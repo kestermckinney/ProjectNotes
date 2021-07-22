@@ -12,6 +12,6 @@ ClientsModel::ClientsModel(QObject* parent): PNSqlQueryModel(parent)
 
     AddRelatedTable("people", "client_id", "People");
 
-    SetOrderBy("client_name")
+    SetOrderBy("client_name");
 
 }
