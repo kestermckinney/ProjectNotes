@@ -63,7 +63,7 @@ public:
     void ClearFilter(int ColumnNumber);
 
     void SetUserFilter(int ColumnNumber, const QStringList& FilterValues);
-    QStringList& GetUserFilter(int ColumnNumber) { return m_UserFilterValues[ColumnNumber]; };
+    const QStringList& GetUserFilter(int ColumnNumber) { return m_UserFilterValues[ColumnNumber]; };
     void SetUserSearchString(int ColumnNumber, const QString& SearchValue);
     QString& GetUserSearchString(int ColumnNumber) { return m_UserSearchString[ColumnNumber]; };
 
