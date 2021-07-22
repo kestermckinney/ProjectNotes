@@ -1,6 +1,9 @@
 #ifndef PNSQLQUERYMODEL_H
 #define PNSQLQUERYMODEL_H
 
+#include <QString>
+#include <QList>
+#include <QStringList>
 #include <QAbstractTableModel>
 #include <QHash>
 #include <QVector>
@@ -97,15 +100,15 @@ private:
 
     // TODO: setup filters and lookup views
     QHash<int, bool> m_IsFiltered;
-    QHash<int, QString&> m_FilterValue;
+    QHash<int, QString> m_FilterValue;
 
     QHash<int, bool> m_IsUserFiltered;
-    QHash<int, QStringList&> m_UserFilterValues;
-    QHash<int, QString&> m_UserSearchString;
+    QHash<int, QStringList> m_UserFilterValues;
+    QHash<int, QString> m_UserSearchString;
 
     QHash<int, bool> m_IsUserRangeFiltered;
-    QHash<int, QString&> m_RangeSearchStart;
-    QHash<int, QString&> m_RangeSearchEnd;
+    QHash<int, QString> m_RangeSearchStart;
+    QHash<int, QString> m_RangeSearchEnd;
 
     QHash<int, PNSqlQueryModel*> m_LookupView;
     QHash<int, int> m_LookupValue;

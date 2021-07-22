@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
         return;
 
 
-    ui->tableViewProjects->setModel(m_DBObjects->projectsmodel());
+    ui->tableViewProjects->setModel(m_DBObjects->projectinformationmodel());
     ui->tableViewProjects->setColumnHidden(0, true);
     PNComboBoxDelegate* peopledelegate = new PNComboBoxDelegate(this, m_DBObjects->peoplemodel());
     PNDateEditDelegate* datedelegate = new PNDateEditDelegate(this);
@@ -66,7 +66,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::handleNewProjectClicked()
 {
-    m_DBObjects->projectsmodel()->AddProject();
+    m_DBObjects->projectinformationmodel()->AddProject();
 }
 
 void MainWindow::handleDeleteProjectClicked()
@@ -75,6 +75,6 @@ void MainWindow::handleDeleteProjectClicked()
 
     for (int i = qi.count() - 1; i >= 0; i--)
     {
-        m_DBObjects->projectsmodel()->DeleteRecord(qi[i]);
+        m_DBObjects->projectinformationmodel()->DeleteRecord(qi[i]);
     }
 }

@@ -722,7 +722,7 @@ QString PNSqlQueryModel::ConstructWhereClause()
 
         // build the column list for user filter where statement
 
-        QHashIterator<int, QString&> hashitsrch(m_UserSearchString);
+        QHashIterator<int, QString> hashitsrch(m_UserSearchString);
         while (hashitsrch.hasNext())
         {
             hashitsrch.next();
