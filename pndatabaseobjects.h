@@ -12,6 +12,11 @@
 #include "actionitemprojectnotesmodel.h"
 #include "actionitemsdetailsmeetingsmodel.h"
 #include "meetingattendeesmodel.h"
+#include "notesactionitemsmodel.h"
+#include "itemdetailteamlistmodel.h"
+#include "trackeritemcommentsmodel.h"
+#include "projectactionitemsmodel.h"
+#include "searchresultsmodel.h"
 
 #include <QObject>
 #include <QSqlDatabase>
@@ -25,9 +30,10 @@ class PNDatabaseObjects : public QObject
 {
     Q_OBJECT
 public:
-    explicit PNDatabaseObjects(QString& databasepath, QObject *parent = nullptr);
-    bool OpenDatabase();
+    explicit PNDatabaseObjects(QObject *parent = nullptr);
+    bool OpenDatabase(QString& databasepath);
     void CloseDatabase();
+    QString Execute(const QString& sql);
 
     void BackupDatabase(QWidget& parent, QFileInfo& file);
     bool SaveParameter( const QString& ParameterName, const QString& ParameterValue );
@@ -51,6 +57,12 @@ public:
     ActionItemProjectNotesModel* actionitemprojectnotesmodel() { return m_ActionItemProjectNotesModel; }
     ActionItemsDetailsMeetingsModel* actionitemsdetailsmeetingsmodel() { return m_ActinoItemsDetailsMeetingsModel; }
     MeetingAttendeesModel* meetingattendeesmodel() { return m_MeetingAttendeesModel; }
+    NotesActionItemsModel* notesactionitemsmodel() { return m_NotesActionItemsModel; }
+    ItemDetailTeamListModel* itemdetailteamlistmodel() { return m_ItemDetailTeamListModel; }
+    TrackerItemCommentsModel* trackeritemscommentsmodel() { return m_TrackerItemCommentsModel; }
+    ProjectActionItemsModel* projectactionitemsmodel() { return m_ProjectActionItemsModel; }
+    ProjectActionItemsModel* actionitemsdetailsmodel() { return m_ActionItemDetailsModel; }
+    SearchResultsModel* searchresultsmodel() { return m_SearchResultsModel; }
 
     // selection values for fields
     static QStringList item_type;
@@ -63,22 +75,19 @@ public:
     static QStringList locations;
 
     // global searches
-    bool GetShowClosedProjects() { return m_ShowClosedProjects; }
-    bool GetShowInternalItems() { return m_ShowInternalItems; }
-    QString& GetGlobalClientFilter() { return m_GlobalClientFilter; }
-    QString& GetGlobalProjectFilter() { return m_GlobalProjectFilter; }
-    void SetShowClosedProjects(bool show) { m_ShowClosedProjects = show; }
-    void SetShowInternalItems(bool show) { m_ShowInternalItems = show; }
-    void SetGlobalClientFilter(QString& filter) { m_GlobalClientFilter = filter; }
-    void SetGlobalProjectFilter(QString& filter) { m_GlobalProjectFilter = filter; }
-
-private:
-    // global searches
-    static bool m_ShowClosedProjects;
-    static bool m_ShowInternalItems;
-    static QString m_GlobalClientFilter;
-    static QString m_GlobalProjectFilter;
-
+    void SetShowAllTrackerItems(bool value);
+    void SetShowClosedProjects(bool value);
+    bool GetShowClosedProjects();
+    void SetShowInternalItems(bool value);
+    bool GetShowInternalItems();
+    void SetGlobalClientFilter(QString value);
+    QString GetGlobalClientFilter();
+    void SetGlobalProjectFilter(QString value);
+    QString GetGlobalProjectFilter();
+    void SetProjectManager(QString value);
+    QString GetProjectManager();
+    void SetManagingCompany(QString value);
+    QString GetManagingCompany();
 
 private:
     QString m_DatabaseFile;
@@ -99,12 +108,17 @@ private:
     ActionItemProjectNotesModel* m_ActionItemProjectNotesModel;
     ActionItemsDetailsMeetingsModel* m_ActinoItemsDetailsMeetingsModel;
     MeetingAttendeesModel* m_MeetingAttendeesModel;
+    NotesActionItemsModel* m_NotesActionItemsModel;
+    ItemDetailTeamListModel* m_ItemDetailTeamListModel;
+    TrackerItemCommentsModel* m_TrackerItemCommentsModel;
+    ProjectActionItemsModel* m_ProjectActionItemsModel;
+    ProjectActionItemsModel* m_ActionItemDetailsModel;
+    SearchResultsModel* m_SearchResultsModel;
 
 signals:
 
 };
 
-bool PNDatabaseObjects::m_ShowClosedProjects = false;
-bool PNDatabaseObjects::m_ShowInternalItems = true;
+extern PNDatabaseObjects global_DBObjects;
 
 #endif // PNDATABASEOBJECTS_H

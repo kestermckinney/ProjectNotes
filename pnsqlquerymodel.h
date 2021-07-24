@@ -1,6 +1,8 @@
 #ifndef PNSQLQUERYMODEL_H
 #define PNSQLQUERYMODEL_H
 
+#include "math.h"
+
 #include <QString>
 #include <QList>
 #include <QStringList>

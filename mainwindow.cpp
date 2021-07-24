@@ -18,19 +18,24 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    m_DBObjects = NULL;
+    //m_DBObjects = nullptr;
 
-    QString path = "/Users/paulmckinney/ProjectNotes.db";
+    //QString path = "/Users/paulmckinney/ProjectNotes.db";
+    QString path = "/home/paulmckinney/ProjectNotes3/database/ProjectNotes.db";
 
-    m_DBObjects = new PNDatabaseObjects(path, this);
+    //m_DBObjects = new PNDatabaseObjects(path, this);
 
-    if (!m_DBObjects->OpenDatabase())
+    if (!global_DBObjects.OpenDatabase(path))
         return;
 
+    global_DBObjects.projectinformationmodel()->Refresh();
+    global_DBObjects.peoplemodel()->Refresh();
 
-    ui->tableViewProjects->setModel(m_DBObjects->projectinformationmodel());
+    ui->tableViewProjects->setModel(global_DBObjects.projectinformationmodel());
     ui->tableViewProjects->setColumnHidden(0, true);
-    PNComboBoxDelegate* peopledelegate = new PNComboBoxDelegate(this, m_DBObjects->peoplemodel());
+
+
+    PNComboBoxDelegate* peopledelegate = new PNComboBoxDelegate(this, global_DBObjects.peoplemodel());
     PNDateEditDelegate* datedelegate = new PNDateEditDelegate(this);
 
     QStringListModel* invoice_periods = new QStringListModel(PNDatabaseObjects::invoicing_period);
@@ -57,16 +62,16 @@ MainWindow::~MainWindow()
 
     ui->tableViewProjects->setModel(nullptr);
 
-    m_DBObjects->CloseDatabase();
+    global_DBObjects.CloseDatabase();
 
-    delete m_DBObjects;
+    //delete m_DBObjects;
 
     delete ui;
 }
 
 void MainWindow::handleNewProjectClicked()
 {
-    m_DBObjects->projectinformationmodel()->AddProject();
+    global_DBObjects.projectinformationmodel()->AddProject();
 }
 
 void MainWindow::handleDeleteProjectClicked()
@@ -75,6 +80,6 @@ void MainWindow::handleDeleteProjectClicked()
 
     for (int i = qi.count() - 1; i >= 0; i--)
     {
-        m_DBObjects->projectinformationmodel()->DeleteRecord(qi[i]);
+        global_DBObjects.projectinformationmodel()->DeleteRecord(qi[i]);
     }
 }

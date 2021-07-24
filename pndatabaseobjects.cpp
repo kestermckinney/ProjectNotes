@@ -55,14 +55,17 @@ QStringList PNDatabaseObjects::locations = {
     "Generic File (System Identified)"
 };
 
+PNDatabaseObjects global_DBObjects(nullptr);
 
-PNDatabaseObjects::PNDatabaseObjects(QString& databasepath, QObject *parent) : QObject(parent)
+PNDatabaseObjects::PNDatabaseObjects(QObject *parent) : QObject(parent)
 {
-    m_DatabaseFile = databasepath;
+    m_DatabaseFile.clear();
 }
 
-bool PNDatabaseObjects::OpenDatabase()
+bool PNDatabaseObjects::OpenDatabase(QString& databasepath)
 {
+    m_DatabaseFile = databasepath;
+
     m_SQLiteDB = QSqlDatabase::addDatabase("QSQLITE");
 
     if (QFileInfo::exists(m_DatabaseFile))
@@ -80,111 +83,71 @@ bool PNDatabaseObjects::OpenDatabase()
         return false;
     }
 
-    m_ClientsModel = new ClientsModel(NULL);
+    m_ClientsModel = new ClientsModel(nullptr);
+    m_UnfilteredClientsModel = new ClientsModel(nullptr);
+    m_PeopleModel = new PeopleModel(nullptr);
+    m_CompanyPeopleModel = new PeopleModel(nullptr);
+    m_UnfilteredPeopleModel = new PeopleModel(nullptr);
+    m_ProjectInformationModel = new ProjectsModel(nullptr);
+    m_TeamsModel = new TeamsModel(nullptr);
+    m_StatusReportItemsModel = new StatusReportItemsModel(nullptr);
+    m_ProjectTeamMembersModel = new ProjectTeamMembersModel(nullptr);
+    m_ProjectLocationsModel = new ProjectLocationsModel(nullptr);
+    m_ProjectNotesModel = new ProjectNotesModel(nullptr);
+    m_ActionItemProjectNotesModel = new ActionItemProjectNotesModel(nullptr);
+    m_ActinoItemsDetailsMeetingsModel = new ActionItemsDetailsMeetingsModel(nullptr);
+    m_MeetingAttendeesModel = new MeetingAttendeesModel(nullptr);
+    m_NotesActionItemsModel = new NotesActionItemsModel(nullptr);
 
-    m_UnfilteredClientsModel = new ClientsModel(NULL);
-    m_PeopleModel = new PeopleModel(NULL);
     //m_PeopleModel->setShowBlank(true);
-    m_CompanyPeopleModel = new PeopleModel(NULL);
-    m_UnfilteredPeopleModel = new PeopleModel(NULL);
-    m_ProjectInformationModel = new ProjectsModel(NULL);
-    m_TeamsModel = new TeamsModel(NULL);
-    m_StatusReportItemsModel = new StatusReportItemsModel(NULL);
-    m_ProjectTeamMembersModel = new ProjectTeamMembersModel(NULL);
-    m_ProjectLocationsModel = new ProjectLocationsModel(NULL);
-    m_ProjectNotesModel = new ProjectNotesModel(NULL);
-    m_ActionItemProjectNotesModel = new ActionItemProjectNotesModel(NULL);
-    m_ActinoItemsDetailsMeetingsModel = new ActionItemsDetailsMeetingsModel(NULL);
-    m_MeetingAttendeesModel = new MeetingAttendeesModel(NULL);
 
     return true;
 }
 
+QString PNDatabaseObjects::Execute(const QString& sql)
+{
+    QSqlQuery query;
+    query.exec(sql);
+
+    if (query.next())
+        return query.value(0).toString();
+    else
+        return QString();
+}
+
 void PNDatabaseObjects::CloseDatabase()
 {
-    if (m_ClientsModel != NULL)
-    {
-        delete m_ClientsModel;
-        m_ClientsModel = NULL;
-    }
+    delete m_ClientsModel;
+    delete m_UnfilteredClientsModel;
+    delete m_PeopleModel;
+    delete m_CompanyPeopleModel;
+    delete m_UnfilteredPeopleModel;
+    delete m_ProjectInformationModel;
+    delete m_TeamsModel;
+    delete m_StatusReportItemsModel;
+    delete m_ProjectTeamMembersModel;
+    delete m_ProjectLocationsModel;
+    delete m_ProjectNotesModel;
+    delete m_ActionItemProjectNotesModel;
+    delete m_ActinoItemsDetailsMeetingsModel;
+    delete m_MeetingAttendeesModel;
+    delete m_NotesActionItemsModel;
 
-    if (m_UnfilteredClientsModel != NULL)
-    {
-        delete m_UnfilteredClientsModel;
-        m_UnfilteredClientsModel = NULL;
-    }
-
-    if (m_PeopleModel != NULL)
-    {
-        delete m_PeopleModel;
-        m_PeopleModel = NULL;
-    }
-
-    if (m_CompanyPeopleModel != NULL)
-    {
-        delete m_CompanyPeopleModel;
-        m_CompanyPeopleModel = NULL;
-    }
-
-    if (m_UnfilteredPeopleModel != NULL)
-    {
-        delete m_UnfilteredPeopleModel;
-        m_UnfilteredPeopleModel = NULL;
-    }
-
-    if (m_ProjectInformationModel != NULL)
-    {
-        delete m_ProjectInformationModel;
-        m_ProjectInformationModel = NULL;
-    }
-
-    if (m_TeamsModel != NULL)
-    {
-        delete m_TeamsModel;
-        m_TeamsModel = NULL;
-    }
-
-    if (m_StatusReportItemsModel != NULL)
-    {
-        delete m_StatusReportItemsModel;
-        m_StatusReportItemsModel = NULL;
-    }
-
-    if (m_ProjectTeamMembersModel != NULL)
-    {
-        delete m_ProjectTeamMembersModel;
-        m_ProjectTeamMembersModel = NULL;
-    }
-
-    if (m_ProjectLocationsModel != NULL)
-    {
-        delete m_ProjectLocationsModel;
-        m_ProjectLocationsModel = NULL;
-    }
-
-    if (m_ProjectNotesModel != NULL)
-    {
-        delete m_ProjectNotesModel;
-        m_ProjectNotesModel = NULL;
-    }
-
-    if (m_ActionItemProjectNotesModel != NULL)
-    {
-        delete m_ActionItemProjectNotesModel;
-        m_ActionItemProjectNotesModel = NULL;
-    }
-
-    if (m_ActinoItemsDetailsMeetingsModel != NULL)
-    {
-        delete m_ActinoItemsDetailsMeetingsModel;
-        m_ActinoItemsDetailsMeetingsModel = NULL;
-    }
-
-    if (m_MeetingAttendeesModel != NULL)
-    {
-        delete m_MeetingAttendeesModel;
-        m_MeetingAttendeesModel = NULL;
-    }
+    m_ClientsModel= nullptr;
+    m_UnfilteredClientsModel= nullptr;
+    m_PeopleModel = nullptr;
+    m_CompanyPeopleModel= nullptr;
+    m_UnfilteredPeopleModel= nullptr;
+    m_ProjectInformationModel= nullptr;
+    m_TeamsModel= nullptr;
+    m_StatusReportItemsModel= nullptr;
+    m_ProjectTeamMembersModel= nullptr;
+    m_ProjectLocationsModel= nullptr;
+    m_ProjectNotesModel= nullptr;
+    m_ActionItemProjectNotesModel= nullptr;
+    m_ActinoItemsDetailsMeetingsModel= nullptr;
+    m_MeetingAttendeesModel= nullptr;
+    m_NotesActionItemsModel= nullptr;
 
     m_SQLiteDB.close();
 }
@@ -230,8 +193,6 @@ bool PNDatabaseObjects::SaveParameter( const QString& ParameterName, const QStri
 
 QString PNDatabaseObjects::LoadParameter( const QString& ParameterName )
 {
-    QString retvalue;
-
     QSqlQuery select("select parameter_value from application_settings where parameter_name = ?;");
     select.bindValue(0, ParameterName);
     if (select.exec())
@@ -248,12 +209,180 @@ QString PNDatabaseObjects::LoadParameter( const QString& ParameterName )
     }
 }
 
+
+void PNDatabaseObjects::SetShowAllTrackerItems(bool value)
+{
+    SaveParameter("UserFilter:ShowAllTrackerItems", (value ? "1": "0"));
+}
+
+void PNDatabaseObjects::SetShowClosedProjects(bool value)
+{
+    SaveParameter("UserFilter:ShowClosedProjects", (value ? "1": "0"));
+}
+
+bool PNDatabaseObjects::GetShowClosedProjects()
+{
+    QString value = LoadParameter("UserFilter:ShowClosedProjects");
+    bool ret = (bool)value.toUInt();
+    return ret;
+}
+
+void PNDatabaseObjects::SetShowInternalItems(bool value)
+{
+    SaveParameter("UserFilter:ShowInternalItems", (value ? "1": "0"));
+}
+
+bool PNDatabaseObjects::GetShowInternalItems()
+{
+    QString value = LoadParameter("UserFilter:ShowInternalItems");
+    bool ret = (bool)value.toUInt();
+    return ret;
+}
+
+void PNDatabaseObjects::SetGlobalClientFilter(QString value)
+{
+    SaveParameter("UserFilter:ClientFilter", value );
+}
+
+QString PNDatabaseObjects::GetGlobalClientFilter()
+{
+    return LoadParameter("UserFilter:ClientFilter");
+}
+
+void PNDatabaseObjects::SetGlobalProjectFilter(QString value)
+{
+    SaveParameter("UserFilter:ProjectFilter", value );
+}
+
+QString PNDatabaseObjects::GetGlobalProjectFilter()
+{
+    return LoadParameter("UserFilter:ProjectFilter");
+}
+
+void PNDatabaseObjects::SetProjectManager(QString value)
+{
+    SaveParameter("Preferences:ProjectManager", value );
+}
+
+QString PNDatabaseObjects::GetProjectManager()
+{
+    return LoadParameter("Preferences:ProjectManager");
+}
+
+void PNDatabaseObjects::SetManagingCompany(QString value)
+{
+    SaveParameter("Preferences:ManagingCompany", value );
+}
+
+QString PNDatabaseObjects::GetManagingCompany()
+{
+    return LoadParameter("Preferences:ManagingCompany");
+}
+
+void PNDatabaseObjects::SetGlobalSearches( bool Refresh )
+{ 
+    // setup default filters
+    if (GetShowClosedProjects())
+    {
+        projectactionitemsmodel()->ClearFilter(9);
+        projectinformationmodel()->ClearFilter(14);
+        searchresultsmodel()->ClearFilter(6);
+    }
+    else
+    {
+        projectactionitemsmodel()->SetFilter(9, tr("Active"));
+        projectinformationmodel()->SetFilter(14, tr("Active"));
+        searchresultsmodel()->SetFilter(6, tr("Active"));
+    }
+
+    if (GetShowInternalItems())
+    {
+        projectnotesmodel()->ClearFilter(5);
+        actionitemsdetailsmeetingsmodel()->ClearFilter(3);
+        notesactionitemsmodel()->ClearFilter(15);
+        actionitemprojectnotesmodel()->ClearFilter(3);
+        projectactionitemsmodel()->ClearFilter(15);
+        actionitemsdetailsmodel()->ClearFilter(3);
+        searchresultsmodel()->ClearFilter(4);
+    }
+    else
+    {
+        projectnotesmodel()->SetFilter(5, tr("0"));
+        actionitemsdetailsmeetingsmodel()->SetFilter(3, tr("0"));
+        notesactionitemsmodel()->SetFilter(15, tr("0"));
+        actionitemprojectnotesmodel()->SetFilter(3, tr("0"));
+        projectactionitemsmodel()->SetFilter(15, tr("0"));
+        actionitemsdetailsmodel()->SetFilter(3, tr("0"));
+        searchresultsmodel()->SetFilter(4, tr("0"));
+    }
+
+    if (GetGlobalClientFilter().isEmpty())
+    {
+        peoplemodel()->ClearUserFilter(5);
+        peoplemodel()->DeactivateUserFilter(tr("GlobalClientFilter"));
+        clientsmodel()->ClearFilter(0);
+        clientsmodel()->DeactivateUserFilter(tr("GlobalClientFilter"));
+        projectactionitemsmodel()->ClearFilter(18);
+        projectinformationmodel()->ClearFilter(13);
+        searchresultsmodel()->ClearFilter(5);
+    }
+    else
+    {
+        //QString managing = Execute(QString("select client_name from clients where client_id = '%s'").arg(GetManagingCompany()));
+        //QString filtered = Execute(QString("select client_name from clients where client_id = '%s'").arg(GetGlobalClientFilter()));
+
+        QStringList managingnclientids;
+        // make sure list of people can show the managing company
+        managingnclientids.append(GetManagingCompany());
+        managingnclientids.append(GetGlobalClientFilter());
+
+        clientsmodel()->SetUserFilter(0, managingnclientids );
+        clientsmodel()->ActivateUserFilter("GlobalClientFilter");
+
+        peoplemodel()->SetUserFilter(5, managingnclientids);
+        peoplemodel()->ActivateUserFilter(tr("GlobalClientFilter"));
+
+        projectactionitemsmodel()->SetFilter(18, GetGlobalClientFilter());
+        projectinformationmodel()->SetFilter(13, GetGlobalClientFilter());
+        searchresultsmodel()->SetFilter(5, GetGlobalClientFilter());
+    }
+
+    if (GetGlobalProjectFilter().isEmpty())
+    {
+        projectactionitemsmodel()->ClearFilter(14);
+        projectinformationmodel()->ClearFilter(0);
+        searchresultsmodel()->ClearFilter(7);
+    }
+    else
+    {
+        projectactionitemsmodel()->SetFilter(14, GetGlobalProjectFilter());
+        projectinformationmodel()->SetFilter(0, GetGlobalProjectFilter());
+
+        QString projectnumber = Execute(QString("select project_number from projects where project_id = '%s'").arg(GetGlobalProjectFilter()));
+
+        searchresultsmodel()->SetFilter(5, projectnumber);
+    }
+
+
+    if (Refresh)
+    {
+        peoplemodel()->Refresh();
+        clientsmodel()->Refresh();
+        projectnotesmodel()->Refresh();
+        actionitemsdetailsmeetingsmodel()->Refresh();
+        notesactionitemsmodel()->Refresh();
+        actionitemprojectnotesmodel()->Refresh();
+        actionitemsdetailsmodel()->Refresh();
+
+        projectactionitemsmodel()->Refresh();
+        projectinformationmodel()->Refresh();
+        searchresultsmodel()->Refresh();
+    }
+}
+
 bool PNDatabaseObjects::ExecuteDDL(const QString& SQL)
 {
   // TODO : finish
 }
 
-void PNDatabaseObjects::SetGlobalSearches( bool Refresh )
-{
-  // TODO: finish
-}
+

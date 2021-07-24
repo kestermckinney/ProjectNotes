@@ -1,4 +1,4 @@
-QT       += core gui sql
+QT       += core gui sql xml
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -15,41 +15,53 @@ SOURCES += \
     actionitemsdetailsmeetingsmodel.cpp \
     clientsmodel.cpp \
     comboboxdelegate.cpp \
+    itemdetailteamlistmodel.cpp \
     main.cpp \
     mainwindow.cpp \
     meetingattendeesmodel.cpp \
     noteactionitemsmodel.cpp \
+    notesactionitemsmodel.cpp \
     peoplemodel.cpp \
     pncomboboxdelegate.cpp \
     pndatabaseobjects.cpp \
     pndateeditdelegate.cpp \
+    pnsettings.cpp \
     pnsqlquerymodel.cpp \
+    projectactionitemsmodel.cpp \
     projectlocationsmodel.cpp \
     projectnotesmodel.cpp \
     projectsmodel.cpp \
     projectteammembersmodel.cpp \
+    searchresultsmodel.cpp \
     statusreportitemsmodel.cpp \
-    teamsmodel.cpp
+    teamsmodel.cpp \
+    trackeritemcommentsmodel.cpp
 
 HEADERS += \
     actionitemprojectnotesmodel.h \
     actionitemsdetailsmeetingsmodel.h \
     clientsmodel.h \
     comboboxdelegate.h \
+    itemdetailteamlistmodel.h \
     mainwindow.h \
     meetingattendeesmodel.h \
     noteactionitemsmodel.h \
+    notesactionitemsmodel.h \
     peoplemodel.h \
     pncomboboxdelegate.h \
     pndatabaseobjects.h \
     pndateeditdelegate.h \
+    pnsettings.h \
     pnsqlquerymodel.h \
+    projectactionitemsmodel.h \
     projectlocationsmodel.h \
     projectnotesmodel.h \
     projectsmodel.h \
     projectteammembersmodel.h \
+    searchresultsmodel.h \
     statusreportitemsmodel.h \
-    teamsmodel.h
+    teamsmodel.h \
+    trackeritemcommentsmodel.h
 
 FORMS += \
     mainwindow.ui

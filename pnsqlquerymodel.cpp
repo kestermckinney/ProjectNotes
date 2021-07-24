@@ -1,4 +1,7 @@
 #include "pnsqlquerymodel.h"
+#include "pndatabaseobjects.h"
+
+#include <QString>
 #include <QSqlQuery>
 #include <QSqlRecord>
 #include <QMessageBox>
@@ -8,6 +11,9 @@
 #include <QUuid>
 #include <QRegularExpressionMatch>
 #include <QHashIterator>
+#include <QDomDocument>
+#include <QDomNode>
+
 
 PNSqlQueryModel::PNSqlQueryModel(QObject *parent) : QAbstractTableModel(parent)
 {
@@ -70,7 +76,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &index, const QVariant &value, i
 
 
         // validate the data
-        if (m_LookupValues[index.column()] != NULL)
+        if (m_LookupValues[index.column()] != nullptr)
         {
             if (m_LookupValues[index.column()]->indexOf(value.toString()) == -1)
             {
@@ -95,7 +101,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &index, const QVariant &value, i
         QVariant oldvalue = m_cache[index.row()].value(index.column());
 
         QSqlQuery update;
-        update.prepare("update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)");
+        update.prepare("update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is nullptr)");
         update.addBindValue(cleanvalue);
         update.addBindValue(keyvalue);
         update.addBindValue(oldvalue);
@@ -220,7 +226,7 @@ void PNSqlQueryModel::SQLEscape(QVariant& ColumnValue, DBColumnType ColumnType)
         return;
     }
 
-    // make blank entries null
+    // make blank entries nullptr
     if ( ColumnValue.toString().isEmpty())
     {
         ColumnValue.clear();
@@ -422,7 +428,7 @@ void PNSqlQueryModel::AddColumn(int ColumnNumber, const QString& DisplayName, DB
     m_ColumnRequired[ColumnNumber] = Required;
     m_ColumnSearchable[ColumnNumber] = Searchable;
     m_ColumnIsEditable[ColumnNumber] = Editable;
-    m_LookupValues[ColumnNumber] = NULL;
+    m_LookupValues[ColumnNumber] = nullptr;
     m_ColumnIsUnique[ColumnNumber] = Unique;
 
     m_IsFiltered[ColumnNumber] = false;
@@ -436,7 +442,7 @@ void PNSqlQueryModel::AddColumn(int ColumnNumber, const QString& DisplayName, DB
     m_RangeSearchStart[ColumnNumber] = QString();
     m_RangeSearchEnd[ColumnNumber] = QString();
 
-    m_LookupView[ColumnNumber] = NULL;
+    m_LookupView[ColumnNumber] = nullptr;
     m_LookupValue[ColumnNumber] = -1;
     m_LookupFK[ColumnNumber] = -1;
 }
@@ -709,7 +715,7 @@ QString PNSqlQueryModel::ConstructWhereClause()
             if (m_ColumnType[hashit.key()] == DB_BOOL && ColumnValue == tr("'0'"))
             {
                 valuelist += QString(" (%1 = %2").arg(m_SqlQuery.record().fieldName(hashit.key()), ColumnValue.toString() );
-                valuelist += QString(" OR %1 IS NULL) ").arg( m_SqlQuery.record().fieldName(hashit.key()) );
+                valuelist += QString(" OR %1 IS nullptr) ").arg( m_SqlQuery.record().fieldName(hashit.key()) );
             }
             else
                 valuelist += QString("%1 = %2").arg( m_SqlQuery.record().fieldName(hashit.key()), ColumnValue.toString() );
@@ -718,7 +724,7 @@ QString PNSqlQueryModel::ConstructWhereClause()
 
     if (m_UserFilterActive)
     {
-        bool checkfornull;
+        bool checkfornullptr;
 
         // build the column list for user filter where statement
 
@@ -727,7 +733,7 @@ QString PNSqlQueryModel::ConstructWhereClause()
         {
             hashitsrch.next();
 
-            checkfornull = false;
+            checkfornullptr = false;
 
             if (!hashitsrch.value().isEmpty())
             {
@@ -735,9 +741,9 @@ QString PNSqlQueryModel::ConstructWhereClause()
                     valuelist += tr(" AND ");
 
                 ColumnValue = tr("%%") + hashitsrch.value() + tr("%%");
-                SQLEscape(&ColumnValue, m_ColumnType[hashitsrch.key()]);
+                SQLEscape(ColumnValue, m_ColumnType[hashitsrch.key()]);
 
-                valuelist += QString(" %1 LIKE %2 ").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), ColumnValue);
+                valuelist += QString(" %1 LIKE %2 ").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), ColumnValue.toString());
             }
 
             if (m_IsUserFiltered[hashitsrch.key()])
@@ -748,32 +754,35 @@ QString PNSqlQueryModel::ConstructWhereClause()
                 QStringList& ColumnValues = m_UserFilterValues[hashitsrch.key()];
                 QString instring;
 
-                for (QStringList::iterator itfilter = ColumnValues.begin(); itfilter != ColumnValues.end(); ++itfilter)
+                for ( const auto& colval : ColumnValues)
                 {
                     if (!instring.isEmpty())
                         instring += tr(", ");
 
                     if (m_LookupView[hashitsrch.key()])
-                        ColumnValue = m_LookupView[hashitsrch.key()].FindValue(*itfilter, m_LookupFK[hashitsrch.key()], m_LookupValue[hashitsrch.key()]);
+                    {
+                        QVariant lookupval(colval);
+                        ColumnValue = m_LookupView[hashitsrch.key()]->FindValue(lookupval, m_LookupFK[hashitsrch.key()], m_LookupValue[hashitsrch.key()]);
+                    }
                     else
-                        ColumnValue = *itfilter;
+                        ColumnValue = colval;
 
-                    SQLEscape(&ColumnValue, m_ColumnType[hashitsrch.key()]);
+                    SQLEscape(ColumnValue, m_ColumnType[hashitsrch.key()]);
 
                     instring += ColumnValue.toString();
 
                     if (m_ColumnType[hashitsrch.key()] == DB_BOOL && ColumnValue == tr("'0'"))
-                        checkfornull = true;
+                        checkfornullptr = true;
 
-                    // the database doesn't store blanks, they are converted to null
-                    if (ColumnValue == tr("NULL"))
-                        checkfornull = true;
+                    // the database doesn't store blanks, they are converted to nullptr
+                    if (ColumnValue == tr("nullptr"))
+                        checkfornullptr = true;
                 }
 
-                if (checkfornull)
+                if (checkfornullptr)
                 {
                     valuelist += QString(" ( %1 IN (%2)").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), instring);
-                    valuelist += QString(" OR %s IS NULL) ").arg(m_SqlQuery.record().fieldName(hashitsrch.key()));
+                    valuelist += QString(" OR %s IS nullptr) ").arg(m_SqlQuery.record().fieldName(hashitsrch.key()));
                 }
                 else
                     valuelist += QString(" %1 IN (%2) ").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), instring);
@@ -781,26 +790,26 @@ QString PNSqlQueryModel::ConstructWhereClause()
 
             if (m_IsUserRangeFiltered[hashitsrch.key()])
             {
-                QString RangeStart = m_RangeSearchStart[hashitsrch.key()];
-                QString RangeEnd = m_RangeSearchEnd[hashitsrch.key()];
+                QVariant RangeStart(m_RangeSearchStart[hashitsrch.key()]);
+                QVariant RangeEnd(m_RangeSearchEnd[hashitsrch.key()]);
 
-                SQLEscape(&RangeStart, m_ColumnType[hashitsrch.key()]);
-                SQLEscape(&RangeEnd, m_ColumnType[hashitsrch.key()]);
+                SQLEscape(RangeStart, m_ColumnType[hashitsrch.key()]);
+                SQLEscape(RangeEnd, m_ColumnType[hashitsrch.key()]);
 
-                if (RangeStart != tr("NULL") && RangeStart != tr("''"))
+                if (RangeStart != tr("nullptr") && RangeStart != tr("''"))
                 {
                     if (!valuelist.isEmpty())
                         valuelist += tr(" AND ");
 
-                    valuelist += QString("%1 >= %2", m_SqlQuery.record().fieldName(hashitsrch.key()), RangeStart);
+                    valuelist += QString("%1 >= %2").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), RangeStart.toString());
                 }
 
-                if (RangeEnd != tr("NULL") && RangeEnd != tr("''"))
+                if (RangeEnd != tr("nullptr") && RangeEnd != tr("''"))
                 {
                     if (!valuelist.isEmpty())
                         valuelist += tr(" AND ");
 
-                    valuelist += QString("%1 <= %2").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), RangeEnd);
+                    valuelist += QString("%1 <= %2").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), RangeEnd.toString());
                 }
             }
         }
@@ -910,14 +919,174 @@ bool PNSqlQueryModel::HasUserFilters()
 
 void PNSqlQueryModel::ActivateUserFilter(QString FilterName)
 {
-  // TODO: Continue from here
+    m_UserFilterActive = true;
+    Refresh();
+
+    if (!FilterName.isEmpty())
+    {
+        QString filter_name = FilterName;
+        filter_name.replace(" ", "_", Qt::CaseSensitive);
+
+        QString parmname;
+        QString val = "true";
+
+        parmname = QString("UserFilter:%s:IsActive").arg(filter_name);
+
+        global_DBObjects.SaveParameter(parmname, val);
+    }
 }
 
-void DeactivateUserFilter(QString FilterName);
-void LoadLastUserFilterState(QString FilterName);
+void PNSqlQueryModel::DeactivateUserFilter(QString FilterName)
+{
+    m_UserFilterActive = false;
+    Refresh();
 
-void SaveUserFilter( QString FilterName);
-void LoadUserFilter( QString FilterName);
+    if (!FilterName.isEmpty())
+    {
+        QString filter_name = FilterName;
+        filter_name.replace(" ", "_", Qt::CaseSensitive);
+
+        QString parmname;
+        QString val = "false";
+
+        parmname = QString("UserFilter:%s:IsActive").arg(filter_name);
+
+        global_DBObjects.SaveParameter(parmname, val);
+    }
+}
+
+void PNSqlQueryModel::LoadLastUserFilterState(QString FilterName)
+{
+    QString filter_name = FilterName;
+    filter_name.replace(" ", "_", Qt::CaseSensitive);
+
+    QString parmname;
+    QString val;
+
+    parmname = QString("UserFilter:%s:IsActive").arg(filter_name);
+    parmname.replace(" ", "_", Qt::CaseSensitive);
+
+    val = global_DBObjects.LoadParameter(parmname);
+
+    if (val == "true")
+        m_UserFilterActive = true;
+    else
+        m_UserFilterActive = false;
+}
+
+void PNSqlQueryModel::SaveUserFilter( QString FilterName)
+{
+    QString filter_name = FilterName;
+    filter_name.replace(" ", "_", Qt::CaseSensitive);
+
+    QDomDocument doc;
+    QDomElement root = doc.createElement(filter_name);
+    doc.appendChild(root);
+
+    QDomElement child;
+    QDomElement columnvalue;
+
+    root.setAttribute("ObjectType", "UserFilter");
+
+    //for (DBColumnHashMap::iterator itcolumn = m_Columns.begin(); itcolumn != m_Columns.end(); ++itcolumn)
+    for (auto it = m_ColumnType.cbegin(); it != m_ColumnType.cend(); ++it)
+    {
+        child = doc.createElement(m_SqlQuery.record().fieldName(it.key()));
+        child.setAttribute("ObjectType", "Field");
+        child.setAttribute("RangeSearchStart", m_RangeSearchStart[it.key()]);
+        child.setAttribute("RangeSearchEnd", m_RangeSearchEnd[it.key()]);
+        child.setAttribute("UserSearchString", m_UserSearchString[it.key()]);
+
+        root.appendChild(child);
+
+        int i = 0;
+        for (wxArrayString::iterator ait = itcolumn->second->m_UserFilterValues.begin();  ait != itcolumn->second->m_UserFilterValues.end(); ++ait)
+        {
+            columnvalue = new wxXmlNode(wxXML_ELEMENT_NODE, QString::Format("value_%i", i));
+            i++;
+
+            columnvalue->AddAttribute("SearchValue", *ait);
+
+            child->AddChild(columnvalue);
+        }
+    }
+
+    // Write the output to a QString.
+    QStringOutputStream stream;
+    doc->Save(stream);
+
+    QString parmname;
+    QString xml = stream.GetString();
+
+    parmname = QString::Format("UserFilter:%s", filter_name);
+
+    wxGetApp().GetDBObjects()->SaveParameter( parmname, xml );
+
+    delete doc;
+
+}
+
+void PNSqlQueryModel::LoadUserFilter( QString FilterName)
+{
+    QString filter_name = FilterName;
+    filter_name.replace(" ", "_", Qt::CaseSensitive);
+
+    QString parmname;
+
+    parmname = QString::Format("UserFilter:%s", filter_name);
+    parmname.Replace(wxT(" "), wxT("_"), true);
+
+    QString xml = wxGetApp().GetDBObjects()->LoadParameter(parmname);
+
+    if (xml.IsEmpty())
+    {
+        ClearAllUserSearches();
+        return;
+    }
+
+    QStringInputStream is(xml);
+
+    wxXmlDocument* doc = new wxXmlDocument();
+    doc->Load(is);
+    wxXmlNode* root = doc->GetRoot();
+
+    wxXmlNode* child = NULL;
+
+    if (root)
+        child = root->GetChildren();
+
+    wxXmlNode* subchild;
+    while (child)
+    {
+        QString field = child->GetName();
+
+        m_Columns[field]->m_RangeSearchStart = child->GetAttribute("RangeSearchStart");
+        m_Columns[field]->m_RangeSearchEnd = child->GetAttribute("RangeSearchEnd");
+        m_Columns[field]->m_UserSearchString = child->GetAttribute("UserSearchString");
+
+        if (!m_Columns[field]->m_RangeSearchStart.IsEmpty() || !m_Columns[field]->m_RangeSearchEnd.IsEmpty())
+            m_Columns[field]->m_IsUserRangeFiltered = true;
+        else
+            m_Columns[field]->m_IsUserRangeFiltered = false;
+
+        m_Columns[field]->m_UserFilterValues.Clear();
+        m_Columns[field]->m_IsUserFiltered = false;
+
+        subchild = child->GetChildren();
+
+        while (subchild)
+        {
+            m_Columns[field]->m_UserFilterValues.Add(subchild->GetAttribute("SearchValue"));
+            m_Columns[field]->m_IsUserFiltered = true;
+
+            subchild = subchild->GetNext();
+        }
+
+        child = child->GetNext();
+    }
+
+    delete doc;
+}
 
 // TODO: Setup filter
 // TODO: Setup global filter

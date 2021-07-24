@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include "pndatabaseobjects.h"
+#include "pnsettings.h"
 
 #include <QMainWindow>
 
@@ -17,7 +18,7 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    static const PNDatabaseObjects* DBObjects() { return m_DBObjects; };
+    //const PNDatabaseObjects* DBObjects() { return m_DBObjects; };
 
 private slots:
     void handleNewProjectClicked();
@@ -25,7 +26,8 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-
-    static PNDatabaseObjects* m_DBObjects;
 };
+
+static PNSettings global_Settings;
+
 #endif // MAINWINDOW_H
