@@ -46,6 +46,7 @@ public:
 
     static QDateTime ParseDateTime(QString entrydate);
     bool AddRecord(QSqlRecord& newrecord);
+    virtual bool NewRecord();
     bool DeleteRecord(QModelIndex index);
 
     int rowCount(const QModelIndex &parent) const override;

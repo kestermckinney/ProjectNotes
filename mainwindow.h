@@ -21,8 +21,8 @@ public:
     //const PNDatabaseObjects* DBObjects() { return m_DBObjects; };
 
 private slots:
-    void handleNewProjectClicked();
-    void handleDeleteProjectClicked();
+    //void handleNewProjectClicked();
+    //void handleDeleteProjectClicked();
 
 private:
     Ui::MainWindow *ui;

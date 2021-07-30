@@ -49,16 +49,20 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tableViewProjects->setItemDelegateForColumn(4, datedelegate);
     ui->tableViewProjects->setItemDelegateForColumn(11, periodsdelegate);
 
+    //ui->actionBack->setVisible(false);
+
     // connect events
-    connect(ui->pushButtonNewProject, &QPushButton::clicked, this, &MainWindow::handleNewProjectClicked);
-    connect(ui->pushButtonDeleteProject, &QPushButton::clicked, this, &MainWindow::handleDeleteProjectClicked);
+    //connect(ui->pushButtonNewProject, &QPushButton::clicked, this, &MainWindow::handleNewProjectClicked);
+    //connect(ui->pushButtonDeleteProject, &QPushButton::clicked, this, &MainWindow::handleDeleteProjectClicked);
+
+    global_Settings.getWindowState("MainWindow", *this);
 }
 
 MainWindow::~MainWindow()
 {
     // disconnect events
-    disconnect(ui->pushButtonNewProject, &QPushButton::clicked, this, &MainWindow::handleNewProjectClicked);
-    disconnect(ui->pushButtonDeleteProject, &QPushButton::clicked, this, &MainWindow::handleDeleteProjectClicked);
+    //disconnect(ui->pushButtonNewProject, &QPushButton::clicked, this, &MainWindow::handleNewProjectClicked);
+    //disconnect(ui->pushButtonDeleteProject, &QPushButton::clicked, this, &MainWindow::handleDeleteProjectClicked);
 
     ui->tableViewProjects->setModel(nullptr);
 
@@ -66,14 +70,11 @@ MainWindow::~MainWindow()
 
     //delete m_DBObjects;
 
+    global_Settings.setWindowState("MainWindow", *this);
+
     delete ui;
 }
-
-void MainWindow::handleNewProjectClicked()
-{
-    global_DBObjects.projectinformationmodel()->AddProject();
-}
-
+/*
 void MainWindow::handleDeleteProjectClicked()
 {
     QModelIndexList qi = ui->tableViewProjects->selectionModel()->selectedRows();
@@ -83,3 +84,4 @@ void MainWindow::handleDeleteProjectClicked()
         global_DBObjects.projectinformationmodel()->DeleteRecord(qi[i]);
     }
 }
+*/

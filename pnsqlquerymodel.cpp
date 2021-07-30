@@ -101,7 +101,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &index, const QVariant &value, i
         QVariant oldvalue = m_cache[index.row()].value(index.column());
 
         QSqlQuery update;
-        update.prepare("update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is nullptr)");
+        update.prepare("update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)");
         update.addBindValue(cleanvalue);
         update.addBindValue(keyvalue);
         update.addBindValue(oldvalue);
@@ -142,6 +142,11 @@ void PNSqlQueryModel::Refresh()
     clear();
 
     m_SqlQuery = QSqlQuery(BaseSQL());
+
+    qDebug() << "Refreshing: ";
+    qDebug() << m_SqlQuery.executedQuery();
+    qDebug() << "Original:";
+    qDebug() << m_BaseSQL;
 
     // add a blank row for drop downs
     if (m_ShowBlank)
@@ -544,6 +549,12 @@ bool PNSqlQueryModel::AddRecord(QSqlRecord& newrecord)
     return false;
 }
 
+bool PNSqlQueryModel::NewRecord()
+{
+    QSqlRecord qr = emptyrecord();
+    return AddRecord(qr);
+}
+
 bool PNSqlQueryModel::DeleteRecord(QModelIndex index)
 {
     if (!DeleteCheck(index))
@@ -612,7 +623,6 @@ void PNSqlQueryModel::AddRelatedTable(const QString& TableName, const QString& C
 
 bool PNSqlQueryModel::DeleteCheck(const QModelIndex &index)
 {
-    // TODO: lookup records that use this row in other tables
     int reference_count = 0;
     QString message;
 
@@ -715,7 +725,7 @@ QString PNSqlQueryModel::ConstructWhereClause()
             if (m_ColumnType[hashit.key()] == DB_BOOL && ColumnValue == tr("'0'"))
             {
                 valuelist += QString(" (%1 = %2").arg(m_SqlQuery.record().fieldName(hashit.key()), ColumnValue.toString() );
-                valuelist += QString(" OR %1 IS nullptr) ").arg( m_SqlQuery.record().fieldName(hashit.key()) );
+                valuelist += QString(" OR %1 IS NULL) ").arg( m_SqlQuery.record().fieldName(hashit.key()) );
             }
             else
                 valuelist += QString("%1 = %2").arg( m_SqlQuery.record().fieldName(hashit.key()), ColumnValue.toString() );
@@ -782,7 +792,7 @@ QString PNSqlQueryModel::ConstructWhereClause()
                 if (checkfornullptr)
                 {
                     valuelist += QString(" ( %1 IN (%2)").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), instring);
-                    valuelist += QString(" OR %s IS nullptr) ").arg(m_SqlQuery.record().fieldName(hashitsrch.key()));
+                    valuelist += QString(" OR %s IS NULL) ").arg(m_SqlQuery.record().fieldName(hashitsrch.key()));
                 }
                 else
                     valuelist += QString(" %1 IN (%2) ").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), instring);
@@ -915,6 +925,8 @@ bool PNSqlQueryModel::HasUserFilters()
         if ( HasUserFilters(hashit.key()) )
             return true;
     }
+
+    return false;
 }
 
 void PNSqlQueryModel::ActivateUserFilter(QString FilterName)
@@ -930,7 +942,7 @@ void PNSqlQueryModel::ActivateUserFilter(QString FilterName)
         QString parmname;
         QString val = "true";
 
-        parmname = QString("UserFilter:%s:IsActive").arg(filter_name);
+        parmname = QString("UserFilter:%1:IsActive").arg(filter_name);
 
         global_DBObjects.SaveParameter(parmname, val);
     }
@@ -949,7 +961,7 @@ void PNSqlQueryModel::DeactivateUserFilter(QString FilterName)
         QString parmname;
         QString val = "false";
 
-        parmname = QString("UserFilter:%s:IsActive").arg(filter_name);
+        parmname = QString("UserFilter:%1:IsActive").arg(filter_name);
 
         global_DBObjects.SaveParameter(parmname, val);
     }
@@ -963,7 +975,7 @@ void PNSqlQueryModel::LoadLastUserFilterState(QString FilterName)
     QString parmname;
     QString val;
 
-    parmname = QString("UserFilter:%s:IsActive").arg(filter_name);
+    parmname = QString("UserFilter:%1:IsActive").arg(filter_name);
     parmname.replace(" ", "_", Qt::CaseSensitive);
 
     val = global_DBObjects.LoadParameter(parmname);
@@ -988,7 +1000,6 @@ void PNSqlQueryModel::SaveUserFilter( QString FilterName)
 
     root.setAttribute("ObjectType", "UserFilter");
 
-    //for (DBColumnHashMap::iterator itcolumn = m_Columns.begin(); itcolumn != m_Columns.end(); ++itcolumn)
     for (auto it = m_ColumnType.cbegin(); it != m_ColumnType.cend(); ++it)
     {
         child = doc.createElement(m_SqlQuery.record().fieldName(it.key()));
@@ -996,34 +1007,29 @@ void PNSqlQueryModel::SaveUserFilter( QString FilterName)
         child.setAttribute("RangeSearchStart", m_RangeSearchStart[it.key()]);
         child.setAttribute("RangeSearchEnd", m_RangeSearchEnd[it.key()]);
         child.setAttribute("UserSearchString", m_UserSearchString[it.key()]);
+        child.setAttribute("FieldNumber", it.key());
 
         root.appendChild(child);
 
         int i = 0;
-        for (wxArrayString::iterator ait = itcolumn->second->m_UserFilterValues.begin();  ait != itcolumn->second->m_UserFilterValues.end(); ++ait)
+
+        for (auto ait = m_UserFilterValues[it.key()].cbegin(); ait != m_UserFilterValues[it.key()].cend(); ++ait)
         {
-            columnvalue = new wxXmlNode(wxXML_ELEMENT_NODE, QString::Format("value_%i", i));
+            columnvalue = doc.createElement(QString("value_%1").arg(i));
             i++;
 
-            columnvalue->AddAttribute("SearchValue", *ait);
+            columnvalue.setAttribute("SearchValue", *ait);
 
-            child->AddChild(columnvalue);
+            child.appendChild(columnvalue);
         }
     }
 
     // Write the output to a QString.
-    QStringOutputStream stream;
-    doc->Save(stream);
+    QString xml = doc.toString();
 
-    QString parmname;
-    QString xml = stream.GetString();
+    QString parmname = QString("UserFilter:%1").arg(filter_name);
 
-    parmname = QString::Format("UserFilter:%s", filter_name);
-
-    wxGetApp().GetDBObjects()->SaveParameter( parmname, xml );
-
-    delete doc;
-
+    global_DBObjects.SaveParameter( parmname, xml );
 }
 
 void PNSqlQueryModel::LoadUserFilter( QString FilterName)
@@ -1033,62 +1039,56 @@ void PNSqlQueryModel::LoadUserFilter( QString FilterName)
 
     QString parmname;
 
-    parmname = QString::Format("UserFilter:%s", filter_name);
-    parmname.Replace(wxT(" "), wxT("_"), true);
+    parmname = QString("UserFilter:%1").arg(filter_name);
+    parmname.replace(" ", "_", Qt::CaseSensitive);
 
-    QString xml = wxGetApp().GetDBObjects()->LoadParameter(parmname);
+    QString xml = global_DBObjects.LoadParameter(parmname);
 
-    if (xml.IsEmpty())
+    if (xml.isEmpty())
     {
         ClearAllUserSearches();
         return;
     }
 
-    QStringInputStream is(xml);
+    QDomDocument doc;
+    doc.setContent(xml);
 
-    wxXmlDocument* doc = new wxXmlDocument();
-    doc->Load(is);
-    wxXmlNode* root = doc->GetRoot();
+    QDomElement root = doc.documentElement();
+    QDomNode child;
 
-    wxXmlNode* child = NULL;
+    if (!root.isNull())
+        child = root.firstChild();
 
-    if (root)
-        child = root->GetChildren();
-
-    wxXmlNode* subchild;
-    while (child)
+    QDomNode subchild;
+    while (!child.isNull())
     {
-        QString field = child->GetName();
+        int field = child.toElement().attribute("FieldNumber").toInt();
 
-        m_Columns[field]->m_RangeSearchStart = child->GetAttribute("RangeSearchStart");
-        m_Columns[field]->m_RangeSearchEnd = child->GetAttribute("RangeSearchEnd");
-        m_Columns[field]->m_UserSearchString = child->GetAttribute("UserSearchString");
+        m_RangeSearchStart[field] = child.toElement().attribute("RangeSearchStart");
+        m_RangeSearchEnd[field] = child.toElement().attribute("RangeSearchEnd");
+        m_UserSearchString[field] = child.toElement().attribute("UserSearchString");
 
-        if (!m_Columns[field]->m_RangeSearchStart.IsEmpty() || !m_Columns[field]->m_RangeSearchEnd.IsEmpty())
-            m_Columns[field]->m_IsUserRangeFiltered = true;
+        if (!m_RangeSearchStart[field].isEmpty() || !m_RangeSearchEnd[field].isEmpty())
+            m_IsUserRangeFiltered[field] = true;
         else
-            m_Columns[field]->m_IsUserRangeFiltered = false;
+            m_IsUserRangeFiltered[field] = false;
 
-        m_Columns[field]->m_UserFilterValues.Clear();
-        m_Columns[field]->m_IsUserFiltered = false;
+        m_UserFilterValues[field].clear();
+        m_IsUserFiltered[field] = false;
 
-        subchild = child->GetChildren();
+        subchild = child.firstChild();
 
-        while (subchild)
+        while (!subchild.isNull())
         {
-            m_Columns[field]->m_UserFilterValues.Add(subchild->GetAttribute("SearchValue"));
-            m_Columns[field]->m_IsUserFiltered = true;
+            m_UserFilterValues[field].append(subchild.toElement().attribute("SearchValue"));
+            m_IsUserFiltered[field] = true;
 
-            subchild = subchild->GetNext();
+            subchild = subchild.nextSibling();
         }
 
-        child = child->GetNext();
+        child = child.nextSibling();
     }
-
-    delete doc;
 }
 
-// TODO: Setup filter
-// TODO: Setup global filter
 // TODO: Setup refresh signalling between models
 

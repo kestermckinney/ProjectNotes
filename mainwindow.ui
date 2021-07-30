@@ -6,12 +6,16 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>740</width>
-    <height>628</height>
+    <width>677</width>
+    <height>629</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Project Notes</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>:/icons/logo16.png</normaloff>:/icons/logo16.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
@@ -41,6 +45,12 @@
     </property>
     <item>
      <widget class="QStackedWidget" name="stackedWidget">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
@@ -83,62 +93,267 @@
           </attribute>
          </widget>
         </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="pageProjectNote">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_18">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayoutProjects">
-          <property name="spacing">
+         <widget class="QTabWidget" name="tabWidget">
+          <property name="currentIndex">
            <number>0</number>
           </property>
-          <item>
-           <widget class="QPushButton" name="pushButtonOpenProject">
-            <property name="text">
-             <string>Open Project</string>
+          <widget class="QWidget" name="tab">
+           <attribute name="title">
+            <string>Note</string>
+           </attribute>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <property name="spacing">
+             <number>0</number>
             </property>
-            <property name="flat">
-             <bool>true</bool>
+            <property name="leftMargin">
+             <number>0</number>
             </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButtonNewProject">
-            <property name="text">
-             <string>New Project</string>
+            <property name="topMargin">
+             <number>0</number>
             </property>
-            <property name="flat">
-             <bool>true</bool>
+            <property name="rightMargin">
+             <number>0</number>
             </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButtonDeleteProject">
-            <property name="text">
-             <string>Delete Project</string>
+            <property name="bottomMargin">
+             <number>5</number>
             </property>
-            <property name="flat">
-             <bool>true</bool>
+            <item>
+             <widget class="QFrame" name="frame_5">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::NoFrame</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Raised</enum>
+              </property>
+              <property name="lineWidth">
+               <number>0</number>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_15">
+               <property name="spacing">
+                <number>5</number>
+               </property>
+               <property name="leftMargin">
+                <number>5</number>
+               </property>
+               <property name="topMargin">
+                <number>5</number>
+               </property>
+               <property name="rightMargin">
+                <number>5</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QFrame" name="frame_7">
+                 <property name="frameShape">
+                  <enum>QFrame::NoFrame</enum>
+                 </property>
+                 <property name="frameShadow">
+                  <enum>QFrame::Plain</enum>
+                 </property>
+                 <property name="lineWidth">
+                  <number>0</number>
+                 </property>
+                 <layout class="QGridLayout" name="gridLayout_3">
+                  <property name="leftMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="horizontalSpacing">
+                   <number>5</number>
+                  </property>
+                  <property name="verticalSpacing">
+                   <number>0</number>
+                  </property>
+                  <item row="0" column="1">
+                   <widget class="QLabel" name="labelMeetingDate_3">
+                    <property name="text">
+                     <string>Meeting Date</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="0">
+                   <widget class="QLabel" name="labelMeetingTittle_3">
+                    <property name="text">
+                     <string>Meeting Title</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="0">
+                   <widget class="QLineEdit" name="lineEditMeetingTitle_3">
+                    <property name="frame">
+                     <bool>false</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="1">
+                   <widget class="QDateEdit" name="dateEditMeetingDate_3">
+                    <property name="frame">
+                     <bool>false</bool>
+                    </property>
+                    <property name="displayFormat">
+                     <string>M/d/yyyy</string>
+                    </property>
+                    <property name="calendarPopup">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="labelNotes_3">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Notes</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QTextEdit" name="textEditNotes_3">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                   <horstretch>0</horstretch>
+                   <verstretch>3</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="frameShadow">
+                  <enum>QFrame::Plain</enum>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tab_3">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <attribute name="title">
+            <string>Attendees</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_16">
+            <property name="leftMargin">
+             <number>0</number>
             </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButtonFilterProject">
-            <property name="text">
-             <string>Filter By This Project</string>
+            <property name="topMargin">
+             <number>5</number>
             </property>
-            <property name="flat">
-             <bool>true</bool>
+            <property name="rightMargin">
+             <number>0</number>
             </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButtonFilterCompany">
-            <property name="text">
-             <string>Filter By This Company</string>
+            <property name="bottomMargin">
+             <number>5</number>
             </property>
-            <property name="flat">
-             <bool>true</bool>
+            <item>
+             <widget class="QTableView" name="tableViewAtendees_3">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>1</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Plain</enum>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tab_2">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <attribute name="title">
+            <string>Action Items</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_17">
+            <property name="spacing">
+             <number>5</number>
             </property>
-           </widget>
-          </item>
-         </layout>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>5</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QTableView" name="tableViewActionItems_3">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>1</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Plain</enum>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -470,36 +685,6 @@
               <property name="spacing">
                <number>0</number>
               </property>
-              <item>
-               <widget class="QPushButton" name="pushButtonAddReportItem">
-                <property name="text">
-                 <string>Add Report Item</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonDeleteReportItem">
-                <property name="text">
-                 <string>Delete Report Item</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonCloseProject">
-                <property name="text">
-                 <string>Close Project</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
              </layout>
             </item>
            </layout>
@@ -531,43 +716,6 @@
               </property>
              </widget>
             </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_4">
-              <property name="spacing">
-               <number>0</number>
-              </property>
-              <item>
-               <widget class="QPushButton" name="pushButtonAddMember">
-                <property name="text">
-                 <string>Add Member</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonDeleteMember">
-                <property name="text">
-                 <string>Delete Member</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonCloseTeamProject">
-                <property name="text">
-                 <string>Close Project</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
            </layout>
           </widget>
           <widget class="QWidget" name="tabArtifacts">
@@ -596,63 +744,6 @@
                <enum>QFrame::Plain</enum>
               </property>
              </widget>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_5">
-              <property name="spacing">
-               <number>0</number>
-              </property>
-              <item>
-               <widget class="QPushButton" name="pushButtonAddArtifactLink">
-                <property name="text">
-                 <string>Add Artifact Link</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonDeleteArtifactLink">
-                <property name="text">
-                 <string>Delete Artifiact Link</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonEditArtifactLink">
-                <property name="text">
-                 <string>Edit Artifact Link</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonFilterArtifacts">
-                <property name="text">
-                 <string>Filter Artifacts</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonCloseArtifactsProject">
-                <property name="text">
-                 <string>Close Project</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
             </item>
            </layout>
           </widget>
@@ -704,175 +795,6 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QFrame" name="frame_3">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="frameShape">
-                  <enum>QFrame::NoFrame</enum>
-                 </property>
-                 <property name="frameShadow">
-                  <enum>QFrame::Raised</enum>
-                 </property>
-                 <property name="lineWidth">
-                  <number>0</number>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_10">
-                  <property name="spacing">
-                   <number>5</number>
-                  </property>
-                  <property name="leftMargin">
-                   <number>5</number>
-                  </property>
-                  <property name="topMargin">
-                   <number>5</number>
-                  </property>
-                  <property name="rightMargin">
-                   <number>5</number>
-                  </property>
-                  <property name="bottomMargin">
-                   <number>0</number>
-                  </property>
-                  <item>
-                   <widget class="QFrame" name="frame_4">
-                    <property name="frameShape">
-                     <enum>QFrame::NoFrame</enum>
-                    </property>
-                    <property name="frameShadow">
-                     <enum>QFrame::Plain</enum>
-                    </property>
-                    <property name="lineWidth">
-                     <number>0</number>
-                    </property>
-                    <layout class="QGridLayout" name="gridLayout">
-                     <property name="leftMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="topMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="rightMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="bottomMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="horizontalSpacing">
-                      <number>5</number>
-                     </property>
-                     <property name="verticalSpacing">
-                      <number>0</number>
-                     </property>
-                     <item row="0" column="1">
-                      <widget class="QLabel" name="labelMeetingDate">
-                       <property name="text">
-                        <string>Meeting Date</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="0" column="0">
-                      <widget class="QLabel" name="labelMeetingTittle">
-                       <property name="text">
-                        <string>Meeting Title</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="1" column="0">
-                      <widget class="QLineEdit" name="lineEditMeetingTitle">
-                       <property name="frame">
-                        <bool>false</bool>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="1" column="1">
-                      <widget class="QDateEdit" name="dateEditMeetingDate">
-                       <property name="frame">
-                        <bool>false</bool>
-                       </property>
-                       <property name="displayFormat">
-                        <string>M/d/yyyy</string>
-                       </property>
-                       <property name="calendarPopup">
-                        <bool>true</bool>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QLabel" name="labelNotes">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="text">
-                     <string>Notes</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QTextEdit" name="textEditNotes">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>3</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="frameShadow">
-                     <enum>QFrame::Plain</enum>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QLabel" name="labelActionItems">
-                    <property name="text">
-                     <string>Action Items</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QTableView" name="tableViewActionItems">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>1</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="frameShadow">
-                     <enum>QFrame::Plain</enum>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QLabel" name="labelAttendees">
-                    <property name="text">
-                     <string>Attendees</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QTableView" name="tableViewAtendees">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>1</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="frameShadow">
-                     <enum>QFrame::Plain</enum>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-               <item>
                 <widget class="QTableView" name="tableViewMeetings">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
@@ -896,93 +818,6 @@
                </item>
               </layout>
              </widget>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_9">
-              <property name="spacing">
-               <number>0</number>
-              </property>
-              <item>
-               <widget class="QPushButton" name="pushButtonAddMeeting">
-                <property name="text">
-                 <string>Add Meeting</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonDeleteMeeting">
-                <property name="text">
-                 <string>Delete Meeting</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonCopyMeeting">
-                <property name="text">
-                 <string>Copy Meeting</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonAddAction">
-                <property name="text">
-                 <string>Add Action</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonDeleteAction">
-                <property name="text">
-                 <string>Delete Action</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonAddAttendee">
-                <property name="text">
-                 <string>Add Attendee</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonDeleteAttendee">
-                <property name="text">
-                 <string>Delete Attendee</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonCloseMeetingProject">
-                <property name="text">
-                 <string>Close Project</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
             </item>
            </layout>
           </widget>
@@ -1013,73 +848,6 @@
               </property>
              </widget>
             </item>
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_6">
-              <property name="spacing">
-               <number>0</number>
-              </property>
-              <item>
-               <widget class="QPushButton" name="pushButtonAddItem">
-                <property name="text">
-                 <string>Add Item</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonDeleteItem">
-                <property name="text">
-                 <string>Delete Item</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonFilterAction">
-                <property name="text">
-                 <string>Only Action</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonFilterTracker">
-                <property name="text">
-                 <string>Only Tracker</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonFilterItems">
-                <property name="text">
-                 <string>Filter Items</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButtonCloseItemsProject">
-                <property name="text">
-                 <string>Close Project</string>
-                </property>
-                <property name="flat">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
            </layout>
           </widget>
          </widget>
@@ -1106,53 +874,6 @@
         <item>
          <widget class="QTableView" name="tableViewPeople"/>
         </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_7">
-          <property name="spacing">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QPushButton" name="pushButtonNewPerson">
-            <property name="text">
-             <string>New Person</string>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButtonDeletePerson">
-            <property name="text">
-             <string>Delete Person</string>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButtonFilterPeople">
-            <property name="text">
-             <string>Filter People</string>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButtonClosePeople">
-            <property name="text">
-             <string>Close People</string>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="pageClients">
@@ -1174,53 +895,6 @@
         </property>
         <item>
          <widget class="QTableView" name="tableViewClients"/>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_8">
-          <property name="spacing">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QPushButton" name="pushButtonNewClient">
-            <property name="text">
-             <string>New Client</string>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButtonDeleteClient">
-            <property name="text">
-             <string>Delete Client</string>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButtonFilterClients">
-            <property name="text">
-             <string>Filter Clients</string>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButtonCloseClients">
-            <property name="text">
-             <string>Close Clients</string>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-         </layout>
         </item>
        </layout>
       </widget>
@@ -1522,43 +1196,6 @@
           </item>
          </layout>
         </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_11">
-          <property name="spacing">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QPushButton" name="pushButtonNewComment">
-            <property name="text">
-             <string>New Comment</string>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButtonDeleteComment">
-            <property name="text">
-             <string>Delete Comment</string>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButtonCloseItemDetails">
-            <property name="text">
-             <string>Close Item Details</string>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="pageSearch">
@@ -1621,33 +1258,6 @@
           </property>
          </widget>
         </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_13">
-          <property name="spacing">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QPushButton" name="pushButtonOpenItem">
-            <property name="text">
-             <string>Open Item</string>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButtonCloseSearch">
-            <property name="text">
-             <string>Close Search</string>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
        </layout>
       </widget>
      </widget>
@@ -1659,8 +1269,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>740</width>
-     <height>21</height>
+     <width>677</width>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -1693,24 +1303,11 @@
     <addaction name="actionPaste"/>
     <addaction name="actionDelete"/>
     <addaction name="actionSelect_All"/>
-   </widget>
-   <widget class="QMenu" name="menuData">
-    <property name="title">
-     <string>Data</string>
-    </property>
-    <addaction name="actionNew_Project"/>
-    <addaction name="actionDelete_Project"/>
     <addaction name="separator"/>
-    <addaction name="actionNew_Client"/>
-    <addaction name="actionDelete_Client"/>
-    <addaction name="actionNew_People"/>
-    <addaction name="actionDelete_People"/>
-    <addaction name="separator"/>
-    <addaction name="actionNew_Meeting"/>
-    <addaction name="actionDelete_Meeting"/>
-    <addaction name="separator"/>
-    <addaction name="actionNew_Tracker_Item"/>
-    <addaction name="actionDelete_Tracker_Item"/>
+    <addaction name="actionNew_Item"/>
+    <addaction name="actionCopy_Item"/>
+    <addaction name="actionDelete_Item"/>
+    <addaction name="actionEdit_Itesm"/>
    </widget>
    <widget class="QMenu" name="menuPlugins">
     <property name="title">
@@ -1726,14 +1323,18 @@
     </property>
     <addaction name="actionInternal_Items"/>
     <addaction name="actionAll_Tracker_Action_Items"/>
-    <addaction name="separator"/>
-    <addaction name="actionTool_Bar"/>
-    <addaction name="actionStatus_Bar"/>
-    <addaction name="actionReset_Panels"/>
-    <addaction name="actionProjects_Panel"/>
-    <addaction name="actionDetail_Data_Panel"/>
-    <addaction name="separator"/>
     <addaction name="actionClosed_Projects"/>
+    <addaction name="separator"/>
+    <addaction name="actionStatus_Bar"/>
+    <addaction name="separator"/>
+    <addaction name="actionProjects"/>
+    <addaction name="actionPeople"/>
+    <addaction name="actionClients"/>
+    <addaction name="separator"/>
+    <addaction name="actionBack"/>
+    <addaction name="actionForward"/>
+    <addaction name="separator"/>
+    <addaction name="actionFilter"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1747,7 +1348,6 @@
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
-   <addaction name="menuData"/>
    <addaction name="menuPlugins"/>
    <addaction name="menuViews"/>
    <addaction name="menuHelp"/>
@@ -1763,11 +1363,17 @@
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
+   <property name="movable">
+    <bool>false</bool>
+   </property>
    <property name="iconSize">
     <size>
      <width>16</width>
      <height>16</height>
     </size>
+   </property>
+   <property name="floatable">
+    <bool>false</bool>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
@@ -1775,30 +1381,18 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionOpen_Database"/>
-   <addaction name="actionClose_Database"/>
-   <addaction name="separator"/>
-   <addaction name="actionNew_Project"/>
-   <addaction name="actionDelete_Project"/>
-   <addaction name="separator"/>
-   <addaction name="actionNew_Client"/>
-   <addaction name="actionDelete_Client"/>
-   <addaction name="actionNew_People"/>
-   <addaction name="actionDelete_People"/>
-   <addaction name="actionNew_Meeting"/>
-   <addaction name="actionDelete_Meeting"/>
-   <addaction name="actionNew_Tracker_Item"/>
-   <addaction name="actionDelete_Tracker_Item"/>
-   <addaction name="separator"/>
+   <addaction name="actionBack"/>
+   <addaction name="actionForward"/>
+   <addaction name="actionNew_Item"/>
+   <addaction name="actionCopy_Item"/>
+   <addaction name="actionDelete_Item"/>
    <addaction name="actionPlugin_Settings"/>
-   <addaction name="separator"/>
-   <addaction name="actionInternal_Items"/>
-   <addaction name="actionAll_Tracker_Action_Items"/>
-   <addaction name="actionProjects_Panel"/>
-   <addaction name="actionDetail_Data_Panel"/>
-   <addaction name="actionClosed_Projects"/>
-   <addaction name="separator"/>
+   <addaction name="actionProjects"/>
+   <addaction name="actionPeople"/>
+   <addaction name="actionClients"/>
+   <addaction name="actionFilter"/>
    <addaction name="actionSearch"/>
+   <addaction name="actionPreferences"/>
   </widget>
   <action name="actionNew_Database">
    <property name="text">
@@ -1812,10 +1406,6 @@
    </property>
   </action>
   <action name="actionOpen_Database">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/opendatabase16.png</normaloff>:/icons/opendatabase16.png</iconset>
-   </property>
    <property name="text">
     <string>&amp;Open Database...</string>
    </property>
@@ -1827,10 +1417,6 @@
    </property>
   </action>
   <action name="actionClose_Database">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/closedatabase16.png</normaloff>:/icons/closedatabase16.png</iconset>
-   </property>
    <property name="text">
     <string>&amp;Close Database</string>
    </property>
@@ -1844,7 +1430,7 @@
   <action name="actionSearch">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/icons/searchdatabase16.png</normaloff>:/icons/searchdatabase16.png</iconset>
+     <normaloff>:/icons/search.png</normaloff>:/icons/search.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Search</string>
@@ -1890,6 +1476,10 @@
    </property>
   </action>
   <action name="actionPreferences">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/settings.png</normaloff>:/icons/settings.png</iconset>
+   </property>
    <property name="text">
     <string>&amp;Preferences...</string>
    </property>
@@ -2010,145 +1600,10 @@
     <string>Ctrl+A</string>
    </property>
   </action>
-  <action name="actionNew_Project">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/newproject16.png</normaloff>:/icons/newproject16.png</iconset>
-   </property>
-   <property name="text">
-    <string>New Project</string>
-   </property>
-   <property name="toolTip">
-    <string>Create a new project</string>
-   </property>
-   <property name="shortcut">
-    <string>Alt+P</string>
-   </property>
-  </action>
-  <action name="actionDelete_Project">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/deleteproject16.png</normaloff>:/icons/deleteproject16.png</iconset>
-   </property>
-   <property name="text">
-    <string>Delete Project</string>
-   </property>
-   <property name="toolTip">
-    <string>Delete the current project</string>
-   </property>
-  </action>
-  <action name="actionNew_Client">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/newclient16.png</normaloff>:/icons/newclient16.png</iconset>
-   </property>
-   <property name="text">
-    <string>New Client</string>
-   </property>
-   <property name="toolTip">
-    <string>Create a new client</string>
-   </property>
-   <property name="shortcut">
-    <string>Alt+C</string>
-   </property>
-  </action>
-  <action name="actionDelete_Client">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/deleteclient16.png</normaloff>:/icons/deleteclient16.png</iconset>
-   </property>
-   <property name="text">
-    <string>Delete Client</string>
-   </property>
-   <property name="toolTip">
-    <string>Delete the current client</string>
-   </property>
-  </action>
-  <action name="actionNew_People">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/newpeople16.png</normaloff>:/icons/newpeople16.png</iconset>
-   </property>
-   <property name="text">
-    <string>New People</string>
-   </property>
-   <property name="toolTip">
-    <string>Create a new people</string>
-   </property>
-   <property name="shortcut">
-    <string>Alt+H</string>
-   </property>
-  </action>
-  <action name="actionDelete_People">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/deletepeople16.png</normaloff>:/icons/deletepeople16.png</iconset>
-   </property>
-   <property name="text">
-    <string>Delete People</string>
-   </property>
-   <property name="toolTip">
-    <string>Delte the current people</string>
-   </property>
-  </action>
-  <action name="actionNew_Meeting">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/newmeeting16.png</normaloff>:/icons/newmeeting16.png</iconset>
-   </property>
-   <property name="text">
-    <string>New Meeting</string>
-   </property>
-   <property name="toolTip">
-    <string>Create a new meeting</string>
-   </property>
-   <property name="shortcut">
-    <string>Alt+N</string>
-   </property>
-  </action>
-  <action name="actionDelete_Meeting">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/deletemeeting16.png</normaloff>:/icons/deletemeeting16.png</iconset>
-   </property>
-   <property name="text">
-    <string>Delete Meeting</string>
-   </property>
-   <property name="toolTip">
-    <string>Delete the current meeting</string>
-   </property>
-  </action>
-  <action name="actionNew_Tracker_Item">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/newtrackeritem16.png</normaloff>:/icons/newtrackeritem16.png</iconset>
-   </property>
-   <property name="text">
-    <string>New Tracker Item</string>
-   </property>
-   <property name="toolTip">
-    <string>Create a new tracker item</string>
-   </property>
-   <property name="shortcut">
-    <string>Alt+T</string>
-   </property>
-  </action>
-  <action name="actionDelete_Tracker_Item">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/deletetrackeritem16.png</normaloff>:/icons/deletetrackeritem16.png</iconset>
-   </property>
-   <property name="text">
-    <string>Delete Tracker Item</string>
-   </property>
-   <property name="toolTip">
-    <string>Delete the current tracker item</string>
-   </property>
-  </action>
   <action name="actionPlugin_Settings">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/icons/scripting16.png</normaloff>:/icons/scripting16.png</iconset>
+     <normaloff>:/icons/add-on.png</normaloff>:/icons/add-on.png</iconset>
    </property>
    <property name="text">
     <string>Plugin Settings</string>
@@ -2178,10 +1633,6 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/viewinternal16.png</normaloff>:/icons/viewinternal16.png</iconset>
-   </property>
    <property name="text">
     <string>Internal Items</string>
    </property>
@@ -2196,10 +1647,6 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/viewallprojects16.png</normaloff>:/icons/viewallprojects16.png</iconset>
-   </property>
    <property name="text">
     <string>All Tracker/Action Items</string>
    </property>
@@ -2208,17 +1655,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+A</string>
-   </property>
-  </action>
-  <action name="actionTool_Bar">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Tool Bar</string>
-   </property>
-   <property name="toolTip">
-    <string>Show the toolbar</string>
    </property>
   </action>
   <action name="actionStatus_Bar">
@@ -2232,45 +1668,24 @@
     <string>Show the status bar</string>
    </property>
   </action>
-  <action name="actionReset_Panels">
-   <property name="text">
-    <string>Reset Panels</string>
-   </property>
-   <property name="toolTip">
-    <string>Reset panel arrangments and sizes to factory default</string>
-   </property>
-  </action>
-  <action name="actionProjects_Panel">
+  <action name="actionProjects">
    <property name="icon">
     <iconset resource="Resources.qrc">
-     <normaloff>:/icons/viewprojectspanel16.png</normaloff>:/icons/viewprojectspanel16.png</iconset>
+     <normaloff>:/icons/projects.png</normaloff>:/icons/projects.png</iconset>
    </property>
    <property name="text">
-    <string>Projects Panel</string>
+    <string>Projects</string>
    </property>
    <property name="toolTip">
-    <string>Go to the Projects Panel</string>
+    <string>Projects</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+P</string>
    </property>
   </action>
-  <action name="actionDetail_Data_Panel">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/viewprojectdetail16.png</normaloff>:/icons/viewprojectdetail16.png</iconset>
-   </property>
-   <property name="text">
-    <string>Detail Data Panel</string>
-   </property>
-   <property name="toolTip">
-    <string>Go to the Detail Data Panel</string>
-   </property>
-  </action>
   <action name="actionClosed_Projects">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/viewclosedprojects16.png</normaloff>:/icons/viewclosedprojects16.png</iconset>
+   <property name="checkable">
+    <bool>true</bool>
    </property>
    <property name="text">
     <string>Closed Projects</string>
@@ -2320,6 +1735,83 @@
    </property>
    <property name="toolTip">
     <string>About Project Notes</string>
+   </property>
+  </action>
+  <action name="actionNew_Item">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/new-record.png</normaloff>:/icons/new-record.png</iconset>
+   </property>
+   <property name="text">
+    <string>New Item</string>
+   </property>
+  </action>
+  <action name="actionCopy_Item">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/copy.png</normaloff>:/icons/copy.png</iconset>
+   </property>
+   <property name="text">
+    <string>Copy Item</string>
+   </property>
+  </action>
+  <action name="actionDelete_Item">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/delete.png</normaloff>:/icons/delete.png</iconset>
+   </property>
+   <property name="text">
+    <string>Delete Item</string>
+   </property>
+  </action>
+  <action name="actionEdit_Itesm">
+   <property name="text">
+    <string>Edit Item</string>
+   </property>
+  </action>
+  <action name="actionBack">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/back.png</normaloff>:/icons/back.png</iconset>
+   </property>
+   <property name="text">
+    <string>Back</string>
+   </property>
+  </action>
+  <action name="actionForward">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/forward.png</normaloff>:/icons/forward.png</iconset>
+   </property>
+   <property name="text">
+    <string>Forward</string>
+   </property>
+  </action>
+  <action name="actionClients">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/clients.png</normaloff>:/icons/clients.png</iconset>
+   </property>
+   <property name="text">
+    <string>Clients</string>
+   </property>
+  </action>
+  <action name="actionPeople">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/people.png</normaloff>:/icons/people.png</iconset>
+   </property>
+   <property name="text">
+    <string>People</string>
+   </property>
+  </action>
+  <action name="actionFilter">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/filter.png</normaloff>:/icons/filter.png</iconset>
+   </property>
+   <property name="text">
+    <string>Filter</string>
    </property>
   </action>
  </widget>

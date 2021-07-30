@@ -328,8 +328,8 @@ void PNDatabaseObjects::SetGlobalSearches( bool Refresh )
     }
     else
     {
-        //QString managing = Execute(QString("select client_name from clients where client_id = '%s'").arg(GetManagingCompany()));
-        //QString filtered = Execute(QString("select client_name from clients where client_id = '%s'").arg(GetGlobalClientFilter()));
+        //QString managing = Execute(QString("select client_name from clients where client_id = '%1'").arg(GetManagingCompany()));
+        //QString filtered = Execute(QString("select client_name from clients where client_id = '%1'").arg(GetGlobalClientFilter()));
 
         QStringList managingnclientids;
         // make sure list of people can show the managing company
@@ -358,7 +358,7 @@ void PNDatabaseObjects::SetGlobalSearches( bool Refresh )
         projectactionitemsmodel()->SetFilter(14, GetGlobalProjectFilter());
         projectinformationmodel()->SetFilter(0, GetGlobalProjectFilter());
 
-        QString projectnumber = Execute(QString("select project_number from projects where project_id = '%s'").arg(GetGlobalProjectFilter()));
+        QString projectnumber = Execute(QString("select project_number from projects where project_id = '%1'").arg(GetGlobalProjectFilter()));
 
         searchresultsmodel()->SetFilter(5, projectnumber);
     }

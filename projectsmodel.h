@@ -7,7 +7,7 @@ class ProjectsModel : public PNSqlQueryModel
 {
 public:
     ProjectsModel(QObject* parent);
-    bool AddProject();
+    bool NewRecord();
 };
 
 #endif // PROJECTSMODEL_H
