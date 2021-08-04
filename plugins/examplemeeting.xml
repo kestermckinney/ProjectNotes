@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes filepath="C:\Users\pamcki\OneDrive - Cornerstone Controls\Project Notes\CornerstoneNotes.db" export_date="07/29/2021 02:48 PM" filter_field="note_id" project_manager_id="159709810500028597" managing_company_id="1597098105000493" managing_company_name="Cornerstone Controls, Inc." managing_manager_name="Paul McKinney" filter_values="1627048990000493">
+  <table name="ix_project_notes" filter_field="note_id" filter_value="1627048990000493">
+    <row id="1627048990000493">
+      <column name="project_id" number="1" lookupvalue="P2645">159709812400031567</column>
+      <column name="note_title" number="2">Customer Status Meeting</column>
+      <column name="note_date" number="3">07/23/2021</column>
+      <column name="note" number="4">* Jim did analog instrument checkouts the last week
+  - did perform a few graphics fixes based on testing scalling and instruments
+* No pressure differntial instruments are tubed in
+* Some valves not ready to check yet
+* Field junction boxes look to be connected
+* Checked out motors that were available
+* Rockwell switches have 2 ports bad that need replaces
+* Scaling seems off on a couple of motors.
+* some motor IPs weren't configured from Rockwell
+* Fairbanks coming in Aug 2nd for startup services
+* Schnider comming in next tuesday to configure controls ups
+* Rockwell comming Aug 9th for medium voltage drives
+* WESP commisioning to come soon it was scheduled for the 9th, but being push to Sept 13th
+
+</column>
+      <column name="meeting" number="5">07/23/2021 Customer Status Meeting</column>
+      <column name="internal_item" number="6">0</column>
+      <column name="project_id_name" number="7" lookupvalue="GPC Maltrin Expansion Project">159709812400031567</column>
+      <table name="ix_item_tracker" filter_field="note_id" filter_value="1627048990000493">
+        <row id="162334874000015056">
+          <column name="item_number" number="1">0087</column>
+          <column name="item_type" number="2">Action</column>
+          <column name="item_name" number="3">Charles Trueblue to install license key when on-site for windows 10 thin clients</column>
+          <column name="identified_by" number="4" lookupvalue="Paul McKinney">159709810500028597</column>
+          <column name="date_identified" number="5">06/10/2021</column>
+          <column name="description" number="6"></column>
+          <column name="assigned_to" number="7" lookupvalue="Paul McKinney">159709810500028597</column>
+          <column name="priority" number="8">High</column>
+          <column name="status" number="9">Assigned</column>
+          <column name="date_due" number="10"></column>
+          <column name="last_update" number="11">07/23/2021</column>
+          <column name="date_resolved" number="12"></column>
+          <column name="note_id" number="13" lookupvalue="07/23/2021 Customer Status Meeting">1627048990000493</column>
+          <column name="project_id" number="14" lookupvalue="P2645">159709812400031567</column>
+          <column name="internal_item" number="15">0</column>
+          <column name="comments" number="16"></column>
+          <column name="project_id_name" number="17" lookupvalue="GPC Maltrin Expansion Project">159709812400031567</column>
+          <table name="ix_item_tracker_updates" filter_field="item_id" filter_value="162334874000015056"/>
+        </row>
+        <row id="162704948000029810">
+          <column name="item_number" number="1">0100</column>
+          <column name="item_type" number="2">Action</column>
+          <column name="item_name" number="3">New Module configuration points, mostly alarms (provide a bulk export)</column>
+          <column name="identified_by" number="4" lookupvalue="Paul McKinney">159709810500028597</column>
+          <column name="date_identified" number="5">07/23/2021</column>
+          <column name="description" number="6">These are a new list that was sent after being on site.  Need to create in dev and export to him.</column>
+          <column name="assigned_to" number="7" lookupvalue="Matthew Hynson">1597098105000605</column>
+          <column name="priority" number="8">High</column>
+          <column name="status" number="9">Assigned</column>
+          <column name="date_due" number="10"></column>
+          <column name="last_update" number="11">07/27/2021</column>
+          <column name="date_resolved" number="12"></column>
+          <column name="note_id" number="13" lookupvalue="07/23/2021 Customer Status Meeting">1627048990000493</column>
+          <column name="project_id" number="14" lookupvalue="P2645">159709812400031567</column>
+          <column name="internal_item" number="15">0</column>
+          <column name="comments" number="16"></column>
+          <column name="project_id_name" number="17" lookupvalue="GPC Maltrin Expansion Project">159709812400031567</column>
+          <table name="ix_item_tracker_updates" filter_field="item_id" filter_value="162704948000029810"/>
+        </row>
+        <row id="162704958300027414">
+          <column name="item_number" number="1">0101</column>
+          <column name="item_type" number="2">Action</column>
+          <column name="item_name" number="3">Additional Malt1 motors modules weren't created in DeltaV, add module without graphic</column>
+          <column name="identified_by" number="4" lookupvalue="Paul McKinney">159709810500028597</column>
+          <column name="date_identified" number="5">07/23/2021</column>
+          <column name="description" number="6"></column>
+          <column name="assigned_to" number="7" lookupvalue="Matthew Hynson">1597098105000605</column>
+          <column name="priority" number="8">High</column>
+          <column name="status" number="9">Assigned</column>
+          <column name="date_due" number="10"></column>
+          <column name="last_update" number="11">07/27/2021</column>
+          <column name="date_resolved" number="12"></column>
+          <column name="note_id" number="13" lookupvalue="07/23/2021 Customer Status Meeting">1627048990000493</column>
+          <column name="project_id" number="14" lookupvalue="P2645">159709812400031567</column>
+          <column name="internal_item" number="15">0</column>
+          <column name="comments" number="16"></column>
+          <column name="project_id_name" number="17" lookupvalue="GPC Maltrin Expansion Project">159709812400031567</column>
+          <table name="ix_item_tracker_updates" filter_field="item_id" filter_value="162704958300027414"/>
+        </row>
+        <row id="1621952279000605">
+          <column name="item_number" number="1">0075</column>
+          <column name="item_type" number="2">Tracker</column>
+          <column name="item_name" number="3">What network drawing updates need complete?</column>
+          <column name="identified_by" number="4" lookupvalue="Paul McKinney">159709810500028597</column>
+          <column name="date_identified" number="5">05/25/2021</column>
+          <column name="description" number="6">Jims says malt 1 and malt 2 has readlines for us to update and panel drawings may need updated after construction,</column>
+          <column name="assigned_to" number="7" lookupvalue="Charlie Frechin">159709810500026751</column>
+          <column name="priority" number="8">High</column>
+          <column name="status" number="9">Assigned</column>
+          <column name="date_due" number="10">05/27/2021</column>
+          <column name="last_update" number="11">07/23/2021</column>
+          <column name="date_resolved" number="12"></column>
+          <column name="note_id" number="13" lookupvalue="07/23/2021 Customer Status Meeting">1627048990000493</column>
+          <column name="project_id" number="14" lookupvalue="P2645">159709812400031567</column>
+          <column name="internal_item" number="15">0</column>
+          <column name="comments" number="16"></column>
+          <column name="project_id_name" number="17" lookupvalue="GPC Maltrin Expansion Project">159709812400031567</column>
+          <table name="ix_item_tracker_updates" filter_field="item_id" filter_value="1621952279000605"/>
+        </row>
+      </table>
+      <table name="ix_meeting_attendees" filter_field="note_id" filter_value="1627048990000493">
+        <row id="16270489900006786">
+          <column name="note_id" number="1">1627048990000493</column>
+          <column name="person_id" number="2" lookupvalue="Jim Herwig">1597407665000493</column>
+          <column name="name" number="3">Jim Herwig</column>
+          <column name="email" number="4">jim_herwig@grainprocessing.com</column>
+          <column name="project_id" number="5" lookupvalue="P2645">159709812400031567</column>
+          <column name="project_id_name" number="6" lookupvalue="GPC Maltrin Expansion Project">159709812400031567</column>
+        </row>
+        <row id="162704899000026952">
+          <column name="note_id" number="1">1627048990000493</column>
+          <column name="person_id" number="2" lookupvalue="Matthew Hynson">1597098105000605</column>
+          <column name="name" number="3">Matthew Hynson</column>
+          <column name="email" number="4">Matthew.Hynson@cornerstonecontrols.com</column>
+          <column name="project_id" number="5" lookupvalue="P2645">159709812400031567</column>
+          <column name="project_id_name" number="6" lookupvalue="GPC Maltrin Expansion Project">159709812400031567</column>
+        </row>
+        <row id="162704899000019621">
+          <column name="note_id" number="1">1627048990000493</column>
+          <column name="person_id" number="2" lookupvalue="Paul McKinney">159709810500028597</column>
+          <column name="name" number="3">Paul McKinney</column>
+          <column name="email" number="4">paul.mckinney@cornerstonecontrols.com</column>
+          <column name="project_id" number="5" lookupvalue="P2645">159709812400031567</column>
+          <column name="project_id_name" number="6" lookupvalue="GPC Maltrin Expansion Project">159709812400031567</column>
+        </row>
+        <row id="162704899000016176">
+          <column name="note_id" number="1">1627048990000493</column>
+          <column name="person_id" number="2" lookupvalue="Scott Brown">161047300200029810</column>
+          <column name="name" number="3">Scott Brown</column>
+          <column name="email" number="4">scott.brown@grainprocessing.com</column>
+          <column name="project_id" number="5" lookupvalue="P2645">159709812400031567</column>
+          <column name="project_id_name" number="6" lookupvalue="GPC Maltrin Expansion Project">159709812400031567</column>
+        </row>
+        <row id="162704899000011930">
+          <column name="note_id" number="1">1627048990000493</column>
+          <column name="person_id" number="2" lookupvalue="Stacie Cochran">159740775300018919</column>
+          <column name="name" number="3">Stacie Cochran</column>
+          <column name="email" number="4">stacie.cochran@grainprocessing.com</column>
+          <column name="project_id" number="5" lookupvalue="P2645">159709812400031567</column>
+          <column name="project_id_name" number="6" lookupvalue="GPC Maltrin Expansion Project">159709812400031567</column>
+        </row>
+      </table>
+    </row>
+  </table>
+</projectnotes>
