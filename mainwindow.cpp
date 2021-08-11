@@ -1,8 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "pncomboboxdelegate.h"
-#include "pndateeditdelegate.h"
-#include "comboboxdelegate.h"
 
 #include <QStringListModel>
 #include <QMessageBox>
@@ -34,20 +31,34 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tableViewProjects->setModel(global_DBObjects.projectinformationmodel());
     ui->tableViewProjects->setColumnHidden(0, true);
 
+    // setup model lists
+    m_ItemType.setStringList(PNDatabaseObjects::item_type);
+    m_ItemStatus.setStringList(PNDatabaseObjects::item_status);
+    m_ItemPriority.setStringList(PNDatabaseObjects::item_priority);
+    m_ProjectStatus.setStringList(PNDatabaseObjects::project_status);
+    m_StatusItemStatus.setStringList(PNDatabaseObjects::status_item_status);
+    m_InvoicingPeriod.setStringList(PNDatabaseObjects::invoicing_period);
+    m_Locations.setStringList(PNDatabaseObjects::locations);
+    m_StatusReportPeriod.setStringList(PNDatabaseObjects::status_report_period);
 
-    PNComboBoxDelegate* peopledelegate = new PNComboBoxDelegate(this, global_DBObjects.peoplemodel());
-    PNDateEditDelegate* datedelegate = new PNDateEditDelegate(this);
-
-    QStringListModel* invoice_periods = new QStringListModel(PNDatabaseObjects::invoicing_period);
-    ComboBoxDelegate* periodsdelegate = new ComboBoxDelegate(this, invoice_periods);
+    // projects list panel delagets
+    m_ProjectPeopleDelegate = new PNComboBoxDelegate(this, global_DBObjects.peoplemodel());
+    m_ProjectClientsDelegate = new PNComboBoxDelegate(this, global_DBObjects.clientsmodel());
+    m_ProjectDateDelegate = new PNDateEditDelegate(this);
+    m_ProjectsReportPeriodDelegate = new ComboBoxDelegate(this, &m_StatusReportPeriod);
+    m_ProjectInvoicegPeriodDelegate = new ComboBoxDelegate(this, &m_InvoicingPeriod);
+    m_ProjectStatusDelegate = new ComboBoxDelegate(this, &m_ProjectStatus);
 
     //QStringListModel report_periods = QStringListModel(PNDatabaseObjects::status_report_period);
 
 
-    ui->tableViewProjects->setItemDelegateForColumn(5, peopledelegate);
-    ui->tableViewProjects->setItemDelegateForColumn(3, datedelegate);
-    ui->tableViewProjects->setItemDelegateForColumn(4, datedelegate);
-    ui->tableViewProjects->setItemDelegateForColumn(11, periodsdelegate);
+    ui->tableViewProjects->setItemDelegateForColumn(5, m_ProjectPeopleDelegate);
+    ui->tableViewProjects->setItemDelegateForColumn(3, m_ProjectDateDelegate);
+    ui->tableViewProjects->setItemDelegateForColumn(4, m_ProjectDateDelegate);
+    ui->tableViewProjects->setItemDelegateForColumn(11, m_ProjectInvoicegPeriodDelegate);
+    ui->tableViewProjects->setItemDelegateForColumn(12, m_ProjectsReportPeriodDelegate);
+    ui->tableViewProjects->setItemDelegateForColumn(13, m_ProjectClientsDelegate);
+    ui->tableViewProjects->setItemDelegateForColumn(14, m_ProjectStatusDelegate);
 
     //ui->actionBack->setVisible(false);
 

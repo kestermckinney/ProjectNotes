@@ -25,6 +25,7 @@
 #include <QSqlError>
 #include <QStringList>
 #include <QDateTime>
+#include <QStringListModel>
 
 class PNDatabaseObjects : public QObject
 {
