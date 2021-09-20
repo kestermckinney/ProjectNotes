@@ -89,13 +89,14 @@ bool PNDatabaseObjects::OpenDatabase(QString& databasepath)
     m_CompanyPeopleModel = new PeopleModel(nullptr);
     m_UnfilteredPeopleModel = new PeopleModel(nullptr);
     m_ProjectInformationModel = new ProjectsModel(nullptr);
+    m_ProjectsListModel = new ProjectsListModel(nullptr);
     m_TeamsModel = new TeamsModel(nullptr);
     m_StatusReportItemsModel = new StatusReportItemsModel(nullptr);
     m_ProjectTeamMembersModel = new ProjectTeamMembersModel(nullptr);
     m_ProjectLocationsModel = new ProjectLocationsModel(nullptr);
     m_ProjectNotesModel = new ProjectNotesModel(nullptr);
     m_ActionItemProjectNotesModel = new ActionItemProjectNotesModel(nullptr);
-    m_ActinoItemsDetailsMeetingsModel = new ActionItemsDetailsMeetingsModel(nullptr);
+    m_ActionItemsDetailsMeetingsModel = new ActionItemsDetailsMeetingsModel(nullptr);
     m_MeetingAttendeesModel = new MeetingAttendeesModel(nullptr);
     m_NotesActionItemsModel = new NotesActionItemsModel(nullptr);
 
@@ -123,13 +124,14 @@ void PNDatabaseObjects::CloseDatabase()
     delete m_CompanyPeopleModel;
     delete m_UnfilteredPeopleModel;
     delete m_ProjectInformationModel;
+    delete m_ProjectsListModel;
     delete m_TeamsModel;
     delete m_StatusReportItemsModel;
     delete m_ProjectTeamMembersModel;
     delete m_ProjectLocationsModel;
     delete m_ProjectNotesModel;
     delete m_ActionItemProjectNotesModel;
-    delete m_ActinoItemsDetailsMeetingsModel;
+    delete m_ActionItemsDetailsMeetingsModel;
     delete m_MeetingAttendeesModel;
     delete m_NotesActionItemsModel;
 
@@ -139,13 +141,14 @@ void PNDatabaseObjects::CloseDatabase()
     m_CompanyPeopleModel= nullptr;
     m_UnfilteredPeopleModel= nullptr;
     m_ProjectInformationModel= nullptr;
+    m_ProjectsListModel = nullptr;
     m_TeamsModel= nullptr;
     m_StatusReportItemsModel= nullptr;
     m_ProjectTeamMembersModel= nullptr;
     m_ProjectLocationsModel= nullptr;
     m_ProjectNotesModel= nullptr;
     m_ActionItemProjectNotesModel= nullptr;
-    m_ActinoItemsDetailsMeetingsModel= nullptr;
+    m_ActionItemsDetailsMeetingsModel= nullptr;
     m_MeetingAttendeesModel= nullptr;
     m_NotesActionItemsModel= nullptr;
 
@@ -286,12 +289,16 @@ void PNDatabaseObjects::SetGlobalSearches( bool Refresh )
     {
         projectactionitemsmodel()->ClearFilter(9);
         projectinformationmodel()->ClearFilter(14);
+        projectslistmodel()->ClearFilter(9);
+        projectslistmodel()->ClearFilter(14);
         searchresultsmodel()->ClearFilter(6);
     }
     else
     {
         projectactionitemsmodel()->SetFilter(9, tr("Active"));
         projectinformationmodel()->SetFilter(14, tr("Active"));
+        projectslistmodel()->SetFilter(9, tr("Active"));
+        projectslistmodel()->SetFilter(14, tr("Active"));
         searchresultsmodel()->SetFilter(6, tr("Active"));
     }
 
@@ -324,6 +331,7 @@ void PNDatabaseObjects::SetGlobalSearches( bool Refresh )
         clientsmodel()->DeactivateUserFilter(tr("GlobalClientFilter"));
         projectactionitemsmodel()->ClearFilter(18);
         projectinformationmodel()->ClearFilter(13);
+        projectslistmodel()->ClearFilter(13);
         searchresultsmodel()->ClearFilter(5);
     }
     else
@@ -344,6 +352,7 @@ void PNDatabaseObjects::SetGlobalSearches( bool Refresh )
 
         projectactionitemsmodel()->SetFilter(18, GetGlobalClientFilter());
         projectinformationmodel()->SetFilter(13, GetGlobalClientFilter());
+        projectslistmodel()->SetFilter(13, GetGlobalClientFilter());
         searchresultsmodel()->SetFilter(5, GetGlobalClientFilter());
     }
 
@@ -351,12 +360,14 @@ void PNDatabaseObjects::SetGlobalSearches( bool Refresh )
     {
         projectactionitemsmodel()->ClearFilter(14);
         projectinformationmodel()->ClearFilter(0);
+        projectslistmodel()->ClearFilter(0);
         searchresultsmodel()->ClearFilter(7);
     }
     else
     {
         projectactionitemsmodel()->SetFilter(14, GetGlobalProjectFilter());
         projectinformationmodel()->SetFilter(0, GetGlobalProjectFilter());
+        projectslistmodel()->SetFilter(0, GetGlobalProjectFilter());
 
         QString projectnumber = Execute(QString("select project_number from projects where project_id = '%1'").arg(GetGlobalProjectFilter()));
 
@@ -376,6 +387,7 @@ void PNDatabaseObjects::SetGlobalSearches( bool Refresh )
 
         projectactionitemsmodel()->Refresh();
         projectinformationmodel()->Refresh();
+        projectslistmodel()->Refresh();
         searchresultsmodel()->Refresh();
     }
 }

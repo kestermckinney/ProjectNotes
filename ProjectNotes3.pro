@@ -30,6 +30,7 @@ SOURCES += \
     projectactionitemsmodel.cpp \
     projectlocationsmodel.cpp \
     projectnotesmodel.cpp \
+    projectslistmodel.cpp \
     projectsmodel.cpp \
     projectteammembersmodel.cpp \
     searchresultsmodel.cpp \
@@ -56,6 +57,7 @@ HEADERS += \
     projectactionitemsmodel.h \
     projectlocationsmodel.h \
     projectnotesmodel.h \
+    projectslistmodel.h \
     projectsmodel.h \
     projectteammembersmodel.h \
     searchresultsmodel.h \

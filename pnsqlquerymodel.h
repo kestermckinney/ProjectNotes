@@ -33,7 +33,7 @@ public:
 
     Qt::ItemFlags flags(const QModelIndex &index) const override;
 
-    void SQLEscape(QVariant& ColumnValue, DBColumnType ColumnType);
+    void SQLEscape(QVariant& ColumnValue, DBColumnType ColumnType) const;
     void ReformatValue(QVariant& ColumnValue, DBColumnType ColumnType) const;
 
     void AddColumn(int ColumnNumber, const QString& DisplayName, DBColumnType Type, bool Searchable, bool Required = false, bool Editable = true, bool Unique = false);
@@ -88,6 +88,11 @@ public:
 
     void SetOrderBy(const QString& OrderBy) { m_OrderBy = OrderBy; };
     void ClearOrderBy() { m_OrderBy.clear(); };
+
+    void setEditable( int Column, bool Editable ) { m_ColumnIsEditable[Column] = Editable; };
+    void setSearchable( int Column, bool Searchable ) { m_ColumnSearchable[Column] = Searchable; };
+    void setRequired( int Column, bool Required ) { m_ColumnRequired[Column] = Required; };
+    DBColumnType getType( const int Column ) const { return m_ColumnType[Column]; };
 
 private:
     QString m_tablename;  // the table to write data too, also the table to sync with other models when changed

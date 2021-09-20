@@ -223,7 +223,7 @@ QDateTime PNSqlQueryModel::ParseDateTime(QString entrydate)
     return QDateTime(qd,qt);
 }
 
-void PNSqlQueryModel::SQLEscape(QVariant& ColumnValue, DBColumnType ColumnType)
+void PNSqlQueryModel::SQLEscape(QVariant& ColumnValue, DBColumnType ColumnType) const
 {
     // don't store blank values
     if ( ColumnValue.isNull() )
@@ -297,7 +297,7 @@ void PNSqlQueryModel::SQLEscape(QVariant& ColumnValue, DBColumnType ColumnType)
                 ColumnValue = "0";
 
             ColumnValue.setValue(ColumnValue.toString().replace("$",""));
-            ColumnValue.setValue(ColumnValue.toString().replace("%%",""));
+            ColumnValue.setValue(ColumnValue.toString().replace("%",""));
             ColumnValue.setValue(ColumnValue.toString().replace(",",""));
 
             break;
@@ -388,7 +388,7 @@ void PNSqlQueryModel::ReformatValue(QVariant& ColumnValue, DBColumnType ColumnTy
         case DB_REAL:
         {
             ColumnValue.setValue(ColumnValue.toString().replace("$",""));
-            ColumnValue.setValue(ColumnValue.toString().replace("%%",""));
+            ColumnValue.setValue(ColumnValue.toString().replace("%",""));
             ColumnValue.setValue(ColumnValue.toString().replace(",",""));
             break;
         }
@@ -396,14 +396,14 @@ void PNSqlQueryModel::ReformatValue(QVariant& ColumnValue, DBColumnType ColumnTy
         case DB_BOOL:
         {
             ColumnValue.setValue(ColumnValue.toString().replace("$",""));
-            ColumnValue.setValue(ColumnValue.toString().replace("%%",""));
+            ColumnValue.setValue(ColumnValue.toString().replace("%",""));
             ColumnValue.setValue(ColumnValue.toString().replace(",",""));
             break;
         }
         case DB_USD:
         {
             ColumnValue.setValue(ColumnValue.toString().replace("$",""));
-            ColumnValue.setValue(ColumnValue.toString().replace("%%",""));
+            ColumnValue.setValue(ColumnValue.toString().replace("%",""));
             ColumnValue.setValue(ColumnValue.toString().replace(",",""));
 
             QLocale lc;
@@ -414,7 +414,7 @@ void PNSqlQueryModel::ReformatValue(QVariant& ColumnValue, DBColumnType ColumnTy
         case DB_PERCENT:
         {
             ColumnValue.setValue(ColumnValue.toString().replace("$",""));
-            ColumnValue.setValue(ColumnValue.toString().replace("%%",""));
+            ColumnValue.setValue(ColumnValue.toString().replace("%",""));
             ColumnValue.setValue(ColumnValue.toString().replace(",",""));
 
             ColumnValue = QString::asprintf("%.2f%%",ColumnValue.toDouble());
@@ -750,7 +750,7 @@ QString PNSqlQueryModel::ConstructWhereClause()
                 if (!valuelist.isEmpty())
                     valuelist += tr(" AND ");
 
-                ColumnValue = tr("%%") + hashitsrch.value() + tr("%%");
+                ColumnValue = tr("%") + hashitsrch.value() + tr("%");
                 SQLEscape(ColumnValue, m_ColumnType[hashitsrch.key()]);
 
                 valuelist += QString(" %1 LIKE %2 ").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), ColumnValue.toString());

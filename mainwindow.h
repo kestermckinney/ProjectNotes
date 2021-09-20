@@ -33,7 +33,7 @@ private:
     QStringListModel m_Locations;//PNDatabaseObjects::locations;
 
     // projects list panel delegates
-    PNComboBoxDelegate* m_ProjectPeopleDelegate;
+    PNComboBoxDelegate* m_UnfilteredPeopleDelegate;
     PNComboBoxDelegate* m_ProjectClientsDelegate;
     PNDateEditDelegate* m_ProjectDateDelegate;
     ComboBoxDelegate* m_ProjectInvoicegPeriodDelegate;

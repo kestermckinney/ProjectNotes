@@ -25,10 +25,11 @@ MainWindow::MainWindow(QWidget *parent)
     if (!global_DBObjects.OpenDatabase(path))
         return;
 
-    global_DBObjects.projectinformationmodel()->Refresh();
-    global_DBObjects.peoplemodel()->Refresh();
+    global_DBObjects.projectslistmodel()->Refresh();
+    global_DBObjects.unfilteredpeoplemodel()->Refresh();
+    global_DBObjects.clientsmodel()->Refresh();
 
-    ui->tableViewProjects->setModel(global_DBObjects.projectinformationmodel());
+    ui->tableViewProjects->setModel(global_DBObjects.projectslistmodel());
     ui->tableViewProjects->setColumnHidden(0, true);
 
     // setup model lists
@@ -42,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_StatusReportPeriod.setStringList(PNDatabaseObjects::status_report_period);
 
     // projects list panel delagets
-    m_ProjectPeopleDelegate = new PNComboBoxDelegate(this, global_DBObjects.peoplemodel());
+    m_UnfilteredPeopleDelegate = new PNComboBoxDelegate(this, global_DBObjects.unfilteredpeoplemodel());
     m_ProjectClientsDelegate = new PNComboBoxDelegate(this, global_DBObjects.clientsmodel());
     m_ProjectDateDelegate = new PNDateEditDelegate(this);
     m_ProjectsReportPeriodDelegate = new ComboBoxDelegate(this, &m_StatusReportPeriod);
@@ -51,8 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     //QStringListModel report_periods = QStringListModel(PNDatabaseObjects::status_report_period);
 
-
-    ui->tableViewProjects->setItemDelegateForColumn(5, m_ProjectPeopleDelegate);
+    ui->tableViewProjects->setItemDelegateForColumn(5, m_UnfilteredPeopleDelegate);
     ui->tableViewProjects->setItemDelegateForColumn(3, m_ProjectDateDelegate);
     ui->tableViewProjects->setItemDelegateForColumn(4, m_ProjectDateDelegate);
     ui->tableViewProjects->setItemDelegateForColumn(11, m_ProjectInvoicegPeriodDelegate);

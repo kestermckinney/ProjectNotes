@@ -2,6 +2,7 @@
 #define PNDATABASEOBJECTS_H
 
 #include "projectsmodel.h"
+#include "projectslistmodel.h"
 #include "clientsmodel.h"
 #include "peoplemodel.h"
 #include "teamsmodel.h"
@@ -50,13 +51,14 @@ public:
     PeopleModel* companypeoplemodel() { return m_CompanyPeopleModel; }
     PeopleModel* unfilteredpeoplemodel() { return m_UnfilteredPeopleModel; }
     ProjectsModel* projectinformationmodel() { return m_ProjectInformationModel; }
+    ProjectsListModel* projectslistmodel() { return m_ProjectsListModel; }
     TeamsModel* teamsmodel() { return m_TeamsModel; }
     StatusReportItemsModel* statusreportitemsmodel() { return m_StatusReportItemsModel; }
     ProjectTeamMembersModel* projectteammembersmodel() { return m_ProjectTeamMembersModel; }
     ProjectLocationsModel* projectlocationsmodel() { return m_ProjectLocationsModel; }
     ProjectNotesModel* projectnotesmodel() { return m_ProjectNotesModel; }
     ActionItemProjectNotesModel* actionitemprojectnotesmodel() { return m_ActionItemProjectNotesModel; }
-    ActionItemsDetailsMeetingsModel* actionitemsdetailsmeetingsmodel() { return m_ActinoItemsDetailsMeetingsModel; }
+    ActionItemsDetailsMeetingsModel* actionitemsdetailsmeetingsmodel() { return m_ActionItemsDetailsMeetingsModel; }
     MeetingAttendeesModel* meetingattendeesmodel() { return m_MeetingAttendeesModel; }
     NotesActionItemsModel* notesactionitemsmodel() { return m_NotesActionItemsModel; }
     ItemDetailTeamListModel* itemdetailteamlistmodel() { return m_ItemDetailTeamListModel; }
@@ -99,7 +101,7 @@ private:
     PeopleModel* m_PeopleModel;
     PeopleModel* m_CompanyPeopleModel;
     PeopleModel* m_UnfilteredPeopleModel;
-    ProjectsModel* m_ProjectsModel;
+    ProjectsListModel* m_ProjectsListModel;
     ProjectsModel* m_ProjectInformationModel;
     TeamsModel* m_TeamsModel;
     StatusReportItemsModel* m_StatusReportItemsModel;
@@ -107,7 +109,7 @@ private:
     ProjectLocationsModel* m_ProjectLocationsModel;
     ProjectNotesModel* m_ProjectNotesModel;
     ActionItemProjectNotesModel* m_ActionItemProjectNotesModel;
-    ActionItemsDetailsMeetingsModel* m_ActinoItemsDetailsMeetingsModel;
+    ActionItemsDetailsMeetingsModel* m_ActionItemsDetailsMeetingsModel;
     MeetingAttendeesModel* m_MeetingAttendeesModel;
     NotesActionItemsModel* m_NotesActionItemsModel;
     ItemDetailTeamListModel* m_ItemDetailTeamListModel;

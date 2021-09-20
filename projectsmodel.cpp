@@ -77,3 +77,29 @@ bool ProjectsModel::NewRecord()
 
     return true;
 }
+
+QVariant ProjectsModel::data(const QModelIndex &index, int role) const
+{
+    if (role == Qt::ForegroundRole)
+    {
+        if (index.column() == 15)
+        {
+            QVariant value = data(index);
+
+            SQLEscape(value, getType(index.column()));
+        
+            float fvalue = value.toFloat();
+
+            if (fvalue > 95.0)
+                return QVariant(QColor(Qt::darkRed));
+            if (fvalue > 90)
+                return QVariant(QColor(Qt::darkYellow));
+            else
+                return PNSqlQueryModel::data(index, role);
+        }
+        else
+            return PNSqlQueryModel::data(index, role);
+    }
+    else
+        return PNSqlQueryModel::data(index, role);
+}
