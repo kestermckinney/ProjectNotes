@@ -26,6 +26,7 @@ SOURCES += \
     pndatabaseobjects.cpp \
     pndateeditdelegate.cpp \
     pnsettings.cpp \
+    pnsortfilterproxymodel.cpp \
     pnsqlquerymodel.cpp \
     projectactionitemsmodel.cpp \
     projectlocationsmodel.cpp \
@@ -53,6 +54,7 @@ HEADERS += \
     pndatabaseobjects.h \
     pndateeditdelegate.h \
     pnsettings.h \
+    pnsortfilterproxymodel.h \
     pnsqlquerymodel.h \
     projectactionitemsmodel.h \
     projectlocationsmodel.h \

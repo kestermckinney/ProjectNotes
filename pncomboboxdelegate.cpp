@@ -58,5 +58,14 @@ void PNComboBoxDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
     myOption.text = m_Model->FindValue(lookupvalue, 0, 1).toString();
 
+    // make light gray background when not editable
+    //if (!((PNSqlQueryModel*)index.model())->isEditable(index.column()))
+    //    myOption.backgroundBrush = QBrush(QColor("lightgray"));
+
+    myOption.palette.setColor(QPalette::Text,index.model()->data(index, Qt::ForegroundRole).value<QColor>());
+    QVariant color = index.model()->data(index, Qt::BackgroundColorRole);
+    if (color.isValid())
+        myOption.backgroundBrush = QBrush(color.value<QColor>());
+
     QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, painter);
 }

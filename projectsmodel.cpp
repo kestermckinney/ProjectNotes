@@ -82,24 +82,127 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::ForegroundRole)
     {
-        if (index.column() == 15)
+        if (index.column() == 3) // status date
         {
             QVariant value = data(index);
 
-            SQLEscape(value, getType(index.column()));
-        
-            float fvalue = value.toFloat();
+            QDateTime datecol = ParseDateTime(value.toString());
+            qint64 dif = datecol.daysTo(QDateTime::currentDateTime());
 
-            if (fvalue > 95.0)
-                return QVariant(QColor(Qt::darkRed));
-            if (fvalue > 90)
-                return QVariant(QColor(Qt::darkYellow));
-            else
-                return PNSqlQueryModel::data(index, role);
+            QString period = data( this->index(index.row(), 12)).toString();
+            if (period == "Weekly")
+            {
+                if (dif > 7)
+                {
+                    return QVariant(QColor(Qt::darkRed));
+                }
+                else if (dif == 7)
+                {
+                    return QVariant(QColor(Qt::darkYellow));
+                }
+            }
+            else if (period == "Bi-Weekly")
+            {
+                if (dif > 14)
+                {
+                    return QVariant(QColor(Qt::darkRed));
+                }
+                else if (dif > 12)
+                {
+                    return QVariant(QColor(Qt::darkYellow));
+                }
+            }
+            else if (period == "Monthly")
+            {
+                if (dif >= 31)
+                {
+                    return QVariant(QColor(Qt::darkRed));
+                }
+                else if (dif > 25)
+                {
+                    return QVariant(QColor(Qt::darkYellow));
+                }
+            }
         }
-        else
-            return PNSqlQueryModel::data(index, role);
+        else if (index.column() == 4) // invoice date
+        {
+            QVariant value = data(index);
+
+            QDateTime datecol = ParseDateTime(value.toString());
+            QDate nextdate = datecol.date();
+            nextdate = nextdate.addMonths(1);
+            nextdate.setDate(nextdate.year(), nextdate.month(), 1); // set to the first of the next month
+
+            qint64 dif = datecol.daysTo(QDateTime::currentDateTime());
+
+            QString period = data( this->index(index.row(), 11)).toString();
+
+            if (period == "Milestone")
+            {
+                if (dif > 30)
+                {
+                    return QVariant(QColor(Qt::darkYellow));
+                }
+            }
+            else if (period == "Monthly")
+            {
+                if (QDate::currentDate() > nextdate)
+                {
+                    return QVariant(QColor(Qt::darkRed));
+                }
+                else if (dif > 25)
+                {
+                    return QVariant(QColor(Qt::darkYellow));
+                }
+            }
+
+        }
+        else if (index.column() == 15)  // percent consumed
+        {
+            double value = data(index).toDouble();
+
+            if (value >= 95.0)
+                return QVariant(QColor(Qt::darkRed));
+            else if (value >= 90.0)
+                return QVariant(QColor(Qt::darkYellow));
+        }
+        else if (index.column() == 17) // cost variance
+        {
+            double value = data(index).toDouble();
+
+            if (value >= 10.0)
+                return QVariant(QColor(Qt::darkRed));
+            else if (value >= 5.0)
+                return QVariant(QColor(Qt::darkYellow));
+        }
+        else if (index.column() == 18)  // schedule variance
+        {
+            double value = data(index).toDouble();
+
+            if (value >= 10.0)
+                return QVariant(QColor(Qt::darkRed));
+            else if (value >= 05.0)
+                return QVariant(QColor(Qt::darkYellow));
+        }
+        else if (index.column() == 19)  // percent complete
+        {
+            double value = data(index).toDouble();
+
+            if (value >= 95.0)
+                return QVariant(QColor(Qt::darkRed));
+            else if (value >= 90.0)
+                return QVariant(QColor(Qt::darkYellow));
+        }
+        else if (index.column() == 20)  // CPI
+        {
+            double value = data(index).toDouble();
+
+            if (value <= 0.8)
+                return QVariant(QColor(Qt::darkRed));
+            else if (value < 1.0)
+                return QVariant(QColor(Qt::darkYellow));
+        }
     }
-    else
-        return PNSqlQueryModel::data(index, role);
+
+    return PNSqlQueryModel::data(index, role);
 }

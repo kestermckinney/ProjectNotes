@@ -3,6 +3,7 @@
 
 #include <QSettings>
 #include <QMainWindow>
+#include <QTableView>
 
 class PNSettings
 {
@@ -28,6 +29,9 @@ public:
 
     QString getPersonalDictionary();
     void setPersonalDictionary(const QString& Dictionary);
+
+    void setTableViewState(const QString& ViewName, const QTableView& View);
+    bool getTableViewState(const QString& ViewName, QTableView& View);
 
 private:
     int getWindowX(const QString& WindowName);

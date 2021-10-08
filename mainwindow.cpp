@@ -27,9 +27,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     global_DBObjects.projectslistmodel()->Refresh();
     global_DBObjects.unfilteredpeoplemodel()->Refresh();
+    global_DBObjects.unfilteredclientsmodel()->Refresh();
     global_DBObjects.clientsmodel()->Refresh();
 
-    ui->tableViewProjects->setModel(global_DBObjects.projectslistmodel());
+    //ui->tableViewProjects->setModel(global_DBObjects.projectslistmodel());
+    ui->tableViewProjects->setModel(global_DBObjects.projectslistmodelproxy());
+
     ui->tableViewProjects->setColumnHidden(0, true);
 
     // setup model lists
@@ -60,6 +63,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tableViewProjects->setItemDelegateForColumn(13, m_ProjectClientsDelegate);
     ui->tableViewProjects->setItemDelegateForColumn(14, m_ProjectStatusDelegate);
 
+    ui->tableViewProjects->setSortingEnabled(true);
+    //ui->tableViewProjects->sortByColumn(3, Qt::AscendingOrder);
+
     //ui->actionBack->setVisible(false);
 
     // connect events
@@ -67,6 +73,7 @@ MainWindow::MainWindow(QWidget *parent)
     //connect(ui->pushButtonDeleteProject, &QPushButton::clicked, this, &MainWindow::handleDeleteProjectClicked);
 
     global_Settings.getWindowState("MainWindow", *this);
+    global_Settings.getTableViewState("ProjectTableColumns", *(ui->tableViewProjects));
 }
 
 MainWindow::~MainWindow()
@@ -74,6 +81,7 @@ MainWindow::~MainWindow()
     // disconnect events
     //disconnect(ui->pushButtonNewProject, &QPushButton::clicked, this, &MainWindow::handleNewProjectClicked);
     //disconnect(ui->pushButtonDeleteProject, &QPushButton::clicked, this, &MainWindow::handleDeleteProjectClicked);
+    global_Settings.setTableViewState("ProjectTableColumns", *(ui->tableViewProjects));
 
     ui->tableViewProjects->setModel(nullptr);
 
@@ -96,3 +104,7 @@ void MainWindow::handleDeleteProjectClicked()
     }
 }
 */
+
+// TODO: Save column resizing that is done
+// TODO: Save sorting that is done
+// TODO: Allow for a reset of columnn sizing and sorting

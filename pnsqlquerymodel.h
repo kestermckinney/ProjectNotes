@@ -90,9 +90,15 @@ public:
     void ClearOrderBy() { m_OrderBy.clear(); };
 
     void setEditable( int Column, bool Editable ) { m_ColumnIsEditable[Column] = Editable; };
+    bool isEditable( int Column ) { return m_ColumnIsEditable[Column]; }
     void setSearchable( int Column, bool Searchable ) { m_ColumnSearchable[Column] = Searchable; };
+    bool isSearchable( int Column ) { return m_ColumnSearchable[Column]; };
     void setRequired( int Column, bool Required ) { m_ColumnRequired[Column] = Required; };
+    bool isRequired( int Column ) { return m_ColumnRequired[Column]; };
     DBColumnType getType( const int Column ) const { return m_ColumnType[Column]; };
+    void setLookup(int Column, PNSqlQueryModel* lookup, int LookupFK, int LookupValue);
+    void setLookup(int Column, QStringList* lookup);
+    QVariant getLookupValue( const QModelIndex& index);
 
 private:
     QString m_tablename;  // the table to write data too, also the table to sync with other models when changed
@@ -103,7 +109,7 @@ private:
     QHash<int, bool> m_ColumnRequired;
     QHash<int, bool> m_ColumnSearchable;
     QHash<int, bool> m_ColumnIsEditable;
-    QHash<int, QStringList*> m_LookupValues;
+
     QHash<int, bool> m_ColumnIsUnique;
 
     // TODO: setup filters and lookup views
@@ -119,8 +125,10 @@ private:
     QHash<int, QString> m_RangeSearchEnd;
 
     QHash<int, PNSqlQueryModel*> m_LookupView;
+    QHash<int, QStringList*> m_LookupValues;
     QHash<int, int> m_LookupValue;
     QHash<int, int> m_LookupFK;
+
 
     // track for deletion checking
     QVector<QString> m_RelatedTable;

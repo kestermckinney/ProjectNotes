@@ -1,4 +1,4 @@
-#include "pndatabaseobjects.h"
+﻿#include "pndatabaseobjects.h"
 
 #include <QUuid>
 
@@ -84,21 +84,74 @@ bool PNDatabaseObjects::OpenDatabase(QString& databasepath)
     }
 
     m_ClientsModel = new ClientsModel(nullptr);
+    m_ClientsModelProxy = new PNSortFilterProxyModel();
+    m_ClientsModelProxy->setSourceModel(m_ClientsModel);
+
     m_UnfilteredClientsModel = new ClientsModel(nullptr);
+    m_UnfilteredClientsModelProxy = new PNSortFilterProxyModel();
+    m_UnfilteredClientsModelProxy->setSourceModel(m_UnfilteredClientsModel);
+
     m_PeopleModel = new PeopleModel(nullptr);
+    // setup lookup/drop down values
+    m_PeopleModel->setLookup(5, m_ClientsModel, 0, 1);
+    m_PeopleModelProxy = new PNSortFilterProxyModel();
+    m_PeopleModelProxy->setSourceModel(m_PeopleModel);
+
     m_CompanyPeopleModel = new PeopleModel(nullptr);
+    m_CompanyPeopleModelProxy = new PNSortFilterProxyModel();
+    m_CompanyPeopleModelProxy->setSourceModel(m_CompanyPeopleModel);
+
+
     m_UnfilteredPeopleModel = new PeopleModel(nullptr);
+    m_UnfilteredPeopleModelProxy = new PNSortFilterProxyModel();
+    m_UnfilteredPeopleModelProxy->setSourceModel(m_UnfilteredPeopleModel);
+
     m_ProjectInformationModel = new ProjectsModel(nullptr);
+    m_ProjectInformationModelProxy = new PNSortFilterProxyModel();
+    m_ProjectInformationModelProxy->setSourceModel(m_ProjectInformationModel);
+
     m_ProjectsListModel = new ProjectsListModel(nullptr);
+    // setup lookup/drop down value
+    m_ProjectsListModel->setLookup(5, m_UnfilteredPeopleModel, 0, 1);
+    m_ProjectsListModel->setLookup(13, m_UnfilteredClientsModel, 0, 1);
+    m_ProjectsListModelProxy = new PNSortFilterProxyModel();
+    m_ProjectsListModelProxy->setSourceModel(m_ProjectsListModel);
+
     m_TeamsModel = new TeamsModel(nullptr);
+    m_TeamsModelProxy = new PNSortFilterProxyModel();
+    m_TeamsModelProxy->setSourceModel(m_TeamsModel);
+
     m_StatusReportItemsModel = new StatusReportItemsModel(nullptr);
+    m_StatusReportItemsModelProxy = new PNSortFilterProxyModel();
+    m_StatusReportItemsModelProxy->setSourceModel(m_StatusReportItemsModel);
+
     m_ProjectTeamMembersModel = new ProjectTeamMembersModel(nullptr);
+    m_ProjectTeamMembersModelProxy = new PNSortFilterProxyModel();
+    m_ProjectTeamMembersModelProxy->setSourceModel(m_ProjectTeamMembersModel);
+
     m_ProjectLocationsModel = new ProjectLocationsModel(nullptr);
+    m_ProjectLocationsModelProxy = new PNSortFilterProxyModel();
+    m_ProjectLocationsModelProxy->setSourceModel(m_ProjectLocationsModel);
+
     m_ProjectNotesModel = new ProjectNotesModel(nullptr);
+    m_ProjectNotesModelProxy = new PNSortFilterProxyModel();
+    m_ProjectNotesModelProxy->setSourceModel(m_ProjectNotesModel);
+
     m_ActionItemProjectNotesModel = new ActionItemProjectNotesModel(nullptr);
+    m_ActionItemProjectNotesModelProxy = new PNSortFilterProxyModel();
+    m_ActionItemProjectNotesModelProxy->setSourceModel(m_ActionItemProjectNotesModel);
+
     m_ActionItemsDetailsMeetingsModel = new ActionItemsDetailsMeetingsModel(nullptr);
+    m_ActionItemsDetailsMeetingsModelProxy = new PNSortFilterProxyModel();
+    m_ActionItemsDetailsMeetingsModelProxy->setSourceModel(m_ActionItemsDetailsMeetingsModel);
+
     m_MeetingAttendeesModel = new MeetingAttendeesModel(nullptr);
+    m_MeetingAttendeesModelProxy = new PNSortFilterProxyModel();
+    m_MeetingAttendeesModelProxy->setSourceModel(m_MeetingAttendeesModel);
+
     m_NotesActionItemsModel = new NotesActionItemsModel(nullptr);
+    m_NotesActionItemsModelProxy = new PNSortFilterProxyModel();
+    m_NotesActionItemsModelProxy->setSourceModel(m_NotesActionItemsModel);
 
     //m_PeopleModel->setShowBlank(true);
 
@@ -134,6 +187,23 @@ void PNDatabaseObjects::CloseDatabase()
     delete m_ActionItemsDetailsMeetingsModel;
     delete m_MeetingAttendeesModel;
     delete m_NotesActionItemsModel;
+
+    delete m_ClientsModelProxy;
+    delete m_UnfilteredClientsModelProxy;
+    delete m_PeopleModelProxy;
+    delete m_CompanyPeopleModelProxy;
+    delete m_UnfilteredPeopleModelProxy;
+    delete m_ProjectInformationModelProxy;
+    delete m_ProjectsListModelProxy;
+    delete m_TeamsModelProxy;
+    delete m_StatusReportItemsModelProxy;
+    delete m_ProjectTeamMembersModelProxy;
+    delete m_ProjectLocationsModelProxy;
+    delete m_ProjectNotesModelProxy;
+    delete m_ActionItemProjectNotesModelProxy;
+    delete m_ActionItemsDetailsMeetingsModelProxy;
+    delete m_MeetingAttendeesModelProxy;
+    delete m_NotesActionItemsModelProxy;
 
     m_ClientsModel= nullptr;
     m_UnfilteredClientsModel= nullptr;

@@ -18,6 +18,7 @@
 #include "trackeritemcommentsmodel.h"
 #include "projectactionitemsmodel.h"
 #include "searchresultsmodel.h"
+#include <pnsortfilterproxymodel.h>
 
 #include <QObject>
 #include <QSqlDatabase>
@@ -65,6 +66,28 @@ public:
     TrackerItemCommentsModel* trackeritemscommentsmodel() { return m_TrackerItemCommentsModel; }
     ProjectActionItemsModel* projectactionitemsmodel() { return m_ProjectActionItemsModel; }
     ProjectActionItemsModel* actionitemsdetailsmodel() { return m_ActionItemDetailsModel; }
+
+    PNSortFilterProxyModel* clientsmodelproxy() { return m_ClientsModelProxy; }
+    PNSortFilterProxyModel* unfilteredclientsmodelproxy() { return m_UnfilteredClientsModelProxy; }
+    PNSortFilterProxyModel* peoplemodelproxy() { return m_PeopleModelProxy; }
+    PNSortFilterProxyModel* companypeoplemodelproxy() { return m_CompanyPeopleModelProxy; }
+    PNSortFilterProxyModel* unfilteredpeoplemodelproxy() { return m_UnfilteredPeopleModelProxy; }
+    PNSortFilterProxyModel* projectinformationmodelproxy() { return m_ProjectInformationModelProxy; }
+    PNSortFilterProxyModel* projectslistmodelproxy() { return m_ProjectsListModelProxy; }
+    PNSortFilterProxyModel* teamsmodelproxy() { return m_TeamsModelProxy; }
+    PNSortFilterProxyModel* statusreportitemsmodelproxy() { return m_StatusReportItemsModelProxy; }
+    PNSortFilterProxyModel* projectteammembersmodelproxy() { return m_ProjectTeamMembersModelProxy; }
+    PNSortFilterProxyModel* projectlocationsmodelproxy() { return m_ProjectLocationsModelProxy; }
+    PNSortFilterProxyModel* projectnotesmodelproxy() { return m_ProjectNotesModelProxy; }
+    PNSortFilterProxyModel* actionitemprojectnotesmodelproxy() { return m_ActionItemProjectNotesModelProxy; }
+    PNSortFilterProxyModel* actionitemsdetailsmeetingsmodelproxy() { return m_ActionItemsDetailsMeetingsModelProxy; }
+    PNSortFilterProxyModel* meetingattendeesmodelproxy() { return m_MeetingAttendeesModelProxy; }
+    PNSortFilterProxyModel* notesactionitemsmodelproxy() { return m_NotesActionItemsModelProxy; }
+    PNSortFilterProxyModel* itemdetailteamlistmodelproxy() { return m_ItemDetailTeamListModelProxy; }
+    PNSortFilterProxyModel* trackeritemscommentsmodelproxy() { return m_TrackerItemCommentsModelProxy; }
+    PNSortFilterProxyModel* projectactionitemsmodelproxy() { return m_ProjectActionItemsModelProxy; }
+    PNSortFilterProxyModel* actionitemsdetailsmodelproxy() { return m_ActionItemDetailsModelProxy; }
+
     SearchResultsModel* searchresultsmodel() { return m_SearchResultsModel; }
 
     // selection values for fields
@@ -117,6 +140,28 @@ private:
     ProjectActionItemsModel* m_ProjectActionItemsModel;
     ProjectActionItemsModel* m_ActionItemDetailsModel;
     SearchResultsModel* m_SearchResultsModel;
+
+
+    PNSortFilterProxyModel* m_ClientsModelProxy;
+    PNSortFilterProxyModel* m_UnfilteredClientsModelProxy;
+    PNSortFilterProxyModel* m_PeopleModelProxy;
+    PNSortFilterProxyModel* m_CompanyPeopleModelProxy;
+    PNSortFilterProxyModel* m_UnfilteredPeopleModelProxy;
+    PNSortFilterProxyModel* m_ProjectsListModelProxy;
+    PNSortFilterProxyModel* m_ProjectInformationModelProxy;
+    PNSortFilterProxyModel* m_TeamsModelProxy;
+    PNSortFilterProxyModel* m_StatusReportItemsModelProxy;
+    PNSortFilterProxyModel* m_ProjectTeamMembersModelProxy;
+    PNSortFilterProxyModel* m_ProjectLocationsModelProxy;
+    PNSortFilterProxyModel* m_ProjectNotesModelProxy;
+    PNSortFilterProxyModel* m_ActionItemProjectNotesModelProxy;
+    PNSortFilterProxyModel* m_ActionItemsDetailsMeetingsModelProxy;
+    PNSortFilterProxyModel* m_MeetingAttendeesModelProxy;
+    PNSortFilterProxyModel* m_NotesActionItemsModelProxy;
+    PNSortFilterProxyModel* m_ItemDetailTeamListModelProxy;
+    PNSortFilterProxyModel* m_TrackerItemCommentsModelProxy;
+    PNSortFilterProxyModel* m_ProjectActionItemsModelProxy;
+    PNSortFilterProxyModel* m_ActionItemDetailsModelProxy;
 
 signals:
 

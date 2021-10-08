@@ -17,7 +17,6 @@
 
 PNSqlQueryModel::PNSqlQueryModel(QObject *parent) : QAbstractTableModel(parent)
 {
-
 }
 
 int PNSqlQueryModel::columnCount(const QModelIndex &parent) const
@@ -171,6 +170,15 @@ QVariant PNSqlQueryModel::data(const QModelIndex &index, int role) const
         ReformatValue(retval, m_ColumnType[index.column()]);
     }
 
+    // make a light gray backround when not editable
+    if (m_cache.size() > index.row() && role == Qt::BackgroundColorRole)
+    {
+        if (!m_ColumnIsEditable[index.column()])
+        {
+            retval = QVariant(QColor("lightgray"));
+        }
+    }
+
     return retval;
 }
 
@@ -241,21 +249,10 @@ void PNSqlQueryModel::SQLEscape(QVariant& ColumnValue, DBColumnType ColumnType) 
     switch (ColumnType) {
         case DB_DATE:
         {
-            //QDateTime datecol = QDateTime::fromString(ColumnValue.toString(), "MM/dd/yyyy");
             QDateTime datecol = ParseDateTime(ColumnValue.toString());
 
             if ( datecol.isValid() )
             {
-                /*
-                if (datecol.date().year() < 1000)
-                {
-                    qint32 adjustment = QDate::currentDate().year();
-                    adjustment = trunc((float)adjustment / 100.0) * 100;
-
-                    datecol = datecol.addYears(adjustment);
-                }
-*/
-
                 ColumnValue = datecol.toSecsSinceEpoch();
             }
             else
@@ -265,7 +262,6 @@ void PNSqlQueryModel::SQLEscape(QVariant& ColumnValue, DBColumnType ColumnType) 
         }
         case DB_DATETIME:
         {
-            //QDateTime datecol = QDateTime::fromString(ColumnValue.toString(),"MM/dd/yyyy hh:mm:ss");
             QDateTime datecol = ParseDateTime(ColumnValue.toString());
             if ( datecol.isValid() )
             {
@@ -1089,6 +1085,31 @@ void PNSqlQueryModel::LoadUserFilter( QString FilterName)
         child = child.nextSibling();
     }
 }
+
+void PNSqlQueryModel::setLookup(int Column, PNSqlQueryModel* lookup, int LookupFK, int LookupValue)
+{
+    m_LookupView[Column] = lookup;
+    m_LookupFK[Column] = LookupFK;
+    m_LookupValue[Column] = LookupValue;
+}
+
+void PNSqlQueryModel::setLookup(int Column, QStringList* lookup)
+{
+    m_LookupValues[Column] = lookup;
+}
+
+QVariant PNSqlQueryModel::getLookupValue(const QModelIndex& index)
+{
+    if ( m_LookupView[index.column()] != nullptr)
+    {
+        QVariant val = data(index);
+        QVariant find = m_LookupView[index.column()]->FindValue(val, m_LookupFK[index.column()], m_LookupValue[index.column()]);
+        return find;
+    }
+
+    return QVariant();
+}
+
 
 // TODO: Setup refresh signalling between models
 

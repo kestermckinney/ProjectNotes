@@ -8,6 +8,7 @@
 #include <QModelIndex>
 #include <QApplication>
 #include <QString>
+#include <QPainter>
 
 PNDateEditDelegate::PNDateEditDelegate(QObject *parent)
 :QItemDelegate(parent)
@@ -53,6 +54,15 @@ void PNDateEditDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     QString datevalue = index.model()->data(index, Qt::EditRole).toString();
 
     myOption.text = datevalue;
+
+    // make light gray background when not editable
+    //if (!((PNSqlQueryModel*)index.model())->isEditable(index.column()))
+    //    myOption.backgroundBrush = QBrush(QColor("lightgray"));
+
+    myOption.palette.setColor(QPalette::Text,index.model()->data(index, Qt::ForegroundRole).value<QColor>());
+    QVariant color = index.model()->data(index, Qt::BackgroundColorRole);
+    if (color.isValid())
+        myOption.backgroundBrush = QBrush(color.value<QColor>());
 
     QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, painter);
 }

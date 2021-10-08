@@ -88,6 +88,44 @@ bool PNSettings::getWindowState(const QString& WindowName, QMainWindow& Window)
     return true;
 }
 
+void PNSettings::setTableViewState(const QString& ViewName, const QTableView& View)
+{
+    int c = View.model()->columnCount();
+    int w;
+    QString savestring;
+
+    for (int i = 0; i < c; i++)
+    {
+        w = View.columnWidth(i);
+        savestring += QString("%1,").arg(w);
+    }
+
+    m_AppConfig->setValue(ViewName, savestring);
+}
+
+bool PNSettings::getTableViewState(const QString& ViewName, QTableView& View)
+{
+    QVariant loadstring;
+
+    loadstring = m_AppConfig->value(ViewName);
+
+    QStringList lst = loadstring.toString().split(",");
+
+    int col = 0;
+    int c = View.model()->columnCount();
+
+    for ( auto& i : lst  )
+    {
+        if (col < c)
+            View.setColumnWidth(col, i.toInt());
+
+        col++;
+    }
+
+    return true;
+}
+
+
 int PNSettings::getWindowX(const QString& WindowName)
 {
     QString path = WindowName + "/X";

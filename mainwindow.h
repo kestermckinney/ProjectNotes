@@ -6,6 +6,7 @@
 #include "pncomboboxdelegate.h"
 #include "pndateeditdelegate.h"
 #include "comboboxdelegate.h"
+#include "pnsortfilterproxymodel.h"
 
 #include <QMainWindow>
 #include <QStringListModel>
@@ -39,7 +40,6 @@ private:
     ComboBoxDelegate* m_ProjectInvoicegPeriodDelegate;
     ComboBoxDelegate* m_ProjectStatusDelegate;
     ComboBoxDelegate* m_ProjectsReportPeriodDelegate;
-
 
 private slots:
     //void handleNewProjectClicked();
