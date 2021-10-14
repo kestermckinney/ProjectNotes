@@ -846,8 +846,11 @@ void PNSqlQueryModel::ClearAllFilters()
 
 void PNSqlQueryModel::ClearFilter(int ColumnNumber)
 {
-    m_IsFiltered[ColumnNumber] = false;
-    m_FilterValue[ColumnNumber].clear();
+    if (m_IsFiltered.contains(ColumnNumber))
+    {
+        m_IsFiltered[ColumnNumber] = false;
+        m_FilterValue[ColumnNumber].clear();
+    }
 }
 
 void PNSqlQueryModel::SetUserFilter(int ColumnNumber, const QStringList& FilterValues)
@@ -870,8 +873,11 @@ void PNSqlQueryModel::SetUserSearchRange(int ColumnNumber, const QString& Search
 
 void PNSqlQueryModel::GetUserSearchRange(int ColumnNumber, QString& SearchBeginValue, QString& SearchEndValue )
 {
-    SearchBeginValue = m_RangeSearchStart[ColumnNumber];
-    SearchEndValue = m_RangeSearchEnd[ColumnNumber];
+    if (m_RangeSearchStart.contains(ColumnNumber))
+    {
+        SearchBeginValue = m_RangeSearchStart[ColumnNumber];
+        SearchEndValue = m_RangeSearchEnd[ColumnNumber];
+    }
 }
 
 void PNSqlQueryModel::ClearAllUserSearches()
@@ -888,24 +894,34 @@ void PNSqlQueryModel::ClearAllUserSearches()
 
 void PNSqlQueryModel::ClearUserFilter(int ColumnNumber)
 {
-    m_IsUserFiltered[ColumnNumber] = false;
-    m_UserFilterValues[ColumnNumber].clear();
+    if (m_IsUserFiltered.contains(ColumnNumber))
+    {
+        m_IsUserFiltered[ColumnNumber] = false;
+        m_UserFilterValues[ColumnNumber].clear();
+    }
 }
 
 void PNSqlQueryModel::ClearUserSearchString(int ColumnNumber)
 {
-    m_UserSearchString[ColumnNumber].clear();
+    if (m_UserSearchString.contains(ColumnNumber))
+        m_UserSearchString[ColumnNumber].clear();
 }
 
 void PNSqlQueryModel::ClearUserSearchRange(int ColumnNumber)
 {
-    m_IsUserRangeFiltered[ColumnNumber] = false;
-    m_RangeSearchStart[ColumnNumber].clear();
-    m_RangeSearchEnd[ColumnNumber].clear();
+    if (m_IsUserRangeFiltered.contains(ColumnNumber))
+    {
+        m_IsUserRangeFiltered[ColumnNumber] = false;
+        m_RangeSearchStart[ColumnNumber].clear();
+        m_RangeSearchEnd[ColumnNumber].clear();
+    }
 }
 
 bool PNSqlQueryModel::HasUserFilters(int ColumnNumber)
 {
+    if (!m_IsUserRangeFiltered.contains(ColumnNumber))
+        return false;
+
     if (m_IsUserRangeFiltered[ColumnNumber] || m_IsUserFiltered[ColumnNumber] || !m_UserSearchString[ColumnNumber].isEmpty()  )
         return true;
     else

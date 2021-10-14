@@ -9,71 +9,24 @@
 #include <QSqlTableModel>
 #include <QDebug>
 #include <QDir>
+#include <QFileDialog>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    //m_DBObjects = nullptr;
 
-    //QString path = "/Users/paulmckinney/ProjectNotes.db";
-    QString path = "/home/paulmckinney/ProjectNotes3/database/ProjectNotes.db";
-
-    //m_DBObjects = new PNDatabaseObjects(path, this);
-
-    if (!global_DBObjects.OpenDatabase(path))
-        return;
-
-    global_DBObjects.projectslistmodel()->Refresh();
-    global_DBObjects.unfilteredpeoplemodel()->Refresh();
-    global_DBObjects.unfilteredclientsmodel()->Refresh();
-    global_DBObjects.clientsmodel()->Refresh();
-
-    //ui->tableViewProjects->setModel(global_DBObjects.projectslistmodel());
-    ui->tableViewProjects->setModel(global_DBObjects.projectslistmodelproxy());
-
-    ui->tableViewProjects->setColumnHidden(0, true);
-
-    // setup model lists
-    m_ItemType.setStringList(PNDatabaseObjects::item_type);
-    m_ItemStatus.setStringList(PNDatabaseObjects::item_status);
-    m_ItemPriority.setStringList(PNDatabaseObjects::item_priority);
-    m_ProjectStatus.setStringList(PNDatabaseObjects::project_status);
-    m_StatusItemStatus.setStringList(PNDatabaseObjects::status_item_status);
-    m_InvoicingPeriod.setStringList(PNDatabaseObjects::invoicing_period);
-    m_Locations.setStringList(PNDatabaseObjects::locations);
-    m_StatusReportPeriod.setStringList(PNDatabaseObjects::status_report_period);
-
-    // projects list panel delagets
-    m_UnfilteredPeopleDelegate = new PNComboBoxDelegate(this, global_DBObjects.unfilteredpeoplemodel());
-    m_ProjectClientsDelegate = new PNComboBoxDelegate(this, global_DBObjects.clientsmodel());
-    m_ProjectDateDelegate = new PNDateEditDelegate(this);
-    m_ProjectsReportPeriodDelegate = new ComboBoxDelegate(this, &m_StatusReportPeriod);
-    m_ProjectInvoicegPeriodDelegate = new ComboBoxDelegate(this, &m_InvoicingPeriod);
-    m_ProjectStatusDelegate = new ComboBoxDelegate(this, &m_ProjectStatus);
-
-    //QStringListModel report_periods = QStringListModel(PNDatabaseObjects::status_report_period);
-
-    ui->tableViewProjects->setItemDelegateForColumn(5, m_UnfilteredPeopleDelegate);
-    ui->tableViewProjects->setItemDelegateForColumn(3, m_ProjectDateDelegate);
-    ui->tableViewProjects->setItemDelegateForColumn(4, m_ProjectDateDelegate);
-    ui->tableViewProjects->setItemDelegateForColumn(11, m_ProjectInvoicegPeriodDelegate);
-    ui->tableViewProjects->setItemDelegateForColumn(12, m_ProjectsReportPeriodDelegate);
-    ui->tableViewProjects->setItemDelegateForColumn(13, m_ProjectClientsDelegate);
-    ui->tableViewProjects->setItemDelegateForColumn(14, m_ProjectStatusDelegate);
-
-    ui->tableViewProjects->setSortingEnabled(true);
-    //ui->tableViewProjects->sortByColumn(3, Qt::AscendingOrder);
-
-    //ui->actionBack->setVisible(false);
+    if (!global_Settings.getLastDatabase().toString().isEmpty())
+        OpenDatabase(global_Settings.getLastDatabase().toString());
 
     // connect events
     //connect(ui->pushButtonNewProject, &QPushButton::clicked, this, &MainWindow::handleNewProjectClicked);
     //connect(ui->pushButtonDeleteProject, &QPushButton::clicked, this, &MainWindow::handleDeleteProjectClicked);
 
+    setButtonAndMenuStates();
+
     global_Settings.getWindowState("MainWindow", *this);
-    global_Settings.getTableViewState("ProjectTableColumns", *(ui->tableViewProjects));
 }
 
 MainWindow::~MainWindow()
@@ -81,13 +34,11 @@ MainWindow::~MainWindow()
     // disconnect events
     //disconnect(ui->pushButtonNewProject, &QPushButton::clicked, this, &MainWindow::handleNewProjectClicked);
     //disconnect(ui->pushButtonDeleteProject, &QPushButton::clicked, this, &MainWindow::handleDeleteProjectClicked);
-    global_Settings.setTableViewState("ProjectTableColumns", *(ui->tableViewProjects));
 
     ui->tableViewProjects->setModel(nullptr);
 
-    global_DBObjects.CloseDatabase();
-
-    //delete m_DBObjects;
+    if (global_DBObjects.isOpen())
+        global_DBObjects.CloseDatabase();
 
     global_Settings.setWindowState("MainWindow", *this);
 
@@ -105,6 +56,94 @@ void MainWindow::handleDeleteProjectClicked()
 }
 */
 
+void MainWindow::setButtonAndMenuStates()
+{
+    bool dbopen = global_DBObjects.isOpen();
+
+    ui->actionSearch->setEnabled(dbopen);
+    ui->actionXML_Export->setEnabled(dbopen);
+    ui->actionXML_Import->setEnabled(dbopen);
+    ui->actionBackup_Database->setEnabled(dbopen);
+
+    /*
+    QAction *actionFind;
+    QAction *actionSpell_Check;
+    QAction *actionUndo;
+    QAction *actionRedo;
+    QAction *actionCopy;
+    QAction *actionCut;
+    QAction *actionPaste;
+    QAction *actionDelete;
+    QAction *actionSelect_All;
+    */
+
+
+    ui->actionInternal_Items->setEnabled(dbopen);
+    ui->actionAll_Tracker_Action_Items->setEnabled(dbopen);
+
+    ui->actionProjects->setEnabled(dbopen);
+    ui->actionClosed_Projects->setEnabled(dbopen);
+
+    if (dbopen)
+        ui->actionClosed_Projects->setChecked(global_DBObjects.GetShowClosedProjects());
+
+    ui->actionNew_Item->setEnabled(dbopen);
+    ui->actionCopy_Item->setEnabled(dbopen);
+    ui->actionDelete_Item->setEnabled(dbopen);
+    ui->actionEdit_Itesm->setEnabled(dbopen);
+    ui->actionBack->setEnabled(dbopen);
+    ui->actionForward->setEnabled(dbopen);
+    ui->actionClients->setEnabled(dbopen);
+    ui->actionPeople->setEnabled(dbopen);
+    ui->actionFilter->setEnabled(dbopen);
+}
+
 // TODO: Save column resizing that is done
 // TODO: Save sorting that is done
 // TODO: Allow for a reset of columnn sizing and sorting
+
+void MainWindow::on_actionExit_triggered()
+{
+    close();
+}
+
+void MainWindow::on_actionOpen_Database_triggered()
+{
+    QString dbfile = QFileDialog::getOpenFileName(this, tr("Open Project Notes file"), QString(), tr("Project Notes (*.db)"));
+
+    if (!dbfile.isEmpty())
+    {
+        OpenDatabase(dbfile);
+    }
+
+    setButtonAndMenuStates();
+}
+
+void MainWindow::OpenDatabase(QString dbfile)
+{
+    if (!global_DBObjects.OpenDatabase(dbfile))
+        return;
+
+    global_DBObjects.projectslistmodel()->Refresh();
+    global_DBObjects.unfilteredpeoplemodel()->Refresh();
+    global_DBObjects.unfilteredclientsmodel()->Refresh();
+    global_DBObjects.clientsmodel()->Refresh();
+
+    global_Settings.setLastDatabase(dbfile);
+    global_DBObjects.SetGlobalSearches(false);
+
+    ui->tableViewProjects->setModel(global_DBObjects.projectslistmodelproxy());
+}
+
+void MainWindow::on_actionClose_Database_triggered()
+{
+    global_Settings.setLastDatabase(QString());
+    global_DBObjects.CloseDatabase();
+    setButtonAndMenuStates();
+}
+
+void MainWindow::on_actionClosed_Projects_triggered()
+{
+    global_DBObjects.SetShowClosedProjects(ui->actionClosed_Projects->isChecked());
+    global_DBObjects.SetGlobalSearches(true);
+}

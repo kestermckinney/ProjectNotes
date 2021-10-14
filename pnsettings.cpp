@@ -100,14 +100,39 @@ void PNSettings::setTableViewState(const QString& ViewName, const QTableView& Vi
         savestring += QString("%1,").arg(w);
     }
 
-    m_AppConfig->setValue(ViewName, savestring);
+    m_AppConfig->setValue(ViewName + "Columns", savestring);
+}
+
+void PNSettings::setTableSortColumn(const QString& ViewName, const int Column, const QString Direction)
+{
+    QString savestring;
+
+    savestring = QString("%1").arg(Column);
+
+    m_AppConfig->setValue(ViewName + "SortColumn", savestring);
+    m_AppConfig->setValue(ViewName + "SortDirection", Direction);
+}
+
+bool PNSettings::getTableSortColumn(const QString& ViewName, int& Column, QString& Direction)
+{
+    QVariant loadstring;
+
+    loadstring = m_AppConfig->value(ViewName + "SortColumn");
+    Direction = m_AppConfig->value(ViewName + "SortDirection").toString();
+
+    if (!loadstring.isValid() || loadstring == "")
+        Column = -1;
+    else
+        Column = loadstring.toInt();
+
+    return true;
 }
 
 bool PNSettings::getTableViewState(const QString& ViewName, QTableView& View)
 {
     QVariant loadstring;
 
-    loadstring = m_AppConfig->value(ViewName);
+    loadstring = m_AppConfig->value(ViewName + "Columns");
 
     QStringList lst = loadstring.toString().split(",");
 
@@ -245,3 +270,5 @@ void PNSettings::setPersonalDictionary(const QString& Dictionary)
 
     m_AppConfig->setValue(path, value);
 }
+
+

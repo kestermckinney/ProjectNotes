@@ -33,6 +33,9 @@ public:
     void setTableViewState(const QString& ViewName, const QTableView& View);
     bool getTableViewState(const QString& ViewName, QTableView& View);
 
+    void setTableSortColumn(const QString& ViewName, const int Column, const QString Direction);
+    bool getTableSortColumn(const QString& ViewName, int& Column, QString& Direction);
+
 private:
     int getWindowX(const QString& WindowName);
     int getWindowY(const QString& WindowName);
@@ -53,5 +56,7 @@ private:
     QSettings* m_AppConfig;
     QSettings* m_PluginConfig;
 };
+
+static PNSettings global_Settings;
 
 #endif // PNSETTINGS_H

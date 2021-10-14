@@ -45,6 +45,7 @@ public:
     bool ExecuteDDL(const QString& SQL);
     void SetGlobalSearches( bool Refresh );
     QString& GetDatabaseFile() { return m_DatabaseFile; }
+    bool isOpen() { return !m_DatabaseFile.isEmpty(); }
 
     ClientsModel* clientsmodel() { return m_ClientsModel; }
     ClientsModel* unfilteredclientsmodel() { return m_UnfilteredClientsModel; }

@@ -3,10 +3,6 @@
 
 #include "pndatabaseobjects.h"
 #include "pnsettings.h"
-#include "pncomboboxdelegate.h"
-#include "pndateeditdelegate.h"
-#include "comboboxdelegate.h"
-#include "pnsortfilterproxymodel.h"
 
 #include <QMainWindow>
 #include <QStringListModel>
@@ -23,32 +19,22 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-private:
-    QStringListModel m_ItemType;//(PNDatabaseObjects::item_type);
-    QStringListModel m_ItemStatus;//PNDatabaseObjects::item_status;
-    QStringListModel m_ItemPriority;//PNDatabaseObjects::item_priority;
-    QStringListModel m_ProjectStatus;//PNDatabaseObjects::project_status;
-    QStringListModel m_StatusItemStatus;//PNDatabaseObjects::status_item_status;
-    QStringListModel m_InvoicingPeriod;//PNDatabaseObjects::invoicing_period;
-    QStringListModel m_StatusReportPeriod; //PNDatabaseObjects::status_report_period;
-    QStringListModel m_Locations;//PNDatabaseObjects::locations;
-
-    // projects list panel delegates
-    PNComboBoxDelegate* m_UnfilteredPeopleDelegate;
-    PNComboBoxDelegate* m_ProjectClientsDelegate;
-    PNDateEditDelegate* m_ProjectDateDelegate;
-    ComboBoxDelegate* m_ProjectInvoicegPeriodDelegate;
-    ComboBoxDelegate* m_ProjectStatusDelegate;
-    ComboBoxDelegate* m_ProjectsReportPeriodDelegate;
-
 private slots:
     //void handleNewProjectClicked();
     //void handleDeleteProjectClicked();
+    void setButtonAndMenuStates();
+    void OpenDatabase(QString dbfile);
+
+    void on_actionExit_triggered();
+
+    void on_actionOpen_Database_triggered();
+
+    void on_actionClose_Database_triggered();
+
+    void on_actionClosed_Projects_triggered();
 
 private:
     Ui::MainWindow *ui;
 };
-
-static PNSettings global_Settings;
 
 #endif // MAINWINDOW_H

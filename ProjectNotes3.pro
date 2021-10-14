@@ -28,7 +28,9 @@ SOURCES += \
     pnsettings.cpp \
     pnsortfilterproxymodel.cpp \
     pnsqlquerymodel.cpp \
+    pntableview.cpp \
     projectactionitemsmodel.cpp \
+    projectlistview.cpp \
     projectlocationsmodel.cpp \
     projectnotesmodel.cpp \
     projectslistmodel.cpp \
@@ -56,7 +58,9 @@ HEADERS += \
     pnsettings.h \
     pnsortfilterproxymodel.h \
     pnsqlquerymodel.h \
+    pntableview.h \
     projectactionitemsmodel.h \
+    projectlistview.h \
     projectlocationsmodel.h \
     projectnotesmodel.h \
     projectslistmodel.h \

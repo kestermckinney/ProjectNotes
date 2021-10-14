@@ -14,8 +14,8 @@
    <string>Project Notes</string>
   </property>
   <property name="windowIcon">
-   <iconset>
-    <normaloff>:/icons/logo16.png</normaloff>:/icons/logo16.png</iconset>
+   <iconset resource="Resources.qrc">
+    <normaloff>:/icons/logo.png</normaloff>:/icons/logo.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
@@ -78,7 +78,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QTableView" name="tableViewProjects">
+         <widget class="ProjectListView" name="tableViewProjects">
           <property name="frameShape">
            <enum>QFrame::NoFrame</enum>
           </property>
@@ -1815,6 +1815,13 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ProjectListView</class>
+   <extends>QTableView</extends>
+   <header>projectlistview.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="Resources.qrc"/>
  </resources>

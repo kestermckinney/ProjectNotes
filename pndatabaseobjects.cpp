@@ -74,12 +74,14 @@ bool PNDatabaseObjects::OpenDatabase(QString& databasepath)
     {
         QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
             QString(tr("File %1 does not exist.")).arg(m_DatabaseFile), QMessageBox::Cancel);
+        m_DatabaseFile.clear(); // set empty if bad file
         return false;
     }
 
     if (!m_SQLiteDB.open()) {
         QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
             m_SQLiteDB.lastError().text(), QMessageBox::Cancel);
+        m_DatabaseFile.clear(); // set empty if bad file
         return false;
     }
 
@@ -188,23 +190,6 @@ void PNDatabaseObjects::CloseDatabase()
     delete m_MeetingAttendeesModel;
     delete m_NotesActionItemsModel;
 
-    delete m_ClientsModelProxy;
-    delete m_UnfilteredClientsModelProxy;
-    delete m_PeopleModelProxy;
-    delete m_CompanyPeopleModelProxy;
-    delete m_UnfilteredPeopleModelProxy;
-    delete m_ProjectInformationModelProxy;
-    delete m_ProjectsListModelProxy;
-    delete m_TeamsModelProxy;
-    delete m_StatusReportItemsModelProxy;
-    delete m_ProjectTeamMembersModelProxy;
-    delete m_ProjectLocationsModelProxy;
-    delete m_ProjectNotesModelProxy;
-    delete m_ActionItemProjectNotesModelProxy;
-    delete m_ActionItemsDetailsMeetingsModelProxy;
-    delete m_MeetingAttendeesModelProxy;
-    delete m_NotesActionItemsModelProxy;
-
     m_ClientsModel= nullptr;
     m_UnfilteredClientsModel= nullptr;
     m_PeopleModel = nullptr;
@@ -222,10 +207,45 @@ void PNDatabaseObjects::CloseDatabase()
     m_MeetingAttendeesModel= nullptr;
     m_NotesActionItemsModel= nullptr;
 
+    delete m_ClientsModelProxy;
+    delete m_UnfilteredClientsModelProxy;
+    delete m_PeopleModelProxy;
+    delete m_CompanyPeopleModelProxy;
+    delete m_UnfilteredPeopleModelProxy;
+    delete m_ProjectInformationModelProxy;
+    delete m_ProjectsListModelProxy;
+    delete m_TeamsModelProxy;
+    delete m_StatusReportItemsModelProxy;
+    delete m_ProjectTeamMembersModelProxy;
+    delete m_ProjectLocationsModelProxy;
+    delete m_ProjectNotesModelProxy;
+    delete m_ActionItemProjectNotesModelProxy;
+    delete m_ActionItemsDetailsMeetingsModelProxy;
+    delete m_MeetingAttendeesModelProxy;
+    delete m_NotesActionItemsModelProxy;
+
+    m_ClientsModelProxy = nullptr;
+    m_UnfilteredClientsModelProxy = nullptr;
+    m_PeopleModelProxy = nullptr;
+    m_CompanyPeopleModelProxy = nullptr;
+    m_UnfilteredPeopleModelProxy = nullptr;
+    m_ProjectInformationModelProxy = nullptr;
+    m_ProjectsListModelProxy = nullptr;
+    m_TeamsModelProxy = nullptr;
+    m_StatusReportItemsModelProxy = nullptr;
+    m_ProjectTeamMembersModelProxy = nullptr;
+    m_ProjectLocationsModelProxy = nullptr;
+    m_ProjectNotesModelProxy = nullptr;
+    m_ActionItemProjectNotesModelProxy = nullptr;
+    m_ActionItemsDetailsMeetingsModelProxy = nullptr;
+    m_MeetingAttendeesModelProxy = nullptr;
+    m_NotesActionItemsModelProxy = nullptr;
+
     m_SQLiteDB.close();
+    m_DatabaseFile.clear();
 }
 
-void PNDatabaseObjects::BackupDatabase(QWidget& parent, QFileInfo& file)
+void PNDatabaseObjects::BackupDatabase(QWidget& /*parent*/, QFileInfo& /*file*/)
 {
     // TODO:  This may not make sense to do when using the QT SQL interface
 }
@@ -462,9 +482,11 @@ void PNDatabaseObjects::SetGlobalSearches( bool Refresh )
     }
 }
 
-bool PNDatabaseObjects::ExecuteDDL(const QString& SQL)
+bool PNDatabaseObjects::ExecuteDDL(const QString& /*SQL*/)
 {
-  // TODO : finish
+    // TODO : finish
+
+    return false;
 }
 
 
