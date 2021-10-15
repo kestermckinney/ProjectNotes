@@ -45,11 +45,13 @@ private:
     int getWindowWidth(const QString& WindowName);
     int getWindowHeight(const QString& WindowName);
     bool getWindowMaximized(const QString& WindowName);
-    bool getWindowStatusBar(const QString& WindowName);
+
     void setWindowWidth(const QString& WindowName, int Width);
     void setWindowHeight(const QString& WindowName, int Height);
     void setWindowMaximized(const QString& WindowName, bool Maximized);
+
     void setWindowStatusBar(const QString& WindowName, bool StatusBar);
+    bool getWindowStatusBar(const QString& WindowName);
 
 
 private:

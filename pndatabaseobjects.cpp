@@ -147,6 +147,14 @@ bool PNDatabaseObjects::OpenDatabase(QString& databasepath)
     m_ActionItemsDetailsMeetingsModelProxy = new PNSortFilterProxyModel();
     m_ActionItemsDetailsMeetingsModelProxy->setSourceModel(m_ActionItemsDetailsMeetingsModel);
 
+    m_ProjectActionItemsModel = new ProjectActionItemsModel(nullptr);
+    m_ProjectActionItemsModelProxy = new PNSortFilterProxyModel();
+    m_ProjectActionItemsModelProxy->setSourceModel(m_ProjectActionItemsModel);
+
+    m_ActionItemDetailsModel = new ProjectActionItemsModel(nullptr);
+    m_ActionItemDetailsModelProxy = new PNSortFilterProxyModel();
+    m_ActionItemDetailsModelProxy->setSourceModel(m_ActionItemDetailsModel);
+
     m_MeetingAttendeesModel = new MeetingAttendeesModel(nullptr);
     m_MeetingAttendeesModelProxy = new PNSortFilterProxyModel();
     m_MeetingAttendeesModelProxy->setSourceModel(m_MeetingAttendeesModel);
@@ -154,6 +162,8 @@ bool PNDatabaseObjects::OpenDatabase(QString& databasepath)
     m_NotesActionItemsModel = new NotesActionItemsModel(nullptr);
     m_NotesActionItemsModelProxy = new PNSortFilterProxyModel();
     m_NotesActionItemsModelProxy->setSourceModel(m_NotesActionItemsModel);
+
+    m_SearchResultsModel = new SearchResultsModel(nullptr);
 
     //m_PeopleModel->setShowBlank(true);
 
@@ -187,8 +197,12 @@ void PNDatabaseObjects::CloseDatabase()
     delete m_ProjectNotesModel;
     delete m_ActionItemProjectNotesModel;
     delete m_ActionItemsDetailsMeetingsModel;
+    delete m_ProjectActionItemsModel;
+    delete m_ActionItemDetailsModel;
     delete m_MeetingAttendeesModel;
     delete m_NotesActionItemsModel;
+
+    delete m_SearchResultsModel;
 
     m_ClientsModel= nullptr;
     m_UnfilteredClientsModel= nullptr;
@@ -202,10 +216,14 @@ void PNDatabaseObjects::CloseDatabase()
     m_ProjectTeamMembersModel= nullptr;
     m_ProjectLocationsModel= nullptr;
     m_ProjectNotesModel= nullptr;
+    m_ActionItemDetailsModel = nullptr;
     m_ActionItemProjectNotesModel= nullptr;
     m_ActionItemsDetailsMeetingsModel= nullptr;
+    m_ProjectActionItemsModel = nullptr;
     m_MeetingAttendeesModel= nullptr;
     m_NotesActionItemsModel= nullptr;
+
+    m_SearchResultsModel = nullptr;
 
     delete m_ClientsModelProxy;
     delete m_UnfilteredClientsModelProxy;
@@ -221,6 +239,8 @@ void PNDatabaseObjects::CloseDatabase()
     delete m_ProjectNotesModelProxy;
     delete m_ActionItemProjectNotesModelProxy;
     delete m_ActionItemsDetailsMeetingsModelProxy;
+    delete m_ProjectActionItemsModelProxy;
+    delete m_ActionItemDetailsModelProxy;
     delete m_MeetingAttendeesModelProxy;
     delete m_NotesActionItemsModelProxy;
 
@@ -238,6 +258,8 @@ void PNDatabaseObjects::CloseDatabase()
     m_ProjectNotesModelProxy = nullptr;
     m_ActionItemProjectNotesModelProxy = nullptr;
     m_ActionItemsDetailsMeetingsModelProxy = nullptr;
+    m_ProjectActionItemsModelProxy = nullptr;
+    m_ActionItemDetailsModelProxy = nullptr;
     m_MeetingAttendeesModelProxy = nullptr;
     m_NotesActionItemsModelProxy = nullptr;
 
@@ -379,7 +401,7 @@ void PNDatabaseObjects::SetGlobalSearches( bool Refresh )
     {
         projectactionitemsmodel()->ClearFilter(9);
         projectinformationmodel()->ClearFilter(14);
-        projectslistmodel()->ClearFilter(9);
+        //projectslistmodel()->ClearFilter(9);
         projectslistmodel()->ClearFilter(14);
         searchresultsmodel()->ClearFilter(6);
     }
@@ -387,7 +409,7 @@ void PNDatabaseObjects::SetGlobalSearches( bool Refresh )
     {
         projectactionitemsmodel()->SetFilter(9, tr("Active"));
         projectinformationmodel()->SetFilter(14, tr("Active"));
-        projectslistmodel()->SetFilter(9, tr("Active"));
+        //projectslistmodel()->SetFilter(9, tr("Active"));
         projectslistmodel()->SetFilter(14, tr("Active"));
         searchresultsmodel()->SetFilter(6, tr("Active"));
     }

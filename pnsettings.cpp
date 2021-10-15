@@ -65,7 +65,7 @@ void PNSettings::setWindowState(const QString& WindowName, const QMainWindow& Wi
     setWindowHeight(WindowName, Window.geometry().height());
     setWindowWidth(WindowName, Window.geometry().width());
     setWindowMaximized(WindowName, Window.isMaximized());
-    setWindowStatusBar(WindowName, Window.statusBar()->isVisible());
+    setWindowStatusBar(WindowName, Window.statusBar()->isVisibleTo(&Window));
 }
 
 bool PNSettings::getWindowState(const QString& WindowName, QMainWindow& Window)
@@ -84,6 +84,8 @@ bool PNSettings::getWindowState(const QString& WindowName, QMainWindow& Window)
                   getWindowWidth(WindowName),
                   getWindowHeight(WindowName)
                 );
+
+    Window.statusBar()->setVisible(getWindowStatusBar(WindowName));
 
     return true;
 }
@@ -199,14 +201,20 @@ bool PNSettings::getWindowMaximized(const QString& WindowName)
 {
     QString path = WindowName + "/Maximized";
 
-    return m_AppConfig->value(path, 0).toBool();
+    if (m_AppConfig->value(path, QString("1")) == QString("1"))
+        return true;
+    else
+        return false;
 }
 
 bool PNSettings::getWindowStatusBar(const QString& WindowName)
 {
     QString path = WindowName + "/StatusBar";
 
-    return m_AppConfig->value(path, 1).toBool();
+    if (m_AppConfig->value(path, QString("1")) == QString("1"))
+        return true;
+    else
+        return false;
 }
 
 void PNSettings::setWindowWidth(const QString& WindowName, int Width)
@@ -228,7 +236,7 @@ void PNSettings::setWindowHeight(const QString& WindowName, int Height)
 void PNSettings::setWindowMaximized(const QString& WindowName, bool Maximized)
 {
     QString path = WindowName + "/Maximized";
-    QVariant value = Maximized;
+    QVariant value = Maximized ? QString("1") : QString("0");
 
     m_AppConfig->setValue(path, value);
 }
@@ -236,7 +244,7 @@ void PNSettings::setWindowMaximized(const QString& WindowName, bool Maximized)
 void PNSettings::setWindowStatusBar(const QString& WindowName, bool StatusBar)
 {
     QString path = WindowName + "/StatusBar";
-    QVariant value = StatusBar;
+    QVariant value = StatusBar ? QString("1") : QString("0");
 
     m_AppConfig->setValue(path, value);
 }

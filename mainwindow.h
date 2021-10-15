@@ -33,6 +33,8 @@ private slots:
 
     void on_actionClosed_Projects_triggered();
 
+    void on_actionStatus_Bar_triggered();
+
 private:
     Ui::MainWindow *ui;
 };

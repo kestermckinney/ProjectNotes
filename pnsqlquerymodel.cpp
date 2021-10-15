@@ -137,15 +137,23 @@ bool PNSqlQueryModel::setData(const QModelIndex &index, const QVariant &value, i
 
 void PNSqlQueryModel::Refresh()
 {
-    //beginResetModel();
+    QString orderby;
+    QString fullsql;
+
+    beginResetModel();
     clear();
 
-    m_SqlQuery = QSqlQuery(BaseSQL());
+    m_SqlQuery = QSqlQuery( BaseSQL() ); // always build query to get the column names for where clause generation
+
+    if (!m_OrderBy.isEmpty() )
+        orderby = " order by " + m_OrderBy;
+
+    fullsql = QString("%1 %2 %3").arg( BaseSQL(), ConstructWhereClause(), orderby);
+
+    m_SqlQuery = QSqlQuery( fullsql );
 
     qDebug() << "Refreshing: ";
-    qDebug() << m_SqlQuery.executedQuery();
-    qDebug() << "Original:";
-    qDebug() << m_BaseSQL;
+    qDebug() << fullsql;
 
     // add a blank row for drop downs
     if (m_ShowBlank)
@@ -157,7 +165,7 @@ void PNSqlQueryModel::Refresh()
     {
         m_cache.append(m_SqlQuery.record());
     }
-    //endResetModel();
+    endResetModel();
 }
 
 QVariant PNSqlQueryModel::data(const QModelIndex &index, int role) const
@@ -186,7 +194,7 @@ void PNSqlQueryModel::clear()
 {
     m_cache.clear();
 
-    qDebug() << "PNSsqlQueryModel cache clearned.";
+    //qDebug() << "PNSsqlQueryModel cache clearned.";
 }
 
 QDateTime PNSqlQueryModel::ParseDateTime(QString entrydate)
@@ -720,11 +728,11 @@ QString PNSqlQueryModel::ConstructWhereClause()
 
             if (m_ColumnType[hashit.key()] == DB_BOOL && ColumnValue == tr("'0'"))
             {
-                valuelist += QString(" (%1 = %2").arg(m_SqlQuery.record().fieldName(hashit.key()), ColumnValue.toString() );
+                valuelist += QString(" ( %1 = '%2'").arg(m_SqlQuery.record().fieldName(hashit.key()), ColumnValue.toString() );
                 valuelist += QString(" OR %1 IS NULL) ").arg( m_SqlQuery.record().fieldName(hashit.key()) );
             }
             else
-                valuelist += QString("%1 = %2").arg( m_SqlQuery.record().fieldName(hashit.key()), ColumnValue.toString() );
+                valuelist += QString("%1 = '%2'").arg( m_SqlQuery.record().fieldName(hashit.key()), ColumnValue.toString() );
         }
     }
 
@@ -846,11 +854,8 @@ void PNSqlQueryModel::ClearAllFilters()
 
 void PNSqlQueryModel::ClearFilter(int ColumnNumber)
 {
-    if (m_IsFiltered.contains(ColumnNumber))
-    {
-        m_IsFiltered[ColumnNumber] = false;
-        m_FilterValue[ColumnNumber].clear();
-    }
+    m_IsFiltered[ColumnNumber] = false;
+    m_FilterValue[ColumnNumber].clear();
 }
 
 void PNSqlQueryModel::SetUserFilter(int ColumnNumber, const QStringList& FilterValues)

@@ -27,6 +27,7 @@ MainWindow::MainWindow(QWidget *parent)
     setButtonAndMenuStates();
 
     global_Settings.getWindowState("MainWindow", *this);
+    ui->actionStatus_Bar->setChecked(statusBar()->isVisibleTo(this));
 }
 
 MainWindow::~MainWindow()
@@ -124,15 +125,15 @@ void MainWindow::OpenDatabase(QString dbfile)
     if (!global_DBObjects.OpenDatabase(dbfile))
         return;
 
+    global_DBObjects.SetGlobalSearches(false);
     global_DBObjects.projectslistmodel()->Refresh();
     global_DBObjects.unfilteredpeoplemodel()->Refresh();
     global_DBObjects.unfilteredclientsmodel()->Refresh();
     global_DBObjects.clientsmodel()->Refresh();
 
-    global_Settings.setLastDatabase(dbfile);
-    global_DBObjects.SetGlobalSearches(false);
-
     ui->tableViewProjects->setModel(global_DBObjects.projectslistmodelproxy());
+
+    global_Settings.setLastDatabase(dbfile);
 }
 
 void MainWindow::on_actionClose_Database_triggered()
@@ -146,4 +147,9 @@ void MainWindow::on_actionClosed_Projects_triggered()
 {
     global_DBObjects.SetShowClosedProjects(ui->actionClosed_Projects->isChecked());
     global_DBObjects.SetGlobalSearches(true);
+}
+
+void MainWindow::on_actionStatus_Bar_triggered()
+{
+    statusBar()->setVisible(!statusBar()->isVisible());
 }
