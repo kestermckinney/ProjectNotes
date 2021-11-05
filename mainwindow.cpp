@@ -17,6 +17,11 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    // view state
+    m_CurrentPage = 0;
+    m_PageHistory.clear();
+    m_CurrentModel = nullptr;
+
     if (!global_Settings.getLastDatabase().toString().isEmpty())
         OpenDatabase(global_Settings.getLastDatabase().toString());
 
@@ -28,6 +33,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     global_Settings.getWindowState("MainWindow", *this);
     ui->actionStatus_Bar->setChecked(statusBar()->isVisibleTo(this));
+
+    filterdialog = new FilterDataDialog(this);
 }
 
 MainWindow::~MainWindow()
@@ -43,6 +50,7 @@ MainWindow::~MainWindow()
 
     global_Settings.setWindowState("MainWindow", *this);
 
+    delete filterdialog;
     delete ui;
 }
 /*
@@ -132,6 +140,7 @@ void MainWindow::OpenDatabase(QString dbfile)
     global_DBObjects.clientsmodel()->Refresh();
 
     ui->tableViewProjects->setModel(global_DBObjects.projectslistmodelproxy());
+    m_CurrentModel = global_DBObjects.projectslistmodel();
 
     global_Settings.setLastDatabase(dbfile);
 }
@@ -152,4 +161,12 @@ void MainWindow::on_actionClosed_Projects_triggered()
 void MainWindow::on_actionStatus_Bar_triggered()
 {
     statusBar()->setVisible(!statusBar()->isVisible());
+}
+
+void MainWindow::on_actionFilter_triggered()
+{
+    // TODO: Setup filter dialog
+    filterdialog->setFilterModel(m_CurrentModel);
+    filterdialog->show();
+
 }

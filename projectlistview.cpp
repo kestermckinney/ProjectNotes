@@ -38,9 +38,6 @@ void ProjectListView::setModel(QAbstractItemModel *model)
         setItemDelegateForColumn(12, m_ProjectsReportPeriodDelegate);
         setItemDelegateForColumn(13, m_ProjectClientsDelegate);
         setItemDelegateForColumn(14, m_ProjectStatusDelegate);
-
-        setSortingEnabled(true);
-
     }
     else
     {

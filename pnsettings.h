@@ -21,8 +21,8 @@ public:
     QVariant getWindowStateData(const QString& StateDataName);
     void setWindowStateData(const QString& StateDataName, const QVariant& Data);
 
-    void setWindowState(const QString& WindowName, const QMainWindow& Window);
-    bool getWindowState(const QString& WindowName, QMainWindow& Window);
+    void setWindowState(const QString& WindowName, const QWidget& Window);
+    bool getWindowState(const QString& WindowName, QWidget& Window);
 
     QString getDefaultDictionary();
     void setDefaultDictionary(const QString& Dictionary);

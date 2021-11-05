@@ -52,7 +52,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>6</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="pageProjectsList">
        <property name="sizePolicy">
@@ -89,6 +89,9 @@
            <enum>QAbstractItemView::SelectRows</enum>
           </property>
           <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="verticalHeaderHighlightSections">
            <bool>false</bool>
           </attribute>
          </widget>

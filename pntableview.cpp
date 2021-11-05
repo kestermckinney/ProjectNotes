@@ -18,6 +18,7 @@ PNTableView::PNTableView(QWidget *parent) : QTableView(parent)
     headerView->setSortIndicatorShown(false);
     headerView->viewport()->installEventFilter(this);
 
+    setSortingEnabled(true);
 }
 
 PNTableView::~PNTableView()
@@ -95,10 +96,16 @@ bool PNTableView::eventFilter(QObject * /*watched*/, QEvent *event)
         }
 
         auto header = headerView();
+
         const int indexAtCursor = header->logicalIndexAt(mouseEvent()->pos());
 
+        // TODO: FIX header sort when clicking on scroll bar and resizing
+        // don't fire if someone clicks on scroll bar or resizes
+        //if (!header->rect().contains(mouseEvent()->pos()))
+        //    return false;
+
         if (indexAtCursor == -1)
-            ; // Do nothing, we clicked outside the headers
+            return false; // Do nothing, we clicked outside the headers
         else if (header->sortIndicatorSection() != indexAtCursor) {
             header->setSortIndicator(indexAtCursor, Qt::AscendingOrder);
             header->setSortIndicatorShown(true);

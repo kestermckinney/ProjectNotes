@@ -1,4 +1,6 @@
 #include "pnsettings.h"
+#include "mainwindow.h"
+
 #include <QStatusBar>
 
 PNSettings::PNSettings()
@@ -58,17 +60,18 @@ void PNSettings::setWindowStateData(const QString& StateDataName, const QVariant
     m_AppConfig->setValue(StateDataName, Data);
 }
 
-void PNSettings::setWindowState(const QString& WindowName, const QMainWindow& Window)
+void PNSettings::setWindowState(const QString& WindowName, const QWidget& Window)
 {
     setWindowX(WindowName, Window.geometry().left());
     setWindowY(WindowName, Window.geometry().top());
     setWindowHeight(WindowName, Window.geometry().height());
     setWindowWidth(WindowName, Window.geometry().width());
     setWindowMaximized(WindowName, Window.isMaximized());
-    setWindowStatusBar(WindowName, Window.statusBar()->isVisibleTo(&Window));
+    if (Window.objectName() == "MainWindow")
+        setWindowStatusBar(WindowName, ((MainWindow&)Window).statusBar()->isVisibleTo(&Window));
 }
 
-bool PNSettings::getWindowState(const QString& WindowName, QMainWindow& Window)
+bool PNSettings::getWindowState(const QString& WindowName, QWidget& Window)
 {
     int x = getWindowX(WindowName);
     int y = getWindowY(WindowName);
@@ -85,7 +88,8 @@ bool PNSettings::getWindowState(const QString& WindowName, QMainWindow& Window)
                   getWindowHeight(WindowName)
                 );
 
-    Window.statusBar()->setVisible(getWindowStatusBar(WindowName));
+    if (Window.objectName() == "MainWindow")
+        ((MainWindow&)Window).statusBar()->setVisible(getWindowStatusBar(WindowName));
 
     return true;
 }

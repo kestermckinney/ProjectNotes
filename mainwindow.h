@@ -3,6 +3,7 @@
 
 #include "pndatabaseobjects.h"
 #include "pnsettings.h"
+#include "filterdatadialog.h"
 
 #include <QMainWindow>
 #include <QStringListModel>
@@ -35,8 +36,17 @@ private slots:
 
     void on_actionStatus_Bar_triggered();
 
+    void on_actionFilter_triggered();
+
 private:
     Ui::MainWindow *ui;
+
+    FilterDataDialog *filterdialog;
+
+    // view state
+    int m_CurrentPage;
+    QList<int> m_PageHistory;
+    PNSqlQueryModel* m_CurrentModel;
 };
 
 #endif // MAINWINDOW_H

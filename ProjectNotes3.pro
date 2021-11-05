@@ -15,6 +15,7 @@ SOURCES += \
     actionitemsdetailsmeetingsmodel.cpp \
     clientsmodel.cpp \
     comboboxdelegate.cpp \
+    filterdatadialog.cpp \
     itemdetailteamlistmodel.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -22,6 +23,7 @@ SOURCES += \
     noteactionitemsmodel.cpp \
     notesactionitemsmodel.cpp \
     peoplemodel.cpp \
+    pncolumnmodel.cpp \
     pncomboboxdelegate.cpp \
     pndatabaseobjects.cpp \
     pndateeditdelegate.cpp \
@@ -39,19 +41,22 @@ SOURCES += \
     searchresultsmodel.cpp \
     statusreportitemsmodel.cpp \
     teamsmodel.cpp \
-    trackeritemcommentsmodel.cpp
+    trackeritemcommentsmodel.cpp \
+    valueselectmodel.cpp
 
 HEADERS += \
     actionitemprojectnotesmodel.h \
     actionitemsdetailsmeetingsmodel.h \
     clientsmodel.h \
     comboboxdelegate.h \
+    filterdatadialog.h \
     itemdetailteamlistmodel.h \
     mainwindow.h \
     meetingattendeesmodel.h \
     noteactionitemsmodel.h \
     notesactionitemsmodel.h \
     peoplemodel.h \
+    pncolumnmodel.h \
     pncomboboxdelegate.h \
     pndatabaseobjects.h \
     pndateeditdelegate.h \
@@ -69,9 +74,11 @@ HEADERS += \
     searchresultsmodel.h \
     statusreportitemsmodel.h \
     teamsmodel.h \
-    trackeritemcommentsmodel.h
+    trackeritemcommentsmodel.h \
+    valueselectmodel.h
 
 FORMS += \
+    filterdatadialog.ui \
     mainwindow.ui
 
 # Default rules for deployment.

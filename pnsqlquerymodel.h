@@ -28,7 +28,7 @@ public:
 
     void setTableName(const QString &table, const QString &DisplayName) { m_tablename = table; m_DisplayName = DisplayName; };
     const QString& tablename() { return m_tablename; };
-    void setBaseSql(const QString &table) { m_BaseSQL = table;};
+    void setBaseSql(const QString table) { m_BaseSQL = table;};
     const QString& BaseSQL() { return m_BaseSQL; };
 
     Qt::ItemFlags flags(const QModelIndex &index) const override;
@@ -96,9 +96,11 @@ public:
     void setRequired( int Column, bool Required ) { m_ColumnRequired[Column] = Required; };
     bool isRequired( int Column ) { return m_ColumnRequired[Column]; };
     DBColumnType getType( const int Column ) const { return m_ColumnType[Column]; };
+    void setType( const int Column, const DBColumnType ColumnType ) { m_ColumnType[Column] = ColumnType; };
     void setLookup(int Column, PNSqlQueryModel* lookup, int LookupFK, int LookupValue);
     void setLookup(int Column, QStringList* lookup);
     QVariant getLookupValue( const QModelIndex& index);
+    QString getColumnName( int Col ) { return m_SqlQuery.record().fieldName(Col); };
 
 private:
     QString m_tablename;  // the table to write data too, also the table to sync with other models when changed
