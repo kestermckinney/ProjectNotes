@@ -7,6 +7,7 @@
 #include <QApplication>
 #include <QEvent>
 #include <QHeaderView>
+#include <QMenu>
 
 PNTableView::PNTableView(QWidget *parent) : QTableView(parent)
 {
@@ -19,10 +20,16 @@ PNTableView::PNTableView(QWidget *parent) : QTableView(parent)
     headerView->viewport()->installEventFilter(this);
 
     setSortingEnabled(true);
+
+    connect(this, &QTableView::activated, this, &PNTableView::dataRowActivated);
+    connect(this, &QTableView::clicked, this, &PNTableView::dataRowSelected);
 }
 
 PNTableView::~PNTableView()
 {
+    disconnect(this, &QTableView::activated, this, &PNTableView::dataRowActivated);
+    disconnect(this, &QTableView::clicked, this, &PNTableView::dataRowSelected);
+
     QHeaderView *headerView = horizontalHeader();
     headerView->removeEventFilter(this);
 }
@@ -125,4 +132,65 @@ bool PNTableView::eventFilter(QObject * /*watched*/, QEvent *event)
         break;
     }
     return false;
+}
+
+void PNTableView::dataRowSelected(const QModelIndex &index)
+{
+    int a = 1;
+}
+
+void PNTableView::dataRowActivated(const QModelIndex &index)
+{
+    int a = 1;
+}
+
+void PNTableView::contextMenuEvent(QContextMenuEvent *e)
+{
+    QMenu *menu = new QMenu(this);
+
+    QAction *newRecord = new QAction(tr("New"), this);
+    QAction *deleteRecord = new QAction(tr("Delete"), this);
+    QAction *openRecord = new QAction(tr("Open"), this);
+    QAction *exportRecord = new QAction(tr("XML Export..."), this);
+    QAction *filterRecords = new QAction(tr("Filter Settings..."), this);
+
+
+    connect(newRecord, SIGNAL(QAction::triggered), this, SLOT(slotNewRecord()));
+    connect(deleteRecord, SIGNAL(QAction::triggered), this, SLOT(slotDelteRecord()));
+    connect(openRecord, SIGNAL(QAction::triggered), this, SLOT(slotOpenRecord()));
+    connect(exportRecord, SIGNAL(QAction::triggered), this, SLOT(slotExportRecord()));
+    connect(filterRecords, SIGNAL(QAction::triggered), this, SLOT(slotFilterRecords()));
+
+    menu->addAction("newRecord", this, SLOT(slotNewRecord()));
+    menu->addAction(deleteRecord);
+    menu->addAction(openRecord);
+    menu->addAction(exportRecord);
+    menu->addAction(filterRecords);
+
+    menu->exec(e->globalPos());
+}
+
+void PNTableView::slotNewRecord()
+{
+    int i = 0;
+}
+
+void PNTableView::slotDeleteRecord()
+{
+
+}
+
+void PNTableView::slotOpenRecord()
+{
+
+}
+
+void PNTableView::slotExportRecord()
+{
+
+}
+
+void PNTableView::slotFilterRecords()
+{
+ int i = 0;
 }
