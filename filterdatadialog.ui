@@ -40,7 +40,7 @@
        </widget>
       </item>
       <item>
-       <widget class="PNTableView" name="tableViewColumnName">
+       <widget class="ColumnView" name="tableViewColumnName">
         <property name="frameShadow">
          <enum>QFrame::Plain</enum>
         </property>
@@ -84,7 +84,7 @@
        </widget>
       </item>
       <item>
-       <widget class="PNTableView" name="tableViewFilterValues">
+       <widget class="ValuesView" name="tableViewFilterValues">
         <property name="frameShadow">
          <enum>QFrame::Plain</enum>
         </property>
@@ -188,9 +188,14 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>PNTableView</class>
+   <class>ColumnView</class>
    <extends>QTableView</extends>
-   <header>pntableview.h</header>
+   <header>columnview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ValuesView</class>
+   <extends>QTableView</extends>
+   <header>valuesview.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -25,18 +25,23 @@ public:
     //signals doubleClicked and clicked and selectRow
 
 public slots:
-    void dataRowSelected(const QModelIndex &index);
-    void dataRowActivated(const QModelIndex &index);
-
-private:
-    QPoint m_pressPos;
-    bool m_isMoving = false;
-
+    virtual void dataRowSelected(const QModelIndex &index);
+    virtual void dataRowActivated(const QModelIndex &index);
     void slotNewRecord();
     void slotDeleteRecord();
     void slotOpenRecord();
     void slotExportRecord();
     void slotFilterRecords();
+
+private:
+    QPoint m_pressPos;
+    bool m_isMoving = false;
+
+    QAction *newRecord;
+    QAction *deleteRecord;
+    QAction *openRecord;
+    QAction *exportRecord;
+    QAction *filterRecords;
 };
 
 #endif // PNTABLEVIEW_H

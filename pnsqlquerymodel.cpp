@@ -527,11 +527,16 @@ bool PNSqlQueryModel::AddRecord(QSqlRecord& newrecord)
 
     QSqlQuery insert;
     insert.prepare("insert into " + m_tablename + " ( " + fields + " ) values ( " + values + " )");
+    qDebug() << "insert into " << m_tablename << " ( " << fields << " ) values ( " << values << " )";
 
+    int bindcount = 0;
     for (i = 0; i < m_SqlQuery.record().count(); i++)
     {
         if (m_ColumnIsEditable[i] || i == 0)
-            insert.bindValue(i, newrecord.field(i).value());
+        {
+            insert.bindValue(bindcount, newrecord.field(i).value());
+            bindcount++;
+        }
     }
 
     if(insert.exec())
@@ -666,7 +671,7 @@ bool PNSqlQueryModel::DeleteCheck(const QModelIndex &index)
     }
     else
     {
-        if ( QMessageBox::question(nullptr, QObject::tr("Cannot delete record"),
+        if ( QMessageBox::question(nullptr, QObject::tr("Delete record?"),
             QObject::tr("Are you sure you want to delete this ") + m_DisplayName + QObject::tr(" record?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
             return true;
         else
@@ -1131,6 +1136,24 @@ QVariant PNSqlQueryModel::getLookupValue(const QModelIndex& index)
     return QVariant();
 }
 
+QString PNSqlQueryModel::getColumnName( QString& DisplayName )
+{
+    for ( int i = 0; i < m_headers.size(); i++ )
+    {
+        if ( m_headers[i][Qt::EditRole].toString() == DisplayName )
+            return m_SqlQuery.record().fieldName(i);
+    }
 
+    return QString();
+}
+
+int PNSqlQueryModel::getColumnNumber(QString &FieldName)
+{
+    for (int i = 0; i < m_SqlQuery.record().count(); i++)
+        if (m_SqlQuery.record().fieldName(i) == FieldName)
+            return i;
+
+    return -1;
+}
 // TODO: Setup refresh signalling between models
 

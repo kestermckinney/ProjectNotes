@@ -7,7 +7,7 @@ class ProjectsModel : public PNSqlQueryModel
 {
 public:
     ProjectsModel(QObject* parent);
-    bool NewRecord();
+    bool NewRecord() override;
 
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 };

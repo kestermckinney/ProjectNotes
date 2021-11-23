@@ -19,16 +19,42 @@ PNTableView::PNTableView(QWidget *parent) : QTableView(parent)
     headerView->setSortIndicatorShown(false);
     headerView->viewport()->installEventFilter(this);
 
-    setSortingEnabled(true);
+    setSelectionMode(QAbstractItemView::SingleSelection);
+    setSelectionBehavior(QAbstractItemView::SelectRows);
 
     connect(this, &QTableView::activated, this, &PNTableView::dataRowActivated);
     connect(this, &QTableView::clicked, this, &PNTableView::dataRowSelected);
+
+    newRecord = new QAction(tr("New"), this);
+    deleteRecord = new QAction(tr("Delete"), this);
+    openRecord = new QAction(tr("Open"), this);
+    exportRecord = new QAction(tr("XML Export..."), this);
+    filterRecords = new QAction(tr("Filter Settings..."), this);
+
+
+    connect(newRecord, &QAction::triggered, this, &PNTableView::slotNewRecord);
+    connect(deleteRecord, &QAction::triggered, this, &PNTableView::slotDeleteRecord);
+    connect(openRecord, &QAction::triggered, this, &PNTableView::slotOpenRecord);
+    connect(exportRecord, &QAction::triggered, this, &PNTableView::slotExportRecord);
+    connect(filterRecords, &QAction::triggered, this, &PNTableView::slotFilterRecords);
 }
 
 PNTableView::~PNTableView()
 {
     disconnect(this, &QTableView::activated, this, &PNTableView::dataRowActivated);
     disconnect(this, &QTableView::clicked, this, &PNTableView::dataRowSelected);
+
+    disconnect(newRecord, &QAction::triggered, this, &PNTableView::slotNewRecord);
+    disconnect(deleteRecord, &QAction::triggered, this, &PNTableView::slotDeleteRecord);
+    disconnect(openRecord, &QAction::triggered, this, &PNTableView::slotOpenRecord);
+    disconnect(exportRecord, &QAction::triggered, this, &PNTableView::slotExportRecord);
+    disconnect(filterRecords, &QAction::triggered, this, &PNTableView::slotFilterRecords);
+
+    delete newRecord;
+    delete deleteRecord;
+    delete openRecord;
+    delete exportRecord;
+    delete filterRecords;
 
     QHeaderView *headerView = horizontalHeader();
     headerView->removeEventFilter(this);
@@ -136,61 +162,67 @@ bool PNTableView::eventFilter(QObject * /*watched*/, QEvent *event)
 
 void PNTableView::dataRowSelected(const QModelIndex &index)
 {
-    int a = 1;
+    Q_UNUSED(index);
+    // TODO: determine if base class should do anything
 }
 
 void PNTableView::dataRowActivated(const QModelIndex &index)
 {
-    int a = 1;
+    Q_UNUSED(index);
+    // TODO: determine if base class should do anything
 }
 
 void PNTableView::contextMenuEvent(QContextMenuEvent *e)
 {
     QMenu *menu = new QMenu(this);
 
-    QAction *newRecord = new QAction(tr("New"), this);
-    QAction *deleteRecord = new QAction(tr("Delete"), this);
-    QAction *openRecord = new QAction(tr("Open"), this);
-    QAction *exportRecord = new QAction(tr("XML Export..."), this);
-    QAction *filterRecords = new QAction(tr("Filter Settings..."), this);
-
-
-    connect(newRecord, SIGNAL(QAction::triggered), this, SLOT(slotNewRecord()));
-    connect(deleteRecord, SIGNAL(QAction::triggered), this, SLOT(slotDelteRecord()));
-    connect(openRecord, SIGNAL(QAction::triggered), this, SLOT(slotOpenRecord()));
-    connect(exportRecord, SIGNAL(QAction::triggered), this, SLOT(slotExportRecord()));
-    connect(filterRecords, SIGNAL(QAction::triggered), this, SLOT(slotFilterRecords()));
-
-    menu->addAction("newRecord", this, SLOT(slotNewRecord()));
+    menu->addAction(newRecord);
     menu->addAction(deleteRecord);
     menu->addAction(openRecord);
     menu->addAction(exportRecord);
     menu->addAction(filterRecords);
+    menu->addSeparator();
 
     menu->exec(e->globalPos());
+    delete menu;
 }
 
 void PNTableView::slotNewRecord()
 {
-    int i = 0;
+    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
+    PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
+
+    currentmodel->NewRecord();
 }
 
 void PNTableView::slotDeleteRecord()
 {
+    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
+    PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
 
+    QModelIndexList qil = this->selectionModel()->selectedRows();
+
+    for (auto qi = qil.begin(); qi != qil.end(); qi++)
+        currentmodel->DeleteRecord(*qi);
 }
 
 void PNTableView::slotOpenRecord()
 {
-
+    // TODO: how should opening of the selected item be handled?
+    QMessageBox::critical(nullptr, QObject::tr("Action Not Overriden"),
+        tr("Open Record Needs Defined"), QMessageBox::Cancel);
 }
 
 void PNTableView::slotExportRecord()
 {
-
+    // TODO: standardize the export trigger
+    QMessageBox::critical(nullptr, QObject::tr("Action Not Overriden"),
+        tr("Export Record Needs Defined"), QMessageBox::Cancel);
 }
 
 void PNTableView::slotFilterRecords()
 {
- int i = 0;
+    // TODO: standardize the filter dialog call
+    QMessageBox::critical(nullptr, QObject::tr("Action Not Overriden"),
+        tr("Filter Record Needs Defined"), QMessageBox::Cancel);
 }

@@ -11,14 +11,14 @@ ValueSelectModel::ValueSelectModel(QObject *parent) : PNSqlQueryModel(parent)
     Refresh();
 }
 
-void ValueSelectModel::setValuesModel(PNSqlQueryModel* model, QString Column)
+void ValueSelectModel::setValuesColumn(QString Column)
 {
-    int ccount = model->columnCount();
+    int ccount = m_FilteringModel->columnCount();
     int col = 0;
 
     for (col = 0; col < ccount;  col++)
     {
-        QString header = model->headerData(col, Qt::Horizontal).toString();
+        QString header = m_FilteringModel->headerData(col, Qt::Horizontal).toString();
         if (header == Column)
             break;
     }
@@ -26,9 +26,9 @@ void ValueSelectModel::setValuesModel(PNSqlQueryModel* model, QString Column)
     if (col >= ccount)
         return; // nothing can be done if the incorrect colum was specified
 
-    QString fieldnm = model->emptyrecord().fieldName(col);
-    setType(0, model->getType(col));
-    QString sql = "select " + fieldnm + " from " + model->tablename() + model->ConstructWhereClause();
+    QString fieldnm = m_FilteringModel->emptyrecord().fieldName(col);
+    setType(0, m_FilteringModel->getType(col));
+    QString sql = "select " + fieldnm + " from " + m_FilteringModel->tablename() + m_FilteringModel->ConstructWhereClause();
 
     setBaseSql(sql);
 

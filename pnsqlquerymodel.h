@@ -45,7 +45,7 @@ public:
                        int role = Qt::EditRole) override;
 
     static QDateTime ParseDateTime(QString entrydate);
-    bool AddRecord(QSqlRecord& newrecord);
+    virtual bool AddRecord(QSqlRecord& newrecord);
     virtual bool NewRecord();
     bool DeleteRecord(QModelIndex index);
 
@@ -101,6 +101,8 @@ public:
     void setLookup(int Column, QStringList* lookup);
     QVariant getLookupValue( const QModelIndex& index);
     QString getColumnName( int Col ) { return m_SqlQuery.record().fieldName(Col); };
+    QString getColumnName( QString& DisplayName );
+    int getColumnNumber( QString& FieldName );
 
 private:
     QString m_tablename;  // the table to write data too, also the table to sync with other models when changed
