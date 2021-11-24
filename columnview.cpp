@@ -23,7 +23,6 @@ void ColumnView::dataRowSelected(const QModelIndex &index)
         if ( (*savedFilters)[dbcolname].ColumnValues.contains(val.toString()) )
             valuesView->selectRow(i);
     }
-// STOPPED HERE this code doesn't select all the rows
 
     // set all of the search parameters
     ParentUI->setEndValue((*savedFilters)[dbcolname].SearchEndValue);
@@ -31,4 +30,3 @@ void ColumnView::dataRowSelected(const QModelIndex &index)
     ParentUI->setSearchText((*savedFilters)[dbcolname].SearchString);
 }
 
-// TODO: don't list duplicate values and blank rows in the selected values

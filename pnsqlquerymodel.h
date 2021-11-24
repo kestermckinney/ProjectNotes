@@ -68,10 +68,10 @@ public:
     void SetUserFilter(int ColumnNumber, const QStringList& FilterValues);
     const QStringList& GetUserFilter(int ColumnNumber) { return m_UserFilterValues[ColumnNumber]; };
     void SetUserSearchString(int ColumnNumber, const QString& SearchValue);
-    QString& GetUserSearchString(int ColumnNumber) { return m_UserSearchString[ColumnNumber]; };
+    QVariant& GetUserSearchString(int ColumnNumber) { return m_UserSearchString[ColumnNumber]; };
 
     void SetUserSearchRange(int ColumnNumber, const QString& SearchBeginValue, const QString& SearchEndValue );
-    void GetUserSearchRange(int ColumnNumber, QString& SearchBeginValue, QString& SearchEndValue );
+    void GetUserSearchRange(int ColumnNumber, QVariant& SearchBeginValue, QVariant& SearchEndValue );
     void ClearAllUserSearches();
     void ClearUserFilter(int ColumnNumber);
     void ClearUserSearchString(int ColumnNumber);
@@ -104,6 +104,9 @@ public:
     QString getColumnName( QString& DisplayName );
     int getColumnNumber( QString& FieldName );
 
+    bool isReadOnly() { return m_ReadOnly; };
+    void setReadOnly() { m_ReadOnly = true; };
+
 private:
     QString m_tablename;  // the table to write data too, also the table to sync with other models when changed
     QString m_DisplayName;
@@ -118,15 +121,15 @@ private:
 
     // TODO: setup filters and lookup views
     QHash<int, bool> m_IsFiltered;
-    QHash<int, QString> m_FilterValue;
+    QHash<int, QVariant> m_FilterValue;
 
     QHash<int, bool> m_IsUserFiltered;
     QHash<int, QStringList> m_UserFilterValues;
-    QHash<int, QString> m_UserSearchString;
+    QHash<int, QVariant> m_UserSearchString;
 
     QHash<int, bool> m_IsUserRangeFiltered;
-    QHash<int, QString> m_RangeSearchStart;
-    QHash<int, QString> m_RangeSearchEnd;
+    QHash<int, QVariant> m_RangeSearchStart;
+    QHash<int, QVariant> m_RangeSearchEnd;
 
     QHash<int, PNSqlQueryModel*> m_LookupView;
     QHash<int, QStringList*> m_LookupValues;
@@ -147,6 +150,7 @@ private:
 
     QString m_OrderBy; // TODO: Add OrderBy
     bool m_UserFilterActive = false; // TODO: Add User filter
+    bool m_ReadOnly = false;
 
 };
 

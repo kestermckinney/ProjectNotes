@@ -2,11 +2,12 @@
 
 ValueSelectModel::ValueSelectModel(QObject *parent) : PNSqlQueryModel(parent)
 {
-    setBaseSql("select '' Values");
+    setBaseSql("select '' Vals");
 
     setTableName("Values", "Values");
 
     AddColumn(0, tr("Values"), DB_STRING, false, true, false);
+    setReadOnly();
 
     Refresh();
 }
@@ -28,7 +29,7 @@ void ValueSelectModel::setValuesColumn(QString Column)
 
     QString fieldnm = m_FilteringModel->emptyrecord().fieldName(col);
     setType(0, m_FilteringModel->getType(col));
-    QString sql = "select " + fieldnm + " from " + m_FilteringModel->tablename() + m_FilteringModel->ConstructWhereClause();
+    QString sql = "select distinct " + fieldnm + " from " + m_FilteringModel->tablename() + m_FilteringModel->ConstructWhereClause() + " and " + fieldnm + " is not null";
 
     setBaseSql(sql);
 

@@ -43,19 +43,19 @@ FilterDataDialog::~FilterDataDialog()
     delete ui;
 }
 
-void FilterDataDialog::setEndValue(QString& text)
+void FilterDataDialog::setEndValue(QVariant& text)
 {
-    ui->lineEditEndValue->setText(text);
+    ui->lineEditEndValue->setText(text.toString());
 }
 
-void FilterDataDialog::setBeginValue(QString& text)
+void FilterDataDialog::setBeginValue(QVariant& text)
 {
-    ui->lineEditStartValue->setText(text);
+    ui->lineEditStartValue->setText(text.toString());
 }
 
-void FilterDataDialog::setSearchText(QString& text)
+void FilterDataDialog::setSearchText(QVariant& text)
 {
-    ui->lineEditSearchText->setText(text);
+    ui->lineEditSearchText->setText(text.toString());
 }
 
 QString FilterDataDialog::getEndValue()
@@ -75,40 +75,13 @@ QString FilterDataDialog::getSearchText()
 
 void FilterDataDialog::setFilterModel(PNSqlQueryModel* model)
 {
-    filterName = model->objectName();
     filteredModel = model;
 
     columnModel->setColumnModel(model);
     columnModel->Refresh();
 
-    savedFilters.clear();
+    setupFilters();
 
-
-    // create storage for filters and load current ones
-    int colcount = model->columnCount();
-    for (int i = 0; i < colcount; i++)
-    {
-        if ( columnModel->isSearchable(i) )
-        {
-            FilterSaveStructure fs = FilterSaveStructure();
-            QString colname = columnModel->getColumnName(i);
-
-            model->GetUserSearchRange(i, fs.SearchBeginValue, fs.SearchEndValue);
-            fs.SearchString = columnModel->GetUserSearchString(i);
-
-            fs.ColumnValues = columnModel->GetUserFilter(i);
-
-            savedFilters[colname] = fs;
-
-            if (selectedColumn == -1)
-                selectedColumn = i;
-        }
-    }
-
-    if (selectedColumn == -1)
-        selectedColumn = 0;
-
-    ui->tableViewColumnName->selectRow(selectedColumn);
     QModelIndex qi = columnModel->index(selectedColumn,0);
 
     valuesModel->setFilteringModel(model);
@@ -190,8 +163,8 @@ void FilterDataDialog::on_pushButtonApply_clicked()
             filteredModel->ClearUserFilter( ColumnNumber );
     }
 
-    filteredModel->SaveUserFilter(filterName);
-    filteredModel->ActivateUserFilter(filterName);
+    filteredModel->SaveUserFilter(filteredModel->objectName());
+    filteredModel->ActivateUserFilter(filteredModel->objectName());
 
     close();
 }
@@ -223,4 +196,44 @@ void FilterDataDialog::on_pushButtonAll_clicked()
         setBeginValue(empty);
         setSearchText(empty);
     }
+}
+
+void FilterDataDialog::on_pushButtonReset_clicked()
+{
+    filteredModel->ClearAllUserSearches();
+    filteredModel->SaveUserFilter(filteredModel->objectName());
+    filteredModel->DeactivateUserFilter(filteredModel->objectName());
+
+    setupFilters();
+}
+
+void FilterDataDialog::setupFilters()
+{
+    savedFilters.clear();
+
+    // create storage for filters and load current ones
+    int colcount = filteredModel->columnCount();
+    for (int i = 0; i < colcount; i++)
+    {
+        if ( columnModel->isSearchable(i) )
+        {
+            FilterSaveStructure fs = FilterSaveStructure();
+            QString colname = columnModel->getColumnName(i);
+
+            filteredModel->GetUserSearchRange(i, fs.SearchBeginValue, fs.SearchEndValue);
+            fs.SearchString = columnModel->GetUserSearchString(i);
+
+            fs.ColumnValues = columnModel->GetUserFilter(i);
+
+            savedFilters[colname] = fs;
+
+            if (selectedColumn == -1)
+                selectedColumn = i;
+        }
+    }
+
+    if (selectedColumn == -1)
+        selectedColumn = 0;
+
+    ui->tableViewColumnName->selectRow(selectedColumn);
 }

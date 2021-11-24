@@ -13,16 +13,9 @@ public:
     PNTableView(QWidget* parent = nullptr);
     ~PNTableView();
     void setModel(QAbstractItemModel *model) override;
-    bool eventFilter(QObject *watched, QEvent *event) override;
-
-    // override slots STOPPED HERE
-    //void selectRow(int row); --- slot
-    //void doubleClicked(const QModelIndex &index);
-    //void QAbstractItemView::clicked(const QModelIndex &index)
+    // BUGGY TODO REMOVE bool eventFilter(QObject *watched, QEvent *event) override;
 
     void contextMenuEvent(QContextMenuEvent *e) override;
-
-    //signals doubleClicked and clicked and selectRow
 
 public slots:
     virtual void dataRowSelected(const QModelIndex &index);
@@ -32,6 +25,7 @@ public slots:
     void slotOpenRecord();
     void slotExportRecord();
     void slotFilterRecords();
+    void slotResetColumns();
 
 private:
     QPoint m_pressPos;
@@ -42,6 +36,7 @@ private:
     QAction *openRecord;
     QAction *exportRecord;
     QAction *filterRecords;
+    QAction *resetColumns;
 };
 
 #endif // PNTABLEVIEW_H

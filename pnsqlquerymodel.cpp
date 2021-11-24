@@ -172,14 +172,14 @@ QVariant PNSqlQueryModel::data(const QModelIndex &index, int role) const
 {
     QVariant retval;
 
-    if (m_cache.size() > index.row() && (role == Qt::DisplayRole || role == Qt::EditRole))
+    if (m_cache.size() > index.row() && (role == Qt::DisplayRole || role == Qt::EditRole) && index.row() >= 0)
     {
         retval = m_cache[index.row()].field(index.column()).value();
         ReformatValue(retval, m_ColumnType[index.column()]);
     }
 
     // make a light gray backround when not editable
-    if (m_cache.size() > index.row() && role == Qt::BackgroundColorRole)
+    if (m_cache.size() > index.row() && role == Qt::BackgroundColorRole && index.row() >= 0)
     {
         if (!m_ColumnIsEditable[index.column()])
         {
@@ -729,15 +729,18 @@ QString PNSqlQueryModel::ConstructWhereClause()
 
             ColumnValue = m_FilterValue[hashit.key()];
 
-            SQLEscape(ColumnValue, m_ColumnType[hashit.key()]);
-
-            if (m_ColumnType[hashit.key()] == DB_BOOL && ColumnValue == tr("'0'"))
+            if (!ColumnValue.isNull())
             {
-                valuelist += QString(" ( %1 = '%2'").arg(m_SqlQuery.record().fieldName(hashit.key()), ColumnValue.toString() );
-                valuelist += QString(" OR %1 IS NULL) ").arg( m_SqlQuery.record().fieldName(hashit.key()) );
+                SQLEscape(ColumnValue, m_ColumnType[hashit.key()]);
+
+                if (m_ColumnType[hashit.key()] == DB_BOOL && ColumnValue == tr("'0'"))
+                {
+                    valuelist += QString(" ( %1 = '%2'").arg(m_SqlQuery.record().fieldName(hashit.key()), ColumnValue.toString() );
+                    valuelist += QString(" OR %1 IS NULL) ").arg( m_SqlQuery.record().fieldName(hashit.key()) );
+                }
+                else
+                    valuelist += QString("%1 = '%2'").arg( m_SqlQuery.record().fieldName(hashit.key()), ColumnValue.toString() );
             }
-            else
-                valuelist += QString("%1 = '%2'").arg( m_SqlQuery.record().fieldName(hashit.key()), ColumnValue.toString() );
         }
     }
 
@@ -747,19 +750,19 @@ QString PNSqlQueryModel::ConstructWhereClause()
 
         // build the column list for user filter where statement
 
-        QHashIterator<int, QString> hashitsrch(m_UserSearchString);
+        QHashIterator<int, QVariant> hashitsrch(m_UserSearchString);
         while (hashitsrch.hasNext())
         {
             hashitsrch.next();
 
             checkfornullptr = false;
 
-            if (!hashitsrch.value().isEmpty())
+            if (!hashitsrch.value().isValid())
             {
                 if (!valuelist.isEmpty())
                     valuelist += tr(" AND ");
 
-                ColumnValue = tr("%") + hashitsrch.value() + tr("%");
+                ColumnValue = tr("%") + hashitsrch.value().toString() + tr("%");
                 SQLEscape(ColumnValue, m_ColumnType[hashitsrch.key()]);
 
                 valuelist += QString(" %1 LIKE %2 ").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), ColumnValue.toString());
@@ -820,7 +823,7 @@ QString PNSqlQueryModel::ConstructWhereClause()
                     if (!valuelist.isEmpty())
                         valuelist += tr(" AND ");
 
-                    valuelist += QString("%1 >= %2").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), RangeStart.toString());
+                    valuelist += QString("%1 >= '%2'").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), RangeStart.toString());
                 }
 
                 if (RangeEnd != tr("nullptr") && RangeEnd != tr("''"))
@@ -828,7 +831,7 @@ QString PNSqlQueryModel::ConstructWhereClause()
                     if (!valuelist.isEmpty())
                         valuelist += tr(" AND ");
 
-                    valuelist += QString("%1 <= %2").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), RangeEnd.toString());
+                    valuelist += QString("%1 <= '%2'").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), RangeEnd.toString());
                 }
             }
         }
@@ -881,7 +884,7 @@ void PNSqlQueryModel::SetUserSearchRange(int ColumnNumber, const QString& Search
     m_RangeSearchEnd[ColumnNumber] = SearchEndValue;
 }
 
-void PNSqlQueryModel::GetUserSearchRange(int ColumnNumber, QString& SearchBeginValue, QString& SearchEndValue )
+void PNSqlQueryModel::GetUserSearchRange(int ColumnNumber, QVariant& SearchBeginValue, QVariant& SearchEndValue )
 {
     if (m_RangeSearchStart.contains(ColumnNumber))
     {
@@ -896,6 +899,7 @@ void PNSqlQueryModel::ClearAllUserSearches()
 
     while (hashit.hasNext())
     {
+        hashit.next();
         ClearUserFilter(hashit.key());
         ClearUserSearchString(hashit.key());
         ClearUserSearchRange(hashit.key());
@@ -932,7 +936,7 @@ bool PNSqlQueryModel::HasUserFilters(int ColumnNumber)
     if (!m_IsUserRangeFiltered.contains(ColumnNumber))
         return false;
 
-    if (m_IsUserRangeFiltered[ColumnNumber] || m_IsUserFiltered[ColumnNumber] || !m_UserSearchString[ColumnNumber].isEmpty()  )
+    if (m_IsUserRangeFiltered[ColumnNumber] || m_IsUserFiltered[ColumnNumber] || !m_UserSearchString[ColumnNumber].isValid()  )
         return true;
     else
         return false;
@@ -944,6 +948,7 @@ bool PNSqlQueryModel::HasUserFilters()
 
     while (hashit.hasNext())
     {
+        hashit.next();
         if ( HasUserFilters(hashit.key()) )
             return true;
     }
@@ -1026,9 +1031,9 @@ void PNSqlQueryModel::SaveUserFilter( QString FilterName)
     {
         child = doc.createElement(m_SqlQuery.record().fieldName(it.key()));
         child.setAttribute("ObjectType", "Field");
-        child.setAttribute("RangeSearchStart", m_RangeSearchStart[it.key()]);
-        child.setAttribute("RangeSearchEnd", m_RangeSearchEnd[it.key()]);
-        child.setAttribute("UserSearchString", m_UserSearchString[it.key()]);
+        child.setAttribute("RangeSearchStart", m_RangeSearchStart[it.key()].toString());
+        child.setAttribute("RangeSearchEnd", m_RangeSearchEnd[it.key()].toString());
+        child.setAttribute("UserSearchString", m_UserSearchString[it.key()].toString());
         child.setAttribute("FieldNumber", it.key());
 
         root.appendChild(child);
@@ -1090,7 +1095,7 @@ void PNSqlQueryModel::LoadUserFilter( QString FilterName)
         m_RangeSearchEnd[field] = child.toElement().attribute("RangeSearchEnd");
         m_UserSearchString[field] = child.toElement().attribute("UserSearchString");
 
-        if (!m_RangeSearchStart[field].isEmpty() || !m_RangeSearchEnd[field].isEmpty())
+        if (!m_RangeSearchStart[field].isValid() || !m_RangeSearchEnd[field].isValid())
             m_IsUserRangeFiltered[field] = true;
         else
             m_IsUserRangeFiltered[field] = false;

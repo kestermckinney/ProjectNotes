@@ -15,10 +15,10 @@ class FilterDataDialog;
 class FilterSaveStructure
 {
 public:
-    QStringList ColumnValues;
-    QString SearchString;
-    QString SearchBeginValue;
-    QString SearchEndValue;
+    QVariantList ColumnValues;
+    QVariant SearchString;
+    QVariant SearchBeginValue;
+    QVariant SearchEndValue;
 };
 
 class FilterDataDialog : public QDialog
@@ -30,9 +30,9 @@ public:
     ~FilterDataDialog();
 
     void setFilterModel(PNSqlQueryModel* model);
-    void setEndValue(QString& text);
-    void setBeginValue(QString& text);
-    void setSearchText(QString& text);
+    void setEndValue(QVariant& text);
+    void setBeginValue(QVariant& text);
+    void setSearchText(QVariant& text);
     QString getEndValue();
     QString getStartValue();
     QString getSearchText();
@@ -50,7 +50,10 @@ private slots:
 
     void on_pushButtonAll_clicked();
 
+    void on_pushButtonReset_clicked();
+
 private:
+    void setupFilters();
     Ui::FilterDataDialog *ui;
 
     PNColumnModel* columnModel = nullptr;
@@ -58,8 +61,6 @@ private:
     ValueSelectModel* valuesModel = nullptr;
     PNSortFilterProxyModel* valuesProxyModel = nullptr;
     PNSqlQueryModel* filteredModel = nullptr;
-
-    QString filterName;
 
     int selectedColumn = -1;  // nothing selected until construction
 
