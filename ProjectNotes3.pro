@@ -14,6 +14,7 @@ SOURCES += \
     actionitemprojectnotesmodel.cpp \
     actionitemsdetailsmeetingsmodel.cpp \
     clientsmodel.cpp \
+    columnview.cpp \
     comboboxdelegate.cpp \
     filterdatadialog.cpp \
     itemdetailteamlistmodel.cpp \
@@ -42,12 +43,14 @@ SOURCES += \
     statusreportitemsmodel.cpp \
     teamsmodel.cpp \
     trackeritemcommentsmodel.cpp \
-    valueselectmodel.cpp
+    valueselectmodel.cpp \
+    valuesview.cpp
 
 HEADERS += \
     actionitemprojectnotesmodel.h \
     actionitemsdetailsmeetingsmodel.h \
     clientsmodel.h \
+    columnview.h \
     comboboxdelegate.h \
     filterdatadialog.h \
     itemdetailteamlistmodel.h \
@@ -75,7 +78,8 @@ HEADERS += \
     statusreportitemsmodel.h \
     teamsmodel.h \
     trackeritemcommentsmodel.h \
-    valueselectmodel.h
+    valueselectmodel.h \
+    valuesview.h
 
 FORMS += \
     filterdatadialog.ui \

@@ -96,6 +96,10 @@ bool PNSettings::getWindowState(const QString& WindowName, QWidget& Window)
 
 void PNSettings::setTableViewState(const QString& ViewName, const QTableView& View)
 {
+    // don't try and save when the model has been removed
+    if (!View.model())
+        return;
+
     int c = View.model()->columnCount();
     int w;
     QString savestring;

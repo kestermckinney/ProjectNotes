@@ -7,6 +7,7 @@ PNColumnModel::PNColumnModel(QObject *parent) : PNSqlQueryModel(parent)
     setTableName("Columns", "Columns");
 
     AddColumn(0, tr("Column"), DB_STRING, false, true, false);
+    setReadOnly();
 
     Refresh();
 }
@@ -22,9 +23,9 @@ void PNColumnModel::setColumnModel(PNSqlQueryModel *columnmodel)
         if (columnmodel->isSearchable(i))
         {
             if (!buildsql.isEmpty())
-                buildsql += "union all\n";
+                buildsql += "union all ";
 
-            buildsql += QString("select '%1' as Column\n").arg( columnmodel->headerData(i, Qt::Horizontal).toString() );
+            buildsql += QString("select '%1' as Column ").arg( columnmodel->headerData(i, Qt::Horizontal).toString() );
         }
     }
 
