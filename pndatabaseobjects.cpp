@@ -451,7 +451,7 @@ void PNDatabaseObjects::SetGlobalSearches( bool Refresh )
         //QString managing = Execute(QString("select client_name from clients where client_id = '%1'").arg(GetManagingCompany()));
         //QString filtered = Execute(QString("select client_name from clients where client_id = '%1'").arg(GetGlobalClientFilter()));
 
-        QStringList managingnclientids;
+        QVariantList managingnclientids;
         // make sure list of people can show the managing company
         managingnclientids.append(GetManagingCompany());
         managingnclientids.append(GetGlobalClientFilter());

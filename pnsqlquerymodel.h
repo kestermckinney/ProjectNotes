@@ -65,12 +65,12 @@ public:
     void ClearAllFilters();
     void ClearFilter(int ColumnNumber);
 
-    void SetUserFilter(int ColumnNumber, const QStringList& FilterValues);
-    const QStringList& GetUserFilter(int ColumnNumber) { return m_UserFilterValues[ColumnNumber]; };
-    void SetUserSearchString(int ColumnNumber, const QString& SearchValue);
+    void SetUserFilter(int ColumnNumber, const QVariantList& FilterValues);
+    const QVariantList& GetUserFilter(int ColumnNumber) { return m_UserFilterValues[ColumnNumber]; };
+    void SetUserSearchString(int ColumnNumber, const QVariant& SearchValue);
     QVariant& GetUserSearchString(int ColumnNumber) { return m_UserSearchString[ColumnNumber]; };
 
-    void SetUserSearchRange(int ColumnNumber, const QString& SearchBeginValue, const QString& SearchEndValue );
+    void SetUserSearchRange(int ColumnNumber, const QVariant& SearchBeginValue, const QVariant& SearchEndValue );
     void GetUserSearchRange(int ColumnNumber, QVariant& SearchBeginValue, QVariant& SearchEndValue );
     void ClearAllUserSearches();
     void ClearUserFilter(int ColumnNumber);
@@ -124,7 +124,7 @@ private:
     QHash<int, QVariant> m_FilterValue;
 
     QHash<int, bool> m_IsUserFiltered;
-    QHash<int, QStringList> m_UserFilterValues;
+    QHash<int, QVariantList> m_UserFilterValues;
     QHash<int, QVariant> m_UserSearchString;
 
     QHash<int, bool> m_IsUserRangeFiltered;

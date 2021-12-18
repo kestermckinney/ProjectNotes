@@ -58,17 +58,17 @@ void FilterDataDialog::setSearchText(QVariant& text)
     ui->lineEditSearchText->setText(text.toString());
 }
 
-QString FilterDataDialog::getEndValue()
+QVariant FilterDataDialog::getEndValue()
 {
     return ui->lineEditEndValue->text();
 }
 
-QString FilterDataDialog::getStartValue()
+QVariant FilterDataDialog::getStartValue()
 {
     return ui->lineEditStartValue->text();
 }
 
-QString FilterDataDialog::getSearchText()
+QVariant FilterDataDialog::getSearchText()
 {
     return ui->lineEditSearchText->text();
 }
@@ -148,13 +148,16 @@ void FilterDataDialog::on_pushButtonApply_clicked()
         QString ColumnName = it.key();
         int ColumnNumber = filteredModel->getColumnNumber(ColumnName);
 
-        if ( !it.value().SearchString.isEmpty() )
+        // save the general search text
+        if ( !it.value().SearchString.isNull() )
             filteredModel->SetUserSearchString( ColumnNumber, it.value().SearchString );
         else
             filteredModel->ClearUserSearchString( ColumnNumber );
 
+        // set the range based filter
         filteredModel->SetUserSearchRange(ColumnNumber,it.value().SearchBeginValue, it.value().SearchEndValue);
 
+        // capture all of the selected values to search for
         if ( it.value().ColumnValues.size() > 0 )
         {
             filteredModel->SetUserFilter(ColumnNumber, it.value().ColumnValues);
@@ -191,7 +194,7 @@ void FilterDataDialog::on_pushButtonAll_clicked()
         savedFilters[dbcolname].SearchString.clear();
         savedFilters[dbcolname].ColumnValues.clear();
 
-        QString empty;
+        QVariant empty;
         setEndValue(empty);
         setBeginValue(empty);
         setSearchText(empty);

@@ -444,12 +444,12 @@ void PNSqlQueryModel::AddColumn(int ColumnNumber, const QString& DisplayName, DB
     m_FilterValue[ColumnNumber] = QString();
 
     m_IsUserFiltered[ColumnNumber] = false;
-    m_UserFilterValues[ColumnNumber] = QStringList();
-    m_UserSearchString[ColumnNumber] = QString();
+    m_UserFilterValues[ColumnNumber] = QVariantList();
+    m_UserSearchString[ColumnNumber] = QVariant();
 
     m_IsUserRangeFiltered[ColumnNumber] = false;
-    m_RangeSearchStart[ColumnNumber] = QString();
-    m_RangeSearchEnd[ColumnNumber] = QString();
+    m_RangeSearchStart[ColumnNumber] = QVariant();
+    m_RangeSearchEnd[ColumnNumber] = QVariant();
 
     m_LookupView[ColumnNumber] = nullptr;
     m_LookupValue[ColumnNumber] = -1;
@@ -724,13 +724,14 @@ QString PNSqlQueryModel::ConstructWhereClause()
 
         if (hashit.value()) // has a filter
         {
-            if (!valuelist.isEmpty())
-                valuelist += tr(" AND ");
 
             ColumnValue = m_FilterValue[hashit.key()];
 
             if (!ColumnValue.isNull())
             {
+                if (!valuelist.isEmpty())
+                    valuelist += tr(" AND ");
+
                 SQLEscape(ColumnValue, m_ColumnType[hashit.key()]);
 
                 if (m_ColumnType[hashit.key()] == DB_BOOL && ColumnValue == tr("'0'"))
@@ -757,15 +758,15 @@ QString PNSqlQueryModel::ConstructWhereClause()
 
             checkfornullptr = false;
 
-            if (!hashitsrch.value().isValid())
+            if (hashitsrch.value().isValid() && !hashitsrch.value().toString().isEmpty())
             {
                 if (!valuelist.isEmpty())
                     valuelist += tr(" AND ");
 
-                ColumnValue = tr("%") + hashitsrch.value().toString() + tr("%");
+                ColumnValue = hashitsrch.value().toString();
                 SQLEscape(ColumnValue, m_ColumnType[hashitsrch.key()]);
 
-                valuelist += QString(" %1 LIKE %2 ").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), ColumnValue.toString());
+                valuelist += QString(" %1 LIKE '%%%2%%' ").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), ColumnValue.toString());
             }
 
             if (m_IsUserFiltered[hashitsrch.key()])
@@ -773,7 +774,7 @@ QString PNSqlQueryModel::ConstructWhereClause()
                 if (!valuelist.isEmpty())
                     valuelist += tr(" AND ");
 
-                QStringList& ColumnValues = m_UserFilterValues[hashitsrch.key()];
+                QVariantList& ColumnValues = m_UserFilterValues[hashitsrch.key()];
                 QString instring;
 
                 for ( const auto& colval : ColumnValues)
@@ -791,20 +792,20 @@ QString PNSqlQueryModel::ConstructWhereClause()
 
                     SQLEscape(ColumnValue, m_ColumnType[hashitsrch.key()]);
 
-                    instring += ColumnValue.toString();
+                    instring += QString("'%1'").arg(ColumnValue.toString());
 
                     if (m_ColumnType[hashitsrch.key()] == DB_BOOL && ColumnValue == tr("'0'"))
                         checkfornullptr = true;
 
                     // the database doesn't store blanks, they are converted to nullptr
-                    if (ColumnValue == tr("nullptr"))
+                    if (ColumnValue.isNull())
                         checkfornullptr = true;
                 }
 
                 if (checkfornullptr)
                 {
                     valuelist += QString(" ( %1 IN (%2)").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), instring);
-                    valuelist += QString(" OR %s IS NULL) ").arg(m_SqlQuery.record().fieldName(hashitsrch.key()));
+                    valuelist += QString(" OR %1 IS NULL) ").arg(m_SqlQuery.record().fieldName(hashitsrch.key()));
                 }
                 else
                     valuelist += QString(" %1 IN (%2) ").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), instring);
@@ -818,7 +819,7 @@ QString PNSqlQueryModel::ConstructWhereClause()
                 SQLEscape(RangeStart, m_ColumnType[hashitsrch.key()]);
                 SQLEscape(RangeEnd, m_ColumnType[hashitsrch.key()]);
 
-                if (RangeStart != tr("nullptr") && RangeStart != tr("''"))
+                if (!RangeStart.isNull() && RangeStart != tr("''"))
                 {
                     if (!valuelist.isEmpty())
                         valuelist += tr(" AND ");
@@ -826,7 +827,7 @@ QString PNSqlQueryModel::ConstructWhereClause()
                     valuelist += QString("%1 >= '%2'").arg(m_SqlQuery.record().fieldName(hashitsrch.key()), RangeStart.toString());
                 }
 
-                if (RangeEnd != tr("nullptr") && RangeEnd != tr("''"))
+                if (!RangeEnd.isNull() && RangeEnd != tr("''"))
                 {
                     if (!valuelist.isEmpty())
                         valuelist += tr(" AND ");
@@ -866,18 +867,18 @@ void PNSqlQueryModel::ClearFilter(int ColumnNumber)
     m_FilterValue[ColumnNumber].clear();
 }
 
-void PNSqlQueryModel::SetUserFilter(int ColumnNumber, const QStringList& FilterValues)
+void PNSqlQueryModel::SetUserFilter(int ColumnNumber, const QVariantList& FilterValues)
 {
-    m_IsFiltered[ColumnNumber] = true;
+    m_IsUserFiltered[ColumnNumber] = true;
     m_UserFilterValues[ColumnNumber] = FilterValues;
 }
 
-void PNSqlQueryModel::SetUserSearchString(int ColumnNumber, const QString& SearchValue)
+void PNSqlQueryModel::SetUserSearchString(int ColumnNumber, const QVariant& SearchValue)
 {
     m_UserSearchString[ColumnNumber] = SearchValue;
 }
 
-void PNSqlQueryModel::SetUserSearchRange(int ColumnNumber, const QString& SearchBeginValue, const QString& SearchEndValue )
+void PNSqlQueryModel::SetUserSearchRange(int ColumnNumber, const QVariant& SearchBeginValue, const QVariant& SearchEndValue )
 {
     m_IsUserRangeFiltered[ColumnNumber] = true;
     m_RangeSearchStart[ColumnNumber] = SearchBeginValue;
@@ -1045,7 +1046,7 @@ void PNSqlQueryModel::SaveUserFilter( QString FilterName)
             columnvalue = doc.createElement(QString("value_%1").arg(i));
             i++;
 
-            columnvalue.setAttribute("SearchValue", *ait);
+            columnvalue.setAttribute("SearchValue", ait->toString());
 
             child.appendChild(columnvalue);
         }

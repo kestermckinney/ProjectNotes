@@ -33,9 +33,9 @@ public:
     void setEndValue(QVariant& text);
     void setBeginValue(QVariant& text);
     void setSearchText(QVariant& text);
-    QString getEndValue();
-    QString getStartValue();
-    QString getSearchText();
+    QVariant getEndValue();
+    QVariant getStartValue();
+    QVariant getSearchText();
 
 private slots:
     void on_lineEditSearchText_textEdited(const QString &arg1);
