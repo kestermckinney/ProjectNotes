@@ -80,8 +80,6 @@ void FilterDataDialog::setFilterModel(PNSqlQueryModel* model)
     columnModel->setColumnModel(model);
     columnModel->Refresh();
 
-    setupFilters();
-
     QModelIndex qi = columnModel->index(selectedColumn,0);
 
     valuesModel->setFilteringModel(model);
@@ -90,7 +88,9 @@ void FilterDataDialog::setFilterModel(PNSqlQueryModel* model)
     ui->tableViewColumnName->setColumnValuesModel(valuesModel);
     ui->tableViewColumnName->setFilteredModel(model);
     ui->tableViewColumnName->setValuesView(ui->tableViewFilterValues, &savedFilters);
-    ui->tableViewFilterValues->setSavedFilters(&savedFilters);
+    ui->tableViewFilterValues->setSavedFilters(&savedFilters);  
+
+    setupFilters();
 }
 
 void FilterDataDialog::on_lineEditSearchText_textEdited(const QString &arg1)
@@ -216,27 +216,33 @@ void FilterDataDialog::setupFilters()
 
     // create storage for filters and load current ones
     int colcount = filteredModel->columnCount();
+    int visiblecolumn = 0;
     for (int i = 0; i < colcount; i++)
     {
-        if ( columnModel->isSearchable(i) )
+        if ( filteredModel->isSearchable(i) )
         {
             FilterSaveStructure fs = FilterSaveStructure();
-            QString colname = columnModel->getColumnName(i);
+            QString colname = filteredModel->getColumnName(i);
 
             filteredModel->GetUserSearchRange(i, fs.SearchBeginValue, fs.SearchEndValue);
-            fs.SearchString = columnModel->GetUserSearchString(i);
+            fs.SearchString = filteredModel->GetUserSearchString(i);
 
-            fs.ColumnValues = columnModel->GetUserFilter(i);
+            fs.ColumnValues = filteredModel->GetUserFilter(i);
 
             savedFilters[colname] = fs;
 
             if (selectedColumn == -1)
-                selectedColumn = i;
+                selectedColumn = visiblecolumn;
+
+            visiblecolumn++;
         }
     }
 
     if (selectedColumn == -1)
         selectedColumn = 0;
 
+    // trigger the column name was selected
     ui->tableViewColumnName->selectRow(selectedColumn);
+    QModelIndex qi = columnModel->index(selectedColumn, 0);
+    ui->tableViewColumnName->dataRowSelected(qi);
 }

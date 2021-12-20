@@ -1,3 +1,4 @@
+#include <QDebug>
 #include "valueselectmodel.h"
 
 ValueSelectModel::ValueSelectModel(QObject *parent) : PNSqlQueryModel(parent)
@@ -27,9 +28,18 @@ void ValueSelectModel::setValuesColumn(QString Column)
     if (col >= ccount)
         return; // nothing can be done if the incorrect colum was specified
 
+    QString where = m_FilteringModel->ConstructWhereClause(false);
+
+    if (!where.isEmpty())
+        where += " and ";
+    else
+        where = " where ";
+
     QString fieldnm = m_FilteringModel->emptyrecord().fieldName(col);
+
     setType(0, m_FilteringModel->getType(col));
-    QString sql = "select distinct " + fieldnm + " from " + m_FilteringModel->tablename() + m_FilteringModel->ConstructWhereClause() + " and " + fieldnm + " is not null";
+    QString sql = "select distinct " + fieldnm + " from " + m_FilteringModel->tablename() + where + fieldnm + " is not null";
+    qDebug() << "Value Select: " << sql << "\n";
 
     setBaseSql(sql);
 

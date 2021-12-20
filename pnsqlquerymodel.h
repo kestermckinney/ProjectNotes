@@ -60,7 +60,7 @@ public:
     void setShowBlank(bool show = true) { m_ShowBlank = show; };
     bool ReloadRecord(const QModelIndex& index);
 
-    QString ConstructWhereClause(); // TODO: Add where clause function
+    QString ConstructWhereClause(bool IncludeUserFilter = true);
     void SetFilter(int ColumnNumber, const QString& FilterValue);
     void ClearAllFilters();
     void ClearFilter(int ColumnNumber);

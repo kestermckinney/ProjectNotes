@@ -711,7 +711,7 @@ bool PNSqlQueryModel::ReloadRecord(const QModelIndex& index)
     return false;
 }
 
-QString PNSqlQueryModel::ConstructWhereClause()
+QString PNSqlQueryModel::ConstructWhereClause(bool IncludeUserFilter)
 {
     QString valuelist;
     QVariant ColumnValue;
@@ -745,7 +745,7 @@ QString PNSqlQueryModel::ConstructWhereClause()
         }
     }
 
-    if (m_UserFilterActive)
+    if (m_UserFilterActive && IncludeUserFilter)
     {
         bool checkfornullptr;
 
