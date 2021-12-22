@@ -2,6 +2,8 @@
 
 ActionItemProjectNotesModel::ActionItemProjectNotesModel(QObject* parent): PNSqlQueryModel(parent)
 {
+    setObjectName("ActionItemProjectNotesModel");
+
     setBaseSql("SELECT note_id, project_id, (strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title) as meeting, internal_item FROM project_notes");
 
     setTableName("project_notes", "Project Notes");

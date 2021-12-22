@@ -2,6 +2,8 @@
 
 NotesActionItemsModel::NotesActionItemsModel(QObject* parent): PNSqlQueryModel(parent)
 {
+    setObjectName("NotesActionItemsModel");
+
     setBaseSql("SELECT item_id, item_number, item_type, item_name, identified_by, date_identified, description, assigned_to, priority, status, date_due, last_update, date_resolved, note_id, project_id, internal_item FROM item_tracker");
 
     setTableName("item_tracker", "Notes Action Items");

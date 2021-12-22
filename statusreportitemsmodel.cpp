@@ -2,6 +2,8 @@
 
 StatusReportItemsModel::StatusReportItemsModel(QObject* parent): PNSqlQueryModel(parent)
 {
+    setObjectName("StatusReportItemsModel");
+
     setBaseSql("SELECT status_item_id, project_id, task_category, task_description FROM status_report_items");
 
     setTableName("status_report_items", "Status Report Items");

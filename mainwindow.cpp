@@ -134,7 +134,11 @@ void MainWindow::OpenDatabase(QString dbfile)
         return;
 
     global_DBObjects.SetGlobalSearches(false);
-    global_DBObjects.projectslistmodel()->Refresh();
+
+    global_DBObjects.projectslistmodel()->LoadUserFilter(global_DBObjects.projectslistmodel()->objectName());
+    global_DBObjects.projectslistmodel()->ActivateUserFilter(global_DBObjects.projectslistmodel()->objectName());
+    //global_DBObjects.projectslistmodel()->Refresh();
+
     global_DBObjects.unfilteredpeoplemodel()->Refresh();
     global_DBObjects.unfilteredclientsmodel()->Refresh();
     global_DBObjects.clientsmodel()->Refresh();

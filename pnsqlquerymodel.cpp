@@ -190,6 +190,7 @@ QVariant PNSqlQueryModel::data(const QModelIndex &index, int role) const
     return retval;
 }
 
+
 void PNSqlQueryModel::clear()
 {
     m_cache.clear();
@@ -317,18 +318,25 @@ void PNSqlQueryModel::SQLEscape(QVariant& ColumnValue, DBColumnType ColumnType) 
 QVariant PNSqlQueryModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (orientation == Qt::Horizontal) {
-        QVariant val = m_headers.value(section).value(role);
+        if ( role == Qt::ForegroundRole )
+        {
+            if (hasUserFilters(section))
+                return QColor(Qt::darkBlue);
+        }
+        else if ( role == Qt::DisplayRole )
+        {
+            QVariant val = m_headers.value(section).value(role);
 
-        if (role == Qt::DisplayRole && !val.isValid())
-            val = m_headers.value(section).value(Qt::EditRole);
+            if (role == Qt::DisplayRole && !val.isValid())
+                val = m_headers.value(section).value(Qt::EditRole);
 
-        if (val.isValid())
-            return val;
+            if (val.isValid())
+                return val;
 
-        if (role == Qt::DisplayRole && m_SqlQuery.record().count() > section)
-            return m_SqlQuery.record().fieldName(section);
+            if (role == Qt::DisplayRole && m_SqlQuery.record().count() > section)
+                return m_SqlQuery.record().fieldName(section);
+        }
     }
-
 
     return QAbstractTableModel::headerData(section, orientation, role);
 }
@@ -875,6 +883,7 @@ void PNSqlQueryModel::SetUserFilter(int ColumnNumber, const QVariantList& Filter
 
 void PNSqlQueryModel::SetUserSearchString(int ColumnNumber, const QVariant& SearchValue)
 {
+    m_IsUserFiltered[ColumnNumber] = true;
     m_UserSearchString[ColumnNumber] = SearchValue;
 }
 
@@ -932,25 +941,22 @@ void PNSqlQueryModel::ClearUserSearchRange(int ColumnNumber)
     }
 }
 
-bool PNSqlQueryModel::HasUserFilters(int ColumnNumber)
+bool PNSqlQueryModel::hasUserFilters(int ColumnNumber) const
 {
-    if (!m_IsUserRangeFiltered.contains(ColumnNumber))
-        return false;
-
-    if (m_IsUserRangeFiltered[ColumnNumber] || m_IsUserFiltered[ColumnNumber] || !m_UserSearchString[ColumnNumber].isValid()  )
+    if (m_IsUserRangeFiltered[ColumnNumber] || m_IsUserFiltered[ColumnNumber] )
         return true;
     else
         return false;
 }
 
-bool PNSqlQueryModel::HasUserFilters()
+bool PNSqlQueryModel::hasUserFilters() const
 {
     QHashIterator<int, bool> hashit(m_IsFiltered);
 
     while (hashit.hasNext())
     {
         hashit.next();
-        if ( HasUserFilters(hashit.key()) )
+        if ( hasUserFilters(hashit.key()) )
             return true;
     }
 
@@ -1096,13 +1102,17 @@ void PNSqlQueryModel::LoadUserFilter( QString FilterName)
         m_RangeSearchEnd[field] = child.toElement().attribute("RangeSearchEnd");
         m_UserSearchString[field] = child.toElement().attribute("UserSearchString");
 
-        if (!m_RangeSearchStart[field].isValid() || !m_RangeSearchEnd[field].isValid())
+        if (!m_RangeSearchStart[field].toString().isEmpty() || !m_RangeSearchEnd[field].toString().isEmpty() )
             m_IsUserRangeFiltered[field] = true;
         else
             m_IsUserRangeFiltered[field] = false;
 
         m_UserFilterValues[field].clear();
-        m_IsUserFiltered[field] = false;
+
+        if (m_UserSearchString[field].toString().isEmpty())
+            m_IsUserFiltered[field] = false;
+        else
+            m_IsUserFiltered[field] = true;
 
         subchild = child.firstChild();
 
@@ -1161,5 +1171,7 @@ int PNSqlQueryModel::getColumnNumber(QString &FieldName)
 
     return -1;
 }
+
 // TODO: Setup refresh signalling between models
+// TODO: STOPPED HERE need to show list of values for contacts and companies instead of id numbers!!!
 

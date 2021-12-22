@@ -2,6 +2,8 @@
 
 ProjectNotesModel::ProjectNotesModel(QObject* parent): PNSqlQueryModel(parent)
 {
+    setObjectName("ProjectNotesModel");
+
     setBaseSql("SELECT note_id, project_id, note_title, note_date, note, internal_item FROM project_notes");
 
     setTableName("project_notes", "Project Notes");

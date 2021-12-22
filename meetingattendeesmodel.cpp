@@ -2,6 +2,8 @@
 
 MeetingAttendeesModel::MeetingAttendeesModel(QObject* parent): PNSqlQueryModel(parent)
 {
+    setObjectName("MeetingAttendeesModel");
+
     setBaseSql("SELECT meeting_attendees.attendee_id, meeting_attendees.note_id, meeting_attendees.person_id, name FROM meeting_attendees join people on people.people_id=meeting_attendees.person_id");
 
     setTableName("meeting_attendees", "Attendees");

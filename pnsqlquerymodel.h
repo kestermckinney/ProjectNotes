@@ -23,6 +23,7 @@ public:
 
     bool setData(const QModelIndex &index, const QVariant &value, int role) override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+
     void clear();
     void Refresh();
 
@@ -76,8 +77,8 @@ public:
     void ClearUserFilter(int ColumnNumber);
     void ClearUserSearchString(int ColumnNumber);
     void ClearUserSearchRange(int ColumnNumber);
-    bool HasUserFilters(int ColumnNumber);
-    bool HasUserFilters();
+    bool hasUserFilters(int ColumnNumber) const;
+    bool hasUserFilters() const;
     void ActivateUserFilter(QString FilterName);
     void DeactivateUserFilter(QString FilterName);
     void LoadLastUserFilterState(QString FilterName);
@@ -119,7 +120,6 @@ private:
 
     QHash<int, bool> m_ColumnIsUnique;
 
-    // TODO: setup filters and lookup views
     QHash<int, bool> m_IsFiltered;
     QHash<int, QVariant> m_FilterValue;
 
@@ -149,7 +149,7 @@ private:
     bool m_ShowBlank = false;
 
     QString m_OrderBy; // TODO: Add OrderBy
-    bool m_UserFilterActive = false; // TODO: Add User filter
+    bool m_UserFilterActive = false;
     bool m_ReadOnly = false;
 
 };

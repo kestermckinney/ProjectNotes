@@ -289,7 +289,7 @@ bool PNDatabaseObjects::SaveParameter( const QString& ParameterName, const QStri
         else
         {
             QSqlQuery insert("insert into application_settings (parameter_id, parameter_name, parameter_value) values (?, ?, ?);");
-            insert.bindValue(2, QUuid::createUuid().toString());
+            insert.bindValue(0, QUuid::createUuid().toString());
             insert.bindValue(1, ParameterName);
             insert.bindValue(2, ParameterValue);
             if (insert.exec())

@@ -1,8 +1,10 @@
 #ifndef FILTERDATADIALOG_H
 #define FILTERDATADIALOG_H
 
-#include "pnsqlquerymodel.h"
+#include "FilterSaveStructure.h"
 #include "pncolumnmodel.h"
+#include "pnsqlquerymodel.h"
+
 #include "valueselectmodel.h"
 #include "pnsortfilterproxymodel.h"
 
@@ -12,14 +14,6 @@ namespace Ui {
 class FilterDataDialog;
 }
 
-class FilterSaveStructure
-{
-public:
-    QVariantList ColumnValues;
-    QVariant SearchString;
-    QVariant SearchBeginValue;
-    QVariant SearchEndValue;
-};
 
 class FilterDataDialog : public QDialog
 {

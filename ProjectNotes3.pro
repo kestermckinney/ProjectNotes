@@ -47,6 +47,7 @@ SOURCES += \
     valuesview.cpp
 
 HEADERS += \
+    FilterSaveStructure.h \
     actionitemprojectnotesmodel.h \
     actionitemsdetailsmeetingsmodel.h \
     clientsmodel.h \

@@ -2,6 +2,8 @@
 
 ProjectLocationsModel::ProjectLocationsModel(QObject* parent): PNSqlQueryModel(parent)
 {
+    setObjectName("ProjedtLocationsModel");
+
     setBaseSql("SELECT location_id, project_id, location_type, location_description, full_path FROM project_locations");
 
     setTableName("project_locations", "Project Locations");

@@ -2,6 +2,8 @@
 
 ProjectActionItemsModel::ProjectActionItemsModel(QObject* parent): PNSqlQueryModel(parent)
 {
+    setObjectName("ProjectActionItemsModel");
+
     setBaseSql("SELECT item_id, item_number, item_type, item_name, identified_by, date_identified, description, assigned_to, priority, status, date_due, last_update, date_resolved, note_id, project_id, internal_item , (select GROUP_CONCAT(update_note, ',') from item_tracker_updates where item_tracker.item_id=item_tracker_updates.item_id ) comments, (select project_status from projects p where p.project_id=item_tracker.project_id) project_status, (select client_id from projects p where p.project_id=item_tracker.project_id) client_id FROM item_tracker ");
 
     setTableName("item_tracker", "Project Action Items");

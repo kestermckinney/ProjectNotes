@@ -2,6 +2,8 @@
 
 TrackerItemCommentsModel::TrackerItemCommentsModel(QObject* parent): PNSqlQueryModel(parent)
 {
+    setObjectName("TrackerItemCommentsModel");
+
     setBaseSql("SELECT tracker_updated_id, item_id, lastupdated_date, update_note, updated_by FROM item_tracker_updates "), tr("tracker_updated_id");
 
     setTableName("item_tracker_updates", "Tracker Comments");

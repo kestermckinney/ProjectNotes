@@ -78,6 +78,8 @@ void FilterDataDialog::setFilterModel(PNSqlQueryModel* model)
     filteredModel = model;
 
     columnModel->setColumnModel(model);
+    columnModel->setSavedFilters(&savedFilters);
+    columnModel->setFilteringModel(model);
     columnModel->Refresh();
 
     QModelIndex qi = columnModel->index(selectedColumn,0);
@@ -149,13 +151,16 @@ void FilterDataDialog::on_pushButtonApply_clicked()
         int ColumnNumber = filteredModel->getColumnNumber(ColumnName);
 
         // save the general search text
-        if ( !it.value().SearchString.isNull() )
+        if ( !it.value().SearchString.toString().isEmpty() )
             filteredModel->SetUserSearchString( ColumnNumber, it.value().SearchString );
         else
             filteredModel->ClearUserSearchString( ColumnNumber );
 
         // set the range based filter
-        filteredModel->SetUserSearchRange(ColumnNumber,it.value().SearchBeginValue, it.value().SearchEndValue);
+        if ( !it.value().SearchBeginValue.toString().isEmpty() || !it.value().SearchEndValue.toString().isEmpty() )
+            filteredModel->SetUserSearchRange(ColumnNumber,it.value().SearchBeginValue, it.value().SearchEndValue);
+        else
+            filteredModel->ClearUserSearchRange(ColumnNumber);
 
         // capture all of the selected values to search for
         if ( it.value().ColumnValues.size() > 0 )
@@ -166,8 +171,9 @@ void FilterDataDialog::on_pushButtonApply_clicked()
             filteredModel->ClearUserFilter( ColumnNumber );
     }
 
-    filteredModel->SaveUserFilter(filteredModel->objectName());
-    filteredModel->ActivateUserFilter(filteredModel->objectName());
+    QString filtername = filteredModel->objectName();
+    filteredModel->SaveUserFilter(filtername);
+    filteredModel->ActivateUserFilter(filtername);
 
     close();
 }
@@ -206,6 +212,7 @@ void FilterDataDialog::on_pushButtonReset_clicked()
     filteredModel->ClearAllUserSearches();
     filteredModel->SaveUserFilter(filteredModel->objectName());
     filteredModel->DeactivateUserFilter(filteredModel->objectName());
+    columnModel->Refresh();
 
     setupFilters();
 }

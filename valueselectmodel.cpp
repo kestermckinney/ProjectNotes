@@ -3,6 +3,8 @@
 
 ValueSelectModel::ValueSelectModel(QObject *parent) : PNSqlQueryModel(parent)
 {
+    setObjectName("ValueSelectModel");
+
     setBaseSql("select '' Vals");
 
     setTableName("Values", "Values");

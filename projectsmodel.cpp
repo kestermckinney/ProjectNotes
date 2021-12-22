@@ -5,6 +5,8 @@
 
 ProjectsModel::ProjectsModel(QObject* parent) : PNSqlQueryModel(parent)
 {
+    setObjectName("ProjectsModel");
+
     setBaseSql("SELECT project_id, project_number, project_name, last_status_date, last_invoice_date, primary_contact, budget, actual,"
         " bcwp, bcws, bac, invoicing_period, status_report_period, client_id, project_status, "
         " (case when budget > 0 then (actual / budget) * 100.0 else NULL end) pct_consumed, "

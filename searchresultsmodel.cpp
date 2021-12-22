@@ -2,6 +2,8 @@
 
 SearchResultsModel::SearchResultsModel(QObject* parent): PNSqlQueryModel(parent)
 {
+    setObjectName("SearchResultsModel");
+
     setBaseSql("SELECT dataid, datatype, dataname, datadescription, internal_item, client_id, project_status, project_number, project_name, item_number, item_name, note_date, note_title, fk_id, (dataid || dataname) keyval FROM database_search");
 
     setTableName("database_search", "Search Results");

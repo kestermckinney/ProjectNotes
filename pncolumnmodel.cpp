@@ -1,7 +1,10 @@
 #include "pncolumnmodel.h"
+#include <QColor>
 
 PNColumnModel::PNColumnModel(QObject *parent) : PNSqlQueryModel(parent)
 {
+    setObjectName("PNColumnModel");
+
     setBaseSql("select '' Column");
 
     setTableName("Columns", "Columns");
@@ -35,3 +38,24 @@ void PNColumnModel::setColumnModel(PNSqlQueryModel *columnmodel)
 
     m_ColumnModel = columnmodel;
 }
+
+QVariant PNColumnModel::data(const QModelIndex &index, int role) const
+{
+    if (role == Qt::ForegroundRole)
+    {
+        if (index.column() == 0) // column name
+        {
+            QString displaycolname = data(index).toString();
+            QString dbcolname = m_FilteringModel->getColumnName(displaycolname);
+
+            if ( (*savedFilters)[dbcolname].ColumnValues.count() > 0 ||
+                 !(*savedFilters)[dbcolname].SearchBeginValue.toString().isEmpty() ||
+                 !(*savedFilters)[dbcolname].SearchEndValue.toString().isEmpty()||
+                 !(*savedFilters)[dbcolname].SearchString.toString().isEmpty() )
+               return QVariant(QColor(Qt::darkBlue));
+        }
+    }
+
+    return PNSqlQueryModel::data(index, role);
+}
+
