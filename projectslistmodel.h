@@ -7,7 +7,7 @@
 class ProjectsListModel : public ProjectsModel
 {
 public:
-    ProjectsListModel(QObject* parent);
+    ProjectsListModel(QObject* t_parent);
 };
 
 #endif // PROJECTSMODEL_H

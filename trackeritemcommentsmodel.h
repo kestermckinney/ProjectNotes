@@ -6,7 +6,7 @@
 class TrackerItemCommentsModel : public PNSqlQueryModel
 {
 public:
-    TrackerItemCommentsModel(QObject* parent);
+    TrackerItemCommentsModel(QObject* t_parent);
 };
 
 #endif // TRACKERITEMCOMMENTSMODEL_H

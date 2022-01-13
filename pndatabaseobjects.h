@@ -33,63 +33,63 @@ class PNDatabaseObjects : public QObject
 {
     Q_OBJECT
 public:
-    explicit PNDatabaseObjects(QObject *parent = nullptr);
-    bool OpenDatabase(QString& databasepath);
+    explicit PNDatabaseObjects(QObject *t_parent = nullptr);
+    bool OpenDatabase(QString& t_databasepath);
     void CloseDatabase();
-    QString Execute(const QString& sql);
+    QString Execute(const QString& t_sql);
 
-    void BackupDatabase(QWidget& parent, QFileInfo& file);
-    bool SaveParameter( const QString& ParameterName, const QString& ParameterValue );
-    QString LoadParameter( const QString& ParameterName );
+    void BackupDatabase(QWidget& t_parent, QFileInfo& t_file);
+    bool SaveParameter( const QString& t_parametername, const QString& t_parametervalue );
+    QString LoadParameter( const QString& t_parametername );
 
-    bool ExecuteDDL(const QString& SQL);
-    void SetGlobalSearches( bool Refresh );
-    QString& GetDatabaseFile() { return m_DatabaseFile; }
-    bool isOpen() { return !m_DatabaseFile.isEmpty(); }
+    bool ExecuteDDL(const QString& t_sql);
+    void SetGlobalSearches( bool t_refresh );
+    QString& GetDatabaseFile() { return m_database_file; }
+    bool isOpen() { return !m_database_file.isEmpty(); }
 
-    ClientsModel* clientsmodel() { return m_ClientsModel; }
-    ClientsModel* unfilteredclientsmodel() { return m_UnfilteredClientsModel; }
-    PeopleModel* peoplemodel() { return m_PeopleModel; }
-    PeopleModel* companypeoplemodel() { return m_CompanyPeopleModel; }
-    PeopleModel* unfilteredpeoplemodel() { return m_UnfilteredPeopleModel; }
-    ProjectsModel* projectinformationmodel() { return m_ProjectInformationModel; }
-    ProjectsListModel* projectslistmodel() { return m_ProjectsListModel; }
-    TeamsModel* teamsmodel() { return m_TeamsModel; }
-    StatusReportItemsModel* statusreportitemsmodel() { return m_StatusReportItemsModel; }
-    ProjectTeamMembersModel* projectteammembersmodel() { return m_ProjectTeamMembersModel; }
-    ProjectLocationsModel* projectlocationsmodel() { return m_ProjectLocationsModel; }
-    ProjectNotesModel* projectnotesmodel() { return m_ProjectNotesModel; }
-    ActionItemProjectNotesModel* actionitemprojectnotesmodel() { return m_ActionItemProjectNotesModel; }
-    ActionItemsDetailsMeetingsModel* actionitemsdetailsmeetingsmodel() { return m_ActionItemsDetailsMeetingsModel; }
-    MeetingAttendeesModel* meetingattendeesmodel() { return m_MeetingAttendeesModel; }
-    NotesActionItemsModel* notesactionitemsmodel() { return m_NotesActionItemsModel; }
-    ItemDetailTeamListModel* itemdetailteamlistmodel() { return m_ItemDetailTeamListModel; }
-    TrackerItemCommentsModel* trackeritemscommentsmodel() { return m_TrackerItemCommentsModel; }
-    ProjectActionItemsModel* projectactionitemsmodel() { return m_ProjectActionItemsModel; }
-    ProjectActionItemsModel* actionitemsdetailsmodel() { return m_ActionItemDetailsModel; }
+    ClientsModel* clientsmodel() { return m_clients_model; }
+    ClientsModel* unfilteredclientsmodel() { return m_unfilteredclients_model; }
+    PeopleModel* peoplemodel() { return m_people_model; }
+    PeopleModel* companypeoplemodel() { return m_company_people_model; }
+    PeopleModel* unfilteredpeoplemodel() { return m_unfiltered_people_model; }
+    ProjectsModel* projectinformationmodel() { return m_project_information_model; }
+    ProjectsListModel* projectslistmodel() { return m_projects_list_model; }
+    TeamsModel* teamsmodel() { return m_teams_model; }
+    StatusReportItemsModel* statusreportitemsmodel() { return m_status_report_items_model; }
+    ProjectTeamMembersModel* projectteammembersmodel() { return m_project_team_members_model; }
+    ProjectLocationsModel* projectlocationsmodel() { return m_project_locations_model; }
+    ProjectNotesModel* projectnotesmodel() { return m_project_notes_model; }
+    ActionItemProjectNotesModel* actionitemprojectnotesmodel() { return m_action_item_project_notes_model; }
+    ActionItemsDetailsMeetingsModel* actionitemsdetailsmeetingsmodel() { return m_action_items_details_meetings_model; }
+    MeetingAttendeesModel* meetingattendeesmodel() { return m_meeting_attendees_model; }
+    NotesActionItemsModel* notesactionitemsmodel() { return m_notes_action_items_model; }
+    ItemDetailTeamListModel* itemdetailteamlistmodel() { return m_item_detail_team_list_model; }
+    TrackerItemCommentsModel* trackeritemscommentsmodel() { return m_tracker_item_comments_model; }
+    ProjectActionItemsModel* projectactionitemsmodel() { return m_project_action_items_model; }
+    ProjectActionItemsModel* actionitemsdetailsmodel() { return m_action_item_details_model; }
 
-    PNSortFilterProxyModel* clientsmodelproxy() { return m_ClientsModelProxy; }
-    PNSortFilterProxyModel* unfilteredclientsmodelproxy() { return m_UnfilteredClientsModelProxy; }
-    PNSortFilterProxyModel* peoplemodelproxy() { return m_PeopleModelProxy; }
-    PNSortFilterProxyModel* companypeoplemodelproxy() { return m_CompanyPeopleModelProxy; }
-    PNSortFilterProxyModel* unfilteredpeoplemodelproxy() { return m_UnfilteredPeopleModelProxy; }
-    PNSortFilterProxyModel* projectinformationmodelproxy() { return m_ProjectInformationModelProxy; }
-    PNSortFilterProxyModel* projectslistmodelproxy() { return m_ProjectsListModelProxy; }
-    PNSortFilterProxyModel* teamsmodelproxy() { return m_TeamsModelProxy; }
-    PNSortFilterProxyModel* statusreportitemsmodelproxy() { return m_StatusReportItemsModelProxy; }
-    PNSortFilterProxyModel* projectteammembersmodelproxy() { return m_ProjectTeamMembersModelProxy; }
-    PNSortFilterProxyModel* projectlocationsmodelproxy() { return m_ProjectLocationsModelProxy; }
-    PNSortFilterProxyModel* projectnotesmodelproxy() { return m_ProjectNotesModelProxy; }
-    PNSortFilterProxyModel* actionitemprojectnotesmodelproxy() { return m_ActionItemProjectNotesModelProxy; }
-    PNSortFilterProxyModel* actionitemsdetailsmeetingsmodelproxy() { return m_ActionItemsDetailsMeetingsModelProxy; }
-    PNSortFilterProxyModel* meetingattendeesmodelproxy() { return m_MeetingAttendeesModelProxy; }
-    PNSortFilterProxyModel* notesactionitemsmodelproxy() { return m_NotesActionItemsModelProxy; }
-    PNSortFilterProxyModel* itemdetailteamlistmodelproxy() { return m_ItemDetailTeamListModelProxy; }
-    PNSortFilterProxyModel* trackeritemscommentsmodelproxy() { return m_TrackerItemCommentsModelProxy; }
-    PNSortFilterProxyModel* projectactionitemsmodelproxy() { return m_ProjectActionItemsModelProxy; }
-    PNSortFilterProxyModel* actionitemsdetailsmodelproxy() { return m_ActionItemDetailsModelProxy; }
+    PNSortFilterProxyModel* clientsmodelproxy() { return m_clients_model_proxy; }
+    PNSortFilterProxyModel* unfilteredclientsmodelproxy() { return m_unfilteredclients_model_proxy; }
+    PNSortFilterProxyModel* peoplemodelproxy() { return m_people_model_proxy; }
+    PNSortFilterProxyModel* companypeoplemodelproxy() { return m_company_people_model_proxy; }
+    PNSortFilterProxyModel* unfilteredpeoplemodelproxy() { return m_unfiltered_people_model_proxy; }
+    PNSortFilterProxyModel* projectinformationmodelproxy() { return m_project_information_model_proxy; }
+    PNSortFilterProxyModel* projectslistmodelproxy() { return m_projects_list_model_proxy; }
+    PNSortFilterProxyModel* teamsmodelproxy() { return m_teams_model_proxy; }
+    PNSortFilterProxyModel* statusreportitemsmodelproxy() { return m_status_report_items_model_proxy; }
+    PNSortFilterProxyModel* projectteammembersmodelproxy() { return m_project_team_members_model_proxy; }
+    PNSortFilterProxyModel* projectlocationsmodelproxy() { return m_project_locations_model_proxy; }
+    PNSortFilterProxyModel* projectnotesmodelproxy() { return m_project_notes_model_proxy; }
+    PNSortFilterProxyModel* actionitemprojectnotesmodelproxy() { return m_action_item_project_notes_model_proxy; }
+    PNSortFilterProxyModel* actionitemsdetailsmeetingsmodelproxy() { return m_action_items_details_meetings_model_proxy; }
+    PNSortFilterProxyModel* meetingattendeesmodelproxy() { return m_meeting_attendees_model_proxy; }
+    PNSortFilterProxyModel* notesactionitemsmodelproxy() { return m_notes_action_items_model_proxy; }
+    PNSortFilterProxyModel* itemdetailteamlistmodelproxy() { return m_item_detail_team_list_model_proxy; }
+    PNSortFilterProxyModel* trackeritemscommentsmodelproxy() { return m_tracker_item_comments_model_proxy; }
+    PNSortFilterProxyModel* projectactionitemsmodelproxy() { return m_project_action_items_model_proxy; }
+    PNSortFilterProxyModel* actionitemsdetailsmodelproxy() { return m_action_item_details_model_proxy; }
 
-    SearchResultsModel* searchresultsmodel() { return m_SearchResultsModel; }
+    SearchResultsModel* searchresultsmodel() { return m_search_results_model; }
 
     // selection values for fields
     static QStringList item_type;
@@ -102,67 +102,67 @@ public:
     static QStringList locations;
 
     // global searches
-    void SetShowAllTrackerItems(bool value);
-    void SetShowClosedProjects(bool value);
+    void SetShowAllTrackerItems(bool t_value);
+    void SetShowClosedProjects(bool t_value);
     bool GetShowClosedProjects();
-    void SetShowInternalItems(bool value);
+    void SetShowInternalItems(bool t_value);
     bool GetShowInternalItems();
-    void SetGlobalClientFilter(QString value);
+    void SetGlobalClientFilter(QString t_value);
     QString GetGlobalClientFilter();
-    void SetGlobalProjectFilter(QString value);
+    void SetGlobalProjectFilter(QString t_value);
     QString GetGlobalProjectFilter();
-    void SetProjectManager(QString value);
+    void SetProjectManager(QString t_value);
     QString GetProjectManager();
-    void SetManagingCompany(QString value);
+    void SetManagingCompany(QString t_value);
     QString GetManagingCompany();
 
 private:
-    QString m_DatabaseFile;
-    QSqlDatabase m_SQLiteDB;
+    QString m_database_file;
+    QSqlDatabase m_sqlite_db;
 
-    ClientsModel* m_ClientsModel;
-    ClientsModel* m_UnfilteredClientsModel;
-    PeopleModel* m_PeopleModel;
-    PeopleModel* m_CompanyPeopleModel;
-    PeopleModel* m_UnfilteredPeopleModel;
-    ProjectsListModel* m_ProjectsListModel;
-    ProjectsModel* m_ProjectInformationModel;
-    TeamsModel* m_TeamsModel;
-    StatusReportItemsModel* m_StatusReportItemsModel;
-    ProjectTeamMembersModel* m_ProjectTeamMembersModel;
-    ProjectLocationsModel* m_ProjectLocationsModel;
-    ProjectNotesModel* m_ProjectNotesModel;
-    ActionItemProjectNotesModel* m_ActionItemProjectNotesModel;
-    ActionItemsDetailsMeetingsModel* m_ActionItemsDetailsMeetingsModel;
-    MeetingAttendeesModel* m_MeetingAttendeesModel;
-    NotesActionItemsModel* m_NotesActionItemsModel;
-    ItemDetailTeamListModel* m_ItemDetailTeamListModel;
-    TrackerItemCommentsModel* m_TrackerItemCommentsModel;
-    ProjectActionItemsModel* m_ProjectActionItemsModel;
-    ProjectActionItemsModel* m_ActionItemDetailsModel;
-    SearchResultsModel* m_SearchResultsModel;
+    ClientsModel* m_clients_model;
+    ClientsModel* m_unfilteredclients_model;
+    PeopleModel* m_people_model;
+    PeopleModel* m_company_people_model;
+    PeopleModel* m_unfiltered_people_model;
+    ProjectsListModel* m_projects_list_model;
+    ProjectsModel* m_project_information_model;
+    TeamsModel* m_teams_model;
+    StatusReportItemsModel* m_status_report_items_model;
+    ProjectTeamMembersModel* m_project_team_members_model;
+    ProjectLocationsModel* m_project_locations_model;
+    ProjectNotesModel* m_project_notes_model;
+    ActionItemProjectNotesModel* m_action_item_project_notes_model;
+    ActionItemsDetailsMeetingsModel* m_action_items_details_meetings_model;
+    MeetingAttendeesModel* m_meeting_attendees_model;
+    NotesActionItemsModel* m_notes_action_items_model;
+    ItemDetailTeamListModel* m_item_detail_team_list_model;
+    TrackerItemCommentsModel* m_tracker_item_comments_model;
+    ProjectActionItemsModel* m_project_action_items_model;
+    ProjectActionItemsModel* m_action_item_details_model;
 
+    SearchResultsModel* m_search_results_model;
 
-    PNSortFilterProxyModel* m_ClientsModelProxy;
-    PNSortFilterProxyModel* m_UnfilteredClientsModelProxy;
-    PNSortFilterProxyModel* m_PeopleModelProxy;
-    PNSortFilterProxyModel* m_CompanyPeopleModelProxy;
-    PNSortFilterProxyModel* m_UnfilteredPeopleModelProxy;
-    PNSortFilterProxyModel* m_ProjectsListModelProxy;
-    PNSortFilterProxyModel* m_ProjectInformationModelProxy;
-    PNSortFilterProxyModel* m_TeamsModelProxy;
-    PNSortFilterProxyModel* m_StatusReportItemsModelProxy;
-    PNSortFilterProxyModel* m_ProjectTeamMembersModelProxy;
-    PNSortFilterProxyModel* m_ProjectLocationsModelProxy;
-    PNSortFilterProxyModel* m_ProjectNotesModelProxy;
-    PNSortFilterProxyModel* m_ActionItemProjectNotesModelProxy;
-    PNSortFilterProxyModel* m_ActionItemsDetailsMeetingsModelProxy;
-    PNSortFilterProxyModel* m_MeetingAttendeesModelProxy;
-    PNSortFilterProxyModel* m_NotesActionItemsModelProxy;
-    PNSortFilterProxyModel* m_ItemDetailTeamListModelProxy;
-    PNSortFilterProxyModel* m_TrackerItemCommentsModelProxy;
-    PNSortFilterProxyModel* m_ProjectActionItemsModelProxy;
-    PNSortFilterProxyModel* m_ActionItemDetailsModelProxy;
+    PNSortFilterProxyModel* m_clients_model_proxy;
+    PNSortFilterProxyModel* m_unfilteredclients_model_proxy;
+    PNSortFilterProxyModel* m_people_model_proxy;
+    PNSortFilterProxyModel* m_company_people_model_proxy;
+    PNSortFilterProxyModel* m_unfiltered_people_model_proxy;
+    PNSortFilterProxyModel* m_projects_list_model_proxy;
+    PNSortFilterProxyModel* m_project_information_model_proxy;
+    PNSortFilterProxyModel* m_teams_model_proxy;
+    PNSortFilterProxyModel* m_status_report_items_model_proxy;
+    PNSortFilterProxyModel* m_project_team_members_model_proxy;
+    PNSortFilterProxyModel* m_project_locations_model_proxy;
+    PNSortFilterProxyModel* m_project_notes_model_proxy;
+    PNSortFilterProxyModel* m_action_item_project_notes_model_proxy;
+    PNSortFilterProxyModel* m_action_items_details_meetings_model_proxy;
+    PNSortFilterProxyModel* m_meeting_attendees_model_proxy;
+    PNSortFilterProxyModel* m_notes_action_items_model_proxy;
+    PNSortFilterProxyModel* m_item_detail_team_list_model_proxy;
+    PNSortFilterProxyModel* m_tracker_item_comments_model_proxy;
+    PNSortFilterProxyModel* m_project_action_items_model_proxy;
+    PNSortFilterProxyModel* m_action_item_details_model_proxy;
 
 signals:
 

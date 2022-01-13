@@ -9,22 +9,22 @@
 class ColumnView : public PNTableView
 {
 public:
-    ColumnView(QWidget* parent = nullptr);
-    void setColumnValuesModel( ValueSelectModel* model ) { valuesModel = model; };
-    void setFilteredModel( PNSqlQueryModel* model ) { filteredModel = model; };
-    void setValuesView( PNTableView* view, QHash<QString, FilterSaveStructure>* savedfilters ) { valuesView = view; savedFilters = savedfilters; };
-    void setUI( FilterDataDialog* parent_ui ) { ParentUI = parent_ui; };
+    ColumnView(QWidget* t_parent = nullptr);
+    void setColumnValuesModel( ValueSelectModel* t_model ) { m_values_model = t_model; };
+    void setFilteredModel( PNSqlQueryModel* t_model ) { m_filtered_model = t_model; };
+    void setValuesView( PNTableView* t_view, QHash<QString, FilterSaveStructure>* t_savedfilters ) { m_values_view = t_view; m_saved_filters = t_savedfilters; };
+    void setUI( FilterDataDialog* t_parent_ui ) { m_parent_ui = t_parent_ui; };
 
 private:
-    ValueSelectModel* valuesModel;
-    PNSqlQueryModel* filteredModel;
-    FilterDataDialog *ParentUI;
+    ValueSelectModel* m_values_model;
+    PNSqlQueryModel* m_filtered_model;
+    FilterDataDialog *m_parent_ui;
 
-    PNTableView* valuesView;
-    QHash<QString, FilterSaveStructure>* savedFilters;
+    PNTableView* m_values_view;
+    QHash<QString, FilterSaveStructure>* m_saved_filters;
 
 public slots:
-    void dataRowSelected(const QModelIndex &index) override;
+    void dataRowSelected(const QModelIndex &t_index) override;
 };
 
 #endif // COLUMNVIEW_H

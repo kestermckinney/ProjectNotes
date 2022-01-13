@@ -1,6 +1,6 @@
 #include "noteactionitemsmodel.h"
 
-NoteActionItemsModel::NoteActionItemsModel(QObject* parent): PNSqlQueryModel(parent)
+NoteActionItemsModel::NoteActionItemsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("NoteActionItemsModel");
 
@@ -10,7 +10,7 @@ NoteActionItemsModel::NoteActionItemsModel(QObject* parent): PNSqlQueryModel(par
 
     AddColumn(0, tr("Item ID"), DB_STRING, false, true, true);
     AddColumn(1, tr("Item"), DB_STRING, true, true, false, false);
-    AddColumn(2, tr("Type"), DB_STRING, true, true, true, false); // item_type, 2);
+    AddColumn(2, tr("t_type"), DB_STRING, true, true, true, false); // item_type, 2);
     AddColumn(3, tr("Item Name"), DB_STRING, true, false, true, false);
     AddColumn(4, tr("Identified By"), DB_STRING, true, false, true, false); // teamlist, tr("name"), tr("people_id"), false ); // made not required because it broke when action item detail changed project numbers
     AddColumn(5, tr("Date Identified"), DB_DATE, true, false, true, false);

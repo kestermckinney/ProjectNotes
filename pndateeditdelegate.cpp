@@ -10,16 +10,16 @@
 #include <QString>
 #include <QPainter>
 
-PNDateEditDelegate::PNDateEditDelegate(QObject *parent)
-:QItemDelegate(parent)
+PNDateEditDelegate::PNDateEditDelegate(QObject *t_parent)
+:QItemDelegate(t_parent)
 {
 
 }
 
 
-QWidget *PNDateEditDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &/* option */, const QModelIndex &/* index */) const
+QWidget *PNDateEditDelegate::createEditor(QWidget *t_parent, const QStyleOptionViewItem &/* t_option */, const QModelIndex &/* t_index */) const
 {
-    QDateEdit* editor = new QDateEdit(parent);
+    QDateEdit* editor = new QDateEdit(t_parent);
 
     editor->setDisplayFormat("MM/dd/yyyy");
     editor->setProperty("EditMask","MM/dd/yyyy");
@@ -27,42 +27,42 @@ QWidget *PNDateEditDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     return editor;
 }
 
-void PNDateEditDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
+void PNDateEditDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_index) const
 {
-    QDateEdit *dateedit = static_cast<QDateEdit*>(editor);
-    QString value = index.model()->data(index, Qt::EditRole).toString();
-    QDateTime datevalue = PNSqlQueryModel::ParseDateTime(value);
+    QDateEdit *dateedit = static_cast<QDateEdit*>(t_editor);
+    QString t_value = t_index.model()->data(t_index, Qt::EditRole).toString();
+    QDateTime datevalue = PNSqlQueryModel::ParseDateTime(t_value);
 
     dateedit->setDate(datevalue.date());
 }
 
-void PNDateEditDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+void PNDateEditDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const
 {
-    QDateEdit *dateedit = static_cast<QDateEdit*>(editor);
-    model->setData(index, dateedit->date().toString("MM/dd/yyyy"), Qt::EditRole);
+    QDateEdit *dateedit = static_cast<QDateEdit*>(t_editor);
+    t_model->setData(t_index, dateedit->date().toString("MM/dd/yyyy"), Qt::EditRole);
 }
 
-void PNDateEditDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &/* index */) const
+void PNDateEditDelegate::updateEditorGeometry(QWidget *t_editor, const QStyleOptionViewItem &t_option, const QModelIndex &/* t_index */) const
 {
-    editor->setGeometry(option.rect);
+    t_editor->setGeometry(t_option.rect);
 }
 
-void PNDateEditDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+void PNDateEditDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const
 {
-    QStyleOptionViewItem myOption = option;
+    QStyleOptionViewItem myOption = t_option;
 
-    QString datevalue = index.model()->data(index, Qt::EditRole).toString();
+    QString datevalue = t_index.model()->data(t_index, Qt::EditRole).toString();
 
     myOption.text = datevalue;
 
-    // make light gray background when not editable
-    //if (!((PNSqlQueryModel*)index.model())->isEditable(index.column()))
+    // make light gray background when not edit_table
+    //if (!((PNSqlQueryModel*)t_index.model())->isEdit_table(t_index.column()))
     //    myOption.backgroundBrush = QBrush(QColor("lightgray"));
 
-    myOption.palette.setColor(QPalette::Text,index.model()->data(index, Qt::ForegroundRole).value<QColor>());
-    QVariant color = index.model()->data(index, Qt::BackgroundColorRole);
+    myOption.palette.setColor(QPalette::Text,t_index.model()->data(t_index, Qt::ForegroundRole).value<QColor>());
+    QVariant color = t_index.model()->data(t_index, Qt::BackgroundColorRole);
     if (color.isValid())
         myOption.backgroundBrush = QBrush(color.value<QColor>());
 
-    QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, painter);
+    QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
 }

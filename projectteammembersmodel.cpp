@@ -1,10 +1,10 @@
 #include "projectteammembersmodel.h"
 
-ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* parent): PNSqlQueryModel(parent)
+ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("ProjectTeamMembersModel");
 
-    setBaseSql("SELECT teammember_id, project_id, project_people.people_id, project_people.role, receive_status_report, name FROM project_people left join people on people.people_id=project_people.people_id");
+    setBaseSql("SELECT teammember_id, project_id, project_people.people_id, project_people.t_role, receive_status_report, name FROM project_people left join people on people.people_id=project_people.people_id");
 
     setTableName("project_people", "Project People");
 

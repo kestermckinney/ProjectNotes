@@ -6,7 +6,7 @@
 class ActionItemsDetailsMeetingsModel : public PNSqlQueryModel
 {
 public:
-    ActionItemsDetailsMeetingsModel(QObject* parent);
+    ActionItemsDetailsMeetingsModel(QObject* t_parent);
 };
 
 #endif // ACTIONITEMSDETAILSMEETINGSMODEL_H

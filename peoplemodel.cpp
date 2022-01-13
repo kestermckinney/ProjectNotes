@@ -3,11 +3,11 @@
 
 #include <QRegularExpression>
 
-PeopleModel::PeopleModel(QObject* parent): PNSqlQueryModel(parent)
+PeopleModel::PeopleModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("PeopleModel");
 
-    setBaseSql("SELECT people_id, name, email, office_phone, cell_phone, client_id, role FROM people");
+    setBaseSql("SELECT people_id, name, email, office_phone, cell_phone, client_id, t_role FROM people");
 
     setTableName("people", "People");
 

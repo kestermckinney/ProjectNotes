@@ -7,8 +7,8 @@ class FilterSaveStructure
 public:
     QVariantList ColumnValues;
     QVariant SearchString;
-    QVariant SearchBeginValue;
-    QVariant SearchEndValue;
+    QVariant t_search_begin_value;
+    QVariant t_search_end_value;
 };
 
 

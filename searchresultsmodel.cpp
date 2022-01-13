@@ -1,6 +1,6 @@
 #include "searchresultsmodel.h"
 
-SearchResultsModel::SearchResultsModel(QObject* parent): PNSqlQueryModel(parent)
+SearchResultsModel::SearchResultsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("SearchResultsModel");
 
@@ -9,7 +9,7 @@ SearchResultsModel::SearchResultsModel(QObject* parent): PNSqlQueryModel(parent)
     setTableName("database_search", "Search Results");
 
     AddColumn(0, tr("Data ID"), DB_STRING, false, false, false, false);
-    AddColumn(1, tr("Type"), DB_STRING, false, false, false, false);
+    AddColumn(1, tr("t_type"), DB_STRING, false, false, false, false);
     AddColumn(2, tr("Name"), DB_STRING, false, false, false, false);
     AddColumn(3, tr("Description"), DB_STRING, false, false, false, false);
     AddColumn(4, tr("Internal"), DB_STRING, false, false, false, false);

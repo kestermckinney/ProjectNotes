@@ -1,6 +1,6 @@
 #include "clientsmodel.h"
 
-ClientsModel::ClientsModel(QObject* parent): PNSqlQueryModel(parent)
+ClientsModel::ClientsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("ClientsModel");
 

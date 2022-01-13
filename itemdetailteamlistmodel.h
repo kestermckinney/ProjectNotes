@@ -6,7 +6,7 @@
 class ItemDetailTeamListModel : public PNSqlQueryModel
 {
 public:
-    ItemDetailTeamListModel(QObject* parent);
+    ItemDetailTeamListModel(QObject* t_parent);
 };
 
 #endif // ITEMDETAILTEAMLISTMODEL_H

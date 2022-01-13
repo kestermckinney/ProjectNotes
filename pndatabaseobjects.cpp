@@ -59,121 +59,120 @@ PNDatabaseObjects global_DBObjects(nullptr);
 
 PNDatabaseObjects::PNDatabaseObjects(QObject *parent) : QObject(parent)
 {
-    m_DatabaseFile.clear();
+    m_database_file.clear();
 }
 
 bool PNDatabaseObjects::OpenDatabase(QString& databasepath)
 {
-    m_DatabaseFile = databasepath;
+    m_database_file = databasepath;
 
-    m_SQLiteDB = QSqlDatabase::addDatabase("QSQLITE");
+    m_sqlite_db = QSqlDatabase::addDatabase("QSQLITE");
 
-    if (QFileInfo::exists(m_DatabaseFile))
-        m_SQLiteDB.setDatabaseName(m_DatabaseFile);
+    if (QFileInfo::exists(m_database_file))
+        m_sqlite_db.setDatabaseName(m_database_file);
     else
     {
         QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
-            QString(tr("File %1 does not exist.")).arg(m_DatabaseFile), QMessageBox::Cancel);
-        m_DatabaseFile.clear(); // set empty if bad file
+            QString(tr("File %1 does not exist.")).arg(m_database_file), QMessageBox::Cancel);
+        m_database_file.clear(); // set empty if bad file
         return false;
     }
 
-    if (!m_SQLiteDB.open()) {
+    if (!m_sqlite_db.open()) {
         QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
-            m_SQLiteDB.lastError().text(), QMessageBox::Cancel);
-        m_DatabaseFile.clear(); // set empty if bad file
+            m_sqlite_db.lastError().text(), QMessageBox::Cancel);
+        m_database_file.clear(); // set empty if bad file
         return false;
     }
 
-    m_ClientsModel = new ClientsModel(nullptr);
-    m_ClientsModelProxy = new PNSortFilterProxyModel();
-    m_ClientsModelProxy->setSourceModel(m_ClientsModel);
+    m_clients_model = new ClientsModel(nullptr);
+    m_clients_model_proxy = new PNSortFilterProxyModel();
+    m_clients_model_proxy->setSourceModel(m_clients_model);
 
-    m_UnfilteredClientsModel = new ClientsModel(nullptr);
-    m_UnfilteredClientsModelProxy = new PNSortFilterProxyModel();
-    m_UnfilteredClientsModelProxy->setSourceModel(m_UnfilteredClientsModel);
+    m_unfilteredclients_model = new ClientsModel(nullptr);
+    m_unfilteredclients_model_proxy = new PNSortFilterProxyModel();
+    m_unfilteredclients_model_proxy->setSourceModel(m_unfilteredclients_model);
 
-    m_PeopleModel = new PeopleModel(nullptr);
+    m_people_model = new PeopleModel(nullptr);
     // setup lookup/drop down values
-    m_PeopleModel->setLookup(5, m_ClientsModel, 0, 1);
-    m_PeopleModelProxy = new PNSortFilterProxyModel();
-    m_PeopleModelProxy->setSourceModel(m_PeopleModel);
+    m_people_model->setLookup(5, m_clients_model, 0, 1);
+    m_people_model_proxy = new PNSortFilterProxyModel();
+    m_people_model_proxy->setSourceModel(m_people_model);
 
-    m_CompanyPeopleModel = new PeopleModel(nullptr);
-    m_CompanyPeopleModelProxy = new PNSortFilterProxyModel();
-    m_CompanyPeopleModelProxy->setSourceModel(m_CompanyPeopleModel);
+    m_company_people_model = new PeopleModel(nullptr);
+    m_company_people_model_proxy = new PNSortFilterProxyModel();
+    m_company_people_model_proxy->setSourceModel(m_company_people_model);
 
+    m_unfiltered_people_model = new PeopleModel(nullptr);
+    m_unfiltered_people_model_proxy = new PNSortFilterProxyModel();
+    m_unfiltered_people_model_proxy->setSourceModel(m_unfiltered_people_model);
 
-    m_UnfilteredPeopleModel = new PeopleModel(nullptr);
-    m_UnfilteredPeopleModelProxy = new PNSortFilterProxyModel();
-    m_UnfilteredPeopleModelProxy->setSourceModel(m_UnfilteredPeopleModel);
+    m_project_information_model = new ProjectsModel(nullptr);
+    m_project_information_model_proxy = new PNSortFilterProxyModel();
+    m_project_information_model_proxy->setSourceModel(m_project_information_model);
 
-    m_ProjectInformationModel = new ProjectsModel(nullptr);
-    m_ProjectInformationModelProxy = new PNSortFilterProxyModel();
-    m_ProjectInformationModelProxy->setSourceModel(m_ProjectInformationModel);
+    m_projects_list_model = new ProjectsListModel(nullptr);
+    // setup lookup/drop down t_value
+    m_projects_list_model->setLookup(5, m_unfiltered_people_model, 0, 1);
+    m_projects_list_model->setLookup(13, m_unfilteredclients_model, 0, 1);
+    m_projects_list_model_proxy = new PNSortFilterProxyModel();
+    m_projects_list_model_proxy->setSourceModel(m_projects_list_model);
 
-    m_ProjectsListModel = new ProjectsListModel(nullptr);
-    // setup lookup/drop down value
-    m_ProjectsListModel->setLookup(5, m_UnfilteredPeopleModel, 0, 1);
-    m_ProjectsListModel->setLookup(13, m_UnfilteredClientsModel, 0, 1);
-    m_ProjectsListModelProxy = new PNSortFilterProxyModel();
-    m_ProjectsListModelProxy->setSourceModel(m_ProjectsListModel);
+    m_teams_model = new TeamsModel(nullptr);
+    m_teams_model_proxy = new PNSortFilterProxyModel();
+    m_teams_model_proxy->setSourceModel(m_teams_model);
 
-    m_TeamsModel = new TeamsModel(nullptr);
-    m_TeamsModelProxy = new PNSortFilterProxyModel();
-    m_TeamsModelProxy->setSourceModel(m_TeamsModel);
+    m_status_report_items_model = new StatusReportItemsModel(nullptr);
+    m_status_report_items_model_proxy = new PNSortFilterProxyModel();
+    m_status_report_items_model_proxy->setSourceModel(m_status_report_items_model);
 
-    m_StatusReportItemsModel = new StatusReportItemsModel(nullptr);
-    m_StatusReportItemsModelProxy = new PNSortFilterProxyModel();
-    m_StatusReportItemsModelProxy->setSourceModel(m_StatusReportItemsModel);
+    m_project_team_members_model = new ProjectTeamMembersModel(nullptr);
+    m_project_team_members_model_proxy = new PNSortFilterProxyModel();
+    m_project_team_members_model_proxy->setSourceModel(m_project_team_members_model);
 
-    m_ProjectTeamMembersModel = new ProjectTeamMembersModel(nullptr);
-    m_ProjectTeamMembersModelProxy = new PNSortFilterProxyModel();
-    m_ProjectTeamMembersModelProxy->setSourceModel(m_ProjectTeamMembersModel);
+    m_project_locations_model = new ProjectLocationsModel(nullptr);
+    m_project_locations_model_proxy = new PNSortFilterProxyModel();
+    m_project_locations_model_proxy->setSourceModel(m_project_locations_model);
 
-    m_ProjectLocationsModel = new ProjectLocationsModel(nullptr);
-    m_ProjectLocationsModelProxy = new PNSortFilterProxyModel();
-    m_ProjectLocationsModelProxy->setSourceModel(m_ProjectLocationsModel);
+    m_project_notes_model = new ProjectNotesModel(nullptr);
+    m_project_notes_model_proxy = new PNSortFilterProxyModel();
+    m_project_notes_model_proxy->setSourceModel(m_project_notes_model);
 
-    m_ProjectNotesModel = new ProjectNotesModel(nullptr);
-    m_ProjectNotesModelProxy = new PNSortFilterProxyModel();
-    m_ProjectNotesModelProxy->setSourceModel(m_ProjectNotesModel);
+    m_action_item_project_notes_model = new ActionItemProjectNotesModel(nullptr);
+    m_action_item_project_notes_model_proxy = new PNSortFilterProxyModel();
+    m_action_item_project_notes_model_proxy->setSourceModel(m_action_item_project_notes_model);
 
-    m_ActionItemProjectNotesModel = new ActionItemProjectNotesModel(nullptr);
-    m_ActionItemProjectNotesModelProxy = new PNSortFilterProxyModel();
-    m_ActionItemProjectNotesModelProxy->setSourceModel(m_ActionItemProjectNotesModel);
+    m_action_items_details_meetings_model = new ActionItemsDetailsMeetingsModel(nullptr);
+    m_action_items_details_meetings_model_proxy = new PNSortFilterProxyModel();
+    m_action_items_details_meetings_model_proxy->setSourceModel(m_action_items_details_meetings_model);
 
-    m_ActionItemsDetailsMeetingsModel = new ActionItemsDetailsMeetingsModel(nullptr);
-    m_ActionItemsDetailsMeetingsModelProxy = new PNSortFilterProxyModel();
-    m_ActionItemsDetailsMeetingsModelProxy->setSourceModel(m_ActionItemsDetailsMeetingsModel);
+    m_project_action_items_model = new ProjectActionItemsModel(nullptr);
+    m_project_action_items_model_proxy = new PNSortFilterProxyModel();
+    m_project_action_items_model_proxy->setSourceModel(m_project_action_items_model);
 
-    m_ProjectActionItemsModel = new ProjectActionItemsModel(nullptr);
-    m_ProjectActionItemsModelProxy = new PNSortFilterProxyModel();
-    m_ProjectActionItemsModelProxy->setSourceModel(m_ProjectActionItemsModel);
+    m_action_item_details_model = new ProjectActionItemsModel(nullptr);
+    m_action_item_details_model_proxy = new PNSortFilterProxyModel();
+    m_action_item_details_model_proxy->setSourceModel(m_action_item_details_model);
 
-    m_ActionItemDetailsModel = new ProjectActionItemsModel(nullptr);
-    m_ActionItemDetailsModelProxy = new PNSortFilterProxyModel();
-    m_ActionItemDetailsModelProxy->setSourceModel(m_ActionItemDetailsModel);
+    m_meeting_attendees_model = new MeetingAttendeesModel(nullptr);
+    m_meeting_attendees_model_proxy = new PNSortFilterProxyModel();
+    m_meeting_attendees_model_proxy->setSourceModel(m_meeting_attendees_model);
 
-    m_MeetingAttendeesModel = new MeetingAttendeesModel(nullptr);
-    m_MeetingAttendeesModelProxy = new PNSortFilterProxyModel();
-    m_MeetingAttendeesModelProxy->setSourceModel(m_MeetingAttendeesModel);
+    m_notes_action_items_model = new NotesActionItemsModel(nullptr);
+    m_notes_action_items_model_proxy = new PNSortFilterProxyModel();
+    m_notes_action_items_model_proxy->setSourceModel(m_notes_action_items_model);
 
-    m_NotesActionItemsModel = new NotesActionItemsModel(nullptr);
-    m_NotesActionItemsModelProxy = new PNSortFilterProxyModel();
-    m_NotesActionItemsModelProxy->setSourceModel(m_NotesActionItemsModel);
+    m_search_results_model = new SearchResultsModel(nullptr);
 
-    m_SearchResultsModel = new SearchResultsModel(nullptr);
-
-    //m_PeopleModel->setShowBlank(true);
+    //m_people_model->setShowBlank(true);
 
     return true;
 }
 
-QString PNDatabaseObjects::Execute(const QString& sql)
+QString PNDatabaseObjects::Execute(const QString& t_sql)
 {
     QSqlQuery query;
-    query.exec(sql);
+    query.exec(t_sql);
 
     if (query.next())
         return query.value(0).toString();
@@ -183,106 +182,114 @@ QString PNDatabaseObjects::Execute(const QString& sql)
 
 void PNDatabaseObjects::CloseDatabase()
 {
-    delete m_ClientsModel;
-    delete m_UnfilteredClientsModel;
-    delete m_PeopleModel;
-    delete m_CompanyPeopleModel;
-    delete m_UnfilteredPeopleModel;
-    delete m_ProjectInformationModel;
-    delete m_ProjectsListModel;
-    delete m_TeamsModel;
-    delete m_StatusReportItemsModel;
-    delete m_ProjectTeamMembersModel;
-    delete m_ProjectLocationsModel;
-    delete m_ProjectNotesModel;
-    delete m_ActionItemProjectNotesModel;
-    delete m_ActionItemsDetailsMeetingsModel;
-    delete m_ProjectActionItemsModel;
-    delete m_ActionItemDetailsModel;
-    delete m_MeetingAttendeesModel;
-    delete m_NotesActionItemsModel;
+    delete m_clients_model;
+    delete m_unfilteredclients_model;
+    delete m_people_model;
+    delete m_company_people_model;
+    delete m_unfiltered_people_model;
+    delete m_project_information_model;
+    delete m_projects_list_model;
+    delete m_teams_model;
+    delete m_status_report_items_model;
+    delete m_project_team_members_model;
+    delete m_project_locations_model;
+    delete m_project_notes_model;
+    delete m_action_item_project_notes_model; //
+    delete m_action_item_details_model;
+    delete m_action_items_details_meetings_model;
+    delete m_project_action_items_model;
+    delete m_tracker_item_comments_model;
+    delete m_meeting_attendees_model;
+    delete m_notes_action_items_model;
+    delete m_item_detail_team_list_model; //
 
-    delete m_SearchResultsModel;
+    delete m_search_results_model;
 
-    m_ClientsModel= nullptr;
-    m_UnfilteredClientsModel= nullptr;
-    m_PeopleModel = nullptr;
-    m_CompanyPeopleModel= nullptr;
-    m_UnfilteredPeopleModel= nullptr;
-    m_ProjectInformationModel= nullptr;
-    m_ProjectsListModel = nullptr;
-    m_TeamsModel= nullptr;
-    m_StatusReportItemsModel= nullptr;
-    m_ProjectTeamMembersModel= nullptr;
-    m_ProjectLocationsModel= nullptr;
-    m_ProjectNotesModel= nullptr;
-    m_ActionItemDetailsModel = nullptr;
-    m_ActionItemProjectNotesModel= nullptr;
-    m_ActionItemsDetailsMeetingsModel= nullptr;
-    m_ProjectActionItemsModel = nullptr;
-    m_MeetingAttendeesModel= nullptr;
-    m_NotesActionItemsModel= nullptr;
+    m_clients_model= nullptr;
+    m_unfilteredclients_model= nullptr;
+    m_people_model= nullptr;
+    m_company_people_model= nullptr;
+    m_unfiltered_people_model= nullptr;
+    m_project_information_model= nullptr;
+    m_projects_list_model= nullptr;
+    m_teams_model= nullptr;
+    m_status_report_items_model= nullptr;
+    m_project_team_members_model= nullptr;
+    m_project_locations_model= nullptr;
+    m_project_notes_model= nullptr;
+    m_action_item_project_notes_model = nullptr;
+    m_action_item_details_model= nullptr;
+    m_action_items_details_meetings_model= nullptr;
+    m_project_action_items_model= nullptr;
+    m_tracker_item_comments_model = nullptr;
+    m_meeting_attendees_model= nullptr;
+    m_notes_action_items_model= nullptr;
+    m_item_detail_team_list_model = nullptr;
 
-    m_SearchResultsModel = nullptr;
+    m_search_results_model = nullptr;
 
-    delete m_ClientsModelProxy;
-    delete m_UnfilteredClientsModelProxy;
-    delete m_PeopleModelProxy;
-    delete m_CompanyPeopleModelProxy;
-    delete m_UnfilteredPeopleModelProxy;
-    delete m_ProjectInformationModelProxy;
-    delete m_ProjectsListModelProxy;
-    delete m_TeamsModelProxy;
-    delete m_StatusReportItemsModelProxy;
-    delete m_ProjectTeamMembersModelProxy;
-    delete m_ProjectLocationsModelProxy;
-    delete m_ProjectNotesModelProxy;
-    delete m_ActionItemProjectNotesModelProxy;
-    delete m_ActionItemsDetailsMeetingsModelProxy;
-    delete m_ProjectActionItemsModelProxy;
-    delete m_ActionItemDetailsModelProxy;
-    delete m_MeetingAttendeesModelProxy;
-    delete m_NotesActionItemsModelProxy;
+    delete m_clients_model_proxy;
+    delete m_unfilteredclients_model_proxy;
+    delete m_people_model_proxy;
+    delete m_company_people_model_proxy;
+    delete m_unfiltered_people_model_proxy;
+    delete m_project_information_model_proxy;
+    delete m_projects_list_model_proxy;
+    delete m_teams_model_proxy;
+    delete m_status_report_items_model_proxy;
+    delete m_project_team_members_model_proxy;
+    delete m_project_locations_model_proxy;
+    delete m_project_notes_model_proxy;
+    delete m_action_item_project_notes_model;
+    delete m_action_item_details_model_proxy;
+    delete m_action_items_details_meetings_model_proxy;
+    delete m_project_action_items_model_proxy;
+    delete m_tracker_item_comments_model_proxy;
+    delete m_meeting_attendees_model_proxy;
+    delete m_notes_action_items_model_proxy;
+    delete m_item_detail_team_list_model_proxy;
 
-    m_ClientsModelProxy = nullptr;
-    m_UnfilteredClientsModelProxy = nullptr;
-    m_PeopleModelProxy = nullptr;
-    m_CompanyPeopleModelProxy = nullptr;
-    m_UnfilteredPeopleModelProxy = nullptr;
-    m_ProjectInformationModelProxy = nullptr;
-    m_ProjectsListModelProxy = nullptr;
-    m_TeamsModelProxy = nullptr;
-    m_StatusReportItemsModelProxy = nullptr;
-    m_ProjectTeamMembersModelProxy = nullptr;
-    m_ProjectLocationsModelProxy = nullptr;
-    m_ProjectNotesModelProxy = nullptr;
-    m_ActionItemProjectNotesModelProxy = nullptr;
-    m_ActionItemsDetailsMeetingsModelProxy = nullptr;
-    m_ProjectActionItemsModelProxy = nullptr;
-    m_ActionItemDetailsModelProxy = nullptr;
-    m_MeetingAttendeesModelProxy = nullptr;
-    m_NotesActionItemsModelProxy = nullptr;
+    m_clients_model_proxy = nullptr;
+    m_unfilteredclients_model_proxy = nullptr;
+    m_people_model_proxy = nullptr;
+    m_company_people_model_proxy = nullptr;
+    m_unfiltered_people_model_proxy = nullptr;
+    m_project_information_model_proxy = nullptr;
+    m_projects_list_model_proxy = nullptr;
+    m_teams_model_proxy = nullptr;
+    m_status_report_items_model_proxy = nullptr;
+    m_project_team_members_model_proxy = nullptr;
+    m_project_locations_model_proxy = nullptr;
+    m_project_notes_model_proxy = nullptr;
+    m_action_item_project_notes_model = nullptr;
+    m_action_item_details_model_proxy = nullptr;
+    m_action_items_details_meetings_model_proxy = nullptr;
+    m_project_action_items_model_proxy = nullptr;
+    m_tracker_item_comments_model_proxy = nullptr;
+    m_meeting_attendees_model_proxy = nullptr;
+    m_notes_action_items_model_proxy = nullptr;
+    m_item_detail_team_list_model = nullptr;
 
-    m_SQLiteDB.close();
-    m_DatabaseFile.clear();
+    m_sqlite_db.close();
+    m_database_file.clear();
 }
 
-void PNDatabaseObjects::BackupDatabase(QWidget& /*parent*/, QFileInfo& /*file*/)
+void PNDatabaseObjects::BackupDatabase(QWidget& /*t_parent*/, QFileInfo& /*t_file*/)
 {
     // TODO:  This may not make sense to do when using the QT SQL interface
 }
 
-bool PNDatabaseObjects::SaveParameter( const QString& ParameterName, const QString& ParameterValue )
+bool PNDatabaseObjects::SaveParameter( const QString& t_parametername, const QString& t_parametervalue )
 {
     QSqlQuery select("select parameter_value from application_settings where parameter_name = ?;");
-    select.bindValue(0, ParameterName);
+    select.bindValue(0, t_parametername);
     if (select.exec())
     {
         if (select.next())
         {
             QSqlQuery update("update application_settings set parameter_value = ? where parameter_name = ?;");
-            update.bindValue(0, ParameterValue);
-            update.bindValue(1, ParameterName);
+            update.bindValue(0, t_parametervalue);
+            update.bindValue(1, t_parametername);
             if (update.exec())
                 return true;
         }
@@ -290,8 +297,8 @@ bool PNDatabaseObjects::SaveParameter( const QString& ParameterName, const QStri
         {
             QSqlQuery insert("insert into application_settings (parameter_id, parameter_name, parameter_value) values (?, ?, ?);");
             insert.bindValue(0, QUuid::createUuid().toString());
-            insert.bindValue(1, ParameterName);
-            insert.bindValue(2, ParameterValue);
+            insert.bindValue(1, t_parametername);
+            insert.bindValue(2, t_parametervalue);
             if (insert.exec())
                 return true;
         }
@@ -306,10 +313,10 @@ bool PNDatabaseObjects::SaveParameter( const QString& ParameterName, const QStri
     return false;
 }
 
-QString PNDatabaseObjects::LoadParameter( const QString& ParameterName )
+QString PNDatabaseObjects::LoadParameter( const QString& t_parametername )
 {
     QSqlQuery select("select parameter_value from application_settings where parameter_name = ?;");
-    select.bindValue(0, ParameterName);
+    select.bindValue(0, t_parametername);
     if (select.exec())
     {
         if (select.next())
@@ -325,38 +332,38 @@ QString PNDatabaseObjects::LoadParameter( const QString& ParameterName )
 }
 
 
-void PNDatabaseObjects::SetShowAllTrackerItems(bool value)
+void PNDatabaseObjects::SetShowAllTrackerItems(bool t_value)
 {
-    SaveParameter("UserFilter:ShowAllTrackerItems", (value ? "1": "0"));
+    SaveParameter("UserFilter:ShowAllTrackerItems", (t_value ? "1": "0"));
 }
 
-void PNDatabaseObjects::SetShowClosedProjects(bool value)
+void PNDatabaseObjects::SetShowClosedProjects(bool t_value)
 {
-    SaveParameter("UserFilter:ShowClosedProjects", (value ? "1": "0"));
+    SaveParameter("UserFilter:ShowClosedProjects", (t_value ? "1": "0"));
 }
 
 bool PNDatabaseObjects::GetShowClosedProjects()
 {
-    QString value = LoadParameter("UserFilter:ShowClosedProjects");
-    bool ret = (bool)value.toUInt();
+    QString t_value = LoadParameter("UserFilter:ShowClosedProjects");
+    bool ret = (bool)t_value.toUInt();
     return ret;
 }
 
-void PNDatabaseObjects::SetShowInternalItems(bool value)
+void PNDatabaseObjects::SetShowInternalItems(bool t_value)
 {
-    SaveParameter("UserFilter:ShowInternalItems", (value ? "1": "0"));
+    SaveParameter("UserFilter:ShowInternalItems", (t_value ? "1": "0"));
 }
 
 bool PNDatabaseObjects::GetShowInternalItems()
 {
-    QString value = LoadParameter("UserFilter:ShowInternalItems");
-    bool ret = (bool)value.toUInt();
+    QString t_value = LoadParameter("UserFilter:ShowInternalItems");
+    bool ret = (bool)t_value.toUInt();
     return ret;
 }
 
-void PNDatabaseObjects::SetGlobalClientFilter(QString value)
+void PNDatabaseObjects::SetGlobalClientFilter(QString t_value)
 {
-    SaveParameter("UserFilter:ClientFilter", value );
+    SaveParameter("UserFilter:ClientFilter", t_value );
 }
 
 QString PNDatabaseObjects::GetGlobalClientFilter()
@@ -364,9 +371,9 @@ QString PNDatabaseObjects::GetGlobalClientFilter()
     return LoadParameter("UserFilter:ClientFilter");
 }
 
-void PNDatabaseObjects::SetGlobalProjectFilter(QString value)
+void PNDatabaseObjects::SetGlobalProjectFilter(QString t_value)
 {
-    SaveParameter("UserFilter:ProjectFilter", value );
+    SaveParameter("UserFilter:ProjectFilter", t_value );
 }
 
 QString PNDatabaseObjects::GetGlobalProjectFilter()
@@ -374,9 +381,9 @@ QString PNDatabaseObjects::GetGlobalProjectFilter()
     return LoadParameter("UserFilter:ProjectFilter");
 }
 
-void PNDatabaseObjects::SetProjectManager(QString value)
+void PNDatabaseObjects::SetProjectManager(QString t_value)
 {
-    SaveParameter("Preferences:ProjectManager", value );
+    SaveParameter("Preferences:ProjectManager", t_value );
 }
 
 QString PNDatabaseObjects::GetProjectManager()
@@ -384,9 +391,9 @@ QString PNDatabaseObjects::GetProjectManager()
     return LoadParameter("Preferences:ProjectManager");
 }
 
-void PNDatabaseObjects::SetManagingCompany(QString value)
+void PNDatabaseObjects::SetManagingCompany(QString t_value)
 {
-    SaveParameter("Preferences:ManagingCompany", value );
+    SaveParameter("Preferences:ManagingCompany", t_value );
 }
 
 QString PNDatabaseObjects::GetManagingCompany()
@@ -394,7 +401,7 @@ QString PNDatabaseObjects::GetManagingCompany()
     return LoadParameter("Preferences:ManagingCompany");
 }
 
-void PNDatabaseObjects::SetGlobalSearches( bool Refresh )
+void PNDatabaseObjects::SetGlobalSearches( bool t_refresh )
 { 
     // setup default filters
     if (GetShowClosedProjects())
@@ -487,7 +494,7 @@ void PNDatabaseObjects::SetGlobalSearches( bool Refresh )
     }
 
 
-    if (Refresh)
+    if (t_refresh)
     {
         peoplemodel()->Refresh();
         clientsmodel()->Refresh();
@@ -504,7 +511,7 @@ void PNDatabaseObjects::SetGlobalSearches( bool Refresh )
     }
 }
 
-bool PNDatabaseObjects::ExecuteDDL(const QString& /*SQL*/)
+bool PNDatabaseObjects::ExecuteDDL(const QString& /*t_sql*/)
 {
     // TODO : finish
 

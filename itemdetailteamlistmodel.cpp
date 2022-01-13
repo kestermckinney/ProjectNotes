@@ -1,6 +1,6 @@
 #include "itemdetailteamlistmodel.h"
 
-ItemDetailTeamListModel::ItemDetailTeamListModel(QObject* parent): PNSqlQueryModel(parent)
+ItemDetailTeamListModel::ItemDetailTeamListModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setBaseSql("SELECT teammember_id, b.name, project_id, a.people_id FROM project_people a join people b on a.people_id=b.people_id ");
 

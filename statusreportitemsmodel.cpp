@@ -1,6 +1,6 @@
 #include "statusreportitemsmodel.h"
 
-StatusReportItemsModel::StatusReportItemsModel(QObject* parent): PNSqlQueryModel(parent)
+StatusReportItemsModel::StatusReportItemsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("StatusReportItemsModel");
 

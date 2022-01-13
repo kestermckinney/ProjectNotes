@@ -3,7 +3,7 @@
 
 #include <QRegularExpression>
 
-ProjectsModel::ProjectsModel(QObject* parent) : PNSqlQueryModel(parent)
+ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
 {
     setObjectName("ProjectsModel");
 
@@ -53,7 +53,7 @@ ProjectsModel::ProjectsModel(QObject* parent) : PNSqlQueryModel(parent)
     SetOrderBy("project_number");
 }
 
-bool ProjectsModel::NewRecord()
+bool ProjectsModel::newRecord()
 {
     QSqlQuery select;
     select.prepare("select max(project_number) from projects where project_number like '[%'");
@@ -80,18 +80,18 @@ bool ProjectsModel::NewRecord()
     return true;
 }
 
-QVariant ProjectsModel::data(const QModelIndex &index, int role) const
+QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
 {
-    if (role == Qt::ForegroundRole)
+    if (t_role == Qt::ForegroundRole)
     {
-        if (index.column() == 3) // status date
+        if (t_index.column() == 3) // status date
         {
-            QVariant value = data(index);
+            QVariant t_value = data(t_index);
 
-            QDateTime datecol = ParseDateTime(value.toString());
+            QDateTime datecol = ParseDateTime(t_value.toString());
             qint64 dif = datecol.daysTo(QDateTime::currentDateTime());
 
-            QString period = data( this->index(index.row(), 12)).toString();
+            QString period = data( this->index(t_index.row(), 12)).toString();
             if (period == "Weekly")
             {
                 if (dif > 7)
@@ -126,18 +126,18 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
                 }
             }
         }
-        else if (index.column() == 4) // invoice date
+        else if (t_index.column() == 4) // invoice date
         {
-            QVariant value = data(index);
+            QVariant t_value = data(t_index);
 
-            QDateTime datecol = ParseDateTime(value.toString());
+            QDateTime datecol = ParseDateTime(t_value.toString());
             QDate nextdate = datecol.date();
             nextdate = nextdate.addMonths(1);
             nextdate.setDate(nextdate.year(), nextdate.month(), 1); // set to the first of the next month
 
             qint64 dif = datecol.daysTo(QDateTime::currentDateTime());
 
-            QString period = data( this->index(index.row(), 11)).toString();
+            QString period = data( this->index(t_index.row(), 11)).toString();
 
             if (period == "Milestone")
             {
@@ -159,52 +159,52 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
             }
 
         }
-        else if (index.column() == 15)  // percent consumed
+        else if (t_index.column() == 15)  // percent consumed
         {
-            double value = data(index).toDouble();
+            double t_value = data(t_index).toDouble();
 
-            if (value >= 95.0)
+            if (t_value >= 95.0)
                 return QVariant(QColor(Qt::darkRed));
-            else if (value >= 90.0)
+            else if (t_value >= 90.0)
                 return QVariant(QColor(Qt::darkYellow));
         }
-        else if (index.column() == 17) // cost variance
+        else if (t_index.column() == 17) // cost variance
         {
-            double value = data(index).toDouble();
+            double t_value = data(t_index).toDouble();
 
-            if (value >= 10.0)
+            if (t_value >= 10.0)
                 return QVariant(QColor(Qt::darkRed));
-            else if (value >= 5.0)
+            else if (t_value >= 5.0)
                 return QVariant(QColor(Qt::darkYellow));
         }
-        else if (index.column() == 18)  // schedule variance
+        else if (t_index.column() == 18)  // schedule variance
         {
-            double value = data(index).toDouble();
+            double t_value = data(t_index).toDouble();
 
-            if (value >= 10.0)
+            if (t_value >= 10.0)
                 return QVariant(QColor(Qt::darkRed));
-            else if (value >= 05.0)
+            else if (t_value >= 05.0)
                 return QVariant(QColor(Qt::darkYellow));
         }
-        else if (index.column() == 19)  // percent complete
+        else if (t_index.column() == 19)  // percent complete
         {
-            double value = data(index).toDouble();
+            double t_value = data(t_index).toDouble();
 
-            if (value >= 95.0)
+            if (t_value >= 95.0)
                 return QVariant(QColor(Qt::darkRed));
-            else if (value >= 90.0)
+            else if (t_value >= 90.0)
                 return QVariant(QColor(Qt::darkYellow));
         }
-        else if (index.column() == 20)  // CPI
+        else if (t_index.column() == 20)  // CPI
         {
-            double value = data(index).toDouble();
+            double t_value = data(t_index).toDouble();
 
-            if (value <= 0.8)
+            if (t_value <= 0.8)
                 return QVariant(QColor(Qt::darkRed));
-            else if (value < 1.0)
+            else if (t_value < 1.0)
                 return QVariant(QColor(Qt::darkYellow));
         }
     }
 
-    return PNSqlQueryModel::data(index, role);
+    return PNSqlQueryModel::data(t_index, t_role);
 }

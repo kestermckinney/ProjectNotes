@@ -205,7 +205,7 @@ void PNTableView::slotNewRecord()
     QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
     PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
 
-    currentmodel->NewRecord();
+    currentmodel->newRecord();
 }
 
 void PNTableView::slotDeleteRecord()

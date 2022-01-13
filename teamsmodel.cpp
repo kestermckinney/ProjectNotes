@@ -1,6 +1,6 @@
 #include "teamsmodel.h"
 
-TeamsModel::TeamsModel(QObject* parent): PNSqlQueryModel(parent)
+TeamsModel::TeamsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("TeamsModel");
 

@@ -11,16 +11,16 @@
 #include <QDir>
 #include <QFileDialog>
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
+MainWindow::MainWindow(QWidget *t_parent)
+    : QMainWindow(t_parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
     // view state
-    m_CurrentPage = 0;
-    m_PageHistory.clear();
-    m_CurrentModel = nullptr;
+    m_current_page = 0;
+    m_page_history.clear();
+    m_current_model = nullptr;
 
     if (!global_Settings.getLastDatabase().toString().isEmpty())
         OpenDatabase(global_Settings.getLastDatabase().toString());
@@ -34,7 +34,7 @@ MainWindow::MainWindow(QWidget *parent)
     global_Settings.getWindowState("MainWindow", *this);
     ui->actionStatus_Bar->setChecked(statusBar()->isVisibleTo(this));
 
-    filterdialog = new FilterDataDialog(this);
+    m_filterdialog = new FilterDataDialog(this);
 }
 
 MainWindow::~MainWindow()
@@ -43,20 +43,20 @@ MainWindow::~MainWindow()
     //disconnect(ui->pushButtonNewProject, &QPushButton::clicked, this, &MainWindow::handleNewProjectClicked);
     //disconnect(ui->pushButtonDeleteProject, &QPushButton::clicked, this, &MainWindow::handleDeleteProjectClicked);
 
-    ui->tableViewProjects->setModel(nullptr);
+    ui->t_tableViewProjects->setModel(nullptr);
 
     if (global_DBObjects.isOpen())
         global_DBObjects.CloseDatabase();
 
     global_Settings.setWindowState("MainWindow", *this);
 
-    delete filterdialog;
+    delete m_filterdialog;
     delete ui;
 }
 /*
 void MainWindow::handleDeleteProjectClicked()
 {
-    QModelIndexList qi = ui->tableViewProjects->selectionModel()->selectedRows();
+    QModelIndexList qi = ui->t_tableViewProjects->selectionModel()->selectedRows();
 
     for (int i = qi.count() - 1; i >= 0; i--)
     {
@@ -128,9 +128,9 @@ void MainWindow::on_actionOpen_Database_triggered()
     setButtonAndMenuStates();
 }
 
-void MainWindow::OpenDatabase(QString dbfile)
+void MainWindow::OpenDatabase(QString t_dbfile)
 {
-    if (!global_DBObjects.OpenDatabase(dbfile))
+    if (!global_DBObjects.OpenDatabase(t_dbfile))
         return;
 
     global_DBObjects.SetGlobalSearches(false);
@@ -143,10 +143,10 @@ void MainWindow::OpenDatabase(QString dbfile)
     global_DBObjects.unfilteredclientsmodel()->Refresh();
     global_DBObjects.clientsmodel()->Refresh();
 
-    ui->tableViewProjects->setModel(global_DBObjects.projectslistmodelproxy());
-    m_CurrentModel = global_DBObjects.projectslistmodel();
+    ui->t_tableViewProjects->setModel(global_DBObjects.projectslistmodelproxy());
+    m_current_model = global_DBObjects.projectslistmodel();
 
-    global_Settings.setLastDatabase(dbfile);
+    global_Settings.setLastDatabase(t_dbfile);
 }
 
 void MainWindow::on_actionClose_Database_triggered()
@@ -170,7 +170,7 @@ void MainWindow::on_actionStatus_Bar_triggered()
 void MainWindow::on_actionFilter_triggered()
 {
     // TODO: Setup filter dialog
-    filterdialog->setFilterModel(m_CurrentModel);
-    filterdialog->show();
+    m_filterdialog->setFilterModel(m_current_model);
+    m_filterdialog->show();
 
 }

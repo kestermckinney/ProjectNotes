@@ -5,154 +5,154 @@
 
 PNSettings::PNSettings()
 {
-    m_AppConfig = new QSettings("ProjectNotes", "AppSettings");
-    m_AppConfig->setFallbacksEnabled(false);
+    m_app_config = new QSettings("ProjectNotes", "AppSettings");
+    m_app_config->setFallbacksEnabled(false);
 
-    m_PluginConfig = new QSettings("ProjectNotes", "PluginSettings");
-    m_PluginConfig->setFallbacksEnabled(false);
+    m_plugin_config = new QSettings("ProjectNotes", "PluginSettings");
+    m_plugin_config->setFallbacksEnabled(false);
 }
 
 PNSettings::~PNSettings()
 {
-    delete m_AppConfig;
-    delete m_PluginConfig;
+    delete m_app_config;
+    delete m_plugin_config;
 }
 
-QVariant PNSettings::getPluginSetting(const QString& PluginName, const QString& ParameterName)
+QVariant PNSettings::getPluginSetting(const QString& t_plugin_name, const QString& t_parameter_name)
 {
-    QString path = PluginName + "/" + ParameterName;
+    QString path = t_plugin_name + "/" + t_parameter_name;
 
-    return m_PluginConfig->value(path);
+    return m_plugin_config->value(path);
 }
 
-bool PNSettings::getPluginEnabled(const QString& PluginName)
+bool PNSettings::getPluginEnabled(const QString& t_plugin_name)
 {
-    QString path = PluginName + "/PluginEnabled";
+    QString path = t_plugin_name + "/PluginEnabled";
 
-    return m_PluginConfig->value(path).toBool();
+    return m_plugin_config->value(path).toBool();
 }
 
-void PNSettings::setPluginEnabled(const QString& PluginName, bool Enabled)
+void PNSettings::setPluginEnabled(const QString& t_plugin_name, bool t_enabled)
 {
-    QString path = PluginName + "/PluginEnabled";
-    QVariant value = Enabled;
+    QString path = t_plugin_name + "/PluginEnabled";
+    QVariant t_value =t_enabled;
 
-    m_PluginConfig->setValue(path, value);
+    m_plugin_config->setValue(path, t_value);
 }
 
 QVariant PNSettings::getLastDatabase()
 {
-    return m_AppConfig->value("LastDatabaseUsed");
+    return m_app_config->value("LastDatabaseUsed");
 }
 
-void PNSettings::setLastDatabase(const QString& LastDatabase)
+void PNSettings::setLastDatabase(const QString& t_last_database)
 {
-    m_AppConfig->setValue("LastDatabaseUsed", LastDatabase);
+    m_app_config->setValue("LastDatabaseUsed", t_last_database);
 }
 
-QVariant PNSettings::getWindowStateData(const QString& StateDataName)
+QVariant PNSettings::getWindowStateData(const QString& t_state_data_name)
 {
-    return m_AppConfig->value(StateDataName);
+    return m_app_config->value(t_state_data_name);
 }
 
-void PNSettings::setWindowStateData(const QString& StateDataName, const QVariant& Data)
+void PNSettings::setWindowStateData(const QString& t_state_data_name, const QVariant& t_data)
 {
-    m_AppConfig->setValue(StateDataName, Data);
+    m_app_config->setValue(t_state_data_name, t_data);
 }
 
-void PNSettings::setWindowState(const QString& WindowName, const QWidget& Window)
+void PNSettings::setWindowState(const QString& t_window_name, const QWidget& t_window)
 {
-    setWindowX(WindowName, Window.geometry().left());
-    setWindowY(WindowName, Window.geometry().top());
-    setWindowHeight(WindowName, Window.geometry().height());
-    setWindowWidth(WindowName, Window.geometry().width());
-    setWindowMaximized(WindowName, Window.isMaximized());
-    if (Window.objectName() == "MainWindow")
-        setWindowStatusBar(WindowName, ((MainWindow&)Window).statusBar()->isVisibleTo(&Window));
+    setWindowX(t_window_name, t_window.geometry().left());
+    setWindowY(t_window_name, t_window.geometry().top());
+    setWindowHeight(t_window_name, t_window.geometry().height());
+    setWindowWidth(t_window_name, t_window.geometry().width());
+    setWindowMaximized(t_window_name, t_window.isMaximized());
+    if (t_window.objectName() == "MainWindow")
+        setWindowStatusBar(t_window_name, ((MainWindow&)t_window).statusBar()->isVisibleTo(&t_window));
 }
 
-bool PNSettings::getWindowState(const QString& WindowName, QWidget& Window)
+bool PNSettings::getWindowState(const QString& t_window_name, QWidget& t_window)
 {
-    int x = getWindowX(WindowName);
-    int y = getWindowY(WindowName);
-    int w = getWindowWidth(WindowName);
-    int h = getWindowHeight(WindowName);
+    int x = getWindowX(t_window_name);
+    int y = getWindowY(t_window_name);
+    int w = getWindowWidth(t_window_name);
+    int h = getWindowHeight(t_window_name);
 
     if ( x == -1 || y == -1 || w == -1 || h == -1)
          return false;
 
-    Window.setGeometry(
-                  getWindowX(WindowName),
-                  getWindowY(WindowName),
-                  getWindowWidth(WindowName),
-                  getWindowHeight(WindowName)
+    t_window.setGeometry(
+                  getWindowX(t_window_name),
+                  getWindowY(t_window_name),
+                  getWindowWidth(t_window_name),
+                  getWindowHeight(t_window_name)
                 );
 
-    if (Window.objectName() == "MainWindow")
-        ((MainWindow&)Window).statusBar()->setVisible(getWindowStatusBar(WindowName));
+    if (t_window.objectName() == "MainWindow")
+        ((MainWindow&)t_window).statusBar()->setVisible(getWindowStatusBar(t_window_name));
 
     return true;
 }
 
-void PNSettings::setTableViewState(const QString& ViewName, const QTableView& View)
+void PNSettings::setTableViewState(const QString& t_view_name, const QTableView& t_view)
 {
     // don't try and save when the model has been removed
-    if (!View.model())
+    if (!t_view.model())
         return;
 
-    int c = View.model()->columnCount();
+    int c = t_view.model()->columnCount();
     int w;
     QString savestring;
 
     for (int i = 0; i < c; i++)
     {
-        w = View.columnWidth(i);
+        w = t_view.columnWidth(i);
         savestring += QString("%1,").arg(w);
     }
 
-    m_AppConfig->setValue(ViewName + "Columns", savestring);
+    m_app_config->setValue(t_view_name + "Columns", savestring);
 }
 
-void PNSettings::setTableSortColumn(const QString& ViewName, const int Column, const QString Direction)
+void PNSettings::setTableSortColumn(const QString& t_view_name, const int t_column, const QString t_direction)
 {
     QString savestring;
 
-    savestring = QString("%1").arg(Column);
+    savestring = QString("%1").arg(t_column);
 
-    m_AppConfig->setValue(ViewName + "SortColumn", savestring);
-    m_AppConfig->setValue(ViewName + "SortDirection", Direction);
+    m_app_config->setValue(t_view_name + "SortColumn", savestring);
+    m_app_config->setValue(t_view_name + "SortDirection", t_direction);
 }
 
-bool PNSettings::getTableSortColumn(const QString& ViewName, int& Column, QString& Direction)
+bool PNSettings::getTableSortColumn(const QString& t_view_name, int& t_column, QString& t_direction)
 {
     QVariant loadstring;
 
-    loadstring = m_AppConfig->value(ViewName + "SortColumn");
-    Direction = m_AppConfig->value(ViewName + "SortDirection").toString();
+    loadstring = m_app_config->value(t_view_name + "SortColumn");
+    t_direction = m_app_config->value(t_view_name + "SortDirection").toString();
 
     if (!loadstring.isValid() || loadstring == "")
-        Column = -1;
+        t_column = -1;
     else
-        Column = loadstring.toInt();
+        t_column = loadstring.toInt();
 
     return true;
 }
 
-bool PNSettings::getTableViewState(const QString& ViewName, QTableView& View)
+bool PNSettings::getTableViewState(const QString& t_view_name, QTableView& t_view)
 {
     QVariant loadstring;
 
-    loadstring = m_AppConfig->value(ViewName + "Columns");
+    loadstring = m_app_config->value(t_view_name + "Columns");
 
     QStringList lst = loadstring.toString().split(",");
 
     int col = 0;
-    int c = View.model()->columnCount();
+    int c = t_view.model()->columnCount();
 
     for ( auto& i : lst  )
     {
         if (col < c)
-            View.setColumnWidth(col, i.toInt());
+            t_view.setColumnWidth(col, i.toInt());
 
         col++;
     }
@@ -161,130 +161,130 @@ bool PNSettings::getTableViewState(const QString& ViewName, QTableView& View)
 }
 
 
-int PNSettings::getWindowX(const QString& WindowName)
+int PNSettings::getWindowX(const QString& t_window_name)
 {
-    QString path = WindowName + "/X";
+    QString path = t_window_name + "/X";
 
-    return m_AppConfig->value(path, -1).toInt();
+    return m_app_config->value(path, -1).toInt();
 }
 
-int PNSettings::getWindowY(const QString& WindowName)
+int PNSettings::getWindowY(const QString& t_window_name)
 {
-    QString path = WindowName + "/Y";
+    QString path = t_window_name + "/Y";
 
-    return m_AppConfig->value(path, -1).toInt();
+    return m_app_config->value(path, -1).toInt();
 }
 
-void PNSettings::setWindowX(const QString& WindowName, int X)
+void PNSettings::setWindowX(const QString& t_window_name, int X)
 {
-    QString path = WindowName + "/X";
-    QVariant value = X;
+    QString path = t_window_name + "/X";
+    QVariant t_value = X;
 
-    m_AppConfig->setValue(path, value);
+    m_app_config->setValue(path, t_value);
 }
 
-void PNSettings::setWindowY(const QString& WindowName, int Y)
+void PNSettings::setWindowY(const QString& t_window_name, int Y)
 {
-    QString path = WindowName + "/Y";
-    QVariant value = Y;
+    QString path = t_window_name + "/Y";
+    QVariant t_value = Y;
 
-    m_AppConfig->setValue(path, value);
+    m_app_config->setValue(path, t_value);
 }
 
-int PNSettings::getWindowWidth(const QString& WindowName)
+int PNSettings::getWindowWidth(const QString& t_window_name)
 {
-    QString path = WindowName + "/Width";
+    QString path = t_window_name + "/Width";
 
-    return m_AppConfig->value(path, -1).toInt();
+    return m_app_config->value(path, -1).toInt();
 }
 
-int PNSettings::getWindowHeight(const QString& WindowName)
+int PNSettings::getWindowHeight(const QString& t_window_name)
 {
-    QString path = WindowName + "/Height";
+    QString path = t_window_name + "/Height";
 
-    return m_AppConfig->value(path, -1).toInt();
+    return m_app_config->value(path, -1).toInt();
 }
 
-bool PNSettings::getWindowMaximized(const QString& WindowName)
+bool PNSettings::getWindowMaximized(const QString& t_window_name)
 {
-    QString path = WindowName + "/Maximized";
+    QString path = t_window_name + "/Maximized";
 
-    if (m_AppConfig->value(path, QString("1")) == QString("1"))
+    if (m_app_config->value(path, QString("1")) == QString("1"))
         return true;
     else
         return false;
 }
 
-bool PNSettings::getWindowStatusBar(const QString& WindowName)
+bool PNSettings::getWindowStatusBar(const QString& t_window_name)
 {
-    QString path = WindowName + "/StatusBar";
+    QString path = t_window_name + "/StatusBar";
 
-    if (m_AppConfig->value(path, QString("1")) == QString("1"))
+    if (m_app_config->value(path, QString("1")) == QString("1"))
         return true;
     else
         return false;
 }
 
-void PNSettings::setWindowWidth(const QString& WindowName, int Width)
+void PNSettings::setWindowWidth(const QString& t_window_name, int t_width)
 {
-    QString path = WindowName + "/Width";
-    QVariant value = Width;
+    QString path = t_window_name + "/Width";
+    QVariant t_value = t_width;
 
-    m_AppConfig->setValue(path, value);
+    m_app_config->setValue(path, t_value);
 }
 
-void PNSettings::setWindowHeight(const QString& WindowName, int Height)
+void PNSettings::setWindowHeight(const QString& t_window_name, int t_height)
 {
-    QString path = WindowName + "/Height";
-    QVariant value = Height;
+    QString path = t_window_name + "/Height";
+    QVariant t_value = t_height;
 
-    m_AppConfig->setValue(path, value);
+    m_app_config->setValue(path, t_value);
 }
 
-void PNSettings::setWindowMaximized(const QString& WindowName, bool Maximized)
+void PNSettings::setWindowMaximized(const QString& t_window_name, bool t_maximized)
 {
-    QString path = WindowName + "/Maximized";
-    QVariant value = Maximized ? QString("1") : QString("0");
+    QString path = t_window_name + "/Maximized";
+    QVariant t_value = t_maximized ? QString("1") : QString("0");
 
-    m_AppConfig->setValue(path, value);
+    m_app_config->setValue(path, t_value);
 }
 
-void PNSettings::setWindowStatusBar(const QString& WindowName, bool StatusBar)
+void PNSettings::setWindowStatusBar(const QString& t_window_name, bool t_status_bar)
 {
-    QString path = WindowName + "/StatusBar";
-    QVariant value = StatusBar ? QString("1") : QString("0");
+    QString path = t_window_name + "/StatusBar";
+    QVariant t_value = t_status_bar ? QString("1") : QString("0");
 
-    m_AppConfig->setValue(path, value);
+    m_app_config->setValue(path, t_value);
 }
 
 QString PNSettings::getDefaultDictionary()
 {
     QString path = "DefaultDictionary";
 
-    return m_AppConfig->value(path).toString();
+    return m_app_config->value(path).toString();
 }
 
-void PNSettings::setDefaultDictionary(const QString& Dictionary)
+void PNSettings::setDefaultDictionary(const QString& t_dictionary)
 {
     QString path = "DefaultDictionary";
-    QVariant value = Dictionary;
+    QVariant t_value = t_dictionary;
 
-    m_AppConfig->setValue(path, value);
+    m_app_config->setValue(path, t_value);
 }
 
 QString PNSettings::getPersonalDictionary()
 {
     QString path = "PersonalDictionary";
 
-    return m_AppConfig->value(path).toString();
+    return m_app_config->value(path).toString();
 }
 
-void PNSettings::setPersonalDictionary(const QString& Dictionary)
+void PNSettings::setPersonalDictionary(const QString& t_dictionary)
 {
     QString path = "PersonalDictionary";
-    QVariant value = Dictionary;
+    QVariant t_value = t_dictionary;
 
-    m_AppConfig->setValue(path, value);
+    m_app_config->setValue(path, t_value);
 }
 
 

@@ -6,7 +6,7 @@
 class ClientsModel : public PNSqlQueryModel
 {
 public:
-    ClientsModel(QObject* parent);
+    ClientsModel(QObject* t_parent);
 };
 
 #endif // CLIENTSMODEL_H

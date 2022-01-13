@@ -7,13 +7,13 @@
 class ValueSelectModel : public PNSqlQueryModel
 {
 public:
-    ValueSelectModel(QObject *parent);
-    void setValuesColumn(QString Column);
+    ValueSelectModel(QObject *t_parent);
+    void setValuesColumn(QString t_column);
 
-    void setFilteringModel(PNSqlQueryModel* model) { m_FilteringModel = model; };
+    void setFilteringModel(PNSqlQueryModel* t_model) { m_filtering_model = t_model; };
 
 private:
-    PNSqlQueryModel* m_FilteringModel;
+    PNSqlQueryModel* m_filtering_model;
 };
 
 #endif // VALUESELECTMODEL_H

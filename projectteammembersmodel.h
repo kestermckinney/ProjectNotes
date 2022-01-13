@@ -6,7 +6,7 @@
 class ProjectTeamMembersModel : public PNSqlQueryModel
 {
 public:
-    ProjectTeamMembersModel(QObject* parent);
+    ProjectTeamMembersModel(QObject* t_parent);
 };
 
 #endif // PROJECTTEAMMEMBERSMODEL_H

@@ -7,13 +7,13 @@
 class PNSortFilterProxyModel : public QSortFilterProxyModel
 {
 public:
-    PNSortFilterProxyModel(QObject* parent = 0);
-    bool filterAcceptsRow(int source_row,
-                          const QModelIndex &source_parent) const override;
-    QVariant headerData(int section, Qt::Orientation orientation,
-                        int role) const override;
+    PNSortFilterProxyModel(QObject* t_parent = 0);
+    bool filterAcceptsRow(int t_source_row,
+                          const QModelIndex &t_source_parent) const override;
+    QVariant headerData(int t_section, Qt::Orientation t_orientation,
+                        int t_t_role) const override;
 
-    bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const override;
+    bool lessThan(const QModelIndex &t_source_left, const QModelIndex &t_source_right) const override;
 };
 
 #endif // PNSORTFILTERPROXYMODEL_H

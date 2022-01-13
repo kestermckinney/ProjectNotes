@@ -1,6 +1,6 @@
 #include "meetingattendeesmodel.h"
 
-MeetingAttendeesModel::MeetingAttendeesModel(QObject* parent): PNSqlQueryModel(parent)
+MeetingAttendeesModel::MeetingAttendeesModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("MeetingAttendeesModel");
 

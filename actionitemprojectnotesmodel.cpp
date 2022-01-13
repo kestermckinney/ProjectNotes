@@ -1,6 +1,6 @@
 #include "actionitemprojectnotesmodel.h"
 
-ActionItemProjectNotesModel::ActionItemProjectNotesModel(QObject* parent): PNSqlQueryModel(parent)
+ActionItemProjectNotesModel::ActionItemProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("ActionItemProjectNotesModel");
 

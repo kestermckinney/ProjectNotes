@@ -6,7 +6,7 @@
 class PeopleModel : public PNSqlQueryModel
 {
 public:
-    PeopleModel(QObject* parent);
+    PeopleModel(QObject* t_parent);
 };
 
 #endif // PEOPLEMODEL_H

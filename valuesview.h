@@ -8,17 +8,17 @@
 class ValuesView : public PNTableView
 {
 public:
-    ValuesView(QWidget* parent = nullptr);
+    ValuesView(QWidget* t_parent = nullptr);
     ~ValuesView();
-    void setSavedFilters( QHash<QString, FilterSaveStructure>* savedfilters ) {m_SavedFilters = savedfilters; };
+    void setSavedFilters( QHash<QString, FilterSaveStructure>* t_saved_filters ) {m_saved_filters = t_saved_filters; };
 
 private:
-    QHash<QString, FilterSaveStructure>* m_SavedFilters;
-    bool eventFilter(QObject *watched, QEvent *event) override;
+    QHash<QString, FilterSaveStructure>* m_saved_filters;
+    bool eventFilter(QObject *t_watched, QEvent *t_event) override;
 
 
 public slots:
-    void dataRowSelected(const QModelIndex &index) override;
+    void dataRowSelected(const QModelIndex &t_index) override;
 };
 
 #endif // VALUESVIEW_H

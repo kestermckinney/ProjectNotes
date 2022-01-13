@@ -20,23 +20,23 @@ class FilterDataDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit FilterDataDialog(QWidget *parent = nullptr);
+    explicit FilterDataDialog(QWidget *t_parent = nullptr);
     ~FilterDataDialog();
 
-    void setFilterModel(PNSqlQueryModel* model);
-    void setEndValue(QVariant& text);
-    void setBeginValue(QVariant& text);
-    void setSearchText(QVariant& text);
+    void setFilterModel(PNSqlQueryModel* t_model);
+    void setEndValue(QVariant& t_text);
+    void setBeginValue(QVariant& t_text);
+    void setSearchText(QVariant& t_text);
     QVariant getEndValue();
     QVariant getStartValue();
     QVariant getSearchText();
 
 private slots:
-    void on_lineEditSearchText_textEdited(const QString &arg1);
+    void on_lineEditSearchText_textEdited(const QString &t_arg1);
 
-    void on_lineEditStartValue_textEdited(const QString &arg1);
+    void on_lineEditStartValue_textEdited(const QString &t_arg1);
 
-    void on_lineEditEndValue_textEdited(const QString &arg1);
+    void on_lineEditEndValue_textEdited(const QString &t_arg1);
 
     void on_pushButtonApply_clicked();
 
@@ -50,15 +50,15 @@ private:
     void setupFilters();
     Ui::FilterDataDialog *ui;
 
-    PNColumnModel* columnModel = nullptr;
-    PNSortFilterProxyModel* columnProxyModel = nullptr;
-    ValueSelectModel* valuesModel = nullptr;
-    PNSortFilterProxyModel* valuesProxyModel = nullptr;
-    PNSqlQueryModel* filteredModel = nullptr;
+    PNColumnModel* m_column_model = nullptr;
+    PNSortFilterProxyModel* m_column_proxy_model = nullptr;
+    ValueSelectModel* m_values_model = nullptr;
+    PNSortFilterProxyModel* m_values_proxy_model = nullptr;
+    PNSqlQueryModel* m_filtered_model = nullptr;
 
-    int selectedColumn = -1;  // nothing selected until construction
+    int m_selected_column = -1;  // nothing selected until construction
 
-    QHash<QString, FilterSaveStructure> savedFilters;
+    QHash<QString, FilterSaveStructure> m_saved_filters;
 };
 
 #endif // FILTERDATADIALOG_H

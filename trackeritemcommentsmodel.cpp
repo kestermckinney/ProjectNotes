@@ -1,6 +1,6 @@
 #include "trackeritemcommentsmodel.h"
 
-TrackerItemCommentsModel::TrackerItemCommentsModel(QObject* parent): PNSqlQueryModel(parent)
+TrackerItemCommentsModel::TrackerItemCommentsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("TrackerItemCommentsModel");
 

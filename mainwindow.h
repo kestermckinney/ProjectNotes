@@ -17,14 +17,14 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    MainWindow(QWidget *t_parent = nullptr);
     ~MainWindow();
 
 private slots:
     //void handleNewProjectClicked();
     //void handleDeleteProjectClicked();
     void setButtonAndMenuStates();
-    void OpenDatabase(QString dbfile);
+    void OpenDatabase(QString t_dbfile);
 
     void on_actionExit_triggered();
 
@@ -41,12 +41,12 @@ private slots:
 private:
     Ui::MainWindow *ui;
 
-    FilterDataDialog *filterdialog;
+    FilterDataDialog *m_filterdialog;
 
     // view state
-    int m_CurrentPage;
-    QList<int> m_PageHistory;
-    PNSqlQueryModel* m_CurrentModel;
+    int m_current_page;
+    QList<int> m_page_history;
+    PNSqlQueryModel* m_current_model;
 };
 
 #endif // MAINWINDOW_H

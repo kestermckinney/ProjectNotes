@@ -6,7 +6,7 @@
 class ProjectLocationsModel : public PNSqlQueryModel
 {
 public:
-    ProjectLocationsModel(QObject* parent);
+    ProjectLocationsModel(QObject* t_parent);
 };
 
 #endif // PROJECTLOCATIONSMODEL_H

@@ -6,7 +6,7 @@
 class TeamsModel : public PNSqlQueryModel
 {
 public:
-    TeamsModel(QObject* parent);
+    TeamsModel(QObject* t_parent);
 };
 
 #endif // TEAMSMODEL_H

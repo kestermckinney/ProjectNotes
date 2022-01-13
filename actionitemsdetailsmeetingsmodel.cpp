@@ -1,6 +1,6 @@
 #include "actionitemsdetailsmeetingsmodel.h"
 
-ActionItemsDetailsMeetingsModel::ActionItemsDetailsMeetingsModel(QObject* parent): PNSqlQueryModel(parent)
+ActionItemsDetailsMeetingsModel::ActionItemsDetailsMeetingsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("ActionItemsDetailsMeetingsModel");
 

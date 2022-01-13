@@ -9,17 +9,17 @@
 class PNColumnModel : public PNSqlQueryModel
 {
 public:
-    PNColumnModel(QObject *parent);
-    void setColumnModel(PNSqlQueryModel* columnmodel);
-    void setSavedFilters(QHash<QString, FilterSaveStructure>* filters) { savedFilters = filters; };
-    void setFilteringModel(PNSqlQueryModel* model) { m_FilteringModel = model; };
-    PNSqlQueryModel* columnmodel() { return m_ColumnModel; };
-    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    PNColumnModel(QObject *t_parent);
+    void setColumnModel(PNSqlQueryModel* t_columnmodel);
+    void setSavedFilters(QHash<QString, FilterSaveStructure>* t_filters) { m_saved_filters = t_filters; };
+    void setFilteringModel(PNSqlQueryModel* t_model) { m_filtering_model = t_model; };
+    PNSqlQueryModel* columnmodel() { return m_column_model; };
+    QVariant data(const QModelIndex &t_index, int t_t_role = Qt::DisplayRole) const override;
 
 private:
-    PNSqlQueryModel* m_ColumnModel;
-    QHash<QString, FilterSaveStructure>* savedFilters;
-    PNSqlQueryModel* m_FilteringModel;
+    PNSqlQueryModel* m_column_model;
+    QHash<QString, FilterSaveStructure>* m_saved_filters;
+    PNSqlQueryModel* m_filtering_model;
 };
 
 #endif // PNCOLUMNMODEL_H

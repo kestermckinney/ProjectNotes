@@ -6,7 +6,7 @@
 class NotesActionItemsModel : public PNSqlQueryModel
 {
 public:
-    NotesActionItemsModel(QObject* parent);
+    NotesActionItemsModel(QObject* t_parent);
 };
 
 #endif // NOTESACTIONITEMSMODEL_H
