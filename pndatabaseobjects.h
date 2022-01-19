@@ -34,17 +34,17 @@ class PNDatabaseObjects : public QObject
     Q_OBJECT
 public:
     explicit PNDatabaseObjects(QObject *t_parent = nullptr);
-    bool OpenDatabase(QString& t_databasepath);
-    void CloseDatabase();
-    QString Execute(const QString& t_sql);
+    bool openDatabase(QString& t_databasepath);
+    void closeDatabase();
+    QString execute(const QString& t_sql);
 
-    void BackupDatabase(QWidget& t_parent, QFileInfo& t_file);
-    bool SaveParameter( const QString& t_parametername, const QString& t_parametervalue );
-    QString LoadParameter( const QString& t_parametername );
+    void backupDatabase(QWidget& t_parent, QFileInfo& t_file);
+    bool saveParameter( const QString& t_parametername, const QString& t_parametervalue );
+    QString loadParameter( const QString& t_parametername );
 
-    bool ExecuteDDL(const QString& t_sql);
-    void SetGlobalSearches( bool t_refresh );
-    QString& GetDatabaseFile() { return m_database_file; }
+    bool executeDDL(const QString& t_sql);
+    void setGlobalSearches( bool t_refresh );
+    QString& getDatabaseFile() { return m_database_file; }
     bool isOpen() { return !m_database_file.isEmpty(); }
 
     ClientsModel* clientsmodel() { return m_clients_model; }
@@ -102,19 +102,19 @@ public:
     static QStringList locations;
 
     // global searches
-    void SetShowAllTrackerItems(bool t_value);
-    void SetShowClosedProjects(bool t_value);
-    bool GetShowClosedProjects();
-    void SetShowInternalItems(bool t_value);
-    bool GetShowInternalItems();
-    void SetGlobalClientFilter(QString t_value);
-    QString GetGlobalClientFilter();
-    void SetGlobalProjectFilter(QString t_value);
-    QString GetGlobalProjectFilter();
-    void SetProjectManager(QString t_value);
-    QString GetProjectManager();
-    void SetManagingCompany(QString t_value);
-    QString GetManagingCompany();
+    void setShowAllTrackerItems(bool t_value);
+    void setShowClosedProjects(bool t_value);
+    bool getShowClosedProjects();
+    void setShowInternalItems(bool t_value);
+    bool getShowInternalItems();
+    void setGlobalClientFilter(QString t_value);
+    QString getGlobalClientFilter();
+    void setGlobalProjectFilter(QString t_value);
+    QString getGlobalProjectFilter();
+    void setProjectManager(QString t_value);
+    QString getProjectManager();
+    void setManagingCompany(QString t_value);
+    QString getManagingCompany();
 
 private:
     QString m_database_file;

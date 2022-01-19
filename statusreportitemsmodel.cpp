@@ -8,12 +8,12 @@ StatusReportItemsModel::StatusReportItemsModel(QObject* t_parent): PNSqlQueryMod
 
     setTableName("status_report_items", "Status Report Items");
 
-    AddColumn(0, tr("Status Item ID"), DB_STRING, false, true, false, true);
-    AddColumn(1, tr("Project ID"), DB_STRING, true, true, true, false);
-    AddColumn(2,  tr("Category"), DB_STRING, true, true, true, false);
-    AddColumn(3, tr("Description"), DB_STRING, true, true, true, true);
+    addColumn(0, tr("Status Item ID"), DB_STRING, false, true, false, true);
+    addColumn(1, tr("Project ID"), DB_STRING, true, true, true, false);
+    addColumn(2,  tr("Category"), DB_STRING, true, true, true, false);
+    addColumn(3, tr("Description"), DB_STRING, true, true, true, true);
 
-    AddRelatedTable("projects", "project_id", "Projects");
+    addRelatedTable("projects", "project_id", "Projects");
 
-    SetOrderBy("status_item_id");
+    setOrderBy("status_item_id");
 }

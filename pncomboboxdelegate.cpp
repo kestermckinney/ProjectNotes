@@ -11,7 +11,7 @@ PNComboBoxDelegate::PNComboBoxDelegate(QObject *t_parent, PNSqlQueryModel *t_mod
 :QItemDelegate(t_parent)
 {
     m_model = t_model;
-    t_displaycolumn = t_displaycolumn;
+    m_display_column = t_displaycolumn;
 }
 
 
@@ -35,7 +35,7 @@ void PNComboBoxDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_i
 {
     QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
     QVariant lookupvalue = t_index.model()->data(t_index);
-    QString t_value = m_model->FindValue(lookupvalue, 0, 1).toString();
+    QString t_value = m_model->findValue(lookupvalue, 0, 1).toString();
     comboBox->setCurrentText(t_value);
 }
 
@@ -56,7 +56,7 @@ void PNComboBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
 
     QVariant lookupvalue = t_index.model()->data(t_index);
 
-    myOption.text = m_model->FindValue(lookupvalue, 0, 1).toString();
+    myOption.text = m_model->findValue(lookupvalue, 0, 1).toString();
 
     // make light gray background when not edit_table
     //if (!((PNSqlQueryModel*)t_index.model())->isEdit_table(t_index.column()))

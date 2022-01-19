@@ -78,7 +78,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="ProjectListView" name="t_tableViewProjects">
+         <widget class="ProjectListView" name="tableViewProjects">
           <property name="frameShape">
            <enum>QFrame::NoFrame</enum>
           </property>
@@ -210,28 +210,28 @@
                    <number>0</number>
                   </property>
                   <item row="0" column="1">
-                   <widget class="QLabel" name="labelMeetingDate_3">
+                   <widget class="QLabel" name="labelMeetingDate">
                     <property name="text">
                      <string>Meeting Date</string>
                     </property>
                    </widget>
                   </item>
                   <item row="0" column="0">
-                   <widget class="QLabel" name="labelMeetingTittle_3">
+                   <widget class="QLabel" name="labelMeetingTitle">
                     <property name="text">
                      <string>Meeting Title</string>
                     </property>
                    </widget>
                   </item>
                   <item row="1" column="0">
-                   <widget class="QLineEdit" name="lineEditMeetingTitle_3">
+                   <widget class="QLineEdit" name="lineEditMeetingTitle">
                     <property name="frame">
                      <bool>false</bool>
                     </property>
                    </widget>
                   </item>
                   <item row="1" column="1">
-                   <widget class="QDateEdit" name="dateEditMeetingDate_3">
+                   <widget class="QDateEdit" name="dateEditMeetingDate">
                     <property name="frame">
                      <bool>false</bool>
                     </property>
@@ -247,7 +247,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QLabel" name="labelNotes_3">
+                <widget class="QLabel" name="labelNotes">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
                    <horstretch>0</horstretch>
@@ -260,7 +260,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QTextEdit" name="textEditNotes_3">
+                <widget class="QTextEdit" name="textEditNotes">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                    <horstretch>0</horstretch>
@@ -301,7 +301,7 @@
              <number>5</number>
             </property>
             <item>
-             <widget class="QTableView" name="t_tableViewAtendees_3">
+             <widget class="QTableView" name="tableViewAtendees">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                 <horstretch>0</horstretch>
@@ -342,7 +342,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QTableView" name="t_tableViewActionItems_3">
+             <widget class="QTableView" name="tableViewActionItems">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                 <horstretch>0</horstretch>
@@ -392,7 +392,7 @@
            </sizepolicy>
           </property>
           <property name="currentIndex">
-           <number>4</number>
+           <number>0</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -677,7 +677,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QTableView" name="t_tableViewStatusReportItems">
+             <widget class="QTableView" name="tableViewStatusReportItems">
               <property name="frameShadow">
                <enum>QFrame::Plain</enum>
               </property>
@@ -713,7 +713,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QTableView" name="t_tableViewTeam">
+             <widget class="QTableView" name="tableViewTeam">
               <property name="frameShadow">
                <enum>QFrame::Plain</enum>
               </property>
@@ -742,7 +742,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QTableView" name="t_tableViewItems">
+             <widget class="QTableView" name="tableViewItems">
               <property name="frameShadow">
                <enum>QFrame::Plain</enum>
               </property>
@@ -771,7 +771,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QTableView" name="t_tableViewLocations">
+             <widget class="QTableView" name="tableViewLocations">
               <property name="frameShadow">
                <enum>QFrame::Plain</enum>
               </property>
@@ -827,7 +827,7 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QTableView" name="t_tableViewMeetings">
+                <widget class="QTableView" name="tableViewMeetings">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
                    <horstretch>0</horstretch>
@@ -875,7 +875,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QTableView" name="t_tableViewPeople"/>
+         <widget class="QTableView" name="tableViewPeople"/>
         </item>
        </layout>
       </widget>
@@ -897,7 +897,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QTableView" name="t_tableViewClients"/>
+         <widget class="QTableView" name="tableViewClients"/>
         </item>
        </layout>
       </widget>
@@ -925,7 +925,7 @@
          <number>0</number>
         </property>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_12">
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
           <property name="spacing">
            <number>5</number>
           </property>
@@ -1191,7 +1191,7 @@
            </layout>
           </item>
           <item>
-           <widget class="QTableView" name="t_tableViewComments">
+           <widget class="QTableView" name="tableViewComments">
             <property name="frameShape">
              <enum>QFrame::NoFrame</enum>
             </property>
@@ -1255,7 +1255,7 @@
          </layout>
         </item>
         <item>
-         <widget class="QTableView" name="t_tableViewSearchResults">
+         <widget class="QTableView" name="tableViewSearchResults">
           <property name="frameShape">
            <enum>QFrame::NoFrame</enum>
           </property>
@@ -1375,7 +1375,10 @@
      <height>16</height>
     </size>
    </property>
-   <property name="float_table">
+   <property name="floatable">
+    <bool>false</bool>
+   </property>
+   <property name="float_table" stdset="0">
     <bool>false</bool>
    </property>
    <attribute name="toolBarArea">

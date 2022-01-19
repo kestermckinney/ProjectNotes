@@ -31,7 +31,7 @@ void PNDateEditDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_i
 {
     QDateEdit *dateedit = static_cast<QDateEdit*>(t_editor);
     QString t_value = t_index.model()->data(t_index, Qt::EditRole).toString();
-    QDateTime datevalue = PNSqlQueryModel::ParseDateTime(t_value);
+    QDateTime datevalue = PNSqlQueryModel::parseDateTime(t_value);
 
     dateedit->setDate(datevalue.date());
 }

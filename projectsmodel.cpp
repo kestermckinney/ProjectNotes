@@ -19,38 +19,38 @@ ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
 
     setTableName("projects", "Project");
 
-    AddColumn(0, tr("Project ID"), DB_STRING, false, true, false);
-    AddColumn(1, tr("Number"), DB_STRING, true, true, true, true);
-    AddColumn(2, tr("Project Name"), DB_STRING, true, true, true, true);
-    AddColumn(3, tr("Status Date"), DB_DATE, true, false, true);
-    AddColumn(4, tr("Invoice Date"), DB_DATE, true, false, true);
-    AddColumn(5, tr("Primary Contact"), DB_STRING, true, false, true);
-    AddColumn(6, tr("Budget"), DB_USD, true, false, true);
-    AddColumn(7, tr("Actual"), DB_USD, true, false, true);
-    AddColumn(8, tr("BCWP"), DB_USD, true, false, true);
-    AddColumn(9, tr("BCWS"), DB_USD, true, false, true);
-    AddColumn(10, tr("BAC"), DB_USD, true, false, true);
-    AddColumn(11, tr("Invoice Period"), DB_STRING, true, false, true);
-    AssociateLookupValues(11, &PNDatabaseObjects::invoicing_period);
-    AddColumn(12, tr("Report Period"), DB_STRING, true, false, true);
-    AssociateLookupValues(12, &PNDatabaseObjects::status_report_period);
-    AddColumn(13, tr("Client"), DB_STRING, true, false, true);
-    AddColumn(14, tr("Status"), DB_STRING, true, false, true);
-    AssociateLookupValues(14, &PNDatabaseObjects::project_status);
-    AddColumn(15, tr("Consumed"), DB_PERCENT, true, false, false);
-    AddColumn(16, tr("EAC"), DB_USD, true, false, false);
-    AddColumn(17, tr("CV"), DB_PERCENT, true, false, false);
-    AddColumn(18, tr("SV"), DB_PERCENT, true, false, false);
-    AddColumn(19, tr("Completed"), DB_PERCENT, true, false, false);
-    AddColumn(20, tr("CPI"), DB_REAL, true, false, false);
+    addColumn(0, tr("Project ID"), DB_STRING, false, true, false);
+    addColumn(1, tr("Number"), DB_STRING, true, true, true, true);
+    addColumn(2, tr("Project Name"), DB_STRING, true, true, true, true);
+    addColumn(3, tr("Status Date"), DB_DATE, true, false, true);
+    addColumn(4, tr("Invoice Date"), DB_DATE, true, false, true);
+    addColumn(5, tr("Primary Contact"), DB_STRING, true, false, true);
+    addColumn(6, tr("Budget"), DB_USD, true, false, true);
+    addColumn(7, tr("Actual"), DB_USD, true, false, true);
+    addColumn(8, tr("BCWP"), DB_USD, true, false, true);
+    addColumn(9, tr("BCWS"), DB_USD, true, false, true);
+    addColumn(10, tr("BAC"), DB_USD, true, false, true);
+    addColumn(11, tr("Invoice Period"), DB_STRING, true, false, true);
+    associateLookupValues(11, &PNDatabaseObjects::invoicing_period);
+    addColumn(12, tr("Report Period"), DB_STRING, true, false, true);
+    associateLookupValues(12, &PNDatabaseObjects::status_report_period);
+    addColumn(13, tr("Client"), DB_STRING, true, false, true);
+    addColumn(14, tr("Status"), DB_STRING, true, false, true);
+    associateLookupValues(14, &PNDatabaseObjects::project_status);
+    addColumn(15, tr("Consumed"), DB_PERCENT, true, false, false);
+    addColumn(16, tr("EAC"), DB_USD, true, false, false);
+    addColumn(17, tr("CV"), DB_PERCENT, true, false, false);
+    addColumn(18, tr("SV"), DB_PERCENT, true, false, false);
+    addColumn(19, tr("Completed"), DB_PERCENT, true, false, false);
+    addColumn(20, tr("CPI"), DB_REAL, true, false, false);
 
-    AddRelatedTable("project_notes", "project_id", "Meeting");
-    AddRelatedTable("item_tracker", "project_id", "Action/Tracker Item");
-    AddRelatedTable("project_locations", "project_id", "Project Location");
-    AddRelatedTable("project_people", "project_id", "Project People");
-    AddRelatedTable("status_report_items", "project_id", "Status Report Item");
+    addRelatedTable("project_notes", "project_id", "Meeting");
+    addRelatedTable("item_tracker", "project_id", "Action/Tracker Item");
+    addRelatedTable("project_locations", "project_id", "Project Location");
+    addRelatedTable("project_people", "project_id", "Project People");
+    addRelatedTable("status_report_items", "project_id", "Status Report Item");
 
-    SetOrderBy("project_number");
+    setOrderBy("project_number");
 }
 
 bool ProjectsModel::newRecord()
@@ -75,7 +75,7 @@ bool ProjectsModel::newRecord()
     qr.setValue(12, tr("Bi-Weekly"));
     qr.setValue(14, tr("Active"));
 
-    AddRecord(qr);
+    addRecord(qr);
 
     return true;
 }
@@ -88,7 +88,7 @@ QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
         {
             QVariant t_value = data(t_index);
 
-            QDateTime datecol = ParseDateTime(t_value.toString());
+            QDateTime datecol = parseDateTime(t_value.toString());
             qint64 dif = datecol.daysTo(QDateTime::currentDateTime());
 
             QString period = data( this->index(t_index.row(), 12)).toString();
@@ -130,7 +130,7 @@ QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
         {
             QVariant t_value = data(t_index);
 
-            QDateTime datecol = ParseDateTime(t_value.toString());
+            QDateTime datecol = parseDateTime(t_value.toString());
             QDate nextdate = datecol.date();
             nextdate = nextdate.addMonths(1);
             nextdate.setDate(nextdate.year(), nextdate.month(), 1); // set to the first of the next month

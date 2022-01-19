@@ -8,12 +8,12 @@ MeetingAttendeesModel::MeetingAttendeesModel(QObject* t_parent): PNSqlQueryModel
 
     setTableName("meeting_attendees", "Attendees");
 
-    AddColumn(0, tr("Attendee ID"), DB_STRING, false, true, true, true);
-    AddColumn(1, tr("Note ID"), DB_STRING, false, true, true, false);
-    AddColumn(2, tr("Attendee"), DB_STRING, false, true, true, false); //, true, teamlist, wxT("name"), wxT("people_id"), true );
-    AddColumn(3, tr("Attendee Name"), DB_STRING, false, true, true, false);
+    addColumn(0, tr("Attendee ID"), DB_STRING, false, true, true, true);
+    addColumn(1, tr("Note ID"), DB_STRING, false, true, true, false);
+    addColumn(2, tr("Attendee"), DB_STRING, false, true, true, false); //, true, teamlist, wxT("name"), wxT("people_id"), true );
+    addColumn(3, tr("Attendee Name"), DB_STRING, false, true, true, false);
 
-    //AddRelatedTable("item_tracker", "assigned_to", "Assigned Item");
+    //addRelatedTable("item_tracker", "assigned_to", "Assigned Item");
 
-    SetOrderBy("people.name");
+    setOrderBy("people.name");
 }

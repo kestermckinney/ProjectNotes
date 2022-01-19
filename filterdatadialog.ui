@@ -40,7 +40,7 @@
        </widget>
       </item>
       <item>
-       <widget class="ColumnView" name="t_tableViewColumnName">
+       <widget class="ColumnView" name="tableViewColumnName">
         <property name="frameShadow">
          <enum>QFrame::Plain</enum>
         </property>
@@ -77,14 +77,14 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="QLabel" name="labelt_filter_values">
+       <widget class="QLabel" name="labelFilterValues">
         <property name="text">
          <string>Filter Values:</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="ValuesView" name="t_tableViewt_filter_values">
+       <widget class="ValuesView" name="tableViewFilterValues">
         <property name="frameShadow">
          <enum>QFrame::Plain</enum>
         </property>

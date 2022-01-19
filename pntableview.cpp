@@ -216,7 +216,7 @@ void PNTableView::slotDeleteRecord()
     QModelIndexList qil = this->selectionModel()->selectedRows();
 
     for (auto qi = qil.begin(); qi != qil.end(); qi++)
-        currentmodel->DeleteRecord(*qi);
+        currentmodel->deleteRecord(*qi);
 }
 
 void PNTableView::slotOpenRecord()

@@ -8,12 +8,12 @@ ProjectLocationsModel::ProjectLocationsModel(QObject* t_parent): PNSqlQueryModel
 
     setTableName("project_locations", "Project Locations");
 
-    AddColumn(0, tr("Location ID"), DB_STRING, false, true, true, true);
-    AddColumn(1, tr("Project ID"), DB_STRING, true, true, true, false);
-    AddColumn(2, tr("Location t_type"), DB_STRING, true, true, true, false);
-    AddColumn(3, tr("Description"), DB_STRING, true, false, true, false);
+    addColumn(0, tr("Location ID"), DB_STRING, false, true, true, true);
+    addColumn(1, tr("Project ID"), DB_STRING, true, true, true, false);
+    addColumn(2, tr("Location t_type"), DB_STRING, true, true, true, false);
+    addColumn(3, tr("Description"), DB_STRING, true, false, true, false);
 
-    //AddRelatedTable("item_tracker", "assigned_to", "Assigned Item");
+    //addRelatedTable("item_tracker", "assigned_to", "Assigned Item");
 
-    SetOrderBy("Description");
+    setOrderBy("Description");
 }

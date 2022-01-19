@@ -9,10 +9,10 @@ ValueSelectModel::ValueSelectModel(QObject *t_parent) : PNSqlQueryModel(t_parent
 
     setTableName("Values", "Values");
 
-    AddColumn(0, tr("Values"), DB_STRING, false, true, false);
+    addColumn(0, tr("Values"), DB_STRING, false, true, false);
     setReadOnly();
 
-    Refresh();
+    refresh();
 }
 
 void ValueSelectModel::setValuesColumn(QString t_column)
@@ -30,7 +30,7 @@ void ValueSelectModel::setValuesColumn(QString t_column)
     if (col >= ccount)
         return; // nothing can be done if the incorrect colum was specified
 
-    QString where = m_filtering_model->ConstructWhereClause(false);
+    QString where = m_filtering_model->constructWhereClause(false);
 
     if (!where.isEmpty())
         where += " and ";
@@ -40,10 +40,10 @@ void ValueSelectModel::setValuesColumn(QString t_column)
     QString fieldnm = m_filtering_model->emptyrecord().fieldName(col);
 
     setType(0, m_filtering_model->getType(col));
-    QString sql = "select distinct " + fieldnm + " from " + m_filtering_model->t_tablename() + where + fieldnm + " is not null";
+    QString sql = "select distinct " + fieldnm + " from " + m_filtering_model->tablename() + where + fieldnm + " is not null";
     qDebug() << "Value Select: " << sql << "\n";
 
     setBaseSql(sql);
 
-    Refresh();
+    refresh();
 }

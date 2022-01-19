@@ -25,74 +25,74 @@ public:
     QVariant data(const QModelIndex &t_index, int t_role = Qt::DisplayRole) const override;
 
     void clear();
-    void Refresh();
+    void refresh();
 
     void setTableName(const QString &t_table, const QString &t_display_name) { m_tablename = t_table; m_display_name = t_display_name; };
-    const QString& t_tablename() { return m_tablename; };
+    const QString& tablename() { return m_tablename; };
     void setBaseSql(const QString t_table) { m_base_sql = t_table;};
     const QString& BaseSQL() { return m_base_sql; };
 
     Qt::ItemFlags flags(const QModelIndex &t_index) const override;
 
-    void SQLEscape(QVariant& t_column_value, DBColumnType t_column_type) const;
-    void ReformatValue(QVariant& t_column_value, DBColumnType t_column_type) const;
+    void sqlEscape(QVariant& t_column_value, DBColumnType t_column_type) const;
+    void reformatValue(QVariant& t_column_value, DBColumnType t_column_type) const;
 
-    void AddColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, bool t_searchable, bool t_required = false, bool t_edit_table = true, bool t_unique = false);
-    void AddRelatedTable(const QString& t_table_name, const QString& t_colum_name, const QString& t_title);
-    void AssociateLookupValues(int t_column_number, QStringList* t_lookup_values);
+    void addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, bool t_searchable, bool t_required = false, bool t_edit_table = true, bool t_unique = false);
+    void addRelatedTable(const QString& t_table_name, const QString& t_colum_name, const QString& t_title);
+    void associateLookupValues(int t_column_number, QStringList* t_lookup_values);
     QVariant headerData(int t_section, Qt::Orientation t_orientation,
                         int t_role = Qt::DisplayRole) const override;
     bool setHeaderData(int t_section, Qt::Orientation t_orientation, const QVariant &t_value,
                        int t_role = Qt::EditRole) override;
 
-    static QDateTime ParseDateTime(QString t_entrydate);
-    virtual bool AddRecord(QSqlRecord& t_newrecord);
+    static QDateTime parseDateTime(QString t_entrydate);
+    virtual bool addRecord(QSqlRecord& t_newrecord);
     virtual bool newRecord();
-    bool DeleteRecord(QModelIndex t_index);
+    bool deleteRecord(QModelIndex t_index);
 
     int rowCount(const QModelIndex &t_parent) const override;
 
     int columnCount(const QModelIndex &t_parent = QModelIndex()) const override;
 
     bool isUniqueValue(const QVariant &t_new_value, const QModelIndex &t_index);
-    bool DeleteCheck(const QModelIndex &t_index);
+    bool deleteCheck(const QModelIndex &t_index);
     QSqlRecord emptyrecord();
-    const QVariant FindValue(QVariant& t_lookup_value, int t_search_column, int t_return_column);
+    const QVariant findValue(QVariant& t_lookup_value, int t_search_column, int t_return_column);
     void setShowBlank(bool t_show = true) { m_show_blank = t_show; };
-    bool ReloadRecord(const QModelIndex& t_index);
+    bool reloadRecord(const QModelIndex& t_index);
 
-    QString ConstructWhereClause(bool t_include_user_filter = true);
-    void SetFilter(int t_column_number, const QString& t_filter_value);
-    void ClearAllFilters();
-    void ClearFilter(int t_column_number);
+    QString constructWhereClause(bool t_include_user_filter = true);
+    void setFilter(int t_column_number, const QString& t_filter_value);
+    void clearAllFilters();
+    void clearFilter(int t_column_number);
 
-    void SetUserFilter(int t_column_number, const QVariantList& t_ilter_values);
-    const QVariantList& GetUserFilter(int t_column_number) { return m_user_filter_values[t_column_number]; };
-    void SetUserSearchString(int t_column_number, const QVariant& t_search_value);
-    QVariant& GetUserSearchString(int t_column_number) { return m_user_search_string[t_column_number]; };
+    void setUserFilter(int t_column_number, const QVariantList& t_ilter_values);
+    const QVariantList& getUserFilter(int t_column_number) { return m_user_filter_values[t_column_number]; };
+    void setUserSearchString(int t_column_number, const QVariant& t_search_value);
+    QVariant& getUserSearchString(int t_column_number) { return m_user_search_string[t_column_number]; };
 
-    void SetUserSearchRange(int t_column_number, const QVariant& t_search_begin_value, const QVariant& m_Search_end_value );
-    void GetUserSearchRange(int t_column_number, QVariant& t_earch_begin_value, QVariant& t_search_end_value );
-    void ClearAllUserSearches();
-    void ClearUserFilter(int t_column_number);
-    void ClearUserSearchString(int t_column_number);
-    void ClearUserSearchRange(int t_column_number);
+    void setUserSearchRange(int t_column_number, const QVariant& t_search_begin_value, const QVariant& m_Search_end_value );
+    void getUserSearchRange(int t_column_number, QVariant& t_earch_begin_value, QVariant& t_search_end_value );
+    void clearAllUserSearches();
+    void clearUserFilter(int t_column_number);
+    void clearUserSearchString(int t_column_number);
+    void clearUserSearchRange(int t_column_number);
     bool hasUserFilters(int t_column_number) const;
     bool hasUserFilters() const;
-    void ActivateUserFilter(QString t_filter_name);
-    void DeactivateUserFilter(QString t_filter_name);
-    void LoadLastUserFilterState(QString t_filter_name);
+    void activateUserFilter(QString t_filter_name);
+    void deactivateUserFilter(QString t_filter_name);
+    void loadLastUserFilterState(QString t_filter_name);
 
-    void SaveUserFilter( QString t_filter_name);
-    void LoadUserFilter( QString t_filter_name);
-    bool GetUserFilterState() { return m_user_filter_active; };
+    void saveUserFilter( QString t_filter_name);
+    void loadUserFilter( QString t_filter_name);
+    bool getUserFilterState() { return m_user_filter_active; };
 
-    void SetOrderBy(const QString& t_order_by) { m_order_by = t_order_by; };
-    void ClearOrderBy() { m_order_by.clear(); };
+    void setOrderBy(const QString& t_order_by) { m_order_by = t_order_by; };
+    void clearOrderBy() { m_order_by.clear(); };
 
-    void setEdit_table( int t_column, bool t_editable ) { m_column_is_editable[t_column] = t_editable; };
-    bool isEdit_table( int t_column ) { return m_column_is_editable[t_column]; }
-    void sett_searchable( int t_column, bool t_searchable ) { m_column_is_searchable[t_column] = t_searchable; };
+    void setEditable( int t_column, bool t_editable ) { m_column_is_editable[t_column] = t_editable; };
+    bool isEditable( int t_column ) { return m_column_is_editable[t_column]; }
+    void setSearchable( int t_column, bool t_searchable ) { m_column_is_searchable[t_column] = t_searchable; };
     bool isSearchable( int t_column ) { return m_column_is_searchable[t_column]; };
     void setRequired( int t_column, bool t_required ) { m_column_is_required[t_column] = t_required; };
     bool isRequired( int t_column ) { return m_column_is_required[t_column]; };

@@ -8,20 +8,20 @@ SearchResultsModel::SearchResultsModel(QObject* t_parent): PNSqlQueryModel(t_par
 
     setTableName("database_search", "Search Results");
 
-    AddColumn(0, tr("Data ID"), DB_STRING, false, false, false, false);
-    AddColumn(1, tr("t_type"), DB_STRING, false, false, false, false);
-    AddColumn(2, tr("Name"), DB_STRING, false, false, false, false);
-    AddColumn(3, tr("Description"), DB_STRING, false, false, false, false);
-    AddColumn(4, tr("Internal"), DB_STRING, false, false, false, false);
-    AddColumn(5, tr("Client ID"), DB_STRING, false, false, false, false);
-    AddColumn(6, tr("Project Status"), DB_STRING, false, false, false, false);
+    addColumn(0, tr("Data ID"), DB_STRING, false, false, false, false);
+    addColumn(1, tr("t_type"), DB_STRING, false, false, false, false);
+    addColumn(2, tr("Name"), DB_STRING, false, false, false, false);
+    addColumn(3, tr("Description"), DB_STRING, false, false, false, false);
+    addColumn(4, tr("Internal"), DB_STRING, false, false, false, false);
+    addColumn(5, tr("Client ID"), DB_STRING, false, false, false, false);
+    addColumn(6, tr("Project Status"), DB_STRING, false, false, false, false);
 
-    AddColumn(7, tr("Project Number"), DB_STRING, false, false, false, false);
-    AddColumn(8, tr("Project Name"), DB_STRING, false, false, false, false);
-    AddColumn(9, tr("Item Number"), DB_STRING, false, false, false, false);
-    AddColumn(10, tr("Item Name"), DB_STRING, false, false, false, false);
-    AddColumn(11, tr("Meeting"), DB_STRING, false, false, false, false);
-    AddColumn(12, tr("Title"), DB_STRING, false, false, false, false);
-    AddColumn(13, tr("Foreign Key"), DB_STRING, false, false, false, false);
-    AddColumn(14, tr("keyval"), DB_STRING, false, false, false, false);
+    addColumn(7, tr("Project Number"), DB_STRING, false, false, false, false);
+    addColumn(8, tr("Project Name"), DB_STRING, false, false, false, false);
+    addColumn(9, tr("Item Number"), DB_STRING, false, false, false, false);
+    addColumn(10, tr("Item Name"), DB_STRING, false, false, false, false);
+    addColumn(11, tr("Meeting"), DB_STRING, false, false, false, false);
+    addColumn(12, tr("Title"), DB_STRING, false, false, false, false);
+    addColumn(13, tr("Foreign Key"), DB_STRING, false, false, false, false);
+    addColumn(14, tr("keyval"), DB_STRING, false, false, false, false);
  }

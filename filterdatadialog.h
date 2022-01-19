@@ -4,6 +4,7 @@
 #include "FilterSaveStructure.h"
 #include "pncolumnmodel.h"
 #include "pnsqlquerymodel.h"
+#include "pntableview.h"
 
 #include "valueselectmodel.h"
 #include "pnsortfilterproxymodel.h"
@@ -24,6 +25,7 @@ public:
     ~FilterDataDialog();
 
     void setFilterModel(PNSqlQueryModel* t_model);
+    void setSourceView( PNTableView* t_view);
     void setEndValue(QVariant& t_text);
     void setBeginValue(QVariant& t_text);
     void setSearchText(QVariant& t_text);

@@ -23,7 +23,7 @@ MainWindow::MainWindow(QWidget *t_parent)
     m_current_model = nullptr;
 
     if (!global_Settings.getLastDatabase().toString().isEmpty())
-        OpenDatabase(global_Settings.getLastDatabase().toString());
+        openDatabase(global_Settings.getLastDatabase().toString());
 
     // connect events
     //connect(ui->pushButtonNewProject, &QPushButton::clicked, this, &MainWindow::handleNewProjectClicked);
@@ -43,10 +43,10 @@ MainWindow::~MainWindow()
     //disconnect(ui->pushButtonNewProject, &QPushButton::clicked, this, &MainWindow::handleNewProjectClicked);
     //disconnect(ui->pushButtonDeleteProject, &QPushButton::clicked, this, &MainWindow::handleDeleteProjectClicked);
 
-    ui->t_tableViewProjects->setModel(nullptr);
+    ui->tableViewProjects->setModel(nullptr);
 
     if (global_DBObjects.isOpen())
-        global_DBObjects.CloseDatabase();
+        global_DBObjects.closeDatabase();
 
     global_Settings.setWindowState("MainWindow", *this);
 
@@ -94,7 +94,7 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionClosed_Projects->setEnabled(dbopen);
 
     if (dbopen)
-        ui->actionClosed_Projects->setChecked(global_DBObjects.GetShowClosedProjects());
+        ui->actionClosed_Projects->setChecked(global_DBObjects.getShowClosedProjects());
 
     ui->actionNew_Item->setEnabled(dbopen);
     ui->actionCopy_Item->setEnabled(dbopen);
@@ -122,29 +122,30 @@ void MainWindow::on_actionOpen_Database_triggered()
 
     if (!dbfile.isEmpty())
     {
-        OpenDatabase(dbfile);
+        openDatabase(dbfile);
     }
 
     setButtonAndMenuStates();
 }
 
-void MainWindow::OpenDatabase(QString t_dbfile)
+void MainWindow::openDatabase(QString t_dbfile)
 {
-    if (!global_DBObjects.OpenDatabase(t_dbfile))
+    if (!global_DBObjects.openDatabase(t_dbfile))
         return;
 
-    global_DBObjects.SetGlobalSearches(false);
+    global_DBObjects.setGlobalSearches(false);
 
-    global_DBObjects.projectslistmodel()->LoadUserFilter(global_DBObjects.projectslistmodel()->objectName());
-    global_DBObjects.projectslistmodel()->ActivateUserFilter(global_DBObjects.projectslistmodel()->objectName());
-    //global_DBObjects.projectslistmodel()->Refresh();
+    global_DBObjects.projectslistmodel()->loadUserFilter(global_DBObjects.projectslistmodel()->objectName());
+    global_DBObjects.projectslistmodel()->activateUserFilter(global_DBObjects.projectslistmodel()->objectName());
+    //global_DBObjects.projectslistmodel()->refresh();
 
-    global_DBObjects.unfilteredpeoplemodel()->Refresh();
-    global_DBObjects.unfilteredclientsmodel()->Refresh();
-    global_DBObjects.clientsmodel()->Refresh();
+    global_DBObjects.unfilteredpeoplemodel()->refresh();
+    global_DBObjects.unfilteredclientsmodel()->refresh();
+    global_DBObjects.clientsmodel()->refresh();
 
-    ui->t_tableViewProjects->setModel(global_DBObjects.projectslistmodelproxy());
+    ui->tableViewProjects->setModel(global_DBObjects.projectslistmodelproxy());
     m_current_model = global_DBObjects.projectslistmodel();
+    m_current_view = ui->tableViewProjects;
 
     global_Settings.setLastDatabase(t_dbfile);
 }
@@ -152,14 +153,14 @@ void MainWindow::OpenDatabase(QString t_dbfile)
 void MainWindow::on_actionClose_Database_triggered()
 {
     global_Settings.setLastDatabase(QString());
-    global_DBObjects.CloseDatabase();
+    global_DBObjects.closeDatabase();
     setButtonAndMenuStates();
 }
 
 void MainWindow::on_actionClosed_Projects_triggered()
 {
-    global_DBObjects.SetShowClosedProjects(ui->actionClosed_Projects->isChecked());
-    global_DBObjects.SetGlobalSearches(true);
+    global_DBObjects.setShowClosedProjects(ui->actionClosed_Projects->isChecked());
+    global_DBObjects.setGlobalSearches(true);
 }
 
 void MainWindow::on_actionStatus_Bar_triggered()
@@ -169,8 +170,8 @@ void MainWindow::on_actionStatus_Bar_triggered()
 
 void MainWindow::on_actionFilter_triggered()
 {
-    // TODO: Setup filter dialog
     m_filterdialog->setFilterModel(m_current_model);
+    m_filterdialog->setSourceView(m_current_view);
     m_filterdialog->show();
 
 }

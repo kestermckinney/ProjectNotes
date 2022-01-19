@@ -52,8 +52,8 @@ bool PNSortFilterProxyModel::lessThan(const QModelIndex &t_source_left, const QM
         type_right = PNSqlQueryModel::DB_STRING;
 
     // convert to sort_table items
-    sourcemodel_left->SQLEscape(value_left, type_left);
-    sourcemodel_right->SQLEscape(value_right, type_right);
+    sourcemodel_left->sqlEscape(value_left, type_left);
+    sourcemodel_right->sqlEscape(value_right, type_right);
 
     // compare items
     if (type_left == PNSqlQueryModel::DB_INTEGER ||

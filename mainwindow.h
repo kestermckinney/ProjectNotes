@@ -24,7 +24,7 @@ private slots:
     //void handleNewProjectClicked();
     //void handleDeleteProjectClicked();
     void setButtonAndMenuStates();
-    void OpenDatabase(QString t_dbfile);
+    void openDatabase(QString t_dbfile);
 
     void on_actionExit_triggered();
 
@@ -47,6 +47,7 @@ private:
     int m_current_page;
     QList<int> m_page_history;
     PNSqlQueryModel* m_current_model;
+    PNTableView* m_current_view;
 };
 
 #endif // MAINWINDOW_H

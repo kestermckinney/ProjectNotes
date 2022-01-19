@@ -9,11 +9,11 @@ ClientsModel::ClientsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
     setTableName("clients", "Clients");
 
 
-    AddColumn(0, tr("Client ID"), DB_STRING, true, true, false, true);
-    AddColumn(1, tr("Client Name"), DB_STRING, true, true, true, true);
+    addColumn(0, tr("Client ID"), DB_STRING, true, true, false, true);
+    addColumn(1, tr("Client Name"), DB_STRING, true, true, true, true);
 
-    AddRelatedTable("people", "client_id", "People");
+    addRelatedTable("people", "client_id", "People");
 
-    SetOrderBy("client_name");
+    setOrderBy("client_name");
 
 }

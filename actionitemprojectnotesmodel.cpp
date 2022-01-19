@@ -8,12 +8,12 @@ ActionItemProjectNotesModel::ActionItemProjectNotesModel(QObject* t_parent): PNS
 
     setTableName("project_notes", "Project Notes");
 
-    AddColumn(0, tr("Note ID"), DB_STRING, false, true, false, false);
-    AddColumn(1, tr("Project ID"), DB_STRING, false, true, false, false);
-    AddColumn(2, tr("Meeting"), DB_STRING, false, true, false, false);
-    AddColumn(3, tr("Internal Item"), DB_BOOL, false, true, false, false);
+    addColumn(0, tr("Note ID"), DB_STRING, false, true, false, false);
+    addColumn(1, tr("Project ID"), DB_STRING, false, true, false, false);
+    addColumn(2, tr("Meeting"), DB_STRING, false, true, false, false);
+    addColumn(3, tr("Internal Item"), DB_BOOL, false, true, false, false);
 
-    //AddRelatedTable("item_tracker", "assigned_to", "Assigned Item");
+    //addRelatedTable("item_tracker", "assigned_to", "Assigned Item");
 
-    SetOrderBy("note_date");
+    setOrderBy("note_date");
 }

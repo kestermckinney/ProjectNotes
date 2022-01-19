@@ -67,7 +67,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 QMessageBox::critical(nullptr, QObject::tr("Cannot update record"),
                    m_headers[t_index.column()][Qt::EditRole].toString() + QObject::tr(" must be a unique t_value."), QMessageBox::Ok);
 
-                ReloadRecord(t_index);
+                reloadRecord(t_index);
 
                 return true;
             }
@@ -89,7 +89,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
         // reformat the t_value to be stored in the database
         QVariant cleanvalue = t_value;
 
-        SQLEscape(cleanvalue, m_column_type[t_index.column()]);
+        sqlEscape(cleanvalue, m_column_type[t_index.column()]);
 
         // the record id is always column 0
         //QModelIndex primaryKeyIndex = m_cache[t_index.row()].value(0); // QAbstractTableModel::t_index(t_index.row(), 0);
@@ -112,7 +112,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 QMessageBox::critical(nullptr, QObject::tr("Cannot update t_value"),
                    QObject::tr("Field was already updated by another process."), QMessageBox::Ok);
 
-                ReloadRecord(t_index);
+                reloadRecord(t_index);
 
                 return true;
             }
@@ -135,7 +135,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
     return true;
 }
 
-void PNSqlQueryModel::Refresh()
+void PNSqlQueryModel::refresh()
 {
     QString orderby;
     QString fullsql;
@@ -148,7 +148,7 @@ void PNSqlQueryModel::Refresh()
     if (!m_order_by.isEmpty() )
         orderby = " order by " + m_order_by;
 
-    fullsql = QString("%1 %2 %3").arg( BaseSQL(), ConstructWhereClause(), orderby);
+    fullsql = QString("%1 %2 %3").arg( BaseSQL(), constructWhereClause(), orderby);
 
     m_sql_query = QSqlQuery( fullsql );
 
@@ -175,7 +175,7 @@ QVariant PNSqlQueryModel::data(const QModelIndex &t_index, int t_role) const
     if (m_cache.size() > t_index.row() && (t_role == Qt::DisplayRole || t_role == Qt::EditRole) && t_index.row() >= 0)
     {
         retval = m_cache[t_index.row()].field(t_index.column()).value();
-        ReformatValue(retval, m_column_type[t_index.column()]);
+        reformatValue(retval, m_column_type[t_index.column()]);
     }
 
     // make a light gray backround when not edit_table
@@ -198,7 +198,7 @@ void PNSqlQueryModel::clear()
     //qDebug() << "PNSsqlQueryModel cache clearned.";
 }
 
-QDateTime PNSqlQueryModel::ParseDateTime(QString t_entrydate)
+QDateTime PNSqlQueryModel::parseDateTime(QString t_entrydate)
 {
     QStringList elements = t_entrydate.split(QRegularExpression("[-/.: ]"), Qt::SkipEmptyParts);
     QString Mon, Day,Year, Hours, Min, Seconds, Mil;
@@ -240,7 +240,7 @@ QDateTime PNSqlQueryModel::ParseDateTime(QString t_entrydate)
     return QDateTime(qd,qt);
 }
 
-void PNSqlQueryModel::SQLEscape(QVariant& t_column_value, DBColumnType t_column_type) const
+void PNSqlQueryModel::sqlEscape(QVariant& t_column_value, DBColumnType t_column_type) const
 {
     // don't store blank values
     if ( t_column_value.isNull() )
@@ -258,7 +258,7 @@ void PNSqlQueryModel::SQLEscape(QVariant& t_column_value, DBColumnType t_column_
     switch (t_column_type) {
         case DB_DATE:
         {
-            QDateTime datecol = ParseDateTime(t_column_value.toString());
+            QDateTime datecol = parseDateTime(t_column_value.toString());
 
             if ( datecol.isValid() )
             {
@@ -271,7 +271,7 @@ void PNSqlQueryModel::SQLEscape(QVariant& t_column_value, DBColumnType t_column_
         }
         case DB_DATETIME:
         {
-            QDateTime datecol = ParseDateTime(t_column_value.toString());
+            QDateTime datecol = parseDateTime(t_column_value.toString());
             if ( datecol.isValid() )
             {
                 if (datecol.date().year() < 1000)
@@ -357,7 +357,7 @@ bool PNSqlQueryModel::setHeaderData(int t_section, Qt::Orientation t_orientation
     return true;
 }
 
-void PNSqlQueryModel::ReformatValue(QVariant& t_column_value, DBColumnType t_column_type) const
+void PNSqlQueryModel::reformatValue(QVariant& t_column_value, DBColumnType t_column_type) const
 {
     // don't reformat empty values
     if (t_column_value.isNull())
@@ -437,7 +437,7 @@ void PNSqlQueryModel::ReformatValue(QVariant& t_column_value, DBColumnType t_col
     }
 }
 
-void PNSqlQueryModel::AddColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, bool t_searchable, bool t_required, bool t_editable, bool t_uniquie)
+void PNSqlQueryModel::addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, bool t_searchable, bool t_required, bool t_editable, bool t_uniquie)
 {
     setHeaderData(t_column_number, Qt::Horizontal, t_display_name);
 
@@ -464,7 +464,7 @@ void PNSqlQueryModel::AddColumn(int t_column_number, const QString& t_display_na
     m_lookup_fk_column[t_column_number] = -1;
 }
 
-void PNSqlQueryModel::AssociateLookupValues(int t_column_number, QStringList* LookupValues)
+void PNSqlQueryModel::associateLookupValues(int t_column_number, QStringList* LookupValues)
 {
     m_lookup_values[t_column_number] = LookupValues;
 }
@@ -477,7 +477,7 @@ int PNSqlQueryModel::rowCount(const QModelIndex &t_parent) const
     return m_cache.size();
 }
 
-bool PNSqlQueryModel::AddRecord(QSqlRecord& t_newrecord)
+bool PNSqlQueryModel::addRecord(QSqlRecord& t_newrecord)
 {
     int i = 0;
     // the record id is always column 0
@@ -569,12 +569,12 @@ bool PNSqlQueryModel::AddRecord(QSqlRecord& t_newrecord)
 bool PNSqlQueryModel::newRecord()
 {
     QSqlRecord qr = emptyrecord();
-    return AddRecord(qr);
+    return addRecord(qr);
 }
 
-bool PNSqlQueryModel::DeleteRecord(QModelIndex t_index)
+bool PNSqlQueryModel::deleteRecord(QModelIndex t_index)
 {
-    if (!DeleteCheck(t_index))
+    if (!deleteCheck(t_index))
         return false;
 
     QSqlQuery delrow("delete from " + m_tablename + " where " + m_sql_query.record().fieldName(0) + " = ? ");
@@ -631,14 +631,14 @@ bool PNSqlQueryModel::isUniqueValue(const QVariant &t_new_value, const QModelInd
     return true;
 }
 
-void PNSqlQueryModel::AddRelatedTable(const QString& TableName, const QString& ColumnName, const QString& Title)
+void PNSqlQueryModel::addRelatedTable(const QString& TableName, const QString& ColumnName, const QString& Title)
 {
     m_related_table.append(TableName);
     m_related_column.append(ColumnName);
     m_relation_title.append(Title);
 }
 
-bool PNSqlQueryModel::DeleteCheck(const QModelIndex &t_index)
+bool PNSqlQueryModel::deleteCheck(const QModelIndex &t_index)
 {
     int reference_count = 0;
     QString message;
@@ -687,20 +687,20 @@ bool PNSqlQueryModel::DeleteCheck(const QModelIndex &t_index)
     }
 }
 
-const QVariant PNSqlQueryModel::FindValue(QVariant& LookupValue, int SearchColumn, int ReturnColumn)
+const QVariant PNSqlQueryModel::findValue(QVariant& t_lookup_value, int t_search_column, int t_return_column)
 {
     for ( QVector<QSqlRecord>::Iterator itrow = m_cache.begin(); itrow != m_cache.end(); ++itrow )
     {
-        if ( itrow->value(SearchColumn) == LookupValue )
+        if ( itrow->value(t_search_column) == t_lookup_value )
         {
-            return itrow->value(ReturnColumn); // key is always at 0
+            return itrow->value(t_return_column); // key is always at 0
         }
     }
 
     return QVariant();
 }
 
-bool PNSqlQueryModel::ReloadRecord(const QModelIndex& t_index)
+bool PNSqlQueryModel::reloadRecord(const QModelIndex& t_index)
 {
     QSqlQuery select(BaseSQL() + " where " + m_sql_query.record().fieldName(0) + " = ? ");
     select.bindValue(0, m_cache[t_index.row()].field(0).value());
@@ -719,7 +719,7 @@ bool PNSqlQueryModel::ReloadRecord(const QModelIndex& t_index)
     return false;
 }
 
-QString PNSqlQueryModel::ConstructWhereClause(bool t_include_user_filter)
+QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
 {
     QString valuelist;
     QVariant t_column_value;
@@ -740,7 +740,7 @@ QString PNSqlQueryModel::ConstructWhereClause(bool t_include_user_filter)
                 if (!valuelist.isEmpty())
                     valuelist += tr(" AND ");
 
-                SQLEscape(t_column_value, m_column_type[hashit.key()]);
+                sqlEscape(t_column_value, m_column_type[hashit.key()]);
 
                 if (m_column_type[hashit.key()] == DB_BOOL && t_column_value == tr("'0'"))
                 {
@@ -772,7 +772,7 @@ QString PNSqlQueryModel::ConstructWhereClause(bool t_include_user_filter)
                     valuelist += tr(" AND ");
 
                 t_column_value = hashitsrch.value().toString();
-                SQLEscape(t_column_value, m_column_type[hashitsrch.key()]);
+                sqlEscape(t_column_value, m_column_type[hashitsrch.key()]);
 
                 valuelist += QString(" %1 LIKE '%%%2%%' ").arg(m_sql_query.record().fieldName(hashitsrch.key()), t_column_value.toString());
             }
@@ -793,12 +793,12 @@ QString PNSqlQueryModel::ConstructWhereClause(bool t_include_user_filter)
                     if (m_lookup_view[hashitsrch.key()])
                     {
                         QVariant lookupval(colval);
-                        t_column_value = m_lookup_view[hashitsrch.key()]->FindValue(lookupval, m_lookup_fk_column[hashitsrch.key()], m_lookup_value_column[hashitsrch.key()]);
+                        t_column_value = m_lookup_view[hashitsrch.key()]->findValue(lookupval, m_lookup_fk_column[hashitsrch.key()], m_lookup_value_column[hashitsrch.key()]);
                     }
                     else
                         t_column_value = colval;
 
-                    SQLEscape(t_column_value, m_column_type[hashitsrch.key()]);
+                    sqlEscape(t_column_value, m_column_type[hashitsrch.key()]);
 
                     instring += QString("'%1'").arg(t_column_value.toString());
 
@@ -824,8 +824,8 @@ QString PNSqlQueryModel::ConstructWhereClause(bool t_include_user_filter)
                 QVariant RangeStart(m_range_search_start[hashitsrch.key()]);
                 QVariant RangeEnd(m_range_search_end[hashitsrch.key()]);
 
-                SQLEscape(RangeStart, m_column_type[hashitsrch.key()]);
-                SQLEscape(RangeEnd, m_column_type[hashitsrch.key()]);
+                sqlEscape(RangeStart, m_column_type[hashitsrch.key()]);
+                sqlEscape(RangeEnd, m_column_type[hashitsrch.key()]);
 
                 if (!RangeStart.isNull() && RangeStart != tr("''"))
                 {
@@ -852,49 +852,49 @@ QString PNSqlQueryModel::ConstructWhereClause(bool t_include_user_filter)
     return valuelist;
 }
 
-void PNSqlQueryModel::SetFilter(int t_column_number, const QString& t_filter_value)
+void PNSqlQueryModel::setFilter(int t_column_number, const QString& t_filter_value)
 {
     m_filter_value[t_column_number] = t_filter_value;
     m_column_is_filtered[t_column_number] = true;
 }
 
-void PNSqlQueryModel::ClearAllFilters()
+void PNSqlQueryModel::clearAllFilters()
 {
     QHashIterator<int, bool> hashit(m_column_is_filtered);
 
     while (hashit.hasNext())
     {
         hashit.next();
-        ClearFilter(hashit.key());
+        clearFilter(hashit.key());
     }
 }
 
-void PNSqlQueryModel::ClearFilter(int t_column_number)
+void PNSqlQueryModel::clearFilter(int t_column_number)
 {
     m_column_is_filtered[t_column_number] = false;
     m_filter_value[t_column_number].clear();
 }
 
-void PNSqlQueryModel::SetUserFilter(int t_column_number, const QVariantList& t_filter_values)
+void PNSqlQueryModel::setUserFilter(int t_column_number, const QVariantList& t_filter_values)
 {
     m_is_user_filtered[t_column_number] = true;
     m_user_filter_values[t_column_number] = t_filter_values;
 }
 
-void PNSqlQueryModel::SetUserSearchString(int t_column_number, const QVariant& t_search_value)
+void PNSqlQueryModel::setUserSearchString(int t_column_number, const QVariant& t_search_value)
 {
     m_is_user_filtered[t_column_number] = true;
     m_user_search_string[t_column_number] = t_search_value;
 }
 
-void PNSqlQueryModel::SetUserSearchRange(int t_column_number, const QVariant& t_search_begin_value, const QVariant& t_search_end_value )
+void PNSqlQueryModel::setUserSearchRange(int t_column_number, const QVariant& t_search_begin_value, const QVariant& t_search_end_value )
 {
     m_is_user_range_filtered[t_column_number] = true;
     m_range_search_start[t_column_number] = t_search_begin_value;
     m_range_search_end[t_column_number] = t_search_end_value;
 }
 
-void PNSqlQueryModel::GetUserSearchRange(int t_column_number, QVariant& t_search_begin_value, QVariant& t_search_end_value )
+void PNSqlQueryModel::getUserSearchRange(int t_column_number, QVariant& t_search_begin_value, QVariant& t_search_end_value )
 {
     if (m_range_search_start.contains(t_column_number))
     {
@@ -903,20 +903,20 @@ void PNSqlQueryModel::GetUserSearchRange(int t_column_number, QVariant& t_search
     }
 }
 
-void PNSqlQueryModel::ClearAllUserSearches()
+void PNSqlQueryModel::clearAllUserSearches()
 {
     QHashIterator<int, bool> hashit(m_column_is_filtered);
 
     while (hashit.hasNext())
     {
         hashit.next();
-        ClearUserFilter(hashit.key());
-        ClearUserSearchString(hashit.key());
-        ClearUserSearchRange(hashit.key());
+        clearUserFilter(hashit.key());
+        clearUserSearchString(hashit.key());
+        clearUserSearchRange(hashit.key());
     }
 }
 
-void PNSqlQueryModel::ClearUserFilter(int t_column_number)
+void PNSqlQueryModel::clearUserFilter(int t_column_number)
 {
     if (m_is_user_filtered.contains(t_column_number))
     {
@@ -925,13 +925,13 @@ void PNSqlQueryModel::ClearUserFilter(int t_column_number)
     }
 }
 
-void PNSqlQueryModel::ClearUserSearchString(int t_column_number)
+void PNSqlQueryModel::clearUserSearchString(int t_column_number)
 {
     if (m_user_search_string.contains(t_column_number))
         m_user_search_string[t_column_number].clear();
 }
 
-void PNSqlQueryModel::ClearUserSearchRange(int t_column_number)
+void PNSqlQueryModel::clearUserSearchRange(int t_column_number)
 {
     if (m_is_user_range_filtered.contains(t_column_number))
     {
@@ -963,10 +963,10 @@ bool PNSqlQueryModel::hasUserFilters() const
     return false;
 }
 
-void PNSqlQueryModel::ActivateUserFilter(QString t_filter_name)
+void PNSqlQueryModel::activateUserFilter(QString t_filter_name)
 {
     m_user_filter_active = true;
-    Refresh();
+    refresh();
 
     if (!t_filter_name.isEmpty())
     {
@@ -978,14 +978,14 @@ void PNSqlQueryModel::ActivateUserFilter(QString t_filter_name)
 
         parmname = QString("UserFilter:%1:IsActive").arg(filter_name);
 
-        global_DBObjects.SaveParameter(parmname, val);
+        global_DBObjects.saveParameter(parmname, val);
     }
 }
 
-void PNSqlQueryModel::DeactivateUserFilter(QString t_filter_name)
+void PNSqlQueryModel::deactivateUserFilter(QString t_filter_name)
 {
     m_user_filter_active = false;
-    Refresh();
+    refresh();
 
     if (!t_filter_name.isEmpty())
     {
@@ -997,11 +997,11 @@ void PNSqlQueryModel::DeactivateUserFilter(QString t_filter_name)
 
         parmname = QString("UserFilter:%1:IsActive").arg(filter_name);
 
-        global_DBObjects.SaveParameter(parmname, val);
+        global_DBObjects.saveParameter(parmname, val);
     }
 }
 
-void PNSqlQueryModel::LoadLastUserFilterState(QString t_filter_name)
+void PNSqlQueryModel::loadLastUserFilterState(QString t_filter_name)
 {
     QString filter_name = t_filter_name;
     filter_name.replace(" ", "_", Qt::CaseSensitive);
@@ -1012,7 +1012,7 @@ void PNSqlQueryModel::LoadLastUserFilterState(QString t_filter_name)
     parmname = QString("UserFilter:%1:IsActive").arg(filter_name);
     parmname.replace(" ", "_", Qt::CaseSensitive);
 
-    val = global_DBObjects.LoadParameter(parmname);
+    val = global_DBObjects.loadParameter(parmname);
 
     if (val == "true")
         m_user_filter_active = true;
@@ -1020,7 +1020,7 @@ void PNSqlQueryModel::LoadLastUserFilterState(QString t_filter_name)
         m_user_filter_active = false;
 }
 
-void PNSqlQueryModel::SaveUserFilter( QString t_filter_name)
+void PNSqlQueryModel::saveUserFilter( QString t_filter_name)
 {
     QString filter_name = t_filter_name;
     filter_name.replace(" ", "_", Qt::CaseSensitive);
@@ -1063,10 +1063,10 @@ void PNSqlQueryModel::SaveUserFilter( QString t_filter_name)
 
     QString parmname = QString("UserFilter:%1").arg(filter_name);
 
-    global_DBObjects.SaveParameter( parmname, xml );
+    global_DBObjects.saveParameter( parmname, xml );
 }
 
-void PNSqlQueryModel::LoadUserFilter( QString t_filter_name)
+void PNSqlQueryModel::loadUserFilter( QString t_filter_name)
 {
     QString filter_name = t_filter_name;
     filter_name.replace(" ", "_", Qt::CaseSensitive);
@@ -1076,11 +1076,11 @@ void PNSqlQueryModel::LoadUserFilter( QString t_filter_name)
     parmname = QString("UserFilter:%1").arg(filter_name);
     parmname.replace(" ", "_", Qt::CaseSensitive);
 
-    QString xml = global_DBObjects.LoadParameter(parmname);
+    QString xml = global_DBObjects.loadParameter(parmname);
 
     if (xml.isEmpty())
     {
-        ClearAllUserSearches();
+        clearAllUserSearches();
         return;
     }
 
@@ -1145,7 +1145,7 @@ QVariant PNSqlQueryModel::getLookupValue(const QModelIndex& t_index)
     if ( m_lookup_view[t_index.column()] != nullptr)
     {
         QVariant val = data(t_index);
-        QVariant find = m_lookup_view[t_index.column()]->FindValue(val, m_lookup_fk_column[t_index.column()], m_lookup_value_column[t_index.column()]);
+        QVariant find = m_lookup_view[t_index.column()]->findValue(val, m_lookup_fk_column[t_index.column()], m_lookup_value_column[t_index.column()]);
         return find;
     }
 

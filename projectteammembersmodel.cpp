@@ -8,13 +8,13 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* t_parent): PNSqlQueryM
 
     setTableName("project_people", "Project People");
 
-    AddColumn(0, tr("Team Member ID"), DB_STRING, false, true, true, true);
-    AddColumn(1, tr("Project ID"), DB_STRING, false, true, true, false);
-    AddColumn(2, tr("Role"), DB_STRING, true, false, true, false);
-    AddColumn(3, tr("Receive Status"), DB_BOOL, true, false, true, false);
-    AddColumn(4, tr("Name"), DB_STRING, true, false, false, false);
+    addColumn(0, tr("Team Member ID"), DB_STRING, false, true, true, true);
+    addColumn(1, tr("Project ID"), DB_STRING, false, true, true, false);
+    addColumn(2, tr("Role"), DB_STRING, true, false, true, false);
+    addColumn(3, tr("Receive Status"), DB_BOOL, true, false, true, false);
+    addColumn(4, tr("Name"), DB_STRING, true, false, false, false);
 
-    //AddRelatedTable("projects", "project_id", "Projecs");
+    //addRelatedTable("projects", "project_id", "Projecs");
 
-    SetOrderBy("name");
+    setOrderBy("name");
 }
