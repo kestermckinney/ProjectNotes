@@ -7,6 +7,7 @@
 
 #include <QMainWindow>
 #include <QStringListModel>
+#include <QStack>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -19,6 +20,14 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *t_parent = nullptr);
     ~MainWindow();
+
+    void navigateToPage(QWidget* t_widget);
+    void navigateForward();
+    void navigateBackward();
+    bool navigateAtEnd() { return (m_navigation_location == (m_navigation_history.count() - 1)); }
+    bool navigateAtStart() { return (m_navigation_location <= 0); }
+    void navigateClearHistory() { m_navigation_location = -1; m_navigation_history.clear(); }
+    QWidget* navigateCurrentPage() { return (m_navigation_location == -1 ? nullptr : m_navigation_history.at(m_navigation_location) ); }
 
 private slots:
     //void handleNewProjectClicked();
@@ -38,6 +47,16 @@ private slots:
 
     void on_actionFilter_triggered();
 
+    void on_actionClients_triggered();
+
+    void on_actionPeople_triggered();
+
+    void on_actionProjects_triggered();
+
+    void on_actionBack_triggered();
+
+    void on_actionForward_triggered();
+
 private:
     Ui::MainWindow *ui;
 
@@ -46,8 +65,11 @@ private:
     // view state
     int m_current_page;
     QList<int> m_page_history;
-    PNSqlQueryModel* m_current_model;
-    PNTableView* m_current_view;
+    PNSqlQueryModel* m_current_model = nullptr;
+    PNTableView* m_current_view = nullptr;
+
+    QStack<QWidget*> m_navigation_history;
+    int m_navigation_location = -1;
 };
 
 #endif // MAINWINDOW_H

@@ -1,3 +1,4 @@
+#include "pnsqlquerymodel.h"
 #include "columnview.h"
 
 ColumnView::ColumnView(QWidget *t_parent) : PNTableView(t_parent)
@@ -36,5 +37,10 @@ void ColumnView::dataRowSelected(const QModelIndex &t_index)
     m_parent_ui->setEndValue((*m_saved_filters)[dbcolname].SearchEndValue);
     m_parent_ui->setBeginValue((*m_saved_filters)[dbcolname].SearchBeginValue);
     m_parent_ui->setSearchText((*m_saved_filters)[dbcolname].SearchString);
+
+    if ( m_filtered_model->getType(col) == PNSqlQueryModel::DB_STRING )
+        m_parent_ui->setSearchTextEnabled(true);
+    else
+        m_parent_ui->setSearchTextEnabled(false);
 }
 

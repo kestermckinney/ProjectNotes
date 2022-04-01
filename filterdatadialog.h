@@ -28,6 +28,7 @@ public:
     void setEndValue(QVariant& t_text);
     void setBeginValue(QVariant& t_text);
     void setSearchText(QVariant& t_text);
+    void setSearchTextEnabled( bool t_enabled );
     QVariant getEndValue();
     QVariant getStartValue();
     QVariant getSearchText();

@@ -100,16 +100,12 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionCopy_Item->setEnabled(dbopen);
     ui->actionDelete_Item->setEnabled(dbopen);
     ui->actionEdit_Itesm->setEnabled(dbopen);
-    ui->actionBack->setEnabled(dbopen);
-    ui->actionForward->setEnabled(dbopen);
+    ui->actionBack->setEnabled(!navigateAtStart());
+    ui->actionForward->setEnabled(!navigateAtEnd());
     ui->actionClients->setEnabled(dbopen);
     ui->actionPeople->setEnabled(dbopen);
     ui->actionFilter->setEnabled(dbopen);
 }
-
-// TODO: Save column resizing that is done
-// TODO: Save sorting that is done
-// TODO: Allow for a reset of columnn sizing and sorting
 
 void MainWindow::on_actionExit_triggered()
 {
@@ -151,6 +147,48 @@ void MainWindow::openDatabase(QString t_dbfile)
     m_current_view = ui->tableViewProjects;
 
     global_Settings.setLastDatabase(t_dbfile);
+
+    navigateClearHistory();
+    navigateToPage(ui->pageProjectsList);
+}
+
+void MainWindow::navigateToPage(QWidget* t_widget)
+{
+    if ( t_widget == navigateCurrentPage() )
+        return;
+
+    m_navigation_location = m_navigation_history.count();
+    m_navigation_history.push(t_widget);
+
+    ui->stackedWidget->setCurrentWidget(t_widget);
+
+    setButtonAndMenuStates();
+}
+
+void MainWindow::navigateBackward()
+{
+    if (m_navigation_location > 0)
+    {
+        m_navigation_location--;
+
+        QWidget* current = m_navigation_history.at(m_navigation_location);
+        ui->stackedWidget->setCurrentWidget(current);
+    }
+
+    setButtonAndMenuStates();
+}
+
+void MainWindow::navigateForward()
+{
+    if (m_navigation_location < (m_navigation_history.count() - 1) )
+    {
+        m_navigation_location++;
+
+        QWidget* current = m_navigation_history.at(m_navigation_location);
+        ui->stackedWidget->setCurrentWidget(current);
+    }
+
+    setButtonAndMenuStates();
 }
 
 void MainWindow::on_actionClose_Database_triggered()
@@ -175,4 +213,29 @@ void MainWindow::on_actionFilter_triggered()
 {
     m_filterdialog->setSourceModelView(m_current_model, m_current_view);
     m_filterdialog->show();
+}
+
+void MainWindow::on_actionClients_triggered()
+{
+    navigateToPage(ui->pageClients);
+}
+
+void MainWindow::on_actionPeople_triggered()
+{
+    navigateToPage(ui->pagePeople);
+}
+
+void MainWindow::on_actionProjects_triggered()
+{
+    navigateToPage(ui->pageProjectsList);
+}
+
+void MainWindow::on_actionBack_triggered()
+{
+    navigateBackward();
+}
+
+void MainWindow::on_actionForward_triggered()
+{
+    navigateForward();
 }

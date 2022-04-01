@@ -66,6 +66,14 @@ void FilterDataDialog::setSearchText(QVariant& t_text)
     ui->lineEditSearchText->setText(t_text.toString());
 }
 
+void FilterDataDialog::setSearchTextEnabled( bool t_enabled )
+{
+    ui->lineEditSearchText->setEnabled( t_enabled );
+
+    if (!t_enabled)
+        ui->lineEditSearchText->clear();
+}
+
 QVariant FilterDataDialog::getEndValue()
 {
     return ui->lineEditEndValue->text();
