@@ -64,8 +64,8 @@ void PNSettings::setWindowState(const QString& t_window_name, const QWidget& t_w
 {
     setWindowX(t_window_name, t_window.geometry().left());
     setWindowY(t_window_name, t_window.geometry().top());
-    setWindowHeight(t_window_name, t_window.geometry().height());
-    setWindowWidth(t_window_name, t_window.geometry().width());
+    if (t_window.geometry().height() > 0) setWindowHeight(t_window_name, t_window.geometry().height());
+    if (t_window.geometry().width() > 0) setWindowWidth(t_window_name, t_window.geometry().width());
     setWindowMaximized(t_window_name, t_window.isMaximized());
     if (t_window.objectName() == "MainWindow")
         setWindowStatusBar(t_window_name, ((MainWindow&)t_window).statusBar()->isVisibleTo(&t_window));
@@ -107,6 +107,10 @@ void PNSettings::setTableViewState(const QString& t_view_name, const QTableView&
     for (int i = 0; i < c; i++)
     {
         w = t_view.columnWidth(i);
+
+        // reject the save it saving a 0 width column
+        if (w <= 0) return;
+
         savestring += QString("%1,").arg(w);
     }
 

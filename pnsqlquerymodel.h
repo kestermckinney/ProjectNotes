@@ -101,7 +101,9 @@ public:
     void setLookup(int t_column, PNSqlQueryModel* t_lookup, int t_lookup_fk_column, int t_lookup_value_column);
     void setLookup(int t_column, QStringList* t_lookup);
     QVariant getLookupValue( const QModelIndex& t_index);
-    QString getColumnName( int t_column ) { return m_sql_query.record().fieldName(t_column); };
+    QString getColumnName( int t_column ) {
+        return m_sql_query.record().fieldName(t_column);
+    };
     QString getColumnName( QString& t_display_name );
     int getColumnNumber( QString& t_field_name );
 
@@ -148,7 +150,7 @@ private:
 
     bool m_show_blank = false;
 
-    QString m_order_by; // TODO: Add OrderBy
+    QString m_order_by;
     bool m_user_filter_active = false;
     bool m_read_only = false;
 

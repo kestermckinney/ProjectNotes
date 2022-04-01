@@ -133,17 +133,20 @@ void MainWindow::openDatabase(QString t_dbfile)
     if (!global_DBObjects.openDatabase(t_dbfile))
         return;
 
+    global_DBObjects.unfilteredpeoplemodel()->refresh();
+    global_DBObjects.unfilteredclientsmodel()->refresh();
+
     global_DBObjects.setGlobalSearches(false);
+
+    global_DBObjects.clientsmodel()->refresh();
 
     global_DBObjects.projectslistmodel()->loadUserFilter(global_DBObjects.projectslistmodel()->objectName());
     global_DBObjects.projectslistmodel()->activateUserFilter(global_DBObjects.projectslistmodel()->objectName());
     //global_DBObjects.projectslistmodel()->refresh();
 
-    global_DBObjects.unfilteredpeoplemodel()->refresh();
-    global_DBObjects.unfilteredclientsmodel()->refresh();
-    global_DBObjects.clientsmodel()->refresh();
 
     ui->tableViewProjects->setModel(global_DBObjects.projectslistmodelproxy());
+    ui->tableViewProjects->selectRow(0);
     m_current_model = global_DBObjects.projectslistmodel();
     m_current_view = ui->tableViewProjects;
 
@@ -170,8 +173,6 @@ void MainWindow::on_actionStatus_Bar_triggered()
 
 void MainWindow::on_actionFilter_triggered()
 {
-    m_filterdialog->setFilterModel(m_current_model);
-    m_filterdialog->setSourceView(m_current_view);
+    m_filterdialog->setSourceModelView(m_current_model, m_current_view);
     m_filterdialog->show();
-
 }

@@ -24,8 +24,7 @@ public:
     explicit FilterDataDialog(QWidget *t_parent = nullptr);
     ~FilterDataDialog();
 
-    void setFilterModel(PNSqlQueryModel* t_model);
-    void setSourceView( PNTableView* t_view);
+    void setSourceModelView(PNSqlQueryModel* t_model,PNTableView* t_view);
     void setEndValue(QVariant& t_text);
     void setBeginValue(QVariant& t_text);
     void setSearchText(QVariant& t_text);

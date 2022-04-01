@@ -722,10 +722,13 @@ bool PNSqlQueryModel::reloadRecord(const QModelIndex& t_index)
 QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
 {
     QString valuelist;
-    QVariant t_column_value;
+    QVariant column_value;
 
-    // build the column list for the where statement
     QHashIterator<int, bool> hashit(m_column_is_filtered);
+
+    // build out the filtered value portion of the where clause
+    // filtered values don't consider the value of foreign keys
+    // they aren't a filter the user sets in the filter tool
     while (hashit.hasNext())
     {
         hashit.next();
@@ -733,114 +736,226 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
         if (hashit.value()) // has a filter
         {
 
-            t_column_value = m_filter_value[hashit.key()];
+            column_value = m_filter_value[hashit.key()];
 
-            if (!t_column_value.isNull())
+            if (!column_value.isNull())
             {
                 if (!valuelist.isEmpty())
                     valuelist += tr(" AND ");
 
-                sqlEscape(t_column_value, m_column_type[hashit.key()]);
+                sqlEscape(column_value, m_column_type[hashit.key()]);
 
-                if (m_column_type[hashit.key()] == DB_BOOL && t_column_value == tr("'0'"))
+                if ( m_column_type[hashit.key()] != DB_STRING )
                 {
-                    valuelist += QString(" ( %1 = '%2'").arg(m_sql_query.record().fieldName(hashit.key()), t_column_value.toString() );
-                    valuelist += QString(" OR %1 IS NULL) ").arg( m_sql_query.record().fieldName(hashit.key()) );
+                    if (m_column_type[hashit.key()] == DB_BOOL && column_value == tr("0"))
+                    {
+                        valuelist += QString(" ( %1 = %2").arg(m_sql_query.record().fieldName(hashit.key()), column_value.toString() );
+                        valuelist += QString(" OR %1 IS NULL) ").arg( m_sql_query.record().fieldName(hashit.key()) );
+                    }
+                    else
+                        valuelist += QString("%1 = %2").arg( m_sql_query.record().fieldName(hashit.key()), column_value.toString() );
                 }
                 else
-                    valuelist += QString("%1 = '%2'").arg( m_sql_query.record().fieldName(hashit.key()), t_column_value.toString() );
+                    valuelist += QString("%1 = '%2'").arg( m_sql_query.record().fieldName(hashit.key()), column_value.toString() );
             }
         }
     }
 
+    // if the user filter is set to active and the function caller wan't to include user filters specified
+    // in the filter tool then add them to the where clause
     if (m_user_filter_active && t_include_user_filter)
     {
-        bool checkfornullptr;
-
-        // build the column list for user filter where statement
-
-        QHashIterator<int, QVariant> hashitsrch(m_user_search_string);
+        // iterate through all the fields and apply the user filters if they have them
+        // user search strings will search a foreign key value and not the foreign key id
+        QHashIterator<int, bool> hashitsrch(m_is_user_filtered);
         while (hashitsrch.hasNext())
         {
             hashitsrch.next();
 
-            checkfornullptr = false;
+            int colnum = hashitsrch.key();
 
-            if (hashitsrch.value().isValid() && !hashitsrch.value().toString().isEmpty())
+            if ( m_is_user_filtered[colnum] || m_is_user_range_filtered[colnum] ) // if has a user filter then add the various kinds
             {
-                if (!valuelist.isEmpty())
-                    valuelist += tr(" AND ");
 
-                t_column_value = hashitsrch.value().toString();
-                sqlEscape(t_column_value, m_column_type[hashitsrch.key()]);
+                // if the column has a sub string search them apply it
+                if ( !m_user_search_string[colnum].isNull() )
+                {
+                    column_value = m_user_search_string[colnum];
 
-                valuelist += QString(" %1 LIKE '%%%2%%' ").arg(m_sql_query.record().fieldName(hashitsrch.key()), t_column_value.toString());
-            }
+                    sqlEscape(column_value, m_column_type[colnum]);
 
-            if (m_is_user_filtered[hashitsrch.key()])
-            {
-                if (!valuelist.isEmpty())
-                    valuelist += tr(" AND ");
+                    if (!valuelist.isEmpty())
+                        valuelist += tr(" AND ");
 
-                QVariantList& ColumnValues = m_user_filter_values[hashitsrch.key()];
+                    // search foreign key value if exists otherwise search for the value in the field
+                    if (m_lookup_view[colnum])
+                    {
+                        int colnumval = m_lookup_value_column[colnum];
+                        int colnumkey = m_lookup_fk_column[colnum];
+
+                        QString keycolumn =  m_lookup_view[colnum]->getColumnName(colnumkey);
+                        QString valuecolumn = m_lookup_view[colnum]->getColumnName(colnumval);
+
+                        valuelist += QString(" ( %1 IN (select %2 from %3 where %4 LIKE '%%5%') ) ").arg(
+                                    m_sql_query.record().fieldName(colnum),
+                                    keycolumn,
+                                    m_lookup_view[colnum]->tablename(),
+                                    valuecolumn,
+                                    column_value.toString()
+                                );
+
+                        //qDebug() << "Looking for columns in " << m_lookup_view[colnum]->tablename() << ":  Column Number " << colnumkey << " is " << keycolumn<< ", Column Number " << colnumval << " is " << valuecolumn;
+                        //qDebug() << "View State: " << m_lookup_view[colnum]->rowCount(m_lookup_view[colnum]->index(0,0)) << "   " << m_lookup_view[colnum]->BaseSQL();
+                    }
+                    else
+                    {
+                        valuelist += QString(" %1 LIKE '%%2%' ").arg(m_sql_query.record().fieldName(colnum), column_value.toString());
+                    }
+                }
+
+                // if column has a list of values to filter add them to the where clause
+                QVariantList& ColumnValues = m_user_filter_values[colnum];
                 QString instring;
+                bool checkfornullptr = false;
 
                 for ( const auto& colval : ColumnValues)
                 {
                     if (!instring.isEmpty())
                         instring += tr(", ");
 
-                    if (m_lookup_view[hashitsrch.key()])
-                    {
-                        QVariant lookupval(colval);
-                        t_column_value = m_lookup_view[hashitsrch.key()]->findValue(lookupval, m_lookup_fk_column[hashitsrch.key()], m_lookup_value_column[hashitsrch.key()]);
-                    }
-                    else
-                        t_column_value = colval;
+                    column_value = colval;
 
-                    sqlEscape(t_column_value, m_column_type[hashitsrch.key()]);
+                    sqlEscape(column_value, m_column_type[colnum]);
 
-                    instring += QString("'%1'").arg(t_column_value.toString());
+                    instring += QString("'%1'").arg(column_value.toString());
 
-                    if (m_column_type[hashitsrch.key()] == DB_BOOL && t_column_value == tr("'0'"))
+                    if (m_column_type[colnum] == DB_BOOL && column_value == tr("'0'"))
                         checkfornullptr = true;
 
                     // the database doesn't store blanks, they are converted to nullptr
-                    if (t_column_value.isNull())
+                    if (column_value.isNull())
                         checkfornullptr = true;
                 }
 
-                if (checkfornullptr)
-                {
-                    valuelist += QString(" ( %1 IN (%2)").arg(m_sql_query.record().fieldName(hashitsrch.key()), instring);
-                    valuelist += QString(" OR %1 IS NULL) ").arg(m_sql_query.record().fieldName(hashitsrch.key()));
-                }
-                else
-                    valuelist += QString(" %1 IN (%2) ").arg(m_sql_query.record().fieldName(hashitsrch.key()), instring);
-            }
-
-            if (m_is_user_range_filtered[hashitsrch.key()])
-            {
-                QVariant RangeStart(m_range_search_start[hashitsrch.key()]);
-                QVariant RangeEnd(m_range_search_end[hashitsrch.key()]);
-
-                sqlEscape(RangeStart, m_column_type[hashitsrch.key()]);
-                sqlEscape(RangeEnd, m_column_type[hashitsrch.key()]);
-
-                if (!RangeStart.isNull() && RangeStart != tr("''"))
+                // if we found any items in the list of values add them to the where clause
+                if (!instring.isEmpty())
                 {
                     if (!valuelist.isEmpty())
                         valuelist += tr(" AND ");
 
-                    valuelist += QString("%1 >= '%2'").arg(m_sql_query.record().fieldName(hashitsrch.key()), RangeStart.toString());
+                    // if there is a null value to search for we need to add it to the where clause
+                    // since you can put blanks in the IN clause
+                    if (checkfornullptr)
+                    {
+                        valuelist += QString(" ( %1 IN (%2)").arg(m_sql_query.record().fieldName(hashitsrch.key()), instring);
+                        valuelist += QString(" OR %1 IS NULL) ").arg(m_sql_query.record().fieldName(hashitsrch.key()));
+                    }
+                    else
+                        valuelist += QString(" %1 IN (%2) ").arg(m_sql_query.record().fieldName(hashitsrch.key()), instring);
                 }
 
-                if (!RangeEnd.isNull() && RangeEnd != tr("''"))
+                // and any range filters that have been included into the where clause
+                if (m_is_user_range_filtered[colnum])
                 {
-                    if (!valuelist.isEmpty())
-                        valuelist += tr(" AND ");
+                    QVariant RangeStart(m_range_search_start[colnum]);
+                    QVariant RangeEnd(m_range_search_end[colnum]);
 
-                    valuelist += QString("%1 <= '%2'").arg(m_sql_query.record().fieldName(hashitsrch.key()), RangeEnd.toString());
+                    sqlEscape(RangeStart, m_column_type[colnum]);
+                    sqlEscape(RangeEnd, m_column_type[colnum]);
+
+
+                    // if the range is searching accross a foreign key value then
+                    // search and return a list of foreign key ids that apply
+                    // search foreign key value if exists otherwise search for the value in the field
+                    if (m_lookup_view[colnum])
+                    {
+                        QString fk_valuelist;
+
+                        int colnumval = m_lookup_value_column[colnum];
+                        int colnumkey = m_lookup_fk_column[colnum];
+
+                        QString keycolumn =  m_lookup_view[colnum]->getColumnName(colnumkey);
+                        QString valuecolumn = m_lookup_view[colnum]->getColumnName(colnumval);
+
+                        if (!RangeStart.isNull() && RangeStart != tr("''"))
+                        {
+                            //if (!fk_valuelist.isEmpty())
+                            //    fk_valuelist += tr(" AND ");
+
+                            if ( m_column_type[colnum] != DB_STRING )
+                            {
+                                fk_valuelist += QString("%1 >= %2").arg(valuecolumn, RangeStart.toString());
+                            }
+                            else
+                            {
+                                fk_valuelist += QString("%1 >= '%2'").arg(valuecolumn, RangeStart.toString());
+                            }
+                        }
+
+                        if (!RangeEnd.isNull() && RangeEnd != tr("''"))
+                        {
+                            if (!valuelist.isEmpty())
+                                fk_valuelist += tr(" AND ");
+
+
+                            if ( m_column_type[colnum] != DB_STRING )
+                            {
+                                fk_valuelist += QString("%1 <= %2").arg(valuecolumn, RangeEnd.toString());
+                            }
+                            else
+                            {
+                                fk_valuelist += QString("%1 <= '%2'").arg(valuecolumn, RangeEnd.toString());
+                            }
+                        }
+
+                        if (!valuelist.isEmpty())
+                            valuelist += tr(" AND ");
+
+                        valuelist += QString(" ( %1 IN (select %2 from %3 where %4) ) ").arg(
+                                    m_sql_query.record().fieldName(colnum),
+                                    keycolumn,
+                                    m_lookup_view[colnum]->tablename(),
+                                    fk_valuelist
+                                );
+
+                        //qDebug() << "Looking for columns in " << m_lookup_view[colnum]->tablename() << ":  Column Number " << colnumkey << " is " << keycolumn<< ", Column Number " << colnumval << " is " << valuecolumn;
+                        //qDebug() << "View State: " << m_lookup_view[colnum]->rowCount(m_lookup_view[colnum]->index(0,0)) << "   " << m_lookup_view[colnum]->BaseSQL();
+                    }
+                    else
+                    {
+                        // if the column doesn't have a lookup value in a foreign key
+                        // you can do the range search on the value
+                        if (!RangeStart.isNull() && RangeStart != tr("''"))
+                        {
+                            if (!valuelist.isEmpty())
+                                valuelist += tr(" AND ");
+
+                            if ( m_column_type[colnum] != DB_STRING )
+                            {
+                                valuelist += QString("%1 >= %2").arg(m_sql_query.record().fieldName(colnum), RangeStart.toString());
+                            }
+                            else
+                            {
+                                valuelist += QString("%1 >= '%2'").arg(m_sql_query.record().fieldName(colnum), RangeStart.toString());
+                            }
+                        }
+
+                        if (!RangeEnd.isNull() && RangeEnd != tr("''"))
+                        {
+                            if (!valuelist.isEmpty())
+                                valuelist += tr(" AND ");
+
+
+                            if ( m_column_type[colnum] != DB_STRING )
+                            {
+                                valuelist += QString("%1 <= %2").arg(m_sql_query.record().fieldName(colnum), RangeEnd.toString());
+                            }
+                            else
+                            {
+                                valuelist += QString("%1 <= '%2'").arg(m_sql_query.record().fieldName(colnum), RangeEnd.toString());
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1173,5 +1288,4 @@ int PNSqlQueryModel::getColumnNumber(QString &t_field_name)
 }
 
 // TODO: Setup refresh signalling between models
-// TODO: STOPPED HERE need to show list of values for contacts and companies instead of id numbers!!!
 

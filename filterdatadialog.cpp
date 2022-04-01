@@ -21,7 +21,15 @@ FilterDataDialog::FilterDataDialog(QWidget *m_parent) :
 
     ui->tableViewColumnName->setModel(m_column_proxy_model);
     ui->tableViewColumnName->setUI(this);
+
     ui->tableViewFilterValues->setModel(m_values_proxy_model);
+
+    //ui->tableViewColumnName->selectRow(0);
+    //ui->tableViewColumnName->dataRowSelected(m_column_proxy_model->index(0,0));
+    //m_values_model->refresh();
+    //m_values_proxy_model->refresh();
+
+
     QString storename = objectName();
     global_Settings.getWindowState(storename, *this);
 
@@ -73,14 +81,11 @@ QVariant FilterDataDialog::getSearchText()
     return ui->lineEditSearchText->text();
 }
 
-void FilterDataDialog::setSourceView( PNTableView* t_view)
-{
-    ui->tableViewColumnName->setSourceView( t_view );
-}
-
-void FilterDataDialog::setFilterModel(PNSqlQueryModel* t_model)
+void FilterDataDialog::setSourceModelView(PNSqlQueryModel *t_model, PNTableView *t_view)
 {
     m_filtered_model = t_model;
+
+    ui->tableViewColumnName->setSourceView( t_view );
 
     m_column_model->setColumnModel(t_model);
     m_column_model->setSavedFilters(&m_saved_filters);
@@ -91,11 +96,16 @@ void FilterDataDialog::setFilterModel(PNSqlQueryModel* t_model)
 
     m_values_model->setFilteringModel(t_model);
     m_values_model->setValuesColumn(m_column_model->data(qi).toString());
+    m_values_model->refresh();
 
     ui->tableViewColumnName->setColumnValuesModel(m_values_model);
     ui->tableViewColumnName->setFilteredModel(t_model);
     ui->tableViewColumnName->setValuesView(ui->tableViewFilterValues, &m_saved_filters);
     ui->tableViewFilterValues->setSavedFilters(&m_saved_filters);
+
+    ui->tableViewColumnName->selectRow(0);
+    ui->tableViewColumnName->dataRowSelected(m_column_proxy_model->index(0,0));
+    m_values_model->refresh();
 
     setupFilters();
 }
@@ -155,25 +165,23 @@ void FilterDataDialog::on_pushButtonApply_clicked()
         QString ColumnName = it.key();
         int t_column_number = m_filtered_model->getColumnNumber(ColumnName);
 
+        m_filtered_model->clearUserFilter(t_column_number);
+        m_filtered_model->clearUserSearchRange(t_column_number);
+        m_filtered_model->clearUserSearchString(t_column_number);
+
         // save the general search text
         if ( !it.value().SearchString.toString().isEmpty() )
             m_filtered_model->setUserSearchString( t_column_number, it.value().SearchString );
-        else
-            m_filtered_model->clearUserSearchString( t_column_number );
 
         // set the range based filter
         if ( !it.value().SearchBeginValue.toString().isEmpty() || !it.value().SearchEndValue.toString().isEmpty() )
             m_filtered_model->setUserSearchRange(t_column_number,it.value().SearchBeginValue, it.value().SearchEndValue);
-        else
-            m_filtered_model->clearUserSearchRange(t_column_number);
 
         // capture all of the selected values to search for
         if ( it.value().ColumnValues.size() > 0 )
         {
             m_filtered_model->setUserFilter(t_column_number, it.value().ColumnValues);
         }
-        else
-            m_filtered_model->clearUserFilter( t_column_number );
     }
 
     QString t_filter_name = m_filtered_model->objectName();
@@ -220,6 +228,15 @@ void FilterDataDialog::on_pushButtonReset_clicked()
     m_column_model->refresh();
 
     setupFilters();
+
+    QVariant empty;
+    setEndValue(empty);
+    setBeginValue(empty);
+    setSearchText(empty);
+
+    ui->tableViewColumnName->selectRow(0);
+    ui->tableViewColumnName->dataRowSelected(m_column_proxy_model->index(0,0));
+    m_values_model->refresh();
 }
 
 void FilterDataDialog::setupFilters()
@@ -255,6 +272,4 @@ void FilterDataDialog::setupFilters()
 
     // trigger the column name was selected
     ui->tableViewColumnName->selectRow(m_selected_column);
-    QModelIndex qi = m_column_model->index(m_selected_column, 0);
-    ui->tableViewColumnName->dataRowSelected(qi);
 }
