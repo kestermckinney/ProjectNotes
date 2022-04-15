@@ -24,12 +24,6 @@ FilterDataDialog::FilterDataDialog(QWidget *m_parent) :
 
     ui->tableViewFilterValues->setModel(m_values_proxy_model);
 
-    //ui->tableViewColumnName->selectRow(0);
-    //ui->tableViewColumnName->dataRowSelected(m_column_proxy_model->index(0,0));
-    //m_values_model->refresh();
-    //m_values_proxy_model->refresh();
-
-
     QString storename = objectName();
     global_Settings.getWindowState(storename, *this);
 
@@ -281,3 +275,6 @@ void FilterDataDialog::setupFilters()
     // trigger the column name was selected
     ui->tableViewColumnName->selectRow(m_selected_column);
 }
+
+
+// TODO: Clients List Filter breaks the column layout adding the column 0 ?????

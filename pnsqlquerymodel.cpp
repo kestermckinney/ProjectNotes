@@ -652,6 +652,8 @@ bool PNSqlQueryModel::deleteCheck(const QModelIndex &t_index)
         select.bindValue(0, m_cache[t_index.row()].value(0));
         select.exec();
 
+        qDebug() << "DELETE CHECK: " << select.executedQuery() << " column:  " <<  m_related_column.at(i) << " value:  " << m_cache[t_index.row()].value(0);
+
         if (select.next())
             relatedcount = select.value(0).toInt();
 

@@ -6,6 +6,7 @@
 #include "comboboxdelegate.h"
 #include "pnsortfilterproxymodel.h"
 #include "pntableview.h"
+#include "pnbasepage.h"
 
 #include <QObject>
 
@@ -14,6 +15,7 @@ class ProjectListView : public PNTableView
 public:
 
     ProjectListView(QWidget* t_parent = nullptr);
+
     void setModel(QAbstractItemModel *t_model) override;
 
 private:

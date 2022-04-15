@@ -108,9 +108,6 @@ void PNSettings::setTableViewState(const QString& t_view_name, const QTableView&
     {
         w = t_view.columnWidth(i);
 
-        // reject the save it saving a 0 width column
-        if (w <= 0) return;
-
         savestring += QString("%1,").arg(w);
     }
 

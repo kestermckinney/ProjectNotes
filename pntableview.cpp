@@ -60,6 +60,9 @@ PNTableView::~PNTableView()
     delete filterRecords;
     delete resetColumns;
 
+    if (m_filterdialog != nullptr)
+        delete m_filterdialog;
+
     // BUGGY TODO REMOVE QHeaderView *headerView = horizontalHeader();
     // BUGGY TODO REMOVE headerView->removeEventFilter(this);
 }
@@ -190,7 +193,7 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *e)
     {
         menu->addAction(newRecord);
         menu->addAction(deleteRecord);
-        menu->addAction(openRecord);
+        if (m_has_open) menu->addAction(openRecord);
         menu->addAction(exportRecord);
         menu->addAction(filterRecords);
         menu->addSeparator();
@@ -235,9 +238,13 @@ void PNTableView::slotExportRecord()
 
 void PNTableView::slotFilterRecords()
 {
-    // TODO: standardize the filter dialog call
-    QMessageBox::critical(nullptr, QObject::tr("Action Not Overriden"),
-        tr("Filter Record Needs Defined"), QMessageBox::Cancel);
+    if (m_filterdialog == nullptr)
+        m_filterdialog = new FilterDataDialog(this);
+
+    PNSortFilterProxyModel* curmodel = (PNSortFilterProxyModel*)this->model();
+
+    m_filterdialog->setSourceModelView((PNSqlQueryModel*)curmodel->sourceModel(), this);
+    m_filterdialog->show();
 }
 
 void PNTableView::slotResetColumns()

@@ -4,7 +4,6 @@
 #include "FilterSaveStructure.h"
 #include "pncolumnmodel.h"
 #include "pnsqlquerymodel.h"
-#include "pntableview.h"
 
 #include "valueselectmodel.h"
 #include "pnsortfilterproxymodel.h"
@@ -15,6 +14,7 @@ namespace Ui {
 class FilterDataDialog;
 }
 
+class PNTableView;
 
 class FilterDataDialog : public QDialog
 {

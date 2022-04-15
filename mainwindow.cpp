@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "pntableview.h"
+
 #include <QStringListModel>
 #include <QMessageBox>
 #include <QSqlDatabase>
@@ -17,51 +19,49 @@ MainWindow::MainWindow(QWidget *t_parent)
 {
     ui->setupUi(this);
 
+    //m_filterdialog = new FilterDataDialog(this);
+
     // view state
-    m_current_page = 0;
     m_page_history.clear();
-    m_current_model = nullptr;
 
     if (!global_Settings.getLastDatabase().toString().isEmpty())
         openDatabase(global_Settings.getLastDatabase().toString());
-
-    // connect events
-    //connect(ui->pushButtonNewProject, &QPushButton::clicked, this, &MainWindow::handleNewProjectClicked);
-    //connect(ui->pushButtonDeleteProject, &QPushButton::clicked, this, &MainWindow::handleDeleteProjectClicked);
 
     setButtonAndMenuStates();
 
     global_Settings.getWindowState("MainWindow", *this);
     ui->actionStatus_Bar->setChecked(statusBar()->isVisibleTo(this));
-
-    m_filterdialog = new FilterDataDialog(this);
 }
 
 MainWindow::~MainWindow()
 {
-    // disconnect events
-    //disconnect(ui->pushButtonNewProject, &QPushButton::clicked, this, &MainWindow::handleNewProjectClicked);
-    //disconnect(ui->pushButtonDeleteProject, &QPushButton::clicked, this, &MainWindow::handleDeleteProjectClicked);
-
+    // need to save the screen layout befor the model is removed from the view
     ui->tableViewProjects->setModel(nullptr);
+    ui->tableViewClients->setModel(nullptr);
 
     if (global_DBObjects.isOpen())
         global_DBObjects.closeDatabase();
 
     global_Settings.setWindowState("MainWindow", *this);
 
-    delete m_filterdialog;
+    //delete m_filterdialog;
+
     delete ui;
 }
+
 /*
 void MainWindow::handleDeleteProjectClicked()
 {
+    navigateCurrentPage()->deleteItem();
+
+
     QModelIndexList qi = ui->t_tableViewProjects->selectionModel()->selectedRows();
 
     for (int i = qi.count() - 1; i >= 0; i--)
     {
         global_DBObjects.projectinformationmodel()->DeleteRecord(qi[i]);
     }
+
 }
 */
 
@@ -99,7 +99,7 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionNew_Item->setEnabled(dbopen);
     ui->actionCopy_Item->setEnabled(dbopen);
     ui->actionDelete_Item->setEnabled(dbopen);
-    ui->actionEdit_Itesm->setEnabled(dbopen);
+    ui->actionEdit_Items->setEnabled(dbopen);
     ui->actionBack->setEnabled(!navigateAtStart());
     ui->actionForward->setEnabled(!navigateAtEnd());
     ui->actionClients->setEnabled(dbopen);
@@ -138,21 +138,18 @@ void MainWindow::openDatabase(QString t_dbfile)
 
     global_DBObjects.projectslistmodel()->loadUserFilter(global_DBObjects.projectslistmodel()->objectName());
     global_DBObjects.projectslistmodel()->activateUserFilter(global_DBObjects.projectslistmodel()->objectName());
-    //global_DBObjects.projectslistmodel()->refresh();
-
-
-    ui->tableViewProjects->setModel(global_DBObjects.projectslistmodelproxy());
-    ui->tableViewProjects->selectRow(0);
-    m_current_model = global_DBObjects.projectslistmodel();
-    m_current_view = ui->tableViewProjects;
 
     global_Settings.setLastDatabase(t_dbfile);
+
+    // assign all of the newly open models
+    ui->pageProjectsList->setupModels(ui);
+    ui->pageClients->setupModels(ui);
 
     navigateClearHistory();
     navigateToPage(ui->pageProjectsList);
 }
 
-void MainWindow::navigateToPage(QWidget* t_widget)
+void MainWindow::navigateToPage(PNBasePage* t_widget)
 {
     if ( t_widget == navigateCurrentPage() )
         return;
@@ -211,8 +208,9 @@ void MainWindow::on_actionStatus_Bar_triggered()
 
 void MainWindow::on_actionFilter_triggered()
 {
-    m_filterdialog->setSourceModelView(m_current_model, m_current_view);
-    m_filterdialog->show();
+    PNTableView* curview = navigateCurrentPage()->getCurrentView();
+
+    curview->filterDialog();
 }
 
 void MainWindow::on_actionClients_triggered()
@@ -238,4 +236,22 @@ void MainWindow::on_actionBack_triggered()
 void MainWindow::on_actionForward_triggered()
 {
     navigateForward();
+}
+
+void MainWindow::on_actionNew_Item_triggered()
+{
+    if ( navigateCurrentPage() )
+        navigateCurrentPage()->newRecord();
+}
+
+void MainWindow::on_actionCopy_Item_triggered()
+{
+    if ( navigateCurrentPage() )
+        navigateCurrentPage()->copyItem();
+}
+
+void MainWindow::on_actionDelete_Item_triggered()
+{
+    if ( navigateCurrentPage() )
+        navigateCurrentPage()->deleteItem();
 }

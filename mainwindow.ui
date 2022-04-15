@@ -54,7 +54,7 @@
       <property name="currentIndex">
        <number>4</number>
       </property>
-      <widget class="QWidget" name="pageProjectsList">
+      <widget class="ProjectsListPage" name="pageProjectsList">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
          <horstretch>0</horstretch>
@@ -857,7 +857,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="pagePeople">
+      <widget class="PeoplePage" name="pagePeople">
        <layout class="QVBoxLayout" name="verticalLayout_7">
         <property name="spacing">
          <number>0</number>
@@ -879,7 +879,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="pageClients">
+      <widget class="ClientsPage" name="pageClients">
        <layout class="QVBoxLayout" name="verticalLayout_8">
         <property name="spacing">
          <number>0</number>
@@ -897,7 +897,14 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QTableView" name="tableViewClients"/>
+         <widget class="ClientsListView" name="tableViewClients">
+          <attribute name="horizontalHeaderVisible">
+           <bool>true</bool>
+          </attribute>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -1310,7 +1317,7 @@
     <addaction name="actionNew_Item"/>
     <addaction name="actionCopy_Item"/>
     <addaction name="actionDelete_Item"/>
-    <addaction name="actionEdit_Itesm"/>
+    <addaction name="actionEdit_Items"/>
    </widget>
    <widget class="QMenu" name="menuPlugins">
     <property name="title">
@@ -1770,7 +1777,7 @@
     <string>Delete Item</string>
    </property>
   </action>
-  <action name="actionEdit_Itesm">
+  <action name="actionEdit_Items">
    <property name="text">
     <string>Edit Item</string>
    </property>
@@ -1826,6 +1833,29 @@
    <class>ProjectListView</class>
    <extends>QTableView</extends>
    <header>projectlistview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ProjectsListPage</class>
+   <extends>QWidget</extends>
+   <header>projectslistpage.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PeoplePage</class>
+   <extends>QWidget</extends>
+   <header>peoplepage.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ClientsPage</class>
+   <extends>QWidget</extends>
+   <header>clientspage.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ClientsListView</class>
+   <extends>QTableView</extends>
+   <header>clientslistview.h</header>
   </customwidget>
  </customwidgets>
  <resources>
