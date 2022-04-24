@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "pntableview.h"
+
 #include <QStringListModel>
 #include <QMessageBox>
 #include <QSqlDatabase>
@@ -11,57 +13,55 @@
 #include <QDir>
 #include <QFileDialog>
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
+MainWindow::MainWindow(QWidget *t_parent)
+    : QMainWindow(t_parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
+    //m_filterdialog = new FilterDataDialog(this);
+
     // view state
-    m_CurrentPage = 0;
-    m_PageHistory.clear();
-    m_CurrentModel = nullptr;
+    m_page_history.clear();
 
     if (!global_Settings.getLastDatabase().toString().isEmpty())
-        OpenDatabase(global_Settings.getLastDatabase().toString());
-
-    // connect events
-    //connect(ui->pushButtonNewProject, &QPushButton::clicked, this, &MainWindow::handleNewProjectClicked);
-    //connect(ui->pushButtonDeleteProject, &QPushButton::clicked, this, &MainWindow::handleDeleteProjectClicked);
+        openDatabase(global_Settings.getLastDatabase().toString());
 
     setButtonAndMenuStates();
 
     global_Settings.getWindowState("MainWindow", *this);
     ui->actionStatus_Bar->setChecked(statusBar()->isVisibleTo(this));
-
-    filterdialog = new FilterDataDialog(this);
 }
 
 MainWindow::~MainWindow()
 {
-    // disconnect events
-    //disconnect(ui->pushButtonNewProject, &QPushButton::clicked, this, &MainWindow::handleNewProjectClicked);
-    //disconnect(ui->pushButtonDeleteProject, &QPushButton::clicked, this, &MainWindow::handleDeleteProjectClicked);
-
+    // need to save the screen layout befor the model is removed from the view
     ui->tableViewProjects->setModel(nullptr);
+    ui->tableViewClients->setModel(nullptr);
 
     if (global_DBObjects.isOpen())
-        global_DBObjects.CloseDatabase();
+        global_DBObjects.closeDatabase();
 
     global_Settings.setWindowState("MainWindow", *this);
 
-    delete filterdialog;
+    //delete m_filterdialog;
+
     delete ui;
 }
+
 /*
 void MainWindow::handleDeleteProjectClicked()
 {
-    QModelIndexList qi = ui->tableViewProjects->selectionModel()->selectedRows();
+    navigateCurrentPage()->deleteItem();
+
+
+    QModelIndexList qi = ui->t_tableViewProjects->selectionModel()->selectedRows();
 
     for (int i = qi.count() - 1; i >= 0; i--)
     {
         global_DBObjects.projectinformationmodel()->DeleteRecord(qi[i]);
     }
+
 }
 */
 
@@ -94,22 +94,18 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionClosed_Projects->setEnabled(dbopen);
 
     if (dbopen)
-        ui->actionClosed_Projects->setChecked(global_DBObjects.GetShowClosedProjects());
+        ui->actionClosed_Projects->setChecked(global_DBObjects.getShowClosedProjects());
 
     ui->actionNew_Item->setEnabled(dbopen);
     ui->actionCopy_Item->setEnabled(dbopen);
     ui->actionDelete_Item->setEnabled(dbopen);
-    ui->actionEdit_Itesm->setEnabled(dbopen);
-    ui->actionBack->setEnabled(dbopen);
-    ui->actionForward->setEnabled(dbopen);
+    ui->actionEdit_Items->setEnabled(dbopen);
+    ui->actionBack->setEnabled(!navigateAtStart());
+    ui->actionForward->setEnabled(!navigateAtEnd());
     ui->actionClients->setEnabled(dbopen);
     ui->actionPeople->setEnabled(dbopen);
     ui->actionFilter->setEnabled(dbopen);
 }
-
-// TODO: Save column resizing that is done
-// TODO: Save sorting that is done
-// TODO: Allow for a reset of columnn sizing and sorting
 
 void MainWindow::on_actionExit_triggered()
 {
@@ -122,40 +118,87 @@ void MainWindow::on_actionOpen_Database_triggered()
 
     if (!dbfile.isEmpty())
     {
-        OpenDatabase(dbfile);
+        openDatabase(dbfile);
     }
 
     setButtonAndMenuStates();
 }
 
-void MainWindow::OpenDatabase(QString dbfile)
+void MainWindow::openDatabase(QString t_dbfile)
 {
-    if (!global_DBObjects.OpenDatabase(dbfile))
+    if (!global_DBObjects.openDatabase(t_dbfile))
         return;
 
-    global_DBObjects.SetGlobalSearches(false);
-    global_DBObjects.projectslistmodel()->Refresh();
-    global_DBObjects.unfilteredpeoplemodel()->Refresh();
-    global_DBObjects.unfilteredclientsmodel()->Refresh();
-    global_DBObjects.clientsmodel()->Refresh();
+    global_DBObjects.unfilteredpeoplemodel()->refresh();
+    global_DBObjects.unfilteredclientsmodel()->refresh();
 
-    ui->tableViewProjects->setModel(global_DBObjects.projectslistmodelproxy());
-    m_CurrentModel = global_DBObjects.projectslistmodel();
+    global_DBObjects.setGlobalSearches(false);
 
-    global_Settings.setLastDatabase(dbfile);
+    global_DBObjects.clientsmodel()->refresh();
+
+    global_DBObjects.projectslistmodel()->loadUserFilter(global_DBObjects.projectslistmodel()->objectName());
+    global_DBObjects.projectslistmodel()->activateUserFilter(global_DBObjects.projectslistmodel()->objectName());
+
+    global_Settings.setLastDatabase(t_dbfile);
+
+    // assign all of the newly open models
+    ui->pageProjectsList->setupModels(ui);
+    ui->pageClients->setupModels(ui);
+
+    navigateClearHistory();
+    navigateToPage(ui->pageProjectsList);
+}
+
+void MainWindow::navigateToPage(PNBasePage* t_widget)
+{
+    if ( t_widget == navigateCurrentPage() )
+        return;
+
+    m_navigation_location = m_navigation_history.count();
+    m_navigation_history.push(t_widget);
+
+    ui->stackedWidget->setCurrentWidget(t_widget);
+
+    setButtonAndMenuStates();
+}
+
+void MainWindow::navigateBackward()
+{
+    if (m_navigation_location > 0)
+    {
+        m_navigation_location--;
+
+        QWidget* current = m_navigation_history.at(m_navigation_location);
+        ui->stackedWidget->setCurrentWidget(current);
+    }
+
+    setButtonAndMenuStates();
+}
+
+void MainWindow::navigateForward()
+{
+    if (m_navigation_location < (m_navigation_history.count() - 1) )
+    {
+        m_navigation_location++;
+
+        QWidget* current = m_navigation_history.at(m_navigation_location);
+        ui->stackedWidget->setCurrentWidget(current);
+    }
+
+    setButtonAndMenuStates();
 }
 
 void MainWindow::on_actionClose_Database_triggered()
 {
     global_Settings.setLastDatabase(QString());
-    global_DBObjects.CloseDatabase();
+    global_DBObjects.closeDatabase();
     setButtonAndMenuStates();
 }
 
 void MainWindow::on_actionClosed_Projects_triggered()
 {
-    global_DBObjects.SetShowClosedProjects(ui->actionClosed_Projects->isChecked());
-    global_DBObjects.SetGlobalSearches(true);
+    global_DBObjects.setShowClosedProjects(ui->actionClosed_Projects->isChecked());
+    global_DBObjects.setGlobalSearches(true);
 }
 
 void MainWindow::on_actionStatus_Bar_triggered()
@@ -165,8 +208,50 @@ void MainWindow::on_actionStatus_Bar_triggered()
 
 void MainWindow::on_actionFilter_triggered()
 {
-    // TODO: Setup filter dialog
-    filterdialog->setFilterModel(m_CurrentModel);
-    filterdialog->show();
+    PNTableView* curview = navigateCurrentPage()->getCurrentView();
 
+    curview->filterDialog();
+}
+
+void MainWindow::on_actionClients_triggered()
+{
+    navigateToPage(ui->pageClients);
+}
+
+void MainWindow::on_actionPeople_triggered()
+{
+    navigateToPage(ui->pagePeople);
+}
+
+void MainWindow::on_actionProjects_triggered()
+{
+    navigateToPage(ui->pageProjectsList);
+}
+
+void MainWindow::on_actionBack_triggered()
+{
+    navigateBackward();
+}
+
+void MainWindow::on_actionForward_triggered()
+{
+    navigateForward();
+}
+
+void MainWindow::on_actionNew_Item_triggered()
+{
+    if ( navigateCurrentPage() )
+        navigateCurrentPage()->newRecord();
+}
+
+void MainWindow::on_actionCopy_Item_triggered()
+{
+    if ( navigateCurrentPage() )
+        navigateCurrentPage()->copyItem();
+}
+
+void MainWindow::on_actionDelete_Item_triggered()
+{
+    if ( navigateCurrentPage() )
+        navigateCurrentPage()->deleteItem();
 }

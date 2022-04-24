@@ -3,8 +3,10 @@
 
 #include <QRegularExpression>
 
-ProjectsModel::ProjectsModel(QObject* parent) : PNSqlQueryModel(parent)
+ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
 {
+    setObjectName("ProjectsModel");
+
     setBaseSql("SELECT project_id, project_number, project_name, last_status_date, last_invoice_date, primary_contact, budget, actual,"
         " bcwp, bcws, bac, invoicing_period, status_report_period, client_id, project_status, "
         " (case when budget > 0 then (actual / budget) * 100.0 else NULL end) pct_consumed, "
@@ -17,41 +19,41 @@ ProjectsModel::ProjectsModel(QObject* parent) : PNSqlQueryModel(parent)
 
     setTableName("projects", "Project");
 
-    AddColumn(0, tr("Project ID"), DB_STRING, false, true, false);
-    AddColumn(1, tr("Number"), DB_STRING, true, true, true, true);
-    AddColumn(2, tr("Project Name"), DB_STRING, true, true, true, true);
-    AddColumn(3, tr("Status Date"), DB_DATE, true, false, true);
-    AddColumn(4, tr("Invoice Date"), DB_DATE, true, false, true);
-    AddColumn(5, tr("Primary Contact"), DB_STRING, true, false, true);
-    AddColumn(6, tr("Budget"), DB_USD, true, false, true);
-    AddColumn(7, tr("Actual"), DB_USD, true, false, true);
-    AddColumn(8, tr("BCWP"), DB_USD, true, false, true);
-    AddColumn(9, tr("BCWS"), DB_USD, true, false, true);
-    AddColumn(10, tr("BAC"), DB_USD, true, false, true);
-    AddColumn(11, tr("Invoice Period"), DB_STRING, true, false, true);
-    AssociateLookupValues(11, &PNDatabaseObjects::invoicing_period);
-    AddColumn(12, tr("Report Period"), DB_STRING, true, false, true);
-    AssociateLookupValues(12, &PNDatabaseObjects::status_report_period);
-    AddColumn(13, tr("Client"), DB_STRING, true, false, true);
-    AddColumn(14, tr("Status"), DB_STRING, true, false, true);
-    AssociateLookupValues(14, &PNDatabaseObjects::project_status);
-    AddColumn(15, tr("Consumed"), DB_PERCENT, true, false, false);
-    AddColumn(16, tr("EAC"), DB_USD, true, false, false);
-    AddColumn(17, tr("CV"), DB_PERCENT, true, false, false);
-    AddColumn(18, tr("SV"), DB_PERCENT, true, false, false);
-    AddColumn(19, tr("Completed"), DB_PERCENT, true, false, false);
-    AddColumn(20, tr("CPI"), DB_REAL, true, false, false);
+    addColumn(0, tr("Project ID"), DB_STRING, false, true, false);
+    addColumn(1, tr("Number"), DB_STRING, true, true, true, true);
+    addColumn(2, tr("Project Name"), DB_STRING, true, true, true, true);
+    addColumn(3, tr("Status Date"), DB_DATE, true, false, true);
+    addColumn(4, tr("Invoice Date"), DB_DATE, true, false, true);
+    addColumn(5, tr("Primary Contact"), DB_STRING, true, false, true);
+    addColumn(6, tr("Budget"), DB_USD, true, false, true);
+    addColumn(7, tr("Actual"), DB_USD, true, false, true);
+    addColumn(8, tr("BCWP"), DB_USD, true, false, true);
+    addColumn(9, tr("BCWS"), DB_USD, true, false, true);
+    addColumn(10, tr("BAC"), DB_USD, true, false, true);
+    addColumn(11, tr("Invoice Period"), DB_STRING, true, false, true);
+    associateLookupValues(11, &PNDatabaseObjects::invoicing_period);
+    addColumn(12, tr("Report Period"), DB_STRING, true, false, true);
+    associateLookupValues(12, &PNDatabaseObjects::status_report_period);
+    addColumn(13, tr("Client"), DB_STRING, true, false, true);
+    addColumn(14, tr("Status"), DB_STRING, true, false, true);
+    associateLookupValues(14, &PNDatabaseObjects::project_status);
+    addColumn(15, tr("Consumed"), DB_PERCENT, true, false, false);
+    addColumn(16, tr("EAC"), DB_USD, true, false, false);
+    addColumn(17, tr("CV"), DB_PERCENT, true, false, false);
+    addColumn(18, tr("SV"), DB_PERCENT, true, false, false);
+    addColumn(19, tr("Completed"), DB_PERCENT, true, false, false);
+    addColumn(20, tr("CPI"), DB_REAL, true, false, false);
 
-    AddRelatedTable("project_notes", "project_id", "Meeting");
-    AddRelatedTable("item_tracker", "project_id", "Action/Tracker Item");
-    AddRelatedTable("project_locations", "project_id", "Project Location");
-    AddRelatedTable("project_people", "project_id", "Project People");
-    AddRelatedTable("status_report_items", "project_id", "Status Report Item");
+    addRelatedTable("project_notes", "project_id", "Meeting");
+    addRelatedTable("item_tracker", "project_id", "Action/Tracker Item");
+    addRelatedTable("project_locations", "project_id", "Project Location");
+    addRelatedTable("project_people", "project_id", "Project People");
+    addRelatedTable("status_report_items", "project_id", "Status Report Item");
 
-    SetOrderBy("project_number");
+    setOrderBy("project_number");
 }
 
-bool ProjectsModel::NewRecord()
+bool ProjectsModel::newRecord()
 {
     QSqlQuery select;
     select.prepare("select max(project_number) from projects where project_number like '[%'");
@@ -73,23 +75,23 @@ bool ProjectsModel::NewRecord()
     qr.setValue(12, tr("Bi-Weekly"));
     qr.setValue(14, tr("Active"));
 
-    AddRecord(qr);
+    addRecord(qr);
 
     return true;
 }
 
-QVariant ProjectsModel::data(const QModelIndex &index, int role) const
+QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
 {
-    if (role == Qt::ForegroundRole)
+    if (t_role == Qt::ForegroundRole)
     {
-        if (index.column() == 3) // status date
+        if (t_index.column() == 3) // status date
         {
-            QVariant value = data(index);
+            QVariant t_value = data(t_index);
 
-            QDateTime datecol = ParseDateTime(value.toString());
+            QDateTime datecol = parseDateTime(t_value.toString());
             qint64 dif = datecol.daysTo(QDateTime::currentDateTime());
 
-            QString period = data( this->index(index.row(), 12)).toString();
+            QString period = data( this->index(t_index.row(), 12)).toString();
             if (period == "Weekly")
             {
                 if (dif > 7)
@@ -124,18 +126,18 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
                 }
             }
         }
-        else if (index.column() == 4) // invoice date
+        else if (t_index.column() == 4) // invoice date
         {
-            QVariant value = data(index);
+            QVariant t_value = data(t_index);
 
-            QDateTime datecol = ParseDateTime(value.toString());
+            QDateTime datecol = parseDateTime(t_value.toString());
             QDate nextdate = datecol.date();
             nextdate = nextdate.addMonths(1);
             nextdate.setDate(nextdate.year(), nextdate.month(), 1); // set to the first of the next month
 
             qint64 dif = datecol.daysTo(QDateTime::currentDateTime());
 
-            QString period = data( this->index(index.row(), 11)).toString();
+            QString period = data( this->index(t_index.row(), 11)).toString();
 
             if (period == "Milestone")
             {
@@ -157,52 +159,52 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
             }
 
         }
-        else if (index.column() == 15)  // percent consumed
+        else if (t_index.column() == 15)  // percent consumed
         {
-            double value = data(index).toDouble();
+            double t_value = data(t_index).toDouble();
 
-            if (value >= 95.0)
+            if (t_value >= 95.0)
                 return QVariant(QColor(Qt::darkRed));
-            else if (value >= 90.0)
+            else if (t_value >= 90.0)
                 return QVariant(QColor(Qt::darkYellow));
         }
-        else if (index.column() == 17) // cost variance
+        else if (t_index.column() == 17) // cost variance
         {
-            double value = data(index).toDouble();
+            double t_value = data(t_index).toDouble();
 
-            if (value >= 10.0)
+            if (t_value >= 10.0)
                 return QVariant(QColor(Qt::darkRed));
-            else if (value >= 5.0)
+            else if (t_value >= 5.0)
                 return QVariant(QColor(Qt::darkYellow));
         }
-        else if (index.column() == 18)  // schedule variance
+        else if (t_index.column() == 18)  // schedule variance
         {
-            double value = data(index).toDouble();
+            double t_value = data(t_index).toDouble();
 
-            if (value >= 10.0)
+            if (t_value >= 10.0)
                 return QVariant(QColor(Qt::darkRed));
-            else if (value >= 05.0)
+            else if (t_value >= 05.0)
                 return QVariant(QColor(Qt::darkYellow));
         }
-        else if (index.column() == 19)  // percent complete
+        else if (t_index.column() == 19)  // percent complete
         {
-            double value = data(index).toDouble();
+            double t_value = data(t_index).toDouble();
 
-            if (value >= 95.0)
+            if (t_value >= 95.0)
                 return QVariant(QColor(Qt::darkRed));
-            else if (value >= 90.0)
+            else if (t_value >= 90.0)
                 return QVariant(QColor(Qt::darkYellow));
         }
-        else if (index.column() == 20)  // CPI
+        else if (t_index.column() == 20)  // CPI
         {
-            double value = data(index).toDouble();
+            double t_value = data(t_index).toDouble();
 
-            if (value <= 0.8)
+            if (t_value <= 0.8)
                 return QVariant(QColor(Qt::darkRed));
-            else if (value < 1.0)
+            else if (t_value < 1.0)
                 return QVariant(QColor(Qt::darkYellow));
         }
     }
 
-    return PNSqlQueryModel::data(index, role);
+    return PNSqlQueryModel::data(t_index, t_role);
 }

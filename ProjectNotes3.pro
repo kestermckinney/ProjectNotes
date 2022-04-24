@@ -13,7 +13,9 @@ CONFIG += c++11
 SOURCES += \
     actionitemprojectnotesmodel.cpp \
     actionitemsdetailsmeetingsmodel.cpp \
+    clientslistview.cpp \
     clientsmodel.cpp \
+    clientspage.cpp \
     columnview.cpp \
     comboboxdelegate.cpp \
     filterdatadialog.cpp \
@@ -24,6 +26,8 @@ SOURCES += \
     noteactionitemsmodel.cpp \
     notesactionitemsmodel.cpp \
     peoplemodel.cpp \
+    peoplepage.cpp \
+    pnbasepage.cpp \
     pncolumnmodel.cpp \
     pncomboboxdelegate.cpp \
     pndatabaseobjects.cpp \
@@ -37,6 +41,7 @@ SOURCES += \
     projectlocationsmodel.cpp \
     projectnotesmodel.cpp \
     projectslistmodel.cpp \
+    projectslistpage.cpp \
     projectsmodel.cpp \
     projectteammembersmodel.cpp \
     searchresultsmodel.cpp \
@@ -47,9 +52,12 @@ SOURCES += \
     valuesview.cpp
 
 HEADERS += \
+    FilterSaveStructure.h \
     actionitemprojectnotesmodel.h \
     actionitemsdetailsmeetingsmodel.h \
+    clientslistview.h \
     clientsmodel.h \
+    clientspage.h \
     columnview.h \
     comboboxdelegate.h \
     filterdatadialog.h \
@@ -59,6 +67,8 @@ HEADERS += \
     noteactionitemsmodel.h \
     notesactionitemsmodel.h \
     peoplemodel.h \
+    peoplepage.h \
+    pnbasepage.h \
     pncolumnmodel.h \
     pncomboboxdelegate.h \
     pndatabaseobjects.h \
@@ -72,6 +82,7 @@ HEADERS += \
     projectlocationsmodel.h \
     projectnotesmodel.h \
     projectslistmodel.h \
+    projectslistpage.h \
     projectsmodel.h \
     projectteammembersmodel.h \
     searchresultsmodel.h \

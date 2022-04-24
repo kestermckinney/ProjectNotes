@@ -7,22 +7,22 @@
 #include <QApplication>
 #include <QString>
 
-PNComboBoxDelegate::PNComboBoxDelegate(QObject *parent, PNSqlQueryModel *model, int DisplayColumn)
-:QItemDelegate(parent)
+PNComboBoxDelegate::PNComboBoxDelegate(QObject *t_parent, PNSqlQueryModel *t_model, int t_displaycolumn)
+:QItemDelegate(t_parent)
 {
-    m_Model = model;
-    m_DisplayColumn = DisplayColumn;
+    m_model = t_model;
+    m_display_column = t_displaycolumn;
 }
 
 
-QWidget *PNComboBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &/* option */, const QModelIndex &/* index */) const
+QWidget *PNComboBoxDelegate::createEditor(QWidget *t_parent, const QStyleOptionViewItem &/* t_option */, const QModelIndex &/* t_index */) const
 {
-    QComboBox* editor = new QComboBox(parent);
+    QComboBox* editor = new QComboBox(t_parent);
     editor->setEditable(true);
-    editor->setModel(m_Model);
-    editor->setModelColumn(m_DisplayColumn); // column to display
+    editor->setModel(m_model);
+    editor->setModelColumn(m_display_column); // column to display
 
-    QCompleter* completer = new QCompleter(m_Model);
+    QCompleter* completer = new QCompleter(m_model);
     completer->setCompletionMode(QCompleter::PopupCompletion);
     completer->setCaseSensitivity(Qt::CaseInsensitive);
     completer->setCompletionColumn(1);
@@ -31,41 +31,41 @@ QWidget *PNComboBoxDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     return editor;
 }
 
-void PNComboBoxDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
+void PNComboBoxDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_index) const
 {
-    QComboBox *comboBox = static_cast<QComboBox*>(editor);
-    QVariant lookupvalue = index.model()->data(index);
-    QString value = m_Model->FindValue(lookupvalue, 0, 1).toString();
-    comboBox->setCurrentText(value);
+    QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+    QVariant lookupvalue = t_index.model()->data(t_index);
+    QString t_value = m_model->findValue(lookupvalue, 0, 1).toString();
+    comboBox->setCurrentText(t_value);
 }
 
-void PNComboBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+void PNComboBoxDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const
 {
-    QComboBox *comboBox = static_cast<QComboBox*>(editor);
-    model->setData(index, m_Model->data(m_Model->index(comboBox->currentIndex(), 0)), Qt::EditRole);
+    QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+    t_model->setData(t_index, m_model->data(m_model->index(comboBox->currentIndex(), 0)), Qt::EditRole);
 }
 
-void PNComboBoxDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &/* index */) const
+void PNComboBoxDelegate::updateEditorGeometry(QWidget *t_editor, const QStyleOptionViewItem &t_option, const QModelIndex &/* t_index */) const
 {
-    editor->setGeometry(option.rect);
+    t_editor->setGeometry(t_option.rect);
 }
 
-void PNComboBoxDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+void PNComboBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const
 {
-    QStyleOptionViewItem myOption = option;
+    QStyleOptionViewItem myOption = t_option;
 
-    QVariant lookupvalue = index.model()->data(index);
+    QVariant lookupvalue = t_index.model()->data(t_index);
 
-    myOption.text = m_Model->FindValue(lookupvalue, 0, 1).toString();
+    myOption.text = m_model->findValue(lookupvalue, 0, 1).toString();
 
-    // make light gray background when not editable
-    //if (!((PNSqlQueryModel*)index.model())->isEditable(index.column()))
+    // make light gray background when not edit_table
+    //if (!((PNSqlQueryModel*)t_index.model())->isEdit_table(t_index.column()))
     //    myOption.backgroundBrush = QBrush(QColor("lightgray"));
 
-    myOption.palette.setColor(QPalette::Text,index.model()->data(index, Qt::ForegroundRole).value<QColor>());
-    QVariant color = index.model()->data(index, Qt::BackgroundColorRole);
+    myOption.palette.setColor(QPalette::Text, t_index.model()->data(t_index, Qt::ForegroundRole).value<QColor>());
+    QVariant color = t_index.model()->data(t_index, Qt::BackgroundColorRole);
     if (color.isValid())
         myOption.backgroundBrush = QBrush(color.value<QColor>());
 
-    QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, painter);
+    QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
 }

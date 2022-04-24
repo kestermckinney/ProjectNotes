@@ -10,16 +10,16 @@ public:
     Q_OBJECT
 
 public:
-    ComboBoxDelegate(QObject *parent, QStringListModel *model);
+    ComboBoxDelegate(QObject *t_parent, QStringListModel *t_model);
 
-    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-    void setEditorData(QWidget *editor, const QModelIndex &index) const;
-    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;
-    void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    QWidget *createEditor(QWidget *t_parent, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const;
+    void setEditorData(QWidget *t_editor, const QModelIndex &t_index) const;
+    void setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const;
+    void updateEditorGeometry(QWidget *t_editor, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const;
+    void paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const;
 
 private:
-    QStringListModel* m_Model;
+    QStringListModel* m_model;
 };
 
 #endif // COMBOBOXDELEGATE_H

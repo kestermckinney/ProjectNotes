@@ -6,7 +6,7 @@
 class MeetingAttendeesModel : public PNSqlQueryModel
 {
 public:
-    MeetingAttendeesModel(QObject* parent);
+    MeetingAttendeesModel(QObject* m_parent);
 };
 
 #endif // MEETINGATTENDEESMODEL_H

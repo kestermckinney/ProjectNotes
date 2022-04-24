@@ -11,52 +11,52 @@ public:
     PNSettings();
     ~PNSettings();
 
-    QVariant getPluginSetting(const QString& PluginName, const QString& ParameterName);
-    bool getPluginEnabled(const QString& PluginName);
-    void setPluginEnabled(const QString& PluginName, bool Enabled);
+    QVariant getPluginSetting(const QString& t_plugin_name, const QString& t_parameter_name);
+    bool getPluginEnabled(const QString& t_plugin_name);
+    void setPluginEnabled(const QString& t_plugin_name, bool t_enabled);
 
     QVariant getLastDatabase();
-    void setLastDatabase(const QString& LastDatabase);
+    void setLastDatabase(const QString& t_last_database);
 
-    QVariant getWindowStateData(const QString& StateDataName);
-    void setWindowStateData(const QString& StateDataName, const QVariant& Data);
+    QVariant getWindowStateData(const QString& t_state_data_name);
+    void setWindowStateData(const QString& t_state_data_name, const QVariant& t_data);
 
-    void setWindowState(const QString& WindowName, const QWidget& Window);
-    bool getWindowState(const QString& WindowName, QWidget& Window);
+    void setWindowState(const QString& t_window_name, const QWidget& t_window);
+    bool getWindowState(const QString& t_window_name, QWidget& t_window);
 
     QString getDefaultDictionary();
-    void setDefaultDictionary(const QString& Dictionary);
+    void setDefaultDictionary(const QString& t_dictionary);
 
     QString getPersonalDictionary();
-    void setPersonalDictionary(const QString& Dictionary);
+    void setPersonalDictionary(const QString& t_dictionary);
 
-    void setTableViewState(const QString& ViewName, const QTableView& View);
-    bool getTableViewState(const QString& ViewName, QTableView& View);
+    void setTableViewState(const QString& t_view_name, const QTableView& t_view);
+    bool getTableViewState(const QString& t_view_name, QTableView& t_view);
 
-    void setTableSortColumn(const QString& ViewName, const int Column, const QString Direction);
-    bool getTableSortColumn(const QString& ViewName, int& Column, QString& Direction);
-
-private:
-    int getWindowX(const QString& WindowName);
-    int getWindowY(const QString& WindowName);
-    void setWindowX(const QString& WindowName, int X);
-    void setWindowY(const QString& WindowName, int Y);
-
-    int getWindowWidth(const QString& WindowName);
-    int getWindowHeight(const QString& WindowName);
-    bool getWindowMaximized(const QString& WindowName);
-
-    void setWindowWidth(const QString& WindowName, int Width);
-    void setWindowHeight(const QString& WindowName, int Height);
-    void setWindowMaximized(const QString& WindowName, bool Maximized);
-
-    void setWindowStatusBar(const QString& WindowName, bool StatusBar);
-    bool getWindowStatusBar(const QString& WindowName);
-
+    void setTableSortColumn(const QString& t_view_name, const int t_column, const QString t_direction);
+    bool getTableSortColumn(const QString& t_view_name, int& t_column, QString& t_direction);
 
 private:
-    QSettings* m_AppConfig;
-    QSettings* m_PluginConfig;
+    int getWindowX(const QString& t_window_name);
+    int getWindowY(const QString& t_window_name);
+    void setWindowX(const QString& t_window_name, int t_x);
+    void setWindowY(const QString& t_window_name, int t_y);
+
+    int getWindowWidth(const QString& t_window_name);
+    int getWindowHeight(const QString& t_window_name);
+    bool getWindowMaximized(const QString& t_window_name);
+
+    void setWindowWidth(const QString& t_window_name, int t_idth);
+    void setWindowHeight(const QString& t_window_name, int t_height);
+    void setWindowMaximized(const QString& t_window_name, bool t_maximized);
+
+    void setWindowStatusBar(const QString& t_window_name, bool t_status_bar);
+    bool getWindowStatusBar(const QString& t_window_name);
+
+
+private:
+    QSettings* m_app_config;
+    QSettings* m_plugin_config;
 };
 
 static PNSettings global_Settings;

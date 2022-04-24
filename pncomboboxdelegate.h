@@ -9,17 +9,17 @@ class PNComboBoxDelegate : public QItemDelegate
     Q_OBJECT
 
 public:
-    PNComboBoxDelegate(QObject *parent, PNSqlQueryModel *model, int DisplayColumn = 1);
+    PNComboBoxDelegate(QObject *t_parent, PNSqlQueryModel *t_model, int t_displaycolumn = 1);
 
-    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-    void setEditorData(QWidget *editor, const QModelIndex &index) const;
-    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;
-    void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    QWidget *createEditor(QWidget *t_parent, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const;
+    void setEditorData(QWidget *t_editor, const QModelIndex &t_index) const;
+    void setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const;
+    void updateEditorGeometry(QWidget *t_editor, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const;
+    void paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const;
 
 private:
-    PNSqlQueryModel* m_Model;
-    int m_DisplayColumn;
+    PNSqlQueryModel* m_model;
+    int m_display_column;
 };
 
 #endif // PNCOMBOBOXDELEGATE_H

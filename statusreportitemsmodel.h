@@ -6,7 +6,7 @@
 class StatusReportItemsModel : public PNSqlQueryModel
 {
 public:
-    StatusReportItemsModel(QObject* parent);
+    StatusReportItemsModel(QObject* t_parent);
 };
 
 #endif // STATUSREPORTITEMSMODEL_H

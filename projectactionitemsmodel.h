@@ -6,7 +6,7 @@
 class ProjectActionItemsModel : public PNSqlQueryModel
 {
 public:
-    ProjectActionItemsModel(QObject* parent);
+    ProjectActionItemsModel(QObject* t_parent);
 };
 
 #endif // PROJECTACTIONITEMSMODEL_H

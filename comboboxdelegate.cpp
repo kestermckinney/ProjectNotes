@@ -6,49 +6,49 @@
 #include <QApplication>
 #include <QString>
 
-ComboBoxDelegate::ComboBoxDelegate(QObject *parent, QStringListModel *model)
-:QItemDelegate(parent)
+ComboBoxDelegate::ComboBoxDelegate(QObject *t_parent, QStringListModel *t_model)
+:QItemDelegate(t_parent)
 {
-    m_Model = model;
+    m_model = t_model;
 }
 
 
-QWidget *ComboBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &/* option */, const QModelIndex &/* index */) const
+QWidget *ComboBoxDelegate::createEditor(QWidget *t_parent, const QStyleOptionViewItem &/* t_option */, const QModelIndex &/* t_index */) const
 {
-    QComboBox* editor = new QComboBox(parent);
+    QComboBox* editor = new QComboBox(t_parent);
     editor->setEditable(false);
-    editor->setModel(m_Model);
+    editor->setModel(m_model);
     editor->setModelColumn(0); // column to display
 
     return editor;
 }
 
-void ComboBoxDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
+void ComboBoxDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_index) const
 {
-    QComboBox *comboBox = static_cast<QComboBox*>(editor);
-    QVariant value = index.model()->data(index);
+    QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+    QVariant t_value = t_index.model()->data(t_index);
 
-    comboBox->setCurrentText(value.toString());
+    comboBox->setCurrentText(t_value.toString());
 }
 
-void ComboBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+void ComboBoxDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const
 {
-    QComboBox *comboBox = static_cast<QComboBox*>(editor);
-    model->setData(index, m_Model->data(m_Model->index(comboBox->currentIndex(), 0)), Qt::EditRole);
+    QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+    t_model->setData(t_index, m_model->data(m_model->index(comboBox->currentIndex(), 0)), Qt::EditRole);
 }
 
-void ComboBoxDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &/* index */) const
+void ComboBoxDelegate::updateEditorGeometry(QWidget *t_editor, const QStyleOptionViewItem &t_option, const QModelIndex &/* t_index */) const
 {
-    editor->setGeometry(option.rect);
+    t_editor->setGeometry(t_option.rect);
 }
 
-void ComboBoxDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+void ComboBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const
 {
-    QStyleOptionViewItem myOption = option;
+    QStyleOptionViewItem myOption = t_option;
 
-    QVariant value = index.model()->data(index);
+    QVariant t_value = t_index.model()->data(t_index);
 
-    myOption.text = value.toString();
+    myOption.text = t_value.toString();
 
-    QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, painter);
+    QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
 }

@@ -6,7 +6,7 @@
 class ProjectNotesModel : public PNSqlQueryModel
 {
 public:
-    ProjectNotesModel(QObject* parent);
+    ProjectNotesModel(QObject* t_parent);
 };
 
 #endif // PROJECTNOTESMODEL_H

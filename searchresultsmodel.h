@@ -6,7 +6,7 @@
 class SearchResultsModel : public PNSqlQueryModel
 {
 public:
-    SearchResultsModel(QObject* parent);
+    SearchResultsModel(QObject* t_parent);
 };
 
 #endif // SEARCHRESULTSMODEL_H

@@ -52,9 +52,9 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>4</number>
       </property>
-      <widget class="QWidget" name="pageProjectsList">
+      <widget class="ProjectsListPage" name="pageProjectsList">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
          <horstretch>0</horstretch>
@@ -210,28 +210,28 @@
                    <number>0</number>
                   </property>
                   <item row="0" column="1">
-                   <widget class="QLabel" name="labelMeetingDate_3">
+                   <widget class="QLabel" name="labelMeetingDate">
                     <property name="text">
                      <string>Meeting Date</string>
                     </property>
                    </widget>
                   </item>
                   <item row="0" column="0">
-                   <widget class="QLabel" name="labelMeetingTittle_3">
+                   <widget class="QLabel" name="labelMeetingTitle">
                     <property name="text">
                      <string>Meeting Title</string>
                     </property>
                    </widget>
                   </item>
                   <item row="1" column="0">
-                   <widget class="QLineEdit" name="lineEditMeetingTitle_3">
+                   <widget class="QLineEdit" name="lineEditMeetingTitle">
                     <property name="frame">
                      <bool>false</bool>
                     </property>
                    </widget>
                   </item>
                   <item row="1" column="1">
-                   <widget class="QDateEdit" name="dateEditMeetingDate_3">
+                   <widget class="QDateEdit" name="dateEditMeetingDate">
                     <property name="frame">
                      <bool>false</bool>
                     </property>
@@ -247,7 +247,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QLabel" name="labelNotes_3">
+                <widget class="QLabel" name="labelNotes">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
                    <horstretch>0</horstretch>
@@ -260,7 +260,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QTextEdit" name="textEditNotes_3">
+                <widget class="QTextEdit" name="textEditNotes">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                    <horstretch>0</horstretch>
@@ -301,7 +301,7 @@
              <number>5</number>
             </property>
             <item>
-             <widget class="QTableView" name="tableViewAtendees_3">
+             <widget class="QTableView" name="tableViewAtendees">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                 <horstretch>0</horstretch>
@@ -342,7 +342,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QTableView" name="tableViewActionItems_3">
+             <widget class="QTableView" name="tableViewActionItems">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                 <horstretch>0</horstretch>
@@ -392,7 +392,7 @@
            </sizepolicy>
           </property>
           <property name="currentIndex">
-           <number>4</number>
+           <number>0</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -857,7 +857,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="pagePeople">
+      <widget class="PeoplePage" name="pagePeople">
        <layout class="QVBoxLayout" name="verticalLayout_7">
         <property name="spacing">
          <number>0</number>
@@ -879,7 +879,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="pageClients">
+      <widget class="ClientsPage" name="pageClients">
        <layout class="QVBoxLayout" name="verticalLayout_8">
         <property name="spacing">
          <number>0</number>
@@ -897,7 +897,14 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QTableView" name="tableViewClients"/>
+         <widget class="ClientsListView" name="tableViewClients">
+          <attribute name="horizontalHeaderVisible">
+           <bool>true</bool>
+          </attribute>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -925,7 +932,7 @@
          <number>0</number>
         </property>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_12">
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
           <property name="spacing">
            <number>5</number>
           </property>
@@ -953,7 +960,7 @@
             <item>
              <widget class="QLabel" name="labelType">
               <property name="text">
-               <string>Type</string>
+               <string>t_type</string>
               </property>
              </widget>
             </item>
@@ -1310,7 +1317,7 @@
     <addaction name="actionNew_Item"/>
     <addaction name="actionCopy_Item"/>
     <addaction name="actionDelete_Item"/>
-    <addaction name="actionEdit_Itesm"/>
+    <addaction name="actionEdit_Items"/>
    </widget>
    <widget class="QMenu" name="menuPlugins">
     <property name="title">
@@ -1376,6 +1383,9 @@
     </size>
    </property>
    <property name="floatable">
+    <bool>false</bool>
+   </property>
+   <property name="float_table" stdset="0">
     <bool>false</bool>
    </property>
    <attribute name="toolBarArea">
@@ -1713,7 +1723,7 @@
     <string>Getting Started</string>
    </property>
    <property name="toolTip">
-    <string>Open the Getting Started Help section</string>
+    <string>Open the Getting Started Help t_section</string>
    </property>
   </action>
   <action name="actionWhat_s_New">
@@ -1721,7 +1731,7 @@
     <string>What's New</string>
    </property>
    <property name="toolTip">
-    <string>Open the What's New help section</string>
+    <string>Open the What's New help t_section</string>
    </property>
   </action>
   <action name="actionCustom_Plugins">
@@ -1767,7 +1777,7 @@
     <string>Delete Item</string>
    </property>
   </action>
-  <action name="actionEdit_Itesm">
+  <action name="actionEdit_Items">
    <property name="text">
     <string>Edit Item</string>
    </property>
@@ -1823,6 +1833,29 @@
    <class>ProjectListView</class>
    <extends>QTableView</extends>
    <header>projectlistview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ProjectsListPage</class>
+   <extends>QWidget</extends>
+   <header>projectslistpage.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PeoplePage</class>
+   <extends>QWidget</extends>
+   <header>peoplepage.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ClientsPage</class>
+   <extends>QWidget</extends>
+   <header>clientspage.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ClientsListView</class>
+   <extends>QTableView</extends>
+   <header>clientslistview.h</header>
   </customwidget>
  </customwidgets>
  <resources>

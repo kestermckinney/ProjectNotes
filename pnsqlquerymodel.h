@@ -21,136 +21,138 @@ public:
 
     PNSqlQueryModel(QObject *parent);
 
-    bool setData(const QModelIndex &index, const QVariant &value, int role) override;
-    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    bool setData(const QModelIndex &t_index, const QVariant &t_value, int t_role) override;
+    QVariant data(const QModelIndex &t_index, int t_role = Qt::DisplayRole) const override;
+
     void clear();
-    void Refresh();
+    void refresh();
 
-    void setTableName(const QString &table, const QString &DisplayName) { m_tablename = table; m_DisplayName = DisplayName; };
+    void setTableName(const QString &t_table, const QString &t_display_name) { m_tablename = t_table; m_display_name = t_display_name; };
     const QString& tablename() { return m_tablename; };
-    void setBaseSql(const QString table) { m_BaseSQL = table;};
-    const QString& BaseSQL() { return m_BaseSQL; };
+    void setBaseSql(const QString t_table) { m_base_sql = t_table;};
+    const QString& BaseSQL() { return m_base_sql; };
 
-    Qt::ItemFlags flags(const QModelIndex &index) const override;
+    Qt::ItemFlags flags(const QModelIndex &t_index) const override;
 
-    void SQLEscape(QVariant& ColumnValue, DBColumnType ColumnType) const;
-    void ReformatValue(QVariant& ColumnValue, DBColumnType ColumnType) const;
+    void sqlEscape(QVariant& t_column_value, DBColumnType t_column_type) const;
+    void reformatValue(QVariant& t_column_value, DBColumnType t_column_type) const;
 
-    void AddColumn(int ColumnNumber, const QString& DisplayName, DBColumnType Type, bool Searchable, bool Required = false, bool Editable = true, bool Unique = false);
-    void AddRelatedTable(const QString& TableName, const QString& ColumnName, const QString& Title);
-    void AssociateLookupValues(int ColumnNumber, QStringList* LookupValues);
-    QVariant headerData(int section, Qt::Orientation orientation,
-                        int role = Qt::DisplayRole) const override;
-    bool setHeaderData(int section, Qt::Orientation orientation, const QVariant &value,
-                       int role = Qt::EditRole) override;
+    void addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, bool t_searchable, bool t_required = false, bool t_edit_table = true, bool t_unique = false);
+    void addRelatedTable(const QString& t_table_name, const QString& t_colum_name, const QString& t_title);
+    void associateLookupValues(int t_column_number, QStringList* t_lookup_values);
+    QVariant headerData(int t_section, Qt::Orientation t_orientation,
+                        int t_role = Qt::DisplayRole) const override;
+    bool setHeaderData(int t_section, Qt::Orientation t_orientation, const QVariant &t_value,
+                       int t_role = Qt::EditRole) override;
 
-    static QDateTime ParseDateTime(QString entrydate);
-    virtual bool AddRecord(QSqlRecord& newrecord);
-    virtual bool NewRecord();
-    bool DeleteRecord(QModelIndex index);
+    static QDateTime parseDateTime(QString t_entrydate);
+    virtual bool addRecord(QSqlRecord& t_newrecord);
+    virtual bool newRecord();
+    bool deleteRecord(QModelIndex t_index);
 
-    int rowCount(const QModelIndex &parent) const override;
+    int rowCount(const QModelIndex &t_parent) const override;
 
-    int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+    int columnCount(const QModelIndex &t_parent = QModelIndex()) const override;
 
-    bool isUniqueValue(const QVariant &NewValue, const QModelIndex &index);
-    bool DeleteCheck(const QModelIndex &index);
+    bool isUniqueValue(const QVariant &t_new_value, const QModelIndex &t_index);
+    bool deleteCheck(const QModelIndex &t_index);
     QSqlRecord emptyrecord();
-    const QVariant FindValue(QVariant& LookupValue, int SearchColumn, int ReturnColumn);
-    void setShowBlank(bool show = true) { m_ShowBlank = show; };
-    bool ReloadRecord(const QModelIndex& index);
+    const QVariant findValue(QVariant& t_lookup_value, int t_search_column, int t_return_column);
+    void setShowBlank(bool t_show = true) { m_show_blank = t_show; };
+    bool reloadRecord(const QModelIndex& t_index);
 
-    QString ConstructWhereClause(); // TODO: Add where clause function
-    void SetFilter(int ColumnNumber, const QString& FilterValue);
-    void ClearAllFilters();
-    void ClearFilter(int ColumnNumber);
+    QString constructWhereClause(bool t_include_user_filter = true);
+    void setFilter(int t_column_number, const QString& t_filter_value);
+    void clearAllFilters();
+    void clearFilter(int t_column_number);
 
-    void SetUserFilter(int ColumnNumber, const QStringList& FilterValues);
-    const QStringList& GetUserFilter(int ColumnNumber) { return m_UserFilterValues[ColumnNumber]; };
-    void SetUserSearchString(int ColumnNumber, const QString& SearchValue);
-    QVariant& GetUserSearchString(int ColumnNumber) { return m_UserSearchString[ColumnNumber]; };
+    void setUserFilter(int t_column_number, const QVariantList& t_ilter_values);
+    const QVariantList& getUserFilter(int t_column_number) { return m_user_filter_values[t_column_number]; };
+    void setUserSearchString(int t_column_number, const QVariant& t_search_value);
+    QVariant& getUserSearchString(int t_column_number) { return m_user_search_string[t_column_number]; };
 
-    void SetUserSearchRange(int ColumnNumber, const QString& SearchBeginValue, const QString& SearchEndValue );
-    void GetUserSearchRange(int ColumnNumber, QVariant& SearchBeginValue, QVariant& SearchEndValue );
-    void ClearAllUserSearches();
-    void ClearUserFilter(int ColumnNumber);
-    void ClearUserSearchString(int ColumnNumber);
-    void ClearUserSearchRange(int ColumnNumber);
-    bool HasUserFilters(int ColumnNumber);
-    bool HasUserFilters();
-    void ActivateUserFilter(QString FilterName);
-    void DeactivateUserFilter(QString FilterName);
-    void LoadLastUserFilterState(QString FilterName);
+    void setUserSearchRange(int t_column_number, const QVariant& t_search_begin_value, const QVariant& m_Search_end_value );
+    void getUserSearchRange(int t_column_number, QVariant& t_earch_begin_value, QVariant& t_search_end_value );
+    void clearAllUserSearches();
+    void clearUserFilter(int t_column_number);
+    void clearUserSearchString(int t_column_number);
+    void clearUserSearchRange(int t_column_number);
+    bool hasUserFilters(int t_column_number) const;
+    bool hasUserFilters() const;
+    void activateUserFilter(QString t_filter_name);
+    void deactivateUserFilter(QString t_filter_name);
+    void loadLastUserFilterState(QString t_filter_name);
 
-    void SaveUserFilter( QString FilterName);
-    void LoadUserFilter( QString FilterName);
-    bool GetUserFilterState() { return m_UserFilterActive; };
+    void saveUserFilter( QString t_filter_name);
+    void loadUserFilter( QString t_filter_name);
+    bool getUserFilterState() { return m_user_filter_active; };
 
-    void SetOrderBy(const QString& OrderBy) { m_OrderBy = OrderBy; };
-    void ClearOrderBy() { m_OrderBy.clear(); };
+    void setOrderBy(const QString& t_order_by) { m_order_by = t_order_by; };
+    void clearOrderBy() { m_order_by.clear(); };
 
-    void setEditable( int Column, bool Editable ) { m_ColumnIsEditable[Column] = Editable; };
-    bool isEditable( int Column ) { return m_ColumnIsEditable[Column]; }
-    void setSearchable( int Column, bool Searchable ) { m_ColumnSearchable[Column] = Searchable; };
-    bool isSearchable( int Column ) { return m_ColumnSearchable[Column]; };
-    void setRequired( int Column, bool Required ) { m_ColumnRequired[Column] = Required; };
-    bool isRequired( int Column ) { return m_ColumnRequired[Column]; };
-    DBColumnType getType( const int Column ) const { return m_ColumnType[Column]; };
-    void setType( const int Column, const DBColumnType ColumnType ) { m_ColumnType[Column] = ColumnType; };
-    void setLookup(int Column, PNSqlQueryModel* lookup, int LookupFK, int LookupValue);
-    void setLookup(int Column, QStringList* lookup);
-    QVariant getLookupValue( const QModelIndex& index);
-    QString getColumnName( int Col ) { return m_SqlQuery.record().fieldName(Col); };
-    QString getColumnName( QString& DisplayName );
-    int getColumnNumber( QString& FieldName );
+    void setEditable( int t_column, bool t_editable ) { m_column_is_editable[t_column] = t_editable; };
+    bool isEditable( int t_column ) { return m_column_is_editable[t_column]; }
+    void setSearchable( int t_column, bool t_searchable ) { m_column_is_searchable[t_column] = t_searchable; };
+    bool isSearchable( int t_column ) { return m_column_is_searchable[t_column]; };
+    void setRequired( int t_column, bool t_required ) { m_column_is_required[t_column] = t_required; };
+    bool isRequired( int t_column ) { return m_column_is_required[t_column]; };
+    DBColumnType getType( const int t_column ) const { return m_column_type[t_column]; };
+    void setType( const int t_column, const DBColumnType t_column_type ) { m_column_type[t_column] = t_column_type; };
+    void setLookup(int t_column, PNSqlQueryModel* t_lookup, int t_lookup_fk_column, int t_lookup_value_column);
+    void setLookup(int t_column, QStringList* t_lookup);
+    QVariant getLookupValue( const QModelIndex& t_index);
+    QString getColumnName( int t_column ) {
+        return m_sql_query.record().fieldName(t_column);
+    };
+    QString getColumnName( QString& t_display_name );
+    int getColumnNumber( QString& t_field_name );
 
-    bool isReadOnly() { return m_ReadOnly; };
-    void setReadOnly() { m_ReadOnly = true; };
+    bool isReadOnly() { return m_read_only; };
+    void setReadOnly() { m_read_only = true; };
 
 private:
-    QString m_tablename;  // the table to write data too, also the table to sync with other models when changed
-    QString m_DisplayName;
-    QString m_BaseSQL;
+    QString m_tablename;  // the t_table to write data too, also the t_table to sync with other models when changed
+    QString m_display_name;
+    QString m_base_sql;
 
-    QHash<int, DBColumnType> m_ColumnType;
-    QHash<int, bool> m_ColumnRequired;
-    QHash<int, bool> m_ColumnSearchable;
-    QHash<int, bool> m_ColumnIsEditable;
+    QHash<int, DBColumnType> m_column_type;
+    QHash<int, bool> m_column_is_required;
+    QHash<int, bool> m_column_is_searchable;
+    QHash<int, bool> m_column_is_editable;
 
-    QHash<int, bool> m_ColumnIsUnique;
+    QHash<int, bool> m_column_is_unique;
 
-    // TODO: setup filters and lookup views
-    QHash<int, bool> m_IsFiltered;
-    QHash<int, QVariant> m_FilterValue;
+    QHash<int, bool> m_column_is_filtered;
+    QHash<int, QVariant> m_filter_value;
 
-    QHash<int, bool> m_IsUserFiltered;
-    QHash<int, QStringList> m_UserFilterValues;
-    QHash<int, QVariant> m_UserSearchString;
+    QHash<int, bool> m_is_user_filtered;
+    QHash<int, QVariantList> m_user_filter_values;
+    QHash<int, QVariant> m_user_search_string;
 
-    QHash<int, bool> m_IsUserRangeFiltered;
-    QHash<int, QVariant> m_RangeSearchStart;
-    QHash<int, QVariant> m_RangeSearchEnd;
+    QHash<int, bool> m_is_user_range_filtered;
+    QHash<int, QVariant> m_range_search_start;
+    QHash<int, QVariant> m_range_search_end;
 
-    QHash<int, PNSqlQueryModel*> m_LookupView;
-    QHash<int, QStringList*> m_LookupValues;
-    QHash<int, int> m_LookupValue;
-    QHash<int, int> m_LookupFK;
+    QHash<int, PNSqlQueryModel*> m_lookup_view;
+    QHash<int, QStringList*> m_lookup_values;
+    QHash<int, int> m_lookup_value_column;
+    QHash<int, int> m_lookup_fk_column;
 
 
     // track for deletion checking
-    QVector<QString> m_RelatedTable;
-    QVector<QString> m_RelatedColumn;
-    QVector<QString> m_RelationTitle;
+    QVector<QString> m_related_table;
+    QVector<QString> m_related_column;
+    QVector<QString> m_relation_title;
 
-    QSqlQuery m_SqlQuery;
+    QSqlQuery m_sql_query;
     QVector<QSqlRecord> m_cache;
     QVector<QHash<int, QVariant> > m_headers;
 
-    bool m_ShowBlank = false;
+    bool m_show_blank = false;
 
-    QString m_OrderBy; // TODO: Add OrderBy
-    bool m_UserFilterActive = false; // TODO: Add User filter
-    bool m_ReadOnly = false;
+    QString m_order_by;
+    bool m_user_filter_active = false;
+    bool m_read_only = false;
 
 };
 
