@@ -95,7 +95,7 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
 
     m_people_model = new PeopleModel(nullptr);
     // setup lookup/drop down values
-    m_people_model->setLookup(5, m_clients_model, 0, 1);
+    m_people_model->setLookup(5, m_unfilteredclients_model, 0, 1);
     m_people_model_proxy = new PNSortFilterProxyModel();
     m_people_model_proxy->setSourceModel(m_people_model);
 

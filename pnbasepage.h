@@ -18,7 +18,7 @@ public:
 
     virtual void setupModels( Ui::MainWindow *t_ui ) { Q_UNUSED(t_ui)};
     virtual void newRecord();
-    virtual void copyItem() { };
+    virtual void copyItem();
     virtual void deleteItem();
 
     PNSortFilterProxyModel*  getCurrentModel() { return m_current_model; };

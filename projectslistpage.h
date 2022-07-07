@@ -9,7 +9,6 @@ public:
     ProjectsListPage();
 
     void setupModels( Ui::MainWindow *t_ui );
-    void copyItem();
 
 private:
     Ui::MainWindow *ui;

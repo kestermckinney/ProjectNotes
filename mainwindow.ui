@@ -875,7 +875,23 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QTableView" name="tableViewPeople"/>
+         <widget class="PeopleListView" name="tableViewPeople">
+          <property name="selectionMode">
+           <enum>QAbstractItemView::SingleSelection</enum>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
+          <attribute name="horizontalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -898,7 +914,13 @@
         </property>
         <item>
          <widget class="ClientsListView" name="tableViewClients">
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
           <attribute name="horizontalHeaderVisible">
+           <bool>true</bool>
+          </attribute>
+          <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
            <bool>true</bool>
           </attribute>
           <attribute name="verticalHeaderVisible">
@@ -1856,6 +1878,11 @@
    <class>ClientsListView</class>
    <extends>QTableView</extends>
    <header>clientslistview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>PeopleListView</class>
+   <extends>QTableView</extends>
+   <header>peoplelistview.h</header>
   </customwidget>
  </customwidgets>
  <resources>

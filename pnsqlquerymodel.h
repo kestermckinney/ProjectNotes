@@ -47,6 +47,7 @@ public:
 
     static QDateTime parseDateTime(QString t_entrydate);
     virtual bool addRecord(QSqlRecord& t_newrecord);
+    virtual bool copyRecord(QModelIndex t_index);
     virtual bool newRecord();
     bool deleteRecord(QModelIndex t_index);
 

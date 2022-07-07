@@ -11,9 +11,9 @@ PeopleModel::PeopleModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 
     setTableName("people", "People");
 
-    addColumn(0, tr("People ID"), DB_STRING, false);
-    addColumn(1, tr("Name"), DB_STRING, true, true, false);
-    addColumn(2,  tr("Email"), DB_STRING, true, false, true, false);
+    addColumn(0, tr("People ID"), DB_STRING, false, true, true, true);
+    addColumn(1, tr("Name"), DB_STRING, true, true, true, true);
+    addColumn(2, tr("Email"), DB_STRING, true, false, true, false);
     addColumn(3, tr("Office Phone"), DB_STRING, true, false, true, false);
     addColumn(4, tr("Cell Phone"), DB_STRING, true, false, true, false);
     // this should be a lookup column

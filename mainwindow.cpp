@@ -36,8 +36,10 @@ MainWindow::MainWindow(QWidget *t_parent)
 MainWindow::~MainWindow()
 {
     // need to save the screen layout befor the model is removed from the view
+    // The destructor of PNTableview does not save the state
     ui->tableViewProjects->setModel(nullptr);
     ui->tableViewClients->setModel(nullptr);
+    ui->tableViewPeople->setModel(nullptr);
 
     if (global_DBObjects.isOpen())
         global_DBObjects.closeDatabase();
@@ -129,12 +131,17 @@ void MainWindow::openDatabase(QString t_dbfile)
     if (!global_DBObjects.openDatabase(t_dbfile))
         return;
 
+    // load and refresh all of the models in order of their dependancy relationships
     global_DBObjects.unfilteredpeoplemodel()->refresh();
     global_DBObjects.unfilteredclientsmodel()->refresh();
 
     global_DBObjects.setGlobalSearches(false);
 
-    global_DBObjects.clientsmodel()->refresh();
+    global_DBObjects.clientsmodel()->loadUserFilter(global_DBObjects.clientsmodel()->objectName());
+    global_DBObjects.clientsmodel()->activateUserFilter(global_DBObjects.clientsmodel()->objectName());
+
+    global_DBObjects.peoplemodel()->loadUserFilter(global_DBObjects.peoplemodel()->objectName());
+    global_DBObjects.peoplemodel()->activateUserFilter(global_DBObjects.peoplemodel()->objectName());
 
     global_DBObjects.projectslistmodel()->loadUserFilter(global_DBObjects.projectslistmodel()->objectName());
     global_DBObjects.projectslistmodel()->activateUserFilter(global_DBObjects.projectslistmodel()->objectName());
@@ -144,9 +151,11 @@ void MainWindow::openDatabase(QString t_dbfile)
     // assign all of the newly open models
     ui->pageProjectsList->setupModels(ui);
     ui->pageClients->setupModels(ui);
+    ui->pagePeople->setupModels(ui);
 
     navigateClearHistory();
-    navigateToPage(ui->pageProjectsList);
+    //navigateToPage(ui->pageProjectsList);
+    navigateToPage(ui->pageClients);
 }
 
 void MainWindow::navigateToPage(PNBasePage* t_widget)

@@ -15,6 +15,7 @@ class ProjectListView : public PNTableView
 public:
 
     ProjectListView(QWidget* t_parent = nullptr);
+    ~ProjectListView();
 
     void setModel(QAbstractItemModel *t_model) override;
 
@@ -29,12 +30,12 @@ private:
     QStringListModel m_locations;//PNDatabaseObjects::locations;
 
     // projects list panel delegates
-    PNComboBoxDelegate* m_unfiltered_people_delegate;
-    PNComboBoxDelegate* m_project_clients_delegate;
-    PNDateEditDelegate* m_project_date_delegate;
-    ComboBoxDelegate* m_project_invoicing_period_delegate;
-    ComboBoxDelegate* m_project_status_delegate;
-    ComboBoxDelegate* m_projects_report_period_delegate;
+    PNComboBoxDelegate* m_unfiltered_people_delegate = nullptr;
+    PNComboBoxDelegate* m_project_clients_delegate = nullptr;
+    PNDateEditDelegate* m_project_date_delegate = nullptr;
+    ComboBoxDelegate* m_project_invoicing_period_delegate = nullptr;
+    ComboBoxDelegate* m_project_status_delegate = nullptr;
+    ComboBoxDelegate* m_projects_report_period_delegate = nullptr;
 
 };
 

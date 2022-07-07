@@ -86,13 +86,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             }
         }
 
-        // reformat the t_value to be stored in the database
-        QVariant cleanvalue = t_value;
-
-        sqlEscape(cleanvalue, m_column_type[t_index.column()]);
-
         // the record id is always column 0
-        //QModelIndex primaryKeyIndex = m_cache[t_index.row()].value(0); // QAbstractTableModel::t_index(t_index.row(), 0);
         QString keycolumnname = m_cache[t_index.row()].fieldName(0);
 
         QString columnname = m_cache[t_index.row()].fieldName(t_index.column());
@@ -101,7 +95,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
 
         QSqlQuery update;
         update.prepare("update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)");
-        update.addBindValue(cleanvalue);
+        update.addBindValue(t_value);
         update.addBindValue(keyvalue);
         update.addBindValue(oldvalue);
 
@@ -118,7 +112,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             }
             else
             {
-                m_cache[t_index.row()].setValue(t_index.column(), cleanvalue);
+                m_cache[t_index.row()].setValue(t_index.column(), t_value);
 
                 return true;
             }
@@ -308,6 +302,10 @@ void PNSqlQueryModel::sqlEscape(QVariant& t_column_value, DBColumnType t_column_
             break;
         }
         case DB_STRING:
+        {
+            t_column_value.setValue(t_column_value.toString().replace("'","''"));
+            break;
+        }
         default:
         {
             break;
@@ -437,7 +435,7 @@ void PNSqlQueryModel::reformatValue(QVariant& t_column_value, DBColumnType t_col
     }
 }
 
-void PNSqlQueryModel::addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, bool t_searchable, bool t_required, bool t_editable, bool t_uniquie)
+void PNSqlQueryModel::addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, bool t_searchable, bool t_required, bool t_editable, bool t_unique)
 {
     setHeaderData(t_column_number, Qt::Horizontal, t_display_name);
 
@@ -446,7 +444,7 @@ void PNSqlQueryModel::addColumn(int t_column_number, const QString& t_display_na
     m_column_is_searchable[t_column_number] = t_searchable;
     m_column_is_editable[t_column_number] = t_editable;
     m_lookup_values[t_column_number] = nullptr;
-    m_column_is_unique[t_column_number] = t_uniquie;
+    m_column_is_unique[t_column_number] = t_unique;
 
     m_column_is_filtered[t_column_number] = false;
     m_filter_value[t_column_number] = QString();
@@ -475,6 +473,65 @@ int PNSqlQueryModel::rowCount(const QModelIndex &t_parent) const
         return 0;
 
     return m_cache.size();
+}
+
+bool PNSqlQueryModel::copyRecord(QModelIndex t_index)
+{
+    QSqlRecord newrecord = emptyrecord();
+    int i = 0;
+
+    for (i = 0; i < m_sql_query.record().count(); i++)
+    {
+
+        if (m_column_is_unique[i])
+        {
+            QString maxnum = m_cache[t_index.row()].value(i).toString();
+
+            // chop off left of the number
+            int copystart = maxnum.indexOf("Copy [");
+            if ( copystart >= 0 )
+            {
+                maxnum = maxnum.mid(copystart + 6);
+
+                // chop off right of the number
+                copystart = maxnum.indexOf("]");
+                maxnum = maxnum.left(copystart);
+            }
+            else
+                maxnum = "0";
+
+            int num = maxnum.toInt();
+            int existcount;
+            QString new_value;
+            QVariant new_field_value;
+
+            // keep trying in the event the value already exists
+            do
+            {
+                num += 1;
+
+                new_value = m_cache[t_index.row()].value(i).toString();
+                new_value.remove(QRegularExpression(" Copy \\[.*\\]"));
+                new_value += QString(" Copy [%1]").arg(num);
+                new_field_value = new_value;
+                sqlEscape(new_field_value, DB_STRING);
+
+                existcount = global_DBObjects.execute(QString("select count(%1) from %2 where %1='%3'").arg(m_sql_query.record().fieldName(i), tablename(), new_field_value.toString())).toInt();
+            }
+            while (existcount > 0);
+
+
+            newrecord.setValue(i, new_value);
+        }
+        else
+        {
+            newrecord.setValue(i, m_cache[t_index.row()].field(i).value());
+        }
+    }
+
+    // STOPPED HERE need to test the copy function
+
+    return addRecord(newrecord);
 }
 
 bool PNSqlQueryModel::addRecord(QSqlRecord& t_newrecord)
@@ -758,7 +815,10 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                         valuelist += QString("%1 = %2").arg( m_sql_query.record().fieldName(hashit.key()), column_value.toString() );
                 }
                 else
+                {
+                    sqlEscape(column_value, m_column_type[hashit.key()]);
                     valuelist += QString("%1 = '%2'").arg( m_sql_query.record().fieldName(hashit.key()), column_value.toString() );
+                }
             }
         }
     }

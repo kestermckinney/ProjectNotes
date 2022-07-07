@@ -9,9 +9,6 @@ public:
     PeoplePage();
 
     virtual void setupModels( Ui::MainWindow *t_ui );
-    void newRecord();
-    void copyItem();
-    void deleteItem();
 
 private:
     Ui::MainWindow *ui;

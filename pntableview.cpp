@@ -96,6 +96,9 @@ void PNTableView::setModel(QAbstractItemModel *model)
             horizontalHeader()->setSortIndicatorShown(false);
         }
 
+        horizontalHeader()->setVisible(true);
+        verticalHeader()->setVisible(false);
+
     }
     else if ( this->model() ) // when closing or setting model to empty save the columns first on startup don't save a blank view
     {

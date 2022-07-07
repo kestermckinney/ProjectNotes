@@ -25,6 +25,7 @@ SOURCES += \
     meetingattendeesmodel.cpp \
     noteactionitemsmodel.cpp \
     notesactionitemsmodel.cpp \
+    peoplelistview.cpp \
     peoplemodel.cpp \
     peoplepage.cpp \
     pnbasepage.cpp \
@@ -66,6 +67,7 @@ HEADERS += \
     meetingattendeesmodel.h \
     noteactionitemsmodel.h \
     notesactionitemsmodel.h \
+    peoplelistview.h \
     peoplemodel.h \
     peoplepage.h \
     pnbasepage.h \
