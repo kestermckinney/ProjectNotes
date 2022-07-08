@@ -20,6 +20,9 @@ public:
     enum DBColumnType {DB_BLOB, DB_REAL, DB_DATE, DB_INTEGER, DB_STRING, DB_USD, DB_PERCENT, DB_DATETIME, DB_BOOL};
 
     PNSqlQueryModel(QObject *parent);
+    ~PNSqlQueryModel();
+
+    void refreshImpactedRecordsets(QModelIndex t_index);
 
     bool setData(const QModelIndex &t_index, const QVariant &t_value, int t_role) override;
     QVariant data(const QModelIndex &t_index, int t_role = Qt::DisplayRole) const override;
@@ -155,6 +158,8 @@ private:
     bool m_user_filter_active = false;
     bool m_read_only = false;
 
+    // list of created models
+    static QList<PNSqlQueryModel*> m_open_recordsets;
 };
 
 #endif // PNSQLQUERYMODEL_H

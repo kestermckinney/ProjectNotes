@@ -24,6 +24,7 @@ public slots:
     virtual void dataRowActivated(const QModelIndex &index);
     void slotNewRecord();
     void slotDeleteRecord();
+    void slotCopyRecord();
     void slotOpenRecord();
     void slotExportRecord();
     void slotFilterRecords();
@@ -43,6 +44,7 @@ private:
     QAction *exportRecord;
     QAction *filterRecords;
     QAction *resetColumns;
+    QAction *copyRecord;
 
     bool m_has_open = false;
 

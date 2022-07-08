@@ -15,6 +15,7 @@ ClientsModel::ClientsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
     addColumn(1, tr("Client Name"), DB_STRING, true, true, true, true);
 
     addRelatedTable("people", "client_id", "People");
+    addRelatedTable("projects", "client_id", "Projects");
 
     setOrderBy("client_name");
 

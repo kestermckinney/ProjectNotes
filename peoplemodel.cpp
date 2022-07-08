@@ -16,8 +16,7 @@ PeopleModel::PeopleModel(QObject* t_parent): PNSqlQueryModel(t_parent)
     addColumn(2, tr("Email"), DB_STRING, true, false, true, false);
     addColumn(3, tr("Office Phone"), DB_STRING, true, false, true, false);
     addColumn(4, tr("Cell Phone"), DB_STRING, true, false, true, false);
-    // this should be a lookup column
-    addColumn(5, tr("Client"), DB_STRING, true, true); //clients, tr("client_name"), tr("client_id"));
+    addColumn(5, tr("Client"), DB_STRING, true, true);
     addColumn(6, tr("Role"), DB_STRING, true, false, true, false);
 
     addRelatedTable("item_tracker", "assigned_to", "Assigned Item");

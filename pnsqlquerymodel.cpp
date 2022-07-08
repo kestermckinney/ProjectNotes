@@ -13,10 +13,83 @@
 #include <QHashIterator>
 #include <QDomDocument>
 #include <QDomNode>
+#include <QList>
 
+QList<PNSqlQueryModel*> PNSqlQueryModel::m_open_recordsets;
 
 PNSqlQueryModel::PNSqlQueryModel(QObject *t_parent) : QAbstractTableModel(t_parent)
 {
+    m_open_recordsets.append(this); // add to the list of open recordsets
+}
+
+PNSqlQueryModel::~PNSqlQueryModel()
+{
+    m_open_recordsets.removeAll(this);  // remove from the list of open recordsets
+}
+
+void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
+{
+    // if no tables rely on this record then jump out of this test
+    if (m_related_table.count() == 0)
+        return;
+
+    QVariant key_value = m_cache[t_index.row()].value(0);
+
+    QListIterator<PNSqlQueryModel*> it_recordsets(m_open_recordsets);
+    PNSqlQueryModel* recordset = nullptr;
+
+    // look through all recordsets that are open
+    while(it_recordsets.hasNext())
+    {
+        recordset = it_recordsets.next();
+
+        //qDebug() << "Searching for Table " << recordset->tablename();
+
+        // look through all related tables and uses of the same table to see if the recordset is match
+        // don't check against yourself
+        if ( recordset != this)
+        {
+            for (int i = 0; i < m_related_table.count(); i++)
+            {
+                if ( recordset->tablename() == m_related_table[i] )
+                {
+                    //qDebug() << "Looking Into Table " << recordset->tablename() << " i is " << i;
+                    // we found a table to check, look for the related column
+                    int ck_col = recordset->m_sql_query.record().indexOf(m_related_column[i]);
+
+                    // if related column is being used then search
+                    if (ck_col != -1)
+                    {
+                        for (int ck_row = 0; ck_row < recordset->m_cache.count(); ck_row++)
+                        {
+                            // if the row contains the key value in the column then reload it
+                            if ( recordset->m_cache[ck_row].value(ck_col) == key_value )
+                            {
+                                //qDebug() << "Reloading Record for Table " << recordset->tablename() << " Row " << ck_row << " Column " << ck_col;
+                                recordset->reloadRecord(recordset->index(ck_row, ck_col));
+                            }
+                        }
+                    }
+
+                }
+            }
+
+            // if it is the same table in a different recordset reload it
+            if ( recordset->tablename() == tablename() )
+            {
+                for (int ck_row = 0; ck_row < recordset->m_cache.count(); ck_row++)
+                {
+                    // if the row contains the key value in the column then reload it
+                    if ( recordset->m_cache[ck_row].value(0) == key_value )
+                    {
+                        //qDebug() << "Reloading Record for Table " << recordset->tablename() << " Row " << ck_row << " Column 0";
+                        recordset->reloadRecord(recordset->index(ck_row, 0));
+                    }
+                }
+            }
+
+        }
+    }
 }
 
 int PNSqlQueryModel::columnCount(const QModelIndex &t_parent) const
@@ -42,8 +115,6 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
 {
     if (t_role == Qt::EditRole)
     {
-            //return QAbstractTableModel::setData(t_index, t_value, t_role);
-
         // nmake sure column is edit_table
         // exit if no update t_table defined
         if (!m_column_is_editable[t_index.column()] || m_tablename.isEmpty())
@@ -114,6 +185,8 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             {
                 m_cache[t_index.row()].setValue(t_index.column(), t_value);
 
+                // check for all of the impacted open recordsets
+                refreshImpactedRecordsets(t_index);
                 return true;
             }
         }
@@ -529,8 +602,6 @@ bool PNSqlQueryModel::copyRecord(QModelIndex t_index)
         }
     }
 
-    // STOPPED HERE need to test the copy function
-
     return addRecord(newrecord);
 }
 
@@ -771,6 +842,9 @@ bool PNSqlQueryModel::reloadRecord(const QModelIndex& t_index)
             m_cache[t_index.row()] = select.record();
 
             emit dataChanged(t_index.model()->index(t_index.row(), 0), t_index.model()->index(t_index.row(), select.record().count()));
+
+            //qDebug() << "emmiting data changed for " << tablename() << " object " << objectName() << " row " << t_index.row() << " for columns 0 to " << select.record().count();
+
             return true;
         }
     }
@@ -1349,5 +1423,4 @@ int PNSqlQueryModel::getColumnNumber(QString &t_field_name)
     return -1;
 }
 
-// TODO: Setup refresh signalling between models
 

@@ -2,7 +2,7 @@
 
 ProjectListView::ProjectListView(QWidget* t_parent) : PNTableView(t_parent)
 {
-
+    setHasOpen(true);
 }
 
 ProjectListView::~ProjectListView()
