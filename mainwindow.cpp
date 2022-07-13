@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include "pntableview.h"
+#include "projectslistmodel.h"
 
 #include <QStringListModel>
 #include <QMessageBox>
@@ -31,10 +32,14 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     global_Settings.getWindowState("MainWindow", *this);
     ui->actionStatus_Bar->setChecked(statusBar()->isVisibleTo(this));
+
+    connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
 }
 
 MainWindow::~MainWindow()
 {
+    disconnect(ui->tableViewProjects, SIGNAL(ui->tableViewProjects->signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
+
     // need to save the screen layout befor the model is removed from the view
     // The destructor of PNTableview does not save the state
     ui->tableViewProjects->setModel(nullptr);
@@ -152,10 +157,11 @@ void MainWindow::openDatabase(QString t_dbfile)
     ui->pageProjectsList->setupModels(ui);
     ui->pageClients->setupModels(ui);
     ui->pagePeople->setupModels(ui);
+    ui->pageProjectDetails->setupModels(ui);
 
     navigateClearHistory();
-    //navigateToPage(ui->pageProjectsList);
-    navigateToPage(ui->pageClients);
+    navigateToPage(ui->pageProjectsList);
+    //navigateToPage(ui->pageClients);
 }
 
 void MainWindow::navigateToPage(PNBasePage* t_widget)
@@ -263,4 +269,9 @@ void MainWindow::on_actionDelete_Item_triggered()
 {
     if ( navigateCurrentPage() )
         navigateCurrentPage()->deleteItem();
+}
+
+void MainWindow::on_actionOpen_ProjectDetails_triggered()
+{
+    navigateToPage(ui->pageProjectDetails);
 }

@@ -242,10 +242,15 @@ void PNTableView::slotCopyRecord()
 
 void PNTableView::slotOpenRecord()
 {
-    STOPPED HERE NEED TO OPEN THE PROJECT
-    // TODO: how should opening of the selected item be handled?
-    QMessageBox::critical(nullptr, QObject::tr("Action Not Overriden"),
-        tr("Open Record Needs Defined"), QMessageBox::Cancel);
+    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
+    PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
+
+    QModelIndexList qil = this->selectionModel()->selectedRows();
+
+    for (auto qi = qil.begin(); qi != qil.end(); qi++)
+        currentmodel->openRecord(*qi);
+
+    emit signalOpenRecordWindow();
 }
 
 void PNTableView::slotExportRecord()

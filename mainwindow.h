@@ -30,6 +30,9 @@ public:
     void navigateClearHistory() { m_navigation_location = -1; m_navigation_history.clear(); }
     PNBasePage* navigateCurrentPage() { return (m_navigation_location == -1 ? nullptr : m_navigation_history.at(m_navigation_location) ); }
 
+public slots:
+    void on_actionOpen_ProjectDetails_triggered();
+
 private slots:
     //void handleNewProjectClicked();
     //void handleDeleteProjectClicked();

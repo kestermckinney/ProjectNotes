@@ -1,5 +1,5 @@
-#ifndef PROJECTLISTVIEW_H
-#define PROJECTLISTVIEW_H
+#ifndef PROJECTSLISTVIEW_H
+#define PROJECTSLISTVIEW_H
 
 #include "pncomboboxdelegate.h"
 #include "pndateeditdelegate.h"
@@ -10,12 +10,12 @@
 
 #include <QObject>
 
-class ProjectListView : public PNTableView
+class ProjectsListView : public PNTableView
 {
 public:
 
-    ProjectListView(QWidget* t_parent = nullptr);
-    ~ProjectListView();
+    ProjectsListView(QWidget* t_parent = nullptr);
+    ~ProjectsListView();
 
     void setModel(QAbstractItemModel *t_model) override;
 
@@ -39,4 +39,4 @@ private:
 
 };
 
-#endif // PROJECTLISTVIEW_H
+#endif // PROJECTSLISTVIEW_H

@@ -52,7 +52,8 @@ public:
     virtual bool addRecord(QSqlRecord& t_newrecord);
     virtual bool copyRecord(QModelIndex t_index);
     virtual bool newRecord();
-    bool deleteRecord(QModelIndex t_index);
+    virtual bool deleteRecord(QModelIndex t_index);
+    virtual bool openRecord(QModelIndex t_index);
 
     int rowCount(const QModelIndex &t_parent) const override;
 
@@ -113,6 +114,7 @@ public:
 
     bool isReadOnly() { return m_read_only; };
     void setReadOnly() { m_read_only = true; };
+
 
 private:
     QString m_tablename;  // the t_table to write data too, also the t_table to sync with other models when changed

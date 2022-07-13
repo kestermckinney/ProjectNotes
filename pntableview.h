@@ -10,6 +10,8 @@
 
 class PNTableView : public QTableView
 {
+    Q_OBJECT
+
 public:
     PNTableView(QWidget* parent = nullptr);
     ~PNTableView();
@@ -18,6 +20,9 @@ public:
     // BUGGY TODO REMOVE bool eventFilter(QObject *watched, QEvent *event) override;
 
     void contextMenuEvent(QContextMenuEvent *e) override;
+
+signals:
+    void signalOpenRecordWindow();
 
 public slots:
     virtual void dataRowSelected(const QModelIndex &index);

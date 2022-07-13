@@ -38,11 +38,12 @@ SOURCES += \
     pnsqlquerymodel.cpp \
     pntableview.cpp \
     projectactionitemsmodel.cpp \
-    projectlistview.cpp \
+    projectdetailspage.cpp \
     projectlocationsmodel.cpp \
     projectnotesmodel.cpp \
     projectslistmodel.cpp \
     projectslistpage.cpp \
+    projectslistview.cpp \
     projectsmodel.cpp \
     projectteammembersmodel.cpp \
     searchresultsmodel.cpp \
@@ -80,11 +81,12 @@ HEADERS += \
     pnsqlquerymodel.h \
     pntableview.h \
     projectactionitemsmodel.h \
-    projectlistview.h \
+    projectdetailspage.h \
     projectlocationsmodel.h \
     projectnotesmodel.h \
     projectslistmodel.h \
     projectslistpage.h \
+    projectslistview.h \
     projectsmodel.h \
     projectteammembersmodel.h \
     searchresultsmodel.h \
