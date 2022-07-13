@@ -19,3 +19,13 @@ void PNBasePage::deleteItem()
         ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->deleteRecord(getCurrentModel()->mapToSource(qi[i]));
     }
 }
+
+void PNBasePage::copyItem()
+{
+    QModelIndexList qi = getCurrentView()->selectionModel()->selectedRows();
+
+    for (int i = qi.count() - 1; i >= 0; i--)
+    {
+        ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->copyRecord(getCurrentModel()->mapToSource(qi[i]));
+    }
+}

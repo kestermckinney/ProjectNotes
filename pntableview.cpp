@@ -31,6 +31,7 @@ PNTableView::PNTableView(QWidget *parent) : QTableView(parent)
     exportRecord = new QAction(tr("XML Export..."), this);
     filterRecords = new QAction(tr("Filter Settings..."), this);
     resetColumns = new QAction(tr("Reset Columns"), this);
+    copyRecord = new QAction(tr("Copy Record"), this);
 
 
     connect(newRecord, &QAction::triggered, this, &PNTableView::slotNewRecord);
@@ -39,6 +40,7 @@ PNTableView::PNTableView(QWidget *parent) : QTableView(parent)
     connect(exportRecord, &QAction::triggered, this, &PNTableView::slotExportRecord);
     connect(filterRecords, &QAction::triggered, this, &PNTableView::slotFilterRecords);
     connect(resetColumns, &QAction::triggered, this, &PNTableView::slotResetColumns);
+    connect(copyRecord, &QAction::triggered, this, &PNTableView::slotCopyRecord);
 }
 
 PNTableView::~PNTableView()
@@ -52,6 +54,7 @@ PNTableView::~PNTableView()
     disconnect(exportRecord, &QAction::triggered, this, &PNTableView::slotExportRecord);
     disconnect(filterRecords, &QAction::triggered, this, &PNTableView::slotFilterRecords);
     disconnect(resetColumns, &QAction::triggered, this, &PNTableView::slotResetColumns);
+    disconnect(copyRecord, &QAction::triggered, this, &PNTableView::slotCopyRecord);
 
     delete newRecord;
     delete deleteRecord;
@@ -95,6 +98,9 @@ void PNTableView::setModel(QAbstractItemModel *model)
             horizontalHeader()->setSortIndicator(-1, Qt::AscendingOrder);
             horizontalHeader()->setSortIndicatorShown(false);
         }
+
+        horizontalHeader()->setVisible(true);
+        verticalHeader()->setVisible(false);
 
     }
     else if ( this->model() ) // when closing or setting model to empty save the columns first on startup don't save a blank view
@@ -193,6 +199,7 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *e)
     {
         menu->addAction(newRecord);
         menu->addAction(deleteRecord);
+        menu->addAction(copyRecord);
         if (m_has_open) menu->addAction(openRecord);
         menu->addAction(exportRecord);
         menu->addAction(filterRecords);
@@ -222,11 +229,28 @@ void PNTableView::slotDeleteRecord()
         currentmodel->deleteRecord(*qi);
 }
 
+void PNTableView::slotCopyRecord()
+{
+    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
+    PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
+
+    QModelIndexList qil = this->selectionModel()->selectedRows();
+
+    for (auto qi = qil.begin(); qi != qil.end(); qi++)
+        currentmodel->copyRecord(*qi);
+}
+
 void PNTableView::slotOpenRecord()
 {
-    // TODO: how should opening of the selected item be handled?
-    QMessageBox::critical(nullptr, QObject::tr("Action Not Overriden"),
-        tr("Open Record Needs Defined"), QMessageBox::Cancel);
+    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
+    PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
+
+    QModelIndexList qil = this->selectionModel()->selectedRows();
+
+    for (auto qi = qil.begin(); qi != qil.end(); qi++)
+        currentmodel->openRecord(*qi);
+
+    emit signalOpenRecordWindow();
 }
 
 void PNTableView::slotExportRecord()

@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include "pntableview.h"
+#include "projectslistmodel.h"
 
 #include <QStringListModel>
 #include <QMessageBox>
@@ -31,13 +32,19 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     global_Settings.getWindowState("MainWindow", *this);
     ui->actionStatus_Bar->setChecked(statusBar()->isVisibleTo(this));
+
+    connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
 }
 
 MainWindow::~MainWindow()
 {
+    disconnect(ui->tableViewProjects, SIGNAL(ui->tableViewProjects->signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
+
     // need to save the screen layout befor the model is removed from the view
+    // The destructor of PNTableview does not save the state
     ui->tableViewProjects->setModel(nullptr);
     ui->tableViewClients->setModel(nullptr);
+    ui->tableViewPeople->setModel(nullptr);
 
     if (global_DBObjects.isOpen())
         global_DBObjects.closeDatabase();
@@ -129,12 +136,17 @@ void MainWindow::openDatabase(QString t_dbfile)
     if (!global_DBObjects.openDatabase(t_dbfile))
         return;
 
+    // load and refresh all of the models in order of their dependancy relationships
     global_DBObjects.unfilteredpeoplemodel()->refresh();
     global_DBObjects.unfilteredclientsmodel()->refresh();
 
     global_DBObjects.setGlobalSearches(false);
 
-    global_DBObjects.clientsmodel()->refresh();
+    global_DBObjects.clientsmodel()->loadUserFilter(global_DBObjects.clientsmodel()->objectName());
+    global_DBObjects.clientsmodel()->activateUserFilter(global_DBObjects.clientsmodel()->objectName());
+
+    global_DBObjects.peoplemodel()->loadUserFilter(global_DBObjects.peoplemodel()->objectName());
+    global_DBObjects.peoplemodel()->activateUserFilter(global_DBObjects.peoplemodel()->objectName());
 
     global_DBObjects.projectslistmodel()->loadUserFilter(global_DBObjects.projectslistmodel()->objectName());
     global_DBObjects.projectslistmodel()->activateUserFilter(global_DBObjects.projectslistmodel()->objectName());
@@ -144,9 +156,12 @@ void MainWindow::openDatabase(QString t_dbfile)
     // assign all of the newly open models
     ui->pageProjectsList->setupModels(ui);
     ui->pageClients->setupModels(ui);
+    ui->pagePeople->setupModels(ui);
+    ui->pageProjectDetails->setupModels(ui);
 
     navigateClearHistory();
     navigateToPage(ui->pageProjectsList);
+    //navigateToPage(ui->pageClients);
 }
 
 void MainWindow::navigateToPage(PNBasePage* t_widget)
@@ -254,4 +269,9 @@ void MainWindow::on_actionDelete_Item_triggered()
 {
     if ( navigateCurrentPage() )
         navigateCurrentPage()->deleteItem();
+}
+
+void MainWindow::on_actionOpen_ProjectDetails_triggered()
+{
+    navigateToPage(ui->pageProjectDetails);
 }

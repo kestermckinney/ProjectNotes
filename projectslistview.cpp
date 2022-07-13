@@ -1,11 +1,20 @@
-#include "projectlistview.h"
+#include "projectslistview.h"
 
-ProjectListView::ProjectListView(QWidget* t_parent) : PNTableView(t_parent)
+ProjectsListView::ProjectsListView(QWidget* t_parent) : PNTableView(t_parent)
 {
-
+    setHasOpen(true);
 }
 
-void ProjectListView::setModel(QAbstractItemModel *t_model)
+ProjectsListView::~ProjectsListView()
+{
+    if (m_unfiltered_people_delegate) delete m_unfiltered_people_delegate;
+    if (m_project_clients_delegate) delete m_project_clients_delegate;
+    if (m_project_date_delegate) delete m_project_date_delegate;
+    if (m_projects_report_period_delegate) delete m_projects_report_period_delegate;
+    if (m_project_status_delegate) delete m_project_status_delegate;
+}
+
+void ProjectsListView::setModel(QAbstractItemModel *t_model)
 {
     if (t_model)
     {
@@ -25,7 +34,7 @@ void ProjectListView::setModel(QAbstractItemModel *t_model)
 
         // projects list panel delagets
         m_unfiltered_people_delegate = new PNComboBoxDelegate(this, global_DBObjects.unfilteredpeoplemodel());
-        m_project_clients_delegate = new PNComboBoxDelegate(this, global_DBObjects.clientsmodel());
+        m_project_clients_delegate = new PNComboBoxDelegate(this, global_DBObjects.unfilteredclientsmodel());
         m_project_date_delegate = new PNDateEditDelegate(this);
         m_projects_report_period_delegate = new ComboBoxDelegate(this, &m_status_report_period);
         m_project_invoicing_period_delegate = new ComboBoxDelegate(this, &m_invoicing_period);

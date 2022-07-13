@@ -18,9 +18,3 @@ void ProjectsListPage::setupModels( Ui::MainWindow *t_ui )
     setCurrentModel(global_DBObjects.projectslistmodelproxy());
     setCurrentView( ui->tableViewProjects );
 }
-
-void ProjectsListPage::copyItem()
-{
-    // TODO: do we want to copy projects???
-    qDebug() << "Copy Project Not Implemented... ";
-}

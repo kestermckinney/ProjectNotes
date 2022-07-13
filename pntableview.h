@@ -10,6 +10,8 @@
 
 class PNTableView : public QTableView
 {
+    Q_OBJECT
+
 public:
     PNTableView(QWidget* parent = nullptr);
     ~PNTableView();
@@ -19,11 +21,15 @@ public:
 
     void contextMenuEvent(QContextMenuEvent *e) override;
 
+signals:
+    void signalOpenRecordWindow();
+
 public slots:
     virtual void dataRowSelected(const QModelIndex &index);
     virtual void dataRowActivated(const QModelIndex &index);
     void slotNewRecord();
     void slotDeleteRecord();
+    void slotCopyRecord();
     void slotOpenRecord();
     void slotExportRecord();
     void slotFilterRecords();
@@ -43,6 +49,7 @@ private:
     QAction *exportRecord;
     QAction *filterRecords;
     QAction *resetColumns;
+    QAction *copyRecord;
 
     bool m_has_open = false;
 

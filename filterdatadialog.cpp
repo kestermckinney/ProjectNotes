@@ -276,5 +276,3 @@ void FilterDataDialog::setupFilters()
     ui->tableViewColumnName->selectRow(m_selected_column);
 }
 
-
-// TODO: Clients List Filter breaks the column layout adding the column 0 ?????

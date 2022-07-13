@@ -52,7 +52,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>4</number>
+       <number>1</number>
       </property>
       <widget class="ProjectsListPage" name="pageProjectsList">
        <property name="sizePolicy">
@@ -78,7 +78,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="ProjectListView" name="tableViewProjects">
+         <widget class="ProjectsListView" name="tableViewProjects">
           <property name="frameShape">
            <enum>QFrame::NoFrame</enum>
           </property>
@@ -147,7 +147,7 @@
              <number>5</number>
             </property>
             <item>
-             <widget class="QFrame" name="frame_5">
+             <widget class="QFrame" name="frame_top">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                 <horstretch>0</horstretch>
@@ -360,7 +360,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="pageProjectDetails">
+      <widget class="ProjectDetailsPage" name="pageProjectDetails">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
          <horstretch>0</horstretch>
@@ -535,7 +535,7 @@
                 </widget>
                </item>
                <item row="4" column="1">
-                <widget class="QComboBox" name="comboBox">
+                <widget class="QComboBox" name="comboBoxPrimaryContact">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                    <horstretch>0</horstretch>
@@ -875,7 +875,23 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QTableView" name="tableViewPeople"/>
+         <widget class="PeopleListView" name="tableViewPeople">
+          <property name="selectionMode">
+           <enum>QAbstractItemView::SingleSelection</enum>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
+          <attribute name="horizontalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -898,7 +914,13 @@
         </property>
         <item>
          <widget class="ClientsListView" name="tableViewClients">
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
           <attribute name="horizontalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
            <bool>true</bool>
           </attribute>
           <attribute name="verticalHeaderVisible">
@@ -1830,9 +1852,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ProjectListView</class>
+   <class>ProjectsListView</class>
    <extends>QTableView</extends>
-   <header>projectlistview.h</header>
+   <header>projectslistview.h</header>
   </customwidget>
   <customwidget>
    <class>ProjectsListPage</class>
@@ -1856,6 +1878,17 @@
    <class>ClientsListView</class>
    <extends>QTableView</extends>
    <header>clientslistview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>PeopleListView</class>
+   <extends>QTableView</extends>
+   <header>peoplelistview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ProjectDetailsPage</class>
+   <extends>QWidget</extends>
+   <header>projectdetailspage.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

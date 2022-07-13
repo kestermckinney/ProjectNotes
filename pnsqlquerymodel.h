@@ -20,6 +20,9 @@ public:
     enum DBColumnType {DB_BLOB, DB_REAL, DB_DATE, DB_INTEGER, DB_STRING, DB_USD, DB_PERCENT, DB_DATETIME, DB_BOOL};
 
     PNSqlQueryModel(QObject *parent);
+    ~PNSqlQueryModel();
+
+    void refreshImpactedRecordsets(QModelIndex t_index);
 
     bool setData(const QModelIndex &t_index, const QVariant &t_value, int t_role) override;
     QVariant data(const QModelIndex &t_index, int t_role = Qt::DisplayRole) const override;
@@ -47,8 +50,10 @@ public:
 
     static QDateTime parseDateTime(QString t_entrydate);
     virtual bool addRecord(QSqlRecord& t_newrecord);
+    virtual bool copyRecord(QModelIndex t_index);
     virtual bool newRecord();
-    bool deleteRecord(QModelIndex t_index);
+    virtual bool deleteRecord(QModelIndex t_index);
+    virtual bool openRecord(QModelIndex t_index);
 
     int rowCount(const QModelIndex &t_parent) const override;
 
@@ -110,6 +115,7 @@ public:
     bool isReadOnly() { return m_read_only; };
     void setReadOnly() { m_read_only = true; };
 
+
 private:
     QString m_tablename;  // the t_table to write data too, also the t_table to sync with other models when changed
     QString m_display_name;
@@ -154,6 +160,8 @@ private:
     bool m_user_filter_active = false;
     bool m_read_only = false;
 
+    // list of created models
+    static QList<PNSqlQueryModel*> m_open_recordsets;
 };
 
 #endif // PNSQLQUERYMODEL_H
