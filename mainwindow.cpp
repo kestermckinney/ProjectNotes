@@ -273,5 +273,7 @@ void MainWindow::on_actionDelete_Item_triggered()
 
 void MainWindow::on_actionOpen_ProjectDetails_triggered()
 {
+    ui->pageProjectDetails->toFirst();
+
     navigateToPage(ui->pageProjectDetails);
 }
