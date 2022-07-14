@@ -11,13 +11,16 @@ class ProjectDetailsPage : public PNBasePage
 
 public:
     ProjectDetailsPage();
+    ~ProjectDetailsPage();
 
     void setupModels( Ui::MainWindow *t_ui );
+
+    void toFirst();
 
 private:
     Ui::MainWindow *ui;
 
-    QDataWidgetMapper m_mapperProjectDetails;
+    QDataWidgetMapper* m_mapperProjectDetails = nullptr;
 };
 
 #endif // PROJECTDETAILSPAGE_H

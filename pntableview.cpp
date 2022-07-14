@@ -31,7 +31,7 @@ PNTableView::PNTableView(QWidget *parent) : QTableView(parent)
     exportRecord = new QAction(tr("XML Export..."), this);
     filterRecords = new QAction(tr("Filter Settings..."), this);
     resetColumns = new QAction(tr("Reset Columns"), this);
-    copyRecord = new QAction(tr("Copy Record"), this);
+    copyRecord = new QAction(tr("Copy"), this);
 
 
     connect(newRecord, &QAction::triggered, this, &PNTableView::slotNewRecord);
