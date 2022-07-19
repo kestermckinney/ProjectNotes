@@ -11,6 +11,7 @@ ProjectsListView::~ProjectsListView()
     if (m_project_clients_delegate) delete m_project_clients_delegate;
     if (m_project_date_delegate) delete m_project_date_delegate;
     if (m_projects_report_period_delegate) delete m_projects_report_period_delegate;
+    if (m_project_invoicing_period_delegate) delete m_project_invoicing_period_delegate;
     if (m_project_status_delegate) delete m_project_status_delegate;
 }
 
