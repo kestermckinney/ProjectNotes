@@ -6,6 +6,7 @@
 #include <QModelIndex>
 #include <QApplication>
 #include <QString>
+#include <QDebug>
 
 PNComboBoxDelegate::PNComboBoxDelegate(QObject *t_parent, PNSqlQueryModel *t_model, int t_displaycolumn)
 :QItemDelegate(t_parent)
@@ -14,8 +15,7 @@ PNComboBoxDelegate::PNComboBoxDelegate(QObject *t_parent, PNSqlQueryModel *t_mod
     m_display_column = t_displaycolumn;
 }
 
-
-QWidget *PNComboBoxDelegate::createEditor(QWidget *t_parent, const QStyleOptionViewItem &/* t_option */, const QModelIndex &/* t_index */) const
+QWidget* PNComboBoxDelegate::createEditor(QWidget *t_parent, const QStyleOptionViewItem& t_option, const QModelIndex& t_index ) const
 {
     QComboBox* editor = new QComboBox(t_parent);
     editor->setEditable(true);
@@ -23,9 +23,10 @@ QWidget *PNComboBoxDelegate::createEditor(QWidget *t_parent, const QStyleOptionV
     editor->setModelColumn(m_display_column); // column to display
 
     QCompleter* completer = new QCompleter(m_model);
+    completer->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
     completer->setCompletionMode(QCompleter::PopupCompletion);
-    completer->setCaseSensitivity(Qt::CaseInsensitive);
-    completer->setCompletionColumn(1);
+    //completer->setCaseSensitivity(Qt::CaseInsensitive);
+    completer->setCompletionColumn(m_display_column);
     editor->setCompleter(completer);
 
     return editor;
@@ -35,14 +36,19 @@ void PNComboBoxDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_i
 {
     QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
     QVariant lookupvalue = t_index.model()->data(t_index);
-    QString t_value = m_model->findValue(lookupvalue, 0, 1).toString();
-    comboBox->setCurrentText(t_value);
+    QString value = m_model->findValue(lookupvalue, 0, 1).toString();
+
+    qDebug() << "Editor Data: " << value;
+    //comboBox->setCurrentIndex(value);
+    comboBox->setCurrentText(value);
+    //QItemDelegate::setEditorData(t_editor, t_index);
 }
 
 void PNComboBoxDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const
 {
     QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
-    t_model->setData(t_index, m_model->data(m_model->index(comboBox->currentIndex(), 0)), Qt::EditRole);
+    QVariant key_val = m_model->data(m_model->index(comboBox->currentIndex(), 0));
+    t_model->setData(t_index, key_val, Qt::EditRole);
 }
 
 void PNComboBoxDelegate::updateEditorGeometry(QWidget *t_editor, const QStyleOptionViewItem &t_option, const QModelIndex &/* t_index */) const
@@ -58,6 +64,8 @@ void PNComboBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
 
     myOption.text = m_model->findValue(lookupvalue, 0, 1).toString();
 
+
+    //qDebug() << "option.text = " << myOption.text;
     // make light gray background when not edit_table
     //if (!((PNSqlQueryModel*)t_index.model())->isEdit_table(t_index.column()))
     //    myOption.backgroundBrush = QBrush(QColor("lightgray"));

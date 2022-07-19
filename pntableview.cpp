@@ -24,6 +24,7 @@ PNTableView::PNTableView(QWidget *parent) : QTableView(parent)
 
     connect(this, &QTableView::activated, this, &PNTableView::dataRowActivated);
     connect(this, &QTableView::clicked, this, &PNTableView::dataRowSelected);
+    //connect(this, &QTableView::doubleClicked, this, &PNTableView::slotOpenRecord);
 
     newRecord = new QAction(tr("New"), this);
     deleteRecord = new QAction(tr("Delete"), this);
@@ -47,6 +48,7 @@ PNTableView::~PNTableView()
 {
     disconnect(this, &QTableView::activated, this, &PNTableView::dataRowActivated);
     disconnect(this, &QTableView::clicked, this, &PNTableView::dataRowSelected);
+    //disconnect(this, &QTableView::doubleClicked, this, &PNTableView::slotOpenRecord);
 
     disconnect(newRecord, &QAction::triggered, this, &PNTableView::slotNewRecord);
     disconnect(deleteRecord, &QAction::triggered, this, &PNTableView::slotDeleteRecord);
@@ -242,6 +244,9 @@ void PNTableView::slotCopyRecord()
 
 void PNTableView::slotOpenRecord()
 {
+    if (!m_has_open) // don't allow double click to work if not specified
+        return;
+
     QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
     PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
 

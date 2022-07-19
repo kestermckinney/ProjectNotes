@@ -219,8 +219,8 @@ void PNSqlQueryModel::refresh()
 
     m_sql_query = QSqlQuery( fullsql );
 
-    qDebug() << "Refreshing: ";
-    qDebug() << fullsql;
+    //qDebug() << "Refreshing: ";
+    //qDebug() << fullsql;
 
     // add a blank row for drop downs
     if (m_show_blank)
@@ -663,7 +663,7 @@ bool PNSqlQueryModel::addRecord(QSqlRecord& t_newrecord)
 
     QSqlQuery insert;
     insert.prepare("insert into " + m_tablename + " ( " + fields + " ) values ( " + values + " )");
-    qDebug() << "insert into " << m_tablename << " ( " << fields << " ) values ( " << values << " )";
+    //qDebug() << "insert into " << m_tablename << " ( " << fields << " ) values ( " << values << " )";
 
     int bindcount = 0;
     for (i = 0; i < m_sql_query.record().count(); i++)
@@ -790,7 +790,7 @@ bool PNSqlQueryModel::deleteCheck(const QModelIndex &t_index)
         select.bindValue(0, m_cache[t_index.row()].value(0));
         select.exec();
 
-        qDebug() << "DELETE CHECK: " << select.executedQuery() << " column:  " <<  m_related_column.at(i) << " value:  " << m_cache[t_index.row()].value(0);
+        //qDebug() << "DELETE CHECK: " << select.executedQuery() << " column:  " <<  m_related_column.at(i) << " value:  " << m_cache[t_index.row()].value(0);
 
         if (select.next())
             relatedcount = select.value(0).toInt();
