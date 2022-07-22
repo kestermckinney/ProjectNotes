@@ -2,9 +2,9 @@
 #define PNCOMBOBOXDELEGATE_H
 #include "pnsqlquerymodel.h"
 
-#include <QItemDelegate>
+#include <QStyledItemDelegate>
 
-class PNComboBoxDelegate : public QItemDelegate
+class PNComboBoxDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
 

@@ -11,7 +11,7 @@
 #include <QPainter>
 
 PNDateEditDelegate::PNDateEditDelegate(QObject *t_parent)
-:QItemDelegate(t_parent)
+:QStyledItemDelegate(t_parent)
 {
 
 }
@@ -24,6 +24,7 @@ QWidget *PNDateEditDelegate::createEditor(QWidget *t_parent, const QStyleOptionV
     editor->setDisplayFormat("MM/dd/yyyy");
     editor->setProperty("EditMask","MM/dd/yyyy");
     editor->setCalendarPopup(true);
+
     return editor;
 }
 

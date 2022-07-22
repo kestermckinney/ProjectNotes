@@ -9,7 +9,7 @@
 #include <QDebug>
 
 PNComboBoxDelegate::PNComboBoxDelegate(QObject *t_parent, PNSqlQueryModel *t_model, int t_displaycolumn)
-:QItemDelegate(t_parent)
+:QStyledItemDelegate(t_parent)
 {
     m_model = t_model;
     m_display_column = t_displaycolumn;
@@ -63,7 +63,6 @@ void PNComboBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
     QVariant lookupvalue = t_index.model()->data(t_index);
 
     myOption.text = m_model->findValue(lookupvalue, 0, 1).toString();
-
 
     //qDebug() << "option.text = " << myOption.text;
     // make light gray background when not edit_table

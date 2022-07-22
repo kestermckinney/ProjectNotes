@@ -1,9 +1,9 @@
 #ifndef PNDATEEDITDELEGATE_H
 #define PNDATEEDITDELEGATE_H
 
-#include <QItemDelegate>
+#include <QStyledItemDelegate>
 
-class PNDateEditDelegate : public QItemDelegate
+class PNDateEditDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
 

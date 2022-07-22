@@ -14,6 +14,7 @@ ProjectDetailsPage::~ProjectDetailsPage()
         delete m_mapperProjectDetails;
 
     if (m_project_clients_delegate) delete m_project_clients_delegate;
+    if (m_project_details_delegate) delete m_project_details_delegate;
 }
 
 void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
@@ -23,6 +24,11 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
 
     if (m_mapperProjectDetails == nullptr)
         m_mapperProjectDetails = new QDataWidgetMapper(this);
+
+    if (m_project_details_delegate == nullptr)
+        m_project_details_delegate = new ProjectDetailsDelegate(this);
+
+    m_mapperProjectDetails->setItemDelegate(m_project_details_delegate);
 
     m_mapperProjectDetails->setModel(global_DBObjects.projectinformationmodelproxy());
     m_mapperProjectDetails->setSubmitPolicy(QDataWidgetMapper::AutoSubmit);

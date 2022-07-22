@@ -38,6 +38,7 @@ SOURCES += \
     pnsqlquerymodel.cpp \
     pntableview.cpp \
     projectactionitemsmodel.cpp \
+    projectdetailsdelegate.cpp \
     projectdetailspage.cpp \
     projectlocationsmodel.cpp \
     projectnotesmodel.cpp \
@@ -81,6 +82,7 @@ HEADERS += \
     pnsqlquerymodel.h \
     pntableview.h \
     projectactionitemsmodel.h \
+    projectdetailsdelegate.h \
     projectdetailspage.h \
     projectlocationsmodel.h \
     projectnotesmodel.h \

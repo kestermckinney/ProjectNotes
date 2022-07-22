@@ -136,7 +136,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             if (!isUniqueValue(t_value, t_index))
             {
                 QMessageBox::critical(nullptr, QObject::tr("Cannot update record"),
-                   m_headers[t_index.column()][Qt::EditRole].toString() + QObject::tr(" must be a unique t_value."), QMessageBox::Ok);
+                   m_headers[t_index.column()][Qt::EditRole].toString() + QObject::tr(" must be a unique value."), QMessageBox::Ok);
 
                 reloadRecord(t_index);
 
@@ -151,7 +151,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             if (m_lookup_values[t_index.column()]->indexOf(t_value.toString()) == -1)
             {
                 QMessageBox::warning(nullptr, QObject::tr("Invalid Field Value"),
-                                     "\"" + t_value.toString() + "\" is not a valid t_value for " + m_headers[t_index.column()][Qt::EditRole].toString() + ".", QMessageBox::Ok);
+                                     "\"" + t_value.toString() + "\" is not a valid value for " + m_headers[t_index.column()][Qt::EditRole].toString() + ".", QMessageBox::Ok);
 
                 return true;
             }
@@ -163,10 +163,13 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
         QString columnname = m_cache[t_index.row()].fieldName(t_index.column());
         QVariant keyvalue = m_cache[t_index.row()].value(0);
         QVariant oldvalue = m_cache[t_index.row()].value(t_index.column());
+        QVariant value = t_value;
+
+        sqlEscape(value, m_column_type[t_index.column()], true);
 
         QSqlQuery update;
         update.prepare("update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)");
-        update.addBindValue(t_value);
+        update.addBindValue(value);
         update.addBindValue(keyvalue);
         update.addBindValue(oldvalue);
 
@@ -174,7 +177,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
         {
             if (update.numRowsAffected() == 0)
             {
-                QMessageBox::critical(nullptr, QObject::tr("Cannot update t_value"),
+                QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
                    QObject::tr("Field was already updated by another process."), QMessageBox::Ok);
 
                 reloadRecord(t_index);
@@ -183,7 +186,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             }
             else
             {
-                m_cache[t_index.row()].setValue(t_index.column(), t_value);
+                m_cache[t_index.row()].setValue(t_index.column(), value);
 
                 // check for all of the impacted open recordsets
                 refreshImpactedRecordsets(t_index);
@@ -192,7 +195,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
         }
         else
         {
-            QMessageBox::critical(nullptr, QObject::tr("Cannot update t_value"),
+            QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
                update.lastError().text() + "\n" + update.lastQuery(), QMessageBox::Ok);
 
             return false;
@@ -307,7 +310,7 @@ QDateTime PNSqlQueryModel::parseDateTime(QString t_entrydate)
     return QDateTime(qd,qt);
 }
 
-void PNSqlQueryModel::sqlEscape(QVariant& t_column_value, DBColumnType t_column_type) const
+void PNSqlQueryModel::sqlEscape(QVariant& t_column_value, DBColumnType t_column_type, bool t_no_quote) const
 {
     // don't store blank values
     if ( t_column_value.isNull() )
@@ -376,7 +379,8 @@ void PNSqlQueryModel::sqlEscape(QVariant& t_column_value, DBColumnType t_column_
         }
         case DB_STRING:
         {
-            t_column_value.setValue(t_column_value.toString().replace("'","''"));
+            if (!t_no_quote)
+                t_column_value.setValue(t_column_value.toString().replace("'","''"));
             break;
         }
         default:
@@ -634,7 +638,7 @@ bool PNSqlQueryModel::addRecord(QSqlRecord& t_newrecord)
             if (!isUniqueValue(t_newrecord.field(i).value(), qmi))
             {
                 QMessageBox::critical(nullptr, QObject::tr("Cannot update record"),
-                   m_headers[i][Qt::EditRole].toString() + QObject::tr(" must be a unique t_value."), QMessageBox::Ok);
+                   m_headers[i][Qt::EditRole].toString() + QObject::tr(" must be a unique value."), QMessageBox::Ok);
 
                 return true;
             }

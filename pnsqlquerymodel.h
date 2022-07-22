@@ -37,7 +37,7 @@ public:
 
     Qt::ItemFlags flags(const QModelIndex &t_index) const override;
 
-    void sqlEscape(QVariant& t_column_value, DBColumnType t_column_type) const;
+    void sqlEscape(QVariant& t_column_value, DBColumnType t_column_type, bool t_no_quote = false) const;
     void reformatValue(QVariant& t_column_value, DBColumnType t_column_type) const;
 
     void addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, bool t_searchable, bool t_required = false, bool t_edit_table = true, bool t_unique = false);

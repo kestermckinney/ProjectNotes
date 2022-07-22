@@ -4,6 +4,7 @@
 #include "pnbasepage.h"
 #include <QObject>
 #include <QDataWidgetMapper>
+#include "projectdetailsdelegate.h"
 #include "pncomboboxdelegate.h"
 
 class ProjectDetailsPage : public PNBasePage
@@ -24,6 +25,7 @@ private:
     QDataWidgetMapper* m_mapperProjectDetails = nullptr;
 
     PNComboBoxDelegate* m_project_clients_delegate = nullptr;
+    ProjectDetailsDelegate* m_project_details_delegate = nullptr;
 };
 
 #endif // PROJECTDETAILSPAGE_H
