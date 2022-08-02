@@ -65,7 +65,7 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
                             // if the row contains the key value in the column then reload it
                             if ( recordset->m_cache[ck_row].value(ck_col) == key_value )
                             {
-                                //qDebug() << "Reloading Record for Table " << recordset->tablename() << " Row " << ck_row << " Column " << ck_col;
+                                // qDebug() << "Reloading Record for Table " << recordset->tablename() << " Row " << ck_row << " Column " << ck_col;
                                 recordset->reloadRecord(recordset->index(ck_row, ck_col));
                             }
                         }
@@ -222,8 +222,8 @@ void PNSqlQueryModel::refresh()
 
     m_sql_query = QSqlQuery( fullsql );
 
-    //qDebug() << "Refreshing: ";
-    //qDebug() << fullsql;
+    qDebug() << "Refreshing: ";
+    qDebug() << fullsql;
 
     // add a blank row for drop downs
     if (m_show_blank)
@@ -234,6 +234,13 @@ void PNSqlQueryModel::refresh()
     while (m_sql_query.next())
     {
         m_cache.append(m_sql_query.record());
+
+        //QString rowtext = "";
+        //for (int c =0; c < m_sql_query.record().count(); c++)
+        //    rowtext += m_sql_query.record().value(c).toString() + " : ";
+
+        //qDebug() << rowtext;
+
     }
     endResetModel();
 }
@@ -904,6 +911,8 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                 }
                 else
                 {
+                    qDebug() << "Table Naame: " << BaseSQL() << " Column Num: " << hashit.key() << "  Column Name: " << m_sql_query.record().fieldName(hashit.key());
+
                     sqlEscape(column_value, m_column_type[hashit.key()]);
                     valuelist += QString("%1 = '%2'").arg( m_sql_query.record().fieldName(hashit.key()), column_value.toString() );
                 }

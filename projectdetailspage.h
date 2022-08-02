@@ -24,7 +24,6 @@ private:
 
     QDataWidgetMapper* m_mapperProjectDetails = nullptr;
 
-    PNComboBoxDelegate* m_project_clients_delegate = nullptr;
     ProjectDetailsDelegate* m_project_details_delegate = nullptr;
 };
 

@@ -4,7 +4,7 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* t_parent): PNSqlQueryM
 {
     setObjectName("ProjectTeamMembersModel");
 
-    setBaseSql("SELECT teammember_id, project_id, project_people.people_id, project_people.t_role, receive_status_report, name FROM project_people left join people on people.people_id=project_people.people_id");
+    setBaseSql("SELECT teammember_id, project_id, project_people.people_id, project_people.role, receive_status_report, name FROM project_people left join people on people.people_id=project_people.people_id");
 
     setTableName("project_people", "Project People");
 
@@ -14,7 +14,7 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* t_parent): PNSqlQueryM
     addColumn(3, tr("Receive Status"), DB_BOOL, true, false, true, false);
     addColumn(4, tr("Name"), DB_STRING, true, false, false, false);
 
-    //addRelatedTable("projects", "project_id", "Projecs");
+    addRelatedTable("projects", "project_id", "Projects");
 
     setOrderBy("name");
 }

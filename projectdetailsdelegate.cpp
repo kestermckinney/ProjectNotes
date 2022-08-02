@@ -76,8 +76,9 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
             key_val = comboBox->itemText(comboBox->currentIndex());
         }
         break;
-    case 13:
     case 5:
+        break;
+    case 13:
         {
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
 
