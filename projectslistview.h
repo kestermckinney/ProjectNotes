@@ -4,9 +4,9 @@
 #include "pncomboboxdelegate.h"
 #include "pndateeditdelegate.h"
 #include "comboboxdelegate.h"
-#include "pnsortfilterproxymodel.h"
+//#include "pnsortfilterproxymodel.h"
 #include "pntableview.h"
-#include "pnbasepage.h"
+//#include "pnbasepage.h"
 
 #include <QObject>
 

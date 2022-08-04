@@ -2,6 +2,7 @@
 #include "ui_filterdatadialog.h"
 #include "pncolumnmodel.h"
 #include "valueselectmodel.h"
+#include "pnsettings.h"
 
 FilterDataDialog::FilterDataDialog(QWidget *m_parent) :
     QDialog(m_parent),

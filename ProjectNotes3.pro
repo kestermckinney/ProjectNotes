@@ -49,6 +49,7 @@ SOURCES += \
     projectteammembersmodel.cpp \
     searchresultsmodel.cpp \
     statusreportitemsmodel.cpp \
+    statusreportitemsview.cpp \
     teamsmodel.cpp \
     trackeritemcommentsmodel.cpp \
     valueselectmodel.cpp \
@@ -93,6 +94,7 @@ HEADERS += \
     projectteammembersmodel.h \
     searchresultsmodel.h \
     statusreportitemsmodel.h \
+    statusreportitemsview.h \
     teamsmodel.h \
     trackeritemcommentsmodel.h \
     valueselectmodel.h \

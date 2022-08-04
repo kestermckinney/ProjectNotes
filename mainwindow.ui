@@ -695,10 +695,16 @@
              </widget>
             </item>
             <item>
-             <widget class="QTableView" name="tableViewStatusReportItems">
+             <widget class="StatusReportItemsView" name="tableViewStatusReportItems">
               <property name="frameShadow">
                <enum>QFrame::Plain</enum>
               </property>
+              <property name="sortingEnabled">
+               <bool>true</bool>
+              </property>
+              <attribute name="verticalHeaderShowSortIndicator" stdset="0">
+               <bool>true</bool>
+              </attribute>
              </widget>
             </item>
             <item>
@@ -1907,6 +1913,11 @@
    <extends>QWidget</extends>
    <header>projectdetailspage.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>StatusReportItemsView</class>
+   <extends>QTableView</extends>
+   <header>statusreportitemsview.h</header>
   </customwidget>
  </customwidgets>
  <resources>

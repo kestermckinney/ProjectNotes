@@ -1,4 +1,5 @@
 #include "projectslistview.h"
+#include "pndatabaseobjects.h"
 
 ProjectsListView::ProjectsListView(QWidget* t_parent) : PNTableView(t_parent)
 {

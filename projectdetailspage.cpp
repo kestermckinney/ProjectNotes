@@ -1,6 +1,6 @@
 #include "projectdetailspage.h"
+#include "pndatabaseobjects.h"
 
-#include "mainwindow.h"
 #include "ui_mainwindow.h"
 
 ProjectDetailsPage::ProjectDetailsPage()
@@ -14,6 +14,13 @@ ProjectDetailsPage::~ProjectDetailsPage()
         delete m_mapperProjectDetails;
 
     if (m_project_details_delegate) delete m_project_details_delegate;
+}
+
+void ProjectDetailsPage::newRecord()
+{
+    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord();
+    //TODO: Add the ability to save a new status item
+    // TODO: Their may be a need to check which model is active
 }
 
 void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
@@ -36,7 +43,7 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     m_mapperProjectDetails->addMapping(ui->lineEditProjectName, 2);
     m_mapperProjectDetails->addMapping(ui->dateEditLastStatus, 3);
     m_mapperProjectDetails->addMapping(ui->dateEditLastInvoiced, 4);
-    //m_mapperProjectDetails->addMapping(ui->comboBoxPrimaryContact, 5);
+    m_mapperProjectDetails->addMapping(ui->comboBoxPrimaryContact, 5);
     m_mapperProjectDetails->addMapping(ui->lineEditBudget, 6);
     m_mapperProjectDetails->addMapping(ui->lineEditActual, 7);
     m_mapperProjectDetails->addMapping(ui->lineEditBCWP, 8);
@@ -56,18 +63,21 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     ui->comboBoxProjectStatus->clear();
     ui->comboBoxProjectStatus->addItems(PNDatabaseObjects::project_status);
 
-    //ui->comboBoxPrimaryContact->setModel(global_DBObjects.projectteammembersmodel());
-    ui->comboBoxPrimaryContact->setModel(global_DBObjects.unfilteredclientsmodel());
-    ui->comboBoxPrimaryContact->setModelColumn(1);
+    ui->comboBoxPrimaryContact->setModel(global_DBObjects.projectteammembersmodel());
+    ui->comboBoxPrimaryContact->setModelColumn(5);
     ui->comboBoxPrimaryContact->setEditable(true);
 
-    //ui->comboBoxClient->setModel(global_DBObjects.unfilteredclientsmodel());
     ui->comboBoxClient->setModel(global_DBObjects.unfilteredclientsmodel());
     ui->comboBoxClient->setModelColumn(1);
     ui->comboBoxClient->setEditable(true);
 
     setCurrentModel(global_DBObjects.projectinformationmodelproxy());
     // TODO: Fix Type setCurrentView( ui->tableViewStatusReportItems );
+
+    ui->tableViewStatusReportItems->setModel(global_DBObjects.statusreportitemsmodelproxy());
+
+    setCurrentModel(global_DBObjects.statusreportitemsmodelproxy());
+    setCurrentView( ui->tableViewStatusReportItems );
 }
 
 void ProjectDetailsPage::toFirst()

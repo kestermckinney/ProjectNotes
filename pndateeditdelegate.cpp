@@ -61,7 +61,7 @@ void PNDateEditDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
     //    myOption.backgroundBrush = QBrush(QColor("lightgray"));
 
     myOption.palette.setColor(QPalette::Text,t_index.model()->data(t_index, Qt::ForegroundRole).value<QColor>());
-    QVariant color = t_index.model()->data(t_index, Qt::BackgroundColorRole);
+    QVariant color = t_index.model()->data(t_index, Qt::BackgroundRole);
     if (color.isValid())
         myOption.backgroundBrush = QBrush(color.value<QColor>());
 

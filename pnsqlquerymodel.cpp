@@ -205,6 +205,13 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
     return true;
 }
 
+void PNSqlQueryModel::setBaseSql(const QString t_table)
+{
+    m_base_sql = t_table;
+
+    m_sql_query = QSqlQuery( BaseSQL() ); // always build query to get the column names for where clause generation
+}
+
 void PNSqlQueryModel::refresh()
 {
     QString orderby;
@@ -213,7 +220,7 @@ void PNSqlQueryModel::refresh()
     beginResetModel();
     clear();
 
-    m_sql_query = QSqlQuery( BaseSQL() ); // always build query to get the column names for where clause generation
+    // m_sql_query = QSqlQuery( BaseSQL() ); // always build query to get the column names for where clause generation
 
     if (!m_order_by.isEmpty() )
         orderby = " order by " + m_order_by;
@@ -256,7 +263,7 @@ QVariant PNSqlQueryModel::data(const QModelIndex &t_index, int t_role) const
     }
 
     // make a light gray backround when not edit_table
-    if (m_cache.size() > t_index.row() && t_role == Qt::BackgroundColorRole && t_index.row() >= 0)
+    if (m_cache.size() > t_index.row() && t_role == Qt::BackgroundRole && t_index.row() >= 0)
     {
         if (!m_column_is_editable[t_index.column()])
         {

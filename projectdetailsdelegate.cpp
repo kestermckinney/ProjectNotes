@@ -24,6 +24,18 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
             dateEdit->setDate(date_value.date());
             break;
         }
+    case 5:
+        {
+            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
+
+            if (model)
+            {
+                QString list_value = model->findValue(value, 2, 5).toString();
+                comboBox->setCurrentText(list_value);
+            }
+        }
+        break;
     case 11:
     case 12:
     case 14:
@@ -32,9 +44,7 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
             comboBox->setCurrentText(value.toString());
         }
         break;
-    case 5:
-        // TODO: get model assigned to protential primary contact
-        break;
+
     case 13:
         {
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
@@ -68,6 +78,14 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
             key_val = dateEdit->date().toString("MM/dd/yyyy");
         }
         break;
+    case 5:
+        {
+            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+
+            int i = comboBox->currentIndex();
+            key_val = comboBox->model()->data(comboBox->model()->index(i, 2));
+        }
+        break;
     case 11:
     case 12:
     case 14:
@@ -75,8 +93,6 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
             key_val = comboBox->itemText(comboBox->currentIndex());
         }
-        break;
-    case 5:
         break;
     case 13:
         {

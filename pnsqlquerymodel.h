@@ -32,7 +32,7 @@ public:
 
     void setTableName(const QString &t_table, const QString &t_display_name) { m_tablename = t_table; m_display_name = t_display_name; };
     const QString& tablename() { return m_tablename; };
-    void setBaseSql(const QString t_table) { m_base_sql = t_table;};
+    void setBaseSql(const QString t_table);
     const QString& BaseSQL() { return m_base_sql; };
 
     Qt::ItemFlags flags(const QModelIndex &t_index) const override;

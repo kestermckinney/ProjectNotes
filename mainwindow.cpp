@@ -45,6 +45,7 @@ MainWindow::~MainWindow()
     ui->tableViewProjects->setModel(nullptr);
     ui->tableViewClients->setModel(nullptr);
     ui->tableViewPeople->setModel(nullptr);
+    ui->tableViewStatusReportItems->setModel(nullptr);
 
     if (global_DBObjects.isOpen())
         global_DBObjects.closeDatabase();
@@ -273,6 +274,7 @@ void MainWindow::on_actionDelete_Item_triggered()
 
 void MainWindow::on_actionOpen_ProjectDetails_triggered()
 {
+
     ui->pageProjectDetails->toFirst();
 
     navigateToPage(ui->pageProjectDetails);

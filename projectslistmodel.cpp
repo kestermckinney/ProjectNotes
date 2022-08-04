@@ -3,7 +3,7 @@
 
 #include <QRegularExpression>
 #include <QApplication>
-#include "mainwindow.h"
+//#include "mainwindow.h"
 
 ProjectsListModel::ProjectsListModel(QObject* t_parent) : ProjectsModel(t_parent)
 {
@@ -23,6 +23,10 @@ bool ProjectsListModel::openRecord(QModelIndex t_index)
     // filter team members by project
     global_DBObjects.projectteammembersmodel()->setFilter(1, record_id.toString());
     global_DBObjects.projectteammembersmodel()->refresh();
+
+    // filter project status items
+    global_DBObjects.statusreportitemsmodel()->setFilter(1, record_id.toString());
+    global_DBObjects.statusreportitemsmodel()->refresh();
 
     return true;
 }
