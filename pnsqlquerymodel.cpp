@@ -712,8 +712,11 @@ bool PNSqlQueryModel::addRecord(QSqlRecord& t_newrecord)
     return false;
 }
 
-bool PNSqlQueryModel::newRecord()
+bool PNSqlQueryModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
+    Q_UNUSED(t_fk_value1);
+    Q_UNUSED(t_fk_value2);
+
     QSqlRecord qr = emptyrecord();
     return addRecord(qr);
 }
@@ -769,10 +772,14 @@ QSqlRecord PNSqlQueryModel::emptyrecord()
 
 bool PNSqlQueryModel::isUniqueValue(const QVariant &t_new_value, const QModelIndex &t_index)
 {
-    QString keycolumnname = m_cache[t_index.row()].fieldName(0);
+    QString keycolumnname = m_sql_query.record().fieldName(0);
 
-    QString columnname = m_cache[t_index.row()].fieldName(t_index.column());
-    QVariant keyvalue = m_cache[t_index.row()].value(0).toString();
+    QString columnname = m_sql_query.record().fieldName(t_index.column());
+
+    QVariant keyvalue;
+
+    if (m_cache.count() > 0) // if not a new record exclude the current record
+        keyvalue = m_cache[t_index.row()].value(0).toString();
 
     QSqlQuery select;
     select.prepare("select count(*) from " + m_tablename + " where " + keycolumnname + " <> ? and " + columnname + " = ?");

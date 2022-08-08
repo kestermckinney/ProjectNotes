@@ -17,6 +17,9 @@ PNComboBoxDelegate::PNComboBoxDelegate(QObject *t_parent, PNSqlQueryModel *t_mod
 
 QWidget* PNComboBoxDelegate::createEditor(QWidget *t_parent, const QStyleOptionViewItem& t_option, const QModelIndex& t_index ) const
 {
+    Q_UNUSED(t_option);
+    Q_UNUSED(t_index);
+
     QComboBox* editor = new QComboBox(t_parent);
     editor->setEditable(true);
     editor->setModel(m_model);
@@ -64,15 +67,15 @@ void PNComboBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
 
     myOption.text = m_model->findValue(lookupvalue, 0, 1).toString();
 
-    //qDebug() << "option.text = " << myOption.text;
-    // make light gray background when not edit_table
-    //if (!((PNSqlQueryModel*)t_index.model())->isEdit_table(t_index.column()))
-    //    myOption.backgroundBrush = QBrush(QColor("lightgray"));
+    QVariant bgcolor = t_index.model()->data(t_index, Qt::BackgroundRole);
+    QVariant fgcolor = t_index.model()->data(t_index, Qt::ForegroundRole);
 
-    myOption.palette.setColor(QPalette::Text, t_index.model()->data(t_index, Qt::ForegroundRole).value<QColor>());
-    QVariant color = t_index.model()->data(t_index, Qt::BackgroundRole);
-    if (color.isValid())
-        myOption.backgroundBrush = QBrush(color.value<QColor>());
+    if (fgcolor.isValid())
+        myOption.palette.setColor(QPalette::Text, fgcolor.value<QColor>());
+
+    if (bgcolor.isValid())
+        myOption.backgroundBrush = QBrush(bgcolor.value<QColor>());
+
 
     QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
 }

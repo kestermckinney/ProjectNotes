@@ -18,7 +18,30 @@ ProjectDetailsPage::~ProjectDetailsPage()
 
 void ProjectDetailsPage::newRecord()
 {
-    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord();
+    QVariant project_id = global_DBObjects.projectinformationmodelproxy()->data(global_DBObjects.projectinformationmodelproxy()->index(0,0));
+
+    switch ( ui->tabWidgetProject->currentIndex() )
+    {
+    case 0:
+        setCurrentModel(global_DBObjects.projectactionitemsmodelproxy());
+        break;
+    case 1:
+        setCurrentModel(global_DBObjects.projectteammembersmodelproxy());
+        break;
+    case 2:
+        setCurrentModel(global_DBObjects.projectactionitemsmodelproxy());
+        break;
+    case 3:
+        setCurrentModel(global_DBObjects.projectlocationsmodelproxy());
+        break;
+    case 4:
+        setCurrentModel(global_DBObjects.projectnotesmodelproxy());
+        break;
+    }
+
+  //      STOPPED HERE NEED TO DETERMINE CURRENT RECORDSET
+
+    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&project_id);
     //TODO: Add the ability to save a new status item
     // TODO: Their may be a need to check which model is active
 }
@@ -54,8 +77,6 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     m_mapperProjectDetails->addMapping(ui->comboBoxClient, 13);
     m_mapperProjectDetails->addMapping(ui->comboBoxProjectStatus, 14);
 
-    // STOPPED HERE trying to setup delegates
-
     ui->comboBoxInvoicingPeriod->clear();
     ui->comboBoxInvoicingPeriod->addItems(PNDatabaseObjects::invoicing_period);
     ui->comboBoxStatusReportPeriod->clear();
@@ -63,21 +84,22 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     ui->comboBoxProjectStatus->clear();
     ui->comboBoxProjectStatus->addItems(PNDatabaseObjects::project_status);
 
-    ui->comboBoxPrimaryContact->setModel(global_DBObjects.projectteammembersmodel());
-    ui->comboBoxPrimaryContact->setModelColumn(5);
+    ui->comboBoxPrimaryContact->setModel(global_DBObjects.teamsmodel());
+    ui->comboBoxPrimaryContact->setModelColumn(1);
     ui->comboBoxPrimaryContact->setEditable(true);
 
     ui->comboBoxClient->setModel(global_DBObjects.unfilteredclientsmodel());
     ui->comboBoxClient->setModelColumn(1);
     ui->comboBoxClient->setEditable(true);
 
-    setCurrentModel(global_DBObjects.projectinformationmodelproxy());
-    // TODO: Fix Type setCurrentView( ui->tableViewStatusReportItems );
 
     ui->tableViewStatusReportItems->setModel(global_DBObjects.statusreportitemsmodelproxy());
 
     setCurrentModel(global_DBObjects.statusreportitemsmodelproxy());
     setCurrentView( ui->tableViewStatusReportItems );
+
+    ui->tableViewTeam->setModel(global_DBObjects.projectteammembersmodelproxy());
+
 }
 
 void ProjectDetailsPage::toFirst()

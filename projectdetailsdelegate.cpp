@@ -31,7 +31,7 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
 
             if (model)
             {
-                QString list_value = model->findValue(value, 2, 5).toString();
+                QString list_value = model->findValue(value, 3, 1).toString();
                 comboBox->setCurrentText(list_value);
             }
         }
@@ -83,7 +83,7 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
 
             int i = comboBox->currentIndex();
-            key_val = comboBox->model()->data(comboBox->model()->index(i, 2));
+            key_val = comboBox->model()->data(comboBox->model()->index(i, 3));
         }
         break;
     case 11:
@@ -99,7 +99,7 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
 
             int i = comboBox->currentIndex();
-            key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
+            key_val = comboBox->model()->data(comboBox->model()->index(i, 3));
         }
         break;
     default:

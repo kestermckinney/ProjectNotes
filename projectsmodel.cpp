@@ -53,8 +53,11 @@ ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
     setOrderBy("project_number");
 }
 
-bool ProjectsModel::newRecord()
+bool ProjectsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
+    Q_UNUSED(t_fk_value1);
+    Q_UNUSED(t_fk_value2);
+
     QSqlQuery select;
     select.prepare("select max(project_number) from projects where project_number like '[%'");
     QString maxnum;

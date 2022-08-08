@@ -28,5 +28,9 @@ bool ProjectsListModel::openRecord(QModelIndex t_index)
     global_DBObjects.statusreportitemsmodel()->setFilter(1, record_id.toString());
     global_DBObjects.statusreportitemsmodel()->refresh();
 
+    // filter team members by project for members list
+    global_DBObjects.teamsmodel()->setFilter(2, record_id.toString());
+    global_DBObjects.teamsmodel()->refresh();
+
     return true;
 }

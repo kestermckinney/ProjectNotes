@@ -56,14 +56,14 @@ void PNDateEditDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
 
     myOption.text = datevalue;
 
-    // make light gray background when not edit_table
-    //if (!((PNSqlQueryModel*)t_index.model())->isEdit_table(t_index.column()))
-    //    myOption.backgroundBrush = QBrush(QColor("lightgray"));
+    QVariant bgcolor = t_index.model()->data(t_index, Qt::BackgroundRole);
+    QVariant fgcolor = t_index.model()->data(t_index, Qt::ForegroundRole);
 
-    myOption.palette.setColor(QPalette::Text,t_index.model()->data(t_index, Qt::ForegroundRole).value<QColor>());
-    QVariant color = t_index.model()->data(t_index, Qt::BackgroundRole);
-    if (color.isValid())
-        myOption.backgroundBrush = QBrush(color.value<QColor>());
+    if (fgcolor.isValid())
+        myOption.palette.setColor(QPalette::Text, fgcolor.value<QColor>());
+
+    if (bgcolor.isValid())
+        myOption.backgroundBrush = QBrush(bgcolor.value<QColor>());
 
     QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
 }

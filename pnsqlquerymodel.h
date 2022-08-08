@@ -51,7 +51,7 @@ public:
     static QDateTime parseDateTime(QString t_entrydate);
     virtual bool addRecord(QSqlRecord& t_newrecord);
     virtual bool copyRecord(QModelIndex t_index);
-    virtual bool newRecord();
+    virtual bool newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr);
     virtual bool deleteRecord(QModelIndex t_index);
     virtual bool openRecord(QModelIndex t_index);
 

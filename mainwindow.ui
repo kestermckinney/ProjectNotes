@@ -737,7 +737,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QTableView" name="tableViewTeam">
+             <widget class="ProjectTeamMembersView" name="tableViewTeam">
               <property name="frameShadow">
                <enum>QFrame::Plain</enum>
               </property>
@@ -745,9 +745,9 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tabItems">
+          <widget class="QWidget" name="tabTracker">
            <attribute name="title">
-            <string>Items</string>
+            <string>Tracker</string>
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_6">
             <property name="spacing">
@@ -1918,6 +1918,11 @@
    <class>StatusReportItemsView</class>
    <extends>QTableView</extends>
    <header>statusreportitemsview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ProjectTeamMembersView</class>
+   <extends>QTableView</extends>
+   <header>projectteammembersview.h</header>
   </customwidget>
  </customwidgets>
  <resources>

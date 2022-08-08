@@ -29,6 +29,7 @@ SOURCES += \
     peoplemodel.cpp \
     peoplepage.cpp \
     pnbasepage.cpp \
+    pncheckboxdelegate.cpp \
     pncolumnmodel.cpp \
     pncomboboxdelegate.cpp \
     pndatabaseobjects.cpp \
@@ -47,6 +48,7 @@ SOURCES += \
     projectslistview.cpp \
     projectsmodel.cpp \
     projectteammembersmodel.cpp \
+    projectteammembersview.cpp \
     searchresultsmodel.cpp \
     statusreportitemsmodel.cpp \
     statusreportitemsview.cpp \
@@ -74,6 +76,7 @@ HEADERS += \
     peoplemodel.h \
     peoplepage.h \
     pnbasepage.h \
+    pncheckboxdelegate.h \
     pncolumnmodel.h \
     pncomboboxdelegate.h \
     pndatabaseobjects.h \
@@ -92,6 +95,7 @@ HEADERS += \
     projectslistview.h \
     projectsmodel.h \
     projectteammembersmodel.h \
+    projectteammembersview.h \
     searchresultsmodel.h \
     statusreportitemsmodel.h \
     statusreportitemsview.h \
