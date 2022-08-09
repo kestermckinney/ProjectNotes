@@ -3,6 +3,7 @@
 
 #include <QRegularExpression>
 
+
 ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
 {
     setObjectName("ProjectsModel");
@@ -58,22 +59,11 @@ bool ProjectsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_
     Q_UNUSED(t_fk_value1);
     Q_UNUSED(t_fk_value2);
 
-    QSqlQuery select;
-    select.prepare("select max(project_number) from projects where project_number like '[%'");
-    QString maxnum;
-
-    select.exec();
-    if (select.next())
-    {
-        maxnum = select.value(0).toString();
-        maxnum.remove(QRegularExpression("[^0-9]+"));
-    }
-
-    int num = maxnum.toInt() + 1;
+    QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
 
     QSqlRecord qr = emptyrecord();
-    qr.setValue(1, QString("[%1]").arg(num, 4, 10, QLatin1Char('0')));
-    qr.setValue(2, QString("[New Project %1]").arg(num, 2, 10, QLatin1Char('0')));
+    qr.setValue(1, QString("[%1]").arg(unique_stamp));
+    qr.setValue(2, QString("[New Project %1]").arg(unique_stamp));
     qr.setValue(11, tr("Monthly"));
     qr.setValue(12, tr("Bi-Weekly"));
     qr.setValue(14, tr("Active"));

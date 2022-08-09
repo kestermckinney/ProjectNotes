@@ -20,7 +20,6 @@ void StatusReportItemsView::setModel(QAbstractItemModel *t_model)
 
         setColumnHidden(0, true);
         setColumnHidden(1, true);
-        //TODO: Fix STOPPED Here.  It isn't hiding
 
         // setup model lists
         m_status_items_status.setStringList(PNDatabaseObjects::status_item_status);

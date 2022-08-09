@@ -177,12 +177,64 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
         {
             if (update.numRowsAffected() == 0)
             {
-                QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
-                   QObject::tr("Field was already updated by another process."), QMessageBox::Ok);
+                // assume if nothing was updated it must be a new record
+                //QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
+                //   QObject::tr("Field was already updated by another process."), QMessageBox::Ok);
 
-                reloadRecord(t_index);
+                //reloadRecord(t_index);
+                QString fields;
+                QString values;
 
-                return true;
+                for (int i = 0; i < m_sql_query.record().count(); i++)
+                {
+                    if (m_column_is_editable[i] || i == 0)
+                    {
+                        if (!fields.isEmpty())
+                            fields += ", ";
+
+                        if (!values.isEmpty())
+                            values += ", ";
+
+                        fields += m_sql_query.record().fieldName(i);
+
+                        values += " ? ";
+                    }
+                }
+
+                QSqlQuery insert;
+                insert.prepare("insert into " + m_tablename + " ( " + fields + " ) values ( " + values + " )");
+                //qDebug() << "insert into " << m_tablename << " ( " << fields << " ) values ( " << values << " )";
+
+                int bindcount = 0;
+                for (int i = 0; i < m_sql_query.record().count(); i++)
+                {
+                    if (m_column_is_editable[i] || i == 0)
+                    {
+                        insert.bindValue(bindcount, m_cache[t_index.row()].field(i).value());
+                        bindcount++;
+                    }
+                }
+
+                if(insert.exec())
+                {
+                    /*
+                    QModelIndex qmi = QModelIndex();
+                    int row = rowCount((qmi));
+
+                    beginInsertRows(qmi, row, row);
+                    m_cache.append(m_cache[t_index.row()]);
+
+                    endInsertRows();
+                    */
+
+                    return true;
+                }
+
+                QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
+                   insert.lastError().text() + "\n" + insert.lastQuery(), QMessageBox::Ok);
+
+
+                return false;
             }
             else
             {
@@ -576,43 +628,7 @@ bool PNSqlQueryModel::copyRecord(QModelIndex t_index)
 
         if (m_column_is_unique[i])
         {
-            QString maxnum = m_cache[t_index.row()].value(i).toString();
-
-            // chop off left of the number
-            int copystart = maxnum.indexOf("Copy [");
-            if ( copystart >= 0 )
-            {
-                maxnum = maxnum.mid(copystart + 6);
-
-                // chop off right of the number
-                copystart = maxnum.indexOf("]");
-                maxnum = maxnum.left(copystart);
-            }
-            else
-                maxnum = "0";
-
-            int num = maxnum.toInt();
-            int existcount;
-            QString new_value;
-            QVariant new_field_value;
-
-            // keep trying in the event the value already exists
-            do
-            {
-                num += 1;
-
-                new_value = m_cache[t_index.row()].value(i).toString();
-                new_value.remove(QRegularExpression(" Copy \\[.*\\]"));
-                new_value += QString(" Copy [%1]").arg(num);
-                new_field_value = new_value;
-                sqlEscape(new_field_value, DB_STRING);
-
-                existcount = global_DBObjects.execute(QString("select count(%1) from %2 where %1='%3'").arg(m_sql_query.record().fieldName(i), tablename(), new_field_value.toString())).toInt();
-            }
-            while (existcount > 0);
-
-
-            newrecord.setValue(i, new_value);
+            newrecord.setValue(i, QString(" Copy of %1").arg(m_cache[t_index.row()].field(i).value().toString()));
         }
         else
         {
@@ -625,91 +641,18 @@ bool PNSqlQueryModel::copyRecord(QModelIndex t_index)
 
 bool PNSqlQueryModel::addRecord(QSqlRecord& t_newrecord)
 {
-    int i = 0;
     // the record id is always column 0
     t_newrecord.setValue(0, QUuid::createUuid().toString());
 
-    for (i = 0; i < m_sql_query.record().count(); i++)
-    {
-        if (m_column_is_required[i])
-        {
-            if (t_newrecord.field(i).value().isNull() || t_newrecord.field(i).value() == "")
-            {
-                QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
-                   m_headers[i][Qt::EditRole].toString() + QObject::tr(" is a required field."), QMessageBox::Ok);
+    QModelIndex qmi = QModelIndex();
+    int row = rowCount((qmi));
 
-                return false;
-            }
-        }
-    }
+    beginInsertRows(qmi, row, row);
+    m_cache.append(t_newrecord);
 
-    for (i = 0; i < m_sql_query.record().count(); i++)
-    {
+    endInsertRows();
 
-        if (m_column_is_unique[i])
-        {
-            QModelIndex qmi = index(0, i);
-            if (!isUniqueValue(t_newrecord.field(i).value(), qmi))
-            {
-                QMessageBox::critical(nullptr, QObject::tr("Cannot update record"),
-                   m_headers[i][Qt::EditRole].toString() + QObject::tr(" must be a unique value."), QMessageBox::Ok);
-
-                return true;
-            }
-        }
-    }
-
-
-    QString fields;
-    QString values;
-
-    for (i = 0; i < m_sql_query.record().count(); i++)
-    {
-        if (m_column_is_editable[i] || i == 0)
-        {
-            if (!fields.isEmpty())
-                fields += ", ";
-
-            if (!values.isEmpty())
-                values += ", ";
-
-            fields += m_sql_query.record().fieldName(i);
-
-            values += " ? ";
-        }
-    }
-
-    QSqlQuery insert;
-    insert.prepare("insert into " + m_tablename + " ( " + fields + " ) values ( " + values + " )");
-    //qDebug() << "insert into " << m_tablename << " ( " << fields << " ) values ( " << values << " )";
-
-    int bindcount = 0;
-    for (i = 0; i < m_sql_query.record().count(); i++)
-    {
-        if (m_column_is_editable[i] || i == 0)
-        {
-            insert.bindValue(bindcount, t_newrecord.field(i).value());
-            bindcount++;
-        }
-    }
-
-    if(insert.exec())
-    {
-        QModelIndex qmi = QModelIndex();
-        int row = rowCount((qmi));
-
-        beginInsertRows(qmi, row, row);
-        m_cache.append(t_newrecord);
-
-        endInsertRows();
-
-        return true;
-    }
-
-    QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
-       insert.lastError().text() + "\n" + insert.lastQuery(), QMessageBox::Ok);
-
-    return false;
+    return true;
 }
 
 bool PNSqlQueryModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)

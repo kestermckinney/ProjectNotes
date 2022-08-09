@@ -23,27 +23,38 @@ void ProjectDetailsPage::newRecord()
     switch ( ui->tabWidgetProject->currentIndex() )
     {
     case 0:
-        setCurrentModel(global_DBObjects.projectactionitemsmodelproxy());
+        setCurrentModel(global_DBObjects.statusreportitemsmodelproxy());
+        setCurrentView(ui->tableViewStatusReportItems);
         break;
     case 1:
         setCurrentModel(global_DBObjects.projectteammembersmodelproxy());
+        setCurrentView(ui->tableViewTeam);
         break;
     case 2:
         setCurrentModel(global_DBObjects.projectactionitemsmodelproxy());
+        // setCurrentView(ui->tableViewActionItems);
         break;
     case 3:
         setCurrentModel(global_DBObjects.projectlocationsmodelproxy());
+        //setCurrentView(ui->tableViewLocations);
         break;
     case 4:
         setCurrentModel(global_DBObjects.projectnotesmodelproxy());
+        //setCurrentview(ui->tableViewMeetings);
         break;
     }
 
-  //      STOPPED HERE NEED TO DETERMINE CURRENT RECORDSET
+  //      STOPPED HERE NEED TO ADD ACTION ITEMS VIEW
+  //        NEED TO OVERRIDE THE NEW RECORD METHODS TO USE FK
+    int lastrow = ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->rowCount(QModelIndex());
 
     ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&project_id);
     //TODO: Add the ability to save a new status item
     // TODO: Their may be a need to check which model is active
+
+    getCurrentView()->selectRow(lastrow);
+    QModelIndex index = getCurrentView()->model()->index(lastrow, 0);
+    getCurrentView()->selectionModel()->select(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
 }
 
 void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
