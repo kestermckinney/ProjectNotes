@@ -32,5 +32,9 @@ bool ProjectsListModel::openRecord(QModelIndex t_index)
     global_DBObjects.teamsmodel()->setFilter(2, record_id.toString());
     global_DBObjects.teamsmodel()->refresh();
 
+    // filter tracker items by project
+    global_DBObjects.projectactionitemsmodel()->setFilter(14, record_id.toString());
+    global_DBObjects.projectactionitemsmodel()->refresh();
+
     return true;
 }

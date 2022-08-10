@@ -392,7 +392,7 @@
            </sizepolicy>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>2</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -766,7 +766,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QTableView" name="tableViewItems">
+             <widget class="ProjectActionItemsView" name="tableViewTrackerItems">
               <property name="frameShadow">
                <enum>QFrame::Plain</enum>
               </property>
@@ -1923,6 +1923,11 @@
    <class>ProjectTeamMembersView</class>
    <extends>QTableView</extends>
    <header>projectteammembersview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ProjectActionItemsView</class>
+   <extends>QTableView</extends>
+   <header>projectactionitemsview.h</header>
   </customwidget>
  </customwidgets>
  <resources>

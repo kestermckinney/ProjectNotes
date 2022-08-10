@@ -25,13 +25,9 @@ void ProjectsListView::setModel(QAbstractItemModel *t_model)
         setColumnHidden(0, true);
 
         // setup model lists
-        m_item_type.setStringList(PNDatabaseObjects::item_type);
-        m_item_status.setStringList(PNDatabaseObjects::item_status);
-        m_item_priority.setStringList(PNDatabaseObjects::item_priority);
         m_project_status.setStringList(PNDatabaseObjects::project_status);
         m_status_item_status.setStringList(PNDatabaseObjects::status_item_status);
         m_invoicing_period.setStringList(PNDatabaseObjects::invoicing_period);
-        m_locations.setStringList(PNDatabaseObjects::locations);
         m_status_report_period.setStringList(PNDatabaseObjects::status_report_period);
 
         // projects list panel delagets

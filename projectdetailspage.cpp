@@ -32,7 +32,7 @@ void ProjectDetailsPage::newRecord()
         break;
     case 2:
         setCurrentModel(global_DBObjects.projectactionitemsmodelproxy());
-        // setCurrentView(ui->tableViewActionItems);
+        setCurrentView(ui->tableViewTrackerItems);
         break;
     case 3:
         setCurrentModel(global_DBObjects.projectlocationsmodelproxy());
@@ -110,6 +110,7 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     setCurrentView( ui->tableViewStatusReportItems );
 
     ui->tableViewTeam->setModel(global_DBObjects.projectteammembersmodelproxy());
+    ui->tableViewTrackerItems->setModel(global_DBObjects.projectactionitemsmodelproxy());
 
 }
 

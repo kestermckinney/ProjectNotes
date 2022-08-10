@@ -18,14 +18,11 @@ public:
     void setModel(QAbstractItemModel *t_model) override;
 
 private:
-    QStringListModel m_item_type;//(PNDatabaseObjects::item_type);
-    QStringListModel m_item_status;//PNDatabaseObjects::item_status;
-    QStringListModel m_item_priority;//PNDatabaseObjects::item_priority;
+
     QStringListModel m_project_status;//PNDatabaseObjects::project_status;
     QStringListModel m_status_item_status;//PNDatabaseObjects::status_item_status;
     QStringListModel m_invoicing_period;//PNDatabaseObjects::invoicing_period;
     QStringListModel m_status_report_period; //PNDatabaseObjects::status_report_period;
-    QStringListModel m_locations;//PNDatabaseObjects::locations;
 
     // projects list panel delegates
     PNComboBoxDelegate* m_unfiltered_people_delegate = nullptr;

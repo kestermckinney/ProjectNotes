@@ -27,7 +27,6 @@ void ProjectTeamMembersView::setModel(QAbstractItemModel *t_model)
         // projects list panel delagets
         m_unfiltered_people_delegate = new PNComboBoxDelegate(this, global_DBObjects.unfilteredpeoplemodel());
         m_receive_status_delegate = new PNCheckBoxDelegate(this);
-        //STOPPED NEEED DELEGATE CHECKBOX
 
         setItemDelegateForColumn(2, m_unfiltered_people_delegate);
         setItemDelegateForColumn(4, m_receive_status_delegate);

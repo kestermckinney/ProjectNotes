@@ -47,6 +47,7 @@ MainWindow::~MainWindow()
     ui->tableViewPeople->setModel(nullptr);
     ui->tableViewStatusReportItems->setModel(nullptr);
     ui->tableViewTeam->setModel(nullptr);
+    ui->tableViewTrackerItems->setModel(nullptr);
 
     if (global_DBObjects.isOpen())
         global_DBObjects.closeDatabase();

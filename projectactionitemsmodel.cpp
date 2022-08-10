@@ -33,3 +33,16 @@ ProjectActionItemsModel::ProjectActionItemsModel(QObject* t_parent): PNSqlQueryM
 
     setOrderBy("item_number");
 }
+
+
+bool ProjectActionItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+{
+    Q_UNUSED(t_fk_value1);
+    Q_UNUSED(t_fk_value2);
+
+    QSqlRecord qr = emptyrecord();
+
+    qr.setValue("project_id", *t_fk_value1);
+
+    return addRecord(qr);
+}
