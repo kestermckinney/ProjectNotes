@@ -406,7 +406,7 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     // setup default filters
     if (getShowClosedProjects())
     {
-        projectactionitemsmodel()->clearFilter(9);
+        projectactionitemsmodel()->clearFilter(17);
         projectinformationmodel()->clearFilter(14);
         //projectslistmodel()->clearFilter(9);
         projectslistmodel()->clearFilter(14);
@@ -414,7 +414,7 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     }
     else
     {
-        projectactionitemsmodel()->setFilter(9, tr("Active"));
+        projectactionitemsmodel()->setFilter(17, tr("Active"));
         projectinformationmodel()->setFilter(14, tr("Active"));
         //projectslistmodel()->setFilter(9, tr("Active"));
         projectslistmodel()->setFilter(14, tr("Active"));

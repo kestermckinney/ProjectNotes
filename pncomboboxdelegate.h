@@ -9,7 +9,7 @@ class PNComboBoxDelegate : public QStyledItemDelegate
     Q_OBJECT
 
 public:
-    PNComboBoxDelegate(QObject *t_parent, PNSqlQueryModel *t_model, int t_displaycolumn = 1);
+    PNComboBoxDelegate(QObject *t_parent, PNSqlQueryModel *t_model, int t_displaycolumn = 1, int t_datacolumn = 0);
 
     QWidget* createEditor(QWidget *t_parent, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const;
     void setEditorData(QWidget *t_editor, const QModelIndex &t_index) const;
@@ -20,6 +20,7 @@ public:
 private:
     PNSqlQueryModel* m_model;
     int m_display_column;
+    int m_data_column;
 };
 
 #endif // PNCOMBOBOXDELEGATE_H
