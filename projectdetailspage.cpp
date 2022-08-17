@@ -13,7 +13,8 @@ ProjectDetailsPage::~ProjectDetailsPage()
     if (m_mapperProjectDetails != nullptr)
         delete m_mapperProjectDetails;
 
-    if (m_project_details_delegate) delete m_project_details_delegate;
+    if (m_project_details_delegate)
+        delete m_project_details_delegate;
 }
 
 void ProjectDetailsPage::newRecord()
@@ -49,7 +50,6 @@ void ProjectDetailsPage::newRecord()
     int lastrow = ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->rowCount(QModelIndex());
 
     ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&project_id);
-    //TODO: Add the ability to save a new status item
     // TODO: Their may be a need to check which model is active
 
     getCurrentView()->selectRow(lastrow);
@@ -61,6 +61,9 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
 {
 
     ui = t_ui;
+
+    ui->dateEditLastInvoiced->setNullable(true);
+    ui->dateEditLastStatus->setNullable(true);
 
     if (m_mapperProjectDetails == nullptr)
         m_mapperProjectDetails = new QDataWidgetMapper(this);

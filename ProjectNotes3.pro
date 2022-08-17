@@ -50,6 +50,7 @@ SOURCES += \
     projectsmodel.cpp \
     projectteammembersmodel.cpp \
     projectteammembersview.cpp \
+    qdateeditex.cpp \
     searchresultsmodel.cpp \
     statusreportitemsmodel.cpp \
     statusreportitemsview.cpp \
@@ -98,13 +99,15 @@ HEADERS += \
     projectsmodel.h \
     projectteammembersmodel.h \
     projectteammembersview.h \
+    qdateeditex.h \
     searchresultsmodel.h \
     statusreportitemsmodel.h \
     statusreportitemsview.h \
     teamsmodel.h \
     trackeritemcommentsmodel.h \
     valueselectmodel.h \
-    valuesview.h
+    valuesview.h \
+    widgets_export.h
 
 FORMS += \
     filterdatadialog.ui \

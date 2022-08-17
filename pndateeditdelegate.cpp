@@ -1,7 +1,7 @@
 #include "pndateeditdelegate.h"
 #include "pnsqlquerymodel.h"
+#include "qdateeditex.h"
 
-#include <QDateEdit>
 #include <QCompleter>
 #include <QCompleter>
 #include <QWidget>
@@ -19,18 +19,19 @@ PNDateEditDelegate::PNDateEditDelegate(QObject *t_parent)
 
 QWidget *PNDateEditDelegate::createEditor(QWidget *t_parent, const QStyleOptionViewItem &/* t_option */, const QModelIndex &/* t_index */) const
 {
-    QDateEdit* editor = new QDateEdit(t_parent);
+    QDateEditEx* editor = new QDateEditEx(t_parent);
 
     editor->setDisplayFormat("MM/dd/yyyy");
     editor->setProperty("EditMask","MM/dd/yyyy");
     editor->setCalendarPopup(true);
+    editor->setNullable(true);
 
     return editor;
 }
 
 void PNDateEditDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_index) const
 {
-    QDateEdit *dateedit = static_cast<QDateEdit*>(t_editor);
+    QDateEditEx *dateedit = static_cast<QDateEditEx*>(t_editor);
     QString t_value = t_index.model()->data(t_index, Qt::EditRole).toString();
     QDateTime datevalue = PNSqlQueryModel::parseDateTime(t_value);
 
@@ -39,7 +40,7 @@ void PNDateEditDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_i
 
 void PNDateEditDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const
 {
-    QDateEdit *dateedit = static_cast<QDateEdit*>(t_editor);
+    QDateEditEx *dateedit = static_cast<QDateEditEx*>(t_editor);
     t_model->setData(t_index, dateedit->date().toString("MM/dd/yyyy"), Qt::EditRole);
 }
 

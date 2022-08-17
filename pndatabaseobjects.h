@@ -103,6 +103,7 @@ public:
 
     // global searches
     void setShowAllTrackerItems(bool t_value);
+    bool getShowAllTrackerItems();
     void setShowClosedProjects(bool t_value);
     bool getShowClosedProjects();
     void setShowInternalItems(bool t_value);

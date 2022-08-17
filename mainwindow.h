@@ -40,32 +40,21 @@ private slots:
     void openDatabase(QString t_dbfile);
 
     void on_actionExit_triggered();
-
     void on_actionOpen_Database_triggered();
-
     void on_actionClose_Database_triggered();
-
     void on_actionClosed_Projects_triggered();
-
     void on_actionStatus_Bar_triggered();
-
     void on_actionFilter_triggered();
-
     void on_actionClients_triggered();
-
     void on_actionPeople_triggered();
-
     void on_actionProjects_triggered();
-
     void on_actionBack_triggered();
-
     void on_actionForward_triggered();
-
     void on_actionNew_Item_triggered();
-
     void on_actionCopy_Item_triggered();
-
     void on_actionDelete_Item_triggered();
+    void on_actionInternal_Items_triggered();
+    void on_actionAll_Tracker_Action_Items_triggered();
 
 private:
     Ui::MainWindow *ui;   

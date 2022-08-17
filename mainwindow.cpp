@@ -79,6 +79,8 @@ void MainWindow::setButtonAndMenuStates()
 {
     bool dbopen = global_DBObjects.isOpen();
 
+    ui->stackedWidget->setVisible(dbopen);
+
     ui->actionSearch->setEnabled(dbopen);
     ui->actionXML_Export->setEnabled(dbopen);
     ui->actionXML_Import->setEnabled(dbopen);
@@ -103,8 +105,6 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionProjects->setEnabled(dbopen);
     ui->actionClosed_Projects->setEnabled(dbopen);
 
-    if (dbopen)
-        ui->actionClosed_Projects->setChecked(global_DBObjects.getShowClosedProjects());
 
     ui->actionNew_Item->setEnabled(dbopen);
     ui->actionCopy_Item->setEnabled(dbopen);
@@ -115,6 +115,34 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionClients->setEnabled(dbopen);
     ui->actionPeople->setEnabled(dbopen);
     ui->actionFilter->setEnabled(dbopen);
+
+    if (dbopen)
+    {
+        ui->actionClosed_Projects->setChecked(global_DBObjects.getShowClosedProjects());
+        ui->actionInternal_Items->setChecked(global_DBObjects.getShowInternalItems());
+
+        if (global_DBObjects.getShowInternalItems())
+            ui->tableViewTrackerItems->setColumnHidden(15, false);
+        else
+            ui->tableViewTrackerItems->setColumnHidden(15, true);
+
+        ui->actionAll_Tracker_Action_Items->setChecked(global_DBObjects.getShowAllTrackerItems());
+
+        if (global_DBObjects.getShowAllTrackerItems())
+        {
+            ui->tableViewTrackerItems->setColumnHidden(0, true);
+            ui->tableViewTrackerItems->setColumnHidden(14, false);
+            ui->tableViewTrackerItems->setColumnHidden(17, false);
+            ui->tableViewTrackerItems->setColumnHidden(18, false);
+        }
+        else
+        {
+            ui->tableViewTrackerItems->setColumnHidden(0, true);
+            ui->tableViewTrackerItems->setColumnHidden(14, true);
+            ui->tableViewTrackerItems->setColumnHidden(17, true);
+            ui->tableViewTrackerItems->setColumnHidden(18, true);
+        }
+    }
 }
 
 void MainWindow::on_actionExit_triggered()
@@ -130,8 +158,6 @@ void MainWindow::on_actionOpen_Database_triggered()
     {
         openDatabase(dbfile);
     }
-
-    setButtonAndMenuStates();
 }
 
 void MainWindow::openDatabase(QString t_dbfile)
@@ -165,6 +191,8 @@ void MainWindow::openDatabase(QString t_dbfile)
     navigateClearHistory();
     navigateToPage(ui->pageProjectsList);
     //navigateToPage(ui->pageClients);
+
+    setButtonAndMenuStates();
 }
 
 void MainWindow::navigateToPage(PNBasePage* t_widget)
@@ -281,3 +309,31 @@ void MainWindow::on_actionOpen_ProjectDetails_triggered()
 
     navigateToPage(ui->pageProjectDetails);
 }
+
+void MainWindow::on_actionInternal_Items_triggered()
+{
+    global_DBObjects.setShowInternalItems(ui->actionInternal_Items->isChecked());
+    global_DBObjects.setGlobalSearches(true);
+
+    setButtonAndMenuStates();
+}
+
+void MainWindow::on_actionAll_Tracker_Action_Items_triggered()
+{
+    global_DBObjects.setShowAllTrackerItems(ui->actionAll_Tracker_Action_Items->isChecked());
+
+    // filter tracker items by project
+    if (ui->actionAll_Tracker_Action_Items->isChecked())
+        global_DBObjects.projectactionitemsmodel()->clearFilter(14);
+    else
+    {
+        QVariant projectid = global_DBObjects.projectinformationmodel()->data(global_DBObjects.projectinformationmodel()->index(0,0));
+        global_DBObjects.projectactionitemsmodel()->setFilter(14, projectid.toString());
+    }
+
+    global_DBObjects.projectactionitemsmodel()->refresh();
+
+    setButtonAndMenuStates();
+}
+
+STOPPED HERE WHEN CHANGING VISIBLE COLUMNS THE COLUMN WIDTH SAVING MESSES UP WHICH ONES SHOW

@@ -29,10 +29,7 @@ void ProjectActionItemsView::setModel(QAbstractItemModel *t_model)
     {
         PNTableView::setModel(t_model);
 
-        setColumnHidden(0, true);
-        setColumnHidden(14, true);
-        setColumnHidden(17, true);
-        setColumnHidden(18, true);
+        // see setbuttonitems for visible columns
 
         // setup model lists
         m_item_priority.setStringList(PNDatabaseObjects::item_priority);

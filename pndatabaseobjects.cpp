@@ -337,6 +337,13 @@ void PNDatabaseObjects::setShowAllTrackerItems(bool t_value)
     saveParameter("UserFilter:ShowAllTrackerItems", (t_value ? "1": "0"));
 }
 
+bool PNDatabaseObjects::getShowAllTrackerItems()
+{
+    QString t_value = loadParameter("UserFilter:ShowAllTrackerItems");
+    bool ret = (bool)t_value.toUInt();
+    return ret;
+}
+
 void PNDatabaseObjects::setShowClosedProjects(bool t_value)
 {
     saveParameter("UserFilter:ShowClosedProjects", (t_value ? "1": "0"));

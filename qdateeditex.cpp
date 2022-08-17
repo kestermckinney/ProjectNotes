@@ -162,6 +162,11 @@ bool QDateEditEx::isNullable() const
     return d->nullable;
 }
 
+bool QDateEditEx::isNull() const
+{
+    return d->null;
+}
+
 /*!
  * \brief sets weahter the date can be empty
  */
