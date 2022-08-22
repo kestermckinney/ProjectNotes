@@ -22,11 +22,14 @@ public:
     void toFirst();
 
 private:
-    Ui::MainWindow *ui;
+    Ui::MainWindow *ui = nullptr;
 
     QDataWidgetMapper* m_mapperProjectDetails = nullptr;
 
     ProjectDetailsDelegate* m_project_details_delegate = nullptr;
+
+private slots:
+    void on_tabWidgetProject_currentChanged(int index);
 };
 
 #endif // PROJECTDETAILSPAGE_H

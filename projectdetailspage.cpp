@@ -10,6 +10,9 @@ ProjectDetailsPage::ProjectDetailsPage()
 
 ProjectDetailsPage::~ProjectDetailsPage()
 {
+    if (ui)
+        disconnect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
+
     if (m_mapperProjectDetails != nullptr)
         delete m_mapperProjectDetails;
 
@@ -61,6 +64,8 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
 {
 
     ui = t_ui;
+
+    connect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
 
     ui->dateEditLastInvoiced->setNullable(true);
     ui->dateEditLastStatus->setNullable(true);
@@ -122,3 +127,31 @@ void ProjectDetailsPage::toFirst()
     if (m_mapperProjectDetails != nullptr)
         m_mapperProjectDetails->toFirst();
 }
+
+void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
+{
+    switch ( index )
+    {
+    case 0:
+        setCurrentModel(global_DBObjects.statusreportitemsmodelproxy());
+        setCurrentView(ui->tableViewStatusReportItems);
+        break;
+    case 1:
+        setCurrentModel(global_DBObjects.projectteammembersmodelproxy());
+        setCurrentView(ui->tableViewTeam);
+        break;
+    case 2:
+        setCurrentModel(global_DBObjects.projectactionitemsmodelproxy());
+        setCurrentView(ui->tableViewTrackerItems);
+        break;
+    case 3:
+        setCurrentModel(global_DBObjects.projectlocationsmodelproxy());
+        //setCurrentView(ui->tableViewLocations);  //TODO:
+        break;
+    case 4:
+        setCurrentModel(global_DBObjects.projectnotesmodelproxy());
+        //setCurrentview(ui->tableViewMeetings); // TODO:
+        break;
+    }
+}
+

@@ -122,7 +122,10 @@ void MainWindow::setButtonAndMenuStates()
         ui->actionInternal_Items->setChecked(global_DBObjects.getShowInternalItems());
 
         if (global_DBObjects.getShowInternalItems())
+        {
             ui->tableViewTrackerItems->setColumnHidden(15, false);
+            ui->tableViewTrackerItems->resizeColumnToContents(15);
+        }
         else
             ui->tableViewTrackerItems->setColumnHidden(15, true);
 
@@ -130,13 +133,21 @@ void MainWindow::setButtonAndMenuStates()
 
         if (global_DBObjects.getShowAllTrackerItems())
         {
+            ui->tabWidgetProject->setTabText(2, "Tracker [ALL]");
+
             ui->tableViewTrackerItems->setColumnHidden(0, true);
             ui->tableViewTrackerItems->setColumnHidden(14, false);
             ui->tableViewTrackerItems->setColumnHidden(17, false);
             ui->tableViewTrackerItems->setColumnHidden(18, false);
+
+            ui->tableViewTrackerItems->resizeColumnToContents(14);
+            ui->tableViewTrackerItems->resizeColumnToContents(17);
+            ui->tableViewTrackerItems->resizeColumnToContents(18);
         }
         else
         {
+            ui->tabWidgetProject->setTabText(2, "Tracker");
+
             ui->tableViewTrackerItems->setColumnHidden(0, true);
             ui->tableViewTrackerItems->setColumnHidden(14, true);
             ui->tableViewTrackerItems->setColumnHidden(17, true);
@@ -336,4 +347,4 @@ void MainWindow::on_actionAll_Tracker_Action_Items_triggered()
     setButtonAndMenuStates();
 }
 
-STOPPED HERE WHEN CHANGING VISIBLE COLUMNS THE COLUMN WIDTH SAVING MESSES UP WHICH ONES SHOW
+//STOPPED HERE WHEN CHANGING VISIBLE COLUMNS THE COLUMN WIDTH SAVING MESSES UP WHICH ONES SHOW

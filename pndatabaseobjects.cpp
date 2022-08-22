@@ -485,14 +485,14 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     if (getGlobalProjectFilter().isEmpty())
     {
         projectactionitemsmodel()->clearFilter(14);
-        projectinformationmodel()->clearFilter(0);
+        // don't clear this one becasue we may have it open  projectinformationmodel()->clearFilter(0);
         projectslistmodel()->clearFilter(0);
         searchresultsmodel()->clearFilter(7);
     }
     else
     {
         projectactionitemsmodel()->setFilter(14, getGlobalProjectFilter());
-        projectinformationmodel()->setFilter(0, getGlobalProjectFilter());
+        // don't set this one only do the lists projectinformationmodel()->setFilter(0, getGlobalProjectFilter());
         projectslistmodel()->setFilter(0, getGlobalProjectFilter());
 
         QString projectnumber = execute(QString("select project_number from projects where project_id = '%1'").arg(getGlobalProjectFilter()));
