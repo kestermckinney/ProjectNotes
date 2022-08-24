@@ -18,6 +18,7 @@ class PNSqlQueryModel : public QAbstractTableModel
 public:
 
     enum DBColumnType {DB_BLOB, DB_REAL, DB_DATE, DB_INTEGER, DB_STRING, DB_USD, DB_PERCENT, DB_DATETIME, DB_BOOL};
+    enum DBCompareType {Equals, GreaterThan, LessThan, NotEqual};
 
     PNSqlQueryModel(QObject *parent);
     ~PNSqlQueryModel();
@@ -67,7 +68,7 @@ public:
     bool reloadRecord(const QModelIndex& t_index);
 
     QString constructWhereClause(bool t_include_user_filter = true);
-    void setFilter(int t_column_number, const QString& t_filter_value);
+    void setFilter(int t_column_number, const QString& t_filter_value, DBCompareType t_compare = DBCompareType::Equals);
     void clearAllFilters();
     void clearFilter(int t_column_number);
 
@@ -130,6 +131,7 @@ private:
 
     QHash<int, bool> m_column_is_filtered;
     QHash<int, QVariant> m_filter_value;
+    QHash<int, DBCompareType> m_filter_compare_type;
 
     QHash<int, bool> m_is_user_filtered;
     QHash<int, QVariantList> m_user_filter_values;

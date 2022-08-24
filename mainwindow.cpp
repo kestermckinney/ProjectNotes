@@ -3,6 +3,7 @@
 
 #include "pntableview.h"
 #include "projectslistmodel.h"
+#include "pnsqlquerymodel.h"
 
 #include <QStringListModel>
 #include <QMessageBox>
@@ -348,3 +349,21 @@ void MainWindow::on_actionAll_Tracker_Action_Items_triggered()
 }
 
 //STOPPED HERE WHEN CHANGING VISIBLE COLUMNS THE COLUMN WIDTH SAVING MESSES UP WHICH ONES SHOW
+
+void MainWindow::on_actionResolved_Tracker_Action_Items_triggered()
+{
+    global_DBObjects.setShowResolvedTrackerItems(ui->actionResolved_Tracker_Action_Items->isChecked());
+
+    // filter tracker items by Resolved
+    if (ui->actionResolved_Tracker_Action_Items->isChecked())
+        global_DBObjects.projectactionitemsmodel()->clearFilter(9);
+    else
+    {
+        global_DBObjects.projectactionitemsmodel()->setFilter(9, "Resolved", PNSqlQueryModel::NotEqual );
+    }
+
+    global_DBObjects.projectactionitemsmodel()->refresh();
+
+    setButtonAndMenuStates();
+}
+

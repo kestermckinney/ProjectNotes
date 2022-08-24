@@ -337,9 +337,21 @@ void PNDatabaseObjects::setShowAllTrackerItems(bool t_value)
     saveParameter("UserFilter:ShowAllTrackerItems", (t_value ? "1": "0"));
 }
 
+void PNDatabaseObjects::setShowResolvedTrackerItems(bool t_value)
+{
+    saveParameter("UserFilter:ShowResolvedTrackerItems", (t_value ? "1": "0"));
+}
+
 bool PNDatabaseObjects::getShowAllTrackerItems()
 {
     QString t_value = loadParameter("UserFilter:ShowAllTrackerItems");
+    bool ret = (bool)t_value.toUInt();
+    return ret;
+}
+
+bool PNDatabaseObjects::getShowResolvedTrackerItems()
+{
+    QString t_value = loadParameter("UserFilter:ShowResolvedTrackerItems");
     bool ret = (bool)t_value.toUInt();
     return ret;
 }
@@ -447,6 +459,15 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
         projectactionitemsmodel()->setFilter(15, tr("0"));
         actionitemsdetailsmodel()->setFilter(3, tr("0"));
         searchresultsmodel()->setFilter(4, tr("0"));
+    }
+
+    if (getShowResolvedTrackerItems())
+    {
+        projectactionitemsmodel()->clearFilter(9);
+    }
+    else
+    {
+        projectactionitemsmodel()->setFilter(9, "Resolved", PNSqlQueryModel::NotEqual);
     }
 
     if (getGlobalClientFilter().isEmpty())

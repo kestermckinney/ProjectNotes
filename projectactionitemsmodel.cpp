@@ -104,9 +104,8 @@ bool ProjectActionItemsModel::setData(const QModelIndex &t_index, const QVariant
     return PNSqlQueryModel::setData(t_index, t_value, t_role);
 }
 
-//TODO: Add the ability to show all action items from all projects
 //TODO: Pop up a tracker items detail screen
 //TODO: Setup a properties page to set the project manager and company
-//TODO: Closed database should show no empty fields.
+//TODO: Add feature to show only open action items
 
 
