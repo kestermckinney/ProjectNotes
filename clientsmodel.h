@@ -7,7 +7,7 @@ class ClientsModel : public PNSqlQueryModel
 {
 public:
     ClientsModel(QObject* t_parent);
-    bool newRecord() override;
+    bool newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr) override;
 };
 
 #endif // CLIENTSMODEL_H

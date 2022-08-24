@@ -21,8 +21,11 @@ ClientsModel::ClientsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 
 }
 
-bool ClientsModel::newRecord()
+bool ClientsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
+    Q_UNUSED(t_fk_value1);
+    Q_UNUSED(t_fk_value2);
+
     QSqlQuery select;
     select.prepare("select max(client_name) from clients where client_name like '[%'");
     QString maxnum;

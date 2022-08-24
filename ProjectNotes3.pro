@@ -29,6 +29,7 @@ SOURCES += \
     peoplemodel.cpp \
     peoplepage.cpp \
     pnbasepage.cpp \
+    pncheckboxdelegate.cpp \
     pncolumnmodel.cpp \
     pncomboboxdelegate.cpp \
     pndatabaseobjects.cpp \
@@ -38,6 +39,7 @@ SOURCES += \
     pnsqlquerymodel.cpp \
     pntableview.cpp \
     projectactionitemsmodel.cpp \
+    projectactionitemsview.cpp \
     projectdetailsdelegate.cpp \
     projectdetailspage.cpp \
     projectlocationsmodel.cpp \
@@ -47,8 +49,11 @@ SOURCES += \
     projectslistview.cpp \
     projectsmodel.cpp \
     projectteammembersmodel.cpp \
+    projectteammembersview.cpp \
+    qdateeditex.cpp \
     searchresultsmodel.cpp \
     statusreportitemsmodel.cpp \
+    statusreportitemsview.cpp \
     teamsmodel.cpp \
     trackeritemcommentsmodel.cpp \
     valueselectmodel.cpp \
@@ -73,6 +78,7 @@ HEADERS += \
     peoplemodel.h \
     peoplepage.h \
     pnbasepage.h \
+    pncheckboxdelegate.h \
     pncolumnmodel.h \
     pncomboboxdelegate.h \
     pndatabaseobjects.h \
@@ -82,6 +88,7 @@ HEADERS += \
     pnsqlquerymodel.h \
     pntableview.h \
     projectactionitemsmodel.h \
+    projectactionitemsview.h \
     projectdetailsdelegate.h \
     projectdetailspage.h \
     projectlocationsmodel.h \
@@ -91,12 +98,16 @@ HEADERS += \
     projectslistview.h \
     projectsmodel.h \
     projectteammembersmodel.h \
+    projectteammembersview.h \
+    qdateeditex.h \
     searchresultsmodel.h \
     statusreportitemsmodel.h \
+    statusreportitemsview.h \
     teamsmodel.h \
     trackeritemcommentsmodel.h \
     valueselectmodel.h \
-    valuesview.h
+    valuesview.h \
+    widgets_export.h
 
 FORMS += \
     filterdatadialog.ui \

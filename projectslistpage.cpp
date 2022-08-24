@@ -1,7 +1,7 @@
 #include <QDebug>
 #include "projectslistpage.h"
+#include "pndatabaseobjects.h"
 
-#include "mainwindow.h"
 #include "ui_mainwindow.h"
 
 

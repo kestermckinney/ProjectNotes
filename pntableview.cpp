@@ -8,6 +8,7 @@
 #include <QEvent>
 #include <QHeaderView>
 #include <QMenu>
+#include <QMessageBox>
 
 PNTableView::PNTableView(QWidget *parent) : QTableView(parent)
 {

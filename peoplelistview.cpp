@@ -1,4 +1,5 @@
 #include "peoplelistview.h"
+#include "pndatabaseobjects.h"
 
 PeopleListView::PeopleListView(QWidget* t_parent) : PNTableView(t_parent)
 {

@@ -1,15 +1,17 @@
-#ifndef PNCOMBOBOXDELEGATE_H
-#define PNCOMBOBOXDELEGATE_H
+#ifndef PNCHECKBOXDELEGATE_H
+#define PNCHECKBOXDELEGATE_H
+
 #include "pnsqlquerymodel.h"
 
 #include <QStyledItemDelegate>
+#include <QObject>
 
-class PNComboBoxDelegate : public QStyledItemDelegate
+class PNCheckBoxDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
 
 public:
-    PNComboBoxDelegate(QObject *t_parent, PNSqlQueryModel *t_model, int t_displaycolumn = 1, int t_datacolumn = 0);
+    PNCheckBoxDelegate(QObject *t_parent);
 
     QWidget* createEditor(QWidget *t_parent, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const;
     void setEditorData(QWidget *t_editor, const QModelIndex &t_index) const;
@@ -18,9 +20,10 @@ public:
     void paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const;
 
 private:
+    Qt::ItemFlags flags ( const QModelIndex & index ) const;
+
     PNSqlQueryModel* m_model;
     int m_display_column;
-    int m_data_column;
 };
 
-#endif // PNCOMBOBOXDELEGATE_H
+#endif // PNCHECKBOXDELEGATE_H

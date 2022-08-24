@@ -337,6 +337,25 @@ void PNDatabaseObjects::setShowAllTrackerItems(bool t_value)
     saveParameter("UserFilter:ShowAllTrackerItems", (t_value ? "1": "0"));
 }
 
+void PNDatabaseObjects::setShowResolvedTrackerItems(bool t_value)
+{
+    saveParameter("UserFilter:ShowResolvedTrackerItems", (t_value ? "1": "0"));
+}
+
+bool PNDatabaseObjects::getShowAllTrackerItems()
+{
+    QString t_value = loadParameter("UserFilter:ShowAllTrackerItems");
+    bool ret = (bool)t_value.toUInt();
+    return ret;
+}
+
+bool PNDatabaseObjects::getShowResolvedTrackerItems()
+{
+    QString t_value = loadParameter("UserFilter:ShowResolvedTrackerItems");
+    bool ret = (bool)t_value.toUInt();
+    return ret;
+}
+
 void PNDatabaseObjects::setShowClosedProjects(bool t_value)
 {
     saveParameter("UserFilter:ShowClosedProjects", (t_value ? "1": "0"));
@@ -406,7 +425,7 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     // setup default filters
     if (getShowClosedProjects())
     {
-        projectactionitemsmodel()->clearFilter(9);
+        projectactionitemsmodel()->clearFilter(17);
         projectinformationmodel()->clearFilter(14);
         //projectslistmodel()->clearFilter(9);
         projectslistmodel()->clearFilter(14);
@@ -414,7 +433,7 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     }
     else
     {
-        projectactionitemsmodel()->setFilter(9, tr("Active"));
+        projectactionitemsmodel()->setFilter(17, tr("Active"));
         projectinformationmodel()->setFilter(14, tr("Active"));
         //projectslistmodel()->setFilter(9, tr("Active"));
         projectslistmodel()->setFilter(14, tr("Active"));
@@ -440,6 +459,15 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
         projectactionitemsmodel()->setFilter(15, tr("0"));
         actionitemsdetailsmodel()->setFilter(3, tr("0"));
         searchresultsmodel()->setFilter(4, tr("0"));
+    }
+
+    if (getShowResolvedTrackerItems())
+    {
+        projectactionitemsmodel()->clearFilter(9);
+    }
+    else
+    {
+        projectactionitemsmodel()->setFilter(9, "Resolved", PNSqlQueryModel::NotEqual);
     }
 
     if (getGlobalClientFilter().isEmpty())
@@ -478,14 +506,14 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     if (getGlobalProjectFilter().isEmpty())
     {
         projectactionitemsmodel()->clearFilter(14);
-        projectinformationmodel()->clearFilter(0);
+        // don't clear this one becasue we may have it open  projectinformationmodel()->clearFilter(0);
         projectslistmodel()->clearFilter(0);
         searchresultsmodel()->clearFilter(7);
     }
     else
     {
         projectactionitemsmodel()->setFilter(14, getGlobalProjectFilter());
-        projectinformationmodel()->setFilter(0, getGlobalProjectFilter());
+        // don't set this one only do the lists projectinformationmodel()->setFilter(0, getGlobalProjectFilter());
         projectslistmodel()->setFilter(0, getGlobalProjectFilter());
 
         QString projectnumber = execute(QString("select project_number from projects where project_id = '%1'").arg(getGlobalProjectFilter()));

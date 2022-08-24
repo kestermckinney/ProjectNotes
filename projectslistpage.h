@@ -10,6 +10,9 @@ public:
 
     void setupModels( Ui::MainWindow *t_ui );
 
+private slots:
+
+
 private:
     Ui::MainWindow *ui;
 };

@@ -492,7 +492,7 @@
                 </widget>
                </item>
                <item row="2" column="1">
-                <widget class="QDateEdit" name="dateEditLastStatus">
+                <widget class="QDateEditEx" name="dateEditLastStatus">
                  <property name="frame">
                   <bool>true</bool>
                  </property>
@@ -512,7 +512,7 @@
                 </widget>
                </item>
                <item row="3" column="1">
-                <widget class="QDateEdit" name="dateEditLastInvoiced">
+                <widget class="QDateEditEx" name="dateEditLastInvoiced">
                  <property name="autoFillBackground">
                   <bool>false</bool>
                  </property>
@@ -547,6 +547,9 @@
                  </property>
                  <property name="frame">
                   <bool>true</bool>
+                 </property>
+                 <property name="modelColumn">
+                  <number>0</number>
                  </property>
                 </widget>
                </item>
@@ -657,6 +660,12 @@
                </item>
                <item row="12" column="1">
                 <widget class="QComboBox" name="comboBoxClient">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
                  <property name="editable">
                   <bool>true</bool>
                  </property>
@@ -686,10 +695,16 @@
              </widget>
             </item>
             <item>
-             <widget class="QTableView" name="tableViewStatusReportItems">
+             <widget class="StatusReportItemsView" name="tableViewStatusReportItems">
               <property name="frameShadow">
                <enum>QFrame::Plain</enum>
               </property>
+              <property name="sortingEnabled">
+               <bool>true</bool>
+              </property>
+              <attribute name="verticalHeaderShowSortIndicator" stdset="0">
+               <bool>true</bool>
+              </attribute>
              </widget>
             </item>
             <item>
@@ -722,7 +737,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QTableView" name="tableViewTeam">
+             <widget class="ProjectTeamMembersView" name="tableViewTeam">
               <property name="frameShadow">
                <enum>QFrame::Plain</enum>
               </property>
@@ -730,9 +745,9 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tabItems">
+          <widget class="QWidget" name="tabTracker">
            <attribute name="title">
-            <string>Items</string>
+            <string>Tracker</string>
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_6">
             <property name="spacing">
@@ -751,7 +766,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QTableView" name="tableViewItems">
+             <widget class="ProjectActionItemsView" name="tableViewTrackerItems">
               <property name="frameShadow">
                <enum>QFrame::Plain</enum>
               </property>
@@ -1358,12 +1373,13 @@
     <addaction name="actionView_Console"/>
     <addaction name="separator"/>
    </widget>
-   <widget class="QMenu" name="menuViews">
+   <widget class="QMenu" name="menuView">
     <property name="title">
-     <string>Views</string>
+     <string>View</string>
     </property>
     <addaction name="actionInternal_Items"/>
     <addaction name="actionAll_Tracker_Action_Items"/>
+    <addaction name="actionResolved_Tracker_Action_Items"/>
     <addaction name="actionClosed_Projects"/>
     <addaction name="separator"/>
     <addaction name="actionStatus_Bar"/>
@@ -1390,7 +1406,7 @@
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menuPlugins"/>
-   <addaction name="menuViews"/>
+   <addaction name="menuView"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -1858,6 +1874,14 @@
     <string>Filter</string>
    </property>
   </action>
+  <action name="actionResolved_Tracker_Action_Items">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Resolved Tracker/Action Items</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -1898,6 +1922,26 @@
    <extends>QWidget</extends>
    <header>projectdetailspage.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>StatusReportItemsView</class>
+   <extends>QTableView</extends>
+   <header>statusreportitemsview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ProjectTeamMembersView</class>
+   <extends>QTableView</extends>
+   <header>projectteammembersview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ProjectActionItemsView</class>
+   <extends>QTableView</extends>
+   <header>projectactionitemsview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QDateEditEx</class>
+   <extends>QDateEdit</extends>
+   <header>qdateeditex.h</header>
   </customwidget>
  </customwidgets>
  <resources>

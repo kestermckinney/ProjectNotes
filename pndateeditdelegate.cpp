@@ -1,7 +1,7 @@
 #include "pndateeditdelegate.h"
 #include "pnsqlquerymodel.h"
+#include "qdateeditex.h"
 
-#include <QDateEdit>
 #include <QCompleter>
 #include <QCompleter>
 #include <QWidget>
@@ -19,18 +19,19 @@ PNDateEditDelegate::PNDateEditDelegate(QObject *t_parent)
 
 QWidget *PNDateEditDelegate::createEditor(QWidget *t_parent, const QStyleOptionViewItem &/* t_option */, const QModelIndex &/* t_index */) const
 {
-    QDateEdit* editor = new QDateEdit(t_parent);
+    QDateEditEx* editor = new QDateEditEx(t_parent);
 
     editor->setDisplayFormat("MM/dd/yyyy");
     editor->setProperty("EditMask","MM/dd/yyyy");
     editor->setCalendarPopup(true);
+    editor->setNullable(true);
 
     return editor;
 }
 
 void PNDateEditDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_index) const
 {
-    QDateEdit *dateedit = static_cast<QDateEdit*>(t_editor);
+    QDateEditEx *dateedit = static_cast<QDateEditEx*>(t_editor);
     QString t_value = t_index.model()->data(t_index, Qt::EditRole).toString();
     QDateTime datevalue = PNSqlQueryModel::parseDateTime(t_value);
 
@@ -39,7 +40,7 @@ void PNDateEditDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_i
 
 void PNDateEditDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const
 {
-    QDateEdit *dateedit = static_cast<QDateEdit*>(t_editor);
+    QDateEditEx *dateedit = static_cast<QDateEditEx*>(t_editor);
     t_model->setData(t_index, dateedit->date().toString("MM/dd/yyyy"), Qt::EditRole);
 }
 
@@ -56,14 +57,14 @@ void PNDateEditDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
 
     myOption.text = datevalue;
 
-    // make light gray background when not edit_table
-    //if (!((PNSqlQueryModel*)t_index.model())->isEdit_table(t_index.column()))
-    //    myOption.backgroundBrush = QBrush(QColor("lightgray"));
+    QVariant bgcolor = t_index.model()->data(t_index, Qt::BackgroundRole);
+    QVariant fgcolor = t_index.model()->data(t_index, Qt::ForegroundRole);
 
-    myOption.palette.setColor(QPalette::Text,t_index.model()->data(t_index, Qt::ForegroundRole).value<QColor>());
-    QVariant color = t_index.model()->data(t_index, Qt::BackgroundColorRole);
-    if (color.isValid())
-        myOption.backgroundBrush = QBrush(color.value<QColor>());
+    if (fgcolor.isValid())
+        myOption.palette.setColor(QPalette::Text, fgcolor.value<QColor>());
+
+    if (bgcolor.isValid())
+        myOption.backgroundBrush = QBrush(bgcolor.value<QColor>());
 
     QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
 }

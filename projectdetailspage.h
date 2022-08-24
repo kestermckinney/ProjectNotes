@@ -5,7 +5,7 @@
 #include <QObject>
 #include <QDataWidgetMapper>
 #include "projectdetailsdelegate.h"
-#include "pncomboboxdelegate.h"
+//#include "pncomboboxdelegate.h"
 
 class ProjectDetailsPage : public PNBasePage
 {
@@ -15,17 +15,21 @@ public:
     ProjectDetailsPage();
     ~ProjectDetailsPage();
 
-    void setupModels( Ui::MainWindow *t_ui );
+    void newRecord() override;
+
+    void setupModels( Ui::MainWindow *t_ui ) override;
 
     void toFirst();
 
 private:
-    Ui::MainWindow *ui;
+    Ui::MainWindow *ui = nullptr;
 
     QDataWidgetMapper* m_mapperProjectDetails = nullptr;
 
-    PNComboBoxDelegate* m_project_clients_delegate = nullptr;
     ProjectDetailsDelegate* m_project_details_delegate = nullptr;
+
+private slots:
+    void on_tabWidgetProject_currentChanged(int index);
 };
 
 #endif // PROJECTDETAILSPAGE_H

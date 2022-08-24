@@ -2,8 +2,8 @@
 #define PNTABLEVIEW_H
 
 #include "filterdatadialog.h"
-#include "pndatabaseobjects.h"
-#include "pnsettings.h"
+//#include "pndatabaseobjects.h"
+//#include "pnsettings.h"
 
 #include <QTableView>
 #include <QObject>
@@ -22,7 +22,7 @@ public:
     void contextMenuEvent(QContextMenuEvent *e) override;
 
 signals:
-    void signalOpenRecordWindow();
+    void signalOpenRecordWindow();//(PNSqlQueryModel* t_model, const QModelIndex &t_index);
 
 public slots:
     virtual void dataRowSelected(const QModelIndex &index);

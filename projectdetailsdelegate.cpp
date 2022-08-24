@@ -1,9 +1,9 @@
 #include "projectdetailsdelegate.h"
 #include "pnsqlquerymodel.h"
+#include "qdateeditex.h"
 
 #include <QLineEdit>
 #include <QComboBox>
-#include <QDateEdit>
 
 ProjectDetailsDelegate::ProjectDetailsDelegate(QObject *parent) : QItemDelegate(parent)
 {
@@ -19,11 +19,29 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
     case 3:
     case 4:
         {
-            QDateEdit* dateEdit = static_cast<QDateEdit*>(t_editor);
-            QDateTime date_value = PNSqlQueryModel::parseDateTime(value.toString());
-            dateEdit->setDate(date_value.date());
+            QDateEditEx* dateEdit = static_cast<QDateEditEx*>(t_editor);
+
+            if (value.isNull())
+                dateEdit->setDateTime(QDateTime());
+            else
+            {
+                QDateTime date_value = PNSqlQueryModel::parseDateTime(value.toString());
+                dateEdit->setDate(date_value.date());
+            }
             break;
         }
+    case 5:
+        {
+            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
+
+            if (model)
+            {
+                QString list_value = model->findValue(value, 3, 1).toString();
+                comboBox->setCurrentText(list_value);
+            }
+        }
+        break;
     case 11:
     case 12:
     case 14:
@@ -32,9 +50,7 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
             comboBox->setCurrentText(value.toString());
         }
         break;
-    case 5:
-        // TODO: get model assigned to protential primary contact
-        break;
+
     case 13:
         {
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
@@ -64,8 +80,19 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
     case 3:
     case 4:
         {
-            QDateEdit* dateEdit = static_cast<QDateEdit*>(t_editor);
-            key_val = dateEdit->date().toString("MM/dd/yyyy");
+            QDateEditEx* dateEdit = static_cast<QDateEditEx*>(t_editor);
+            if (!dateEdit->isNull())
+                key_val = dateEdit->date().toString("MM/dd/yyyy");
+            else
+                key_val.clear();
+        }
+        break;
+    case 5:
+        {
+            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+
+            int i = comboBox->currentIndex();
+            key_val = comboBox->model()->data(comboBox->model()->index(i, 3));
         }
         break;
     case 11:
@@ -77,12 +104,11 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
         }
         break;
     case 13:
-    case 5:
         {
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
 
             int i = comboBox->currentIndex();
-            key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
+            key_val = comboBox->model()->data(comboBox->model()->index(i, 3));
         }
         break;
     default:
