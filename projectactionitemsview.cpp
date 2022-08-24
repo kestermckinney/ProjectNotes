@@ -28,12 +28,9 @@ void ProjectActionItemsView::setModel(QAbstractItemModel *t_model)
     if (t_model)
     {
         PNTableView::setModel(t_model);
-/*
-        setColumnHidden(0, true);
-        setColumnHidden(14, true);
-        setColumnHidden(17, true);
-        setColumnHidden(18, true);
-*/
+
+        // see setbuttonitems for visible columns
+
         // setup model lists
         m_item_priority.setStringList(PNDatabaseObjects::item_priority);
         m_item_type.setStringList(PNDatabaseObjects::item_type);
@@ -41,20 +38,20 @@ void ProjectActionItemsView::setModel(QAbstractItemModel *t_model)
 
         // projects list panel delagets
         m_action_item_type_delegate = new ComboBoxDelegate(this, &m_item_type);
-        m_identified_by_delegate = new PNComboBoxDelegate(this, global_DBObjects.teamsmodel());
+        m_identified_by_delegate = new PNComboBoxDelegate(this, global_DBObjects.teamsmodel(), 1, 3);
         m_date_identified_delegate = new PNDateEditDelegate(this);
-        m_assigned_to_delegate = new PNComboBoxDelegate(this, global_DBObjects.teamsmodel());
+        m_assigned_to_delegate = new PNComboBoxDelegate(this, global_DBObjects.teamsmodel(), 1, 3);
         m_priority_delegate = new ComboBoxDelegate(this, &m_item_priority);
         m_status_delegate = new ComboBoxDelegate(this, &m_item_status);
         m_date_due_delegate = new PNDateEditDelegate(this);
         m_date_date_updated_delagate = new PNDateEditDelegate(this);
         m_date_resolved_delegate = new PNDateEditDelegate(this);
-        m_meeting_delegate = new PNComboBoxDelegate(this, global_DBObjects.projectnotesmodel());
+        m_meeting_delegate = new PNComboBoxDelegate(this, global_DBObjects.actionitemsdetailsmeetingsmodel(), 2, 0);
         m_project_delegate = new PNComboBoxDelegate(this, global_DBObjects.projectslistmodel());
         m_internal_delegate = new PNCheckBoxDelegate(this);
         m_client_delegate = new PNComboBoxDelegate(this, global_DBObjects.unfilteredclientsmodel());
 
-
+        // assign delegates to columns
         setItemDelegateForColumn(2, m_action_item_type_delegate);
         setItemDelegateForColumn(4, m_identified_by_delegate);
         setItemDelegateForColumn(5, m_date_identified_delegate);

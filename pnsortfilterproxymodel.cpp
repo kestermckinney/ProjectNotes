@@ -8,6 +8,9 @@ PNSortFilterProxyModel::PNSortFilterProxyModel(QObject *t_parent): QSortFilterPr
 
 bool PNSortFilterProxyModel::filterAcceptsRow(int source_row,
                                   const QModelIndex &source_t_parent) const{
+    Q_UNUSED(source_row);
+    Q_UNUSED(source_t_parent);
+
     /*
     QModelIndex indG = sourceModel()->t_index(source_row,
                                                1, source_t_parent);

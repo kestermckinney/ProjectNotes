@@ -591,6 +591,7 @@ void PNSqlQueryModel::addColumn(int t_column_number, const QString& t_display_na
 
     m_column_is_filtered[t_column_number] = false;
     m_filter_value[t_column_number] = QString();
+    m_filter_compare_type[t_column_number]  = DBCompareType::Equals;
 
     m_is_user_filtered[t_column_number] = false;
     m_user_filter_values[t_column_number] = QVariantList();
@@ -854,13 +855,30 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                 if (!valuelist.isEmpty())
                     valuelist += tr(" AND ");
 
+                QString compare_op;
+
+                switch (m_filter_compare_type[hashit.key()])
+                {
+                case DBCompareType::GreaterThan:
+                    compare_op = ">";
+                    break;
+                case DBCompareType::LessThan:
+                    compare_op = "<";
+                    break;
+                case DBCompareType::NotEqual:
+                    compare_op = "<>";
+                    break;
+                default:
+                    compare_op = "=";
+                }
+
                 sqlEscape(column_value, m_column_type[hashit.key()]);
 
                 if ( m_column_type[hashit.key()] != DB_STRING )
                 {
                     if (m_column_type[hashit.key()] == DB_BOOL && column_value == tr("0"))
                     {
-                        valuelist += QString(" ( %1 = %2").arg(m_sql_query.record().fieldName(hashit.key()), column_value.toString() );
+                        valuelist += QString(" ( %1 %3 %2").arg(m_sql_query.record().fieldName(hashit.key()), column_value.toString(), compare_op);
                         valuelist += QString(" OR %1 IS NULL) ").arg( m_sql_query.record().fieldName(hashit.key()) );
                     }
                     else
@@ -871,7 +889,7 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                     qDebug() << "Table Naame: " << BaseSQL() << " Column Num: " << hashit.key() << "  Column Name: " << m_sql_query.record().fieldName(hashit.key());
 
                     sqlEscape(column_value, m_column_type[hashit.key()]);
-                    valuelist += QString("%1 = '%2'").arg( m_sql_query.record().fieldName(hashit.key()), column_value.toString() );
+                    valuelist += QString("%1 %3 '%2'").arg( m_sql_query.record().fieldName(hashit.key()), column_value.toString(), compare_op);
                 }
             }
         }
@@ -1083,10 +1101,11 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
     return valuelist;
 }
 
-void PNSqlQueryModel::setFilter(int t_column_number, const QString& t_filter_value)
+void PNSqlQueryModel::setFilter(int t_column_number, const QString& t_filter_value, DBCompareType t_compare_type)
 {
     m_filter_value[t_column_number] = t_filter_value;
     m_column_is_filtered[t_column_number] = true;
+    m_filter_compare_type[t_column_number] = t_compare_type;
 }
 
 void PNSqlQueryModel::clearAllFilters()
@@ -1104,6 +1123,7 @@ void PNSqlQueryModel::clearFilter(int t_column_number)
 {
     m_column_is_filtered[t_column_number] = false;
     m_filter_value[t_column_number].clear();
+    m_filter_compare_type[t_column_number] = DBCompareType::Equals;
 }
 
 void PNSqlQueryModel::setUserFilter(int t_column_number, const QVariantList& t_filter_values)

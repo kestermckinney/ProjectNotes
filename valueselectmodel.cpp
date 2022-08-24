@@ -40,7 +40,7 @@ void ValueSelectModel::setValuesColumn(QString t_column)
     QString fieldnm = m_filtering_model->emptyrecord().fieldName(col);
 
     setType(0, m_filtering_model->getType(col));
-    QString sql = "select distinct " + fieldnm + " from " + m_filtering_model->tablename() + where + fieldnm + " is not null";
+    QString sql = "select distinct " + fieldnm + " from ( " + m_filtering_model->BaseSQL() + where + fieldnm + " is not null )";
     qDebug() << "Value Select: " << sql << "\n";
 
     setBaseSql(sql);

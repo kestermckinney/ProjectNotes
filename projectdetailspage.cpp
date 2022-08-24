@@ -10,47 +10,24 @@ ProjectDetailsPage::ProjectDetailsPage()
 
 ProjectDetailsPage::~ProjectDetailsPage()
 {
+    if (ui)
+        disconnect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
+
     if (m_mapperProjectDetails != nullptr)
         delete m_mapperProjectDetails;
 
-    if (m_project_details_delegate) delete m_project_details_delegate;
+    if (m_project_details_delegate)
+        delete m_project_details_delegate;
 }
 
 void ProjectDetailsPage::newRecord()
 {
     QVariant project_id = global_DBObjects.projectinformationmodelproxy()->data(global_DBObjects.projectinformationmodelproxy()->index(0,0));
-
-    switch ( ui->tabWidgetProject->currentIndex() )
-    {
-    case 0:
-        setCurrentModel(global_DBObjects.statusreportitemsmodelproxy());
-        setCurrentView(ui->tableViewStatusReportItems);
-        break;
-    case 1:
-        setCurrentModel(global_DBObjects.projectteammembersmodelproxy());
-        setCurrentView(ui->tableViewTeam);
-        break;
-    case 2:
-        setCurrentModel(global_DBObjects.projectactionitemsmodelproxy());
-        setCurrentView(ui->tableViewTrackerItems);
-        break;
-    case 3:
-        setCurrentModel(global_DBObjects.projectlocationsmodelproxy());
-        //setCurrentView(ui->tableViewLocations);
-        break;
-    case 4:
-        setCurrentModel(global_DBObjects.projectnotesmodelproxy());
-        //setCurrentview(ui->tableViewMeetings);
-        break;
-    }
-
   //      STOPPED HERE NEED TO ADD ACTION ITEMS VIEW
   //        NEED TO OVERRIDE THE NEW RECORD METHODS TO USE FK
     int lastrow = ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->rowCount(QModelIndex());
 
     ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&project_id);
-    //TODO: Add the ability to save a new status item
-    // TODO: Their may be a need to check which model is active
 
     getCurrentView()->selectRow(lastrow);
     QModelIndex index = getCurrentView()->model()->index(lastrow, 0);
@@ -59,8 +36,12 @@ void ProjectDetailsPage::newRecord()
 
 void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
 {
-
     ui = t_ui;
+
+    connect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
+
+    ui->dateEditLastInvoiced->setNullable(true);
+    ui->dateEditLastStatus->setNullable(true);
 
     if (m_mapperProjectDetails == nullptr)
         m_mapperProjectDetails = new QDataWidgetMapper(this);
@@ -119,3 +100,31 @@ void ProjectDetailsPage::toFirst()
     if (m_mapperProjectDetails != nullptr)
         m_mapperProjectDetails->toFirst();
 }
+
+void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
+{
+    switch ( index )
+    {
+    case 0:
+        setCurrentModel(global_DBObjects.statusreportitemsmodelproxy());
+        setCurrentView(ui->tableViewStatusReportItems);
+        break;
+    case 1:
+        setCurrentModel(global_DBObjects.projectteammembersmodelproxy());
+        setCurrentView(ui->tableViewTeam);
+        break;
+    case 2:
+        setCurrentModel(global_DBObjects.projectactionitemsmodelproxy());
+        setCurrentView(ui->tableViewTrackerItems);
+        break;
+    case 3:
+        setCurrentModel(global_DBObjects.projectlocationsmodelproxy());
+        //setCurrentView(ui->tableViewLocations);  //TODO:
+        break;
+    case 4:
+        setCurrentModel(global_DBObjects.projectnotesmodelproxy());
+        //setCurrentview(ui->tableViewMeetings); // TODO:
+        break;
+    }
+}
+

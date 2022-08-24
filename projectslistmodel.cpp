@@ -36,5 +36,13 @@ bool ProjectsListModel::openRecord(QModelIndex t_index)
     global_DBObjects.projectactionitemsmodel()->setFilter(14, record_id.toString());
     global_DBObjects.projectactionitemsmodel()->refresh();
 
+    // filter tracker items by project
+    if (global_DBObjects.getShowAllTrackerItems())
+        global_DBObjects.projectactionitemsmodel()->clearFilter(14);
+    else
+        global_DBObjects.projectactionitemsmodel()->setFilter(14, record_id.toString());
+
+    global_DBObjects.projectactionitemsmodel()->refresh();
+
     return true;
 }

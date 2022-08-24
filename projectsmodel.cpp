@@ -64,6 +64,8 @@ bool ProjectsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_
     QSqlRecord qr = emptyrecord();
     qr.setValue(1, QString("[%1]").arg(unique_stamp));
     qr.setValue(2, QString("[New Project %1]").arg(unique_stamp));
+    qr.setValue(3, QVariant());
+    qr.setValue(4, QVariant());
     qr.setValue(11, tr("Monthly"));
     qr.setValue(12, tr("Bi-Weekly"));
     qr.setValue(14, tr("Active"));

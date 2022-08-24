@@ -18,6 +18,9 @@ void ColumnView::dataRowSelected(const QModelIndex &t_index)
     // determine column delegate set in the source view
     int col = m_filtered_model->getColumnNumber(dbcolname);
 
+    if (m_values_view->columnWidth(col) <= 0)
+        m_values_view->resizeColumnToContents(0);
+
     if ( col < 0 )
         return;
 
