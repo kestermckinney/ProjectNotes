@@ -111,7 +111,8 @@ HEADERS += \
 
 FORMS += \
     filterdatadialog.ui \
-    mainwindow.ui
+    mainwindow.ui \
+    parametersdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

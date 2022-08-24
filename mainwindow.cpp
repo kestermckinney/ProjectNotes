@@ -348,8 +348,6 @@ void MainWindow::on_actionAll_Tracker_Action_Items_triggered()
     setButtonAndMenuStates();
 }
 
-//STOPPED HERE WHEN CHANGING VISIBLE COLUMNS THE COLUMN WIDTH SAVING MESSES UP WHICH ONES SHOW
-
 void MainWindow::on_actionResolved_Tracker_Action_Items_triggered()
 {
     global_DBObjects.setShowResolvedTrackerItems(ui->actionResolved_Tracker_Action_Items->isChecked());

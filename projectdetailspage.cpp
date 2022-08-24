@@ -23,37 +23,11 @@ ProjectDetailsPage::~ProjectDetailsPage()
 void ProjectDetailsPage::newRecord()
 {
     QVariant project_id = global_DBObjects.projectinformationmodelproxy()->data(global_DBObjects.projectinformationmodelproxy()->index(0,0));
-
-    switch ( ui->tabWidgetProject->currentIndex() )
-    {
-    case 0:
-        setCurrentModel(global_DBObjects.statusreportitemsmodelproxy());
-        setCurrentView(ui->tableViewStatusReportItems);
-        break;
-    case 1:
-        setCurrentModel(global_DBObjects.projectteammembersmodelproxy());
-        setCurrentView(ui->tableViewTeam);
-        break;
-    case 2:
-        setCurrentModel(global_DBObjects.projectactionitemsmodelproxy());
-        setCurrentView(ui->tableViewTrackerItems);
-        break;
-    case 3:
-        setCurrentModel(global_DBObjects.projectlocationsmodelproxy());
-        //setCurrentView(ui->tableViewLocations);
-        break;
-    case 4:
-        setCurrentModel(global_DBObjects.projectnotesmodelproxy());
-        //setCurrentview(ui->tableViewMeetings);
-        break;
-    }
-
   //      STOPPED HERE NEED TO ADD ACTION ITEMS VIEW
   //        NEED TO OVERRIDE THE NEW RECORD METHODS TO USE FK
     int lastrow = ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->rowCount(QModelIndex());
 
     ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&project_id);
-    // TODO: Their may be a need to check which model is active
 
     getCurrentView()->selectRow(lastrow);
     QModelIndex index = getCurrentView()->model()->index(lastrow, 0);
@@ -62,7 +36,6 @@ void ProjectDetailsPage::newRecord()
 
 void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
 {
-
     ui = t_ui;
 
     connect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
