@@ -11,13 +11,13 @@ PeopleModel::PeopleModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 
     setTableName("people", "People");
 
-    addColumn(0, tr("People ID"), DB_STRING, false, true, true, true);
-    addColumn(1, tr("Name"), DB_STRING, true, true, true, true);
-    addColumn(2, tr("Email"), DB_STRING, true, false, true, false);
-    addColumn(3, tr("Office Phone"), DB_STRING, true, false, true, false);
-    addColumn(4, tr("Cell Phone"), DB_STRING, true, false, true, false);
-    addColumn(5, tr("Client"), DB_STRING, true, true);
-    addColumn(6, tr("Role"), DB_STRING, true, false, true, false);
+    addColumn(0, tr("People ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn(1, tr("Name"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
+    addColumn(2, tr("Email"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(3, tr("Office Phone"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(4, tr("Cell Phone"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(5, tr("Client"), DBString, DBSearchable, DBRequired);
+    addColumn(6, tr("Role"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
     addRelatedTable("item_tracker", "assigned_to", "Assigned Item");
     addRelatedTable("item_tracker", "identified_by", "Identified By Item");

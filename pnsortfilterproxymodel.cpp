@@ -47,26 +47,26 @@ bool PNSortFilterProxyModel::lessThan(const QModelIndex &t_source_left, const QM
     if (!value_left.isValid())
         value_left = sourcemodel_left->data(t_source_left);
     else
-        type_left = PNSqlQueryModel::DB_STRING;
+        type_left = PNSqlQueryModel::DBString;
 
     if (!value_right.isValid())
         value_right = sourcemodel_right->data(t_source_right);
     else
-        type_right = PNSqlQueryModel::DB_STRING;
+        type_right = PNSqlQueryModel::DBString;
 
     // convert to sort_table items
     sourcemodel_left->sqlEscape(value_left, type_left);
     sourcemodel_right->sqlEscape(value_right, type_right);
 
     // compare items
-    if (type_left == PNSqlQueryModel::DB_INTEGER ||
-            type_left == PNSqlQueryModel::DB_BOOL ||
-            type_left == PNSqlQueryModel::DB_PERCENT ||
-            type_left == PNSqlQueryModel::DB_REAL ||
-            type_left == PNSqlQueryModel::DB_USD)
+    if (type_left == PNSqlQueryModel::DBInteger ||
+            type_left == PNSqlQueryModel::DBBool ||
+            type_left == PNSqlQueryModel::DBPercent ||
+            type_left == PNSqlQueryModel::DBReal ||
+            type_left == PNSqlQueryModel::DBUSD)
         return value_left.toDouble() < value_right.toDouble();
-    else if (type_left == PNSqlQueryModel::DB_DATE ||
-             type_left == PNSqlQueryModel::DB_DATETIME)
+    else if (type_left == PNSqlQueryModel::DBDate ||
+             type_left == PNSqlQueryModel::DBDateTime)
         return value_left.toDouble() < value_right.toDouble();
     else
         return value_left.toString() < value_right.toString();

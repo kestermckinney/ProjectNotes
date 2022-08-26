@@ -9,7 +9,7 @@ PNColumnModel::PNColumnModel(QObject *t_parent) : PNSqlQueryModel(t_parent)
 
     setTableName("Columns", "Columns");
 
-    addColumn(0, tr("Column"), DB_STRING, false, true, false);
+    addColumn(0, tr("Column"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
     setReadOnly();
 
     refresh();

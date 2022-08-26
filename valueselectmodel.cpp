@@ -9,7 +9,7 @@ ValueSelectModel::ValueSelectModel(QObject *t_parent) : PNSqlQueryModel(t_parent
 
     setTableName("Values", "Values");
 
-    addColumn(0, tr("Values"), DB_STRING, false, true, false);
+    addColumn(0, tr("Values"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
     setReadOnly();
 
     refresh();

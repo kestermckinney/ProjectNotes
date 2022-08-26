@@ -9,26 +9,26 @@ ProjectActionItemsModel::ProjectActionItemsModel(QObject* t_parent): PNSqlQueryM
 
     setTableName("item_tracker", "Project Action Items");
 
-    addColumn(0, tr("Item ID"), DB_STRING, false, true, true, true);
-    addColumn(1, tr("Item"), DB_STRING, true, true, true, false);
-    addColumn(2, tr("Type"), DB_STRING, true, true, true, false); //item_type, 2);
-    addColumn(3, tr("Item Name"), DB_STRING, true, false, true, false);
-    addColumn(4, tr("Identified By"), DB_STRING, true, false, true, false); // teamlist, tr("name"), tr("people_id"), false ); // made not required because it broke when action item detail changed project numbers
-    addColumn(5, tr("Date Identified"), DB_DATE, true, false, true, false);
-    addColumn(6, tr("Description"), DB_STRING, true, false, true, false);
-    addColumn(7, tr("Assigned To"), DB_STRING, true, false, true, false); // teamlist, tr("name"), tr("people_id") );
-    addColumn(8, tr("Priority"), DB_STRING, true, true, true, false);// item_priority, 3);
-    addColumn(9, tr("Status"), DB_STRING, true, true, true, false);//, true, item_status, 5);
-    addColumn(10, tr("Date Due"), DB_DATE, true, false, true, false);
-    addColumn(11, tr("Updated"), DB_DATE, true, true, true, false);
-    addColumn(12, tr("Date Resolved"), DB_DATE, true, false, true, false);
+    addColumn(0, tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn(1, tr("Item"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
+    addColumn(2, tr("Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique); //item_type, 2);
+    addColumn(3, tr("Item Name"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(4, tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique); // teamlist, tr("name"), tr("people_id"), false ); // made not required because it broke when action item detail changed project numbers
+    addColumn(5, tr("Date Identified"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(6, tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(7, tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique); // teamlist, tr("name"), tr("people_id") );
+    addColumn(8, tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);// item_priority, 3);
+    addColumn(9, tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);//, true, item_status, 5);
+    addColumn(10, tr("Date Due"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(11, tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
+    addColumn(12, tr("Date Resolved"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
-    addColumn(13, tr("Meeting"), DB_STRING, true, false, true, false);// actionitemprojectnotes, wxT("meeting"), wxT("note_id"));
-    addColumn(14, tr("Project"), DB_STRING, true, false, true, false); //, true, projects, wxT("project_number"), wxT("project_id") );
-    addColumn(15, tr("Internal"), DB_BOOL, true, false, true, false);
-    addColumn(16, tr("Comments"), DB_STRING, true, false, false, false);
-    addColumn(17, tr("Project Status"), DB_STRING, true, false, false, false);
-    addColumn(18, tr("Client"), DB_STRING,  true, false, false, false);
+    addColumn(13, tr("Meeting"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);// actionitemprojectnotes, wxT("meeting"), wxT("note_id"));
+    addColumn(14, tr("Project"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique); //, true, projects, wxT("project_number"), wxT("project_id") );
+    addColumn(15, tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(16, tr("Comments"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(17, tr("Project Status"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn(18, tr("Client"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
     addRelatedTable("item_tracker_updates", "item_id", "Tracker Updates");
 
@@ -105,5 +105,8 @@ bool ProjectActionItemsModel::setData(const QModelIndex &t_index, const QVariant
 }
 
 //TODO: Pop up a tracker items detail screen
+//TODO: Add artifacts locations
+//TODO: Add notes list
+//TODO: Pop up the note
 
 

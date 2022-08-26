@@ -8,11 +8,11 @@ TeamsModel::TeamsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 
     setTableName("project_people", "Project People");
 
-    addColumn(0, tr("Team Member ID"), DB_STRING, false, true, true);
-    addColumn(1, tr("Name"), DB_STRING, true, true, false, false);
-    addColumn(2, tr("Project ID"), DB_STRING, true, true, false, false);
-    addColumn(3, tr("People ID"), DB_STRING, true, true, false, false);
-    addColumn(4, tr("Client ID"), DB_STRING, true, true, false, false);
+    addColumn(0, tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
+    addColumn(1, tr("Name"), DBString, DBSearchable, DBRequired);
+    addColumn(2, tr("Project ID"), DBString, DBSearchable, DBRequired);
+    addColumn(3, tr("People ID"), DBString, DBSearchable, DBRequired);
+    addColumn(4, tr("Client ID"), DBString, DBSearchable, DBRequired);
 
     addRelatedTable("people", "people_id", "People");
     addRelatedTable("clients", "client_id", "Clients");

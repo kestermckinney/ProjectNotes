@@ -8,12 +8,12 @@ ProjectNotesModel::ProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_paren
 
     setTableName("project_notes", "Project Notes");
 
-    addColumn(0, tr("Note ID"), DB_STRING, false, true, false, true);
-    addColumn(1, tr("Project ID"), DB_STRING, true, true, false);
-    addColumn(2,  tr("Title"), DB_STRING, true, false, true, false);
-    addColumn(3, tr("Date"), DB_DATE, true, false, true, false);
-    addColumn(4, tr("Note"), DB_STRING, true, false, true, false);
-    addColumn(5, tr("Internal"), DB_BOOL, true, false, true, false);
+    addColumn(0, tr("Note ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn(1, tr("Project ID"), DBString, DBSearchable, DBRequired, DBReadOnly);
+    addColumn(2,  tr("Title"), DBString, DBSearchable, DBNotRequired, DBEditable);
+    addColumn(3, tr("Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
+    addColumn(4, tr("Note"), DBString, DBSearchable, DBNotRequired, DBEditable);
+    addColumn(5, tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable);
 
 
     addRelatedTable("item_tracker", "note_id", "Action Item");

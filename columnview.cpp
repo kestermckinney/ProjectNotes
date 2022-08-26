@@ -50,7 +50,7 @@ void ColumnView::dataRowSelected(const QModelIndex &t_index)
     m_parent_ui->setBeginValue((*m_saved_filters)[dbcolname].SearchBeginValue);
     m_parent_ui->setSearchText((*m_saved_filters)[dbcolname].SearchString);
 
-    if ( m_filtered_model->getType(col) == PNSqlQueryModel::DB_STRING )
+    if ( m_filtered_model->getType(col) == PNSqlQueryModel::DBString )
         m_parent_ui->setSearchTextEnabled(true);
     else
         m_parent_ui->setSearchTextEnabled(false);

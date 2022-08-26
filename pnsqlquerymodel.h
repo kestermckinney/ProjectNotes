@@ -17,8 +17,12 @@ class PNSqlQueryModel : public QAbstractTableModel
 {
 public:
 
-    enum DBColumnType {DB_BLOB, DB_REAL, DB_DATE, DB_INTEGER, DB_STRING, DB_USD, DB_PERCENT, DB_DATETIME, DB_BOOL};
+    enum DBColumnType {DBBlob, DBReal, DBDate, DBInteger, DBString, DBUSD, DBPercent, DBDateTime, DBBool};
     enum DBCompareType {Equals, GreaterThan, LessThan, NotEqual};
+    enum DBColumnRequired {DBRequired, DBNotRequired};
+    enum DBColumnSearchable {DBSearchable, DBNotSearchable};
+    enum DBColumnUnique {DBUnique, DBNotUnique};
+    enum DBColumnEditable {DBEditable, DBReadOnly};
 
     PNSqlQueryModel(QObject *parent);
     ~PNSqlQueryModel();
@@ -41,7 +45,7 @@ public:
     void sqlEscape(QVariant& t_column_value, DBColumnType t_column_type, bool t_no_quote = false) const;
     void reformatValue(QVariant& t_column_value, DBColumnType t_column_type) const;
 
-    void addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, bool t_searchable, bool t_required = false, bool t_edit_table = true, bool t_unique = false);
+    void addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable, DBColumnRequired t_required = DBNotRequired, DBColumnEditable t_edit_table = DBEditable, DBColumnUnique t_unique = DBNotUnique);
     void addRelatedTable(const QString& t_table_name, const QString& t_colum_name, const QString& t_title);
     void associateLookupValues(int t_column_number, QStringList* t_lookup_values);
     QVariant headerData(int t_section, Qt::Orientation t_orientation,
@@ -96,12 +100,12 @@ public:
     void setOrderBy(const QString& t_order_by) { m_order_by = t_order_by; };
     void clearOrderBy() { m_order_by.clear(); };
 
-    void setEditable( int t_column, bool t_editable ) { m_column_is_editable[t_column] = t_editable; };
-    bool isEditable( int t_column ) { return m_column_is_editable[t_column]; }
-    void setSearchable( int t_column, bool t_searchable ) { m_column_is_searchable[t_column] = t_searchable; };
-    bool isSearchable( int t_column ) { return m_column_is_searchable[t_column]; };
-    void setRequired( int t_column, bool t_required ) { m_column_is_required[t_column] = t_required; };
-    bool isRequired( int t_column ) { return m_column_is_required[t_column]; };
+    void setEditable( int t_column, DBColumnEditable t_editable ) { m_column_is_editable[t_column] = t_editable; };
+    bool isEditable( int t_column ) { return (m_column_is_editable[t_column] == DBEditable); }
+    void setSearchable( int t_column, DBColumnSearchable t_searchable ) { m_column_is_searchable[t_column] = t_searchable; };
+    bool isSearchable( int t_column ) { return (m_column_is_searchable[t_column] == DBSearchable); };
+    void setRequired( int t_column, DBColumnRequired t_required ) { m_column_is_required[t_column] = t_required; };
+    bool isRequired( int t_column ) { return (m_column_is_required[t_column] == DBRequired); };
     DBColumnType getType( const int t_column ) const { return m_column_type[t_column]; };
     void setType( const int t_column, const DBColumnType t_column_type ) { m_column_type[t_column] = t_column_type; };
     void setLookup(int t_column, PNSqlQueryModel* t_lookup, int t_lookup_fk_column, int t_lookup_value_column);
@@ -123,11 +127,10 @@ private:
     QString m_base_sql;
 
     QHash<int, DBColumnType> m_column_type;
-    QHash<int, bool> m_column_is_required;
-    QHash<int, bool> m_column_is_searchable;
-    QHash<int, bool> m_column_is_editable;
-
-    QHash<int, bool> m_column_is_unique;
+    QHash<int, DBColumnRequired> m_column_is_required;
+    QHash<int, DBColumnSearchable> m_column_is_searchable;
+    QHash<int, DBColumnEditable> m_column_is_editable;
+    QHash<int, DBColumnUnique> m_column_is_unique;
 
     QHash<int, bool> m_column_is_filtered;
     QHash<int, QVariant> m_filter_value;

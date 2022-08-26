@@ -8,23 +8,22 @@ NotesActionItemsModel::NotesActionItemsModel(QObject* t_parent): PNSqlQueryModel
 
     setTableName("item_tracker", "Notes Action Items");
 
-    addColumn(0, tr("Item ID"), DB_STRING, false, true, true, true);
-    addColumn(1, tr("Item"), DB_STRING, true, true, true, false);
-    addColumn(2, tr("t_type"), DB_STRING, true, true, true, false); //item_type, 2);
-    addColumn(3, tr("Item Name"), DB_STRING, true, false, true, false);
-    addColumn(4, tr("Identified By"), DB_STRING, true, false, true, false); // teamlist, tr("name"), tr("people_id"), false ); // made not required because it broke when action item detail changed project numbers
-    addColumn(5, tr("Date Identified"), DB_DATE, true, false, true, false);
-    addColumn(6, tr("Description"), DB_STRING, true, false, true, false);
-    addColumn(7, tr("Assigned To"), DB_STRING, true, false, true, false); // teamlist, tr("name"), tr("people_id") );
-    addColumn(8, tr("Priority"), DB_STRING, true, true, true, false);// item_priority, 3);
-    addColumn(9, tr("Status"), DB_STRING, true, true, true, false);//, true, item_status, 5);
-    addColumn(10, tr("Date Due"), DB_DATE, true, false, true, false);
-    addColumn(11, tr("Updated"), DB_DATE, true, true, true, false);
-    addColumn(12, tr("Date Resolved"), DB_DATE, true, false, true, false);
-    addColumn(13, tr("Note Date"), DB_STRING, true, false, true, false); // actionitemprojectnotes, tr("note_date"), tr("note_id"));
-    addColumn(14, tr("Project ID"), DB_STRING, true, false, true, false);
-    addColumn(15, tr("Internal"), DB_BOOL, true, false, true, false);
-
+    addColumn(0, tr("Item ID"), DBString, DBSearchable, DBRequired, DBReadOnly);
+    addColumn(1, tr("Item"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique);
+    addColumn(2, tr("t_type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
+    addColumn(3, tr("Item Name"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(4, tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(5, tr("Date Identified"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(6, tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(7, tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(8, tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
+    addColumn(9, tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
+    addColumn(10, tr("Date Due"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(11, tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
+    addColumn(12, tr("Date Resolved"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(13, tr("Note Date"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(14, tr("Project ID"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(15, tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addRelatedTable("item_tracker_updates", "item_id", "Tracker Updates");
 
     setOrderBy("item_number");

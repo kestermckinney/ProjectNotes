@@ -8,10 +8,10 @@ ActionItemsDetailsMeetingsModel::ActionItemsDetailsMeetingsModel(QObject* t_pare
 
     setTableName("project_notes", "Notes");
 
-    addColumn(0, tr("Note ID"), DB_STRING, false, false, false, false);
-    addColumn(1, tr("Project ID"), DB_STRING, false, false, false, false);
-    addColumn(2, tr("Meeting"), DB_STRING, false, false, false, false);
-    addColumn(3, tr("Internal Item"), DB_BOOL, false, false, false, false);
+    addColumn(0, tr("Note ID"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn(1, tr("Project ID"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn(2, tr("Meeting"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn(3, tr("Internal Item"), DBBool, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
    // addRelatedTable("item_tracker", "assigned_to", "Assigned Item");
 

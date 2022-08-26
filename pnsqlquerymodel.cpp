@@ -105,7 +105,7 @@ Qt::ItemFlags PNSqlQueryModel::flags(
 {
     Qt::ItemFlags flags = QAbstractTableModel::flags(t_index);
 
-    if (m_column_is_editable[t_index.column()])
+    if (m_column_is_editable[t_index.column()] == DBEditable)
         flags |= Qt::ItemIsEditable;
 
     return flags;
@@ -117,10 +117,10 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
     {
         // nmake sure column is edit_table
         // exit if no update t_table defined
-        if (!m_column_is_editable[t_index.column()] || m_tablename.isEmpty())
+        if ((m_column_is_editable[t_index.column()] == DBReadOnly) || m_tablename.isEmpty())
             return false;
 
-        if (m_column_is_required[t_index.column()] || t_index.column() == 0)
+        if ((m_column_is_required[t_index.column()] == DBRequired) || t_index.column() == 0)
         {
             if (t_value.isNull() || t_value == "")
             {
@@ -131,7 +131,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             }
         }
 
-        if (m_column_is_unique[t_index.column()])
+        if (m_column_is_unique[t_index.column()] == DBUnique)
         {
             if (!isUniqueValue(t_value, t_index))
             {
@@ -187,7 +187,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
 
                 for (int i = 0; i < m_sql_query.record().count(); i++)
                 {
-                    if (m_column_is_editable[i] || i == 0)
+                    if ((m_column_is_editable[i] == DBEditable) || i == 0)
                     {
                         if (!fields.isEmpty())
                             fields += ", ";
@@ -208,7 +208,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 int bindcount = 0;
                 for (int i = 0; i < m_sql_query.record().count(); i++)
                 {
-                    if (m_column_is_editable[i] || i == 0)
+                    if ((m_column_is_editable[i] == DBEditable) || i == 0)
                     {
                         insert.bindValue(bindcount, m_cache[t_index.row()].field(i).value());
                         bindcount++;
@@ -317,7 +317,7 @@ QVariant PNSqlQueryModel::data(const QModelIndex &t_index, int t_role) const
     // make a light gray backround when not edit_table
     if (m_cache.size() > t_index.row() && t_role == Qt::BackgroundRole && t_index.row() >= 0)
     {
-        if (!m_column_is_editable[t_index.column()])
+        if (m_column_is_editable[t_index.column()] == DBReadOnly)
         {
             retval = QVariant(QColor("lightgray"));
         }
@@ -392,7 +392,7 @@ void PNSqlQueryModel::sqlEscape(QVariant& t_column_value, DBColumnType t_column_
     }
 
     switch (t_column_type) {
-        case DB_DATE:
+        case DBDate:
         {
             QDateTime datecol = parseDateTime(t_column_value.toString());
 
@@ -405,7 +405,7 @@ void PNSqlQueryModel::sqlEscape(QVariant& t_column_value, DBColumnType t_column_
 
             break;
         }
-        case DB_DATETIME:
+        case DBDateTime:
         {
             QDateTime datecol = parseDateTime(t_column_value.toString());
             if ( datecol.isValid() )
@@ -425,11 +425,11 @@ void PNSqlQueryModel::sqlEscape(QVariant& t_column_value, DBColumnType t_column_
 
             break;
         }
-        case DB_PERCENT:
-        case DB_REAL:
-        case DB_INTEGER:
-        case DB_BOOL:
-        case DB_USD:
+        case DBPercent:
+        case DBReal:
+        case DBInteger:
+        case DBBool:
+        case DBUSD:
         {
             t_column_value.setValue(t_column_value.toString().toLower());
             if (t_column_value == "true")
@@ -443,7 +443,7 @@ void PNSqlQueryModel::sqlEscape(QVariant& t_column_value, DBColumnType t_column_
 
             break;
         }
-        case DB_STRING:
+        case DBString:
         {
             if (!t_no_quote)
                 t_column_value.setValue(t_column_value.toString().replace("'","''"));
@@ -505,12 +505,12 @@ void PNSqlQueryModel::reformatValue(QVariant& t_column_value, DBColumnType t_col
         return;
 
     switch (t_column_type) {
-        case DB_STRING:
+        case DBString:
         {
             // leave strings alone
             break;
         }
-        case DB_DATE:
+        case DBDate:
         {
             QDateTime datecol;
             datecol.setSecsSinceEpoch(t_column_value.toLongLong());
@@ -524,7 +524,7 @@ void PNSqlQueryModel::reformatValue(QVariant& t_column_value, DBColumnType t_col
 
             break;
         }
-        case DB_DATETIME:
+        case DBDateTime:
         {
             QDateTime datecol;
             datecol.setSecsSinceEpoch(t_column_value.toLongLong());
@@ -538,22 +538,22 @@ void PNSqlQueryModel::reformatValue(QVariant& t_column_value, DBColumnType t_col
 
             break;
         }
-        case DB_REAL:
+        case DBReal:
         {
             t_column_value.setValue(t_column_value.toString().replace("$",""));
             t_column_value.setValue(t_column_value.toString().replace("%",""));
             t_column_value.setValue(t_column_value.toString().replace(",",""));
             break;
         }
-        case DB_INTEGER:
-        case DB_BOOL:
+        case DBInteger:
+        case DBBool:
         {
             t_column_value.setValue(t_column_value.toString().replace("$",""));
             t_column_value.setValue(t_column_value.toString().replace("%",""));
             t_column_value.setValue(t_column_value.toString().replace(",",""));
             break;
         }
-        case DB_USD:
+        case DBUSD:
         {
             t_column_value.setValue(t_column_value.toString().replace("$",""));
             t_column_value.setValue(t_column_value.toString().replace("%",""));
@@ -564,7 +564,7 @@ void PNSqlQueryModel::reformatValue(QVariant& t_column_value, DBColumnType t_col
 
             break;
         }
-        case DB_PERCENT:
+        case DBPercent:
         {
             t_column_value.setValue(t_column_value.toString().replace("$",""));
             t_column_value.setValue(t_column_value.toString().replace("%",""));
@@ -578,7 +578,7 @@ void PNSqlQueryModel::reformatValue(QVariant& t_column_value, DBColumnType t_col
     }
 }
 
-void PNSqlQueryModel::addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, bool t_searchable, bool t_required, bool t_editable, bool t_unique)
+void PNSqlQueryModel::addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable, DBColumnRequired t_required, DBColumnEditable t_editable, DBColumnUnique t_unique)
 {
     setHeaderData(t_column_number, Qt::Horizontal, t_display_name);
 
@@ -627,7 +627,7 @@ bool PNSqlQueryModel::copyRecord(QModelIndex t_index)
     for (i = 0; i < m_sql_query.record().count(); i++)
     {
 
-        if (m_column_is_unique[i])
+        if (m_column_is_unique[i] == DBUnique)
         {
             newrecord.setValue(i, QString(" Copy of %1").arg(m_cache[t_index.row()].field(i).value().toString()));
         }
@@ -874,9 +874,9 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
 
                 sqlEscape(column_value, m_column_type[hashit.key()]);
 
-                if ( m_column_type[hashit.key()] != DB_STRING )
+                if ( m_column_type[hashit.key()] != DBString )
                 {
-                    if (m_column_type[hashit.key()] == DB_BOOL && column_value == tr("0"))
+                    if (m_column_type[hashit.key()] == DBBool && column_value == tr("0"))
                     {
                         valuelist += QString(" ( %1 %3 %2").arg(m_sql_query.record().fieldName(hashit.key()), column_value.toString(), compare_op);
                         valuelist += QString(" OR %1 IS NULL) ").arg( m_sql_query.record().fieldName(hashit.key()) );
@@ -963,7 +963,7 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
 
                     instring += QString("'%1'").arg(column_value.toString());
 
-                    if (m_column_type[colnum] == DB_BOOL && column_value == tr("'0'"))
+                    if (m_column_type[colnum] == DBBool && column_value == tr("'0'"))
                         checkfornullptr = true;
 
                     // the database doesn't store blanks, they are converted to nullptr
@@ -1016,7 +1016,7 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                             //if (!fk_valuelist.isEmpty())
                             //    fk_valuelist += tr(" AND ");
 
-                            if ( m_column_type[colnum] != DB_STRING )
+                            if ( m_column_type[colnum] != DBString )
                             {
                                 fk_valuelist += QString("%1 >= %2").arg(valuecolumn, RangeStart.toString());
                             }
@@ -1032,7 +1032,7 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                                 fk_valuelist += tr(" AND ");
 
 
-                            if ( m_column_type[colnum] != DB_STRING )
+                            if ( m_column_type[colnum] != DBString )
                             {
                                 fk_valuelist += QString("%1 <= %2").arg(valuecolumn, RangeEnd.toString());
                             }
@@ -1064,7 +1064,7 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                             if (!valuelist.isEmpty())
                                 valuelist += tr(" AND ");
 
-                            if ( m_column_type[colnum] != DB_STRING )
+                            if ( m_column_type[colnum] != DBString )
                             {
                                 valuelist += QString("%1 >= %2").arg(m_sql_query.record().fieldName(colnum), RangeStart.toString());
                             }
@@ -1080,7 +1080,7 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                                 valuelist += tr(" AND ");
 
 
-                            if ( m_column_type[colnum] != DB_STRING )
+                            if ( m_column_type[colnum] != DBString )
                             {
                                 valuelist += QString("%1 <= %2").arg(m_sql_query.record().fieldName(colnum), RangeEnd.toString());
                             }

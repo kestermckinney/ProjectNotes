@@ -6,10 +6,10 @@ ItemDetailTeamListModel::ItemDetailTeamListModel(QObject* t_parent): PNSqlQueryM
 
     setTableName("people", "Team Members");
 
-    addColumn(0, tr("Team Member ID"), DB_STRING, false, true, true, true);
-    addColumn(1, tr("Name"), DB_STRING, true, true, false, false);
-    addColumn(2, tr("Project ID"), DB_STRING, true, true, false, false);
-    addColumn(3, tr("People ID"), DB_STRING, true, true, false, false);
+    addColumn(0, tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn(1, tr("Name"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique);
+    addColumn(2, tr("Project ID"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique);
+    addColumn(3, tr("People ID"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique);
 
     setOrderBy("name");
 }
