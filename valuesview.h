@@ -1,7 +1,7 @@
 #ifndef VALUESVIEW_H
 #define VALUESVIEW_H
 
-#include "filterdatadialog.h"
+//#include "filterdatadialog.h"
 #include "pntableview.h"
 #include <QObject>
 
@@ -14,8 +14,6 @@ public:
 
 private:
     QHash<QString, FilterSaveStructure>* m_saved_filters;
-    bool eventFilter(QObject *t_watched, QEvent *t_event) override;
-
 
 public slots:
     void dataRowSelected(const QModelIndex &t_index) override;

@@ -38,6 +38,7 @@ SOURCES += \
     pnsortfilterproxymodel.cpp \
     pnsqlquerymodel.cpp \
     pntableview.cpp \
+    preferencesdialog.cpp \
     projectactionitemsmodel.cpp \
     projectactionitemsview.cpp \
     projectdetailsdelegate.cpp \
@@ -87,6 +88,7 @@ HEADERS += \
     pnsortfilterproxymodel.h \
     pnsqlquerymodel.h \
     pntableview.h \
+    preferencesdialog.h \
     projectactionitemsmodel.h \
     projectactionitemsview.h \
     projectdetailsdelegate.h \
@@ -112,7 +114,7 @@ HEADERS += \
 FORMS += \
     filterdatadialog.ui \
     mainwindow.ui \
-    parametersdialog.ui
+    preferencesdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

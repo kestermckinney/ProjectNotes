@@ -3,7 +3,7 @@
 
 ProjectActionItemsView::ProjectActionItemsView(QWidget* t_parent) : PNTableView(t_parent)
 {
-
+    setObjectName("tableViewTrackerItems");
 }
 
 ProjectActionItemsView::~ProjectActionItemsView()

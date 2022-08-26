@@ -3,7 +3,7 @@
 
 StatusReportItemsView::StatusReportItemsView(QWidget* t_parent) : PNTableView(t_parent)
 {
-
+    setObjectName("tableViewStatusReportItems");
 }
 
 

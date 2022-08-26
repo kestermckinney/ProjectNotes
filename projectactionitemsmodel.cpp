@@ -63,7 +63,7 @@ bool ProjectActionItemsModel::newRecord(const QVariant* t_fk_value1, const QVari
     // STOPPED HERE: Need to setup the Default values
     qr.setValue(1, QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0')));  // Need to make a counter that looks good for items
     qr.setValue(2, "Tracker");
-    // TODO: Add feature to specify PM qr.setValue(4, ); // default identified by to the pm
+    qr.setValue(4, global_DBObjects.getProjectManager()); // default identified by to the pm
     qr.setValue(5, curdate); // default to today
     qr.setValue(8, "High"); // set a default priority
     qr.setValue(9, "New"); // set a default status
@@ -105,7 +105,5 @@ bool ProjectActionItemsModel::setData(const QModelIndex &t_index, const QVariant
 }
 
 //TODO: Pop up a tracker items detail screen
-//TODO: Setup a properties page to set the project manager and company
-//TODO: Add feature to show only open action items
 
 

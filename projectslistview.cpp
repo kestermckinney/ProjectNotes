@@ -3,6 +3,7 @@
 
 ProjectsListView::ProjectsListView(QWidget* t_parent) : PNTableView(t_parent)
 {
+    setObjectName("tableViewProjects");
     setHasOpen(true);
 }
 

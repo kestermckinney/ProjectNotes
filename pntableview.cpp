@@ -10,7 +10,7 @@
 #include <QMenu>
 #include <QMessageBox>
 
-PNTableView::PNTableView(QWidget *parent) : QTableView(parent)
+PNTableView::PNTableView(QWidget *t_parent) : QTableView(t_parent)
 {
     setSortingEnabled(true);
 
@@ -18,7 +18,7 @@ PNTableView::PNTableView(QWidget *parent) : QTableView(parent)
 
     headerView->setSortIndicator(-1, Qt::AscendingOrder);
     headerView->setSortIndicatorShown(true);
-    // BUGGY TODO REMOVE headerView->viewport()->installEventFilter(this);
+    headerView->viewport()->installEventFilter(this);
 
     setSelectionMode(QAbstractItemView::SingleSelection);
     setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -69,23 +69,21 @@ PNTableView::~PNTableView()
     if (m_filterdialog != nullptr)
         delete m_filterdialog;
 
-    // BUGGY TODO REMOVE QHeaderView *headerView = horizontalHeader();
-    // BUGGY TODO REMOVE headerView->removeEventFilter(this);
+    QHeaderView *headerView = horizontalHeader();
+    headerView->removeEventFilter(this);
 }
 
 
-void PNTableView::setModel(QAbstractItemModel *model)
+void PNTableView::setModel(QAbstractItemModel *t_model)
 {
-    QString storename = objectName();
-
-    if ( model ) // load view settings on create and set model
+    if ( t_model ) // load view settings on create and set model
     {
         int Col;
         QString Dir;
 
-        QTableView::setModel(model);
-        global_Settings.getTableViewState(storename, *this);
-        global_Settings.getTableSortColumn(storename, Col, Dir);
+        QTableView::setModel(t_model);
+        global_Settings.getTableViewState(objectName(), *this);
+        global_Settings.getTableSortColumn(objectName(), Col, Dir);
 
         if (Col >= 0)
         {
@@ -108,66 +106,69 @@ void PNTableView::setModel(QAbstractItemModel *model)
     }
     else if ( this->model() ) // when closing or setting model to empty save the columns first on startup don't save a blank view
     {
-        global_Settings.setTableViewState(storename, *this);
-        QTableView::setModel(model);
+        // do this on the close instead global_Settings.setTableViewState(objectName(), *this);
+        QTableView::setModel(t_model);
     }
 }
-/*
-bool PNTableView::eventFilter(QObject* watched, QEvent *event)
-{
-    auto mouseEvent = [event] { return static_cast<QMouseEvent *>(event); };
-    auto headerView = [this] { return horizontalHeader(); };
 
-    switch (event->type()) {
+bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
+{
+    Q_UNUSED(t_watched);
+
+    switch (t_event->type())
+    {
     case QEvent::MouseButtonPress:
-        if (mouseEvent()->button() != Qt::LeftButton)
+        if ( ((QMouseEvent*)t_event)->button() != Qt::LeftButton )
             return false;
-        m_pressPos = mouseEvent()->pos();
+        m_pressPos = ((QMouseEvent*)t_event)->pos();
         break;
 
     case QEvent::MouseMove:
-        if (mouseEvent()->buttons().testFlag(Qt::LeftButton)
-            && (m_pressPos - mouseEvent()->pos()).manhattanLength() > qApp->startDragDistance()) {
-            m_isMoving = headerView()->sectionsMovable();
+        if ( ((QMouseEvent*)t_event)->buttons().testFlag(Qt::LeftButton )
+            && (m_pressPos - ((QMouseEvent*)t_event)->pos()).manhattanLength() > qApp->startDragDistance())
+        {
+            m_isMoving = true;
         }
         break;
-
-    case QEvent::MouseButtonRelease: {
-        QString storename = objectName();
-
-        if (mouseEvent()->button() != Qt::LeftButton)
+    case QEvent::MouseButtonRelease:
+    {
+         if ( ((QMouseEvent*)t_event)->button() != Qt::LeftButton )
             return false;
 
         // If we were dragging a section, then pass the event on.
-        if (m_isMoving) {
+        if (m_isMoving)
+        {
+            global_Settings.setTableViewState(objectName(), *this);
+
             m_isMoving = false;
             return false;
         }
 
-        auto header = headerView();
+        auto header = horizontalHeader();
 
-        const int indexAtCursor = header->logicalIndexAt(mouseEvent()->pos());
-
-        // TODO: FIX header sort when clicking on scroll bar and resizing
-        // don't fire if someone clicks on scroll bar or resizes
-        //if (!header->rect().contains(mouseEvent()->pos()))
-        //    return false;
+        const int indexAtCursor = header->logicalIndexAt(((QMouseEvent*)t_event)->pos());
 
         if (indexAtCursor == -1)
             return false; // Do nothing, we clicked outside the headers
-        else if (header->sortIndicatorSection() != indexAtCursor) {
+
+        else if (header->sortIndicatorSection() != indexAtCursor)
+        {
             header->setSortIndicator(indexAtCursor, Qt::AscendingOrder);
             header->setSortIndicatorShown(true);
-            global_Settings.setTableSortColumn(storename, indexAtCursor, "A");
-        } else if (header->sortIndicatorOrder() == Qt::AscendingOrder) {
+            global_Settings.setTableSortColumn(objectName(), indexAtCursor, "A");
+        }
+        else if (header->sortIndicatorOrder() == Qt::AscendingOrder)
+        {
             header->setSortIndicator(indexAtCursor, Qt::DescendingOrder);
-            global_Settings.setTableSortColumn(storename, indexAtCursor, "D");
-        } else {
+            global_Settings.setTableSortColumn(objectName(), indexAtCursor, "D");
+        }
+        else
+        {
             header->setSortIndicator(-1, Qt::AscendingOrder);
             header->setSortIndicatorShown(false);
-            global_Settings.setTableSortColumn(storename, -1, "");
+            global_Settings.setTableSortColumn(objectName(), -1, "");
         }
-        emit header->sectionClicked(indexAtCursor);
+
         return true;
     }
     default:
@@ -175,20 +176,20 @@ bool PNTableView::eventFilter(QObject* watched, QEvent *event)
     }
     return false;
 }
-*/
-void PNTableView::dataRowSelected(const QModelIndex &index)
+
+void PNTableView::dataRowSelected(const QModelIndex &t_index)
 {
-    Q_UNUSED(index);
+    Q_UNUSED(t_index);
     // TODO: determine if base class should do anything
 }
 
-void PNTableView::dataRowActivated(const QModelIndex &index)
+void PNTableView::dataRowActivated(const QModelIndex &t_index)
 {
-    Q_UNUSED(index);
+    Q_UNUSED(t_index);
     // TODO: determine if base class should do anything
 }
 
-void PNTableView::contextMenuEvent(QContextMenuEvent *e)
+void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
 {
     QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
     PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
@@ -209,7 +210,7 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *e)
         menu->addSeparator();
     }
 
-    menu->exec(e->globalPos());
+    menu->exec(t_e->globalPos());
     delete menu;
 }
 

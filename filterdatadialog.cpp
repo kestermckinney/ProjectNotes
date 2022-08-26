@@ -20,10 +20,7 @@ FilterDataDialog::FilterDataDialog(QWidget *m_parent) :
     m_values_proxy_model = new PNSortFilterProxyModel(this);
     m_values_proxy_model->setSourceModel(m_values_model);
 
-    ui->tableViewColumnName->setModel(m_column_proxy_model);
     ui->tableViewColumnName->setUI(this);
-
-    ui->tableViewFilterValues->setModel(m_values_proxy_model);
 
     QString storename = objectName();
     global_Settings.getWindowState(storename, *this);
@@ -88,6 +85,10 @@ void FilterDataDialog::setSourceModelView(PNSqlQueryModel *t_model, PNTableView 
 {
     m_filtered_model = t_model;
 
+    // set the names differently for each instance so the table view widths are saved differently for each view filter
+    ui->tableViewColumnName->setObjectName("tableViewColumnName_" + t_view->objectName());
+    ui->tableViewFilterValues->setObjectName("tableViewFilterValues_" + t_view->objectName());
+
     ui->tableViewColumnName->setSourceView( t_view );
 
     m_column_model->setColumnModel(t_model);
@@ -106,11 +107,19 @@ void FilterDataDialog::setSourceModelView(PNSqlQueryModel *t_model, PNTableView 
     ui->tableViewColumnName->setValuesView(ui->tableViewFilterValues, &m_saved_filters);
     ui->tableViewFilterValues->setSavedFilters(&m_saved_filters);
 
-    ui->tableViewColumnName->selectRow(0);
-    ui->tableViewColumnName->dataRowSelected(m_column_proxy_model->index(0,0));
+    ui->tableViewColumnName->setModel(m_column_proxy_model);
+    ui->tableViewFilterValues->setModel(m_values_proxy_model);
+
+    // sometimes the column width get zeroed out
+    if (ui->tableViewColumnName->columnWidth(0) <= 0)
+        ui->tableViewColumnName->resizeColumnToContents(0);
+
     m_values_model->refresh();
 
     setupFilters();
+
+    ui->tableViewColumnName->selectRow(0);
+    ui->tableViewColumnName->dataRowSelected(m_column_proxy_model->index(0,0));
 }
 
 void FilterDataDialog::on_lineEditSearchText_textEdited(const QString &t_arg1)
@@ -226,8 +235,6 @@ void FilterDataDialog::on_pushButtonAll_clicked()
 void FilterDataDialog::on_pushButtonReset_clicked()
 {
     m_filtered_model->clearAllUserSearches();
-    m_filtered_model->saveUserFilter(m_filtered_model->objectName());
-    m_filtered_model->deactivateUserFilter(m_filtered_model->objectName());
     m_column_model->refresh();
 
     setupFilters();

@@ -21,7 +21,7 @@ MainWindow::MainWindow(QWidget *t_parent)
 {
     ui->setupUi(this);
 
-    //m_filterdialog = new FilterDataDialog(this);
+    m_preferences_dialog = new PreferencesDialog(this);
 
     // view state
     m_page_history.clear();
@@ -55,7 +55,7 @@ MainWindow::~MainWindow()
 
     global_Settings.setWindowState("MainWindow", *this);
 
-    //delete m_filterdialog;
+    delete m_preferences_dialog;
 
     delete ui;
 }
@@ -363,5 +363,10 @@ void MainWindow::on_actionResolved_Tracker_Action_Items_triggered()
     global_DBObjects.projectactionitemsmodel()->refresh();
 
     setButtonAndMenuStates();
+}
+
+void MainWindow::on_actionPreferences_triggered()
+{
+    m_preferences_dialog->show();
 }
 

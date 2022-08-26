@@ -3,6 +3,8 @@
 
 ColumnView::ColumnView(QWidget *t_parent) : PNTableView(t_parent)
 {
+    setObjectName("tableViewColumnName");
+
     m_values_model = nullptr;
 }
 
@@ -18,22 +20,29 @@ void ColumnView::dataRowSelected(const QModelIndex &t_index)
     // determine column delegate set in the source view
     int col = m_filtered_model->getColumnNumber(dbcolname);
 
-    if (m_values_view->columnWidth(col) <= 0)
+    if (m_values_view->columnWidth(0) <= 0)
         m_values_view->resizeColumnToContents(0);
 
-    if ( col < 0 )
+    if ( col < 0 )  // if for some reason no column is selected bail out
         return;
 
     QAbstractItemDelegate* delegate = m_source_view->itemDelegateForColumn(col);
     m_values_view->setItemDelegateForColumn(0, delegate);
 
+    qDebug() << "Finding All The Selections:";
+
     // set all of the selected values
-    for (int i = 0; i < m_values_model->rowCount(QModelIndex()); i++)
+    for (int i = 0; i < m_values_view->model()->rowCount(QModelIndex()); i++)
     {
-        QVariant val = m_values_model->data(m_values_model->index(i, 0));
+        QVariant val = m_values_view->model()->data(m_values_view->model()->index(i, 0));
+        qDebug() << "Found: " << val << " for column " << dbcolname;
 
         if ( (*m_saved_filters)[dbcolname].ColumnValues.contains(val.toString()) )
+        {
             m_values_view->selectRow(i);
+            qDebug() << "Selected: " << val;
+        }
+
     }
 
     // set all of the search parameters

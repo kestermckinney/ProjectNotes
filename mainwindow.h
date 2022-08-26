@@ -12,6 +12,7 @@ QT_END_NAMESPACE
 #include "pndatabaseobjects.h"
 #include "pnsettings.h"
 #include "pnbasepage.h"
+#include "preferencesdialog.h"
 
 
 class MainWindow : public QMainWindow
@@ -55,13 +56,13 @@ private slots:
     void on_actionDelete_Item_triggered();
     void on_actionInternal_Items_triggered();
     void on_actionAll_Tracker_Action_Items_triggered();
-
+    void on_actionPreferences_triggered();
     void on_actionResolved_Tracker_Action_Items_triggered();
 
 private:
     Ui::MainWindow *ui;   
 
-    // FilterDataDialog *m_filterdialog;
+    PreferencesDialog* m_preferences_dialog;
 
     // view state
     QList<int> m_page_history;

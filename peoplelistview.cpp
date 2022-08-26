@@ -3,7 +3,7 @@
 
 PeopleListView::PeopleListView(QWidget* t_parent) : PNTableView(t_parent)
 {
-
+    setObjectName("tableViewPeople");
 }
 
 PeopleListView::~PeopleListView()

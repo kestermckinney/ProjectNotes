@@ -2,7 +2,7 @@
 
 ClientsListView::ClientsListView(QWidget* t_parent) : PNTableView(t_parent)
 {
-
+    setObjectName("tableViewClients");
 }
 
 void ClientsListView::setModel(QAbstractItemModel *t_model)

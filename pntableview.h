@@ -13,20 +13,20 @@ class PNTableView : public QTableView
     Q_OBJECT
 
 public:
-    PNTableView(QWidget* parent = nullptr);
+    PNTableView(QWidget* t_parent = nullptr);
     ~PNTableView();
-    void setModel(QAbstractItemModel *model) override;
+    void setModel(QAbstractItemModel *t_model) override;
     void filterDialog() { this->slotFilterRecords(); }
-    // BUGGY TODO REMOVE bool eventFilter(QObject *watched, QEvent *event) override;
+    bool eventFilter(QObject *t_watched, QEvent *t_event) override;
 
-    void contextMenuEvent(QContextMenuEvent *e) override;
+    void contextMenuEvent(QContextMenuEvent *t_e) override;
 
 signals:
-    void signalOpenRecordWindow();//(PNSqlQueryModel* t_model, const QModelIndex &t_index);
+    void signalOpenRecordWindow();
 
 public slots:
-    virtual void dataRowSelected(const QModelIndex &index);
-    virtual void dataRowActivated(const QModelIndex &index);
+    virtual void dataRowSelected(const QModelIndex &t_index);
+    virtual void dataRowActivated(const QModelIndex &t_index);
     void slotNewRecord();
     void slotDeleteRecord();
     void slotCopyRecord();
