@@ -43,7 +43,9 @@ SOURCES += \
     projectactionitemsview.cpp \
     projectdetailsdelegate.cpp \
     projectdetailspage.cpp \
+    projectlocationdialog.cpp \
     projectlocationsmodel.cpp \
+    projectlocationsview.cpp \
     projectnotesmodel.cpp \
     projectslistmodel.cpp \
     projectslistpage.cpp \
@@ -93,7 +95,9 @@ HEADERS += \
     projectactionitemsview.h \
     projectdetailsdelegate.h \
     projectdetailspage.h \
+    projectlocationdialog.h \
     projectlocationsmodel.h \
+    projectlocationsview.h \
     projectnotesmodel.h \
     projectslistmodel.h \
     projectslistpage.h \
@@ -114,7 +118,8 @@ HEADERS += \
 FORMS += \
     filterdatadialog.ui \
     mainwindow.ui \
-    preferencesdialog.ui
+    preferencesdialog.ui \
+    projectlocationdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

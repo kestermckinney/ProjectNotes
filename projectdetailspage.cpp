@@ -92,7 +92,7 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
 
     ui->tableViewTeam->setModel(global_DBObjects.projectteammembersmodelproxy());
     ui->tableViewTrackerItems->setModel(global_DBObjects.projectactionitemsmodelproxy());
-
+    ui->tableViewLocations->setModel(global_DBObjects.projectlocationsmodelproxy());
 }
 
 void ProjectDetailsPage::toFirst()
@@ -119,7 +119,7 @@ void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
         break;
     case 3:
         setCurrentModel(global_DBObjects.projectlocationsmodelproxy());
-        //setCurrentView(ui->tableViewLocations);  //TODO:
+        setCurrentView(ui->tableViewLocations);
         break;
     case 4:
         setCurrentModel(global_DBObjects.projectnotesmodelproxy());
