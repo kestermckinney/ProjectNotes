@@ -1,5 +1,8 @@
 #include "pnsqlquerymodel.h"
 #include "columnview.h"
+#include "filterdatadialog.h"
+
+#include<QDebug>
 
 ColumnView::ColumnView(QWidget *t_parent) : PNTableView(t_parent)
 {

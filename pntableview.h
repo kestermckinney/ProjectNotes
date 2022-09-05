@@ -2,8 +2,6 @@
 #define PNTABLEVIEW_H
 
 #include "filterdatadialog.h"
-//#include "pndatabaseobjects.h"
-//#include "pnsettings.h"
 
 #include <QTableView>
 #include <QObject>

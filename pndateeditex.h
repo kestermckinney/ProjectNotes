@@ -26,14 +26,14 @@
 #include "widgets_export.h"
 #include <QDateEdit>
 
-class WIDGETS_EXPORT QDateEditEx : public QDateEdit
+class WIDGETS_EXPORT PNDateEditEx : public QDateEdit
 {
     Q_OBJECT
 
     Q_PROPERTY(bool nullable READ isNullable WRITE setNullable)
     Q_PROPERTY(bool null READ isNull)
 public:
-    explicit QDateEditEx(QWidget *parent = 0);
+    explicit PNDateEditEx(QWidget *parent = 0);
 
     QDateTime dateTime() const;
     QDate date() const;
@@ -61,7 +61,7 @@ public Q_SLOTS:
     /*! \reimp */ void setTime(const QTime &time);
 
 private:
-    Q_DISABLE_COPY(QDateEditEx)
+    Q_DISABLE_COPY(PNDateEditEx)
     class Private;
     friend class Private;
     Private* d;

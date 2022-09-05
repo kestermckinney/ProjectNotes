@@ -20,7 +20,7 @@
 **
 **************************************************************************/
 
-#include "qdateeditex.h"
+#include "pndateeditex.h"
 #include <QStyle>
 #include <QPushButton>
 #include <QLineEdit>
@@ -43,11 +43,11 @@
   \sa QDateEdit
 */
 
-class QDateEditEx::Private {
+class PNDateEditEx::Private {
 public:
-    Private( QDateEditEx* qq ) : q(qq),  /*clearButton(0),*/ null(false), nullable(false) {}
+    Private( PNDateEditEx* qq ) : q(qq),  /*clearButton(0),*/ null(false), nullable(false) {}
 
-    QDateEditEx* const q;
+    PNDateEditEx* const q;
 
     bool null;
     bool nullable;
@@ -67,7 +67,7 @@ public:
 /*!
   \reimp
 */
-QDateEditEx::QDateEditEx(QWidget *parent) :
+PNDateEditEx::PNDateEditEx(QWidget *parent) :
     QDateEdit(parent), d(new Private(this))
 {
 }
@@ -76,7 +76,7 @@ QDateEditEx::QDateEditEx(QWidget *parent) :
  * \brief returns date, if empty date is invalid
  * \return date, if empty date is invalid
  */
-QDateTime QDateEditEx::dateTime() const
+QDateTime PNDateEditEx::dateTime() const
 {
     if (d->nullable && d->null) {
         return QDateTime();
@@ -89,7 +89,7 @@ QDateTime QDateEditEx::dateTime() const
  * \brief returns date, if empty date is invalid
  * \return date, if empty date is invalid
  */
-QDate QDateEditEx::date() const
+QDate PNDateEditEx::date() const
 {
     if (d->nullable && d->null) {
         return QDate();
@@ -102,7 +102,7 @@ QDate QDateEditEx::date() const
  * \brief returns date, if empty date is invalid
  * \return date, if empty date is invalid
  */
-QTime QDateEditEx::time() const
+QTime PNDateEditEx::time() const
 {
     if (d->nullable && d->null) {
         return QTime();
@@ -115,7 +115,7 @@ QTime QDateEditEx::time() const
  * \brief sets a date, if date is invalid a
  * empty date is shown
  */
-void QDateEditEx::setDateTime(const QDateTime &dateTime)
+void PNDateEditEx::setDateTime(const QDateTime &dateTime)
 {
     if (d->nullable && !dateTime.isValid()) {
         d->setNull(true);
@@ -129,7 +129,7 @@ void QDateEditEx::setDateTime(const QDateTime &dateTime)
  * \brief sets a date, if date is invalid a
  * empty date is shown
  */
-void QDateEditEx::setDate(const QDate &date)
+void PNDateEditEx::setDate(const QDate &date)
 {
     if (d->nullable && !date.isValid()) {
         d->setNull(true);
@@ -143,7 +143,7 @@ void QDateEditEx::setDate(const QDate &date)
  * \brief sets a date, if date is invalid a
  * empty date is shown
  */
-void QDateEditEx::setTime(const QTime &time)
+void PNDateEditEx::setTime(const QTime &time)
 {
     if (d->nullable && !time.isValid()) {
         d->setNull(true);
@@ -157,12 +157,12 @@ void QDateEditEx::setTime(const QTime &time)
  * \brief returns date can be empty
  * \return true, if date can be emtpy
  */
-bool QDateEditEx::isNullable() const
+bool PNDateEditEx::isNullable() const
 {
     return d->nullable;
 }
 
-bool QDateEditEx::isNull() const
+bool PNDateEditEx::isNull() const
 {
     return d->null;
 }
@@ -170,7 +170,7 @@ bool QDateEditEx::isNull() const
 /*!
  * \brief sets weahter the date can be empty
  */
-void QDateEditEx::setNullable(bool enable)
+void PNDateEditEx::setNullable(bool enable)
 {
     d->nullable = enable;
 
@@ -180,7 +180,7 @@ void QDateEditEx::setNullable(bool enable)
 /*!
   \reimp
 */
-QSize QDateEditEx::sizeHint() const
+QSize PNDateEditEx::sizeHint() const
 {
     const QSize sz = QDateEdit::sizeHint();
 
@@ -190,14 +190,14 @@ QSize QDateEditEx::sizeHint() const
 /*!
   \reimp
 */
-QSize QDateEditEx::minimumSizeHint() const
+QSize PNDateEditEx::minimumSizeHint() const
 {
     const QSize sz = QDateEdit::minimumSizeHint();
 
     return sz;
 }
 
-void QDateEditEx::showEvent(QShowEvent *event)
+void PNDateEditEx::showEvent(QShowEvent *event)
 {
     QDateEdit::showEvent(event);
     d->setNull(d->null); // force empty string back in
@@ -206,7 +206,7 @@ void QDateEditEx::showEvent(QShowEvent *event)
 /*!
   \reimp
 */
-void QDateEditEx::resizeEvent(QResizeEvent *event)
+void PNDateEditEx::resizeEvent(QResizeEvent *event)
 {
     QDateEdit::resizeEvent(event);
 }
@@ -214,7 +214,7 @@ void QDateEditEx::resizeEvent(QResizeEvent *event)
 /*!
   \reimp
 */
-void QDateEditEx::paintEvent(QPaintEvent *event)
+void PNDateEditEx::paintEvent(QPaintEvent *event)
 {
     QDateEdit::paintEvent(event);
     d->setNull(d->null); // force empty string back in
@@ -223,7 +223,7 @@ void QDateEditEx::paintEvent(QPaintEvent *event)
 /*!
   \reimp
 */
-void QDateEditEx::keyPressEvent(QKeyEvent *event)
+void PNDateEditEx::keyPressEvent(QKeyEvent *event)
 {
     if (d->nullable &&
         (event->key() >= Qt::Key_0) &&
@@ -251,7 +251,7 @@ void QDateEditEx::keyPressEvent(QKeyEvent *event)
 /*!
   \reimp
 */
-void QDateEditEx::mousePressEvent(QMouseEvent *event)
+void PNDateEditEx::mousePressEvent(QMouseEvent *event)
 {
     bool saveNull = d->null;
     QDateEdit::mousePressEvent(event);
@@ -263,7 +263,7 @@ void QDateEditEx::mousePressEvent(QMouseEvent *event)
 /*!
   \reimp
 */
-bool QDateEditEx::focusNextPrevChild(bool next)
+bool PNDateEditEx::focusNextPrevChild(bool next)
 {
     if (d->nullable && d->null){
         return QAbstractSpinBox::focusNextPrevChild(next);
@@ -272,7 +272,7 @@ bool QDateEditEx::focusNextPrevChild(bool next)
     }
 }
 
-QValidator::State QDateEditEx::validate(QString &input, int &pos) const
+QValidator::State PNDateEditEx::validate(QString &input, int &pos) const
 {
     if (d->nullable && d->null){
         return QValidator::Acceptable;

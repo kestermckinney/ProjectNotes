@@ -1,6 +1,6 @@
 #include "projectdetailsdelegate.h"
 #include "pnsqlquerymodel.h"
-#include "qdateeditex.h"
+#include "pndateeditex.h"
 
 #include <QLineEdit>
 #include <QComboBox>
@@ -19,7 +19,7 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
     case 3:
     case 4:
         {
-            QDateEditEx* dateEdit = static_cast<QDateEditEx*>(t_editor);
+            PNDateEditEx* dateEdit = static_cast<PNDateEditEx*>(t_editor);
 
             if (value.isNull())
                 dateEdit->setDateTime(QDateTime());
@@ -80,7 +80,7 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
     case 3:
     case 4:
         {
-            QDateEditEx* dateEdit = static_cast<QDateEditEx*>(t_editor);
+            PNDateEditEx* dateEdit = static_cast<PNDateEditEx*>(t_editor);
             if (!dateEdit->isNull())
                 key_val = dateEdit->date().toString("MM/dd/yyyy");
             else
