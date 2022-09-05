@@ -795,7 +795,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QTableView" name="tableViewLocations">
+             <widget class="ProjectLocationsView" name="tableViewLocations">
               <property name="frameShadow">
                <enum>QFrame::Plain</enum>
               </property>
@@ -1942,6 +1942,11 @@
    <class>QDateEditEx</class>
    <extends>QDateEdit</extends>
    <header>qdateeditex.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ProjectLocationsView</class>
+   <extends>QTableView</extends>
+   <header>projectlocationsview.h</header>
   </customwidget>
  </customwidgets>
  <resources>

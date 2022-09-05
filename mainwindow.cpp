@@ -43,12 +43,14 @@ MainWindow::~MainWindow()
 
     // need to save the screen layout befor the model is removed from the view
     // The destructor of PNTableview does not save the state
+    /*
     ui->tableViewProjects->setModel(nullptr);
     ui->tableViewClients->setModel(nullptr);
     ui->tableViewPeople->setModel(nullptr);
     ui->tableViewStatusReportItems->setModel(nullptr);
     ui->tableViewTeam->setModel(nullptr);
     ui->tableViewTrackerItems->setModel(nullptr);
+    */
 
     if (global_DBObjects.isOpen())
         global_DBObjects.closeDatabase();
