@@ -1,5 +1,6 @@
 #include "valuesview.h"
 #include <QMouseEvent>
+#include <QDebug>
 
 ValuesView::ValuesView(QWidget *t_parent) : PNTableView(t_parent)
 {

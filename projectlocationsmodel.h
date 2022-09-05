@@ -7,7 +7,6 @@ class ProjectLocationsModel : public PNSqlQueryModel
 {
 public:
     ProjectLocationsModel(QObject* t_parent);
-    bool newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2);
 };
 
 #endif // PROJECTLOCATIONSMODEL_H

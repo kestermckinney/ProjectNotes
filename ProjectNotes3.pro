@@ -34,6 +34,8 @@ SOURCES += \
     pncomboboxdelegate.cpp \
     pndatabaseobjects.cpp \
     pndateeditdelegate.cpp \
+    pndateeditex.cpp \
+    pnlineeditfilebutton.cpp \
     pnsettings.cpp \
     pnsortfilterproxymodel.cpp \
     pnsqlquerymodel.cpp \
@@ -43,9 +45,7 @@ SOURCES += \
     projectactionitemsview.cpp \
     projectdetailsdelegate.cpp \
     projectdetailspage.cpp \
-    projectlocationdialog.cpp \
     projectlocationsmodel.cpp \
-    projectlocationsview.cpp \
     projectnotesmodel.cpp \
     projectslistmodel.cpp \
     projectslistpage.cpp \
@@ -53,7 +53,6 @@ SOURCES += \
     projectsmodel.cpp \
     projectteammembersmodel.cpp \
     projectteammembersview.cpp \
-    qdateeditex.cpp \
     searchresultsmodel.cpp \
     statusreportitemsmodel.cpp \
     statusreportitemsview.cpp \
@@ -86,6 +85,8 @@ HEADERS += \
     pncomboboxdelegate.h \
     pndatabaseobjects.h \
     pndateeditdelegate.h \
+    pndateeditex.h \
+    pnlineeditfilebutton.h \
     pnsettings.h \
     pnsortfilterproxymodel.h \
     pnsqlquerymodel.h \
@@ -95,9 +96,7 @@ HEADERS += \
     projectactionitemsview.h \
     projectdetailsdelegate.h \
     projectdetailspage.h \
-    projectlocationdialog.h \
     projectlocationsmodel.h \
-    projectlocationsview.h \
     projectnotesmodel.h \
     projectslistmodel.h \
     projectslistpage.h \
@@ -105,7 +104,6 @@ HEADERS += \
     projectsmodel.h \
     projectteammembersmodel.h \
     projectteammembersview.h \
-    qdateeditex.h \
     searchresultsmodel.h \
     statusreportitemsmodel.h \
     statusreportitemsview.h \
@@ -118,8 +116,7 @@ HEADERS += \
 FORMS += \
     filterdatadialog.ui \
     mainwindow.ui \
-    preferencesdialog.ui \
-    projectlocationdialog.ui
+    preferencesdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
