@@ -23,8 +23,7 @@ ProjectDetailsPage::~ProjectDetailsPage()
 void ProjectDetailsPage::newRecord()
 {
     QVariant project_id = global_DBObjects.projectinformationmodelproxy()->data(global_DBObjects.projectinformationmodelproxy()->index(0,0));
-  //      STOPPED HERE NEED TO ADD ACTION ITEMS VIEW
-  //        NEED TO OVERRIDE THE NEW RECORD METHODS TO USE FK
+
     int lastrow = ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->rowCount(QModelIndex());
 
     ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&project_id);
@@ -91,8 +90,8 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     setCurrentView( ui->tableViewStatusReportItems );
 
     ui->tableViewTeam->setModel(global_DBObjects.projectteammembersmodelproxy());
-    ui->tableViewTrackerItems->setModel(global_DBObjects.projectactionitemsmodelproxy());
-
+    ui->tableViewTrackerItems->setModel(global_DBObjects.projectactionitemsmodelproxy());   
+    ui->tableViewLocations->setModel(global_DBObjects.projectlocationsmodelproxy());
 }
 
 void ProjectDetailsPage::toFirst()
@@ -103,6 +102,9 @@ void ProjectDetailsPage::toFirst()
 
 void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
 {
+    // TODO: this goes out of alignment when a tab isn't clicked when first opened
+    // maybe the open should select the tab too
+
     switch ( index )
     {
     case 0:
@@ -119,7 +121,7 @@ void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
         break;
     case 3:
         setCurrentModel(global_DBObjects.projectlocationsmodelproxy());
-        //setCurrentView(ui->tableViewLocations);  //TODO:
+        setCurrentView(ui->tableViewLocations);
         break;
     case 4:
         setCurrentModel(global_DBObjects.projectnotesmodelproxy());

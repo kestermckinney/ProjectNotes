@@ -99,7 +99,7 @@ public:
     static QStringList status_item_status;
     static QStringList invoicing_period;
     static QStringList status_report_period;
-    static QStringList locations;
+    static QStringList file_types;
 
     // global searches
     void setShowAllTrackerItems(bool t_value);

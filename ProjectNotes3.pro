@@ -5,6 +5,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 ICON = AppIcon.icns
 
 CONFIG += c++11
+CONFIG += console
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -36,6 +37,7 @@ SOURCES += \
     pndateeditdelegate.cpp \
     pndateeditex.cpp \
     pnlineeditfilebutton.cpp \
+    pnlineeditfilebuttondelegate.cpp \
     pnsettings.cpp \
     pnsortfilterproxymodel.cpp \
     pnsqlquerymodel.cpp \
@@ -46,6 +48,7 @@ SOURCES += \
     projectdetailsdelegate.cpp \
     projectdetailspage.cpp \
     projectlocationsmodel.cpp \
+    projectlocationsview.cpp \
     projectnotesmodel.cpp \
     projectslistmodel.cpp \
     projectslistpage.cpp \
@@ -87,6 +90,7 @@ HEADERS += \
     pndateeditdelegate.h \
     pndateeditex.h \
     pnlineeditfilebutton.h \
+    pnlineeditfilebuttondelegate.h \
     pnsettings.h \
     pnsortfilterproxymodel.h \
     pnsqlquerymodel.h \
@@ -97,6 +101,7 @@ HEADERS += \
     projectdetailsdelegate.h \
     projectdetailspage.h \
     projectlocationsmodel.h \
+    projectlocationsview.h \
     projectnotesmodel.h \
     projectslistmodel.h \
     projectslistpage.h \

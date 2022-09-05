@@ -45,12 +45,13 @@ QStringList PNDatabaseObjects::status_report_period = {
     "None"
 };
 
-QStringList PNDatabaseObjects::locations = {
+QStringList PNDatabaseObjects::file_types = {
     "File Folder",
     "Web Link",
     "Microsoft Project",
     "Word Document",
     "Excel Document",
+    "PowerPoint Document",
     "PDF File",
     "Generic File (System Identified)"
 };

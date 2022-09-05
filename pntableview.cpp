@@ -192,6 +192,10 @@ void PNTableView::dataRowActivated(const QModelIndex &t_index)
 void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
 {
     QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
+
+    if ( !sortmodel )
+        return;
+
     PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
 
     QMenu *menu = new QMenu(this);

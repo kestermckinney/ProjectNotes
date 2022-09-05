@@ -59,8 +59,6 @@ bool ProjectActionItemsModel::newRecord(const QVariant* t_fk_value1, const QVari
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
 
     qr.setValue("project_id", *t_fk_value1);
-
-    // STOPPED HERE: Need to setup the Default values
     qr.setValue(1, QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0')));  // Need to make a counter that looks good for items
     qr.setValue(2, "Tracker");
     qr.setValue(4, global_DBObjects.getProjectManager()); // default identified by to the pm

@@ -392,7 +392,7 @@
            </sizepolicy>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>3</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -795,7 +795,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QTableView" name="tableViewLocations">
+             <widget class="ProjectLocationsView" name="tableViewLocations">
               <property name="frameShadow">
                <enum>QFrame::Plain</enum>
               </property>
@@ -1326,7 +1326,7 @@
      <x>0</x>
      <y>0</y>
      <width>677</width>
-     <height>23</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -1942,6 +1942,11 @@
    <class>PNDateEditEx</class>
    <extends>QDateEdit</extends>
    <header>pndateeditex.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ProjectLocationsView</class>
+   <extends>QTableView</extends>
+   <header>projectlocationsview.h</header>
   </customwidget>
  </customwidgets>
  <resources>
