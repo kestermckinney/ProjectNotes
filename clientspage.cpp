@@ -5,7 +5,8 @@
 
 ClientsPage::ClientsPage()
 {
-
+    QString page_title = "Clients";
+    setPageTitle(page_title);
 }
 
 void ClientsPage::setupModels( Ui::MainWindow *t_ui )

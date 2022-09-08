@@ -41,5 +41,4 @@ void ProjectLocationsView::setModel(QAbstractItemModel *t_model)
     }
 }
 
-//TODO: right-click open should open the file STOPPED HERE
 

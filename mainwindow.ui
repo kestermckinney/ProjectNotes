@@ -392,7 +392,7 @@
            </sizepolicy>
           </property>
           <property name="currentIndex">
-           <number>3</number>
+           <number>2</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -851,7 +851,7 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QTableView" name="tableViewMeetings">
+                <widget class="ProjectNotesView" name="tableViewProjectNotes">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
                    <horstretch>0</horstretch>
@@ -954,7 +954,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="pageItemDetails">
+      <widget class="ItemDetailsPage" name="pageItemDetails">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -1006,14 +1006,17 @@
             <item>
              <widget class="QLabel" name="labelType">
               <property name="text">
-               <string>t_type</string>
+               <string>Type</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QComboBox" name="comboBoxType">
-              <property name="frame">
+              <property name="editable">
                <bool>false</bool>
+              </property>
+              <property name="frame">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -1027,7 +1030,7 @@
             <item>
              <widget class="QLineEdit" name="lineEditName">
               <property name="frame">
-               <bool>false</bool>
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -1040,8 +1043,11 @@
             </item>
             <item>
              <widget class="QComboBox" name="comboBoxProject">
+              <property name="editable">
+               <bool>true</bool>
+              </property>
               <property name="frame">
-               <bool>false</bool>
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -1054,8 +1060,11 @@
             </item>
             <item>
              <widget class="QComboBox" name="comboBoxMeeting">
+              <property name="editable">
+               <bool>true</bool>
+              </property>
               <property name="frame">
-               <bool>false</bool>
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -1068,8 +1077,11 @@
             </item>
             <item>
              <widget class="QComboBox" name="comboBoxAssignedTo">
+              <property name="editable">
+               <bool>true</bool>
+              </property>
               <property name="frame">
-               <bool>false</bool>
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -1082,8 +1094,11 @@
             </item>
             <item>
              <widget class="QComboBox" name="comboBoxIdentifiedBy">
+              <property name="editable">
+               <bool>true</bool>
+              </property>
               <property name="frame">
-               <bool>false</bool>
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -1122,15 +1137,18 @@
                </widget>
               </item>
               <item row="1" column="1">
-               <widget class="QComboBox" name="comboBox_27">
+               <widget class="QComboBox" name="comboBoxPriority">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
+                <property name="editable">
+                 <bool>true</bool>
+                </property>
                 <property name="frame">
-                 <bool>false</bool>
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
@@ -1169,7 +1187,7 @@
                </widget>
               </item>
               <item row="3" column="1">
-               <widget class="QDateEdit" name="dateEditDueDate">
+               <widget class="PNDateEditEx" name="dateEditDueDate">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1195,7 +1213,7 @@
                </widget>
               </item>
               <item row="4" column="1">
-               <widget class="QDateEdit" name="dateEditDateResolved">
+               <widget class="PNDateEditEx" name="dateEditDateResolved">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1221,7 +1239,7 @@
                </widget>
               </item>
               <item row="5" column="1">
-               <widget class="QDateEdit" name="dateEditLastUpdated">
+               <widget class="PNDateEditEx" name="dateEditLastUpdated">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1236,6 +1254,13 @@
                 </property>
                 <property name="calendarPopup">
                  <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1">
+               <widget class="QCheckBox" name="checkBoxInternal">
+                <property name="text">
+                 <string>Internal</string>
                 </property>
                </widget>
               </item>
@@ -1947,6 +1972,17 @@
    <class>ProjectLocationsView</class>
    <extends>QTableView</extends>
    <header>projectlocationsview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ProjectNotesView</class>
+   <extends>QTableView</extends>
+   <header>projectnotesview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ItemDetailsPage</class>
+   <extends>QWidget</extends>
+   <header>itemdetailspage.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

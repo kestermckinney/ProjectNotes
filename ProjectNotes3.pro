@@ -20,6 +20,8 @@ SOURCES += \
     columnview.cpp \
     comboboxdelegate.cpp \
     filterdatadialog.cpp \
+    itemdetailsdelegate.cpp \
+    itemdetailspage.cpp \
     itemdetailteamlistmodel.cpp \
     main.cpp \
     mainwindow.cpp \
@@ -50,6 +52,7 @@ SOURCES += \
     projectlocationsmodel.cpp \
     projectlocationsview.cpp \
     projectnotesmodel.cpp \
+    projectnotesview.cpp \
     projectslistmodel.cpp \
     projectslistpage.cpp \
     projectslistview.cpp \
@@ -74,6 +77,8 @@ HEADERS += \
     columnview.h \
     comboboxdelegate.h \
     filterdatadialog.h \
+    itemdetailsdelegate.h \
+    itemdetailspage.h \
     itemdetailteamlistmodel.h \
     mainwindow.h \
     meetingattendeesmodel.h \
@@ -103,6 +108,7 @@ HEADERS += \
     projectlocationsmodel.h \
     projectlocationsview.h \
     projectnotesmodel.h \
+    projectnotesview.h \
     projectslistmodel.h \
     projectslistpage.h \
     projectslistview.h \

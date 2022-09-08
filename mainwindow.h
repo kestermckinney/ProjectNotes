@@ -33,10 +33,9 @@ public:
 
 public slots:
     void on_actionOpen_ProjectDetails_triggered();
+    void on_actionOpen_ItemDetails_triggered();
 
 private slots:
-    //void handleNewProjectClicked();
-    //void handleDeleteProjectClicked();
     void setButtonAndMenuStates();
     void openDatabase(QString t_dbfile);
 

@@ -35,11 +35,13 @@ MainWindow::MainWindow(QWidget *t_parent)
     ui->actionStatus_Bar->setChecked(statusBar()->isVisibleTo(this));
 
     connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
+    connect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
 }
 
 MainWindow::~MainWindow()
 {
-    disconnect(ui->tableViewProjects, SIGNAL(ui->tableViewProjects->signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
+    disconnect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
+    disconnect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
 
     // need to save the screen layout befor the model is removed from the view
     // The destructor of PNTableview does not save the state
@@ -199,6 +201,7 @@ void MainWindow::openDatabase(QString t_dbfile)
     ui->pageClients->setupModels(ui);
     ui->pagePeople->setupModels(ui);
     ui->pageProjectDetails->setupModels(ui);
+    ui->pageItemDetails->setupModels(ui);
 
     navigateClearHistory();
     navigateToPage(ui->pageProjectsList);
@@ -217,6 +220,8 @@ void MainWindow::navigateToPage(PNBasePage* t_widget)
 
     ui->stackedWidget->setCurrentWidget(t_widget);
 
+    this->setWindowTitle(QString("Project Notes [%1]").arg(t_widget->pagetitle()));
+
     setButtonAndMenuStates();
 }
 
@@ -228,6 +233,8 @@ void MainWindow::navigateBackward()
 
         QWidget* current = m_navigation_history.at(m_navigation_location);
         ui->stackedWidget->setCurrentWidget(current);
+
+        this->setWindowTitle(QString("Project Notes [%1]").arg(((PNBasePage* )current)->pagetitle()));
     }
 
     setButtonAndMenuStates();
@@ -241,6 +248,8 @@ void MainWindow::navigateForward()
 
         QWidget* current = m_navigation_history.at(m_navigation_location);
         ui->stackedWidget->setCurrentWidget(current);
+
+        this->setWindowTitle(QString("Project Notes [%1]").arg(((PNBasePage* )current)->pagetitle()));
     }
 
     setButtonAndMenuStates();
@@ -320,6 +329,14 @@ void MainWindow::on_actionOpen_ProjectDetails_triggered()
     ui->pageProjectDetails->toFirst();
 
     navigateToPage(ui->pageProjectDetails);
+}
+
+void MainWindow::on_actionOpen_ItemDetails_triggered()
+{
+
+    ui->pageItemDetails->toFirst();
+
+    navigateToPage(ui->pageItemDetails);
 }
 
 void MainWindow::on_actionInternal_Items_triggered()

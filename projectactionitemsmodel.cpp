@@ -102,8 +102,20 @@ bool ProjectActionItemsModel::setData(const QModelIndex &t_index, const QVariant
     return PNSqlQueryModel::setData(t_index, t_value, t_role);
 }
 
+
+bool ProjectActionItemsModel::openRecord(QModelIndex t_index)
+{
+    QVariant record_id = data(index(t_index.row(), 0));
+
+    // only select the records another event will be fired to open the window to show them
+    global_DBObjects.actionitemsdetailsmodel()->setFilter(14, record_id.toString());
+    global_DBObjects.actionitemsdetailsmodel()->refresh();
+
+    return true;
+}
+
+
 //TODO: Pop up a tracker items detail screen
-//TODO: Add artifacts locations
 //TODO: Add notes list
 //TODO: Pop up the note
 

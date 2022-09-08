@@ -7,7 +7,8 @@
 
 ProjectsListPage::ProjectsListPage()
 {
-
+    QString page_title = "Projects";
+    setPageTitle(page_title);
 }
 
 void ProjectsListPage::setupModels( Ui::MainWindow *t_ui )

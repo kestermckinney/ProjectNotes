@@ -5,7 +5,8 @@
 
 ProjectDetailsPage::ProjectDetailsPage()
 {
-
+    QString page_title = "Project Details";
+    setPageTitle(page_title);
 }
 
 ProjectDetailsPage::~ProjectDetailsPage()
@@ -92,6 +93,7 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     ui->tableViewTeam->setModel(global_DBObjects.projectteammembersmodelproxy());
     ui->tableViewTrackerItems->setModel(global_DBObjects.projectactionitemsmodelproxy());   
     ui->tableViewLocations->setModel(global_DBObjects.projectlocationsmodelproxy());
+    ui->tableViewProjectNotes->setModel(global_DBObjects.projectnotesmodelproxy());
 }
 
 void ProjectDetailsPage::toFirst()
@@ -125,7 +127,7 @@ void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
         break;
     case 4:
         setCurrentModel(global_DBObjects.projectnotesmodelproxy());
-        //setCurrentview(ui->tableViewMeetings); // TODO:
+        setCurrentView(ui->tableViewProjectNotes);
         break;
     }
 }

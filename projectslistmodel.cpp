@@ -46,5 +46,8 @@ bool ProjectsListModel::openRecord(QModelIndex t_index)
     global_DBObjects.projectlocationsmodel()->setFilter(1, record_id.toString());
     global_DBObjects.projectlocationsmodel()->refresh();
 
+    global_DBObjects.projectnotesmodel()->setFilter(1, record_id.toString());
+    global_DBObjects.projectnotesmodel()->refresh();
+
     return true;
 }

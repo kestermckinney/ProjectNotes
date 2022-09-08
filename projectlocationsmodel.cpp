@@ -65,9 +65,6 @@ bool ProjectLocationsModel::setData(const QModelIndex &t_index, const QVariant &
         QModelIndex qmi_desc = index(t_index.row(), 3);
         QVariant desc_val = data(qmi_desc, t_role);
 
-
-        // STOPPED HERE TEST FOR FILE TYPES
-
         if ( test_val.right(5).contains(".doc", Qt::CaseInsensitive) || test_val.right(5).contains(".dot", Qt::CaseInsensitive) || test_val.right(5).contains(".odt", Qt::CaseInsensitive) || test_val.right(5).contains(".rtf", Qt::CaseInsensitive) )
         {
             file_type = "Word Document";

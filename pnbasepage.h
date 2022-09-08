@@ -2,7 +2,6 @@
 #define PNBASEPAGE_H
 
 #include <QWidget>
-#include "pnsqlquerymodel.h"
 #include "pntableview.h"
 
 QT_BEGIN_NAMESPACE
@@ -21,6 +20,9 @@ public:
     virtual void copyItem();
     virtual void deleteItem();
 
+    const QString& pagetitle() { return m_page_title; };
+    void setPageTitle(QString& t_pagetitle) { m_page_title = t_pagetitle; };
+
     PNSortFilterProxyModel*  getCurrentModel() { return m_current_model; };
     PNTableView* getCurrentView() { return m_current_view; };
     void setCurrentModel( PNSortFilterProxyModel* t_current_model ) { m_current_model = t_current_model; };
@@ -31,6 +33,8 @@ signals:
 private:
     PNSortFilterProxyModel* m_current_model = nullptr;
     PNTableView* m_current_view = nullptr;
+
+    QString m_page_title;
 };
 
 #endif // PNBASEPAGE_H

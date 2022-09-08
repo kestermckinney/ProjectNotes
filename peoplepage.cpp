@@ -4,7 +4,8 @@
 
 PeoplePage::PeoplePage()
 {
-
+    QString page_title = "People";
+    setPageTitle(page_title);
 }
 
 void PeoplePage::setupModels( Ui::MainWindow *t_ui )

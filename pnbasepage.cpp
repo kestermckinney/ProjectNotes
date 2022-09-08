@@ -1,6 +1,4 @@
 #include "pnbasepage.h"
-//#include "pntableview.h"
-//#include "pnsqlquerymodel.h"
 
 PNBasePage::PNBasePage(QWidget *parent) : QWidget(parent)
 {
