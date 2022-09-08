@@ -4,6 +4,7 @@
 ProjectLocationsView::ProjectLocationsView(QWidget* t_parent) : PNTableView(t_parent)
 {
     setObjectName("tableViewProjectLocations");
+    setHasOpen(true);
 }
 
 ProjectLocationsView::~ProjectLocationsView()

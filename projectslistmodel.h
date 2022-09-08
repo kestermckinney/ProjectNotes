@@ -9,7 +9,7 @@ class ProjectsListModel : public ProjectsModel
 public:
     ProjectsListModel(QObject* t_parent);
 
-    bool openRecord(QModelIndex t_index);
+    bool openRecord(QModelIndex t_index) override;
 };
 
 #endif // PROJECTSMODEL_H

@@ -3,7 +3,6 @@
 
 #include <QRegularExpression>
 #include <QApplication>
-//#include "mainwindow.h"
 
 ProjectsListModel::ProjectsListModel(QObject* t_parent) : ProjectsModel(t_parent)
 {
