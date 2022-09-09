@@ -163,6 +163,10 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_notes_action_items_model_proxy = new PNSortFilterProxyModel();
     m_notes_action_items_model_proxy->setSourceModel(m_notes_action_items_model);
 
+    m_tracker_item_comments_model = new TrackerItemCommentsModel(nullptr);
+    m_tracker_item_comments_model_proxy = new PNSortFilterProxyModel();
+    m_tracker_item_comments_model_proxy->setSourceModel(m_tracker_item_comments_model);
+
     m_search_results_model = new SearchResultsModel(nullptr);
 
     //m_people_model->setShowBlank(true);

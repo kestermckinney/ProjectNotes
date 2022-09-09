@@ -16,3 +16,6 @@ TrackerItemCommentsModel::TrackerItemCommentsModel(QObject* t_parent): PNSqlQuer
 
     setOrderBy("lastupdated_date");
 }
+
+// TODO: Add new record implmentation
+// TODO: Add overrident update to change the updated date

@@ -50,6 +50,7 @@ void ItemDetailsPage::setupModels( Ui::MainWindow *t_ui )
     m_mapperItemDetails->setModel(global_DBObjects.actionitemsdetailsmodelproxy());
     m_mapperItemDetails->setSubmitPolicy(QDataWidgetMapper::AutoSubmit);
 
+    m_mapperItemDetails->addMapping(ui->lineEditItemNumber, 1);
     m_mapperItemDetails->addMapping(ui->comboBoxType, 2);
     m_mapperItemDetails->addMapping(ui->lineEditName, 3);
     m_mapperItemDetails->addMapping(ui->comboBoxProject, 14);
@@ -75,26 +76,28 @@ void ItemDetailsPage::setupModels( Ui::MainWindow *t_ui )
     ui->comboBoxPriority->addItems(PNDatabaseObjects::item_priority);
 
     ui->comboBoxProject->setModel(global_DBObjects.projectslistmodel());
-    ui->comboBoxProject->setModelColumn(0);
+    ui->comboBoxProject->setModelColumn(1);
     ui->comboBoxProject->setEditable(true);
 
     ui->comboBoxMeeting->setModel(global_DBObjects.actionitemsdetailsmeetingsmodel());
-    ui->comboBoxMeeting->setModelColumn(0);
+    ui->comboBoxMeeting->setModelColumn(2);
     ui->comboBoxMeeting->setEditable(true);
 
     ui->comboBoxAssignedTo->setModel(global_DBObjects.teamsmodel());
-    ui->comboBoxAssignedTo->setModelColumn(3);
+    ui->comboBoxAssignedTo->setModelColumn(1);
     ui->comboBoxAssignedTo->setEditable(true);
 
     ui->comboBoxIdentifiedBy->setModel(global_DBObjects.teamsmodel());
-    ui->comboBoxIdentifiedBy->setModelColumn(3);
+    ui->comboBoxIdentifiedBy->setModelColumn(1);
     ui->comboBoxIdentifiedBy->setEditable(true);
 
 
-    // this will be for comments ui->tableViewStatusReportItems->setModel(global_DBObjects.statusreportitemsmodelproxy());
+    ui->tableViewComments->setModel(global_DBObjects.trackeritemscommentsmodel());
+    ui->tableViewComments->setWordWrap(true);
+    ui->tableViewComments->resizeRowsToContents();
 
-    // this will be for comments setCurrentModel(global_DBObjects.statusreportitemsmodelproxy());
-    // this will be for comments setCurrentView( ui->tableViewStatusReportItems );
+    setCurrentModel(global_DBObjects.trackeritemscommentsmodelproxy());
+    setCurrentView( ui->tableViewComments );
 }
 
 void ItemDetailsPage::toFirst()

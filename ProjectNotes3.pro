@@ -64,6 +64,7 @@ SOURCES += \
     statusreportitemsview.cpp \
     teamsmodel.cpp \
     trackeritemcommentsmodel.cpp \
+    trackeritemcommentsview.cpp \
     valueselectmodel.cpp \
     valuesview.cpp
 
@@ -120,6 +121,7 @@ HEADERS += \
     statusreportitemsview.h \
     teamsmodel.h \
     trackeritemcommentsmodel.h \
+    trackeritemcommentsview.h \
     valueselectmodel.h \
     valuesview.h \
     widgets_export.h
