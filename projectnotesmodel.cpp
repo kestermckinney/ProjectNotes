@@ -59,19 +59,20 @@ bool ProjectNotesModel::newRecord(const QVariant* t_fk_value1, const QVariant* t
 
 bool ProjectNotesModel::openRecord(QModelIndex t_index)
 {
-    QVariant location = data(index(t_index.row(), 4));
-    QVariant location_type = data(index(t_index.row(), 2));
+    QVariant project_id = data(index(t_index.row(), 1));
+    QVariant note_id = data(index(t_index.row(), 0));
 
     //TODO: Implement open the meeting notes
-/*
-    if ( location_type == "Web Link" )
-    {
-        QDesktopServices::openUrl(QUrl(location.toString(), QUrl::TolerantMode));
-    }
-    else
-    {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(location.toString()));
-    }
-*/
+    // MAYBE we can use the same recordset.
+    global_DBObjects.projecteditingnotesmodel()->setFilter(0, note_id.toString());
+    global_DBObjects.projecteditingnotesmodel()->refresh();
+
+    // only select the records another event will be fired to open the window to show them
+    global_DBObjects.meetingattendeesmodel()->setFilter(1, note_id.toString());
+    global_DBObjects.meetingattendeesmodel()->refresh();
+
+    global_DBObjects.notesactionitemsmodel()->setFilter(1, note_id.toString());
+    global_DBObjects.notesactionitemsmodel()->refresh();
+
     return true;
 }

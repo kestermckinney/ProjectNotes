@@ -59,6 +59,7 @@ public:
     ProjectTeamMembersModel* projectteammembersmodel() { return m_project_team_members_model; }
     ProjectLocationsModel* projectlocationsmodel() { return m_project_locations_model; }
     ProjectNotesModel* projectnotesmodel() { return m_project_notes_model; }
+    ProjectNotesModel* projecteditingnotesmodel() { return m_project_editing_notes_model; }
     ActionItemProjectNotesModel* actionitemprojectnotesmodel() { return m_action_item_project_notes_model; }
     ActionItemsDetailsMeetingsModel* actionitemsdetailsmeetingsmodel() { return m_action_items_details_meetings_model; }
     MeetingAttendeesModel* meetingattendeesmodel() { return m_meeting_attendees_model; }
@@ -80,6 +81,7 @@ public:
     PNSortFilterProxyModel* projectteammembersmodelproxy() { return m_project_team_members_model_proxy; }
     PNSortFilterProxyModel* projectlocationsmodelproxy() { return m_project_locations_model_proxy; }
     PNSortFilterProxyModel* projectnotesmodelproxy() { return m_project_notes_model_proxy; }
+    PNSortFilterProxyModel* projecteditingnotesmodelproxy() { return m_project_editing_notes_model_proxy; }
     PNSortFilterProxyModel* actionitemprojectnotesmodelproxy() { return m_action_item_project_notes_model_proxy; }
     PNSortFilterProxyModel* actionitemsdetailsmeetingsmodelproxy() { return m_action_items_details_meetings_model_proxy; }
     PNSortFilterProxyModel* meetingattendeesmodelproxy() { return m_meeting_attendees_model_proxy; }
@@ -135,6 +137,7 @@ private:
     ProjectTeamMembersModel* m_project_team_members_model;
     ProjectLocationsModel* m_project_locations_model;
     ProjectNotesModel* m_project_notes_model;
+    ProjectNotesModel* m_project_editing_notes_model;
     ActionItemProjectNotesModel* m_action_item_project_notes_model;
     ActionItemsDetailsMeetingsModel* m_action_items_details_meetings_model;
     MeetingAttendeesModel* m_meeting_attendees_model;
@@ -158,6 +161,7 @@ private:
     PNSortFilterProxyModel* m_project_team_members_model_proxy;
     PNSortFilterProxyModel* m_project_locations_model_proxy;
     PNSortFilterProxyModel* m_project_notes_model_proxy;
+    PNSortFilterProxyModel* m_project_editing_notes_model_proxy;
     PNSortFilterProxyModel* m_action_item_project_notes_model_proxy;
     PNSortFilterProxyModel* m_action_items_details_meetings_model_proxy;
     PNSortFilterProxyModel* m_meeting_attendees_model_proxy;

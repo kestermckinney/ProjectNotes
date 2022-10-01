@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>677</width>
+    <width>866</width>
     <height>641</height>
    </rect>
   </property>
@@ -52,7 +52,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>5</number>
+       <number>1</number>
       </property>
       <widget class="ProjectsListPage" name="pageProjectsList">
        <property name="sizePolicy">
@@ -98,7 +98,7 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="pageProjectNote">
+      <widget class="ProjectNotesPage" name="pageProjectNote">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
          <horstretch>0</horstretch>
@@ -122,9 +122,9 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QTabWidget" name="tabWidget">
+         <widget class="QTabWidget" name="tabWidgetNotes">
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tab">
            <attribute name="title">
@@ -226,14 +226,14 @@
                   <item row="1" column="0">
                    <widget class="QLineEdit" name="lineEditMeetingTitle">
                     <property name="frame">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </property>
                    </widget>
                   </item>
                   <item row="1" column="1">
-                   <widget class="QDateEdit" name="dateEditMeetingDate">
+                   <widget class="PNDateEditEx" name="dateEditMeetingDate">
                     <property name="frame">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </property>
                     <property name="displayFormat">
                      <string>M/d/yyyy</string>
@@ -301,7 +301,7 @@
              <number>5</number>
             </property>
             <item>
-             <widget class="QTableView" name="tableViewAtendees">
+             <widget class="MeetingAttendeesView" name="tableViewAtendees">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                 <horstretch>0</horstretch>
@@ -392,7 +392,7 @@
            </sizepolicy>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -1373,7 +1373,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>677</width>
+     <width>866</width>
      <height>22</height>
     </rect>
    </property>
@@ -1415,7 +1415,7 @@
    </widget>
    <widget class="QMenu" name="menuPlugins">
     <property name="title">
-     <string>Plugins</string>
+     <string>Pl&amp;ugins</string>
     </property>
     <addaction name="actionPlugin_Settings"/>
     <addaction name="actionView_Console"/>
@@ -1451,14 +1451,32 @@
     <addaction name="actionCustom_Plugins"/>
     <addaction name="actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menuF_ormat">
+    <property name="title">
+     <string>F&amp;ormat</string>
+    </property>
+    <addaction name="action_Bold"/>
+    <addaction name="action_Italic"/>
+    <addaction name="action_Underline"/>
+    <addaction name="separator"/>
+    <addaction name="action_Left"/>
+    <addaction name="action_Center"/>
+    <addaction name="action_Right"/>
+    <addaction name="action_Justify"/>
+    <addaction name="actionI_ndent"/>
+    <addaction name="actionUind_ent"/>
+    <addaction name="separator"/>
+    <addaction name="actionC_olor"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
+   <addaction name="menuF_ormat"/>
    <addaction name="menuPlugins"/>
    <addaction name="menuView"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <widget class="QToolBar" name="toolBar">
+  <widget class="QToolBar" name="toolBarNavigator">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
      <horstretch>0</horstretch>
@@ -1501,6 +1519,54 @@
    <addaction name="actionFilter"/>
    <addaction name="actionSearch"/>
    <addaction name="actionPreferences"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarEdit">
+   <property name="windowTitle">
+    <string>toolBar_2</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionUndo"/>
+   <addaction name="actionRedo"/>
+   <addaction name="actionCopy"/>
+   <addaction name="actionCut"/>
+   <addaction name="actionPaste"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarFormat">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="action_Bold"/>
+   <addaction name="action_Italic"/>
+   <addaction name="action_Underline"/>
+   <addaction name="action_Left"/>
+   <addaction name="action_Center"/>
+   <addaction name="action_Right"/>
+   <addaction name="action_Justify"/>
+   <addaction name="actionI_ndent"/>
+   <addaction name="actionUind_ent"/>
+   <addaction name="actionC_olor"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarStyle">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
   </widget>
   <action name="actionNew_Database">
    <property name="text">
@@ -1632,6 +1698,10 @@
    </property>
   </action>
   <action name="actionUndo">
+   <property name="icon">
+    <iconset theme="edit-undo">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
    <property name="text">
     <string>Undo</string>
    </property>
@@ -1643,6 +1713,10 @@
    </property>
   </action>
   <action name="actionRedo">
+   <property name="icon">
+    <iconset theme="edit-redo">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
    <property name="text">
     <string>Redo</string>
    </property>
@@ -1654,6 +1728,10 @@
    </property>
   </action>
   <action name="actionCopy">
+   <property name="icon">
+    <iconset theme="edit-copy">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
    <property name="text">
     <string>Copy</string>
    </property>
@@ -1665,6 +1743,10 @@
    </property>
   </action>
   <action name="actionCut">
+   <property name="icon">
+    <iconset theme="edit-cut">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
    <property name="text">
     <string>Cut</string>
    </property>
@@ -1676,6 +1758,10 @@
    </property>
   </action>
   <action name="actionPaste">
+   <property name="icon">
+    <iconset theme="edit-paste">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
    <property name="text">
     <string>Paste</string>
    </property>
@@ -1687,6 +1773,10 @@
    </property>
   </action>
   <action name="actionDelete">
+   <property name="icon">
+    <iconset theme="edit-delete">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
    <property name="text">
     <string>Delete</string>
    </property>
@@ -1698,6 +1788,10 @@
    </property>
   </action>
   <action name="actionSelect_All">
+   <property name="icon">
+    <iconset theme="edit-select-all">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
    <property name="text">
     <string>Select All</string>
    </property>
@@ -1930,6 +2024,96 @@
     <string>Resolved Tracker/Action Items</string>
    </property>
   </action>
+  <action name="action_Bold">
+   <property name="icon">
+    <iconset theme="format-text-bold">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Bold</string>
+   </property>
+  </action>
+  <action name="action_Italic">
+   <property name="icon">
+    <iconset theme="format-text-italic">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Italic</string>
+   </property>
+  </action>
+  <action name="action_Underline">
+   <property name="icon">
+    <iconset theme="format-text-underline">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Underline</string>
+   </property>
+  </action>
+  <action name="action_Left">
+   <property name="icon">
+    <iconset theme="format-justify-left">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Left</string>
+   </property>
+  </action>
+  <action name="action_Center">
+   <property name="icon">
+    <iconset theme="format-justify-center">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Center</string>
+   </property>
+  </action>
+  <action name="action_Right">
+   <property name="icon">
+    <iconset theme="format-justify-right">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Right</string>
+   </property>
+  </action>
+  <action name="action_Justify">
+   <property name="icon">
+    <iconset theme="format-justify-fill">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Justify</string>
+   </property>
+  </action>
+  <action name="actionI_ndent">
+   <property name="icon">
+    <iconset theme="format-indent-more">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>I&amp;ndent</string>
+   </property>
+  </action>
+  <action name="actionUind_ent">
+   <property name="icon">
+    <iconset theme="format-indent-less">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>Uind&amp;ent</string>
+   </property>
+  </action>
+  <action name="actionC_olor">
+   <property name="icon">
+    <iconset theme="text-x-generic">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>C&amp;olor...</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -2011,6 +2195,17 @@
    <class>TrackerItemCommentsView</class>
    <extends>QTableView</extends>
    <header>trackeritemcommentsview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ProjectNotesPage</class>
+   <extends>QWidget</extends>
+   <header>projectnotespage.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>MeetingAttendeesView</class>
+   <extends>QTableView</extends>
+   <header>meetingattendeesview.h</header>
   </customwidget>
  </customwidgets>
  <resources>

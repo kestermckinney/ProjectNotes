@@ -36,6 +36,7 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
     connect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
+    connect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectNote_triggered()));
 }
 
 MainWindow::~MainWindow()
@@ -202,6 +203,7 @@ void MainWindow::openDatabase(QString t_dbfile)
     ui->pagePeople->setupModels(ui);
     ui->pageProjectDetails->setupModels(ui);
     ui->pageItemDetails->setupModels(ui);
+    ui->pageProjectNote->setupModels(ui);
 
     navigateClearHistory();
     navigateToPage(ui->pageProjectsList);
@@ -339,6 +341,13 @@ void MainWindow::on_actionOpen_ItemDetails_triggered()
     navigateToPage(ui->pageItemDetails);
 }
 
+void MainWindow::on_actionOpen_ProjectNote_triggered()
+{
+
+    ui->pageProjectNote->toFirst();
+
+    navigateToPage(ui->pageProjectNote);
+}
 void MainWindow::on_actionInternal_Items_triggered()
 {
     global_DBObjects.setShowInternalItems(ui->actionInternal_Items->isChecked());

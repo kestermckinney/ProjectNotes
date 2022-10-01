@@ -26,6 +26,7 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     meetingattendeesmodel.cpp \
+    meetingattendeesview.cpp \
     noteactionitemsmodel.cpp \
     notesactionitemsmodel.cpp \
     peoplelistview.cpp \
@@ -51,7 +52,9 @@ SOURCES += \
     projectdetailspage.cpp \
     projectlocationsmodel.cpp \
     projectlocationsview.cpp \
+    projectnotesdelegate.cpp \
     projectnotesmodel.cpp \
+    projectnotespage.cpp \
     projectnotesview.cpp \
     projectslistmodel.cpp \
     projectslistpage.cpp \
@@ -83,6 +86,7 @@ HEADERS += \
     itemdetailteamlistmodel.h \
     mainwindow.h \
     meetingattendeesmodel.h \
+    meetingattendeesview.h \
     noteactionitemsmodel.h \
     notesactionitemsmodel.h \
     peoplelistview.h \
@@ -108,7 +112,9 @@ HEADERS += \
     projectdetailspage.h \
     projectlocationsmodel.h \
     projectlocationsview.h \
+    projectnotesdelegate.h \
     projectnotesmodel.h \
+    projectnotespage.h \
     projectnotesview.h \
     projectslistmodel.h \
     projectslistpage.h \

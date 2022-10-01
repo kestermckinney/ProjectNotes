@@ -139,6 +139,10 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_project_notes_model_proxy = new PNSortFilterProxyModel();
     m_project_notes_model_proxy->setSourceModel(m_project_notes_model);
 
+    m_project_editing_notes_model = new ProjectNotesModel(nullptr);
+    m_project_editing_notes_model_proxy = new PNSortFilterProxyModel();
+    m_project_editing_notes_model_proxy->setSourceModel(m_project_editing_notes_model);
+
     m_action_item_project_notes_model = new ActionItemProjectNotesModel(nullptr);
     m_action_item_project_notes_model_proxy = new PNSortFilterProxyModel();
     m_action_item_project_notes_model_proxy->setSourceModel(m_action_item_project_notes_model);
