@@ -42,10 +42,7 @@ void PNComboBoxDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_i
     QVariant lookupvalue = t_index.model()->data(t_index);
     QString value = m_model->findValue(lookupvalue, m_data_column, m_display_column).toString();
 
-    qDebug() << "Editor Data: " << value;
-    //comboBox->setCurrentIndex(value);
     comboBox->setCurrentText(value);
-    //QItemDelegate::setEditorData(t_editor, t_index);
 }
 
 void PNComboBoxDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const

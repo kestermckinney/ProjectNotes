@@ -159,11 +159,13 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
             else
                 key_val = "0";
         }
+        break;
     default:
         {
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             key_val = lineedit->text();
         }
+        break;
     }
 
     t_model->setData(t_index, key_val, Qt::EditRole);

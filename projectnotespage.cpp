@@ -23,12 +23,11 @@ ProjectNotesPage::~ProjectNotesPage()
 
 void ProjectNotesPage::newRecord()
 {
-    QVariant project_id = global_DBObjects.projectinformationmodelproxy()->data(global_DBObjects.projectinformationmodelproxy()->index(0,0));
-    QVariant note_id;// = //TODO: Get a note id to associate with the new record
+    QVariant note_id = global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,0));
 
     int lastrow = ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->rowCount(QModelIndex());
 
-    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&project_id, &note_id);
+    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&note_id);
 
     getCurrentView()->selectRow(lastrow);
     QModelIndex index = getCurrentView()->model()->index(lastrow, 0);

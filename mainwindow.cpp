@@ -52,6 +52,7 @@ MainWindow::~MainWindow()
     ui->tableViewStatusReportItems->setModel(nullptr);
     ui->tableViewTeam->setModel(nullptr);
     ui->tableViewTrackerItems->setModel(nullptr);
+    ui->tableViewAtendees->setModel(nullptr);
 
     if (global_DBObjects.isOpen())
         global_DBObjects.closeDatabase();
@@ -216,6 +217,10 @@ void MainWindow::navigateToPage(PNBasePage* t_widget)
 {
     if ( t_widget == navigateCurrentPage() )
         return;
+
+    // if in the middle of the history chop off the remaining history
+    while (m_navigation_location < m_navigation_history.count() - 1)
+        m_navigation_history.pop();
 
     m_navigation_location = m_navigation_history.count();
     m_navigation_history.push(t_widget);

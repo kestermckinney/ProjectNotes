@@ -144,7 +144,6 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             }
         }
 
-
         // validate the data
         if (m_lookup_values[t_index.column()] != nullptr)
         {
@@ -157,104 +156,107 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             }
         }
 
-        // the record id is always column 0
-        QString keycolumnname = m_cache[t_index.row()].fieldName(0);
 
-        QString columnname = m_cache[t_index.row()].fieldName(t_index.column());
-        QVariant keyvalue = m_cache[t_index.row()].value(0);
-        QVariant oldvalue = m_cache[t_index.row()].value(t_index.column());
-        QVariant value = t_value;
-
-        sqlEscape(value, m_column_type[t_index.column()], true);
-
-        QSqlQuery update;
-        update.prepare("update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)");
-        update.addBindValue(value);
-        update.addBindValue(keyvalue);
-        update.addBindValue(oldvalue);
-
-        if(update.exec())
+        // new records will not have an id and need inserted
+        if ( m_cache[t_index.row()].value(0).isNull() )
         {
-            if (update.numRowsAffected() == 0)
+            QString fields;
+            QString values;
+
+            // the record id is always column 0
+            // new records will need a new key id set
+            m_cache[t_index.row()].setValue(0, QUuid::createUuid().toString());
+
+            // set the cached value
+            m_cache[t_index.row()].setValue(t_index.column(), t_value );
+
+            for (int i = 0; i < m_sql_query.record().count(); i++)
             {
-                // assume if nothing was updated it must be a new record
-                //QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
-                //   QObject::tr("Field was already updated by another process."), QMessageBox::Ok);
-
-                //reloadRecord(t_index);
-                QString fields;
-                QString values;
-
-                for (int i = 0; i < m_sql_query.record().count(); i++)
+                if ((m_column_is_editable[i] == DBEditable) || i == 0)
                 {
-                    if ((m_column_is_editable[i] == DBEditable) || i == 0)
-                    {
-                        if (!fields.isEmpty())
-                            fields += ", ";
+                    if (!fields.isEmpty())
+                        fields += ", ";
 
-                        if (!values.isEmpty())
-                            values += ", ";
+                    if (!values.isEmpty())
+                        values += ", ";
 
-                        fields += m_sql_query.record().fieldName(i);
+                    fields += m_sql_query.record().fieldName(i);
 
-                        values += " ? ";
-                    }
+                    values += " ? ";
                 }
-
-                QSqlQuery insert;
-                insert.prepare("insert into " + m_tablename + " ( " + fields + " ) values ( " + values + " )");
-                //qDebug() << "insert into " << m_tablename << " ( " << fields << " ) values ( " << values << " )";
-
-                int bindcount = 0;
-                for (int i = 0; i < m_sql_query.record().count(); i++)
-                {
-                    if ((m_column_is_editable[i] == DBEditable) || i == 0)
-                    {
-                        insert.bindValue(bindcount, m_cache[t_index.row()].field(i).value());
-                        bindcount++;
-                    }
-                }
-
-                if(insert.exec())
-                {
-                    /*
-                    QModelIndex qmi = QModelIndex();
-                    int row = rowCount((qmi));
-
-                    beginInsertRows(qmi, row, row);
-                    m_cache.append(m_cache[t_index.row()]);
-
-                    endInsertRows();
-                    */
-
-                    return true;
-                }
-
-                QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
-                   insert.lastError().text() + "\n" + insert.lastQuery(), QMessageBox::Ok);
-
-
-                return false;
             }
-            else
-            {
-                m_cache[t_index.row()].setValue(t_index.column(), value);
 
-                // check for all of the impacted open recordsets
-                refreshImpactedRecordsets(t_index);
+            QSqlQuery insert;
+            insert.prepare("insert into " + m_tablename + " ( " + fields + " ) values ( " + values + " )");
+            qDebug() << "insert into " << m_tablename << " ( " << fields << " ) values ( " << values << " )";
+
+            int bindcount = 0;
+            for (int i = 0; i < m_sql_query.record().count(); i++)
+            {
+                if ((m_column_is_editable[i] == DBEditable) || i == 0)
+                {
+                    insert.bindValue(bindcount, m_cache[t_index.row()].field(i).value());
+                    qDebug() << "Value " << m_cache[t_index.row()].field(i).value();
+                    bindcount++;
+                }
+            }
+
+            if(insert.exec())
                 return true;
-            }
+
+            QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
+               insert.lastError().text() + "\n" + insert.lastQuery(), QMessageBox::Ok);
         }
         else
         {
-            QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
-               update.lastError().text() + "\n" + update.lastQuery(), QMessageBox::Ok);
+            // the record id is always column 0
+            QString keycolumnname = m_cache[t_index.row()].fieldName(0);
+            QString columnname = m_cache[t_index.row()].fieldName(t_index.column());
+            QVariant keyvalue = m_cache[t_index.row()].value(0);
+            QVariant oldvalue = m_cache[t_index.row()].value(t_index.column());
+            QVariant value = t_value;
 
-            return false;
+            sqlEscape(oldvalue, m_column_type[t_index.column()], true);
+            sqlEscape(value, m_column_type[t_index.column()], true);
+STOPPED HERE -- Cannot update a date value it checks the old one incorrectly
+            QSqlQuery update;
+            update.prepare("update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)");
+            update.addBindValue(value);
+            update.addBindValue(keyvalue);
+            update.addBindValue(oldvalue);
+
+            qDebug() << "update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)";
+            qDebug() << "Value " << value;
+            qDebug() << "Value " << keyvalue;
+            qDebug() << "Value " << oldvalue;
+
+            if(update.exec())
+            {
+                if (update.numRowsAffected() == 0)
+                {
+                    QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
+                       QObject::tr("Field was already updated by another process."), QMessageBox::Ok);
+
+                    reloadRecord(t_index);
+                }
+                else
+                {
+                    m_cache[t_index.row()].setValue(t_index.column(), value);
+
+                    // check for all of the impacted open recordsets
+                    refreshImpactedRecordsets(t_index);
+                    return true;
+                }
+            }
+            else
+            {
+                QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
+                   update.lastError().text() + "\n" + update.lastQuery(), QMessageBox::Ok);
+            }
         }
     }
 
-    return true;
+    return false;
 }
 
 void PNSqlQueryModel::setBaseSql(const QString t_table)
@@ -622,9 +624,9 @@ int PNSqlQueryModel::rowCount(const QModelIndex &t_parent) const
 bool PNSqlQueryModel::copyRecord(QModelIndex t_index)
 {
     QSqlRecord newrecord = emptyrecord();
-    int i = 0;
 
-    for (i = 0; i < m_sql_query.record().count(); i++)
+    // don't copy key record so it is identified as a new record
+    for (int i = 1; i < m_sql_query.record().count(); i++)
     {
 
         if (m_column_is_unique[i] == DBUnique)
@@ -642,11 +644,10 @@ bool PNSqlQueryModel::copyRecord(QModelIndex t_index)
 
 bool PNSqlQueryModel::addRecord(QSqlRecord& t_newrecord)
 {
-    // the record id is always column 0
-    t_newrecord.setValue(0, QUuid::createUuid().toString());
-
     QModelIndex qmi = QModelIndex();
     int row = rowCount((qmi));
+
+    qDebug() << t_newrecord;
 
     beginInsertRows(qmi, row, row);
     m_cache.append(t_newrecord);

@@ -24,7 +24,7 @@ void MeetingAttendeesView::setModel(QAbstractItemModel *t_model)
         // setup model lists
 
         // projects list panel delagets
-        m_unfiltered_people_delegate = new PNComboBoxDelegate(this, global_DBObjects.unfilteredpeoplemodel());
+        m_unfiltered_people_delegate = new PNComboBoxDelegate(this, global_DBObjects.teamsmodel(), 1, 3);
 
         setItemDelegateForColumn(2, m_unfiltered_people_delegate);
     }
