@@ -5,33 +5,34 @@ TrackerItemsModel::TrackerItemsModel(QObject* t_parent): PNSqlQueryModel(t_paren
 {
     setObjectName("TrackerItemsModel");
 
-    setBaseSql("SELECT item_id, item_number, item_type, item_name, identified_by, (select name from people where people_id=identified_by) identified_by_name, date_identified, description, assigned_to, priority, status, date_due, last_update, date_resolved, note_id, project_id, internal_item , (select GROUP_CONCAT(update_note, ',') from item_tracker_updates where item_tracker.item_id=item_tracker_updates.item_id ) comments, (select project_status from projects p where p.project_id=item_tracker.project_id) project_status, (select client_id from projects p where p.project_id=item_tracker.project_id) client_id, (select name from people where people_id=identified_by) identified_by_name FROM item_tracker ");
+    //setBaseSql("SELECT item_id, item_number, item_type, item_name, identified_by, date_identified, description, assigned_to, priority, status, date_due, last_update, date_resolved, note_id,  project_id, internal_item , (select GROUP_CONCAT(update_note, ',') from item_tracker_updates where item_tracker.item_id=item_tracker_updates.item_id ) comments, (select project_status from projects p where p.project_id=item_tracker.project_id) project_status, client_id FROM item_tracker ");
+    setBaseSql("select * from item_tracker_view");
+
 //TODO: Don't use delegates for colums that aren't editable.  It takes up too much memory and could be slow
+//TODO: put the view in the databae upgrade script
     setTableName("item_tracker", "Project Action Items");
 
     addColumn(0, tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
     addColumn(1, tr("Item"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(2, tr("Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(3, tr("Item Name"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(4, tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn(4, tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
     addColumn(5, tr("Date Identified"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(6, tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(7, tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn(7, tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(8, tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(9, tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(10, tr("Date Due"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(11, tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(12, tr("Date Resolved"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
-    addColumn(13, tr("Meeting"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn(14, tr("Project"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique); // TODO: can't save a new record when this is set to readonly
+    addColumn(13, tr("Meeting"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(14, tr("Project"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique); // TODO: can't save a new record when this is set to readonly
     addColumn(15, tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(16, tr("Comments"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(17, tr("Project Status"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(18, tr("Client"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-
-    addColumn(19, tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique); //TODO: this is on the end but moving will cause many filter changes
 
     addRelatedTable("item_tracker_updates", "item_id", "Tracker Updates");
 

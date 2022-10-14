@@ -1,5 +1,7 @@
 #include "projectnotespage.h"
 #include "pndatabaseobjects.h"
+#include "trackeritemsview.h"
+#include "notesactionitemsview.h"
 
 #include "ui_mainwindow.h"
 
@@ -24,10 +26,11 @@ ProjectNotesPage::~ProjectNotesPage()
 void ProjectNotesPage::newRecord()
 {
     QVariant note_id = global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,0));
+    QVariant project_id = global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,1));
 
     int lastrow = ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->rowCount(QModelIndex());
 
-    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&note_id);
+    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&note_id, &project_id);
 
     getCurrentView()->selectRow(lastrow);
     QModelIndex index = getCurrentView()->model()->index(lastrow, 0);
@@ -58,27 +61,22 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
     m_mapperProjectNotes->addMapping(ui->dateEditMeetingDate, 3);
 
     ui->tableViewAtendees->setModel(global_DBObjects.meetingattendeesmodelproxy());
+    ui->tableViewActionItems->setModel(global_DBObjects.notesactionitemsmodelproxy());
 
     setCurrentModel(nullptr);
     setCurrentView(nullptr);
-
-    //ui->tableViewTeam->setModel(global_DBObjects.projectteammembersmodelproxy());
-    //ui->tableViewTrackerItems->setModel(global_DBObjects.projectactionitemsmodelproxy());   
-    //ui->tableViewLocations->setModel(global_DBObjects.projectlocationsmodelproxy());
-    //ui->tableViewProjectNotes->setModel(global_DBObjects.projecteditingnotesmodelproxy());
 }
 
 void ProjectNotesPage::toFirst()
 {
     if (m_mapperProjectNotes != nullptr)
         m_mapperProjectNotes->toFirst();
+
+     ui->tabWidgetNotes->setCurrentIndex(0);  // always set to the first tab on open
 }
 
 void ProjectNotesPage::on_tabWidgetNotes_currentChanged(int index)
 {
-    // TODO: this goes out of alignment when a tab isn't clicked when first opened
-    // maybe the open should select the tab too
-
     switch ( index )
     {
     case 0:
@@ -90,8 +88,8 @@ void ProjectNotesPage::on_tabWidgetNotes_currentChanged(int index)
         setCurrentView(ui->tableViewAtendees);
         break;
     case 2:
-        //setCurrentModel(global_DBObjects.projectactionitemsmodelproxy());
-        //setCurrentView(ui->tableViewTrackerItems);
+        setCurrentModel(global_DBObjects.notesactionitemsmodelproxy());
+        setCurrentView(ui->tableViewActionItems);
         break;
     }
 }

@@ -52,7 +52,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <widget class="ProjectsListPage" name="pageProjectsList">
        <property name="sizePolicy">
@@ -124,9 +124,9 @@
         <item>
          <widget class="QTabWidget" name="tabWidgetNotes">
           <property name="currentIndex">
-           <number>1</number>
+           <number>2</number>
           </property>
-          <widget class="QWidget" name="tab">
+          <widget class="QWidget" name="tabNote">
            <attribute name="title">
             <string>Note</string>
            </attribute>
@@ -147,7 +147,7 @@
              <number>5</number>
             </property>
             <item>
-             <widget class="QFrame" name="frame_top">
+             <widget class="QFrame" name="frameNote">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                 <horstretch>0</horstretch>
@@ -180,7 +180,7 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QFrame" name="frame_7">
+                <widget class="QFrame" name="frameMeetingTitle">
                  <property name="frameShape">
                   <enum>QFrame::NoFrame</enum>
                  </property>
@@ -277,7 +277,7 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_3">
+          <widget class="QWidget" name="tabAttendees">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -315,7 +315,7 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_2">
+          <widget class="QWidget" name="tabActionItems">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -342,7 +342,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QTableView" name="tableViewActionItems">
+             <widget class="NotesActionItemsView" name="tableViewActionItems">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                 <horstretch>0</horstretch>
@@ -392,7 +392,7 @@
            </sizepolicy>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>2</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -427,7 +427,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QFrame" name="frame">
+             <widget class="QFrame" name="frameStatusItems">
               <property name="frameShape">
                <enum>QFrame::StyledPanel</enum>
               </property>
@@ -439,7 +439,7 @@
                 <enum>QFormLayout::ExpandingFieldsGrow</enum>
                </property>
                <item row="0" column="0">
-                <widget class="QLabel" name="label">
+                <widget class="QLabel" name="labelNumber">
                  <property name="text">
                   <string>Number</string>
                  </property>
@@ -766,7 +766,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="ProjectActionItemsView" name="tableViewTrackerItems">
+             <widget class="TrackerItemsView" name="tableViewTrackerItems">
               <property name="frameShadow">
                <enum>QFrame::Plain</enum>
               </property>
@@ -824,7 +824,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QFrame" name="frame_2">
+             <widget class="QFrame" name="frameProjectNotes">
               <property name="frameShape">
                <enum>QFrame::NoFrame</enum>
               </property>
@@ -1326,7 +1326,7 @@
          <number>0</number>
         </property>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_14">
+         <layout class="QHBoxLayout" name="horizontalLayoutSearch">
           <property name="spacing">
            <number>0</number>
           </property>
@@ -1426,7 +1426,6 @@
      <string>View</string>
     </property>
     <addaction name="actionInternal_Items"/>
-    <addaction name="actionAll_Tracker_Action_Items"/>
     <addaction name="actionResolved_Tracker_Action_Items"/>
     <addaction name="actionClosed_Projects"/>
     <addaction name="separator"/>
@@ -2166,11 +2165,6 @@
    <header>projectteammembersview.h</header>
   </customwidget>
   <customwidget>
-   <class>ProjectActionItemsView</class>
-   <extends>QTableView</extends>
-   <header>projectactionitemsview.h</header>
-  </customwidget>
-  <customwidget>
    <class>PNDateEditEx</class>
    <extends>QDateEdit</extends>
    <header>pndateeditex.h</header>
@@ -2206,6 +2200,16 @@
    <class>MeetingAttendeesView</class>
    <extends>QTableView</extends>
    <header>meetingattendeesview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>NotesActionItemsView</class>
+   <extends>QTableView</extends>
+   <header>notesactionitemsview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>TrackerItemsView</class>
+   <extends>QTableView</extends>
+   <header>trackeritemsview.h</header>
   </customwidget>
  </customwidgets>
  <resources>

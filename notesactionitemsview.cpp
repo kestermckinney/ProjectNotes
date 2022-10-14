@@ -1,13 +1,13 @@
-#include "projectactionitemsview.h"
+#include "notesactionitemsview.h"
 #include "pndatabaseobjects.h"
 
-ProjectActionItemsView::ProjectActionItemsView(QWidget* t_parent) : PNTableView(t_parent)
+NotesActionItemsView::NotesActionItemsView(QWidget* t_parent) : PNTableView(t_parent)
 {
-    setObjectName("tableViewTrackerItems");
+    setObjectName("tableViewMeetingItems");
     setHasOpen(true);
 }
 
-ProjectActionItemsView::~ProjectActionItemsView()
+NotesActionItemsView::~NotesActionItemsView()
 {
     if (m_action_item_type_delegate) delete m_action_item_type_delegate;
     if (m_identified_by_delegate) delete m_identified_by_delegate;
@@ -24,13 +24,25 @@ ProjectActionItemsView::~ProjectActionItemsView()
     if (m_client_delegate) delete m_client_delegate;
 }
 
-void ProjectActionItemsView::setModel(QAbstractItemModel *t_model)
+void NotesActionItemsView::setModel(QAbstractItemModel *t_model)
 {
     if (t_model)
     {
         PNTableView::setModel(t_model);
 
         // see setbuttonitems for visible columns
+        setColumnHidden(1, true);
+        setColumnHidden(2, true);
+        setColumnHidden(4, true);
+        setColumnHidden(5, true);
+        setColumnHidden(6, true);
+        setColumnHidden(8, true);
+        setColumnHidden(9, true);
+        setColumnHidden(11, true);
+        setColumnHidden(12, true);
+        setColumnHidden(13, true);
+        setColumnHidden(14, true);
+        setColumnHidden(18, true);
 
         // setup model lists
         m_item_priority.setStringList(PNDatabaseObjects::item_priority);

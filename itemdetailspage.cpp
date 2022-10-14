@@ -1,7 +1,8 @@
-#include "itemdetailspage.h"
-#include "pndatabaseobjects.h"
 
 #include "ui_mainwindow.h"
+
+#include "itemdetailspage.h"
+#include "pndatabaseobjects.h"
 
 ItemDetailsPage::ItemDetailsPage()
 {
@@ -20,11 +21,11 @@ ItemDetailsPage::~ItemDetailsPage()
 
 void ItemDetailsPage::newRecord()
 {
-    QVariant project_id = global_DBObjects.projectinformationmodelproxy()->data(global_DBObjects.projectinformationmodelproxy()->index(0,0));
+    QVariant tracker_id = global_DBObjects.actionitemsdetailsmodelproxy()->data(global_DBObjects.actionitemsdetailsmodelproxy()->index(0,0));
 
     int lastrow = ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->rowCount(QModelIndex());
 
-    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&project_id);
+    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&tracker_id);
 
     getCurrentView()->selectRow(lastrow);
     QModelIndex index = getCurrentView()->model()->index(lastrow, 0);

@@ -147,15 +147,19 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_action_item_project_notes_model_proxy = new PNSortFilterProxyModel();
     m_action_item_project_notes_model_proxy->setSourceModel(m_action_item_project_notes_model);
 
+    m_tracker_items_meetings_model = new ActionItemsDetailsMeetingsModel(nullptr);
+    m_tracker_items_meetings_model_proxy = new PNSortFilterProxyModel();
+    m_tracker_items_meetings_model_proxy->setSourceModel(m_tracker_items_meetings_model);
+
     m_action_items_details_meetings_model = new ActionItemsDetailsMeetingsModel(nullptr);
     m_action_items_details_meetings_model_proxy = new PNSortFilterProxyModel();
     m_action_items_details_meetings_model_proxy->setSourceModel(m_action_items_details_meetings_model);
 
-    m_project_action_items_model = new ProjectActionItemsModel(nullptr);
+    m_project_action_items_model = new TrackerItemsModel(nullptr);
     m_project_action_items_model_proxy = new PNSortFilterProxyModel();
     m_project_action_items_model_proxy->setSourceModel(m_project_action_items_model);
 
-    m_action_item_details_model = new ProjectActionItemsModel(nullptr);
+    m_action_item_details_model = new TrackerItemsModel(nullptr);
     m_action_item_details_model_proxy = new PNSortFilterProxyModel();
     m_action_item_details_model_proxy->setSourceModel(m_action_item_details_model);
 
@@ -206,6 +210,7 @@ void PNDatabaseObjects::closeDatabase()
     delete m_action_item_project_notes_model; //
     delete m_action_item_details_model;
     delete m_action_items_details_meetings_model;
+    delete m_tracker_items_meetings_model;
     delete m_project_action_items_model;
     delete m_tracker_item_comments_model;
     delete m_meeting_attendees_model;
@@ -229,6 +234,7 @@ void PNDatabaseObjects::closeDatabase()
     m_action_item_project_notes_model = nullptr;
     m_action_item_details_model= nullptr;
     m_action_items_details_meetings_model= nullptr;
+    m_tracker_items_meetings_model = nullptr;
     m_project_action_items_model= nullptr;
     m_tracker_item_comments_model = nullptr;
     m_meeting_attendees_model= nullptr;
@@ -252,6 +258,7 @@ void PNDatabaseObjects::closeDatabase()
     delete m_action_item_project_notes_model;
     delete m_action_item_details_model_proxy;
     delete m_action_items_details_meetings_model_proxy;
+    delete m_tracker_items_meetings_model_proxy;
     delete m_project_action_items_model_proxy;
     delete m_tracker_item_comments_model_proxy;
     delete m_meeting_attendees_model_proxy;
@@ -273,6 +280,7 @@ void PNDatabaseObjects::closeDatabase()
     m_action_item_project_notes_model = nullptr;
     m_action_item_details_model_proxy = nullptr;
     m_action_items_details_meetings_model_proxy = nullptr;
+    m_tracker_items_meetings_model_proxy = nullptr;
     m_project_action_items_model_proxy = nullptr;
     m_tracker_item_comments_model_proxy = nullptr;
     m_meeting_attendees_model_proxy = nullptr;
@@ -340,22 +348,9 @@ QString PNDatabaseObjects::loadParameter( const QString& t_parametername )
     }
 }
 
-
-void PNDatabaseObjects::setShowAllTrackerItems(bool t_value)
-{
-    saveParameter("UserFilter:ShowAllTrackerItems", (t_value ? "1": "0"));
-}
-
 void PNDatabaseObjects::setShowResolvedTrackerItems(bool t_value)
 {
     saveParameter("UserFilter:ShowResolvedTrackerItems", (t_value ? "1": "0"));
-}
-
-bool PNDatabaseObjects::getShowAllTrackerItems()
-{
-    QString t_value = loadParameter("UserFilter:ShowAllTrackerItems");
-    bool ret = (bool)t_value.toUInt();
-    return ret;
 }
 
 bool PNDatabaseObjects::getShowResolvedTrackerItems()
@@ -434,7 +429,7 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     // setup default filters
     if (getShowClosedProjects())
     {
-        projectactionitemsmodel()->clearFilter(17);
+        trackeritemsmodel()->clearFilter(17);
         projectinformationmodel()->clearFilter(14);
         //projectslistmodel()->clearFilter(9);
         projectslistmodel()->clearFilter(14);
@@ -442,7 +437,7 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     }
     else
     {
-        projectactionitemsmodel()->setFilter(17, tr("Active"));
+        trackeritemsmodel()->setFilter(17, tr("Active"));  //TODO: this won't work because it is a subselect column
         projectinformationmodel()->setFilter(14, tr("Active"));
         //projectslistmodel()->setFilter(9, tr("Active"));
         projectslistmodel()->setFilter(14, tr("Active"));
@@ -455,7 +450,7 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
         actionitemsdetailsmeetingsmodel()->clearFilter(3);
         notesactionitemsmodel()->clearFilter(15);
         actionitemprojectnotesmodel()->clearFilter(3);
-        projectactionitemsmodel()->clearFilter(15);
+        trackeritemsmodel()->clearFilter(15);
         actionitemsdetailsmodel()->clearFilter(3);
         searchresultsmodel()->clearFilter(4);
     }
@@ -465,18 +460,18 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
         actionitemsdetailsmeetingsmodel()->setFilter(3, tr("0"));
         notesactionitemsmodel()->setFilter(15, tr("0"));
         actionitemprojectnotesmodel()->setFilter(3, tr("0"));
-        projectactionitemsmodel()->setFilter(15, tr("0"));
+        trackeritemsmodel()->setFilter(15, tr("0"));
         actionitemsdetailsmodel()->setFilter(3, tr("0"));
         searchresultsmodel()->setFilter(4, tr("0"));
     }
 
     if (getShowResolvedTrackerItems())
     {
-        projectactionitemsmodel()->clearFilter(9);
+        trackeritemsmodel()->clearFilter(9);
     }
     else
     {
-        projectactionitemsmodel()->setFilter(9, "Resolved", PNSqlQueryModel::NotEqual);
+        trackeritemsmodel()->setFilter(9, "Resolved", PNSqlQueryModel::NotEqual);
     }
 
     if (getGlobalClientFilter().isEmpty())
@@ -485,7 +480,7 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
         peoplemodel()->deactivateUserFilter(tr("GlobalClientFilter"));
         clientsmodel()->clearFilter(0);
         clientsmodel()->deactivateUserFilter(tr("GlobalClientFilter"));
-        projectactionitemsmodel()->clearFilter(18);
+        trackeritemsmodel()->clearFilter(18);
         projectinformationmodel()->clearFilter(13);
         projectslistmodel()->clearFilter(13);
         searchresultsmodel()->clearFilter(5);
@@ -506,7 +501,7 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
         peoplemodel()->setUserFilter(5, managingnclientids);
         peoplemodel()->activateUserFilter(tr("GlobalClientFilter"));
 
-        projectactionitemsmodel()->setFilter(18, getGlobalClientFilter());
+        trackeritemsmodel()->setFilter(18, getGlobalClientFilter());
         projectinformationmodel()->setFilter(13, getGlobalClientFilter());
         projectslistmodel()->setFilter(13, getGlobalClientFilter());
         searchresultsmodel()->setFilter(5, getGlobalClientFilter());
@@ -514,14 +509,14 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
 
     if (getGlobalProjectFilter().isEmpty())
     {
-        projectactionitemsmodel()->clearFilter(14);
+        trackeritemsmodel()->clearFilter(14);
         // don't clear this one becasue we may have it open  projectinformationmodel()->clearFilter(0);
         projectslistmodel()->clearFilter(0);
         searchresultsmodel()->clearFilter(7);
     }
     else
     {
-        projectactionitemsmodel()->setFilter(14, getGlobalProjectFilter());
+        trackeritemsmodel()->setFilter(14, getGlobalProjectFilter());
         // don't set this one only do the lists projectinformationmodel()->setFilter(0, getGlobalProjectFilter());
         projectslistmodel()->setFilter(0, getGlobalProjectFilter());
 
@@ -541,7 +536,7 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
         actionitemprojectnotesmodel()->refresh();
         actionitemsdetailsmodel()->refresh();
 
-        projectactionitemsmodel()->refresh();
+        trackeritemsmodel()->refresh();
         projectinformationmodel()->refresh();
         projectslistmodel()->refresh();
         searchresultsmodel()->refresh();

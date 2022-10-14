@@ -5,7 +5,6 @@
 #include <QObject>
 #include <QDataWidgetMapper>
 #include "projectnotesdelegate.h"
-//#include "pncomboboxdelegate.h"
 
 class ProjectNotesPage : public PNBasePage
 {

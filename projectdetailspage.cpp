@@ -91,7 +91,7 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     setCurrentView( ui->tableViewStatusReportItems );
 
     ui->tableViewTeam->setModel(global_DBObjects.projectteammembersmodelproxy());
-    ui->tableViewTrackerItems->setModel(global_DBObjects.projectactionitemsmodelproxy());   
+    ui->tableViewTrackerItems->setModel(global_DBObjects.trackeritemsmodelproxy());   
     ui->tableViewLocations->setModel(global_DBObjects.projectlocationsmodelproxy());
     ui->tableViewProjectNotes->setModel(global_DBObjects.projectnotesmodelproxy());
 }
@@ -100,6 +100,8 @@ void ProjectDetailsPage::toFirst()
 {
     if (m_mapperProjectDetails != nullptr)
         m_mapperProjectDetails->toFirst();
+
+    ui->tabWidgetProject->setCurrentIndex(0);  // always set to the first tab on open
 }
 
 void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
@@ -118,7 +120,7 @@ void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
         setCurrentView(ui->tableViewTeam);
         break;
     case 2:
-        setCurrentModel(global_DBObjects.projectactionitemsmodelproxy());
+        setCurrentModel(global_DBObjects.trackeritemsmodelproxy());
         setCurrentView(ui->tableViewTrackerItems);
         break;
     case 3:

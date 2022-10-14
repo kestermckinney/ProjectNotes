@@ -216,9 +216,8 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             QVariant oldvalue = m_cache[t_index.row()].value(t_index.column());
             QVariant value = t_value;
 
-            sqlEscape(oldvalue, m_column_type[t_index.column()], true);
             sqlEscape(value, m_column_type[t_index.column()], true);
-STOPPED HERE -- Cannot update a date value it checks the old one incorrectly
+
             QSqlQuery update;
             update.prepare("update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)");
             update.addBindValue(value);
@@ -274,8 +273,6 @@ void PNSqlQueryModel::refresh()
     beginResetModel();
     clear();
 
-    // m_sql_query = QSqlQuery( BaseSQL() ); // always build query to get the column names for where clause generation
-
     if (!m_order_by.isEmpty() )
         orderby = " order by " + m_order_by;
 
@@ -321,7 +318,7 @@ QVariant PNSqlQueryModel::data(const QModelIndex &t_index, int t_role) const
     {
         if (m_column_is_editable[t_index.column()] == DBReadOnly)
         {
-            retval = QVariant(QColor("lightgray"));
+            retval = QVariant(QColor("gray"));
         }
     }
 
@@ -911,9 +908,8 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
 
             if ( m_is_user_filtered[colnum] || m_is_user_range_filtered[colnum] ) // if has a user filter then add the various kinds
             {
-
                 // if the column has a sub string search them apply it
-                if ( !m_user_search_string[colnum].isNull() )
+                if ( !m_user_search_string[colnum].isNull() && !(m_user_search_string[colnum] == ""))
                 {
                     column_value = m_user_search_string[colnum];
 
@@ -944,7 +940,10 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                     }
                     else
                     {
-                        valuelist += QString(" %1 LIKE '%%2%' ").arg(m_sql_query.record().fieldName(colnum), column_value.toString());
+                        if (  m_column_type[colnum] == DBString )
+                            valuelist += QString(" %1 LIKE '%%2%' ").arg(m_sql_query.record().fieldName(colnum), column_value.toString());
+                        else
+                            valuelist += QString(" %1 = %2 ").arg(m_sql_query.record().fieldName(colnum), column_value.toString());
                     }
                 }
 
@@ -962,7 +961,10 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
 
                     sqlEscape(column_value, m_column_type[colnum]);
 
-                    instring += QString("'%1'").arg(column_value.toString());
+                    if ( m_column_type[colnum] == DBString )
+                        instring += QString("'%1'").arg(column_value.toString());
+                    else
+                        instring += QString("%1").arg(column_value.toString());
 
                     if (m_column_type[colnum] == DBBool && column_value == tr("'0'"))
                         checkfornullptr = true;
@@ -1031,7 +1033,6 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                         {
                             if (!valuelist.isEmpty())
                                 fk_valuelist += tr(" AND ");
-
 
                             if ( m_column_type[colnum] != DBString )
                             {

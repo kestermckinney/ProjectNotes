@@ -27,8 +27,8 @@ SOURCES += \
     mainwindow.cpp \
     meetingattendeesmodel.cpp \
     meetingattendeesview.cpp \
-    noteactionitemsmodel.cpp \
     notesactionitemsmodel.cpp \
+    notesactionitemsview.cpp \
     peoplelistview.cpp \
     peoplemodel.cpp \
     peoplepage.cpp \
@@ -46,8 +46,8 @@ SOURCES += \
     pnsqlquerymodel.cpp \
     pntableview.cpp \
     preferencesdialog.cpp \
-    projectactionitemsmodel.cpp \
-    projectactionitemsview.cpp \
+    trackeritemsmodel.cpp \
+    trackeritemsview.cpp \
     projectdetailsdelegate.cpp \
     projectdetailspage.cpp \
     projectlocationsmodel.cpp \
@@ -87,8 +87,8 @@ HEADERS += \
     mainwindow.h \
     meetingattendeesmodel.h \
     meetingattendeesview.h \
-    noteactionitemsmodel.h \
     notesactionitemsmodel.h \
+    notesactionitemsview.h \
     peoplelistview.h \
     peoplemodel.h \
     peoplepage.h \
@@ -106,8 +106,8 @@ HEADERS += \
     pnsqlquerymodel.h \
     pntableview.h \
     preferencesdialog.h \
-    projectactionitemsmodel.h \
-    projectactionitemsview.h \
+    trackeritemsmodel.h \
+    trackeritemsview.h \
     projectdetailsdelegate.h \
     projectdetailspage.h \
     projectlocationsmodel.h \

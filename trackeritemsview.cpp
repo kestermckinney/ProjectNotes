@@ -21,7 +21,7 @@ TrackerItemsView::~TrackerItemsView()
     if (m_meeting_delegate) delete m_meeting_delegate;
     if (m_project_delegate) delete m_project_delegate;
     if (m_internal_delegate) delete m_internal_delegate;
-    if (m_client_delegate) delete m_client_delegate;
+    //if (m_client_delegate) delete m_client_delegate;
 }
 
 void TrackerItemsView::setModel(QAbstractItemModel *t_model)
@@ -39,18 +39,18 @@ void TrackerItemsView::setModel(QAbstractItemModel *t_model)
 
         // projects list panel delagets
         m_action_item_type_delegate = new ComboBoxDelegate(this, &m_item_type);
-        m_identified_by_delegate = new PNComboBoxDelegate(this, global_DBObjects.unfilteredpeoplemodel());
+        m_identified_by_delegate = new PNComboBoxDelegate(this, global_DBObjects.teamsmodel(), 1, 3);
         m_date_identified_delegate = new PNDateEditDelegate(this);
-        m_assigned_to_delegate = new PNComboBoxDelegate(this, global_DBObjects.unfilteredpeoplemodel());
+        m_assigned_to_delegate = new PNComboBoxDelegate(this, global_DBObjects.teamsmodel(), 1, 3);
         m_priority_delegate = new ComboBoxDelegate(this, &m_item_priority);
         m_status_delegate = new ComboBoxDelegate(this, &m_item_status);
         m_date_due_delegate = new PNDateEditDelegate(this);
         m_date_date_updated_delagate = new PNDateEditDelegate(this);
         m_date_resolved_delegate = new PNDateEditDelegate(this);
-        m_meeting_delegate = new PNComboBoxDelegate(this, global_DBObjects.actionitemsdetailsmeetingsmodel(), 2, 0);  //TODO: make this not filtered by project
+        m_meeting_delegate = new PNComboBoxDelegate(this, global_DBObjects.trackeritemsmeetingsmodel(), 2, 0);
         m_project_delegate = new PNComboBoxDelegate(this, global_DBObjects.projectslistmodel());
         m_internal_delegate = new PNCheckBoxDelegate(this);
-        m_client_delegate = new PNComboBoxDelegate(this, global_DBObjects.unfilteredclientsmodel());
+        //m_client_delegate = new PNComboBoxDelegate(this, global_DBObjects.unfilteredclientsmodel());
 
         // assign delegates to columns
         setItemDelegateForColumn(2, m_action_item_type_delegate);
@@ -65,7 +65,7 @@ void TrackerItemsView::setModel(QAbstractItemModel *t_model)
         setItemDelegateForColumn(13, m_meeting_delegate);
         setItemDelegateForColumn(14, m_project_delegate);
         setItemDelegateForColumn(15, m_internal_delegate);
-        setItemDelegateForColumn(18, m_client_delegate);
+        //setItemDelegateForColumn(18, m_client_delegate);
     }
     else
     {

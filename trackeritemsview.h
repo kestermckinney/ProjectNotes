@@ -18,12 +18,12 @@ public:
     void setModel(QAbstractItemModel *t_model) override;
 
 private:
-    QStringListModel m_item_type;//(PNDatabaseObjects::item_type);
-    QStringListModel m_item_status;//PNDatabaseObjects::item_status;
-    QStringListModel m_item_priority;//PNDatabaseObjects::item_priority;
+    QStringListModel m_item_type;
+    QStringListModel m_item_status;
+    QStringListModel m_item_priority;
 
     // projects list panel delegates
-    PNComboBoxDelegate* m_unfiltered_people_delegate = nullptr;
+    //PNComboBoxDelegate* m_unfiltered_people_delegate = nullptr;
     ComboBoxDelegate* m_action_item_type_delegate = nullptr;
     PNComboBoxDelegate* m_identified_by_delegate = nullptr;
     ComboBoxDelegate* m_priority_delegate = nullptr;
@@ -36,7 +36,7 @@ private:
     PNComboBoxDelegate* m_meeting_delegate = nullptr;
     PNComboBoxDelegate* m_project_delegate = nullptr;
     PNCheckBoxDelegate* m_internal_delegate = nullptr;
-    PNComboBoxDelegate* m_client_delegate = nullptr;
+    //PNComboBoxDelegate* m_client_delegate = nullptr;
 };
 
 

@@ -55,7 +55,6 @@ private slots:
     void on_actionCopy_Item_triggered();
     void on_actionDelete_Item_triggered();
     void on_actionInternal_Items_triggered();
-    void on_actionAll_Tracker_Action_Items_triggered();
     void on_actionPreferences_triggered();
     void on_actionResolved_Tracker_Action_Items_triggered();
 

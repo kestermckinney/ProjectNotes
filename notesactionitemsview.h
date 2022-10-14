@@ -1,5 +1,5 @@
-#ifndef PROJECTACTIONITEMSVIEW_H
-#define PROJECTACTIONITEMSVIEW_H
+#ifndef NOTESACTONITEMSVIEW_H
+#define NOTESACTONITEMSVIEW_H
 
 #include "pntableview.h"
 #include "pncomboboxdelegate.h"
@@ -9,11 +9,11 @@
 #include <QObject>
 #include <QStringListModel>
 
-class ProjectActionItemsView : public PNTableView
+class NotesActionItemsView : public PNTableView
 {
 public:
-    ProjectActionItemsView(QWidget* t_parent = nullptr);
-    ~ProjectActionItemsView();
+    NotesActionItemsView(QWidget* t_parent = nullptr);
+    ~NotesActionItemsView();
 
     void setModel(QAbstractItemModel *t_model) override;
 
@@ -40,4 +40,4 @@ private:
 };
 
 
-#endif // PROJECTACTIONITEMSVIEW_H
+#endif // NOTESACTONITEMSVIEW_H

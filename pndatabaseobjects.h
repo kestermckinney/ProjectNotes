@@ -16,7 +16,7 @@
 #include "notesactionitemsmodel.h"
 #include "itemdetailteamlistmodel.h"
 #include "trackeritemcommentsmodel.h"
-#include "projectactionitemsmodel.h"
+#include "trackeritemsmodel.h"
 #include "searchresultsmodel.h"
 #include <pnsortfilterproxymodel.h>
 
@@ -62,12 +62,13 @@ public:
     ProjectNotesModel* projecteditingnotesmodel() { return m_project_editing_notes_model; }
     ActionItemProjectNotesModel* actionitemprojectnotesmodel() { return m_action_item_project_notes_model; }
     ActionItemsDetailsMeetingsModel* actionitemsdetailsmeetingsmodel() { return m_action_items_details_meetings_model; }
+    ActionItemsDetailsMeetingsModel* trackeritemsmeetingsmodel() { return m_tracker_items_meetings_model; }
     MeetingAttendeesModel* meetingattendeesmodel() { return m_meeting_attendees_model; }
     NotesActionItemsModel* notesactionitemsmodel() { return m_notes_action_items_model; }
     ItemDetailTeamListModel* itemdetailteamlistmodel() { return m_item_detail_team_list_model; }
     TrackerItemCommentsModel* trackeritemscommentsmodel() { return m_tracker_item_comments_model; }
-    ProjectActionItemsModel* projectactionitemsmodel() { return m_project_action_items_model; }
-    ProjectActionItemsModel* actionitemsdetailsmodel() { return m_action_item_details_model; }
+    TrackerItemsModel* trackeritemsmodel() { return m_project_action_items_model; }
+    TrackerItemsModel* actionitemsdetailsmodel() { return m_action_item_details_model; }
 
     PNSortFilterProxyModel* clientsmodelproxy() { return m_clients_model_proxy; }
     PNSortFilterProxyModel* unfilteredclientsmodelproxy() { return m_unfilteredclients_model_proxy; }
@@ -84,11 +85,12 @@ public:
     PNSortFilterProxyModel* projecteditingnotesmodelproxy() { return m_project_editing_notes_model_proxy; }
     PNSortFilterProxyModel* actionitemprojectnotesmodelproxy() { return m_action_item_project_notes_model_proxy; }
     PNSortFilterProxyModel* actionitemsdetailsmeetingsmodelproxy() { return m_action_items_details_meetings_model_proxy; }
+    PNSortFilterProxyModel* trackeritemsmeetingsmodelproxy() { return m_tracker_items_meetings_model_proxy; }
     PNSortFilterProxyModel* meetingattendeesmodelproxy() { return m_meeting_attendees_model_proxy; }
     PNSortFilterProxyModel* notesactionitemsmodelproxy() { return m_notes_action_items_model_proxy; }
     PNSortFilterProxyModel* itemdetailteamlistmodelproxy() { return m_item_detail_team_list_model_proxy; }
     PNSortFilterProxyModel* trackeritemscommentsmodelproxy() { return m_tracker_item_comments_model_proxy; }
-    PNSortFilterProxyModel* projectactionitemsmodelproxy() { return m_project_action_items_model_proxy; }
+    PNSortFilterProxyModel* trackeritemsmodelproxy() { return m_project_action_items_model_proxy; }
     PNSortFilterProxyModel* actionitemsdetailsmodelproxy() { return m_action_item_details_model_proxy; }
 
     SearchResultsModel* searchresultsmodel() { return m_search_results_model; }
@@ -104,9 +106,7 @@ public:
     static QStringList file_types;
 
     // global searches
-    void setShowAllTrackerItems(bool t_value);
     void setShowResolvedTrackerItems(bool t_value);
-    bool getShowAllTrackerItems();
     bool getShowResolvedTrackerItems();
     void setShowClosedProjects(bool t_value);
     bool getShowClosedProjects();
@@ -140,12 +140,13 @@ private:
     ProjectNotesModel* m_project_editing_notes_model;
     ActionItemProjectNotesModel* m_action_item_project_notes_model;
     ActionItemsDetailsMeetingsModel* m_action_items_details_meetings_model;
+    ActionItemsDetailsMeetingsModel* m_tracker_items_meetings_model;
     MeetingAttendeesModel* m_meeting_attendees_model;
     NotesActionItemsModel* m_notes_action_items_model;
     ItemDetailTeamListModel* m_item_detail_team_list_model;
     TrackerItemCommentsModel* m_tracker_item_comments_model;
-    ProjectActionItemsModel* m_project_action_items_model;
-    ProjectActionItemsModel* m_action_item_details_model;
+    TrackerItemsModel* m_project_action_items_model;
+    TrackerItemsModel* m_action_item_details_model;
 
     SearchResultsModel* m_search_results_model;
 
@@ -164,6 +165,7 @@ private:
     PNSortFilterProxyModel* m_project_editing_notes_model_proxy;
     PNSortFilterProxyModel* m_action_item_project_notes_model_proxy;
     PNSortFilterProxyModel* m_action_items_details_meetings_model_proxy;
+    PNSortFilterProxyModel* m_tracker_items_meetings_model_proxy;
     PNSortFilterProxyModel* m_meeting_attendees_model_proxy;
     PNSortFilterProxyModel* m_notes_action_items_model_proxy;
     PNSortFilterProxyModel* m_item_detail_team_list_model_proxy;

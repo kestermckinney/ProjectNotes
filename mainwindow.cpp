@@ -134,30 +134,12 @@ void MainWindow::setButtonAndMenuStates()
         else
             ui->tableViewTrackerItems->setColumnHidden(15, true);
 
-        ui->actionAll_Tracker_Action_Items->setChecked(global_DBObjects.getShowAllTrackerItems());
+        ui->tabWidgetProject->setTabText(2, "Tracker");
 
-        if (global_DBObjects.getShowAllTrackerItems())
-        {
-            ui->tabWidgetProject->setTabText(2, "Tracker [ALL]");
-
-            ui->tableViewTrackerItems->setColumnHidden(0, true);
-            ui->tableViewTrackerItems->setColumnHidden(14, false);
-            ui->tableViewTrackerItems->setColumnHidden(17, false);
-            ui->tableViewTrackerItems->setColumnHidden(18, false);
-
-            ui->tableViewTrackerItems->resizeColumnToContents(14);
-            ui->tableViewTrackerItems->resizeColumnToContents(17);
-            ui->tableViewTrackerItems->resizeColumnToContents(18);
-        }
-        else
-        {
-            ui->tabWidgetProject->setTabText(2, "Tracker");
-
-            ui->tableViewTrackerItems->setColumnHidden(0, true);
-            ui->tableViewTrackerItems->setColumnHidden(14, true);
-            ui->tableViewTrackerItems->setColumnHidden(17, true);
-            ui->tableViewTrackerItems->setColumnHidden(18, true);
-        }
+        ui->tableViewTrackerItems->setColumnHidden(0, true);
+        ui->tableViewTrackerItems->setColumnHidden(14, true);
+        ui->tableViewTrackerItems->setColumnHidden(17, true);
+        ui->tableViewTrackerItems->setColumnHidden(18, true);
     }
 }
 
@@ -361,37 +343,19 @@ void MainWindow::on_actionInternal_Items_triggered()
     setButtonAndMenuStates();
 }
 
-void MainWindow::on_actionAll_Tracker_Action_Items_triggered()
-{
-    global_DBObjects.setShowAllTrackerItems(ui->actionAll_Tracker_Action_Items->isChecked());
-
-    // filter tracker items by project
-    if (ui->actionAll_Tracker_Action_Items->isChecked())
-        global_DBObjects.projectactionitemsmodel()->clearFilter(14);
-    else
-    {
-        QVariant projectid = global_DBObjects.projectinformationmodel()->data(global_DBObjects.projectinformationmodel()->index(0,0));
-        global_DBObjects.projectactionitemsmodel()->setFilter(14, projectid.toString());
-    }
-
-    global_DBObjects.projectactionitemsmodel()->refresh();
-
-    setButtonAndMenuStates();
-}
-
 void MainWindow::on_actionResolved_Tracker_Action_Items_triggered()
 {
     global_DBObjects.setShowResolvedTrackerItems(ui->actionResolved_Tracker_Action_Items->isChecked());
 
     // filter tracker items by Resolved
     if (ui->actionResolved_Tracker_Action_Items->isChecked())
-        global_DBObjects.projectactionitemsmodel()->clearFilter(9);
+        global_DBObjects.trackeritemsmodel()->clearFilter(9);
     else
     {
-        global_DBObjects.projectactionitemsmodel()->setFilter(9, "Resolved", PNSqlQueryModel::NotEqual );
+        global_DBObjects.trackeritemsmodel()->setFilter(9, "Resolved", PNSqlQueryModel::NotEqual );
     }
 
-    global_DBObjects.projectactionitemsmodel()->refresh();
+    global_DBObjects.trackeritemsmodel()->refresh();
 
     setButtonAndMenuStates();
 }
