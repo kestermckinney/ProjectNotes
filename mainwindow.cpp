@@ -14,12 +14,17 @@
 #include <QDebug>
 #include <QDir>
 #include <QFileDialog>
+#include <QTextEdit>
+#include <QFontComboBox>
 
 MainWindow::MainWindow(QWidget *t_parent)
     : QMainWindow(t_parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    // add special formatting button for html editor
+    setupTextActions();
 
     m_preferences_dialog = new PreferencesDialog(this);
 
@@ -363,5 +368,52 @@ void MainWindow::on_actionResolved_Tracker_Action_Items_triggered()
 void MainWindow::on_actionPreferences_triggered()
 {
     m_preferences_dialog->show();
+}
+
+void MainWindow::setupTextActions()
+{
+    QToolBar *tb = ui->toolBarStyle; //  addToolBar(tr("Format Actions"));
+
+    tb->setAllowedAreas(Qt::TopToolBarArea | Qt::BottomToolBarArea);
+    //addToolBarBreak(Qt::TopToolBarArea);
+    //addToolBar(tb);
+
+    m_combo_box_style = new QComboBox(tb);
+    tb->addWidget(m_combo_box_style);
+    m_combo_box_style->addItem("Standard");
+    m_combo_box_style->addItem("Bullet List (Disc)");
+    m_combo_box_style->addItem("Bullet List (Circle)");
+    m_combo_box_style->addItem("Bullet List (Square)");
+    m_combo_box_style->addItem("Task List (Unchecked)");
+    m_combo_box_style->addItem("Task List (Checked)");
+    m_combo_box_style->addItem("Ordered List (Decimal)");
+    m_combo_box_style->addItem("Ordered List (Alpha lower)");
+    m_combo_box_style->addItem("Ordered List (Alpha upper)");
+    m_combo_box_style->addItem("Ordered List (Roman lower)");
+    m_combo_box_style->addItem("Ordered List (Roman upper)");
+    m_combo_box_style->addItem("Heading 1");
+    m_combo_box_style->addItem("Heading 2");
+    m_combo_box_style->addItem("Heading 3");
+    m_combo_box_style->addItem("Heading 4");
+    m_combo_box_style->addItem("Heading 5");
+    m_combo_box_style->addItem("Heading 6");
+
+//TODO:    connect(m_combo_box_style, QOverload<int>::of(&QComboBox::activated), this, &TextEdit::textStyle);
+
+    m_combo_box_font = new QFontComboBox(tb);
+    tb->addWidget(m_combo_box_font);
+//TODO:    connect(m_combo_box_font, &QComboBox::textActivated, this, &TextEdit::textFamily);
+
+    m_combo_box_size = new QComboBox(tb);
+    m_combo_box_size->setObjectName("comboSize");
+    tb->addWidget(m_combo_box_size);
+    m_combo_box_size->setEditable(true);
+
+    const QList<int> standardSizes = QFontDatabase::standardSizes();
+    for (int size : standardSizes)
+        m_combo_box_size->addItem(QString::number(size));
+    m_combo_box_size->setCurrentIndex(standardSizes.indexOf(QApplication::font().pointSize()));
+
+//TODO:    connect(m_combo_box_size, &QComboBox::textActivated, this, &TextEdit::textSize);
 }
 

@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QStringListModel>
 #include <QStack>
+#include <QComboBox>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -68,6 +69,14 @@ private:
 
     QStack<PNBasePage*> m_navigation_history;
     int m_navigation_location = -1;
+
+
+    // setup complex text formatting toolbar and menu
+    void setupTextActions();
+
+    QComboBox* m_combo_box_style;
+    QComboBox* m_combo_box_font;
+    QComboBox* m_combo_box_size;
 };
 
 #endif // MAINWINDOW_H

@@ -5,7 +5,6 @@
 #include <QObject>
 #include <QDataWidgetMapper>
 #include "projectdetailsdelegate.h"
-//#include "pncomboboxdelegate.h"
 
 #include <QList>
 
@@ -23,7 +22,7 @@ public:
 
 public slots:
     void toFirst();
-    void toFirst( const QModelIndex& topLeft, const QModelIndex& bottomRight) { Q_UNUSED(topLeft);Q_UNUSED(bottomRight) toFirst(); };
+    void toFirst( const QModelIndex& topLeft, const QModelIndex& bottomRight) { Q_UNUSED(topLeft);Q_UNUSED(bottomRight) toFirst(); }
 
 private:
     Ui::MainWindow *ui = nullptr;
