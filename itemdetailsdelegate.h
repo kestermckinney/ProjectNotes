@@ -1,10 +1,10 @@
 #ifndef ITEMDETAILSDELEGATE_H
 #define ITEMDETAILSDELEGATE_H
 
-#include <QItemDelegate>
+#include <QStyledItemDelegate>
 #include <QObject>
 
-class ItemDetailsDelegate : public QItemDelegate
+class ItemDetailsDelegate : public QStyledItemDelegate
 {
 public:
     explicit ItemDetailsDelegate(QObject *parent = nullptr);

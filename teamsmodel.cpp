@@ -20,4 +20,5 @@ TeamsModel::TeamsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 
     setOrderBy("name");
 
+    setShowBlank(); // add a blank line to the selection
 }

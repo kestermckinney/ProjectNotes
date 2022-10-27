@@ -51,6 +51,7 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
         {
             for (int i = 0; i < m_related_table.count(); i++)
             {
+                // if this is a realated table look for related columns
                 if ( recordset->tablename() == m_related_table[i] )
                 {
                     //qDebug() << "Looking Into Table " << recordset->tablename() << " i is " << i;
@@ -71,6 +72,19 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
                         }
                     }
 
+                }
+                // if this is a copy of the same table update the row we just changed
+                else if (this->tablename() == recordset->tablename())
+                {
+                    for (int m_row = 0; m_row < recordset->m_cache.count(); m_row++)
+                    {
+                        // if the row contains the key value in the column then reload it
+                        if ( recordset->m_cache[m_row].value(0) == key_value )
+                        {
+                            // qDebug() << "Reloading Record for Table " << recordset->tablename() << " Row " << ck_row << " Column " << ck_col;
+                            recordset->reloadRecord(recordset->index(m_row, 0));
+                        }
+                    }
                 }
             }
 
@@ -264,6 +278,12 @@ void PNSqlQueryModel::setBaseSql(const QString t_table)
 
     m_sql_query = QSqlQuery( BaseSQL() ); // always build query to get the column names for where clause generation
 }
+
+void PNSqlQueryModel::setTableName(const QString &t_table, const QString &t_display_name)
+{
+    m_tablename = t_table;
+    m_display_name = t_display_name;
+};
 
 void PNSqlQueryModel::refresh()
 {

@@ -161,9 +161,6 @@ bool TrackerItemsModel::openRecord(QModelIndex t_index)
     return true;
 }
 
-
-//TODO: Pop up a tracker items detail screen
-//TODO: Add notes list
-//TODO: Pop up the note
+//TODO: Pop up the note on a tracker comment??
 
 

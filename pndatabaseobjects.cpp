@@ -93,6 +93,7 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_unfilteredclients_model = new ClientsModel(nullptr);
     m_unfilteredclients_model_proxy = new PNSortFilterProxyModel();
     m_unfilteredclients_model_proxy->setSourceModel(m_unfilteredclients_model);
+    m_unfilteredclients_model->setShowBlank();
 
     m_people_model = new PeopleModel(nullptr);
     // setup lookup/drop down values
@@ -107,6 +108,7 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_unfiltered_people_model = new PeopleModel(nullptr);
     m_unfiltered_people_model_proxy = new PNSortFilterProxyModel();
     m_unfiltered_people_model_proxy->setSourceModel(m_unfiltered_people_model);
+    m_unfiltered_people_model->setShowBlank();
 
     m_project_information_model = new ProjectsModel(nullptr);
     m_project_information_model_proxy = new PNSortFilterProxyModel();
@@ -150,10 +152,12 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_tracker_items_meetings_model = new ActionItemsDetailsMeetingsModel(nullptr);
     m_tracker_items_meetings_model_proxy = new PNSortFilterProxyModel();
     m_tracker_items_meetings_model_proxy->setSourceModel(m_tracker_items_meetings_model);
+    m_tracker_items_meetings_model->setShowBlank();
 
     m_action_items_details_meetings_model = new ActionItemsDetailsMeetingsModel(nullptr);
     m_action_items_details_meetings_model_proxy = new PNSortFilterProxyModel();
     m_action_items_details_meetings_model_proxy->setSourceModel(m_action_items_details_meetings_model);
+    m_action_items_details_meetings_model->setShowBlank();
 
     m_project_action_items_model = new TrackerItemsModel(nullptr);
     m_project_action_items_model_proxy = new PNSortFilterProxyModel();
@@ -176,8 +180,6 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_tracker_item_comments_model_proxy->setSourceModel(m_tracker_item_comments_model);
 
     m_search_results_model = new SearchResultsModel(nullptr);
-
-    //m_people_model->setShowBlank(true);
 
     return true;
 }

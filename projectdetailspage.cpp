@@ -12,7 +12,10 @@ ProjectDetailsPage::ProjectDetailsPage()
 ProjectDetailsPage::~ProjectDetailsPage()
 {
     if (ui)
+    {
         disconnect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
+        disconnect(global_DBObjects.projectinformationmodel(), SIGNAL(dataChanged( const QModelIndex &, const QModelIndex & )), this, SLOT(toFirst( const QModelIndex &, const QModelIndex & )));
+    }
 
     if (m_mapperProjectDetails != nullptr)
         delete m_mapperProjectDetails;
@@ -39,6 +42,7 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     ui = t_ui;
 
     connect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
+    connect(global_DBObjects.projectinformationmodel(), SIGNAL(dataChanged( const QModelIndex &, const QModelIndex & )), this, SLOT(toFirst( const QModelIndex &, const QModelIndex & )));
 
     ui->dateEditLastInvoiced->setNullable(true);
     ui->dateEditLastStatus->setNullable(true);
@@ -106,8 +110,6 @@ void ProjectDetailsPage::toFirst()
 
 void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
 {
-    // TODO: this goes out of alignment when a tab isn't clicked when first opened
-    // maybe the open should select the tab too
 
     switch ( index )
     {

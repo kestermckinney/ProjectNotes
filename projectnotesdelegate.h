@@ -1,10 +1,10 @@
 #ifndef PROJECTNOTESDELEGATE_H
 #define PROJECTNOTESDELEGATE_H
 
-#include <QItemDelegate>
+#include <QStyledItemDelegate>
 #include <QObject>
 
-class ProjectNotesDelegate : public QItemDelegate
+class ProjectNotesDelegate : public QStyledItemDelegate
 {
 public:
     explicit ProjectNotesDelegate(QObject *parent = nullptr);

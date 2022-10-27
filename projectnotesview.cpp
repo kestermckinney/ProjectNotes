@@ -38,4 +38,6 @@ void ProjectNotesView::setModel(QAbstractItemModel *t_model)
     }
 }
 
+//TODO: add html editor features to notes pages
+//TODO: fix icons to be like the ones i created custom
 

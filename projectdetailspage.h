@@ -7,6 +7,8 @@
 #include "projectdetailsdelegate.h"
 //#include "pncomboboxdelegate.h"
 
+#include <QList>
+
 class ProjectDetailsPage : public PNBasePage
 {
     Q_OBJECT
@@ -19,7 +21,9 @@ public:
 
     void setupModels( Ui::MainWindow *t_ui ) override;
 
+public slots:
     void toFirst();
+    void toFirst( const QModelIndex& topLeft, const QModelIndex& bottomRight) { Q_UNUSED(topLeft);Q_UNUSED(bottomRight) toFirst(); };
 
 private:
     Ui::MainWindow *ui = nullptr;
