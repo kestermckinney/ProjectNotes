@@ -1450,26 +1450,14 @@
     <addaction name="actionCustom_Plugins"/>
     <addaction name="actionAbout"/>
    </widget>
-   <widget class="QMenu" name="menuF_ormat">
+   <widget class="QMenu" name="menuFormat">
     <property name="title">
      <string>F&amp;ormat</string>
     </property>
-    <addaction name="action_Bold"/>
-    <addaction name="action_Italic"/>
-    <addaction name="action_Underline"/>
-    <addaction name="separator"/>
-    <addaction name="action_Left"/>
-    <addaction name="action_Center"/>
-    <addaction name="action_Right"/>
-    <addaction name="action_Justify"/>
-    <addaction name="actionI_ndent"/>
-    <addaction name="actionUind_ent"/>
-    <addaction name="separator"/>
-    <addaction name="actionC_olor"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
-   <addaction name="menuF_ormat"/>
+   <addaction name="menuFormat"/>
    <addaction name="menuPlugins"/>
    <addaction name="menuView"/>
    <addaction name="menuHelp"/>
@@ -1536,27 +1524,6 @@
    <addaction name="actionPaste"/>
   </widget>
   <widget class="QToolBar" name="toolBarFormat">
-   <property name="windowTitle">
-    <string>toolBar</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="action_Bold"/>
-   <addaction name="action_Italic"/>
-   <addaction name="action_Underline"/>
-   <addaction name="action_Left"/>
-   <addaction name="action_Center"/>
-   <addaction name="action_Right"/>
-   <addaction name="action_Justify"/>
-   <addaction name="actionI_ndent"/>
-   <addaction name="actionUind_ent"/>
-   <addaction name="actionC_olor"/>
-  </widget>
-  <widget class="QToolBar" name="toolBarStyle">
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
@@ -2023,7 +1990,10 @@
     <string>Resolved Tracker/Action Items</string>
    </property>
   </action>
-  <action name="action_Bold">
+  <action name="actionBold">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset theme="format-text-bold">
      <normaloff>.</normaloff>.</iconset>
@@ -2032,7 +2002,10 @@
     <string>&amp;Bold</string>
    </property>
   </action>
-  <action name="action_Italic">
+  <action name="actionItalic">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset theme="format-text-italic">
      <normaloff>.</normaloff>.</iconset>
@@ -2041,7 +2014,10 @@
     <string>&amp;Italic</string>
    </property>
   </action>
-  <action name="action_Underline">
+  <action name="actionUnderline">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset theme="format-text-underline">
      <normaloff>.</normaloff>.</iconset>
@@ -2050,7 +2026,10 @@
     <string>&amp;Underline</string>
    </property>
   </action>
-  <action name="action_Left">
+  <action name="actionLeft">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset theme="format-justify-left">
      <normaloff>.</normaloff>.</iconset>
@@ -2059,7 +2038,10 @@
     <string>&amp;Left</string>
    </property>
   </action>
-  <action name="action_Center">
+  <action name="actionCenter">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset theme="format-justify-center">
      <normaloff>.</normaloff>.</iconset>
@@ -2068,7 +2050,10 @@
     <string>&amp;Center</string>
    </property>
   </action>
-  <action name="action_Right">
+  <action name="actionRight">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset theme="format-justify-right">
      <normaloff>.</normaloff>.</iconset>
@@ -2077,7 +2062,10 @@
     <string>&amp;Right</string>
    </property>
   </action>
-  <action name="action_Justify">
+  <action name="actionJustify">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset theme="format-justify-fill">
      <normaloff>.</normaloff>.</iconset>
@@ -2086,7 +2074,10 @@
     <string>&amp;Justify</string>
    </property>
   </action>
-  <action name="actionI_ndent">
+  <action name="actionIndent">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset theme="format-indent-more">
      <normaloff>.</normaloff>.</iconset>
@@ -2095,7 +2086,10 @@
     <string>I&amp;ndent</string>
    </property>
   </action>
-  <action name="actionUind_ent">
+  <action name="actionUindent">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset theme="format-indent-less">
      <normaloff>.</normaloff>.</iconset>
@@ -2104,7 +2098,10 @@
     <string>Uind&amp;ent</string>
    </property>
   </action>
-  <action name="actionC_olor">
+  <action name="actionColor">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset theme="text-x-generic">
      <normaloff>.</normaloff>.</iconset>

@@ -1,8 +1,7 @@
 
-#include "ui_mainwindow.h"
-
 #include "itemdetailspage.h"
 #include "pndatabaseobjects.h"
+#include "ui_mainwindow.h"
 
 ItemDetailsPage::ItemDetailsPage()
 {
@@ -111,3 +110,4 @@ void ItemDetailsPage::toFirst()
     if (m_mapperItemDetails != nullptr)
         m_mapperItemDetails->toFirst();
 }
+

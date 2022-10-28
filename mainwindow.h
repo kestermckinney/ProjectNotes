@@ -5,6 +5,7 @@
 #include <QStringListModel>
 #include <QStack>
 #include <QComboBox>
+#include <QTextCharFormat>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -59,6 +60,11 @@ private slots:
     void on_actionPreferences_triggered();
     void on_actionResolved_Tracker_Action_Items_triggered();
 
+    void cursorPositionChanged();
+    void alignmentChanged(Qt::Alignment a);
+    void fontChanged(const QFont &f);
+    void currentCharFormatChanged(const QTextCharFormat &format);
+
 private:
     Ui::MainWindow *ui;   
 
@@ -73,6 +79,31 @@ private:
 
     // setup complex text formatting toolbar and menu
     void setupTextActions();
+    void textStyle(int styleIndex);
+    void textFamily(const QString &f);
+    void mergeFormatOnWordOrSelection(const QTextCharFormat &format);
+    void textSize(const QString &p);
+    void modifyIndentation(int amount);
+    void colorChanged(const QColor &c);
+    void textItalic();
+    void textBold();
+    void textUnderline();
+    void unindent();
+    void indent();
+    void textAlign(QAction *a);
+    void textColor();
+
+    QAction *m_actionTextBold;
+    QAction *m_actionTextUnderline;
+    QAction *m_actionTextItalic;
+    QAction *m_actionTextColor;
+    QAction *m_actionAlignLeft;
+    QAction *m_actionAlignCenter;
+    QAction *m_actionAlignRight;
+    QAction *m_actionAlignJustify;
+    QAction *m_actionIndentLess;
+    QAction *m_actionIndentMore;
+    //QAction *m_actionToggleCheckState;
 
     QComboBox* m_combo_box_style;
     QComboBox* m_combo_box_font;
