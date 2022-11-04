@@ -116,22 +116,27 @@ void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
     case 0:
         setCurrentModel(global_DBObjects.statusreportitemsmodelproxy());
         setCurrentView(ui->tableViewStatusReportItems);
+        ui->tableViewStatusReportItems->setFocus();
         break;
     case 1:
         setCurrentModel(global_DBObjects.projectteammembersmodelproxy());
         setCurrentView(ui->tableViewTeam);
+        ui->tableViewTeam->setFocus();
         break;
     case 2:
         setCurrentModel(global_DBObjects.trackeritemsmodelproxy());
         setCurrentView(ui->tableViewTrackerItems);
+        ui->tableViewTrackerItems->setFocus();
         break;
     case 3:
         setCurrentModel(global_DBObjects.projectlocationsmodelproxy());
         setCurrentView(ui->tableViewLocations);
+        ui->tableViewLocations->setFocus();
         break;
     case 4:
         setCurrentModel(global_DBObjects.projectnotesmodelproxy());
         setCurrentView(ui->tableViewProjectNotes);
+        ui->tableViewProjectNotes->setFocus();
         break;
     }
 }

@@ -19,8 +19,6 @@ TrackerItemCommentsModel::TrackerItemCommentsModel(QObject* t_parent): PNSqlQuer
     setOrderBy("lastupdated_date");
 }
 
-// TODO: Add new record implmentation
-// TODO: Add overrident update to change the updated date
 bool TrackerItemCommentsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value2);
@@ -35,4 +33,24 @@ bool TrackerItemCommentsModel::newRecord(const QVariant* t_fk_value1, const QVar
     qr.setValue(4, global_DBObjects.getProjectManager()); // default updated by to the pm
 
     return addRecord(qr);
+}
+
+
+bool TrackerItemCommentsModel::setData(const QModelIndex &t_index, const QVariant &t_value, int t_role)
+{
+    QVariant curdate = QDateTime::currentDateTime().toString("MM/dd/yyyy");
+
+    // set the date the record was updated
+    if (t_index.column() != 2)
+    {
+        QVariant oldvalue = data(t_index, t_role);
+
+        if (oldvalue != t_value) // don't change the update date if nothing changed
+        {
+            QModelIndex qmi = index(t_index.row(), 2);
+            PNSqlQueryModel::setData(qmi, curdate, t_role);
+        }
+    }
+
+    return PNSqlQueryModel::setData(t_index, t_value, t_role);
 }

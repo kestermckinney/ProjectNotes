@@ -86,14 +86,17 @@ void ProjectNotesPage::on_tabWidgetNotes_currentChanged(int index)
     case 0:
         setCurrentModel(nullptr);
         setCurrentView(nullptr);
+        this->setFocus();
         break;
     case 1:
         setCurrentModel(global_DBObjects.meetingattendeesmodelproxy());
         setCurrentView(ui->tableViewAtendees);
+        ui->tableViewAtendees->setFocus();
         break;
     case 2:
         setCurrentModel(global_DBObjects.notesactionitemsmodelproxy());
         setCurrentView(ui->tableViewActionItems);
+        ui->tableViewActionItems->setFocus();
         break;
     }
 }

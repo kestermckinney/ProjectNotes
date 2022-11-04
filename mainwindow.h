@@ -38,6 +38,8 @@ public slots:
     void on_actionOpen_ItemDetails_triggered();
     void on_actionOpen_ProjectNote_triggered();
 
+    void on_focusChanged(QWidget *t_old, QWidget *t_now);
+
 private slots:
     void setButtonAndMenuStates();
     void openDatabase(QString t_dbfile);
@@ -65,6 +67,14 @@ private slots:
     void fontChanged(const QFont &f);
     void currentCharFormatChanged(const QTextCharFormat &format);
 
+    void on_actionUndo_triggered();
+    void on_actionRedo_triggered();
+    void on_actionCopy_triggered();
+    void on_actionCut_triggered();
+    void on_actionPaste_triggered();
+    void on_actionDelete_triggered();
+    void on_actionSelect_All_triggered();
+
 private:
     Ui::MainWindow *ui;   
 
@@ -76,6 +86,7 @@ private:
     QStack<PNBasePage*> m_navigation_history;
     int m_navigation_location = -1;
 
+    const QString rsrcPath = ":/icons";
 
     // setup complex text formatting toolbar and menu
     void setupTextActions();
@@ -93,6 +104,7 @@ private:
     void textAlign(QAction *a);
     void textColor();
 
+
     QAction *m_actionTextBold;
     QAction *m_actionTextUnderline;
     QAction *m_actionTextItalic;
@@ -103,7 +115,11 @@ private:
     QAction *m_actionAlignJustify;
     QAction *m_actionIndentLess;
     QAction *m_actionIndentMore;
-    //QAction *m_actionToggleCheckState;
+    QAction *m_actionUndo;
+    QAction *m_actionRedo;
+    QAction *m_actionCut;
+    QAction *m_actionCopy;
+    QAction *m_actionPaste;
 
     QComboBox* m_combo_box_style;
     QComboBox* m_combo_box_font;

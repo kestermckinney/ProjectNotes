@@ -202,7 +202,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
 
             QSqlQuery insert;
             insert.prepare("insert into " + m_tablename + " ( " + fields + " ) values ( " + values + " )");
-            qDebug() << "insert into " << m_tablename << " ( " << fields << " ) values ( " << values << " )";
+            //qDebug() << "insert into " << m_tablename << " ( " << fields << " ) values ( " << values << " )";
 
             int bindcount = 0;
             for (int i = 0; i < m_sql_query.record().count(); i++)
@@ -210,7 +210,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 if ((m_column_is_editable[i] == DBEditable) || i == 0)
                 {
                     insert.bindValue(bindcount, m_cache[t_index.row()].field(i).value());
-                    qDebug() << "Value " << m_cache[t_index.row()].field(i).value();
+                    //qDebug() << "Value " << m_cache[t_index.row()].field(i).value();
                     bindcount++;
                 }
             }
@@ -238,10 +238,10 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             update.addBindValue(keyvalue);
             update.addBindValue(oldvalue);
 
-            qDebug() << "update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)";
-            qDebug() << "Value " << value;
-            qDebug() << "Value " << keyvalue;
-            qDebug() << "Value " << oldvalue;
+            //qDebug() << "update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)";
+            //qDebug() << "Value " << value;
+            //qDebug() << "Value " << keyvalue;
+            //qDebug() << "Value " << oldvalue;
 
             if(update.exec())
             {
@@ -300,8 +300,8 @@ void PNSqlQueryModel::refresh()
 
     m_sql_query = QSqlQuery( fullsql );
 
-    qDebug() << "Refreshing: ";
-    qDebug() << fullsql;
+    //qDebug() << "Refreshing: ";
+    //qDebug() << fullsql;
 
     // add a blank row for drop downs
     if (m_show_blank)

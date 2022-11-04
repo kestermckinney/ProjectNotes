@@ -17,6 +17,9 @@
 #include <QFontComboBox>
 #include <QTextList>
 #include <QColorDialog>
+#include <QClipboard>
+#include <QMimeType>
+#include <QMimeData>
 
 #include "mainwindow.h"
 
@@ -49,6 +52,8 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     connect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
     connect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
+
+    connect((QApplication*)QApplication::instance(), &QApplication::focusChanged, this, &MainWindow::on_focusChanged);
 }
 
 MainWindow::~MainWindow()
@@ -74,6 +79,14 @@ MainWindow::~MainWindow()
     delete m_preferences_dialog;
 
     delete ui;
+}
+
+void MainWindow::on_focusChanged(QWidget *t_old, QWidget *t_now)
+{
+    Q_UNUSED(t_old);
+    Q_UNUSED(t_now);
+
+    setButtonAndMenuStates();
 }
 
 /*
@@ -102,19 +115,6 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionXML_Export->setEnabled(dbopen);
     ui->actionXML_Import->setEnabled(dbopen);
     ui->actionBackup_Database->setEnabled(dbopen);
-
-    /*
-    QAction *actionFind;
-    QAction *actionSpell_Check;
-    QAction *actionUndo;
-    QAction *actionRedo;
-    QAction *actionCopy;
-    QAction *actionCut;
-    QAction *actionPaste;
-    QAction *actionDelete;
-    QAction *actionSelect_All;
-    */
-
 
     ui->actionInternal_Items->setEnabled(dbopen);
     ui->actionAll_Tracker_Action_Items->setEnabled(dbopen);
@@ -152,6 +152,126 @@ void MainWindow::setButtonAndMenuStates()
         ui->tableViewTrackerItems->setColumnHidden(14, true);
         ui->tableViewTrackerItems->setColumnHidden(17, true);
         ui->tableViewTrackerItems->setColumnHidden(18, true);
+
+        QWidget* fw = this->focusWidget();
+
+        // determind if we can format text
+        bool can_format_text =
+            (fw != nullptr) &&
+            (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 );
+
+        // determine if we can text edit
+        bool can_text_edit =
+                (fw != nullptr) && (
+                can_format_text ||
+                (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 ) ||
+                (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 ) ||
+                (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 ) ||
+                (strcmp(fw->metaObject()->className(), "QComboBox") == 0 ));
+
+        // file menu items
+        ui->actionClose_Database->setEnabled(true);
+        ui->actionSearch->setEnabled(true);
+        ui->actionXML_Export->setEnabled(true);
+        ui->actionXML_Import->setEnabled(true);
+        ui->actionPreferences->setEnabled(true);
+
+        // edit menu items
+        ui->actionFind->setEnabled(can_text_edit);
+        ui->actionSpell_Check->setEnabled(can_text_edit);
+        ui->actionUndo->setEnabled(can_text_edit);
+        ui->actionRedo->setEnabled(can_text_edit);
+        ui->actionDelete->setEnabled(can_text_edit);
+        ui->actionCut->setEnabled(can_text_edit);
+        ui->actionCopy->setEnabled(can_text_edit);
+        ui->actionPaste->setEnabled(can_text_edit);
+        ui->actionSelect_All->setEnabled(can_text_edit);
+
+        // check if form has table view available to use
+        // TODO: Note Page Note Tab does not have a table view
+        // TODO: Shouldn't show copy or delete if row not selected
+        if ( ui->tabWidgetNotes->currentIndex() == 0 && ui->stackedWidget->currentIndex() == 1 )
+        {
+            ui->actionDelete_Item->setEnabled(false);
+            ui->actionCopy_Item->setEnabled(false);
+            ui->actionNew_Item->setEnabled(false);
+
+            ui->toolBarFormat->setVisible(true); // text format bar
+            ui->toolBarEdit->setVisible(true); // text edit bar
+        }
+        else
+        {
+            ui->toolBarFormat->setVisible(false); // text format bar
+            ui->toolBarEdit->setVisible(false); // text edit bar
+
+            //if (fw) qDebug() << "Set Focus:  " << fw->metaObject()->className();
+
+            if ( (fw != nullptr) && strcmp(fw->metaObject()->className(), "PNTableView") == 0 )
+            {
+                if ( (dynamic_cast<QTableView*>(fw))->selectionModel()->hasSelection() )
+                {
+                    ui->actionDelete_Item->setEnabled(true);
+                    ui->actionCopy_Item->setEnabled(true);
+                }
+                else
+                {
+                    ui->actionDelete_Item->setEnabled(false);
+                    ui->actionCopy_Item->setEnabled(false);
+                }
+            }
+            else
+            {
+                ui->actionDelete_Item->setEnabled(false);
+                ui->actionCopy_Item->setEnabled(false);
+            }
+
+            ui->actionNew_Item->setEnabled(true);
+        }
+
+        // format menu items
+        if ( can_format_text )
+            ui->menuFormat->setEnabled(true);
+        else
+            ui->menuFormat->setEnabled(false);
+
+        // view items
+        ui->menuView->setEnabled(true);
+    }
+    else
+    {
+        // file menu items
+        ui->actionClose_Database->setEnabled(false);
+        ui->actionSearch->setEnabled(false);
+        ui->actionXML_Export->setEnabled(false);
+        ui->actionXML_Import->setEnabled(false);
+        ui->actionPreferences->setEnabled(false);
+
+        // edit menu items
+        ui->actionFind->setEnabled(false);
+        ui->actionSpell_Check->setEnabled(false);
+        ui->actionUndo->setEnabled(false);
+        ui->actionRedo->setEnabled(false);
+        ui->actionDelete->setEnabled(false);
+        ui->actionCut->setEnabled(false);
+        ui->actionCopy->setEnabled(false);
+        ui->actionPaste->setEnabled(false);
+        ui->actionSelect_All->setEnabled(false);
+
+        ui->actionDelete_Item->setEnabled(false);
+        ui->actionCopy_Item->setEnabled(false);
+        ui->actionNew_Item->setEnabled(false);
+
+        // format menu items
+        ui->menuFormat->setEnabled(false);
+
+        // view items
+        ui->menuView->setEnabled(false);
+
+        // text format bar
+        ui->toolBarFormat->setVisible(false);
+
+        // edit tool bar
+        ui->toolBarEdit->setVisible(false);
     }
 }
 
@@ -434,8 +554,6 @@ void MainWindow::textColor()
 
 void MainWindow::setupTextActions()
 {
-    const QString rsrcPath = ":/icons";
-
     QToolBar *tb = ui->toolBarFormat;
     QMenu *menu = ui->menuFormat;
 
@@ -764,21 +882,6 @@ void MainWindow::cursorPositionChanged()
             m_combo_box_style->setCurrentIndex(-1);
             break;
         }
-/*
-        switch (ui->textEditNotes->textCursor().block().blockFormat().marker())
-        {
-        case QTextBlockFormat::MarkerType::NoMarker:
-            m_actionToggleCheckState->setChecked(false);
-            break;
-        case QTextBlockFormat::MarkerType::Unchecked:
-            m_combo_box_style->setCurrentIndex(4);
-            m_actionToggleCheckState->setChecked(false);
-            break;
-        case QTextBlockFormat::MarkerType::Checked:
-            m_combo_box_style->setCurrentIndex(5);
-            m_actionToggleCheckState->setChecked(true);
-            break;
-        }*/
     }
     else
     {
@@ -814,5 +917,124 @@ void MainWindow::fontChanged(const QFont &f)
     m_actionTextUnderline->setChecked(f.underline());
 }
 
-// STOPPED HERE - Need to add cut copy past functions
+
+void MainWindow::on_actionUndo_triggered()
+{
+    QWidget* fw = this->focusWidget();
+
+    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
+        (dynamic_cast<QTextEdit*>(fw))->undo();
+    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+        (dynamic_cast<QLineEdit*>(fw))->undo();
+    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+        (dynamic_cast<QLineEdit*>(fw))->undo();
+    else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
+        (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->undo();
+    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
+        (dynamic_cast<QComboBox*>(fw))->lineEdit()->undo();
+}
+
+
+void MainWindow::on_actionRedo_triggered()
+{
+    QWidget* fw = this->focusWidget();
+
+    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
+        (dynamic_cast<QTextEdit*>(fw))->redo();
+    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+        (dynamic_cast<QLineEdit*>(fw))->redo();
+    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+        (dynamic_cast<QLineEdit*>(fw))->redo();
+    else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
+        (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->redo();
+    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
+        (dynamic_cast<QComboBox*>(fw))->lineEdit()->redo();
+}
+
+
+void MainWindow::on_actionCopy_triggered()
+{
+    QWidget* fw = this->focusWidget();
+
+    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
+        (dynamic_cast<QTextEdit*>(fw))->copy();
+    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+        (dynamic_cast<QLineEdit*>(fw))->copy();
+    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+        (dynamic_cast<QLineEdit*>(fw))->copy();
+    else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
+        (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->copy();
+    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
+        (dynamic_cast<QComboBox*>(fw))->lineEdit()->copy();
+}
+
+
+void MainWindow::on_actionCut_triggered()
+{
+    QWidget* fw = this->focusWidget();
+
+    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
+        (dynamic_cast<QTextEdit*>(fw))->cut();
+    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+        (dynamic_cast<QLineEdit*>(fw))->cut();
+    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+        (dynamic_cast<QLineEdit*>(fw))->cut();
+    else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
+        (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->cut();
+    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
+        (dynamic_cast<QComboBox*>(fw))->lineEdit()->cut();
+}
+
+
+void MainWindow::on_actionPaste_triggered()
+{
+    QWidget* fw = this->focusWidget();
+
+    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
+        (dynamic_cast<QTextEdit*>(fw))->paste();
+    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+        (dynamic_cast<QLineEdit*>(fw))->paste();
+    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+        (dynamic_cast<QLineEdit*>(fw))->paste();
+    else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
+        (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->paste();
+    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
+        (dynamic_cast<QComboBox*>(fw))->lineEdit()->paste();
+}
+
+
+void MainWindow::on_actionDelete_triggered()
+{
+    QWidget* fw = this->focusWidget();
+
+    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
+        (dynamic_cast<QTextEdit*>(fw))->textCursor().insertText("");
+    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+        (dynamic_cast<QLineEdit*>(fw))->backspace();
+    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+        (dynamic_cast<QLineEdit*>(fw))->backspace();
+    else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
+        (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->copy();
+    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
+        (dynamic_cast<QComboBox*>(fw))->lineEdit()->backspace();
+
+}
+
+
+void MainWindow::on_actionSelect_All_triggered()
+{
+    QWidget* fw = this->focusWidget();
+
+    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
+        (dynamic_cast<QTextEdit*>(fw))->selectAll();
+    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+        (dynamic_cast<QLineEdit*>(fw))->selectAll();
+    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+        (dynamic_cast<QLineEdit*>(fw))->selectAll();
+    else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
+        (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->selectAll();
+    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
+        (dynamic_cast<QComboBox*>(fw))->lineEdit()->selectAll();
+}
+
 // TODO: Add spell checking features

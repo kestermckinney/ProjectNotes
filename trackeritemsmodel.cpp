@@ -161,6 +161,5 @@ bool TrackerItemsModel::openRecord(QModelIndex t_index)
     return true;
 }
 
-//TODO: Pop up the note on a tracker comment??
 
 
