@@ -115,7 +115,5 @@ bool ProjectLocationsModel::openRecord(QModelIndex t_index)
         QDesktopServices::openUrl(QUrl::fromLocalFile(location.toString()));
     }
 
-    //TODO: For all records you can call an open record when they are new and not saved.
-
     return true;
 }

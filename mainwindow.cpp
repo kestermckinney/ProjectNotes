@@ -188,9 +188,8 @@ void MainWindow::setButtonAndMenuStates()
         ui->actionSelect_All->setEnabled(can_text_edit);
 
         // check if form has table view available to use
-        // TODO: Note Page Note Tab does not have a table view
-        // TODO: Shouldn't show copy or delete if row not selected
-        if ( ui->tabWidgetNotes->currentIndex() == 0 && ui->stackedWidget->currentIndex() == 1 )
+        // Note Page Note Tab does not have a table view
+         if ( ui->tabWidgetNotes->currentIndex() == 0 && ui->stackedWidget->currentIndex() == 1 )
         {
             ui->actionDelete_Item->setEnabled(false);
             ui->actionCopy_Item->setEnabled(false);

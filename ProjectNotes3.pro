@@ -46,6 +46,7 @@ SOURCES += \
     pnsqlquerymodel.cpp \
     pntableview.cpp \
     preferencesdialog.cpp \
+    spellcheckdialog.cpp \
     trackeritemsmodel.cpp \
     trackeritemsview.cpp \
     projectdetailsdelegate.cpp \
@@ -106,6 +107,7 @@ HEADERS += \
     pnsqlquerymodel.h \
     pntableview.h \
     preferencesdialog.h \
+    spellcheckdialog.h \
     trackeritemsmodel.h \
     trackeritemsview.h \
     projectdetailsdelegate.h \
@@ -135,7 +137,8 @@ HEADERS += \
 FORMS += \
     filterdatadialog.ui \
     mainwindow.ui \
-    preferencesdialog.ui
+    preferencesdialog.ui \
+    spellcheckdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -146,4 +149,22 @@ RESOURCES += \
     Resources.qrc
 
 DISTFILES += \
-    database/ProjectNotes.db
+    database/ProjectNotes.db \
+    dictionary/en_GB.aff \
+    dictionary/en_GB.dic \
+    dictionary/en_US.aff \
+    dictionary/en_US.dic \
+    dictionary/es_ANY.aff \
+    dictionary/es_ANY.dic \
+    dictionary/index.ini
+
+
+unix {
+   LIBS += -lhunspell
+}
+
+win32 {
+   INCLUDEPATH += C:/path/to/hunspell/include
+   LIBS += C:/path/to/hunspell/Release/hunspell.lib
+}
+
