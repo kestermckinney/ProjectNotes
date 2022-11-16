@@ -33,6 +33,7 @@ private:
 
 private slots:
     void on_tabWidgetProject_currentChanged(int index);
+
 };
 
 #endif // PROJECTDETAILSPAGE_H

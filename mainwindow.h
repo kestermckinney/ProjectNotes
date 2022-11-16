@@ -15,6 +15,7 @@ QT_END_NAMESPACE
 #include "pnsettings.h"
 #include "pnbasepage.h"
 #include "preferencesdialog.h"
+#include "spellcheckdialog.h"
 
 
 class MainWindow : public QMainWindow
@@ -74,11 +75,13 @@ private slots:
     void on_actionPaste_triggered();
     void on_actionDelete_triggered();
     void on_actionSelect_All_triggered();
+    void on_actionSpell_Check_triggered();
 
 private:
     Ui::MainWindow *ui;   
 
-    PreferencesDialog* m_preferences_dialog;
+    PreferencesDialog* m_preferences_dialog = nullptr;
+    SpellCheckDialog* m_spellcheck_dialog = nullptr;
 
     // view state
     QList<int> m_page_history;

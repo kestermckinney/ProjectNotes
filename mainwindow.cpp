@@ -34,6 +34,7 @@ MainWindow::MainWindow(QWidget *t_parent)
     setupTextActions();
 
     m_preferences_dialog = new PreferencesDialog(this);
+    m_spellcheck_dialog = new SpellCheckDialog(this);
 
     // view state
     m_page_history.clear();
@@ -77,6 +78,7 @@ MainWindow::~MainWindow()
     global_Settings.setWindowState("MainWindow", *this);
 
     delete m_preferences_dialog;
+    delete m_spellcheck_dialog;
 
     delete ui;
 }
@@ -235,6 +237,9 @@ void MainWindow::setButtonAndMenuStates()
 
         // view items
         ui->menuView->setEnabled(true);
+
+        // spell check only QTextEdit widgets
+        ui->actionSpell_Check->setEnabled(can_format_text);
     }
     else
     {
@@ -1001,7 +1006,6 @@ void MainWindow::on_actionPaste_triggered()
         (dynamic_cast<QComboBox*>(fw))->lineEdit()->paste();
 }
 
-
 void MainWindow::on_actionDelete_triggered()
 {
     QWidget* fw = this->focusWidget();
@@ -1019,7 +1023,6 @@ void MainWindow::on_actionDelete_triggered()
 
 }
 
-
 void MainWindow::on_actionSelect_All_triggered()
 {
     QWidget* fw = this->focusWidget();
@@ -1036,4 +1039,24 @@ void MainWindow::on_actionSelect_All_triggered()
         (dynamic_cast<QComboBox*>(fw))->lineEdit()->selectAll();
 }
 
-// TODO: Add spell checking features
+void MainWindow::on_actionSpell_Check_triggered()
+{
+    QWidget* fw = this->focusWidget();
+
+    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
+        m_spellcheck_dialog->spellCheck(fw);
+
+    /*
+    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+        (dynamic_cast<QLineEdit*>(fw))->selectAll();
+    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+        (dynamic_cast<QLineEdit*>(fw))->selectAll();
+    else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
+        (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->selectAll();
+    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
+        (dynamic_cast<QComboBox*>(fw))->lineEdit()->selectAll();
+        */
+}
+
+// TODO: Add spell checking features for QLineEdit
+// TODO: Add find feature for QTextEdit and QLineEdit
