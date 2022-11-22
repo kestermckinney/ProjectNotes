@@ -20,6 +20,7 @@ SOURCES += \
     columnview.cpp \
     comboboxdelegate.cpp \
     filterdatadialog.cpp \
+    findreplacedialog.cpp \
     itemdetailsdelegate.cpp \
     itemdetailspage.cpp \
     itemdetailteamlistmodel.cpp \
@@ -82,6 +83,7 @@ HEADERS += \
     columnview.h \
     comboboxdelegate.h \
     filterdatadialog.h \
+    findreplacedialog.h \
     itemdetailsdelegate.h \
     itemdetailspage.h \
     itemdetailteamlistmodel.h \
@@ -136,6 +138,7 @@ HEADERS += \
 
 FORMS += \
     filterdatadialog.ui \
+    findreplacedialog.ui \
     mainwindow.ui \
     preferencesdialog.ui \
     spellcheckdialog.ui

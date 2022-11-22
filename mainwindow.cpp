@@ -17,6 +17,7 @@
 #include <QFontComboBox>
 #include <QTextList>
 #include <QColorDialog>
+#include <QComboBox>
 #include <QClipboard>
 #include <QMimeType>
 #include <QMimeData>
@@ -35,6 +36,7 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     m_preferences_dialog = new PreferencesDialog(this);
     m_spellcheck_dialog = new SpellCheckDialog(this);
+    m_find_replace_dialog = new FindReplaceDialog(this);
 
     // view state
     m_page_history.clear();
@@ -79,6 +81,7 @@ MainWindow::~MainWindow()
 
     delete m_preferences_dialog;
     delete m_spellcheck_dialog;
+    delete m_find_replace_dialog;
 
     delete ui;
 }
@@ -168,8 +171,14 @@ void MainWindow::setButtonAndMenuStates()
                 can_format_text ||
                 (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 ) ||
                 (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 ) ||
                 (strcmp(fw->metaObject()->className(), "QComboBox") == 0 ));
+
+        // can't edit combo boxes not set to editable
+        if ( can_text_edit && (strcmp(fw->metaObject()->className(), "QComboBox") == 0)  )
+        {
+            if ( !(dynamic_cast<QComboBox*>(fw))->isEditable() )
+                can_text_edit = false;
+        }
 
         // file menu items
         ui->actionClose_Database->setEnabled(true);
@@ -1056,6 +1065,25 @@ void MainWindow::on_actionSpell_Check_triggered()
     else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
         (dynamic_cast<QComboBox*>(fw))->lineEdit()->selectAll();
         */
+}
+
+void MainWindow::on_actionFind_triggered()
+{
+    QWidget* fw = this->focusWidget();
+
+    QWidget* parent = fw->parentWidget();
+
+    qDebug() << fw->metaObject()->className();
+    qDebug() << parent->metaObject()->className();
+
+    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
+        m_find_replace_dialog->showReplaceWindow(dynamic_cast<QTextEdit*>(fw));
+    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+        m_find_replace_dialog->showReplaceWindow(dynamic_cast<QLineEdit*>(fw));
+    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+        m_find_replace_dialog->showReplaceWindow(dynamic_cast<QLineEdit*>(fw));
+    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
+        m_find_replace_dialog->showReplaceWindow(dynamic_cast<QComboBox*>(fw)->lineEdit());
 }
 
 // TODO: Add spell checking features for QLineEdit
