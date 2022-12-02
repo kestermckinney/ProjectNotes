@@ -94,6 +94,7 @@ public:
     PNSortFilterProxyModel* actionitemsdetailsmodelproxy() { return m_action_item_details_model_proxy; }
 
     SearchResultsModel* searchresultsmodel() { return m_search_results_model; }
+    PNSortFilterProxyModel* searchresultsmodelproxy() { return m_search_results_model_proxy; }
 
     // selection values for fields
     static QStringList item_type;
@@ -172,6 +173,7 @@ private:
     PNSortFilterProxyModel* m_tracker_item_comments_model_proxy;
     PNSortFilterProxyModel* m_project_action_items_model_proxy;
     PNSortFilterProxyModel* m_action_item_details_model_proxy;
+    PNSortFilterProxyModel* m_search_results_model_proxy;
 
 signals:
 

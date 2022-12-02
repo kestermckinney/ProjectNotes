@@ -52,6 +52,7 @@ MainWindow::MainWindow(QWidget *t_parent)
     connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
     connect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
     connect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectNote_triggered()));
+    connect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_SearchResults_triggered()));
 
     connect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
     connect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
@@ -63,6 +64,8 @@ MainWindow::~MainWindow()
 {
     disconnect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
     disconnect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
+    disconnect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectNote_triggered()));
+    disconnect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_SearchResults_triggered()));
 
     // need to save the screen layout befor the model is removed from the view
     // The destructor of PNTableview does not save the state
@@ -127,7 +130,6 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionProjects->setEnabled(dbopen);
     ui->actionClosed_Projects->setEnabled(dbopen);
 
-
     ui->actionNew_Item->setEnabled(dbopen);
     ui->actionCopy_Item->setEnabled(dbopen);
     ui->actionDelete_Item->setEnabled(dbopen);
@@ -173,6 +175,13 @@ void MainWindow::setButtonAndMenuStates()
                 (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 ) ||
                 (strcmp(fw->metaObject()->className(), "QComboBox") == 0 ));
 
+        // determine if we can find text
+        bool can_find_edit =
+                (fw != nullptr) && (
+                can_format_text ||
+                (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 ) ||
+                (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 ));
+
         // can't edit combo boxes not set to editable
         if ( can_text_edit && (strcmp(fw->metaObject()->className(), "QComboBox") == 0)  )
         {
@@ -188,7 +197,7 @@ void MainWindow::setButtonAndMenuStates()
         ui->actionPreferences->setEnabled(true);
 
         // edit menu items
-        ui->actionFind->setEnabled(can_text_edit);
+        ui->actionFind->setEnabled(can_find_edit);
         ui->actionSpell_Check->setEnabled(can_text_edit);
         ui->actionUndo->setEnabled(can_text_edit);
         ui->actionRedo->setEnabled(can_text_edit);
@@ -332,10 +341,10 @@ void MainWindow::openDatabase(QString t_dbfile)
     ui->pageProjectDetails->setupModels(ui);
     ui->pageItemDetails->setupModels(ui);
     ui->pageProjectNote->setupModels(ui);
+    ui->pageSearch->setupModels(ui);
 
     navigateClearHistory();
     navigateToPage(ui->pageProjectsList);
-    //navigateToPage(ui->pageClients);
 
     setButtonAndMenuStates();
 }
@@ -467,7 +476,6 @@ void MainWindow::on_actionOpen_ProjectDetails_triggered()
 
 void MainWindow::on_actionOpen_ItemDetails_triggered()
 {
-
     ui->pageItemDetails->toFirst();
 
     navigateToPage(ui->pageItemDetails);
@@ -475,11 +483,115 @@ void MainWindow::on_actionOpen_ItemDetails_triggered()
 
 void MainWindow::on_actionOpen_ProjectNote_triggered()
 {
-
     ui->pageProjectNote->toFirst();
 
     navigateToPage(ui->pageProjectNote);
 }
+
+void MainWindow::on_actionOpen_SearchResults_triggered()
+{
+    // find the selected search result
+    QModelIndexList qil = ui->tableViewSearchResults->selectionModel()->selectedIndexes();
+    QModelIndex qi = qil.first();
+
+    QVariant data_type = ui->tableViewSearchResults->model()->data(ui->tableViewSearchResults->model()->index(qi.row(), 1));
+    QVariant record_id = ui->tableViewSearchResults->model()->data(ui->tableViewSearchResults->model()->index(qi.row(), 0));
+    QVariant fk_id = ui->tableViewSearchResults->model()->data(ui->tableViewSearchResults->model()->index(qi.row(), 13));
+
+
+    if (data_type == tr("Client"))
+    {
+        navigateToPage(ui->pageClients);
+
+        QModelIndex qmi = global_DBObjects.clientsmodel()->findIndex(record_id, 0);
+        QModelIndex qi = global_DBObjects.clientsmodelproxy()->mapFromSource(qmi);
+        ui->tableViewClients->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        ui->tableViewClients->scrollTo(qi, QAbstractItemView::PositionAtCenter); //TODO: Fix ScrollTo it isn't working
+    }
+    else if (data_type == tr("People"))
+    {
+        navigateToPage(ui->pagePeople);
+
+        QModelIndex qmi = global_DBObjects.peoplemodel()->findIndex(record_id, 0);
+        QModelIndex qi = global_DBObjects.peoplemodelproxy()->mapFromSource(qmi);
+        ui->tableViewPeople->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        ui->tableViewPeople->scrollTo(qi, QAbstractItemView::PositionAtCenter); //TODO: Fix ScrollTo it isn't working
+    }
+    else if (data_type == tr("Project"))
+    {
+        ui->pageProjectDetails->toFirst();
+
+        navigateToPage(ui->pageProjectDetails);
+    }
+    else if (data_type == tr("Project Notes"))
+    {
+        ui->pageProjectNote->toFirst();
+
+        navigateToPage(ui->pageProjectNote);
+        // STOPPED HERE FIND THE ROW
+    }
+    else if (data_type == tr("Meeting Attendees"))
+    {
+        ui->pageProjectNote->toFirst();
+
+        navigateToPage(ui->pageProjectNote);
+        ui->tabWidgetNotes->setCurrentIndex(1);
+
+        QModelIndex qmi = global_DBObjects.meetingattendeesmodel()->findIndex(record_id, 0);
+        QModelIndex qi = global_DBObjects.meetingattendeesmodelproxy()->mapFromSource(qmi);
+        ui->tableViewAtendees->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        ui->tableViewAtendees->scrollTo(qi, QAbstractItemView::PositionAtCenter); //TODO: Fix ScrollTo it isn't working
+    }
+    else if (data_type == tr("Project Locations"))
+    {
+        ui->pageProjectDetails->toFirst();
+
+        navigateToPage(ui->pageProjectDetails);
+        ui->tabWidgetProject->setCurrentIndex(3);
+
+        QModelIndex qmi = global_DBObjects.projectlocationsmodel()->findIndex(record_id, 0);
+        QModelIndex qi = global_DBObjects.projectlocationsmodelproxy()->mapFromSource(qmi);
+        ui->tableViewLocations->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        ui->tableViewLocations->scrollTo(qi, QAbstractItemView::PositionAtCenter); //TODO: Fix ScrollTo it isn't working
+    }
+    else if (data_type == tr("Project Team"))
+    {
+        ui->pageProjectDetails->toFirst();
+
+        navigateToPage(ui->pageProjectDetails);
+        ui->tabWidgetProject->setCurrentIndex(1);
+
+        QModelIndex qmi = global_DBObjects.projectteammembersmodel()->findIndex(record_id, 0);
+        QModelIndex qi = global_DBObjects.projectteammembersmodelproxy()->mapFromSource(qmi);
+        ui->tableViewTeam->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        ui->tableViewTeam->scrollTo(qi, QAbstractItemView::PositionAtCenter); //TODO: Fix ScrollTo it isn't working
+    }
+    else if (data_type == tr("Status Report Item"))
+    {
+        ui->pageProjectDetails->toFirst();
+
+        navigateToPage(ui->pageProjectDetails);
+        ui->tabWidgetProject->setCurrentIndex(0);
+
+        QModelIndex qmi = global_DBObjects.statusreportitemsmodel()->findIndex(record_id, 0);
+        QModelIndex qi = global_DBObjects.statusreportitemsmodelproxy()->mapFromSource(qmi);
+        ui->tableViewStatusReportItems->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        ui->tableViewStatusReportItems->scrollTo(qi, QAbstractItemView::PositionAtCenter); //TODO: Fix ScrollTo it isn't working
+    }
+    else if (data_type == tr("Item Tracker") )
+    {
+        ui->pageProjectDetails->toFirst();
+
+        navigateToPage(ui->pageProjectDetails);
+        ui->tabWidgetProject->setCurrentIndex(2);
+
+        QModelIndex qmi = global_DBObjects.trackeritemsmodel()->findIndex(record_id, 0);
+        QModelIndex qi = global_DBObjects.trackeritemsmodelproxy()->mapFromSource(qmi);
+        ui->tableViewTrackerItems->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        ui->tableViewTrackerItems->scrollTo(qi, QAbstractItemView::PositionAtCenter); //TODO: Fix ScrollTo it isn't working
+    }
+}
+
 void MainWindow::on_actionInternal_Items_triggered()
 {
     global_DBObjects.setShowInternalItems(ui->actionInternal_Items->isChecked());
@@ -1071,20 +1183,32 @@ void MainWindow::on_actionFind_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    QWidget* parent = fw->parentWidget();
-
-    qDebug() << fw->metaObject()->className();
-    qDebug() << parent->metaObject()->className();
-
     if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
         m_find_replace_dialog->showReplaceWindow(dynamic_cast<QTextEdit*>(fw));
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         m_find_replace_dialog->showReplaceWindow(dynamic_cast<QLineEdit*>(fw));
-    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
-        m_find_replace_dialog->showReplaceWindow(dynamic_cast<QLineEdit*>(fw));
+//    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+//        m_find_replace_dialog->showReplaceWindow(dynamic_cast<QLineEdit*>(fw));
     else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
         m_find_replace_dialog->showReplaceWindow(dynamic_cast<QComboBox*>(fw)->lineEdit());
 }
 
-// TODO: Add spell checking features for QLineEdit
-// TODO: Add find feature for QTextEdit and QLineEdit
+void MainWindow::on_actionSearch_triggered()
+{
+    navigateToPage(ui->pageSearch);
+}
+
+
+void MainWindow::on_pushButtonSearch_clicked()
+{
+    global_DBObjects.searchresultsmodel()->PerformSearch(ui->lineEditSearchText->text());
+}
+
+void MainWindow::on_lineEditSearchText_returnPressed()
+{
+    global_DBObjects.searchresultsmodel()->PerformSearch(ui->lineEditSearchText->text());
+}
+
+// TODO: Add spell checking features for QExpandingLineEdit and QLineEdit
+// TODO: Add find feature for QExpandingLineEdit
+// TODO: Add find featuers to QComboBox located in a table view

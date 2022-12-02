@@ -47,6 +47,8 @@ SOURCES += \
     pnsqlquerymodel.cpp \
     pntableview.cpp \
     preferencesdialog.cpp \
+    searchpage.cpp \
+    searchresultsview.cpp \
     spellcheckdialog.cpp \
     trackeritemsmodel.cpp \
     trackeritemsview.cpp \
@@ -109,6 +111,8 @@ HEADERS += \
     pnsqlquerymodel.h \
     pntableview.h \
     preferencesdialog.h \
+    searchpage.h \
+    searchresultsview.h \
     spellcheckdialog.h \
     trackeritemsmodel.h \
     trackeritemsview.h \

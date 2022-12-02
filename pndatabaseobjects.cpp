@@ -180,6 +180,8 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_tracker_item_comments_model_proxy->setSourceModel(m_tracker_item_comments_model);
 
     m_search_results_model = new SearchResultsModel(nullptr);
+    m_search_results_model_proxy = new PNSortFilterProxyModel();
+    m_search_results_model_proxy->setSourceModel(m_search_results_model);
 
     return true;
 }
@@ -209,7 +211,7 @@ void PNDatabaseObjects::closeDatabase()
     delete m_project_team_members_model;
     delete m_project_locations_model;
     delete m_project_notes_model;
-    delete m_action_item_project_notes_model; //
+    delete m_action_item_project_notes_model;
     delete m_action_item_details_model;
     delete m_action_items_details_meetings_model;
     delete m_tracker_items_meetings_model;
@@ -217,7 +219,7 @@ void PNDatabaseObjects::closeDatabase()
     delete m_tracker_item_comments_model;
     delete m_meeting_attendees_model;
     delete m_notes_action_items_model;
-    delete m_item_detail_team_list_model; //
+    delete m_item_detail_team_list_model;
 
     delete m_search_results_model;
 
@@ -266,6 +268,7 @@ void PNDatabaseObjects::closeDatabase()
     delete m_meeting_attendees_model_proxy;
     delete m_notes_action_items_model_proxy;
     delete m_item_detail_team_list_model_proxy;
+    delete m_search_results_model_proxy;
 
     m_clients_model_proxy = nullptr;
     m_unfilteredclients_model_proxy = nullptr;
@@ -288,6 +291,7 @@ void PNDatabaseObjects::closeDatabase()
     m_meeting_attendees_model_proxy = nullptr;
     m_notes_action_items_model_proxy = nullptr;
     m_item_detail_team_list_model = nullptr;
+    m_search_results_model_proxy = nullptr;
 
     m_sqlite_db.close();
     m_database_file.clear();

@@ -68,6 +68,7 @@ public:
     bool deleteCheck(const QModelIndex &t_index);
     QSqlRecord emptyrecord();
     const QVariant findValue(QVariant& t_lookup_value, int t_search_column, int t_return_column);
+    const QModelIndex findIndex(QVariant& t_lookup_value, int t_search_column);
     void setShowBlank(bool t_show = true) { m_show_blank = t_show; };
     bool reloadRecord(const QModelIndex& t_index);
 

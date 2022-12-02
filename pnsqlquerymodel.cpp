@@ -300,8 +300,8 @@ void PNSqlQueryModel::refresh()
 
     m_sql_query = QSqlQuery( fullsql );
 
-    //qDebug() << "Refreshing: ";
-    //qDebug() << fullsql;
+    qDebug() << "Refreshing: ";
+    qDebug() << fullsql;
 
     // add a blank row for drop downs
     if (m_show_blank)
@@ -827,6 +827,24 @@ const QVariant PNSqlQueryModel::findValue(QVariant& t_lookup_value, int t_search
     return QVariant();
 }
 
+const QModelIndex PNSqlQueryModel::findIndex(QVariant& t_lookup_value, int t_search_column)
+{
+    int row = 0;
+
+    for ( QVector<QSqlRecord>::Iterator itrow = m_cache.begin(); itrow != m_cache.end(); ++itrow )
+    {
+        if ( itrow->value(t_search_column) == t_lookup_value )
+        {
+            return index(row, 0); // key is always at 0
+        }
+
+        row++;
+    }
+
+    return QModelIndex();
+}
+
+
 bool PNSqlQueryModel::reloadRecord(const QModelIndex& t_index)
 {
     QSqlQuery select(BaseSQL() + " where " + m_sql_query.record().fieldName(0) + " = ? ");
@@ -904,7 +922,7 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                 }
                 else
                 {
-                    qDebug() << "Table Naame: " << BaseSQL() << " Column Num: " << hashit.key() << "  Column Name: " << m_sql_query.record().fieldName(hashit.key());
+                    qDebug() << "Table Name: " << BaseSQL() << " Column Num: " << hashit.key() << "  Column Name: " << m_sql_query.record().fieldName(hashit.key());
 
                     sqlEscape(column_value, m_column_type[hashit.key()]);
                     valuelist += QString("%1 %3 '%2'").arg( m_sql_query.record().fieldName(hashit.key()), column_value.toString(), compare_op);
