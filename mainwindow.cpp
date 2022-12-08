@@ -58,6 +58,19 @@ MainWindow::MainWindow(QWidget *t_parent)
     connect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
 
     connect((QApplication*)QApplication::instance(), &QApplication::focusChanged, this, &MainWindow::on_focusChanged);
+
+    // connect the search request event
+    connect(global_DBObjects.peoplemodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.clientsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.projectslistmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.statusreportitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.projectteammembersmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.projectlocationsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.projectnotesmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.meetingattendeesmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.notesactionitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
 }
 
 MainWindow::~MainWindow()
@@ -66,6 +79,22 @@ MainWindow::~MainWindow()
     disconnect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
     disconnect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectNote_triggered()));
     disconnect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_SearchResults_triggered()));
+
+    disconnect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
+    disconnect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
+
+    // connect the search request event
+    disconnect(global_DBObjects.peoplemodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.clientsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.projectslistmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.statusreportitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.projectteammembersmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.projectlocationsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.projectnotesmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.meetingattendeesmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.notesactionitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
 
     // need to save the screen layout befor the model is removed from the view
     // The destructor of PNTableview does not save the state
@@ -98,6 +127,7 @@ void MainWindow::on_focusChanged(QWidget *t_old, QWidget *t_now)
 }
 
 /*
+//TODO: Remove
 void MainWindow::handleDeleteProjectClicked()
 {
     navigateCurrentPage()->deleteItem();
@@ -343,6 +373,7 @@ void MainWindow::openDatabase(QString t_dbfile)
     ui->pageProjectNote->setupModels(ui);
     ui->pageSearch->setupModels(ui);
 
+
     navigateClearHistory();
     navigateToPage(ui->pageProjectsList);
 
@@ -580,15 +611,20 @@ void MainWindow::on_actionOpen_SearchResults_triggered()
     }
     else if (data_type == tr("Item Tracker") )
     {
-        ui->pageProjectDetails->toFirst();
+        ui->pageItemDetails->toFirst();
 
-        navigateToPage(ui->pageProjectDetails);
-        ui->tabWidgetProject->setCurrentIndex(2);
+        navigateToPage(ui->pageItemDetails);
+    }
+    else if (data_type == tr("Tracker Update") )
+    {
+        ui->pageItemDetails->toFirst();
 
-        QModelIndex qmi = global_DBObjects.trackeritemsmodel()->findIndex(record_id, 0);
-        QModelIndex qi = global_DBObjects.trackeritemsmodelproxy()->mapFromSource(qmi);
-        ui->tableViewTrackerItems->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
-        ui->tableViewTrackerItems->scrollTo(qi, QAbstractItemView::PositionAtCenter); //TODO: Fix ScrollTo it isn't working
+        navigateToPage(ui->pageItemDetails);
+
+        QModelIndex qmi = global_DBObjects.trackeritemscommentsmodel()->findIndex(record_id, 0);
+        QModelIndex qi = global_DBObjects.trackeritemscommentsmodelproxy()->mapFromSource(qmi);
+        ui->tableViewComments->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        ui->tableViewComments->scrollTo(qi, QAbstractItemView::PositionAtCenter); //TODO: Fix ScrollTo it isn't working
     }
 }
 
@@ -1197,7 +1233,6 @@ void MainWindow::on_actionSearch_triggered()
 {
     navigateToPage(ui->pageSearch);
 }
-
 
 void MainWindow::on_pushButtonSearch_clicked()
 {

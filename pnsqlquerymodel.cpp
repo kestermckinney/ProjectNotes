@@ -798,9 +798,12 @@ bool PNSqlQueryModel::deleteCheck(const QModelIndex &t_index)
         if ( QMessageBox::question(nullptr, QObject::tr("Cannot delete record"),
            message, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
         {
-            //TODO: call search function here
-        }
+            QString key = m_cache[t_index.row()].value(0).toString();
 
+            global_DBObjects.searchresultsmodel()->PerformKeySearch( key );
+
+            emit callKeySearch();
+        }
 
         return false;
     }

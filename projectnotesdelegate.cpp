@@ -39,7 +39,10 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
     case 4: // note
         {
             QTextEdit* textedit = static_cast<QTextEdit*>(t_editor);
-            textedit->setHtml(value.toString());
+            if (value.toString().contains("<html>", Qt::CaseInsensitive))
+                textedit->setHtml(value.toString());
+            else
+                textedit->setPlainText(value.toString());
         }
         break;
     }

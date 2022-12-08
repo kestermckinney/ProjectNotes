@@ -5,7 +5,7 @@ SearchResultsModel::SearchResultsModel(QObject* t_parent): PNSqlQueryModel(t_par
 {
     setObjectName("SearchResultsModel");
 
-    setBaseSql("SELECT dataid, datatype, dataname, datadescription, internal_item, client_id, project_status, project_number, project_name, item_number, item_name, note_date, note_title, fk_id, (dataid || dataname) keyval FROM database_search");
+    setBaseSql("SELECT dataid, datatype, dataname, datadescription, internal_item, client_id, project_status, project_number, project_name, item_number, item_name, note_date, note_title, fk_id, datakey FROM database_search");
 
     setTableName("database_search", "Search Results");
 
@@ -23,7 +23,7 @@ SearchResultsModel::SearchResultsModel(QObject* t_parent): PNSqlQueryModel(t_par
     addColumn(11, tr("Meeting"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(12, tr("Title"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(13, tr("Foreign Key"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn(14, tr("keyval"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique); //TODO: FIX unused columns
+    addColumn(14, tr("Data Key"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 }
 
 bool SearchResultsModel::openRecord(QModelIndex t_index)
@@ -92,7 +92,7 @@ bool SearchResultsModel::openRecord(QModelIndex t_index)
 
         // filter team members by project for members list
         global_DBObjects.teamsmodel()->setFilter(2, project_id.toString());
-        global_DBObjects.teamsmodel()->refresh();  //TODO: Non-HTML notes aren't showing return characters and tabs
+        global_DBObjects.teamsmodel()->refresh();
 
     }
     else if (data_type == tr("Meeting Attendees"))
@@ -114,9 +114,9 @@ bool SearchResultsModel::openRecord(QModelIndex t_index)
 
         // filter team members by project for members list
         global_DBObjects.teamsmodel()->setFilter(2, project_id.toString());
-        global_DBObjects.teamsmodel()->refresh();  //TODO: Non-HTML notes aren't showing return characters and tabs
+        global_DBObjects.teamsmodel()->refresh();
     }
-    else if (data_type == tr("Project Locations") || data_type == tr("Project Team") || data_type == tr("Status Report Item") || data_type == tr("Item Tracker") )
+    else if (data_type == tr("Project Locations") || data_type == tr("Project Team") || data_type == tr("Status Report Item") )
     {
         QVariant record_id = data(index(t_index.row(), 13));
 
@@ -153,6 +153,45 @@ bool SearchResultsModel::openRecord(QModelIndex t_index)
         global_DBObjects.projectnotesmodel()->setFilter(1, record_id.toString());
         global_DBObjects.projectnotesmodel()->refresh();
     }
+    else if ( data_type == tr("Item Tracker") )
+    {
+        QVariant record_id = data(index(t_index.row(), 0));
+        QVariant project_id = data(index(t_index.row(), 13));
+
+        // only select the records another event will be fired to open the window to show them
+        global_DBObjects.actionitemsdetailsmodel()->setFilter(0, record_id.toString());
+        global_DBObjects.actionitemsdetailsmodel()->refresh();
+
+        global_DBObjects.actionitemsdetailsmeetingsmodel()->setFilter(1, project_id.toString());
+        global_DBObjects.actionitemsdetailsmeetingsmodel()->refresh();
+
+        global_DBObjects.trackeritemscommentsmodel()->setFilter(1, record_id.toString());
+        global_DBObjects.trackeritemscommentsmodel()->refresh();
+
+        // filter team members by project for members list
+        global_DBObjects.teamsmodel()->setFilter(2, project_id.toString());
+        global_DBObjects.teamsmodel()->refresh();
+    }
+    else if ( data_type == tr("Tracker Update") )
+    {
+        QVariant record_id = data(index(t_index.row(), 14));
+        QVariant project_id = data(index(t_index.row(), 13));
+        //QVariant tracker_id = data(index(t_index.row(), 0));
+
+        // only select the records another event will be fired to open the window to show them
+        global_DBObjects.actionitemsdetailsmodel()->setFilter(0, record_id.toString());
+        global_DBObjects.actionitemsdetailsmodel()->refresh();
+
+        global_DBObjects.actionitemsdetailsmeetingsmodel()->setFilter(1, project_id.toString());
+        global_DBObjects.actionitemsdetailsmeetingsmodel()->refresh();
+
+        global_DBObjects.trackeritemscommentsmodel()->setFilter(1, record_id.toString());
+        global_DBObjects.trackeritemscommentsmodel()->refresh();
+
+        // filter team members by project for members list
+        global_DBObjects.teamsmodel()->setFilter(2, project_id.toString());
+        global_DBObjects.teamsmodel()->refresh();
+    }
 
     return true;
 }
@@ -170,6 +209,23 @@ void SearchResultsModel::PerformSearch(const QString& t_search_value)
     else
     {
         setUserSearchString(3, t_search_value);
+        activateUserFilter(QString());
+    }
+}
+
+void SearchResultsModel::PerformKeySearch(const QString& t_search_value)
+{
+    clearAllUserSearches();
+    deactivateUserFilter(QString());
+
+    if ( t_search_value.isEmpty())
+    {
+        setUserSearchString(0, "FIND NOTHING");
+        activateUserFilter(QString());
+    }
+    else
+    {
+        setUserSearchString(14, t_search_value);
         activateUserFilter(QString());
     }
 }

@@ -15,6 +15,8 @@
 
 class PNSqlQueryModel : public QAbstractTableModel
 {
+    Q_OBJECT
+
 public:
 
     enum DBColumnType {DBBlob, DBReal, DBDate, DBInteger, DBString, DBUSD, DBPercent, DBDateTime, DBBool};
@@ -169,6 +171,9 @@ private:
 
     // list of created models
     static QList<PNSqlQueryModel*> m_open_recordsets;
+
+signals:
+    void callKeySearch();
 };
 
 #endif // PNSQLQUERYMODEL_H
