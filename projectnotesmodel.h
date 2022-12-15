@@ -7,7 +7,7 @@ class ProjectNotesModel : public PNSqlQueryModel
 {
 public:
     ProjectNotesModel(QObject* t_parent);
-
+    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new ProjectNotesModel(this)); };
     bool newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr) override;
 
     bool openRecord(QModelIndex t_index) override;

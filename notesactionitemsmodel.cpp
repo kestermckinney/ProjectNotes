@@ -26,7 +26,8 @@ NotesActionItemsModel::NotesActionItemsModel(QObject* t_parent): PNSqlQueryModel
     addColumn(13, tr("Note"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(14, tr("Project ID"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(15, tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addRelatedTable("item_tracker_updates", "item_id", "Tracker Updates");
+
+    addRelatedTable("item_tracker_updates", "item_id", "Tracker Updates", DBExportable);
 
     setOrderBy("item_number");
 }

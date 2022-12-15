@@ -174,4 +174,3 @@ win32 {
    INCLUDEPATH += C:/path/to/hunspell/include
    LIBS += C:/path/to/hunspell/Release/hunspell.lib
 }
-

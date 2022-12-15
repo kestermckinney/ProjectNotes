@@ -3,6 +3,7 @@
 #include "pnsettings.h"
 #include <QMessageBox>
 #include <QDebug>
+#include <QFile>
 
 SpellCheckDialog::SpellCheckDialog(QWidget *parent) :
     QDialog(parent),
@@ -40,12 +41,29 @@ SpellCheckDialog::SpellCheckDialog(QWidget *parent) :
 
     m_DefaultDictionary = global_Settings.getDefaultDictionary().toInt();
 
-    ui->comboBoxDictionaryLanguage->setCurrentIndex(m_DefaultDictionary);
+    if (m_DefaultDictionary > -1)
+    {
+        ui->comboBoxDictionaryLanguage->setCurrentIndex(m_DefaultDictionary);
 
-    QByteArray dictFilePathBA = QString(QCoreApplication::applicationDirPath() + "/dictionary/" + m_DicFiles[m_DefaultDictionary]).toLocal8Bit();
-    QByteArray affixFilePathBA = QString(QCoreApplication::applicationDirPath() + "/dictionary/" + m_AffFiles[m_DefaultDictionary]).toLocal8Bit();
+        QString dict = QString(QCoreApplication::applicationDirPath() + "/dictionary/" + m_DicFiles[m_DefaultDictionary]);
+        QString aff = QString(QCoreApplication::applicationDirPath() + "/dictionary/" + m_AffFiles[m_DefaultDictionary]);
 
-    m_spellchecker = new Hunspell(affixFilePathBA.constData(), dictFilePathBA.constData());
+        QByteArray dictFilePathBA = dict.toLocal8Bit();
+        QByteArray affixFilePathBA = aff.toLocal8Bit();
+
+        if (!QFile::exists(dict) || !QFile::exists(aff))
+        {
+            QMessageBox::critical(this, QObject::tr("Dictionary Files Not Specified"),
+                QString(tr("No dictionary files were specified.  You may need to re-install Project Notes.")), QMessageBox::Close);
+        }
+
+        m_spellchecker = new Hunspell(affixFilePathBA.constData(), dictFilePathBA.constData());
+    }
+    else
+    {
+        QMessageBox::critical(this, QObject::tr("Dictionary Files Not Found"),
+            QString(tr("No dictionary files were found.  You may need to re-install Project Notes.")), QMessageBox::Close);
+    }
 
     if (m_DictionaryNames.count())
         this->setWindowTitle("Spelling: " + m_DictionaryNames[m_DefaultDictionary]);
@@ -59,8 +77,9 @@ void SpellCheckDialog::LoadPersonalWordList()
 
     QStringList wordlist = personalwords.split(":");
 
-    for ( const QString& word : wordlist )
-        m_spellchecker->add(word.toStdString());
+    if (m_spellchecker)
+        for ( const QString& word : wordlist )
+            m_spellchecker->add(word.toStdString());
 }
 
 void SpellCheckDialog::AddToPersonalWordList(QString& t_word)
@@ -76,6 +95,13 @@ void SpellCheckDialog::AddToPersonalWordList(QString& t_word)
 }
 void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
 {
+    if (!m_spellchecker)
+    {
+        QMessageBox::critical(this, QObject::tr("Dictionary Files Not Found"),
+            QString(tr("No dictionary files were found.  You may need to re-install Project Notes.")), QMessageBox::Close);
+        return;
+    }
+
     SpellCheckDialog::SpellCheckAction spellResult;
     m_check_widget = dynamic_cast<QTextEdit*>(t_focus_control);
 

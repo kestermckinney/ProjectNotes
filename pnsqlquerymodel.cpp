@@ -300,8 +300,8 @@ void PNSqlQueryModel::refresh()
 
     m_sql_query = QSqlQuery( fullsql );
 
-    qDebug() << "Refreshing: ";
-    qDebug() << fullsql;
+//    qDebug() << "Refreshing: ";
+//    qDebug() << fullsql;
 
     // add a blank row for drop downs
     if (m_show_blank)
@@ -348,18 +348,7 @@ QVariant PNSqlQueryModel::data(const QModelIndex &t_index, int t_role) const
 
 void PNSqlQueryModel::clear()
 {
-//    QModelIndex qil = index(0, 0);
-//    QModelIndex qir = index(m_cache.count(), m_sql_query.record().count());
-
-//    beginRemoveRows(QModelIndex(), 0, m_cache.count());
-
     m_cache.clear();
-
-    //endRemoveRows();
-
-    //emit dataChanged(qil, qir);
-
-    //qDebug() << "PNSsqlQueryModel cache clearned. Count is " << m_cache.count();
 }
 
 QDateTime PNSqlQueryModel::parseDateTime(QString t_entrydate)
@@ -765,11 +754,12 @@ bool PNSqlQueryModel::isUniqueValue(const QVariant &t_new_value, const QModelInd
     return true;
 }
 
-void PNSqlQueryModel::addRelatedTable(const QString& TableName, const QString& ColumnName, const QString& Title)
+void PNSqlQueryModel::addRelatedTable(const QString& TableName, const QString& ColumnName, const QString& Title, const DBRelationExportable exportable)
 {
     m_related_table.append(TableName);
     m_related_column.append(ColumnName);
     m_relation_title.append(Title);
+    m_relation_exportable.append(exportable);
 }
 
 bool PNSqlQueryModel::deleteCheck(const QModelIndex &t_index)
@@ -934,7 +924,7 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                 }
                 else
                 {
-                    qDebug() << "Table Name: " << BaseSQL() << " Column Num: " << hashit.key() << "  Column Name: " << m_sql_query.record().fieldName(hashit.key());
+                    //qDebug() << "Table Naame: " << BaseSQL() << " Column Num: " << hashit.key() << "  Column Name: " << m_sql_query.record().fieldName(hashit.key());
 
                     sqlEscape(column_value, m_column_type[hashit.key()]);
                     valuelist += QString("%1 %3 '%2'").arg( m_sql_query.record().fieldName(hashit.key()), column_value.toString(), compare_op);
@@ -1474,5 +1464,122 @@ int PNSqlQueryModel::getColumnNumber(QString &t_field_name)
 
     return -1;
 }
+//TODO: STARTED ADDS HERE
+
+//QList<PNSqlQueryModel*> PNSqlQueryModel::childRecordsets()
+//{
+//    QListIterator<PNSqlQueryModel*> it_recordsets(m_open_recordsets);
+//    PNSqlQueryModel* recordset = nullptr;
+//    QList<PNSqlQueryModel*> related_tables;
+
+//    // look through all recordsets that are open
+//    while(it_recordsets.hasNext())
+//    {
+//        recordset = it_recordsets.next();
+
+//        // look through all related tables and uses of the same table to see if the recordset is match
+//        // don't check against yourself
+//        if ( recordset != this)
+//        {
+//            for (int i = 0; i < recordset->getRelatedTables().count(); i++)
+//            {
+//                if ( tablename() == recordset->getRelatedTables()[i] )
+//                {
+//                    related_tables.append(recordset);
+//                }
+//            }
+//        }
+//    }
+
+//    return related_tables;
+//}
 
 
+QDomElement PNSqlQueryModel::toQDomElement( QDomDocument& t_xml_document )
+{
+    QDomElement xmltable = t_xml_document.createElement("table");
+    xmltable.toElement().setAttribute("name", this->tablename());
+
+    for ( const auto& row : m_cache )
+    {
+        QDomElement xmlrow = t_xml_document.createElement("row");
+        xmlrow.setAttribute("id", row.value(0).toString());
+
+        // build the column xml
+        for ( int i = 0; i < row.count(); i++ )
+        {
+            QDomElement xmlcolumn = t_xml_document.createElement("column");
+            xmlcolumn.setAttribute("name", row.fieldName(i));
+            xmlcolumn.setAttribute("number", i);
+
+            QDomText xmltext = t_xml_document.createTextNode(row.value(i).toString());
+            xmlcolumn.appendChild(xmltext);
+
+            if ( m_lookup_view[i] != nullptr )
+            {
+                QString fk_val_col = m_lookup_view[i]->getColumnName( m_lookup_value_column[i]);
+                QString fk_table = m_lookup_view[i]->tablename();
+                QString fk_key_col = m_lookup_view[i]->getColumnName(m_lookup_fk_column[i]);
+                QString fk_key_val = row.value(i).toString();
+
+                QString sql = QString("select %1 from %2 where %3 = '%4'").arg(fk_val_col, fk_table, fk_key_col, fk_key_val);
+                QString lookup_value = global_DBObjects.execute(sql);
+
+                xmlcolumn.setAttribute("lookupvalue", lookup_value);
+            }
+
+            xmlrow.appendChild(xmlcolumn);
+        }
+
+        // append related tables into the row
+
+        // for loop through a list of related tables
+        for (int i = 0; i < m_related_table.count(); i++)
+        {
+            // not all related items are exportable
+            // it would be too much data
+            if (m_relation_exportable[i] == DBExportable)
+            {
+                //find that table in the database objects
+                QListIterator<PNSqlQueryModel*> it_recordsets(m_open_recordsets);
+                PNSqlQueryModel* recordset = nullptr;
+
+                // look through all recordsets that are open
+                while(it_recordsets.hasNext())
+                {
+                    recordset = it_recordsets.next();
+
+                    if (recordset->tablename() == m_related_table[i])
+                    {
+                        // create an export version of that querymodel
+                        PNSqlQueryModel* export_version = recordset->createExportVersion();
+
+                        //set the filter for the export version
+                        int col = export_version->getColumnNumber(m_related_column[i]);
+                        export_version->setFilter(col, row.value(0).toString());
+                        export_version->refresh();
+
+                        QDomElement qd = export_version->toQDomElement( t_xml_document );
+
+                        qd.setAttribute("filter_field", m_related_column[i]);
+                        qd.setAttribute("filter_value", row.value(0).toString());
+
+                        // add the new XML to the current row
+                        xmlrow.appendChild(qd);
+
+                        delete export_version;
+                    }
+                }
+            }
+        }
+
+        xmltable.appendChild(xmlrow);
+    }
+
+    return xmltable;
+}
+
+PNSqlQueryModel* PNSqlQueryModel::createExportVersion()
+{
+    return new PNSqlQueryModel(this);
+}
