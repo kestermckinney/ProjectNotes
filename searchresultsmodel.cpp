@@ -199,7 +199,6 @@ bool SearchResultsModel::openRecord(QModelIndex t_index)
 void SearchResultsModel::PerformSearch(const QString& t_search_value)
 {
     clearAllUserSearches();
-    deactivateUserFilter(QString());
 
     if ( t_search_value.isEmpty())
     {
@@ -216,7 +215,6 @@ void SearchResultsModel::PerformSearch(const QString& t_search_value)
 void SearchResultsModel::PerformKeySearch(const QString& t_search_value)
 {
     clearAllUserSearches();
-    deactivateUserFilter(QString());
 
     if ( t_search_value.isEmpty())
     {

@@ -435,17 +435,15 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     // setup default filters
     if (getShowClosedProjects())
     {
-        trackeritemsmodel()->clearFilter(17);
+        //trackeritemsmodel()->clearFilter(17);
         projectinformationmodel()->clearFilter(14);
-        //projectslistmodel()->clearFilter(9);
         projectslistmodel()->clearFilter(14);
         searchresultsmodel()->clearFilter(6);
     }
     else
     {
-        trackeritemsmodel()->setFilter(17, tr("Active"));  //TODO: this won't work because it is a subselect column IT WORKS NOW but do we need it since we don't show all
+        //trackeritemsmodel()->setFilter(17, tr("Active"));  // IT WORKS NOW but do we need it since we don't show all items in this version
         projectinformationmodel()->setFilter(14, tr("Active"));
-        //projectslistmodel()->setFilter(9, tr("Active"));  //TODO: this seems backwards.  i think the project information should be removed
         projectslistmodel()->setFilter(14, tr("Active"));
         searchresultsmodel()->setFilter(6, tr("Active"));
     }

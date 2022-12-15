@@ -253,8 +253,6 @@ void MainWindow::setButtonAndMenuStates()
             ui->toolBarFormat->setVisible(false); // text format bar
             ui->toolBarEdit->setVisible(false); // text edit bar
 
-            //if (fw) qDebug() << "Set Focus:  " << fw->metaObject()->className();
-
             if ( (fw != nullptr) && strcmp(fw->metaObject()->className(), "PNTableView") == 0 )
             {
                 if ( (dynamic_cast<QTableView*>(fw))->selectionModel()->hasSelection() )
@@ -288,6 +286,10 @@ void MainWindow::setButtonAndMenuStates()
 
         // spell check only QTextEdit widgets
         ui->actionSpell_Check->setEnabled(can_format_text);
+
+        // filter tracker items
+        ui->actionResolved_Tracker_Action_Items->setChecked(global_DBObjects.getShowResolvedTrackerItems());
+        ui->actionResolved_Tracker_Action_Items->setEnabled(true);
     }
     else
     {
@@ -324,6 +326,10 @@ void MainWindow::setButtonAndMenuStates()
 
         // edit tool bar
         ui->toolBarEdit->setVisible(false);
+
+        // filter tracker items
+        ui->actionResolved_Tracker_Action_Items->setChecked(false);
+        ui->actionResolved_Tracker_Action_Items->setEnabled(false);
     }
 }
 
@@ -559,7 +565,6 @@ void MainWindow::on_actionOpen_SearchResults_triggered()
         ui->pageProjectNote->toFirst();
 
         navigateToPage(ui->pageProjectNote);
-        // STOPPED HERE FIND THE ROW
     }
     else if (data_type == tr("Meeting Attendees"))
     {
@@ -1246,4 +1251,4 @@ void MainWindow::on_lineEditSearchText_returnPressed()
 
 // TODO: Add spell checking features for QExpandingLineEdit and QLineEdit
 // TODO: Add find feature for QExpandingLineEdit
-// TODO: Add find featuers to QComboBox located in a table view
+// TODO: Add find features to QComboBox located in a table view

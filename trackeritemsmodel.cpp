@@ -5,10 +5,8 @@ TrackerItemsModel::TrackerItemsModel(QObject* t_parent): PNSqlQueryModel(t_paren
 {
     setObjectName("TrackerItemsModel");
 
-    //setBaseSql("SELECT item_id, item_number, item_type, item_name, identified_by, date_identified, description, assigned_to, priority, status, date_due, last_update, date_resolved, note_id,  project_id, internal_item , (select GROUP_CONCAT(update_note, ',') from item_tracker_updates where item_tracker.item_id=item_tracker_updates.item_id ) comments, (select project_status from projects p where p.project_id=item_tracker.project_id) project_status, client_id FROM item_tracker ");
     setBaseSql("select * from item_tracker_view");
 
-//TODO: Don't use delegates for colums that aren't editable.  It takes up too much memory and could be slow
 //TODO: put the view in the databae upgrade script
     setTableName("item_tracker", "Project Action Items");
 

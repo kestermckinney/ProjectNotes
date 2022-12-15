@@ -348,9 +348,18 @@ QVariant PNSqlQueryModel::data(const QModelIndex &t_index, int t_role) const
 
 void PNSqlQueryModel::clear()
 {
+//    QModelIndex qil = index(0, 0);
+//    QModelIndex qir = index(m_cache.count(), m_sql_query.record().count());
+
+//    beginRemoveRows(QModelIndex(), 0, m_cache.count());
+
     m_cache.clear();
 
-    //qDebug() << "PNSsqlQueryModel cache clearned.";
+    //endRemoveRows();
+
+    //emit dataChanged(qil, qir);
+
+    //qDebug() << "PNSsqlQueryModel cache clearned. Count is " << m_cache.count();
 }
 
 QDateTime PNSqlQueryModel::parseDateTime(QString t_entrydate)

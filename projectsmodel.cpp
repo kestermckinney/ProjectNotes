@@ -9,17 +9,6 @@ ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
     setObjectName("ProjectsModel");
 
     //TODO: add the view to the database creation
-    /*
-    setBaseSql("SELECT project_id, project_number, project_name, last_status_date, last_invoice_date, primary_contact, budget, actual,"
-        " bcwp, bcws, bac, invoicing_period, status_report_period, client_id, project_status, "
-        " (case when budget > 0 then (actual / budget) * 100.0 else NULL end) pct_consumed, "
-        " (case when actual > 0 and bcws > 0 then actual + (bac - bcwp) / (bcwp/actual*bcwp/bcws) else NULL end) eac, "
-        " (case when bcwp > 0 then (actual -  bcwp) / bcwp * 100.0 else NULL end) cv, "
-        " (case when bcws > 0 then (bcwp -  bcws) / bcws * 100.0 else NULL end) sv, "
-        " (case when bac > 0 then bcwp / bac * 100.0 else NULL end) pct_complete, "
-        " (case when actual > 0 then round(bcwp / actual, 2) else NULL end) cpi "
-        " FROM projects");
-    */
 
     setBaseSql("select * from projects_view");
     setTableName("projects", "Project");
