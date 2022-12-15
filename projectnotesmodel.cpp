@@ -16,10 +16,8 @@ ProjectNotesModel::ProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_paren
     addColumn(4, tr("Note"), DBString, DBSearchable, DBNotRequired, DBEditable);
     addColumn(5, tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable);
 
-
-    addRelatedTable("item_tracker", "note_id", "Action Item");
-    addRelatedTable("meeting_attendees", "note_id", "Meeting Attendee");
-
+    addRelatedTable("item_tracker", "note_id", "Action Item", DBExportable);
+    addRelatedTable("meeting_attendees", "note_id", "Meeting Attendee", DBExportable);
 
     setOrderBy("note_date desc");
 }

@@ -13,8 +13,6 @@ MeetingAttendeesModel::MeetingAttendeesModel(QObject* t_parent): PNSqlQueryModel
     addColumn(2, tr("Attendee"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(3, tr("Attendee Name"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBNotUnique);
 
-    //addRelatedTable("item_tracker", "assigned_to", "Assigned Item");
-
     setOrderBy("people.name");
 }
 

@@ -34,7 +34,7 @@ TrackerItemsModel::TrackerItemsModel(QObject* t_parent): PNSqlQueryModel(t_paren
     addColumn(17, tr("Project Status"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(18, tr("Client"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
-    addRelatedTable("item_tracker_updates", "item_id", "Tracker Updates");
+    addRelatedTable("item_tracker_updates", "item_id", "Tracker Updates", DBExportable);
 
     setOrderBy("item_number");
 }

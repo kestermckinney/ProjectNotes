@@ -13,7 +13,5 @@ ActionItemProjectNotesModel::ActionItemProjectNotesModel(QObject* t_parent): PNS
     addColumn(2, tr("Meeting"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBNotUnique);
     addColumn(3, tr("Internal Item"), DBBool, DBNotSearchable, DBRequired, DBReadOnly, DBNotUnique);
 
-    //addRelatedTable("item_tracker", "assigned_to", "Assigned Item");
-
     setOrderBy("note_date");
 }

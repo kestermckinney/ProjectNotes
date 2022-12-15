@@ -13,7 +13,5 @@ ActionItemsDetailsMeetingsModel::ActionItemsDetailsMeetingsModel(QObject* t_pare
     addColumn(2, tr("Meeting"), DBString, DBNotSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(3, tr("Internal Item"), DBBool, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
-   // addRelatedTable("item_tracker", "assigned_to", "Assigned Item");
-
     setOrderBy("note_date");
 }
