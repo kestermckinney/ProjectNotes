@@ -1,13 +1,14 @@
 #include "itemdetailsdelegate.h"
 #include "pnsqlquerymodel.h"
 #include "pndateeditex.h"
+#include "pndatabaseobjects.h"
 
 #include <QLineEdit>
 #include <QComboBox>
 #include <QCheckBox>
 #include <QMessageBox>
 
-ItemDetailsDelegate::ItemDetailsDelegate(QObject *parent) : QItemDelegate(parent)
+ItemDetailsDelegate::ItemDetailsDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
 
 }
@@ -35,7 +36,7 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
             }
             break;
         }
-    case 13:
+    case 13: // meeting
         {
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
             PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
@@ -118,7 +119,7 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
                 key_val.clear();
         }
         break;
-    case 13:
+    case 13: // meeting
         {
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
 
@@ -128,22 +129,34 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
         break;
     case 14: // project number
         {
-            QModelIndex p_qi = t_model->index(t_index.row(), 14);
             QModelIndex i_qi = t_model->index(t_index.row(), 0);
+            QModelIndex p_qi = t_model->index(t_index.row(), 14);
 
-            QVariant project_id = t_model->data(p_qi);
             QVariant item_id = t_model->data(i_qi);
-     //   STOPPED HERE
-            if ( verifyProjectNumber(project_id, item_id))
-            {
-                QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            QVariant project_id = t_model->data(p_qi);
 
-                int i = comboBox->currentIndex();
-                key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
-            }
-            else
+            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+
+            int i = comboBox->currentIndex();
+            key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
+
+            // if project number changes verify and clear the meeting
+            if ( key_val != project_id )
             {
-                return;  //TODO: this may not reset the project value
+                if ( !verifyProjectNumber(key_val, item_id))
+                {
+                    setEditorData(t_editor, t_index); // set the value back
+                    return;
+                }
+
+                // reset the filters for all of the drop downs
+                global_DBObjects.actionitemsdetailsmeetingsmodel()->setFilter(1, key_val.toString());
+                global_DBObjects.actionitemsdetailsmeetingsmodel()->refresh();
+
+                QModelIndex n_qi = t_model->index(t_index.row(), 13);
+                QVariant nothing;
+
+                t_model->setData(n_qi, nothing); // set the meeting to blank since it won't be in the new project
             }
         }
         break;
@@ -201,7 +214,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
             while (select.next())
             {
                 issuestoresolve++;
-                msg += "Identified By, " + select.record().value(1).toString() + " is not found on the selected projects team.  Remove or change this person before changing to this project number.";
+                msg += "Identified By, " + select.record().value(1).toString() + " is not found on the selected projects team.  Remove or change this person before changing to this project number.\n";
             }
         }
     }
@@ -217,7 +230,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
             while (select.next())
             {
                 issuestoresolve++;
-                msg += "Assigned To, " + select.record().value(1).toString() + " is not found on the selected projects team.  Remove or change this person before changing to this project number.";
+                msg += "Assigned To, " + select.record().value(1).toString() + " is not found on the selected projects team.  Remove or change this person before changing to this project number.\n";
             }
         }
     }
@@ -233,7 +246,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
             while (select.next())
             {
                 issuestoresolve++;
-                msg += "Comment Updated By, " + select.record().value(1).toString() + " is not found on the selected projects team.  Remove or change this person before changing to this project number.";
+                msg += "Comment Updated By, " + select.record().value(1).toString() + " is not found on the selected projects team.  Remove or change this person before changing to this project number.\n";
             }
         }
     }
@@ -247,18 +260,15 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
     // note the meeting value will be cleared
     // have user confirm the change
     {
-        QSqlQuery select("select note_id from item_tracker_updates where item_id = ? and note_id is not null");
+        QSqlQuery select("select note_id from item_tracker where item_id = ?");
         select.bindValue(0, t_item_id);
-        select.bindValue(1, t_project_id);
 
         if (select.exec())
         {
-            if (select.next())
+            if (select.next() && !select.record().value(0).isNull())
             {
                 if ( QMessageBox::question(nullptr, QObject::tr("Associatd Meeting"),
-                   "The associated meeting will be removed.  Still reassign the project?", QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
-                    return true;
-                else
+                   "The associated meeting will be removed.  Still reassign the project?\n", QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::No )
                     return false;
             }
         }

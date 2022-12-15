@@ -6,7 +6,7 @@
 #include <QComboBox>
 #include <QTextEdit>
 
-ProjectNotesDelegate::ProjectNotesDelegate(QObject *parent) : QItemDelegate(parent)
+ProjectNotesDelegate::ProjectNotesDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
 
 }
@@ -39,7 +39,10 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
     case 4: // note
         {
             QTextEdit* textedit = static_cast<QTextEdit*>(t_editor);
-            textedit->setText(value.toString());
+            if (value.toString().contains("<html>", Qt::CaseInsensitive))
+                textedit->setHtml(value.toString());
+            else
+                textedit->setPlainText(value.toString());
         }
         break;
     }
@@ -66,10 +69,10 @@ void ProjectNotesDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t
                 key_val.clear();
         }
         break;
-    case 4: // note title
+    case 4: // note text
         {
             QTextEdit* textedit = static_cast<QTextEdit*>(t_editor);
-            key_val = textedit->toPlainText();
+            key_val = textedit->toHtml();
         }
         break;
     }

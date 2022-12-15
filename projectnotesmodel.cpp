@@ -42,7 +42,6 @@ bool ProjectNotesModel::newRecord(const QVariant* t_fk_value1, const QVariant* t
 
 bool ProjectNotesModel::openRecord(QModelIndex t_index)
 {
-    QVariant project_id = data(index(t_index.row(), 1));
     QVariant note_id = data(index(t_index.row(), 0));
 
     global_DBObjects.projecteditingnotesmodel()->setFilter(0, note_id.toString());

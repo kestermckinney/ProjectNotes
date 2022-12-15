@@ -1,11 +1,13 @@
 #ifndef PROJECTDETAILSDELEGATE_H
 #define PROJECTDETAILSDELEGATE_H
 
-#include <QItemDelegate>
+#include <QStyledItemDelegate>
 #include <QObject>
 
-class ProjectDetailsDelegate : public QItemDelegate
+class ProjectDetailsDelegate : public QStyledItemDelegate
 {
+    Q_OBJECT
+
 public:
     explicit ProjectDetailsDelegate(QObject *parent = nullptr);
     void setEditorData(QWidget *editor, const QModelIndex &index) const;

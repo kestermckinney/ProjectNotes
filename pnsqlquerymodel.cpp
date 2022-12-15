@@ -51,6 +51,7 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
         {
             for (int i = 0; i < m_related_table.count(); i++)
             {
+                // if this is a realated table look for related columns
                 if ( recordset->tablename() == m_related_table[i] )
                 {
                     //qDebug() << "Looking Into Table " << recordset->tablename() << " i is " << i;
@@ -71,6 +72,19 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
                         }
                     }
 
+                }
+                // if this is a copy of the same table update the row we just changed
+                else if (this->tablename() == recordset->tablename())
+                {
+                    for (int m_row = 0; m_row < recordset->m_cache.count(); m_row++)
+                    {
+                        // if the row contains the key value in the column then reload it
+                        if ( recordset->m_cache[m_row].value(0) == key_value )
+                        {
+                            // qDebug() << "Reloading Record for Table " << recordset->tablename() << " Row " << ck_row << " Column " << ck_col;
+                            recordset->reloadRecord(recordset->index(m_row, 0));
+                        }
+                    }
                 }
             }
 
@@ -188,7 +202,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
 
             QSqlQuery insert;
             insert.prepare("insert into " + m_tablename + " ( " + fields + " ) values ( " + values + " )");
-            qDebug() << "insert into " << m_tablename << " ( " << fields << " ) values ( " << values << " )";
+            //qDebug() << "insert into " << m_tablename << " ( " << fields << " ) values ( " << values << " )";
 
             int bindcount = 0;
             for (int i = 0; i < m_sql_query.record().count(); i++)
@@ -196,7 +210,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 if ((m_column_is_editable[i] == DBEditable) || i == 0)
                 {
                     insert.bindValue(bindcount, m_cache[t_index.row()].field(i).value());
-                    qDebug() << "Value " << m_cache[t_index.row()].field(i).value();
+                    //qDebug() << "Value " << m_cache[t_index.row()].field(i).value();
                     bindcount++;
                 }
             }
@@ -224,10 +238,10 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             update.addBindValue(keyvalue);
             update.addBindValue(oldvalue);
 
-            qDebug() << "update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)";
-            qDebug() << "Value " << value;
-            qDebug() << "Value " << keyvalue;
-            qDebug() << "Value " << oldvalue;
+            //qDebug() << "update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)";
+            //qDebug() << "Value " << value;
+            //qDebug() << "Value " << keyvalue;
+            //qDebug() << "Value " << oldvalue;
 
             if(update.exec())
             {
@@ -264,6 +278,12 @@ void PNSqlQueryModel::setBaseSql(const QString t_table)
 
     m_sql_query = QSqlQuery( BaseSQL() ); // always build query to get the column names for where clause generation
 }
+
+void PNSqlQueryModel::setTableName(const QString &t_table, const QString &t_display_name)
+{
+    m_tablename = t_table;
+    m_display_name = t_display_name;
+};
 
 void PNSqlQueryModel::refresh()
 {
@@ -329,8 +349,6 @@ QVariant PNSqlQueryModel::data(const QModelIndex &t_index, int t_role) const
 void PNSqlQueryModel::clear()
 {
     m_cache.clear();
-
-    //qDebug() << "PNSsqlQueryModel cache clearned.";
 }
 
 QDateTime PNSqlQueryModel::parseDateTime(QString t_entrydate)
@@ -779,9 +797,12 @@ bool PNSqlQueryModel::deleteCheck(const QModelIndex &t_index)
         if ( QMessageBox::question(nullptr, QObject::tr("Cannot delete record"),
            message, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
         {
-            //TODO: call search function here
-        }
+            QString key = m_cache[t_index.row()].value(0).toString();
 
+            global_DBObjects.searchresultsmodel()->PerformKeySearch( key );
+
+            emit callKeySearch();
+        }
 
         return false;
     }
@@ -807,6 +828,24 @@ const QVariant PNSqlQueryModel::findValue(QVariant& t_lookup_value, int t_search
 
     return QVariant();
 }
+
+const QModelIndex PNSqlQueryModel::findIndex(QVariant& t_lookup_value, int t_search_column)
+{
+    int row = 0;
+
+    for ( QVector<QSqlRecord>::Iterator itrow = m_cache.begin(); itrow != m_cache.end(); ++itrow )
+    {
+        if ( itrow->value(t_search_column) == t_lookup_value )
+        {
+            return index(row, 0); // key is always at 0
+        }
+
+        row++;
+    }
+
+    return QModelIndex();
+}
+
 
 bool PNSqlQueryModel::reloadRecord(const QModelIndex& t_index)
 {

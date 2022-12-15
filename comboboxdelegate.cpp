@@ -7,7 +7,7 @@
 #include <QString>
 
 ComboBoxDelegate::ComboBoxDelegate(QObject *t_parent, QStringListModel *t_model)
-:QItemDelegate(t_parent)
+:QStyledItemDelegate(t_parent)
 {
     m_model = t_model;
 }

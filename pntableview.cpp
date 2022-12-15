@@ -198,6 +198,10 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
 
     PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
 
+    int row = this->selectionModel()->currentIndex().row();
+
+    bool is_new_record = currentmodel->data(currentmodel->index(row, 0)).isNull();
+
     QMenu *menu = new QMenu(this);
 
     menu->addAction(resetColumns);
@@ -205,11 +209,17 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
 
     if (currentmodel && !currentmodel->isReadOnly())
     {
-        menu->addAction(newRecord);
-        menu->addAction(deleteRecord);
-        menu->addAction(copyRecord);
-        if (m_has_open) menu->addAction(openRecord);
-        menu->addAction(exportRecord);
+        if (!is_new_record)
+        {
+            menu->addAction(newRecord);
+            menu->addAction(deleteRecord);
+            menu->addAction(copyRecord);
+        }
+
+        if (m_has_open && !is_new_record) menu->addAction(openRecord);
+
+        if (!is_new_record) menu->addAction(exportRecord);
+
         menu->addAction(filterRecords);
         menu->addSeparator();
     }

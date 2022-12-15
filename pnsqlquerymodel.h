@@ -17,6 +17,8 @@
 
 class PNSqlQueryModel : public QAbstractTableModel
 {
+    Q_OBJECT
+
 public:
 
     enum DBColumnType {DBBlob, DBReal, DBDate, DBInteger, DBString, DBUSD, DBPercent, DBDateTime, DBBool};
@@ -38,7 +40,7 @@ public:
     void clear();
     void refresh();
 
-    void setTableName(const QString &t_table, const QString &t_display_name) { m_tablename = t_table; m_display_name = t_display_name; };
+    void setTableName(const QString &t_table, const QString &t_display_name);
     const QString& tablename() { return m_tablename; };
     void setBaseSql(const QString t_table);
     const QString& BaseSQL() { return m_base_sql; };
@@ -71,6 +73,7 @@ public:
     bool deleteCheck(const QModelIndex &t_index);
     QSqlRecord emptyrecord();
     const QVariant findValue(QVariant& t_lookup_value, int t_search_column, int t_return_column);
+    const QModelIndex findIndex(QVariant& t_lookup_value, int t_search_column);
     void setShowBlank(bool t_show = true) { m_show_blank = t_show; };
     bool reloadRecord(const QModelIndex& t_index);
 
@@ -182,6 +185,9 @@ private:
 
     // list of created models
     static QList<PNSqlQueryModel*> m_open_recordsets;
+
+signals:
+    void callKeySearch();
 };
 
 #endif // PNSQLQUERYMODEL_H

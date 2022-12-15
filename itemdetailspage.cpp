@@ -1,8 +1,7 @@
 
-#include "ui_mainwindow.h"
-
 #include "itemdetailspage.h"
 #include "pndatabaseobjects.h"
+#include "ui_mainwindow.h"
 
 ItemDetailsPage::ItemDetailsPage()
 {
@@ -12,6 +11,9 @@ ItemDetailsPage::ItemDetailsPage()
 
 ItemDetailsPage::~ItemDetailsPage()
 {
+    if (ui)
+        connect(global_DBObjects.actionitemsdetailsmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(toFirst(QModelIndex,QModelIndex)));
+
     if (m_mapperItemDetails != nullptr)
         delete m_mapperItemDetails;
 
@@ -35,6 +37,8 @@ void ItemDetailsPage::newRecord()
 void ItemDetailsPage::setupModels( Ui::MainWindow *t_ui )
 {
     ui = t_ui;
+
+    connect(global_DBObjects.actionitemsdetailsmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(toFirst(QModelIndex,QModelIndex)));
 
     ui->dateEditDueDate->setNullable(true);
     ui->dateEditDateResolved->setNullable(true);
@@ -106,3 +110,5 @@ void ItemDetailsPage::toFirst()
     if (m_mapperItemDetails != nullptr)
         m_mapperItemDetails->toFirst();
 }
+
+

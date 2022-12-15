@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QStringListModel>
 #include <QStack>
+#include <QComboBox>
+#include <QTextCharFormat>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -13,6 +15,8 @@ QT_END_NAMESPACE
 #include "pnsettings.h"
 #include "pnbasepage.h"
 #include "preferencesdialog.h"
+#include "spellcheckdialog.h"
+#include "findreplacedialog.h"
 
 
 class MainWindow : public QMainWindow
@@ -35,6 +39,10 @@ public slots:
     void on_actionOpen_ProjectDetails_triggered();
     void on_actionOpen_ItemDetails_triggered();
     void on_actionOpen_ProjectNote_triggered();
+    void on_actionOpen_SearchResults_triggered();
+
+
+    void on_focusChanged(QWidget *t_old, QWidget *t_now);
 
 private slots:
     void setButtonAndMenuStates();
@@ -58,16 +66,76 @@ private slots:
     void on_actionPreferences_triggered();
     void on_actionResolved_Tracker_Action_Items_triggered();
 
+    void cursorPositionChanged();
+    void alignmentChanged(Qt::Alignment a);
+    void fontChanged(const QFont &f);
+    void currentCharFormatChanged(const QTextCharFormat &format);
+
+    void on_actionUndo_triggered();
+    void on_actionRedo_triggered();
+    void on_actionCopy_triggered();
+    void on_actionCut_triggered();
+    void on_actionPaste_triggered();
+    void on_actionDelete_triggered();
+    void on_actionSelect_All_triggered();
+    void on_actionSpell_Check_triggered();
+
+    void on_actionFind_triggered();
+    void on_actionSearch_triggered();
+    void on_pushButtonSearch_clicked();
+    void on_lineEditSearchText_returnPressed();
+
 private:
     Ui::MainWindow *ui;   
 
-    PreferencesDialog* m_preferences_dialog;
+    PreferencesDialog* m_preferences_dialog = nullptr;
+    SpellCheckDialog* m_spellcheck_dialog = nullptr;
+    FindReplaceDialog* m_find_replace_dialog = nullptr;
 
     // view state
     QList<int> m_page_history;
 
     QStack<PNBasePage*> m_navigation_history;
     int m_navigation_location = -1;
+
+    const QString rsrcPath = ":/icons";
+
+    // setup complex text formatting toolbar and menu
+    void setupTextActions();
+    void textStyle(int styleIndex);
+    void textFamily(const QString &f);
+    void mergeFormatOnWordOrSelection(const QTextCharFormat &format);
+    void textSize(const QString &p);
+    void modifyIndentation(int amount);
+    void colorChanged(const QColor &c);
+    void textItalic();
+    void textBold();
+    void textUnderline();
+    void unindent();
+    void indent();
+    void textAlign(QAction *a);
+    void textColor();
+
+
+    QAction *m_actionTextBold;
+    QAction *m_actionTextUnderline;
+    QAction *m_actionTextItalic;
+    QAction *m_actionTextColor;
+    QAction *m_actionAlignLeft;
+    QAction *m_actionAlignCenter;
+    QAction *m_actionAlignRight;
+    QAction *m_actionAlignJustify;
+    QAction *m_actionIndentLess;
+    QAction *m_actionIndentMore;
+    QAction *m_actionUndo;
+    QAction *m_actionRedo;
+    QAction *m_actionCut;
+    QAction *m_actionCopy;
+    QAction *m_actionPaste;
+
+    QComboBox* m_combo_box_style;
+    QComboBox* m_combo_box_font;
+    QComboBox* m_combo_box_size;
 };
 
 #endif // MAINWINDOW_H

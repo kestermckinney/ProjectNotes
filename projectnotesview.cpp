@@ -38,4 +38,5 @@ void ProjectNotesView::setModel(QAbstractItemModel *t_model)
     }
 }
 
+//TODO: fix icons to be like the ones i created custom
 

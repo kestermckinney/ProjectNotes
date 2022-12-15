@@ -94,6 +94,7 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_unfilteredclients_model = new ClientsModel(nullptr);
     m_unfilteredclients_model_proxy = new PNSortFilterProxyModel();
     m_unfilteredclients_model_proxy->setSourceModel(m_unfilteredclients_model);
+    m_unfilteredclients_model->setShowBlank();
 
     m_people_model = new PeopleModel(nullptr);
     // setup lookup/drop down values
@@ -108,6 +109,7 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_unfiltered_people_model = new PeopleModel(nullptr);
     m_unfiltered_people_model_proxy = new PNSortFilterProxyModel();
     m_unfiltered_people_model_proxy->setSourceModel(m_unfiltered_people_model);
+    m_unfiltered_people_model->setShowBlank();
 
     m_project_information_model = new ProjectsModel(nullptr);
     m_project_information_model_proxy = new PNSortFilterProxyModel();
@@ -151,10 +153,12 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_tracker_items_meetings_model = new ActionItemsDetailsMeetingsModel(nullptr);
     m_tracker_items_meetings_model_proxy = new PNSortFilterProxyModel();
     m_tracker_items_meetings_model_proxy->setSourceModel(m_tracker_items_meetings_model);
+    m_tracker_items_meetings_model->setShowBlank();
 
     m_action_items_details_meetings_model = new ActionItemsDetailsMeetingsModel(nullptr);
     m_action_items_details_meetings_model_proxy = new PNSortFilterProxyModel();
     m_action_items_details_meetings_model_proxy->setSourceModel(m_action_items_details_meetings_model);
+    m_action_items_details_meetings_model->setShowBlank();
 
     m_project_action_items_model = new TrackerItemsModel(nullptr);
     m_project_action_items_model_proxy = new PNSortFilterProxyModel();
@@ -177,6 +181,7 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_tracker_item_comments_model_proxy->setSourceModel(m_tracker_item_comments_model);
 
     m_search_results_model = new SearchResultsModel(nullptr);
+/*
 stopped here create doc funcion
     QDomDocument doc;
     QDomElement root = doc.createElement("projectnotes");
@@ -200,6 +205,9 @@ stopped here create doc funcion
 
     qDebug() << doc.toString();
 
+*/
+    m_search_results_model_proxy = new PNSortFilterProxyModel();
+    m_search_results_model_proxy->setSourceModel(m_search_results_model);
 
     return true;
 }
@@ -229,7 +237,7 @@ void PNDatabaseObjects::closeDatabase()
     delete m_project_team_members_model;
     delete m_project_locations_model;
     delete m_project_notes_model;
-    delete m_action_item_project_notes_model; //
+    delete m_action_item_project_notes_model;
     delete m_action_item_details_model;
     delete m_action_items_details_meetings_model;
     delete m_tracker_items_meetings_model;
@@ -237,7 +245,7 @@ void PNDatabaseObjects::closeDatabase()
     delete m_tracker_item_comments_model;
     delete m_meeting_attendees_model;
     delete m_notes_action_items_model;
-    delete m_item_detail_team_list_model; //
+    delete m_item_detail_team_list_model;
 
     delete m_search_results_model;
 
@@ -286,6 +294,7 @@ void PNDatabaseObjects::closeDatabase()
     delete m_meeting_attendees_model_proxy;
     delete m_notes_action_items_model_proxy;
     delete m_item_detail_team_list_model_proxy;
+    delete m_search_results_model_proxy;
 
     m_clients_model_proxy = nullptr;
     m_unfilteredclients_model_proxy = nullptr;
@@ -308,6 +317,7 @@ void PNDatabaseObjects::closeDatabase()
     m_meeting_attendees_model_proxy = nullptr;
     m_notes_action_items_model_proxy = nullptr;
     m_item_detail_team_list_model = nullptr;
+    m_search_results_model_proxy = nullptr;
 
     m_sqlite_db.close();
     m_database_file.clear();
@@ -451,17 +461,15 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     // setup default filters
     if (getShowClosedProjects())
     {
-        trackeritemsmodel()->clearFilter(17);
+        //trackeritemsmodel()->clearFilter(17);
         projectinformationmodel()->clearFilter(14);
-        //projectslistmodel()->clearFilter(9);
         projectslistmodel()->clearFilter(14);
         searchresultsmodel()->clearFilter(6);
     }
     else
     {
-        trackeritemsmodel()->setFilter(17, tr("Active"));  //TODO: this won't work because it is a subselect column IT WORKS NOW but do we need it since we don't show all
+        //trackeritemsmodel()->setFilter(17, tr("Active"));  // IT WORKS NOW but do we need it since we don't show all items in this version
         projectinformationmodel()->setFilter(14, tr("Active"));
-        //projectslistmodel()->setFilter(9, tr("Active"));  //TODO: this seems backwards.  i think the project information should be removed
         projectslistmodel()->setFilter(14, tr("Active"));
         searchresultsmodel()->setFilter(6, tr("Active"));
     }
