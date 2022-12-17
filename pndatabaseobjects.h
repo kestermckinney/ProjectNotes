@@ -122,6 +122,8 @@ public:
     void setManagingCompany(QString t_value);
     QString getManagingCompany();
 
+    QDomDocument* createXMLExportDoc(PNSqlQueryModel* t_querymodel);
+
 private:
     QString m_database_file;
     QSqlDatabase m_sqlite_db;

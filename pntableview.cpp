@@ -20,12 +20,15 @@ PNTableView::PNTableView(QWidget *t_parent) : QTableView(t_parent)
     headerView->setSortIndicatorShown(true);
     headerView->viewport()->installEventFilter(this);
 
+    QHeaderView *rowView = verticalHeader();
+
+    rowView->viewport()->installEventFilter(this);
+
     setSelectionMode(QAbstractItemView::SingleSelection);
     setSelectionBehavior(QAbstractItemView::SelectRows);
 
     connect(this, &QTableView::activated, this, &PNTableView::dataRowActivated);
     connect(this, &QTableView::clicked, this, &PNTableView::dataRowSelected);
-    //connect(this, &QTableView::doubleClicked, this, &PNTableView::slotOpenRecord);
 
     newRecord = new QAction(tr("New"), this);
     deleteRecord = new QAction(tr("Delete"), this);
@@ -49,7 +52,6 @@ PNTableView::~PNTableView()
 {
     disconnect(this, &QTableView::activated, this, &PNTableView::dataRowActivated);
     disconnect(this, &QTableView::clicked, this, &PNTableView::dataRowSelected);
-    //disconnect(this, &QTableView::doubleClicked, this, &PNTableView::slotOpenRecord);
 
     disconnect(newRecord, &QAction::triggered, this, &PNTableView::slotNewRecord);
     disconnect(deleteRecord, &QAction::triggered, this, &PNTableView::slotDeleteRecord);
@@ -71,6 +73,8 @@ PNTableView::~PNTableView()
 
     QHeaderView *headerView = horizontalHeader();
     headerView->removeEventFilter(this);
+    QHeaderView *rowView = verticalHeader();
+    rowView->removeEventFilter(this);
 }
 
 
@@ -102,6 +106,7 @@ void PNTableView::setModel(QAbstractItemModel *t_model)
 
         horizontalHeader()->setVisible(true);
         verticalHeader()->setVisible(true);
+        verticalHeader()->setSortIndicatorShown(false);
 
     }
     else if ( this->model() ) // when closing or setting model to empty save the columns first on startup don't save a blank view
@@ -117,6 +122,17 @@ bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
 
     switch (t_event->type())
     {
+    case QEvent::MouseButtonDblClick:
+        if ( ((QMouseEvent*)t_event)->buttons().testFlag(Qt::LeftButton ) )
+        {
+            auto vheader = verticalHeader();
+
+            if (vheader->geometry().contains(((QMouseEvent*)t_event)->pos()))
+                slotOpenRecord();
+            else
+                return false;
+        }
+        break;
     case QEvent::MouseButtonPress:
         if ( ((QMouseEvent*)t_event)->button() != Qt::LeftButton )
             return false;
@@ -135,6 +151,11 @@ bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
          if ( ((QMouseEvent*)t_event)->button() != Qt::LeftButton )
             return false;
 
+         auto header = horizontalHeader();
+
+         if (!header->geometry().contains(((QMouseEvent*)t_event)->pos()))
+             return false;
+
         // If we were dragging a section, then pass the event on.
         if (m_isMoving)
         {
@@ -143,8 +164,6 @@ bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
             m_isMoving = false;
             return false;
         }
-
-        auto header = horizontalHeader();
 
         const int indexAtCursor = header->logicalIndexAt(((QMouseEvent*)t_event)->pos());
 
@@ -180,13 +199,11 @@ bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
 void PNTableView::dataRowSelected(const QModelIndex &t_index)
 {
     Q_UNUSED(t_index);
-    // TODO: determine if base class should do anything
 }
 
 void PNTableView::dataRowActivated(const QModelIndex &t_index)
 {
     Q_UNUSED(t_index);
-    // TODO: determine if base class should do anything
 }
 
 void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)

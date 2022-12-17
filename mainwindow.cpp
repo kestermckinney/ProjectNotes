@@ -51,6 +51,7 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
     connect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
+    connect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
     connect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectNote_triggered()));
     connect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_SearchResults_triggered()));
 
@@ -77,6 +78,7 @@ MainWindow::~MainWindow()
 {
     disconnect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
     disconnect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
+    disconnect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
     disconnect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectNote_triggered()));
     disconnect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_SearchResults_triggered()));
 
@@ -125,23 +127,6 @@ void MainWindow::on_focusChanged(QWidget *t_old, QWidget *t_now)
 
     setButtonAndMenuStates();
 }
-
-/*
-//TODO: Remove
-void MainWindow::handleDeleteProjectClicked()
-{
-    navigateCurrentPage()->deleteItem();
-
-
-    QModelIndexList qi = ui->t_tableViewProjects->selectionModel()->selectedRows();
-
-    for (int i = qi.count() - 1; i >= 0; i--)
-    {
-        global_DBObjects.projectinformationmodel()->DeleteRecord(qi[i]);
-    }
-
-}
-*/
 
 void MainWindow::setButtonAndMenuStates()
 {

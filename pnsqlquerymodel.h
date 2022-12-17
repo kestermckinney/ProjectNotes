@@ -129,14 +129,9 @@ public:
     bool isUniqueColumn(int t_column) { return m_column_is_unique[t_column]; };
     void setReadOnly() { m_read_only = true; };
 
-//    const QVector<QString> getRelatedTables() { return m_related_table; };
-//    const QString getRelatedColumn(int t_col) { return m_related_column[t_col]; };
-    QDomElement toQDomElement( QDomDocument& t_xml_document );
+    QDomElement toQDomElement( QDomDocument* t_xml_document );
     // use this to allow for different filters from the original
     virtual PNSqlQueryModel* createExportVersion();
-
-
-//    QList<PNSqlQueryModel*> childRecordsets();
 
 private:
     QString m_tablename;  // the t_table to write data too, also the t_table to sync with other models when changed

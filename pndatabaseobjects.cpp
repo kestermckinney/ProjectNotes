@@ -181,31 +181,7 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_tracker_item_comments_model_proxy->setSourceModel(m_tracker_item_comments_model);
 
     m_search_results_model = new SearchResultsModel(nullptr);
-/*
-stopped here create doc funcion
-    QDomDocument doc;
-    QDomElement root = doc.createElement("projectnotes");
-    doc.appendChild(root).toElement();
 
-    root.setAttribute("filepath", global_DBObjects.getDatabaseFile());
-    root.setAttribute("export_date", QDateTime::currentDateTime().toString("MM/dd/yyyy h:m:s ap"));
-    //root.setAttribute("filter_field", fkfield);
-
-    QString companyname = global_DBObjects.execute(QString("select client_name from clients where client_id='%1'").arg(global_DBObjects.getManagingCompany()));
-    QString managername = global_DBObjects.execute(QString("select name from people where people_id='%1'").arg(global_DBObjects.getProjectManager()));
-
-    root.setAttribute("project_manager_id", global_DBObjects.getProjectManager());
-    root.setAttribute("managing_company_id", global_DBObjects.getManagingCompany());
-    root.setAttribute("managing_company_name", companyname);
-    root.setAttribute("managing_manager_name", managername);
-
-    m_projects_list_model->refresh();
-    QDomElement e = m_projects_list_model->toQDomElement(doc);
-    root.appendChild(e);
-
-    qDebug() << doc.toString();
-
-*/
     m_search_results_model_proxy = new PNSortFilterProxyModel();
     m_search_results_model_proxy->setSourceModel(m_search_results_model);
 
@@ -571,6 +547,31 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
         projectslistmodel()->refresh();
         searchresultsmodel()->refresh();
     }
+}
+
+QDomDocument* PNDatabaseObjects::createXMLExportDoc(PNSqlQueryModel* t_querymodel)
+{
+    QDomDocument* doc = new QDomDocument();
+    QDomElement root = doc->createElement("projectnotes");
+    doc->appendChild(root).toElement();
+
+    root.setAttribute("filepath", global_DBObjects.getDatabaseFile());
+    root.setAttribute("export_date", QDateTime::currentDateTime().toString("MM/dd/yyyy h:m:s ap"));
+
+    QString companyname = global_DBObjects.execute(QString("select client_name from clients where client_id='%1'").arg(global_DBObjects.getManagingCompany()));
+    QString managername = global_DBObjects.execute(QString("select name from people where people_id='%1'").arg(global_DBObjects.getProjectManager()));
+
+    root.setAttribute("project_manager_id", global_DBObjects.getProjectManager());
+    root.setAttribute("managing_company_id", global_DBObjects.getManagingCompany());
+    root.setAttribute("managing_company_name", companyname);
+    root.setAttribute("managing_manager_name", managername);
+
+    QDomElement e = t_querymodel->toQDomElement(doc);
+    root.appendChild(e);
+
+    // qDebug() << doc->toString();
+
+    return doc;
 }
 
 bool PNDatabaseObjects::executeDDL(const QString& /*t_sql*/)

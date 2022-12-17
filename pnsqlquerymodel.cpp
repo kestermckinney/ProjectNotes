@@ -1464,55 +1464,25 @@ int PNSqlQueryModel::getColumnNumber(QString &t_field_name)
 
     return -1;
 }
-//TODO: STARTED ADDS HERE
 
-//QList<PNSqlQueryModel*> PNSqlQueryModel::childRecordsets()
-//{
-//    QListIterator<PNSqlQueryModel*> it_recordsets(m_open_recordsets);
-//    PNSqlQueryModel* recordset = nullptr;
-//    QList<PNSqlQueryModel*> related_tables;
-
-//    // look through all recordsets that are open
-//    while(it_recordsets.hasNext())
-//    {
-//        recordset = it_recordsets.next();
-
-//        // look through all related tables and uses of the same table to see if the recordset is match
-//        // don't check against yourself
-//        if ( recordset != this)
-//        {
-//            for (int i = 0; i < recordset->getRelatedTables().count(); i++)
-//            {
-//                if ( tablename() == recordset->getRelatedTables()[i] )
-//                {
-//                    related_tables.append(recordset);
-//                }
-//            }
-//        }
-//    }
-
-//    return related_tables;
-//}
-
-
-QDomElement PNSqlQueryModel::toQDomElement( QDomDocument& t_xml_document )
+QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document )
 {
-    QDomElement xmltable = t_xml_document.createElement("table");
+    QDomElement xmltable = t_xml_document->createElement("table");
     xmltable.toElement().setAttribute("name", this->tablename());
 
     for ( const auto& row : m_cache )
     {
-        QDomElement xmlrow = t_xml_document.createElement("row");
+        QDomElement xmlrow = t_xml_document->createElement("row");
         xmlrow.setAttribute("id", row.value(0).toString());
 
         // build the column xml
         for ( int i = 0; i < row.count(); i++ )
         {
-            QDomElement xmlcolumn = t_xml_document.createElement("column");
+            QDomElement xmlcolumn = t_xml_document->createElement("column");
             xmlcolumn.setAttribute("name", row.fieldName(i));
             xmlcolumn.setAttribute("number", i);
 
-            QDomText xmltext = t_xml_document.createTextNode(row.value(i).toString());
+            QDomText xmltext = t_xml_document->createTextNode(row.value(i).toString());
             xmlcolumn.appendChild(xmltext);
 
             if ( m_lookup_view[i] != nullptr )
@@ -1583,3 +1553,5 @@ PNSqlQueryModel* PNSqlQueryModel::createExportVersion()
 {
     return new PNSqlQueryModel(this);
 }
+
+//TODO: Add the import XML functionallity to this class
