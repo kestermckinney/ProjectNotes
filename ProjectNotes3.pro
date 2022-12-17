@@ -20,14 +20,16 @@ SOURCES += \
     columnview.cpp \
     comboboxdelegate.cpp \
     filterdatadialog.cpp \
+    findreplacedialog.cpp \
     itemdetailsdelegate.cpp \
     itemdetailspage.cpp \
     itemdetailteamlistmodel.cpp \
     main.cpp \
     mainwindow.cpp \
     meetingattendeesmodel.cpp \
-    noteactionitemsmodel.cpp \
+    meetingattendeesview.cpp \
     notesactionitemsmodel.cpp \
+    notesactionitemsview.cpp \
     peoplelistview.cpp \
     peoplemodel.cpp \
     peoplepage.cpp \
@@ -45,13 +47,18 @@ SOURCES += \
     pnsqlquerymodel.cpp \
     pntableview.cpp \
     preferencesdialog.cpp \
-    projectactionitemsmodel.cpp \
-    projectactionitemsview.cpp \
+    searchpage.cpp \
+    searchresultsview.cpp \
+    spellcheckdialog.cpp \
+    trackeritemsmodel.cpp \
+    trackeritemsview.cpp \
     projectdetailsdelegate.cpp \
     projectdetailspage.cpp \
     projectlocationsmodel.cpp \
     projectlocationsview.cpp \
+    projectnotesdelegate.cpp \
     projectnotesmodel.cpp \
+    projectnotespage.cpp \
     projectnotesview.cpp \
     projectslistmodel.cpp \
     projectslistpage.cpp \
@@ -78,13 +85,15 @@ HEADERS += \
     columnview.h \
     comboboxdelegate.h \
     filterdatadialog.h \
+    findreplacedialog.h \
     itemdetailsdelegate.h \
     itemdetailspage.h \
     itemdetailteamlistmodel.h \
     mainwindow.h \
     meetingattendeesmodel.h \
-    noteactionitemsmodel.h \
+    meetingattendeesview.h \
     notesactionitemsmodel.h \
+    notesactionitemsview.h \
     peoplelistview.h \
     peoplemodel.h \
     peoplepage.h \
@@ -102,13 +111,18 @@ HEADERS += \
     pnsqlquerymodel.h \
     pntableview.h \
     preferencesdialog.h \
-    projectactionitemsmodel.h \
-    projectactionitemsview.h \
+    searchpage.h \
+    searchresultsview.h \
+    spellcheckdialog.h \
+    trackeritemsmodel.h \
+    trackeritemsview.h \
     projectdetailsdelegate.h \
     projectdetailspage.h \
     projectlocationsmodel.h \
     projectlocationsview.h \
+    projectnotesdelegate.h \
     projectnotesmodel.h \
+    projectnotespage.h \
     projectnotesview.h \
     projectslistmodel.h \
     projectslistpage.h \
@@ -128,8 +142,10 @@ HEADERS += \
 
 FORMS += \
     filterdatadialog.ui \
+    findreplacedialog.ui \
     mainwindow.ui \
-    preferencesdialog.ui
+    preferencesdialog.ui \
+    spellcheckdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -140,4 +156,21 @@ RESOURCES += \
     Resources.qrc
 
 DISTFILES += \
-    database/ProjectNotes.db
+    database/ProjectNotes.db \
+    dictionary/en_GB.aff \
+    dictionary/en_GB.dic \
+    dictionary/en_US.aff \
+    dictionary/en_US.dic \
+    dictionary/es_ANY.aff \
+    dictionary/es_ANY.dic \
+    dictionary/index.ini
+
+
+unix {
+   LIBS += -lhunspell
+}
+
+win32 {
+   INCLUDEPATH += C:/path/to/hunspell/include
+   LIBS += C:/path/to/hunspell/Release/hunspell.lib
+}

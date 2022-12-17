@@ -32,22 +32,22 @@ bool ProjectsListModel::openRecord(QModelIndex t_index)
     global_DBObjects.teamsmodel()->refresh();
 
     // filter tracker items by project
-    global_DBObjects.projectactionitemsmodel()->setFilter(14, record_id.toString());
-    global_DBObjects.projectactionitemsmodel()->refresh();
+    global_DBObjects.trackeritemsmodel()->setFilter(14, record_id.toString());
+    global_DBObjects.trackeritemsmodel()->refresh();
 
     // filter tracker items by project
-    if (global_DBObjects.getShowAllTrackerItems())
-        global_DBObjects.projectactionitemsmodel()->clearFilter(14);
-    else
-        global_DBObjects.projectactionitemsmodel()->setFilter(14, record_id.toString());
+    global_DBObjects.trackeritemsmodel()->setFilter(14, record_id.toString());
+    global_DBObjects.trackeritemsmodel()->refresh();
 
-    global_DBObjects.projectactionitemsmodel()->refresh();
+    global_DBObjects.trackeritemsmeetingsmodel()->setFilter(1, record_id.toString());
+    global_DBObjects.trackeritemsmeetingsmodel()->refresh();
 
     global_DBObjects.projectlocationsmodel()->setFilter(1, record_id.toString());
     global_DBObjects.projectlocationsmodel()->refresh();
 
     global_DBObjects.projectnotesmodel()->setFilter(1, record_id.toString());
     global_DBObjects.projectnotesmodel()->refresh();
+
 
     return true;
 }

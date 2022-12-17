@@ -1,12 +1,14 @@
 #include "itemdetailsdelegate.h"
 #include "pnsqlquerymodel.h"
 #include "pndateeditex.h"
+#include "pndatabaseobjects.h"
 
 #include <QLineEdit>
 #include <QComboBox>
 #include <QCheckBox>
+#include <QMessageBox>
 
-ItemDetailsDelegate::ItemDetailsDelegate(QObject *parent) : QItemDelegate(parent)
+ItemDetailsDelegate::ItemDetailsDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
 
 }
@@ -34,7 +36,7 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
             }
             break;
         }
-    case 13:
+    case 13: // meeting
         {
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
             PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
@@ -46,7 +48,7 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
             }
         }
         break;
-    case 14:
+    case 14: // project number
         {
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
             PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
@@ -117,7 +119,7 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
                 key_val.clear();
         }
         break;
-    case 13:
+    case 13: // meeting
         {
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
 
@@ -125,12 +127,37 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
             key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
         }
         break;
-    case 14:
+    case 14: // project number
         {
+            QModelIndex i_qi = t_model->index(t_index.row(), 0);
+            QModelIndex p_qi = t_model->index(t_index.row(), 14);
+
+            QVariant item_id = t_model->data(i_qi);
+            QVariant project_id = t_model->data(p_qi);
+
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
 
             int i = comboBox->currentIndex();
             key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
+
+            // if project number changes verify and clear the meeting
+            if ( key_val != project_id )
+            {
+                if ( !verifyProjectNumber(key_val, item_id))
+                {
+                    setEditorData(t_editor, t_index); // set the value back
+                    return;
+                }
+
+                // reset the filters for all of the drop downs
+                global_DBObjects.actionitemsdetailsmeetingsmodel()->setFilter(1, key_val.toString());
+                global_DBObjects.actionitemsdetailsmeetingsmodel()->refresh();
+
+                QModelIndex n_qi = t_model->index(t_index.row(), 13);
+                QVariant nothing;
+
+                t_model->setData(n_qi, nothing); // set the meeting to blank since it won't be in the new project
+            }
         }
         break;
     case 2:
@@ -159,12 +186,93 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
             else
                 key_val = "0";
         }
+        break;
     default:
         {
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             key_val = lineedit->text();
         }
+        break;
     }
 
     t_model->setData(t_index, key_val, Qt::EditRole);
+}
+
+bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& t_item_id) const
+{
+    QString msg;
+    int issuestoresolve = 0;
+
+    // check to see if identified by is in the project team
+    {
+        QSqlQuery select("select identified_by, (select name from people p where p.people_id=identified_by) people_id_name from item_tracker where item_id = ? and identified_by not in (select people_id from project_people where project_id = ?)");
+        select.bindValue(0, t_item_id);
+        select.bindValue(1, t_project_id);
+
+        if (select.exec())
+        {
+            while (select.next())
+            {
+                issuestoresolve++;
+                msg += "Identified By, " + select.record().value(1).toString() + " is not found on the selected projects team.  Remove or change this person before changing to this project number.\n";
+            }
+        }
+    }
+
+    // check to see if assigned to is in the project team
+    {
+        QSqlQuery select("select assigned_to, (select name from people p where p.people_id=assigned_to) people_id_name from item_tracker where item_id = ? and assigned_to not in (select people_id from project_people where project_id = ?)");
+        select.bindValue(0, t_item_id);
+        select.bindValue(1, t_project_id);
+
+        if (select.exec())
+        {
+            while (select.next())
+            {
+                issuestoresolve++;
+                msg += "Assigned To, " + select.record().value(1).toString() + " is not found on the selected projects team.  Remove or change this person before changing to this project number.\n";
+            }
+        }
+    }
+
+    // check to see if updated by value is in team
+    {
+        QSqlQuery select("select updated_by, (select name from people p where p.people_id=updated_by) people_id_name from item_tracker_updates where item_id = ? and updated_by not in (select people_id from project_people where project_id = ? )");
+        select.bindValue(0, t_item_id);
+        select.bindValue(1, t_project_id);
+
+        if (select.exec())
+        {
+            while (select.next())
+            {
+                issuestoresolve++;
+                msg += "Comment Updated By, " + select.record().value(1).toString() + " is not found on the selected projects team.  Remove or change this person before changing to this project number.\n";
+            }
+        }
+    }
+
+    if (issuestoresolve)
+    {
+        QMessageBox::critical(nullptr, QObject::tr("Cannot Reassign Project"), msg);
+        return false;
+    }
+
+    // note the meeting value will be cleared
+    // have user confirm the change
+    {
+        QSqlQuery select("select note_id from item_tracker where item_id = ?");
+        select.bindValue(0, t_item_id);
+
+        if (select.exec())
+        {
+            if (select.next() && !select.record().value(0).isNull())
+            {
+                if ( QMessageBox::question(nullptr, QObject::tr("Associatd Meeting"),
+                   "The associated meeting will be removed.  Still reassign the project?\n", QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::No )
+                    return false;
+            }
+        }
+    }
+
+    return true;
 }

@@ -52,15 +52,23 @@ public:
     bool null;
     bool nullable;
 
-    void setNull(bool n) {
+    void setNull(bool n)
+    {
         null = n;
-        if (null) {
-            //QLineEdit *edit = qFindChild<QLineEdit *>(q, "qt_spinbox_lineedit");
+        if (null)
+        {
             QLineEdit *edit = q->findChild<QLineEdit *>("qt_spinbox_lineedit");
-            if (!edit->text().isEmpty()) {
+            if (!edit->text().isEmpty())
+            {
                 edit->clear();
             }
         }
+    }
+
+    QLineEdit* getLineEdit()
+    {
+        QLineEdit *edit = q->findChild<QLineEdit *>("qt_spinbox_lineedit");
+        return edit;
     }
 };
 
@@ -270,6 +278,11 @@ bool PNDateEditEx::focusNextPrevChild(bool next)
     } else {
         return QDateEdit::focusNextPrevChild(next);
     }
+}
+
+QLineEdit* PNDateEditEx::getLineEdit() const
+{
+    return d->getLineEdit();
 }
 
 QValidator::State PNDateEditEx::validate(QString &input, int &pos) const

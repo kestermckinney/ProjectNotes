@@ -2,6 +2,7 @@
 #define PNSQLQUERYMODEL_H
 
 #include "math.h"
+//#include "importexport.h"
 
 #include <QString>
 #include <QList>
@@ -12,9 +13,12 @@
 #include <QSqlQuery>
 #include <QSqlRecord>
 #include <QSqlField>
+#include <QDomElement>
 
 class PNSqlQueryModel : public QAbstractTableModel
 {
+    Q_OBJECT
+
 public:
 
     enum DBColumnType {DBBlob, DBReal, DBDate, DBInteger, DBString, DBUSD, DBPercent, DBDateTime, DBBool};
@@ -23,6 +27,7 @@ public:
     enum DBColumnSearchable {DBSearchable, DBNotSearchable};
     enum DBColumnUnique {DBUnique, DBNotUnique};
     enum DBColumnEditable {DBEditable, DBReadOnly};
+    enum DBRelationExportable {DBExportable, DBNotExportable};
 
     PNSqlQueryModel(QObject *parent);
     ~PNSqlQueryModel();
@@ -35,7 +40,7 @@ public:
     void clear();
     void refresh();
 
-    void setTableName(const QString &t_table, const QString &t_display_name) { m_tablename = t_table; m_display_name = t_display_name; };
+    void setTableName(const QString &t_table, const QString &t_display_name);
     const QString& tablename() { return m_tablename; };
     void setBaseSql(const QString t_table);
     const QString& BaseSQL() { return m_base_sql; };
@@ -46,7 +51,7 @@ public:
     void reformatValue(QVariant& t_column_value, DBColumnType t_column_type) const;
 
     void addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable, DBColumnRequired t_required = DBNotRequired, DBColumnEditable t_edit_table = DBEditable, DBColumnUnique t_unique = DBNotUnique);
-    void addRelatedTable(const QString& t_table_name, const QString& t_colum_name, const QString& t_title);
+    void addRelatedTable(const QString& t_table_name, const QString& t_colum_name, const QString& t_title, const DBRelationExportable exportable = DBNotExportable);
     void associateLookupValues(int t_column_number, QStringList* t_lookup_values);
     QVariant headerData(int t_section, Qt::Orientation t_orientation,
                         int t_role = Qt::DisplayRole) const override;
@@ -68,11 +73,13 @@ public:
     bool deleteCheck(const QModelIndex &t_index);
     QSqlRecord emptyrecord();
     const QVariant findValue(QVariant& t_lookup_value, int t_search_column, int t_return_column);
+    const QModelIndex findIndex(QVariant& t_lookup_value, int t_search_column);
     void setShowBlank(bool t_show = true) { m_show_blank = t_show; };
     bool reloadRecord(const QModelIndex& t_index);
 
     QString constructWhereClause(bool t_include_user_filter = true);
     void setFilter(int t_column_number, const QString& t_filter_value, DBCompareType t_compare = DBCompareType::Equals);
+    bool hasFilter(int t_column_number) const { return m_column_is_filtered[t_column_number];};
     void clearAllFilters();
     void clearFilter(int t_column_number);
 
@@ -116,10 +123,15 @@ public:
     };
     QString getColumnName( QString& t_display_name );
     int getColumnNumber( QString& t_field_name );
+    int getUniqueColumnCount();
 
     bool isReadOnly() { return m_read_only; };
+    bool isUniqueColumn(int t_column) { return m_column_is_unique[t_column]; };
     void setReadOnly() { m_read_only = true; };
 
+    QDomElement toQDomElement( QDomDocument* t_xml_document );
+    // use this to allow for different filters from the original
+    virtual PNSqlQueryModel* createExportVersion();
 
 private:
     QString m_tablename;  // the t_table to write data too, also the t_table to sync with other models when changed
@@ -150,10 +162,11 @@ private:
     QHash<int, int> m_lookup_fk_column;
 
 
-    // track for deletion checking
+    // track for deletion checking and exporting
     QVector<QString> m_related_table;
     QVector<QString> m_related_column;
     QVector<QString> m_relation_title;
+    QVector<DBRelationExportable> m_relation_exportable;
 
     QSqlQuery m_sql_query;
     QVector<QSqlRecord> m_cache;
@@ -167,6 +180,9 @@ private:
 
     // list of created models
     static QList<PNSqlQueryModel*> m_open_recordsets;
+
+signals:
+    void callKeySearch();
 };
 
 #endif // PNSQLQUERYMODEL_H

@@ -8,12 +8,22 @@ MeetingAttendeesModel::MeetingAttendeesModel(QObject* t_parent): PNSqlQueryModel
 
     setTableName("meeting_attendees", "Attendees");
 
-    addColumn(0, tr("Attendee ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
-    addColumn(1, tr("Note ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBNotUnique);
+    addColumn(0, tr("Attendee ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBUnique);
+    addColumn(1, tr("Note ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(2, tr("Attendee"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique);
-    addColumn(3, tr("Attendee Name"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique);
-
-    //addRelatedTable("item_tracker", "assigned_to", "Assigned Item");
+    addColumn(3, tr("Attendee Name"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBNotUnique);
 
     setOrderBy("people.name");
 }
+
+bool MeetingAttendeesModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+{
+    Q_UNUSED(t_fk_value2);
+
+    QSqlRecord qr = emptyrecord();
+
+    qr.setValue(1, *t_fk_value1);
+
+    return addRecord(qr);
+}
+

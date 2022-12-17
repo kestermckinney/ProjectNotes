@@ -1,0 +1,17 @@
+{
+    "shell_cmd": "qmake && make",
+    "working_dir": "${project_path:${folder}}",
+
+    "variants":
+    [
+        {
+            "name": "Qmake Project",
+            "shell_cmd": "qmake -project"
+        },
+
+        {
+            "name": "Qmake Clean",
+            "shell_cmd": "make clean"
+        }
+    ]
+}
