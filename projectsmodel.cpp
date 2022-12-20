@@ -8,16 +8,9 @@ ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
 {
     setObjectName("ProjectsModel");
 
-    setBaseSql("SELECT project_id, project_number, project_name, last_status_date, last_invoice_date, primary_contact, budget, actual,"
-        " bcwp, bcws, bac, invoicing_period, status_report_period, client_id, project_status, "
-        " (case when budget > 0 then (actual / budget) * 100.0 else NULL end) pct_consumed, "
-        " (case when actual > 0 and bcws > 0 then actual + (bac - bcwp) / (bcwp/actual*bcwp/bcws) else NULL end) eac, "
-        " (case when bcwp > 0 then (actual -  bcwp) / bcwp * 100.0 else NULL end) cv, "
-        " (case when bcws > 0 then (bcwp -  bcws) / bcws * 100.0 else NULL end) sv, "
-        " (case when bac > 0 then bcwp / bac * 100.0 else NULL end) pct_complete, "
-        " (case when actual > 0 then round(bcwp / actual, 2) else NULL end) cpi "
-        " FROM projects");
+    //TODO: add the view to the database creation
 
+    setBaseSql("select * from projects_view");
     setTableName("projects", "Project");
 
     addColumn(0, tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
@@ -45,11 +38,11 @@ ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
     addColumn(19, tr("Completed"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn(20, tr("CPI"), DBReal, DBSearchable, DBNotRequired, DBReadOnly);
 
-    addRelatedTable("project_notes", "project_id", "Meeting");
-    addRelatedTable("item_tracker", "project_id", "Action/Tracker Item");
-    addRelatedTable("project_locations", "project_id", "Project Location");
-    addRelatedTable("project_people", "project_id", "Project People");
-    addRelatedTable("status_report_items", "project_id", "Status Report Item");
+    addRelatedTable("project_notes", "project_id", "Meeting", DBExportable);
+    addRelatedTable("item_tracker", "project_id", "Action/Tracker Item", DBExportable);
+    addRelatedTable("project_locations", "project_id", "Project Location", DBExportable);
+    addRelatedTable("project_people", "project_id", "Project People", DBExportable);
+    addRelatedTable("status_report_items", "project_id", "Status Report Item", DBExportable);
 
     setOrderBy("project_number");
 }
@@ -91,33 +84,33 @@ QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
             {
                 if (dif > 7)
                 {
-                    return QVariant(QColor(Qt::darkRed));
+                    return QVariant(QColor(Qt::red));
                 }
                 else if (dif == 7)
                 {
-                    return QVariant(QColor(Qt::darkYellow));
+                    return QVariant(QColor(Qt::yellow));
                 }
             }
             else if (period == "Bi-Weekly")
             {
                 if (dif > 14)
                 {
-                    return QVariant(QColor(Qt::darkRed));
+                    return QVariant(QColor(Qt::red));
                 }
                 else if (dif > 12)
                 {
-                    return QVariant(QColor(Qt::darkYellow));
+                    return QVariant(QColor(Qt::yellow));
                 }
             }
             else if (period == "Monthly")
             {
                 if (dif >= 31)
                 {
-                    return QVariant(QColor(Qt::darkRed));
+                    return QVariant(QColor(Qt::red));
                 }
                 else if (dif > 25)
                 {
-                    return QVariant(QColor(Qt::darkYellow));
+                    return QVariant(QColor(Qt::yellow));
                 }
             }
         }
@@ -138,18 +131,18 @@ QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
             {
                 if (dif > 30)
                 {
-                    return QVariant(QColor(Qt::darkYellow));
+                    return QVariant(QColor(Qt::yellow));
                 }
             }
             else if (period == "Monthly")
             {
                 if (QDate::currentDate() > nextdate)
                 {
-                    return QVariant(QColor(Qt::darkRed));
+                    return QVariant(QColor(Qt::red));
                 }
                 else if (dif > 25)
                 {
-                    return QVariant(QColor(Qt::darkYellow));
+                    return QVariant(QColor(Qt::yellow));
                 }
             }
 
@@ -159,45 +152,45 @@ QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
             double t_value = data(t_index).toDouble();
 
             if (t_value >= 95.0)
-                return QVariant(QColor(Qt::darkRed));
+                return QVariant(QColor(Qt::red));
             else if (t_value >= 90.0)
-                return QVariant(QColor(Qt::darkYellow));
+                return QVariant(QColor(Qt::yellow));
         }
         else if (t_index.column() == 17) // cost variance
         {
             double t_value = data(t_index).toDouble();
 
             if (t_value >= 10.0)
-                return QVariant(QColor(Qt::darkRed));
+                return QVariant(QColor(Qt::red));
             else if (t_value >= 5.0)
-                return QVariant(QColor(Qt::darkYellow));
+                return QVariant(QColor(Qt::yellow));
         }
         else if (t_index.column() == 18)  // schedule variance
         {
             double t_value = data(t_index).toDouble();
 
             if (t_value >= 10.0)
-                return QVariant(QColor(Qt::darkRed));
+                return QVariant(QColor(Qt::red));
             else if (t_value >= 05.0)
-                return QVariant(QColor(Qt::darkYellow));
+                return QVariant(QColor(Qt::yellow));
         }
         else if (t_index.column() == 19)  // percent complete
         {
             double t_value = data(t_index).toDouble();
 
             if (t_value >= 95.0)
-                return QVariant(QColor(Qt::darkRed));
+                return QVariant(QColor(Qt::red));
             else if (t_value >= 90.0)
-                return QVariant(QColor(Qt::darkYellow));
+                return QVariant(QColor(Qt::yellow));
         }
         else if (t_index.column() == 20)  // CPI
         {
             double t_value = data(t_index).toDouble();
 
             if (t_value <= 0.8)
-                return QVariant(QColor(Qt::darkRed));
+                return QVariant(QColor(Qt::red));
             else if (t_value < 1.0)
-                return QVariant(QColor(Qt::darkYellow));
+                return QVariant(QColor(Qt::yellow));
         }
     }
 

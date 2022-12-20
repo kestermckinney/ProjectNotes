@@ -25,6 +25,7 @@
 
 #include "widgets_export.h"
 #include <QDateEdit>
+#include <QLineEdit>
 
 class WIDGETS_EXPORT PNDateEditEx : public QDateEdit
 {
@@ -45,6 +46,7 @@ public:
 
     QSize sizeHint() const;
     QSize minimumSizeHint() const;
+    QLineEdit* getLineEdit() const;
 
 protected:
     /*! \reimp */ void showEvent(QShowEvent *event);

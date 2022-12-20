@@ -12,7 +12,10 @@ ProjectDetailsPage::ProjectDetailsPage()
 ProjectDetailsPage::~ProjectDetailsPage()
 {
     if (ui)
+    {
         disconnect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
+        disconnect(global_DBObjects.projectinformationmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(toFirst(QModelIndex,QModelIndex)));
+    }
 
     if (m_mapperProjectDetails != nullptr)
         delete m_mapperProjectDetails;
@@ -39,6 +42,7 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     ui = t_ui;
 
     connect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
+    connect(global_DBObjects.projectinformationmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(toFirst(QModelIndex,QModelIndex)));
 
     ui->dateEditLastInvoiced->setNullable(true);
     ui->dateEditLastStatus->setNullable(true);
@@ -91,7 +95,7 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     setCurrentView( ui->tableViewStatusReportItems );
 
     ui->tableViewTeam->setModel(global_DBObjects.projectteammembersmodelproxy());
-    ui->tableViewTrackerItems->setModel(global_DBObjects.projectactionitemsmodelproxy());   
+    ui->tableViewTrackerItems->setModel(global_DBObjects.trackeritemsmodelproxy());   
     ui->tableViewLocations->setModel(global_DBObjects.projectlocationsmodelproxy());
     ui->tableViewProjectNotes->setModel(global_DBObjects.projectnotesmodelproxy());
 }
@@ -100,34 +104,39 @@ void ProjectDetailsPage::toFirst()
 {
     if (m_mapperProjectDetails != nullptr)
         m_mapperProjectDetails->toFirst();
+
+    ui->tabWidgetProject->setCurrentIndex(0);  // always set to the first tab on open
 }
 
 void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
 {
-    // TODO: this goes out of alignment when a tab isn't clicked when first opened
-    // maybe the open should select the tab too
 
     switch ( index )
     {
     case 0:
         setCurrentModel(global_DBObjects.statusreportitemsmodelproxy());
         setCurrentView(ui->tableViewStatusReportItems);
+        ui->tableViewStatusReportItems->setFocus();
         break;
     case 1:
         setCurrentModel(global_DBObjects.projectteammembersmodelproxy());
         setCurrentView(ui->tableViewTeam);
+        ui->tableViewTeam->setFocus();
         break;
     case 2:
-        setCurrentModel(global_DBObjects.projectactionitemsmodelproxy());
+        setCurrentModel(global_DBObjects.trackeritemsmodelproxy());
         setCurrentView(ui->tableViewTrackerItems);
+        ui->tableViewTrackerItems->setFocus();
         break;
     case 3:
         setCurrentModel(global_DBObjects.projectlocationsmodelproxy());
         setCurrentView(ui->tableViewLocations);
+        ui->tableViewLocations->setFocus();
         break;
     case 4:
         setCurrentModel(global_DBObjects.projectnotesmodelproxy());
         setCurrentView(ui->tableViewProjectNotes);
+        ui->tableViewProjectNotes->setFocus();
         break;
     }
 }

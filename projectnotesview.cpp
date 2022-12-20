@@ -20,6 +20,7 @@ void ProjectNotesView::setModel(QAbstractItemModel *t_model)
 
         setColumnHidden(0, true);
         setColumnHidden(1, true);
+        setColumnHidden(4, true);
 
         // see setbuttonitems for visible columns
 
@@ -36,5 +37,4 @@ void ProjectNotesView::setModel(QAbstractItemModel *t_model)
         PNTableView::setModel(t_model);
     }
 }
-
 

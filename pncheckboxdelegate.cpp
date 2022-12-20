@@ -9,6 +9,7 @@
 #include <QDebug>
 #include <QLayout>
 #include <QHBoxLayout>
+#include <QPainter>
 
 PNCheckBoxDelegate::PNCheckBoxDelegate(QObject *t_parent)
 :QStyledItemDelegate(t_parent)
@@ -89,6 +90,10 @@ void PNCheckBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
     const int y = t_option.rect.center().y() - checkbox_indicator.rect.height() / 2;
 
     checkbox_indicator.rect.moveTo( x, y );
+
+    if (t_option.state & QStyle::State_Selected) {
+       t_painter->fillRect(t_option.rect, t_option.palette.highlight());
+    }
 
     QApplication::style()->drawControl( QStyle::CE_CheckBox, &checkbox_indicator, t_painter );
 }

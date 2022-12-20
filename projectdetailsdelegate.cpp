@@ -5,7 +5,7 @@
 #include <QLineEdit>
 #include <QComboBox>
 
-ProjectDetailsDelegate::ProjectDetailsDelegate(QObject *parent) : QItemDelegate(parent)
+ProjectDetailsDelegate::ProjectDetailsDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
 
 }

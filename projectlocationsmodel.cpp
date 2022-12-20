@@ -31,20 +31,7 @@ bool ProjectLocationsModel::newRecord(const QVariant* t_fk_value1, const QVarian
 
     QSqlRecord qr = emptyrecord();
 
-    // determine the max item_number from the database, then determine the max number from the record cache in case new unsaved records were added
-    QString itemnumber_string = global_DBObjects.execute(QString("select max(location_id) from project_locations where project_id = '%1'").arg(t_fk_value1->toString()));
-    int itemnumber_int = itemnumber_string.toInt();
-
-    for ( int i = 0; i < rowCount(QModelIndex()); i++ )
-    {
-        int testnumber = data(this->index(i, 0)).toInt();
-        if (testnumber > itemnumber_int)
-            itemnumber_int = testnumber;
-    }
-
-    itemnumber_int++;  // set one above the max
-
-    qr.setValue(0, QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0')));  // Need to make a counter that looks good for items
+    // let system generate id qr.setValue(0, QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0')));  // Need to make a counter that looks good for items
     qr.setValue(1, *t_fk_value1);
     qr.setValue(2, "Generic File (System Identified)");
     qr.setValue(3, QVariant());
