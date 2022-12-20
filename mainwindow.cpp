@@ -708,7 +708,7 @@ void MainWindow::setupTextActions()
     QToolBar *tb = ui->toolBarFormat;
     QMenu *menu = ui->menuFormat;
 
-    const QIcon boldIcon = QIcon::fromTheme("format-text-bold", QIcon(rsrcPath + "/textbold.png"));
+    const QIcon boldIcon = QIcon(rsrcPath + "/textbold.png");
     m_actionTextBold = menu->addAction(boldIcon, tr("&Bold"), this, &MainWindow::textBold);
     m_actionTextBold->setShortcut(Qt::CTRL + Qt::Key_B);
     m_actionTextBold->setPriority(QAction::LowPriority);
@@ -718,7 +718,7 @@ void MainWindow::setupTextActions()
     tb->addAction(m_actionTextBold);
     m_actionTextBold->setCheckable(true);
 
-    const QIcon italicIcon = QIcon::fromTheme("format-text-italic", QIcon(rsrcPath + "/textitalic.png"));
+    const QIcon italicIcon = QIcon(rsrcPath + "/textitalic.png");
     m_actionTextItalic = menu->addAction(italicIcon, tr("&Italic"), this, &MainWindow::textItalic);
     m_actionTextItalic->setPriority(QAction::LowPriority);
     m_actionTextItalic->setShortcut(Qt::CTRL + Qt::Key_I);
@@ -728,7 +728,7 @@ void MainWindow::setupTextActions()
     tb->addAction(m_actionTextItalic);
     m_actionTextItalic->setCheckable(true);
 
-    const QIcon underlineIcon = QIcon::fromTheme("format-text-underline", QIcon(rsrcPath + "/textunder.png"));
+    const QIcon underlineIcon = QIcon(rsrcPath + "/textunder.png");
     m_actionTextUnderline = menu->addAction(underlineIcon, tr("&Underline"), this, &MainWindow::textUnderline);
     m_actionTextUnderline->setShortcut(Qt::CTRL + Qt::Key_U);
     m_actionTextUnderline->setPriority(QAction::LowPriority);
@@ -740,31 +740,31 @@ void MainWindow::setupTextActions()
 
     menu->addSeparator();
 
-    const QIcon leftIcon = QIcon::fromTheme("format-justify-left", QIcon(rsrcPath + "/textleft.png"));
+    const QIcon leftIcon = QIcon(rsrcPath + "/textleft.png");
     m_actionAlignLeft = new QAction(leftIcon, tr("&Left"), this);
     m_actionAlignLeft->setShortcut(Qt::CTRL + Qt::Key_L);
     m_actionAlignLeft->setCheckable(true);
     m_actionAlignLeft->setPriority(QAction::LowPriority);
-    const QIcon centerIcon = QIcon::fromTheme("format-justify-center", QIcon(rsrcPath + "/textcenter.png"));
+    const QIcon centerIcon = QIcon(rsrcPath + "/textcenter.png");
     m_actionAlignCenter = new QAction(centerIcon, tr("C&enter"), this);
     m_actionAlignCenter->setShortcut(Qt::CTRL + Qt::Key_E);
     m_actionAlignCenter->setCheckable(true);
     m_actionAlignCenter->setPriority(QAction::LowPriority);
-    const QIcon rightIcon = QIcon::fromTheme("format-justify-right", QIcon(rsrcPath + "/textright.png"));
+    const QIcon rightIcon = QIcon(rsrcPath + "/textright.png");
     m_actionAlignRight = new QAction(rightIcon, tr("&Right"), this);
     m_actionAlignRight->setShortcut(Qt::CTRL + Qt::Key_R);
     m_actionAlignRight->setCheckable(true);
     m_actionAlignRight->setPriority(QAction::LowPriority);
-    const QIcon fillIcon = QIcon::fromTheme("format-justify-fill", QIcon(rsrcPath + "/textjustify.png"));
+    const QIcon fillIcon = QIcon(rsrcPath + "/textjustify.png");
     m_actionAlignJustify = new QAction(fillIcon, tr("&Justify"), this);
     m_actionAlignJustify->setShortcut(Qt::CTRL + Qt::Key_J);
     m_actionAlignJustify->setCheckable(true);
     m_actionAlignJustify->setPriority(QAction::LowPriority);
-    const QIcon indentMoreIcon = QIcon::fromTheme("format-indent-more", QIcon(rsrcPath + "/format-indent-more.png"));
+    const QIcon indentMoreIcon = QIcon(rsrcPath + "/format-indent-more.png");
     m_actionIndentMore = menu->addAction(indentMoreIcon, tr("&Indent"), this, &MainWindow::indent);
     m_actionIndentMore->setShortcut(Qt::CTRL + Qt::Key_BracketRight);
     m_actionIndentMore->setPriority(QAction::LowPriority);
-    const QIcon indentLessIcon = QIcon::fromTheme("format-indent-less", QIcon(rsrcPath + "/format-indent-less.png"));
+    const QIcon indentLessIcon = QIcon(rsrcPath + "/format-indent-less.png");
     m_actionIndentLess = menu->addAction(indentLessIcon, tr("&Unindent"), this, &MainWindow::unindent);
     m_actionIndentLess->setShortcut(Qt::CTRL + Qt::Key_BracketLeft);
     m_actionIndentLess->setPriority(QAction::LowPriority);
