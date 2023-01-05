@@ -11,12 +11,6 @@ ProjectDetailsPage::ProjectDetailsPage()
 
 ProjectDetailsPage::~ProjectDetailsPage()
 {
-    if (ui)
-    {
-        disconnect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
-        disconnect(global_DBObjects.projectinformationmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
-    }
-
     if (m_mapperProjectDetails != nullptr)
         delete m_mapperProjectDetails;
 
@@ -41,8 +35,17 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
 {
     ui = t_ui;
 
-    connect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
-    connect(global_DBObjects.projectinformationmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
+    if (t_ui)
+    {
+        connect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
+        connect(global_DBObjects.projectinformationmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
+    }
+    else
+    {
+        disconnect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
+        disconnect(global_DBObjects.projectinformationmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
+        return; // closing the appliction
+    }
 
     ui->dateEditLastInvoiced->setNullable(true);
     ui->dateEditLastStatus->setNullable(true);

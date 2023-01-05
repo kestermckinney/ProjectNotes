@@ -12,12 +12,6 @@ ProjectNotesPage::ProjectNotesPage()
 
 ProjectNotesPage::~ProjectNotesPage()
 {
-    if (ui)
-    {
-        disconnect(ui->tabWidgetNotes, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetNotes_currentChanged(int)));
-        disconnect(global_DBObjects.projecteditingnotesmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
-    }
-
    if (m_mapperProjectNotes != nullptr)
        delete m_mapperProjectNotes;
 
@@ -43,8 +37,17 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
 {
     ui = t_ui;
 
-    connect(ui->tabWidgetNotes, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetNotes_currentChanged(int)));
-    connect(global_DBObjects.projecteditingnotesmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
+    if (t_ui)
+    {
+        connect(ui->tabWidgetNotes, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetNotes_currentChanged(int)));
+        connect(global_DBObjects.projecteditingnotesmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
+    }
+    else
+    {
+        disconnect(ui->tabWidgetNotes, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetNotes_currentChanged(int)));
+        disconnect(global_DBObjects.projecteditingnotesmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
+        return; // closing the application
+    }
 
     ui->dateEditMeetingDate->setNullable(true);
 

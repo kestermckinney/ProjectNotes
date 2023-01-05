@@ -14,6 +14,10 @@ ProjectsListPage::ProjectsListPage()
 void ProjectsListPage::setupModels( Ui::MainWindow *t_ui )
 {
     ui = t_ui;
+
+    if (!t_ui)
+        return;  // closing application
+
     ui->tableViewProjects->setModel(global_DBObjects.projectslistmodelproxy());
     ui->tableViewProjects->selectRow(0);
     setCurrentModel(global_DBObjects.projectslistmodelproxy());
