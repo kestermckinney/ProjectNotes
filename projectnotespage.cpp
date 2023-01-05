@@ -15,14 +15,14 @@ ProjectNotesPage::~ProjectNotesPage()
     if (ui)
     {
         disconnect(ui->tabWidgetNotes, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetNotes_currentChanged(int)));
-        // causes error disconnect(global_DBObjects.projecteditingnotesmodel(), SIGNAL(dataChanged(QModelIndex, QModelIndex)), this, SLOT(toFirst(QModelIndex, QModelIndex)));
+        disconnect(global_DBObjects.projecteditingnotesmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
     }
 
-// causses error   if (m_mapperProjectNotes != nullptr)
-// causes error       delete m_mapperProjectNotes;
+   if (m_mapperProjectNotes != nullptr)
+       delete m_mapperProjectNotes;
 
-// causes error    if (m_project_notes_delegate)
-// causes error        delete m_project_notes_delegate;
+    if (m_project_notes_delegate)
+        delete m_project_notes_delegate;
 }
 
 void ProjectNotesPage::newRecord()
@@ -44,7 +44,7 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
     ui = t_ui;
 
     connect(ui->tabWidgetNotes, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetNotes_currentChanged(int)));
-    connect(global_DBObjects.projecteditingnotesmodel(), SIGNAL(dataChanged(QModelIndex, QModelIndex)), this, SLOT(toFirst(QModelIndex, QModelIndex)));
+    connect(global_DBObjects.projecteditingnotesmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
 
     ui->dateEditMeetingDate->setNullable(true);
 
