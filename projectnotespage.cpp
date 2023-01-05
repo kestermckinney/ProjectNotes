@@ -1,6 +1,5 @@
 #include "projectnotespage.h"
 #include "pndatabaseobjects.h"
-//#include "trackeritemsview.h"
 #include "notesactionitemsview.h"
 
 #include "ui_mainwindow.h"
@@ -19,8 +18,8 @@ ProjectNotesPage::~ProjectNotesPage()
         disconnect(global_DBObjects.projecteditingnotesmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
     }
 
-    if (m_mapperProjectNotes != nullptr)
-        delete m_mapperProjectNotes;
+   if (m_mapperProjectNotes != nullptr)
+       delete m_mapperProjectNotes;
 
     if (m_project_notes_delegate)
         delete m_project_notes_delegate;

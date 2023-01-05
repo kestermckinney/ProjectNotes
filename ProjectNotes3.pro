@@ -171,6 +171,13 @@ unix {
 }
 
 win32 {
-   INCLUDEPATH += C:/path/to/hunspell/include
-   LIBS += C:/path/to/hunspell/Release/hunspell.lib
+   DEFINES +=   WIN32 \
+                _DEBUG \
+                _WINDOWS \
+                _USRDLL \
+                HUNSPELL_STATIC \
+                _CRT_SECURE_NO_WARNINGS
+
+   INCLUDEPATH += "C:/Users/Paul McKinney/Documents/hunspell/src"
+   LIBS += "C:/Users/Paul McKinney/Documents/hunspell/msvc/x64/Debug/libhunspell.lib"
 }

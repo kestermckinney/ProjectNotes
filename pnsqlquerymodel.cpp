@@ -686,7 +686,8 @@ bool PNSqlQueryModel::deleteRecord(QModelIndex t_index)
     if (!deleteCheck(t_index))
         return false;
 
-    QSqlQuery delrow("delete from " + m_tablename + " where " + m_sql_query.record().fieldName(0) + " = ? ");
+    QSqlQuery delrow;
+    delrow.prepare("delete from " + m_tablename + " where " + m_sql_query.record().fieldName(0) + " = ? ");
     delrow.bindValue(0, m_cache[t_index.row()].field(0).value());
 
     if(delrow.exec())
@@ -849,7 +850,8 @@ const QModelIndex PNSqlQueryModel::findIndex(QVariant& t_lookup_value, int t_sea
 
 bool PNSqlQueryModel::reloadRecord(const QModelIndex& t_index)
 {
-    QSqlQuery select(BaseSQL() + " where " + m_sql_query.record().fieldName(0) + " = ? ");
+    QSqlQuery select;
+    select.prepare(BaseSQL() + " where " + m_sql_query.record().fieldName(0) + " = ? ");
     select.bindValue(0, m_cache[t_index.row()].field(0).value());
 
     if (select.exec())
