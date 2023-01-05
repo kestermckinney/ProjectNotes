@@ -12,6 +12,10 @@ ClientsPage::ClientsPage()
 void ClientsPage::setupModels( Ui::MainWindow *t_ui )
 {
     ui = t_ui;
+
+    if (!t_ui)
+        return; // closing application
+
     ui->tableViewClients->setModel(global_DBObjects.clientsmodelproxy());
     ui->tableViewClients->selectRow(0);
 
