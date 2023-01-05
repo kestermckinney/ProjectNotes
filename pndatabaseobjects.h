@@ -40,7 +40,7 @@ public:
 
     void backupDatabase(QWidget& t_parent, QFileInfo& t_file);
     bool saveParameter( const QString& t_parametername, const QString& t_parametervalue );
-    QString loadParameter( const QString& t_parametername );
+    QString loadParameter( const QVariant& t_parametername );
 
     bool executeDDL(const QString& t_sql);
     void setGlobalSearches( bool t_refresh );

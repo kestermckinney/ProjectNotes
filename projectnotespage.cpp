@@ -1,6 +1,5 @@
 #include "projectnotespage.h"
 #include "pndatabaseobjects.h"
-//#include "trackeritemsview.h"
 #include "notesactionitemsview.h"
 
 #include "ui_mainwindow.h"
@@ -16,14 +15,14 @@ ProjectNotesPage::~ProjectNotesPage()
     if (ui)
     {
         disconnect(ui->tabWidgetNotes, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetNotes_currentChanged(int)));
-        disconnect(global_DBObjects.projecteditingnotesmodel(), SIGNAL(dataChanged(QModelIndex, QModelIndex)), this, SLOT(toFirst(QModelIndex, QModelIndex)));
+        // causes error disconnect(global_DBObjects.projecteditingnotesmodel(), SIGNAL(dataChanged(QModelIndex, QModelIndex)), this, SLOT(toFirst(QModelIndex, QModelIndex)));
     }
 
-    if (m_mapperProjectNotes != nullptr)
-        delete m_mapperProjectNotes;
+// causses error   if (m_mapperProjectNotes != nullptr)
+// causes error       delete m_mapperProjectNotes;
 
-    if (m_project_notes_delegate)
-        delete m_project_notes_delegate;
+// causes error    if (m_project_notes_delegate)
+// causes error        delete m_project_notes_delegate;
 }
 
 void ProjectNotesPage::newRecord()
