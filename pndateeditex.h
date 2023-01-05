@@ -35,6 +35,7 @@ class WIDGETS_EXPORT PNDateEditEx : public QDateEdit
     Q_PROPERTY(bool null READ isNull)
 public:
     explicit PNDateEditEx(QWidget *parent = 0);
+    ~PNDateEditEx();
 
     QDateTime dateTime() const;
     QDate date() const;

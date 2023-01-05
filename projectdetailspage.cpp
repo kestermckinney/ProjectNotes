@@ -14,7 +14,7 @@ ProjectDetailsPage::~ProjectDetailsPage()
     if (ui)
     {
         disconnect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
-        disconnect(global_DBObjects.projectinformationmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(toFirst(QModelIndex,QModelIndex)));
+        disconnect(global_DBObjects.projectinformationmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
     }
 
     if (m_mapperProjectDetails != nullptr)
@@ -42,7 +42,7 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     ui = t_ui;
 
     connect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
-    connect(global_DBObjects.projectinformationmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(toFirst(QModelIndex,QModelIndex)));
+    connect(global_DBObjects.projectinformationmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
 
     ui->dateEditLastInvoiced->setNullable(true);
     ui->dateEditLastStatus->setNullable(true);
