@@ -42,7 +42,7 @@ qDebug() << QCoreApplication::applicationDirPath();
 
     m_DefaultDictionary = global_Settings.getDefaultDictionary().toInt();
 
-    if (m_DicFiles.count() > 0 && m_AffFiles.count() > 0 )
+    if (m_DicFiles.count() > 0 && m_AffFiles.count() > 0)
     {
         ui->comboBoxDictionaryLanguage->setCurrentIndex(m_DefaultDictionary);
 

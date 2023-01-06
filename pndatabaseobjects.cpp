@@ -185,6 +185,22 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_search_results_model_proxy = new PNSortFilterProxyModel();
     m_search_results_model_proxy->setSourceModel(m_search_results_model);
 
+
+    //TODO: STOPPED
+    m_people_model->refresh();
+
+    QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(m_people_model);
+    QDomElement xnode = xdoc->firstChild().toElement();
+    xnode = xnode.firstChild().toElement();
+    xnode = xnode.firstChild().toElement();
+
+    qDebug() << xnode.nodeName();
+    qDebug() << xnode.attribute("id");
+
+    m_people_model->setData(&xnode,false);
+
+    //delete xdoc;
+
     return true;
 }
 
@@ -583,8 +599,6 @@ QDomDocument* PNDatabaseObjects::createXMLExportDoc(PNSqlQueryModel* t_querymode
 
     QDomElement e = t_querymodel->toQDomElement(doc);
     root.appendChild(e);
-
-    // qDebug() << doc->toString();
 
     return doc;
 }
