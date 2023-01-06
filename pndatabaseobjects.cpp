@@ -322,13 +322,20 @@ void PNDatabaseObjects::backupDatabase(QWidget& /*t_parent*/, QFileInfo& /*t_fil
 
 bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QString& t_parametervalue )
 {
-    QSqlQuery select("select parameter_value from application_settings where parameter_name = ?;");
+    QSqlQuery select;
+    if(!select.prepare("select parameter_value from application_settings where parameter_name = ?;"))
+    {
+        QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
+        return false;
+    }
+
     select.bindValue(0, t_parametername);
     if (select.exec())
     {
         if (select.next())
         {
-            QSqlQuery update("update application_settings set parameter_value = ? where parameter_name = ?;");
+            QSqlQuery update;
+            update.prepare("update application_settings set parameter_value = ? where parameter_name = ?;");
             update.bindValue(0, t_parametervalue);
             update.bindValue(1, t_parametername);
             if (update.exec())
@@ -336,7 +343,8 @@ bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QSt
         }
         else
         {
-            QSqlQuery insert("insert into application_settings (parameter_id, parameter_name, parameter_value) values (?, ?, ?);");
+            QSqlQuery insert;
+            insert.prepare("insert into application_settings (parameter_id, parameter_name, parameter_value) values (?, ?, ?);");
             insert.bindValue(0, QUuid::createUuid().toString());
             insert.bindValue(1, t_parametername);
             insert.bindValue(2, t_parametervalue);
@@ -347,17 +355,24 @@ bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QSt
     }
     else
     {
-        QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), "Failed to access a saved setting.  You may need to restart Project Notes.");
+        QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting.  You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()));
         return false;
     }
 
     return false;
 }
 
-QString PNDatabaseObjects::loadParameter( const QString& t_parametername )
+QString PNDatabaseObjects::loadParameter( const QVariant& t_parametername )
 {
-    QSqlQuery select("select parameter_value from application_settings where parameter_name = ?;");
+    QSqlQuery select;
+    if (!select.prepare("select parameter_value from application_settings where parameter_name = ?"))
+    {
+        QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
+        return QString();
+    }
+
     select.bindValue(0, t_parametername);
+
     if (select.exec())
     {
         if (select.next())
@@ -367,7 +382,7 @@ QString PNDatabaseObjects::loadParameter( const QString& t_parametername )
     }
     else
     {
-        QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), "Failed to access a saved setting.  You may need to restart Project Notes.");
+        QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
         return QString();
     }
 }

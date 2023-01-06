@@ -14,6 +14,10 @@ SearchPage::SearchPage()
 void SearchPage::setupModels( Ui::MainWindow *t_ui )
 {
     ui = t_ui;
+
+    if (!t_ui)
+        return;  // closing application
+
     ui->tableViewSearchResults->setModel(global_DBObjects.searchresultsmodelproxy());
     ui->tableViewSearchResults->selectRow(0);
     setCurrentModel(global_DBObjects.searchresultsmodelproxy());

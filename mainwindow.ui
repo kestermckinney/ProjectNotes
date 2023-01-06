@@ -1483,8 +1483,8 @@
    </property>
    <property name="iconSize">
     <size>
-     <width>16</width>
-     <height>16</height>
+     <width>24</width>
+     <height>24</height>
     </size>
    </property>
    <property name="floatable">
@@ -1670,8 +1670,8 @@
   </action>
   <action name="actionUndo">
    <property name="icon">
-    <iconset theme="edit-undo">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/editundo.png</normaloff>:/icons/editundo.png</iconset>
    </property>
    <property name="text">
     <string>Undo</string>
@@ -1685,8 +1685,8 @@
   </action>
   <action name="actionRedo">
    <property name="icon">
-    <iconset theme="edit-redo">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/editredo.png</normaloff>:/icons/editredo.png</iconset>
    </property>
    <property name="text">
     <string>Redo</string>
@@ -1700,8 +1700,8 @@
   </action>
   <action name="actionCopy">
    <property name="icon">
-    <iconset theme="edit-copy">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/editcopy.png</normaloff>:/icons/editcopy.png</iconset>
    </property>
    <property name="text">
     <string>Copy</string>
@@ -1715,8 +1715,8 @@
   </action>
   <action name="actionCut">
    <property name="icon">
-    <iconset theme="edit-cut">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/editcut.png</normaloff>:/icons/editcut.png</iconset>
    </property>
    <property name="text">
     <string>Cut</string>
@@ -1730,8 +1730,8 @@
   </action>
   <action name="actionPaste">
    <property name="icon">
-    <iconset theme="edit-paste">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/editpaste.png</normaloff>:/icons/editpaste.png</iconset>
    </property>
    <property name="text">
     <string>Paste</string>
@@ -1745,8 +1745,8 @@
   </action>
   <action name="actionDelete">
    <property name="icon">
-    <iconset theme="edit-delete">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/deletetext.png</normaloff>:/icons/deletetext.png</iconset>
    </property>
    <property name="text">
     <string>Delete</string>
@@ -1760,8 +1760,8 @@
   </action>
   <action name="actionSelect_All">
    <property name="icon">
-    <iconset theme="edit-select-all">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/selectall.png</normaloff>:/icons/selectall.png</iconset>
    </property>
    <property name="text">
     <string>Select All</string>
@@ -2000,8 +2000,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset theme="format-text-bold">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/textbold.png</normaloff>:/icons/textbold.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Bold</string>
@@ -2012,8 +2012,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset theme="format-text-italic">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/textitalic.png</normaloff>:/icons/textitalic.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Italic</string>
@@ -2024,8 +2024,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset theme="format-text-underline">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/textunder.png</normaloff>:/icons/textunder.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Underline</string>
@@ -2036,8 +2036,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset theme="format-justify-left">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/textleft.png</normaloff>:/icons/textleft.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Left</string>
@@ -2048,8 +2048,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset theme="format-justify-center">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/textcenter.png</normaloff>:/icons/textcenter.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Center</string>
@@ -2060,8 +2060,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset theme="format-justify-right">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/textright.png</normaloff>:/icons/textright.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Right</string>
@@ -2072,8 +2072,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset theme="format-justify-fill">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/textjustify.png</normaloff>:/icons/textjustify.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Justify</string>
@@ -2084,8 +2084,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset theme="format-indent-more">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/format-indent-more.png</normaloff>:/icons/format-indent-more.png</iconset>
    </property>
    <property name="text">
     <string>I&amp;ndent</string>
@@ -2096,8 +2096,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset theme="format-indent-less">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/format-indent-less.png</normaloff>:/icons/format-indent-less.png</iconset>
    </property>
    <property name="text">
     <string>Uind&amp;ent</string>
