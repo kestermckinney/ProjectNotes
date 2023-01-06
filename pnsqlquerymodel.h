@@ -126,12 +126,13 @@ public:
     int getUniqueColumnCount();
 
     bool isReadOnly() { return m_read_only; };
-    bool isUniqueColumn(int t_column) { return m_column_is_unique[t_column]; };
+    bool isUniqueColumn(int t_column) { return (m_column_is_unique[t_column] == DBUnique); };
     void setReadOnly() { m_read_only = true; };
 
     QDomElement toQDomElement( QDomDocument* t_xml_document );
     // use this to allow for different filters from the original
     virtual PNSqlQueryModel* createExportVersion();
+    bool setData(QDomElement* t_xml_row, bool t_ignore_key);
 
 private:
     QString m_tablename;  // the t_table to write data too, also the t_table to sync with other models when changed

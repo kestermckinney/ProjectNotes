@@ -1554,4 +1554,111 @@ PNSqlQueryModel* PNSqlQueryModel::createExportVersion()
     return new PNSqlQueryModel(this);
 }
 
+bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
+{
+    if (t_xml_row->tagName() != "row")
+    {
+        qDebug() << "tag name: " << t_xml_row->tagName() << " is not a 'row'";
+        return false;
+    }
+
+    QString whereclause;
+    QString fields;
+    QString updatefields;
+    QString updatevalues;
+    QString keyfield = getColumnName(0);
+
+    // determine if identifier should be used
+    if (!t_ignore_key)
+    {
+        QString keyvalue = t_xml_row->attribute("id");
+
+        if (!keyvalue.isNull())
+            whereclause = QString(" %1 = '%2'").arg(keyfield, keyvalue);
+    }
+
+    QDomNode element = t_xml_row->firstChild();
+    while (!element.isNull())
+    {
+        if (element.toElement().tagName() == "column")
+        {
+            QString field_name = element.toElement().attribute("name");
+            QVariant field_value = element.toElement().text();
+            QString lookup_value = element.toElement().attribute("lookupvalue");
+
+            int colnum = getColumnNumber(field_name);
+
+            if (!fields.isEmpty())
+                fields += ",";
+            fields += field_name;
+
+            // if column has a lookup value, look up the key value
+            if (!lookup_value.isNull())
+            {
+                // look up the value
+                int colnum = getColumnNumber(field_name);
+                QString fk_val_col = m_lookup_view[colnum]->getColumnName( m_lookup_value_column[colnum]);
+                QString fk_table = m_lookup_view[colnum]->tablename();
+                QString fk_key_col = m_lookup_view[colnum]->getColumnName(m_lookup_fk_column[colnum]);
+
+                QString sql = QString("select %1 from %2 where %3 = '%4'").arg(fk_key_col, fk_table, fk_val_col, lookup_value);
+                field_value = global_DBObjects.execute(sql);
+            }
+
+            if (!updatefields.isEmpty())
+                updatefields += ",";
+
+            //TODO: setup type formatting
+            sqlEscape(field_value, m_column_type[colnum], true);
+
+            if (field_value.isNull())
+                updatefields += QString("%1 = NULL").arg(field_name);
+            else
+                updatefields += QString("%1 = '%2'").arg(field_name, field_value.toString());
+
+            // if using keys don't check for unique values
+            if (!t_ignore_key)
+            {
+                if (colnum > 0)  // don't include keyfield in unique check
+                {
+                    if (isUniqueColumn(colnum))
+                    {
+                        if (!whereclause.isEmpty())
+                            whereclause += " and ";
+
+                        if (field_value.isNull())
+                            whereclause += QString("%1 is NULL").arg(field_name);
+                        else
+                            whereclause += QString(" %1 = '%2'").arg(field_name, field_value.toString());
+                    }
+                }
+            }
+            
+            element = element.nextSibling();
+        }
+    }
+    
+    // check to see if record exists
+    QString exists_sql = QString("select count(*) from %1 where %2").arg(m_tablename, whereclause);
+    QString exists_count = global_DBObjects.execute(exists_sql);
+    QString sql;
+
+    if (exists_count.toInt() > 0)
+    {
+        // update if exists
+        sql = QString("update %1 set %2 where %3").arg(m_tablename, updatefields, whereclause);
+    }
+    else
+    {
+        // insert if it doesn't exist
+        sql = QString("insert into %1 (%2) values (%3)").arg(m_tablename, fields, updatevalues);
+    }
+
+    qDebug() << "XML Generated SQL: " << sql;
+
+///    global_DBObjects.execute(sql);
+
+    return true;
+}
+
 //TODO: Add the import XML functionallity to this class

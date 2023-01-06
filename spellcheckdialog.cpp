@@ -41,7 +41,7 @@ SpellCheckDialog::SpellCheckDialog(QWidget *parent) :
 
     m_DefaultDictionary = global_Settings.getDefaultDictionary().toInt();
 
-    if (m_DefaultDictionary > -1)
+    if (m_DicFiles.count() > 0 && m_AffFiles.count() > 0)
     {
         ui->comboBoxDictionaryLanguage->setCurrentIndex(m_DefaultDictionary);
 
