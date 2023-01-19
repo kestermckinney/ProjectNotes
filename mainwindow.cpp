@@ -118,6 +118,8 @@ MainWindow::~MainWindow()
     delete m_find_replace_dialog;
 
     delete ui;
+
+    ui = nullptr;
 }
 
 void MainWindow::on_focusChanged(QWidget *t_old, QWidget *t_now)
@@ -130,6 +132,9 @@ void MainWindow::on_focusChanged(QWidget *t_old, QWidget *t_now)
 
 void MainWindow::setButtonAndMenuStates()
 {
+    if (!ui)
+        return;
+
     bool dbopen = global_DBObjects.isOpen();
 
     ui->stackedWidget->setVisible(dbopen);

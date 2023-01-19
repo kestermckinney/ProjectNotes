@@ -97,8 +97,6 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_unfilteredclients_model->setShowBlank();
 
     m_people_model = new PeopleModel(nullptr);
-    // setup lookup/drop down values
-    m_people_model->setLookup(5, m_unfilteredclients_model, 0, 1);
     m_people_model_proxy = new PNSortFilterProxyModel();
     m_people_model_proxy->setSourceModel(m_people_model);
 
@@ -116,9 +114,6 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_project_information_model_proxy->setSourceModel(m_project_information_model);
 
     m_projects_list_model = new ProjectsListModel(nullptr);
-    // setup lookup/drop down t_value
-    m_projects_list_model->setLookup(5, m_unfiltered_people_model, 0, 1);
-    m_projects_list_model->setLookup(13, m_unfilteredclients_model, 0, 1);
     m_projects_list_model_proxy = new PNSortFilterProxyModel();
     m_projects_list_model_proxy->setSourceModel(m_projects_list_model);
 
@@ -184,22 +179,6 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
 
     m_search_results_model_proxy = new PNSortFilterProxyModel();
     m_search_results_model_proxy->setSourceModel(m_search_results_model);
-
-
-    //TODO: STOPPED
-    m_people_model->refresh();
-
-    QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(m_people_model);
-    QDomElement xnode = xdoc->firstChild().toElement();
-    xnode = xnode.firstChild().toElement();
-    xnode = xnode.firstChild().toElement();
-
-    qDebug() << xnode.nodeName();
-    qDebug() << xnode.attribute("id");
-
-    m_people_model->setData(&xnode,false);
-
-    //delete xdoc;
 
     return true;
 }
@@ -524,9 +503,6 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     }
     else
     {
-        //QString managing = Execute(QString("select client_name from clients where client_id = '%1'").arg(GetManagingCompany()));
-        //QString filtered = Execute(QString("select client_name from clients where client_id = '%1'").arg(GetGlobalClientFilter()));
-
         QVariantList managingnclientids;
         // make sure list of people can show the managing company
         managingnclientids.append(getManagingCompany());

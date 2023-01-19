@@ -14,19 +14,24 @@ TrackerItemsModel::TrackerItemsModel(QObject* t_parent): PNSqlQueryModel(t_paren
     addColumn(1, tr("Item"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(2, tr("Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(3, tr("Item Name"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(4, tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(4, tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+              "people", "people_id", "name");
 
     addColumn(5, tr("Date Identified"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(6, tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(7, tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(7, tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+              "people", "people_id", "name");
+
     addColumn(8, tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(9, tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(10, tr("Date Due"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(11, tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(12, tr("Date Resolved"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
-    addColumn(13, tr("Meeting"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(14, tr("Project"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(13, tr("Meeting"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+               "project_notes", "note_id", "(strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title) as meeting");
+    addColumn(14, tr("Project"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+              "projects", "project_id", "project_number");
     addColumn(15, tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(16, tr("Comments"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(17, tr("Project Status"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);

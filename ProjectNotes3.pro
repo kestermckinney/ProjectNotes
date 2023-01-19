@@ -73,7 +73,8 @@ SOURCES += \
     trackeritemcommentsmodel.cpp \
     trackeritemcommentsview.cpp \
     valueselectmodel.cpp \
-    valuesview.cpp
+    valuesview.cpp \
+    xmlexportdialog.cpp
 
 HEADERS += \
     FilterSaveStructure.h \
@@ -138,14 +139,16 @@ HEADERS += \
     trackeritemcommentsview.h \
     valueselectmodel.h \
     valuesview.h \
-    widgets_export.h
+    widgets_export.h \
+    xmlexportdialog.h
 
 FORMS += \
     filterdatadialog.ui \
     findreplacedialog.ui \
     mainwindow.ui \
     preferencesdialog.ui \
-    spellcheckdialog.ui
+    spellcheckdialog.ui \
+    xmlexportdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

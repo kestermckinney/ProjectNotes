@@ -14,17 +14,21 @@ NotesActionItemsModel::NotesActionItemsModel(QObject* t_parent): PNSqlQueryModel
     addColumn(1, tr("Item"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique);
     addColumn(2, tr("t_type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(3, tr("Item Name"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(4, tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(4, tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+              "people", "people_id", "name");
     addColumn(5, tr("Date Identified"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(6, tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(7, tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(7, tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+              "people", "people_id", "name");
     addColumn(8, tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(9, tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(10, tr("Date Due"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(11, tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(12, tr("Date Resolved"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(13, tr("Note"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(14, tr("Project ID"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(13, tr("Note"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+              "project_notes", "note_id", "(strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title) as meeting");
+    addColumn(14, tr("Project ID"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+              "projects", "project_id", "project_number");
     addColumn(15, tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
     addRelatedTable("item_tracker_updates", "item_id", "Tracker Updates", DBExportable);

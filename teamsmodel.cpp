@@ -10,9 +10,12 @@ TeamsModel::TeamsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 
     addColumn(0, tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
     addColumn(1, tr("Name"), DBString, DBSearchable, DBRequired);
-    addColumn(2, tr("Project ID"), DBString, DBSearchable, DBRequired);
-    addColumn(3, tr("People ID"), DBString, DBSearchable, DBRequired);
-    addColumn(4, tr("Client ID"), DBString, DBSearchable, DBRequired);
+    addColumn(2, tr("Project ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
+              "projects", "project_id", "project_number");
+    addColumn(3, tr("People ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
+              "people", "people_id", "name");
+    addColumn(4, tr("Client ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
+              "clients", "client_id", "client_name");
 
     addRelatedTable("people", "people_id", "People");
     addRelatedTable("clients", "client_id", "Clients");

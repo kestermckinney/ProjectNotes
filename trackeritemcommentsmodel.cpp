@@ -11,10 +11,12 @@ TrackerItemCommentsModel::TrackerItemCommentsModel(QObject* t_parent): PNSqlQuer
     setTableName("item_tracker_updates", "Tracker Comments");
 
     addColumn(0, tr("Item Updated ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
-    addColumn(1, tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBEditable);
+    addColumn(1, tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
+              "item_tracker", "item_id", "item_number");
     addColumn(2, tr("Updated"), DBDate, DBSearchable, DBRequired);
     addColumn(3, tr("Comments"), DBString, DBSearchable, DBNotRequired);
-    addColumn(4, tr("Updated By"), DBString, DBSearchable, DBRequired); // itemdetailteamlist, tr("name"), tr("people_id"), true );
+    addColumn(4, tr("Updated By"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
+              "people", "people_id", "name"); // itemdetailteamlist, tr("name"), tr("people_id"), true );
 
     setOrderBy("lastupdated_date");
 }
