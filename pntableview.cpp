@@ -358,4 +358,3 @@ void PNTableView::slotResetColumns()
     resizeColumnsToContents();
 }
 
-//TODO: update character colors to look better

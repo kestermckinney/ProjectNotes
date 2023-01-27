@@ -1463,7 +1463,6 @@ bool PNSqlQueryModel::importXMLNode(const QDomNode& t_domnode)  // this should b
     return true;
 }
 
-//TODO: for columns that have Active, Closed and other status import should check and fail them
 bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
 {
     if (t_xml_row->tagName() != "row")
@@ -1619,6 +1618,4 @@ void PNSqlQueryModel::refreshByTableName()
 }
 
 
-//TODO: Add the import XML functionallity to this class
-//TODO: Set a wait cusor while generating XML
 //TODO: establish a progress bar while generating the XML

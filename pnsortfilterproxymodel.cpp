@@ -36,8 +36,8 @@ bool PNSortFilterProxyModel::lessThan(const QModelIndex &t_source_left, const QM
     PNSqlQueryModel *sourcemodel_right = (PNSqlQueryModel*) t_source_right.model();
 
     // get base values
-    QVariant value_left;//TODO: REMOVE = sourcemodel_left->getLookupValue(t_source_left);
-    QVariant value_right;//TODO: REMOVE = sourcemodel_right->getLookupValue(t_source_right);
+    QVariant value_left;
+    QVariant value_right;
 
     PNSqlQueryModel::DBColumnType type_left = sourcemodel_left->getType(t_source_left.column());
     PNSqlQueryModel::DBColumnType type_right = sourcemodel_right->getType(t_source_right.column());
