@@ -22,14 +22,14 @@ TrackerItemsModel::TrackerItemsModel(QObject* t_parent): PNSqlQueryModel(t_paren
     addColumn(7, tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name");
 
-    addColumn(8, tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
-    addColumn(9, tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
+    addColumn(8, tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_priority);
+    addColumn(9, tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_status);
     addColumn(10, tr("Date Due"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(11, tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(12, tr("Date Resolved"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
     addColumn(13, tr("Meeting"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
-               "project_notes", "note_id", "(strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title) as meeting");
+               "project_notes", "note_id", "(strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title)");
     addColumn(14, tr("Project"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "projects", "project_id", "project_number");
     addColumn(15, tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
@@ -117,11 +117,11 @@ QVariant TrackerItemsModel::data(const QModelIndex &t_index, int t_role) const
 
             if (value == "High")
             {
-                 return QVariant(QColor(Qt::red));
+                 return QVariant(QCOLOR_RED);
             }
             else if (value == "Medium")
             {
-                return QVariant(QColor(Qt::yellow));
+                return QVariant(QCOLOR_YELLOW);
             }
         }
         else if (t_index.column() == 10) // due date
@@ -134,11 +134,11 @@ QVariant TrackerItemsModel::data(const QModelIndex &t_index, int t_role) const
 
             if (dif == 0)
             {
-                return QVariant(QColor(Qt::yellow));
+                return QVariant(QCOLOR_YELLOW);
             }
             else if (dif > 0)
             {
-                return QVariant(QColor(Qt::red));
+                return QVariant(QCOLOR_RED);
             }
         }
     }

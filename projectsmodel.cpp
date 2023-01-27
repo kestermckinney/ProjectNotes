@@ -26,13 +26,10 @@ ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
     addColumn(9, tr("BCWS"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
     addColumn(10, tr("BAC"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
     addColumn(11, tr("Invoice Period"), DBString, DBSearchable, DBNotRequired, DBEditable);
-//    associateLookupValues(11, &PNDatabaseObjects::invoicing_period);
     addColumn(12, tr("Report Period"), DBString, DBSearchable, DBNotRequired, DBEditable);
-//    associateLookupValues(12, &PNDatabaseObjects::status_report_period);
     addColumn(13, tr("Client"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "clients", "client_id", "client_name");
-    addColumn(14, tr("Status"), DBString, DBSearchable, DBNotRequired, DBEditable);
-//    associateLookupValues(14, &PNDatabaseObjects::project_status);
+    addColumn(14, tr("Status"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::project_status);
     addColumn(15, tr("Consumed"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn(16, tr("EAC"), DBUSD, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn(17, tr("CV"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
@@ -86,33 +83,33 @@ QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
             {
                 if (dif > 7)
                 {
-                    return QVariant(QColor(Qt::red));
+                    return QVariant(QCOLOR_RED);
                 }
                 else if (dif == 7)
                 {
-                    return QVariant(QColor(Qt::yellow));
+                    return QVariant(QCOLOR_YELLOW);
                 }
             }
             else if (period == "Bi-Weekly")
             {
                 if (dif > 14)
                 {
-                    return QVariant(QColor(Qt::red));
+                    return QVariant(QCOLOR_RED);
                 }
                 else if (dif > 12)
                 {
-                    return QVariant(QColor(Qt::yellow));
+                    return QVariant(QCOLOR_YELLOW);
                 }
             }
             else if (period == "Monthly")
             {
                 if (dif >= 31)
                 {
-                    return QVariant(QColor(Qt::red));
+                    return QVariant(QCOLOR_RED);
                 }
                 else if (dif > 25)
                 {
-                    return QVariant(QColor(Qt::yellow));
+                    return QVariant(QCOLOR_YELLOW);
                 }
             }
         }
@@ -133,18 +130,18 @@ QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
             {
                 if (dif > 30)
                 {
-                    return QVariant(QColor(Qt::yellow));
+                    return QVariant(QCOLOR_YELLOW);
                 }
             }
             else if (period == "Monthly")
             {
                 if (QDate::currentDate() > nextdate)
                 {
-                    return QVariant(QColor(Qt::red));
+                    return QVariant(QCOLOR_RED);
                 }
                 else if (dif > 25)
                 {
-                    return QVariant(QColor(Qt::yellow));
+                    return QVariant(QCOLOR_YELLOW);
                 }
             }
 
@@ -154,45 +151,45 @@ QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
             double t_value = data(t_index).toDouble();
 
             if (t_value >= 95.0)
-                return QVariant(QColor(Qt::red));
+                return QVariant(QCOLOR_RED);
             else if (t_value >= 90.0)
-                return QVariant(QColor(Qt::yellow));
+                return QVariant(QCOLOR_YELLOW);
         }
         else if (t_index.column() == 17) // cost variance
         {
             double t_value = data(t_index).toDouble();
 
             if (t_value >= 10.0)
-                return QVariant(QColor(Qt::red));
+                return QVariant(QCOLOR_RED);
             else if (t_value >= 5.0)
-                return QVariant(QColor(Qt::yellow));
+                return QVariant(QCOLOR_YELLOW);
         }
         else if (t_index.column() == 18)  // schedule variance
         {
             double t_value = data(t_index).toDouble();
 
             if (t_value >= 10.0)
-                return QVariant(QColor(Qt::red));
+                return QVariant(QCOLOR_RED);
             else if (t_value >= 05.0)
-                return QVariant(QColor(Qt::yellow));
+                return QVariant(QCOLOR_YELLOW);
         }
         else if (t_index.column() == 19)  // percent complete
         {
             double t_value = data(t_index).toDouble();
 
             if (t_value >= 95.0)
-                return QVariant(QColor(Qt::red));
+                return QVariant(QCOLOR_RED);
             else if (t_value >= 90.0)
-                return QVariant(QColor(Qt::yellow));
+                return QVariant(QCOLOR_YELLOW);
         }
         else if (t_index.column() == 20)  // CPI
         {
             double t_value = data(t_index).toDouble();
 
             if (t_value <= 0.8)
-                return QVariant(QColor(Qt::red));
+                return QVariant(QCOLOR_RED);
             else if (t_value < 1.0)
-                return QVariant(QColor(Qt::yellow));
+                return QVariant(QCOLOR_YELLOW);
         }
     }
 

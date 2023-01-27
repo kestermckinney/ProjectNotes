@@ -36,6 +36,9 @@ public:
     bool setData(const QModelIndex &t_index, const QVariant &t_value, int t_role) override;
     QVariant data(const QModelIndex &t_index, int t_role = Qt::DisplayRole) const override;
 
+    bool importXMLNode(const QDomNode& t_domnode);
+    bool setData(QDomElement* t_xml_row, bool t_ignore_key);
+
     void clear();
     void refresh();
 
@@ -53,6 +56,8 @@ public:
     void addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable,
                    DBColumnRequired t_required = DBNotRequired, DBColumnEditable t_edit_table = DBEditable, DBColumnUnique t_unique = DBNotUnique,
                    const QString& t_lookup_table = QString(), const QString& t_lookup_fk_column_name = QString(), const QString& t_lookup_value_column_name = QString());
+    void addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable, DBColumnRequired t_required,
+                                    DBColumnEditable t_editable, DBColumnUnique t_unique, QStringList* t_valuelist);
     void addRelatedTable(const QString& t_table_name, const QString& t_colum_name, const QString& t_title, const DBRelationExportable exportable = DBNotExportable);
     void associateLookupValues(int t_column_number, QStringList* t_lookup_values);
     QVariant headerData(int t_section, Qt::Orientation t_orientation,
@@ -78,6 +83,7 @@ public:
     const QModelIndex findIndex(QVariant& t_lookup_value, int t_search_column);
     void setShowBlank(bool t_show = true) { m_show_blank = t_show; };
     bool reloadRecord(const QModelIndex& t_index);
+    void refreshByTableName();
 
     QString constructWhereClause(bool t_include_user_filter = true);
     void setFilter(int t_column_number, const QString& t_filter_value, DBCompareType t_compare = DBCompareType::Equals);
@@ -133,7 +139,6 @@ public:
     QDomElement toQDomElement( QDomDocument* t_xml_document );
     // use this to allow for different filters from the original
     virtual PNSqlQueryModel* createExportVersion();
-    bool setData(QDomElement* t_xml_row, bool t_ignore_key);
 
 
 private:
@@ -163,7 +168,7 @@ private:
     QHash<int, QString> m_lookup_table;
     QHash<int, QString> m_lookup_value_column_name;
     QHash<int, QString> m_lookup_fk_column_name;
-
+    QHash<int, QStringList*> m_lookup_values;
 
     // track for deletion checking and exporting
     QVector<QString> m_related_table;

@@ -1,4 +1,5 @@
 #include "pncolumnmodel.h"
+#include "pndatabaseobjects.h"
 #include <QColor>
 
 PNColumnModel::PNColumnModel(QObject *t_parent) : PNSqlQueryModel(t_parent)
@@ -52,7 +53,7 @@ QVariant PNColumnModel::data(const QModelIndex &t_index, int t_role) const
                  !(*m_saved_filters)[dbcolname].SearchBeginValue.toString().isEmpty() ||
                  !(*m_saved_filters)[dbcolname].SearchEndValue.toString().isEmpty()||
                  !(*m_saved_filters)[dbcolname].SearchString.toString().isEmpty() )
-               return QVariant(QColor(Qt::darkBlue));
+               return QVariant(QCOLOR_BLUE);
         }
     }
 

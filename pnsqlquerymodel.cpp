@@ -325,7 +325,7 @@ QVariant PNSqlQueryModel::data(const QModelIndex &t_index, int t_role) const
     {
         if (m_column_is_editable[t_index.column()] == DBReadOnly)
         {
-            retval = QVariant(QColor("gray"));
+            retval = QVariant(QCOLOR_GRAY);
         }
     }
 
@@ -466,7 +466,7 @@ QVariant PNSqlQueryModel::headerData(int t_section, Qt::Orientation t_orientatio
         if ( t_role == Qt::ForegroundRole )
         {
             if (hasUserFilters(t_section))
-                return QColor(Qt::darkBlue);
+                return QCOLOR_BLUE;
         }
         else if ( t_role == Qt::DisplayRole )
         {
@@ -583,6 +583,15 @@ void PNSqlQueryModel::reformatValue(QVariant& t_column_value, DBColumnType t_col
 }
 
 void PNSqlQueryModel::addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable, DBColumnRequired t_required, DBColumnEditable t_editable, DBColumnUnique t_unique,
+                                QStringList* t_valuelist)
+{
+    addColumn(t_column_number, t_display_name, t_type, t_searchable, t_required, t_editable, t_unique);
+
+    m_lookup_values[t_column_number] = t_valuelist;
+}
+
+
+void PNSqlQueryModel::addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable, DBColumnRequired t_required, DBColumnEditable t_editable, DBColumnUnique t_unique,
                                 const QString& t_lookup_table, const QString& t_lookup_fk_column_name, const QString& t_lookup_value_column_name)
 {
     setHeaderData(t_column_number, Qt::Horizontal, t_display_name);
@@ -608,6 +617,8 @@ void PNSqlQueryModel::addColumn(int t_column_number, const QString& t_display_na
     m_lookup_table[t_column_number] = t_lookup_table;
     m_lookup_value_column_name[t_column_number] = t_lookup_value_column_name;
     m_lookup_fk_column_name[t_column_number] = t_lookup_fk_column_name;
+
+    m_lookup_values[t_column_number] = nullptr;
 }
 
 int PNSqlQueryModel::rowCount(const QModelIndex &t_parent) const
@@ -1366,7 +1377,6 @@ QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document )
         {
             QDomElement xmlcolumn = t_xml_document->createElement("column");
             xmlcolumn.setAttribute("name", row.fieldName(i));
-            xmlcolumn.setAttribute("number", i);
 
             QDomText xmltext = t_xml_document->createTextNode(row.value(i).toString());
             xmlcolumn.appendChild(xmltext);
@@ -1438,6 +1448,22 @@ PNSqlQueryModel* PNSqlQueryModel::createExportVersion()
     return new PNSqlQueryModel(this);
 }
 
+bool PNSqlQueryModel::importXMLNode(const QDomNode& t_domnode)  // this should be table level
+{
+    QDomElement node = t_domnode.firstChildElement("row");
+
+    while (!node.isNull())
+    {
+        if (!setData(&node, false))
+            return false; // jump out if we have an error
+
+        node = node.nextSiblingElement("row");
+    }
+
+    return true;
+}
+
+//TODO: for columns that have Active, Closed and other status import should check and fail them
 bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
 {
     if (t_xml_row->tagName() != "row")
@@ -1448,14 +1474,15 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
 
     QString whereclause;
     QString fields;
-    QString updatefields;
     QString updatevalues;
+    QString insertvalues;
     QString keyfield = getColumnName(0);
+    QString keyvalue;
 
     // determine if identifier should be used
     if (!t_ignore_key)
     {
-        QString keyvalue = t_xml_row->attribute("id");
+        keyvalue = t_xml_row->attribute("id");
 
         if (!keyvalue.isNull())
             whereclause = QString(" %1 = '%2'").arg(keyfield, keyvalue);
@@ -1472,53 +1499,67 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
 
             int colnum = getColumnNumber(field_name);
 
-            if (!fields.isEmpty())
-                fields += ",";
-            fields += field_name;
-
-            // if column has a lookup value, look up the key value
-            //STOPPED new version doesn't use lookup views how to replace
-            if (!lookup_value.isNull())
+            // if key column is specified blank or null don't use it
+            if ( !(colnum == 0 && (field_value.isNull() || field_value.toString().isEmpty())) )
             {
-//                // look up the value
-//                int colnum = getColumnNumber(field_name);
-//                QString fk_val_col = m_lookup_view[colnum]->getColumnName( m_lookup_value_column[colnum]);
-//                QString fk_table = m_lookup_view[colnum]->tablename();
-//                QString fk_key_col = m_lookup_view[colnum]->getColumnName(m_lookup_fk_column[colnum]);
+                if (!fields.isEmpty())
+                    fields += ",";
 
-//                QString sql = QString("select %1 from %2 where %3 = '%4'").arg(fk_key_col, fk_table, fk_val_col, lookup_value);
-//                field_value = global_DBObjects.execute(sql);
-            }
+                fields += field_name;
 
-            if (!updatefields.isEmpty())
-                updatefields += ",";
-
-            //TODO: setup type formatting
-            sqlEscape(field_value, m_column_type[colnum], true);
-
-            if (field_value.isNull())
-                updatefields += QString("%1 = NULL").arg(field_name);
-            else
-                updatefields += QString("%1 = '%2'").arg(field_name, field_value.toString());
-
-            // if using keys don't check for unique values
-            if (!t_ignore_key)
-            {
-                if (colnum > 0)  // don't include keyfield in unique check
+                // if column has a lookup value, look up the key value
+                if (!lookup_value.isNull() && !m_lookup_table[colnum].isEmpty())
                 {
-                    if (isUniqueColumn(colnum))
-                    {
-                        if (!whereclause.isEmpty())
-                            whereclause += " and ";
+                    QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookup_fk_column_name[colnum], m_lookup_table[colnum], m_lookup_value_column_name[colnum], lookup_value);
+                    field_value = global_DBObjects.execute(sql);
+                }
 
-                        if (field_value.isNull())
-                            whereclause += QString("%1 is NULL").arg(field_name);
-                        else
-                            whereclause += QString(" %1 = '%2'").arg(field_name, field_value.toString());
+                if (!insertvalues.isEmpty())
+                    insertvalues += ",";
+
+
+                if (!updatevalues.isEmpty())
+                    updatevalues += ",";
+
+                // if list of values doesn't contain this value the record need rejected
+                if (m_lookup_values[colnum] && !m_lookup_values[colnum]->contains(field_value.toString(), Qt::CaseSensitive))
+                {
+                    QMessageBox::critical(nullptr, QObject::tr("Invalid Field Value"), QString("""%1"" is not a valid field value.").arg(field_value.toString()));
+                    return false;
+                }
+
+                sqlEscape(field_value, m_column_type[colnum], true);
+
+                if (field_value.isNull())
+                {
+                    updatevalues += QString("%1 = NULL").arg(field_name);
+                    insertvalues += "NULL";
+                }
+                else
+                {
+                    updatevalues += QString("%1 = '%2'").arg(field_name, field_value.toString());
+                    insertvalues += QString("'%1'").arg(field_value.toString());
+                }
+
+                // if using keys don't check for unique values
+                if (keyvalue.isNull())
+                {
+                    if (colnum > 0)  // don't include keyfield in unique check
+                    {
+                        if (isUniqueColumn(colnum))
+                        {
+                            if (!whereclause.isEmpty())
+                                whereclause += " and ";
+
+                            if (field_value.isNull())
+                                whereclause += QString("%1 is NULL").arg(field_name);
+                            else
+                                whereclause += QString(" %1 = '%2'").arg(field_name, field_value.toString());
+                        }
                     }
                 }
             }
-            
+
             element = element.nextSibling();
         }
     }
@@ -1531,12 +1572,24 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
     if (exists_count.toInt() > 0)
     {
         // update if exists
-        sql = QString("update %1 set %2 where %3").arg(m_tablename, updatefields, whereclause);
+        sql = QString("update %1 set %2 where %3").arg(m_tablename, updatevalues, whereclause);
     }
     else
     {
         // insert if it doesn't exist
-        sql = QString("insert into %1 (%2) values (%3)").arg(m_tablename, fields, updatevalues);
+        // needs an ID since one won't exist
+        if (!fields.isEmpty())
+            fields += ",";
+
+        fields += getColumnName(0); // get the key field name
+
+        if (!insertvalues.isEmpty())
+            insertvalues += ",";
+
+        insertvalues += QString("'%1'").arg(QUuid::createUuid().toString());
+
+
+        sql = QString("insert into %1 (%2) values (%3)").arg(m_tablename, fields, insertvalues);
     }
 
     qDebug() << "XML Generated SQL: " << sql;
@@ -1545,6 +1598,26 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
 
     return true;
 }
+
+void PNSqlQueryModel::refreshByTableName()
+{
+    QListIterator<PNSqlQueryModel*> it_recordsets(m_open_recordsets);
+    PNSqlQueryModel* recordset = nullptr;
+
+    // look through all recordsets that are open
+    while(it_recordsets.hasNext())
+    {
+        recordset = it_recordsets.next();
+
+        // look through all related tables and uses of the same table to see if the recordset is match
+        // don't check against yourself, especially when importing you are just using a empty recordset
+        if ( recordset != this && this->tablename() == recordset->tablename())
+        {
+            recordset->refresh();
+        }
+    }
+}
+
 
 //TODO: Add the import XML functionallity to this class
 //TODO: Set a wait cusor while generating XML

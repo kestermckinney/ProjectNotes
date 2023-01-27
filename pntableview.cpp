@@ -308,6 +308,9 @@ void PNTableView::slotExportRecord()
     // choose the file
     QString xmlfile = QFileDialog::getSaveFileName(this, tr("Save XML to file"), QString(), tr("XML File (*.xml)"));
 
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    QApplication::processEvents();
+
     if (!xmlfile.isEmpty())
     {
         QFile outfile(xmlfile);
@@ -322,6 +325,7 @@ void PNTableView::slotExportRecord()
         {
             QMessageBox::critical(this, tr("Open Failed"), outfile.errorString());
             delete xdoc;
+            QApplication::restoreOverrideCursor();
             return;
         }
 
@@ -331,6 +335,9 @@ void PNTableView::slotExportRecord()
         outfile.close();
         delete xdoc;
     }
+
+    QApplication::restoreOverrideCursor();
+    QApplication::processEvents();
 
     return;
 }
@@ -350,3 +357,5 @@ void PNTableView::slotResetColumns()
 {
     resizeColumnsToContents();
 }
+
+//TODO: update character colors to look better

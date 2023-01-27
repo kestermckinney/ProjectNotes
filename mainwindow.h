@@ -84,6 +84,7 @@ private slots:
     void on_actionSearch_triggered();
     void on_pushButtonSearch_clicked();
     void on_lineEditSearchText_returnPressed();
+    void on_actionXML_Import_triggered();
 
 private:
     Ui::MainWindow *ui;   
