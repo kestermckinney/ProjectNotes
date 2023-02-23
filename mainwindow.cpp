@@ -72,6 +72,10 @@ MainWindow::MainWindow(QWidget *t_parent)
     connect(global_DBObjects.notesactionitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+
+    m_plugin_manager = new PNPluginManager();
+    m_plugin_settings_dialog = new PluginSettingsDialog(this);
+    m_console_dialog = new PNConsoleDialog(this);
 }
 
 MainWindow::~MainWindow()
@@ -117,6 +121,10 @@ MainWindow::~MainWindow()
     delete m_spellcheck_dialog;
     delete m_find_replace_dialog;
 
+    delete m_plugin_settings_dialog;
+    delete m_console_dialog;
+    delete m_plugin_manager;
+
     delete ui;
 }
 
@@ -154,6 +162,15 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionClients->setEnabled(dbopen);
     ui->actionPeople->setEnabled(dbopen);
     ui->actionFilter->setEnabled(dbopen);
+
+    //plugin menu
+    if (m_console_dialog)
+    {
+        if (m_console_dialog->isVisible())
+            ui->actionView_Console->setChecked(true);
+        else
+            ui->actionView_Console->setChecked(false);
+    }
 
     if (dbopen)
     {
@@ -1233,6 +1250,20 @@ void MainWindow::on_lineEditSearchText_returnPressed()
 {
     global_DBObjects.searchresultsmodel()->PerformSearch(ui->lineEditSearchText->text());
 }
+
+void MainWindow::on_actionPlugin_Settings_triggered()
+{
+    m_plugin_settings_dialog->exec();
+}
+
+void MainWindow::on_actionView_Console_triggered()
+{
+    if (ui->actionView_Console->isChecked())
+        m_console_dialog->show();
+    else
+        m_console_dialog->hide();
+}
+
 
 // TODO: Add spell checking features for QExpandingLineEdit and QLineEdit
 // TODO: Add find feature for QExpandingLineEdit
