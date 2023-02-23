@@ -27,5 +27,7 @@
         <file>icons/textleft.png</file>
         <file>icons/textright.png</file>
         <file>icons/textunder.png</file>
+        <file>icons/deletetext.png</file>
+        <file>icons/selectall.png</file>
     </qresource>
 </RCC>

@@ -1,5 +1,6 @@
 #include "pntableview.h"
 #include "pnsettings.h"
+#include "pndatabaseobjects.h"
 #include "pnsqlquerymodel.h"
 
 #include <QDebug>
@@ -9,6 +10,7 @@
 #include <QHeaderView>
 #include <QMenu>
 #include <QMessageBox>
+#include <QFileDialog>
 
 PNTableView::PNTableView(QWidget *t_parent) : QTableView(t_parent)
 {
@@ -20,12 +22,15 @@ PNTableView::PNTableView(QWidget *t_parent) : QTableView(t_parent)
     headerView->setSortIndicatorShown(true);
     headerView->viewport()->installEventFilter(this);
 
+    QHeaderView *rowView = verticalHeader();
+
+    rowView->viewport()->installEventFilter(this);
+
     setSelectionMode(QAbstractItemView::SingleSelection);
     setSelectionBehavior(QAbstractItemView::SelectRows);
 
     connect(this, &QTableView::activated, this, &PNTableView::dataRowActivated);
     connect(this, &QTableView::clicked, this, &PNTableView::dataRowSelected);
-    //connect(this, &QTableView::doubleClicked, this, &PNTableView::slotOpenRecord);
 
     newRecord = new QAction(tr("New"), this);
     deleteRecord = new QAction(tr("Delete"), this);
@@ -49,7 +54,6 @@ PNTableView::~PNTableView()
 {
     disconnect(this, &QTableView::activated, this, &PNTableView::dataRowActivated);
     disconnect(this, &QTableView::clicked, this, &PNTableView::dataRowSelected);
-    //disconnect(this, &QTableView::doubleClicked, this, &PNTableView::slotOpenRecord);
 
     disconnect(newRecord, &QAction::triggered, this, &PNTableView::slotNewRecord);
     disconnect(deleteRecord, &QAction::triggered, this, &PNTableView::slotDeleteRecord);
@@ -66,11 +70,13 @@ PNTableView::~PNTableView()
     delete filterRecords;
     delete resetColumns;
 
-    if (m_filterdialog != nullptr)
+    if (m_filterdialog)
         delete m_filterdialog;
 
     QHeaderView *headerView = horizontalHeader();
     headerView->removeEventFilter(this);
+    QHeaderView *rowView = verticalHeader();
+    rowView->removeEventFilter(this);
 }
 
 
@@ -102,6 +108,7 @@ void PNTableView::setModel(QAbstractItemModel *t_model)
 
         horizontalHeader()->setVisible(true);
         verticalHeader()->setVisible(true);
+        verticalHeader()->setSortIndicatorShown(false);
 
     }
     else if ( this->model() ) // when closing or setting model to empty save the columns first on startup don't save a blank view
@@ -117,6 +124,17 @@ bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
 
     switch (t_event->type())
     {
+    case QEvent::MouseButtonDblClick:
+        if ( ((QMouseEvent*)t_event)->buttons().testFlag(Qt::LeftButton ) )
+        {
+            auto vheader = verticalHeader();
+
+            if (vheader->geometry().contains(((QMouseEvent*)t_event)->pos()))
+                slotOpenRecord();
+            else
+                return false;
+        }
+        break;
     case QEvent::MouseButtonPress:
         if ( ((QMouseEvent*)t_event)->button() != Qt::LeftButton )
             return false;
@@ -135,6 +153,11 @@ bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
          if ( ((QMouseEvent*)t_event)->button() != Qt::LeftButton )
             return false;
 
+         auto header = horizontalHeader();
+
+         if (!header->geometry().contains(((QMouseEvent*)t_event)->pos()))
+             return false;
+
         // If we were dragging a section, then pass the event on.
         if (m_isMoving)
         {
@@ -143,8 +166,6 @@ bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
             m_isMoving = false;
             return false;
         }
-
-        auto header = horizontalHeader();
 
         const int indexAtCursor = header->logicalIndexAt(((QMouseEvent*)t_event)->pos());
 
@@ -180,13 +201,11 @@ bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
 void PNTableView::dataRowSelected(const QModelIndex &t_index)
 {
     Q_UNUSED(t_index);
-    // TODO: determine if base class should do anything
 }
 
 void PNTableView::dataRowActivated(const QModelIndex &t_index)
 {
     Q_UNUSED(t_index);
-    // TODO: determine if base class should do anything
 }
 
 void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
@@ -276,9 +295,51 @@ void PNTableView::slotOpenRecord()
 
 void PNTableView::slotExportRecord()
 {
-    // TODO: standardize the export trigger
-    QMessageBox::critical(nullptr, QObject::tr("Action Not Overriden"),
-        tr("Export Record Needs Defined"), QMessageBox::Cancel);
+    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
+    PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
+
+    QModelIndexList qil = this->selectionModel()->selectedRows();
+
+    QVariant keyval;
+    //for (auto qi = qil.begin(); qi != qil.end(); qi++)
+    auto qi = qil.begin();
+    keyval = currentmodel->data(*qi);
+
+    // choose the file
+    QString xmlfile = QFileDialog::getSaveFileName(this, tr("Save XML to file"), QString(), tr("XML File (*.xml)"));
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    QApplication::processEvents();
+
+    if (!xmlfile.isEmpty())
+    {
+        QFile outfile(xmlfile);
+
+        PNSqlQueryModel *exportmodel = currentmodel->createExportVersion();
+        exportmodel->setFilter(0, keyval.toString());
+        exportmodel->refresh();
+
+        QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(exportmodel);
+
+        if (!outfile.open(QFile::WriteOnly | QFile::Truncate))
+        {
+            QMessageBox::critical(this, tr("Open Failed"), outfile.errorString());
+            delete xdoc;
+            QApplication::restoreOverrideCursor();
+            return;
+        }
+
+        QTextStream textstream(&outfile);
+
+        xdoc->save(textstream, 4);
+        outfile.close();
+        delete xdoc;
+    }
+
+    QApplication::restoreOverrideCursor();
+    QApplication::processEvents();
+
+    return;
 }
 
 void PNTableView::slotFilterRecords()
@@ -296,3 +357,4 @@ void PNTableView::slotResetColumns()
 {
     resizeColumnsToContents();
 }
+

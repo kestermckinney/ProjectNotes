@@ -158,19 +158,6 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             }
         }
 
-        // validate the data
-        if (m_lookup_values[t_index.column()] != nullptr)
-        {
-            if (m_lookup_values[t_index.column()]->indexOf(t_value.toString()) == -1)
-            {
-                QMessageBox::warning(nullptr, QObject::tr("Invalid Field Value"),
-                                     "\"" + t_value.toString() + "\" is not a valid value for " + m_headers[t_index.column()][Qt::EditRole].toString() + ".", QMessageBox::Ok);
-
-                return true;
-            }
-        }
-
-
         // new records will not have an id and need inserted
         if ( m_cache[t_index.row()].value(0).isNull() )
         {
@@ -338,7 +325,7 @@ QVariant PNSqlQueryModel::data(const QModelIndex &t_index, int t_role) const
     {
         if (m_column_is_editable[t_index.column()] == DBReadOnly)
         {
-            retval = QVariant(QColor("gray"));
+            retval = QVariant(QCOLOR_GRAY);
         }
     }
 
@@ -479,7 +466,7 @@ QVariant PNSqlQueryModel::headerData(int t_section, Qt::Orientation t_orientatio
         if ( t_role == Qt::ForegroundRole )
         {
             if (hasUserFilters(t_section))
-                return QColor(Qt::darkBlue);
+                return QCOLOR_BLUE;
         }
         else if ( t_role == Qt::DisplayRole )
         {
@@ -595,7 +582,17 @@ void PNSqlQueryModel::reformatValue(QVariant& t_column_value, DBColumnType t_col
     }
 }
 
-void PNSqlQueryModel::addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable, DBColumnRequired t_required, DBColumnEditable t_editable, DBColumnUnique t_unique)
+void PNSqlQueryModel::addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable, DBColumnRequired t_required, DBColumnEditable t_editable, DBColumnUnique t_unique,
+                                QStringList* t_valuelist)
+{
+    addColumn(t_column_number, t_display_name, t_type, t_searchable, t_required, t_editable, t_unique);
+
+    m_lookup_values[t_column_number] = t_valuelist;
+}
+
+
+void PNSqlQueryModel::addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable, DBColumnRequired t_required, DBColumnEditable t_editable, DBColumnUnique t_unique,
+                                const QString& t_lookup_table, const QString& t_lookup_fk_column_name, const QString& t_lookup_value_column_name)
 {
     setHeaderData(t_column_number, Qt::Horizontal, t_display_name);
 
@@ -603,7 +600,6 @@ void PNSqlQueryModel::addColumn(int t_column_number, const QString& t_display_na
     m_column_is_required[t_column_number] = t_required;
     m_column_is_searchable[t_column_number] = t_searchable;
     m_column_is_editable[t_column_number] = t_editable;
-    m_lookup_values[t_column_number] = nullptr;
     m_column_is_unique[t_column_number] = t_unique;
 
     m_column_is_filtered[t_column_number] = false;
@@ -618,14 +614,11 @@ void PNSqlQueryModel::addColumn(int t_column_number, const QString& t_display_na
     m_range_search_start[t_column_number] = QVariant();
     m_range_search_end[t_column_number] = QVariant();
 
-    m_lookup_view[t_column_number] = nullptr;
-    m_lookup_value_column[t_column_number] = -1;
-    m_lookup_fk_column[t_column_number] = -1;
-}
+    m_lookup_table[t_column_number] = t_lookup_table;
+    m_lookup_value_column_name[t_column_number] = t_lookup_value_column_name;
+    m_lookup_fk_column_name[t_column_number] = t_lookup_fk_column_name;
 
-void PNSqlQueryModel::associateLookupValues(int t_column_number, QStringList* LookupValues)
-{
-    m_lookup_values[t_column_number] = LookupValues;
+    m_lookup_values[t_column_number] = nullptr;
 }
 
 int PNSqlQueryModel::rowCount(const QModelIndex &t_parent) const
@@ -686,7 +679,8 @@ bool PNSqlQueryModel::deleteRecord(QModelIndex t_index)
     if (!deleteCheck(t_index))
         return false;
 
-    QSqlQuery delrow("delete from " + m_tablename + " where " + m_sql_query.record().fieldName(0) + " = ? ");
+    QSqlQuery delrow;
+    delrow.prepare("delete from " + m_tablename + " where " + m_sql_query.record().fieldName(0) + " = ? ");
     delrow.bindValue(0, m_cache[t_index.row()].field(0).value());
 
     if(delrow.exec())
@@ -849,7 +843,8 @@ const QModelIndex PNSqlQueryModel::findIndex(QVariant& t_lookup_value, int t_sea
 
 bool PNSqlQueryModel::reloadRecord(const QModelIndex& t_index)
 {
-    QSqlQuery select(BaseSQL() + " where " + m_sql_query.record().fieldName(0) + " = ? ");
+    QSqlQuery select;
+    select.prepare(BaseSQL() + " where " + m_sql_query.record().fieldName(0) + " = ? ");
     select.bindValue(0, m_cache[t_index.row()].field(0).value());
 
     if (select.exec())
@@ -958,32 +953,13 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                     if (!valuelist.isEmpty())
                         valuelist += tr(" AND ");
 
-                    // search foreign key value if exists otherwise search for the value in the field
-                    if (m_lookup_view[colnum])
+                    if (  m_column_type[colnum] == DBString )
                     {
-                        int colnumval = m_lookup_value_column[colnum];
-                        int colnumkey = m_lookup_fk_column[colnum];
-
-                        QString keycolumn =  m_lookup_view[colnum]->getColumnName(colnumkey);
-                        QString valuecolumn = m_lookup_view[colnum]->getColumnName(colnumval);
-
-                        valuelist += QString(" ( %1 IN (select %2 from %3 where %4 LIKE '%%5%') ) ").arg(
-                                    m_sql_query.record().fieldName(colnum),
-                                    keycolumn,
-                                    m_lookup_view[colnum]->tablename(),
-                                    valuecolumn,
-                                    column_value.toString()
-                                );
-
-                        //qDebug() << "Looking for columns in " << m_lookup_view[colnum]->tablename() << ":  Column Number " << colnumkey << " is " << keycolumn<< ", Column Number " << colnumval << " is " << valuecolumn;
-                        //qDebug() << "View State: " << m_lookup_view[colnum]->rowCount(m_lookup_view[colnum]->index(0,0)) << "   " << m_lookup_view[colnum]->BaseSQL();
+                        valuelist += QString(" %1 LIKE '%%2%' ").arg(m_sql_query.record().fieldName(colnum), column_value.toString());
                     }
                     else
                     {
-                        if (  m_column_type[colnum] == DBString )
-                            valuelist += QString(" %1 LIKE '%%2%' ").arg(m_sql_query.record().fieldName(colnum), column_value.toString());
-                        else
-                            valuelist += QString(" %1 = %2 ").arg(m_sql_query.record().fieldName(colnum), column_value.toString());
+                        valuelist += QString(" %1 = %2 ").arg(m_sql_query.record().fieldName(colnum), column_value.toString());
                     }
                 }
 
@@ -1044,92 +1020,37 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                     // if the range is searching accross a foreign key value then
                     // search and return a list of foreign key ids that apply
                     // search foreign key value if exists otherwise search for the value in the field
-                    if (m_lookup_view[colnum])
+
+                    // if the column doesn't have a lookup value in a foreign key
+                    // you can do the range search on the value
+                    if (!RangeStart.isNull() && RangeStart != tr("''"))
                     {
-                        QString fk_valuelist;
-
-                        int colnumval = m_lookup_value_column[colnum];
-                        int colnumkey = m_lookup_fk_column[colnum];
-
-                        QString keycolumn =  m_lookup_view[colnum]->getColumnName(colnumkey);
-                        QString valuecolumn = m_lookup_view[colnum]->getColumnName(colnumval);
-
-                        if (!RangeStart.isNull() && RangeStart != tr("''"))
-                        {
-                            //if (!fk_valuelist.isEmpty())
-                            //    fk_valuelist += tr(" AND ");
-
-                            if ( m_column_type[colnum] != DBString )
-                            {
-                                fk_valuelist += QString("%1 >= %2").arg(valuecolumn, RangeStart.toString());
-                            }
-                            else
-                            {
-                                fk_valuelist += QString("%1 >= '%2'").arg(valuecolumn, RangeStart.toString());
-                            }
-                        }
-
-                        if (!RangeEnd.isNull() && RangeEnd != tr("''"))
-                        {
-                            if (!valuelist.isEmpty())
-                                fk_valuelist += tr(" AND ");
-
-                            if ( m_column_type[colnum] != DBString )
-                            {
-                                fk_valuelist += QString("%1 <= %2").arg(valuecolumn, RangeEnd.toString());
-                            }
-                            else
-                            {
-                                fk_valuelist += QString("%1 <= '%2'").arg(valuecolumn, RangeEnd.toString());
-                            }
-                        }
-
                         if (!valuelist.isEmpty())
                             valuelist += tr(" AND ");
 
-                        valuelist += QString(" ( %1 IN (select %2 from %3 where %4) ) ").arg(
-                                    m_sql_query.record().fieldName(colnum),
-                                    keycolumn,
-                                    m_lookup_view[colnum]->tablename(),
-                                    fk_valuelist
-                                );
-
-                        //qDebug() << "Looking for columns in " << m_lookup_view[colnum]->tablename() << ":  Column Number " << colnumkey << " is " << keycolumn<< ", Column Number " << colnumval << " is " << valuecolumn;
-                        //qDebug() << "View State: " << m_lookup_view[colnum]->rowCount(m_lookup_view[colnum]->index(0,0)) << "   " << m_lookup_view[colnum]->BaseSQL();
-                    }
-                    else
-                    {
-                        // if the column doesn't have a lookup value in a foreign key
-                        // you can do the range search on the value
-                        if (!RangeStart.isNull() && RangeStart != tr("''"))
+                        if ( m_column_type[colnum] != DBString )
                         {
-                            if (!valuelist.isEmpty())
-                                valuelist += tr(" AND ");
-
-                            if ( m_column_type[colnum] != DBString )
-                            {
-                                valuelist += QString("%1 >= %2").arg(m_sql_query.record().fieldName(colnum), RangeStart.toString());
-                            }
-                            else
-                            {
-                                valuelist += QString("%1 >= '%2'").arg(m_sql_query.record().fieldName(colnum), RangeStart.toString());
-                            }
+                            valuelist += QString("%1 >= %2").arg(m_sql_query.record().fieldName(colnum), RangeStart.toString());
                         }
-
-                        if (!RangeEnd.isNull() && RangeEnd != tr("''"))
+                        else
                         {
-                            if (!valuelist.isEmpty())
-                                valuelist += tr(" AND ");
+                            valuelist += QString("%1 >= '%2'").arg(m_sql_query.record().fieldName(colnum), RangeStart.toString());
+                        }
+                    }
+
+                    if (!RangeEnd.isNull() && RangeEnd != tr("''"))
+                    {
+                        if (!valuelist.isEmpty())
+                            valuelist += tr(" AND ");
 
 
-                            if ( m_column_type[colnum] != DBString )
-                            {
-                                valuelist += QString("%1 <= %2").arg(m_sql_query.record().fieldName(colnum), RangeEnd.toString());
-                            }
-                            else
-                            {
-                                valuelist += QString("%1 <= '%2'").arg(m_sql_query.record().fieldName(colnum), RangeEnd.toString());
-                            }
+                        if ( m_column_type[colnum] != DBString )
+                        {
+                            valuelist += QString("%1 <= %2").arg(m_sql_query.record().fieldName(colnum), RangeEnd.toString());
+                        }
+                        else
+                        {
+                            valuelist += QString("%1 <= '%2'").arg(m_sql_query.record().fieldName(colnum), RangeEnd.toString());
                         }
                     }
                 }
@@ -1421,30 +1342,6 @@ void PNSqlQueryModel::loadUserFilter( QString t_filter_name)
     }
 }
 
-void PNSqlQueryModel::setLookup(int Column, PNSqlQueryModel* t_lookup, int t_lookup_fk_column, int t_lookup_value_column)
-{
-    m_lookup_view[Column] = t_lookup;
-    m_lookup_fk_column[Column] = t_lookup_fk_column;
-    m_lookup_value_column[Column] = t_lookup_value_column;
-}
-
-void PNSqlQueryModel::setLookup(int Column, QStringList* t_lookup)
-{
-    m_lookup_values[Column] = t_lookup;
-}
-
-QVariant PNSqlQueryModel::getLookupValue(const QModelIndex& t_index)
-{
-    if ( m_lookup_view[t_index.column()] != nullptr)
-    {
-        QVariant val = data(t_index);
-        QVariant find = m_lookup_view[t_index.column()]->findValue(val, m_lookup_fk_column[t_index.column()], m_lookup_value_column[t_index.column()]);
-        return find;
-    }
-
-    return QVariant();
-}
-
 QString PNSqlQueryModel::getColumnName( QString& t_display_name )
 {
     for ( int i = 0; i < m_headers.size(); i++ )
@@ -1464,68 +1361,35 @@ int PNSqlQueryModel::getColumnNumber(QString &t_field_name)
 
     return -1;
 }
-//TODO: STARTED ADDS HERE
 
-//QList<PNSqlQueryModel*> PNSqlQueryModel::childRecordsets()
-//{
-//    QListIterator<PNSqlQueryModel*> it_recordsets(m_open_recordsets);
-//    PNSqlQueryModel* recordset = nullptr;
-//    QList<PNSqlQueryModel*> related_tables;
-
-//    // look through all recordsets that are open
-//    while(it_recordsets.hasNext())
-//    {
-//        recordset = it_recordsets.next();
-
-//        // look through all related tables and uses of the same table to see if the recordset is match
-//        // don't check against yourself
-//        if ( recordset != this)
-//        {
-//            for (int i = 0; i < recordset->getRelatedTables().count(); i++)
-//            {
-//                if ( tablename() == recordset->getRelatedTables()[i] )
-//                {
-//                    related_tables.append(recordset);
-//                }
-//            }
-//        }
-//    }
-
-//    return related_tables;
-//}
-
-
-QDomElement PNSqlQueryModel::toQDomElement( QDomDocument& t_xml_document )
+QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document )
 {
-    QDomElement xmltable = t_xml_document.createElement("table");
+    QDomElement xmltable = t_xml_document->createElement("table");
     xmltable.toElement().setAttribute("name", this->tablename());
 
     for ( const auto& row : m_cache )
     {
-        QDomElement xmlrow = t_xml_document.createElement("row");
+        QDomElement xmlrow = t_xml_document->createElement("row");
         xmlrow.setAttribute("id", row.value(0).toString());
 
         // build the column xml
         for ( int i = 0; i < row.count(); i++ )
         {
-            QDomElement xmlcolumn = t_xml_document.createElement("column");
+            QDomElement xmlcolumn = t_xml_document->createElement("column");
             xmlcolumn.setAttribute("name", row.fieldName(i));
-            xmlcolumn.setAttribute("number", i);
 
-            QDomText xmltext = t_xml_document.createTextNode(row.value(i).toString());
+            QDomText xmltext = t_xml_document->createTextNode(row.value(i).toString());
             xmlcolumn.appendChild(xmltext);
 
-            if ( m_lookup_view[i] != nullptr )
+            if ( !m_lookup_table[i].isEmpty() )
             {
-                QString fk_val_col = m_lookup_view[i]->getColumnName( m_lookup_value_column[i]);
-                QString fk_table = m_lookup_view[i]->tablename();
-                QString fk_key_col = m_lookup_view[i]->getColumnName(m_lookup_fk_column[i]);
                 QString fk_key_val = row.value(i).toString();
 
-                QString sql = QString("select %1 from %2 where %3 = '%4'").arg(fk_val_col, fk_table, fk_key_col, fk_key_val);
+                QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookup_value_column_name[i], m_lookup_table[i], m_lookup_fk_column_name[i], fk_key_val);
                 QString lookup_value = global_DBObjects.execute(sql);
 
-                xmlcolumn.setAttribute("lookupvalue", lookup_value);
+                if (!lookup_value.isEmpty())
+                    xmlcolumn.setAttribute("lookupvalue", lookup_value);
             }
 
             xmlrow.appendChild(xmlcolumn);
@@ -1583,3 +1447,175 @@ PNSqlQueryModel* PNSqlQueryModel::createExportVersion()
 {
     return new PNSqlQueryModel(this);
 }
+
+bool PNSqlQueryModel::importXMLNode(const QDomNode& t_domnode)  // this should be table level
+{
+    QDomElement node = t_domnode.firstChildElement("row");
+
+    while (!node.isNull())
+    {
+        if (!setData(&node, false))
+            return false; // jump out if we have an error
+
+        node = node.nextSiblingElement("row");
+    }
+
+    return true;
+}
+
+bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
+{
+    if (t_xml_row->tagName() != "row")
+    {
+        qDebug() << "tag name: " << t_xml_row->tagName() << " is not a 'row'";
+        return false;
+    }
+
+    QString whereclause;
+    QString fields;
+    QString updatevalues;
+    QString insertvalues;
+    QString keyfield = getColumnName(0);
+    QString keyvalue;
+
+    // determine if identifier should be used
+    if (!t_ignore_key)
+    {
+        keyvalue = t_xml_row->attribute("id");
+
+        if (!keyvalue.isNull())
+            whereclause = QString(" %1 = '%2'").arg(keyfield, keyvalue);
+    }
+
+    QDomNode element = t_xml_row->firstChild();
+    while (!element.isNull())
+    {
+        if (element.toElement().tagName() == "column")
+        {
+            QString field_name = element.toElement().attribute("name");
+            QVariant field_value = element.toElement().text();
+            QString lookup_value = element.toElement().attribute("lookupvalue");
+
+            int colnum = getColumnNumber(field_name);
+
+            // if key column is specified blank or null don't use it
+            if ( !(colnum == 0 && (field_value.isNull() || field_value.toString().isEmpty())) )
+            {
+                if (!fields.isEmpty())
+                    fields += ",";
+
+                fields += field_name;
+
+                // if column has a lookup value, look up the key value
+                if (!lookup_value.isNull() && !m_lookup_table[colnum].isEmpty())
+                {
+                    QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookup_fk_column_name[colnum], m_lookup_table[colnum], m_lookup_value_column_name[colnum], lookup_value);
+                    field_value = global_DBObjects.execute(sql);
+                }
+
+                if (!insertvalues.isEmpty())
+                    insertvalues += ",";
+
+
+                if (!updatevalues.isEmpty())
+                    updatevalues += ",";
+
+                // if list of values doesn't contain this value the record need rejected
+                if (m_lookup_values[colnum] && !m_lookup_values[colnum]->contains(field_value.toString(), Qt::CaseSensitive))
+                {
+                    QMessageBox::critical(nullptr, QObject::tr("Invalid Field Value"), QString("""%1"" is not a valid field value.").arg(field_value.toString()));
+                    return false;
+                }
+
+                sqlEscape(field_value, m_column_type[colnum], true);
+
+                if (field_value.isNull())
+                {
+                    updatevalues += QString("%1 = NULL").arg(field_name);
+                    insertvalues += "NULL";
+                }
+                else
+                {
+                    updatevalues += QString("%1 = '%2'").arg(field_name, field_value.toString());
+                    insertvalues += QString("'%1'").arg(field_value.toString());
+                }
+
+                // if using keys don't check for unique values
+                if (keyvalue.isNull())
+                {
+                    if (colnum > 0)  // don't include keyfield in unique check
+                    {
+                        if (isUniqueColumn(colnum))
+                        {
+                            if (!whereclause.isEmpty())
+                                whereclause += " and ";
+
+                            if (field_value.isNull())
+                                whereclause += QString("%1 is NULL").arg(field_name);
+                            else
+                                whereclause += QString(" %1 = '%2'").arg(field_name, field_value.toString());
+                        }
+                    }
+                }
+            }
+
+            element = element.nextSibling();
+        }
+    }
+    
+    // check to see if record exists
+    QString exists_sql = QString("select count(*) from %1 where %2").arg(m_tablename, whereclause);
+    QString exists_count = global_DBObjects.execute(exists_sql);
+    QString sql;
+
+    if (exists_count.toInt() > 0)
+    {
+        // update if exists
+        sql = QString("update %1 set %2 where %3").arg(m_tablename, updatevalues, whereclause);
+    }
+    else
+    {
+        // insert if it doesn't exist
+        // needs an ID since one won't exist
+        if (!fields.isEmpty())
+            fields += ",";
+
+        fields += getColumnName(0); // get the key field name
+
+        if (!insertvalues.isEmpty())
+            insertvalues += ",";
+
+        insertvalues += QString("'%1'").arg(QUuid::createUuid().toString());
+
+
+        sql = QString("insert into %1 (%2) values (%3)").arg(m_tablename, fields, insertvalues);
+    }
+
+    qDebug() << "XML Generated SQL: " << sql;
+
+    global_DBObjects.execute(sql);
+
+    return true;
+}
+
+void PNSqlQueryModel::refreshByTableName()
+{
+    QListIterator<PNSqlQueryModel*> it_recordsets(m_open_recordsets);
+    PNSqlQueryModel* recordset = nullptr;
+
+    // look through all recordsets that are open
+    while(it_recordsets.hasNext())
+    {
+        recordset = it_recordsets.next();
+
+        // look through all related tables and uses of the same table to see if the recordset is match
+        // don't check against yourself, especially when importing you are just using a empty recordset
+        if ( recordset != this && this->tablename() == recordset->tablename())
+        {
+            recordset->refresh();
+        }
+    }
+}
+
+
+//TODO: establish a progress bar while generating the XML

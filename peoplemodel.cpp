@@ -16,7 +16,8 @@ PeopleModel::PeopleModel(QObject* t_parent): PNSqlQueryModel(t_parent)
     addColumn(2, tr("Email"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(3, tr("Office Phone"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(4, tr("Cell Phone"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(5, tr("Client"), DBString, DBSearchable, DBRequired);
+    addColumn(5, tr("Client"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
+            "clients", "client_id", "client_name");
     addColumn(6, tr("Role"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
     addRelatedTable("item_tracker", "assigned_to", "Assigned Item");
@@ -25,6 +26,7 @@ PeopleModel::PeopleModel(QObject* t_parent): PNSqlQueryModel(t_parent)
     addRelatedTable("meeting_attendees", "person_id", "Meeting Attendee");
     addRelatedTable("project_people", "people_id", "Project Team");
     addRelatedTable("projects", "primary_contact", "Project Primary Contact");
+
 
     setOrderBy("name");
 }

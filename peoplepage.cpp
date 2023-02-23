@@ -11,6 +11,10 @@ PeoplePage::PeoplePage()
 void PeoplePage::setupModels( Ui::MainWindow *t_ui )
 {
     ui = t_ui;
+
+    if (!t_ui)
+        return;  // closing application
+
     ui->tableViewPeople->setModel(global_DBObjects.peoplemodelproxy());
     ui->tableViewPeople->selectRow(0);
 

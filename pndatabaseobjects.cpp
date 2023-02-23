@@ -97,8 +97,6 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_unfilteredclients_model->setShowBlank();
 
     m_people_model = new PeopleModel(nullptr);
-    // setup lookup/drop down values
-    m_people_model->setLookup(5, m_unfilteredclients_model, 0, 1);
     m_people_model_proxy = new PNSortFilterProxyModel();
     m_people_model_proxy->setSourceModel(m_people_model);
 
@@ -116,9 +114,6 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_project_information_model_proxy->setSourceModel(m_project_information_model);
 
     m_projects_list_model = new ProjectsListModel(nullptr);
-    // setup lookup/drop down t_value
-    m_projects_list_model->setLookup(5, m_unfiltered_people_model, 0, 1);
-    m_projects_list_model->setLookup(13, m_unfilteredclients_model, 0, 1);
     m_projects_list_model_proxy = new PNSortFilterProxyModel();
     m_projects_list_model_proxy->setSourceModel(m_projects_list_model);
 
@@ -181,31 +176,7 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_tracker_item_comments_model_proxy->setSourceModel(m_tracker_item_comments_model);
 
     m_search_results_model = new SearchResultsModel(nullptr);
-/*
-stopped here create doc funcion
-    QDomDocument doc;
-    QDomElement root = doc.createElement("projectnotes");
-    doc.appendChild(root).toElement();
 
-    root.setAttribute("filepath", global_DBObjects.getDatabaseFile());
-    root.setAttribute("export_date", QDateTime::currentDateTime().toString("MM/dd/yyyy h:m:s ap"));
-    //root.setAttribute("filter_field", fkfield);
-
-    QString companyname = global_DBObjects.execute(QString("select client_name from clients where client_id='%1'").arg(global_DBObjects.getManagingCompany()));
-    QString managername = global_DBObjects.execute(QString("select name from people where people_id='%1'").arg(global_DBObjects.getProjectManager()));
-
-    root.setAttribute("project_manager_id", global_DBObjects.getProjectManager());
-    root.setAttribute("managing_company_id", global_DBObjects.getManagingCompany());
-    root.setAttribute("managing_company_name", companyname);
-    root.setAttribute("managing_manager_name", managername);
-
-    m_projects_list_model->refresh();
-    QDomElement e = m_projects_list_model->toQDomElement(doc);
-    root.appendChild(e);
-
-    qDebug() << doc.toString();
-
-*/
     m_search_results_model_proxy = new PNSortFilterProxyModel();
     m_search_results_model_proxy->setSourceModel(m_search_results_model);
 
@@ -330,13 +301,20 @@ void PNDatabaseObjects::backupDatabase(QWidget& /*t_parent*/, QFileInfo& /*t_fil
 
 bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QString& t_parametervalue )
 {
-    QSqlQuery select("select parameter_value from application_settings where parameter_name = ?;");
+    QSqlQuery select;
+    if(!select.prepare("select parameter_value from application_settings where parameter_name = ?;"))
+    {
+        QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
+        return false;
+    }
+
     select.bindValue(0, t_parametername);
     if (select.exec())
     {
         if (select.next())
         {
-            QSqlQuery update("update application_settings set parameter_value = ? where parameter_name = ?;");
+            QSqlQuery update;
+            update.prepare("update application_settings set parameter_value = ? where parameter_name = ?;");
             update.bindValue(0, t_parametervalue);
             update.bindValue(1, t_parametername);
             if (update.exec())
@@ -344,7 +322,8 @@ bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QSt
         }
         else
         {
-            QSqlQuery insert("insert into application_settings (parameter_id, parameter_name, parameter_value) values (?, ?, ?);");
+            QSqlQuery insert;
+            insert.prepare("insert into application_settings (parameter_id, parameter_name, parameter_value) values (?, ?, ?);");
             insert.bindValue(0, QUuid::createUuid().toString());
             insert.bindValue(1, t_parametername);
             insert.bindValue(2, t_parametervalue);
@@ -355,17 +334,24 @@ bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QSt
     }
     else
     {
-        QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), "Failed to access a saved setting.  You may need to restart Project Notes.");
+        QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting.  You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()));
         return false;
     }
 
     return false;
 }
 
-QString PNDatabaseObjects::loadParameter( const QString& t_parametername )
+QString PNDatabaseObjects::loadParameter( const QVariant& t_parametername )
 {
-    QSqlQuery select("select parameter_value from application_settings where parameter_name = ?;");
+    QSqlQuery select;
+    if (!select.prepare("select parameter_value from application_settings where parameter_name = ?"))
+    {
+        QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
+        return QString();
+    }
+
     select.bindValue(0, t_parametername);
+
     if (select.exec())
     {
         if (select.next())
@@ -375,7 +361,7 @@ QString PNDatabaseObjects::loadParameter( const QString& t_parametername )
     }
     else
     {
-        QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), "Failed to access a saved setting.  You may need to restart Project Notes.");
+        QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
         return QString();
     }
 }
@@ -517,9 +503,6 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     }
     else
     {
-        //QString managing = Execute(QString("select client_name from clients where client_id = '%1'").arg(GetManagingCompany()));
-        //QString filtered = Execute(QString("select client_name from clients where client_id = '%1'").arg(GetGlobalClientFilter()));
-
         QVariantList managingnclientids;
         // make sure list of people can show the managing company
         managingnclientids.append(getManagingCompany());
@@ -571,6 +554,202 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
         projectslistmodel()->refresh();
         searchresultsmodel()->refresh();
     }
+}
+
+QDomDocument* PNDatabaseObjects::createXMLExportDoc(PNSqlQueryModel* t_querymodel)
+{
+    QDomDocument* doc = new QDomDocument();
+    QDomElement root = doc->createElement("projectnotes");
+    doc->appendChild(root).toElement();
+
+    root.setAttribute("filepath", global_DBObjects.getDatabaseFile());
+    root.setAttribute("export_date", QDateTime::currentDateTime().toString("MM/dd/yyyy h:m:s ap"));
+
+    QString companyname = global_DBObjects.execute(QString("select client_name from clients where client_id='%1'").arg(global_DBObjects.getManagingCompany()));
+    QString managername = global_DBObjects.execute(QString("select name from people where people_id='%1'").arg(global_DBObjects.getProjectManager()));
+
+    root.setAttribute("project_manager_id", global_DBObjects.getProjectManager());
+    root.setAttribute("managing_company_id", global_DBObjects.getManagingCompany());
+    root.setAttribute("managing_company_name", companyname);
+    root.setAttribute("managing_manager_name", managername);
+
+    QDomElement e = t_querymodel->toQDomElement(doc);
+    root.appendChild(e);
+
+    return doc;
+}
+
+QList<QDomNode> PNDatabaseObjects::findTableNodes(const QDomNode& t_xmlelement, const QString& t_tablename)
+{
+    QList<QDomNode> domlist;
+
+    QDomNode node = t_xmlelement.firstChild();
+
+    while (!node.isNull())
+    {
+        if (node.nodeName() == "table" && node.toElement().attributeNode("name").value() == t_tablename)
+        {
+                domlist.append(node);
+                qDebug() << "Found Node: " << node.nodeName() << " Name: " << t_tablename;
+        }
+
+        domlist.append(findTableNodes(node, t_tablename));
+
+        node = node.nextSibling();
+    }
+
+    return domlist;
+}
+
+bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
+{
+    // import clients
+    QDomElement root = t_xmldoc.documentElement();
+    QList<QDomNode> domlist;
+
+    qDebug() << "Root: "  << root.tagName();
+
+    domlist = findTableNodes(root, "clients");
+    if (!domlist.empty())
+    {
+        ClientsModel clients_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if (!clients_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        clients_model.refreshByTableName();
+    }
+
+    // import people
+    domlist = findTableNodes(root, "people");
+    if (!domlist.empty())
+    {
+        PeopleModel people_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if(!people_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        people_model.refreshByTableName();
+    }
+
+    // import projects
+    domlist = findTableNodes(root, "projects");
+    if (!domlist.empty())
+    {
+        ProjectsModel projects_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if (!projects_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        projects_model.refreshByTableName();
+    }
+
+    // import project people
+    domlist = findTableNodes(root, "project_people");
+    if (!domlist.empty())
+    {
+        ProjectTeamMembersModel project_people_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if (!project_people_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        project_people_model.refreshByTableName();
+    }
+
+    // import status report items
+    domlist = findTableNodes(root, "status_report_items");
+    if (!domlist.empty())
+    {
+        StatusReportItemsModel status_report_items_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if(!status_report_items_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        status_report_items_model.refreshByTableName();
+    }
+
+    // import project locations
+    domlist = findTableNodes(root, "project_locations");
+    if (!domlist.empty())
+    {
+        ProjectLocationsModel project_locations_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if(!project_locations_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        project_locations_model.refreshByTableName();
+    }
+
+
+    // import project notes
+    domlist = findTableNodes(root, "project_notes");
+    if (!domlist.empty())
+    {
+        ProjectNotesModel project_notes_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if(!project_notes_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        project_notes_model.refreshByTableName();
+    }
+
+    // import item tracker
+    domlist = findTableNodes(root, "item_tracker");
+    if (!domlist.empty())
+    {
+        TrackerItemsModel tracker_items_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if(!tracker_items_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        tracker_items_model.refreshByTableName();
+    }
+
+    // import meeting attendees
+    domlist = findTableNodes(root, "meeting_attendees");
+    if (!domlist.empty())
+    {
+        MeetingAttendeesModel meeting_attendees_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if(!meeting_attendees_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        meeting_attendees_model.refreshByTableName();
+    }
+
+    // import tracker items updates
+    domlist = findTableNodes(root, "item_tracker_updates");
+    if (!domlist.empty())
+    {
+        TrackerItemCommentsModel item_tracker_updates_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if(!item_tracker_updates_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        item_tracker_updates_model.refreshByTableName();
+    }
+
+    return true;
 }
 
 bool PNDatabaseObjects::executeDDL(const QString& /*t_sql*/)

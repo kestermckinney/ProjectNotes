@@ -33,15 +33,19 @@ SOURCES += \
     peoplelistview.cpp \
     peoplemodel.cpp \
     peoplepage.cpp \
+    pluginsettingsdialog.cpp \
     pnbasepage.cpp \
     pncheckboxdelegate.cpp \
     pncolumnmodel.cpp \
     pncomboboxdelegate.cpp \
+    pnconsoledialog.cpp \
     pndatabaseobjects.cpp \
     pndateeditdelegate.cpp \
     pndateeditex.cpp \
     pnlineeditfilebutton.cpp \
     pnlineeditfilebuttondelegate.cpp \
+    pnplugin.cpp \
+    pnpluginmanager.cpp \
     pnsettings.cpp \
     pnsortfilterproxymodel.cpp \
     pnsqlquerymodel.cpp \
@@ -73,7 +77,8 @@ SOURCES += \
     trackeritemcommentsmodel.cpp \
     trackeritemcommentsview.cpp \
     valueselectmodel.cpp \
-    valuesview.cpp
+    valuesview.cpp \
+    xmlexportdialog.cpp
 
 HEADERS += \
     FilterSaveStructure.h \
@@ -97,15 +102,19 @@ HEADERS += \
     peoplelistview.h \
     peoplemodel.h \
     peoplepage.h \
+    pluginsettingsdialog.h \
     pnbasepage.h \
     pncheckboxdelegate.h \
     pncolumnmodel.h \
     pncomboboxdelegate.h \
+    pnconsoledialog.h \
     pndatabaseobjects.h \
     pndateeditdelegate.h \
     pndateeditex.h \
     pnlineeditfilebutton.h \
     pnlineeditfilebuttondelegate.h \
+    pnplugin.h \
+    pnpluginmanager.h \
     pnsettings.h \
     pnsortfilterproxymodel.h \
     pnsqlquerymodel.h \
@@ -138,14 +147,18 @@ HEADERS += \
     trackeritemcommentsview.h \
     valueselectmodel.h \
     valuesview.h \
-    widgets_export.h
+    widgets_export.h \
+    xmlexportdialog.h
 
 FORMS += \
     filterdatadialog.ui \
     findreplacedialog.ui \
     mainwindow.ui \
+    pluginsettingsdialog.ui \
+    pnconsoledialog.ui \
     preferencesdialog.ui \
-    spellcheckdialog.ui
+    spellcheckdialog.ui \
+    xmlexportdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -168,9 +181,22 @@ DISTFILES += \
 
 unix {
    LIBS += -lhunspell
+   INCLUDEPATH += /usr/include/python3.10
+   #INCLUDEPATH += /usr/include/linux/
+   INCLUDEPATH += /usr/lib/gcc/x86_64-linux-gnu/12/include/
+   #$(shell python3-config --includes)
+   LIBS += -lpython3.10 -lm -L/usr/lib/python3.10/config
+   #$(shell python3-config --ldflags)
 }
 
 win32 {
-   INCLUDEPATH += C:/path/to/hunspell/include
-   LIBS += C:/path/to/hunspell/Release/hunspell.lib
+   DEFINES +=   WIN32 \
+                _DEBUG \
+                _WINDOWS \
+                _USRDLL \
+                HUNSPELL_STATIC \
+                _CRT_SECURE_NO_WARNINGS
+
+   INCLUDEPATH += "C:/Users/Paul McKinney/Documents/hunspell/src"
+   LIBS += "C:/Users/Paul McKinney/Documents/hunspell/msvc/x64/Debug/libhunspell.lib"
 }

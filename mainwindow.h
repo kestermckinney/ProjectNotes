@@ -17,6 +17,9 @@ QT_END_NAMESPACE
 #include "preferencesdialog.h"
 #include "spellcheckdialog.h"
 #include "findreplacedialog.h"
+#include "pnconsoledialog.h"
+#include "pnpluginmanager.h"
+#include "pluginsettingsdialog.h"
 
 
 class MainWindow : public QMainWindow
@@ -84,6 +87,9 @@ private slots:
     void on_actionSearch_triggered();
     void on_pushButtonSearch_clicked();
     void on_lineEditSearchText_returnPressed();
+    void on_actionPlugin_Settings_triggered();
+    void on_actionView_Console_triggered();
+    void on_actionXML_Import_triggered();
 
 private:
     Ui::MainWindow *ui;   
@@ -91,6 +97,9 @@ private:
     PreferencesDialog* m_preferences_dialog = nullptr;
     SpellCheckDialog* m_spellcheck_dialog = nullptr;
     FindReplaceDialog* m_find_replace_dialog = nullptr;
+    PNPluginManager* m_plugin_manager = nullptr;
+    PNConsoleDialog* m_console_dialog = nullptr;
+    PluginSettingsDialog* m_plugin_settings_dialog = nullptr;
 
     // view state
     QList<int> m_page_history;

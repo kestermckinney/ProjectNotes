@@ -29,6 +29,12 @@
 #include <QDateTime>
 #include <QStringListModel>
 
+// common colors
+#define QCOLOR_YELLOW QColor(173, 172, 58)
+#define QCOLOR_RED QColor(153, 33, 23)
+#define QCOLOR_BLUE QColor(0, 15, 128)
+#define QCOLOR_GRAY QColor(235, 235, 235)
+
 class PNDatabaseObjects : public QObject
 {
     Q_OBJECT
@@ -40,7 +46,7 @@ public:
 
     void backupDatabase(QWidget& t_parent, QFileInfo& t_file);
     bool saveParameter( const QString& t_parametername, const QString& t_parametervalue );
-    QString loadParameter( const QString& t_parametername );
+    QString loadParameter( const QVariant& t_parametername );
 
     bool executeDDL(const QString& t_sql);
     void setGlobalSearches( bool t_refresh );
@@ -122,6 +128,9 @@ public:
     void setManagingCompany(QString t_value);
     QString getManagingCompany();
 
+    QDomDocument* createXMLExportDoc(PNSqlQueryModel* t_querymodel);
+    bool importXMLDoc(const QDomDocument& t_xmldoc);
+
 private:
     QString m_database_file;
     QSqlDatabase m_sqlite_db;
@@ -174,6 +183,9 @@ private:
     PNSortFilterProxyModel* m_project_action_items_model_proxy;
     PNSortFilterProxyModel* m_action_item_details_model_proxy;
     PNSortFilterProxyModel* m_search_results_model_proxy;
+
+    // xml utility functions
+    QList<QDomNode> findTableNodes(const QDomNode& t_xmlelement, const QString& t_tablename);
 
 signals:
 

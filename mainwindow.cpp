@@ -51,6 +51,7 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
     connect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
+    connect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
     connect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectNote_triggered()));
     connect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_SearchResults_triggered()));
 
@@ -71,12 +72,17 @@ MainWindow::MainWindow(QWidget *t_parent)
     connect(global_DBObjects.notesactionitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+
+    m_plugin_manager = new PNPluginManager();
+    m_plugin_settings_dialog = new PluginSettingsDialog(this);
+    m_console_dialog = new PNConsoleDialog(this);
 }
 
 MainWindow::~MainWindow()
 {
     disconnect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
     disconnect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
+    disconnect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
     disconnect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectNote_triggered()));
     disconnect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_SearchResults_triggered()));
 
@@ -115,7 +121,13 @@ MainWindow::~MainWindow()
     delete m_spellcheck_dialog;
     delete m_find_replace_dialog;
 
+    delete m_plugin_settings_dialog;
+    delete m_console_dialog;
+    delete m_plugin_manager;
+
     delete ui;
+
+    ui = nullptr;
 }
 
 void MainWindow::on_focusChanged(QWidget *t_old, QWidget *t_now)
@@ -126,25 +138,11 @@ void MainWindow::on_focusChanged(QWidget *t_old, QWidget *t_now)
     setButtonAndMenuStates();
 }
 
-/*
-//TODO: Remove
-void MainWindow::handleDeleteProjectClicked()
-{
-    navigateCurrentPage()->deleteItem();
-
-
-    QModelIndexList qi = ui->t_tableViewProjects->selectionModel()->selectedRows();
-
-    for (int i = qi.count() - 1; i >= 0; i--)
-    {
-        global_DBObjects.projectinformationmodel()->DeleteRecord(qi[i]);
-    }
-
-}
-*/
-
 void MainWindow::setButtonAndMenuStates()
 {
+    if (!ui)
+        return;
+
     bool dbopen = global_DBObjects.isOpen();
 
     ui->stackedWidget->setVisible(dbopen);
@@ -169,6 +167,15 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionClients->setEnabled(dbopen);
     ui->actionPeople->setEnabled(dbopen);
     ui->actionFilter->setEnabled(dbopen);
+
+    //plugin menu
+    if (m_console_dialog)
+    {
+        if (m_console_dialog->isVisible())
+            ui->actionView_Console->setChecked(true);
+        else
+            ui->actionView_Console->setChecked(false);
+    }
 
     if (dbopen)
     {
@@ -723,7 +730,7 @@ void MainWindow::setupTextActions()
     QToolBar *tb = ui->toolBarFormat;
     QMenu *menu = ui->menuFormat;
 
-    const QIcon boldIcon = QIcon::fromTheme("format-text-bold", QIcon(rsrcPath + "/textbold.png"));
+    const QIcon boldIcon = QIcon(rsrcPath + "/textbold.png");
     m_actionTextBold = menu->addAction(boldIcon, tr("&Bold"), this, &MainWindow::textBold);
     m_actionTextBold->setShortcut(Qt::CTRL + Qt::Key_B);
     m_actionTextBold->setPriority(QAction::LowPriority);
@@ -733,7 +740,7 @@ void MainWindow::setupTextActions()
     tb->addAction(m_actionTextBold);
     m_actionTextBold->setCheckable(true);
 
-    const QIcon italicIcon = QIcon::fromTheme("format-text-italic", QIcon(rsrcPath + "/textitalic.png"));
+    const QIcon italicIcon = QIcon(rsrcPath + "/textitalic.png");
     m_actionTextItalic = menu->addAction(italicIcon, tr("&Italic"), this, &MainWindow::textItalic);
     m_actionTextItalic->setPriority(QAction::LowPriority);
     m_actionTextItalic->setShortcut(Qt::CTRL + Qt::Key_I);
@@ -743,7 +750,7 @@ void MainWindow::setupTextActions()
     tb->addAction(m_actionTextItalic);
     m_actionTextItalic->setCheckable(true);
 
-    const QIcon underlineIcon = QIcon::fromTheme("format-text-underline", QIcon(rsrcPath + "/textunder.png"));
+    const QIcon underlineIcon = QIcon(rsrcPath + "/textunder.png");
     m_actionTextUnderline = menu->addAction(underlineIcon, tr("&Underline"), this, &MainWindow::textUnderline);
     m_actionTextUnderline->setShortcut(Qt::CTRL + Qt::Key_U);
     m_actionTextUnderline->setPriority(QAction::LowPriority);
@@ -755,31 +762,31 @@ void MainWindow::setupTextActions()
 
     menu->addSeparator();
 
-    const QIcon leftIcon = QIcon::fromTheme("format-justify-left", QIcon(rsrcPath + "/textleft.png"));
+    const QIcon leftIcon = QIcon(rsrcPath + "/textleft.png");
     m_actionAlignLeft = new QAction(leftIcon, tr("&Left"), this);
     m_actionAlignLeft->setShortcut(Qt::CTRL + Qt::Key_L);
     m_actionAlignLeft->setCheckable(true);
     m_actionAlignLeft->setPriority(QAction::LowPriority);
-    const QIcon centerIcon = QIcon::fromTheme("format-justify-center", QIcon(rsrcPath + "/textcenter.png"));
+    const QIcon centerIcon = QIcon(rsrcPath + "/textcenter.png");
     m_actionAlignCenter = new QAction(centerIcon, tr("C&enter"), this);
     m_actionAlignCenter->setShortcut(Qt::CTRL + Qt::Key_E);
     m_actionAlignCenter->setCheckable(true);
     m_actionAlignCenter->setPriority(QAction::LowPriority);
-    const QIcon rightIcon = QIcon::fromTheme("format-justify-right", QIcon(rsrcPath + "/textright.png"));
+    const QIcon rightIcon = QIcon(rsrcPath + "/textright.png");
     m_actionAlignRight = new QAction(rightIcon, tr("&Right"), this);
     m_actionAlignRight->setShortcut(Qt::CTRL + Qt::Key_R);
     m_actionAlignRight->setCheckable(true);
     m_actionAlignRight->setPriority(QAction::LowPriority);
-    const QIcon fillIcon = QIcon::fromTheme("format-justify-fill", QIcon(rsrcPath + "/textjustify.png"));
+    const QIcon fillIcon = QIcon(rsrcPath + "/textjustify.png");
     m_actionAlignJustify = new QAction(fillIcon, tr("&Justify"), this);
     m_actionAlignJustify->setShortcut(Qt::CTRL + Qt::Key_J);
     m_actionAlignJustify->setCheckable(true);
     m_actionAlignJustify->setPriority(QAction::LowPriority);
-    const QIcon indentMoreIcon = QIcon::fromTheme("format-indent-more", QIcon(rsrcPath + "/format-indent-more.png"));
+    const QIcon indentMoreIcon = QIcon(rsrcPath + "/format-indent-more.png");
     m_actionIndentMore = menu->addAction(indentMoreIcon, tr("&Indent"), this, &MainWindow::indent);
     m_actionIndentMore->setShortcut(Qt::CTRL + Qt::Key_BracketRight);
     m_actionIndentMore->setPriority(QAction::LowPriority);
-    const QIcon indentLessIcon = QIcon::fromTheme("format-indent-less", QIcon(rsrcPath + "/format-indent-less.png"));
+    const QIcon indentLessIcon = QIcon(rsrcPath + "/format-indent-less.png");
     m_actionIndentLess = menu->addAction(indentLessIcon, tr("&Unindent"), this, &MainWindow::unindent);
     m_actionIndentLess->setShortcut(Qt::CTRL + Qt::Key_BracketLeft);
     m_actionIndentLess->setPriority(QAction::LowPriority);
@@ -1247,6 +1254,57 @@ void MainWindow::on_pushButtonSearch_clicked()
 void MainWindow::on_lineEditSearchText_returnPressed()
 {
     global_DBObjects.searchresultsmodel()->PerformSearch(ui->lineEditSearchText->text());
+}
+
+void MainWindow::on_actionPlugin_Settings_triggered()
+{
+    m_plugin_settings_dialog->exec();
+}
+
+void MainWindow::on_actionView_Console_triggered()
+{
+    if (ui->actionView_Console->isChecked())
+        m_console_dialog->show();
+    else
+        m_console_dialog->hide();
+}
+
+void MainWindow::on_actionXML_Import_triggered()
+{
+    // choose the file
+    QString xmlfile = QFileDialog::getOpenFileName(this, tr("Import XML from file"), QString(), tr("XML File (*.xml)"));
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    QApplication::processEvents();
+
+    if (!xmlfile.isEmpty())
+    {
+        QFile infile(xmlfile);
+
+        if (!infile.open(QFile::ReadOnly))
+        {
+            QMessageBox::critical(this, tr("Open Failed"), infile.errorString());
+            QApplication::restoreOverrideCursor();
+            QApplication::processEvents();
+            return;
+        }
+
+        QDomDocument xmldoc;
+        xmldoc.setContent(&infile);
+
+        if (!global_DBObjects.importXMLDoc(xmldoc))
+        {
+            QMessageBox::critical(this, tr("Open Failed"), "Parsing XML file failed.");
+            infile.close();
+            QApplication::restoreOverrideCursor();
+            QApplication::processEvents();
+            return;
+        }
+
+        infile.close();
+    }
+
+    QApplication::restoreOverrideCursor();
+    QApplication::processEvents();
 }
 
 // TODO: Add spell checking features for QExpandingLineEdit and QLineEdit

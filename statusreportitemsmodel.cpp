@@ -1,4 +1,5 @@
 #include "statusreportitemsmodel.h"
+#include "pndatabaseobjects.h"
 
 StatusReportItemsModel::StatusReportItemsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
@@ -9,8 +10,9 @@ StatusReportItemsModel::StatusReportItemsModel(QObject* t_parent): PNSqlQueryMod
     setTableName("status_report_items", "Status Report Items");
 
     addColumn(0, tr("Status Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
-    addColumn(1, tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable);
-    addColumn(2,  tr("Category"), DBString, DBSearchable, DBRequired, DBEditable);
+    addColumn(1, tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
+              "projects", "project_id", "project_number");
+    addColumn(2,  tr("Category"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::status_item_status);
     addColumn(3, tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable);
 
     addRelatedTable("projects", "project_id", "Projects");

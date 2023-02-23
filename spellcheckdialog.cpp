@@ -12,6 +12,7 @@ SpellCheckDialog::SpellCheckDialog(QWidget *parent) :
     ui->setupUi(this);
 
     QSettings spell_settings(QCoreApplication::applicationDirPath() + "/dictionary/index.ini", QSettings::IniFormat);
+qDebug() << QCoreApplication::applicationDirPath();
 
     QStringList dictionaries = spell_settings.childGroups();
 
@@ -41,7 +42,7 @@ SpellCheckDialog::SpellCheckDialog(QWidget *parent) :
 
     m_DefaultDictionary = global_Settings.getDefaultDictionary().toInt();
 
-    if (m_DefaultDictionary > -1)
+    if (m_DicFiles.count() > 0 && m_AffFiles.count() > 0)
     {
         ui->comboBoxDictionaryLanguage->setCurrentIndex(m_DefaultDictionary);
 
@@ -53,7 +54,7 @@ SpellCheckDialog::SpellCheckDialog(QWidget *parent) :
 
         if (!QFile::exists(dict) || !QFile::exists(aff))
         {
-            QMessageBox::critical(this, QObject::tr("Dictionary Files Not Specified"),
+            QMessageBox::critical(this, QObject::tr("Dictionary Files Not Found"),
                 QString(tr("No dictionary files were specified.  You may need to re-install Project Notes.")), QMessageBox::Close);
         }
 

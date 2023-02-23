@@ -2,7 +2,6 @@
 #define PNSQLQUERYMODEL_H
 
 #include "math.h"
-//#include "importexport.h"
 
 #include <QString>
 #include <QList>
@@ -37,11 +36,15 @@ public:
     bool setData(const QModelIndex &t_index, const QVariant &t_value, int t_role) override;
     QVariant data(const QModelIndex &t_index, int t_role = Qt::DisplayRole) const override;
 
+    bool importXMLNode(const QDomNode& t_domnode);
+    bool setData(QDomElement* t_xml_row, bool t_ignore_key);
+
     void clear();
     void refresh();
 
     void setTableName(const QString &t_table, const QString &t_display_name);
     const QString& tablename() { return m_tablename; };
+    const QString& displayname() { return m_display_name; };
     void setBaseSql(const QString t_table);
     const QString& BaseSQL() { return m_base_sql; };
 
@@ -50,7 +53,11 @@ public:
     void sqlEscape(QVariant& t_column_value, DBColumnType t_column_type, bool t_no_quote = false) const;
     void reformatValue(QVariant& t_column_value, DBColumnType t_column_type) const;
 
-    void addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable, DBColumnRequired t_required = DBNotRequired, DBColumnEditable t_edit_table = DBEditable, DBColumnUnique t_unique = DBNotUnique);
+    void addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable,
+                   DBColumnRequired t_required = DBNotRequired, DBColumnEditable t_edit_table = DBEditable, DBColumnUnique t_unique = DBNotUnique,
+                   const QString& t_lookup_table = QString(), const QString& t_lookup_fk_column_name = QString(), const QString& t_lookup_value_column_name = QString());
+    void addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable, DBColumnRequired t_required,
+                                    DBColumnEditable t_editable, DBColumnUnique t_unique, QStringList* t_valuelist);
     void addRelatedTable(const QString& t_table_name, const QString& t_colum_name, const QString& t_title, const DBRelationExportable exportable = DBNotExportable);
     void associateLookupValues(int t_column_number, QStringList* t_lookup_values);
     QVariant headerData(int t_section, Qt::Orientation t_orientation,
@@ -76,6 +83,7 @@ public:
     const QModelIndex findIndex(QVariant& t_lookup_value, int t_search_column);
     void setShowBlank(bool t_show = true) { m_show_blank = t_show; };
     bool reloadRecord(const QModelIndex& t_index);
+    void refreshByTableName();
 
     QString constructWhereClause(bool t_include_user_filter = true);
     void setFilter(int t_column_number, const QString& t_filter_value, DBCompareType t_compare = DBCompareType::Equals);
@@ -106,6 +114,8 @@ public:
 
     void setOrderBy(const QString& t_order_by) { m_order_by = t_order_by; };
     void clearOrderBy() { m_order_by.clear(); };
+    void setForeignKeyValueColumn(const QString& t_fk_value) { m_ForeignKeyValue = t_fk_value; };
+    const QString& getForeignKeyValueColumn() { return m_ForeignKeyValue; };
 
     void setEditable( int t_column, DBColumnEditable t_editable ) { m_column_is_editable[t_column] = t_editable; };
     bool isEditable( int t_column ) { return (m_column_is_editable[t_column] == DBEditable); }
@@ -115,9 +125,6 @@ public:
     bool isRequired( int t_column ) { return (m_column_is_required[t_column] == DBRequired); };
     DBColumnType getType( const int t_column ) const { return m_column_type[t_column]; };
     void setType( const int t_column, const DBColumnType t_column_type ) { m_column_type[t_column] = t_column_type; };
-    void setLookup(int t_column, PNSqlQueryModel* t_lookup, int t_lookup_fk_column, int t_lookup_value_column);
-    void setLookup(int t_column, QStringList* t_lookup);
-    QVariant getLookupValue( const QModelIndex& t_index);
     QString getColumnName( int t_column ) {
         return m_sql_query.record().fieldName(t_column);
     };
@@ -126,17 +133,13 @@ public:
     int getUniqueColumnCount();
 
     bool isReadOnly() { return m_read_only; };
-    bool isUniqueColumn(int t_column) { return m_column_is_unique[t_column]; };
+    bool isUniqueColumn(int t_column) { return (m_column_is_unique[t_column] == DBUnique); };
     void setReadOnly() { m_read_only = true; };
 
-//    const QVector<QString> getRelatedTables() { return m_related_table; };
-//    const QString getRelatedColumn(int t_col) { return m_related_column[t_col]; };
-    QDomElement toQDomElement( QDomDocument& t_xml_document );
+    QDomElement toQDomElement( QDomDocument* t_xml_document );
     // use this to allow for different filters from the original
     virtual PNSqlQueryModel* createExportVersion();
 
-
-//    QList<PNSqlQueryModel*> childRecordsets();
 
 private:
     QString m_tablename;  // the t_table to write data too, also the t_table to sync with other models when changed
@@ -161,11 +164,11 @@ private:
     QHash<int, QVariant> m_range_search_start;
     QHash<int, QVariant> m_range_search_end;
 
-    QHash<int, PNSqlQueryModel*> m_lookup_view;
+    // track related columns for xml import/export
+    QHash<int, QString> m_lookup_table;
+    QHash<int, QString> m_lookup_value_column_name;
+    QHash<int, QString> m_lookup_fk_column_name;
     QHash<int, QStringList*> m_lookup_values;
-    QHash<int, int> m_lookup_value_column;
-    QHash<int, int> m_lookup_fk_column;
-
 
     // track for deletion checking and exporting
     QVector<QString> m_related_table;
@@ -180,6 +183,7 @@ private:
     bool m_show_blank = false;
 
     QString m_order_by;
+    QString m_ForeignKeyValue;
     bool m_user_filter_active = false;
     bool m_read_only = false;
 

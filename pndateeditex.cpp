@@ -80,6 +80,11 @@ PNDateEditEx::PNDateEditEx(QWidget *parent) :
 {
 }
 
+PNDateEditEx::~PNDateEditEx()
+{
+    delete d;
+}
+
 /*!
  * \brief returns date, if empty date is invalid
  * \return date, if empty date is invalid
