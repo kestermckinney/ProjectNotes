@@ -2,6 +2,7 @@
 #include "ui_pluginsettingsdialog.h"
 #include "pnpluginmanager.h"
 #include "pnplugin.h"
+#include "pnsettings.h"
 
 #include <QList>
 #include <QTableWidgetItem>
@@ -55,25 +56,25 @@ void PluginSettingsDialog::selectPlugin(int t_index)
     m_loading = true;
 
     QList<PNPlugin*> plist = m_plugin_manager->getPlugins();
-    PNPlugin* p = plist[t_index];
+    m_current_selection = plist[t_index];
 
     // description
-    ui->PluginDescriptionLineEdit->setText(p->getPNPluginDescription());
+    ui->PluginDescriptionLineEdit->setText(m_current_selection->getPNPluginDescription());
 
     // is enabled
-    ui->EnabledCheckBox->setCheckState( p->isEnabled() ? Qt::Checked : Qt::Unchecked);
+    ui->EnabledCheckBox->setCheckState( m_current_selection->isEnabled() ? Qt::Checked : Qt::Unchecked);
 
     // list of events
     ui->EventsListWidget->clear();
-    ui->EventsListWidget->addItems(p->getEventNames());
+    ui->EventsListWidget->addItems(m_current_selection->getEventNames());
 
     // list of properties
     ui->SettingsTableWidget->clear();
 
     // set the location
-    ui->LocationLineEdit->setText(p->getPluginLocation());
+    ui->LocationLineEdit->setText(m_current_selection->getPluginLocation());
 
-    QStringList qs = p->getParameterNames();
+    QStringList qs = m_current_selection->getParameterNames();
     ui->SettingsTableWidget->setRowCount(qs.length());
 
     for (int i = 0; i < qs.length(); i++)
@@ -84,8 +85,8 @@ void PluginSettingsDialog::selectPlugin(int t_index)
         ui->SettingsTableWidget->setItem(i, 0, item);
         ui->SettingsTableWidget->horizontalHeader()->setStretchLastSection(true);
 
-        //TODO: get theplugin parameter value
-        QTableWidgetItem* setting = new QTableWidgetItem("THE VALUE");
+        QVariant val = global_Settings.getPluginSetting(m_current_selection->getPNPluginName(), qs[i]);
+        QTableWidgetItem* setting = new QTableWidgetItem(val.toString());
         ui->SettingsTableWidget->setItem(i, 1, setting);
     }
 
@@ -110,18 +111,17 @@ void PluginSettingsDialog::on_PluginsListWidget_currentItemChanged(QListWidgetIt
 void PluginSettingsDialog::on_EnabledCheckBox_stateChanged(int arg1)
 {
     if (m_loading) return; // loading values ignore events
-    QString val = QString("%1").arg(ui->EnabledCheckBox->checkState());
-    qDebug() << val;
-    // TODO: Store state value
+
+    global_Settings.setPluginEnabled(m_current_selection->getPNPluginName(), (ui->EnabledCheckBox->checkState() == Qt::Checked));
 }
 
 
 void PluginSettingsDialog::on_SettingsTableWidget_cellChanged(int row, int column)
 {
     if (m_loading) return; // loading values ignore events
-    qDebug() << ui->SettingsTableWidget->item(row, column)->text();
 
-    // TODO: Store state value
+    if (m_current_selection)
+        global_Settings.setPluginSetting(m_current_selection->getPNPluginName(), ui->SettingsTableWidget->item(row, 0)->text(), ui->SettingsTableWidget->item(row, column)->text());
 }
 
 

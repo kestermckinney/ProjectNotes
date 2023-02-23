@@ -116,4 +116,3 @@ void ItemDetailsPage::toFirst()
         m_mapperItemDetails->toFirst();
 }
 
-

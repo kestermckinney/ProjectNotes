@@ -77,8 +77,7 @@ SOURCES += \
     trackeritemcommentsmodel.cpp \
     trackeritemcommentsview.cpp \
     valueselectmodel.cpp \
-    valuesview.cpp \
-    xmlexportdialog.cpp
+    valuesview.cpp
 
 HEADERS += \
     FilterSaveStructure.h \
@@ -147,8 +146,7 @@ HEADERS += \
     trackeritemcommentsview.h \
     valueselectmodel.h \
     valuesview.h \
-    widgets_export.h \
-    xmlexportdialog.h
+    widgets_export.h
 
 FORMS += \
     filterdatadialog.ui \
@@ -157,8 +155,7 @@ FORMS += \
     pluginsettingsdialog.ui \
     pnconsoledialog.ui \
     preferencesdialog.ui \
-    spellcheckdialog.ui \
-    xmlexportdialog.ui
+    spellcheckdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

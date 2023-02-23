@@ -25,6 +25,13 @@ QVariant PNSettings::getPluginSetting(const QString& t_plugin_name, const QStrin
     return m_plugin_config->value(path);
 }
 
+void PNSettings::setPluginSetting(const QString& t_plugin_name, const QString& t_parameter_name, const QString& t_parameter_value)
+{
+    QString path = t_plugin_name + "/" + t_parameter_name;
+
+    m_plugin_config->setValue(path, t_parameter_value);
+}
+
 bool PNSettings::getPluginEnabled(const QString& t_plugin_name)
 {
     QString path = t_plugin_name + "/PluginEnabled";

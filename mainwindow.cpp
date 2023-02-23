@@ -148,8 +148,22 @@ void MainWindow::setButtonAndMenuStates()
     ui->stackedWidget->setVisible(dbopen);
 
     ui->actionSearch->setEnabled(dbopen);
-    ui->actionXML_Export->setEnabled(dbopen);
+
+    PNTableView* curview = navigateCurrentPage()->getCurrentView();
+
+    if (curview)
+    {
+        bool issearch = (curview->objectName().compare("tableViewSearchResults") == 0);
+        bool sel = curview->selectionModel()->hasSelection();
+
+        // can only choose export when something is selected
+        ui->actionXML_Export->setEnabled(dbopen && sel && !issearch);
+    }
+    else
+        ui->actionXML_Export->setEnabled(false);
+
     ui->actionXML_Import->setEnabled(dbopen);
+
     ui->actionBackup_Database->setEnabled(dbopen);
 
     ui->actionInternal_Items->setEnabled(dbopen);
@@ -229,7 +243,6 @@ void MainWindow::setButtonAndMenuStates()
         // file menu items
         ui->actionClose_Database->setEnabled(true);
         ui->actionSearch->setEnabled(true);
-        ui->actionXML_Export->setEnabled(true);
         ui->actionXML_Import->setEnabled(true);
         ui->actionPreferences->setEnabled(true);
 
@@ -303,7 +316,6 @@ void MainWindow::setButtonAndMenuStates()
         // file menu items
         ui->actionClose_Database->setEnabled(false);
         ui->actionSearch->setEnabled(false);
-        ui->actionXML_Export->setEnabled(false);
         ui->actionXML_Import->setEnabled(false);
         ui->actionPreferences->setEnabled(false);
 
@@ -1306,6 +1318,18 @@ void MainWindow::on_actionXML_Import_triggered()
     QApplication::restoreOverrideCursor();
     QApplication::processEvents();
 }
+
+void MainWindow::on_actionXML_Export_triggered()
+{
+    PNTableView* curview = navigateCurrentPage()->getCurrentView();
+    bool sel = curview->selectionModel()->hasSelection();
+
+    if (curview && sel)
+    {
+        curview->slotExportRecord();
+    }
+}
+
 
 // TODO: Add spell checking features for QExpandingLineEdit and QLineEdit
 // TODO: Add find feature for QExpandingLineEdit

@@ -201,6 +201,9 @@ bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
 void PNTableView::dataRowSelected(const QModelIndex &t_index)
 {
     Q_UNUSED(t_index);
+
+    ((QWidget*)parent())->setFocus();
+    //setButtonAndMenus fuction is called this method seems to work in linuxF
 }
 
 void PNTableView::dataRowActivated(const QModelIndex &t_index)
@@ -301,7 +304,7 @@ void PNTableView::slotExportRecord()
     QModelIndexList qil = this->selectionModel()->selectedRows();
 
     QVariant keyval;
-    //for (auto qi = qil.begin(); qi != qil.end(); qi++)
+
     auto qi = qil.begin();
     keyval = currentmodel->data(*qi);
 

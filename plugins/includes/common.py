@@ -1,10 +1,14 @@
-from PySide6 import QtSql, QtGui, QtCore
-from PySide6.QtCore import QDirIterator, QDir, QSettings
-from PySide6.QtXml import QDomDocument, QDomNode
-from PySide6.QtWidgets import QMessageBox, QMainWindow
+import platform
 
-from win32com.client import GetObject
-import win32com
+if (platform.system() == 'Windows'):
+    from win32com.client import GetObject
+    import win32com
+
+from PyQt5 import QtSql, QtGui, QtCore
+from PyQt5.QtCore import QDirIterator, QDir, QSettings
+from PyQt5.QtXml import QDomDocument, QDomNode
+from PyQt5.QtWidgets import QMessageBox, QMainWindow
+
 import re
 import subprocess
 import sys
