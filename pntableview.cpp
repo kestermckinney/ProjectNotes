@@ -1,5 +1,6 @@
 #include "pntableview.h"
 #include "pnsettings.h"
+#include "pndatabaseobjects.h"
 #include "pnsqlquerymodel.h"
 
 #include <QDebug>
@@ -9,6 +10,7 @@
 #include <QHeaderView>
 #include <QMenu>
 #include <QMessageBox>
+#include <QFileDialog>
 
 PNTableView::PNTableView(QWidget *t_parent) : QTableView(t_parent)
 {
@@ -68,7 +70,7 @@ PNTableView::~PNTableView()
     delete filterRecords;
     delete resetColumns;
 
-    if (m_filterdialog != nullptr)
+    if (m_filterdialog)
         delete m_filterdialog;
 
     QHeaderView *headerView = horizontalHeader();
@@ -293,9 +295,51 @@ void PNTableView::slotOpenRecord()
 
 void PNTableView::slotExportRecord()
 {
-    // TODO: standardize the export trigger
-    QMessageBox::critical(nullptr, QObject::tr("Action Not Overriden"),
-        tr("Export Record Needs Defined"), QMessageBox::Cancel);
+    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
+    PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
+
+    QModelIndexList qil = this->selectionModel()->selectedRows();
+
+    QVariant keyval;
+    //for (auto qi = qil.begin(); qi != qil.end(); qi++)
+    auto qi = qil.begin();
+    keyval = currentmodel->data(*qi);
+
+    // choose the file
+    QString xmlfile = QFileDialog::getSaveFileName(this, tr("Save XML to file"), QString(), tr("XML File (*.xml)"));
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    QApplication::processEvents();
+
+    if (!xmlfile.isEmpty())
+    {
+        QFile outfile(xmlfile);
+
+        PNSqlQueryModel *exportmodel = currentmodel->createExportVersion();
+        exportmodel->setFilter(0, keyval.toString());
+        exportmodel->refresh();
+
+        QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(exportmodel);
+
+        if (!outfile.open(QFile::WriteOnly | QFile::Truncate))
+        {
+            QMessageBox::critical(this, tr("Open Failed"), outfile.errorString());
+            delete xdoc;
+            QApplication::restoreOverrideCursor();
+            return;
+        }
+
+        QTextStream textstream(&outfile);
+
+        xdoc->save(textstream, 4);
+        outfile.close();
+        delete xdoc;
+    }
+
+    QApplication::restoreOverrideCursor();
+    QApplication::processEvents();
+
+    return;
 }
 
 void PNTableView::slotFilterRecords()
@@ -313,3 +357,4 @@ void PNTableView::slotResetColumns()
 {
     resizeColumnsToContents();
 }
+

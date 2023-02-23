@@ -10,7 +10,8 @@ ProjectNotesModel::ProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_paren
     setTableName("project_notes", "Project Notes");
 
     addColumn(0, tr("Note ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
-    addColumn(1, tr("Project ID"), DBString, DBSearchable, DBRequired, DBReadOnly);
+    addColumn(1, tr("Project ID"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique,
+              "projects", "project_id", "project_number");
     addColumn(2,  tr("Title"), DBString, DBSearchable, DBNotRequired, DBEditable);
     addColumn(3, tr("Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
     addColumn(4, tr("Note"), DBString, DBSearchable, DBNotRequired, DBEditable);

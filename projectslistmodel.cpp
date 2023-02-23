@@ -7,6 +7,7 @@
 ProjectsListModel::ProjectsListModel(QObject* t_parent) : ProjectsModel(t_parent)
 {
     setObjectName("ProjectsListModel");
+    setTableName("projects", "Projects");
 
     setEditable(5, DBReadOnly); // cannot edit the the primary contact when viewing all projects
 }
@@ -47,7 +48,6 @@ bool ProjectsListModel::openRecord(QModelIndex t_index)
 
     global_DBObjects.projectnotesmodel()->setFilter(1, record_id.toString());
     global_DBObjects.projectnotesmodel()->refresh();
-
 
     return true;
 }

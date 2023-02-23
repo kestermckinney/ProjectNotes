@@ -126,6 +126,8 @@ MainWindow::~MainWindow()
     delete m_plugin_manager;
 
     delete ui;
+
+    ui = nullptr;
 }
 
 void MainWindow::on_focusChanged(QWidget *t_old, QWidget *t_now)
@@ -138,6 +140,9 @@ void MainWindow::on_focusChanged(QWidget *t_old, QWidget *t_now)
 
 void MainWindow::setButtonAndMenuStates()
 {
+    if (!ui)
+        return;
+
     bool dbopen = global_DBObjects.isOpen();
 
     ui->stackedWidget->setVisible(dbopen);
@@ -1264,6 +1269,43 @@ void MainWindow::on_actionView_Console_triggered()
         m_console_dialog->hide();
 }
 
+void MainWindow::on_actionXML_Import_triggered()
+{
+    // choose the file
+    QString xmlfile = QFileDialog::getOpenFileName(this, tr("Import XML from file"), QString(), tr("XML File (*.xml)"));
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    QApplication::processEvents();
+
+    if (!xmlfile.isEmpty())
+    {
+        QFile infile(xmlfile);
+
+        if (!infile.open(QFile::ReadOnly))
+        {
+            QMessageBox::critical(this, tr("Open Failed"), infile.errorString());
+            QApplication::restoreOverrideCursor();
+            QApplication::processEvents();
+            return;
+        }
+
+        QDomDocument xmldoc;
+        xmldoc.setContent(&infile);
+
+        if (!global_DBObjects.importXMLDoc(xmldoc))
+        {
+            QMessageBox::critical(this, tr("Open Failed"), "Parsing XML file failed.");
+            infile.close();
+            QApplication::restoreOverrideCursor();
+            QApplication::processEvents();
+            return;
+        }
+
+        infile.close();
+    }
+
+    QApplication::restoreOverrideCursor();
+    QApplication::processEvents();
+}
 
 // TODO: Add spell checking features for QExpandingLineEdit and QLineEdit
 // TODO: Add find feature for QExpandingLineEdit

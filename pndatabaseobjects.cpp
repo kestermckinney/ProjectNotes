@@ -97,8 +97,6 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_unfilteredclients_model->setShowBlank();
 
     m_people_model = new PeopleModel(nullptr);
-    // setup lookup/drop down values
-    m_people_model->setLookup(5, m_unfilteredclients_model, 0, 1);
     m_people_model_proxy = new PNSortFilterProxyModel();
     m_people_model_proxy->setSourceModel(m_people_model);
 
@@ -116,9 +114,6 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_project_information_model_proxy->setSourceModel(m_project_information_model);
 
     m_projects_list_model = new ProjectsListModel(nullptr);
-    // setup lookup/drop down t_value
-    m_projects_list_model->setLookup(5, m_unfiltered_people_model, 0, 1);
-    m_projects_list_model->setLookup(13, m_unfilteredclients_model, 0, 1);
     m_projects_list_model_proxy = new PNSortFilterProxyModel();
     m_projects_list_model_proxy->setSourceModel(m_projects_list_model);
 
@@ -508,9 +503,6 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     }
     else
     {
-        //QString managing = Execute(QString("select client_name from clients where client_id = '%1'").arg(GetManagingCompany()));
-        //QString filtered = Execute(QString("select client_name from clients where client_id = '%1'").arg(GetGlobalClientFilter()));
-
         QVariantList managingnclientids;
         // make sure list of people can show the managing company
         managingnclientids.append(getManagingCompany());
@@ -584,9 +576,180 @@ QDomDocument* PNDatabaseObjects::createXMLExportDoc(PNSqlQueryModel* t_querymode
     QDomElement e = t_querymodel->toQDomElement(doc);
     root.appendChild(e);
 
-    // qDebug() << doc->toString();
-
     return doc;
+}
+
+QList<QDomNode> PNDatabaseObjects::findTableNodes(const QDomNode& t_xmlelement, const QString& t_tablename)
+{
+    QList<QDomNode> domlist;
+
+    QDomNode node = t_xmlelement.firstChild();
+
+    while (!node.isNull())
+    {
+        if (node.nodeName() == "table" && node.toElement().attributeNode("name").value() == t_tablename)
+        {
+                domlist.append(node);
+                qDebug() << "Found Node: " << node.nodeName() << " Name: " << t_tablename;
+        }
+
+        domlist.append(findTableNodes(node, t_tablename));
+
+        node = node.nextSibling();
+    }
+
+    return domlist;
+}
+
+bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
+{
+    // import clients
+    QDomElement root = t_xmldoc.documentElement();
+    QList<QDomNode> domlist;
+
+    qDebug() << "Root: "  << root.tagName();
+
+    domlist = findTableNodes(root, "clients");
+    if (!domlist.empty())
+    {
+        ClientsModel clients_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if (!clients_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        clients_model.refreshByTableName();
+    }
+
+    // import people
+    domlist = findTableNodes(root, "people");
+    if (!domlist.empty())
+    {
+        PeopleModel people_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if(!people_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        people_model.refreshByTableName();
+    }
+
+    // import projects
+    domlist = findTableNodes(root, "projects");
+    if (!domlist.empty())
+    {
+        ProjectsModel projects_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if (!projects_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        projects_model.refreshByTableName();
+    }
+
+    // import project people
+    domlist = findTableNodes(root, "project_people");
+    if (!domlist.empty())
+    {
+        ProjectTeamMembersModel project_people_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if (!project_people_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        project_people_model.refreshByTableName();
+    }
+
+    // import status report items
+    domlist = findTableNodes(root, "status_report_items");
+    if (!domlist.empty())
+    {
+        StatusReportItemsModel status_report_items_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if(!status_report_items_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        status_report_items_model.refreshByTableName();
+    }
+
+    // import project locations
+    domlist = findTableNodes(root, "project_locations");
+    if (!domlist.empty())
+    {
+        ProjectLocationsModel project_locations_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if(!project_locations_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        project_locations_model.refreshByTableName();
+    }
+
+
+    // import project notes
+    domlist = findTableNodes(root, "project_notes");
+    if (!domlist.empty())
+    {
+        ProjectNotesModel project_notes_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if(!project_notes_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        project_notes_model.refreshByTableName();
+    }
+
+    // import item tracker
+    domlist = findTableNodes(root, "item_tracker");
+    if (!domlist.empty())
+    {
+        TrackerItemsModel tracker_items_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if(!tracker_items_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        tracker_items_model.refreshByTableName();
+    }
+
+    // import meeting attendees
+    domlist = findTableNodes(root, "meeting_attendees");
+    if (!domlist.empty())
+    {
+        MeetingAttendeesModel meeting_attendees_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if(!meeting_attendees_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        meeting_attendees_model.refreshByTableName();
+    }
+
+    // import tracker items updates
+    domlist = findTableNodes(root, "item_tracker_updates");
+    if (!domlist.empty())
+    {
+        TrackerItemCommentsModel item_tracker_updates_model(nullptr);
+
+        for (QDomNode& tablenode : domlist)
+            if(!item_tracker_updates_model.importXMLNode(tablenode))
+                return false;
+
+        domlist.clear();
+        item_tracker_updates_model.refreshByTableName();
+    }
+
+    return true;
 }
 
 bool PNDatabaseObjects::executeDDL(const QString& /*t_sql*/)

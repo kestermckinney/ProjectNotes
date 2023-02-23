@@ -89,6 +89,7 @@ private slots:
     void on_lineEditSearchText_returnPressed();
     void on_actionPlugin_Settings_triggered();
     void on_actionView_Console_triggered();
+    void on_actionXML_Import_triggered();
 
 private:
     Ui::MainWindow *ui;   
