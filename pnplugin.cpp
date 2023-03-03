@@ -1,4 +1,5 @@
 #include "pnplugin.h"
+#include "pnsettings.h"
 
 #include <QObject>
 #include <QString>
@@ -40,7 +41,6 @@ bool PNPlugin::loadModule(const QFileInfo& t_filename)
 
     m_Parameters = getPythonStringList("parameters");
 
-    //TODO: setup events to be callable
     m_Startup = PyObject_GetAttrString(m_PNPluginModule,"event_startup");
     m_Shutdown = PyObject_GetAttrString(m_PNPluginModule,"event_shutdown");
     m_EveryMinute = PyObject_GetAttrString(m_PNPluginModule,"event_everyminute");
@@ -95,44 +95,44 @@ bool PNPlugin::hasDataRightClickEvent(const QString& t_tablename)
     return val;
 };
 
-void PNPlugin::callStartupEvent()
+void PNPlugin::callStartupEvent(const QString& t_xmlstring)
 {
-    callPythonMethod(m_Startup);
+    callPythonMethod(m_Startup, t_xmlstring);
 }
 
-void PNPlugin::callShutdownEvent()
+void PNPlugin::callShutdownEvent(const QString& t_xmlstring)
 {
-    callPythonMethod(m_Shutdown);
+    callPythonMethod(m_Shutdown, t_xmlstring);
 }
 
-void PNPlugin::callEveryMinuteEvent()
+void PNPlugin::callEveryMinuteEvent(const QString& t_xmlstring)
 {
-    callPythonMethod(m_EveryMinute);
+    callPythonMethod(m_EveryMinute, t_xmlstring);
 }
 
-void PNPlugin::callEvery5MinutesEvent()
+void PNPlugin::callEvery5MinutesEvent(const QString& t_xmlstring)
 {
-    callPythonMethod(m_Every5Minutes);
+    callPythonMethod(m_Every5Minutes, t_xmlstring);
 }
 
-void PNPlugin::callEvery10MinutesEvent()
+void PNPlugin::callEvery10MinutesEvent(const QString& t_xmlstring)
 {
-    callPythonMethod(m_Every10Minutes);
+    callPythonMethod(m_Every10Minutes, t_xmlstring);
 }
 
-void PNPlugin::callEvery15MinutesEvent()
+void PNPlugin::callEvery15MinutesEvent(const QString& t_xmlstring)
 {
-    callPythonMethod(m_Every15Minutes);
+    callPythonMethod(m_Every15Minutes, t_xmlstring);
 }
 
-void PNPlugin::callEvery30MinutesEvent()
+void PNPlugin::callEvery30MinutesEvent(const QString& t_xmlstring)
 {
-    callPythonMethod(m_Every30Minutes);
+    callPythonMethod(m_Every30Minutes, t_xmlstring);
 }
 
-void PNPlugin::callPNPluginMenuEvent()
+void PNPlugin::callPNPluginMenuEvent(const QString& t_xmlstring)
 {
-    callPythonMethod(m_PNPluginMenu);
+    callPythonMethod(m_PNPluginMenu, t_xmlstring);
 }
 
 QString PNPlugin::callDataRightClickEvent(const QString& t_xmlstring)
@@ -145,13 +145,14 @@ QString PNPlugin::callPythonMethod(PyObject* t_method)
     char* result;
     QString val;
 
-    //TODO: CALL a set parameters for all active parameters
+    //qDebug() << "Found " << m_Parameters.count() << " parameters";
+
+    // CALL a set parameters for all active parameters
     for ( QString p : m_Parameters)
     {
-        //TODO: get the parameter value stored in QConfig
-        QString parmval = "big param";
+        QVariant parmval = global_Settings.getPluginSetting(m_PNPluginName, p);
 
-        setPythonVariable(p, parmval);
+        setPythonVariable(p, parmval.toString());
     }
 
     PyObject* func = PyObject_CallObject(t_method, nullptr);
@@ -182,16 +183,16 @@ QString PNPlugin::callPythonMethod(PyObject* t_method, const QString& t_xmlstrin
     char* result;
     QString val;
 
-    //TODO: CALL a set parameters for all active parameters
+//    qDebug() << "Found " << m_Parameters.count() << " parameters";
+//    qDebug() << "Debug UTF: " << t_xmlstring;
+
+    // CALL a set parameters for all active parameters
     for ( QString p : m_Parameters)
     {
-        //TODO: get the parameter value stored in QConfig
-        QString parmval = "small parm value";
+        QVariant parmval = global_Settings.getPluginSetting(m_PNPluginName, p);
 
-        setPythonVariable(p, parmval);
+        setPythonVariable(p, parmval.toString());
     }
-
-    qDebug() << "Debug UTF: " << t_xmlstring;
 
     PyObject* pargs = Py_BuildValue("(s)", t_xmlstring.toUtf8().data());
     if (!pargs)
@@ -230,7 +231,7 @@ QString PNPlugin::callPythonMethod(PyObject* t_method, const QString& t_xmlstrin
 
 int PNPlugin::setPythonVariable(const QString& t_variablename, const QString& t_value)
 {
-    qDebug() << "Setting Value: "  << t_variablename << " as " << t_value;
+    //qDebug() << "Setting Value: "  << t_variablename << " as " << t_value;
 
     PyObject* objectval = PyUnicode_FromString(t_value.toStdString().c_str());
 
@@ -303,13 +304,19 @@ QStringList PNPlugin::getPythonStringList(const QString& t_variablename)
         }
 
         const char* str = PyUnicode_AsUTF8(item);
+        QString memval = QString::fromUtf8(str);
 
-        val.append(QString(str));
+        val.append(memval);
 
         Py_XDECREF(item);
     }
 
     Py_XDECREF(attr);
+
+    //qDebug() << "Parameter count: " << val.count();
+
+    for ( QString p : val)
+        //qDebug() << "Parameter Loaded: " << p;
 
     return val;
 }

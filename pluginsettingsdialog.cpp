@@ -14,20 +14,6 @@ PluginSettingsDialog::PluginSettingsDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    ui->SettingsTableWidget->setColumnCount(2);
-    QTableWidgetItem* propitem = new QTableWidgetItem("Property");
-    propitem->setBackground(Qt::gray);
-    QTableWidgetItem* propval = new QTableWidgetItem("Setting");
-    ui->SettingsTableWidget->setHorizontalHeaderItem(0, propitem);
-    ui->SettingsTableWidget->setHorizontalHeaderItem(1, propval);
-    ui->SettingsTableWidget->verticalHeader()->hide();
-
-//    QTableWidgetItem* item1 = new QTableWidgetItem("Item 1");
-//    item1->setFlags(item1->flags() & ~Qt::ItemIsEditable);
-//    item1->setBackground(Qt::gray);
-//    ui->SettingsTableWidget->setRowCount(2);
-//    ui->SettingsTableWidget->setItem(0, 0, item1);
-
     //TODO: allow for passwords to stay hidden and ecrypted
 }
 
@@ -59,9 +45,12 @@ void PluginSettingsDialog::selectPlugin(int t_index)
     m_current_selection = plist[t_index];
 
     // description
-    ui->PluginDescriptionLineEdit->setText(m_current_selection->getPNPluginDescription());
+    ui->PluginDescriptionPlainTextEdit->setPlainText(m_current_selection->getPNPluginDescription());
 
     // is enabled
+    bool enable = global_Settings.getPluginEnabled(m_current_selection->getPNPluginName());
+    m_current_selection->setEnabled(enable);
+
     ui->EnabledCheckBox->setCheckState( m_current_selection->isEnabled() ? Qt::Checked : Qt::Unchecked);
 
     // list of events
@@ -70,6 +59,14 @@ void PluginSettingsDialog::selectPlugin(int t_index)
 
     // list of properties
     ui->SettingsTableWidget->clear();
+
+    ui->SettingsTableWidget->setColumnCount(2);
+    QTableWidgetItem* propitem = new QTableWidgetItem("Property");
+    propitem->setBackground(Qt::gray);
+    QTableWidgetItem* propval = new QTableWidgetItem("Setting");
+    ui->SettingsTableWidget->setHorizontalHeaderItem(0, propitem);
+    ui->SettingsTableWidget->setHorizontalHeaderItem(1, propval);
+    ui->SettingsTableWidget->verticalHeader()->hide();
 
     // set the location
     ui->LocationLineEdit->setText(m_current_selection->getPluginLocation());
@@ -112,7 +109,9 @@ void PluginSettingsDialog::on_EnabledCheckBox_stateChanged(int arg1)
 {
     if (m_loading) return; // loading values ignore events
 
+
     global_Settings.setPluginEnabled(m_current_selection->getPNPluginName(), (ui->EnabledCheckBox->checkState() == Qt::Checked));
+    m_current_selection->setEnabled((ui->EnabledCheckBox->checkState() == Qt::Checked));
 }
 
 

@@ -296,5 +296,3 @@ QList<PNPlugin*> PNPluginManager::findDataRightClickEvents(const QString& t_tabl
 
     return list;
 }
-
-

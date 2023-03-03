@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QMessageBox, QMainWindow
 
 import re
 import subprocess
-import sys
+
 
 class ProjectNotesCommon:
 
@@ -196,7 +196,7 @@ class ProjectNotesCommon:
         return(rownode)
 
     def get_projectfolder(self, node):
-        table = self.find_node(node.toElement(), "table", "name", "ix_project_locations")
+        table = self.find_node(node.toElement(), "table", "name", "project_locations")
         projectfolder = ""
 
         if table is None:
@@ -215,6 +215,10 @@ class ProjectNotesCommon:
         return(projectfolder)
 
     def ping_server(self, servername):
+        if (platform.system() != 'Windows'):
+            print("ping_server requires win32com not supported on this platform")
+            return(False)
+
         colProcess = None
         strList = None
         p = None
@@ -235,6 +239,10 @@ class ProjectNotesCommon:
         return(False)
 
     def check_drive(self, network, letter):
+        if (platform.system() != 'Windows'):
+            print("check_drive requires win32com not supported on this platform")
+            return(False)
+
         drives = network.EnumNetworkDrives()
 
         i = 0
@@ -249,6 +257,10 @@ class ProjectNotesCommon:
         return(False)
 
     def connect_drives(self):
+        if (platform.system() != 'Windows'):
+            print("connect_drives requires win32com not supported on this platform")
+            return(False)
+            
         network = win32com.client.Dispatch("WScript.Network")
 
         if self.ping_server("INDFP03.cornerstonecontrols.local"):
@@ -273,8 +285,8 @@ class ProjectNotesCommon:
     def exec_program(self, fullpath):
         result = subprocess.run( [fullpath], capture_output=True, text=True)
 
-        print("stdout:", result.stdout)
-        print("stderr:", result.stderr)
+        # print("stdout:", result.stdout)
+        # print("stderr:", result.stderr)
 
     def get_global_setting(self, settingname):
         cfg = QSettings("ProjectNotes","PluginSettings")
@@ -310,25 +322,32 @@ class ProjectNotesCommon:
             return(False)
 
         # code below will cause the script to fail if connection settings are wrong
-        adodb = self.connect()
-        rs = win32com.client.Dispatch("ADODB.Recordset")
-        rs.ActiveConnection = adodb
+        if (platform.system() == 'Windows'):
+            adodb = self.connect()
+            rs = win32com.client.Dispatch("ADODB.Recordset")
+            rs.ActiveConnection = adodb
 
-        rs.Open("select sysdate from dual", adodb)
-        st = rs.State
-        #print("State: " +  str(st) + "\n")
-        rs = None
+            rs.Open("select sysdate from dual", adodb)
+            st = rs.State
+            #print("State: " +  str(st) + "\n")
+            rs = None
 
-        self.close(adodb)
-        adodb = None
+            self.close(adodb)
+            adodb = None
 
-        if st == 0:
-            QMessageBox.warning(None, "Could not connect to Oracle verify parameters are correct in the Global Settigns plugin.", QMessageBox.Ok)
-            return(False)
+            if st == 0:
+                QMessageBox.warning(None, "Could not connect to Oracle verify parameters are correct in the Global Settigns plugin.", QMessageBox.Ok)
+                return(False)
+        else:
+            print("connect to ADODB requires win32com not supported on this platform")
 
         return(True)
 
     def connect(self):
+        if (platform.system() != 'Windows'):
+            print("connect to ADODB requires win32com not supported on this platform")
+            return(False)
+            
         op = self.get_global_setting("OraclePassword")
         ou = self.get_global_setting("OracleUsername")
         ds = self.get_global_setting("OracleDataSource")
@@ -343,5 +362,9 @@ class ProjectNotesCommon:
         return(adodb)
 
     def close(self, adodb):
-      adodb.Close()
-      adodb = None
+        if (platform.system() !='Windows'):
+            print("close ADODB requires win32com not supported on this platform")
+            return(False)
+
+        adodb.Close()
+        adodb = None

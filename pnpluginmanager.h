@@ -3,6 +3,8 @@
 
 #include "pnplugin.h"
 
+#include <QMenu>
+
 typedef std::function<void(std::string)> stdout_write_type;
 void set_stdout(stdout_write_type write);
 void reset_stdout();

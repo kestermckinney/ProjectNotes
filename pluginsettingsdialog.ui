@@ -14,7 +14,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Plugin Settings</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_4">
    <item>
@@ -43,16 +43,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="PluginDescriptionLineEdit">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-         </property>
+        <widget class="QPlainTextEdit" name="PluginDescriptionPlainTextEdit">
          <property name="readOnly">
           <bool>true</bool>
          </property>

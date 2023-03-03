@@ -3,6 +3,7 @@
 #include "pntableview.h"
 #include "projectslistmodel.h"
 #include "pnsqlquerymodel.h"
+#include "pndatabaseobjects.h"
 
 #include <QStringListModel>
 #include <QMessageBox>
@@ -24,6 +25,7 @@
 
 #include "mainwindow.h"
 
+PNPluginManager* MainWindow::m_plugin_manager = nullptr;
 
 MainWindow::MainWindow(QWidget *t_parent)
     : QMainWindow(t_parent)
@@ -74,8 +76,46 @@ MainWindow::MainWindow(QWidget *t_parent)
     connect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
 
     m_plugin_manager = new PNPluginManager();
-    m_plugin_settings_dialog = new PluginSettingsDialog(this);
     m_console_dialog = new PNConsoleDialog(this);
+    m_plugin_settings_dialog = new PluginSettingsDialog(this);
+
+    for ( PNPlugin* p : m_plugin_manager->getPlugins())
+    {
+        if (p->hasPNPluginMenuEvent() && p->isEnabled())
+        {
+            QAction* act = ui->menuPlugins->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+        }
+    }
+}
+
+void MainWindow::slotPluginMenu(PNPlugin* t_plugin)
+{
+    QString xmlstr;
+
+    if (!t_plugin->getTableName().isEmpty())
+    {
+        // determine what table to export
+        PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
+
+        if (table)
+        {
+            // build export xml
+            PNSqlQueryModel* model = table->createExportVersion();
+            model->refresh();
+            QDomDocument* doc = global_DBObjects.createXMLExportDoc(model);
+            xmlstr = doc->toString();
+            delete model;
+            delete doc;
+        }
+        else
+        {
+            QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1)specified by the plugin does not exist.").arg(t_plugin->getTableName()));
+            return;
+        }
+    }
+
+    // call the menu plugin with the data structure
+    t_plugin->callPNPluginMenuEvent(xmlstr);
 }
 
 MainWindow::~MainWindow()
@@ -1270,7 +1310,7 @@ void MainWindow::on_lineEditSearchText_returnPressed()
 
 void MainWindow::on_actionPlugin_Settings_triggered()
 {
-    m_plugin_settings_dialog->exec();
+    m_plugin_settings_dialog->editPluginSettings(m_plugin_manager);
 }
 
 void MainWindow::on_actionView_Console_triggered()

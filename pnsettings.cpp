@@ -36,7 +36,12 @@ bool PNSettings::getPluginEnabled(const QString& t_plugin_name)
 {
     QString path = t_plugin_name + "/PluginEnabled";
 
-    return m_plugin_config->value(path).toBool();
+    QVariant val = m_plugin_config->value(path);
+
+    // default to all plugins being enabled when first loaded
+    if (val.isNull()) val = "1";
+
+    return val.toBool();
 }
 
 void PNSettings::setPluginEnabled(const QString& t_plugin_name, bool t_enabled)

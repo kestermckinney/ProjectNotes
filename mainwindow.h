@@ -36,6 +36,7 @@ public:
     bool navigateAtStart() { return (m_navigation_location <= 0); }
     void navigateClearHistory() { m_navigation_location = -1; m_navigation_history.clear(); }
     PNBasePage* navigateCurrentPage() { return (m_navigation_location == -1 ? nullptr : m_navigation_history.at(m_navigation_location) ); }
+    static PNPluginManager* getPluginManager() { return m_plugin_manager; }
 
 public slots:
     void on_actionOpen_ProjectDetails_triggered();
@@ -91,13 +92,15 @@ private slots:
     void on_actionXML_Import_triggered();
     void on_actionXML_Export_triggered();
 
+    void slotPluginMenu(PNPlugin* t_plugin);
+
 private:
     Ui::MainWindow *ui;   
 
     PreferencesDialog* m_preferences_dialog = nullptr;
     SpellCheckDialog* m_spellcheck_dialog = nullptr;
     FindReplaceDialog* m_find_replace_dialog = nullptr;
-    PNPluginManager* m_plugin_manager = nullptr;
+    static PNPluginManager* m_plugin_manager;
     PNConsoleDialog* m_console_dialog = nullptr;
     PluginSettingsDialog* m_plugin_settings_dialog = nullptr;
 
@@ -146,5 +149,6 @@ private:
     QComboBox* m_combo_box_font;
     QComboBox* m_combo_box_size;
 };
+
 
 #endif // MAINWINDOW_H

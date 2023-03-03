@@ -1,204 +1,170 @@
-from includes.common import ProjectNotesCommon
-from includes.excel_tools import ProjectNotesExcelTools
 
-from PySide6 import QtSql, QtGui, QtCore, QtUiTools
-from PySide6.QtSql import QSqlDatabase
-from PySide6.QtXml import QDomDocument, QDomNode
-from PySide6.QtCore import QFile, QIODevice, QDateTime, QUrl
-from PySide6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
-from PySide6.QtGui import QDesktopServices
-import sys
-import win32com
+import platform
+
+if (platform.system() == 'Windows'):
+    from includes.excel_tools import ProjectNotesExcelTools
+    import win32com
+
+from includes.common import ProjectNotesCommon
+from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
+from PyQt5.QtSql import QSqlDatabase
+from PyQt5.QtXml import QDomDocument, QDomNode
+from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
+from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
+from PyQt5.QtGui import QDesktopServices
+
 
 # Project Notes Plugin Parameters
 pluginname = "Schedule One On One Meeting"
 plugindescription = "Using Outlook create an invite to an employee review meeting."
+plugintable = "people" # the table or view that the plugin applies to.  This will enable the right click
+childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
+
+# TODO: This will need to be duplicated for project people too
 
 # events must have a data structure and data view specified
 #
 # Structures:
-#      disabled        The event will not be enabled
-#      wxxmldocument   The event will pass a wxLua wx.wxXmlDocument containing the spedified data view and expect the plugin to return a wx.wxXmlDocument
-#      string          The event will pass a wxLua string containing XML and will expect the plugin to return an XML string
-#      nodata          The event will pass a wxLua None and will expect the plugin to return an XML string
-#
-# all tables in the database have corresponding import/export data views the views are prefixed by ix_
+#      string          The event will pass a python string containing XML and will expect the plugin to return an XML string
 #
 # Data Views:
-#      ix_clients
-#      ix_people
-#      ix_projects
-#      ix_project_people
-#      ix_status_report_items
-#      ix_project_locations
-#      ix_project_notes
-#      ix_meeting_attendees
-#      ix_item_tracker_updates
-#      ix_item_tracker
+#      clients
+#      people
+#      projects
+#      project_people
+#      status_report_items
+#      project_locations
+#      project_notes
+#      meeting_attendees
+#      item_tracker_updates
+#      item_tracker
 
-# Active Events
-Startup="disabled"
-Shutdown="disabled"
-EveryMinute="disabled"
-Every5Minutes="disabled"
-Every10Minutes="disabled"
-Every30Minutes="disabled"
-PluginMenuClick="disabled"
-RightClickProject="disabled"
-RightClickPeople="wxxmldocument:ix_people"
-RightClickClient="disabled"
-RightClickStatusReportItem="disabled"
-RightClickLocationItem="disabled"
-RightClickTeamMember="wxxmldocument:ix_project_people"
-RightClickMeeting="disabled"
-RightClickAttendee="wxxmldocument:ix_meeting_attendees"
-RightCickTrackerItem="disabled"
+# Supported Events
+
+# def event_startup(xmlstr):
+#     return ""
+#
+# def event_shutdown(xmlstr):
+#     return ""
+#
+# def event_everyminute(xmlstr):
+#     return ""
+#
+# def event_every5minutes(xmlstr):
+#     return ""
+#
+# def event_every10minutes(xmlstr):
+#     return ""
+#
+# def event_every30Mmnutes(xmlstr):
+#     return ""
+#
+# def event_menuclick(xmlstr):
+#     return ""
 
 # Parameters specified here will show in the Project Notes plugin settings window
 # the global variable name must be specified as a string value to be read by project notes
-# Project Notes will set these values before calling any functions
+# Project Notes will set these values before calling any defs
 
 # Project Notes Parameters
-parameters = {
-}
+parameters = [
+]
 
 OracleUsername = ""
 ProjectsFolder = ""
 
-pnc = ProjectNotesCommon()
-pne = ProjectNotesExcelTools()
+# this plugin is only supported on windows
+if (platform.system() == 'Windows'):
+    pnc = ProjectNotesCommon()
+    pne = ProjectNotesExcelTools()
 
-# processing main function
-def main_process( xmlval ):
-    outlook = win32com.client.Dispatch("Outlook.Application")
-    message = outlook.CreateItem(1)
-    email = ""
-    nm = ""
-    pm = ""
+    # processing main function
+    def event_data_rightclick(xmlstr):
+        xmlval = QDomDocument()
+        if (xmlval.setContent(xmlstr) == False):
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+            return ""
+            
+        outlook = win32com.client.Dispatch("Outlook.Application")
+        message = outlook.CreateItem(1)
+        email = ""
+        nm = ""
+        pm = ""
 
-    xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
-    projectfolder = pnc.get_projectfolder(xmlroot)
-    pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
+        projectfolder = pnc.get_projectfolder(xmlroot)
+        pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
 
-    if xmlroot:
-        teammember = pnc.find_node(xmlroot, "table", "name", "ix_project_people")
-        if teammember:
-            memberrow = teammember.firstChild()
+        if xmlroot:
+            teammember = pnc.find_node(xmlroot, "table", "name", "ix_project_people")
+            if teammember:
+                memberrow = teammember.firstChild()
 
-            while not memberrow.isNull():
-                nm = pnc.get_column_value(memberrow, "name")
-                email = pnc.get_column_value(memberrow, "email")
+                while not memberrow.isNull():
+                    nm = pnc.get_column_value(memberrow, "name")
+                    email = pnc.get_column_value(memberrow, "email")
 
-                if nm != pm:
-                    if (email != None and email != ""):
-                        message.Recipients.Add(email)
+                    if nm != pm:
+                        if (email != None and email != ""):
+                            message.Recipients.Add(email)
 
-                memberrow = memberrow.nextSibling()
+                    memberrow = memberrow.nextSibling()
 
-        teammember = pnc.find_node(xmlroot, "table", "name", "ix_meeting_attendees")
-        if teammember:
-            memberrow = teammember.firstChild()
+            teammember = pnc.find_node(xmlroot, "table", "name", "ix_meeting_attendees")
+            if teammember:
+                memberrow = teammember.firstChild()
 
-            while not memberrow.isNull():
-                nm = pnc.get_column_value(memberrow, "name")
-                email = pnc.get_column_value(memberrow, "email")
-                if nm != pm:
-                    if (email != None and email != ""):
-                        message.Recipients.Add(email)
+                while not memberrow.isNull():
+                    nm = pnc.get_column_value(memberrow, "name")
+                    email = pnc.get_column_value(memberrow, "email")
+                    if nm != pm:
+                        if (email != None and email != ""):
+                            message.Recipients.Add(email)
 
-                memberrow = memberrow.nextSibling()
+                    memberrow = memberrow.nextSibling()
 
-        teammember = pnc.find_node(xmlroot, "table", "name", "ix_people")
-        if teammember:
-            memberrow = teammember.GetChildren()
+            teammember = pnc.find_node(xmlroot, "table", "name", "ix_people")
+            if teammember:
+                memberrow = teammember.GetChildren()
 
-            while not memberrow.isNull():
-                nm = pnc.get_column_value(memberrow, "name")
-                email = pnc.get_column_value(memberrow, "email")
-                if nm != pm:
-                    if (email != None and email != ""):
-                        message.Recipients.Add(email)
+                while not memberrow.isNull():
+                    nm = pnc.get_column_value(memberrow, "name")
+                    email = pnc.get_column_value(memberrow, "email")
+                    if nm != pm:
+                        if (email != None and email != ""):
+                            message.Recipients.Add(email)
 
-                memberrow = memberrow.nextSibling()
+                    memberrow = memberrow.nextSibling()
 
-        message.Subject = "One On One with " + pm + " and " + nm
+            message.Subject = "One On One with " + pm + " and " + nm
 
-        txt = get_text_invite()
-        message.MeetingStatus = 1
-        message.Duration = 60
-        message.Location = pnc.get_global_setting("DefaultMeetingLocation")
-        message.Body = txt
-        outlook.ActiveExplorer().Activate()
-        message.Display()
+            txt = get_text_invite()
+            message.MeetingStatus = 1
+            message.Duration = 60
+            message.Location = pnc.get_global_setting("DefaultMeetingLocation")
+            message.Body = txt
+            outlook.ActiveExplorer().Activate()
+            message.Display()
 
-        outlook = None
-        message = None
+            outlook = None
+            message = None
 
-    return xmldoc
+        return xmldoc
 
-# Project Notes Plugin Events
-def event_startup(xmlstr):
-    return main_process(xmlstr)
+    def get_text_invite():
+        txtdoc = """
+        One On One Meeting Agenda
+        The purpose of this meeting is to review personal performance, discuss goals, and overall wellbeing.  We will review and discuss the following items.
 
-def event_shutdown(xmlstr):
-    return main_process(xmlstr)
-
-def event_everyminute(xmlstr):
-    return main_process(xmlstr)
-
-def event_every5minutes(xmlstr):
-    return main_process(xmlstr)
-
-def event_every10minutes(xmlstr):
-    return main_process(xmlstr)
-
-def event_every30Mmnutes(xmlstr):
-    return main_process(xmlstr)
-
-def event_menuclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_projectrightclick(xmlstr):
-    return main_process_project(xmlstr)
-
-def event_peoplerightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_clientrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_statusreportitemrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_teammemberrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_locationitemrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_meetingrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_attendeerightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_trackeritemrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def get_text_invite():
-    txtdoc = """
-    One On One Meeting Agenda
-    The purpose of this meeting is to review personal performance, discuss goals, and overall wellbeing.  We will review and discuss the following items.
-
-    Wellbeing
-    - Utilization Numbers
-    - Performance Factors
-    - Associate Development Plan
-    - Company Performance
-    - Safety
-    - Annual Review ( of Year)
-    """
-    return txtdoc
+        Wellbeing
+        - Utilization Numbers
+        - Performance Factors
+        - Associate Development Plan
+        - Company Performance
+        - Safety
+        - Annual Review ( of Year)
+        """
+        return txtdoc
 
 
 """

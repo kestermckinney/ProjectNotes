@@ -128,7 +128,7 @@ public:
     void setManagingCompany(QString t_value);
     QString getManagingCompany();
 
-    QDomDocument* createXMLExportDoc(PNSqlQueryModel* t_querymodel);
+    QDomDocument* createXMLExportDoc(PNSqlQueryModel* t_querymodel, const QString& t_filter = QString());
     bool importXMLDoc(const QDomDocument& t_xmldoc);
 
 private:

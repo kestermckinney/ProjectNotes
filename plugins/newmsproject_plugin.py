@@ -1,192 +1,155 @@
+
+import platform
+
+if (platform.system() == 'Windows'):
+    from includes.excel_tools import ProjectNotesExcelTools
+    import win32com
+
 from includes.common import ProjectNotesCommon
-from includes.excel_tools import ProjectNotesExcelTools
+from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
+from PyQt5.QtSql import QSqlDatabase
+from PyQt5.QtXml import QDomDocument, QDomNode
+from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
+from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
+from PyQt5.QtGui import QDesktopServices
 
-from PySide6 import QtSql, QtGui, QtCore, QtUiTools
-from PySide6.QtSql import QSqlDatabase
-from PySide6.QtXml import QDomDocument, QDomNode
-from PySide6.QtCore import QFile, QIODevice, QDateTime, QUrl, QDir, QFileInfo
-from PySide6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog, QInputDialog
-from PySide6.QtGui import QDesktopServices
-import sys
-import win32com
-
-# events must have a data structure and data view specified
-#
-# Structures:
-#      disabled        The event will not be enabled
-#      wxxmldocument   The event will pass a wxLua wx.wxXmlDocument containing the spedified data view and expect the plugin to return a wx.wxXmlDocument
-#      string          The event will pass a wxLua string containing XML and will expect the plugin to return an XML string
-#      nodata          The event will pass a wxLua None and will expect the plugin to return an XML string
-#
-# all tables in the database have corresponding import/export data views the views are prefixed by ix_
-#
-# Data Views:
-#      ix_clients
-#      ix_people
-#      ix_projects
-#      ix_project_people
-#      ix_status_report_items
-#      ix_project_locations
-#      ix_project_notes
-#      ix_meeting_attendees
-#      ix_item_tracker_updates
-#      ix_item_tracker
 
 # Project Notes Plugin Parameters
 pluginname = "Get MS Project Template"
 plugindescription = "Copy the selected MS Project Template"
+plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
+childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
-# Active Events
-Startup="disabled"
-Shutdown="disabled"
-EveryMinute="disabled"
-Every5Minutes="disabled"
-Every10Minutes="disabled"
-Every30Minutes="disabled"
-PluginMenuClick="disabled"
-RightClickProject="wxxmldocument:ix_projects"
-RightClickPeople="disabled"
-RightClickClient="disabled"
-RightClickStatusReportItem="disabled"
-RightClickLocationItem="disabled"
-RightClickTeamMember="disabled"
-RightClickMeeting="disabled"
-RightClickAttendee="disabled"
-RightCickTrackerItem="disabled"
+# events must have a data structure and data view specified
+#
+# Structures:
+#      string          The event will pass a python string containing XML and will expect the plugin to return an XML string
+#
+# Data Views:
+#      clients
+#      people
+#      projects
+#      project_people
+#      status_report_items
+#      project_locations
+#      project_notes
+#      meeting_attendees
+#      item_tracker_updates
+#      item_tracker
+
+# Supported Events
+
+# def event_startup(xmlstr):
+#     return ""
+#
+# def event_shutdown(xmlstr):
+#     return ""
+#
+# def event_everyminute(xmlstr):
+#     return ""
+#
+# def event_every5minutes(xmlstr):
+#     return ""
+#
+# def event_every10minutes(xmlstr):
+#     return ""
+#
+# def event_every30Mmnutes(xmlstr):
+#     return ""
+#
+# def event_menuclick(xmlstr):
+#     return ""
 
 # Parameters specified here will show in the Project Notes plugin settings window
 # the global variable name must be specified as a string value to be read by project notes
-# Project Notes will set these values before calling any functions
+# Project Notes will set these values before calling any defs
 
 # Project Notes Parameters
-parameters = {
-}
+parameters = [
+]
 
-pnc = ProjectNotesCommon()
+# this plugin is only supported on windows
+if (platform.system() == 'Windows'):
+    pnc = ProjectNotesCommon()
 
-# processing main function
-def main_process( xmlval ):
-    if not pnc.verify_global_settings():
-        return None
+    def event_data_rightclick(xmlstr):
+        xmlval = QDomDocument()
+        if (xmlval.setContent(xmlstr) == False):
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+            return ""
+            
+        if not pnc.verify_global_settings():
+            return ""
 
-    # setup global variable
-    ProjectsFolder = pnc.get_global_setting("ProjectsFolder")
+        # setup global variable
+        ProjectsFolder = pnc.get_global_setting("ProjectsFolder")
 
-    # prompt for the template to use
-    xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
-    projectfolder = pnc.get_projectfolder(xmlroot)
-    pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
-    cm = xmlroot.attributes().namedItem("managing_company_name").nodeValue()
+        # prompt for the template to use
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
+        projectfolder = pnc.get_projectfolder(xmlroot)
+        pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
+        cm = xmlroot.attributes().namedItem("managing_company_name").nodeValue()
 
-    projtab = pnc.find_node(xmlroot, "table", "name", "ix_projects")
-    projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
-    projnam = pnc.get_column_value(projtab.firstChild(), "project_name")
+        projtab = pnc.find_node(xmlroot, "table", "name", "ix_projects")
+        projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
+        projnam = pnc.get_column_value(projtab.firstChild(), "project_name")
 
-    if (projectfolder is None or projectfolder =="" or not QDir(projectfolder).exists()):
-        projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QtCore.QDir.home().path())
+        if (projectfolder is None or projectfolder =="" or not QDir(projectfolder).exists()):
+            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QtCore.QDir.home().path())
 
-        if projectfolder == "" or projectfolder is None:
+            if projectfolder == "" or projectfolder is None:
+                return None
+        else:
+            projectfolder = projectfolder + "\\Schedule\\"
+
+
+        templatefile = QFileDialog.getOpenFileName(None, "Select the MS Project Template", QDir.currentPath() + "\\templates\\","Project files (*.mpp)|*.mpp")
+
+        if templatefile is None or templatefile[0] == "":
             return None
-    else:
-        projectfolder = projectfolder + "\\Schedule\\"
 
+        basename = projnam[:30]
+        projectfile = projectfolder + basename + ".mpp"
 
-    templatefile = QFileDialog.getOpenFileName(None, "Select the MS Project Template", QDir.currentPath() + "\\templates\\","Project files (*.mpp)|*.mpp")
+        print(templatefile[0])
+        # copy the file
+        if not QDir(projectfile).exists():
+            QFile(templatefile[0]).copy(projectfile)
 
-    if templatefile is None or templatefile[0] == "":
-        return None
+        print("Calling Create Object for MSProject\n")
+        project = win32com.client.Dispatch("MSProject.Application")
+        project.Visible = False
 
-    basename = projnam[:30]
-    projectfile = projectfolder + basename + ".mpp"
+        print("Calling File Open\n")
+        project.FileOpenOrCreate(projectfile)
 
-    print(templatefile[0])
-    # copy the file
-    if not QDir(projectfile).exists():
-        QFile(templatefile[0]).copy(projectfile)
+        print("Replacing PROJECTNAME\n")
+        project.ReplaceEx("Name", "contains", "PROJECTNAME", basename, True, True, False, 188743694, 7, True)
 
-    print("Calling Create Object for MSProject\n")
-    project = win32com.client.Dispatch("MSProject.Application")
-    project.Visible = False
+        print("Saving..\n")
+        project.FileSave()
 
-    print("Calling File Open\n")
-    project.FileOpenOrCreate(projectfile)
+        project.Quit()
 
-    print("Replacing PROJECTNAME\n")
-    project.ReplaceEx("Name", "contains", "PROJECTNAME", basename, True, True, False, 188743694, 7, True)
+        project = None
 
-    print("Saving..\n")
-    project.FileSave()
+        QDesktopServices.openUrl(QUrl("file:///" + projectfile, QUrl.TolerantMode))
 
-    project.Quit()
+        # add the location to the project
+        docxml = pnc.xml_doc_root()
 
-    project = None
+        table = pnc.xml_table(docxml, "ix_project_locations")
+        docxml.appendChild(table)
 
-    QDesktopServices.openUrl(QUrl("file:///" + projectfile, QUrl.TolerantMode))
+        row = pnc.xml_row(docxml)
+        table.appendChild(row)
 
-    # add the location to the project
-    docxml = pnc.xml_doc_root()
+        row.appendChild(pnc.xml_col(docxml, "project_id",None, projnum))
+        row.appendChild(pnc.xml_col(docxml, "location_type", "Microsoft Project", None))
+        row.appendChild(pnc.xml_col(docxml, "location_description", "Project Schedule : " + basename, None))
+        row.appendChild(pnc.xml_col(docxml, "full_path", projectfile, None))
 
-    table = pnc.xml_table(docxml, "ix_project_locations")
-    docxml.appendChild(table)
-
-    row = pnc.xml_row(docxml)
-    table.appendChild(row)
-
-    row.appendChild(pnc.xml_col(docxml, "project_id",None, projnum))
-    row.appendChild(pnc.xml_col(docxml, "location_type", "Microsoft Project", None))
-    row.appendChild(pnc.xml_col(docxml, "location_description", "Project Schedule : " + basename, None))
-    row.appendChild(pnc.xml_col(docxml, "full_path", projectfile, None))
-
-    return docxml
-
-# Project Notes Plugin Events
-def event_startup(xmlstr):
-    return main_process(xmlstr)
-
-def event_shutdown(xmlstr):
-    return main_process(xmlstr)
-
-def event_everyminute(xmlstr):
-    return main_process(xmlstr)
-
-def event_every5minutes(xmlstr):
-    return main_process(xmlstr)
-
-def event_every10minutes(xmlstr):
-    return main_process(xmlstr)
-
-def event_every30Mmnutes(xmlstr):
-    return main_process(xmlstr)
-
-def event_menuclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_projectrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_peoplerightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_clientrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_statusreportitemrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_teammemberrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_locationitemrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_meetingrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_attendeerightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_trackeritemrightclick(xmlstr):
-    return main_process(xmlstr)
+        return docxml
 
 # setup test data
 """
