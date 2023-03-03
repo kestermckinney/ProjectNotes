@@ -43,10 +43,10 @@ public:
     void refresh();
 
     void setTableName(const QString &t_table, const QString &t_display_name);
-    const QString& tablename() { return m_tablename; };
-    const QString& displayname() { return m_display_name; };
+    const QString& tablename() { return m_tablename; }
+    const QString& displayname() { return m_display_name; }
     void setBaseSql(const QString t_table);
-    const QString& BaseSQL() { return m_base_sql; };
+    const QString& BaseSQL() { return m_base_sql; }
 
     Qt::ItemFlags flags(const QModelIndex &t_index) const override;
 
@@ -81,20 +81,20 @@ public:
     QSqlRecord emptyrecord();
     const QVariant findValue(QVariant& t_lookup_value, int t_search_column, int t_return_column);
     const QModelIndex findIndex(QVariant& t_lookup_value, int t_search_column);
-    void setShowBlank(bool t_show = true) { m_show_blank = t_show; };
+    void setShowBlank(bool t_show = true) { m_show_blank = t_show; }
     bool reloadRecord(const QModelIndex& t_index);
     void refreshByTableName();
 
     QString constructWhereClause(bool t_include_user_filter = true);
     void setFilter(int t_column_number, const QString& t_filter_value, DBCompareType t_compare = DBCompareType::Equals);
-    bool hasFilter(int t_column_number) const { return m_column_is_filtered[t_column_number];};
+    bool hasFilter(int t_column_number) const { return m_column_is_filtered[t_column_number];}
     void clearAllFilters();
     void clearFilter(int t_column_number);
 
     void setUserFilter(int t_column_number, const QVariantList& t_ilter_values);
-    const QVariantList& getUserFilter(int t_column_number) { return m_user_filter_values[t_column_number]; };
+    const QVariantList& getUserFilter(int t_column_number) { return m_user_filter_values[t_column_number]; }
     void setUserSearchString(int t_column_number, const QVariant& t_search_value);
-    QVariant& getUserSearchString(int t_column_number) { return m_user_search_string[t_column_number]; };
+    QVariant& getUserSearchString(int t_column_number) { return m_user_search_string[t_column_number]; }
 
     void setUserSearchRange(int t_column_number, const QVariant& t_search_begin_value, const QVariant& m_Search_end_value );
     void getUserSearchRange(int t_column_number, QVariant& t_earch_begin_value, QVariant& t_search_end_value );
@@ -110,21 +110,21 @@ public:
 
     void saveUserFilter( QString t_filter_name);
     void loadUserFilter( QString t_filter_name);
-    bool getUserFilterState() { return m_user_filter_active; };
+    bool getUserFilterState() { return m_user_filter_active; }
 
-    void setOrderBy(const QString& t_order_by) { m_order_by = t_order_by; };
-    void clearOrderBy() { m_order_by.clear(); };
-    void setForeignKeyValueColumn(const QString& t_fk_value) { m_ForeignKeyValue = t_fk_value; };
-    const QString& getForeignKeyValueColumn() { return m_ForeignKeyValue; };
+    void setOrderBy(const QString& t_order_by) { m_order_by = t_order_by; }
+    void clearOrderBy() { m_order_by.clear(); }
+    void setForeignKeyValueColumn(const QString& t_fk_value) { m_ForeignKeyValue = t_fk_value; }
+    const QString& getForeignKeyValueColumn() { return m_ForeignKeyValue; }
 
-    void setEditable( int t_column, DBColumnEditable t_editable ) { m_column_is_editable[t_column] = t_editable; };
+    void setEditable( int t_column, DBColumnEditable t_editable ) { m_column_is_editable[t_column] = t_editable; }
     bool isEditable( int t_column ) { return (m_column_is_editable[t_column] == DBEditable); }
-    void setSearchable( int t_column, DBColumnSearchable t_searchable ) { m_column_is_searchable[t_column] = t_searchable; };
-    bool isSearchable( int t_column ) { return (m_column_is_searchable[t_column] == DBSearchable); };
-    void setRequired( int t_column, DBColumnRequired t_required ) { m_column_is_required[t_column] = t_required; };
-    bool isRequired( int t_column ) { return (m_column_is_required[t_column] == DBRequired); };
-    DBColumnType getType( const int t_column ) const { return m_column_type[t_column]; };
-    void setType( const int t_column, const DBColumnType t_column_type ) { m_column_type[t_column] = t_column_type; };
+    void setSearchable( int t_column, DBColumnSearchable t_searchable ) { m_column_is_searchable[t_column] = t_searchable; }
+    bool isSearchable( int t_column ) { return (m_column_is_searchable[t_column] == DBSearchable); }
+    void setRequired( int t_column, DBColumnRequired t_required ) { m_column_is_required[t_column] = t_required; }
+    bool isRequired( int t_column ) { return (m_column_is_required[t_column] == DBRequired); }
+    DBColumnType getType( const int t_column ) const { return m_column_type[t_column]; }
+    void setType( const int t_column, const DBColumnType t_column_type ) { m_column_type[t_column] = t_column_type; }
     QString getColumnName( int t_column ) {
         return m_sql_query.record().fieldName(t_column);
     };
@@ -132,14 +132,26 @@ public:
     int getColumnNumber( QString& t_field_name );
     int getUniqueColumnCount();
 
-    bool isReadOnly() { return m_read_only; };
-    bool isUniqueColumn(int t_column) { return (m_column_is_unique[t_column] == DBUnique); };
-    void setReadOnly() { m_read_only = true; };
+    bool isReadOnly() { return m_read_only; }
+    bool isUniqueColumn(int t_column) { return (m_column_is_unique[t_column] == DBUnique); }
+    void setReadOnly() { m_read_only = true; }
+    bool isExportable() { return m_can_export; }
+    void setNoExport() { m_can_export = false; }
 
-    QDomElement toQDomElement( QDomDocument* t_xml_document );
+    QDomElement toQDomElement( QDomDocument* t_xml_document, const QString& t_filter = QString());
     // use this to allow for different filters from the original
     virtual PNSqlQueryModel* createExportVersion();
 
+    static PNSqlQueryModel* findOpenTable(const QString& t_tablename)
+    {
+        for ( PNSqlQueryModel* m : m_open_recordsets)
+        {
+            if (m->tablename().compare(t_tablename, Qt::CaseInsensitive) == 0)
+                return m;
+        }
+
+        return nullptr;
+    }
 
 private:
     QString m_tablename;  // the t_table to write data too, also the t_table to sync with other models when changed
@@ -186,6 +198,7 @@ private:
     QString m_ForeignKeyValue;
     bool m_user_filter_active = false;
     bool m_read_only = false;
+    bool m_can_export = true;
 
     // list of created models
     static QList<PNSqlQueryModel*> m_open_recordsets;

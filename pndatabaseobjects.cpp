@@ -556,7 +556,7 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     }
 }
 
-QDomDocument* PNDatabaseObjects::createXMLExportDoc(PNSqlQueryModel* t_querymodel)
+QDomDocument* PNDatabaseObjects::createXMLExportDoc(PNSqlQueryModel* t_querymodel, const QString& t_filter)
 {
     QDomDocument* doc = new QDomDocument();
     QDomElement root = doc->createElement("projectnotes");
@@ -573,7 +573,7 @@ QDomDocument* PNDatabaseObjects::createXMLExportDoc(PNSqlQueryModel* t_querymode
     root.setAttribute("managing_company_name", companyname);
     root.setAttribute("managing_manager_name", managername);
 
-    QDomElement e = t_querymodel->toQDomElement(doc);
+    QDomElement e = t_querymodel->toQDomElement(doc, t_filter);
     root.appendChild(e);
 
     return doc;

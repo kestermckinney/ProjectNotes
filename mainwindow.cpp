@@ -3,6 +3,7 @@
 #include "pntableview.h"
 #include "projectslistmodel.h"
 #include "pnsqlquerymodel.h"
+#include "pndatabaseobjects.h"
 
 #include <QStringListModel>
 #include <QMessageBox>
@@ -24,6 +25,7 @@
 
 #include "mainwindow.h"
 
+PNPluginManager* MainWindow::m_plugin_manager = nullptr;
 
 MainWindow::MainWindow(QWidget *t_parent)
     : QMainWindow(t_parent)
@@ -72,6 +74,48 @@ MainWindow::MainWindow(QWidget *t_parent)
     connect(global_DBObjects.notesactionitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+
+    m_plugin_manager = new PNPluginManager();
+    m_console_dialog = new PNConsoleDialog(this);
+    m_plugin_settings_dialog = new PluginSettingsDialog(this);
+
+    for ( PNPlugin* p : m_plugin_manager->getPlugins())
+    {
+        if (p->hasPNPluginMenuEvent() && p->isEnabled())
+        {
+            QAction* act = ui->menuPlugins->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+        }
+    }
+}
+
+void MainWindow::slotPluginMenu(PNPlugin* t_plugin)
+{
+    QString xmlstr;
+
+    if (!t_plugin->getTableName().isEmpty())
+    {
+        // determine what table to export
+        PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
+
+        if (table)
+        {
+            // build export xml
+            PNSqlQueryModel* model = table->createExportVersion();
+            model->refresh();
+            QDomDocument* doc = global_DBObjects.createXMLExportDoc(model);
+            xmlstr = doc->toString();
+            delete model;
+            delete doc;
+        }
+        else
+        {
+            QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1)specified by the plugin does not exist.").arg(t_plugin->getTableName()));
+            return;
+        }
+    }
+
+    // call the menu plugin with the data structure
+    t_plugin->callPNPluginMenuEvent(xmlstr);
 }
 
 MainWindow::~MainWindow()
@@ -117,6 +161,10 @@ MainWindow::~MainWindow()
     delete m_spellcheck_dialog;
     delete m_find_replace_dialog;
 
+    delete m_plugin_settings_dialog;
+    delete m_console_dialog;
+    delete m_plugin_manager;
+
     delete ui;
 
     ui = nullptr;
@@ -140,8 +188,22 @@ void MainWindow::setButtonAndMenuStates()
     ui->stackedWidget->setVisible(dbopen);
 
     ui->actionSearch->setEnabled(dbopen);
-    ui->actionXML_Export->setEnabled(dbopen);
+
+    PNTableView* curview = navigateCurrentPage()->getCurrentView();
+
+    if (curview)
+    {
+        bool issearch = (curview->objectName().compare("tableViewSearchResults") == 0);
+        bool sel = curview->selectionModel()->hasSelection();
+
+        // can only choose export when something is selected
+        ui->actionXML_Export->setEnabled(dbopen && sel && !issearch);
+    }
+    else
+        ui->actionXML_Export->setEnabled(false);
+
     ui->actionXML_Import->setEnabled(dbopen);
+
     ui->actionBackup_Database->setEnabled(dbopen);
 
     ui->actionInternal_Items->setEnabled(dbopen);
@@ -159,6 +221,15 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionClients->setEnabled(dbopen);
     ui->actionPeople->setEnabled(dbopen);
     ui->actionFilter->setEnabled(dbopen);
+
+    //plugin menu
+    if (m_console_dialog)
+    {
+        if (m_console_dialog->isVisible())
+            ui->actionView_Console->setChecked(true);
+        else
+            ui->actionView_Console->setChecked(false);
+    }
 
     if (dbopen)
     {
@@ -212,7 +283,6 @@ void MainWindow::setButtonAndMenuStates()
         // file menu items
         ui->actionClose_Database->setEnabled(true);
         ui->actionSearch->setEnabled(true);
-        ui->actionXML_Export->setEnabled(true);
         ui->actionXML_Import->setEnabled(true);
         ui->actionPreferences->setEnabled(true);
 
@@ -286,7 +356,6 @@ void MainWindow::setButtonAndMenuStates()
         // file menu items
         ui->actionClose_Database->setEnabled(false);
         ui->actionSearch->setEnabled(false);
-        ui->actionXML_Export->setEnabled(false);
         ui->actionXML_Import->setEnabled(false);
         ui->actionPreferences->setEnabled(false);
 
@@ -1239,6 +1308,18 @@ void MainWindow::on_lineEditSearchText_returnPressed()
     global_DBObjects.searchresultsmodel()->PerformSearch(ui->lineEditSearchText->text());
 }
 
+void MainWindow::on_actionPlugin_Settings_triggered()
+{
+    m_plugin_settings_dialog->editPluginSettings(m_plugin_manager);
+}
+
+void MainWindow::on_actionView_Console_triggered()
+{
+    if (ui->actionView_Console->isChecked())
+        m_console_dialog->show();
+    else
+        m_console_dialog->hide();
+}
 
 void MainWindow::on_actionXML_Import_triggered()
 {
@@ -1277,6 +1358,18 @@ void MainWindow::on_actionXML_Import_triggered()
     QApplication::restoreOverrideCursor();
     QApplication::processEvents();
 }
+
+void MainWindow::on_actionXML_Export_triggered()
+{
+    PNTableView* curview = navigateCurrentPage()->getCurrentView();
+    bool sel = curview->selectionModel()->hasSelection();
+
+    if (curview && sel)
+    {
+        curview->slotExportRecord();
+    }
+}
+
 
 // TODO: Add spell checking features for QExpandingLineEdit and QLineEdit
 // TODO: Add find feature for QExpandingLineEdit

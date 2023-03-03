@@ -33,15 +33,19 @@ SOURCES += \
     peoplelistview.cpp \
     peoplemodel.cpp \
     peoplepage.cpp \
+    pluginsettingsdialog.cpp \
     pnbasepage.cpp \
     pncheckboxdelegate.cpp \
     pncolumnmodel.cpp \
     pncomboboxdelegate.cpp \
+    pnconsoledialog.cpp \
     pndatabaseobjects.cpp \
     pndateeditdelegate.cpp \
     pndateeditex.cpp \
     pnlineeditfilebutton.cpp \
     pnlineeditfilebuttondelegate.cpp \
+    pnplugin.cpp \
+    pnpluginmanager.cpp \
     pnsettings.cpp \
     pnsortfilterproxymodel.cpp \
     pnsqlquerymodel.cpp \
@@ -73,8 +77,7 @@ SOURCES += \
     trackeritemcommentsmodel.cpp \
     trackeritemcommentsview.cpp \
     valueselectmodel.cpp \
-    valuesview.cpp \
-    xmlexportdialog.cpp
+    valuesview.cpp
 
 HEADERS += \
     FilterSaveStructure.h \
@@ -98,15 +101,19 @@ HEADERS += \
     peoplelistview.h \
     peoplemodel.h \
     peoplepage.h \
+    pluginsettingsdialog.h \
     pnbasepage.h \
     pncheckboxdelegate.h \
     pncolumnmodel.h \
     pncomboboxdelegate.h \
+    pnconsoledialog.h \
     pndatabaseobjects.h \
     pndateeditdelegate.h \
     pndateeditex.h \
     pnlineeditfilebutton.h \
     pnlineeditfilebuttondelegate.h \
+    pnplugin.h \
+    pnpluginmanager.h \
     pnsettings.h \
     pnsortfilterproxymodel.h \
     pnsqlquerymodel.h \
@@ -139,16 +146,16 @@ HEADERS += \
     trackeritemcommentsview.h \
     valueselectmodel.h \
     valuesview.h \
-    widgets_export.h \
-    xmlexportdialog.h
+    widgets_export.h
 
 FORMS += \
     filterdatadialog.ui \
     findreplacedialog.ui \
     mainwindow.ui \
+    pluginsettingsdialog.ui \
+    pnconsoledialog.ui \
     preferencesdialog.ui \
-    spellcheckdialog.ui \
-    xmlexportdialog.ui
+    spellcheckdialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -171,6 +178,12 @@ DISTFILES += \
 
 unix {
    LIBS += -lhunspell
+   INCLUDEPATH += /usr/include/python3.10
+   #INCLUDEPATH += /usr/include/linux/
+   INCLUDEPATH += /usr/lib/gcc/x86_64-linux-gnu/12/include/
+   #$(shell python3-config --includes)
+   LIBS += -lpython3.10 -lm -L/usr/lib/python3.10/config
+   #$(shell python3-config --ldflags)
 }
 
 win32 {

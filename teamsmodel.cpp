@@ -17,11 +17,13 @@ TeamsModel::TeamsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
     addColumn(4, tr("Client ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "clients", "client_id", "client_name");
 
-    addRelatedTable("people", "people_id", "People");
-    addRelatedTable("clients", "client_id", "Clients");
-    addRelatedTable("projects", "project_id", "Projects");
+//    addRelatedTable("people", "people_id", "People");
+//    addRelatedTable("clients", "client_id", "Clients");
+//    addRelatedTable("projects", "project_id", "Projects");
+    // I don't think the related table is needed because this is just used for drop down lists
 
     setOrderBy("name");
 
     setShowBlank(); // add a blank line to the selection
+    setNoExport();  // this table is only for drop downs don't export it
 }

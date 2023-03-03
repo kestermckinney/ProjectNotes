@@ -2,6 +2,7 @@
 #include "pnsettings.h"
 #include "pndatabaseobjects.h"
 #include "pnsqlquerymodel.h"
+#include "mainwindow.h"
 
 #include <QDebug>
 #include <QMouseEvent>
@@ -79,6 +80,61 @@ PNTableView::~PNTableView()
     rowView->removeEventFilter(this);
 }
 
+
+void PNTableView::slotPluginMenu(PNPlugin* t_plugin)
+{
+    PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
+
+    if (!table && !t_plugin->getTableName().isEmpty())
+    {
+        QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1)specified by the plugin does not exist.").arg(t_plugin->getTableName()));
+        return;
+    }
+
+    if (table)
+    {
+        QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
+        PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
+
+        QModelIndexList qil = this->selectionModel()->selectedRows();
+
+        QVariant keyval;
+
+        auto qi = qil.begin();
+        keyval = currentmodel->data(*qi);
+
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+        QApplication::processEvents();
+
+
+        PNSqlQueryModel *exportmodel = currentmodel->createExportVersion();
+        exportmodel->setFilter(0, keyval.toString());
+        exportmodel->refresh();
+
+        QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(exportmodel, t_plugin->getChildTablesFilter());
+        QString xmlstr = xdoc->toString();
+
+        // call the menu plugin with the data structure
+        t_plugin->callDataRightClickEvent(xmlstr);
+
+        delete xdoc;
+
+        QApplication::restoreOverrideCursor();
+        QApplication::processEvents();
+    }
+    else
+    {
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+        QApplication::processEvents();
+
+        // call the menu plugin with an empty string
+        t_plugin->callDataRightClickEvent(QString());
+
+        QApplication::restoreOverrideCursor();
+        QApplication::processEvents();
+
+    }
+}
 
 void PNTableView::setModel(QAbstractItemModel *t_model)
 {
@@ -201,6 +257,9 @@ bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
 void PNTableView::dataRowSelected(const QModelIndex &t_index)
 {
     Q_UNUSED(t_index);
+
+    ((QWidget*)parent())->setFocus();
+    //setButtonAndMenus fuction is called this method seems to work in linuxF
 }
 
 void PNTableView::dataRowActivated(const QModelIndex &t_index)
@@ -241,6 +300,20 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
 
         menu->addAction(filterRecords);
         menu->addSeparator();
+    }
+
+    // check for plugins
+    menu->addSeparator();
+    //STOPPED HERE
+
+    QString table = ((PNSqlQueryModel*) ((QSortFilterProxyModel*)this->model())->sourceModel())->tablename();
+
+    for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
+    {
+        if (p->hasDataRightClickEvent(table) && p->isEnabled())
+        {
+            QAction* act = menu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+        }
     }
 
     menu->exec(t_e->globalPos());
@@ -301,7 +374,7 @@ void PNTableView::slotExportRecord()
     QModelIndexList qil = this->selectionModel()->selectedRows();
 
     QVariant keyval;
-    //for (auto qi = qil.begin(); qi != qil.end(); qi++)
+
     auto qi = qil.begin();
     keyval = currentmodel->data(*qi);
 
@@ -338,8 +411,6 @@ void PNTableView::slotExportRecord()
 
     QApplication::restoreOverrideCursor();
     QApplication::processEvents();
-
-    return;
 }
 
 void PNTableView::slotFilterRecords()

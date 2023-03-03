@@ -2,6 +2,8 @@
 #define PNTABLEVIEW_H
 
 #include "filterdatadialog.h"
+#include "pnplugin.h"
+#include "pnpluginmanager.h"
 
 #include <QTableView>
 #include <QObject>
@@ -19,6 +21,9 @@ public:
 
     void contextMenuEvent(QContextMenuEvent *t_e) override;
 
+    bool getHasOpen() { return m_has_open; }
+    void setHasOpen(bool t_has_open) { m_has_open = t_has_open; }
+
 signals:
     void signalOpenRecordWindow();
 
@@ -31,10 +36,8 @@ public slots:
     void slotOpenRecord();
     void slotExportRecord();
     void slotFilterRecords();
-    void slotResetColumns();
-
-    bool getHasOpen() { return m_has_open; }
-    void setHasOpen(bool t_has_open) { m_has_open = t_has_open; }
+    void slotResetColumns();  
+    void slotPluginMenu(PNPlugin* t_plugin);
 
 private:
     QPoint m_pressPos;
