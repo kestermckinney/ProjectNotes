@@ -75,15 +75,15 @@ MainWindow::MainWindow(QWidget *t_parent)
     connect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
 
-    m_plugin_manager = new PNPluginManager();
-    m_console_dialog = new PNConsoleDialog(this);
+    m_plugin_manager = new PNPluginManager(this);
+
     m_plugin_settings_dialog = new PluginSettingsDialog(this);
 
     for ( PNPlugin* p : m_plugin_manager->getPlugins())
     {
         if (p->hasPNPluginMenuEvent() && p->isEnabled())
         {
-            QAction* act = ui->menuPlugins->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+            ui->menuPlugins->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
         }
     }
 }
@@ -162,7 +162,6 @@ MainWindow::~MainWindow()
     delete m_find_replace_dialog;
 
     delete m_plugin_settings_dialog;
-    delete m_console_dialog;
     delete m_plugin_manager;
 
     delete ui;
@@ -223,12 +222,15 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionFilter->setEnabled(dbopen);
 
     //plugin menu
-    if (m_console_dialog)
+    if (m_plugin_manager)
     {
-        if (m_console_dialog->isVisible())
-            ui->actionView_Console->setChecked(true);
-        else
-            ui->actionView_Console->setChecked(false);
+        if (m_plugin_manager->getConsoleDialg())
+        {
+            if (m_plugin_manager->getConsoleDialg()->isVisible())
+                ui->actionView_Console->setChecked(true);
+            else
+                ui->actionView_Console->setChecked(false);
+        }
     }
 
     if (dbopen)
@@ -1316,9 +1318,9 @@ void MainWindow::on_actionPlugin_Settings_triggered()
 void MainWindow::on_actionView_Console_triggered()
 {
     if (ui->actionView_Console->isChecked())
-        m_console_dialog->show();
+        m_plugin_manager->getConsoleDialg()->show();
     else
-        m_console_dialog->hide();
+        m_plugin_manager->getConsoleDialg()->hide();
 }
 
 void MainWindow::on_actionXML_Import_triggered()

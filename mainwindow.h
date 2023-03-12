@@ -17,7 +17,6 @@ QT_END_NAMESPACE
 #include "preferencesdialog.h"
 #include "spellcheckdialog.h"
 #include "findreplacedialog.h"
-#include "pnconsoledialog.h"
 #include "pnpluginmanager.h"
 #include "pluginsettingsdialog.h"
 
@@ -101,7 +100,6 @@ private:
     SpellCheckDialog* m_spellcheck_dialog = nullptr;
     FindReplaceDialog* m_find_replace_dialog = nullptr;
     static PNPluginManager* m_plugin_manager;
-    PNConsoleDialog* m_console_dialog = nullptr;
     PluginSettingsDialog* m_plugin_settings_dialog = nullptr;
 
     // view state

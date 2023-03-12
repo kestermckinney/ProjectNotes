@@ -283,7 +283,7 @@ class ProjectNotesCommon:
         return(None)
 
     def exec_program(self, fullpath):
-        result = subprocess.run( [fullpath], capture_output=True, text=True)
+        result = subprocess.Popen( [fullpath] ) #, capture_output=False)
 
         # print("stdout:", result.stdout)
         # print("stderr:", result.stderr)

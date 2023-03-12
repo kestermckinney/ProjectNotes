@@ -10,6 +10,7 @@
 
 #pragma push_macro("slots")
 #undef slots
+#undef _DEBUG //Prevent linking debug build of python
 #include "Python.h"
 #pragma pop_macro("slots")
 
