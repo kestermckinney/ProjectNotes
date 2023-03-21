@@ -7,7 +7,6 @@ TrackerItemsModel::TrackerItemsModel(QObject* t_parent): PNSqlQueryModel(t_paren
 
     setBaseSql("select * from item_tracker_view");
 
-//TODO: put the view in the databae upgrade script
     setTableName("item_tracker", "Project Action Items");
 
     addColumn(0, tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);

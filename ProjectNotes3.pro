@@ -19,6 +19,7 @@ SOURCES += \
     clientspage.cpp \
     columnview.cpp \
     comboboxdelegate.cpp \
+    databasestructure.cpp \
     filterdatadialog.cpp \
     findreplacedialog.cpp \
     itemdetailsdelegate.cpp \
@@ -89,6 +90,7 @@ HEADERS += \
     clientspage.h \
     columnview.h \
     comboboxdelegate.h \
+    databasestructure.h \
     filterdatadialog.h \
     findreplacedialog.h \
     itemdetailsdelegate.h \

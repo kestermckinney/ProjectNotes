@@ -8,8 +8,6 @@ ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
 {
     setObjectName("ProjectsModel");
 
-    //TODO: add the view to the database creation
-
     setBaseSql("select * from projects_view");
     setTableName("projects", "Project");
 

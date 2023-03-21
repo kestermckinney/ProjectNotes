@@ -21,6 +21,9 @@ QT_END_NAMESPACE
 #include "pnpluginmanager.h"
 #include "pluginsettingsdialog.h"
 
+#define PNMajorVersion 3
+#define PNMinorVersion 0
+#define PNFixVersion 0
 
 class MainWindow : public QMainWindow
 {
@@ -50,8 +53,8 @@ public slots:
 private slots:
     void setButtonAndMenuStates();
     void openDatabase(QString t_dbfile);
-
     void on_actionExit_triggered();
+    void on_actionNew_Database_triggered();
     void on_actionOpen_Database_triggered();
     void on_actionClose_Database_triggered();
     void on_actionClosed_Projects_triggered();

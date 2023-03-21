@@ -41,6 +41,7 @@ class PNDatabaseObjects : public QObject
 public:
     explicit PNDatabaseObjects(QObject *t_parent = nullptr);
     bool openDatabase(QString& t_databasepath);
+    bool createDatabase(QString& t_databasepath);
     void closeDatabase();
     QString execute(const QString& t_sql);
 
@@ -48,7 +49,6 @@ public:
     bool saveParameter( const QString& t_parametername, const QString& t_parametervalue );
     QString loadParameter( const QVariant& t_parametername );
 
-    bool executeDDL(const QString& t_sql);
     void setGlobalSearches( bool t_refresh );
     QString& getDatabaseFile() { return m_database_file; }
     bool isOpen() { return !m_database_file.isEmpty(); }

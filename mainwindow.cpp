@@ -355,6 +355,18 @@ void MainWindow::on_actionOpen_Database_triggered()
     }
 }
 
+void MainWindow::on_actionNew_Database_triggered()
+{
+    QString dbfile = QFileDialog::getSaveFileName(this, tr("Create Project Notes file"), QString(), tr("Project Notes (*.db)"));
+
+    if (!dbfile.isEmpty())
+    {
+        global_DBObjects.createDatabase(dbfile);
+        openDatabase(dbfile);
+    }
+}
+
+
 void MainWindow::openDatabase(QString t_dbfile)
 {
     if (!global_DBObjects.openDatabase(t_dbfile))
