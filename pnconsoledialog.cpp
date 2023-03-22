@@ -1,6 +1,8 @@
 #include "pnconsoledialog.h"
 #include "ui_pnconsoledialog.h"
 
+#include "pnpluginmanager.h"
+
 PNConsoleDialog::PNConsoleDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::PNConsoleDialog)
@@ -8,9 +10,13 @@ PNConsoleDialog::PNConsoleDialog(QWidget *parent) :
     ui->setupUi(this);
 
     QPlainTextEdit* pe = ui->ConsolePlainTextEdit;
+    stdout_write_type outwrite;
 
-    m_write = [pe] (std::string s) { pe->setPlainText( pe->toPlainText() + QString::fromStdString(s)); };
-    set_stdout(m_write);
+    outwrite = [pe] (std::string s)
+    {
+        pe->setPlainText( pe->toPlainText() + QString::fromStdString(s));
+    };
+    set_stdout(outwrite);
 
 }
 

@@ -1,7 +1,10 @@
 #ifndef PNPLUGINMANAGER_H
 #define PNPLUGINMANAGER_H
 
+#include "pnconsoledialog.h"
 #include "pnplugin.h"
+
+#include <QMenu>
 
 typedef std::function<void(std::string)> stdout_write_type;
 void set_stdout(stdout_write_type write);
@@ -10,7 +13,7 @@ void reset_stdout();
 class PNPluginManager
 {
 public:
-    PNPluginManager();
+    PNPluginManager(QWidget* t_parent);
     ~PNPluginManager();
 
     QList<PNPlugin*> findStartupEvents();
@@ -24,9 +27,11 @@ public:
 
     QList<PNPlugin*> findDataRightClickEvents(const QString& t_tablename);
     QList<PNPlugin*> getPlugins() { return m_PNPlugins;};
+    PNConsoleDialog* getConsoleDialg() { return m_console_dialog; }
 
 private:
     QList<PNPlugin*> m_PNPlugins;
+    PNConsoleDialog* m_console_dialog = nullptr;
 };
 
 #endif // PNPLUGINMANAGER_H

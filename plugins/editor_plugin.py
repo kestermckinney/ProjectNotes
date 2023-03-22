@@ -1,127 +1,136 @@
-from includes.common import ProjectNotesCommon
-from includes.excel_tools import ProjectNotesExcelTools
-
-from PySide6 import QtSql, QtGui, QtCore, QtUiTools
-from PySide6.QtSql import QSqlDatabase
-from PySide6.QtXml import QDomDocument, QDomNode
-from PySide6.QtCore import QFile, QIODevice, QDateTime, QUrl
-from PySide6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
-from PySide6.QtGui import QDesktopServices
 import sys
-import win32com
+import platform
+
+print(sys.path)
+
+#if (platform.system() == 'Windows'):
+#    from includes.excel_tools import ProjectNotesExcelTools
+#    import win32com
+
+import importlib.machinery
+print(importlib.machinery.all_suffixes())
+
+from includes.common import ProjectNotesCommon
+from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
+from PyQt5.QtSql import QSqlDatabase
+from PyQt5.QtXml import QDomDocument, QDomNode
+from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
+from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
+from PyQt5.QtGui import QDesktopServices
+
 
 # Project Notes Plugin Parameters
-pluginname = "Open Editor"
-plugindescription = "Open the specified editor."
+pluginname = "Open Editor" # name used in the menu
+plugindescription = "Open the specified editor. Supported platforms: Windows, Linux, MacOS"
+plugintable = "" # the table or view that the plugin applies to.  This will enable the right click
+childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
 # events must have a data structure and data view specified
 #
 # Structures:
-#      disabled        The event will not be enabled
-#      wxxmldocument   The event will pass a wxLua wx.wxXmlDocument containing the spedified data view and expect the plugin to return a wx.wxXmlDocument
-#      string          The event will pass a wxLua string containing XML and will expect the plugin to return an XML string
-#      nodata          The event will pass a wxLua None and will expect the plugin to return an XML string
-#
-# all tables in the database have corresponding import/export data views the views are prefixed by ix_
+#      string          The event will pass a python string containing XML and will expect the plugin to return an XML string
 #
 # Data Views:
-#      ix_clients
-#      ix_people
-#      ix_projects
-#      ix_project_people
-#      ix_status_report_items
-#      ix_project_locations
-#      ix_project_notes
-#      ix_meeting_attendees
-#      ix_item_tracker_updates
-#      ix_item_tracker
+#      clients
+#      people
+#      projects
+#      project_people
+#      status_report_items
+#      project_locations
+#      project_notes
+#      meeting_attendees
+#      item_tracker_updates
+#      item_tracker
 
-# Active Events
-Startup="disabled"
-Shutdown="disabled"
-EveryMinute="disabled"
-Every5Minutes="disabled"
-Every10Minutes="disabled"
-Every30Minutes="disabled"
-PluginMenuClick="nodata"
-RightClickProject="disabled"
-RightClickPeople="disabled"
-RightClickClient="disabled"
-RightClickStatusReportItem="disabled"
-RightClickLocationItem="disabled"
-RightClickTeamMember="disabled"
-RightClickMeeting="disabled"
-RightClickAttendee="disabled"
-RightCickTrackerItem="disabled"
+# Supported Events
+
+# def event_startup(xmlstr):
+#     return ""
+#
+# def event_shutdown(xmlstr):
+#     return ""
+#
+# def event_everyminute(xmlstr):
+#     return ""
+#
+# def event_every5minutes(xmlstr):
+#     return ""
+#
+# def event_every10minutes(xmlstr):
+#     return ""
+#
+# def event_every30Mmnutes(xmlstr):
+#     return ""
+#
+# def event_menuclick(xmlstr):
+#     return ""
 
 # Parameters specified here will show in the Project Notes plugin settings window
 # the global variable name must be specified as a string value to be read by project notes
 # Project Notes will set these values before calling any defs
 
 # Project Notes Parameters
-parameters = {
+parameters = [
     "EditorFullPath"
-}
+]
 
 pnc = ProjectNotesCommon()
 
 # Project Notes Plugin Events
-def event_startup(xmlstr):
+"""
+def event_startup():
     return None
 
-def event_shutdown(xmlstr):
+def event_shutdown():
     return None
 
-def event_everyminute(xmlstr):
+def event_everyminute():
     return None
 
-def event_every5minutes(xmlstr):
+def event_every5minutes():
     return None
 
-def event_every10minutes(xmlstr):
+def event_every10minutes():
     return None
 
-def event_every30Mmnutes(xmlstr):
+def event_every30Mmnutes():
     return None
-
+"""
 def event_menuclick(xmlstr):
+    xmlval = QDomDocument()
+    if (xmlval.setContent(xmlstr) == False):
+        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+        return ""
+
+    print(xmlstr);
+        
     if (EditorFullPath is None or EditorFullPath == ""):
         QMessageBox.critical(None, "Editor Not Specified",
         "You will need to specify an editor in the Open Editor plugin settings.",
         QMessageBox.Cancel)
     else:
         pnc.exec_program( EditorFullPath )
-    return None
+    return ""
 
-def event_projectrightclick(xmlstr):
-    return None
+"""
+def event_data_rightclick(xmlstr):
+    print("data right click")
+    print("python val ", xmlstr)
+    QMessageBox.critical(None, "Param", EditorFullPath, QMessageBox.Cancel)
 
-def event_peoplerightclick(xmlstr):
-    return None
+    QMessageBox.critical(None, "String Output Test", "example" + xmlstr, QMessageBox.Cancel)
 
-def event_clientrightclick(xmlstr):
-    return None
 
-def event_statusreportitemrightclick(xmlstr):
-    return None
+    #dom = QDomDocument()
+    #dom.setContent(xmlstr)
 
-def event_teammemberrightclick(xmlstr):
-    return None
+    #print(dom.toString())
 
-def event_locationitemrightclick(xmlstr):
-    return None
-
-def event_meetingrightclick(xmlstr):
-    return None
-
-def event_attendeerightclick(xmlstr):
-    return None
-
-def event_trackeritemrightclick(xmlstr):
-    return None
+    return "<html/>"
+"""
 
 """
 print("Testing Plugin")
 EditorFullPath = "notepad.exe"
-event_menuclick(None)
+event_menuclick("")
 """

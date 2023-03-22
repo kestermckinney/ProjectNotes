@@ -1,217 +1,181 @@
-from includes.common import ProjectNotesCommon
-from includes.excel_tools import ProjectNotesExcelTools
 
-from PySide6 import QtSql, QtGui, QtCore, QtUiTools
-from PySide6.QtSql import QSqlDatabase
-from PySide6.QtXml import QDomDocument, QDomNode
-from PySide6.QtCore import QFile, QIODevice, QDateTime, QUrl
-from PySide6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
-from PySide6.QtGui import QDesktopServices
-import sys
-import win32com
+import platform
+
+if (platform.system() == 'Windows'):
+    from includes.excel_tools import ProjectNotesExcelTools
+    import win32com
+
+from includes.common import ProjectNotesCommon
+from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
+from PyQt5.QtSql import QSqlDatabase
+from PyQt5.QtXml import QDomDocument, QDomNode
+from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
+from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
+from PyQt5.QtGui import QDesktopServices
+
 
 # Project Notes Plugin Parameters
 pluginname = "Export Outlook Contact(s)"
 plugindescription = "Import Outlook contacts and assocated companies."
+plugintable = "people" # the table or view that the plugin applies to.  This will enable the right click
+childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
 # events must have a data structure and data view specified
 #
 # Structures:
-#      disabled        The event will not be enabled
-#      wxxmldocument   The event will pass a wxLua wx.wxXmlDocument containing the spedified data view and expect the plugin to return a wx.wxXmlDocument
-#      string          The event will pass a wxLua string containing XML and will expect the plugin to return an XML string
-#      nodata          The event will pass a wxLua None and will expect the plugin to return an XML string
-#
-# all tables in the database have corresponding import/export data views the views are prefixed by ix_
+#      string          The event will pass a python string containing XML and will expect the plugin to return an XML string
 #
 # Data Views:
-#      ix_clients
-#      ix_people
-#      ix_projects
-#      ix_project_people
-#      ix_status_report_items
-#      ix_project_locations
-#      ix_project_notes
-#      ix_meeting_attendees
-#      ix_item_tracker_updates
-#      ix_item_tracker
+#      clients
+#      people
+#      projects
+#      project_people
+#      status_report_items
+#      project_locations
+#      project_notes
+#      meeting_attendees
+#      item_tracker_updates
+#      item_tracker
 
-# Active Events
-Startup="disabled"
-Shutdown="disabled"
-EveryMinute="disabled"
-Every5Minutes="disabled"
-Every10Minutes="disabled"
-Every30Minutes="disabled"
-PluginMenuClick="wxxmldocument:ix_people"
-RightClickProject="disabled"
-RightClickPeople="wxxmldocument:ix_people"
-RightClickClient="disabled"
-RightClickStatusReportItem="disabled"
-RightClickLocationItem="disabled"
-RightClickTeamMember="disabled"
-RightClickMeeting="disabled"
-RightClickAttendee="disabled"
-RightCickTrackerItem="disabled"
+# Supported Events
+
+# def event_startup(xmlstr):
+#     return ""
+#
+# def event_shutdown(xmlstr):
+#     return ""
+#
+# def event_everyminute(xmlstr):
+#     return ""
+#
+# def event_every5minutes(xmlstr):
+#     return ""
+#
+# def event_every10minutes(xmlstr):
+#     return ""
+#
+# def event_every30Mmnutes(xmlstr):
+#     return ""
+#
+# def event_menuclick(xmlstr):
+#     return ""
 
 # Parameters specified here will show in the Project Notes plugin settings window
 # the global variable name must be specified as a string value to be read by project notes
-# Project Notes will set these values before calling any functions
+# Project Notes will set these values before calling any defs
 
 # Project Notes Parameters
-parameters = {
-}
+parameters = [
+]
 
 OracleUsername = ""
 ProjectsFolder = ""
 
-pnc = ProjectNotesCommon()
-pne = ProjectNotesExcelTools()
+# this plugin is only supported on windows
+if (platform.system() == 'Windows'):
+    pnc = ProjectNotesCommon()
+    pne = ProjectNotesExcelTools()
 
-def find_contact( outlook, fullname ):
-    mapi  = outlook.GetNamespace("MAPI")
-    contactsfold = mapi.GetDefaultFolder(10) # olFolderContacts
+    def find_contact( outlook, fullname ):
+        mapi  = outlook.GetNamespace("MAPI")
+        contactsfold = mapi.GetDefaultFolder(10) # olFolderContacts
 
-    cont_enum = contactsfold.Items
-    for contact in cont_enum:
-        try:
-            if contact.FullName.strip().upper() == fullname.strip().upper():
-                mapi = None
-                contactsfold = None
-                cont_enum = None
-                print("found: " + contact.FullName)
-                return contact
-        except:
-            print("Group Name Found")
+        cont_enum = contactsfold.Items
+        for contact in cont_enum:
+            try:
+                if contact.FullName.strip().upper() == fullname.strip().upper():
+                    mapi = None
+                    contactsfold = None
+                    cont_enum = None
+                    print("found: " + contact.FullName)
+                    return contact
+            except:
+                print("Group Name Found")
 
-    mapi = None
-    contactsfold = None
-    cont_enum = None
+        mapi = None
+        contactsfold = None
+        cont_enum = None
 
-    return None
+        return None
 
-# processing main function
-def main_process( xmlval ):
-    outlook = win32com.client.Dispatch("Outlook.Application")
-    mapi = outlook.GetNamespace("MAPI")
-    contactsfold = mapi.GetDefaultFolder(10) # olFolderContacts
+    # processing main function
+    def event_menuclick(xmlstr):
+        xmlval = QDomDocument()
+        if (xmlval.setContent(xmlstr) == False):
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+            return ""
 
+        outlook = win32com.client.Dispatch("Outlook.Application")
+        mapi = outlook.GetNamespace("MAPI")
+        contactsfold = mapi.GetDefaultFolder(10) # olFolderContacts
 
-    xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
-    childnode = xmlroot.firstChild()
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
+        childnode = xmlroot.firstChild()
 
-    while not childnode.isNull():
-        if childnode.attributes().namedItem("name").nodeValue() == "ix_people":
-            rownode = childnode.firstChild()
+        while not childnode.isNull():
+            if childnode.attributes().namedItem("name").nodeValue() == "people":
+                rownode = childnode.firstChild()
 
-            while not rownode.isNull():
-                colnode = rownode.firstChild()
+                while not rownode.isNull():
+                    colnode = rownode.firstChild()
 
-                fullname = None
-                company = None
-                workphone = None
-                workemail = None
-                cellphone = None
-                jobtitle = None
+                    fullname = None
+                    company = None
+                    workphone = None
+                    workemail = None
+                    cellphone = None
+                    jobtitle = None
 
-                while not colnode.isNull():
-                    #textnode = colnode.firstChild()
-                    content = colnode.toElement().text()
-                    #print(content)
+                    while not colnode.isNull():
+                        #textnode = colnode.firstChild()
+                        content = colnode.toElement().text()
+                        #print(content)
 
-                    if colnode.attributes().namedItem("name").nodeValue() == "name":
-                        fullname = content
+                        if colnode.attributes().namedItem("name").nodeValue() == "name":
+                            fullname = content
 
-                    if colnode.attributes().namedItem("name").nodeValue() == "email":
-                        workemail = content
+                        if colnode.attributes().namedItem("name").nodeValue() == "email":
+                            workemail = content
 
-                    if colnode.attributes().namedItem("name").nodeValue() == "office_phone":
-                        workphone = content
+                        if colnode.attributes().namedItem("name").nodeValue() == "office_phone":
+                            workphone = content
 
-                    if colnode.attributes().namedItem("name").nodeValue() == "cell_phone":
-                        cellphone = content
+                        if colnode.attributes().namedItem("name").nodeValue() == "cell_phone":
+                            cellphone = content
 
-                    if colnode.attributes().namedItem("name").nodeValue() == "client_id":
-                        company = colnode.attributes().namedItem("lookupvalue").nodeValue()
+                        if colnode.attributes().namedItem("name").nodeValue() == "client_id":
+                            company = colnode.attributes().namedItem("lookupvalue").nodeValue()
 
-                    if colnode.attributes().namedItem("name").nodeValue() == "role":
-                        jobtitle = content
+                        if colnode.attributes().namedItem("name").nodeValue() == "role":
+                            jobtitle = content
 
-                    colnode = colnode.nextSibling()
+                        colnode = colnode.nextSibling()
 
-                #print(fullname)
+                    #print(fullname)
 
-                searchname = find_contact(outlook, fullname)
+                    searchname = find_contact(outlook, fullname)
 
-                if searchname == None:
-                    searchname = contactsfold.Items.Add()
+                    if searchname == None:
+                        searchname = contactsfold.Items.Add()
 
-                searchname.FullName = fullname
-                searchname.CompanyName = company
-                searchname.BusinessTelephoneNumber = workphone
-                searchname.MobileTelephoneNumber = cellphone
-                searchname.Email1Address = workemail
-                searchname.JobTitle = jobtitle
-                searchname.Save()
+                    searchname.FullName = fullname
+                    searchname.CompanyName = company
+                    searchname.BusinessTelephoneNumber = workphone
+                    searchname.MobileTelephoneNumber = cellphone
+                    searchname.Email1Address = workemail
+                    searchname.JobTitle = jobtitle
+                    searchname.Save()
 
-                rownode = rownode.nextSibling()
+                    rownode = rownode.nextSibling()
 
-        childnode = childnode.nextSibling()
+            childnode = childnode.nextSibling()
 
-    outlook = None
-    mapi = None
-    contactsfold = None
+        outlook = None
+        mapi = None
+        contactsfold = None
 
-    return xmldoc
+        return xmldoc
 
-# Project Notes Plugin Events
-def event_startup(xmlstr):
-    return main_process(xmlstr)
-
-def event_shutdown(xmlstr):
-    return main_process(xmlstr)
-
-def event_everyminute(xmlstr):
-    return main_process(xmlstr)
-
-def event_every5minutes(xmlstr):
-    return main_process(xmlstr)
-
-def event_every10minutes(xmlstr):
-    return main_process(xmlstr)
-
-def event_every30Mmnutes(xmlstr):
-    return main_process(xmlstr)
-
-def event_menuclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_projectrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_peoplerightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_clientrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_statusreportitemrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_teammemberrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_locationitemrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_meetingrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_attendeerightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_trackeritemrightclick(xmlstr):
-    return main_process(xmlstr)
 
 # setup test data
 """

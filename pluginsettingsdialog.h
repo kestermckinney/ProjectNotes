@@ -34,6 +34,7 @@ private:
     Ui::PluginSettingsDialog *ui;
 
     bool m_loading = false; // loading values don't respond to events
+    PNPlugin* m_current_selection = nullptr;
     PNPluginManager* m_plugin_manager = nullptr;
 };
 

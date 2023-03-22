@@ -17,7 +17,6 @@ QT_END_NAMESPACE
 #include "preferencesdialog.h"
 #include "spellcheckdialog.h"
 #include "findreplacedialog.h"
-#include "pnconsoledialog.h"
 #include "pnpluginmanager.h"
 #include "pluginsettingsdialog.h"
 
@@ -40,6 +39,7 @@ public:
     bool navigateAtStart() { return (m_navigation_location <= 0); }
     void navigateClearHistory() { m_navigation_location = -1; m_navigation_history.clear(); }
     PNBasePage* navigateCurrentPage() { return (m_navigation_location == -1 ? nullptr : m_navigation_history.at(m_navigation_location) ); }
+    static PNPluginManager* getPluginManager() { return m_plugin_manager; }
 
 public slots:
     void on_actionOpen_ProjectDetails_triggered();
@@ -93,6 +93,9 @@ private slots:
     void on_actionPlugin_Settings_triggered();
     void on_actionView_Console_triggered();
     void on_actionXML_Import_triggered();
+    void on_actionXML_Export_triggered();
+
+    void slotPluginMenu(PNPlugin* t_plugin);
 
 private:
     Ui::MainWindow *ui;   
@@ -100,8 +103,7 @@ private:
     PreferencesDialog* m_preferences_dialog = nullptr;
     SpellCheckDialog* m_spellcheck_dialog = nullptr;
     FindReplaceDialog* m_find_replace_dialog = nullptr;
-    PNPluginManager* m_plugin_manager = nullptr;
-    PNConsoleDialog* m_console_dialog = nullptr;
+    static PNPluginManager* m_plugin_manager;
     PluginSettingsDialog* m_plugin_settings_dialog = nullptr;
 
     // view state
@@ -149,5 +151,6 @@ private:
     QComboBox* m_combo_box_font;
     QComboBox* m_combo_box_size;
 };
+
 
 #endif // MAINWINDOW_H

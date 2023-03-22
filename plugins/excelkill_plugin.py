@@ -1,119 +1,81 @@
+
+import platform
+
+if (platform.system() == 'Windows'):
+    from includes.excel_tools import ProjectNotesExcelTools
+    import win32com
+    from win32com.client import GetObject
+
 from includes.common import ProjectNotesCommon
-from includes.excel_tools import ProjectNotesExcelTools
+from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
+from PyQt5.QtSql import QSqlDatabase
+from PyQt5.QtXml import QDomDocument, QDomNode
+from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
+from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
+from PyQt5.QtGui import QDesktopServices
 
-from win32com.client import GetObject
-import win32com
-
-# TODO: check for successful connection and respond
-# TODO: add error when not running in Windows_NT
 
 # Project Notes Plugin Parameters
 pluginname = "Close Stranded Excel"
 plugindescription = "Closes all of the abandon Excel automation object processes."
+plugintable = "" # the table or view that the plugin applies to.  This will enable the right click
+childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
 # events must have a data structure and data view specified
 #
 # Structures:
-#      disabled        The event will not be enabled
-#      wxxmldocument   The event will pass a wxLua wx.wxXmlDocument containing the spedified data view and expect the plugin to return a wx.wxXmlDocument
-#      string          The event will pass a wxLua string containing XML and will expect the plugin to return an XML string
-#      nodata          The event will pass a wxLua None and will expect the plugin to return an XML string
-#
-# all tables in the database have corresponding import/export data views the views are prefixed by ix_
+#      string          The event will pass a python string containing XML and will expect the plugin to return an XML string
 #
 # Data Views:
-#      ix_clients
-#      ix_people
-#      ix_projects
-#      ix_project_people
-#      ix_status_report_items
-#      ix_project_locations
-#      ix_project_notes
-#      ix_meeting_attendees
-#      ix_item_tracker_updates
-#      ix_item_tracker
+#      clients
+#      people
+#      projects
+#      project_people
+#      status_report_items
+#      project_locations
+#      project_notes
+#      meeting_attendees
+#      item_tracker_updates
+#      item_tracker
+
+# Supported Events
+
+# def event_startup(xmlstr):
+#     return ""
+#
+# def event_shutdown(xmlstr):
+#     return ""
+#
+# def event_everyminute(xmlstr):
+#     return ""
+#
+# def event_every5minutes(xmlstr):
+#     return ""
+#
+# def event_every10minutes(xmlstr):
+#     return ""
+#
+# def event_every30Mmnutes(xmlstr):
+#     return ""
+#
+# def event_menuclick(xmlstr):
+#     return ""
 
 # Parameters specified here will show in the Project Notes plugin settings window
 # the global variable name must be specified as a string value to be read by project notes
 # Project Notes will set these values before calling any defs
 
-# Active Events
-Startup="disabled"
-Shutdown="disabled"
-EveryMinute="disabled"
-Every5Minutes="disabled"
-Every10Minutes="disabled"
-Every30Minutes="disabled"
-PluginMenuClick="nodata"
-RightClickProject="disabled"
-RightClickPeople="disabled"
-RightClickClient="disabled"
-RightClickStatusReportItem="disabled"
-RightClickLocationItem="disabled"
-RightClickTeamMember="disabled"
-RightClickMeeting="disabled"
-RightClickAttendee="disabled"
-RightCickTrackerItem="disabled"
-
 # Project Notes Parameters
-parameters = {
-}
+parameters = [
+]
 
-pne = ProjectNotesExcelTools()
+# this plugin is only supported on windows
+if (platform.system() == 'Windows'):
+    pne = ProjectNotesExcelTools()
 
-def main_process(xmlstr):
-    pne.killexcelautomation()
-    return None
-
-
-# Project Notes Plugin Events
-def event_startup(xmlstr):
-    return main_process(xmlstr)
-
-def event_shutdown(xmlstr):
-    return main_process(xmlstr)
-
-def event_everyminute(xmlstr):
-    return main_process(xmlstr)
-
-def event_every5minutes(xmlstr):
-    return main_process(xmlstr)
-
-def event_every10minutes(xmlstr):
-    return main_process(xmlstr)
-
-def event_every30Mmnutes(xmlstr):
-    return main_process(xmlstr)
-
-def event_menuclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_projectrightclick(xmlstr):
-    return main_process_project(xmlstr)
-
-def event_peoplerightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_clientrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_statusreportitemrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_teammemberrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_locationitemrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_meetingrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_attendeerightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_trackeritemrightclick(xmlstr):
-    return main_process(xmlstr)
+    def event_menuclick(xmlstr):
+        pne.killexcelautomation()
+        return ""
 
 # call when testing outside of Project Notes
 #print("Kill Excel Automations")

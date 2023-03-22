@@ -1,201 +1,165 @@
-from includes.common import ProjectNotesCommon
-from includes.excel_tools import ProjectNotesExcelTools
 
-from PySide6 import QtSql, QtGui, QtCore, QtUiTools
-from PySide6.QtSql import QSqlDatabase
-from PySide6.QtXml import QDomDocument, QDomNode
-from PySide6.QtCore import QFile, QIODevice, QDateTime, QUrl, QDir, QFileInfo
-from PySide6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog, QInputDialog
-from PySide6.QtGui import QDesktopServices
-import sys
-import win32com
+import platform
+
+if (platform.system() == 'Windows'):
+    from includes.excel_tools import ProjectNotesExcelTools
+    import win32com
+
+from includes.common import ProjectNotesCommon
+from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
+from PyQt5.QtSql import QSqlDatabase
+from PyQt5.QtXml import QDomDocument, QDomNode
+from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
+from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
+from PyQt5.QtGui import QDesktopServices
+
 
 # Project Notes Plugin Parameters
 pluginname = "Send Meeting Notes"
 plugindescription = "Using Outlook sends meeting notes out for the selected meeting."
+plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
+childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
 # events must have a data structure and data view specified
 #
 # Structures:
-#      disabled        The event will not be enabled
-#      wxxmldocument   The event will pass a wxLua wx.wxXmlDocument containing the spedified data view and expect the plugin to return a wx.wxXmlDocument
-#      string          The event will pass a wxLua string containing XML and will expect the plugin to return an XML string
-#      nodata          The event will pass a wxLua None and will expect the plugin to return an XML string
-#
-# all tables in the database have corresponding import/export data views the views are prefixed by ix_
+#      string          The event will pass a python string containing XML and will expect the plugin to return an XML string
 #
 # Data Views:
-#      ix_clients
-#      ix_people
-#      ix_projects
-#      ix_project_people
-#      ix_status_report_items
-#      ix_project_locations
-#      ix_project_notes
-#      ix_meeting_attendees
-#      ix_item_tracker_updates
-#      ix_item_tracker
+#      clients
+#      people
+#      projects
+#      project_people
+#      status_report_items
+#      project_locations
+#      project_notes
+#      meeting_attendees
+#      item_tracker_updates
+#      item_tracker
 
-# Active Events
-Startup="disabled"
-Shutdown="disabled"
-EveryMinute="disabled"
-Every5Minutes="disabled"
-Every10Minutes="disabled"
-Every30Minutes="disabled"
-PluginMenuClick="disabled"
-RightClickProject="disabled"
-RightClickPeople="disabled"
-RightClickClient="disabled"
-RightClickStatusReportItem="disabled"
-RightClickLocationItem="disabled"
-RightClickTeamMember="disabled"
-RightClickMeeting="wxxmldocument:ix_project_notes"
-RightClickAttendee="disabled"
-RightCickTrackerItem="disabled"
+# Supported Events
+
+# def event_startup(xmlstr):
+#     return ""
+#
+# def event_shutdown(xmlstr):
+#     return ""
+#
+# def event_everyminute(xmlstr):
+#     return ""
+#
+# def event_every5minutes(xmlstr):
+#     return ""
+#
+# def event_every10minutes(xmlstr):
+#     return ""
+#
+# def event_every30Mmnutes(xmlstr):
+#     return ""
+#
+# def event_menuclick(xmlstr):
+#     return ""
 
 # Parameters specified here will show in the Project Notes plugin settings window
 # the global variable name must be specified as a string value to be read by project notes
 # Project Notes will set these values before calling any defs
 
 # Project Notes Parameters
-parameters = {
-}
+parameters = [
+]
 
-pnc = ProjectNotesCommon()
-pne = ProjectNotesExcelTools()
+# this plugin is only supported on windows
+if (platform.system() == 'Windows'):
+    pnc = ProjectNotesCommon()
+    pne = ProjectNotesExcelTools()
 
-# processing main def
-def main_process( xmlval ):
-    outlook = win32com.client.Dispatch("Outlook.Application")
-    message = outlook.CreateItem(0)
-    message.To = ""
+    def event_data_rightclick(xmlstr):
+        xmlval = QDomDocument()
+        if (xmlval.setContent(xmlstr) == False):
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+            return ""
+ 
+        outlook = win32com.client.Dispatch("Outlook.Application")
+        message = outlook.CreateItem(0)
+        message.To = ""
 
-    xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
-    htmlbody = ""
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
+        htmlbody = ""
 
-    childnode = xmlroot.firstChild()
-    pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
-    email = None
-    nm = None
+        childnode = xmlroot.firstChild()
+        pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
+        email = None
+        nm = None
 
-    while not childnode.isNull():
+        while not childnode.isNull():
 
-        if childnode.attributes().namedItem("name").nodeValue() == "ix_project_notes":
-            rownode = childnode.firstChild()
+            if childnode.attributes().namedItem("name").nodeValue() == "ix_project_notes":
+                rownode = childnode.firstChild()
 
-            while not rownode.isNull():
-                htmlbody = htmlbody + get_html_header(pnc.get_column_value(rownode, "project_id"),
-                pnc.get_column_value(rownode, "project_id_name"),
-                pnc.get_column_value(rownode, "note_date"),
-                pnc.get_column_value(rownode, "note_title"))
+                while not rownode.isNull():
+                    htmlbody = htmlbody + get_html_header(pnc.get_column_value(rownode, "project_id"),
+                    pnc.get_column_value(rownode, "project_id_name"),
+                    pnc.get_column_value(rownode, "note_date"),
+                    pnc.get_column_value(rownode, "note_title"))
 
-                attendeetable = pnc.find_node(rownode, "table", "name", "ix_meeting_attendees")
-                if attendeetable:
-                    attendeerow = attendeetable.firstChild()
+                    attendeetable = pnc.find_node(rownode, "table", "name", "ix_meeting_attendees")
+                    if attendeetable:
+                        attendeerow = attendeetable.firstChild()
 
-                    attendeelist = ""
-                    while not attendeerow.isNull():
-                        if attendeelist != "":
-                            attendeelist = attendeelist + ", "
+                        attendeelist = ""
+                        while not attendeerow.isNull():
+                            if attendeelist != "":
+                                attendeelist = attendeelist + ", "
 
-                        attendeelist = attendeelist + pnc.get_column_value(attendeerow, "name")
+                            attendeelist = attendeelist + pnc.get_column_value(attendeerow, "name")
 
-                        nm = pnc.get_column_value(attendeerow, "name")
-                        email = pnc.get_column_value(attendeerow, "email")
+                            nm = pnc.get_column_value(attendeerow, "name")
+                            email = pnc.get_column_value(attendeerow, "email")
 
-                        if nm != pm:
-                            if (email != None and email != ""):
-                                message.Recipients.Add(email)
+                            if nm != pm:
+                                if (email != None and email != ""):
+                                    message.Recipients.Add(email)
 
-                        attendeerow = attendeerow.nextSibling()
+                            attendeerow = attendeerow.nextSibling()
 
 
-                htmlbody = htmlbody + get_html_attendee(attendeelist)
-                htmlbody = htmlbody + get_html_notes(pnc.get_column_value(rownode, "note"))
-                htmlbody = htmlbody + get_html_trackerheader()
+                    htmlbody = htmlbody + get_html_attendee(attendeelist)
+                    htmlbody = htmlbody + get_html_notes(pnc.get_column_value(rownode, "note"))
+                    htmlbody = htmlbody + get_html_trackerheader()
 
-                trackertable = pnc.find_node(rownode, "table", "name", "ix_item_tracker")
-                if trackertable:
-                    trackerrow = trackertable.firstChild()
+                    trackertable = pnc.find_node(rownode, "table", "name", "ix_item_tracker")
+                    if trackertable:
+                        trackerrow = trackertable.firstChild()
 
-                    while not trackerrow.isNull():
-                        htmlbody = htmlbody + get_html_trackerrow(
-                        pnc.get_column_value(trackerrow, "item_name"),
-                        pnc.get_column_value(trackerrow, "assigned_to"),
-                        pnc.get_column_value(trackerrow, "status"),
-                        pnc.get_column_value(trackerrow, "date_due") )
+                        while not trackerrow.isNull():
+                            htmlbody = htmlbody + get_html_trackerrow(
+                            pnc.get_column_value(trackerrow, "item_name"),
+                            pnc.get_column_value(trackerrow, "assigned_to"),
+                            pnc.get_column_value(trackerrow, "status"),
+                            pnc.get_column_value(trackerrow, "date_due") )
 
-                        trackerrow = trackerrow.nextSibling()
+                            trackerrow = trackerrow.nextSibling()
 
-                htmlbody = htmlbody + get_html_footer()
+                    htmlbody = htmlbody + get_html_footer()
 
-                message.Display()
-                outlook.ActiveExplorer().Activate()
+                    message.Display()
+                    outlook.ActiveExplorer().Activate()
 
-                DefaultSignature = message.HTMLBody
+                    DefaultSignature = message.HTMLBody
 
-                message.Subject = pnc.get_column_value(rownode, "project_id") + " " + pnc.get_column_value(rownode, "project_id_name") + " - " + pnc.get_column_value(rownode, "note_date") + " " + pnc.get_column_value(rownode, "note_title") + " Notes"
-                message.BodyFormat = 2 # olFormatHTML
-                message.HTMLBody = htmlbody + DefaultSignature
+                    message.Subject = pnc.get_column_value(rownode, "project_id") + " " + pnc.get_column_value(rownode, "project_id_name") + " - " + pnc.get_column_value(rownode, "note_date") + " " + pnc.get_column_value(rownode, "note_title") + " Notes"
+                    message.BodyFormat = 2 # olFormatHTML
+                    message.HTMLBody = htmlbody + DefaultSignature
 
-                rownode = rownode.nextSibling()
+                    rownode = rownode.nextSibling()
 
-        childnode = childnode.nextSibling()
+            childnode = childnode.nextSibling()
 
-    outlook = None
-    message = None
+        outlook = None
+        message = None
 
-    return xmldoc
+        return xmldoc
 
-# Project Notes Plugin Events
-def event_startup(xmlstr):
-    return main_process(xmlstr)
-
-def event_shutdown(xmlstr):
-    return main_process(xmlstr)
-
-def event_everyminute(xmlstr):
-    return main_process(xmlstr)
-
-def event_every5minutes(xmlstr):
-    return main_process(xmlstr)
-
-def event_every10minutes(xmlstr):
-    return main_process(xmlstr)
-
-def event_every30Mmnutes(xmlstr):
-    return main_process(xmlstr)
-
-def event_menuclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_projectrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_peoplerightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_clientrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_statusreportitemrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_teammemberrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_locationitemrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_meetingrightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_attendeerightclick(xmlstr):
-    return main_process(xmlstr)
-
-def event_trackeritemrightclick(xmlstr):
-    return main_process(xmlstr)
 
 def get_html_header(projectnumber, projectname, day, title):
     htmldoc ="""

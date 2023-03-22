@@ -12,6 +12,7 @@ public:
     ~PNSettings();
 
     QVariant getPluginSetting(const QString& t_plugin_name, const QString& t_parameter_name);
+    void setPluginSetting(const QString& t_plugin_name, const QString& t_parameter_name, const QString& t_parameter_value);
     bool getPluginEnabled(const QString& t_plugin_name);
     void setPluginEnabled(const QString& t_plugin_name, bool t_enabled);
 

@@ -1362,8 +1362,17 @@ int PNSqlQueryModel::getColumnNumber(QString &t_field_name)
     return -1;
 }
 
-QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document )
+QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document, const QString& t_filter )
 {
+    // if there is a filter let's apply it
+    if (!t_filter.isEmpty())
+        if (!t_filter.contains(this->tablename(), Qt::CaseInsensitive))
+            return QDomElement();
+
+    // some data models are just for drop downs
+    if (!isExportable())
+        return QDomElement();
+
     QDomElement xmltable = t_xml_document->createElement("table");
     xmltable.toElement().setAttribute("name", this->tablename());
 
@@ -1423,7 +1432,7 @@ QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document )
                         export_version->setFilter(col, row.value(0).toString());
                         export_version->refresh();
 
-                        QDomElement qd = export_version->toQDomElement( t_xml_document );
+                        QDomElement qd = export_version->toQDomElement( t_xml_document, t_filter );
 
                         qd.setAttribute("filter_field", m_related_column[i]);
                         qd.setAttribute("filter_value", row.value(0).toString());

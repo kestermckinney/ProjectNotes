@@ -3,8 +3,9 @@
 #include <QDir>
 #include <QDirIterator>
 #include <QCoreApplication>
+#include <QMessageBox>
 #include <QDebug>
-
+#include <QStandardPaths>
 
 struct Stdout
 {
@@ -31,6 +32,9 @@ PyObject* Stdout_write(PyObject* self, PyObject* args)
 
 PyObject* Stdout_flush(PyObject* self, PyObject* args)
 {
+    Q_UNUSED(self);
+    Q_UNUSED(args);
+
     // no-op
     return Py_BuildValue("");
 }
@@ -134,9 +138,8 @@ void reset_stdout()
     g_stdout = 0;
 }
 
-
 // initialize PNPlugin engine
-PNPluginManager::PNPluginManager()
+PNPluginManager::PNPluginManager(QWidget* t_parent)
 {
     Py_SetProgramName(L"Project Notes 3");
 
@@ -145,6 +148,7 @@ PNPluginManager::PNPluginManager()
     Py_Initialize();
 
     PyImport_ImportModule("embeddedconsole");
+    m_console_dialog = new PNConsoleDialog(t_parent);
 
     // load PNPlugin modules
     QString fullpath = QCoreApplication::applicationDirPath() + "/plugins/";
@@ -176,6 +180,8 @@ PNPluginManager::~PNPluginManager()
         delete p;
 
     m_PNPlugins.clear();
+
+    delete m_console_dialog;
 
     Py_FinalizeEx();
 }
@@ -297,4 +303,5 @@ QList<PNPlugin*> PNPluginManager::findDataRightClickEvents(const QString& t_tabl
     return list;
 }
 
-
+//TODO: call timed events
+//TODO: call startup and shutdown eventsS

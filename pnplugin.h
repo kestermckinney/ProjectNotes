@@ -5,15 +5,19 @@
 #include <QStringList>
 #include <QDomDocument>
 #include <QFileInfo>
+#include <QObject>
+#include <QAction>
 
 #pragma push_macro("slots")
 #undef slots
+#undef _DEBUG //Prevent linking debug build of python
 #include "Python.h"
 #pragma pop_macro("slots")
 
 
 class PNPlugin
 {
+
 public:
     bool loadModule(const QFileInfo& t_filename);
     ~PNPlugin();
@@ -26,23 +30,26 @@ public:
     bool hasEvery30MinutesEvent() { return (m_Every30Minutes != nullptr);};
     bool hasPNPluginMenuEvent() { return (m_PNPluginMenu != nullptr);};
     bool hasDataRightClickEvent(const QString& t_tablename);
-    void callStartupEvent();
-    void callShutdownEvent();
-    void callEveryMinuteEvent();
-    void callEvery5MinutesEvent();
-    void callEvery10MinutesEvent();
-    void callEvery15MinutesEvent();
-    void callEvery30MinutesEvent();
-    void callPNPluginMenuEvent();
+    void callStartupEvent(const QString& t_xmlstring);
+    void callShutdownEvent(const QString& t_xmlstring);
+    void callEveryMinuteEvent(const QString& t_xmlstring);
+    void callEvery5MinutesEvent(const QString& t_xmlstring);
+    void callEvery10MinutesEvent(const QString& t_xmlstring);
+    void callEvery15MinutesEvent(const QString& t_xmlstring);
+    void callEvery30MinutesEvent(const QString& t_xmlstring);
+    void callPNPluginMenuEvent(const QString& t_xmlstring);
     QString callDataRightClickEvent(const QString& t_xmlstring);
-    QString getPNPluginName() { return m_PNPluginName; };
-    QString getPNPluginDescription() { return m_Description; };
-    bool isEnabled() { return m_IsEnabled; };
-    void setEnabled(bool enable) { m_IsEnabled = enable; };
+    QString getPNPluginName() { return m_PNPluginName; }
+    QString getPNPluginDescription() { return m_Description; }
+    bool isEnabled() { return m_IsEnabled; }
+    void setEnabled(bool enable) { m_IsEnabled = enable; }
 
     QStringList getEventNames();
-    QStringList getParameterNames() { return m_Parameters;};
-    QString getPluginLocation() { return m_PluginLocation;};
+    QStringList getParameterNames() { return m_Parameters;}
+    QString getPluginLocation() { return m_PluginLocation;}
+    QString getTableName() { return m_TableName; }
+    QString getChildTablesFilter() { return m_ChildTablesFilter; }
+
 
 private:
     QString m_PluginLocation;
