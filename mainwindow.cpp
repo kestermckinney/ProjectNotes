@@ -88,7 +88,6 @@ MainWindow::MainWindow(QWidget *t_parent)
     }   
 
     // call all of the startup events
-    // TODO: need to see what happens if no database is open
     for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
     {
         if (p->hasStartupEvent() && p->isEnabled())
@@ -109,6 +108,10 @@ void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
 
     if (!t_plugin->getTableName().isEmpty())
     {
+        // this plugin requires an open database
+        if (!global_DBObjects.isOpen())
+            return;
+
         // determine what table to export
         PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
 
@@ -151,7 +154,6 @@ void MainWindow::slotTimerUpdates()
     m_minute_counter++;
 
     // call all of the startup events
-    // TODO: need to see what happens if no database is open
     for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
     {
         if ( p->isEnabled() &&
@@ -173,6 +175,10 @@ void MainWindow::slotStartupEvent(PNPlugin* t_plugin)
 
     if (!t_plugin->getTableName().isEmpty())
     {
+        // this plugin requires an open database
+        if (!global_DBObjects.isOpen())
+            return;
+
         // determine what table to export
         PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
 
@@ -203,6 +209,10 @@ void MainWindow::slotShutdownEvent(PNPlugin* t_plugin)
 
     if (!t_plugin->getTableName().isEmpty())
     {
+        // this plugin requires an open database
+        if (!global_DBObjects.isOpen())
+            return;
+
         // determine what table to export
         PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
 
@@ -343,7 +353,11 @@ void MainWindow::setButtonAndMenuStates()
 
     ui->actionSearch->setEnabled(dbopen);
 
-    PNTableView* curview = navigateCurrentPage()->getCurrentView();
+
+    PNTableView* curview = nullptr;
+
+    if (navigateCurrentPage())
+        navigateCurrentPage()->getCurrentView();
 
     if (curview)
     {
@@ -564,6 +578,18 @@ void MainWindow::on_actionOpen_Database_triggered()
     }
 }
 
+void MainWindow::on_actionNew_Database_triggered()
+{
+    QString dbfile = QFileDialog::getSaveFileName(this, tr("Create Project Notes file"), QString(), tr("Project Notes (*.db)"));
+
+    if (!dbfile.isEmpty())
+    {
+        global_DBObjects.createDatabase(dbfile);
+        openDatabase(dbfile);
+    }
+}
+
+
 void MainWindow::openDatabase(QString t_dbfile)
 {
     if (!global_DBObjects.openDatabase(t_dbfile))
@@ -652,9 +678,13 @@ void MainWindow::navigateForward()
 }
 
 void MainWindow::on_actionClose_Database_triggered()
-{
+{ 
+    navigateCurrentPage()->setCurrentView(nullptr);
+    navigateClearHistory();
+
     global_Settings.setLastDatabase(QString());
     global_DBObjects.closeDatabase();
+
     setButtonAndMenuStates();
 }
 
@@ -1527,7 +1557,29 @@ void MainWindow::on_actionXML_Export_triggered()
     }
 }
 
+void MainWindow::on_actionBackup_Database_triggered()
+{
+    // choose the file
+    QString dbfile = QFileDialog::getSaveFileName(this, tr("Backup to file"), QString(), tr("Project Notes (*.db)"));
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    QApplication::processEvents();
+
+    if (!dbfile.isEmpty())
+    {
+        global_DBObjects.backupDatabase(dbfile);
+    }
+
+    QApplication::restoreOverrideCursor();
+    QApplication::processEvents();
+
+}
+
 
 // TODO: Add spell checking features for QExpandingLineEdit and QLineEdit
 // TODO: Add find feature for QExpandingLineEdit
 // TODO: Add find features to QComboBox located in a table view
+// TODO: Add licensing information to all files to be included with the software
+// TODO: Determine what information goes in the about screen
+// TODO: Complete Help Menu Items
+// TODO: Create About Dialog

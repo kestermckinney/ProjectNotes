@@ -12,7 +12,7 @@ SpellCheckDialog::SpellCheckDialog(QWidget *parent) :
     ui->setupUi(this);
 
     QSettings spell_settings(QCoreApplication::applicationDirPath() + "/dictionary/index.ini", QSettings::IniFormat);
-qDebug() << QCoreApplication::applicationDirPath();
+    //qDebug() << QCoreApplication::applicationDirPath();
 
     QStringList dictionaries = spell_settings.childGroups();
 
@@ -293,7 +293,7 @@ void SpellCheckDialog::on_pushButtonChange_clicked()
             ui->lineEditChange->setText( ui->listWidgetSuggestions->currentItem()->text() );
     }
 
-    qDebug() << "Set Text: " << ui->lineEditChange->text();
+    //qDebug() << "Set Text: " << ui->lineEditChange->text();
 
     m_return_code = Change;
     accept();
