@@ -17,9 +17,12 @@ QT_END_NAMESPACE
 #include "preferencesdialog.h"
 #include "spellcheckdialog.h"
 #include "findreplacedialog.h"
-#include "pnconsoledialog.h"
 #include "pnpluginmanager.h"
 #include "pluginsettingsdialog.h"
+
+#define PNMajorVersion 3
+#define PNMinorVersion 0
+#define PNFixVersion 0
 
 class MainWindow : public QMainWindow
 {
@@ -50,8 +53,8 @@ public slots:
 private slots:
     void setButtonAndMenuStates();
     void openDatabase(QString t_dbfile);
-
     void on_actionExit_triggered();
+    void on_actionNew_Database_triggered();
     void on_actionOpen_Database_triggered();
     void on_actionClose_Database_triggered();
     void on_actionClosed_Projects_triggered();
@@ -101,7 +104,6 @@ private:
     SpellCheckDialog* m_spellcheck_dialog = nullptr;
     FindReplaceDialog* m_find_replace_dialog = nullptr;
     static PNPluginManager* m_plugin_manager;
-    PNConsoleDialog* m_console_dialog = nullptr;
     PluginSettingsDialog* m_plugin_settings_dialog = nullptr;
 
     // view state

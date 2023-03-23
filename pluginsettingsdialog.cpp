@@ -99,6 +99,9 @@ PluginSettingsDialog::~PluginSettingsDialog()
 
 void PluginSettingsDialog::on_PluginsListWidget_currentItemChanged(QListWidgetItem *current, QListWidgetItem *previous)
 {
+    Q_UNUSED(current);
+    Q_UNUSED(previous);
+
     if (m_loading) return; // loading values ignore events
     if (ui->PluginsListWidget->currentRow() > -1)
         selectPlugin(ui->PluginsListWidget->currentRow());
@@ -107,6 +110,7 @@ void PluginSettingsDialog::on_PluginsListWidget_currentItemChanged(QListWidgetIt
 
 void PluginSettingsDialog::on_EnabledCheckBox_stateChanged(int arg1)
 {
+    Q_UNUSED(arg1);
     if (m_loading) return; // loading values ignore events
 
 

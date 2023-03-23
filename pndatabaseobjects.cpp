@@ -1,4 +1,5 @@
 ﻿#include "pndatabaseobjects.h"
+#include "databasestructure.h"
 
 #include <QUuid>
 #include <QDebug>
@@ -64,6 +65,37 @@ PNDatabaseObjects::PNDatabaseObjects(QObject *parent) : QObject(parent)
     m_database_file.clear();
 }
 
+bool PNDatabaseObjects::createDatabase(QString& t_databasepath)
+{
+    m_database_file = t_databasepath;
+
+    m_sqlite_db = QSqlDatabase::addDatabase("QSQLITE");
+
+    if (!QFileInfo::exists(m_database_file))
+        m_sqlite_db.setDatabaseName(m_database_file);
+    else
+    {
+        QMessageBox::critical(nullptr, QObject::tr("Cannot create database"),
+            QString(tr("File %1 already exists.")).arg(m_database_file), QMessageBox::Cancel);
+        m_database_file.clear(); // set empty if bad file
+        return false;
+    }
+
+    if (!m_sqlite_db.open()) {
+        QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
+            m_sqlite_db.lastError().text(), QMessageBox::Cancel);
+        m_database_file.clear(); // set empty if bad file
+        return false;
+    }
+
+    DatabaseStructure ds;
+    ds.CreateDatabase();
+
+    m_sqlite_db.close();
+
+    return true;
+}
+
 bool PNDatabaseObjects::openDatabase(QString& databasepath)
 {
     m_database_file = databasepath;
@@ -86,6 +118,9 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
         m_database_file.clear(); // set empty if bad file
         return false;
     }
+
+    DatabaseStructure ds;
+    ds.UpgradeDatabase();
 
     m_clients_model = new ClientsModel(nullptr);
     m_clients_model_proxy = new PNSortFilterProxyModel();
@@ -187,6 +222,12 @@ QString PNDatabaseObjects::execute(const QString& t_sql)
 {
     QSqlQuery query;
     query.exec(t_sql);
+
+    QSqlError e = query.lastError();
+    if (e.isValid())
+    {
+        qDebug() << "Exec Error:  " << e.text();
+    }
 
     if (query.next())
         return query.value(0).toString();
@@ -751,12 +792,3 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
 
     return true;
 }
-
-bool PNDatabaseObjects::executeDDL(const QString& /*t_sql*/)
-{
-    // TODO : finish
-
-    return false;
-}
-
-

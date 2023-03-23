@@ -228,4 +228,3 @@ void SearchResultsModel::PerformKeySearch(const QString& t_search_value)
     }
 }
 
-//TODO: Add search query to database updates

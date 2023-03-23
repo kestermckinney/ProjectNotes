@@ -1,9 +1,13 @@
 
+import sys
 import platform
+
+print(sys.path)
 
 if (platform.system() == 'Windows'):
     from includes.excel_tools import ProjectNotesExcelTools
     import win32com
+    from win32 import win32api
 
 from includes.common import ProjectNotesCommon
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
@@ -346,6 +350,6 @@ f.close()
 
 print("Run Test")
 # call when testing outside of Project Notes
-main_process(xmldoc)
+event_data_rightclick(xmldoc.toString())
 """
 #TODO:  Some large XML fields from ProjectNotes 2 break the parser.  For examle an email was pasted into description.  Maybe CDATA tags are needed there.

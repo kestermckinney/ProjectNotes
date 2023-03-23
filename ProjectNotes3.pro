@@ -4,8 +4,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 ICON = AppIcon.icns
 
-CONFIG += c++11
 CONFIG += console
+CONFIG += c++11
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -19,6 +19,7 @@ SOURCES += \
     clientspage.cpp \
     columnview.cpp \
     comboboxdelegate.cpp \
+    databasestructure.cpp \
     filterdatadialog.cpp \
     findreplacedialog.cpp \
     itemdetailsdelegate.cpp \
@@ -88,6 +89,7 @@ HEADERS += \
     clientspage.h \
     columnview.h \
     comboboxdelegate.h \
+    databasestructure.h \
     filterdatadialog.h \
     findreplacedialog.h \
     itemdetailsdelegate.h \
@@ -188,12 +190,14 @@ unix {
 
 win32 {
    DEFINES +=   WIN32 \
-                _DEBUG \
+#                _DEBUG \
                 _WINDOWS \
                 _USRDLL \
                 HUNSPELL_STATIC \
                 _CRT_SECURE_NO_WARNINGS
 
    INCLUDEPATH += "C:/Users/Paul McKinney/Documents/hunspell/src"
-   LIBS += "C:/Users/Paul McKinney/Documents/hunspell/msvc/x64/Debug/libhunspell.lib"
+   INCLUDEPATH +="C:/Program Files/Python311/include"
+   LIBS += "C:\Users\Paul McKinney\Documents\hunspell\msvc\x64\Debug/libhunspell.lib"
+   LIBS += "C:/Program Files/Python311/libs/python311.lib"
 }

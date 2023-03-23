@@ -15,41 +15,50 @@ bool PNPlugin::loadModule(const QFileInfo& t_filename)
     m_PNPluginModule = PyImport_ImportModule(t_filename.baseName().toUtf8().constData());
     if (!m_PNPluginModule)
     {
-        PyErr_PrintEx(0);
-        QMessageBox::critical( nullptr, "Python Module Failed", QString("Could not load module %1." ).arg(t_filename.absoluteFilePath()));
+        PyErr_Print();
+        QMessageBox::critical( nullptr, "Python Module Failed", QString("Could not load module %1." ).arg(t_filename.baseName()));
         return false;
     }
 
     m_PNPluginName = getPythonVariable("pluginname");
     if (m_PNPluginName.isNull())
     {
-        PyErr_PrintEx(0);
-        QMessageBox::critical( nullptr, "Python Module Failed", QString("PNPlugin name is required for module %1." ).arg(t_filename.absoluteFilePath()));
+        PyErr_Print();
+        QMessageBox::critical( nullptr, "Python Module Failed", QString("PNPlugin name is required for module %1." ).arg(t_filename.baseName()));
         return false;
     }
 
     m_Description = getPythonVariable("plugindescription");
     if (m_Description.isNull())
     {
-        PyErr_PrintEx(0);
-        QMessageBox::critical( nullptr, "Python Module Failed", QString("PNPlugin description is required for module %1." ).arg(t_filename.absoluteFilePath()));
+        PyErr_Print();
+        QMessageBox::critical( nullptr, "Python Module Failed", QString("PNPlugin description is required for module %1." ).arg(t_filename.baseName()));
         return false;
     }
 
     m_TableName = getPythonVariable("plugintable");
+
     m_ChildTablesFilter = getPythonVariable("childtablesfilter");
 
     m_Parameters = getPythonStringList("parameters");
 
-    m_Startup = PyObject_GetAttrString(m_PNPluginModule,"event_startup");
-    m_Shutdown = PyObject_GetAttrString(m_PNPluginModule,"event_shutdown");
-    m_EveryMinute = PyObject_GetAttrString(m_PNPluginModule,"event_everyminute");
-    m_Every5Minutes = PyObject_GetAttrString(m_PNPluginModule,"event_every5minutes");
-    m_Every10Minutes = PyObject_GetAttrString(m_PNPluginModule,"event_every10minutes");
-    m_Every30Minutes = PyObject_GetAttrString(m_PNPluginModule,"event_every30minutes");
-    m_PNPluginMenu = PyObject_GetAttrString(m_PNPluginModule,"event_menuclick");
+    if (PyObject_HasAttrString(m_PNPluginModule, "event_startup"))
+        m_Startup = PyObject_GetAttrString(m_PNPluginModule,"event_startup");
+    if (PyObject_HasAttrString(m_PNPluginModule, "event_shutdown"))
+        m_Shutdown = PyObject_GetAttrString(m_PNPluginModule,"event_shutdown");
+    if (PyObject_HasAttrString(m_PNPluginModule, "event_everyminute"))
+        m_EveryMinute = PyObject_GetAttrString(m_PNPluginModule,"event_everyminute");
+    if (PyObject_HasAttrString(m_PNPluginModule, "event_every5minute"))
+        m_Every5Minutes = PyObject_GetAttrString(m_PNPluginModule,"event_every5minutes");
+    if (PyObject_HasAttrString(m_PNPluginModule, "event_every10minute"))
+        m_Every10Minutes = PyObject_GetAttrString(m_PNPluginModule,"event_every10minutes");
+    if (PyObject_HasAttrString(m_PNPluginModule, "event_every30minute"))
+        m_Every30Minutes = PyObject_GetAttrString(m_PNPluginModule,"event_every30minutes");
+    if (PyObject_HasAttrString(m_PNPluginModule, "event_menuclick"))
+        m_PNPluginMenu = PyObject_GetAttrString(m_PNPluginModule,"event_menuclick");
 
-    m_DataRightClickEvent = PyObject_GetAttrString(m_PNPluginModule,"event_data_rightclick");
+    if (PyObject_HasAttrString(m_PNPluginModule, "event_data_rightclick"))
+        m_DataRightClickEvent = PyObject_GetAttrString(m_PNPluginModule,"event_data_rightclick");
 
     return true;
 }
@@ -249,7 +258,10 @@ int PNPlugin::setPythonVariable(const QString& t_variablename, const QString& t_
 
 QString PNPlugin::getPythonVariable(const QString& t_variablename)
 {
-    PyObject* attr = PyObject_GetAttrString(m_PNPluginModule, t_variablename.toStdString().c_str());
+    if (PyObject_HasAttrString(m_PNPluginModule, t_variablename.toStdString().c_str()) == 0)
+        return QString();
+
+    PyObject* attr = attr = PyObject_GetAttrString(m_PNPluginModule, t_variablename.toStdString().c_str());
     if (!attr)
     {
         PyErr_PrintEx(0);
@@ -274,6 +286,9 @@ QStringList PNPlugin::getPythonStringList(const QString& t_variablename)
 {
     QStringList val;
 
+    if (PyObject_HasAttrString(m_PNPluginModule, t_variablename.toStdString().c_str()) == 0)
+        return val;
+
     PyObject* attr = PyObject_GetAttrString(m_PNPluginModule, t_variablename.toStdString().c_str());
     if (!attr)
     {
@@ -281,7 +296,6 @@ QStringList PNPlugin::getPythonStringList(const QString& t_variablename)
         QMessageBox::critical( nullptr, "Python Call Failed", QString("Could not get attribute %1.").arg(t_variablename) );
         return QStringList();
     }
-
 
     if (!PyList_Check(attr))
     {
@@ -307,15 +321,13 @@ QStringList PNPlugin::getPythonStringList(const QString& t_variablename)
         QString memval = QString::fromUtf8(str);
 
         val.append(memval);
-
-        Py_XDECREF(item);
     }
 
     Py_XDECREF(attr);
 
     //qDebug() << "Parameter count: " << val.count();
 
-    for ( QString p : val)
+    //for ( QString p : val)
         //qDebug() << "Parameter Loaded: " << p;
 
     return val;

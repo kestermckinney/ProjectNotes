@@ -312,7 +312,7 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
     {
         if (p->hasDataRightClickEvent(table) && p->isEnabled())
         {
-            QAction* act = menu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+            menu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
         }
     }
 

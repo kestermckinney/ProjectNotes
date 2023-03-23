@@ -1,9 +1,14 @@
-
+import sys
 import platform
 
-if (platform.system() == 'Windows'):
-    from includes.excel_tools import ProjectNotesExcelTools
-    import win32com
+print(sys.path)
+
+#if (platform.system() == 'Windows'):
+#    from includes.excel_tools import ProjectNotesExcelTools
+#    import win32com
+
+import importlib.machinery
+print(importlib.machinery.all_suffixes())
 
 from includes.common import ProjectNotesCommon
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
@@ -126,6 +131,6 @@ def event_data_rightclick(xmlstr):
 
 """
 print("Testing Plugin")
-EditorFullPath = "fire"
-event_menuclick()
+EditorFullPath = "notepad.exe"
+event_menuclick("")
 """
