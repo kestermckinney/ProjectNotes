@@ -1,14 +1,14 @@
 import sys
 import platform
 
-print(sys.path)
+#print(sys.path)
 
 #if (platform.system() == 'Windows'):
 #    from includes.excel_tools import ProjectNotesExcelTools
 #    import win32com
 
-import importlib.machinery
-print(importlib.machinery.all_suffixes())
+#import importlib.machinery
+#print(importlib.machinery.all_suffixes())
 
 from includes.common import ProjectNotesCommon
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
@@ -76,26 +76,6 @@ parameters = [
 
 pnc = ProjectNotesCommon()
 
-# Project Notes Plugin Events
-"""
-def event_startup():
-    return None
-
-def event_shutdown():
-    return None
-
-def event_everyminute():
-    return None
-
-def event_every5minutes():
-    return None
-
-def event_every10minutes():
-    return None
-
-def event_every30Mmnutes():
-    return None
-"""
 def event_menuclick(xmlstr):
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):

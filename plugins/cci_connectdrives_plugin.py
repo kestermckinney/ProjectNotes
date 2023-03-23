@@ -81,7 +81,10 @@ if (platform.system() == 'Windows'):
             return ""
 
         pnc.connect_drives()
-        return None
+
+        print("Connect drives every 5 minutes called...")
+
+        return ""
 
     def event_every5minutes(xmlstr):
         xmlval = QDomDocument()
@@ -90,4 +93,4 @@ if (platform.system() == 'Windows'):
             return ""
             
         pnc.connect_drives()
-        return None
+        return ""

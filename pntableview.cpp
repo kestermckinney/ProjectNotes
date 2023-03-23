@@ -91,6 +91,8 @@ void PNTableView::slotPluginMenu(PNPlugin* t_plugin)
         return;
     }
 
+    QString response;
+
     if (table)
     {
         QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
@@ -115,7 +117,7 @@ void PNTableView::slotPluginMenu(PNPlugin* t_plugin)
         QString xmlstr = xdoc->toString();
 
         // call the menu plugin with the data structure
-        t_plugin->callDataRightClickEvent(xmlstr);
+        response = t_plugin->callDataRightClickEvent(xmlstr);
 
         delete xdoc;
 
@@ -128,11 +130,25 @@ void PNTableView::slotPluginMenu(PNPlugin* t_plugin)
         QApplication::processEvents();
 
         // call the menu plugin with an empty string
-        t_plugin->callDataRightClickEvent(QString());
+        response = t_plugin->callDataRightClickEvent(QString());
 
         QApplication::restoreOverrideCursor();
         QApplication::processEvents();
 
+    }
+
+    if (!response.isEmpty())
+    {
+        QDomDocument doc;
+        doc.setContent(response);
+
+        if (!global_DBObjects.importXMLDoc(doc))
+        {
+            QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
+
+            QApplication::restoreOverrideCursor();
+            QApplication::processEvents();
+        }
     }
 }
 
@@ -304,7 +320,6 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
 
     // check for plugins
     menu->addSeparator();
-    //STOPPED HERE
 
     QString table = ((PNSqlQueryModel*) ((QSortFilterProxyModel*)this->model())->sourceModel())->tablename();
 

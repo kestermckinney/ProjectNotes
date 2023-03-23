@@ -6,6 +6,7 @@
 #include <QStack>
 #include <QComboBox>
 #include <QTextCharFormat>
+#include <QTimer>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -92,6 +93,10 @@ private slots:
     void on_actionXML_Export_triggered();
 
     void slotPluginMenu(PNPlugin* t_plugin);
+    void slotStartupEvent(PNPlugin* t_plugin);
+    void slotShutdownEvent(PNPlugin* t_plugin);
+    void slotTimerEvent(PNPlugin* t_plugin);
+    void slotTimerUpdates();
 
 private:
     Ui::MainWindow *ui;   
@@ -101,6 +106,8 @@ private:
     FindReplaceDialog* m_find_replace_dialog = nullptr;
     static PNPluginManager* m_plugin_manager;
     PluginSettingsDialog* m_plugin_settings_dialog = nullptr;
+    QTimer* m_timer = nullptr;
+    long m_minute_counter = 0;
 
     // view state
     QList<int> m_page_history;

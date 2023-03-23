@@ -3,6 +3,8 @@
 
 #include "pnpluginmanager.h"
 
+#include <QScrollBar>
+
 PNConsoleDialog::PNConsoleDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::PNConsoleDialog)
@@ -15,6 +17,7 @@ PNConsoleDialog::PNConsoleDialog(QWidget *parent) :
     outwrite = [pe] (std::string s)
     {
         pe->setPlainText( pe->toPlainText() + QString::fromStdString(s));
+        pe->verticalScrollBar()->setValue(pe->verticalScrollBar()->maximum());
     };
     set_stdout(outwrite);
 

@@ -227,5 +227,3 @@ void SearchResultsModel::PerformKeySearch(const QString& t_search_value)
         activateUserFilter(QString());
     }
 }
-
-//TODO: Add search query to database updates

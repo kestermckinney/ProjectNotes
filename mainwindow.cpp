@@ -85,8 +85,148 @@ MainWindow::MainWindow(QWidget *t_parent)
         {
             ui->menuPlugins->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
         }
+    }   
+
+    // call all of the startup events
+    // TODO: need to see what happens if no database is open
+    for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
+    {
+        if (p->hasStartupEvent() && p->isEnabled())
+        {
+            slotStartupEvent(p);
+        }
+    }
+
+    m_timer = new QTimer(this);
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(slotTimerUpdates()));
+    m_timer->start(1000*60); // one minute timer event
+
+}
+
+void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
+{
+    QString xmlstr;
+
+    if (!t_plugin->getTableName().isEmpty())
+    {
+        // determine what table to export
+        PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
+
+        if (table)
+        {
+            // build export xml
+            PNSqlQueryModel* model = table->createExportVersion();
+            model->refresh();
+            QDomDocument* doc = global_DBObjects.createXMLExportDoc(model, t_plugin->getChildTablesFilter());
+            xmlstr = doc->toString();
+            delete model;
+            delete doc;
+        }
+        else
+        {
+            QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1)specified by the plugin does not exist.").arg(t_plugin->getTableName()));
+            return;
+        }
+    }
+
+    // call the menu plugin with the data structure
+    if (t_plugin->hasEveryMinuteEvent())
+        t_plugin->callEveryMinuteEvent(xmlstr);
+
+    if (t_plugin->hasEvery5MinutesEvent() && (m_minute_counter % 5) == 0)
+        t_plugin->callEvery5MinutesEvent(xmlstr);
+
+    if (t_plugin->hasEvery10MinutesEvent() && (m_minute_counter % 10) == 0)
+        t_plugin->callEvery10MinutesEvent(xmlstr);
+
+    if (t_plugin->hasEvery15MinutesEvent() && (m_minute_counter % 15) == 0)
+        t_plugin->callEvery15MinutesEvent(xmlstr);
+
+    if (t_plugin->hasEvery30MinutesEvent() && (m_minute_counter % 30) == 0)
+        t_plugin->callEvery30MinutesEvent(xmlstr);
+}
+
+void MainWindow::slotTimerUpdates()
+{
+    m_minute_counter++;
+
+    // call all of the startup events
+    // TODO: need to see what happens if no database is open
+    for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
+    {
+        if ( p->isEnabled() &&
+            (p->hasEveryMinuteEvent() ||
+            p->hasEvery5MinutesEvent() ||
+            p->hasEvery10MinutesEvent() ||
+            p->hasEvery15MinutesEvent() ||
+            p->hasEvery30MinutesEvent())
+           )
+        {
+            slotTimerEvent(p);
+        }
     }
 }
+
+void MainWindow::slotStartupEvent(PNPlugin* t_plugin)
+{
+    QString xmlstr;
+
+    if (!t_plugin->getTableName().isEmpty())
+    {
+        // determine what table to export
+        PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
+
+        if (table)
+        {
+            // build export xml
+            PNSqlQueryModel* model = table->createExportVersion();
+            model->refresh();
+            QDomDocument* doc = global_DBObjects.createXMLExportDoc(model, t_plugin->getChildTablesFilter());
+            xmlstr = doc->toString();
+            delete model;
+            delete doc;
+        }
+        else
+        {
+            QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1)specified by the plugin does not exist.").arg(t_plugin->getTableName()));
+            return;
+        }
+    }
+
+    // call the menu plugin with the data structure
+    t_plugin->callStartupEvent(xmlstr);
+}
+
+void MainWindow::slotShutdownEvent(PNPlugin* t_plugin)
+{
+    QString xmlstr;
+
+    if (!t_plugin->getTableName().isEmpty())
+    {
+        // determine what table to export
+        PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
+
+        if (table)
+        {
+            // build export xml
+            PNSqlQueryModel* model = table->createExportVersion();
+            model->refresh();
+            QDomDocument* doc = global_DBObjects.createXMLExportDoc(model, t_plugin->getChildTablesFilter());
+            xmlstr = doc->toString();
+            delete model;
+            delete doc;
+        }
+        else
+        {
+            QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1)specified by the plugin does not exist.").arg(t_plugin->getTableName()));
+            return;
+        }
+    }
+
+    // call the menu plugin with the data structure
+    t_plugin->callShutdownEvent(xmlstr);
+}
+
 
 void MainWindow::slotPluginMenu(PNPlugin* t_plugin)
 {
@@ -102,7 +242,7 @@ void MainWindow::slotPluginMenu(PNPlugin* t_plugin)
             // build export xml
             PNSqlQueryModel* model = table->createExportVersion();
             model->refresh();
-            QDomDocument* doc = global_DBObjects.createXMLExportDoc(model);
+            QDomDocument* doc = global_DBObjects.createXMLExportDoc(model, t_plugin->getChildTablesFilter());
             xmlstr = doc->toString();
             delete model;
             delete doc;
@@ -142,6 +282,8 @@ MainWindow::~MainWindow()
     disconnect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     disconnect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
 
+    disconnect(m_timer, SIGNAL(timeout()), this, SLOT(slotTimerUpdates()));
+
     // need to save the screen layout befor the model is removed from the view
     // The destructor of PNTableview does not save the state
     ui->tableViewProjects->setModel(nullptr);
@@ -151,6 +293,18 @@ MainWindow::~MainWindow()
     ui->tableViewTeam->setModel(nullptr);
     ui->tableViewTrackerItems->setModel(nullptr);
     ui->tableViewAtendees->setModel(nullptr);
+
+    // stop all of the timer events
+    m_timer->stop();
+
+    // call all of the shutdown events
+    for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
+    {
+        if (p->hasShutdownEvent() && p->isEnabled())
+        {
+            slotShutdownEvent(p);
+        }
+    }
 
     if (global_DBObjects.isOpen())
         global_DBObjects.closeDatabase();
@@ -163,6 +317,7 @@ MainWindow::~MainWindow()
 
     delete m_plugin_settings_dialog;
     delete m_plugin_manager;
+    delete m_timer;
 
     delete ui;
 
