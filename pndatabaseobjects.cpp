@@ -71,15 +71,9 @@ bool PNDatabaseObjects::createDatabase(QString& t_databasepath)
 
     m_sqlite_db = QSqlDatabase::addDatabase("QSQLITE");
 
-    if (!QFileInfo::exists(m_database_file))
-        m_sqlite_db.setDatabaseName(m_database_file);
-    else
-    {
-        QMessageBox::critical(nullptr, QObject::tr("Cannot create database"),
-            QString(tr("File %1 already exists.")).arg(m_database_file), QMessageBox::Cancel);
-        m_database_file.clear(); // set empty if bad file
-        return false;
-    }
+    QFile::remove(m_database_file);  // if it exists remove it.  Dialog should have prompted you.
+
+    m_sqlite_db.setDatabaseName(m_database_file);
 
     if (!m_sqlite_db.open()) {
         QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
@@ -341,6 +335,7 @@ void PNDatabaseObjects::backupDatabase(const QString& t_file)
     qry.prepare( "BEGIN IMMEDIATE;");
     qry.exec();
 
+    QFile::remove(t_file); // copy command won't overwrite
     if (!QFile::copy(m_database_file, t_file))
     {
         QMessageBox::critical(nullptr, QObject::tr("Database Backup Failed"), QString("Failed to backup the database.") );

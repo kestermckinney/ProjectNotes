@@ -4,6 +4,7 @@
 #include "projectslistmodel.h"
 #include "pnsqlquerymodel.h"
 #include "pndatabaseobjects.h"
+#include "aboutdialog.h"
 
 #include <QStringListModel>
 #include <QMessageBox>
@@ -584,8 +585,8 @@ void MainWindow::on_actionNew_Database_triggered()
 
     if (!dbfile.isEmpty())
     {
-        global_DBObjects.createDatabase(dbfile);
-        openDatabase(dbfile);
+        if (global_DBObjects.createDatabase(dbfile)) // open the database if created successfully
+            openDatabase(dbfile);
     }
 }
 
@@ -971,6 +972,7 @@ void MainWindow::setupTextActions()
 
     const QIcon boldIcon = QIcon(rsrcPath + "/textbold.png");
     m_actionTextBold = menu->addAction(boldIcon, tr("&Bold"), this, &MainWindow::textBold);
+    m_actionTextBold->setStatusTip("Bold text");
     m_actionTextBold->setShortcut(Qt::CTRL + Qt::Key_B);
     m_actionTextBold->setPriority(QAction::LowPriority);
     QFont bold;
@@ -981,6 +983,7 @@ void MainWindow::setupTextActions()
 
     const QIcon italicIcon = QIcon(rsrcPath + "/textitalic.png");
     m_actionTextItalic = menu->addAction(italicIcon, tr("&Italic"), this, &MainWindow::textItalic);
+    m_actionTextItalic->setStatusTip("Italic text");
     m_actionTextItalic->setPriority(QAction::LowPriority);
     m_actionTextItalic->setShortcut(Qt::CTRL + Qt::Key_I);
     QFont italic;
@@ -991,6 +994,7 @@ void MainWindow::setupTextActions()
 
     const QIcon underlineIcon = QIcon(rsrcPath + "/textunder.png");
     m_actionTextUnderline = menu->addAction(underlineIcon, tr("&Underline"), this, &MainWindow::textUnderline);
+    m_actionTextUnderline->setStatusTip("Underline text");
     m_actionTextUnderline->setShortcut(Qt::CTRL + Qt::Key_U);
     m_actionTextUnderline->setPriority(QAction::LowPriority);
     QFont underline;
@@ -1003,30 +1007,36 @@ void MainWindow::setupTextActions()
 
     const QIcon leftIcon = QIcon(rsrcPath + "/textleft.png");
     m_actionAlignLeft = new QAction(leftIcon, tr("&Left"), this);
+    m_actionAlignLeft->setStatusTip("Left align text");
     m_actionAlignLeft->setShortcut(Qt::CTRL + Qt::Key_L);
     m_actionAlignLeft->setCheckable(true);
     m_actionAlignLeft->setPriority(QAction::LowPriority);
     const QIcon centerIcon = QIcon(rsrcPath + "/textcenter.png");
     m_actionAlignCenter = new QAction(centerIcon, tr("C&enter"), this);
+    m_actionAlignCenter->setStatusTip("Center align text");
     m_actionAlignCenter->setShortcut(Qt::CTRL + Qt::Key_E);
     m_actionAlignCenter->setCheckable(true);
     m_actionAlignCenter->setPriority(QAction::LowPriority);
     const QIcon rightIcon = QIcon(rsrcPath + "/textright.png");
     m_actionAlignRight = new QAction(rightIcon, tr("&Right"), this);
+    m_actionAlignRight->setStatusTip("Right align text");
     m_actionAlignRight->setShortcut(Qt::CTRL + Qt::Key_R);
     m_actionAlignRight->setCheckable(true);
     m_actionAlignRight->setPriority(QAction::LowPriority);
     const QIcon fillIcon = QIcon(rsrcPath + "/textjustify.png");
     m_actionAlignJustify = new QAction(fillIcon, tr("&Justify"), this);
+    m_actionAlignJustify->setStatusTip("Justify text");
     m_actionAlignJustify->setShortcut(Qt::CTRL + Qt::Key_J);
     m_actionAlignJustify->setCheckable(true);
     m_actionAlignJustify->setPriority(QAction::LowPriority);
     const QIcon indentMoreIcon = QIcon(rsrcPath + "/format-indent-more.png");
     m_actionIndentMore = menu->addAction(indentMoreIcon, tr("&Indent"), this, &MainWindow::indent);
+    m_actionIndentMore->setStatusTip("Indent text");
     m_actionIndentMore->setShortcut(Qt::CTRL + Qt::Key_BracketRight);
     m_actionIndentMore->setPriority(QAction::LowPriority);
     const QIcon indentLessIcon = QIcon(rsrcPath + "/format-indent-less.png");
     m_actionIndentLess = menu->addAction(indentLessIcon, tr("&Unindent"), this, &MainWindow::unindent);
+    m_actionIndentLess->setStatusTip("Unindent text");
     m_actionIndentLess->setShortcut(Qt::CTRL + Qt::Key_BracketLeft);
     m_actionIndentLess->setPriority(QAction::LowPriority);
 
@@ -1060,6 +1070,7 @@ void MainWindow::setupTextActions()
     QPixmap pix(16, 16);
     pix.fill(Qt::black);
     m_actionTextColor = menu->addAction(pix, tr("&Color..."), this, &MainWindow::textColor);
+    m_actionTextColor->setStatusTip("Color text");
     tb->addAction(m_actionTextColor);
 
     menu->addSeparator();
@@ -1576,10 +1587,42 @@ void MainWindow::on_actionBackup_Database_triggered()
 }
 
 
+void MainWindow::on_actionAbout_triggered()
+{
+    AboutDialog dlg;
+
+    dlg.exec();
+}
+
+
+void MainWindow::on_actionHelp_triggered()
+{
+
+}
+
+
+void MainWindow::on_actionGetting_Started_triggered()
+{
+
+}
+
+
+void MainWindow::on_actionWhat_s_New_triggered()
+{
+
+}
+
+
+void MainWindow::on_actionCustom_Plugins_triggered()
+{
+
+}
+
+
 // TODO: Add spell checking features for QExpandingLineEdit and QLineEdit
 // TODO: Add find feature for QExpandingLineEdit
 // TODO: Add find features to QComboBox located in a table view
 // TODO: Add licensing information to all files to be included with the software
 // TODO: Determine what information goes in the about screen
 // TODO: Complete Help Menu Items
-// TODO: Create About Dialog
+// TODO: Test setup database from scratch

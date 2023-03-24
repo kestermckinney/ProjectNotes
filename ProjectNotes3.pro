@@ -12,6 +12,7 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    aboutdialog.cpp \
     actionitemprojectnotesmodel.cpp \
     actionitemsdetailsmeetingsmodel.cpp \
     clientslistview.cpp \
@@ -82,6 +83,7 @@ SOURCES += \
 
 HEADERS += \
     FilterSaveStructure.h \
+    aboutdialog.h \
     actionitemprojectnotesmodel.h \
     actionitemsdetailsmeetingsmodel.h \
     clientslistview.h \
@@ -151,6 +153,7 @@ HEADERS += \
     widgets_export.h
 
 FORMS += \
+    aboutdialog.ui \
     filterdatadialog.ui \
     findreplacedialog.ui \
     mainwindow.ui \

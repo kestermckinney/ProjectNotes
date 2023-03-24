@@ -314,7 +314,6 @@ bool DatabaseStructure::CreateDatabase()
         )";
 
     global_DBObjects.execute(search_view);
-    //TODO: Test the above code
 
     global_DBObjects.execute(R"(
             CREATE VIEW item_tracker_view AS SELECT
@@ -564,7 +563,6 @@ bool DatabaseStructure::UpgradeDatabase()
             )";
 
         global_DBObjects.execute(search_view);
-        //TODO: Test the above code
 
         global_DBObjects.execute(R"(
             CREATE VIEW projects_view AS SELECT

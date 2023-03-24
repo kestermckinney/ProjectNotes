@@ -73,6 +73,11 @@ private slots:
     void on_actionPreferences_triggered();
     void on_actionResolved_Tracker_Action_Items_triggered();
     void on_actionBackup_Database_triggered();
+    void on_actionAbout_triggered();
+    void on_actionHelp_triggered();
+    void on_actionGetting_Started_triggered();
+    void on_actionWhat_s_New_triggered();
+    void on_actionCustom_Plugins_triggered();
 
     void cursorPositionChanged();
     void alignmentChanged(Qt::Alignment a);
