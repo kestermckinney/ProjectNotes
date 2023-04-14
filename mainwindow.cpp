@@ -358,7 +358,7 @@ void MainWindow::setButtonAndMenuStates()
     PNTableView* curview = nullptr;
 
     if (navigateCurrentPage())
-        navigateCurrentPage()->getCurrentView();
+        curview = navigateCurrentPage()->getCurrentView();
 
     if (curview)
     {
@@ -371,6 +371,8 @@ void MainWindow::setButtonAndMenuStates()
     else
         ui->actionXML_Export->setEnabled(false);
 
+    bool hascurview = (curview != nullptr);
+
     ui->actionXML_Import->setEnabled(dbopen);
 
     ui->actionBackup_Database->setEnabled(dbopen);
@@ -381,12 +383,14 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionProjects->setEnabled(dbopen);
     ui->actionClosed_Projects->setEnabled(dbopen);
 
-    ui->actionNew_Item->setEnabled(dbopen);
-    ui->actionCopy_Item->setEnabled(dbopen);
-    ui->actionDelete_Item->setEnabled(dbopen);
-    ui->actionEdit_Items->setEnabled(dbopen);
+    ui->actionNew_Item->setEnabled(hascurview);
+    ui->actionCopy_Item->setEnabled(hascurview);
+    ui->actionDelete_Item->setEnabled(hascurview);
+    ui->actionEdit_Items->setEnabled(hascurview);
+
     ui->actionBack->setEnabled(!navigateAtStart());
     ui->actionForward->setEnabled(!navigateAtEnd());
+
     ui->actionClients->setEnabled(dbopen);
     ui->actionPeople->setEnabled(dbopen);
     ui->actionFilter->setEnabled(dbopen);
@@ -472,7 +476,7 @@ void MainWindow::setButtonAndMenuStates()
         // check if form has table view available to use
         // Note Page Note Tab does not have a table view
          if ( ui->tabWidgetNotes->currentIndex() == 0 && ui->stackedWidget->currentIndex() == 1 )
-        {
+        { 
             ui->actionDelete_Item->setEnabled(false);
             ui->actionCopy_Item->setEnabled(false);
             ui->actionNew_Item->setEnabled(false);
@@ -489,8 +493,8 @@ void MainWindow::setButtonAndMenuStates()
             {
                 if ( (dynamic_cast<QTableView*>(fw))->selectionModel()->hasSelection() )
                 {
-                    ui->actionDelete_Item->setEnabled(true);
-                    ui->actionCopy_Item->setEnabled(true);
+                    ui->actionDelete_Item->setEnabled(hascurview);
+                    ui->actionCopy_Item->setEnabled(hascurview);
                 }
                 else
                 {
@@ -504,7 +508,7 @@ void MainWindow::setButtonAndMenuStates()
                 ui->actionCopy_Item->setEnabled(false);
             }
 
-            ui->actionNew_Item->setEnabled(true);
+            ui->actionNew_Item->setEnabled(hascurview);
         }
 
         // format menu items
@@ -621,7 +625,7 @@ void MainWindow::openDatabase(QString t_dbfile)
     ui->pageItemDetails->setupModels(ui);
     ui->pageProjectNote->setupModels(ui);
     ui->pageSearch->setupModels(ui);
-
+    ui->pageHelp->setupModels(ui);
 
     navigateClearHistory();
     navigateToPage(ui->pageProjectsList);
@@ -1583,7 +1587,6 @@ void MainWindow::on_actionBackup_Database_triggered()
 
     QApplication::restoreOverrideCursor();
     QApplication::processEvents();
-
 }
 
 
@@ -1597,25 +1600,29 @@ void MainWindow::on_actionAbout_triggered()
 
 void MainWindow::on_actionHelp_triggered()
 {
-
+    navigateToPage(ui->pageHelp);
+    ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/Introduction.html"));
 }
 
 
 void MainWindow::on_actionGetting_Started_triggered()
 {
-
+    navigateToPage(ui->pageHelp);
+    ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/GettingStarted.html"));
 }
 
 
 void MainWindow::on_actionWhat_s_New_triggered()
 {
-
+    navigateToPage(ui->pageHelp);
+    ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/Whatsnew.html"));
 }
 
 
 void MainWindow::on_actionCustom_Plugins_triggered()
 {
-
+    navigateToPage(ui->pageHelp);
+    ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/OverviewofPlugins.html"));
 }
 
 
