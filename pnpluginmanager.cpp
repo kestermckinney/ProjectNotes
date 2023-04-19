@@ -159,7 +159,7 @@ PNPluginManager::PNPluginManager(QWidget* t_parent)
 
     QDirIterator fileit( fullpath, {"*.py"}, QDir::Files);
 
-    qDebug() << "Plugin Path: " << fullpath;
+    //qDebug() << "Plugin Path: " << fullpath;
 
     // iterate through PNPlugins folder and load py files
     while (fileit.hasNext())
@@ -303,5 +303,3 @@ QList<PNPlugin*> PNPluginManager::findDataRightClickEvents(const QString& t_tabl
     return list;
 }
 
-//TODO: call timed events
-//TODO: call startup and shutdown eventsS

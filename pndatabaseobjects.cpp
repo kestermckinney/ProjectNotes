@@ -71,15 +71,9 @@ bool PNDatabaseObjects::createDatabase(QString& t_databasepath)
 
     m_sqlite_db = QSqlDatabase::addDatabase("QSQLITE");
 
-    if (!QFileInfo::exists(m_database_file))
-        m_sqlite_db.setDatabaseName(m_database_file);
-    else
-    {
-        QMessageBox::critical(nullptr, QObject::tr("Cannot create database"),
-            QString(tr("File %1 already exists.")).arg(m_database_file), QMessageBox::Cancel);
-        m_database_file.clear(); // set empty if bad file
-        return false;
-    }
+    QFile::remove(m_database_file);  // if it exists remove it.  Dialog should have prompted you.
+
+    m_sqlite_db.setDatabaseName(m_database_file);
 
     if (!m_sqlite_db.open()) {
         QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
@@ -335,9 +329,20 @@ void PNDatabaseObjects::closeDatabase()
     m_database_file.clear();
 }
 
-void PNDatabaseObjects::backupDatabase(QWidget& /*t_parent*/, QFileInfo& /*t_file*/)
+void PNDatabaseObjects::backupDatabase(const QString& t_file)
 {
-    // TODO:  This may not make sense to do when using the QT SQL interface
+    QSqlQuery qry(m_sqlite_db);
+    qry.prepare( "BEGIN IMMEDIATE;");
+    qry.exec();
+
+    QFile::remove(t_file); // copy command won't overwrite
+    if (!QFile::copy(m_database_file, t_file))
+    {
+        QMessageBox::critical(nullptr, QObject::tr("Database Backup Failed"), QString("Failed to backup the database.") );
+    }
+
+    qry.prepare( "ROLLBACK;");
+    qry.exec();
 }
 
 bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QString& t_parametervalue )
@@ -631,7 +636,7 @@ QList<QDomNode> PNDatabaseObjects::findTableNodes(const QDomNode& t_xmlelement, 
         if (node.nodeName() == "table" && node.toElement().attributeNode("name").value() == t_tablename)
         {
                 domlist.append(node);
-                qDebug() << "Found Node: " << node.nodeName() << " Name: " << t_tablename;
+                //qDebug() << "Found Node: " << node.nodeName() << " Name: " << t_tablename;
         }
 
         domlist.append(findTableNodes(node, t_tablename));
@@ -648,7 +653,7 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     QDomElement root = t_xmldoc.documentElement();
     QList<QDomNode> domlist;
 
-    qDebug() << "Root: "  << root.tagName();
+    //qDebug() << "Root: "  << root.tagName();
 
     domlist = findTableNodes(root, "clients");
     if (!domlist.empty())

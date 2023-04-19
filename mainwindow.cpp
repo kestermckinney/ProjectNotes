@@ -4,6 +4,7 @@
 #include "projectslistmodel.h"
 #include "pnsqlquerymodel.h"
 #include "pndatabaseobjects.h"
+#include "aboutdialog.h"
 
 #include <QStringListModel>
 #include <QMessageBox>
@@ -85,8 +86,158 @@ MainWindow::MainWindow(QWidget *t_parent)
         {
             ui->menuPlugins->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
         }
+    }   
+
+    // call all of the startup events
+    for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
+    {
+        if (p->hasStartupEvent() && p->isEnabled())
+        {
+            slotStartupEvent(p);
+        }
+    }
+
+    m_timer = new QTimer(this);
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(slotTimerUpdates()));
+    m_timer->start(1000*60); // one minute timer event
+
+}
+
+void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
+{
+    QString xmlstr;
+
+    if (!t_plugin->getTableName().isEmpty())
+    {
+        // this plugin requires an open database
+        if (!global_DBObjects.isOpen())
+            return;
+
+        // determine what table to export
+        PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
+
+        if (table)
+        {
+            // build export xml
+            PNSqlQueryModel* model = table->createExportVersion();
+            model->refresh();
+            QDomDocument* doc = global_DBObjects.createXMLExportDoc(model, t_plugin->getChildTablesFilter());
+            xmlstr = doc->toString();
+            delete model;
+            delete doc;
+        }
+        else
+        {
+            QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1)specified by the plugin does not exist.").arg(t_plugin->getTableName()));
+            return;
+        }
+    }
+
+    // call the menu plugin with the data structure
+    if (t_plugin->hasEveryMinuteEvent())
+        t_plugin->callEveryMinuteEvent(xmlstr);
+
+    if (t_plugin->hasEvery5MinutesEvent() && (m_minute_counter % 5) == 0)
+        t_plugin->callEvery5MinutesEvent(xmlstr);
+
+    if (t_plugin->hasEvery10MinutesEvent() && (m_minute_counter % 10) == 0)
+        t_plugin->callEvery10MinutesEvent(xmlstr);
+
+    if (t_plugin->hasEvery15MinutesEvent() && (m_minute_counter % 15) == 0)
+        t_plugin->callEvery15MinutesEvent(xmlstr);
+
+    if (t_plugin->hasEvery30MinutesEvent() && (m_minute_counter % 30) == 0)
+        t_plugin->callEvery30MinutesEvent(xmlstr);
+}
+
+void MainWindow::slotTimerUpdates()
+{
+    m_minute_counter++;
+
+    // call all of the startup events
+    for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
+    {
+        if ( p->isEnabled() &&
+            (p->hasEveryMinuteEvent() ||
+            p->hasEvery5MinutesEvent() ||
+            p->hasEvery10MinutesEvent() ||
+            p->hasEvery15MinutesEvent() ||
+            p->hasEvery30MinutesEvent())
+           )
+        {
+            slotTimerEvent(p);
+        }
     }
 }
+
+void MainWindow::slotStartupEvent(PNPlugin* t_plugin)
+{
+    QString xmlstr;
+
+    if (!t_plugin->getTableName().isEmpty())
+    {
+        // this plugin requires an open database
+        if (!global_DBObjects.isOpen())
+            return;
+
+        // determine what table to export
+        PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
+
+        if (table)
+        {
+            // build export xml
+            PNSqlQueryModel* model = table->createExportVersion();
+            model->refresh();
+            QDomDocument* doc = global_DBObjects.createXMLExportDoc(model, t_plugin->getChildTablesFilter());
+            xmlstr = doc->toString();
+            delete model;
+            delete doc;
+        }
+        else
+        {
+            QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1)specified by the plugin does not exist.").arg(t_plugin->getTableName()));
+            return;
+        }
+    }
+
+    // call the menu plugin with the data structure
+    t_plugin->callStartupEvent(xmlstr);
+}
+
+void MainWindow::slotShutdownEvent(PNPlugin* t_plugin)
+{
+    QString xmlstr;
+
+    if (!t_plugin->getTableName().isEmpty())
+    {
+        // this plugin requires an open database
+        if (!global_DBObjects.isOpen())
+            return;
+
+        // determine what table to export
+        PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
+
+        if (table)
+        {
+            // build export xml
+            PNSqlQueryModel* model = table->createExportVersion();
+            model->refresh();
+            QDomDocument* doc = global_DBObjects.createXMLExportDoc(model, t_plugin->getChildTablesFilter());
+            xmlstr = doc->toString();
+            delete model;
+            delete doc;
+        }
+        else
+        {
+            QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1)specified by the plugin does not exist.").arg(t_plugin->getTableName()));
+            return;
+        }
+    }
+
+    // call the menu plugin with the data structure
+    t_plugin->callShutdownEvent(xmlstr);
+}
+
 
 void MainWindow::slotPluginMenu(PNPlugin* t_plugin)
 {
@@ -102,7 +253,7 @@ void MainWindow::slotPluginMenu(PNPlugin* t_plugin)
             // build export xml
             PNSqlQueryModel* model = table->createExportVersion();
             model->refresh();
-            QDomDocument* doc = global_DBObjects.createXMLExportDoc(model);
+            QDomDocument* doc = global_DBObjects.createXMLExportDoc(model, t_plugin->getChildTablesFilter());
             xmlstr = doc->toString();
             delete model;
             delete doc;
@@ -142,6 +293,8 @@ MainWindow::~MainWindow()
     disconnect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     disconnect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
 
+    disconnect(m_timer, SIGNAL(timeout()), this, SLOT(slotTimerUpdates()));
+
     // need to save the screen layout befor the model is removed from the view
     // The destructor of PNTableview does not save the state
     ui->tableViewProjects->setModel(nullptr);
@@ -151,6 +304,18 @@ MainWindow::~MainWindow()
     ui->tableViewTeam->setModel(nullptr);
     ui->tableViewTrackerItems->setModel(nullptr);
     ui->tableViewAtendees->setModel(nullptr);
+
+    // stop all of the timer events
+    m_timer->stop();
+
+    // call all of the shutdown events
+    for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
+    {
+        if (p->hasShutdownEvent() && p->isEnabled())
+        {
+            slotShutdownEvent(p);
+        }
+    }
 
     if (global_DBObjects.isOpen())
         global_DBObjects.closeDatabase();
@@ -163,6 +328,7 @@ MainWindow::~MainWindow()
 
     delete m_plugin_settings_dialog;
     delete m_plugin_manager;
+    delete m_timer;
 
     delete ui;
 
@@ -188,7 +354,11 @@ void MainWindow::setButtonAndMenuStates()
 
     ui->actionSearch->setEnabled(dbopen);
 
-    PNTableView* curview = navigateCurrentPage()->getCurrentView();
+
+    PNTableView* curview = nullptr;
+
+    if (navigateCurrentPage())
+        curview = navigateCurrentPage()->getCurrentView();
 
     if (curview)
     {
@@ -201,6 +371,8 @@ void MainWindow::setButtonAndMenuStates()
     else
         ui->actionXML_Export->setEnabled(false);
 
+    bool hascurview = (curview != nullptr);
+
     ui->actionXML_Import->setEnabled(dbopen);
 
     ui->actionBackup_Database->setEnabled(dbopen);
@@ -211,12 +383,14 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionProjects->setEnabled(dbopen);
     ui->actionClosed_Projects->setEnabled(dbopen);
 
-    ui->actionNew_Item->setEnabled(dbopen);
-    ui->actionCopy_Item->setEnabled(dbopen);
-    ui->actionDelete_Item->setEnabled(dbopen);
-    ui->actionEdit_Items->setEnabled(dbopen);
+    ui->actionNew_Item->setEnabled(hascurview);
+    ui->actionCopy_Item->setEnabled(hascurview);
+    ui->actionDelete_Item->setEnabled(hascurview);
+    ui->actionEdit_Items->setEnabled(hascurview);
+
     ui->actionBack->setEnabled(!navigateAtStart());
     ui->actionForward->setEnabled(!navigateAtEnd());
+
     ui->actionClients->setEnabled(dbopen);
     ui->actionPeople->setEnabled(dbopen);
     ui->actionFilter->setEnabled(dbopen);
@@ -302,7 +476,7 @@ void MainWindow::setButtonAndMenuStates()
         // check if form has table view available to use
         // Note Page Note Tab does not have a table view
          if ( ui->tabWidgetNotes->currentIndex() == 0 && ui->stackedWidget->currentIndex() == 1 )
-        {
+        { 
             ui->actionDelete_Item->setEnabled(false);
             ui->actionCopy_Item->setEnabled(false);
             ui->actionNew_Item->setEnabled(false);
@@ -319,8 +493,8 @@ void MainWindow::setButtonAndMenuStates()
             {
                 if ( (dynamic_cast<QTableView*>(fw))->selectionModel()->hasSelection() )
                 {
-                    ui->actionDelete_Item->setEnabled(true);
-                    ui->actionCopy_Item->setEnabled(true);
+                    ui->actionDelete_Item->setEnabled(hascurview);
+                    ui->actionCopy_Item->setEnabled(hascurview);
                 }
                 else
                 {
@@ -334,7 +508,7 @@ void MainWindow::setButtonAndMenuStates()
                 ui->actionCopy_Item->setEnabled(false);
             }
 
-            ui->actionNew_Item->setEnabled(true);
+            ui->actionNew_Item->setEnabled(hascurview);
         }
 
         // format menu items
@@ -415,8 +589,8 @@ void MainWindow::on_actionNew_Database_triggered()
 
     if (!dbfile.isEmpty())
     {
-        global_DBObjects.createDatabase(dbfile);
-        openDatabase(dbfile);
+        if (global_DBObjects.createDatabase(dbfile)) // open the database if created successfully
+            openDatabase(dbfile);
     }
 }
 
@@ -451,7 +625,7 @@ void MainWindow::openDatabase(QString t_dbfile)
     ui->pageItemDetails->setupModels(ui);
     ui->pageProjectNote->setupModels(ui);
     ui->pageSearch->setupModels(ui);
-
+    ui->pageHelp->setupModels(ui);
 
     navigateClearHistory();
     navigateToPage(ui->pageProjectsList);
@@ -509,9 +683,13 @@ void MainWindow::navigateForward()
 }
 
 void MainWindow::on_actionClose_Database_triggered()
-{
+{ 
+    navigateCurrentPage()->setCurrentView(nullptr);
+    navigateClearHistory();
+
     global_Settings.setLastDatabase(QString());
     global_DBObjects.closeDatabase();
+
     setButtonAndMenuStates();
 }
 
@@ -798,6 +976,7 @@ void MainWindow::setupTextActions()
 
     const QIcon boldIcon = QIcon(rsrcPath + "/textbold.png");
     m_actionTextBold = menu->addAction(boldIcon, tr("&Bold"), this, &MainWindow::textBold);
+    m_actionTextBold->setStatusTip("Bold text");
     m_actionTextBold->setShortcut(Qt::CTRL + Qt::Key_B);
     m_actionTextBold->setPriority(QAction::LowPriority);
     QFont bold;
@@ -808,6 +987,7 @@ void MainWindow::setupTextActions()
 
     const QIcon italicIcon = QIcon(rsrcPath + "/textitalic.png");
     m_actionTextItalic = menu->addAction(italicIcon, tr("&Italic"), this, &MainWindow::textItalic);
+    m_actionTextItalic->setStatusTip("Italic text");
     m_actionTextItalic->setPriority(QAction::LowPriority);
     m_actionTextItalic->setShortcut(Qt::CTRL + Qt::Key_I);
     QFont italic;
@@ -818,6 +998,7 @@ void MainWindow::setupTextActions()
 
     const QIcon underlineIcon = QIcon(rsrcPath + "/textunder.png");
     m_actionTextUnderline = menu->addAction(underlineIcon, tr("&Underline"), this, &MainWindow::textUnderline);
+    m_actionTextUnderline->setStatusTip("Underline text");
     m_actionTextUnderline->setShortcut(Qt::CTRL + Qt::Key_U);
     m_actionTextUnderline->setPriority(QAction::LowPriority);
     QFont underline;
@@ -830,30 +1011,36 @@ void MainWindow::setupTextActions()
 
     const QIcon leftIcon = QIcon(rsrcPath + "/textleft.png");
     m_actionAlignLeft = new QAction(leftIcon, tr("&Left"), this);
+    m_actionAlignLeft->setStatusTip("Left align text");
     m_actionAlignLeft->setShortcut(Qt::CTRL + Qt::Key_L);
     m_actionAlignLeft->setCheckable(true);
     m_actionAlignLeft->setPriority(QAction::LowPriority);
     const QIcon centerIcon = QIcon(rsrcPath + "/textcenter.png");
     m_actionAlignCenter = new QAction(centerIcon, tr("C&enter"), this);
+    m_actionAlignCenter->setStatusTip("Center align text");
     m_actionAlignCenter->setShortcut(Qt::CTRL + Qt::Key_E);
     m_actionAlignCenter->setCheckable(true);
     m_actionAlignCenter->setPriority(QAction::LowPriority);
     const QIcon rightIcon = QIcon(rsrcPath + "/textright.png");
     m_actionAlignRight = new QAction(rightIcon, tr("&Right"), this);
+    m_actionAlignRight->setStatusTip("Right align text");
     m_actionAlignRight->setShortcut(Qt::CTRL + Qt::Key_R);
     m_actionAlignRight->setCheckable(true);
     m_actionAlignRight->setPriority(QAction::LowPriority);
     const QIcon fillIcon = QIcon(rsrcPath + "/textjustify.png");
     m_actionAlignJustify = new QAction(fillIcon, tr("&Justify"), this);
+    m_actionAlignJustify->setStatusTip("Justify text");
     m_actionAlignJustify->setShortcut(Qt::CTRL + Qt::Key_J);
     m_actionAlignJustify->setCheckable(true);
     m_actionAlignJustify->setPriority(QAction::LowPriority);
     const QIcon indentMoreIcon = QIcon(rsrcPath + "/format-indent-more.png");
     m_actionIndentMore = menu->addAction(indentMoreIcon, tr("&Indent"), this, &MainWindow::indent);
+    m_actionIndentMore->setStatusTip("Indent text");
     m_actionIndentMore->setShortcut(Qt::CTRL + Qt::Key_BracketRight);
     m_actionIndentMore->setPriority(QAction::LowPriority);
     const QIcon indentLessIcon = QIcon(rsrcPath + "/format-indent-less.png");
     m_actionIndentLess = menu->addAction(indentLessIcon, tr("&Unindent"), this, &MainWindow::unindent);
+    m_actionIndentLess->setStatusTip("Unindent text");
     m_actionIndentLess->setShortcut(Qt::CTRL + Qt::Key_BracketLeft);
     m_actionIndentLess->setPriority(QAction::LowPriority);
 
@@ -887,6 +1074,7 @@ void MainWindow::setupTextActions()
     QPixmap pix(16, 16);
     pix.fill(Qt::black);
     m_actionTextColor = menu->addAction(pix, tr("&Color..."), this, &MainWindow::textColor);
+    m_actionTextColor->setStatusTip("Color text");
     tb->addAction(m_actionTextColor);
 
     menu->addSeparator();
@@ -1384,9 +1572,64 @@ void MainWindow::on_actionXML_Export_triggered()
     }
 }
 
+void MainWindow::on_actionBackup_Database_triggered()
+{
+    // choose the file
+    QString dbfile = QFileDialog::getSaveFileName(this, tr("Backup to file"), QString(), tr("Project Notes (*.db)"));
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    QApplication::processEvents();
+
+    if (!dbfile.isEmpty())
+    {
+        global_DBObjects.backupDatabase(dbfile);
+    }
+
+    QApplication::restoreOverrideCursor();
+    QApplication::processEvents();
+}
+
+
+void MainWindow::on_actionAbout_triggered()
+{
+    AboutDialog dlg;
+
+    dlg.exec();
+}
+
+
+void MainWindow::on_actionHelp_triggered()
+{
+    navigateToPage(ui->pageHelp);
+    ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/Introduction.html"));
+}
+
+
+void MainWindow::on_actionGetting_Started_triggered()
+{
+    navigateToPage(ui->pageHelp);
+    ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/GettingStarted.html"));
+}
+
+
+void MainWindow::on_actionWhat_s_New_triggered()
+{
+    navigateToPage(ui->pageHelp);
+    ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/Whatsnew.html"));
+}
+
+
+void MainWindow::on_actionCustom_Plugins_triggered()
+{
+    navigateToPage(ui->pageHelp);
+    ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/OverviewofPlugins.html"));
+}
+
 
 // TODO: Add spell checking features for QExpandingLineEdit and QLineEdit
 // TODO: Add find feature for QExpandingLineEdit
 // TODO: Add find features to QComboBox located in a table view
 // TODO: Add licensing information to all files to be included with the software
 // TODO: Determine what information goes in the about screen
+// TODO: Complete Help Menu Items
+// TODO: Test setup database from scratch

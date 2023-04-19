@@ -79,6 +79,7 @@ void PluginSettingsDialog::selectPlugin(int t_index)
         QTableWidgetItem* item = new QTableWidgetItem(qs[i]);
         item->setFlags(item->flags() & ~Qt::ItemIsEditable);
         item->setBackground(Qt::gray);
+
         ui->SettingsTableWidget->setItem(i, 0, item);
         ui->SettingsTableWidget->horizontalHeader()->setStretchLastSection(true);
 

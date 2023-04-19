@@ -17,7 +17,7 @@ from PyQt5.QtGui import QDesktopServices
 # Project Notes Plugin Parameters
 pluginname = "Clean PC"
 plugindescription = "Removes unwanted links and files.  Also performs registry clean up."
-plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
+plugintable = "" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
 # events must have a data structure and data view specified
@@ -76,6 +76,8 @@ def cleanpc():
 
         if QFile("C:\\Users\\Public\\Desktop\\IFS Apps 10.url").exists():
             QFile("C:\\Users\\Public\\Desktop\\IFS Apps 10.url").remove()
+
+        print("Clean PC called...")
 
 
 # Project Notes Plugin Events

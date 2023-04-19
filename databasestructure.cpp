@@ -206,7 +206,8 @@ bool DatabaseStructure::CreateDatabase()
         );
     )");
 
-    global_DBObjects.execute(R"(
+
+    QString search_view = R"(
         CREATE VIEW database_search AS select 'Client' as datatype, 'Client Name' as dataname, client_name as datadescription, client_id as dataid, '0' as internal_item, client_id, 'Active' as project_status, '' as project_number, '' as project_name, '' as item_number, '' as item_name, '' as note_date, '' as note_title, '' as fk_id, client_id as datakey from clients
         -- list all the people data
         union all
@@ -255,7 +256,9 @@ bool DatabaseStructure::CreateDatabase()
         select 'Project Locations' as datatype, 'Location Type' as dataname, location_type as datadescription, location_id as dataid, '0' as internal_item, projects.client_id, project_status, project_number, project_name, '' as item_number, '' as item_name, '' as note_date, '' as note_title, projects.project_id as fk_id, '' as datakey from project_locations join projects on project_locations.project_id=projects.project_id
         union all
         select 'Project Locations' as datatype, 'Description' as dataname, location_description as datadescription, location_id as dataid, '0' as internal_item, projects.client_id, project_status, project_number, project_name, '' as item_number, '' as item_name, '' as note_date, '' as note_title, projects.project_id as fk_id, '' as datakey from project_locations join projects on project_locations.project_id=projects.project_id
-        union all
+        union all)";
+
+    search_view += R"(
         select 'Project Locations' as datatype, 'Full Path' as dataname, full_path as datadescription, location_id as dataid, '0' as internal_item, projects.client_id, project_status, project_number, project_name, '' as item_number, '' as item_name, '' as note_date, '' as note_title, projects.project_id as fk_id, '' as datakey from project_locations join projects on project_locations.project_id=projects.project_id
         -- list all project team members
         union all
@@ -308,7 +311,9 @@ bool DatabaseStructure::CreateDatabase()
         select 'Item Tracker' as datatype, 'Project Number' as dataname, projects.project_number as datadescription, item_id as dataid, item_tracker.internal_item, projects.client_id, project_status, project_number, project_name, item_number, item_name, strftime('%m/%d/%Y', datetime(project_notes.note_date, 'unixepoch')) as note_date, note_title, projects.project_id as fk_id, projects.project_id as datakey from item_tracker join projects on item_tracker.project_id=projects.project_id left join project_notes on project_notes.note_id=item_tracker.note_id
         union all
         select 'Tracker Update' as datatype, 'Comments' as dataname, item_tracker_updates.update_note as datadescription, tracker_updated_id as dataid, item_tracker.internal_item, projects.client_id, project_status, project_number, project_name, item_number, item_name, strftime('%m/%d/%Y', datetime(lastupdated_date, 'unixepoch')) as note_date, note_title, item_tracker.project_id as fk_id, item_tracker.item_id as datakey from item_tracker left join projects on item_tracker.project_id=projects.project_id left join project_notes on project_notes.note_id=item_tracker.note_id left join item_tracker_updates on item_tracker.item_id=item_tracker_updates.item_id
-    )");
+        )";
+
+    global_DBObjects.execute(search_view);
 
     global_DBObjects.execute(R"(
             CREATE VIEW item_tracker_view AS SELECT
@@ -451,7 +456,7 @@ bool DatabaseStructure::UpgradeDatabase()
             DROP VIEW IF EXISTS database_search;
         )");
 
-        global_DBObjects.execute(R"(
+        QString search_view = R"(
             CREATE VIEW database_search AS select 'Client' as datatype, 'Client Name' as dataname, client_name as datadescription, client_id as dataid, '0' as internal_item, client_id, 'Active' as project_status, '' as project_number, '' as project_name, '' as item_number, '' as item_name, '' as note_date, '' as note_title, '' as fk_id, client_id as datakey from clients
             -- list all the people data
             union all
@@ -500,7 +505,9 @@ bool DatabaseStructure::UpgradeDatabase()
             select 'Project Locations' as datatype, 'Location Type' as dataname, location_type as datadescription, location_id as dataid, '0' as internal_item, projects.client_id, project_status, project_number, project_name, '' as item_number, '' as item_name, '' as note_date, '' as note_title, projects.project_id as fk_id, '' as datakey from project_locations join projects on project_locations.project_id=projects.project_id
             union all
             select 'Project Locations' as datatype, 'Description' as dataname, location_description as datadescription, location_id as dataid, '0' as internal_item, projects.client_id, project_status, project_number, project_name, '' as item_number, '' as item_name, '' as note_date, '' as note_title, projects.project_id as fk_id, '' as datakey from project_locations join projects on project_locations.project_id=projects.project_id
-            union all
+            union all)";
+
+        search_view += R"(
             select 'Project Locations' as datatype, 'Full Path' as dataname, full_path as datadescription, location_id as dataid, '0' as internal_item, projects.client_id, project_status, project_number, project_name, '' as item_number, '' as item_name, '' as note_date, '' as note_title, projects.project_id as fk_id, '' as datakey from project_locations join projects on project_locations.project_id=projects.project_id
             -- list all project team members
             union all
@@ -553,7 +560,9 @@ bool DatabaseStructure::UpgradeDatabase()
             select 'Item Tracker' as datatype, 'Project Number' as dataname, projects.project_number as datadescription, item_id as dataid, item_tracker.internal_item, projects.client_id, project_status, project_number, project_name, item_number, item_name, strftime('%m/%d/%Y', datetime(project_notes.note_date, 'unixepoch')) as note_date, note_title, projects.project_id as fk_id, projects.project_id as datakey from item_tracker join projects on item_tracker.project_id=projects.project_id left join project_notes on project_notes.note_id=item_tracker.note_id
             union all
             select 'Tracker Update' as datatype, 'Comments' as dataname, item_tracker_updates.update_note as datadescription, tracker_updated_id as dataid, item_tracker.internal_item, projects.client_id, project_status, project_number, project_name, item_number, item_name, strftime('%m/%d/%Y', datetime(lastupdated_date, 'unixepoch')) as note_date, note_title, item_tracker.project_id as fk_id, item_tracker.item_id as datakey from item_tracker left join projects on item_tracker.project_id=projects.project_id left join project_notes on project_notes.note_id=item_tracker.note_id left join item_tracker_updates on item_tracker.item_id=item_tracker_updates.item_id
-        )");
+            )";
+
+        global_DBObjects.execute(search_view);
 
         global_DBObjects.execute(R"(
             CREATE VIEW projects_view AS SELECT

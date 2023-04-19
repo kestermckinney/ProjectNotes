@@ -655,7 +655,7 @@ bool PNSqlQueryModel::addRecord(QSqlRecord& t_newrecord)
     QModelIndex qmi = QModelIndex();
     int row = rowCount((qmi));
 
-    qDebug() << t_newrecord;
+    //qDebug() << t_newrecord;
 
     beginInsertRows(qmi, row, row);
     m_cache.append(t_newrecord);
@@ -1476,7 +1476,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
 {
     if (t_xml_row->tagName() != "row")
     {
-        qDebug() << "tag name: " << t_xml_row->tagName() << " is not a 'row'";
+        //qDebug() << "tag name: " << t_xml_row->tagName() << " is not a 'row'";
         return false;
     }
 
@@ -1600,7 +1600,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
         sql = QString("insert into %1 (%2) values (%3)").arg(m_tablename, fields, insertvalues);
     }
 
-    qDebug() << "XML Generated SQL: " << sql;
+    //qDebug() << "XML Generated SQL: " << sql;
 
     global_DBObjects.execute(sql);
 

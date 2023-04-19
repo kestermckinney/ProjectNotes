@@ -2,8 +2,6 @@
 import sys
 import platform
 
-print(sys.path)
-
 if (platform.system() == 'Windows'):
     from includes.excel_tools import ProjectNotesExcelTools
     import win32com

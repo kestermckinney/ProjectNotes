@@ -45,7 +45,7 @@ public:
     void closeDatabase();
     QString execute(const QString& t_sql);
 
-    void backupDatabase(QWidget& t_parent, QFileInfo& t_file);
+    void backupDatabase(const QString& t_file);
     bool saveParameter( const QString& t_parametername, const QString& t_parametervalue );
     QString loadParameter( const QVariant& t_parametername );
 

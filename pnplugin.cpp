@@ -9,7 +9,7 @@
 
 bool PNPlugin::loadModule(const QFileInfo& t_filename)
 {
-    qDebug() << "Loading plugin file: " << t_filename;
+    //qDebug() << "Loading plugin file: " << t_filename;
     m_PluginLocation = t_filename.absoluteFilePath();
 
     m_PNPluginModule = PyImport_ImportModule(t_filename.baseName().toUtf8().constData());
@@ -44,16 +44,22 @@ bool PNPlugin::loadModule(const QFileInfo& t_filename)
 
     if (PyObject_HasAttrString(m_PNPluginModule, "event_startup"))
         m_Startup = PyObject_GetAttrString(m_PNPluginModule,"event_startup");
+
     if (PyObject_HasAttrString(m_PNPluginModule, "event_shutdown"))
         m_Shutdown = PyObject_GetAttrString(m_PNPluginModule,"event_shutdown");
+
     if (PyObject_HasAttrString(m_PNPluginModule, "event_everyminute"))
         m_EveryMinute = PyObject_GetAttrString(m_PNPluginModule,"event_everyminute");
-    if (PyObject_HasAttrString(m_PNPluginModule, "event_every5minute"))
+
+    if (PyObject_HasAttrString(m_PNPluginModule, "event_every5minutes"))
         m_Every5Minutes = PyObject_GetAttrString(m_PNPluginModule,"event_every5minutes");
-    if (PyObject_HasAttrString(m_PNPluginModule, "event_every10minute"))
+
+    if (PyObject_HasAttrString(m_PNPluginModule, "event_every10minutes"))
         m_Every10Minutes = PyObject_GetAttrString(m_PNPluginModule,"event_every10minutes");
-    if (PyObject_HasAttrString(m_PNPluginModule, "event_every30minute"))
+
+    if (PyObject_HasAttrString(m_PNPluginModule, "event_every30minutes"))
         m_Every30Minutes = PyObject_GetAttrString(m_PNPluginModule,"event_every30minutes");
+
     if (PyObject_HasAttrString(m_PNPluginModule, "event_menuclick"))
         m_PNPluginMenu = PyObject_GetAttrString(m_PNPluginModule,"event_menuclick");
 

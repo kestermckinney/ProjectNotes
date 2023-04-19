@@ -1,4 +1,4 @@
-QT       += core gui sql xml
+QT       += core gui sql xml help
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -12,6 +12,7 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    aboutdialog.cpp \
     actionitemprojectnotesmodel.cpp \
     actionitemsdetailsmeetingsmodel.cpp \
     clientslistview.cpp \
@@ -22,6 +23,8 @@ SOURCES += \
     databasestructure.cpp \
     filterdatadialog.cpp \
     findreplacedialog.cpp \
+    helpbrowser.cpp \
+    helppage.cpp \
     itemdetailsdelegate.cpp \
     itemdetailspage.cpp \
     itemdetailteamlistmodel.cpp \
@@ -82,6 +85,7 @@ SOURCES += \
 
 HEADERS += \
     FilterSaveStructure.h \
+    aboutdialog.h \
     actionitemprojectnotesmodel.h \
     actionitemsdetailsmeetingsmodel.h \
     clientslistview.h \
@@ -92,6 +96,8 @@ HEADERS += \
     databasestructure.h \
     filterdatadialog.h \
     findreplacedialog.h \
+    helpbrowser.h \
+    helppage.h \
     itemdetailsdelegate.h \
     itemdetailspage.h \
     itemdetailteamlistmodel.h \
@@ -151,6 +157,7 @@ HEADERS += \
     widgets_export.h
 
 FORMS += \
+    aboutdialog.ui \
     filterdatadialog.ui \
     findreplacedialog.ui \
     mainwindow.ui \
