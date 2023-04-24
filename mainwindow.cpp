@@ -645,6 +645,8 @@ void MainWindow::navigateToPage(PNBasePage* t_widget)
     m_navigation_location = m_navigation_history.count();
     m_navigation_history.push(t_widget);
 
+    PNSqlQueryModel::refreshDirty();
+
     ui->stackedWidget->setCurrentWidget(t_widget);
 
     this->setWindowTitle(QString("Project Notes [%1]").arg(t_widget->pagetitle()));
@@ -659,6 +661,8 @@ void MainWindow::navigateBackward()
         m_navigation_location--;
 
         QWidget* current = m_navigation_history.at(m_navigation_location);
+        PNSqlQueryModel::refreshDirty();
+
         ui->stackedWidget->setCurrentWidget(current);
 
         this->setWindowTitle(QString("Project Notes [%1]").arg(((PNBasePage* )current)->pagetitle()));
@@ -674,6 +678,8 @@ void MainWindow::navigateForward()
         m_navigation_location++;
 
         QWidget* current = m_navigation_history.at(m_navigation_location);
+        PNSqlQueryModel::refreshDirty();
+
         ui->stackedWidget->setCurrentWidget(current);
 
         this->setWindowTitle(QString("Project Notes [%1]").arg(((PNBasePage* )current)->pagetitle()));

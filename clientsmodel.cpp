@@ -10,7 +10,6 @@ ClientsModel::ClientsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 
     setTableName("clients", "Clients");
 
-
     addColumn(0, tr("Client ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
     addColumn(1, tr("Client Name"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
 

@@ -113,6 +113,8 @@ void ProjectDetailsPage::toFirst()
 
 void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
 {
+    PNSqlQueryModel::refreshDirty();
+
     emit setFocus(); // tell the main window to update to call the setButtonsAndMenus function
 
     switch ( index )
