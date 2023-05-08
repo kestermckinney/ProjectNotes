@@ -17,10 +17,10 @@ TeamsModel::TeamsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
     addColumn(4, tr("Client ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "clients", "client_id", "client_name");
 
-//    addRelatedTable("people", "people_id", "People");
-//    addRelatedTable("clients", "client_id", "Clients");
-//    addRelatedTable("projects", "project_id", "Projects");
-    // I don't think the related table is needed because this is just used for drop down lists
+    //TODO: This may be an issue when the primary key of record is not the foreign key
+    addRelatedTable("projects", "primary_contact", "Primary Contact");
+    addRelatedTable("item_tracker", "identified_by", "Identified By");
+    addRelatedTable("item_tracker","assigned_to", "Assigned To");
 
     setOrderBy("name");
 

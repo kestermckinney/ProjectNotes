@@ -55,53 +55,26 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
                 if ( recordset->tablename() == m_related_table[i] )
                 {
                     //qDebug() << "Looking Into Table " << recordset->tablename() << " i is " << i;
+                    //qDebug() << "Check if table " << recordset->tablename() << " has column " << m_related_column[i];
                     // we found a table to check, look for the related column
                     int ck_col = recordset->m_sql_query.record().indexOf(m_related_column[i]);
 
                     // if related column is being used then search
                     if (ck_col != -1)
                     {
-                        for (int ck_row = 0; ck_row < recordset->m_cache.count(); ck_row++)
-                        {
-                            // if the row contains the key value in the column then reload it
-                            if ( recordset->m_cache[ck_row].value(ck_col) == key_value )
-                            {
-                                // qDebug() << "Reloading Record for Table " << recordset->tablename() << " Row " << ck_row << " Column " << ck_col;
-                                recordset->reloadRecord(recordset->index(ck_row, ck_col));
-                            }
-                        }
+                        recordset->setDirty();  // refresh when ne page active
                     }
 
-                }
-                // if this is a copy of the same table update the row we just changed
-                else if (this->tablename() == recordset->tablename())
-                {
-                    for (int m_row = 0; m_row < recordset->m_cache.count(); m_row++)
-                    {
-                        // if the row contains the key value in the column then reload it
-                        if ( recordset->m_cache[m_row].value(0) == key_value )
-                        {
-                            // qDebug() << "Reloading Record for Table " << recordset->tablename() << " Row " << ck_row << " Column " << ck_col;
-                            recordset->reloadRecord(recordset->index(m_row, 0));
-                        }
-                    }
                 }
             }
 
             // if it is the same table in a different recordset reload it
             if ( recordset->tablename() == tablename() )
             {
-                for (int ck_row = 0; ck_row < recordset->m_cache.count(); ck_row++)
-                {
-                    // if the row contains the key value in the column then reload it
-                    if ( recordset->m_cache[ck_row].value(0) == key_value )
-                    {
-                        //qDebug() << "Reloading Record for Table " << recordset->tablename() << " Row " << ck_row << " Column 0";
-                        recordset->reloadRecord(recordset->index(ck_row, 0));
-                    }
-                }
-            }
+                //qDebug() << "Found " << tablename() << " in another model";
 
+                recordset->setDirty();
+            }
         }
     }
 }
@@ -308,6 +281,8 @@ void PNSqlQueryModel::refresh()
 
     }
     endResetModel();
+
+    m_is_dirty = false;
 }
 
 QVariant PNSqlQueryModel::data(const QModelIndex &t_index, int t_role) const
@@ -1628,3 +1603,4 @@ void PNSqlQueryModel::refreshByTableName()
 
 
 //TODO: establish a progress bar while generating the XML
+//TODO: When a team member is updated the Primary Contact get's cleared somehow

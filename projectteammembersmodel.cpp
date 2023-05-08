@@ -16,7 +16,9 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* t_parent): PNSqlQueryM
     addColumn(4, tr("Receive Status"), DBBool, DBSearchable, DBNotRequired, DBEditable);
     addColumn(5, tr("Role"), DBString, DBSearchable, DBNotRequired, DBEditable);
 
-    addRelatedTable("projects", "project_id", "Projects");
+    addRelatedTable("projects", "primary_contact", "Primary Contact");
+    addRelatedTable("item_tracker", "identified_by", "Identified By");
+    addRelatedTable("item_tracker","assigned_to", "Assigned To");
 
     setOrderBy("name");
 }

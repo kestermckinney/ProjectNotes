@@ -4,6 +4,7 @@
 
 #include <QLineEdit>
 #include <QComboBox>
+#include <QDebug>
 
 ProjectDetailsDelegate::ProjectDetailsDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
@@ -35,10 +36,15 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
             PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
 
+
+            qDebug() << " Primary Contact Mapper Called";
+
             if (model)
             {
                 QString list_value = model->findValue(value, 3, 1).toString();
                 comboBox->setCurrentText(list_value);
+
+                qDebug() << " .. Set text value to " << list_value;
             }
         }
         break;

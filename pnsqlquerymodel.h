@@ -123,6 +123,8 @@ public:
     bool isSearchable( int t_column ) { return (m_column_is_searchable[t_column] == DBSearchable); }
     void setRequired( int t_column, DBColumnRequired t_required ) { m_column_is_required[t_column] = t_required; }
     bool isRequired( int t_column ) { return (m_column_is_required[t_column] == DBRequired); }
+    bool isDirty() { return m_is_dirty; }
+    bool setDirty() { m_is_dirty = true; } // records need refreshed when underlying database tables have changed
     DBColumnType getType( const int t_column ) const { return m_column_type[t_column]; }
     void setType( const int t_column, const DBColumnType t_column_type ) { m_column_type[t_column] = t_column_type; }
     QString getColumnName( int t_column ) {
@@ -151,6 +153,15 @@ public:
         }
 
         return nullptr;
+    }
+
+    static void refreshDirty()
+    {
+        for ( PNSqlQueryModel* m : m_open_recordsets)
+        {
+            if (m->isDirty())
+                m->refresh();
+        }
     }
 
 private:
@@ -199,6 +210,7 @@ private:
     bool m_user_filter_active = false;
     bool m_read_only = false;
     bool m_can_export = true;
+    bool m_is_dirty = false; // only set to true when related query models have changed
 
     // list of created models
     static QList<PNSqlQueryModel*> m_open_recordsets;
