@@ -4,6 +4,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 ICON = AppIcon.icns
 
+win32: RC_ICONS = icons/logo.ico
+
 CONFIG += console
 CONFIG += c++11
 
@@ -185,7 +187,7 @@ DISTFILES += \
     dictionary/index.ini
 
 
-unix {
+unix: {
    LIBS += -lhunspell
    INCLUDEPATH += /usr/include/python3.10
    #INCLUDEPATH += /usr/include/linux/
@@ -195,16 +197,32 @@ unix {
    #$(shell python3-config --ldflags)
 }
 
-win32 {
-   DEFINES +=   WIN32 \
-#                _DEBUG \
-                _WINDOWS \
-                _USRDLL \
-                HUNSPELL_STATIC \
-                _CRT_SECURE_NO_WARNINGS
+win32: {
+    CONFIG(debug,debug|release): {
+        #debug
+        DEFINES +=   WIN32 \
+                    _WINDOWS \
+                    _USRDLL \
+                    HUNSPELL_STATIC \
+                    _CRT_SECURE_NO_WARNINGS
 
-   INCLUDEPATH += "C:/Users/Paul McKinney/Documents/hunspell/src"
-   INCLUDEPATH +="C:/Program Files/Python311/include"
-   LIBS += "C:\Users\Paul McKinney\Documents\hunspell\msvc\x64\Debug/libhunspell.lib"
-   LIBS += "C:/Program Files/Python311/libs/python311.lib"
+       INCLUDEPATH += "C:/Users/Paul McKinney/Documents/hunspell/src"
+       INCLUDEPATH +="C:/Program Files/Python311/include"
+       LIBS += "C:\Users\Paul McKinney\Documents\hunspell\msvc\x64\Debug/libhunspell.lib"
+       LIBS += "C:/Program Files/Python311/libs/python311.lib"
+    }
+
+    CONFIG(release,debug|release): {
+        #release
+        DEFINES +=   WIN32 \
+                   _WINDOWS \
+                   _USRDLL \
+                   HUNSPELL_STATIC \
+                   _CRT_SECURE_NO_WARNINGS
+
+        INCLUDEPATH += "C:/Users/Paul McKinney/Documents/hunspell/src"
+        INCLUDEPATH +="C:/Program Files/Python311/include"
+        LIBS += "C:\Users\Paul McKinney\Documents\hunspell\msvc\x64\Release/libhunspell.lib"
+        LIBS += "C:/Program Files/Python311/libs/python311.lib"
+    }
 }
