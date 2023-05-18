@@ -153,9 +153,19 @@ PNPluginManager::PNPluginManager(QWidget* t_parent)
     // load PNPlugin modules
     QString fullpath = QCoreApplication::applicationDirPath() + "/plugins/";
     QString syspath = QString("sys.path.append(\"%1\")").arg(fullpath);
+    QString pythonzip = QString("sys.path.append(\"%1\")").arg(QCoreApplication::applicationDirPath() + "/python311.zip");
+    QString sitepackages = QString("sys.path.append(\"%1\")").arg(QCoreApplication::applicationDirPath() + "/site-packages");
+    QString win32path = QString("sys.path.append(\"%1\")").arg(QCoreApplication::applicationDirPath() + "/site-packages/win32");
+    QString win32lib = QString("sys.path.append(\"%1\")").arg(QCoreApplication::applicationDirPath() + "/site-packages/win32/lib");
+    QString pythonwin = QString("sys.path.append(\"%1\")").arg(QCoreApplication::applicationDirPath() + "/site-packages/Pythonwin");
 
     PyRun_SimpleString("import sys");
     PyRun_SimpleString(syspath.toUtf8().constData());
+    PyRun_SimpleString(pythonzip.toUtf8().constData());
+    PyRun_SimpleString(sitepackages.toUtf8().constData());
+    PyRun_SimpleString(win32path.toUtf8().constData());
+    PyRun_SimpleString(win32lib.toUtf8().constData());
+    PyRun_SimpleString(pythonwin.toUtf8().constData());
 
     QDirIterator fileit( fullpath, {"*.py"}, QDir::Files);
 

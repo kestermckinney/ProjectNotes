@@ -126,7 +126,7 @@ public:
     void setRequired( int t_column, DBColumnRequired t_required ) { m_column_is_required[t_column] = t_required; }
     bool isRequired( int t_column ) { return (m_column_is_required[t_column] == DBRequired); }
     bool isDirty() { return m_is_dirty; }
-    bool setDirty() { m_is_dirty = true; } // records need refreshed when underlying database tables have changed
+    void setDirty() { m_is_dirty = true; } // records need refreshed when underlying database tables have changed
     DBColumnType getType( const int t_column ) const { return m_column_type[t_column]; }
     void setType( const int t_column, const DBColumnType t_column_type ) { m_column_type[t_column] = t_column_type; }
     QString getColumnName( int t_column ) { return m_sql_query.record().fieldName(t_column); }

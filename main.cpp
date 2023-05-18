@@ -5,6 +5,8 @@
 
 int main(int argc, char *argv[])
 {
+    QCoreApplication::addLibraryPath("./site-packages/PyQt5/Qt5/plugins");
+
     QApplication a(argc, argv);
     MainWindow w;
 
