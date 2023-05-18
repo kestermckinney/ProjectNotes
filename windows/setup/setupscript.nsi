@@ -57,6 +57,8 @@ RequestExecutionLevel user
 
 ; MUI end ------
 
+!system 'cscript build_file_list.vbs'
+
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 OutFile "ProjectNotes3-Setup64.exe"
 InstallDir "$PROGRAMFILES64\Project Notes 3"
@@ -77,127 +79,8 @@ Section "MainSection" SEC01
   ; Project Notes Needed Libraries
   File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\ProjectNotes3.exe"
 
-  ;TODO: I think the Qt Libraries need to bee in the install folder
-
-  ; python related files
-  File "..\bin\_bz2.pyd"
-  File "..\bin\_decimal.pyd"
-  File "..\bin\_elementtree.pyd"
-  File "..\bin\_hashlib.pyd"
-  File "..\bin\_lzma.pyd"
-  File "..\bin\_socket.pyd"
-  File "..\bin\_ssl.pyd"
-  File "..\bin\_win32sysloader.pyd"
-  File "..\bin\base_library.zip"
-  File "..\bin\libcrypto-1_1.dll"
-  File "..\bin\libssl-1_1.dll"
-  File "..\bin\mfc140u.dll"
-  File "..\bin\pyexpat.pyd"
-  File "..\bin\python3.dll"
-  File "..\bin\python311.dll"
-  File "..\bin\select.pyd"
-
-  ; put in root SetOutPath "$INSTDIR\PyQt5"
-  File "..\bin\PyQt5\QtCore.pyd"
-  File "..\bin\PyQt5\QtGui.pyd"
-  File "..\bin\PyQt5\QtSql.pyd"
-  File "..\bin\PyQt5\QtWidgets.pyd"
-  File "..\bin\PyQt5\QtXml.pyd"
-  File "..\bin\PyQt5\sip.cp311-win_amd64.pyd"
-
-  ; put in root SetOutPath "$INSTDIR\PyQt5\Qt5\bin"
-  File "..\bin\PyQt5\Qt5\bin\d3dcompiler_47.dll"
-  File "..\bin\PyQt5\Qt5\bin\libEGL.dll"
-  File "..\bin\PyQt5\Qt5\bin\libGLESv2.dll"
-  File "..\bin\PyQt5\Qt5\bin\MSVCP140.dll"
-  File "..\bin\PyQt5\Qt5\bin\MSVCP140_1.dll"
-  File "..\bin\PyQt5\Qt5\bin\opengl32sw.dll"
-  File "..\bin\PyQt5\Qt5\bin\Qt5Core.dll"
-  File "..\bin\PyQt5\Qt5\bin\Qt5DBus.dll"
-  File "..\bin\PyQt5\Qt5\bin\Qt5Gui.dll"
-  File "..\bin\PyQt5\Qt5\bin\Qt5Network.dll"
-  File "..\bin\PyQt5\Qt5\bin\Qt5Qml.dll"
-  File "..\bin\PyQt5\Qt5\bin\Qt5QmlModels.dll"
-  File "..\bin\PyQt5\Qt5\bin\Qt5Quick.dll"
-  File "..\bin\PyQt5\Qt5\bin\Qt5Sql.dll"
-  File "..\bin\PyQt5\Qt5\bin\Qt5Svg.dll"
-  File "..\bin\PyQt5\Qt5\bin\Qt5WebSockets.dll"
-  File "..\bin\PyQt5\Qt5\bin\Qt5Widgets.dll"
-  File "..\bin\PyQt5\Qt5\bin\Qt5Xml.dll"
-  File "..\bin\PyQt5\Qt5\bin\Qt5Help.dll"
-  File "..\bin\PyQt5\Qt5\bin\VCRUNTIME140_1.dll"
-
-  SetOutPath "$INSTDIR\PyQt5\Qt5\plugins\generic" 
-  File "..\bin\PyQt5\Qt5\plugins\generic\qtuiotouchplugin.dll"
-
-  SetOutPath "$INSTDIR\PyQt5\Qt5\plugins\iconengines" 
-  File "..\bin\PyQt5\Qt5\plugins\iconengines\qsvgicon.dll"
-
-  SetOutPath "$INSTDIR\PyQt5\Qt5\plugins\imageformats"
-  File "..\bin\PyQt5\Qt5\plugins\imageformats\qgif.dll"
-  File "..\bin\PyQt5\Qt5\plugins\imageformats\qicns.dll"
-  File "..\bin\PyQt5\Qt5\plugins\imageformats\qico.dll"
-  File "..\bin\PyQt5\Qt5\plugins\imageformats\qjpeg.dll"
-  File "..\bin\PyQt5\Qt5\plugins\imageformats\qsvg.dll"
-  File "..\bin\PyQt5\Qt5\plugins\imageformats\qtga.dll"
-  File "..\bin\PyQt5\Qt5\plugins\imageformats\qtiff.dll"
-  File "..\bin\PyQt5\Qt5\plugins\imageformats\qwbmp.dll"
-  File "..\bin\PyQt5\Qt5\plugins\imageformats\qwebp.dll"
-
-  SetOutPath "$INSTDIR\PyQt5\Qt5\plugins\platforms"
-  File "..\bin\PyQt5\Qt5\plugins\platforms\qminimal.dll"
-  File "..\bin\PyQt5\Qt5\plugins\platforms\qoffscreen.dll"
-  File "..\bin\PyQt5\Qt5\plugins\platforms\qwebgl.dll"
-  File "..\bin\PyQt5\Qt5\plugins\platforms\qwindows.dll"
-
-  SetOutPath "$INSTDIR\PyQt5\Qt5\plugins\platformthemes" 
-  File "..\bin\PyQt5\Qt5\plugins\platformthemes\qxdgdesktopportal.dll"
-
-  SetOutPath "$INSTDIR\PyQt5\Qt5\plugins\sqldrivers"
-  File "..\bin\PyQt5\Qt5\plugins\sqldrivers\qsqlite.dll"
-  File "..\bin\PyQt5\Qt5\plugins\sqldrivers\qsqlodbc.dll"
-  File "..\bin\PyQt5\Qt5\plugins\sqldrivers\qsqlpsql.dll"
-
-  SetOutPath "$INSTDIR\PyQt5\Qt5\plugins\styles"
-  File "..\bin\PyQt5\Qt5\plugins\styles\qwindowsvistastyle.dll" 
-
-  SetOutPath "$INSTDIR\PyQt5\Qt5\translations"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_ar.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_bg.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_ca.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_cs.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_da.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_de.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_en.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_es.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_fi.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_fr.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_gd.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_he.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_hu.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_it.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_ja.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_ko.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_lv.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_pl.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_ru.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_sk.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_tr.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_uk.qm"
-  File "..\bin\PyQt5\Qt5\translations\qtbase_zh_TW.qm"
-
-  SetOutPath "$INSTDIR\PyQt5\uic\widget-plugins"
-  File "..\bin\PyQt5\uic\widget-plugins\qaxcontainer.py"
-  File "..\bin\PyQt5\uic\widget-plugins\qscintilla.py"
-  File "..\bin\PyQt5\uic\widget-plugins\qtcharts.py"
-  File "..\bin\PyQt5\uic\widget-plugins\qtprintsupport.py"
-  File "..\bin\PyQt5\uic\widget-plugins\qtquickwidgets.py"
-  File "..\bin\PyQt5\uic\widget-plugins\qtwebenginewidgets.py"
-  File "..\bin\PyQt5\uic\widget-plugins\qtwebkit.py"
-
-  SetOutPath "$INSTDIR\pywin32_system32"
-  File "..\bin\pywin32_system32\pythoncom311.dll"
-  File "..\bin\pywin32_system32\pywintypes311.dll"
+  ; include files that were built
+  !include "install_files.nsh"
 
   ; Help files
   SetOutPath "$INSTDIR\docs"
@@ -267,7 +150,7 @@ Section "MainSection" SEC01
   File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\en_GB.dic"
   File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\en_GB.aff"
 
-  EnVar::AddValue "Path" $INSTDIR
+  EnVar::AddValue "Path" "$INSTDIR"
 SectionEnd
 
 Section -AdditionalIcons
@@ -308,9 +191,17 @@ FunctionEnd
 Section Uninstall
   ; SetShellVarContext all ; only use when RequestExecutionLevel admin
 
+  EnVar::DeleteValue "Path" "$INSTDIR"
+
   ; Help files
   Delete "$INSTDIR\docs\Project Notes.qch"
   Delete "$INSTDIR\docs\Project Notes.qhc"
+
+  Delete "$INSTDIR\docs\.Project Notes\*.*"
+  RMDir "$INSTDIR\docs\.Project Notes"
+  RMDir "$INSTDIR\docs\"
+
+  !include "remove_files.nsh"
 
   ; remove base itms and dictionaris
   Delete "$INSTDIR\${PRODUCT_NAME}.url"
@@ -322,115 +213,7 @@ Section Uninstall
   Delete "$INSTDIR\dictionary\es_ANY.aff"
   Delete "$INSTDIR\dictionary\es_ANY.dic"
   Delete "$INSTDIR\dictionary\index.ini"
-
-  ; python related Deletes
-  Delete "$INSTDIR\_bz2.pyd"
-  Delete "$INSTDIR\_decimal.pyd"
-  Delete "$INSTDIR\_elementtree.pyd"
-  Delete "$INSTDIR\_hashlib.pyd"
-  Delete "$INSTDIR\_lzma.pyd"
-  Delete "$INSTDIR\_socket.pyd"
-  Delete "$INSTDIR\_ssl.pyd"
-  Delete "$INSTDIR\_win32sysloader.pyd"
-  Delete "$INSTDIR\base_library.zip"
-  Delete "$INSTDIR\libcrypto-1_1.dll"
-  Delete "$INSTDIR\libssl-1_1.dll"
-  Delete "$INSTDIR\mfc140u.dll"
-  Delete "$INSTDIR\pyexpat.pyd"
-  Delete "$INSTDIR\python3.dll"
-  Delete "$INSTDIR\python311.dll"
-  Delete "$INSTDIR\select.pyd"
-
-  Delete "$INSTDIR\QtCore.pyd"
-  Delete "$INSTDIR\QtGui.pyd"
-  Delete "$INSTDIR\QtSql.pyd"
-  Delete "$INSTDIR\QtWidgets.pyd"
-  Delete "$INSTDIR\QtXml.pyd"
-  Delete "$INSTDIR\sip.cp311-win_amd64.pyd"
-
-  Delete "$INSTDIR\QtCore.pyd"
-  Delete "$INSTDIR\d3dcompiler_47.dll"
-  Delete "$INSTDIR\libEGL.dll"
-  Delete "$INSTDIR\libGLESv2.dll"
-  Delete "$INSTDIR\MSVCP140.dll"
-  Delete "$INSTDIR\MSVCP140_1.dll"
-  Delete "$INSTDIR\opengl32sw.dll"
-  Delete "$INSTDIR\Qt5Core.dll"
-  Delete "$INSTDIR\Qt5DBus.dll"
-  Delete "$INSTDIR\Qt5Gui.dll"
-  Delete "$INSTDIR\Qt5Network.dll"
-  Delete "$INSTDIR\Qt5Qml.dll"
-  Delete "$INSTDIR\Qt5QmlModels.dll"
-  Delete "$INSTDIR\Qt5Quick.dll"
-  Delete "$INSTDIR\Qt5Sql.dll"
-  Delete "$INSTDIR\Qt5Svg.dll"
-  Delete "$INSTDIR\Qt5WebSockets.dll"
-  Delete "$INSTDIR\Qt5Widgets.dll"
-  Delete "$INSTDIR\Qt5Xml.dll"
-  Delete "$INSTDIR\Qt5Help.dll"
-  Delete "$INSTDIR\VCRUNTIME140_1.dll"
-
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\generic\qtuiotouchplugin.dll"
-
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\iconengines\qsvgicon.dll"
-
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\imageformats\qgif.dll"
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\imageformats\qicns.dll"
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\imageformats\qico.dll"
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\imageformats\qjpeg.dll"
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\imageformats\qsvg.dll"
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\imageformats\qtga.dll"
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\imageformats\qtiff.dll"
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\imageformats\qwbmp.dll"
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\imageformats\qwebp.dll"
-
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\platforms\qminimal.dll"
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\platforms\qoffscreen.dll"
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\platforms\qwebgl.dll"
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\platforms\qwindows.dll"
-
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\platformthemes\qxdgdesktopportal.dll"
-
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\sqldrivers\qsqlite.dll"
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\sqldrivers\qsqlodbc.dll"
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\sqldrivers\qsqlpsql.dll"
-
-  Delete "$INSTDIR\PyQt5\Qt5\plugins\styles\qwindowsvistastyle.dll" 
-
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_ar.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_bg.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_ca.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_cs.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_da.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_de.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_en.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_es.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_fi.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_fr.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_gd.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_he.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_hu.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_it.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_ja.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_ko.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_lv.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_pl.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_ru.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_sk.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_tr.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_uk.qm"
-  Delete "$INSTDIR\PyQt5\Qt5\translations\qtbase_zh_TW.qm"
-
-  Delete "$INSTDIR\PyQt5\uic\widget-plugins\qaxcontainer.py"
-  Delete "$INSTDIR\PyQt5\uic\widget-plugins\qscintilla.py"
-  Delete "$INSTDIR\PyQt5\uic\widget-plugins\qtcharts.py"
-  Delete "$INSTDIR\PyQt5\uic\widget-plugins\qtprintsupport.py"
-  Delete "$INSTDIR\PyQt5\uic\widget-plugins\qtquickwidgets.py"
-  Delete "$INSTDIR\PyQt5\uic\widget-plugins\qtwebenginewidgets.py"
-  Delete "$INSTDIR\PyQt5\uic\widget-plugins\qtwebkit.py"
-
-  Delete "$INSTDIR\pywin32_system32\pythoncom311.dll"
-  Delete "$INSTDIR\pywin32_system32\pywintypes311.dll"
+  RMDir "$INSTDIR\dictionary"
 
   ; remove all items in the plugins folder
   Delete "$INSTDIR\plugins\archivenotes_plugin.py"
@@ -467,6 +250,10 @@ Section Uninstall
   Delete "$INSTDIR\plugins\includes\dialogStatusRptOptions.ui"
   Delete "$INSTDIR\plugins\includes\dialogTrackerRptOptions.ui"
 
+  Delete "$INSTDIR\plugins\includes\__pycache__\*.*"
+  RMDir "$INSTDIR\plugins\includes\__pycache__"
+  RMDir "$INSTDIR\plugins\includes"
+
   Delete "$INSTDIR\plugins\templates\Customer Kick Off Template.ppt"
   Delete "$INSTDIR\plugins\templates\Customer MES Kick Off Template.ppt"
   Delete "$INSTDIR\plugins\templates\Full DeltaV Schedule Template.mpp"
@@ -482,6 +269,12 @@ Section Uninstall
   Delete "$INSTDIR\plugins\templates\Tracker Items Template.xlsx"
   Delete "$INSTDIR\plugins\templates\Risk Register Template.xlsx"
 
+  RMDir "$INSTDIR\plugins\templates"
+
+  Delete "$INSTDIR\plugins\__pycache__\*.*"
+  RMDir "$INSTDIR\plugins\__pycache__"
+  RMDIR "$INSTDIR\plugins"
+
   Delete "$INSTDIR\ProjectNotes3.exe"
 
   Delete "$SMPROGRAMS\Project Notes 3\Uninstall.lnk"
@@ -489,39 +282,6 @@ Section Uninstall
   Delete "$DESKTOP\Project Notes 3.lnk"
   Delete "$SMPROGRAMS\Project Notes 3\Project Notes 3.lnk"
 
-  Delete "$INSTDIR\plugins\__pycache__\*.*"
-  Delete "$INSTDIR\plugins\includes\__pycache__\*.*"
-  Delete "$INSTDIR\docs\.Project Notes\*.*"
-
-  EnVar::DeleteValue "Path" $INSTDIR
-
-
-  RMDir "$INSTDIR\plugins\__pycache__"
-  RMDir "$INSTDIR\plugins\includes\__pycache__"
-  RMDir "$INSTDIR\docs\.Project Notes"
-
-  RMDir "$INSTDIR\plugins\includes"
-  RMDir "$INSTDIR\plugins\templates"
-  RMDir "$INSTDIR\plugins"
-  RMDir "$INSTDIR\dictionary"
-  RMDir "$INSTDIR\docs"
-
-  RMDir "$INSTDIR\PyQt5\uic\widget-plugins"
-  RMDir "$INSTDIR\PyQt5\uic"
-  RMDir "$INSTDIR\PyQt5\Qt5\translations"
-
-  RMDir "$INSTDIR\PyQt5\Qt5\plugins\generic"
-  RMDir "$INSTDIR\PyQt5\Qt5\plugins\iconengines"
-  RMDir "$INSTDIR\PyQt5\Qt5\plugins\imageformats"
-  RMDir "$INSTDIR\PyQt5\Qt5\plugins\platforms"
-  RMDir "$INSTDIR\PyQt5\Qt5\plugins\platformthemes"
-  RMDir "$INSTDIR\PyQt5\Qt5\plugins\sqldrivers"
-  RMDir "$INSTDIR\PyQt5\Qt5\plugins\styles"
-
-  RMDir "$INSTDIR\PyQt5\Qt5\plugins"
-  RMDir "$INSTDIR\PyQt5\Qt5"
-  RMDir "$INSTDIR\PyQt5"
-  RMDir "$INSTDIR\pywin32_system32"
   RMDir "$SMPROGRAMS\Project Notes 3"
   RMDir "$INSTDIR"
 
