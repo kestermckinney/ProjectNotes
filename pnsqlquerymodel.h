@@ -13,6 +13,7 @@
 #include <QSqlRecord>
 #include <QSqlField>
 #include <QDomElement>
+#include <QDebug>
 
 class PNSqlQueryModel : public QAbstractTableModel
 {
@@ -58,7 +59,8 @@ public:
                    const QString& t_lookup_table = QString(), const QString& t_lookup_fk_column_name = QString(), const QString& t_lookup_value_column_name = QString());
     void addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable, DBColumnRequired t_required,
                                     DBColumnEditable t_editable, DBColumnUnique t_unique, QStringList* t_valuelist);
-    void addRelatedTable(const QString& t_table_name, const QString& t_colum_name, const QString& t_title, const DBRelationExportable exportable = DBNotExportable);
+    void addRelatedTable(const QString& t_table_name, const QString& t_column_name, const QString& t_fk_column_name, const QString& t_title, const DBRelationExportable t_exportable = DBNotExportable);
+    void addUniqueKeys(QStringList t_unique_keys, const QString& t_name) { m_unique_keys[t_name] = t_unique_keys; }
     void associateLookupValues(int t_column_number, QStringList* t_lookup_values);
     QVariant headerData(int t_section, Qt::Orientation t_orientation,
                         int t_role = Qt::DisplayRole) const override;
@@ -127,15 +129,13 @@ public:
     bool setDirty() { m_is_dirty = true; } // records need refreshed when underlying database tables have changed
     DBColumnType getType( const int t_column ) const { return m_column_type[t_column]; }
     void setType( const int t_column, const DBColumnType t_column_type ) { m_column_type[t_column] = t_column_type; }
-    QString getColumnName( int t_column ) {
-        return m_sql_query.record().fieldName(t_column);
-    };
+    QString getColumnName( int t_column ) { return m_sql_query.record().fieldName(t_column); }
     QString getColumnName( QString& t_display_name );
     int getColumnNumber( QString& t_field_name );
-    int getUniqueColumnCount();
 
     bool isReadOnly() { return m_read_only; }
     bool isUniqueColumn(int t_column) { return (m_column_is_unique[t_column] == DBUnique); }
+    bool checkUniqueKeys(const QModelIndex &t_index, const QVariant &t_value);
     void setReadOnly() { m_read_only = true; }
     bool isExportable() { return m_can_export; }
     void setNoExport() { m_can_export = false; }
@@ -152,16 +152,25 @@ public:
                 return m;
         }
 
-        return nullptr;
+        return nullptr;QVector<QString> m_related_column;
     }
 
-    static void refreshDirty()
+    static bool refreshDirty()
     {
+        bool foundsome = false;
+
         for ( PNSqlQueryModel* m : m_open_recordsets)
         {
             if (m->isDirty())
+            {
+                qDebug() << "Refreshing Dirty Table: " << m->tablename();
+
                 m->refresh();
+                foundsome = true;
+            }
         }
+
+        return foundsome;
     }
 
 private:
@@ -187,6 +196,9 @@ private:
     QHash<int, QVariant> m_range_search_start;
     QHash<int, QVariant> m_range_search_end;
 
+    // setup unique keys to be used
+    QHash<QString, QStringList> m_unique_keys;
+
     // track related columns for xml import/export
     QHash<int, QString> m_lookup_table;
     QHash<int, QString> m_lookup_value_column_name;
@@ -196,6 +208,7 @@ private:
     // track for deletion checking and exporting
     QVector<QString> m_related_table;
     QVector<QString> m_related_column;
+    QVector<QString> m_related_fk_column;
     QVector<QString> m_relation_title;
     QVector<DBRelationExportable> m_relation_exportable;
 

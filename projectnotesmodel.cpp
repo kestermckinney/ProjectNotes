@@ -1,5 +1,6 @@
 #include "projectnotesmodel.h"
 #include "pndatabaseobjects.h"
+#include <QDebug>
 
 ProjectNotesModel::ProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
@@ -10,15 +11,15 @@ ProjectNotesModel::ProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_paren
     setTableName("project_notes", "Project Notes");
 
     addColumn(0, tr("Note ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
-    addColumn(1, tr("Project ID"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique,
+    addColumn(1, tr("Project ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "projects", "project_id", "project_number");
     addColumn(2,  tr("Title"), DBString, DBSearchable, DBNotRequired, DBEditable);
     addColumn(3, tr("Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
     addColumn(4, tr("Note"), DBString, DBSearchable, DBNotRequired, DBEditable);
     addColumn(5, tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable);
 
-    addRelatedTable("item_tracker", "note_id", "Action Item", DBExportable);
-    addRelatedTable("meeting_attendees", "note_id", "Meeting Attendee", DBExportable);
+    addRelatedTable("item_tracker", "note_id", "note_id", "Action Item", DBExportable);
+    addRelatedTable("meeting_attendees", "note_id", "note_id", "Meeting Attendee", DBExportable);
 
     setOrderBy("note_date desc");
 }
@@ -26,6 +27,8 @@ ProjectNotesModel::ProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_paren
 bool ProjectNotesModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value2);
+
+    qDebug() << "Adding a new note with fk1: " << *t_fk_value1;
 
     QSqlRecord qr = emptyrecord();
 

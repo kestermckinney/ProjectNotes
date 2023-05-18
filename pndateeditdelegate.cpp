@@ -69,13 +69,5 @@ void PNDateEditDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
     QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
 }
 
-
-// TODO: Can't delete a date on project tab after it has been entered
-// TODO: Adding a team member doesn't auto-fill out the role
-// TODO: after adding a person, they don't show in the drop down for adding them to be a team member
 // TODO: can't seem to double click on the first row of the projects list to open the projects
-// TODO: adding a team member row with blank items throws an insert error
-// TODO: once a person is added to the team the primary contact drop down doesn't get updated
-// TODO: once a person is added to the team the drop down in items track does not get updated
-
 

@@ -37,14 +37,14 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
             PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
 
 
-            qDebug() << " Primary Contact Mapper Called";
+            //qDebug() << " Primary Contact Mapper Called";
 
             if (model)
             {
                 QString list_value = model->findValue(value, 3, 1).toString();
                 comboBox->setCurrentText(list_value);
 
-                qDebug() << " .. Set text value to " << list_value;
+                //qDebug() << " .. Set text value to " << list_value;
             }
         }
         break;
@@ -114,7 +114,7 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
 
             int i = comboBox->currentIndex();
-            key_val = comboBox->model()->data(comboBox->model()->index(i, 3));
+            key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
         }
         break;
     default:

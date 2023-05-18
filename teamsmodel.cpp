@@ -17,10 +17,13 @@ TeamsModel::TeamsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
     addColumn(4, tr("Client ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "clients", "client_id", "client_name");
 
-    //TODO: This may be an issue when the primary key of record is not the foreign key
-    addRelatedTable("projects", "primary_contact", "Primary Contact");
-    addRelatedTable("item_tracker", "identified_by", "Identified By");
-    addRelatedTable("item_tracker","assigned_to", "Assigned To");
+    QStringList key1 = {"project_id", "people_id"};
+
+    addUniqueKeys(key1, "Name");
+
+    addRelatedTable("projects", "primary_contact", "people_id", "Primary Contact");
+    addRelatedTable("item_tracker", "identified_by", "people_id", "Identified By");
+    addRelatedTable("item_tracker","assigned_to", "people_id", "Assigned To");
 
     setOrderBy("name");
 

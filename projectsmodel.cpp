@@ -35,11 +35,11 @@ ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
     addColumn(19, tr("Completed"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn(20, tr("CPI"), DBReal, DBSearchable, DBNotRequired, DBReadOnly);
 
-    addRelatedTable("project_notes", "project_id", "Meeting", DBExportable);
-    addRelatedTable("item_tracker", "project_id", "Action/Tracker Item", DBExportable);
-    addRelatedTable("project_locations", "project_id", "Project Location", DBExportable);
-    addRelatedTable("project_people", "project_id", "Project People", DBExportable);
-    addRelatedTable("status_report_items", "project_id", "Status Report Item", DBExportable);
+    addRelatedTable("project_notes", "project_id", "project_id", "Meeting", DBExportable);
+    addRelatedTable("item_tracker", "project_id", "project_id", "Action/Tracker Item", DBExportable);
+    addRelatedTable("project_locations", "project_id", "project_id", "Project Location", DBExportable);
+    addRelatedTable("project_people", "project_id", "project_id", "Project People", DBExportable);
+    addRelatedTable("status_report_items", "project_id", "project_id", "Status Report Item", DBExportable);
 
     setOrderBy("project_number");
 }

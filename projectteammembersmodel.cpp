@@ -1,4 +1,5 @@
 #include "projectteammembersmodel.h"
+#include <QDebug>
 
 ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
@@ -16,9 +17,14 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* t_parent): PNSqlQueryM
     addColumn(4, tr("Receive Status"), DBBool, DBSearchable, DBNotRequired, DBEditable);
     addColumn(5, tr("Role"), DBString, DBSearchable, DBNotRequired, DBEditable);
 
-    addRelatedTable("projects", "primary_contact", "Primary Contact");
-    addRelatedTable("item_tracker", "identified_by", "Identified By");
-    addRelatedTable("item_tracker","assigned_to", "Assigned To");
+    QStringList key1 = {"project_id", "people_id"};
+
+    addUniqueKeys(key1, "Name");
+
+    addRelatedTable("projects", "primary_contact", "people_id", "Primary Contact");
+    addRelatedTable("item_tracker", "identified_by", "people_id", "Identified By");
+    addRelatedTable("item_tracker","assigned_to", "people_id", "Assigned To");
+    addRelatedTable("meeting_attendees", "person_id", "people_id", "Attendee");
 
     setOrderBy("name");
 }
@@ -50,3 +56,28 @@ bool ProjectTeamMembersModel::newRecord(const QVariant* t_fk_value1, const QVari
     return addRecord(qr);
 }
 
+bool ProjectTeamMembersModel::setData(const QModelIndex &t_index, const QVariant &t_value, int t_role)
+{
+    // if setting team member and no role is available grab the default
+    if (t_index.column() == 2)
+    {
+        QModelIndex qi = index(t_index.row(), 5);
+
+        if (data(qi).isNull())
+        {
+            QModelIndex qi_key = index(t_index.row(), 2);
+
+            // get the default
+            QSqlQuery qry(QString("select role from people where people_id='%1'").arg( data(qi_key).toString() ));
+            qDebug() << QString("select role from people where people_id='%1'").arg( data(qi_key).toString() );
+            qry.exec();
+
+            if (qry.next())
+            {
+                setData(qi, qry.record().value(0), t_role);
+            }
+        }
+    }
+
+    return PNSqlQueryModel::setData(t_index, t_value, t_role);
+}

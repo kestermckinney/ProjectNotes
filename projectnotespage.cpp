@@ -83,7 +83,8 @@ void ProjectNotesPage::toFirst()
 
 void ProjectNotesPage::on_tabWidgetNotes_currentChanged(int index)
 {
-    PNSqlQueryModel::refreshDirty();
+    if (PNSqlQueryModel::refreshDirty())
+        toFirst();
 
     emit setFocus(); // tell the main window to update to call the setButtonsAndMenus function
 

@@ -70,7 +70,10 @@ bool DatabaseStructure::CreateDatabase()
             date_resolved   INTEGER,
             note_id         TEXT,
             project_id      TEXT,
-            internal_item   INTEGER
+            internal_item   INTEGER,
+            PRIMARY KEY("item_id"),
+            UNIQUE("project_id","item_number"),
+            UNIQUE("project_id","item_name")
         );
     )");
 
@@ -92,7 +95,9 @@ bool DatabaseStructure::CreateDatabase()
             UNIQUE
             NOT NULL,
             note_id     TEXT,
-            person_id   TEXT
+            person_id   TEXT,
+            PRIMARY KEY("attendee_id"),
+            UNIQUE("note_id","person_id")
         );
     )");
 
@@ -121,7 +126,10 @@ bool DatabaseStructure::CreateDatabase()
             project_id           TEXT,
             location_type        TEXT,
             location_description TEXT,
-            full_path            TEXT
+            full_path            TEXT,
+            PRIMARY KEY("location_id"),
+            UNIQUE("project_id","location_id"),
+            UNIQUE("project_id","location_description")
         );
     )");
 
@@ -146,7 +154,9 @@ bool DatabaseStructure::CreateDatabase()
             people_id             TEXT    NOT NULL,
             project_id            TEXT    NOT NULL,
             role                  TEXT,
-            receive_status_report INTEGER
+            receive_status_report INTEGER,
+            PRIMARY KEY("teammember_id"),
+            UNIQUE("project_id","people_id")
         );
     )");
 
@@ -202,7 +212,9 @@ bool DatabaseStructure::CreateDatabase()
                                   NOT NULL,
             project_id       TEXT NOT NULL,
             task_category    TEXT,
-            task_description TEXT NOT NULL
+            task_description TEXT NOT NULL,
+            PRIMARY KEY("status_item_id"),
+            UNIQUE("task_description","project_id")
         );
     )");
 
@@ -428,6 +440,92 @@ bool DatabaseStructure::UpgradeDatabase()
 
     if (currentversion == "1.2.0" || currentversion == "1.0.0")
     {
+        // TODO: add the unique key restricions to meeting_attendees
+        // TODO: add the unique key restrictions to project_locations
+        // TODO: add the unique key restrictions to project_people
+        // TODO: add the unique key restrictions to status_report_items
+
+        global_DBObjects.execute(R"(
+            CREATE TABLE tmp_item_tracker as select * from item_tracker;
+            );
+        )");
+
+        global_DBObjects.execute(R"(
+            DROP TABLE item_tracker;
+            );
+        )");
+
+        global_DBObjects.execute(R"(
+            CREATE TABLE item_tracker(
+                item_id         TEXT    NOT NULL
+                UNIQUE
+                PRIMARY KEY,
+                item_number     TEXT,
+                item_type       TEXT,
+                item_name       TEXT,
+                identified_by   TEXT,
+                date_identified INTEGER,
+                description     TEXT,
+                assigned_to     TEXT,
+                priority        TEXT,
+                status          TEXT,
+                date_due        INTEGER,
+                last_update     INTEGER,
+                date_resolved   INTEGER,
+                note_id         TEXT,
+                project_id      TEXT,
+                internal_item   INTEGER,
+                PRIMARY KEY("item_id"),
+                UNIQUE("project_id","item_number"),
+                UNIQUE("project_id","item_name")
+            );
+        )");
+
+        global_DBObjects.execute(R"(
+            insert into item_tracker
+            (
+                item_id,
+                item_number,
+                item_type,
+                item_name,
+                identified_by,
+                date_identified,
+                description,
+                assigned_to,
+                priority,
+                status,
+                date_due,
+                last_update,
+                date_resolved,
+                note_id,
+                project_id,
+                internal_item
+            )
+            select
+                item_id,
+                item_number,
+                item_type,
+                item_name,
+                identified_by,
+                date_identified,
+                description,
+                assigned_to,
+                priority,
+                status,
+                date_due,
+                last_update,
+                date_resolved,
+                note_id,
+                project_id,
+                internal_item
+            from tmp_item_tracker;
+            );
+        )");
+
+        global_DBObjects.execute(R"(
+            DROP TABLE tmp_item_tracker;
+        )");
+
         global_DBObjects.execute(R"(
             CREATE VIEW item_tracker_view AS SELECT
             item_id,
