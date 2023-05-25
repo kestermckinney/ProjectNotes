@@ -7,8 +7,7 @@
 
 ProjectsListPage::ProjectsListPage()
 {
-    QString page_title = "Projects";
-    setPageTitle(page_title);
+
 }
 
 void ProjectsListPage::setupModels( Ui::MainWindow *t_ui )
@@ -22,4 +21,14 @@ void ProjectsListPage::setupModels( Ui::MainWindow *t_ui )
     ui->tableViewProjects->selectRow(0);
     setCurrentModel(global_DBObjects.projectslistmodelproxy());
     setCurrentView( ui->tableViewProjects );
+}
+
+void ProjectsListPage::setButtonAndMenuStates()
+{
+
+}
+
+void ProjectsListPage::setPageTitle()
+{
+    topLevelWidget()->setWindowTitle(QString("Project Notes"));
 }

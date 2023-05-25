@@ -5,8 +5,7 @@
 
 ClientsPage::ClientsPage()
 {
-    QString page_title = "Clients";
-    setPageTitle(page_title);
+
 }
 
 void ClientsPage::setupModels( Ui::MainWindow *t_ui )
@@ -21,4 +20,14 @@ void ClientsPage::setupModels( Ui::MainWindow *t_ui )
 
     setCurrentModel(global_DBObjects.clientsmodelproxy());
     setCurrentView( ui->tableViewClients );
+}
+
+void ClientsPage::setButtonAndMenuStates()
+{
+
+}
+
+void ClientsPage::setPageTitle()
+{
+    topLevelWidget()->setWindowTitle(QString("Project Notes Clients"));
 }

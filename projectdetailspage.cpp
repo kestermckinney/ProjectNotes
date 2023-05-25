@@ -5,8 +5,7 @@
 
 ProjectDetailsPage::ProjectDetailsPage()
 {
-    QString page_title = "Project Details";
-    setPageTitle(page_title);
+
 }
 
 ProjectDetailsPage::~ProjectDetailsPage()
@@ -16,6 +15,12 @@ ProjectDetailsPage::~ProjectDetailsPage()
 
     if (m_project_details_delegate)
         delete m_project_details_delegate;
+}
+
+void ProjectDetailsPage::setPageTitle()
+{
+    topLevelWidget()->setWindowTitle(QString("Project Notes Project [%1]").arg(ui->lineEditNumber->text()));
+    //qDebug() << "Project Details Page Set Title to " << QString("Project Notes Project [%1]").arg(ui->lineEditNumber->text());
 }
 
 void ProjectDetailsPage::newRecord()
@@ -38,12 +43,10 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     if (t_ui)
     {
         connect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
-        connect(global_DBObjects.projectinformationmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
     }
     else
     {
         disconnect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
-        disconnect(global_DBObjects.projectinformationmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
         return; // closing the appliction
     }
 
@@ -103,18 +106,20 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     ui->tableViewProjectNotes->setModel(global_DBObjects.projectnotesmodelproxy());
 }
 
-void ProjectDetailsPage::toFirst()
+void ProjectDetailsPage::toFirst(bool t_open)
 {
     if (m_mapperProjectDetails != nullptr)
         m_mapperProjectDetails->toFirst();
 
-    ui->tabWidgetProject->setCurrentIndex(0);  // always set to the first tab on open
+    if (t_open)
+        ui->tabWidgetProject->setCurrentIndex(0);  // always set to the first tab on open
+    else
+        ui->tabWidgetProject->setCurrentIndex(ui->tabWidgetProject->currentIndex());  // always set to the first tab on open
 }
 
 void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
 {
-    if (PNSqlQueryModel::refreshDirty())
-        toFirst();
+    PNSqlQueryModel::refreshDirty();
 
     emit setFocus(); // tell the main window to update to call the setButtonsAndMenus function
 
@@ -148,3 +153,7 @@ void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
     }
 }
 
+void ProjectDetailsPage::setButtonAndMenuStates()
+{
+
+}

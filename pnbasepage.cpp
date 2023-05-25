@@ -5,6 +5,11 @@ PNBasePage::PNBasePage(QWidget *parent) : QWidget(parent)
 
 }
 
+void PNBasePage::setPageTitle()
+{
+
+}
+
 void PNBasePage::newRecord()
 {
     int lastrow = ((PNSqlQueryModel*)getCurrentModel())->rowCount(QModelIndex());
@@ -41,3 +46,14 @@ void PNBasePage::copyItem()
     QModelIndex index = getCurrentView()->model()->index(lastrow, 0);
     getCurrentView()->selectionModel()->select(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
 }
+
+ void PNBasePage::setButtonAndMenuStates()
+ {
+
+ }
+
+ void PNBasePage::toFirst(bool t_open)
+ {
+    Q_UNUSED(t_open);
+ }
+

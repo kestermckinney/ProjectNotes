@@ -76,6 +76,8 @@ MainWindow::MainWindow(QWidget *t_parent)
     connect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
 
+    connect(ui->pageProjectDetails, SIGNAL(titlechange(QString)), this, SLOT(setPageTitle(QString)));
+
     m_plugin_manager = new PNPluginManager(this);
 
     m_plugin_settings_dialog = new PluginSettingsDialog(this);
@@ -358,7 +360,12 @@ void MainWindow::setButtonAndMenuStates()
     PNTableView* curview = nullptr;
 
     if (navigateCurrentPage())
+    {
+        // if we have current page, call it's button and menu state function
+        navigateCurrentPage()->setButtonAndMenuStates();
+
         curview = navigateCurrentPage()->getCurrentView();
+    }
 
     if (curview)
     {
@@ -635,13 +642,13 @@ void MainWindow::navigateToPage(PNBasePage* t_widget)
         m_navigation_history.pop();
 
     m_navigation_location = m_navigation_history.count();
-    m_navigation_history.push(t_widget);
+    m_navigation_history.push(t_widget);   
 
-    PNSqlQueryModel::refreshDirty();
+    if (PNSqlQueryModel::refreshDirty())
+        t_widget->toFirst(false);
 
     ui->stackedWidget->setCurrentWidget(t_widget);
-
-    this->setWindowTitle(QString("Project Notes [%1]").arg(t_widget->pagetitle()));
+    t_widget->setPageTitle();
 
     setButtonAndMenuStates();
 }
@@ -653,11 +660,12 @@ void MainWindow::navigateBackward()
         m_navigation_location--;
 
         QWidget* current = m_navigation_history.at(m_navigation_location);
-        PNSqlQueryModel::refreshDirty();
+
+        if (PNSqlQueryModel::refreshDirty())
+            ((PNBasePage*)current)->toFirst(false);
 
         ui->stackedWidget->setCurrentWidget(current);
-
-        this->setWindowTitle(QString("Project Notes [%1]").arg(((PNBasePage* )current)->pagetitle()));
+        ((PNBasePage*)current)->setPageTitle();
     }
 
     setButtonAndMenuStates();
@@ -670,11 +678,12 @@ void MainWindow::navigateForward()
         m_navigation_location++;
 
         QWidget* current = m_navigation_history.at(m_navigation_location);
-        PNSqlQueryModel::refreshDirty();
+
+        if (PNSqlQueryModel::refreshDirty())
+            ((PNBasePage*)current)->toFirst(false);
 
         ui->stackedWidget->setCurrentWidget(current);
-
-        this->setWindowTitle(QString("Project Notes [%1]").arg(((PNBasePage* )current)->pagetitle()));
+        ((PNBasePage*)current)->setPageTitle();
     }
 
     setButtonAndMenuStates();
@@ -1636,10 +1645,8 @@ void MainWindow::on_actionCustom_Plugins_triggered()
 // TODO: Add licensing information to all files to be included with the software
 // TODO: Complete Help Menu Items
 // TODO: Test setup database from scratch
-// TODO: View internal items when changed showed items not in the project
+
 // TODO: A new meeting should always include the project manager on the list of attendees
-// TODO: Project Note - Action items should not show internal check box when internal items are off  - this is really an issue when checking and unchecking the internal menu option
-// TODO: Fix sometimes when you click on the Notes tab of project details, it reverts back to the first tab
-// TODO: Make sure you can't add a team member twice
-// TODO: Make sure you can't add an attendee twice
+// TODO: A new project should always include the project manager on the team
+
 

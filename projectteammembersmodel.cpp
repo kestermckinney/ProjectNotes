@@ -69,7 +69,7 @@ bool ProjectTeamMembersModel::setData(const QModelIndex &t_index, const QVariant
 
             // get the default
             QSqlQuery qry(QString("select role from people where people_id='%1'").arg( data(qi_key).toString() ));
-            qDebug() << QString("select role from people where people_id='%1'").arg( data(qi_key).toString() );
+            //qDebug() << QString("select role from people where people_id='%1'").arg( data(qi_key).toString() );
             qry.exec();
 
             if (qry.next())

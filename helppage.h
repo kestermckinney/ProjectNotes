@@ -10,8 +10,9 @@ public:
     HelpPage();
 
     void search();
-
     virtual void setupModels( Ui::MainWindow *t_ui );
+    void setPageTitle();
+    void setButtonAndMenuStates();
 
 public slots:
     void showLink(const QUrl &url);

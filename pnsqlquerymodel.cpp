@@ -104,7 +104,11 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
 {
     if (t_role == Qt::EditRole)
     {
-        // nmake sure column is edit_table
+        // nothing changed, so do nothing
+        if (m_cache[t_index.row()].value(t_index.column()) == t_value)
+            return false;
+
+        // make sure column is edit_table
         // exit if no update t_table defined
         if ((m_column_is_editable[t_index.column()] == DBReadOnly) || m_tablename.isEmpty())
             return false;
@@ -1552,8 +1556,6 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
             element = element.nextSibling();
         }
     }
-    
-    //TODO: Check unique keys to make sure we don't violate any data rules.  I think the best way is to setup unique keys in the database
 
     // check to see if record exists
     QString exists_sql = QString("select count(*) from %1 where %2").arg(m_tablename, whereclause);

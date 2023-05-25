@@ -17,6 +17,15 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
 
     switch (t_index.column())
     {
+    case 1:
+        {
+            QWidget* window = static_cast<QWidget*>(t_editor);
+            window->topLevelWidget()->setWindowTitle(QString("Project Notes Project [%1]").arg(value.toString()));
+
+            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
+            lineedit->setText(value.toString());
+        }
+        break;
     case 3:
     case 4:
         {
@@ -83,6 +92,15 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
 
     switch (t_index.column())
     {
+    case 1:
+        {
+            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
+            key_val = lineedit->text();
+
+            QWidget* window = static_cast<QWidget*>(t_editor);
+            window->topLevelWidget()->setWindowTitle(QString("Project Notes Project [%1]").arg(key_val.toString()));
+        }
+        break;
     case 3:
     case 4:
         {

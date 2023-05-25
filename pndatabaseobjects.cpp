@@ -493,14 +493,12 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     // setup default filters
     if (getShowClosedProjects())
     {
-        //trackeritemsmodel()->clearFilter(17);
         projectinformationmodel()->clearFilter(14);
         projectslistmodel()->clearFilter(14);
         searchresultsmodel()->clearFilter(6);
     }
     else
     {
-        //trackeritemsmodel()->setFilter(17, tr("Active"));  // IT WORKS NOW but do we need it since we don't show all items in this version
         projectinformationmodel()->setFilter(14, tr("Active"));
         projectslistmodel()->setFilter(14, tr("Active"));
         searchresultsmodel()->setFilter(6, tr("Active"));
@@ -518,13 +516,13 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     }
     else
     {
-        projectnotesmodel()->setFilter(5, tr("0"));
-        actionitemsdetailsmeetingsmodel()->setFilter(3, tr("0"));
-        notesactionitemsmodel()->setFilter(15, tr("0"));
-        actionitemprojectnotesmodel()->setFilter(3, tr("0"));
-        trackeritemsmodel()->setFilter(15, tr("0"));
-        actionitemsdetailsmodel()->setFilter(3, tr("0"));
-        searchresultsmodel()->setFilter(4, tr("0"));
+        projectnotesmodel()->setFilter(5, "0");
+        actionitemsdetailsmeetingsmodel()->setFilter(3, "0");
+        notesactionitemsmodel()->setFilter(15, "0");
+        actionitemprojectnotesmodel()->setFilter(3, "0");
+        trackeritemsmodel()->setFilter(15, "0");
+        actionitemsdetailsmodel()->setFilter(3, "0");
+        searchresultsmodel()->setFilter(4, "0");
     }
 
     if (getShowResolvedTrackerItems())
@@ -568,14 +566,14 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
 
     if (getGlobalProjectFilter().isEmpty())
     {
-        trackeritemsmodel()->clearFilter(14);
+        //trackeritemsmodel()->clearFilter(14);
         // don't clear this one becasue we may have it open  projectinformationmodel()->clearFilter(0);
         projectslistmodel()->clearFilter(0);
         searchresultsmodel()->clearFilter(7);
     }
     else
     {
-        trackeritemsmodel()->setFilter(14, getGlobalProjectFilter());
+        //trackeritemsmodel()->setFilter(14, getGlobalProjectFilter());
         // don't set this one only do the lists projectinformationmodel()->setFilter(0, getGlobalProjectFilter());
         projectslistmodel()->setFilter(0, getGlobalProjectFilter());
 

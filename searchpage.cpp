@@ -7,8 +7,12 @@
 
 SearchPage::SearchPage()
 {
-    QString page_title = "Database Search";
-    setPageTitle(page_title);
+
+}
+
+void SearchPage::setPageTitle()
+{
+    topLevelWidget()->setWindowTitle(QString("Project Notes Search"));
 }
 
 void SearchPage::setupModels( Ui::MainWindow *t_ui )
@@ -23,3 +27,9 @@ void SearchPage::setupModels( Ui::MainWindow *t_ui )
     setCurrentModel(global_DBObjects.searchresultsmodelproxy());
     setCurrentView( ui->tableViewSearchResults );
 }
+
+void SearchPage::setButtonAndMenuStates()
+{
+
+}
+

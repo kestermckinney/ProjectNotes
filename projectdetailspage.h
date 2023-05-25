@@ -17,12 +17,10 @@ public:
     ~ProjectDetailsPage();
 
     void newRecord() override;
-
     void setupModels( Ui::MainWindow *t_ui ) override;
-
-public slots:
-    void toFirst();
-    void toFirst( const QModelIndex& topLeft, const QModelIndex& bottomRight) { Q_UNUSED(topLeft);Q_UNUSED(bottomRight) toFirst(); }
+    void toFirst(bool t_open = true);
+    void setButtonAndMenuStates();
+    void setPageTitle();
 
 private:
     Ui::MainWindow *ui = nullptr;

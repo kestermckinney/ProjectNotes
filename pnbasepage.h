@@ -19,22 +19,18 @@ public:
     virtual void newRecord();
     virtual void copyItem();
     virtual void deleteItem();
-
-    const QString& pagetitle() { return m_page_title; };
-    void setPageTitle(QString& t_pagetitle) { m_page_title = t_pagetitle; };
+    virtual void setPageTitle();
 
     PNSortFilterProxyModel*  getCurrentModel() { return m_current_model; };
     PNTableView* getCurrentView() { return m_current_view; };
     void setCurrentModel( PNSortFilterProxyModel* t_current_model ) { m_current_model = t_current_model; };
     void setCurrentView( PNTableView* t_current_view ) { m_current_view = t_current_view; };
-
-signals:
+    virtual void setButtonAndMenuStates();
+    virtual void toFirst(bool t_open = true);
 
 private:
     PNSortFilterProxyModel* m_current_model = nullptr;
     PNTableView* m_current_view = nullptr;
-
-    QString m_page_title;
 };
 
 #endif // PNBASEPAGE_H
