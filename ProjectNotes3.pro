@@ -189,11 +189,11 @@ DISTFILES += \
 
 unix: {
    LIBS += -lhunspell
-   INCLUDEPATH += /usr/include/python3.10
+   INCLUDEPATH += /usr/include/python3.11
    #INCLUDEPATH += /usr/include/linux/
    INCLUDEPATH += /usr/lib/gcc/x86_64-linux-gnu/12/include/
    #$(shell python3-config --includes)
-   LIBS += -lpython3.10 -lm -L/usr/lib/python3.10/config
+   LIBS += -lpython3.11 -lm -L/usr/lib/python3.11/config
    #$(shell python3-config --ldflags)
 }
 

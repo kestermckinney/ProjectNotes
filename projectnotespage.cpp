@@ -6,8 +6,7 @@
 
 ProjectNotesPage::ProjectNotesPage()
 {
-    QString page_title = "Project Notes";
-    setPageTitle(page_title);
+
 }
 
 ProjectNotesPage::~ProjectNotesPage()
@@ -17,6 +16,11 @@ ProjectNotesPage::~ProjectNotesPage()
 
     if (m_project_notes_delegate)
         delete m_project_notes_delegate;
+}
+
+void ProjectNotesPage::setPageTitle()
+{
+    topLevelWidget()->setWindowTitle(QString("Project Notes Meeting [%1]").arg(ui->lineEditMeetingTitle->text()));
 }
 
 void ProjectNotesPage::newRecord()
@@ -40,12 +44,10 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
     if (t_ui)
     {
         connect(ui->tabWidgetNotes, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetNotes_currentChanged(int)));
-        connect(global_DBObjects.projecteditingnotesmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
     }
     else
     {
         disconnect(ui->tabWidgetNotes, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetNotes_currentChanged(int)));
-        disconnect(global_DBObjects.projecteditingnotesmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
         return; // closing the application
     }
 
@@ -65,6 +67,7 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
     m_mapperProjectNotes->addMapping(ui->lineEditMeetingTitle, 2);
     m_mapperProjectNotes->addMapping(ui->textEditNotes, 4);
     m_mapperProjectNotes->addMapping(ui->dateEditMeetingDate, 3);
+    m_mapperProjectNotes->addMapping(ui->checkBoxInternalNote, 5);
 
     ui->tableViewAtendees->setModel(global_DBObjects.meetingattendeesmodelproxy());
     ui->tableViewActionItems->setModel(global_DBObjects.notesactionitemsmodelproxy());
@@ -73,16 +76,23 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
     setCurrentView(nullptr);
 }
 
-void ProjectNotesPage::toFirst()
+void ProjectNotesPage::toFirst(bool t_open)
 {
     if (m_mapperProjectNotes != nullptr)
         m_mapperProjectNotes->toFirst();
 
-     ui->tabWidgetNotes->setCurrentIndex(0);  // always set to the first tab on open
+    if (t_open)
+        ui->tabWidgetNotes->setCurrentIndex(0);  // always set to the first tab on open
+    else
+        ui->tabWidgetNotes->setCurrentIndex(ui->tabWidgetNotes->currentIndex());  // always set to the first tab on open
+
+    //qDebug() << "toFirst for Project Notes Page called";
 }
 
 void ProjectNotesPage::on_tabWidgetNotes_currentChanged(int index)
 {
+    //qDebug() << "Project Notes Page on current tab changed called";
+
     PNSqlQueryModel::refreshDirty();
 
     emit setFocus(); // tell the main window to update to call the setButtonsAndMenus function
@@ -102,7 +112,16 @@ void ProjectNotesPage::on_tabWidgetNotes_currentChanged(int index)
     case 2:
         setCurrentModel(global_DBObjects.notesactionitemsmodelproxy());
         setCurrentView(ui->tableViewActionItems);
+
         ui->tableViewActionItems->setFocus();
         break;
     }
+}
+
+void ProjectNotesPage::setButtonAndMenuStates()
+{
+    if (global_DBObjects.getShowInternalItems())
+       ui->tableViewActionItems->setColumnHidden(15, false);
+    else
+       ui->tableViewActionItems->setColumnHidden(15, true);
 }

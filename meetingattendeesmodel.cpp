@@ -15,6 +15,10 @@ MeetingAttendeesModel::MeetingAttendeesModel(QObject* t_parent): PNSqlQueryModel
               "people", "people_id", "name");
     addColumn(3, tr("Attendee Name"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBNotUnique);
 
+    QStringList key1 = {"note_id", "people_id"};
+
+    addUniqueKeys(key1, "Name");
+
     setOrderBy("people.name");
 }
 

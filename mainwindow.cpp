@@ -76,6 +76,8 @@ MainWindow::MainWindow(QWidget *t_parent)
     connect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
 
+    connect(ui->pageProjectDetails, SIGNAL(titlechange(QString)), this, SLOT(setPageTitle(QString)));
+
     m_plugin_manager = new PNPluginManager(this);
 
     m_plugin_settings_dialog = new PluginSettingsDialog(this);
@@ -358,7 +360,12 @@ void MainWindow::setButtonAndMenuStates()
     PNTableView* curview = nullptr;
 
     if (navigateCurrentPage())
+    {
+        // if we have current page, call it's button and menu state function
+        navigateCurrentPage()->setButtonAndMenuStates();
+
         curview = navigateCurrentPage()->getCurrentView();
+    }
 
     if (curview)
     {
@@ -489,18 +496,10 @@ void MainWindow::setButtonAndMenuStates()
             ui->toolBarFormat->setVisible(false); // text format bar
             ui->toolBarEdit->setVisible(false); // text edit bar
 
-            if ( (fw != nullptr) && strcmp(fw->metaObject()->className(), "PNTableView") == 0 )
+            if (curview && curview->selectionModel()->hasSelection())
             {
-                if ( (dynamic_cast<QTableView*>(fw))->selectionModel()->hasSelection() )
-                {
-                    ui->actionDelete_Item->setEnabled(hascurview);
-                    ui->actionCopy_Item->setEnabled(hascurview);
-                }
-                else
-                {
-                    ui->actionDelete_Item->setEnabled(false);
-                    ui->actionCopy_Item->setEnabled(false);
-                }
+                ui->actionDelete_Item->setEnabled(hascurview);
+                ui->actionCopy_Item->setEnabled(hascurview);
             }
             else
             {
@@ -643,13 +642,13 @@ void MainWindow::navigateToPage(PNBasePage* t_widget)
         m_navigation_history.pop();
 
     m_navigation_location = m_navigation_history.count();
-    m_navigation_history.push(t_widget);
+    m_navigation_history.push(t_widget);   
 
-    PNSqlQueryModel::refreshDirty();
+    if (PNSqlQueryModel::refreshDirty())
+        t_widget->toFirst(false);
 
     ui->stackedWidget->setCurrentWidget(t_widget);
-
-    this->setWindowTitle(QString("Project Notes [%1]").arg(t_widget->pagetitle()));
+    t_widget->setPageTitle();
 
     setButtonAndMenuStates();
 }
@@ -661,11 +660,12 @@ void MainWindow::navigateBackward()
         m_navigation_location--;
 
         QWidget* current = m_navigation_history.at(m_navigation_location);
-        PNSqlQueryModel::refreshDirty();
+
+        if (PNSqlQueryModel::refreshDirty())
+            ((PNBasePage*)current)->toFirst(false);
 
         ui->stackedWidget->setCurrentWidget(current);
-
-        this->setWindowTitle(QString("Project Notes [%1]").arg(((PNBasePage* )current)->pagetitle()));
+        ((PNBasePage*)current)->setPageTitle();
     }
 
     setButtonAndMenuStates();
@@ -678,11 +678,12 @@ void MainWindow::navigateForward()
         m_navigation_location++;
 
         QWidget* current = m_navigation_history.at(m_navigation_location);
-        PNSqlQueryModel::refreshDirty();
+
+        if (PNSqlQueryModel::refreshDirty())
+            ((PNBasePage*)current)->toFirst(false);
 
         ui->stackedWidget->setCurrentWidget(current);
-
-        this->setWindowTitle(QString("Project Notes [%1]").arg(((PNBasePage* )current)->pagetitle()));
+        ((PNBasePage*)current)->setPageTitle();
     }
 
     setButtonAndMenuStates();
@@ -792,24 +793,25 @@ void MainWindow::on_actionOpen_SearchResults_triggered()
     QVariant record_id = ui->tableViewSearchResults->model()->data(ui->tableViewSearchResults->model()->index(qi.row(), 0));
     QVariant fk_id = ui->tableViewSearchResults->model()->data(ui->tableViewSearchResults->model()->index(qi.row(), 13));
 
-
     if (data_type == tr("Client"))
     {
         navigateToPage(ui->pageClients);
 
         QModelIndex qmi = global_DBObjects.clientsmodel()->findIndex(record_id, 0);
-        QModelIndex qi = global_DBObjects.clientsmodelproxy()->mapFromSource(qmi);
+        QModelIndex qi = global_DBObjects.clientsmodelproxy()->index(global_DBObjects.clientsmodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
+
         ui->tableViewClients->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
-        ui->tableViewClients->scrollTo(qi, QAbstractItemView::PositionAtCenter); //TODO: Fix ScrollTo it isn't working
+        ui->tableViewClients->scrollTo(qi, QAbstractItemView::PositionAtCenter);
     }
     else if (data_type == tr("People"))
     {
         navigateToPage(ui->pagePeople);
 
         QModelIndex qmi = global_DBObjects.peoplemodel()->findIndex(record_id, 0);
-        QModelIndex qi = global_DBObjects.peoplemodelproxy()->mapFromSource(qmi);
+        QModelIndex qi = global_DBObjects.peoplemodelproxy()->index(global_DBObjects.peoplemodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
+
         ui->tableViewPeople->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
-        ui->tableViewPeople->scrollTo(qi, QAbstractItemView::PositionAtCenter); //TODO: Fix ScrollTo it isn't working
+        ui->tableViewPeople->scrollTo(qi, QAbstractItemView::PositionAtCenter);
     }
     else if (data_type == tr("Project"))
     {
@@ -831,9 +833,10 @@ void MainWindow::on_actionOpen_SearchResults_triggered()
         ui->tabWidgetNotes->setCurrentIndex(1);
 
         QModelIndex qmi = global_DBObjects.meetingattendeesmodel()->findIndex(record_id, 0);
-        QModelIndex qi = global_DBObjects.meetingattendeesmodelproxy()->mapFromSource(qmi);
+        QModelIndex qi = global_DBObjects.meetingattendeesmodelproxy()->index(global_DBObjects.meetingattendeesmodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
+
         ui->tableViewAtendees->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
-        ui->tableViewAtendees->scrollTo(qi, QAbstractItemView::PositionAtCenter); //TODO: Fix ScrollTo it isn't working
+        ui->tableViewAtendees->scrollTo(qi, QAbstractItemView::PositionAtCenter);
     }
     else if (data_type == tr("Project Locations"))
     {
@@ -843,9 +846,10 @@ void MainWindow::on_actionOpen_SearchResults_triggered()
         ui->tabWidgetProject->setCurrentIndex(3);
 
         QModelIndex qmi = global_DBObjects.projectlocationsmodel()->findIndex(record_id, 0);
-        QModelIndex qi = global_DBObjects.projectlocationsmodelproxy()->mapFromSource(qmi);
+        QModelIndex qi = global_DBObjects.projectlocationsmodelproxy()->index(global_DBObjects.projectlocationsmodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
+
         ui->tableViewLocations->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
-        ui->tableViewLocations->scrollTo(qi, QAbstractItemView::PositionAtCenter); //TODO: Fix ScrollTo it isn't working
+        ui->tableViewLocations->scrollTo(qi, QAbstractItemView::PositionAtCenter);
     }
     else if (data_type == tr("Project Team"))
     {
@@ -855,9 +859,10 @@ void MainWindow::on_actionOpen_SearchResults_triggered()
         ui->tabWidgetProject->setCurrentIndex(1);
 
         QModelIndex qmi = global_DBObjects.projectteammembersmodel()->findIndex(record_id, 0);
-        QModelIndex qi = global_DBObjects.projectteammembersmodelproxy()->mapFromSource(qmi);
+        QModelIndex qi = global_DBObjects.projectteammembersmodelproxy()->index(global_DBObjects.projectteammembersmodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
+
         ui->tableViewTeam->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
-        ui->tableViewTeam->scrollTo(qi, QAbstractItemView::PositionAtCenter); //TODO: Fix ScrollTo it isn't working
+        ui->tableViewTeam->scrollTo(qi, QAbstractItemView::PositionAtCenter);
     }
     else if (data_type == tr("Status Report Item"))
     {
@@ -867,9 +872,10 @@ void MainWindow::on_actionOpen_SearchResults_triggered()
         ui->tabWidgetProject->setCurrentIndex(0);
 
         QModelIndex qmi = global_DBObjects.statusreportitemsmodel()->findIndex(record_id, 0);
-        QModelIndex qi = global_DBObjects.statusreportitemsmodelproxy()->mapFromSource(qmi);
+        QModelIndex qi = global_DBObjects.statusreportitemsmodelproxy()->index(global_DBObjects.statusreportitemsmodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
+
         ui->tableViewStatusReportItems->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
-        ui->tableViewStatusReportItems->scrollTo(qi, QAbstractItemView::PositionAtCenter); //TODO: Fix ScrollTo it isn't working
+        ui->tableViewStatusReportItems->scrollTo(qi, QAbstractItemView::PositionAtCenter);
     }
     else if (data_type == tr("Item Tracker") )
     {
@@ -884,9 +890,10 @@ void MainWindow::on_actionOpen_SearchResults_triggered()
         navigateToPage(ui->pageItemDetails);
 
         QModelIndex qmi = global_DBObjects.trackeritemscommentsmodel()->findIndex(record_id, 0);
-        QModelIndex qi = global_DBObjects.trackeritemscommentsmodelproxy()->mapFromSource(qmi);
+        QModelIndex qi = global_DBObjects.trackeritemscommentsmodelproxy()->index(global_DBObjects.trackeritemscommentsmodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
+
         ui->tableViewComments->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
-        ui->tableViewComments->scrollTo(qi, QAbstractItemView::PositionAtCenter); //TODO: Fix ScrollTo it isn't working
+        ui->tableViewComments->scrollTo(qi, QAbstractItemView::PositionAtCenter);
     }
 }
 
@@ -1636,6 +1643,10 @@ void MainWindow::on_actionCustom_Plugins_triggered()
 // TODO: Add find feature for QExpandingLineEdit
 // TODO: Add find features to QComboBox located in a table view
 // TODO: Add licensing information to all files to be included with the software
-// TODO: Determine what information goes in the about screen
 // TODO: Complete Help Menu Items
 // TODO: Test setup database from scratch
+
+// TODO: A new meeting should always include the project manager on the list of attendees
+// TODO: A new project should always include the project manager on the team
+
+

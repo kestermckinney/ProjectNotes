@@ -31,8 +31,6 @@ void TrackerItemCommentsView::setModel(QAbstractItemModel *t_model)
 
         setItemDelegateForColumn(4, m_updated_by_delegate);
         setItemDelegateForColumn(2, m_date_updated_delegate);
-
-        // verticalHeader()->setVisible(true);
     }
     else
     {

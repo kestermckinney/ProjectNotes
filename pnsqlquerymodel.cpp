@@ -52,7 +52,7 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
             for (int i = 0; i < m_related_table.count(); i++)
             {
                 // if this is a realated table look for related columns
-                if ( recordset->tablename() == m_related_table[i] )
+                if ( recordset->tablename().compare( m_related_table[i] ) == 0 )
                 {
                     //qDebug() << "Looking Into Table " << recordset->tablename() << " i is " << i;
                     //qDebug() << "Check if table " << recordset->tablename() << " has column " << m_related_column[i];
@@ -63,17 +63,19 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
                     if (ck_col != -1)
                     {
                         recordset->setDirty();  // refresh when ne page active
+                        qDebug() << "Marking table: " << recordset->tablename() << " as dirty.";
                     }
 
                 }
             }
 
             // if it is the same table in a different recordset reload it
-            if ( recordset->tablename() == tablename() )
+            if ( recordset->tablename().compare(tablename()) == 0 )
             {
                 //qDebug() << "Found " << tablename() << " in another model";
 
                 recordset->setDirty();
+                qDebug() << "Marking table: " << recordset->tablename() << " as dirty based on same table name.";
             }
         }
     }
@@ -102,7 +104,11 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
 {
     if (t_role == Qt::EditRole)
     {
-        // nmake sure column is edit_table
+        // nothing changed, so do nothing
+        if (m_cache[t_index.row()].value(t_index.column()) == t_value)
+            return false;
+
+        // make sure column is edit_table
         // exit if no update t_table defined
         if ((m_column_is_editable[t_index.column()] == DBReadOnly) || m_tablename.isEmpty())
             return false;
@@ -114,7 +120,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 QMessageBox::critical(nullptr, QObject::tr("Cannot update record"),
                    m_headers[t_index.column()][Qt::EditRole].toString() + QObject::tr(" is a required field."), QMessageBox::Ok);
 
-                return true;
+                return false;
             }
         }
 
@@ -127,9 +133,13 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
 
                 reloadRecord(t_index);
 
-                return true;
+                return false;
             }
         }
+
+        // make sure we aren't violating any unique key sets STOPPED HERE
+        if (!checkUniqueKeys(t_index, t_value))
+            return false;
 
         // new records will not have an id and need inserted
         if ( m_cache[t_index.row()].value(0).isNull() )
@@ -198,7 +208,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             update.addBindValue(keyvalue);
             update.addBindValue(oldvalue);
 
-            //qDebug() << "update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)";
+            qDebug() << "update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)";
             //qDebug() << "Value " << value;
             //qDebug() << "Value " << keyvalue;
             //qDebug() << "Value " << oldvalue;
@@ -306,7 +316,6 @@ QVariant PNSqlQueryModel::data(const QModelIndex &t_index, int t_role) const
 
     return retval;
 }
-
 
 void PNSqlQueryModel::clear()
 {
@@ -723,18 +732,20 @@ bool PNSqlQueryModel::isUniqueValue(const QVariant &t_new_value, const QModelInd
     return true;
 }
 
-void PNSqlQueryModel::addRelatedTable(const QString& TableName, const QString& ColumnName, const QString& Title, const DBRelationExportable exportable)
+void PNSqlQueryModel::addRelatedTable(const QString& t_table_name, const QString& t_column_name, const QString& t_fk_column_name, const QString& t_title, const DBRelationExportable t_exportable)
 {
-    m_related_table.append(TableName);
-    m_related_column.append(ColumnName);
-    m_relation_title.append(Title);
-    m_relation_exportable.append(exportable);
+    m_related_table.append(t_table_name);
+    m_related_column.append(t_column_name);
+    m_related_fk_column.append(t_fk_column_name);
+    m_relation_title.append(t_title);
+    m_relation_exportable.append(t_exportable);
 }
 
 bool PNSqlQueryModel::deleteCheck(const QModelIndex &t_index)
 {
     int reference_count = 0;
     QString message;
+    QString key;
 
     for (int i = 0; i < m_related_table.size(); ++i)
     {
@@ -742,10 +753,11 @@ bool PNSqlQueryModel::deleteCheck(const QModelIndex &t_index)
 
         QSqlQuery select;
         select.prepare("select count(*) from " + m_related_table.at(i) + " where " + m_related_column.at(i) + " = ?");
-        select.bindValue(0, m_cache[t_index.row()].value(0));
+        select.bindValue(0, m_cache[t_index.row()].value(m_related_fk_column.at(i)));
         select.exec();
 
-        //qDebug() << "DELETE CHECK: " << select.executedQuery() << " column:  " <<  m_related_column.at(i) << " value:  " << m_cache[t_index.row()].value(0);
+        // go with the last key value you find
+        key = m_cache[t_index.row()].value(m_related_fk_column.at(i)).toString();
 
         if (select.next())
             relatedcount = select.value(0).toInt();
@@ -766,8 +778,6 @@ bool PNSqlQueryModel::deleteCheck(const QModelIndex &t_index)
         if ( QMessageBox::question(nullptr, QObject::tr("Cannot delete record"),
            message, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
         {
-            QString key = m_cache[t_index.row()].value(0).toString();
-
             global_DBObjects.searchresultsmodel()->PerformKeySearch( key );
 
             emit callKeySearch();
@@ -1546,7 +1556,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
             element = element.nextSibling();
         }
     }
-    
+
     // check to see if record exists
     QString exists_sql = QString("select count(*) from %1 where %2").arg(m_tablename, whereclause);
     QString exists_count = global_DBObjects.execute(exists_sql);
@@ -1601,6 +1611,69 @@ void PNSqlQueryModel::refreshByTableName()
     }
 }
 
+bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant &t_value)
+{
+    QString checkfield = m_cache[t_index.row()].field(t_index.column()).name();
+
+    QHash<QString, QStringList>::iterator itk;
+
+    for ( itk = m_unique_keys.begin(); itk != m_unique_keys.end(); ++itk  )
+    {
+        QString where;
+        bool isrelevent = false;
+
+        foreach ( const QString f, itk.value() )
+        {
+            if ( f.compare(checkfield) == 0 )
+                isrelevent = true;
+
+            if (!where.isEmpty())
+                where += " and ";
+            where += QString("%1 = ?").arg(f);
+        }
+
+        // if the field we are checking is relevent check it
+        if (isrelevent)
+        {
+            where = QString("select count(*) from %1 where ").arg(tablename()) + where;
+
+            qDebug() << "Verifying Unique:  " << where;
+
+            QSqlQuery qry;
+            qry.prepare(where);
+
+            foreach ( const QString f, itk.value() )
+            {
+                if ( f.compare(checkfield) == 0 )
+                {
+                    qDebug() << "binding...  " << t_value;
+                    qry.addBindValue(t_value); // check the value we want to update with
+                }
+                else
+                {
+                    qDebug() << "binding... " << m_cache[t_index.row()].field(f).value();
+                    qry.addBindValue(m_cache[t_index.row()].field(f).value());
+                }
+            }
+
+            qry.exec();
+
+            if (qry.next())
+            {
+                if ( qry.value(0).toInt() > 0)
+                {
+
+                    QMessageBox::warning(nullptr, QObject::tr("Cannot update record"),
+                       QString("%1 must be unique.").arg(itk.key()));
+
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
 
 //TODO: establish a progress bar while generating the XML
-//TODO: When a team member is updated the Primary Contact get's cleared somehow
+

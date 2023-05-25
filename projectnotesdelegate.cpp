@@ -5,6 +5,7 @@
 #include <QLineEdit>
 #include <QComboBox>
 #include <QTextEdit>
+#include <QCheckBox>
 
 ProjectNotesDelegate::ProjectNotesDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
@@ -21,6 +22,10 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
         {
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             lineedit->setText(value.toString());
+
+            QWidget* window = static_cast<QWidget*>(t_editor);
+            window->topLevelWidget()->setWindowTitle(QString("Project Notes Meeting [%1]").arg(value.toString()));
+            //qDebug() << "Project Notes Delegate set window title";
         }
         break;
     case 3:
@@ -45,6 +50,15 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
                 textedit->setPlainText(value.toString());
         }
         break;
+    case 5: // note internal
+        {
+            QCheckBox* chkbox = static_cast<QCheckBox*>(t_editor);
+            if (value.toString() == "0")
+                chkbox->setChecked(false);
+            else
+                chkbox->setChecked(true);
+        }
+        break;
     }
 }
 
@@ -58,6 +72,9 @@ void ProjectNotesDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t
         {
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             key_val = lineedit->text();
+
+            QWidget* window = static_cast<QWidget*>(t_editor);
+            window->topLevelWidget()->setWindowTitle(QString("Project Notes Meeting [%1]").arg(key_val.toString()));
         }
         break;
     case 3: // note date
@@ -73,6 +90,15 @@ void ProjectNotesDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t
         {
             QTextEdit* textedit = static_cast<QTextEdit*>(t_editor);
             key_val = textedit->toHtml();
+        }
+        break;
+    case 5: // note internal
+        {
+            QCheckBox* chkbox = static_cast<QCheckBox*>(t_editor);
+            if (chkbox->isChecked())
+                key_val = QString("1");
+            else
+                key_val = QString("0");
         }
         break;
     }

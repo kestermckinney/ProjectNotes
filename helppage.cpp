@@ -6,13 +6,16 @@
 #include <QHelpContentWidget>
 
 #include "helppage.h"
-//#include "mainwindow.h"
 #include "ui_mainwindow.h"
 
 HelpPage::HelpPage()
 {
-    QString page_title = "Help";
-    setPageTitle(page_title);
+
+}
+
+void HelpPage::setPageTitle()
+{
+    topLevelWidget()->setWindowTitle(QString("Project Notes Help"));
 }
 
 void HelpPage::setupModels( Ui::MainWindow *t_ui )
@@ -79,3 +82,7 @@ void HelpPage::showLink(const QUrl &url)
     ui->textBrowser->setSource(url);
 }
 
+void HelpPage::setButtonAndMenuStates()
+{
+
+}

@@ -44,6 +44,14 @@ void NotesActionItemsView::setModel(QAbstractItemModel *t_model)
         setColumnHidden(14, true);
         setColumnHidden(18, true);
 
+        if (global_DBObjects.getShowInternalItems())
+        {
+           setColumnHidden(15, false);
+           resizeColumnToContents(15);
+        }
+        else
+           setColumnHidden(15, true);
+
         // setup model lists
         m_item_priority.setStringList(PNDatabaseObjects::item_priority);
         m_item_type.setStringList(PNDatabaseObjects::item_type);
@@ -84,4 +92,3 @@ void NotesActionItemsView::setModel(QAbstractItemModel *t_model)
         PNTableView::setModel(t_model);
     }
 }
-

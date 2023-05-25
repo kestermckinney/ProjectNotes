@@ -17,6 +17,15 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
 
     switch (t_index.column())
     {
+    case 1:
+        {
+            QWidget* window = static_cast<QWidget*>(t_editor);
+            window->topLevelWidget()->setWindowTitle(QString("Project Notes Project [%1]").arg(value.toString()));
+
+            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
+            lineedit->setText(value.toString());
+        }
+        break;
     case 3:
     case 4:
         {
@@ -37,14 +46,14 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
             PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
 
 
-            qDebug() << " Primary Contact Mapper Called";
+            //qDebug() << " Primary Contact Mapper Called";
 
             if (model)
             {
                 QString list_value = model->findValue(value, 3, 1).toString();
                 comboBox->setCurrentText(list_value);
 
-                qDebug() << " .. Set text value to " << list_value;
+                //qDebug() << " .. Set text value to " << list_value;
             }
         }
         break;
@@ -83,6 +92,15 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
 
     switch (t_index.column())
     {
+    case 1:
+        {
+            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
+            key_val = lineedit->text();
+
+            QWidget* window = static_cast<QWidget*>(t_editor);
+            window->topLevelWidget()->setWindowTitle(QString("Project Notes Project [%1]").arg(key_val.toString()));
+        }
+        break;
     case 3:
     case 4:
         {
@@ -114,7 +132,7 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
 
             int i = comboBox->currentIndex();
-            key_val = comboBox->model()->data(comboBox->model()->index(i, 3));
+            key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
         }
         break;
     default:

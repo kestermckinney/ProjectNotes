@@ -5,8 +5,7 @@
 
 ItemDetailsPage::ItemDetailsPage()
 {
-    QString page_title = "Item Details";
-    setPageTitle(page_title);
+
 }
 
 ItemDetailsPage::~ItemDetailsPage()
@@ -16,6 +15,12 @@ ItemDetailsPage::~ItemDetailsPage()
 
     if (m_item_details_delegate)
         delete m_item_details_delegate;
+}
+
+void ItemDetailsPage::setPageTitle()
+{
+    topLevelWidget()->setWindowTitle(QString("Project Notes Item [%1]").arg(ui->lineEditItemNumber->text()));
+    //qDebug() << "Item Details Page Set Title";
 }
 
 void ItemDetailsPage::newRecord()
@@ -110,9 +115,15 @@ void ItemDetailsPage::setupModels( Ui::MainWindow *t_ui )
     setCurrentView( ui->tableViewComments );
 }
 
-void ItemDetailsPage::toFirst()
+void ItemDetailsPage::toFirst(bool t_open)
 {
+    Q_UNUSED(t_open)
+
     if (m_mapperItemDetails != nullptr)
         m_mapperItemDetails->toFirst();
 }
 
+void ItemDetailsPage::setButtonAndMenuStates()
+{
+
+}

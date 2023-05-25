@@ -170,7 +170,7 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
             switch (spellResult)
             {
             case SpellCheckDialog::Change:
-                qDebug() << "Change Text: " << ui->lineEditChange->text();
+                //qDebug() << "Change Text: " << ui->lineEditChange->text();
                 cursor.insertText(ui->lineEditChange->text());
                 break;
             case SpellCheckDialog::ChangeAll:

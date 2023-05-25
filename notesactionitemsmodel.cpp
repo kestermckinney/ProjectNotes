@@ -31,7 +31,15 @@ NotesActionItemsModel::NotesActionItemsModel(QObject* t_parent): PNSqlQueryModel
               "projects", "project_id", "project_number");
     addColumn(15, tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
-    addRelatedTable("item_tracker_updates", "item_id", "Tracker Updates", DBExportable);
+    QStringList key1 = {"project_id", "item_number"};
+
+    addUniqueKeys(key1, "Item");
+
+    QStringList key2 = {"project_id", "item_name"};
+
+    addUniqueKeys(key2, "Item Name");
+
+    addRelatedTable("item_tracker_updates", "item_id", "item_id", "Tracker Updates", DBExportable);
 
     setOrderBy("item_number");
 }

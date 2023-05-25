@@ -47,8 +47,6 @@ public slots:
     void on_actionOpen_ItemDetails_triggered();
     void on_actionOpen_ProjectNote_triggered();
     void on_actionOpen_SearchResults_triggered();
-
-
     void on_focusChanged(QWidget *t_old, QWidget *t_now);
 
 private slots:

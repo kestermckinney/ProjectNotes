@@ -15,7 +15,11 @@ StatusReportItemsModel::StatusReportItemsModel(QObject* t_parent): PNSqlQueryMod
     addColumn(2,  tr("Category"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::status_item_status);
     addColumn(3, tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable);
 
-    addRelatedTable("projects", "project_id", "Projects");
+    QStringList key1 = {"project_id", "task_description"};
+
+    addUniqueKeys(key1, "Description");
+
+    addRelatedTable("projects", "project_id", "project_id", "Projects");
 
     setOrderBy("status_item_id");
 }
