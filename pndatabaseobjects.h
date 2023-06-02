@@ -131,6 +131,10 @@ public:
     QDomDocument* createXMLExportDoc(PNSqlQueryModel* t_querymodel, const QString& t_filter = QString());
     bool importXMLDoc(const QDomDocument& t_xmldoc);
 
+    // helper functions
+    void addDefaultPMToProject(const QString& t_project_id);
+    void addDefaultPMToMeeting(const QString& t_note_id);
+
 private:
     QString m_database_file;
     QSqlDatabase m_sqlite_db;

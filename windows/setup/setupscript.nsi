@@ -150,7 +150,7 @@ Section "MainSection" SEC01
   File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\en_GB.dic"
   File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\en_GB.aff"
 
-  EnVar::AddValue "Path" "$INSTDIR"
+  ; not needed anymore EnVar::AddValue "Path" "$INSTDIR"
 SectionEnd
 
 Section -AdditionalIcons
@@ -191,7 +191,7 @@ FunctionEnd
 Section Uninstall
   ; SetShellVarContext all ; only use when RequestExecutionLevel admin
 
-  EnVar::DeleteValue "Path" "$INSTDIR"
+  ; not needed anymore EnVar::DeleteValue "Path" "$INSTDIR"
 
   ; Help files
   Delete "$INSTDIR\docs\Project Notes.qch"

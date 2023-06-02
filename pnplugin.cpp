@@ -174,14 +174,14 @@ QString PNPlugin::callPythonMethod(PyObject* t_method)
     if (!func)
     {
         PyErr_PrintEx(0);
-        QMessageBox::critical( nullptr, "Python Call Failed", "Could not call method.");
+        QMessageBox::critical( nullptr, "Python Call Failed", "Could not call method.  See plugin console.");
         return QString();
     }
 
     if (!PyArg_Parse(func, "s", &result))                /* convert to C */
     {
         PyErr_PrintEx(0);
-        QMessageBox::critical( nullptr, "Python Call Failed", "Could not get result for method.");
+        QMessageBox::critical( nullptr, "Python Call Failed", "Could not get result for method.  See plugin console.");
         Py_XDECREF(func);
         return QString();
     }
@@ -213,7 +213,7 @@ QString PNPlugin::callPythonMethod(PyObject* t_method, const QString& t_xmlstrin
     if (!pargs)
     {
         PyErr_PrintEx(0);
-        QMessageBox::critical( nullptr, "Python Call Failed", "Could not build argument list for Python method.");
+        QMessageBox::critical( nullptr, "Python Call Failed", "Could not build argument list for Python method.  See plugin console.");
         return QString();
     }
 
@@ -221,7 +221,7 @@ QString PNPlugin::callPythonMethod(PyObject* t_method, const QString& t_xmlstrin
     if (!func)
     {
         PyErr_PrintEx(0);
-        QMessageBox::critical( nullptr, "Python Call Failed", "Could not call Python method.");
+        QMessageBox::critical( nullptr, "Python Call Failed", "Could not call Python method.  See plugin console.");
         Py_XDECREF(pargs);
         return QString();
     }
@@ -231,7 +231,7 @@ QString PNPlugin::callPythonMethod(PyObject* t_method, const QString& t_xmlstrin
     if (!PyArg_Parse(func, "s", &result))                /* convert to C */
     {
         PyErr_PrintEx(0);
-        QMessageBox::critical( nullptr, "Python Call Failed", "Could not get result from Python method.");
+        QMessageBox::critical( nullptr, "Python Call Failed", "Could not get result from Python method.  See plugin console.");
         Py_XDECREF(pargs);
         Py_XDECREF(func);
         return QString();
@@ -254,7 +254,7 @@ int PNPlugin::setPythonVariable(const QString& t_variablename, const QString& t_
     if (r == -1)
     {
         PyErr_PrintEx(0);
-        QMessageBox::critical( nullptr, "Python Call Failed", QString("Could not set attribute %1.").arg(t_variablename) );
+        QMessageBox::critical( nullptr, "Python Call Failed", QString("Could not set attribute %1.  See plugin console.").arg(t_variablename) );
         return -1;
     }
 
@@ -271,7 +271,7 @@ QString PNPlugin::getPythonVariable(const QString& t_variablename)
     if (!attr)
     {
         PyErr_PrintEx(0);
-        QMessageBox::critical( nullptr, "Python Call Failed", QString("Could not get attribute %1.").arg(t_variablename) );
+        QMessageBox::critical( nullptr, "Python Call Failed", QString("Could not get attribute %1.  See plugin console.").arg(t_variablename) );
         return QString();
     }
 
@@ -279,7 +279,7 @@ QString PNPlugin::getPythonVariable(const QString& t_variablename)
     if (!str)
     {
         PyErr_PrintEx(0);
-        QMessageBox::critical( nullptr, "Python Call Failed", QString("Could not get string for %1.").arg(t_variablename) );
+        QMessageBox::critical( nullptr, "Python Call Failed", QString("Could not get string for %1.  See plugin console.").arg(t_variablename) );
         return QString();
     }
 
@@ -299,14 +299,14 @@ QStringList PNPlugin::getPythonStringList(const QString& t_variablename)
     if (!attr)
     {
         PyErr_PrintEx(0);
-        QMessageBox::critical( nullptr, "Python Call Failed", QString("Could not get attribute %1.").arg(t_variablename) );
+        QMessageBox::critical( nullptr, "Python Call Failed", QString("Could not get attribute %1.  See plugin console.").arg(t_variablename) );
         return QStringList();
     }
 
     if (!PyList_Check(attr))
     {
         PyErr_PrintEx(0);
-        QMessageBox::critical( nullptr, "Python Call Failed", QString("Could not get attribute %1.").arg(t_variablename) );
+        QMessageBox::critical( nullptr, "Python Call Failed", QString("Could not get attribute %1.  See plugin console.").arg(t_variablename) );
         Py_XDECREF(attr);
         return QStringList();
     }
@@ -319,7 +319,7 @@ QStringList PNPlugin::getPythonStringList(const QString& t_variablename)
         if (!item)
         {
             PyErr_PrintEx(0);
-            QMessageBox::critical( nullptr, "Python Call Failed", QString("Could not get item %1 for %2.").arg(i).arg(t_variablename) );
+            QMessageBox::critical( nullptr, "Python Call Failed", QString("Could not get item %1 for %2.  See plugin console.").arg(i).arg(t_variablename) );
             return QStringList();
         }
 

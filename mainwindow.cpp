@@ -50,7 +50,6 @@ MainWindow::MainWindow(QWidget *t_parent)
     setButtonAndMenuStates();
 
     global_Settings.getWindowState("MainWindow", *this);
-    ui->actionStatus_Bar->setChecked(statusBar()->isVisibleTo(this));
 
     connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
     connect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
@@ -75,8 +74,6 @@ MainWindow::MainWindow(QWidget *t_parent)
     connect(global_DBObjects.notesactionitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-
-    connect(ui->pageProjectDetails, SIGNAL(titlechange(QString)), this, SLOT(setPageTitle(QString)));
 
     m_plugin_manager = new PNPluginManager(this);
 
@@ -1648,5 +1645,4 @@ void MainWindow::on_actionCustom_Plugins_triggered()
 
 // TODO: A new meeting should always include the project manager on the list of attendees
 // TODO: A new project should always include the project manager on the team
-
 

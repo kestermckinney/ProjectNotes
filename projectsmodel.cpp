@@ -193,3 +193,17 @@ QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
 
     return PNSqlQueryModel::data(t_index, t_role);
 }
+
+bool ProjectsModel::setData(const QModelIndex &t_index, const QVariant &t_value, int t_role)
+{
+    bool wasnew = isNewRecord(t_index);
+    bool result = PNSqlQueryModel::setData(t_index, t_value, t_role);
+
+    if (wasnew && result)
+    {
+        QString project_id = data(index(t_index.row(), 0)).toString();
+        global_DBObjects.addDefaultPMToProject(project_id);
+    }
+
+    return result;
+}

@@ -86,7 +86,7 @@ def event_startup(xmlstr):
         return ""
 
     print("Tester: Event Startup called...")
-    print(xmlstr);       
+    print(xmlstr)
 
     return ""
 
@@ -97,7 +97,7 @@ def event_shutdown(xmlstr):
         return ""
 
     print("Tester: Event Startup called...")
-    print(xmlstr);       
+    print(xmlstr)    
 
     return ""
 
@@ -108,7 +108,7 @@ def event_everyminute(xmlstr):
         return ""
 
     print("Tester: Event Every Minute called...")
-    print(xmlstr);       
+    print(xmlstr)
 
     return ""
 
@@ -119,7 +119,7 @@ def event_every5minutes(xmlstr):
         return ""
 
     print("Tester: Event Every 5 Minutes called...")
-    print(xmlstr);       
+    print(xmlstr)
 
     return ""
 
@@ -130,7 +130,7 @@ def event_every10minutes(xmlstr):
         return ""
 
     print("Tester: Event Every 10 Minutes called...")
-    print(xmlstr);       
+    print(xmlstr)
 
     return ""
 
@@ -141,7 +141,7 @@ def event_every30minutes(xmlstr):
         return ""
 
     print("Tester: Event Every 30 Minutes called...")
-    print(xmlstr);       
+    print(xmlstr)
 
     return ""
 
@@ -152,7 +152,8 @@ def event_menuclick(xmlstr):
         return ""
 
     print("Tester: Event Menu click called...")
-    print(xmlstr);       
+    prin()
+    print(xmlstr)       
 
     return ""
 
@@ -163,7 +164,7 @@ def event_data_rightclick(xmlstr):
         return ""
 
     print("Tester: Right Click Data Event called...")
-    print(xmlstr);       
+    print(xmlstr)
 
 
     # simple test will always change the name back

@@ -60,3 +60,17 @@ bool ProjectNotesModel::openRecord(QModelIndex t_index)
 
     return true;
 }
+
+bool ProjectNotesModel::setData(const QModelIndex &t_index, const QVariant &t_value, int t_role)
+{
+    bool wasnew = isNewRecord(t_index);
+    bool result = PNSqlQueryModel::setData(t_index, t_value, t_role);
+
+    if (wasnew && result)
+    {
+        QString note_id = data(index(t_index.row(), 0)).toString();
+        global_DBObjects.addDefaultPMToMeeting(note_id);
+    }
+
+    return result;
+}

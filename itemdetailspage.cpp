@@ -40,16 +40,6 @@ void ItemDetailsPage::setupModels( Ui::MainWindow *t_ui )
 {
     ui = t_ui;
 
-    if (t_ui)
-    {
-        connect(global_DBObjects.actionitemsdetailsmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
-    }
-    else
-    {
-        disconnect(global_DBObjects.actionitemsdetailsmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
-        return;  // closing application
-    }
-
     ui->dateEditDueDate->setNullable(true);
     ui->dateEditDateResolved->setNullable(true);
     ui->dateEditLastUpdated->setNullable(true);

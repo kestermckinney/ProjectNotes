@@ -795,3 +795,26 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
 
     return true;
 }
+
+void PNDatabaseObjects::addDefaultPMToProject(const QString& t_project_id)
+{
+    QString pm = getProjectManager();
+    QString guid = QUuid::createUuid().toString();
+
+    QString insert = QString("insert into project_people (teammember_id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' )").arg(t_project_id).arg(pm).arg(guid);
+    qDebug() << "Adding default pm to project: " << insert;
+
+    execute(insert);
+}
+
+void PNDatabaseObjects::addDefaultPMToMeeting(const QString& t_note_id)
+{
+    QString pm = getProjectManager();
+    QString guid = QUuid::createUuid().toString();
+
+    // TODO: this will add him even if he isn't on the team
+    QString insert = QString("insert into meeting_attendees (attendee_id, person_id, note_id) select '%3', '%2', '%1' where not exists (select 1 from meeting_attendees where note_id = '%1' and person_id = '%2' )").arg(t_note_id).arg(pm).arg(guid);
+    qDebug() << "Adding default pm to meeting: " << insert;
+
+    execute(insert);
+}

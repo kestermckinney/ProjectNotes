@@ -98,10 +98,16 @@ PyModuleDef embmodule =
 PyObject* g_stdout;
 PyObject* g_stdout_saved;
 
+PyObject* g_stderr;
+PyObject* g_stderr_saved;
+
 PyMODINIT_FUNC PyInit_embeddedconsole(void)
 {
     g_stdout = 0;
     g_stdout_saved = 0;
+
+    g_stderr = 0;
+    g_stderr_saved = 0;
 
     StdoutType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&StdoutType) < 0)
@@ -127,6 +133,17 @@ void set_stdout(stdout_write_type write)
     Stdout* impl = reinterpret_cast<Stdout*>(g_stdout);
     impl->write = write;
     PySys_SetObject("stdout", g_stdout);
+
+
+    if (!g_stderr)
+    {
+        g_stderr_saved = PySys_GetObject("stderr"); // borrowed
+        g_stderr = StdoutType.tp_new(&StdoutType, 0, 0);
+    }
+
+    Stdout* impl_err = reinterpret_cast<Stdout*>(g_stderr);
+    impl_err->write = write;
+    PySys_SetObject("stderr", g_stderr);
 }
 
 void reset_stdout()
@@ -136,6 +153,12 @@ void reset_stdout()
 
     Py_XDECREF(g_stdout);
     g_stdout = 0;
+
+    if (g_stderr_saved)
+        PySys_SetObject("stderr", g_stderr_saved);
+
+    Py_XDECREF(g_stderr);
+    g_stderr = 0;
 }
 
 // initialize PNPlugin engine
