@@ -205,7 +205,6 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_tracker_item_comments_model_proxy->setSourceModel(m_tracker_item_comments_model);
 
     m_search_results_model = new SearchResultsModel(nullptr);
-
     m_search_results_model_proxy = new PNSortFilterProxyModel();
     m_search_results_model_proxy->setSourceModel(m_search_results_model);
 

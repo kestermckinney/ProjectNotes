@@ -431,6 +431,7 @@ void PNSqlQueryModel::sqlEscape(QVariant& t_column_value, DBColumnType t_column_
 
             break;
         }
+        case DBHtml:
         case DBString:
         {
             if (!t_no_quote)
@@ -493,6 +494,7 @@ void PNSqlQueryModel::reformatValue(QVariant& t_column_value, DBColumnType t_col
         return;
 
     switch (t_column_type) {
+        case DBHtml:
         case DBString:
         {
             // leave strings alone
@@ -892,7 +894,7 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
 
                 sqlEscape(column_value, m_column_type[hashit.key()]);
 
-                if ( m_column_type[hashit.key()] != DBString )
+                if ( m_column_type[hashit.key()] != DBString && m_column_type[hashit.key()] != DBHtml)
                 {
                     if (m_column_type[hashit.key()] == DBBool && column_value == tr("0"))
                     {
@@ -938,7 +940,7 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                     if (!valuelist.isEmpty())
                         valuelist += tr(" AND ");
 
-                    if (  m_column_type[colnum] == DBString )
+                    if (  m_column_type[colnum] == DBString ||  m_column_type[colnum] == DBHtml )
                     {
                         valuelist += QString(" %1 LIKE '%%2%' ").arg(m_sql_query.record().fieldName(colnum), column_value.toString());
                     }
@@ -962,7 +964,7 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
 
                     sqlEscape(column_value, m_column_type[colnum]);
 
-                    if ( m_column_type[colnum] == DBString )
+                    if ( m_column_type[colnum] == DBString || m_column_type[colnum] == DBHtml )
                         instring += QString("'%1'").arg(column_value.toString());
                     else
                         instring += QString("%1").arg(column_value.toString());
@@ -1013,7 +1015,7 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                         if (!valuelist.isEmpty())
                             valuelist += tr(" AND ");
 
-                        if ( m_column_type[colnum] != DBString )
+                        if ( m_column_type[colnum] != DBString && m_column_type[colnum] != DBHtml)
                         {
                             valuelist += QString("%1 >= %2").arg(m_sql_query.record().fieldName(colnum), RangeStart.toString());
                         }
@@ -1029,7 +1031,7 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                             valuelist += tr(" AND ");
 
 
-                        if ( m_column_type[colnum] != DBString )
+                        if ( m_column_type[colnum] != DBString && m_column_type[colnum] != DBHtml)
                         {
                             valuelist += QString("%1 <= %2").arg(m_sql_query.record().fieldName(colnum), RangeEnd.toString());
                         }
@@ -1372,13 +1374,24 @@ QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document, const 
             QDomElement xmlcolumn = t_xml_document->createElement("column");
             xmlcolumn.setAttribute("name", row.fieldName(i));
 
-            QDomText xmltext = t_xml_document->createTextNode(row.value(i).toString());
-            xmlcolumn.appendChild(xmltext);
+            QVariant val = row.value(i);
+            reformatValue(val, getType(i));
+
+            if (getType(i) == DBHtml)
+            {
+                // need a specific type here
+                QDomCDATASection xmlcdata = t_xml_document->createCDATASection(val.toString());
+                xmlcolumn.appendChild(xmlcdata);
+            }
+            else
+            {
+                QDomText xmltext = t_xml_document->createTextNode(val.toString());
+                xmlcolumn.appendChild(xmltext);
+            }
 
             if ( !m_lookup_table[i].isEmpty() )
             {
                 QString fk_key_val = row.value(i).toString();
-
                 QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookup_value_column_name[i], m_lookup_table[i], m_lookup_fk_column_name[i], fk_key_val);
                 QString lookup_value = global_DBObjects.execute(sql);
 
@@ -1426,6 +1439,7 @@ QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document, const 
                         xmlrow.appendChild(qd);
 
                         delete export_version;
+                        break; // only grab the first instance of the related table
                     }
                 }
             }
@@ -1461,7 +1475,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
 {
     if (t_xml_row->tagName() != "row")
     {
-        //qDebug() << "tag name: " << t_xml_row->tagName() << " is not a 'row'";
+        qDebug() << "tag name: " << t_xml_row->tagName() << " is not a 'row'";
         return false;
     }
 
@@ -1493,7 +1507,9 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
             int colnum = getColumnNumber(field_name);
 
             // if key column is specified blank or null don't use it
-            if ( !(colnum == 0 && (field_value.isNull() || field_value.toString().isEmpty())) )
+            // don't use if it isn't an editable column
+            if ( !(colnum == 0 && (field_value.isNull() || field_value.toString().isEmpty())) &&
+                 isEditable(colnum) )
             {
                 if (!fields.isEmpty())
                     fields += ",";
@@ -1521,7 +1537,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                     return false;
                 }
 
-                sqlEscape(field_value, m_column_type[colnum], true);
+                sqlEscape(field_value, m_column_type[colnum], false);
 
                 if (field_value.isNull())
                 {
@@ -1552,9 +1568,9 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                     }
                 }
             }
-
-            element = element.nextSibling();
         }
+
+        element = element.nextSibling();
     }
 
     // check to see if record exists
@@ -1585,7 +1601,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
         sql = QString("insert into %1 (%2) values (%3)").arg(m_tablename, fields, insertvalues);
     }
 
-    //qDebug() << "XML Generated SQL: " << sql;
+    qDebug() << "XML Generated SQL: " << sql;
 
     global_DBObjects.execute(sql);
 
@@ -1676,4 +1692,4 @@ bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant
 }
 
 //TODO: establish a progress bar while generating the XML
-
+//TODO: Not importing a note the note editing screen didn't update with the new data

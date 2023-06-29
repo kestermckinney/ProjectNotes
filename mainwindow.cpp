@@ -134,19 +134,104 @@ void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
 
     // call the menu plugin with the data structure
     if (t_plugin->hasEveryMinuteEvent())
-        t_plugin->callEveryMinuteEvent(xmlstr);
+    {
+        QString response = t_plugin->callEveryMinuteEvent(xmlstr);
+
+        if (!response.isEmpty())
+        {
+            QApplication::setOverrideCursor(Qt::WaitCursor);
+            QApplication::processEvents();
+
+            QDomDocument doc;
+            doc.setContent(response);
+
+            if (!global_DBObjects.importXMLDoc(doc))
+                QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
+
+            QApplication::restoreOverrideCursor();
+            QApplication::processEvents();
+        }
+    }
 
     if (t_plugin->hasEvery5MinutesEvent() && (m_minute_counter % 5) == 0)
-        t_plugin->callEvery5MinutesEvent(xmlstr);
+    {
+        QString response = t_plugin->callEvery5MinutesEvent(xmlstr);
+
+        if (!response.isEmpty())
+        {
+            QApplication::setOverrideCursor(Qt::WaitCursor);
+            QApplication::processEvents();
+
+            QDomDocument doc;
+            doc.setContent(response);
+
+            if (!global_DBObjects.importXMLDoc(doc))
+                QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
+
+            QApplication::restoreOverrideCursor();
+            QApplication::processEvents();
+        }
+    }
 
     if (t_plugin->hasEvery10MinutesEvent() && (m_minute_counter % 10) == 0)
-        t_plugin->callEvery10MinutesEvent(xmlstr);
+    {
+        QString response = t_plugin->callEvery10MinutesEvent(xmlstr);
+
+        if (!response.isEmpty())
+        {
+            QApplication::setOverrideCursor(Qt::WaitCursor);
+            QApplication::processEvents();
+
+            QDomDocument doc;
+            doc.setContent(response);
+
+            if (!global_DBObjects.importXMLDoc(doc))
+                QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
+
+            QApplication::restoreOverrideCursor();
+            QApplication::processEvents();
+        }
+    }
 
     if (t_plugin->hasEvery15MinutesEvent() && (m_minute_counter % 15) == 0)
-        t_plugin->callEvery15MinutesEvent(xmlstr);
+    {
+        QString response = t_plugin->callEvery15MinutesEvent(xmlstr);
+
+        if (!response.isEmpty())
+        {
+            QApplication::setOverrideCursor(Qt::WaitCursor);
+            QApplication::processEvents();
+
+            QDomDocument doc;
+            doc.setContent(response);
+
+            if (!global_DBObjects.importXMLDoc(doc))
+                QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
+
+            QApplication::restoreOverrideCursor();
+            QApplication::processEvents();
+        }
+    }
 
     if (t_plugin->hasEvery30MinutesEvent() && (m_minute_counter % 30) == 0)
-        t_plugin->callEvery30MinutesEvent(xmlstr);
+    {
+        QString response = t_plugin->callEvery30MinutesEvent(xmlstr);
+
+        if (!response.isEmpty())
+        {
+            QApplication::setOverrideCursor(Qt::WaitCursor);
+            QApplication::processEvents();
+
+            QDomDocument doc;
+            doc.setContent(response);
+
+            if (!global_DBObjects.importXMLDoc(doc))
+                QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
+
+            QApplication::restoreOverrideCursor();
+            QApplication::processEvents();
+        }
+    }
 }
 
 void MainWindow::slotTimerUpdates()
@@ -200,7 +285,22 @@ void MainWindow::slotStartupEvent(PNPlugin* t_plugin)
     }
 
     // call the menu plugin with the data structure
-    t_plugin->callStartupEvent(xmlstr);
+    QString response = t_plugin->callStartupEvent(xmlstr);
+
+    if (!response.isEmpty())
+    {
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+        QApplication::processEvents();
+
+        QDomDocument doc;
+        doc.setContent(response);
+
+        if (!global_DBObjects.importXMLDoc(doc))
+            QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
+
+        QApplication::restoreOverrideCursor();
+        QApplication::processEvents();
+    }
 }
 
 void MainWindow::slotShutdownEvent(PNPlugin* t_plugin)
@@ -234,7 +334,22 @@ void MainWindow::slotShutdownEvent(PNPlugin* t_plugin)
     }
 
     // call the menu plugin with the data structure
-    t_plugin->callShutdownEvent(xmlstr);
+    QString response = t_plugin->callShutdownEvent(xmlstr);
+
+    if (!response.isEmpty())
+    {
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+        QApplication::processEvents();
+
+        QDomDocument doc;
+        doc.setContent(response);
+
+        if (!global_DBObjects.importXMLDoc(doc))
+            QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
+
+        QApplication::restoreOverrideCursor();
+        QApplication::processEvents();
+    }
 }
 
 
@@ -265,7 +380,22 @@ void MainWindow::slotPluginMenu(PNPlugin* t_plugin)
     }
 
     // call the menu plugin with the data structure
-    t_plugin->callPNPluginMenuEvent(xmlstr);
+    QString response = t_plugin->callPNPluginMenuEvent(xmlstr);
+
+    if (!response.isEmpty())
+    {
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+        QApplication::processEvents();
+
+        QDomDocument doc;
+        doc.setContent(response);
+
+        if (!global_DBObjects.importXMLDoc(doc))
+            QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
+
+        QApplication::restoreOverrideCursor();
+        QApplication::processEvents();
+    }
 }
 
 MainWindow::~MainWindow()
@@ -1641,8 +1771,4 @@ void MainWindow::on_actionCustom_Plugins_triggered()
 // TODO: Add find features to QComboBox located in a table view
 // TODO: Add licensing information to all files to be included with the software
 // TODO: Complete Help Menu Items
-// TODO: Test setup database from scratch
-
-// TODO: A new meeting should always include the project manager on the list of attendees
-// TODO: A new project should always include the project manager on the team
 

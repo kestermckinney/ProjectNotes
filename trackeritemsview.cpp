@@ -31,6 +31,7 @@ void TrackerItemsView::setModel(QAbstractItemModel *t_model)
         PNTableView::setModel(t_model);
 
         // see setbuttonitems for visible columns
+        setColumnHidden(19, true);
 
         // setup model lists
         m_item_priority.setStringList(PNDatabaseObjects::item_priority);
@@ -73,3 +74,4 @@ void TrackerItemsView::setModel(QAbstractItemModel *t_model)
     }
 }
 
+//TODO: Right-Click errors out on on context menu

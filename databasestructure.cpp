@@ -383,7 +383,8 @@ bool DatabaseStructure::CreateDatabase()
             internal_item,
             (select GROUP_CONCAT(update_note, ',') from item_tracker_updates where item_tracker.item_id=item_tracker_updates.item_id ) comments,
             (select project_status from projects p where p.project_id=item_tracker.project_id) project_status,
-            (select c.client_id from projects c where c.project_id=project_id) client_id
+            (select c.client_id from projects c where c.project_id=project_id) client_id,
+            (select project_name from projects p where p.project_id=item_tracker.project_id) project_id_name
         FROM item_tracker
         )");
 
@@ -615,7 +616,8 @@ bool DatabaseStructure::UpgradeDatabase()
             internal_item,
             (select GROUP_CONCAT(update_note, ',') from item_tracker_updates where item_tracker.item_id=item_tracker_updates.item_id ) comments,
             (select project_status from projects p where p.project_id=item_tracker.project_id) project_status,
-            (select c.client_id from projects c where c.project_id=project_id) client_id
+            (select c.client_id from projects c where c.project_id=project_id) client_id,
+            (select project_name from projects p where p.project_id=item_tracker.project_id) project_id_name
             FROM item_tracker;
         )");
 

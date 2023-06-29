@@ -21,7 +21,7 @@ class PNSqlQueryModel : public QAbstractTableModel
 
 public:
 
-    enum DBColumnType {DBBlob, DBReal, DBDate, DBInteger, DBString, DBUSD, DBPercent, DBDateTime, DBBool};
+    enum DBColumnType {DBBlob, DBReal, DBDate, DBInteger, DBString, DBUSD, DBPercent, DBDateTime, DBBool, DBHtml};
     enum DBCompareType {Equals, GreaterThan, LessThan, NotEqual};
     enum DBColumnRequired {DBRequired, DBNotRequired};
     enum DBColumnSearchable {DBSearchable, DBNotSearchable};

@@ -110,44 +110,44 @@ bool PNPlugin::hasDataRightClickEvent(const QString& t_tablename)
     return val;
 };
 
-void PNPlugin::callStartupEvent(const QString& t_xmlstring)
+QString PNPlugin::callStartupEvent(const QString& t_xmlstring)
 {
-    callPythonMethod(m_Startup, t_xmlstring);
+    return callPythonMethod(m_Startup, t_xmlstring);
 }
 
-void PNPlugin::callShutdownEvent(const QString& t_xmlstring)
+QString PNPlugin::callShutdownEvent(const QString& t_xmlstring)
 {
-    callPythonMethod(m_Shutdown, t_xmlstring);
+    return callPythonMethod(m_Shutdown, t_xmlstring);
 }
 
-void PNPlugin::callEveryMinuteEvent(const QString& t_xmlstring)
+QString PNPlugin::callEveryMinuteEvent(const QString& t_xmlstring)
 {
-    callPythonMethod(m_EveryMinute, t_xmlstring);
+    return callPythonMethod(m_EveryMinute, t_xmlstring);
 }
 
-void PNPlugin::callEvery5MinutesEvent(const QString& t_xmlstring)
+QString PNPlugin::callEvery5MinutesEvent(const QString& t_xmlstring)
 {
-    callPythonMethod(m_Every5Minutes, t_xmlstring);
+    return callPythonMethod(m_Every5Minutes, t_xmlstring);
 }
 
-void PNPlugin::callEvery10MinutesEvent(const QString& t_xmlstring)
+QString PNPlugin::callEvery10MinutesEvent(const QString& t_xmlstring)
 {
-    callPythonMethod(m_Every10Minutes, t_xmlstring);
+    return callPythonMethod(m_Every10Minutes, t_xmlstring);
 }
 
-void PNPlugin::callEvery15MinutesEvent(const QString& t_xmlstring)
+QString PNPlugin::callEvery15MinutesEvent(const QString& t_xmlstring)
 {
-    callPythonMethod(m_Every15Minutes, t_xmlstring);
+    return callPythonMethod(m_Every15Minutes, t_xmlstring);
 }
 
-void PNPlugin::callEvery30MinutesEvent(const QString& t_xmlstring)
+QString PNPlugin::callEvery30MinutesEvent(const QString& t_xmlstring)
 {
-    callPythonMethod(m_Every30Minutes, t_xmlstring);
+    return callPythonMethod(m_Every30Minutes, t_xmlstring);
 }
 
-void PNPlugin::callPNPluginMenuEvent(const QString& t_xmlstring)
+QString PNPlugin::callPNPluginMenuEvent(const QString& t_xmlstring)
 {
-    callPythonMethod(m_PNPluginMenu, t_xmlstring);
+    return callPythonMethod(m_PNPluginMenu, t_xmlstring);
 }
 
 QString PNPlugin::callDataRightClickEvent(const QString& t_xmlstring)

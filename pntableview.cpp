@@ -374,9 +374,10 @@ void PNTableView::slotOpenRecord()
     PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
 
     QModelIndexList qil = this->selectionModel()->selectedRows();
+    auto qi = qil.begin();
+    QModelIndex qq = sortmodel->mapToSource(*qi);
 
-    for (auto qi = qil.begin(); qi != qil.end(); qi++)
-        currentmodel->openRecord(*qi);
+    currentmodel->openRecord(qq);
 
     emit signalOpenRecordWindow();
 }
@@ -391,7 +392,8 @@ void PNTableView::slotExportRecord()
     QVariant keyval;
 
     auto qi = qil.begin();
-    keyval = currentmodel->data(*qi);
+    QModelIndex qq = sortmodel->mapToSource(*qi);
+    keyval = currentmodel->data(qq);
 
     // choose the file
     QString xmlfile = QFileDialog::getSaveFileName(this, tr("Save XML to file"), QString(), tr("XML File (*.xml)"));

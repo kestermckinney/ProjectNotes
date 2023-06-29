@@ -6,7 +6,7 @@ ProjectNotesModel::ProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_paren
 {
     setObjectName("ProjectNotesModel");
 
-    setBaseSql("SELECT note_id, project_id, note_title, note_date, note, internal_item FROM project_notes");
+    setBaseSql("SELECT note_id, project_id, note_title, note_date, note, internal_item, (select project_name from projects p where p.project_id=n.project_id) project_id_name FROM project_notes n");
 
     setTableName("project_notes", "Project Notes");
 
@@ -15,8 +15,9 @@ ProjectNotesModel::ProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_paren
               "projects", "project_id", "project_number");
     addColumn(2,  tr("Title"), DBString, DBSearchable, DBNotRequired, DBEditable);
     addColumn(3, tr("Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
-    addColumn(4, tr("Note"), DBString, DBSearchable, DBNotRequired, DBEditable);
+    addColumn(4, tr("Note"), DBHtml, DBSearchable, DBNotRequired, DBEditable);
     addColumn(5, tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable);
+    addColumn(6, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
 
     addRelatedTable("item_tracker", "note_id", "note_id", "Action Item", DBExportable);
     addRelatedTable("meeting_attendees", "note_id", "note_id", "Meeting Attendee", DBExportable);
