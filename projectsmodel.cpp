@@ -13,7 +13,7 @@ ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
 
     addColumn(0, tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
     addColumn(1, tr("Number"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
-    addColumn(2, tr("Project Name"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
+    addColumn(2, tr("Project Name"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(3, tr("Status Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
     addColumn(4, tr("Invoice Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
     addColumn(5, tr("Primary Contact"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
@@ -207,3 +207,6 @@ bool ProjectsModel::setData(const QModelIndex &t_index, const QVariant &t_value,
 
     return result;
 }
+//TODO: Remove project name unique constraint from the database, it makes is so import can't update the name
+//TODO: Right click should show Open as the firt menu item since it is most common
+//TODO: Deleting a team member fails if they attended a meeting on a different project

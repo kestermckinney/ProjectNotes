@@ -5,27 +5,40 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* t_parent): PNSqlQueryM
 {
     setObjectName("ProjectTeamMembersModel");
 
-    setBaseSql("SELECT teammember_id, project_id, project_people.people_id, name, receive_status_report, project_people.role, email FROM project_people left join people on people.people_id=project_people.people_id");
+    setBaseSql("SELECT teammember_id, project_id, project_people.people_id, name, receive_status_report, project_people.role, email, (select p.project_number from projects p where p.project_id=project_id) project_number, (select p.project_name from projects p where p.project_id=project_id) project_name FROM project_people left join people on people.people_id=project_people.people_id");
 
     setTableName("project_people", "Project People");
 
     addColumn(0, tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
     addColumn(1, tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
-              "people", "people_id", "name");
-    addColumn(2, tr("Name"), DBString, DBNotSearchable, DBNotRequired, DBEditable);
+            "projects", "project_id", "project_number");
+    addColumn(2, tr("Name"), DBString, DBNotSearchable, DBNotRequired, DBEditable, DBNotUnique,
+            "people", "people_id", "name");
     addColumn(3, tr("Name"), DBString, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn(4, tr("Receive Status"), DBBool, DBSearchable, DBNotRequired, DBEditable);
     addColumn(5, tr("Role"), DBString, DBSearchable, DBNotRequired, DBEditable);
     addColumn(6, tr("Email"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
+    addColumn(7, tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
+    addColumn(8, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
 
     QStringList key1 = {"project_id", "people_id"};
 
     addUniqueKeys(key1, "Name");
 
     addRelatedTable("projects", "primary_contact", "people_id", "Primary Contact");
-    addRelatedTable("item_tracker", "identified_by", "people_id", "Identified By");
-    addRelatedTable("item_tracker","assigned_to", "people_id", "Assigned To");
-    addRelatedTable("meeting_attendees", "person_id", "people_id", "Attendee");
+
+    // this is problematic for delete check since it is two field reationship TODO:
+    QStringList rel_col1 = { "project_id", "people_id" };
+    QStringList rel_fk1 = { "project_id", "identified_by" };
+    addRelatedTable("item_tracker", rel_fk1, rel_col1, "Identified By");
+
+    QStringList rel_col2 = { "project_id", "people_id" };
+    QStringList rel_fk2 = { "project_id", "assigned_to" };
+    addRelatedTable("item_tracker", rel_fk2, rel_col2, "Assigned To");
+
+    QStringList rel_col3 = { "project_id", "people_id" };
+    QStringList rel_fk3 = { "project_id", "person_id" };
+    addRelatedTable("meeting_attendees", rel_fk3, rel_col3, "Attendee");
 
     setOrderBy("name");
 }

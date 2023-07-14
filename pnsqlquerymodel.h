@@ -60,6 +60,8 @@ public:
     void addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable, DBColumnRequired t_required,
                                     DBColumnEditable t_editable, DBColumnUnique t_unique, QStringList* t_valuelist);
     void addRelatedTable(const QString& t_table_name, const QString& t_column_name, const QString& t_fk_column_name, const QString& t_title, const DBRelationExportable t_exportable = DBNotExportable);
+    void addRelatedTable(const QString& t_table_name, const QStringList& t_column_names, const QStringList& t_fk_column_names, const QString& t_title, const DBRelationExportable t_exportable = DBNotExportable);
+
     void addUniqueKeys(QStringList t_unique_keys, const QString& t_name) { m_unique_keys[t_name] = t_unique_keys; }
     void associateLookupValues(int t_column_number, QStringList* t_lookup_values);
     QVariant headerData(int t_section, Qt::Orientation t_orientation,
@@ -208,8 +210,8 @@ private:
 
     // track for deletion checking and exporting
     QVector<QString> m_related_table;
-    QVector<QString> m_related_column;
-    QVector<QString> m_related_fk_column;
+    QVector<QStringList> m_related_columns;
+    QVector<QStringList> m_related_fk_columns;
     QVector<QString> m_relation_title;
     QVector<DBRelationExportable> m_relation_exportable;
 

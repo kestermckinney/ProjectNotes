@@ -97,7 +97,7 @@ void ItemDetailsPage::setupModels( Ui::MainWindow *t_ui )
     ui->comboBoxIdentifiedBy->setEditable(true);
 
 
-    ui->tableViewComments->setModel(global_DBObjects.trackeritemscommentsmodel());
+    ui->tableViewComments->setModel(global_DBObjects.trackeritemscommentsmodelproxy());
     ui->tableViewComments->setWordWrap(true);
     ui->tableViewComments->resizeRowsToContents();
 

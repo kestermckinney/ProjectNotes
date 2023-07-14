@@ -27,6 +27,9 @@ PeopleModel::PeopleModel(QObject* t_parent): PNSqlQueryModel(t_parent)
     addRelatedTable("project_people", "people_id", "people_id", "Project Team");
     addRelatedTable("projects", "primary_contact", "people_id", "Project Primary Contact");
 
+    QStringList key1 = {"name"};
+
+    addUniqueKeys(key1, "Name");
 
     setOrderBy("name");
 }

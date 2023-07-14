@@ -22,6 +22,11 @@ void TrackerItemCommentsView::setModel(QAbstractItemModel *t_model)
 
         setColumnHidden(0, true);
         setColumnHidden(1, true);
+        setColumnHidden(5, true);
+        setColumnHidden(6, true);
+        setColumnHidden(7, true);
+        setColumnHidden(8, true);
+        setColumnHidden(9, true);
 
         // setup model lists
 

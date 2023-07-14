@@ -24,6 +24,7 @@ void MeetingAttendeesView::setModel(QAbstractItemModel *t_model)
         setColumnHidden(5, true);
         setColumnHidden(6, true);
         setColumnHidden(7, true);
+        setColumnHidden(8, true);
 
         // setup model lists
 
