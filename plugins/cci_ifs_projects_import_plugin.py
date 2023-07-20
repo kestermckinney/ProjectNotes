@@ -229,31 +229,44 @@ if (platform.system() == 'Windows'):
         OracleUsername = pnc.get_global_setting("OracleUsername")
         ProjectsFolder = pnc.get_global_setting("ProjectsFolder")
 
+        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+        QtWidgets.QApplication.processEvents()
+
         progbar = QProgressDialog()
+        progbar.setWindowTitle("Importing...")
+        progbar.setWindowFlags(
+            QtCore.Qt.Window |
+            QtCore.Qt.WindowCloseButtonHint |
+            QtCore.Qt.WindowStaysOnTopHint
+            )
         progbar.setCancelButton(None)
         progbar.setLabelText("Getting data...")
         progbar.setValue(0)
+        QtWidgets.QApplication.processEvents() 
         progbar.show()
         progval = 20
 
-        docxml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<projectnotes>\n"
+        docxml = "<projectnotes>\n"
 
         adodb = pnc.connect()
         progval = progval + 20
         progbar.setValue(progval)
         progbar.setLabelText("Looking up clients...")
+        QtWidgets.QApplication.processEvents() 
 
         docxml = docxml + getclientsxml(adodb)
 
         progval = progval + 20
         progbar.setValue(progval)
         progbar.setLabelText("Looking up projects...")
+        QtWidgets.QApplication.processEvents() 
 
         docxml = docxml + getprojectsxml(adodb)
 
         progval = progval + 30
         progbar.setValue(progval)
         progbar.setLabelText("Looking up team members...")
+        QtWidgets.QApplication.processEvents() 
 
 
         docxml = docxml + getteammembersxml(adodb)
@@ -262,16 +275,24 @@ if (platform.system() == 'Windows'):
 
         progbar.setValue(100)
         progbar.setLabelText("Finalizing import files...")
+        QtWidgets.QApplication.processEvents() 
         progbar.hide()
         progbar.close()
+
+
+        QtWidgets.QApplication.restoreOverrideCursor()
+        QtWidgets.QApplication.processEvents() 
 
         return docxml
 
 # call when testing outside of Project Notes
 """
+import sys
 print("Run Test")
 app = QApplication(sys.argv)
 
-str = main_process(None)
+str = event_menuclick(None)
 print(str)
 """
+# TODO: Right click menus should include icons from the main menu
+

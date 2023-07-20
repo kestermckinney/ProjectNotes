@@ -325,8 +325,16 @@ if (platform.system() == 'Windows'):
         emailasexcel = False
         noemail = False
 
-        loader = QtUiTools.QUiLoader()
-        ui = loader.load("includes/dialogStatusRptOptions.ui")
+        QtWidgets.QApplication.restoreOverrideCursor()
+        QtWidgets.QApplication.processEvents()   
+
+        ui = uic.loadUi("plugins/includes/dialogStatusRptOptions.ui")
+        ui.m_datePickerRptDateStatus.setCalendarPopup(True)
+        ui.setWindowFlags(
+            QtCore.Qt.Window |
+            QtCore.Qt.WindowCloseButtonHint |
+            QtCore.Qt.WindowStaysOnTopHint
+            )
 
         ui.m_datePickerRptDateStatus.setDateTime(statusdate)
         ui.m_checkBoxDisplayStatus.setChecked(False)
@@ -341,7 +349,12 @@ if (platform.system() == 'Windows'):
             emailaspdf = ui.m_radioBoxEmailAsPDF.isChecked()
             emailasexcel = ui.m_radioBoxEmailAsExcel.isChecked()
             noemail = ui.m_radioBoxDoNotEmail.isChecked()
+
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            QtWidgets.QApplication.processEvents()        
         else:
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            QtWidgets.QApplication.processEvents()
             return(None)
 
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
@@ -357,6 +370,14 @@ if (platform.system() == 'Windows'):
             projectfolder = projectfolder + "\\Status Reports\\"
 
         progbar = QProgressDialog()
+        progbar.setWindowTitle("Generating Report...")
+        progbar.setWindowFlags(
+            QtCore.Qt.Window |
+            QtCore.Qt.WindowCloseButtonHint |
+            QtCore.Qt.WindowStaysOnTopHint
+            )
+
+        progbar.setMinimumWidth(350)
         progbar.setCancelButton(None)
         progbar.show()
         progval = 0
@@ -373,8 +394,9 @@ if (platform.system() == 'Windows'):
         receivers = ""
 
         progval = progval + 1
-        progbar.setValue(min(progval / progtot * 100, 100))
+        progbar.setValue(int(min(progval / progtot * 100, 100)))
         progbar.setLabelText("looking up recipients...")
+        QtWidgets.QApplication.processEvents()   
 
         teammember = pnc.find_node(xmlroot, "table", "name", "project_people")
         if not teammember.isNull():
@@ -397,22 +419,24 @@ if (platform.system() == 'Windows'):
                 memberrow = memberrow.nextSibling()
 
             progval = progval + 1
-            progbar.setValue(min(progval / progtot * 100, 100))
+            progbar.setValue(int(min(progval / progtot * 100, 100)))
             progbar.setLabelText("Copying files...")
+            QtWidgets.QApplication.processEvents()   
 
         fullreportname = projectfolder + statusdate.toString("yyyyMMdd ") + projnum + " Status Report Full.xlsx"
         fullreportpdf = projectfolder + statusdate.toString("yyyyMMdd ") + projnum + " Status Report Full.pdf"
         basereportname = projectfolder + statusdate.toString("yyyyMMdd ") + projnum + " Status Report.xlsx"
         basereportpdf = projectfolder + statusdate.toString("yyyyMMdd ") + projnum + " Status Report.pdf"
 
-        QFile.copy("templates/Status Report Template.xlsx", fullreportname)
+        QFile.copy("plugins/templates/Status Report Template.xlsx", fullreportname)
 
         handle = pne.open_excel_document(fullreportname)
         sheet = handle['workbook'].Sheets("Status Report")
 
         progval = progval + 1
-        progbar.setValue(min(progval / progtot * 100, 100))
+        progbar.setValue(int(min(progval / progtot * 100, 100)))
         progbar.setLabelText("Gathering status items...")
+        QtWidgets.QApplication.processEvents()   
 
         # count expand out excell rows for status report items
         repitem = pnc.find_node(xmlroot, "table", "name", "status_report_items")
@@ -442,8 +466,9 @@ if (platform.system() == 'Windows'):
             pne.expand_row(sheet, "<COMPLETED>", compcount)
 
             progval = progval + 1
-            progbar.setValue(min(progval / progtot * 100, 100))
+            progbar.setValue(int(min(progval / progtot * 100, 100)))
             progbar.setLabelText("Gathering status items...")
+            QtWidgets.QApplication.processEvents()   
 
             compcount = 0
             progcount = 0
@@ -464,11 +489,15 @@ if (platform.system() == 'Windows'):
                 repitemrow = repitemrow.nextSibling()
 
         progval = progval + 1
-        progbar.setValue(min(progval / progtot * 100, 100))
+        #print("going to gather tracker....")
+        progbar.setValue(int(min(progval / progtot * 100, 100)))
         progbar.setLabelText("Gathering tracker items...")
+        QtWidgets.QApplication.processEvents()   
+        #print("gathering tracker items...")
 
         # show all tracker items
         trackeritems = pnc.find_node_by2(xmlroot, "table", "name", "item_tracker", "filter_field", "project_id")
+        #print("returned from find by node")
         itemcount = 0
         isinternal = 0
         itemstatus = ""
@@ -486,7 +515,7 @@ if (platform.system() == 'Windows'):
                 #print("internal: " + isinternal + " status: " + itemstatus + " item type: " + itemtype + " item number: " +  pnc.get_column_value(itemrow, "item_number"))
 
                 if (isinternal != "1" and itemtype == "Tracker" and (itemstatus == "Assigned" or itemstatus == "New")):
-                    #print("counting tracker items..")
+                    ##print("counting tracker items..")
                     itemcount = itemcount + 1
 
                 itemrow = itemrow.nextSibling()
@@ -515,170 +544,178 @@ if (platform.system() == 'Windows'):
 
                 itemrow = itemrow.nextSibling()
 
-            # don't show task items
-            if itemcount == 0:
-                pne.cliprowsbytags(sheet, "<ISSUESTOP>", "<ISSUESBOTTOM>")
+        # don't show task items
+        if itemcount == 0:
+            pne.cliprowsbytags(sheet, "<ISSUESTOP>", "<ISSUESBOTTOM>")
 
-            progval = progval + 1
-            progbar.setValue(min(progval / progtot * 100, 100))
-            progbar.setLabelText("Pulling IFS project summary...")
+        progval = progval + 1
+        progbar.setValue(int(min(progval / progtot * 100, 100)))
+        progbar.setLabelText("Pulling IFS project summary...")
+        QtWidgets.QApplication.processEvents()   
 
-            docxml = pnc.xml_doc_root()
+        docxml = pnc.xml_doc_root()
 
-            adodb = pnc.connect()
+        adodb = pnc.connect()
 
-            node = populate_financials(docxml, sheet, adodb, projnum, statusdate.toString("MM/dd/yyyy"))
+        node = populate_financials(docxml, sheet, adodb, projnum, statusdate.toString("MM/dd/yyyy"))
 
-            #print("Creating root node")
-            root = docxml.elementsByTagName("projectnotes").at(0) # get root node
-            root.appendChild(node)
+        #print("Creating root node")
+        root = docxml.elementsByTagName("projectnotes").at(0) # get root node
+        root.appendChild(node)
 
-            progval = progval + 1
-            progbar.setValue(min(progval / progtot * 100, 100))
-            progbar.setLabelText("Pulling IFS milestones...")
+        progval = progval + 1
+        progbar.setValue(int(min(progval / progtot * 100, 100)))
+        progbar.setLabelText("Pulling IFS milestones...")
+        QtWidgets.QApplication.processEvents()   
 
-            #print("Calling populate milestones")
-            populate_milestones(sheet, adodb, projnum)
+        #print("Calling populate milestones")
+        populate_milestones(sheet, adodb, projnum)
 
-            progval = progval + 1
-            progbar.setValue(min(progval / progtot * 100, 100))
-            progbar.setLabelText("Pulling IFS PO information...")
+        progval = progval + 1
+        progbar.setValue(int(min(progval / progtot * 100, 100)))
+        progbar.setLabelText("Pulling IFS PO information...")
+        QtWidgets.QApplication.processEvents()   
 
-            #print("Calling populate T & E")
-            populate_tande(sheet, adodb, projnum)
+        #print("Calling populate T & E")
+        populate_tande(sheet, adodb, projnum)
 
-            if mtotalpoline == 0:
-                pne.replace_cell_tag(sheet, "<PERCENTCONSUMED>", "0")
+        if mtotalpoline == 0:
+            pne.replace_cell_tag(sheet, "<PERCENTCONSUMED>", "0")
+        else:
+            pne.replace_cell_tag(sheet, "<PERCENTCONSUMED>", "" + str(  mtotalinvoicable / mtotalpoline ) )
+        #pne.replace_cell_tag(sheet, "<STATUSDATE>", executedate.toString("MM/dd/yyyy"))
+        pne.replace_cell_tag(sheet, "<ENDINGDATE>", statusdate.toString("MM/dd/yyyy"))
+        pne.replace_cell_tag(sheet, "<REPORTINGPERIOD>", period )
+        pne.replace_cell_tag(sheet, "<PROJECTMANAGER>", pm)
+        pne.replace_cell_tag(sheet, "<RECEIVERS>", receivers)
+
+        progval = progval + 1
+        progbar.setValue(int(min(progval / progtot * 100, 100)))
+        progbar.setLabelText("Pulling IFS project summary...")
+        QtWidgets.QApplication.processEvents()   
+
+        #ts = QDateTime()
+        periodstart = statusdate
+        if period == "Bi-Weekly":
+            periodstart = periodstart.addDays(-14)
+            #ts = -2
+        elif period == "Weekly":
+            periodstart = periodstart.addDays(-7)
+            #ts = -1
+        elif period == "Monthly":
+            periodstart = periodstart.addMonths(-1)
+            #ts:SetMonths(-1)
+
+        #print("Pre Period Calcs Status Date: " + statusdate.toString("MM/dd/yyyy") + "\n")
+        if not period == "None":
+            pne.replace_cell_tag(sheet, "<STARTINGDATE>", periodstart.toString("MM/dd/yyyy"))
+        else:
+            pne.replace_cell_tag(sheet, "<STARTINGDATE>", "")
+
+        #print("Post Period Calcs Status Date: " + statusdate.toString("MM/dd/yyyy") + "\n")
+
+        pnc.close(adodb)
+
+        # clear unused tags
+        pne.replace_cell_tag(sheet, "<COMPLETED>", "")
+        pne.replace_cell_tag(sheet, "<INPROGRESS>", "")
+        pne.replace_cell_tag(sheet, "<ISSUESTOP>", "")
+        pne.replace_cell_tag(sheet, "<ISSUESBOTTOM>", "")
+
+        progval = progval + 1
+        progbar.setValue(int(min(progval / progtot * 100, 100)))
+        progbar.setLabelText("Finalizing Excel files...")
+        QtWidgets.QApplication.processEvents()   
+
+        if (progcount + compcount == 0):
+            pne.cliprowsbytags(sheet, "<STATUSITEMTOP>", "<STATUSITEMBOTTOM>")
+        else:
+            pne.replace_cell_tag(sheet, "<STATUSITEMTOP>", "")
+            pne.replace_cell_tag(sheet, "<STATUSITEMBOTTOM>", "")
+
+
+        pne.replace_cell_tag(sheet, "<RUNDATE>", executedate.toString("MM/dd/yyyy"))
+        handle['workbook'].Save()
+
+        QFile.copy(fullreportname, basereportname)
+
+        handle2 = pne.open_excel_document(basereportname)
+        sheet2 = handle2['workbook'].Sheets("Status Report")
+
+        progval = progval + 1
+        progbar.setValue(int(min(progval / progtot * 100, 100)))
+        progbar.setLabelText("Finalizing Excel files...")
+        QtWidgets.QApplication.processEvents()   
+
+        pne.cliprowsbytags(sheet2, "<FULLREPORTTOP>", "<FULLREPORTBOTTOM>")
+        pne.replace_cell_tag(sheet2, "<FULLREPORTTOP>", "")
+        pne.replace_cell_tag(sheet2, "<FULLREPORTBOTTOM>", "")
+
+        pne.replace_cell_tag(sheet, "<FULLREPORTTOP>", "")
+        pne.replace_cell_tag(sheet, "<FULLREPORTBOTTOM>", "")
+
+        handle['workbook'].Save()
+        handle2['workbook'].Save()
+
+        # generate PDFs
+        if not fullreport is None:
+            pne.save_excel_as_pdf(handle, sheet, fullreportpdf)
+
+        pne.save_excel_as_pdf(handle2, sheet2, basereportpdf)
+        # should we email?
+        if noemail == False:
+            subject = projnum + " " + projdes + " Status Report " + statusdate.toString("MM/dd/yyyy")
+            #print("Ready to email")
+            if emailashtml:
+                pne.email_excel_html(sheet2, subject, emaillist, None)
+            elif emailasexcel:
+                pne.email_excel_html(sheet2, subject, emaillist, basereportname)
+            elif emailaspdf:
+                pne.email_excel_html(sheet2, subject, emaillist, basereportpdf)
+
+        pne.close_excel_document(handle)
+        pne.close_excel_document(handle2)
+        #print("closing exel documents")
+
+        if keepexcel == False:
+            QFile.remove(fullreportname)
+            QFile.remove(basereportname)
+        elif fullreport == False:
+            QFile.remove(fullreportname)
+        #print("removing extra files")
+
+        if ui.m_checkBoxDisplayStatus.isChecked():
+            if fullreport:
+                QDesktopServices.openUrl(QUrl("file:///" + fullreportpdf, QUrl.TolerantMode))
             else:
-                pne.replace_cell_tag(sheet, "<PERCENTCONSUMED>", "" + str(  mtotalinvoicable / mtotalpoline ) )
-            pne.replace_cell_tag(sheet, "<STATUSDATE>", statusdate.toString("MM/dd/yyyy"))
-            pne.replace_cell_tag(sheet, "<ENDINGDATE>", statusdate.toString("MM/dd/yyyy"))
-            pne.replace_cell_tag(sheet, "<REPORTINGPERIOD>", period )
-            pne.replace_cell_tag(sheet, "<PROJECTMANAGER>", pm)
-            pne.replace_cell_tag(sheet, "<RECEIVERS>", receivers)
+                QDesktopServices.openUrl(QUrl("file:///" + basereportpdf, QUrl.TolerantMode))
 
-            progval = progval + 1
-            progbar.setValue(min(progval / progtot * 100, 100))
-            progbar.setLabelText("Pulling IFS project summary...")
-
-            #ts = QDateTime()
-            periodstart = statusdate
-            if period == "Bi-Weekly":
-                periodstart.addDays(-14)
-                #ts = -2
-            elif period == "Weekly":
-                periodstart.addDays(-7)
-                #ts = -1
-            elif period == "Monthly":
-                periodstart.addMonths(-1)
-                #ts:SetMonths(-1)
-
-            # print ("Pre Period Calcs Status Date: " + statusdate.toString("MM/dd/yyyy") + "\n")
-            if not period == "None":
-                pne.replace_cell_tag(sheet, "<STARTINGDATE>", periodstart.toString("MM/dd/yyyy"))
-            else:
-                pne.replace_cell_tag(sheet, "<STARTINGDATE>", "")
-
-            #print ("Post Period Calcs Status Date: " + statusdate.toString("MM/dd/yyyy") + "\n")
-
-            pnc.close(adodb)
-
-            # clear unused tags
-            pne.replace_cell_tag(sheet, "<COMPLETED>", "")
-            pne.replace_cell_tag(sheet, "<INPROGRESS>", "")
-            pne.replace_cell_tag(sheet, "<ISSUESTOP>", "")
-            pne.replace_cell_tag(sheet, "<ISSUESBOTTOM>", "")
-
-            progval = progval + 1
-            progbar.setValue(min(progval / progtot * 100, 100))
-            progbar.setLabelText("Finalizing Excel files...")
-
-            if (progcount + compcount == 0):
-                pne.cliprowsbytags(sheet, "<STATUSITEMTOP>", "<STATUSITEMBOTTOM>")
-            else:
-                pne.replace_cell_tag(sheet, "<STATUSITEMTOP>", "")
-                pne.replace_cell_tag(sheet, "<STATUSITEMBOTTOM>", "")
-
-
-            pne.replace_cell_tag(sheet, "<RUNDATE>", executedate.toString("MM/dd/yyyy"))
-            handle['workbook'].Save()
-
-            QFile.copy(fullreportname, basereportname)
-
-            handle2 = pne.open_excel_document(basereportname)
-            sheet2 = handle2['workbook'].Sheets("Status Report")
-
-            progval = progval + 1
-            progbar.setValue(min(progval / progtot * 100, 100))
-            progbar.setLabelText("Finalizing Excel files...")
-
-            pne.cliprowsbytags(sheet2, "<FULLREPORTTOP>", "<FULLREPORTBOTTOM>")
-            pne.replace_cell_tag(sheet2, "<FULLREPORTTOP>", "")
-            pne.replace_cell_tag(sheet2, "<FULLREPORTBOTTOM>", "")
-
-            pne.replace_cell_tag(sheet, "<FULLREPORTTOP>", "")
-            pne.replace_cell_tag(sheet, "<FULLREPORTBOTTOM>", "")
-
-            handle['workbook'].Save()
-            handle2['workbook'].Save()
-
-            # generate PDFs
-            if not fullreport is None:
-                pne.save_excel_as_pdf(handle, sheet, fullreportpdf)
-
-            pne.save_excel_as_pdf(handle2, sheet2, basereportpdf)
-            # should we email?
-            if noemail == False:
-                subject = projnum + " " + projdes + " Status Report " + statusdate.toString("MM/dd/yyyy")
-                print("Ready to email")
-                if emailashtml:
-                    pne.email_excel_html(sheet2, subject, emaillist, None)
-                elif emailasexcel:
-                    pne.email_excel_html(sheet2, subject, emaillist, basereportname)
-                elif emailaspdf:
-                    pne.email_excel_html(sheet2, subject, emaillist, basereportpdf)
-
-            pne.close_excel_document(handle)
-            pne.close_excel_document(handle2)
-
-            if keepexcel == False:
-                QFile.remove(fullreportname)
-                QFile.remove(basereportname)
-            elif fullreport == False:
-                QFile.remove(fullreportname)
-
-            if ui.m_checkBoxDisplayStatus.isChecked():
-                if fullreport:
-                    QDesktopServices.openUrl(QUrl("file:///" + fullreportpdf, QUrl.TolerantMode))
-                else:
-                    QDesktopServices.openUrl(QUrl("file:///" + basereportpdf, QUrl.TolerantMode))
-
-            progbar.setValue(100)
-            progbar.setLabelText("Finalizing Excel files...")
-            progbar.hide()
-            progbar.close()
-            progbar = None # must be destroyed
+        progbar.setValue(100)
+        progbar.setLabelText("Finalizing Excel files...")
+        QtWidgets.QApplication.processEvents()   
+        progbar.hide()
+        progbar.close()
+        progbar = None # must be destroyed
+        #print("closing progress bar...")
 
         pne.killexcelautomation()
 
-        return(docxml)
-
-# setup test data
+        return("")
 """
+# setup test data
+import sys
 print("Buld up QDomDocument")
 app = QApplication(sys.argv)
 
-
 xmldoc = QDomDocument("TestDocument")
-f = QFile("exampleproject.xml")
+f = QFile("C:/Users/pamcki/Desktop/project.xml")
 
 if f.open(QIODevice.ReadOnly):
     print("example project opened")
 xmldoc.setContent(f)
 f.close()
 
-print("Run Test")
-# call when testing outside of Project Notes
-main_process(xmldoc)
+event_data_rightclick(xmldoc.toString())
 """
-#TODO:  Some large XML fields from ProjectNotes 2 break the parser.  For examle an email was pasted into description.  Maybe CDATA tags are needed there.
+
+# TESTED: Phase 1

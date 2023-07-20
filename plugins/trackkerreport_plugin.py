@@ -9,7 +9,7 @@ from includes.common import ProjectNotesCommon
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
 from PyQt5.QtSql import QSqlDatabase
 from PyQt5.QtXml import QDomDocument, QDomNode
-from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
+from PyQt5.QtCore import QFile, QIODevice, QDate, QUrl
 from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
 from PyQt5.QtGui import QDesktopServices
 
@@ -84,7 +84,7 @@ if (platform.system() == 'Windows'):
         # setup global variable
         ProjectsFolder = pnc.get_global_setting("ProjectsFolder")
 
-        executedate = QDateTime.currentDateTime()
+        executedate = QDate.currentDate()
         internalreport = False
         keepexcel = False
         emailashtml = False
@@ -92,9 +92,10 @@ if (platform.system() == 'Windows'):
         emailasexcel = False
         noemail = True
 
-        loader = QtUiTools.QUiLoader()
-        ui = loader.load("includes/dialogTrackerRptOptions.ui")
-
+        ui = uic.loadUi("plugins/includes/dialogTrackerRptOptions.ui")
+        ui.m_datePickerRptDateNotes.setDate(executedate)
+        ui.m_datePickerRptDateNotes.setCalendarPopup(True)
+        
         ui.m_checkBoxDisplayTracker.setChecked(True)
         ui.m_checkBoxItemsTracker.setChecked(True)
         ui.m_checkBoxNewTracker.setChecked(True)
@@ -111,9 +112,11 @@ if (platform.system() == 'Windows'):
         else:
             return None
 
-        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
+        pm = xmlroot.toElement().attribute("managing_manager_name")
+        co = xmlroot.toElement().attribute("managing_company_name")
 
-        check_tag = pnc.find_node_by2(xmlroot, "table", "name", "ix_item_tracker", "filter_field", "project_id")
+        check_tag = pnc.find_node_by2(xmlroot, "table", "name", "item_tracker", "filter_field", "project_id")
         check_row = None
         if check_tag:
             check_row = check_tag.firstChild()
@@ -122,7 +125,7 @@ if (platform.system() == 'Windows'):
             QMessageBox.warning(None, "No Records", "No tracker or action items are available.", QMessageBox.Ok)
             return None
 
-        projtab = pnc.find_node(xmlroot, "table", "name", "ix_projects")
+        projtab = pnc.find_node(xmlroot, "table", "name", "projects")
         projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
         projdes = pnc.get_column_value(projtab.firstChild(), "project_name")
 
@@ -137,12 +140,9 @@ if (platform.system() == 'Windows'):
             projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QtCore.QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
-                return(None)
+                return ""
         else:
             projectfolder = projectfolder + "\\Issues List\\"
-
-        pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
-        cm = xmlroot.attributes().namedItem("managing_company_name").nodeValue()
 
         progbar = QProgressDialog()
         progbar.setCancelButton(None)
@@ -152,10 +152,10 @@ if (platform.system() == 'Windows'):
 
 
         progval = progval + 1
-        progbar.setValue(min(progval / progtot * 100, 100))
+        progbar.setValue(int(min(progval / progtot * 100, 100)))
         progbar.setLabelText("looking up recipients...")
 
-        teammember = pnc.find_node(xmlroot, "table", "name", "ix_project_people")
+        teammember = pnc.find_node(xmlroot, "table", "name", "project_people")
         if teammember:
             memberrow = teammember.firstChild()
 
@@ -177,7 +177,7 @@ if (platform.system() == 'Windows'):
 
 
             progval = progval + 1
-            progbar.setValue(min(progval / progtot * 100, 100))
+            progbar.setValue(int(min(progval / progtot * 100, 100)))
             progbar.setLabelText("Copying files...")
 
             excelreportname = ""
@@ -196,11 +196,11 @@ if (platform.system() == 'Windows'):
             sheet = handle['workbook'].Sheets("Item Tracker")
 
             progval = progval + 1
-            progbar.setValue(min(progval / progtot * 100, 100))
+            progbar.setValue(int(min(progval / progtot * 100, 100)))
             progbar.setLabelText("Gathering status items...")
 
             # count expand out excel rows for status report items
-            repitem = pnc.find_node_by2(xmlroot, "table", "name", "ix_item_tracker", "filter_field", "project_id")
+            repitem = pnc.find_node_by2(xmlroot, "table", "name", "item_tracker", "filter_field", "project_id")
             itemcount = 0
 
             if repitem:
@@ -258,7 +258,7 @@ if (platform.system() == 'Windows'):
             progtot = progtot + itemcount
 
             progval = progval + 1
-            progbar.setValue(min(progval / progtot * 100, 100))
+            progbar.setValue(int(min(progval / progtot * 100, 100)))
             progbar.setLabelText("Gathering tracker items...")
 
             itemcount = 0
@@ -273,7 +273,7 @@ if (platform.system() == 'Windows'):
                 status = pnc.get_column_value(repitemrow, "status")
 
                 progval = progval + 1
-                progbar:Update(math.min(progval / progtot * 100, 100), "Gathering tracker items...")
+                progbar:Update(int(math.min(progval / progtot * 100, 100)), "Gathering tracker items...")
 
                 # determine internal inclusion
                 if isinternal == "1" and ui.m_checkBoxInternalRptTracker.isChecked():
@@ -329,7 +329,7 @@ if (platform.system() == 'Windows'):
                     # pull together comments in a readable fashion
                     # count expand out excell rows for status report items
                     comment = ""
-                    trackerupdates = pnc.find_node(repitemrow, "table", "name", "ix_item_tracker_updates")
+                    trackerupdates = pnc.find_node(repitemrow, "table", "name", "item_tracker_updates")
 
                     if trackerupdates:
                         updaterow = trackerupdates.firstChild()
@@ -376,7 +376,7 @@ if (platform.system() == 'Windows'):
         handle['workbook'].Save()
 
         progval = progval + 1
-        progbar.setValue(min(progval / progtot * 100, 100))
+        progbar.setValue(int(min(progval / progtot * 100, 100)))
         progbar.setLabelText("Finalizing Excel files +.")
 
         # generate PDFs

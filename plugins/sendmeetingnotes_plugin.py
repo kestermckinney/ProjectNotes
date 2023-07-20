@@ -17,7 +17,7 @@ from PyQt5.QtGui import QDesktopServices
 # Project Notes Plugin Parameters
 pluginname = "Send Meeting Notes"
 plugindescription = "Using Outlook sends meeting notes out for the selected meeting."
-plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
+plugintable = "project_notes" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
 # events must have a data structure and data view specified
@@ -74,6 +74,7 @@ if (platform.system() == 'Windows'):
     pne = ProjectNotesExcelTools()
 
     def event_data_rightclick(xmlstr):
+        xmldoc = ""
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -83,17 +84,22 @@ if (platform.system() == 'Windows'):
         message = outlook.CreateItem(0)
         message.To = ""
 
-        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
+        pm = xmlroot.toElement().attribute("managing_manager_name")
+        co = xmlroot.toElement().attribute("managing_company_name")
+
         htmlbody = ""
 
         childnode = xmlroot.firstChild()
-        pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
+
         email = None
         nm = None
 
+        print("send meeting notes called")
+
         while not childnode.isNull():
 
-            if childnode.attributes().namedItem("name").nodeValue() == "ix_project_notes":
+            if childnode.attributes().namedItem("name").nodeValue() == "project_notes":
                 rownode = childnode.firstChild()
 
                 while not rownode.isNull():
@@ -102,7 +108,7 @@ if (platform.system() == 'Windows'):
                     pnc.get_column_value(rownode, "note_date"),
                     pnc.get_column_value(rownode, "note_title"))
 
-                    attendeetable = pnc.find_node(rownode, "table", "name", "ix_meeting_attendees")
+                    attendeetable = pnc.find_node(rownode, "table", "name", "meeting_attendees")
                     if attendeetable:
                         attendeerow = attendeetable.firstChild()
 
@@ -116,18 +122,19 @@ if (platform.system() == 'Windows'):
                             nm = pnc.get_column_value(attendeerow, "name")
                             email = pnc.get_column_value(attendeerow, "email")
 
+                            #TODO: See if note can default to 10pt font size
+
                             if nm != pm:
                                 if (email != None and email != ""):
                                     message.Recipients.Add(email)
 
                             attendeerow = attendeerow.nextSibling()
 
-
                     htmlbody = htmlbody + get_html_attendee(attendeelist)
                     htmlbody = htmlbody + get_html_notes(pnc.get_column_value(rownode, "note"))
                     htmlbody = htmlbody + get_html_trackerheader()
 
-                    trackertable = pnc.find_node(rownode, "table", "name", "ix_item_tracker")
+                    trackertable = pnc.find_node(rownode, "table", "name", "item_tracker")
                     if trackertable:
                         trackerrow = trackertable.firstChild()
 
@@ -157,6 +164,8 @@ if (platform.system() == 'Windows'):
 
         outlook = None
         message = None
+
+        print(xmldoc)
 
         return xmldoc
 
@@ -377,7 +386,7 @@ def get_html_notes(notes):
     background:#D9E1F2;padding:0in 5.4pt 0in 5.4pt;height:17.25pt'>
     <p class=MsoNormal><span style='mso-ascii-font-family:Calibri;mso-fareast-font-family:
     "Times New Roman";mso-hansi-font-family:Calibri;mso-bidi-font-family:Calibri;
-    color:black;mso-color-alt:windowtext'>""" + pnc.to_html(notes) + """</span><span
+    color:black;mso-color-alt:windowtext'>""" + notes + """</span><span
     style='mso-ascii-font-family:Calibri;mso-fareast-font-family:"Times New Roman";
     mso-hansi-font-family:Calibri;mso-bidi-font-family:Calibri'><o:p></o:p></span></p>
     </td>
@@ -591,16 +600,17 @@ def get_html_footer():
 
 # setup test data
 """
+import sys
 print("Buld up QDomDocument")
 app = QApplication(sys.argv)
 
 xmldoc = QDomDocument("TestDocument")
-f = QFile("examplemeeting.xml")
+f = QFile("C:/Users/pamcki/Desktop/note.xml")
 
 if f.open(QIODevice.ReadOnly):
     print("example project opened")
 xmldoc.setContent(f)
 f.close()
 
-main_process(xmldoc)
+event_data_rightclick(xmldoc.toString())
 """

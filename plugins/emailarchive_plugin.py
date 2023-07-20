@@ -104,7 +104,7 @@ if (platform.system() == 'Windows'):
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
         projectfolder = pnc.get_projectfolder(xmlroot)
 
-        projtab = pnc.find_node(xmlroot, "table", "name", "ix_projects")
+        projtab = pnc.find_node(xmlroot, "table", "name", "projects")
         projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
         projdes = pnc.get_column_value(projtab.firstChild(), "project_name")
 
@@ -112,7 +112,7 @@ if (platform.system() == 'Windows'):
             projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QtCore.QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
-                return(None)
+                return ""
 
         progbar = QProgressDialog()
         progbar.setCancelButton(None)

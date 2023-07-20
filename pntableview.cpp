@@ -26,6 +26,7 @@ PNTableView::PNTableView(QWidget *t_parent) : QTableView(t_parent)
     QHeaderView *rowView = verticalHeader();
 
     rowView->viewport()->installEventFilter(this);
+    rowView->setDefaultSectionSize(15);
 
     setSelectionMode(QAbstractItemView::SingleSelection);
     setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -303,14 +304,14 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
 
     if (currentmodel && !currentmodel->isReadOnly())
     {
+        if (m_has_open && !is_new_record) menu->addAction(openRecord);
+
         if (!is_new_record)
         {
             menu->addAction(newRecord);
             menu->addAction(deleteRecord);
             menu->addAction(copyRecord);
         }
-
-        if (m_has_open && !is_new_record) menu->addAction(openRecord);
 
         if (!is_new_record) menu->addAction(exportRecord);
 

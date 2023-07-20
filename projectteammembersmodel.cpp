@@ -27,7 +27,6 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* t_parent): PNSqlQueryM
 
     addRelatedTable("projects", "primary_contact", "people_id", "Primary Contact");
 
-    // this is problematic for delete check since it is two field reationship TODO:
     QStringList rel_col1 = { "project_id", "people_id" };
     QStringList rel_fk1 = { "project_id", "identified_by" };
     addRelatedTable("item_tracker", rel_fk1, rel_col1, "Identified By");

@@ -15,12 +15,10 @@ from PyQt5.QtGui import QDesktopServices
 
 
 # Project Notes Plugin Parameters
-pluginname = "Schedule One On One Meeting"
+pluginname = "Schedule One On One"
 plugindescription = "Using Outlook create an invite to an employee review meeting."
 plugintable = "people" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
-
-# TODO: This will need to be duplicated for project people too
 
 # events must have a data structure and data view specified
 #
@@ -96,36 +94,9 @@ if (platform.system() == 'Windows'):
         pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
 
         if xmlroot:
-            teammember = pnc.find_node(xmlroot, "table", "name", "ix_project_people")
+            teammember = pnc.find_node(xmlroot, "table", "name", "people")
             if teammember:
                 memberrow = teammember.firstChild()
-
-                while not memberrow.isNull():
-                    nm = pnc.get_column_value(memberrow, "name")
-                    email = pnc.get_column_value(memberrow, "email")
-
-                    if nm != pm:
-                        if (email != None and email != ""):
-                            message.Recipients.Add(email)
-
-                    memberrow = memberrow.nextSibling()
-
-            teammember = pnc.find_node(xmlroot, "table", "name", "ix_meeting_attendees")
-            if teammember:
-                memberrow = teammember.firstChild()
-
-                while not memberrow.isNull():
-                    nm = pnc.get_column_value(memberrow, "name")
-                    email = pnc.get_column_value(memberrow, "email")
-                    if nm != pm:
-                        if (email != None and email != ""):
-                            message.Recipients.Add(email)
-
-                    memberrow = memberrow.nextSibling()
-
-            teammember = pnc.find_node(xmlroot, "table", "name", "ix_people")
-            if teammember:
-                memberrow = teammember.GetChildren()
 
                 while not memberrow.isNull():
                     nm = pnc.get_column_value(memberrow, "name")
@@ -149,7 +120,7 @@ if (platform.system() == 'Windows'):
             outlook = None
             message = None
 
-        return xmldoc
+        return("")
 
     def get_text_invite():
         txtdoc = """
@@ -185,4 +156,5 @@ print("Run Test")
 # call when testing outside of Project Notes
 main_process(xmldoc)
 """
-#TODO:  Some large XML fields from ProjectNotes 2 break the parser.  For examle an email was pasted into description.  Maybe CDATA tags are needed there.
+
+# TESTED: Phase 1

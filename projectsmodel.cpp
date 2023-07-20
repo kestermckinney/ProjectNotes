@@ -41,6 +41,10 @@ ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
     addRelatedTable("project_people", "project_id", "project_id", "Project People", DBExportable);
     addRelatedTable("status_report_items", "project_id", "project_id", "Status Report Item", DBExportable);
 
+    QStringList key1 = {"project_number"};
+
+    addUniqueKeys(key1, "Number");
+
     setOrderBy("project_number");
 }
 
@@ -207,6 +211,3 @@ bool ProjectsModel::setData(const QModelIndex &t_index, const QVariant &t_value,
 
     return result;
 }
-//TODO: Remove project name unique constraint from the database, it makes is so import can't update the name
-//TODO: Right click should show Open as the firt menu item since it is most common
-//TODO: Deleting a team member fails if they attended a meeting on a different project

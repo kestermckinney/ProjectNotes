@@ -76,6 +76,8 @@ if (platform.system() == 'Windows'):
     # processing main function
     def event_data_rightclick(xmlstr):
         xmlval = QDomDocument()
+        xmldoc = ""
+        
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
             return ""
@@ -83,15 +85,15 @@ if (platform.system() == 'Windows'):
         outlook = win32com.client.Dispatch("Outlook.Application")
         message = outlook.CreateItem(1)
 
-        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
-        pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
-        co = xmlroot.attributes().namedItem("managing_company_name").nodeValue()
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
+        pm = xmlroot.toElement().attribute("managing_manager_name")
+        co = xmlroot.toElement().attribute("managing_company_name")
 
         email = None
         nm = None
         pco = None
 
-        teammember = pnc.find_node(xmlroot, "table", "name", "ix_project_people")
+        teammember = pnc.find_node(xmlroot, "table", "name", "project_people")
         if teammember:
             memberrow = teammember.firstChild()
 
@@ -105,7 +107,7 @@ if (platform.system() == 'Windows'):
 
                 memberrow = memberrow.nextSibling()
 
-        project = pnc.find_node(xmlroot, "table", "name", "ix_projects")
+        project = pnc.find_node(xmlroot, "table", "name", "projects")
         if project:
             projectrow = project.firstChild()
 
@@ -133,7 +135,7 @@ if (platform.system() == 'Windows'):
         pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
         co = xmlroot.attributes().namedItem("managing_company_name").nodeValue()
 
-        attendeetable = pnc.find_node(xmlroot, "table", "name", "ix_meeting_attendees")
+        attendeetable = pnc.find_node(xmlroot, "table", "name", "meeting_attendees")
 
         if attendeetable:
             attendeerow = attendeetable.firstChild()
@@ -151,7 +153,7 @@ if (platform.system() == 'Windows'):
 
             attendeerow = attendeerow.nextSibling()
 
-        project = pnc.find_node(xmlroot, "table", "name", "ix_project_notes")
+        project = pnc.find_node(xmlroot, "table", "name", "project_notes")
         if project:
             projectrow = project.firstChild()
 
@@ -197,4 +199,3 @@ f.close()
 #main_process_project(xmldoc)
 main_process_meeting(xmldoc)
 """
-#TODO: Split this into two plugins one for meetings and one for projects

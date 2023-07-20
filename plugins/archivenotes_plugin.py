@@ -11,15 +11,15 @@ from includes.common import ProjectNotesCommon
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
 from PyQt5.QtSql import QSqlDatabase
 from PyQt5.QtXml import QDomDocument, QDomNode
-from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
+from PyQt5.QtCore import QFile, QIODevice, QDate, QUrl
 from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
-from PyQt5.QtGui import QDesktopServices
+from PyQt5.QtGui import QDesktopServices, QTextDocument
 
 # Project Notes Plugin Parameters
 pluginname = "Archive Meeting Notes"
 plugindescription = "Generate meeting notes archive based on the options selected."
-plugintable = "project_notes" # the table or view that the plugin applies to.  This will enable the right click
-childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
+plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
+childtablesfilter = "projects/project_notes/meeting_attendees/item_tracker/project_locations" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
 # events must have a data structure and data view specified
 #
@@ -94,7 +94,7 @@ if (platform.system() == 'Windows'):
         # setup global variables
         ProjectsFolder = pnc.get_global_setting("ProjectsFolder")
 
-        executedate = QDateTime.currentDateTime()
+        executedate = QDate.currentDate()
         internalreport = False
         keepexcel = False
         emailashtml = False
@@ -102,8 +102,17 @@ if (platform.system() == 'Windows'):
         emailasexcel = False
         noemail = True
 
-        loader = QtUiTools.QUiLoader()
-        ui = loader.load("includes/dialogNotesArchiveOptions.ui")
+        QtWidgets.QApplication.restoreOverrideCursor()
+        QtWidgets.QApplication.processEvents()   
+
+        ui = uic.loadUi("plugins/includes/dialogNotesArchiveOptions.ui")
+        ui.m_datePickerRptDateNotes.setDate(executedate)
+        ui.m_datePickerRptDateNotes.setCalendarPopup(True)
+        ui.setWindowFlags(
+            QtCore.Qt.Window |
+            QtCore.Qt.WindowCloseButtonHint |
+            QtCore.Qt.WindowStaysOnTopHint
+            )
 
         if ui.exec() == QDialog.Accepted:
             internalreport = ui.m_checkBoxInternalRptNotes.isChecked()
@@ -112,15 +121,23 @@ if (platform.system() == 'Windows'):
             emailaspdf = ui.m_radioBoxEmailAsPDF.isChecked()
             emailasexcel = ui.m_radioBoxEmailAsExcel.isChecked()
             noemail = ui.m_radioBoxDoNotEmail.isChecked()
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            QtWidgets.QApplication.processEvents()
         else:
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            QtWidgets.QApplication.processEvents()
             return ""
 
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
+        pm = xmlroot.toElement().attribute("managing_manager_name")
+
+        #print("locating project folder...")
+        QtWidgets.QApplication.processEvents()
         projectfolder = pnc.get_projectfolder(xmlroot)
-        pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
-
-
-        projtab = pnc.find_node(xmlroot, "table", "name", "ix_projects")
+        #print("finding projects table ..")
+        QtWidgets.QApplication.processEvents()
+        
+        projtab = pnc.find_node(xmlroot, "table", "name", "projects")
         projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
         projdes = pnc.get_column_value(projtab.firstChild(), "project_name")
 
@@ -133,21 +150,30 @@ if (platform.system() == 'Windows'):
             projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QtCore.QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
-                return(None)
+                return ""
         else:
-            projectfolder = projectfolder + "\\Meeting Minutes\\"
+            projectfolder = projectfolder + "/Meeting Minutes/"
+
+        projectfolder = projectfolder + "/"
 
         progbar = QProgressDialog()
+        progbar.setWindowTitle("Archiving...")
+        progbar.setWindowFlags(
+            QtCore.Qt.Window |
+            QtCore.Qt.WindowCloseButtonHint |
+            QtCore.Qt.WindowStaysOnTopHint
+            )
+        progbar.setMinimumWidth(350)
         progbar.setCancelButton(None)
         progbar.show()
 
         progval = 0
         progtot = 6
-        progbar.setValue(min(progval / progtot * 100, 100))
+        progbar.setValue(int(min(progval / progtot * 100, 100)))
         progbar.setLabelText("Generating Report...")
 
         progval = progval + 1
-        progbar.setValue(min(progval / progtot * 100, 100))
+        progbar.setValue(int(min(progval / progtot * 100, 100)))
         progbar.setLabelText("Copying files...")
 
         excelreportname = ""
@@ -161,24 +187,25 @@ if (platform.system() == 'Windows'):
             pdfreportname = projectfolder + projnum + " Meeting Minutes.pdf"
 
 
-        QFile.copy("templates\\Meeting Template.xlsx", excelreportname)
+        QFile.copy("plugins/templates/Meeting Template.xlsx", excelreportname)
 
         handle = pne.open_excel_document(excelreportname)
         sheet = handle['workbook'].Sheets("Meeting Notes")
 
         progval = progval + 1
-        progbar.setValue(min(progval / progtot * 100, 100))
+        progbar.setValue(int(min(progval / progtot * 100, 100)))
         progbar.setLabelText("Gathering notes...")
 
 
         # count expand out excell rows for status report items
-        notes = pnc.find_node(xmlroot, "table", "name", "ix_project_notes")
+        notes = pnc.find_node(xmlroot, "table", "name", "project_notes")
         itemcount = 0
 
         if notes:
             notesrow = notes.firstChild()
 
             while not notesrow.isNull():
+                QtWidgets.QApplication.processEvents()
                 isinternal = pnc.get_column_value(notesrow, "internal_item")
 
                 if isinternal == "1" and internalreport:
@@ -192,13 +219,14 @@ if (platform.system() == 'Windows'):
             progtot = progtot + itemcount
 
             progval = progval + 1
-            progbar.setValue(min(progval / progtot * 100, 100))
+            progbar.setValue(int(min(progval / progtot * 100, 100)))
             progbar.setLabelText("Gathering notes...")
 
         itemcount = 0
         notesrow = notes.firstChild()
 
         while not notesrow.isNull():
+            QtWidgets.QApplication.processEvents()
             isinternal = pnc.get_column_value(notesrow, "internal_item")
             includeitem = False
 
@@ -211,7 +239,7 @@ if (platform.system() == 'Windows'):
                 itemcount = itemcount + 1
 
             progval = progval + 1
-            progbar.setValue(min(progval / progtot * 100, 100))
+            progbar.setValue(int(min(progval / progtot * 100, 100)))
             progbar.setLabelText("Gathering notes...")
 
             pne.replace_cell_tag(sheet, "<MEETING_TITLE" + str(itemcount) + ">", "'" + pnc.get_column_value(notesrow, "note_title"))
@@ -220,25 +248,31 @@ if (platform.system() == 'Windows'):
             # expand the row so notes show
 
             # EXCEL WON'T AUTOFIT THIS FOR SOME REASON I BELIEVE IT IS BECAUSE THE CELLS ARE MERGED
+            #print("replaced title and meeting date....")
 
             note = pnc.get_column_value(notesrow, "note")
-            pne.set_cell_by_tag(sheet, "<MEETING_NOTES" + str(itemcount) + ">", "'" + note )
+            doc = QTextDocument()
+            doc.setHtml(note)
+            pne.set_cell_by_tag(sheet, "<MEETING_NOTES" + str(itemcount) + ">", "'" + doc.toPlainText() )
             """
             if cell :
               cell.EntireRow:AutoFit()
 
             """
+            #print("going to look for attendees...")
 
-            attendees = pnc.find_node(notesrow, "table", "name", "ix_meeting_attendees")
+            attendees = pnc.find_node(notesrow, "table", "name", "meeting_attendees")
             attendeelist = ""
             if attendees:
                 attendeerow = attendees.firstChild()
 
                 while not attendeerow.isNull():
+                    QtWidgets.QApplication.processEvents()
                     if attendeelist != "" :
                         attendeelist = attendeelist + ", "
 
                     attendeelist = attendeelist + pnc.get_column_value(attendeerow, "name")
+                    #print("processing attendees...")
                     attendeerow = attendeerow.nextSibling()
 
             # expand the row so attees show
@@ -247,16 +281,22 @@ if (platform.system() == 'Windows'):
             if cell:
                 cell.EntireRow:AutoFit()
 
+            #print("Going threw items....")
             # count expand out excel rows for status report items
-            trackeritems = pnc.find_node(notesrow, "table", "name", "ix_item_tracker")
+            trackeritems = pnc.find_node(notesrow, "table", "name", "item_tracker")
+            #print("found a tracker table...")
+            #print("gathering notes... for note_id " + pnc.get_column_value(notesrow, "note_id"))
             trackercount = 0
             if trackeritems:
                 trackerrow = trackeritems.firstChild()
 
-                while trackerrow:
+                while not trackerrow.isNull():
+                    QtWidgets.QApplication.processEvents()
                     trackercount = trackercount + 1
+                    #print("counting " + pnc.get_column_value(trackerrow, "item_id"))
                     trackerrow = trackerrow.nextSibling()
 
+            #print("replacing item and status tags...")
             pne.replace_cell_tag(sheet, "<ITEM" + str(itemcount) + ">", "<ITEM>")
             pne.replace_cell_tag(sheet, "<ASSIGNED_TO" + str(itemcount) + ">", "<ASSIGNED_TO>")
             pne.replace_cell_tag(sheet, "<STATUS" + str(itemcount) + ">", "<STATUS>")
@@ -268,8 +308,10 @@ if (platform.system() == 'Windows'):
             if trackeritems:
                 trackerrow = trackeritems.firstChild()
 
-                while trackerrow:
+                while not trackerrow.isNull():
+                    QtWidgets.QApplication.processEvents()
                     trackercount = trackercount + 1
+                    #print("processing tracker rows")
                     cell = pne.find_cell_tag(sheet, "<ITEM" + str(trackercount) + ">")
                     pne.replace_cell_tag(sheet, "<ITEM" + str(trackercount) + ">", pnc.get_column_value(trackerrow, "item_name"))
                     if cell:
@@ -296,7 +338,7 @@ if (platform.system() == 'Windows'):
         handle['workbook'].Save()
 
         progval = progval + 1
-        progbar.setValue(min(progval / progtot * 100, 100))
+        progbar.setValue(int(min(progval / progtot * 100, 100)))
         progbar.setLabelText("Finalizing Excel files...")
 
         # generate PDFs
@@ -335,19 +377,19 @@ if (platform.system() == 'Windows'):
 
 # setup test data
 """
+import sys
 print("Buld up QDomDocument")
 app = QApplication(sys.argv)
 
 xmldoc = QDomDocument("TestDocument")
-f = QFile("exampleproject.xml")
+f = QFile("C:/Users/pamcki/Desktop/project.xml")
 
 if f.open(QIODevice.ReadOnly):
     print("example project opened")
 xmldoc.setContent(f)
 f.close()
 
-print("Run Test")
-# call when testing outside of Project Notes
 event_data_rightclick(xmldoc.toString())
 """
-#TODO:  Some large XML fields from ProjectNotes 2 break the parser.  For examle an email was pasted into description.  Maybe CDATA tags are needed there.
+
+# TESTED: Phase 1

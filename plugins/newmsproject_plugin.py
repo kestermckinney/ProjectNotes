@@ -90,7 +90,7 @@ if (platform.system() == 'Windows'):
         pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
         cm = xmlroot.attributes().namedItem("managing_company_name").nodeValue()
 
-        projtab = pnc.find_node(xmlroot, "table", "name", "ix_projects")
+        projtab = pnc.find_node(xmlroot, "table", "name", "projects")
         projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
         projnam = pnc.get_column_value(projtab.firstChild(), "project_name")
 
@@ -98,7 +98,7 @@ if (platform.system() == 'Windows'):
             projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QtCore.QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
-                return None
+                return ""
         else:
             projectfolder = projectfolder + "\\Schedule\\"
 
@@ -138,7 +138,7 @@ if (platform.system() == 'Windows'):
         # add the location to the project
         docxml = pnc.xml_doc_root()
 
-        table = pnc.xml_table(docxml, "ix_project_locations")
+        table = pnc.xml_table(docxml, "project_locations")
         docxml.appendChild(table)
 
         row = pnc.xml_row(docxml)
@@ -170,4 +170,3 @@ print("Run Test")
 print(main_process(xmldoc).toString())
 print("Finished")
 """
-#TODO:  Some large XML fields from ProjectNotes 2 break the parser.  For examle an email was pasted into description.  Maybe CDATA tags are needed there.

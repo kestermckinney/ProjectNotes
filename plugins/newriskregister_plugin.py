@@ -92,7 +92,7 @@ if (platform.system() == 'Windows'):
         pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
         cm = xmlroot.attributes().namedItem("managing_company_name").nodeValue()
 
-        projtab = pnc.find_node(xmlroot, "table", "name", "ix_projects")
+        projtab = pnc.find_node(xmlroot, "table", "name", "projects")
         projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
         projnam = pnc.get_column_value(projtab.firstChild(), "project_name")
 
@@ -133,7 +133,7 @@ if (platform.system() == 'Windows'):
         # add the location to the project
         docxml = pnc.xml_doc_root()
 
-        table = pnc.xml_table(docxml, "ix_project_locations")
+        table = pnc.xml_table(docxml, "project_locations")
         docxml.appendChild(table)
 
         row = pnc.xml_row(docxml)

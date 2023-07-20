@@ -71,6 +71,7 @@ OracleUsername = ""
 ProjectsFolder = ""
 
 # this plugin is only supported on windows
+# Ping doesn't work via VPN
 if (platform.system() == 'Windows'):
     pnc = ProjectNotesCommon()
 
@@ -82,7 +83,7 @@ if (platform.system() == 'Windows'):
 
         pnc.connect_drives()
 
-        print("Connect drives every 5 minutes called...")
+        #print("Connect drives every 5 minutes called...")
 
         return ""
 
@@ -94,3 +95,17 @@ if (platform.system() == 'Windows'):
             
         pnc.connect_drives()
         return ""
+        
+
+# call when testing outside of Project Notes
+# this plugin doesn't seem to work over a VPN
+"""
+import sys
+print("Run Test")
+app = QApplication(sys.argv)
+
+str = event_menuclick(None)
+print(str)
+"""
+
+# TESTED: Phase 1

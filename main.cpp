@@ -41,6 +41,8 @@ int main(int argc, char *argv[])
     }
 #endif
 
+
+
     a.setWindowIcon(QIcon(":/icons/logo.png")); // "AppIcon.icns"
     w.show();
 

@@ -1608,6 +1608,8 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                         if (!lookup_value.isNull() && !m_lookup_table[colnum].isEmpty())
                         {
                             QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookup_fk_column_name[colnum], m_lookup_table[colnum], m_lookup_value_column_name[colnum], lookup_value);
+                            qDebug() << "EXEC LOOKUP EXISTING: " << sql;
+
                             field_value = global_DBObjects.execute(sql);
                         }
 
@@ -1663,6 +1665,8 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                 if (!lookup_value.isNull() && !m_lookup_table[colnum].isEmpty())
                 {
                     QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookup_fk_column_name[colnum], m_lookup_table[colnum], m_lookup_value_column_name[colnum], lookup_value);
+                    qDebug() << "EXEC LOOKUP FOR FIELD VALUE: " << sql;
+
                     field_value = global_DBObjects.execute(sql);
                 }
 

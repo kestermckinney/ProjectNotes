@@ -22,8 +22,18 @@ TeamsModel::TeamsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
     addUniqueKeys(key1, "Name");
 
     addRelatedTable("projects", "primary_contact", "people_id", "Primary Contact");
-    addRelatedTable("item_tracker", "identified_by", "people_id", "Identified By");
-    addRelatedTable("item_tracker","assigned_to", "people_id", "Assigned To");
+
+    QStringList rel_col1 = { "project_id", "people_id" };
+    QStringList rel_fk1 = { "project_id", "identified_by" };
+    addRelatedTable("item_tracker", rel_fk1, rel_col1, "Identified By");
+
+    QStringList rel_col2 = { "project_id", "people_id" };
+    QStringList rel_fk2 = { "project_id", "assigned_to" };
+    addRelatedTable("item_tracker", rel_fk2, rel_col2, "Assigned To");
+
+    QStringList rel_col3 = { "project_id", "people_id" };
+    QStringList rel_fk3 = { "project_id", "person_id" };
+    addRelatedTable("meeting_attendees", rel_fk3, rel_col3, "Attendee");
 
     setOrderBy("name");
 
