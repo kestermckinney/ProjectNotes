@@ -65,7 +65,7 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
                         if (ck_col != -1)
                         {
                             recordset->setDirty();  // refresh when ne page active
-                            qDebug() << "Marking table: " << recordset->tablename() << " as dirty.";
+                            //qDebug() << "Marking table: " << recordset->tablename() << " as dirty.";
                             break; // just need to identify one column
                         }
                     }
@@ -78,7 +78,7 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
                 //qDebug() << "Found " << tablename() << " in another model";
 
                 recordset->setDirty();
-                qDebug() << "Marking table: " << recordset->tablename() << " as dirty based on same table name.";
+                //qDebug() << "Marking table: " << recordset->tablename() << " as dirty based on same table name.";
             }
         }
     }
@@ -126,6 +126,10 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 return false;
             }
         }
+
+        // check to see if you can change it
+        if (!columnChangeCheck(t_index))
+            return false;
 
         if (m_column_is_unique[t_index.column()] == DBUnique)
         {
@@ -755,6 +759,111 @@ void PNSqlQueryModel::addRelatedTable(const QString& t_table_name, const QString
     m_related_fk_columns.append(t_fk_column_names);
     m_relation_title.append(t_title);
     m_relation_exportable.append(t_exportable);
+}
+
+bool PNSqlQueryModel::columnChangeCheck(const QModelIndex &t_index)
+{
+    int reference_count = 0;
+    QString message;
+    QStringList key_columns;
+    QStringList key_values;
+    QString project_number_key;
+    QString primary_key;
+
+    for (int i = 0; i < m_related_table.size(); ++i)
+    {
+        int relatedcount = 0;
+        bool use_related = false;
+
+        //set the where for all
+        QString where_clause;
+
+        for (int c = 0; c < m_related_columns[i].count(); c++)
+        {
+            QString col_name = m_related_columns[i].at(c);
+            QString fk_col_name = m_related_fk_columns[i].at(c);
+
+            // look to see if the current column has a related value otherwise dont consider this related table
+            if (fk_col_name.compare(m_cache[t_index.row()].fieldName(t_index.column())) == 0)
+                use_related = true;
+
+            QVariant col_val = m_cache[t_index.row()].value(fk_col_name).toString();
+            int col_num = getColumnNumber(fk_col_name);
+
+            sqlEscape(col_val, m_column_type[col_num]);
+
+            if (!where_clause.isEmpty())
+                where_clause += " and ";
+
+            where_clause += QString(" %1 = '%2' ").arg(col_name, col_val.toString());
+
+            // special key field mapping
+            // check to see if search should be limited by project
+            if (fk_col_name.compare("project_id") == 0)
+            {
+                QSqlQuery projsql;
+                projsql.prepare(QString("select project_number from projects where project_id ='%1'").arg(col_val.toString()));
+                projsql.exec();
+
+                if (projsql.next())
+                    project_number_key = projsql.value(0).toString();
+            }
+            else
+            {
+                primary_key = col_val.toString();
+            }
+        }
+
+        if (use_related)
+        {
+            QSqlQuery select;
+            select.prepare("select count(*) from " + m_related_table.at(i) + " where " + where_clause);
+            select.exec();
+
+            qDebug() << "SET VALUE CHECK: " << "select count(*) from " + m_related_table.at(i) + " where " + where_clause;
+
+            if (select.next())
+                relatedcount = select.value(0).toInt();
+
+            if (relatedcount > 0)
+            {
+                reference_count += relatedcount;
+
+                message += select.value(0).toString() + " " + m_relation_title.at(i) + " record(s)\n";
+            }
+        }
+    }
+
+    if (reference_count > 0)
+    {
+        message = QObject::tr("The ") + m_display_name + QObject::tr(" record is referenced in the following records:\n\n") + message +
+                 QObject::tr("\nYou cannot change the ") + m_display_name + QObject::tr(" record until the assocated records are changed. Would you like to run a search for all related records?");
+
+        if ( QMessageBox::question(nullptr, QObject::tr("Cannot change record"),
+           message, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
+        {
+            if (!project_number_key.isEmpty())
+            {
+                key_columns.append("project_number");
+                key_values.append(project_number_key);
+                key_columns.append("datakey");
+                key_values.append(primary_key);
+            }
+            else
+            {
+                key_columns.append("datakey");
+                key_values.append(primary_key);
+            }
+
+            global_DBObjects.searchresultsmodel()->PerformKeySearch( key_columns, key_values );
+
+            emit callKeySearch();
+        }
+
+        return false;
+    }
+
+    return true;
 }
 
 bool PNSqlQueryModel::deleteCheck(const QModelIndex &t_index)
@@ -1823,4 +1932,4 @@ bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant
 }
 
 //TODO: establish a progress bar while generating the XML
-//TODO: Not importing a note the note editing screen didn't update with the new data
+

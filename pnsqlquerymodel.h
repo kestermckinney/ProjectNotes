@@ -83,6 +83,8 @@ public:
     bool isUniqueValue(const QVariant &t_new_value, const QModelIndex &t_index);
     bool isNewRecord(const QModelIndex &t_index) { return m_cache[t_index.row()].value(0).isNull(); } // new records have blank guid in 0
     bool deleteCheck(const QModelIndex &t_index);
+    bool columnChangeCheck(const QModelIndex &t_index);
+
     QSqlRecord emptyrecord();
     const QVariant findValue(QVariant& t_lookup_value, int t_search_column, int t_return_column);
     const QModelIndex findIndex(QVariant& t_lookup_value, int t_search_column);
@@ -166,7 +168,7 @@ public:
         {
             if (m->isDirty())
             {
-                qDebug() << "Refreshing Dirty Table: " << m->tablename();
+                //qDebug() << "Refreshing Dirty Table: " << m->tablename();
 
                 m->refresh();
                 foundsome = true;

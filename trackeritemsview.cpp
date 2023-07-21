@@ -74,5 +74,4 @@ void TrackerItemsView::setModel(QAbstractItemModel *t_model)
     }
 }
 
-//TODO: Right-Click errors out on on context menu
-//TODO: Tracker Item not working when opened from project
+

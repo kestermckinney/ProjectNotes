@@ -510,7 +510,7 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
         notesactionitemsmodel()->clearFilter(15);
         actionitemprojectnotesmodel()->clearFilter(3);
         trackeritemsmodel()->clearFilter(15);
-        actionitemsdetailsmodel()->clearFilter(3);
+        actionitemsdetailsmodel()->clearFilter(15);
         searchresultsmodel()->clearFilter(4);
     }
     else
@@ -520,7 +520,7 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
         notesactionitemsmodel()->setFilter(15, "0");
         actionitemprojectnotesmodel()->setFilter(3, "0");
         trackeritemsmodel()->setFilter(15, "0");
-        actionitemsdetailsmodel()->setFilter(3, "0");
+        actionitemsdetailsmodel()->setFilter(15, "0");
         searchresultsmodel()->setFilter(4, "0");
     }
 
@@ -810,10 +810,23 @@ void PNDatabaseObjects::addDefaultPMToMeeting(const QString& t_note_id)
 {
     QString pm = getProjectManager();
     QString guid = QUuid::createUuid().toString();
+    QString guid2 = QUuid::createUuid().toString();
 
-    // TODO: this will add him even if he isn't on the team
+    QString project_id = execute(QString("select project_id from project_notes where note_id='%1'").arg(t_note_id));
+    QString insertpm = QString("insert into project_people (teammember_id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' )").arg(project_id).arg(pm).arg(guid2);
+    qDebug() << "Adding default pm to project: " << insertpm;
+
+    execute(insertpm);
+
     QString insert = QString("insert into meeting_attendees (attendee_id, person_id, note_id) select '%3', '%2', '%1' where not exists (select 1 from meeting_attendees where note_id = '%1' and person_id = '%2' )").arg(t_note_id).arg(pm).arg(guid);
     qDebug() << "Adding default pm to meeting: " << insert;
 
+    meetingattendeesmodel()->setDirty();
+    teamsmodel()->setDirty();
+    projectteammembersmodel()->setDirty();
+
     execute(insert);
 }
+
+// TODO: you can remove someone from a team by just reselecting a new persion
+

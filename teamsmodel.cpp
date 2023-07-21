@@ -21,7 +21,9 @@ TeamsModel::TeamsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 
     addUniqueKeys(key1, "Name");
 
-    addRelatedTable("projects", "primary_contact", "people_id", "Primary Contact");
+    QStringList rel_col4 = { "project_id", "people_id" };
+    QStringList rel_fk4 = { "project_id", "primary_contact" };
+    addRelatedTable("projects", rel_fk4, rel_col4, "Primary Contact");
 
     QStringList rel_col1 = { "project_id", "people_id" };
     QStringList rel_fk1 = { "project_id", "identified_by" };

@@ -25,7 +25,9 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* t_parent): PNSqlQueryM
 
     addUniqueKeys(key1, "Name");
 
-    addRelatedTable("projects", "primary_contact", "people_id", "Primary Contact");
+    QStringList rel_col4 = { "project_id", "people_id" };
+    QStringList rel_fk4 = { "project_id", "primary_contact" };
+    addRelatedTable("projects", rel_fk4, rel_col4, "Primary Contact");
 
     QStringList rel_col1 = { "project_id", "people_id" };
     QStringList rel_fk1 = { "project_id", "identified_by" };
@@ -72,25 +74,30 @@ bool ProjectTeamMembersModel::newRecord(const QVariant* t_fk_value1, const QVari
 bool ProjectTeamMembersModel::setData(const QModelIndex &t_index, const QVariant &t_value, int t_role)
 {
     // if setting team member and no role is available grab the default
-    if (t_index.column() == 2)
+    if (PNSqlQueryModel::setData(t_index, t_value, t_role))
     {
-        QModelIndex qi = index(t_index.row(), 5);
-
-        if (data(qi).isNull())
+        if (t_index.column() == 2)
         {
-            QModelIndex qi_key = index(t_index.row(), 2);
+            QModelIndex qi = index(t_index.row(), 5);
 
-            // get the default
-            QSqlQuery qry(QString("select role from people where people_id='%1'").arg( data(qi_key).toString() ));
-            //qDebug() << QString("select role from people where people_id='%1'").arg( data(qi_key).toString() );
-            qry.exec();
-
-            if (qry.next())
+            if (data(qi).isNull())
             {
-                setData(qi, qry.record().value(0), t_role);
+                QModelIndex qi_key = index(t_index.row(), 2);
+
+                // get the default
+                QSqlQuery qry(QString("select role from people where people_id='%1'").arg( data(qi_key).toString() ));
+                //qDebug() << QString("select role from people where people_id='%1'").arg( data(qi_key).toString() );
+                qry.exec();
+
+                if (qry.next())
+                {
+                    setData(qi, qry.record().value(0), t_role);
+                }
             }
         }
+
+        return true;
     }
 
-    return PNSqlQueryModel::setData(t_index, t_value, t_role);
+    return false;
 }

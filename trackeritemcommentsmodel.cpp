@@ -23,6 +23,9 @@ TrackerItemCommentsModel::TrackerItemCommentsModel(QObject* t_parent): PNSqlQuer
     addColumn(8, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(9, tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
+    addRelatedTable("item_tracker", "item_id", "item_id", "Tracker Item");
+    // TODO: the item tracker list doesn't update when comments are chagned here.. need to test the mark dirty
+
     setOrderBy("lastupdated_date");
 }
 
@@ -47,17 +50,22 @@ bool TrackerItemCommentsModel::setData(const QModelIndex &t_index, const QVarian
 {
     QVariant curdate = QDateTime::currentDateTime().toString("MM/dd/yyyy");
 
-    // set the date the record was updated
-    if (t_index.column() != 2)
+    if(PNSqlQueryModel::setData(t_index, t_value, t_role))
     {
-        QVariant oldvalue = data(t_index, t_role);
-
-        if (oldvalue != t_value) // don't change the update date if nothing changed
+        // set the date the record was updated
+        if (t_index.column() != 2)
         {
-            QModelIndex qmi = index(t_index.row(), 2);
-            PNSqlQueryModel::setData(qmi, curdate, t_role);
+            QVariant oldvalue = data(t_index, t_role);
+
+            if (oldvalue != t_value) // don't change the update date if nothing changed
+            {
+                QModelIndex qmi = index(t_index.row(), 2);
+                PNSqlQueryModel::setData(qmi, curdate, t_role);
+            }
         }
+
+        return true;
     }
 
-    return PNSqlQueryModel::setData(t_index, t_value, t_role);
+    return false;
 }
