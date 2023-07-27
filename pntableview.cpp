@@ -140,16 +140,17 @@ void PNTableView::slotPluginMenu(PNPlugin* t_plugin)
 
     if (!response.isEmpty())
     {
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+        QApplication::processEvents();
+
         QDomDocument doc;
         doc.setContent(response);
 
         if (!global_DBObjects.importXMLDoc(doc))
-        {
             QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
 
-            QApplication::restoreOverrideCursor();
-            QApplication::processEvents();
-        }
+        QApplication::restoreOverrideCursor();
+        QApplication::processEvents();
     }
 }
 

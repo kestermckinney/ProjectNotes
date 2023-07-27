@@ -114,3 +114,5 @@ print("Testing Plugin")
 EditorFullPath = "notepad.exe"
 event_menuclick("")
 """
+
+# TESTED: Phase 1

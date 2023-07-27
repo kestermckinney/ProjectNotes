@@ -240,6 +240,7 @@ if (platform.system() == 'Windows'):
             QtCore.Qt.WindowStaysOnTopHint
             )
         progbar.setCancelButton(None)
+        progbar.setMinimumWidth(350)
         progbar.setLabelText("Getting data...")
         progbar.setValue(0)
         QtWidgets.QApplication.processEvents() 
@@ -294,5 +295,11 @@ app = QApplication(sys.argv)
 str = event_menuclick(None)
 print(str)
 """
-# TODO: Right click menus should include icons from the main menu
 
+
+# TESTED: Phase 1
+
+
+# TODO: Right click menus should include icons from the main menu
+# TODO: You are given option to delete a search record, but it fails.
+# TODO: Filter People by client name text not working

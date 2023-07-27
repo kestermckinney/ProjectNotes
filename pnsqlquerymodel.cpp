@@ -658,6 +658,21 @@ bool PNSqlQueryModel::addRecord(QSqlRecord& t_newrecord)
     return true;
 }
 
+const QModelIndex PNSqlQueryModel::addRecordIndex(QSqlRecord& t_newrecord)
+{
+    QModelIndex qmi = QModelIndex();
+    int row = rowCount((qmi));
+
+    //qDebug() << t_newrecord;
+
+    beginInsertRows(qmi, row, row);
+    m_cache.append(t_newrecord);
+
+    endInsertRows();
+
+    return index(row, 0);
+}
+
 bool PNSqlQueryModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value1);

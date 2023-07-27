@@ -9,7 +9,7 @@ from includes.common import ProjectNotesCommon
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
 from PyQt5.QtSql import QSqlDatabase
 from PyQt5.QtXml import QDomDocument, QDomNode
-from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
+from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl, QDir, QFileInfo
 from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
 from PyQt5.QtGui import QDesktopServices
 
@@ -71,16 +71,16 @@ parameters = [
 OracleUsername = ""
 ProjectsFolder = ""
 
+# make global to pass between sections
+mtotalcost = 0
+mtotalinvoiced = 0
+mtotalpoline = 0
+mtotalinvoicable = 0
+
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
     pnc = ProjectNotesCommon()
     pne = ProjectNotesExcelTools()
-
-    # make global to pass between sections
-    mtotalcost = 0
-    mtotalinvoiced = 0
-    mtotalpoline = 0
-    mtotalinvoicable = 0
 
     def populate_tande(sheet, adodb, projectnumber):
         strsql = """
@@ -143,16 +143,26 @@ if (platform.system() == 'Windows'):
             pne.replace_cell_tag(sheet, "<PCR" + str(count) + ">", recordset.Fields.Item("pcr_number").Value )
 
             pne.replace_cell_tag(sheet, "<POAMOUNT" + str(count) + ">", recordset.Fields.Item("po_amount").Value )
-            mtotalpoline = mtotalpoline + float(recordset.Fields.Item("po_amount").Value )
+            mtotalpoline = mtotalpoline + float(recordset.Fields.Item("po_amount").Value.replace(',','') )
 
             pne.replace_cell_tag(sheet, "<POINVOICABLE" + str(count) + ">", recordset.Fields.Item("invoiceable").Value )
-            mtotalinvoicable = mtotalinvoicable + float(recordset.Fields.Item("invoiceable").Value )
+            mtotalinvoicable = mtotalinvoicable + float(recordset.Fields.Item("invoiceable").Value.replace(',','') )
+
+            #print("invoicable " + str(mtotalinvoicable))
+            #print("po line total " + str(mtotalpoline))
 
             recordset.MoveNext()
 
         recordset.Close()
 
         recordset = None
+
+        if mtotalpoline == 0:
+            pne.replace_cell_tag(sheet, "<PERCENTCONSUMED>", "0")
+            #print("po line zero")
+        else:
+            pne.replace_cell_tag(sheet, "<PERCENTCONSUMED>", "" + str(  mtotalinvoicable / mtotalpoline ) )
+            #print("calcs are " +  str(  mtotalinvoicable / mtotalpoline ) )
 
         pne.replace_cell_tag(sheet, "<TOTALPOS>", str(mtotalpoline))
         pne.replace_cell_tag(sheet, "<TOTALINVOICABLE>", str(mtotalinvoicable))
@@ -199,13 +209,13 @@ if (platform.system() == 'Windows'):
 
             pne.replace_cell_tag(sheet, "<MILESTONENAME" + str(count) + ">", recordset.Fields.Item("MILESTONENAME").Value)
             pne.replace_cell_tag(sheet, "<MILESTONECOST" + str(count) + ">", recordset.Fields.Item("SALES_AMOUNT").Value)
-            mtotalcost = mtotalcost + float(recordset.Fields.Item("SALES_AMOUNT").Value)
+            mtotalcost = mtotalcost + float(recordset.Fields.Item("SALES_AMOUNT").Value.replace(',',''))
 
             pne.replace_cell_tag(sheet, "<MILESTONESTATUS" + str(count) + ">", recordset.Fields.Item("STATUS").Value)
 
             if not recordset.Fields.Item("STATUS").Value == "Notinvoiced":
                 pne.replace_cell_tag(sheet, "<MILESTONEINVOICED" + str(count) + ">", recordset.Fields.Item("SALES_AMOUNT").Value)
-                mtotalinvoiced = mtotalinvoiced + float(recordset.Fields.Item("SALES_AMOUNT").Value)
+                mtotalinvoiced = mtotalinvoiced + float(recordset.Fields.Item("SALES_AMOUNT").Value.replace(',',''))
             else:
                 pne.replace_cell_tag(sheet, "<MILESTONEINVOICED" + str(count) + ">", "")
 
@@ -218,7 +228,7 @@ if (platform.system() == 'Windows'):
         pne.replace_cell_tag(sheet, "<MILESTONEINVOICEDTOTAL>", "" + str(mtotalinvoiced))
 
         if mtotalcost == 0:
-            cliprowsbytags(sheet, "<MILESTONETOP>", "<MILESTONEBOTTOM>")
+            pne.cliprowsbytags(sheet, "<MILESTONETOP>", "<MILESTONEBOTTOM>")
         else:
             pne.replace_cell_tag(sheet, "<MILESTONETOP>", "")
             pne.replace_cell_tag(sheet, "<MILESTONEBOTTOM>", "")
@@ -313,7 +323,6 @@ if (platform.system() == 'Windows'):
         global OracleUsername
         global ProjectsFolder
         OracleUsername = pnc.get_global_setting("OracleUsername")
-        #print("OracleUserName: " + OracleUsername)
         ProjectsFolder = pnc.get_global_setting("ProjectsFolder")
 
         statusdate = QDateTime.currentDateTime()
@@ -355,17 +364,17 @@ if (platform.system() == 'Windows'):
         else:
             QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
             QtWidgets.QApplication.processEvents()
-            return(None)
+            return("")
 
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
         projectfolder = pnc.get_projectfolder(xmlroot)
         pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
 
         if (projectfolder is None or projectfolder ==""):
-            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QtCore.QDir.home().path())
+            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
-                return(None)
+                return("")
         else:
             projectfolder = projectfolder + "\\Status Reports\\"
 
@@ -496,7 +505,7 @@ if (platform.system() == 'Windows'):
         #print("gathering tracker items...")
 
         # show all tracker items
-        trackeritems = pnc.find_node_by2(xmlroot, "table", "name", "item_tracker", "filter_field", "project_id")
+        trackeritems = pnc.find_node_by2(xmlroot, "table", "name", "item_tracker", "filter_field_1", "project_id")
         #print("returned from find by node")
         itemcount = 0
         isinternal = 0
@@ -553,15 +562,14 @@ if (platform.system() == 'Windows'):
         progbar.setLabelText("Pulling IFS project summary...")
         QtWidgets.QApplication.processEvents()   
 
-        docxml = pnc.xml_doc_root()
+        docxml = QDomDocument()
+        docroot = docxml.createElement("projectnotes");
+        docxml.appendChild(docroot);
 
         adodb = pnc.connect()
 
         node = populate_financials(docxml, sheet, adodb, projnum, statusdate.toString("MM/dd/yyyy"))
-
-        #print("Creating root node")
-        root = docxml.elementsByTagName("projectnotes").at(0) # get root node
-        root.appendChild(node)
+        docroot.appendChild(node)
 
         progval = progval + 1
         progbar.setValue(int(min(progval / progtot * 100, 100)))
@@ -579,10 +587,6 @@ if (platform.system() == 'Windows'):
         #print("Calling populate T & E")
         populate_tande(sheet, adodb, projnum)
 
-        if mtotalpoline == 0:
-            pne.replace_cell_tag(sheet, "<PERCENTCONSUMED>", "0")
-        else:
-            pne.replace_cell_tag(sheet, "<PERCENTCONSUMED>", "" + str(  mtotalinvoicable / mtotalpoline ) )
         #pne.replace_cell_tag(sheet, "<STATUSDATE>", executedate.toString("MM/dd/yyyy"))
         pne.replace_cell_tag(sheet, "<ENDINGDATE>", statusdate.toString("MM/dd/yyyy"))
         pne.replace_cell_tag(sheet, "<REPORTINGPERIOD>", period )
@@ -637,7 +641,9 @@ if (platform.system() == 'Windows'):
         pne.replace_cell_tag(sheet, "<RUNDATE>", executedate.toString("MM/dd/yyyy"))
         handle['workbook'].Save()
 
-        QFile.copy(fullreportname, basereportname)
+        if not QFile.copy(fullreportname, basereportname):
+            QMessageBox.critical(None, "Unable to copy template", "Could not copy " + fullreportname + " to " + basereportname, QMessageBox.Cancel)
+            return ""
 
         handle2 = pne.open_excel_document(basereportname)
         sheet2 = handle2['workbook'].Sheets("Status Report")
@@ -700,9 +706,10 @@ if (platform.system() == 'Windows'):
 
         pne.killexcelautomation()
 
-        return("")
-"""
+        return(docxml.toString())
+
 # setup test data
+"""
 import sys
 print("Buld up QDomDocument")
 app = QApplication(sys.argv)
@@ -715,7 +722,8 @@ if f.open(QIODevice.ReadOnly):
 xmldoc.setContent(f)
 f.close()
 
-event_data_rightclick(xmldoc.toString())
+print(event_data_rightclick(xmldoc.toString()))
 """
 
-# TESTED: Phase 1
+
+# TODO: Right click returned XML isn't getting imported

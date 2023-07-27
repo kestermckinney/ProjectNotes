@@ -19,7 +19,7 @@ ProjectDetailsPage::~ProjectDetailsPage()
 
 void ProjectDetailsPage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes Project [%1]").arg(ui->lineEditNumber->text()));
+    topLevelWidget()->setWindowTitle(QString("Project Notes Project [%1 %2]").arg(ui->lineEditNumber->text(), ui->lineEditProjectName->text().left(50)));
     //qDebug() << "Project Details Page Set Title to " << QString("Project Notes Project [%1]").arg(ui->lineEditNumber->text());
 }
 

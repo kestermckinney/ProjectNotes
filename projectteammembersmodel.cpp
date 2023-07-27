@@ -5,7 +5,7 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* t_parent): PNSqlQueryM
 {
     setObjectName("ProjectTeamMembersModel");
 
-    setBaseSql("SELECT teammember_id, project_id, project_people.people_id, name, receive_status_report, project_people.role, email, (select p.project_number from projects p where p.project_id=project_id) project_number, (select p.project_name from projects p where p.project_id=project_id) project_name FROM project_people left join people on people.people_id=project_people.people_id");
+    setBaseSql("SELECT teammember_id, project_id, pp.people_id, name, receive_status_report, pp.role, email, (select pr2.project_number from projects pr2 where pr2.project_id=pp.project_id) project_number, (select pr.project_name from projects pr where pr.project_id=pp.project_id) project_name FROM project_people pp left join people p on p.people_id=pp.people_id");
 
     setTableName("project_people", "Project People");
 

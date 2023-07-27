@@ -1,6 +1,8 @@
 #include "projectnotesdelegate.h"
 #include "pnsqlquerymodel.h"
 #include "pndateeditex.h"
+#include "mainwindow.h"
+#include "pnbasepage.h"
 
 #include <QLineEdit>
 #include <QComboBox>
@@ -23,9 +25,9 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             lineedit->setText(value.toString());
 
-            QWidget* window = static_cast<QWidget*>(t_editor);
-            window->topLevelWidget()->setWindowTitle(QString("Project Notes Meeting [%1]").arg(value.toString()));
-            //qDebug() << "Project Notes Delegate set window title";
+            QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+            if (((MainWindow*) window)->navigateCurrentPage())
+                ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 3:
@@ -38,6 +40,10 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
             {
                 QDateTime date_value = PNSqlQueryModel::parseDateTime(value.toString());
                 dateEdit->setDate(date_value.date());
+
+                QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+                if (((MainWindow*) window)->navigateCurrentPage())
+                    ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
             }
         }
         break;
@@ -73,8 +79,9 @@ void ProjectNotesDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             key_val = lineedit->text();
 
-            QWidget* window = static_cast<QWidget*>(t_editor);
-            window->topLevelWidget()->setWindowTitle(QString("Project Notes Meeting [%1]").arg(key_val.toString()));
+            QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+            if (((MainWindow*) window)->navigateCurrentPage())
+                ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 3: // note date

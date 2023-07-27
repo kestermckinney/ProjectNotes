@@ -3,6 +3,7 @@ import platform
 if (platform.system() == 'Windows'):
     from win32com.client import GetObject
     import win32com
+    import win32api
 
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets
 from PyQt5.QtCore import QDirIterator, QDir, QSettings
@@ -198,12 +199,7 @@ class ProjectNotesCommon:
 
             return(xmldoc)
 
-    def xml_doc_root(self):
-      xmldoc = QDomDocument()
-      root = xmldoc.createElement("projectnotes");
-      xmldoc.appendChild(root);
-
-      return xmldoc
+    #   return xmldoc
 
     def xml_col(self, xmldoc, name, content, lookupvalue):
         colnode = xmldoc.createElement("column")
@@ -319,7 +315,12 @@ class ProjectNotesCommon:
         return(None)
 
     def exec_program(self, fullpath):
-        result = subprocess.Popen( [fullpath] ) #, capture_output=False)
+
+        if (platform.system() == 'Windows'):
+            win32api.WinExec( fullpath )
+        else:
+            #result = subprocess.Popen( [fullpath] ) #, capture_output=False)
+            os.system( fullpath ) # i think this will work on Linux
 
         # print("stdout:", result.stdout)
         # print("stderr:", result.stderr)

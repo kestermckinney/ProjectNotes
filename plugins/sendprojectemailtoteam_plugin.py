@@ -79,7 +79,6 @@ if (platform.system() == 'Windows'):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
             return ""
             
-        print(xmlstr)
         outlook = win32com.client.Dispatch("Outlook.Application")
 
         message = outlook.CreateItem(0)
@@ -140,3 +139,5 @@ if f.open(QIODevice.ReadOnly):
 
 event_data_rightclick(xmldoc.toString())
 """
+
+# TODO: Disabled plugin seems to still run.  I think it is running on startup.

@@ -9,7 +9,7 @@ from includes.common import ProjectNotesCommon
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
 from PyQt5.QtSql import QSqlDatabase
 from PyQt5.QtXml import QDomDocument, QDomNode
-from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
+from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl, QDir, QFileInfo
 from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
 from PyQt5.QtGui import QDesktopServices
 
@@ -95,7 +95,7 @@ if (platform.system() == 'Windows'):
         projnam = pnc.get_column_value(projtab.firstChild(), "project_name")
 
         if (projectfolder is None or projectfolder =="" or not QDir(projectfolder).exists()):
-            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QtCore.QDir.home().path())
+            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
                 return ""
@@ -103,30 +103,28 @@ if (platform.system() == 'Windows'):
             projectfolder = projectfolder + "\\Schedule\\"
 
 
-        templatefile = QFileDialog.getOpenFileName(None, "Select the MS Project Template", QDir.currentPath() + "\\templates\\","Project files (*.mpp)|*.mpp")
+        templatefile = QFileDialog.getOpenFileName(None, "Select the MS Project Template", QDir.currentPath() + "\\plugins\\templates\\","Project files (*.mpp)|*.mpp")
 
         if templatefile is None or templatefile[0] == "":
-            return None
+            return ""
 
         basename = projnam[:30]
         projectfile = projectfolder + basename + ".mpp"
 
-        print(templatefile[0])
         # copy the file
-        if not QDir(projectfile).exists():
-            QFile(templatefile[0]).copy(projectfile)
+        if not QFile(projectfile).exists():
+            if not QFile(templatefile[0]).copy(projectfile):
+                QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile[0] + " to " + projectfile, QMessageBox.Cancel)
+                return ""
 
-        print("Calling Create Object for MSProject\n")
+
         project = win32com.client.Dispatch("MSProject.Application")
         project.Visible = False
 
-        print("Calling File Open\n")
         project.FileOpenOrCreate(projectfile)
 
-        print("Replacing PROJECTNAME\n")
         project.ReplaceEx("Name", "contains", "PROJECTNAME", basename, True, True, False, 188743694, 7, True)
 
-        print("Saving..\n")
         project.FileSave()
 
         project.Quit()
@@ -136,20 +134,22 @@ if (platform.system() == 'Windows'):
         QDesktopServices.openUrl(QUrl("file:///" + projectfile, QUrl.TolerantMode))
 
         # add the location to the project
-        docxml = pnc.xml_doc_root()
+        docxml = QDomDocument()
+        docroot = docxml.createElement("projectnotes");
+        docxml.appendChild(docroot);
 
         table = pnc.xml_table(docxml, "project_locations")
-        docxml.appendChild(table)
+        docroot.appendChild(table)
 
         row = pnc.xml_row(docxml)
         table.appendChild(row)
 
         row.appendChild(pnc.xml_col(docxml, "project_id",None, projnum))
         row.appendChild(pnc.xml_col(docxml, "location_type", "Microsoft Project", None))
-        row.appendChild(pnc.xml_col(docxml, "location_description", "Project Schedule : " + basename, None))
+        row.appendChild(pnc.xml_col(docxml, "location_description", "Project Schedule : " + basename + ".mpp", None))
         row.appendChild(pnc.xml_col(docxml, "full_path", projectfile, None))
 
-        return docxml
+        return docxml.toString()
 
 # setup test data
 """
@@ -170,3 +170,5 @@ print("Run Test")
 print(main_process(xmldoc).toString())
 print("Finished")
 """
+
+# TESTED: Phase 1

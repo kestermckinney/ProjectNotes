@@ -1,6 +1,8 @@
 #include "projectdetailsdelegate.h"
 #include "pnsqlquerymodel.h"
 #include "pndateeditex.h"
+#include "pnbasepage.h"
+#include "mainwindow.h"
 
 #include <QLineEdit>
 #include <QComboBox>
@@ -18,12 +20,14 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
     switch (t_index.column())
     {
     case 1:
+    case 2:
         {
-            QWidget* window = static_cast<QWidget*>(t_editor);
-            window->topLevelWidget()->setWindowTitle(QString("Project Notes Project [%1]").arg(value.toString()));
-
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             lineedit->setText(value.toString());
+
+            QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+            if (((MainWindow*) window)->navigateCurrentPage())
+                ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 3:
@@ -97,8 +101,9 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             key_val = lineedit->text();
 
-            QWidget* window = static_cast<QWidget*>(t_editor);
-            window->topLevelWidget()->setWindowTitle(QString("Project Notes Project [%1]").arg(key_val.toString()));
+            QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+            if (((MainWindow*) window)->navigateCurrentPage())
+                ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 3:

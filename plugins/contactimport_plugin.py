@@ -173,12 +173,12 @@ if (platform.system() == 'Windows'):
         QtWidgets.QApplication.restoreOverrideCursor()
         QtWidgets.QApplication.processEvents()   
 
-        print(xmldoc)
-
         return xmldoc
 
 #print("Run Test")
 # call when testing outside of Project Notes
+#app = QApplication(sys.argv)
 #print(event_menuclick(None))
 
 # TODO: The context menu should be added to the top menu somewhere - maybe the plugins menu under a separator
+# TESTED: Phase 1

@@ -11,7 +11,7 @@ from includes.common import ProjectNotesCommon
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
 from PyQt5.QtSql import QSqlDatabase
 from PyQt5.QtXml import QDomDocument, QDomNode
-from PyQt5.QtCore import QFile, QIODevice, QDate, QUrl
+from PyQt5.QtCore import QFile, QIODevice, QDate, QUrl, QDir
 from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
 from PyQt5.QtGui import QDesktopServices, QTextDocument
 
@@ -147,7 +147,7 @@ if (platform.system() == 'Windows'):
         receivers = ""
 
         if (projectfolder is None or projectfolder ==""):
-            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QtCore.QDir.home().path())
+            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
                 return ""
@@ -187,7 +187,10 @@ if (platform.system() == 'Windows'):
             pdfreportname = projectfolder + projnum + " Meeting Minutes.pdf"
 
 
-        QFile.copy("plugins/templates/Meeting Template.xlsx", excelreportname)
+        templatefile = "plugins/templates/Meeting Template.xlsx"
+        if not QFile.copy(templatefile, excelreportname):
+            QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + projectfile, QMessageBox.Cancel)
+            return ""
 
         handle = pne.open_excel_document(excelreportname)
         sheet = handle['workbook'].Sheets("Meeting Notes")

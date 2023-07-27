@@ -1,5 +1,7 @@
 
 import platform
+import os
+import re
 
 if (platform.system() == 'Windows'):
     from includes.excel_tools import ProjectNotesExcelTools
@@ -9,7 +11,7 @@ from includes.common import ProjectNotesCommon
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
 from PyQt5.QtSql import QSqlDatabase
 from PyQt5.QtXml import QDomDocument, QDomNode
-from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
+from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl, QDir, QFileInfo
 from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
 from PyQt5.QtGui import QDesktopServices
 
@@ -17,8 +19,8 @@ from PyQt5.QtGui import QDesktopServices
 # Project Notes Plugin Parameters
 pluginname = "Archive Project Email"
 plugindescription = "Archive all of the email related to the project into the corresponding project folder."
-plugintable = "" # the table or view that the plugin applies to.  This will enable the right click
-childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
+plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
+childtablesfilter = "projects/project_locations" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
 # events must have a data structure and data view specified
 #
@@ -79,17 +81,24 @@ if (platform.system() == 'Windows'):
 
     def makefilename(datetime, subject):
         id = re.sub(r"[-`!@#$%^&*()+\\|{}/';:<>,.~?\"\]\[ ]", "", datetime)
-        #id = datetime.toString("yyyy") + datetime.toString("MM") + datetime.toString("DD") + datetime.toString("hh") + datetime.toString("mm") + datetime.toString("ss")
         cleanname = id + "-" + pnc.valid_filename(subject)
-        return cleanname[:100]
+        # there is no guarantee this length will work.  It depends on system settigns and the base path length
+        return cleanname[:70]
 
     def event_data_rightclick(xmlstr):
+        QtWidgets.QApplication.restoreOverrideCursor()
+        QtWidgets.QApplication.processEvents()   
+
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            QtWidgets.QApplication.processEvents()
             return ""
 
         if not pnc.verify_global_settings():
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            QtWidgets.QApplication.processEvents()
             return ""
 
         answer = QMessageBox.question(None,
@@ -99,27 +108,41 @@ if (platform.system() == 'Windows'):
             QMessageBox.No)
 
         if (answer != QMessageBox.Yes):
+            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            QtWidgets.QApplication.processEvents()
             return ""
 
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
         projectfolder = pnc.get_projectfolder(xmlroot)
+        print("project folder " + projectfolder)
 
         projtab = pnc.find_node(xmlroot, "table", "name", "projects")
         projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
         projdes = pnc.get_column_value(projtab.firstChild(), "project_name")
 
         if (projectfolder is None or projectfolder ==""):
-            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QtCore.QDir.home().path())
+            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
                 return ""
 
         progbar = QProgressDialog()
-        progbar.setCancelButton(None)
-        progbar.show()
-        progval = 0
         progbar.setValue(0)
         progbar.setLabelText("Archiving project emails...")
+        progbar.setWindowFlags(
+            QtCore.Qt.Window |
+            QtCore.Qt.WindowCloseButtonHint |
+            QtCore.Qt.WindowStaysOnTopHint
+            )
+        progbar.setMinimumWidth(350)
+        progbar.setCancelButton(None)
+        progbar.show()
+
+        progval = 0
+
+        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+        QtWidgets.QApplication.processEvents()
+
 
         sentfolder = projectfolder + "\\Correspondence\\Sent Email\\"
         receivedfolder = projectfolder + "\\Correspondence\\Received Email\\"
@@ -139,35 +162,33 @@ if (platform.system() == 'Windows'):
         progtot = inbox.Items.Count + sent.Items.Count
         for message in inbox.Items:
             progval = progval + 1
-            progbar.setValue(min(progval / progtot * 100, 100))
+            progbar.setValue(int(min(progval / progtot * 100, 100)))
             progbar.setLabelText("Parsing Inbox items...")
+            QtWidgets.QApplication.processEvents()
+            #print("looking in inbox for project " + projnum)
 
             if message.Subject.find(projnum) >= 0:
-                try:
-                    filename = receivedfolder + makefilename(str(message.SentOn), message.Subject) + ".msg"
+                filename = receivedfolder + makefilename(str(message.SentOn), message.Subject) + ".msg"
 
-                    print (filename + "\n")
+                #print (filename + "\n")
 
-                    if not QFile.exists(filename):
-                        message.SaveAs(filename, 3)
-                except:
-                    print("Not an email record")
+                if not QFile.exists(filename):
+                    message.SaveAs(filename, 3)
 
         for message in sent.Items:
             progval = progval + 1
-            progbar.setValue(min(progval / progtot * 100, 100))
+            progbar.setValue(int(min(progval / progtot * 100, 100)))
             progbar.setLabelText("Parsing Sent items...")
+            QtWidgets.QApplication.processEvents()
+            #print("looking in sent mail for project " + projnum)
 
             if message.Subject.find(projnum) >= 0:
-                try:
-                    filename = sentfolder + makefilename(str(message.SentOn), message.Subject) + ".msg"
+                filename = sentfolder + makefilename(str(message.SentOn), message.Subject) + ".msg"
 
-                    print (filename + "\n")
+                #print (filename + "\n")
 
-                    if not QFile.exists(filename):
-                        message.SaveAs(filename, 3)
-                except:
-                    print("Not an email record")
+                if not QFile.exists(filename):
+                    message.SaveAs(filename, 3)
 
 
         mail_enum = None
@@ -187,20 +208,23 @@ if (platform.system() == 'Windows'):
         return ""
 
 """
-# setup test data
+import sys
 print("Buld up QDomDocument")
 app = QApplication(sys.argv)
 
-
 xmldoc = QDomDocument("TestDocument")
-f = QFile("exampleproject.xml")
+f = QFile("C:/Users/pamcki/Desktop/project.xml")
 
 if f.open(QIODevice.ReadOnly):
     print("example project opened")
 xmldoc.setContent(f)
 f.close()
 
-print("Run Test")
-# call when testing outside of Project Notes
-main_process(xmldoc)
+event_data_rightclick(xmldoc.toString())
+
 """
+
+# TESTED: Phase 1
+
+# TODO: when copying a meeting it should use the current date, it doesn't copy all atteneeds and does copy the meeting notes.
+

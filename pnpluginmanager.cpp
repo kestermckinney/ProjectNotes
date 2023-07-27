@@ -204,6 +204,8 @@ PNPluginManager::PNPluginManager(QWidget* t_parent)
         if (module->loadModule(fileit.fileInfo()))
             m_PNPlugins.append(module);
     }
+
+    sortPlugins();
 }
 
 // close PNPlugin engine
@@ -336,3 +338,23 @@ QList<PNPlugin*> PNPluginManager::findDataRightClickEvents(const QString& t_tabl
     return list;
 }
 
+void PNPluginManager::sortPlugins()
+{
+    int n;
+    int i;
+
+    for ( n = 0; n < m_PNPlugins.count(); n++ )
+    {
+        for ( i = n + 1; i < m_PNPlugins.count(); i++ )
+        {
+            QString valorN = m_PNPlugins.at(n)->getPNPluginName();
+            QString valorI = m_PNPlugins.at(i)->getPNPluginName();
+
+            if (valorN.toUpper() > valorI.toUpper())
+            {
+                m_PNPlugins.move(i, n);
+                n=0;
+            }
+        }
+    }
+}

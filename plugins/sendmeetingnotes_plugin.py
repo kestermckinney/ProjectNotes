@@ -95,8 +95,6 @@ if (platform.system() == 'Windows'):
         email = None
         nm = None
 
-        print("send meeting notes called")
-
         while not childnode.isNull():
 
             if childnode.attributes().namedItem("name").nodeValue() == "project_notes":
@@ -165,9 +163,7 @@ if (platform.system() == 'Windows'):
         outlook = None
         message = None
 
-        print(xmldoc)
-
-        return xmldoc
+        return ""
 
 
 def get_html_header(projectnumber, projectname, day, title):
@@ -386,7 +382,7 @@ def get_html_notes(notes):
     background:#D9E1F2;padding:0in 5.4pt 0in 5.4pt;height:17.25pt'>
     <p class=MsoNormal><span style='mso-ascii-font-family:Calibri;mso-fareast-font-family:
     "Times New Roman";mso-hansi-font-family:Calibri;mso-bidi-font-family:Calibri;
-    color:black;mso-color-alt:windowtext'>""" + notes + """</span><span
+    color:black;mso-color-alt:windowtext'>""" + ( notes if "<html>" in notes else pnc.to_html(notes) ) + """</span><span
     style='mso-ascii-font-family:Calibri;mso-fareast-font-family:"Times New Roman";
     mso-hansi-font-family:Calibri;mso-bidi-font-family:Calibri'><o:p></o:p></span></p>
     </td>
@@ -614,3 +610,5 @@ f.close()
 
 event_data_rightclick(xmldoc.toString())
 """
+
+# TESTED: Phase 1

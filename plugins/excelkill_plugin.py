@@ -80,3 +80,5 @@ if (platform.system() == 'Windows'):
 # call when testing outside of Project Notes
 #print("Kill Excel Automations")
 #main_process(None)
+
+# TESTED: Phase 1

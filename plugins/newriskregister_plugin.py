@@ -9,7 +9,7 @@ from includes.common import ProjectNotesCommon
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
 from PyQt5.QtSql import QSqlDatabase
 from PyQt5.QtXml import QDomDocument, QDomNode
-from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
+from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl, QDir, QFileInfo, QDir
 from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
 from PyQt5.QtGui import QDesktopServices
 
@@ -97,14 +97,14 @@ if (platform.system() == 'Windows'):
         projnam = pnc.get_column_value(projtab.firstChild(), "project_name")
 
         if (projectfolder is None or projectfolder =="" or not QDir(projectfolder).exists()):
-            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QtCore.QDir.home().path())
+            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
                 return ""
         else:
             projectfolder = projectfolder + "\\Risk Management\\"
 
-        templatefile = QFileDialog.getOpenFileName(None, "Select the Excel Template", QDir.currentPath() + "\\templates\\","Excel files (*.xls;*.xlsx;*.xlsm)|*Risk*.xls;*Risk*.xlsx;*Risk*.xlstm")
+        templatefile = QFileDialog.getOpenFileName(None, "Select the Excel Template", QDir.currentPath() + "\\plugins\\templates\\","Excel files (*.xls;*.xlsx;*.xlsm)|*Risk*.xls;*Risk*.xlsx;*Risk*.xlstm")
 
         if templatefile is None or templatefile[0] == "":
             return ""
@@ -117,7 +117,10 @@ if (platform.system() == 'Windows'):
 
         # copy the file
         if not QDir(projectfile).exists():
-            QFile(templatefile[0]).copy(projectfile)
+            if not QFile(templatefile[0]).copy(projectfile):
+                QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile[0] + " to " + projectfile, QMessageBox.Cancel)
+                return ""
+
 
         handle = pne.open_excel_document(projectfile)
         sheet = handle['workbook'].Sheets("Risk Register")
@@ -131,10 +134,12 @@ if (platform.system() == 'Windows'):
         QDesktopServices.openUrl(QUrl("file:///" + projectfile, QUrl.TolerantMode))
 
         # add the location to the project
-        docxml = pnc.xml_doc_root()
+        docxml = QDomDocument()
+        docroot = docxml.createElement("projectnotes");
+        docxml.appendChild(docroot);
 
         table = pnc.xml_table(docxml, "project_locations")
-        docxml.appendChild(table)
+        docroot.appendChild(table)
 
         row = pnc.xml_row(docxml)
         table.appendChild(row)
@@ -144,7 +149,7 @@ if (platform.system() == 'Windows'):
         row.appendChild(pnc.xml_col(docxml, "location_description", basename, None))
         row.appendChild(pnc.xml_col(docxml, "full_path", projectfile, None))
 
-        return docxml
+        return docxml.toString()
 
 # setup test data
 """
@@ -165,3 +170,5 @@ print("Run Test")
 print(main_process(xmldoc).toString())
 print("Finished")
 """
+
+# TESTED: Phase 1

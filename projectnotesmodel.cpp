@@ -75,3 +75,29 @@ bool ProjectNotesModel::setData(const QModelIndex &t_index, const QVariant &t_va
 
     return result;
 }
+
+bool ProjectNotesModel::copyRecord(QModelIndex t_index)
+{
+    QSqlRecord qr = emptyrecord();
+
+    QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
+
+    qr.setValue(1, data(index(t_index.row(), 1)));
+    qr.setValue(2, data(index(t_index.row(), 2)));
+    qr.setValue(3, curdate);
+    //qr.setValue(4, QVariant());
+    qr.setValue(5, 0);
+
+    QModelIndex qi = addRecordIndex(qr);
+    setData( index(qi.row(), 4), QVariant(), Qt::EditRole);
+
+    QVariant oldid = data(index(t_index.row(), 0));
+    QVariant newid = data(index(qi.row(), 0));
+
+    QString insert = "insert into meeting_attendees (attendee_id, note_id, person_id) select m.attendee_id || '-cp', '" + newid.toString() + "', m.person_id from meeting_attendees m where m.note_id ='" + oldid.toString() + "'  and m.person_id not in (select e.person_id from meeting_attendees e where e.note_id='" + newid.toString() + "')";
+
+    global_DBObjects.execute(insert);
+    global_DBObjects.meetingattendeesmodel()->setDirty();
+
+    return true;
+}
