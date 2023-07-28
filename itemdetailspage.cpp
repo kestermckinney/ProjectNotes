@@ -5,7 +5,7 @@
 
 ItemDetailsPage::ItemDetailsPage()
 {
-
+    setTableName("item_tracker");
 }
 
 ItemDetailsPage::~ItemDetailsPage()
@@ -103,6 +103,8 @@ void ItemDetailsPage::setupModels( Ui::MainWindow *t_ui )
 
     setCurrentModel(global_DBObjects.trackeritemscommentsmodelproxy());
     setCurrentView( ui->tableViewComments );
+
+    ui->tableViewComments->verticalHeader()->setDefaultSectionSize( 15 * 4 );
 }
 
 void ItemDetailsPage::toFirst(bool t_open)

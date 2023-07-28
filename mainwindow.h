@@ -41,6 +41,7 @@ public:
     void navigateClearHistory() { m_navigation_location = -1; m_navigation_history.clear(); }
     PNBasePage* navigateCurrentPage() { return (m_navigation_location == -1 ? nullptr : m_navigation_history.at(m_navigation_location) ); }
     static PNPluginManager* getPluginManager() { return m_plugin_manager; }
+    void buildPluginMenu();
 
 public slots:
     void on_actionOpen_ProjectDetails_triggered();
@@ -105,6 +106,7 @@ private slots:
     void slotShutdownEvent(PNPlugin* t_plugin);
     void slotTimerEvent(PNPlugin* t_plugin);
     void slotTimerUpdates();
+    void on_actionOpen_Item_triggered();
 
 private:
     Ui::MainWindow *ui;   

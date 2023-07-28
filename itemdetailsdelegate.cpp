@@ -22,6 +22,7 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
     switch (t_index.column())
     {
     case 1:
+    case 3:
         {
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             lineedit->setText(value.toString());
@@ -119,6 +120,7 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
     switch (t_index.column())
     {
     case 1:
+    case 3:
         {
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             key_val = lineedit->text();

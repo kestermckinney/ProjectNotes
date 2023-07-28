@@ -169,7 +169,7 @@ public:
         {
             if (m->isDirty())
             {
-                //qDebug() << "Refreshing Dirty Table: " << m->tablename();
+                qDebug() << "Refreshing Dirty Table: " << m->tablename();
 
                 m->refresh();
                 foundsome = true;

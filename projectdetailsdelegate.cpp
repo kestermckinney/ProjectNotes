@@ -49,7 +49,6 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
             PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
 
-
             //qDebug() << " Primary Contact Mapper Called";
 
             if (model)
@@ -97,6 +96,7 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
     switch (t_index.column())
     {
     case 1:
+    case 2:
         {
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             key_val = lineedit->text();

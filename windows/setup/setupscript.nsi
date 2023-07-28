@@ -140,6 +140,7 @@ Section "MainSection" SEC01
   File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Status Report Template.xlsx"
   File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Tracker Items Template.xlsx"
   File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Risk Register Template.xlsx"
+  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\PCR Template.xlsx"
   
   SetOutPath "$INSTDIR\dictionary"
   File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\index.ini"
@@ -268,6 +269,7 @@ Section Uninstall
   Delete "$INSTDIR\plugins\templates\Status Report Template.xlsx"
   Delete "$INSTDIR\plugins\templates\Tracker Items Template.xlsx"
   Delete "$INSTDIR\plugins\templates\Risk Register Template.xlsx"
+  Delete "$INSTDIR\plugins\templates\PCR Template.xlsx"
 
   RMDir "$INSTDIR\plugins\templates"
 

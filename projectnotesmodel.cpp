@@ -29,7 +29,7 @@ bool ProjectNotesModel::newRecord(const QVariant* t_fk_value1, const QVariant* t
 {
     Q_UNUSED(t_fk_value2);
 
-    qDebug() << "Adding a new note with fk1: " << *t_fk_value1;
+    //qDebug() << "Adding a new note with fk1: " << *t_fk_value1;
 
     QSqlRecord qr = emptyrecord();
 

@@ -44,11 +44,6 @@ MainWindow::MainWindow(QWidget *t_parent)
     // view state
     m_page_history.clear();
 
-    if (!global_Settings.getLastDatabase().toString().isEmpty())
-        openDatabase(global_Settings.getLastDatabase().toString());
-
-    setButtonAndMenuStates();
-
     global_Settings.getWindowState("MainWindow", *this);
 
     connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
@@ -79,13 +74,12 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     m_plugin_settings_dialog = new PluginSettingsDialog(this);
 
-    for ( PNPlugin* p : m_plugin_manager->getPlugins())
-    {
-        if (p->hasPNPluginMenuEvent() && p->isEnabled())
-        {
-            ui->menuPlugins->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
-        }
-    }   
+    if (!global_Settings.getLastDatabase().toString().isEmpty())
+        openDatabase(global_Settings.getLastDatabase().toString());
+
+    setButtonAndMenuStates();
+
+    buildPluginMenu();
 
     // call all of the startup events
     for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
@@ -99,7 +93,31 @@ MainWindow::MainWindow(QWidget *t_parent)
     m_timer = new QTimer(this);
     connect(m_timer, SIGNAL(timeout()), this, SLOT(slotTimerUpdates()));
     m_timer->start(1000*60); // one minute timer event
+}
 
+
+void MainWindow::buildPluginMenu()
+{
+    // clear any other plugin items
+    QAction* mi = ui->menuPlugins->actions().last();
+
+    while ( mi->text().compare("View Console") != 0 ) // see form definition
+    {
+        ui->menuPlugins->removeAction(mi);
+        mi = ui->menuPlugins->actions().last();
+    }
+
+    ui->menuPlugins->addSeparator();
+
+    // add globally available plugins
+    for ( PNPlugin* p : m_plugin_manager->getPlugins())
+    {
+        if (p->hasPNPluginMenuEvent() && p->isEnabled())
+        {
+            QAction* act = ui->menuPlugins->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+            act->setIcon(QIcon(":/icons/add-on.png"));
+        }
+    }
 }
 
 void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
@@ -517,6 +535,7 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionProjects->setEnabled(dbopen);
     ui->actionClosed_Projects->setEnabled(dbopen);
 
+    ui->actionOpen_Item->setEnabled(hascurview);
     ui->actionNew_Item->setEnabled(hascurview);
     ui->actionCopy_Item->setEnabled(hascurview);
     ui->actionDelete_Item->setEnabled(hascurview);
@@ -612,6 +631,7 @@ void MainWindow::setButtonAndMenuStates()
          if ( ui->tabWidgetNotes->currentIndex() == 0 && ui->stackedWidget->currentIndex() == 1 )
         { 
             ui->actionDelete_Item->setEnabled(false);
+            ui->actionOpen_Item->setEnabled(false);
             ui->actionCopy_Item->setEnabled(false);
             ui->actionNew_Item->setEnabled(false);
 
@@ -626,11 +646,13 @@ void MainWindow::setButtonAndMenuStates()
             if (curview && curview->selectionModel()->hasSelection())
             {
                 ui->actionDelete_Item->setEnabled(hascurview);
+                ui->actionOpen_Item->setEnabled(hascurview);
                 ui->actionCopy_Item->setEnabled(hascurview);
             }
             else
             {
                 ui->actionDelete_Item->setEnabled(false);
+                ui->actionOpen_Item->setEnabled(false);
                 ui->actionCopy_Item->setEnabled(false);
             }
 
@@ -673,6 +695,7 @@ void MainWindow::setButtonAndMenuStates()
         ui->actionSelect_All->setEnabled(false);
 
         ui->actionDelete_Item->setEnabled(false);
+        ui->actionOpen_Item->setEnabled(false);
         ui->actionCopy_Item->setEnabled(false);
         ui->actionNew_Item->setEnabled(false);
 
@@ -776,6 +799,7 @@ void MainWindow::navigateToPage(PNBasePage* t_widget)
 
     ui->stackedWidget->setCurrentWidget(t_widget);
     t_widget->setPageTitle();
+    t_widget->buildPluginMenu(m_plugin_manager, ui);
 
     setButtonAndMenuStates();
 }
@@ -793,6 +817,7 @@ void MainWindow::navigateBackward()
 
         ui->stackedWidget->setCurrentWidget(current);
         ((PNBasePage*)current)->setPageTitle();
+        ((PNBasePage*)current)->buildPluginMenu(m_plugin_manager, ui);
     }
 
     setButtonAndMenuStates();
@@ -811,6 +836,7 @@ void MainWindow::navigateForward()
 
         ui->stackedWidget->setCurrentWidget(current);
         ((PNBasePage*)current)->setPageTitle();
+        ((PNBasePage*)current)->buildPluginMenu(m_plugin_manager, ui);
     }
 
     setButtonAndMenuStates();
@@ -874,6 +900,15 @@ void MainWindow::on_actionNew_Item_triggered()
 {
     if ( navigateCurrentPage() )
         navigateCurrentPage()->newRecord();
+}
+
+
+void MainWindow::on_actionOpen_Item_triggered()
+{
+    if ( navigateCurrentPage() )
+    {
+        navigateCurrentPage()->getCurrentView()->slotOpenRecord();
+    }
 }
 
 void MainWindow::on_actionCopy_Item_triggered()

@@ -835,7 +835,7 @@ bool PNSqlQueryModel::columnChangeCheck(const QModelIndex &t_index)
             select.prepare("select count(*) from " + m_related_table.at(i) + " where " + where_clause);
             select.exec();
 
-            qDebug() << "SET VALUE CHECK: " << "select count(*) from " + m_related_table.at(i) + " where " + where_clause;
+            //qDebug() << "SET VALUE CHECK: " << "select count(*) from " + m_related_table.at(i) + " where " + where_clause;
 
             if (select.next())
                 relatedcount = select.value(0).toInt();
@@ -1683,7 +1683,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
 {
     if (t_xml_row->tagName() != "row")
     {
-        qDebug() << "tag name: " << t_xml_row->tagName() << " is not a 'row'";
+        //qDebug() << "tag name: " << t_xml_row->tagName() << " is not a 'row'";
         return false;
     }
 
@@ -1732,7 +1732,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                         if (!lookup_value.isNull() && !m_lookup_table[colnum].isEmpty())
                         {
                             QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookup_fk_column_name[colnum], m_lookup_table[colnum], m_lookup_value_column_name[colnum], lookup_value);
-                            qDebug() << "EXEC LOOKUP EXISTING: " << sql;
+                            //qDebug() << "EXEC LOOKUP EXISTING: " << sql;
 
                             field_value = global_DBObjects.execute(sql);
                         }
@@ -1789,7 +1789,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                 if (!lookup_value.isNull() && !m_lookup_table[colnum].isEmpty())
                 {
                     QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookup_fk_column_name[colnum], m_lookup_table[colnum], m_lookup_value_column_name[colnum], lookup_value);
-                    qDebug() << "EXEC LOOKUP FOR FIELD VALUE: " << sql;
+                    //qDebug() << "EXEC LOOKUP FOR FIELD VALUE: " << sql;
 
                     field_value = global_DBObjects.execute(sql);
                 }
@@ -1831,7 +1831,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
     QString exists_count = global_DBObjects.execute(exists_sql);
     QString sql;
 
-    qDebug() << "CHECK EXISTS: " << exists_sql;
+    //qDebug() << "CHECK EXISTS: " << exists_sql;
 
     if (exists_count.toInt() > 0)
     {
@@ -1856,7 +1856,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
         sql = QString("insert into %1 (%2) values (%3)").arg(m_tablename, fields, insertvalues);
     }
 
-    qDebug() << "XML Generated SQL: " << sql;
+    //qDebug() << "XML Generated SQL: " << sql;
 
     global_DBObjects.execute(sql);
 
@@ -1908,7 +1908,7 @@ bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant
         {
             where = QString("select count(*) from %1 where ").arg(tablename()) + where;
 
-            qDebug() << "Verifying Unique:  " << where;
+            //qDebug() << "Verifying Unique:  " << where;
 
             QSqlQuery qry;
             qry.prepare(where);
@@ -1917,12 +1917,12 @@ bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant
             {
                 if ( f.compare(checkfield) == 0 )
                 {
-                    qDebug() << "binding...  " << t_value;
+                    //qDebug() << "binding...  " << t_value;
                     qry.addBindValue(t_value); // check the value we want to update with
                 }
                 else
                 {
-                    qDebug() << "binding... " << m_cache[t_index.row()].field(f).value();
+                    //qDebug() << "binding... " << m_cache[t_index.row()].field(f).value();
                     qry.addBindValue(m_cache[t_index.row()].field(f).value());
                 }
             }

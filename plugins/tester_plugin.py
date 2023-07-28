@@ -22,7 +22,7 @@ from PyQt5.QtGui import QDesktopServices
 # Project Notes Plugin Parameters
 pluginname = "Testing Plugin" # name used in the menu
 plugindescription = "This is test plugin. Supported platforms: Windows, Linux, MacOS"
-plugintable = "clients" # the table or view that the plugin applies to.  This will enable the right click
+plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
 # events must have a data structure and data view specified
@@ -74,12 +74,13 @@ parameters = [
     "TestParameter1",
     "TestParameter2"
 ]
+app = QApplication(sys.argv)
 
 pnc = ProjectNotesCommon()
 
 # Project Notes Plugin Events
 
-def event_startup(xmlstr):
+def disabled_event_startup(xmlstr):
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
         QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -90,7 +91,7 @@ def event_startup(xmlstr):
 
     return ""
 
-def event_shutdown(xmlstr):
+def disabled_event_shutdown(xmlstr):
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
         QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -101,7 +102,7 @@ def event_shutdown(xmlstr):
 
     return ""
 
-def event_everyminute(xmlstr):
+def disabled_event_everyminute(xmlstr):
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
         QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -112,7 +113,7 @@ def event_everyminute(xmlstr):
 
     return ""
 
-def event_every5minutes(xmlstr):
+def disabled_event_every5minutes(xmlstr):
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
         QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -123,7 +124,7 @@ def event_every5minutes(xmlstr):
 
     return ""
 
-def event_every10minutes(xmlstr):
+def disabled_event_every10minutes(xmlstr):
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
         QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -134,7 +135,7 @@ def event_every10minutes(xmlstr):
 
     return ""
 
-def event_every30minutes(xmlstr):
+def disabled_event_every30minutes(xmlstr):
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
         QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -145,7 +146,7 @@ def event_every30minutes(xmlstr):
 
     return ""
 
-def event_menuclick(xmlstr):
+def disabled_event_menuclick(xmlstr):
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
         QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -166,6 +167,7 @@ def event_data_rightclick(xmlstr):
     print("Tester: Right Click Data Event called...")
     print(xmlstr)
 
+    QMessageBox.critical(None, "how", "Will this work", QMessageBox.Cancel)
 
     # simple test will always change the name back
     retval = """<projectnotes>
@@ -180,6 +182,7 @@ def event_data_rightclick(xmlstr):
           </row>
          </table>
         </projectnotes>"""
+
 
     return retval
 

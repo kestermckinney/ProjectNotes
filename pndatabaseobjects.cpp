@@ -650,7 +650,7 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     QDomElement root = t_xmldoc.documentElement();
     QList<QDomNode> domlist;
 
-    qDebug() << "Root: "  << root.tagName();
+    //qDebug() << "Root: "  << root.tagName();
 
     domlist = findTableNodes(root, "clients");
     if (!domlist.empty())
@@ -792,6 +792,8 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
         item_tracker_updates_model.refreshByTableName();
     }
 
+    PNSqlQueryModel::refreshDirty();
+
     return true;
 }
 
@@ -801,7 +803,7 @@ void PNDatabaseObjects::addDefaultPMToProject(const QString& t_project_id)
     QString guid = QUuid::createUuid().toString();
 
     QString insert = QString("insert into project_people (teammember_id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' )").arg(t_project_id).arg(pm).arg(guid);
-    qDebug() << "Adding default pm to project: " << insert;
+    //qDebug() << "Adding default pm to project: " << insert;
 
     execute(insert);
 }
@@ -814,12 +816,12 @@ void PNDatabaseObjects::addDefaultPMToMeeting(const QString& t_note_id)
 
     QString project_id = execute(QString("select project_id from project_notes where note_id='%1'").arg(t_note_id));
     QString insertpm = QString("insert into project_people (teammember_id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' )").arg(project_id).arg(pm).arg(guid2);
-    qDebug() << "Adding default pm to project: " << insertpm;
+    //qDebug() << "Adding default pm to project: " << insertpm;
 
     execute(insertpm);
 
     QString insert = QString("insert into meeting_attendees (attendee_id, person_id, note_id) select '%3', '%2', '%1' where not exists (select 1 from meeting_attendees where note_id = '%1' and person_id = '%2' )").arg(t_note_id).arg(pm).arg(guid);
-    qDebug() << "Adding default pm to meeting: " << insert;
+    //qDebug() << "Adding default pm to meeting: " << insert;
 
     meetingattendeesmodel()->setDirty();
     teamsmodel()->setDirty();

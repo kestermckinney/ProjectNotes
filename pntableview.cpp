@@ -34,13 +34,13 @@ PNTableView::PNTableView(QWidget *t_parent) : QTableView(t_parent)
     connect(this, &QTableView::activated, this, &PNTableView::dataRowActivated);
     connect(this, &QTableView::clicked, this, &PNTableView::dataRowSelected);
 
-    newRecord = new QAction(tr("New"), this);
-    deleteRecord = new QAction(tr("Delete"), this);
-    openRecord = new QAction(tr("Open"), this);
+    newRecord = new QAction(QIcon(":/icons/new-record.png"), tr("New"), this);
+    deleteRecord = new QAction(QIcon(":/icons/delete.png"), tr("Delete"), this);
+    openRecord = new QAction(QIcon(":/icons/folder.png"),tr("Open"), this);
     exportRecord = new QAction(tr("XML Export..."), this);
-    filterRecords = new QAction(tr("Filter Settings..."), this);
+    filterRecords = new QAction(QIcon(":/icons/filter.png"), tr("Filter Settings..."), this);
     resetColumns = new QAction(tr("Reset Columns"), this);
-    copyRecord = new QAction(tr("Copy"), this);
+    copyRecord = new QAction(QIcon(":/icons/copy.png"), tr("Copy"), this);
 
 
     connect(newRecord, &QAction::triggered, this, &PNTableView::slotNewRecord);
@@ -88,7 +88,7 @@ void PNTableView::slotPluginMenu(PNPlugin* t_plugin)
 
     if (!table && !t_plugin->getTableName().isEmpty())
     {
-        QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1)specified by the plugin does not exist.").arg(t_plugin->getTableName()));
+        QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1) specified by the plugin does not exist.").arg(t_plugin->getTableName()));
         return;
     }
 
@@ -329,7 +329,8 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
     {
         if (p->hasDataRightClickEvent(table) && p->isEnabled())
         {
-            menu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+            QAction* act = menu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+            act->setIcon(QIcon(":/icons/add-on.png"));
         }
     }
 
@@ -352,8 +353,9 @@ void PNTableView::slotDeleteRecord()
 
     QModelIndexList qil = this->selectionModel()->selectedRows();
 
-    for (auto qi = qil.begin(); qi != qil.end(); qi++)
-        currentmodel->deleteRecord(*qi);
+    auto qi = qil.begin();
+    QModelIndex qq = sortmodel->mapToSource(*qi);
+    currentmodel->deleteRecord(qq);
 }
 
 void PNTableView::slotCopyRecord()
@@ -363,8 +365,9 @@ void PNTableView::slotCopyRecord()
 
     QModelIndexList qil = this->selectionModel()->selectedRows();
 
-    for (auto qi = qil.begin(); qi != qil.end(); qi++)
-        currentmodel->copyRecord(*qi);
+    auto qi = qil.begin();
+    QModelIndex qq = sortmodel->mapToSource(*qi);
+    currentmodel->copyRecord(qq);
 }
 
 void PNTableView::slotOpenRecord()

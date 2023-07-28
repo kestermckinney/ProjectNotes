@@ -29,5 +29,6 @@
         <file>icons/textunder.png</file>
         <file>icons/deletetext.png</file>
         <file>icons/selectall.png</file>
+        <file>icons/folder.png</file>
     </qresource>
 </RCC>

@@ -31,3 +31,5 @@ void ClientsPage::setPageTitle()
 {
     topLevelWidget()->setWindowTitle(QString("Project Notes Clients"));
 }
+
+

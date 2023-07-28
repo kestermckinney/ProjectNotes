@@ -6,7 +6,7 @@
 
 ProjectNotesPage::ProjectNotesPage()
 {
-
+    setTableName("project_notes");
 }
 
 ProjectNotesPage::~ProjectNotesPage()
@@ -74,6 +74,8 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
 
     setCurrentModel(nullptr);
     setCurrentView(nullptr);
+
+    ui->textEditNotes->setFont(QFont("Segoe UI", 10));
 }
 
 void ProjectNotesPage::toFirst(bool t_open)

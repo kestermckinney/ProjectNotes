@@ -4,7 +4,7 @@
 
 PeoplePage::PeoplePage()
 {
-
+    setTableName("people");
 }
 
 void PeoplePage::setupModels( Ui::MainWindow *t_ui )
