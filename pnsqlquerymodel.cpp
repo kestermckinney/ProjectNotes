@@ -277,8 +277,8 @@ void PNSqlQueryModel::refresh()
 
     m_sql_query = QSqlQuery( fullsql );
 
-//    qDebug() << "Refreshing: ";
-//    qDebug() << fullsql;
+    //qDebug() << "Refreshing: ";
+    //qDebug() << fullsql;
 
     // add a blank row for drop downs
     if (m_show_blank)
@@ -1126,13 +1126,26 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                     if (!valuelist.isEmpty())
                         valuelist += tr(" AND ");
 
+
                     if (  m_column_type[colnum] == DBString ||  m_column_type[colnum] == DBHtml )
                     {
-                        valuelist += QString(" %1 LIKE '%%2%' ").arg(m_sql_query.record().fieldName(colnum), column_value.toString());
+                        if ( !m_lookup_table[colnum].isEmpty() )
+                        {
+                            QString fk_key_val =  m_user_search_string[colnum].toString();
+                            valuelist +=  QString(" %5 in (select %1 from %2 where %3 LIKE '%%4%')").arg(m_lookup_fk_column_name[colnum], m_lookup_table[colnum], m_lookup_value_column_name[colnum], fk_key_val, m_sql_query.record().fieldName(colnum));
+                        }
+                        else
+                            valuelist += QString(" %1 LIKE '%%2%' ").arg(m_sql_query.record().fieldName(colnum), column_value.toString());
                     }
                     else
                     {
-                        valuelist += QString(" %1 = %2 ").arg(m_sql_query.record().fieldName(colnum), column_value.toString());
+                        if ( !m_lookup_table[colnum].isEmpty() )
+                        {
+                            QString fk_key_val =  m_user_search_string[colnum].toString();
+                            valuelist +=  QString(" %5 in (select %1 from %2 where %3 = '%%4%')").arg(m_lookup_fk_column_name[colnum], m_lookup_table[colnum], m_lookup_value_column_name[colnum], fk_key_val, m_sql_query.record().fieldName(colnum));
+                        }
+                        else
+                            valuelist += QString(" %1 = %2 ").arg(m_sql_query.record().fieldName(colnum), column_value.toString());
                     }
                 }
 
@@ -1189,41 +1202,82 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                     sqlEscape(RangeStart, m_column_type[colnum]);
                     sqlEscape(RangeEnd, m_column_type[colnum]);
 
-
                     // if the range is searching accross a foreign key value then
                     // search and return a list of foreign key ids that apply
                     // search foreign key value if exists otherwise search for the value in the field
 
-                    // if the column doesn't have a lookup value in a foreign key
-                    // you can do the range search on the value
-                    if (!RangeStart.isNull() && RangeStart != tr("''"))
+                    if ( !m_lookup_table[colnum].isEmpty() )
                     {
+                        QString valuerange;
+
+                        // if the column doesn't have a lookup value in a foreign key
+                        // you can do the range search on the value
+                        if (!RangeStart.isNull() && RangeStart != tr("''"))
+                        {
+                            if ( m_column_type[colnum] != DBString && m_column_type[colnum] != DBHtml)
+                            {
+                                valuerange += QString("%1 >= %2").arg(m_lookup_value_column_name[colnum], RangeStart.toString());
+                            }
+                            else
+                            {
+                                valuerange += QString("%1 >= '%2'").arg(m_lookup_value_column_name[colnum], RangeStart.toString());
+                            }
+                        }
+
+                        if (!RangeEnd.isNull() && RangeEnd != tr("''"))
+                        {
+                            if (!valuerange.isEmpty())
+                                valuerange += tr(" AND ");
+
+                            if ( m_column_type[colnum] != DBString && m_column_type[colnum] != DBHtml)
+                            {
+                                valuerange += QString("%1 <= %2").arg(m_lookup_value_column_name[colnum], RangeEnd.toString());
+                            }
+                            else
+                            {
+                                valuerange += QString("%1 <= '%2'").arg(m_lookup_value_column_name[colnum], RangeEnd.toString());
+                            }
+                        }
+
                         if (!valuelist.isEmpty())
                             valuelist += tr(" AND ");
 
-                        if ( m_column_type[colnum] != DBString && m_column_type[colnum] != DBHtml)
-                        {
-                            valuelist += QString("%1 >= %2").arg(m_sql_query.record().fieldName(colnum), RangeStart.toString());
-                        }
-                        else
-                        {
-                            valuelist += QString("%1 >= '%2'").arg(m_sql_query.record().fieldName(colnum), RangeStart.toString());
-                        }
+                        QString fk_key_val =  m_user_search_string[colnum].toString();
+                        valuelist +=  QString(" %4 in (select %1 from %2 where %3)").arg(m_lookup_fk_column_name[colnum], m_lookup_table[colnum], valuerange, m_sql_query.record().fieldName(colnum));
                     }
-
-                    if (!RangeEnd.isNull() && RangeEnd != tr("''"))
+                    else
                     {
-                        if (!valuelist.isEmpty())
-                            valuelist += tr(" AND ");
-
-
-                        if ( m_column_type[colnum] != DBString && m_column_type[colnum] != DBHtml)
+                        // if the column doesn't have a lookup value in a foreign key
+                        // you can do the range search on the value
+                        if (!RangeStart.isNull() && RangeStart != tr("''"))
                         {
-                            valuelist += QString("%1 <= %2").arg(m_sql_query.record().fieldName(colnum), RangeEnd.toString());
+                            if (!valuelist.isEmpty())
+                                valuelist += tr(" AND ");
+
+                            if ( m_column_type[colnum] != DBString && m_column_type[colnum] != DBHtml)
+                            {
+                                valuelist += QString("%1 >= %2").arg(m_sql_query.record().fieldName(colnum), RangeStart.toString());
+                            }
+                            else
+                            {
+                                valuelist += QString("%1 >= '%2'").arg(m_sql_query.record().fieldName(colnum), RangeStart.toString());
+                            }
                         }
-                        else
+
+                        if (!RangeEnd.isNull() && RangeEnd != tr("''"))
                         {
-                            valuelist += QString("%1 <= '%2'").arg(m_sql_query.record().fieldName(colnum), RangeEnd.toString());
+                            if (!valuelist.isEmpty())
+                                valuelist += tr(" AND ");
+
+
+                            if ( m_column_type[colnum] != DBString && m_column_type[colnum] != DBHtml)
+                            {
+                                valuelist += QString("%1 <= %2").arg(m_sql_query.record().fieldName(colnum), RangeEnd.toString());
+                            }
+                            else
+                            {
+                                valuelist += QString("%1 <= '%2'").arg(m_sql_query.record().fieldName(colnum), RangeEnd.toString());
+                            }
                         }
                     }
                 }
@@ -1877,7 +1931,7 @@ void PNSqlQueryModel::refreshByTableName()
         // don't check against yourself, especially when importing you are just using a empty recordset
         if ( recordset != this && this->tablename() == recordset->tablename())
         {
-            recordset->refresh();
+            recordset->setDirty();
         }
     }
 }

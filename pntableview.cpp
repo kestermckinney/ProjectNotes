@@ -303,10 +303,10 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
     menu->addAction(resetColumns);
     menu->addSeparator();
 
+    if (currentmodel && m_has_open && !is_new_record) menu->addAction(openRecord);
+
     if (currentmodel && !currentmodel->isReadOnly())
     {
-        if (m_has_open && !is_new_record) menu->addAction(openRecord);
-
         if (!is_new_record)
         {
             menu->addAction(newRecord);

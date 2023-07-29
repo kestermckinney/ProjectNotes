@@ -172,6 +172,9 @@ void PNBasePage::setButtonAndMenuStates()
 
          QApplication::restoreOverrideCursor();
          QApplication::processEvents();
+
+         // make sure page is updated if there was a response
+         toFirst(false);
      }
  }
 

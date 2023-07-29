@@ -57,6 +57,7 @@ SOURCES += \
     pnsqlquerymodel.cpp \
     pntableview.cpp \
     preferencesdialog.cpp \
+    runguard.cpp \
     searchpage.cpp \
     searchresultsview.cpp \
     spellcheckdialog.cpp \
@@ -129,6 +130,7 @@ HEADERS += \
     pnsqlquerymodel.h \
     pntableview.h \
     preferencesdialog.h \
+    runguard.h \
     searchpage.h \
     searchresultsview.h \
     spellcheckdialog.h \

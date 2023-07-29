@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "runguard.h"
 
 #include <QApplication>
 #include <QStyleFactory>
@@ -8,11 +9,11 @@ int main(int argc, char *argv[])
 {
     QCoreApplication::addLibraryPath("./site-packages/PyQt5/Qt5/plugins");
 
-    QSharedMemory shared("62d60669-bb94-4a94-88bb-b964890a71f4");
-    if( !shared.create( 512, QSharedMemory::ReadWrite) )
+    RunGuard guard( "62d60669-bb94-4a94-88bb-b964890a71f4" );
+    if ( !guard.tryToRun() )
     {
         QMessageBox::critical(nullptr, "Only One Instance", QString("Only one instance of Project Notes can be running at a time."));
-        exit(0);
+        return 0;
     }
 
     QApplication a(argc, argv);

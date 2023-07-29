@@ -122,6 +122,13 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
 
             int i = comboBox->currentIndex();
             key_val = comboBox->model()->data(comboBox->model()->index(i, 3));
+
+            //  if the value was typed in use the typed in value
+            if (i == 0 && !comboBox->lineEdit()->text().isEmpty())
+            {
+                i = comboBox->findText(comboBox->lineEdit()->text(), Qt::MatchFixedString);
+                key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
+            }
         }
         break;
     case 11:
@@ -138,6 +145,13 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
 
             int i = comboBox->currentIndex();
             key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
+
+            //  if the value was typed in use the typed in value
+            if (i == 0 && !comboBox->lineEdit()->text().isEmpty())
+            {
+                i = comboBox->findText(comboBox->lineEdit()->text(), Qt::MatchFixedString);
+                key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
+            }
         }
         break;
     default:

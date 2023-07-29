@@ -24,6 +24,8 @@ SearchResultsModel::SearchResultsModel(QObject* t_parent): PNSqlQueryModel(t_par
     addColumn(12, tr("Title"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(13, tr("Foreign Key"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(14, tr("Data Key"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+
+    setReadOnly();
 }
 
 bool SearchResultsModel::openRecord(QModelIndex t_index)

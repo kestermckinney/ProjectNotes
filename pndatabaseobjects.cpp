@@ -650,8 +650,6 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     QDomElement root = t_xmldoc.documentElement();
     QList<QDomNode> domlist;
 
-    //qDebug() << "Root: "  << root.tagName();
-
     domlist = findTableNodes(root, "clients");
     if (!domlist.empty())
     {
