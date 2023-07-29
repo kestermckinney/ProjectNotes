@@ -5,8 +5,7 @@
 
 ItemDetailsPage::ItemDetailsPage()
 {
-    QString page_title = "Item Details";
-    setPageTitle(page_title);
+    setTableName("item_tracker");
 }
 
 ItemDetailsPage::~ItemDetailsPage()
@@ -16,6 +15,12 @@ ItemDetailsPage::~ItemDetailsPage()
 
     if (m_item_details_delegate)
         delete m_item_details_delegate;
+}
+
+void ItemDetailsPage::setPageTitle()
+{
+    topLevelWidget()->setWindowTitle(QString("Project Notes Item [%1 %2]").arg(ui->lineEditItemNumber->text(), ui->lineEditName->text().left(50)));
+    //qDebug() << "Item Details Page Set Title";
 }
 
 void ItemDetailsPage::newRecord()
@@ -34,16 +39,6 @@ void ItemDetailsPage::newRecord()
 void ItemDetailsPage::setupModels( Ui::MainWindow *t_ui )
 {
     ui = t_ui;
-
-    if (t_ui)
-    {
-        connect(global_DBObjects.actionitemsdetailsmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
-    }
-    else
-    {
-        disconnect(global_DBObjects.actionitemsdetailsmodel(), SIGNAL(dataChanged(QModelIndex,QModelIndex,QVector<int>)), this, SLOT(toFirst()));
-        return;  // closing application
-    }
 
     ui->dateEditDueDate->setNullable(true);
     ui->dateEditDateResolved->setNullable(true);
@@ -102,17 +97,25 @@ void ItemDetailsPage::setupModels( Ui::MainWindow *t_ui )
     ui->comboBoxIdentifiedBy->setEditable(true);
 
 
-    ui->tableViewComments->setModel(global_DBObjects.trackeritemscommentsmodel());
+    ui->tableViewComments->setModel(global_DBObjects.trackeritemscommentsmodelproxy());
     ui->tableViewComments->setWordWrap(true);
     ui->tableViewComments->resizeRowsToContents();
 
     setCurrentModel(global_DBObjects.trackeritemscommentsmodelproxy());
     setCurrentView( ui->tableViewComments );
+
+    ui->tableViewComments->verticalHeader()->setDefaultSectionSize( 15 * 4 );
 }
 
-void ItemDetailsPage::toFirst()
+void ItemDetailsPage::toFirst(bool t_open)
 {
+    Q_UNUSED(t_open)
+
     if (m_mapperItemDetails != nullptr)
         m_mapperItemDetails->toFirst();
 }
 
+void ItemDetailsPage::setButtonAndMenuStates()
+{
+
+}

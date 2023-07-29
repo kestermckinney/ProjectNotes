@@ -1,10 +1,13 @@
 #include "projectnotesdelegate.h"
 #include "pnsqlquerymodel.h"
 #include "pndateeditex.h"
+#include "mainwindow.h"
+#include "pnbasepage.h"
 
 #include <QLineEdit>
 #include <QComboBox>
 #include <QTextEdit>
+#include <QCheckBox>
 
 ProjectNotesDelegate::ProjectNotesDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
@@ -21,6 +24,10 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
         {
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             lineedit->setText(value.toString());
+
+            QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+            if (((MainWindow*) window)->navigateCurrentPage())
+                ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 3:
@@ -33,6 +40,10 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
             {
                 QDateTime date_value = PNSqlQueryModel::parseDateTime(value.toString());
                 dateEdit->setDate(date_value.date());
+
+                QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+                if (((MainWindow*) window)->navigateCurrentPage())
+                    ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
             }
         }
         break;
@@ -43,6 +54,15 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
                 textedit->setHtml(value.toString());
             else
                 textedit->setPlainText(value.toString());
+        }
+        break;
+    case 5: // note internal
+        {
+            QCheckBox* chkbox = static_cast<QCheckBox*>(t_editor);
+            if (value.toString() == "0")
+                chkbox->setChecked(false);
+            else
+                chkbox->setChecked(true);
         }
         break;
     }
@@ -58,6 +78,10 @@ void ProjectNotesDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t
         {
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             key_val = lineedit->text();
+
+            QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+            if (((MainWindow*) window)->navigateCurrentPage())
+                ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 3: // note date
@@ -73,6 +97,15 @@ void ProjectNotesDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t
         {
             QTextEdit* textedit = static_cast<QTextEdit*>(t_editor);
             key_val = textedit->toHtml();
+        }
+        break;
+    case 5: // note internal
+        {
+            QCheckBox* chkbox = static_cast<QCheckBox*>(t_editor);
+            if (chkbox->isChecked())
+                key_val = QString("1");
+            else
+                key_val = QString("0");
         }
         break;
     }

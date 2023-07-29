@@ -1,6 +1,8 @@
 #include "trackeritemsmodel.h"
 #include "pndatabaseobjects.h"
 
+#include <QDebug>
+
 TrackerItemsModel::TrackerItemsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("TrackerItemsModel");
@@ -35,8 +37,13 @@ TrackerItemsModel::TrackerItemsModel(QObject* t_parent): PNSqlQueryModel(t_paren
     addColumn(16, tr("Comments"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(17, tr("Project Status"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(18, tr("Client"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn(19, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
-    addRelatedTable("item_tracker_updates", "item_id", "Tracker Updates", DBExportable);
+    QStringList key1 = {"project_id", "item_number"};
+
+    addUniqueKeys(key1, "Item");
+
+    addRelatedTable("item_tracker_updates", "item_id", "item_id", "Tracker Updates", DBExportable);
 
     setOrderBy("item_number");
 }
@@ -45,6 +52,8 @@ TrackerItemsModel::TrackerItemsModel(QObject* t_parent): PNSqlQueryModel(t_paren
 bool TrackerItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value2);
+
+    //qDebug() << "Adding new tracker item with fk1: " << t_fk_value1->toString() << " and fk2: " << t_fk_value2;
 
     QSqlRecord qr = emptyrecord();
 
@@ -63,6 +72,9 @@ bool TrackerItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t
 
 
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
+
+
+    //qDebug() << "Using project manager id: " << global_DBObjects.getProjectManager();
 
     qr.setValue("project_id", *t_fk_value1);
     qr.setValue(1, QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0')));  // Need to make a counter that looks good for items

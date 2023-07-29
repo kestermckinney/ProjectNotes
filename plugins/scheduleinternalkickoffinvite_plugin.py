@@ -18,7 +18,7 @@ from PyQt5.QtGui import QDesktopServices
 pluginname = "Schedule Internal Kickoff"
 plugindescription = "Using Outlook create an invite to the internal Kickoff."
 plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
-childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
+childtablesfilter = "projects/project_people" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
 # events must have a data structure and data view specified
 #
@@ -69,8 +69,6 @@ parameters = [
 ]
 
 
-
-
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
     pnc = ProjectNotesCommon()
@@ -78,6 +76,8 @@ if (platform.system() == 'Windows'):
     
     def event_data_rightclick(xmlstr):
         xmlval = QDomDocument()
+        xmldoc = ""
+        
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
             return ""
@@ -85,15 +85,18 @@ if (platform.system() == 'Windows'):
         outlook = win32com.client.Dispatch("Outlook.Application")
         message = outlook.CreateItem(1)
 
-        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
-        pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
-        co = xmlroot.attributes().namedItem("managing_company_name").nodeValue()
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
+        pm = xmlroot.toElement().attribute("managing_manager_name")
+        co = xmlroot.toElement().attribute("managing_company_name")
+
+        print("main pm", pm)
+        print("main company", co)
 
         email = None
         nm = None
         pco = None
 
-        teammember = pnc.find_node(xmlroot, "table", "name", "ix_project_people")
+        teammember = pnc.find_node(xmlroot, "table", "name", "project_people")
         if teammember:
             memberrow = teammember.firstChild()
 
@@ -101,13 +104,16 @@ if (platform.system() == 'Windows'):
                 nm = pnc.get_column_value(memberrow, "name")
                 email = pnc.get_column_value(memberrow, "email")
                 pco = pnc.get_column_value(memberrow, "client_name")
+
+                print(pco, ",", co, ",", email, ",", pm, ",", nm)
+
                 if nm != pm:
                     if (email is not None and email != "" and pco == co):
                         message.Recipients.Add(email)
 
                 memberrow = memberrow.nextSibling()
 
-        project = pnc.find_node(xmlroot, "table", "name", "ix_projects")
+        project = pnc.find_node(xmlroot, "table", "name", "projects")
         if project:
             projectrow = project.firstChild()
 
@@ -131,11 +137,11 @@ if (platform.system() == 'Windows'):
         outlook = win32com.client.Dispatch("Outlook.Application")
         message = outlook.CreateItem(1)
 
-        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
-        pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
-        co = xmlroot.attributes().namedItem("managing_company_name").nodeValue()
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
+        pm = xmlroot.toElement().attribute("managing_manager_name")
+        co = xmlroot.toElement().attribute("managing_company_name")
 
-        attendeetable = pnc.find_node(xmlroot, "table", "name", "ix_meeting_attendees")
+        attendeetable = pnc.find_node(xmlroot, "table", "name", "meeting_attendees")
 
         if attendeetable:
             attendeerow = attendeetable.firstChild()
@@ -153,7 +159,7 @@ if (platform.system() == 'Windows'):
 
             attendeerow = attendeerow.nextSibling()
 
-        project = pnc.find_node(xmlroot, "table", "name", "ix_project_notes")
+        project = pnc.find_node(xmlroot, "table", "name", "project_notes")
         if project:
             projectrow = project.firstChild()
 
@@ -206,11 +212,12 @@ Next Steps
     return txtdoc
 """
 # setup test data
+import sys
 print("Buld up QDomDocument")
 app = QApplication(sys.argv)
 
 xmldoc = QDomDocument("TestDocument")
-f = QFile("exampleproject.xml")
+f = QFile("C:/Users/pamcki/Desktop/project.xml")
 
 if f.open(QIODevice.ReadOnly):
     print("example project opened")
@@ -218,6 +225,7 @@ xmldoc.setContent(f)
 f.close()
 
 #main_process_project(xmldoc)
-main_process_meeting(xmldoc)
+event_data_rightclick(xmldoc.toString())
 """
-#TODO: Split this into two plugins one for meetings and one for projects
+
+# TESTED: Phase 1

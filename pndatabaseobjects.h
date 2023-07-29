@@ -45,7 +45,7 @@ public:
     void closeDatabase();
     QString execute(const QString& t_sql);
 
-    void backupDatabase(QWidget& t_parent, QFileInfo& t_file);
+    void backupDatabase(const QString& t_file);
     bool saveParameter( const QString& t_parametername, const QString& t_parametervalue );
     QString loadParameter( const QVariant& t_parametername );
 
@@ -130,6 +130,10 @@ public:
 
     QDomDocument* createXMLExportDoc(PNSqlQueryModel* t_querymodel, const QString& t_filter = QString());
     bool importXMLDoc(const QDomDocument& t_xmldoc);
+
+    // helper functions
+    void addDefaultPMToProject(const QString& t_project_id);
+    void addDefaultPMToMeeting(const QString& t_note_id);
 
 private:
     QString m_database_file;

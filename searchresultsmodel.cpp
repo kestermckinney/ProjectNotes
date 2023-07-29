@@ -24,6 +24,8 @@ SearchResultsModel::SearchResultsModel(QObject* t_parent): PNSqlQueryModel(t_par
     addColumn(12, tr("Title"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(13, tr("Foreign Key"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(14, tr("Data Key"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+
+    setReadOnly();
 }
 
 bool SearchResultsModel::openRecord(QModelIndex t_index)
@@ -212,18 +214,31 @@ void SearchResultsModel::PerformSearch(const QString& t_search_value)
     }
 }
 
-void SearchResultsModel::PerformKeySearch(const QString& t_search_value)
+void SearchResultsModel::PerformKeySearch(const QStringList& t_search_fields, const QStringList& t_search_values)
 {
     clearAllUserSearches();
 
-    if ( t_search_value.isEmpty())
+    if ( t_search_values.isEmpty())
     {
         setUserSearchString(0, "FIND NOTHING");
         activateUserFilter(QString());
     }
     else
     {
-        setUserSearchString(14, t_search_value);
+        // if specific search column passed use it, if not a column use the data value
+        for (int c = 0; c < t_search_fields.count(); c++)
+        {
+            QString col_name = t_search_fields.at(c);
+            QString col_val = t_search_values.at(c);
+
+            int col_num = getColumnNumber(col_name);
+
+            if (col_num == -1)
+                setUserSearchString(14, col_val);
+            else
+                setUserSearchString(col_num, col_val);
+        }
+
         activateUserFilter(QString());
     }
 }

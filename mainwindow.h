@@ -6,6 +6,7 @@
 #include <QStack>
 #include <QComboBox>
 #include <QTextCharFormat>
+#include <QTimer>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -40,14 +41,13 @@ public:
     void navigateClearHistory() { m_navigation_location = -1; m_navigation_history.clear(); }
     PNBasePage* navigateCurrentPage() { return (m_navigation_location == -1 ? nullptr : m_navigation_history.at(m_navigation_location) ); }
     static PNPluginManager* getPluginManager() { return m_plugin_manager; }
+    void buildPluginMenu();
 
 public slots:
     void on_actionOpen_ProjectDetails_triggered();
     void on_actionOpen_ItemDetails_triggered();
     void on_actionOpen_ProjectNote_triggered();
     void on_actionOpen_SearchResults_triggered();
-
-
     void on_focusChanged(QWidget *t_old, QWidget *t_now);
 
 private slots:
@@ -71,6 +71,12 @@ private slots:
     void on_actionInternal_Items_triggered();
     void on_actionPreferences_triggered();
     void on_actionResolved_Tracker_Action_Items_triggered();
+    void on_actionBackup_Database_triggered();
+    void on_actionAbout_triggered();
+    void on_actionHelp_triggered();
+    void on_actionGetting_Started_triggered();
+    void on_actionWhat_s_New_triggered();
+    void on_actionCustom_Plugins_triggered();
 
     void cursorPositionChanged();
     void alignmentChanged(Qt::Alignment a);
@@ -96,6 +102,11 @@ private slots:
     void on_actionXML_Export_triggered();
 
     void slotPluginMenu(PNPlugin* t_plugin);
+    void slotStartupEvent(PNPlugin* t_plugin);
+    void slotShutdownEvent(PNPlugin* t_plugin);
+    void slotTimerEvent(PNPlugin* t_plugin);
+    void slotTimerUpdates();
+    void on_actionOpen_Item_triggered();
 
 private:
     Ui::MainWindow *ui;   
@@ -105,6 +116,8 @@ private:
     FindReplaceDialog* m_find_replace_dialog = nullptr;
     static PNPluginManager* m_plugin_manager;
     PluginSettingsDialog* m_plugin_settings_dialog = nullptr;
+    QTimer* m_timer = nullptr;
+    long m_minute_counter = 0;
 
     // view state
     QList<int> m_page_history;

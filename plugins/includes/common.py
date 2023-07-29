@@ -3,8 +3,9 @@ import platform
 if (platform.system() == 'Windows'):
     from win32com.client import GetObject
     import win32com
+    import win32api
 
-from PyQt5 import QtSql, QtGui, QtCore
+from PyQt5 import QtSql, QtGui, QtCore, QtWidgets
 from PyQt5.QtCore import QDirIterator, QDir, QSettings
 from PyQt5.QtXml import QDomDocument, QDomNode
 from PyQt5.QtWidgets import QMessageBox, QMainWindow
@@ -19,26 +20,48 @@ class ProjectNotesCommon:
         if val is None:
             return ("")
         else:
+            newval = ""
+
+            val = val.replace("&", "&amp;")
             val = val.replace(">", "&gt;")
             val = val.replace("<", "&lt;")
-            val = val.replace("&", "&#38;")
             val = val.replace("\"", "&quot;")
-            val = val.replace("'", "&#39;")
-            return(val)
+            val = val.replace("'", "&apos;")
+
+            for c in val:
+                if (ord(c) > 255):
+                    print("invalid character " + f'&#x{ord(c):04X};' + " removed")
+                elif (ord(c) < 32 or ord(c) > 122):
+                    newval = newval + f'&#x{ord(c):04X};'
+                else:
+                    newval = newval + c
+
+            return(newval)
 
     def to_html(self, val):
         if val is None:
             return ("")
         else:
+            newval = ""
+
+            val = val.replace("&", "&amp;")
             val = val.replace(">", "&gt;")
             val = val.replace("<", "&lt;")
-            val = val.replace("&", "&amp;")
             val = val.replace("\"", "&quot;")
-            val = val.replace("'", "&#39;")
+            val = val.replace("'", "&apos;")
             val = val.replace(" ", "&#160;")
             val = val.replace("\n", "<br>")
             val = val.replace("\t", "&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;")
-            return(val)
+
+            for c in val:
+                if (ord(c) > 255):
+                    print("invalid character " + f'&#x{ord(c):04X};' + " removed")
+                elif (ord(c) < 32 or ord(c) > 122):
+                    newval = newval + f'&#x{ord(c):04X};'
+                else:
+                    newval = newval + c
+
+            return(newval)
 
     def valid_filename(self, val):
         if val is None:
@@ -50,12 +73,18 @@ class ProjectNotesCommon:
     def find_node(self, node, type, attribute, name):
         if node is None:
             return(None)
-        #print("looking at node: ", type(node))
+
+        #print("looking at node: ", name)
+        
+        QtWidgets.QApplication.processEvents()
         children = node.firstChild()
 
         while not children.isNull():
-            if ( children.nodeName() == type and children.attributes().namedItem(attribute).nodeValue() == name ):
+            if ( children.nodeName() == type and children.toElement().attribute(attribute) == name ):
                 return(children)
+
+            #print("node check : " + children.nodeName())
+            QtWidgets.QApplication.processEvents()
 
             subsearch = self.find_node(children, type, attribute, name)
             if subsearch is not None:
@@ -103,21 +132,23 @@ class ProjectNotesCommon:
             colnode = colnode.nextSibling()
         return("")
 
-    def find_projectfiles(self, projectnumber, subfolder, filedescription, filetypedescription):
+    def find_projectfiles(self, projectnumber, subfolder, filedescription, filetypedescription, namefilter):
         xmldoc = ""
 
-        it = QDirIterator(subfolder)
+        #print("== initiating find project files in " + subfolder)
+        it = QDirIterator(subfolder, namefilter)
 
         while it.hasNext():
             it.next()
             filename = it.fileName()
+            #print("-> found file name : " + filename)
 
-            if filename.lower().find("template") == -1 and not it.fileInfo().IsDir(): # don't show templates
+            if filename.lower().find("template") == -1 and not it.fileInfo().isDir(): # don't show templates
                 xmldoc = xmldoc + "<row>\n"
-                xmldoc = xmldoc + "<column name=\"project_id\" number=\"1\" lookupvalue=\"" + self.to_xml(projectnumber) + "\"></column>\n"
-                xmldoc = xmldoc + "<column name=\"location_type\" number=\"2\">" + self.to_xml(filetypedescription) + "</column>\n"
-                xmldoc = xmldoc + "<column name=\"location_description\" number=\"3\">" + self.to_xml(filedescription) + " : " + it.fileName() + "</column>\n"
-                xmldoc = xmldoc + "<column name=\"full_path\" number=\"4\">" + self.to_xml(filename) + "</column>\n"
+                xmldoc = xmldoc + "<column name=\"project_id\" lookupvalue=\"" + self.to_xml(projectnumber) + "\"></column>\n"
+                xmldoc = xmldoc + "<column name=\"location_type\">" + self.to_xml(filetypedescription) + "</column>\n"
+                xmldoc = xmldoc + "<column name=\"location_description\">" + self.to_xml(filedescription) + " : " + self.to_xml(it.fileName()) + "</column>\n"
+                xmldoc = xmldoc + "<column name=\"full_path\">" + self.to_xml(subfolder + "\\" + filename) + "</column>\n"
                 xmldoc = xmldoc + "</row>\n"
 
         return(xmldoc)
@@ -141,38 +172,34 @@ class ProjectNotesCommon:
                     xmldoc = xmldoc + "<column name=\"full_path\" number=\"4\">" + self.to_xml(foldername) + "\\Project Management</column>\n"
                     xmldoc = xmldoc + "</row>\n"
 
+                    #print("found folder name : " + foldername)
+
                     # link all ms project files
                     if QDir(foldername + "\\Project Management\\Schedule").exists():
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Schedule\\*.mpp", "Project Schedule", "Microsoft Project" )
+                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Schedule", "Project Schedule", "Microsoft Project", ["*.mpp"] )
 
                     # link all purchase orders
                     if QDir(foldername + "\\Project Management\\Purchase Orders").exists():
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Purchase Orders\\*.pdf", "Customer PO", "PDF File" )
+                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Purchase Orders", "Customer PO", "PDF File", ["*.pdf"] )
 
                     # link all quotes
                     if QDir(foldername + "\\Project Management\\Quotes").exists():
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Quotes\\*.pdf", "Quote", "PDF File" )
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Quotes\\*.xlsx", "Estimate", "Excel Document" )
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Quotes\\*.xls", "Estimate", "Excel Document" )
+                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Quotes", "Quote", "PDF File", ["*.pdf"] )
+                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Quotes", "Estimate", "Excel Document", ["*.xlsx", "*.xls"] )
 
                     # link all quotes
                     if QDir(foldername + "\\Project Management\\Risk Management").exists():
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Risk Management\\*.xlsx", "Risk Register", "Excel Document" )
+                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Risk Management", "Risk Register", "Excel Document", ["*.xlsx"] )
 
                     # link all PCRs
                     if QDir(foldername + "\\Project Management\\PCR\'s").exists():
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s\\*.pdf", "Change Request", "PDF File" )
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s\\*.docx", "Change Request", "Word Document" )
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s\\*.doc", "Change Request", "Word Document" )
+                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request", "PDF File", ["*.pdf"] )
+                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request", "Word Document", ["*.docx"] )
+                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request", "Word Document", ["*.doc"] )
 
             return(xmldoc)
 
-    def xml_doc_root(self):
-      xmldoc = QDomDocument()
-      root = xmldoc.createElement("projectnotes");
-      xmldoc.appendChild(root);
-
-      return xmldoc
+    #   return xmldoc
 
     def xml_col(self, xmldoc, name, content, lookupvalue):
         colnode = xmldoc.createElement("column")
@@ -206,6 +233,7 @@ class ProjectNotesCommon:
 
         while not row.isNull():
             desc = self.get_column_value(row, "location_description")
+            #print("Finding location : " + desc)
             if desc == "Project Folder":
                 projectfolder = self.get_column_value(row, "full_path")
                 return(projectfolder)
@@ -226,11 +254,11 @@ class ProjectNotesCommon:
         objWMIService = win32com.client.GetObject("winmgmts:{impersonationLevel=impersonate}!\\\\")
         colProcess = objWMIService.ExecQuery("select * from Win32_PingStatus where address = '" + servername + "'")
 
-        #print(objWMIService)
+        print(objWMIService)
         for p in colProcess:
-            #print("found row " + p.Address)
-            #if p.StatusCode:
-            #    print("srv: " + servername + " stat: " + p.StatusCode + "\n")
+            print("found row " + p.Address)
+            if p.StatusCode:
+                print("srv: " + servername + " stat: " + str(p.StatusCode))
             if p.StatusCode == 0 and not p.StatusCode is None:
                 return(True)
 
@@ -256,6 +284,7 @@ class ProjectNotesCommon:
 
         return(False)
 
+    # this doesn't seem to work over a VPN
     def connect_drives(self):
         if (platform.system() != 'Windows'):
             print("connect_drives requires win32com not supported on this platform")
@@ -264,18 +293,21 @@ class ProjectNotesCommon:
         network = win32com.client.Dispatch("WScript.Network")
 
         if self.ping_server("INDFP03.cornerstonecontrols.local"):
+            #print("ping indfp03 worked...")
             if not self.check_drive(network, "K:"):
                 network.MapNetworkDrive("K:", "\\\\INDFP03.cornerstonecontrols.local\\DATA", True)
             if not self.check_drive(network, "P:"):
                 network.MapNetworkDrive("P:", "\\\\INDFP03.cornerstonecontrols.local\\DATA\\ENGINEERING\\PROJECTS", True)
 
         if self.ping_server("CINVFP01.cornerstonecontrols.local"):
+            #print("ping cinvfp01 worked...")
             if not self.check_drive(network, "N:"):
                 network.MapNetworkDrive("N:", "\\\\CINVFP01.cornerstonecontrols.local\\DATA", True)
             if not self.check_drive(network, "O:"):
                 network.MapNetworkDrive("O:", "\\\\CINVFP01.cornerstonecontrols.local\\PROJECTS", True)
 
         if self.ping_server("CORNERSTONECONTROLS.LOCAL"):
+            #print("ping cornerstonecontrols worked...")
             if not self.check_drive(network, "R:"):
                 network.MapNetworkDrive("R:", "\\\\CORNERSTONECONTROLS.LOCAL\\COMMON\\Public", True)
 
@@ -283,7 +315,12 @@ class ProjectNotesCommon:
         return(None)
 
     def exec_program(self, fullpath):
-        result = subprocess.Popen( [fullpath] ) #, capture_output=False)
+
+        if (platform.system() == 'Windows'):
+            win32api.WinExec( fullpath )
+        else:
+            #result = subprocess.Popen( [fullpath] ) #, capture_output=False)
+            os.system( fullpath ) # i think this will work on Linux
 
         # print("stdout:", result.stdout)
         # print("stderr:", result.stderr)
@@ -368,3 +405,63 @@ class ProjectNotesCommon:
 
         adodb.Close()
         adodb = None
+
+    def scrape_project_name(self, xmldoc):
+        projectname = ""
+        contents = None
+        lookupvalue = None
+
+        col = self.find_node(xmldoc, "column", "name", "project_name")
+        if col:
+            lookupvalue = col.attributes().namedItem("lookupvalue").nodeValue()
+            contents = col.toElement().text()
+
+            if lookupvalue != "" and lookupvalue is not None:
+                projectname = lookupvalue
+            else:
+                projectname = contents
+
+        if projectname == "" or projectname is None:
+            col = self.find_node(xmldoc, "column", "name", "project_id_name")
+            if col:
+                lookupvalue = col.attributes().namedItem("lookupvalue").nodeValue()
+                contents = col.toElement().text()
+
+            if lookupvalue is not None and lookupvalue != "":
+                projectname = lookupvalue
+            else:
+                projectname = contents
+
+        return(projectname)
+
+    def scrape_project_number(self, xmldoc):
+        projectnumber = ""
+        contents = None
+        lookupvalue = None
+
+        col = self.find_node(xmldoc, "column", "name", "project_number")
+        if col:
+            lookupvalue = col.attributes().namedItem("lookupvalue").nodeValue()
+            contents = col.toElement().text()
+
+            if lookupvalue != "" and lookupvalue is not None:
+                projectnumber = lookupvalue
+            else:
+                projectnumber = contents
+
+        if projectnumber == "" or projectnumber is None:
+            col = self.find_node(xmldoc, "column", "name", "project_id")
+            if col:
+                lookupvalue = col.attributes().namedItem("lookupvalue").nodeValue()
+                contents = col.toElement().text()
+
+            if lookupvalue != "" and lookupvalue != None:
+                projectnumber = lookupvalue
+            else:
+                projectnumber = contents
+
+        return(projectnumber)
+
+
+#pnc = ProjectNotesCommon()
+#print(pnc.to_xml("This is <a> rest & I wan t' it tow ork  COMPANY LLC â BLUFFTON ÂÃÂÃ crap "))

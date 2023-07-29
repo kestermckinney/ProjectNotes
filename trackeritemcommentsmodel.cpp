@@ -6,7 +6,7 @@ TrackerItemCommentsModel::TrackerItemCommentsModel(QObject* t_parent): PNSqlQuer
 {
     setObjectName("TrackerItemCommentsModel");
 
-    setBaseSql("SELECT tracker_updated_id, item_id, lastupdated_date, update_note, updated_by FROM item_tracker_updates "), tr("tracker_updated_id");
+    setBaseSql("SELECT tracker_updated_id, item_id, lastupdated_date, update_note, updated_by, (select i.item_name from item_tracker i where i.item_id=u.item_id) item_name, (select i.item_number from item_tracker i where i.item_id=u.item_id) item_number, (select i.description from item_tracker i where i.item_id=u.item_id) description, (select p.project_name from projects p where p.project_id=(select i.project_id from item_tracker i where i.item_id=u.item_id)) project_name, (select p.project_number from projects p where p.project_id=(select i.project_id from item_tracker i where i.item_id=u.item_id)) project_number FROM item_tracker_updates u");
 
     setTableName("item_tracker_updates", "Tracker Comments");
 
@@ -17,6 +17,14 @@ TrackerItemCommentsModel::TrackerItemCommentsModel(QObject* t_parent): PNSqlQuer
     addColumn(3, tr("Comments"), DBString, DBSearchable, DBNotRequired);
     addColumn(4, tr("Updated By"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name"); // itemdetailteamlist, tr("name"), tr("people_id"), true );
+    addColumn(5, tr("Item Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn(6, tr("Item Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn(7, tr("Item Description"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn(8, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn(9, tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+
+    addRelatedTable("item_tracker", "item_id", "item_id", "Tracker Item");
+    // TODO: the item tracker list doesn't update when comments are chagned here.. need to test the mark dirty
 
     setOrderBy("lastupdated_date");
 }
@@ -42,17 +50,22 @@ bool TrackerItemCommentsModel::setData(const QModelIndex &t_index, const QVarian
 {
     QVariant curdate = QDateTime::currentDateTime().toString("MM/dd/yyyy");
 
-    // set the date the record was updated
-    if (t_index.column() != 2)
+    if(PNSqlQueryModel::setData(t_index, t_value, t_role))
     {
-        QVariant oldvalue = data(t_index, t_role);
-
-        if (oldvalue != t_value) // don't change the update date if nothing changed
+        // set the date the record was updated
+        if (t_index.column() != 2)
         {
-            QModelIndex qmi = index(t_index.row(), 2);
-            PNSqlQueryModel::setData(qmi, curdate, t_role);
+            QVariant oldvalue = data(t_index, t_role);
+
+            if (oldvalue != t_value) // don't change the update date if nothing changed
+            {
+                QModelIndex qmi = index(t_index.row(), 2);
+                PNSqlQueryModel::setData(qmi, curdate, t_role);
+            }
         }
+
+        return true;
     }
 
-    return PNSqlQueryModel::setData(t_index, t_value, t_role);
+    return false;
 }

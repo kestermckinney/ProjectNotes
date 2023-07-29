@@ -21,6 +21,7 @@ void ProjectNotesView::setModel(QAbstractItemModel *t_model)
         setColumnHidden(0, true);
         setColumnHidden(1, true);
         setColumnHidden(4, true);
+        setColumnHidden(6, true);
 
         // see setbuttonitems for visible columns
 

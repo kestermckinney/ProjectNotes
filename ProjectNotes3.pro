@@ -1,10 +1,12 @@
-QT       += core gui sql xml
+QT       += core gui sql xml help
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 ICON = AppIcon.icns
 
-CONFIG += console
+win32: RC_ICONS = icons/logo.ico
+
+# CONFIG += console
 CONFIG += c++11
 
 # You can make your code fail to compile if it uses deprecated APIs.
@@ -12,6 +14,7 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    aboutdialog.cpp \
     actionitemprojectnotesmodel.cpp \
     actionitemsdetailsmeetingsmodel.cpp \
     clientslistview.cpp \
@@ -22,6 +25,8 @@ SOURCES += \
     databasestructure.cpp \
     filterdatadialog.cpp \
     findreplacedialog.cpp \
+    helpbrowser.cpp \
+    helppage.cpp \
     itemdetailsdelegate.cpp \
     itemdetailspage.cpp \
     itemdetailteamlistmodel.cpp \
@@ -52,6 +57,7 @@ SOURCES += \
     pnsqlquerymodel.cpp \
     pntableview.cpp \
     preferencesdialog.cpp \
+    runguard.cpp \
     searchpage.cpp \
     searchresultsview.cpp \
     spellcheckdialog.cpp \
@@ -82,6 +88,7 @@ SOURCES += \
 
 HEADERS += \
     FilterSaveStructure.h \
+    aboutdialog.h \
     actionitemprojectnotesmodel.h \
     actionitemsdetailsmeetingsmodel.h \
     clientslistview.h \
@@ -92,6 +99,8 @@ HEADERS += \
     databasestructure.h \
     filterdatadialog.h \
     findreplacedialog.h \
+    helpbrowser.h \
+    helppage.h \
     itemdetailsdelegate.h \
     itemdetailspage.h \
     itemdetailteamlistmodel.h \
@@ -121,6 +130,7 @@ HEADERS += \
     pnsqlquerymodel.h \
     pntableview.h \
     preferencesdialog.h \
+    runguard.h \
     searchpage.h \
     searchresultsview.h \
     spellcheckdialog.h \
@@ -151,6 +161,7 @@ HEADERS += \
     widgets_export.h
 
 FORMS += \
+    aboutdialog.ui \
     filterdatadialog.ui \
     findreplacedialog.ui \
     mainwindow.ui \
@@ -178,26 +189,42 @@ DISTFILES += \
     dictionary/index.ini
 
 
-unix {
+unix: {
    LIBS += -lhunspell
-   INCLUDEPATH += /usr/include/python3.10
+   INCLUDEPATH += /usr/include/python3.11
    #INCLUDEPATH += /usr/include/linux/
    INCLUDEPATH += /usr/lib/gcc/x86_64-linux-gnu/12/include/
    #$(shell python3-config --includes)
-   LIBS += -lpython3.10 -lm -L/usr/lib/python3.10/config
+   LIBS += -lpython3.11 -lm -L/usr/lib/python3.11/config
    #$(shell python3-config --ldflags)
 }
 
-win32 {
-   DEFINES +=   WIN32 \
-#                _DEBUG \
-                _WINDOWS \
-                _USRDLL \
-                HUNSPELL_STATIC \
-                _CRT_SECURE_NO_WARNINGS
+win32: {
+    CONFIG(debug,debug|release): {
+        #debug
+        DEFINES +=   WIN32 \
+                    _WINDOWS \
+                    _USRDLL \
+                    HUNSPELL_STATIC \
+                    _CRT_SECURE_NO_WARNINGS
 
-   INCLUDEPATH += "C:/Users/Paul McKinney/Documents/hunspell/src"
-   INCLUDEPATH +="C:/Program Files/Python311/include"
-   LIBS += "C:\Users\Paul McKinney\Documents\hunspell\msvc\x64\Debug/libhunspell.lib"
-   LIBS += "C:/Program Files/Python311/libs/python311.lib"
+       INCLUDEPATH += "C:/Users/Paul McKinney/Documents/hunspell/src"
+       INCLUDEPATH +="C:/Program Files/Python311/include"
+       LIBS += "C:\Users\Paul McKinney\Documents\hunspell\msvc\x64\Debug/libhunspell.lib"
+       LIBS += "C:/Program Files/Python311/libs/python311.lib"
+    }
+
+    CONFIG(release,debug|release): {
+        #release
+        DEFINES +=   WIN32 \
+                   _WINDOWS \
+                   _USRDLL \
+                   HUNSPELL_STATIC \
+                   _CRT_SECURE_NO_WARNINGS
+
+        INCLUDEPATH += "C:/Users/Paul McKinney/Documents/hunspell/src"
+        INCLUDEPATH +="C:/Program Files/Python311/include"
+        LIBS += "C:\Users\Paul McKinney\Documents\hunspell\msvc\x64\Release/libhunspell.lib"
+        LIBS += "C:/Program Files/Python311/libs/python311.lib"
+    }
 }

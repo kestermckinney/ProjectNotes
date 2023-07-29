@@ -9,8 +9,8 @@ from includes.common import ProjectNotesCommon
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
 from PyQt5.QtSql import QSqlDatabase
 from PyQt5.QtXml import QDomDocument, QDomNode
-from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
-from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
+from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl, QFileInfo, QDir
+from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog, QInputDialog, QLineEdit
 from PyQt5.QtGui import QDesktopServices
 
 
@@ -91,26 +91,27 @@ if (platform.system() == 'Windows'):
         pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
 
 
-        projtab = pnc.find_node(xmlroot, "table", "name", "ix_projects")
+        projtab = pnc.find_node(xmlroot, "table", "name", "projects")
         projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
         projnam = pnc.get_column_value(projtab.firstChild(), "project_name")
         clientnam = pnc.get_column_value(projtab.firstChild(), "client_id")
 
         ok = False
 
-        changenum, ok = QInputDialog.getText(None, "Change Order Number", "Number 0#:")
+        changenum, ok = QInputDialog.getText(None, "Change Order Number", "Number 0#:", QLineEdit.Normal, "", QtCore.Qt.Window | QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowStaysOnTopHint)
+
         if not ok:
             return None
 
         if (projectfolder is None or projectfolder =="" or not QDir(projectfolder).exists()):
-            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QtCore.QDir.home().path())
+            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
-                return None
+                return ""
         else:
             projectfolder = projectfolder + "\\PCR\'s\\"
 
-        templatefile =  "templates\\PCR Template.docx"
+        templatefile =  "plugins\\templates\\PCR Template.docx"
         tempfileinfo = QFileInfo(templatefile)
         basename = projnum + " " + tempfileinfo.baseName() + changenum + "." + tempfileinfo.suffix()
         basename = basename.replace(" Template", "")
@@ -118,11 +119,14 @@ if (platform.system() == 'Windows'):
         projectfile = projectfolder + basename
 
         # copy the file
-        if not QDir(projectfile).exists():
-            QFile(templatefile).copy(projectfile)
+        if not QFile(projectfile).exists():
+            if not QFile(templatefile).copy(projectfile):
+                QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + projectfile, QMessageBox.Cancel)
+                return ""
 
         # change the values for the project specifics in the file
         word = win32com.client.DispatchEx("Word.Application")
+        print(projectfile)
 
         doc = word.Documents.Open(projectfile)
 
@@ -142,10 +146,12 @@ if (platform.system() == 'Windows'):
         #word = None
 
         # add the location to the project
-        docxml = pnc.xml_doc_root()
+        docxml = QDomDocument()
+        docroot = docxml.createElement("projectnotes");
+        docxml.appendChild(docroot);
 
-        table = pnc.xml_table(docxml, "ix_project_locations")
-        docxml.appendChild(table)
+        table = pnc.xml_table(docxml, "project_locations")
+        docroot.appendChild(table)
 
         row = pnc.xml_row(docxml)
         table.appendChild(row)
@@ -155,7 +161,7 @@ if (platform.system() == 'Windows'):
         row.appendChild(pnc.xml_col(docxml, "location_description", "Change Request : " + basename, None))
         row.appendChild(pnc.xml_col(docxml, "full_path", projectfile, None))
 
-        return docxml
+        return docxml.toString()
 
 
     def replace_text(doc, searchtext, replacetext):
@@ -165,21 +171,25 @@ if (platform.system() == 'Windows'):
 
 # setup test data
 """
+import sys
 print("Buld up QDomDocument")
 app = QApplication(sys.argv)
 
-
 xmldoc = QDomDocument("TestDocument")
-f = QFile("exampleproject.xml")
+f = QFile("C:/Users/pamcki/Desktop/project.xml")
 
 if f.open(QIODevice.ReadOnly):
     print("example project opened")
 xmldoc.setContent(f)
 f.close()
 
-print("Run Test")
-# call when testing outside of Project Notes
-print(main_process(xmldoc).toString())
+print(event_data_rightclick(xmldoc.toString()))
 print("Finished")
 """
-#TODO:  Some large XML fields from ProjectNotes 2 break the parser.  For examle an email was pasted into description.  Maybe CDATA tags are needed there.
+# TESTED: Phase 1
+
+# TODO: installer doesn't copy over PCR Template.docx
+# TODO: right click menus not processing XML returned
+# TODO: check for a running instance of ProjectNotes so you don't run it twice
+# TODO: make the tracker items comments at least 3 lines high
+# TODO: deletingg a sorted location type deletes the wrong one... probably happens everywhere

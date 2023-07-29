@@ -4,8 +4,7 @@
 
 PeoplePage::PeoplePage()
 {
-    QString page_title = "People";
-    setPageTitle(page_title);
+    setTableName("people");
 }
 
 void PeoplePage::setupModels( Ui::MainWindow *t_ui )
@@ -20,4 +19,9 @@ void PeoplePage::setupModels( Ui::MainWindow *t_ui )
 
     setCurrentModel(global_DBObjects.peoplemodelproxy());
     setCurrentView( ui->tableViewPeople );
+}
+
+void PeoplePage::setButtonAndMenuStates()
+{
+
 }

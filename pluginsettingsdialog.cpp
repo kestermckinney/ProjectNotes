@@ -14,6 +14,8 @@ PluginSettingsDialog::PluginSettingsDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    ui->SettingsTableWidget->verticalHeader()->setDefaultSectionSize(15);
+
     //TODO: allow for passwords to stay hidden and ecrypted
 }
 
@@ -27,7 +29,10 @@ void PluginSettingsDialog::editPluginSettings(PNPluginManager* t_pluginmanager)
 
     for (PNPlugin* p : plist)
     {
-        ui->PluginsListWidget->addItem(p->getPNPluginName());
+        QListWidgetItem* qli = new QListWidgetItem;
+        qli->setText(p->getPNPluginName());
+        qli->setSizeHint(QSize(ui->PluginsListWidget->width(), 15));
+        ui->PluginsListWidget->addItem(qli);
     }
 
     if (ui->PluginsListWidget->currentRow() > -1)
@@ -79,6 +84,7 @@ void PluginSettingsDialog::selectPlugin(int t_index)
         QTableWidgetItem* item = new QTableWidgetItem(qs[i]);
         item->setFlags(item->flags() & ~Qt::ItemIsEditable);
         item->setBackground(Qt::gray);
+
         ui->SettingsTableWidget->setItem(i, 0, item);
         ui->SettingsTableWidget->horizontalHeader()->setStretchLastSection(true);
 

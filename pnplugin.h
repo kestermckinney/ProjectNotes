@@ -30,14 +30,14 @@ public:
     bool hasEvery30MinutesEvent() { return (m_Every30Minutes != nullptr);};
     bool hasPNPluginMenuEvent() { return (m_PNPluginMenu != nullptr);};
     bool hasDataRightClickEvent(const QString& t_tablename);
-    void callStartupEvent(const QString& t_xmlstring);
-    void callShutdownEvent(const QString& t_xmlstring);
-    void callEveryMinuteEvent(const QString& t_xmlstring);
-    void callEvery5MinutesEvent(const QString& t_xmlstring);
-    void callEvery10MinutesEvent(const QString& t_xmlstring);
-    void callEvery15MinutesEvent(const QString& t_xmlstring);
-    void callEvery30MinutesEvent(const QString& t_xmlstring);
-    void callPNPluginMenuEvent(const QString& t_xmlstring);
+    QString callStartupEvent(const QString& t_xmlstring);
+    QString callShutdownEvent(const QString& t_xmlstring);
+    QString callEveryMinuteEvent(const QString& t_xmlstring);
+    QString callEvery5MinutesEvent(const QString& t_xmlstring);
+    QString callEvery10MinutesEvent(const QString& t_xmlstring);
+    QString callEvery15MinutesEvent(const QString& t_xmlstring);
+    QString callEvery30MinutesEvent(const QString& t_xmlstring);
+    QString callPNPluginMenuEvent(const QString& t_xmlstring);
     QString callDataRightClickEvent(const QString& t_xmlstring);
     QString getPNPluginName() { return m_PNPluginName; }
     QString getPNPluginDescription() { return m_Description; }

@@ -16,13 +16,13 @@ class ProjectNotesExcelTools:
         #return({'excel':, 'workbook':workbook_obj})
 
     def find_cell_tag(self, sheet, tagname):
-        searchrange = sheet.Range("A1", "Z1000") # hopefully this catches everything
+        searchrange = sheet.Range("A1", "Z10000") # hopefully this catches everything
         searchresult = searchrange.Find(tagname)
 
         return(searchresult)
 
     def replace_cell_tag(self, sheet, oldtagname, newtagname):
-        searchrange = sheet.Range("A1", "Z1000") # hopefully this catches everything
+        searchrange = sheet.Range("A1", "Z10000") # hopefully this catches everything
         replaceresult = searchrange.Replace(oldtagname, newtagname[:255], 2)
         #print("replace cell tag: " + oldtagname + " with " + newtagname + " result: " + str(replaceresult))
 
@@ -139,7 +139,7 @@ class ProjectNotesExcelTools:
             try:
                 p.Terminate()
             except:
-                print("Wrong Process Type")
+                print("Could not close an EXCEL.EXE process.")
 
         objWMIService = None
 

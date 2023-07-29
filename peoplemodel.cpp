@@ -16,17 +16,20 @@ PeopleModel::PeopleModel(QObject* t_parent): PNSqlQueryModel(t_parent)
     addColumn(2, tr("Email"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(3, tr("Office Phone"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(4, tr("Cell Phone"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(5, tr("Client"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
+    addColumn(5, tr("Client"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
             "clients", "client_id", "client_name");
     addColumn(6, tr("Role"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
-    addRelatedTable("item_tracker", "assigned_to", "Assigned Item");
-    addRelatedTable("item_tracker", "identified_by", "Identified By Item");
-    addRelatedTable("item_tracker_updates", "updated_by", "Item Updated By");
-    addRelatedTable("meeting_attendees", "person_id", "Meeting Attendee");
-    addRelatedTable("project_people", "people_id", "Project Team");
-    addRelatedTable("projects", "primary_contact", "Project Primary Contact");
+    addRelatedTable("item_tracker", "assigned_to", "people_id", "Assigned Item");
+    addRelatedTable("item_tracker", "identified_by", "people_id", "Identified By Item");
+    addRelatedTable("item_tracker_updates", "updated_by", "people_id", "Item Updated By");
+    addRelatedTable("meeting_attendees", "person_id", "people_id", "Meeting Attendee");
+    addRelatedTable("project_people", "people_id", "people_id", "Project Team");
+    addRelatedTable("projects", "primary_contact", "people_id", "Project Primary Contact");
 
+    QStringList key1 = {"name"};
+
+    addUniqueKeys(key1, "Name");
 
     setOrderBy("name");
 }

@@ -39,11 +39,15 @@ void PreferencesDialog::showEvent(QShowEvent *ev)
         ui->comboBoxProjectManager->setModelColumn(1);
 
         PNSqlQueryModel *client_model = static_cast<PNSqlQueryModel*>(ui->comboBoxManagerCompany->model());
+        client_model->refresh();
+
         QVariant client_id = global_DBObjects.getManagingCompany();
         QString client_name = client_model->findValue(client_id, 0, 1).toString();
         ui->comboBoxManagerCompany->setCurrentText(client_name);
 
         PNSqlQueryModel *people_model = static_cast<PNSqlQueryModel*>(ui->comboBoxProjectManager->model());
+        people_model->refresh();
+
         QVariant people_id = global_DBObjects.getProjectManager();
         QString people_name = people_model->findValue(people_id, 0, 1).toString();
         ui->comboBoxProjectManager->setCurrentText(people_name);

@@ -13,7 +13,7 @@ ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
 
     addColumn(0, tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
     addColumn(1, tr("Number"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
-    addColumn(2, tr("Project Name"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
+    addColumn(2, tr("Project Name"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(3, tr("Status Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
     addColumn(4, tr("Invoice Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
     addColumn(5, tr("Primary Contact"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
@@ -35,11 +35,15 @@ ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
     addColumn(19, tr("Completed"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn(20, tr("CPI"), DBReal, DBSearchable, DBNotRequired, DBReadOnly);
 
-    addRelatedTable("project_notes", "project_id", "Meeting", DBExportable);
-    addRelatedTable("item_tracker", "project_id", "Action/Tracker Item", DBExportable);
-    addRelatedTable("project_locations", "project_id", "Project Location", DBExportable);
-    addRelatedTable("project_people", "project_id", "Project People", DBExportable);
-    addRelatedTable("status_report_items", "project_id", "Status Report Item", DBExportable);
+    addRelatedTable("project_notes", "project_id", "project_id", "Meeting", DBExportable);
+    addRelatedTable("item_tracker", "project_id", "project_id", "Action/Tracker Item", DBExportable);
+    addRelatedTable("project_locations", "project_id", "project_id", "Project Location", DBExportable);
+    addRelatedTable("project_people", "project_id", "project_id", "Project People", DBExportable);
+    addRelatedTable("status_report_items", "project_id", "project_id", "Status Report Item", DBExportable);
+
+    QStringList key1 = {"project_number"};
+
+    addUniqueKeys(key1, "Number");
 
     setOrderBy("project_number");
 }
@@ -192,4 +196,18 @@ QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
     }
 
     return PNSqlQueryModel::data(t_index, t_role);
+}
+
+bool ProjectsModel::setData(const QModelIndex &t_index, const QVariant &t_value, int t_role)
+{
+    bool wasnew = isNewRecord(t_index);
+    bool result = PNSqlQueryModel::setData(t_index, t_value, t_role);
+
+    if (wasnew && result)
+    {
+        QString project_id = data(index(t_index.row(), 0)).toString();
+        global_DBObjects.addDefaultPMToProject(project_id);
+    }
+
+    return result;
 }

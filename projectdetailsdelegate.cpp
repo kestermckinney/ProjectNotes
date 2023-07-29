@@ -1,9 +1,12 @@
 #include "projectdetailsdelegate.h"
 #include "pnsqlquerymodel.h"
 #include "pndateeditex.h"
+#include "pnbasepage.h"
+#include "mainwindow.h"
 
 #include <QLineEdit>
 #include <QComboBox>
+#include <QDebug>
 
 ProjectDetailsDelegate::ProjectDetailsDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
@@ -16,6 +19,17 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
 
     switch (t_index.column())
     {
+    case 1:
+    case 2:
+        {
+            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
+            lineedit->setText(value.toString());
+
+            QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+            if (((MainWindow*) window)->navigateCurrentPage())
+                ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
+        }
+        break;
     case 3:
     case 4:
         {
@@ -35,10 +49,14 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
             PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
 
+            //qDebug() << " Primary Contact Mapper Called";
+
             if (model)
             {
                 QString list_value = model->findValue(value, 3, 1).toString();
                 comboBox->setCurrentText(list_value);
+
+                //qDebug() << " .. Set text value to " << list_value;
             }
         }
         break;
@@ -77,6 +95,17 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
 
     switch (t_index.column())
     {
+    case 1:
+    case 2:
+        {
+            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
+            key_val = lineedit->text();
+
+            QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+            if (((MainWindow*) window)->navigateCurrentPage())
+                ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
+        }
+        break;
     case 3:
     case 4:
         {
@@ -93,6 +122,13 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
 
             int i = comboBox->currentIndex();
             key_val = comboBox->model()->data(comboBox->model()->index(i, 3));
+
+            //  if the value was typed in use the typed in value
+            if (i == 0 && !comboBox->lineEdit()->text().isEmpty())
+            {
+                i = comboBox->findText(comboBox->lineEdit()->text(), Qt::MatchFixedString);
+                key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
+            }
         }
         break;
     case 11:
@@ -108,7 +144,14 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
 
             int i = comboBox->currentIndex();
-            key_val = comboBox->model()->data(comboBox->model()->index(i, 3));
+            key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
+
+            //  if the value was typed in use the typed in value
+            if (i == 0 && !comboBox->lineEdit()->text().isEmpty())
+            {
+                i = comboBox->findText(comboBox->lineEdit()->text(), Qt::MatchFixedString);
+                key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
+            }
         }
         break;
     default:

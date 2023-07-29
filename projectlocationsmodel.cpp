@@ -20,6 +20,14 @@ ProjectLocationsModel::ProjectLocationsModel(QObject* t_parent): PNSqlQueryModel
     addColumn(3, tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(4, tr("Full Path"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
+//    QStringList key1 = {"project_id", "full_path"};
+
+//    addUniqueKeys(key1, "Full Path");
+
+    QStringList key2 = {"project_id", "location_description"};
+
+    addUniqueKeys(key2, "Description");
+
     setOrderBy("location_id");
 }
 

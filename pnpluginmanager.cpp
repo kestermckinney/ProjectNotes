@@ -98,10 +98,16 @@ PyModuleDef embmodule =
 PyObject* g_stdout;
 PyObject* g_stdout_saved;
 
+PyObject* g_stderr;
+PyObject* g_stderr_saved;
+
 PyMODINIT_FUNC PyInit_embeddedconsole(void)
 {
     g_stdout = 0;
     g_stdout_saved = 0;
+
+    g_stderr = 0;
+    g_stderr_saved = 0;
 
     StdoutType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&StdoutType) < 0)
@@ -127,6 +133,17 @@ void set_stdout(stdout_write_type write)
     Stdout* impl = reinterpret_cast<Stdout*>(g_stdout);
     impl->write = write;
     PySys_SetObject("stdout", g_stdout);
+
+
+    if (!g_stderr)
+    {
+        g_stderr_saved = PySys_GetObject("stderr"); // borrowed
+        g_stderr = StdoutType.tp_new(&StdoutType, 0, 0);
+    }
+
+    Stdout* impl_err = reinterpret_cast<Stdout*>(g_stderr);
+    impl_err->write = write;
+    PySys_SetObject("stderr", g_stderr);
 }
 
 void reset_stdout()
@@ -136,6 +153,12 @@ void reset_stdout()
 
     Py_XDECREF(g_stdout);
     g_stdout = 0;
+
+    if (g_stderr_saved)
+        PySys_SetObject("stderr", g_stderr_saved);
+
+    Py_XDECREF(g_stderr);
+    g_stderr = 0;
 }
 
 // initialize PNPlugin engine
@@ -153,13 +176,23 @@ PNPluginManager::PNPluginManager(QWidget* t_parent)
     // load PNPlugin modules
     QString fullpath = QCoreApplication::applicationDirPath() + "/plugins/";
     QString syspath = QString("sys.path.append(\"%1\")").arg(fullpath);
+    QString pythonzip = QString("sys.path.append(\"%1\")").arg(QCoreApplication::applicationDirPath() + "/python311.zip");
+    QString sitepackages = QString("sys.path.append(\"%1\")").arg(QCoreApplication::applicationDirPath() + "/site-packages");
+    QString win32path = QString("sys.path.append(\"%1\")").arg(QCoreApplication::applicationDirPath() + "/site-packages/win32");
+    QString win32lib = QString("sys.path.append(\"%1\")").arg(QCoreApplication::applicationDirPath() + "/site-packages/win32/lib");
+    QString pythonwin = QString("sys.path.append(\"%1\")").arg(QCoreApplication::applicationDirPath() + "/site-packages/Pythonwin");
 
     PyRun_SimpleString("import sys");
     PyRun_SimpleString(syspath.toUtf8().constData());
+    PyRun_SimpleString(pythonzip.toUtf8().constData());
+    PyRun_SimpleString(sitepackages.toUtf8().constData());
+    PyRun_SimpleString(win32path.toUtf8().constData());
+    PyRun_SimpleString(win32lib.toUtf8().constData());
+    PyRun_SimpleString(pythonwin.toUtf8().constData());
 
     QDirIterator fileit( fullpath, {"*.py"}, QDir::Files);
 
-    qDebug() << "Plugin Path: " << fullpath;
+    //qDebug() << "Plugin Path: " << fullpath;
 
     // iterate through PNPlugins folder and load py files
     while (fileit.hasNext())
@@ -171,6 +204,8 @@ PNPluginManager::PNPluginManager(QWidget* t_parent)
         if (module->loadModule(fileit.fileInfo()))
             m_PNPlugins.append(module);
     }
+
+    sortPlugins();
 }
 
 // close PNPlugin engine
@@ -303,5 +338,23 @@ QList<PNPlugin*> PNPluginManager::findDataRightClickEvents(const QString& t_tabl
     return list;
 }
 
-//TODO: call timed events
-//TODO: call startup and shutdown eventsS
+void PNPluginManager::sortPlugins()
+{
+    int n;
+    int i;
+
+    for ( n = 0; n < m_PNPlugins.count(); n++ )
+    {
+        for ( i = n + 1; i < m_PNPlugins.count(); i++ )
+        {
+            QString valorN = m_PNPlugins.at(n)->getPNPluginName();
+            QString valorI = m_PNPlugins.at(i)->getPNPluginName();
+
+            if (valorN.toUpper() > valorI.toUpper())
+            {
+                m_PNPlugins.move(i, n);
+                n=0;
+            }
+        }
+    }
+}

@@ -18,23 +18,28 @@ public:
     virtual void setupModels( Ui::MainWindow *t_ui ) { Q_UNUSED(t_ui)};
     virtual void newRecord();
     virtual void copyItem();
+    virtual void openItem();
     virtual void deleteItem();
-
-    const QString& pagetitle() { return m_page_title; };
-    void setPageTitle(QString& t_pagetitle) { m_page_title = t_pagetitle; };
+    virtual void setPageTitle();
 
     PNSortFilterProxyModel*  getCurrentModel() { return m_current_model; };
     PNTableView* getCurrentView() { return m_current_view; };
     void setCurrentModel( PNSortFilterProxyModel* t_current_model ) { m_current_model = t_current_model; };
     void setCurrentView( PNTableView* t_current_view ) { m_current_view = t_current_view; };
+    virtual void setButtonAndMenuStates();
+    virtual void toFirst(bool t_open = true);
+    const QString getTableName() { return m_table_name; }
+    void setTableName(const QString& t_table_name) { m_table_name = t_table_name; }
+    void buildPluginMenu(PNPluginManager* t_pm, Ui::MainWindow* t_ui);
 
-signals:
+public slots:
+    void slotPluginMenu(PNPlugin* t_plugin);
 
 private:
     PNSortFilterProxyModel* m_current_model = nullptr;
     PNTableView* m_current_view = nullptr;
 
-    QString m_page_title;
+    QString m_table_name;
 };
 
 #endif // PNBASEPAGE_H

@@ -89,45 +89,73 @@ if (platform.system() == 'Windows'):
         xmlclients = ""
         xmldoc = ""
 
+        #print("count of contacts : " + str(contactsfold.Items.Count))
+
+        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+        QtWidgets.QApplication.processEvents()
+
+        tot_contacts = contactsfold.Items.Count
+        cur_contacts = 0
+
+        progbar = QProgressDialog()
+        progbar.setWindowTitle("Importing...")
+        progbar.setWindowFlags(
+            QtCore.Qt.Window |
+            QtCore.Qt.WindowCloseButtonHint |
+            QtCore.Qt.WindowStaysOnTopHint
+            )
+        progbar.setMinimumWidth(350)
+        progbar.setCancelButton(None)
+        progbar.show()
+
+
         cont_enum = contactsfold.Items
         for contact in cont_enum:
+            cur_contacts = cur_contacts + 1
+
+            progbar.setValue(int(cur_contacts / tot_contacts * 100))
+            progbar.setLabelText("Importing Contacts...")
+            QtWidgets.QApplication.processEvents()
+
             # olContactItem
-            #try:
+            if contact is not None:
+                if hasattr(contact, "FullName"):
+                    #print("importing ... " + contact.FullName)
+                    xmldoc = xmldoc + "<row>\n"
 
-            if (contact.FullName is not None and contact.FullName != ""):
-                print(contact.FullName)
-                xmldoc = xmldoc + "<row>\n"
+                    xmldoc = xmldoc + "<column name=\"name\">" + pnc.to_xml(contact.FullName.strip()) + "</column>\n"
 
-                xmldoc = xmldoc + "<column name=\"name\" number=\"1\">" + pnc.to_xml(contact.FullName) + "</column>\n"
+                    if contact.Email1Address is not None:
+                        # make sure the email address looks valid
+                        if "@" in contact.Email1Address: 
+                            xmldoc = xmldoc + "<column name=\"email\">" + pnc.to_xml(contact.Email1Address.strip()) + "</column>\n"
+                        else:
+                            print("email address is corrupt for " + contact.FullName)
 
-                if contact.Email1Address is not None:
-                    xmldoc = xmldoc + "<column name=\"email\" number=\"2\">" + pnc.to_xml(contact.Email1Address) + "</column>\n"
+                    if contact.BusinessTelephoneNumber is not None:
+                        xmldoc = xmldoc + "<column name=\"office_phone\">" + pnc.to_xml(contact.BusinessTelephoneNumber.strip()) + "</column>\n"
 
-                if contact.BusinessTelephoneNumber is not None:
-                    xmldoc = xmldoc + "<column name=\"office_phone\" number=\"3\">" + pnc.to_xml(contact.BusinessTelephoneNumber) + "</column>\n"
+                    if contact.MobileTelephoneNumber is not None:
+                        xmldoc = xmldoc + "<column name=\"cell_phone\">" + pnc.to_xml(contact.MobileTelephoneNumber.strip()) + "</column>\n"
 
-                if contact.MobileTelephoneNumber is not None:
-                    xmldoc = xmldoc + "<column name=\"cell_phone\" number=\"4\">" + pnc.to_xml(contact.MobileTelephoneNumber) + "</column>\n"
+                    if contact.JobTitle is not None:
+                        xmldoc = xmldoc + "<column name=\"role\">" + pnc.to_xml(contact.JobTitle.strip()) + "</column>\n"
 
-                if contact.JobTitle is not None:
-                    xmldoc = xmldoc + "<column name=\"role\" number=\"4\">" + pnc.to_xml(contact.JobTitle) + "</column>\n"
+                    # add the company name as a sub tablenode
+                    if (contact.CompanyName is not None and contact.CompanyName != ''):
+                        xmldoc = xmldoc + "<column name=\"client_id\" number=\"5\" lookupvalue=\"" + pnc.to_xml(contact.CompanyName.strip()) + "\"></column>\n"
+                        xmlclients = xmlclients + "<row><column name=\"client_name\">" + pnc.to_xml(contact.CompanyName.strip()) + "</column></row>\n"
 
-                # add the company name as a sub tablenode
-                if (contact.CompanyName is not None and contact.CompanyName != ''):
-                    xmldoc = xmldoc + "<column name=\"client_id\" number=\"5\" lookupvalue=\"" + pnc.to_xml(contact.CompanyName) + "\"></column>\n"
-                    xmlclients = xmlclients + "<row><column name=\"client_name\" number=\"1\">" + pnc.to_xml(contact.CompanyName) + "</column></row>\n"
-
-                xmldoc = xmldoc + "</row>\n"
-            #except:
-            #    print("Group Name Found")
+                    xmldoc = xmldoc + "</row>\n"
+            else:
+                print("Corrupt Contact Record Found")
 
         xmldoc = """
-        <?xml version="1.0" encoding="UTF-8"?>
         <projectnotes>
-        <table name="ix_clients">
+        <table name="clients">
         """ + xmlclients + """
         </table>
-        <table name="ix_people">
+        <table name="people">
         """ + xmldoc + """
         </table>
         </projectnotes>
@@ -138,8 +166,19 @@ if (platform.system() == 'Windows'):
         contactsfold = None
         cont_enum = None
 
+        progbar.hide()
+        progbar.close()
+        progbar = None # must be destroyed
+
+        QtWidgets.QApplication.restoreOverrideCursor()
+        QtWidgets.QApplication.processEvents()   
+
         return xmldoc
 
 #print("Run Test")
 # call when testing outside of Project Notes
-#print(main_process(None))
+#app = QApplication(sys.argv)
+#print(event_menuclick(None))
+
+# TODO: The context menu should be added to the top menu somewhere - maybe the plugins menu under a separator
+# TESTED: Phase 1

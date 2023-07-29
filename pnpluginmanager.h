@@ -29,6 +29,8 @@ public:
     QList<PNPlugin*> getPlugins() { return m_PNPlugins;};
     PNConsoleDialog* getConsoleDialg() { return m_console_dialog; }
 
+    void sortPlugins();
+
 private:
     QList<PNPlugin*> m_PNPlugins;
     PNConsoleDialog* m_console_dialog = nullptr;

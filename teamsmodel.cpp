@@ -17,10 +17,25 @@ TeamsModel::TeamsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
     addColumn(4, tr("Client ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "clients", "client_id", "client_name");
 
-//    addRelatedTable("people", "people_id", "People");
-//    addRelatedTable("clients", "client_id", "Clients");
-//    addRelatedTable("projects", "project_id", "Projects");
-    // I don't think the related table is needed because this is just used for drop down lists
+    QStringList key1 = {"project_id", "people_id"};
+
+    addUniqueKeys(key1, "Name");
+
+    QStringList rel_col4 = { "project_id", "people_id" };
+    QStringList rel_fk4 = { "project_id", "primary_contact" };
+    addRelatedTable("projects", rel_fk4, rel_col4, "Primary Contact");
+
+    QStringList rel_col1 = { "project_id", "people_id" };
+    QStringList rel_fk1 = { "project_id", "identified_by" };
+    addRelatedTable("item_tracker", rel_fk1, rel_col1, "Identified By");
+
+    QStringList rel_col2 = { "project_id", "people_id" };
+    QStringList rel_fk2 = { "project_id", "assigned_to" };
+    addRelatedTable("item_tracker", rel_fk2, rel_col2, "Assigned To");
+
+    QStringList rel_col3 = { "project_id", "people_id" };
+    QStringList rel_fk3 = { "project_id", "person_id" };
+    addRelatedTable("meeting_attendees", rel_fk3, rel_col3, "Attendee");
 
     setOrderBy("name");
 

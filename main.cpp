@@ -1,10 +1,21 @@
 #include "mainwindow.h"
+#include "runguard.h"
 
 #include <QApplication>
 #include <QStyleFactory>
+#include <QSharedMemory>
 
 int main(int argc, char *argv[])
 {
+    QCoreApplication::addLibraryPath("./site-packages/PyQt5/Qt5/plugins");
+
+    RunGuard guard( "62d60669-bb94-4a94-88bb-b964890a71f4" );
+    if ( !guard.tryToRun() )
+    {
+        QMessageBox::critical(nullptr, "Only One Instance", QString("Only one instance of Project Notes can be running at a time."));
+        return 0;
+    }
+
     QApplication a(argc, argv);
     MainWindow w;
 
@@ -38,6 +49,8 @@ int main(int argc, char *argv[])
         qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
     }
 #endif
+
+
 
     a.setWindowIcon(QIcon(":/icons/logo.png")); // "AppIcon.icns"
     w.show();

@@ -71,15 +71,9 @@ bool PNDatabaseObjects::createDatabase(QString& t_databasepath)
 
     m_sqlite_db = QSqlDatabase::addDatabase("QSQLITE");
 
-    if (!QFileInfo::exists(m_database_file))
-        m_sqlite_db.setDatabaseName(m_database_file);
-    else
-    {
-        QMessageBox::critical(nullptr, QObject::tr("Cannot create database"),
-            QString(tr("File %1 already exists.")).arg(m_database_file), QMessageBox::Cancel);
-        m_database_file.clear(); // set empty if bad file
-        return false;
-    }
+    QFile::remove(m_database_file);  // if it exists remove it.  Dialog should have prompted you.
+
+    m_sqlite_db.setDatabaseName(m_database_file);
 
     if (!m_sqlite_db.open()) {
         QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
@@ -211,7 +205,6 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     m_tracker_item_comments_model_proxy->setSourceModel(m_tracker_item_comments_model);
 
     m_search_results_model = new SearchResultsModel(nullptr);
-
     m_search_results_model_proxy = new PNSortFilterProxyModel();
     m_search_results_model_proxy->setSourceModel(m_search_results_model);
 
@@ -335,9 +328,20 @@ void PNDatabaseObjects::closeDatabase()
     m_database_file.clear();
 }
 
-void PNDatabaseObjects::backupDatabase(QWidget& /*t_parent*/, QFileInfo& /*t_file*/)
+void PNDatabaseObjects::backupDatabase(const QString& t_file)
 {
-    // TODO:  This may not make sense to do when using the QT SQL interface
+    QSqlQuery qry(m_sqlite_db);
+    qry.prepare( "BEGIN IMMEDIATE;");
+    qry.exec();
+
+    QFile::remove(t_file); // copy command won't overwrite
+    if (!QFile::copy(m_database_file, t_file))
+    {
+        QMessageBox::critical(nullptr, QObject::tr("Database Backup Failed"), QString("Failed to backup the database.") );
+    }
+
+    qry.prepare( "ROLLBACK;");
+    qry.exec();
 }
 
 bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QString& t_parametervalue )
@@ -488,14 +492,12 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     // setup default filters
     if (getShowClosedProjects())
     {
-        //trackeritemsmodel()->clearFilter(17);
         projectinformationmodel()->clearFilter(14);
         projectslistmodel()->clearFilter(14);
         searchresultsmodel()->clearFilter(6);
     }
     else
     {
-        //trackeritemsmodel()->setFilter(17, tr("Active"));  // IT WORKS NOW but do we need it since we don't show all items in this version
         projectinformationmodel()->setFilter(14, tr("Active"));
         projectslistmodel()->setFilter(14, tr("Active"));
         searchresultsmodel()->setFilter(6, tr("Active"));
@@ -508,18 +510,18 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
         notesactionitemsmodel()->clearFilter(15);
         actionitemprojectnotesmodel()->clearFilter(3);
         trackeritemsmodel()->clearFilter(15);
-        actionitemsdetailsmodel()->clearFilter(3);
+        actionitemsdetailsmodel()->clearFilter(15);
         searchresultsmodel()->clearFilter(4);
     }
     else
     {
-        projectnotesmodel()->setFilter(5, tr("0"));
-        actionitemsdetailsmeetingsmodel()->setFilter(3, tr("0"));
-        notesactionitemsmodel()->setFilter(15, tr("0"));
-        actionitemprojectnotesmodel()->setFilter(3, tr("0"));
-        trackeritemsmodel()->setFilter(15, tr("0"));
-        actionitemsdetailsmodel()->setFilter(3, tr("0"));
-        searchresultsmodel()->setFilter(4, tr("0"));
+        projectnotesmodel()->setFilter(5, "0");
+        actionitemsdetailsmeetingsmodel()->setFilter(3, "0");
+        notesactionitemsmodel()->setFilter(15, "0");
+        actionitemprojectnotesmodel()->setFilter(3, "0");
+        trackeritemsmodel()->setFilter(15, "0");
+        actionitemsdetailsmodel()->setFilter(15, "0");
+        searchresultsmodel()->setFilter(4, "0");
     }
 
     if (getShowResolvedTrackerItems())
@@ -563,14 +565,14 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
 
     if (getGlobalProjectFilter().isEmpty())
     {
-        trackeritemsmodel()->clearFilter(14);
+        //trackeritemsmodel()->clearFilter(14);
         // don't clear this one becasue we may have it open  projectinformationmodel()->clearFilter(0);
         projectslistmodel()->clearFilter(0);
         searchresultsmodel()->clearFilter(7);
     }
     else
     {
-        trackeritemsmodel()->setFilter(14, getGlobalProjectFilter());
+        //trackeritemsmodel()->setFilter(14, getGlobalProjectFilter());
         // don't set this one only do the lists projectinformationmodel()->setFilter(0, getGlobalProjectFilter());
         projectslistmodel()->setFilter(0, getGlobalProjectFilter());
 
@@ -631,7 +633,7 @@ QList<QDomNode> PNDatabaseObjects::findTableNodes(const QDomNode& t_xmlelement, 
         if (node.nodeName() == "table" && node.toElement().attributeNode("name").value() == t_tablename)
         {
                 domlist.append(node);
-                qDebug() << "Found Node: " << node.nodeName() << " Name: " << t_tablename;
+                //qDebug() << "Found Node: " << node.nodeName() << " Name: " << t_tablename;
         }
 
         domlist.append(findTableNodes(node, t_tablename));
@@ -647,8 +649,6 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     // import clients
     QDomElement root = t_xmldoc.documentElement();
     QList<QDomNode> domlist;
-
-    qDebug() << "Root: "  << root.tagName();
 
     domlist = findTableNodes(root, "clients");
     if (!domlist.empty())
@@ -790,5 +790,43 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
         item_tracker_updates_model.refreshByTableName();
     }
 
+    PNSqlQueryModel::refreshDirty();
+
     return true;
 }
+
+void PNDatabaseObjects::addDefaultPMToProject(const QString& t_project_id)
+{
+    QString pm = getProjectManager();
+    QString guid = QUuid::createUuid().toString();
+
+    QString insert = QString("insert into project_people (teammember_id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' )").arg(t_project_id).arg(pm).arg(guid);
+    //qDebug() << "Adding default pm to project: " << insert;
+
+    execute(insert);
+}
+
+void PNDatabaseObjects::addDefaultPMToMeeting(const QString& t_note_id)
+{
+    QString pm = getProjectManager();
+    QString guid = QUuid::createUuid().toString();
+    QString guid2 = QUuid::createUuid().toString();
+
+    QString project_id = execute(QString("select project_id from project_notes where note_id='%1'").arg(t_note_id));
+    QString insertpm = QString("insert into project_people (teammember_id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' )").arg(project_id).arg(pm).arg(guid2);
+    //qDebug() << "Adding default pm to project: " << insertpm;
+
+    execute(insertpm);
+
+    QString insert = QString("insert into meeting_attendees (attendee_id, person_id, note_id) select '%3', '%2', '%1' where not exists (select 1 from meeting_attendees where note_id = '%1' and person_id = '%2' )").arg(t_note_id).arg(pm).arg(guid);
+    //qDebug() << "Adding default pm to meeting: " << insert;
+
+    meetingattendeesmodel()->setDirty();
+    teamsmodel()->setDirty();
+    projectteammembersmodel()->setDirty();
+
+    execute(insert);
+}
+
+// TODO: you can remove someone from a team by just reselecting a new persion
+

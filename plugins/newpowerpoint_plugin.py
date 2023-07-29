@@ -9,7 +9,7 @@ from includes.common import ProjectNotesCommon
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
 from PyQt5.QtSql import QSqlDatabase
 from PyQt5.QtXml import QDomDocument, QDomNode
-from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
+from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl, QFileInfo, QDir
 from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
 from PyQt5.QtGui import QDesktopServices
 
@@ -70,19 +70,19 @@ if (platform.system() == 'Windows'):
         pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
         cm = xmlroot.attributes().namedItem("managing_company_name").nodeValue()
 
-        projtab = pnc.find_node(xmlroot, "table", "name", "ix_projects")
+        projtab = pnc.find_node(xmlroot, "table", "name", "projects")
         projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
         projnam = pnc.get_column_value(projtab.firstChild(), "project_name")
 
         if (projectfolder is None or projectfolder =="" or not QDir(projectfolder).exists()):
-            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QtCore.QDir.home().path())
+            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
-                return None
+                return ""
         else:
             projectfolder = projectfolder + "\\Meeting Minutes\\"
 
-        templatefile = QFileDialog.getOpenFileName(None, "Select the PowerPoint Template", QDir.currentPath() + "\\templates\\","PowerPoint files (*.ppt;*.pptx;*.pptm)|*.ppt;*.pptx;*.pptm")
+        templatefile = QFileDialog.getOpenFileName(None, "Select the PowerPoint Template", QDir.currentPath() + "\\plugins\\templates\\","PowerPoint files (*.ppt;*.pptx;*.pptm)|*.ppt;*.pptx;*.pptm")
 
         if templatefile is None or templatefile[0] == "":
             return ""
@@ -95,7 +95,10 @@ if (platform.system() == 'Windows'):
 
         # copy the file
         if not QDir(projectfile).exists():
-            QFile(templatefile[0]).copy(projectfile)
+            if not QFile(templatefile[0]).copy(projectfile):
+                QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile[0] + " to " + projectfile, QMessageBox.Cancel)
+                return ""
+
 
         # change the values for the project specifics in the file
         #-exec_program("cscript.exe open_project.vbs \"" + projectfile + "\"  \"" + basename + "\" \"" + pm + "\"")
@@ -118,10 +121,12 @@ if (platform.system() == 'Windows'):
         powerpoint = None
 
         # add the location to the project
-        docxml = pnc.xml_doc_root()
+        docxml = QDomDocument()
+        docroot = docxml.createElement("projectnotes");
+        docxml.appendChild(docroot);
 
-        table = pnc.xml_table(docxml, "ix_project_locations")
-        docxml.appendChild(table)
+        table = pnc.xml_table(docxml, "project_locations")
+        docroot.appendChild(table)
 
         row = pnc.xml_row(docxml)
         table.appendChild(row)
@@ -131,7 +136,7 @@ if (platform.system() == 'Windows'):
         row.appendChild(pnc.xml_col(docxml, "location_description", basename, None))
         row.appendChild(pnc.xml_col(docxml, "full_path", projectfile, None))
 
-        return docxml
+        return docxml.toString()
 
 # setup test data
 """
@@ -152,3 +157,4 @@ print("Run Test")
 print(main_process(xmldoc).toString())
 print("Finished")
 """
+# TESTED: Phase 1

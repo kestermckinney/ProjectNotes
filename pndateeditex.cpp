@@ -45,7 +45,7 @@
 
 class PNDateEditEx::Private {
 public:
-    Private( PNDateEditEx* qq ) : q(qq),  /*clearButton(0),*/ null(false), nullable(false) {}
+    Private( PNDateEditEx* qq ) : q(qq),  /*clearButton(0),*/ null(false), nullable(true) {}
 
     PNDateEditEx* const q;
 
@@ -248,8 +248,8 @@ void PNDateEditEx::keyPressEvent(QKeyEvent *event)
         QAbstractSpinBox::keyPressEvent(event);
         return;
     }
-    if (event->key() == Qt::Key_Backspace && d->nullable){
-        //QLineEdit *edit = qFindChild<QLineEdit *>(this, "qt_spinbox_lineedit");
+    if ( ( event->key() == Qt::Key_Backspace || event->key() == Qt::Key_Delete )
+            && d->nullable){
         QLineEdit *edit = findChild<QLineEdit *>("qt_spinbox_lineedit");
         if (edit->selectedText() == edit->text()) {
             setDateTime(QDateTime());
