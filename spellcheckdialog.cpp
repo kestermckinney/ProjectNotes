@@ -6,7 +6,7 @@
 #include <QFile>
 
 SpellCheckDialog::SpellCheckDialog(QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint | Qt::WindowCloseButtonHint),
     ui(new Ui::SpellCheckDialog)
 {
     ui->setupUi(this);

@@ -51,31 +51,20 @@ MainWindow::MainWindow(QWidget *t_parent)
     connect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
     connect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectNote_triggered()));
     connect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_SearchResults_triggered()));
+    connect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpenTeamMember_triggered()));
 
     connect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
     connect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
 
     connect((QApplication*)QApplication::instance(), &QApplication::focusChanged, this, &MainWindow::on_focusChanged);
 
-    // connect the search request event
-    connect(global_DBObjects.peoplemodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    connect(global_DBObjects.clientsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    connect(global_DBObjects.projectslistmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    connect(global_DBObjects.statusreportitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    connect(global_DBObjects.projectteammembersmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    connect(global_DBObjects.projectlocationsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    connect(global_DBObjects.projectnotesmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    connect(global_DBObjects.meetingattendeesmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    connect(global_DBObjects.notesactionitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    connect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    connect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-
     m_plugin_manager = new PNPluginManager(this);
 
     m_plugin_settings_dialog = new PluginSettingsDialog(this);
 
     if (!global_Settings.getLastDatabase().toString().isEmpty())
-        openDatabase(global_Settings.getLastDatabase().toString());
+        if (QFile(global_Settings.getLastDatabase().toString()).exists())
+            openDatabase(global_Settings.getLastDatabase().toString());
 
     setButtonAndMenuStates();
 
@@ -423,22 +412,10 @@ MainWindow::~MainWindow()
     disconnect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
     disconnect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectNote_triggered()));
     disconnect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_SearchResults_triggered()));
+    disconnect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpenTeamMember_triggered()));
 
     disconnect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
     disconnect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
-
-    // connect the search request event
-    disconnect(global_DBObjects.peoplemodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    disconnect(global_DBObjects.clientsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    disconnect(global_DBObjects.projectslistmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    disconnect(global_DBObjects.statusreportitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    disconnect(global_DBObjects.projectteammembersmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    disconnect(global_DBObjects.projectlocationsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    disconnect(global_DBObjects.projectnotesmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    disconnect(global_DBObjects.meetingattendeesmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    disconnect(global_DBObjects.notesactionitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    disconnect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
-    disconnect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
 
     disconnect(m_timer, SIGNAL(timeout()), this, SLOT(slotTimerUpdates()));
 
@@ -464,10 +441,10 @@ MainWindow::~MainWindow()
         }
     }
 
-    if (global_DBObjects.isOpen())
-        global_DBObjects.closeDatabase();
-
     global_Settings.setWindowState("MainWindow", *this);
+
+    if (global_DBObjects.isOpen())
+        CloseDatabase();
 
     delete m_preferences_dialog;
     delete m_spellcheck_dialog;
@@ -780,6 +757,19 @@ void MainWindow::openDatabase(QString t_dbfile)
     navigateToPage(ui->pageProjectsList);
 
     setButtonAndMenuStates();
+
+    // connect the search request event
+    connect(global_DBObjects.peoplemodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.clientsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.projectslistmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.statusreportitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.projectteammembersmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.projectlocationsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.projectnotesmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.meetingattendeesmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.notesactionitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    connect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
 }
 
 void MainWindow::navigateToPage(PNBasePage* t_widget)
@@ -841,6 +831,23 @@ void MainWindow::navigateForward()
 
     setButtonAndMenuStates();
 }
+void MainWindow::CloseDatabase()
+{
+    global_DBObjects.closeDatabase();
+
+    // disconnect the search request event
+    disconnect(global_DBObjects.peoplemodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.clientsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.projectslistmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.statusreportitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.projectteammembersmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.projectlocationsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.projectnotesmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.meetingattendeesmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.notesactionitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+    disconnect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+}
 
 void MainWindow::on_actionClose_Database_triggered()
 { 
@@ -848,7 +855,8 @@ void MainWindow::on_actionClose_Database_triggered()
     navigateClearHistory();
 
     global_Settings.setLastDatabase(QString());
-    global_DBObjects.closeDatabase();
+
+    CloseDatabase();  
 
     setButtonAndMenuStates();
 }
@@ -943,6 +951,23 @@ void MainWindow::on_actionOpen_ProjectNote_triggered()
     ui->pageProjectNote->toFirst();
 
     navigateToPage(ui->pageProjectNote);
+}
+
+void MainWindow::on_actionOpenTeamMember_triggered()
+{
+    navigateToPage(ui->pagePeople);
+
+    QModelIndexList qil = ui->tableViewTeam->selectionModel()->selectedRows();
+    auto qib = qil.begin();
+    QModelIndex qq = global_DBObjects.projectteammembersmodelproxy()->mapToSource(*qib);
+    QVariant record_id = global_DBObjects.projectteammembersmodel()->data(global_DBObjects.projectteammembersmodel()->index(qq.row(), 2));
+
+
+    QModelIndex qmi = global_DBObjects.peoplemodel()->findIndex(record_id, 0);
+    QModelIndex qi = global_DBObjects.peoplemodelproxy()->index(global_DBObjects.peoplemodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
+
+    ui->tableViewPeople->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    ui->tableViewPeople->scrollTo(qi, QAbstractItemView::PositionAtCenter);
 }
 
 void MainWindow::on_actionOpen_SearchResults_triggered()

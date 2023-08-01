@@ -9,6 +9,7 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QMessageBox>
+#include <QPlainTextEdit>
 
 ItemDetailsDelegate::ItemDetailsDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
@@ -103,6 +104,12 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
                 checkbox->setCheckState(Qt::Checked);
             else
                 checkbox->setCheckState(Qt::Unchecked);
+        }
+        break;
+    case 6:
+        {
+            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
+            lineedit->setPlainText(value.toString());
         }
         break;
     default:
@@ -230,6 +237,12 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
                 key_val = "1";
             else
                 key_val = "0";
+        }
+        break;
+    case 6:
+        {
+            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
+            key_val = lineedit->toPlainText();
         }
         break;
     default:

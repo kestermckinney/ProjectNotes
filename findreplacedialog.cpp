@@ -5,7 +5,7 @@
 #include <QMessageBox>
 
 FindReplaceDialog::FindReplaceDialog(QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint),
     ui(new Ui::FindReplaceDialog)
 {
     ui->setupUi(this);

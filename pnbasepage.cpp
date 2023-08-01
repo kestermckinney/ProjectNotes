@@ -112,26 +112,18 @@ void PNBasePage::setButtonAndMenuStates()
 
  void PNBasePage::slotPluginMenu(PNPlugin* t_plugin)
  {
-     PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
-
-     if (!table && !t_plugin->getTableName().isEmpty())
-     {
-         QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1) specified by the plugin does not exist.").arg(t_plugin->getTableName()));
-         return;
-     }
-
      QString response;
 
-     if (table)
+     if (m_page_model)
      {
          QVariant keyval;
-         keyval = table->data(table->index(0, 0));
+         keyval = m_page_model->data(m_page_model->index(0, 0));
 
          QApplication::setOverrideCursor(Qt::WaitCursor);
          QApplication::processEvents();
 
 
-         PNSqlQueryModel *exportmodel = table->createExportVersion();
+         PNSqlQueryModel *exportmodel = m_page_model->createExportVersion();
          exportmodel->setFilter(0, keyval.toString());
          exportmodel->refresh();
 
@@ -145,18 +137,6 @@ void PNBasePage::setButtonAndMenuStates()
 
          QApplication::restoreOverrideCursor();
          QApplication::processEvents();
-     }
-     else
-     {
-         QApplication::setOverrideCursor(Qt::WaitCursor);
-         QApplication::processEvents();
-
-         // call the menu plugin with an empty string
-         response = t_plugin->callDataRightClickEvent(QString());
-
-         QApplication::restoreOverrideCursor();
-         QApplication::processEvents();
-
      }
 
      if (!response.isEmpty())

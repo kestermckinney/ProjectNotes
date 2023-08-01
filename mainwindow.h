@@ -42,12 +42,14 @@ public:
     PNBasePage* navigateCurrentPage() { return (m_navigation_location == -1 ? nullptr : m_navigation_history.at(m_navigation_location) ); }
     static PNPluginManager* getPluginManager() { return m_plugin_manager; }
     void buildPluginMenu();
+    void CloseDatabase();
 
 public slots:
     void on_actionOpen_ProjectDetails_triggered();
     void on_actionOpen_ItemDetails_triggered();
     void on_actionOpen_ProjectNote_triggered();
     void on_actionOpen_SearchResults_triggered();
+    void on_actionOpenTeamMember_triggered();
     void on_focusChanged(QWidget *t_old, QWidget *t_now);
 
 private slots:

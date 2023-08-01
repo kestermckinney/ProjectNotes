@@ -16,6 +16,7 @@ public:
     explicit PNBasePage(QWidget *parent = nullptr);
 
     virtual void setupModels( Ui::MainWindow *t_ui ) { Q_UNUSED(t_ui)};
+    virtual void setPageModel( PNSqlQueryModel* t_page_model ) { m_page_model = t_page_model; }
     virtual void newRecord();
     virtual void copyItem();
     virtual void openItem();
@@ -37,6 +38,7 @@ public slots:
 
 private:
     PNSortFilterProxyModel* m_current_model = nullptr;
+    PNSqlQueryModel* m_page_model = nullptr;
     PNTableView* m_current_view = nullptr;
 
     QString m_table_name;

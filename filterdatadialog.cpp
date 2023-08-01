@@ -5,7 +5,7 @@
 #include "pnsettings.h"
 
 FilterDataDialog::FilterDataDialog(QWidget *m_parent) :
-    QDialog(m_parent),
+    QDialog(m_parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint ),
     ui(new Ui::FilterDataDialog)
 {
     ui->setupUi(this);

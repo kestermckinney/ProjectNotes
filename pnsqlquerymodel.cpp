@@ -932,7 +932,7 @@ bool PNSqlQueryModel::deleteCheck(const QModelIndex &t_index)
         select.prepare("select count(*) from " + m_related_table.at(i) + " where " + where_clause);
         select.exec();
 
-        qDebug() << "DELETE CHECK: " << "select count(*) from " + m_related_table.at(i) + " where " + where_clause;
+        //qDebug() << "DELETE CHECK: " << "select count(*) from " + m_related_table.at(i) + " where " + where_clause;
 
         if (select.next())
             relatedcount = select.value(0).toInt();

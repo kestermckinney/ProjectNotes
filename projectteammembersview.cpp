@@ -3,7 +3,7 @@
 
 ProjectTeamMembersView::ProjectTeamMembersView(QWidget* t_parent) : PNTableView(t_parent)
 {
-
+    setHasOpen(true);
 }
 
 ProjectTeamMembersView::~ProjectTeamMembersView()

@@ -62,6 +62,7 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
     m_mapperProjectNotes->setItemDelegate(m_project_notes_delegate);
 
     m_mapperProjectNotes->setModel(global_DBObjects.projecteditingnotesmodelproxy());
+    setPageModel(global_DBObjects.projecteditingnotesmodel());
     m_mapperProjectNotes->setSubmitPolicy(QDataWidgetMapper::AutoSubmit);
 
     m_mapperProjectNotes->addMapping(ui->lineEditMeetingTitle, 2);

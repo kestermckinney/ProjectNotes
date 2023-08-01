@@ -19,8 +19,6 @@ StatusReportItemsModel::StatusReportItemsModel(QObject* t_parent): PNSqlQueryMod
 
     addUniqueKeys(key1, "Description");
 
-    addRelatedTable("projects", "project_id", "project_id", "Projects");
-
     setOrderBy("status_item_id");
 }
 

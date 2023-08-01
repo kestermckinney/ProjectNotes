@@ -84,59 +84,36 @@ PNTableView::~PNTableView()
 
 void PNTableView::slotPluginMenu(PNPlugin* t_plugin)
 {
-    PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
-
-    if (!table && !t_plugin->getTableName().isEmpty())
-    {
-        QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1) specified by the plugin does not exist.").arg(t_plugin->getTableName()));
-        return;
-    }
-
     QString response;
 
-    if (table)
-    {
-        QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
-        PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
+    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
+    PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
 
-        QModelIndexList qil = this->selectionModel()->selectedRows();
+    QModelIndexList qil = this->selectionModel()->selectedRows();
 
-        QVariant keyval;
+    QVariant keyval;
 
-        auto qi = qil.begin();
-        keyval = currentmodel->data(*qi);
+    auto qi = qil.begin();
+    keyval = currentmodel->data(*qi);
 
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-        QApplication::processEvents();
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    QApplication::processEvents();
 
 
-        PNSqlQueryModel *exportmodel = currentmodel->createExportVersion();
-        exportmodel->setFilter(0, keyval.toString());
-        exportmodel->refresh();
+    PNSqlQueryModel *exportmodel = currentmodel->createExportVersion();
+    exportmodel->setFilter(0, keyval.toString());
+    exportmodel->refresh();
 
-        QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(exportmodel, t_plugin->getChildTablesFilter());
-        QString xmlstr = xdoc->toString();
+    QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(exportmodel, t_plugin->getChildTablesFilter());
+    QString xmlstr = xdoc->toString();
 
-        // call the menu plugin with the data structure
-        response = t_plugin->callDataRightClickEvent(xmlstr);
+    // call the menu plugin with the data structure
+    response = t_plugin->callDataRightClickEvent(xmlstr);
 
-        delete xdoc;
+    delete xdoc;
 
-        QApplication::restoreOverrideCursor();
-        QApplication::processEvents();
-    }
-    else
-    {
-        QApplication::setOverrideCursor(Qt::WaitCursor);
-        QApplication::processEvents();
-
-        // call the menu plugin with an empty string
-        response = t_plugin->callDataRightClickEvent(QString());
-
-        QApplication::restoreOverrideCursor();
-        QApplication::processEvents();
-
-    }
+    QApplication::restoreOverrideCursor();
+    QApplication::processEvents();
 
     if (!response.isEmpty())
     {

@@ -61,6 +61,7 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     m_mapperProjectDetails->setItemDelegate(m_project_details_delegate);
 
     m_mapperProjectDetails->setModel(global_DBObjects.projectinformationmodelproxy());
+    setPageModel(global_DBObjects.projectinformationmodel());
     m_mapperProjectDetails->setSubmitPolicy(QDataWidgetMapper::AutoSubmit);
 
     m_mapperProjectDetails->addMapping(ui->lineEditNumber, 1);

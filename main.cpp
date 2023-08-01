@@ -9,6 +9,8 @@ int main(int argc, char *argv[])
 {
     QCoreApplication::addLibraryPath("./site-packages/PyQt5/Qt5/plugins");
 
+    QApplication a(argc, argv);
+
     RunGuard guard( "62d60669-bb94-4a94-88bb-b964890a71f4" );
     if ( !guard.tryToRun() )
     {
@@ -16,7 +18,6 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    QApplication a(argc, argv);
     MainWindow w;
 
 #ifdef Q_OS_WIN

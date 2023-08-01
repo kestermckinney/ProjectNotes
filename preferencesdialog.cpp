@@ -4,7 +4,7 @@
 #include "pndatabaseobjects.h"
 
 PreferencesDialog::PreferencesDialog(QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint ),
     ui(new Ui::PreferencesDialog)
 {
     ui->setupUi(this);

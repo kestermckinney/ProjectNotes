@@ -53,6 +53,7 @@ void ItemDetailsPage::setupModels( Ui::MainWindow *t_ui )
     m_mapperItemDetails->setItemDelegate(m_item_details_delegate);
 
     m_mapperItemDetails->setModel(global_DBObjects.actionitemsdetailsmodelproxy());
+    setPageModel(global_DBObjects.actionitemsdetailsmodel());
     m_mapperItemDetails->setSubmitPolicy(QDataWidgetMapper::AutoSubmit);
 
     m_mapperItemDetails->addMapping(ui->lineEditItemNumber, 1);
@@ -60,6 +61,7 @@ void ItemDetailsPage::setupModels( Ui::MainWindow *t_ui )
     m_mapperItemDetails->addMapping(ui->lineEditName, 3);
     m_mapperItemDetails->addMapping(ui->comboBoxProject, 14);
     m_mapperItemDetails->addMapping(ui->comboBoxMeeting, 13);
+    m_mapperItemDetails->addMapping(ui->plainTextEditDescription, 6);
     m_mapperItemDetails->addMapping(ui->comboBoxAssignedTo, 7);
     m_mapperItemDetails->addMapping(ui->comboBoxIdentifiedBy, 4);
     m_mapperItemDetails->addMapping(ui->dateEditIdentifiedDate, 5);

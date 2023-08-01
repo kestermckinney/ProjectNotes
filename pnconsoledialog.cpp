@@ -6,7 +6,7 @@
 #include <QScrollBar>
 
 PNConsoleDialog::PNConsoleDialog(QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint),
     ui(new Ui::PNConsoleDialog)
 {
     ui->setupUi(this);
