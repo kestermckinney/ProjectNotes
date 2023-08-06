@@ -11,7 +11,7 @@ NotesActionItemsModel::NotesActionItemsModel(QObject* t_parent): PNSqlQueryModel
     setTableName("item_tracker", "Notes Action Items");
 
     addColumn(0, tr("Item ID"), DBString, DBSearchable, DBRequired, DBReadOnly);
-    addColumn(1, tr("Item"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique);
+    addColumn(1, tr("Item"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(2, tr("t_type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_type);
     addColumn(3, tr("Item Name"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(4, tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
@@ -49,7 +49,7 @@ bool NotesActionItemsModel::newRecord(const QVariant* t_fk_value1, const QVarian
     QSqlRecord qr = emptyrecord();
 
     // determine the max item_number from the database, then determine the max number from the record cache in case new unsaved records were added
-    QString itemnumber_string = global_DBObjects.execute(QString("select max(item_number) from item_tracker where project_id = '%1'").arg(t_fk_value1->toString()));
+    QString itemnumber_string = global_DBObjects.execute(QString("select max(item_number) from item_tracker where project_id = '%1'").arg(t_fk_value2->toString()));
     int itemnumber_int = itemnumber_string.toInt();
 
     for ( int i = 0; i < rowCount(QModelIndex()); i++ )

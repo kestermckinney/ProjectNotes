@@ -20,7 +20,9 @@ ProjectNotesPage::~ProjectNotesPage()
 
 void ProjectNotesPage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes Meeting [%1 %2]").arg(ui->lineEditMeetingTitle->text(), ui->dateEditMeetingDate->text().left(50)));
+    QString project_number= global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,7)).toString();
+
+    topLevelWidget()->setWindowTitle(QString("Project Notes Meeting [%1 %2 %3]").arg(project_number, ui->lineEditMeetingTitle->text(), ui->dateEditMeetingDate->text().left(50)));
 }
 
 void ProjectNotesPage::newRecord()

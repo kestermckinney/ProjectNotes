@@ -178,9 +178,7 @@ bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
     case QEvent::MouseButtonDblClick:
         if ( ((QMouseEvent*)t_event)->buttons().testFlag(Qt::LeftButton ) )
         {
-            auto vheader = verticalHeader();
-
-            if (vheader->geometry().contains(((QMouseEvent*)t_event)->pos()))
+            if (geometry().contains(((QMouseEvent*)t_event)->pos()))
                 slotOpenRecord();
             else
                 return false;
