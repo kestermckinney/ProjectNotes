@@ -245,7 +245,7 @@ void MainWindow::slotTimerUpdates()
 {
     m_minute_counter++;
 
-    // call all of the startup events
+    // call all of the timer events
     for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
     {
         if ( p->isEnabled() &&
@@ -256,6 +256,7 @@ void MainWindow::slotTimerUpdates()
             p->hasEvery30MinutesEvent())
            )
         {
+            //qDebug() << "calling timer event for " << p->getPNPluginName() << " is enabled " << p->isEnabled();
             slotTimerEvent(p);
         }
     }
@@ -570,14 +571,16 @@ void MainWindow::setButtonAndMenuStates()
                 can_format_text ||
                 (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 ) ||
                 (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "QComboBox") == 0 ));
+                (strcmp(fw->metaObject()->className(), "QComboBox") == 0 ) /* ||
+                (strcmp(fw->metaObject()->className(), "QPlainTextEdit") == 0 ) STOPPED HERE */);
 
         // determine if we can find text
         bool can_find_edit =
                 (fw != nullptr) && (
                 can_format_text ||
                 (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 ));
+                (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 ) ||
+                (strcmp(fw->metaObject()->className(), "QPlainTextEdit") == 0 ) );
 
         // can't edit combo boxes not set to editable
         if ( can_text_edit && (strcmp(fw->metaObject()->className(), "QComboBox") == 0)  )
@@ -644,9 +647,6 @@ void MainWindow::setButtonAndMenuStates()
 
         // view items
         ui->menuView->setEnabled(true);
-
-        // spell check only QTextEdit widgets
-        ui->actionSpell_Check->setEnabled(can_format_text);
 
         // filter tracker items
         ui->actionResolved_Tracker_Action_Items->setChecked(global_DBObjects.getShowResolvedTrackerItems());
@@ -789,7 +789,7 @@ void MainWindow::navigateToPage(PNBasePage* t_widget)
 
     ui->stackedWidget->setCurrentWidget(t_widget);
     t_widget->setPageTitle();
-    t_widget->buildPluginMenu(m_plugin_manager, ui);
+    t_widget->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
 
     setButtonAndMenuStates();
 }
@@ -807,7 +807,8 @@ void MainWindow::navigateBackward()
 
         ui->stackedWidget->setCurrentWidget(current);
         ((PNBasePage*)current)->setPageTitle();
-        ((PNBasePage*)current)->buildPluginMenu(m_plugin_manager, ui);
+        buildPluginMenu();
+        ((PNBasePage*)current)->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
     }
 
     setButtonAndMenuStates();
@@ -826,15 +827,14 @@ void MainWindow::navigateForward()
 
         ui->stackedWidget->setCurrentWidget(current);
         ((PNBasePage*)current)->setPageTitle();
-        ((PNBasePage*)current)->buildPluginMenu(m_plugin_manager, ui);
+        buildPluginMenu();
+        ((PNBasePage*)current)->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
     }
 
     setButtonAndMenuStates();
 }
 void MainWindow::CloseDatabase()
 {
-    global_DBObjects.closeDatabase();
-
     // disconnect the search request event
     disconnect(global_DBObjects.peoplemodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     disconnect(global_DBObjects.clientsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
@@ -847,6 +847,8 @@ void MainWindow::CloseDatabase()
     disconnect(global_DBObjects.notesactionitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     disconnect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     disconnect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+
+    global_DBObjects.closeDatabase();
 }
 
 void MainWindow::on_actionClose_Database_triggered()
@@ -1668,7 +1670,8 @@ void MainWindow::on_actionSpell_Check_triggered()
 
     if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
         m_spellcheck_dialog->spellCheck(fw);
-
+    /* STOPPED HERE else if (strcmp(fw->metaObject()->className(), "QPlainTextEdit") == 0 )
+        m_spellcheck_dialog->spellCheck(fw); */
     /*
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->selectAll();

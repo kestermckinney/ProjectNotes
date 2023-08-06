@@ -80,12 +80,12 @@ bool TrackerItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t
     qr.setValue(1, QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0')));  // Need to make a counter that looks good for items
     qr.setValue(2, "Tracker");
     qr.setValue(4, global_DBObjects.getProjectManager()); // default identified by to the pm
-    qr.setValue(5, curdate); // default to today
+    qr.setValue(5, curdate); // date identified
     qr.setValue(8, "High"); // set a default priority
     qr.setValue(9, "New"); // set a default status
     qr.setValue(10, QVariant());
-    qr.setValue(11, curdate); // date data as entered
-    qr.setValue(12, QVariant());
+    qr.setValue(11, curdate); // date data as updated
+    qr.setValue(12, QVariant()); // date resolved
     qr.setValue(15, 0);
 
     return addRecord(qr);
@@ -93,29 +93,29 @@ bool TrackerItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t
 
 bool TrackerItemsModel::setData(const QModelIndex &t_index, const QVariant &t_value, int t_role)
 {
-    QVariant curdate = QDateTime::currentDateTime().toString("MM/dd/yyyy");
-
-    // set the date the record was updated
-    if (t_index.column() != 11)
+    if ( PNSqlQueryModel::setData(t_index, t_value, t_role) )
     {
-        QVariant oldvalue = data(t_index, t_role);
+        QVariant curdate = QDateTime::currentDateTime().toString("MM/dd/yyyy");
 
-        if (oldvalue != t_value) // don't change the update date if nothing changed
+        // if the issue was changed to resolved them change the resolved date
+        if (t_index.column() == 9 && t_value.toString() == "Resolved")
         {
+            QModelIndex qmi_resolved = index(t_index.row(), 12);
+            PNSqlQueryModel::setData(qmi_resolved, curdate, t_role);
+        }
+
+        // set the date the record was updated
+        if (t_index.column() != 11)
+        {
+            QVariant oldvalue = data(t_index, t_role);
             QModelIndex qmi = index(t_index.row(), 11);
             PNSqlQueryModel::setData(qmi, curdate, t_role);
         }
+
+        return true;
     }
 
-    // if the issue was changed to resolved them change the resolved date
-    if (t_index.column() == 9 && t_value.toString() == "Resolved")
-    {
-        QModelIndex qmi_resolved = index(t_index.row(), 12);
-        PNSqlQueryModel::setData(qmi_resolved, curdate, t_role);
-    }
-
-
-    return PNSqlQueryModel::setData(t_index, t_value, t_role);
+    return false;
 }
 
 QVariant TrackerItemsModel::data(const QModelIndex &t_index, int t_role) const

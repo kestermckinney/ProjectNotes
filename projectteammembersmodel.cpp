@@ -7,7 +7,7 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* t_parent): PNSqlQueryM
 {
     setObjectName("ProjectTeamMembersModel");
 
-    setBaseSql("SELECT teammember_id, project_id, pp.people_id, name, receive_status_report, pp.role, email, (select pr2.project_number from projects pr2 where pr2.project_id=pp.project_id) project_number, (select pr.project_name from projects pr where pr.project_id=pp.project_id) project_name FROM project_people pp left join people p on p.people_id=pp.people_id");
+    setBaseSql("SELECT teammember_id, project_id, pp.people_id, name, receive_status_report, pp.role, email, (select pr2.project_number from projects pr2 where pr2.project_id=pp.project_id) project_number, (select pr.project_name from projects pr where pr.project_id=pp.project_id) project_name, (select client_name from clients c where c.client_id=p.client_id) client_name FROM project_people pp left join people p on p.people_id=pp.people_id");
 
     setTableName("project_people", "Project People");
 
@@ -22,6 +22,7 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* t_parent): PNSqlQueryM
     addColumn(6, tr("Email"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
     addColumn(7, tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
     addColumn(8, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
+    addColumn(9, tr("Client Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
 
     QStringList key1 = {"project_id", "people_id"};
 

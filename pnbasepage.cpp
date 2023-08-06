@@ -74,37 +74,16 @@ void PNBasePage::setButtonAndMenuStates()
     Q_UNUSED(t_open);
  }
 
- void PNBasePage::buildPluginMenu(PNPluginManager* t_pm, Ui::MainWindow* t_ui)
+ void PNBasePage::buildPluginMenu(PNPluginManager* t_pm, QMenu* t_menu)
  {
-     // clear any other plugin items
-     QAction* mi = t_ui->menuPlugins->actions().last();
-
-     while ( mi->text().compare("View Console") != 0 )
-     {
-         t_ui->menuPlugins->removeAction(mi);
-         mi = t_ui->menuPlugins->actions().last();
-     }
-
-    t_ui->menuPlugins->addSeparator();
-
-     // add globally available plugins
-     for ( PNPlugin* p : t_pm->getPlugins())
-     {
-         if (p->hasPNPluginMenuEvent() && p->isEnabled())
-         {
-             QAction* act = t_ui->menuPlugins->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
-             act->setIcon(QIcon(":/icons/add-on.png"));
-         }
-     }
-
-     t_ui->menuPlugins->addSeparator();
+    t_menu->addSeparator();
 
     // add menus relevant to the current table
-     for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
+     for ( PNPlugin* p : t_pm->getPlugins())
      {
          if (p->hasDataRightClickEvent(getTableName()) && p->isEnabled())
          {
-             QAction* act = t_ui->menuPlugins->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+             QAction* act = t_menu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
              act->setIcon(QIcon(":/icons/add-on.png"));
          }
      }

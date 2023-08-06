@@ -23,9 +23,6 @@ TrackerItemCommentsModel::TrackerItemCommentsModel(QObject* t_parent): PNSqlQuer
     addColumn(8, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(9, tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
-    addRelatedTable("item_tracker", "item_id", "item_id", "Tracker Item");
-    // TODO: the item tracker list doesn't update when comments are chagned here.. need to test the mark dirty
-
     setOrderBy("lastupdated_date");
 }
 
@@ -63,6 +60,8 @@ bool TrackerItemCommentsModel::setData(const QModelIndex &t_index, const QVarian
                 PNSqlQueryModel::setData(qmi, curdate, t_role);
             }
         }
+
+        global_DBObjects.trackeritemsmodel()->setDirty(); // the combined comments can't be set relatable
 
         return true;
     }

@@ -31,7 +31,7 @@ public:
     virtual void toFirst(bool t_open = true);
     const QString getTableName() { return m_table_name; }
     void setTableName(const QString& t_table_name) { m_table_name = t_table_name; }
-    void buildPluginMenu(PNPluginManager* t_pm, Ui::MainWindow* t_ui);
+    void buildPluginMenu(PNPluginManager* t_pm, QMenu* t_menu);
 
 public slots:
     void slotPluginMenu(PNPlugin* t_plugin);

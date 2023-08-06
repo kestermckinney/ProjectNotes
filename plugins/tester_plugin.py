@@ -102,7 +102,7 @@ def disabled_event_shutdown(xmlstr):
 
     return ""
 
-def disabled_event_everyminute(xmlstr):
+def event_everyminute(xmlstr):
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
         QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)

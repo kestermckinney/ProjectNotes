@@ -256,6 +256,7 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
     t_model->setData(t_index, key_val, Qt::EditRole);
 }
 
+
 bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& t_item_id) const
 {
     QString msg;

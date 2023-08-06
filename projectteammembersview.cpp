@@ -24,6 +24,7 @@ void ProjectTeamMembersView::setModel(QAbstractItemModel *t_model)
         setColumnHidden(6, true);
         setColumnHidden(7, true);
         setColumnHidden(8, true);
+        setColumnHidden(9, true);
         // setup model lists
 
         // projects list panel delagets

@@ -52,10 +52,8 @@ void PluginSettingsDialog::selectPlugin(int t_index)
     // description
     ui->PluginDescriptionPlainTextEdit->setPlainText(m_current_selection->getPNPluginDescription());
 
-    // is enabled
-    bool enable = global_Settings.getPluginEnabled(m_current_selection->getPNPluginName());
-    m_current_selection->setEnabled(enable);
-
+    // is enabled 
+    m_current_selection->setEnabled(m_current_selection->isEnabled());
     ui->EnabledCheckBox->setCheckState( m_current_selection->isEnabled() ? Qt::Checked : Qt::Unchecked);
 
     // list of events
@@ -119,8 +117,6 @@ void PluginSettingsDialog::on_EnabledCheckBox_stateChanged(int arg1)
     Q_UNUSED(arg1);
     if (m_loading) return; // loading values ignore events
 
-
-    global_Settings.setPluginEnabled(m_current_selection->getPNPluginName(), (ui->EnabledCheckBox->checkState() == Qt::Checked));
     m_current_selection->setEnabled((ui->EnabledCheckBox->checkState() == Qt::Checked));
 }
 
