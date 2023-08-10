@@ -1,7 +1,10 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "projectteammembersmodel.h"
 #include "pndatabaseobjects.h"
 
-#include <QDebug>
+//#include <QDebug>
 
 ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
@@ -107,6 +110,8 @@ bool ProjectTeamMembersModel::setData(const QModelIndex &t_index, const QVariant
 
 bool ProjectTeamMembersModel::openRecord(QModelIndex t_index)
 {
+    Q_UNUSED(t_index);
+
     global_DBObjects.peoplemodel()->deactivateUserFilter(global_DBObjects.peoplemodel()->objectName());
 
     return true;

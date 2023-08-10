@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #ifndef PNTABLEVIEW_H
 #define PNTABLEVIEW_H
 
@@ -19,7 +22,7 @@ public:
 
 protected:
     bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index)
-    { return false; }
+    { Q_UNUSED(model); Q_UNUSED(option); Q_UNUSED(index); Q_UNUSED(event); return false; }
     QWidget* createEditor(QWidget *, const QStyleOptionViewItem &, const QModelIndex &) const
     { return Q_NULLPTR; }
 

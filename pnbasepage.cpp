@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "pnbasepage.h"
 #include "pndatabaseobjects.h"
 #include "pnsqlquerymodel.h"
@@ -19,17 +22,17 @@ void PNBasePage::setPageTitle()
 
 void PNBasePage::newRecord()
 {
-    int lastrow = ((QSortFilterProxyModel*)getCurrentView()->model())->sourceModel()->rowCount(QModelIndex());
+    int lastrow = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->sourceModel()->rowCount(QModelIndex());
 
-    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord();
+    dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord();
 
     //  check if column is visible
     int col = 1;
     while (!getCurrentView()->isVisible())
         col++;
 
-    QModelIndex index = ((QSortFilterProxyModel*)getCurrentView()->model())->sourceModel()->index(lastrow, col);
-    QModelIndex sort_index = ((QSortFilterProxyModel*)getCurrentView()->model())->mapFromSource(index);
+    QModelIndex index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->sourceModel()->index(lastrow, col);
+    QModelIndex sort_index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->mapFromSource(index);
 
     getCurrentView()->selectionModel()->select(sort_index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     getCurrentView()->scrollTo(sort_index, QAbstractItemView::PositionAtCenter);
@@ -41,19 +44,19 @@ void PNBasePage::deleteItem()
 
     for (int i = qi.count() - 1; i >= 0; i--)
     {
-        ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->deleteRecord(getCurrentModel()->mapToSource(qi[i]));
+        dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->deleteRecord(getCurrentModel()->mapToSource(qi[i]));
     }
 }
 
 void PNBasePage::copyItem()
 {
-    int lastrow = ((PNSqlQueryModel*)getCurrentModel())->rowCount(QModelIndex());
+    int lastrow = dynamic_cast<PNSqlQueryModel*>(getCurrentModel())->rowCount(QModelIndex());
 
     QModelIndexList qi = getCurrentView()->selectionModel()->selectedRows();
 
     for (int i = qi.count() - 1; i >= 0; i--)
     {
-        ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->copyRecord(getCurrentModel()->mapToSource(qi[i]));
+        dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->copyRecord(getCurrentModel()->mapToSource(qi[i]));
     }
 
     //  check if column is visible
@@ -61,8 +64,8 @@ void PNBasePage::copyItem()
     while (!getCurrentView()->isVisible())
         col++;
 
-    QModelIndex index = ((QSortFilterProxyModel*)getCurrentView()->model())->sourceModel()->index(lastrow, col);
-    QModelIndex sort_index = ((QSortFilterProxyModel*)getCurrentView()->model())->mapFromSource(index);
+    QModelIndex index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->sourceModel()->index(lastrow, col);
+    QModelIndex sort_index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->mapFromSource(index);
 
     getCurrentView()->selectionModel()->select(sort_index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     getCurrentView()->scrollTo(sort_index, QAbstractItemView::PositionAtCenter);
@@ -74,7 +77,7 @@ void PNBasePage::openItem()
 
     for (int i = qi.count() - 1; i >= 0; i--)
     {
-        ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->openRecord(getCurrentModel()->mapToSource(qi[i]));
+        dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->openRecord(getCurrentModel()->mapToSource(qi[i]));
     }
 }
 

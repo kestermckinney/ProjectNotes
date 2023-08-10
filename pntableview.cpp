@@ -1,10 +1,13 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "pntableview.h"
 #include "pnsettings.h"
 #include "pndatabaseobjects.h"
 #include "pnsqlquerymodel.h"
 #include "mainwindow.h"
 
-#include <QDebug>
+//#include <QDebug>
 #include <QMouseEvent>
 #include <QApplication>
 #include <QEvent>
@@ -12,6 +15,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QTextStream>
 
 PNTableView::PNTableView(QWidget *t_parent) : QTableView(t_parent)
 {
@@ -86,8 +90,8 @@ void PNTableView::slotPluginMenu(PNPlugin* t_plugin)
 {
     QString response;
 
-    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
-    PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
 
     QModelIndexList qil = this->selectionModel()->selectedRows();
 
@@ -262,12 +266,12 @@ void PNTableView::dataRowActivated(const QModelIndex &t_index)
 
 void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
 {
-    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
 
     if ( !sortmodel )
         return;
 
-    PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
+    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
 
     int row = this->selectionModel()->currentIndex().row();
 
@@ -315,16 +319,16 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
 
 void PNTableView::slotNewRecord()
 {
-    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
-    PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
 
     currentmodel->newRecord();
 }
 
 void PNTableView::slotDeleteRecord()
 {
-    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
-    PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
 
     QModelIndexList qil = this->selectionModel()->selectedRows();
 
@@ -335,8 +339,8 @@ void PNTableView::slotDeleteRecord()
 
 void PNTableView::slotCopyRecord()
 {
-    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
-    PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
 
     QModelIndexList qil = this->selectionModel()->selectedRows();
 
@@ -350,8 +354,8 @@ void PNTableView::slotOpenRecord()
     if (!m_has_open) // don't allow double click to work if not specified
         return;
 
-    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
-    PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
 
     QModelIndexList qil = this->selectionModel()->selectedRows();
     auto qi = qil.begin();
@@ -364,8 +368,8 @@ void PNTableView::slotOpenRecord()
 
 void PNTableView::slotExportRecord()
 {
-    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
-    PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
 
     QModelIndexList qil = this->selectionModel()->selectedRows();
 

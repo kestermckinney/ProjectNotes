@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "pncheckboxdelegate.h"
 
 #include <QCheckBox>
@@ -6,7 +9,7 @@
 #include <QModelIndex>
 #include <QApplication>
 #include <QString>
-#include <QDebug>
+//#include <QDebug>
 #include <QLayout>
 #include <QHBoxLayout>
 #include <QPainter>

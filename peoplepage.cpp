@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "peoplepage.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"

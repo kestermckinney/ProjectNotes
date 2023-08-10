@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #ifndef PEOPLELISTVIEW_H
 #define PEOPLELISTVIEW_H
 

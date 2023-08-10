@@ -1,10 +1,13 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "pnplugin.h"
 #include "pnsettings.h"
 
 #include <QObject>
 #include <QString>
 #include <QMessageBox>
-#include <QDebug>
+//#include <QDebug>
 #include <QFileInfo>
 
 bool PNPlugin::loadModule(const QFileInfo& t_filename)

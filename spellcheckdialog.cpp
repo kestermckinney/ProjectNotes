@@ -1,8 +1,11 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "spellcheckdialog.h"
 #include "ui_spellcheckdialog.h"
 #include "pnsettings.h"
 #include <QMessageBox>
-#include <QDebug>
+//#include <QDebug>
 #include <QFile>
 
 SpellCheckDialog::SpellCheckDialog(QWidget *parent) :

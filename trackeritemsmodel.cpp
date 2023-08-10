@@ -1,7 +1,7 @@
 #include "trackeritemsmodel.h"
 #include "pndatabaseobjects.h"
 
-#include <QDebug>
+//#include <QDebug>
 
 TrackerItemsModel::TrackerItemsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {

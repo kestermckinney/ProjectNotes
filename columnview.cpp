@@ -1,8 +1,11 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "pnsqlquerymodel.h"
 #include "columnview.h"
 #include "filterdatadialog.h"
 
-#include<QDebug>
+//#include<QDebug>
 
 ColumnView::ColumnView(QWidget *t_parent) : PNTableView(t_parent)
 {
@@ -13,7 +16,7 @@ ColumnView::ColumnView(QWidget *t_parent) : PNTableView(t_parent)
 
 void ColumnView::dataRowSelected(const QModelIndex &t_index)
 {
-    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
 
     m_values_model->setValuesColumn(sortmodel->data(t_index).toString());
     // translate the diplay name to the database field name

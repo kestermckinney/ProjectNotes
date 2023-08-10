@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "pluginsettingsdialog.h"
 #include "ui_pluginsettingsdialog.h"
 #include "pnpluginmanager.h"
@@ -6,7 +9,7 @@
 
 #include <QList>
 #include <QTableWidgetItem>
-#include <QDebug>
+//#include <QDebug>
 
 PluginSettingsDialog::PluginSettingsDialog(QWidget *parent) :
     QDialog(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint),

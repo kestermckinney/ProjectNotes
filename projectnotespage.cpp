@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "projectnotespage.h"
 #include "pndatabaseobjects.h"
 #include "notesactionitemsview.h"
@@ -30,9 +33,9 @@ void ProjectNotesPage::newRecord()
     QVariant note_id = global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,0));
     QVariant project_id = global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,1));
 
-    int lastrow = ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->rowCount(QModelIndex());
+    int lastrow = dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->rowCount(QModelIndex());
 
-    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&note_id, &project_id);
+    dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord(&note_id, &project_id);
 
     getCurrentView()->selectRow(lastrow);
     QModelIndex index = getCurrentView()->model()->index(lastrow, 0);
@@ -78,7 +81,7 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
     setCurrentModel(nullptr);
     setCurrentView(nullptr);
 
-    ui->textEditNotes->setFont(QFont("Segoe UI", 10));
+    ui->textEditNotes->setFontPointSize(10);
 }
 
 void ProjectNotesPage::toFirst(bool t_open)

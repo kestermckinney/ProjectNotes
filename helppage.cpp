@@ -1,9 +1,13 @@
-#include <QDebug>
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
+//#include <QDebug>
 #include <QUrl>
 #include <QHelpSearchEngine>
 #include <QHelpSearchQueryWidget>
 #include <QHelpSearchResultWidget>
 #include <QHelpContentWidget>
+#include <QHelpIndexWidget>
 
 #include "helppage.h"
 #include "ui_mainwindow.h"
@@ -24,11 +28,11 @@ void HelpPage::setupModels( Ui::MainWindow *t_ui )
 
     if (!t_ui)
     {
-        disconnect((QWidget*)ui->textBrowser->helpEngine()->contentWidget(),
+        disconnect(dynamic_cast<QWidget*>(ui->textBrowser->helpEngine()->contentWidget()),
                 SIGNAL(linkActivated(QUrl)),
                 ui->textBrowser, SLOT(setSource(QUrl)));
 
-        disconnect((QWidget*)ui->textBrowser->helpEngine()->indexWidget(),
+        disconnect(dynamic_cast<QWidget*>(ui->textBrowser->helpEngine()->indexWidget()),
                 SIGNAL(linkActivated(QUrl, QString)),
                 ui->textBrowser, SLOT(setSource(QUrl)));
 
@@ -41,12 +45,12 @@ void HelpPage::setupModels( Ui::MainWindow *t_ui )
 
     if (ui->textBrowser->helpEngine())
     {
-        ui->tabWidgetContents->addTab((QWidget*)ui->textBrowser->helpEngine()->contentWidget(), "Contents");
-        ui->tabWidgetContents->addTab((QWidget*)ui->textBrowser->helpEngine()->indexWidget(), "Index");
+        ui->tabWidgetContents->addTab(dynamic_cast<QWidget*>(ui->textBrowser->helpEngine()->contentWidget()), "Contents");
+        ui->tabWidgetContents->addTab(dynamic_cast<QWidget*>(ui->textBrowser->helpEngine()->indexWidget()), "Index");
 
         QVBoxLayout *layout = new QVBoxLayout();
-        layout->addWidget((QWidget*)ui->textBrowser->helpEngine()->searchEngine()->queryWidget());
-        layout->addWidget((QWidget*)ui->textBrowser->helpEngine()->searchEngine()->resultWidget());
+        layout->addWidget(dynamic_cast<QWidget*>(ui->textBrowser->helpEngine()->searchEngine()->queryWidget()));
+        layout->addWidget(dynamic_cast<QWidget*>(ui->textBrowser->helpEngine()->searchEngine()->resultWidget()));
         QWidget* widget = new QWidget();
         widget->setLayout(layout);
 
@@ -57,11 +61,11 @@ void HelpPage::setupModels( Ui::MainWindow *t_ui )
         ui->textBrowser->helpEngine()->searchEngine()->reindexDocumentation();
     }
 
-    connect((QWidget*)ui->textBrowser->helpEngine()->contentWidget(),
+    connect(dynamic_cast<QWidget*>(ui->textBrowser->helpEngine()->contentWidget()),
             SIGNAL(linkActivated(QUrl)),
             ui->textBrowser, SLOT(setSource(QUrl)));
 
-    connect((QWidget*)ui->textBrowser->helpEngine()->indexWidget(),
+    connect(dynamic_cast<QWidget*>(ui->textBrowser->helpEngine()->indexWidget()),
             SIGNAL(linkActivated(QUrl, QString)),
             ui->textBrowser, SLOT(setSource(QUrl)));
 

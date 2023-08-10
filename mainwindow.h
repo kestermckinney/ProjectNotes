@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
@@ -45,11 +48,11 @@ public:
     void CloseDatabase();
 
 public slots:
-    void on_actionOpen_ProjectDetails_triggered();
-    void on_actionOpen_ItemDetails_triggered();
-    void on_actionOpen_ProjectNote_triggered();
-    void on_actionOpen_SearchResults_triggered();
-    void on_actionOpenTeamMember_triggered();
+    void slotOpen_ProjectDetails_triggered();
+    void slotOpen_ItemDetails_triggered();
+    void slotOpen_ProjectNote_triggered();
+    void slotOpen_SearchResults_triggered();
+    void slotOpenTeamMember_triggered();
     void on_focusChanged(QWidget *t_old, QWidget *t_now);
 
 private slots:

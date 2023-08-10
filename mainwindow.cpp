@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "ui_mainwindow.h"
 
 #include "pntableview.h"
@@ -12,7 +15,6 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QSqlTableModel>
-#include <QDebug>
 #include <QDir>
 #include <QFileDialog>
 #include <QTextEdit>
@@ -23,6 +25,7 @@
 #include <QClipboard>
 #include <QMimeType>
 #include <QMimeData>
+//#include <QDebug>
 
 #include "mainwindow.h"
 
@@ -46,17 +49,17 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     global_Settings.getWindowState("MainWindow", *this);
 
-    connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
-    connect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
-    connect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
-    connect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectNote_triggered()));
-    connect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_SearchResults_triggered()));
-    connect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpenTeamMember_triggered()));
+    connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ProjectDetails_triggered()));
+    connect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ItemDetails_triggered()));
+    connect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ItemDetails_triggered()));
+    connect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ProjectNote_triggered()));
+    connect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_SearchResults_triggered()));
+    connect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpenTeamMember_triggered()));
 
     connect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
     connect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
 
-    connect((QApplication*)QApplication::instance(), &QApplication::focusChanged, this, &MainWindow::on_focusChanged);
+    connect(dynamic_cast<QApplication*>(QApplication::instance()), &QApplication::focusChanged, this, &MainWindow::on_focusChanged);
 
     m_plugin_manager = new PNPluginManager(this);
 
@@ -408,12 +411,12 @@ void MainWindow::slotPluginMenu(PNPlugin* t_plugin)
 
 MainWindow::~MainWindow()
 {
-    disconnect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
-    disconnect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
-    disconnect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
-    disconnect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectNote_triggered()));
-    disconnect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_SearchResults_triggered()));
-    disconnect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpenTeamMember_triggered()));
+    disconnect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ProjectDetails_triggered()));
+    disconnect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ItemDetails_triggered()));
+    disconnect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ItemDetails_triggered()));
+    disconnect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ProjectNote_triggered()));
+    disconnect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_SearchResults_triggered()));
+    disconnect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpenTeamMember_triggered()));
 
     disconnect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
     disconnect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
@@ -824,6 +827,7 @@ void MainWindow::navigateToPage(PNBasePage* t_widget)
 
     ui->stackedWidget->setCurrentWidget(t_widget);
     t_widget->setPageTitle();
+    buildPluginMenu();
     t_widget->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
 
     setButtonAndMenuStates();
@@ -838,12 +842,12 @@ void MainWindow::navigateBackward()
         QWidget* current = m_navigation_history.at(m_navigation_location);
 
         if (PNSqlQueryModel::refreshDirty())
-            ((PNBasePage*)current)->toFirst(false);
+            dynamic_cast<PNBasePage*>(current)->toFirst(false);
 
         ui->stackedWidget->setCurrentWidget(current);
-        ((PNBasePage*)current)->setPageTitle();
+        dynamic_cast<PNBasePage*>(current)->setPageTitle();
         buildPluginMenu();
-        ((PNBasePage*)current)->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
+        dynamic_cast<PNBasePage*>(current)->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
     }
 
     setButtonAndMenuStates();
@@ -858,12 +862,12 @@ void MainWindow::navigateForward()
         QWidget* current = m_navigation_history.at(m_navigation_location);
 
         if (PNSqlQueryModel::refreshDirty())
-            ((PNBasePage*)current)->toFirst(false);
+            dynamic_cast<PNBasePage*>(current)->toFirst(false);
 
         ui->stackedWidget->setCurrentWidget(current);
-        ((PNBasePage*)current)->setPageTitle();
+        dynamic_cast<PNBasePage*>(current)->setPageTitle();
         buildPluginMenu();
-        ((PNBasePage*)current)->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
+        dynamic_cast<PNBasePage*>(current)->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
     }
 
     setButtonAndMenuStates();
@@ -968,7 +972,7 @@ void MainWindow::on_actionDelete_Item_triggered()
         navigateCurrentPage()->deleteItem();
 }
 
-void MainWindow::on_actionOpen_ProjectDetails_triggered()
+void MainWindow::slotOpen_ProjectDetails_triggered()
 {
 
     ui->pageProjectDetails->toFirst();
@@ -976,21 +980,21 @@ void MainWindow::on_actionOpen_ProjectDetails_triggered()
     navigateToPage(ui->pageProjectDetails);
 }
 
-void MainWindow::on_actionOpen_ItemDetails_triggered()
+void MainWindow::slotOpen_ItemDetails_triggered()
 {
     ui->pageItemDetails->toFirst();
 
     navigateToPage(ui->pageItemDetails);
 }
 
-void MainWindow::on_actionOpen_ProjectNote_triggered()
+void MainWindow::slotOpen_ProjectNote_triggered()
 {
     ui->pageProjectNote->toFirst();
 
     navigateToPage(ui->pageProjectNote);
 }
 
-void MainWindow::on_actionOpenTeamMember_triggered()
+void MainWindow::slotOpenTeamMember_triggered()
 {
     navigateToPage(ui->pagePeople);
 
@@ -1007,7 +1011,7 @@ void MainWindow::on_actionOpenTeamMember_triggered()
     ui->tableViewPeople->scrollTo(qi, QAbstractItemView::PositionAtCenter);
 }
 
-void MainWindow::on_actionOpen_SearchResults_triggered()
+void MainWindow::slotOpen_SearchResults_triggered()
 {
     // find the selected search result
     QModelIndexList qil = ui->tableViewSearchResults->selectionModel()->selectedIndexes();
@@ -1380,6 +1384,7 @@ void MainWindow::textStyle(int styleIndex)
             style = cursor.currentList()->format().style();
         else
             style = QTextListFormat::ListDisc;
+
         marker = QTextBlockFormat::MarkerType::Unchecked;
         break;
     case 5:
@@ -1387,6 +1392,7 @@ void MainWindow::textStyle(int styleIndex)
             style = cursor.currentList()->format().style();
         else
             style = QTextListFormat::ListDisc;
+
         marker = QTextBlockFormat::MarkerType::Checked;
         break;
     case 6:
@@ -1451,17 +1457,19 @@ void MainWindow::textStyle(int styleIndex)
 void MainWindow::textFamily(const QString &f)
 {
     QTextCharFormat fmt;
-    fmt.setFontFamily(f);
+    // don't use this method is is broken fmt.setFontFamily(f);
+    fmt.setFont(f);
     mergeFormatOnWordOrSelection(fmt);
 }
 
 void MainWindow::mergeFormatOnWordOrSelection(const QTextCharFormat &format)
 {
     QTextCursor cursor = ui->textEditNotes->textCursor();
+
     if (!cursor.hasSelection())
         cursor.select(QTextCursor::WordUnderCursor);
+
     cursor.mergeCharFormat(format);
-    ui->textEditNotes->mergeCurrentCharFormat(format);
 }
 
 void MainWindow::modifyIndentation(int amount)
@@ -1509,6 +1517,8 @@ void MainWindow::textSize(const QString &p)
         QTextCharFormat fmt;
         fmt.setFontPointSize(pointSize);
         mergeFormatOnWordOrSelection(fmt);
+
+        //qDebug() << "Called textSize: " << p;
     }
 }
 

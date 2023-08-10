@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "pnlineeditfilebuttondelegate.h"
 #include "pnlineeditfilebutton.h"
 

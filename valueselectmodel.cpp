@@ -1,4 +1,4 @@
-#include <QDebug>
+//#include <QDebug>
 #include "valueselectmodel.h"
 
 ValueSelectModel::ValueSelectModel(QObject *t_parent) : PNSqlQueryModel(t_parent)

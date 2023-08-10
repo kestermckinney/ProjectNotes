@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "projectnotesdelegate.h"
 #include "pnsqlquerymodel.h"
 #include "pndateeditex.h"
@@ -26,8 +29,8 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
             lineedit->setText(value.toString());
 
             QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
-            if (((MainWindow*) window)->navigateCurrentPage())
-                ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
+            if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
+                dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 3:
@@ -42,8 +45,8 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
                 dateEdit->setDate(date_value.date());
 
                 QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
-                if (((MainWindow*) window)->navigateCurrentPage())
-                    ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
+                if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
+                    dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
             }
         }
         break;
@@ -80,8 +83,8 @@ void ProjectNotesDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t
             key_val = lineedit->text();
 
             QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
-            if (((MainWindow*) window)->navigateCurrentPage())
-                ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
+            if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
+                dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 3: // note date

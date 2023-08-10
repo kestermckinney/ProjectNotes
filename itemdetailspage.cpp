@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 
 #include "itemdetailspage.h"
 #include "pndatabaseobjects.h"
@@ -27,9 +30,9 @@ void ItemDetailsPage::newRecord()
 {
     QVariant tracker_id = global_DBObjects.actionitemsdetailsmodelproxy()->data(global_DBObjects.actionitemsdetailsmodelproxy()->index(0,0));
 
-    int lastrow = ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->rowCount(QModelIndex());
+    int lastrow = dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->rowCount(QModelIndex());
 
-    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&tracker_id);
+    dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord(&tracker_id);
 
     getCurrentView()->selectRow(lastrow);
     QModelIndex index = getCurrentView()->model()->index(lastrow, 0);

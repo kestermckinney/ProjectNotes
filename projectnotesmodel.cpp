@@ -1,6 +1,9 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "projectnotesmodel.h"
 #include "pndatabaseobjects.h"
-#include <QDebug>
+//#include <QDebug>
 
 ProjectNotesModel::ProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {

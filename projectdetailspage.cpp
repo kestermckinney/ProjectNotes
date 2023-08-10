@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "projectdetailspage.h"
 #include "pndatabaseobjects.h"
 
@@ -26,9 +29,9 @@ void ProjectDetailsPage::newRecord()
 {
     QVariant project_id = global_DBObjects.projectinformationmodelproxy()->data(global_DBObjects.projectinformationmodelproxy()->index(0,0));
 
-    int lastrow = ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->rowCount(QModelIndex());
+    int lastrow = dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->rowCount(QModelIndex());
 
-    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&project_id);
+    dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord(&project_id);
 
     getCurrentView()->selectRow(lastrow);
     QModelIndex index = getCurrentView()->model()->index(lastrow, 0);

@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "pncomboboxdelegate.h"
 
 #include <QComboBox>
@@ -6,7 +9,7 @@
 #include <QModelIndex>
 #include <QApplication>
 #include <QString>
-#include <QDebug>
+//#include <QDebug>
 
 PNComboBoxDelegate::PNComboBoxDelegate(QObject *t_parent, PNSqlQueryModel *t_model, int t_displaycolumn, int t_datacolumn)
 :QStyledItemDelegate(t_parent)

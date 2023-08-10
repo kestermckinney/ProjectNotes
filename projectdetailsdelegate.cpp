@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "projectdetailsdelegate.h"
 #include "pnsqlquerymodel.h"
 #include "pndateeditex.h"
@@ -6,7 +9,7 @@
 
 #include <QLineEdit>
 #include <QComboBox>
-#include <QDebug>
+//#include <QDebug>
 
 ProjectDetailsDelegate::ProjectDetailsDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
@@ -26,8 +29,8 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
             lineedit->setText(value.toString());
 
             QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
-            if (((MainWindow*) window)->navigateCurrentPage())
-                ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
+            if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
+                dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 3:
@@ -102,8 +105,8 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
             key_val = lineedit->text();
 
             QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
-            if (((MainWindow*) window)->navigateCurrentPage())
-                ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
+            if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
+                dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 3:

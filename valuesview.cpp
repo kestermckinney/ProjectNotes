@@ -1,6 +1,6 @@
 #include "valuesview.h"
 #include <QMouseEvent>
-#include <QDebug>
+//#include <QDebug>
 
 ValuesView::ValuesView(QWidget *t_parent) : PNTableView(t_parent)
 {
@@ -16,8 +16,8 @@ ValuesView::~ValuesView()
 
 void ValuesView::dataRowSelected(const QModelIndex &t_index)
 {
-    QSortFilterProxyModel* sortmodel = (QSortFilterProxyModel*) this->model();
-    PNSqlQueryModel* currentmodel = (PNSqlQueryModel*) sortmodel->sourceModel();
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
 
     QString column = currentmodel->getColumnName(0);
 

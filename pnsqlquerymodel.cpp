@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "pnsqlquerymodel.h"
 #include "pndatabaseobjects.h"
 
@@ -6,7 +9,7 @@
 #include <QSqlRecord>
 #include <QMessageBox>
 #include <QSqlError>
-#include <QDebug>
+//#include <QDebug>
 #include <QDateTime>
 #include <QUuid>
 #include <QRegularExpressionMatch>
@@ -14,6 +17,7 @@
 #include <QDomDocument>
 #include <QDomNode>
 #include <QList>
+#include <QLocale>
 
 QList<PNSqlQueryModel*> PNSqlQueryModel::m_open_recordsets;
 
@@ -215,7 +219,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             update.addBindValue(keyvalue);
             update.addBindValue(oldvalue);
 
-            qDebug() << "update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)";
+            //qDebug() << "update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)";
             //qDebug() << "Value " << value;
             //qDebug() << "Value " << keyvalue;
             //qDebug() << "Value " << oldvalue;

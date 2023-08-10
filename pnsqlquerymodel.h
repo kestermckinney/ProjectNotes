@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #ifndef PNSQLQUERYMODEL_H
 #define PNSQLQUERYMODEL_H
 
@@ -13,7 +16,7 @@
 #include <QSqlRecord>
 #include <QSqlField>
 #include <QDomElement>
-#include <QDebug>
+//#include <QDebug>
 
 class PNSqlQueryModel : public QAbstractTableModel
 {
@@ -169,7 +172,7 @@ public:
         {
             if (m->isDirty())
             {
-                qDebug() << "Refreshing Dirty Table: " << m->tablename();
+                //qDebug() << "Refreshing Dirty Table: " << m->tablename();
 
                 m->refresh();
                 foundsome = true;
