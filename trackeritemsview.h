@@ -37,6 +37,7 @@ private:
     PNComboBoxDelegate* m_project_delegate = nullptr;
     PNCheckBoxDelegate* m_internal_delegate = nullptr;
     //PNComboBoxDelegate* m_client_delegate = nullptr;
+    NotEditableDelegate* m_not_editable_delegate = nullptr;
 };
 
 

@@ -19,13 +19,20 @@ void PNBasePage::setPageTitle()
 
 void PNBasePage::newRecord()
 {
-    int lastrow = ((PNSqlQueryModel*)getCurrentModel())->rowCount(QModelIndex());
+    int lastrow = ((QSortFilterProxyModel*)getCurrentView()->model())->sourceModel()->rowCount(QModelIndex());
 
     ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord();
 
-    getCurrentView()->selectRow(lastrow);
-    QModelIndex index = getCurrentView()->model()->index(lastrow, 0);
-    getCurrentView()->selectionModel()->select(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    //  check if column is visible
+    int col = 1;
+    while (!getCurrentView()->isVisible())
+        col++;
+
+    QModelIndex index = ((QSortFilterProxyModel*)getCurrentView()->model())->sourceModel()->index(lastrow, col);
+    QModelIndex sort_index = ((QSortFilterProxyModel*)getCurrentView()->model())->mapFromSource(index);
+
+    getCurrentView()->selectionModel()->select(sort_index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    getCurrentView()->scrollTo(sort_index, QAbstractItemView::PositionAtCenter);
 }
 
 void PNBasePage::deleteItem()
@@ -49,9 +56,16 @@ void PNBasePage::copyItem()
         ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->copyRecord(getCurrentModel()->mapToSource(qi[i]));
     }
 
-    getCurrentView()->selectRow(lastrow);
-    QModelIndex index = getCurrentView()->model()->index(lastrow, 0);
-    getCurrentView()->selectionModel()->select(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    //  check if column is visible
+    int col = 1;
+    while (!getCurrentView()->isVisible())
+        col++;
+
+    QModelIndex index = ((QSortFilterProxyModel*)getCurrentView()->model())->sourceModel()->index(lastrow, col);
+    QModelIndex sort_index = ((QSortFilterProxyModel*)getCurrentView()->model())->mapFromSource(index);
+
+    getCurrentView()->selectionModel()->select(sort_index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    getCurrentView()->scrollTo(sort_index, QAbstractItemView::PositionAtCenter);
 }
 
 void PNBasePage::openItem()

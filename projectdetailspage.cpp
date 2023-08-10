@@ -155,5 +155,17 @@ void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
 
 void ProjectDetailsPage::setButtonAndMenuStates()
 {
+    bool show_internal = global_DBObjects.getShowInternalItems();
 
+    ui->lineEditBAC->setVisible(show_internal);
+    ui->lineEditBCWP->setVisible(show_internal);
+    ui->lineEditBCWS->setVisible(show_internal);
+    ui->lineEditBudget->setVisible(show_internal);
+    ui->lineEditActual->setVisible(show_internal);
+
+    ui->labelBAC->setVisible(show_internal);
+    ui->labelBCWP->setVisible(show_internal);
+    ui->labelBCWS->setVisible(show_internal);
+    ui->labelBudget->setVisible(show_internal);
+    ui->labelActual->setVisible(show_internal);
 }

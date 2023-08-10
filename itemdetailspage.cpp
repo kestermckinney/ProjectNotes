@@ -19,7 +19,7 @@ ItemDetailsPage::~ItemDetailsPage()
 
 void ItemDetailsPage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes Item [%1 %2]").arg(ui->lineEditItemNumber->text(), ui->lineEditName->text().left(50)));
+    topLevelWidget()->setWindowTitle(QString("Project Notes Item [%1 %2 %3]").arg(ui->lineEditNumber->text(), ui->lineEditItemNumber->text(), ui->lineEditName->text().left(50)));
     //qDebug() << "Item Details Page Set Title";
 }
 

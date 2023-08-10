@@ -546,9 +546,44 @@ void MainWindow::setButtonAndMenuStates()
         {
             ui->tableViewTrackerItems->setColumnHidden(15, false);
             ui->tableViewTrackerItems->resizeColumnToContents(15);
+
+            ui->tableViewProjects->setColumnHidden(6, false);
+            ui->tableViewProjects->setColumnHidden(7, false);
+            ui->tableViewProjects->setColumnHidden(8, false);
+            ui->tableViewProjects->setColumnHidden(9, false);
+            ui->tableViewProjects->setColumnHidden(10, false);
+            ui->tableViewProjects->setColumnHidden(15, false);
+            ui->tableViewProjects->setColumnHidden(16, false);
+            ui->tableViewProjects->setColumnHidden(17, false);
+            ui->tableViewProjects->setColumnHidden(18, false);
+            ui->tableViewProjects->setColumnHidden(20, false);
+
+            ui->tableViewProjects->resizeColumnToContents(6);
+            ui->tableViewProjects->resizeColumnToContents(7);
+            ui->tableViewProjects->resizeColumnToContents(8);
+            ui->tableViewProjects->resizeColumnToContents(9);
+            ui->tableViewProjects->resizeColumnToContents(10);
+            ui->tableViewProjects->resizeColumnToContents(15);
+            ui->tableViewProjects->resizeColumnToContents(16);
+            ui->tableViewProjects->resizeColumnToContents(17);
+            ui->tableViewProjects->resizeColumnToContents(18);
+            ui->tableViewProjects->resizeColumnToContents(20);
         }
         else
+        {
             ui->tableViewTrackerItems->setColumnHidden(15, true);
+
+            ui->tableViewProjects->setColumnHidden(6, true);
+            ui->tableViewProjects->setColumnHidden(7, true);
+            ui->tableViewProjects->setColumnHidden(8, true);
+            ui->tableViewProjects->setColumnHidden(9, true);
+            ui->tableViewProjects->setColumnHidden(10, true);
+            ui->tableViewProjects->setColumnHidden(15, true);
+            ui->tableViewProjects->setColumnHidden(16, true);
+            ui->tableViewProjects->setColumnHidden(17, true);
+            ui->tableViewProjects->setColumnHidden(18, true);
+            ui->tableViewProjects->setColumnHidden(20, true);
+        }
 
         ui->tabWidgetProject->setTabText(2, "Tracker");
 
@@ -1020,7 +1055,7 @@ void MainWindow::on_actionOpen_SearchResults_triggered()
         ui->tabWidgetNotes->setCurrentIndex(1);
 
         QModelIndex qmi = global_DBObjects.meetingattendeesmodel()->findIndex(record_id, 0);
-        QModelIndex qi = global_DBObjects.meetingattendeesmodelproxy()->index(global_DBObjects.meetingattendeesmodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
+        QModelIndex qi = global_DBObjects.meetingattendeesmodelproxy()->index(global_DBObjects.meetingattendeesmodelproxy()->mapFromSource(qmi).row(), 2);  // usa a visible column
 
         ui->tableViewAtendees->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
         ui->tableViewAtendees->scrollTo(qi, QAbstractItemView::PositionAtCenter);
@@ -1033,7 +1068,7 @@ void MainWindow::on_actionOpen_SearchResults_triggered()
         ui->tabWidgetProject->setCurrentIndex(3);
 
         QModelIndex qmi = global_DBObjects.projectlocationsmodel()->findIndex(record_id, 0);
-        QModelIndex qi = global_DBObjects.projectlocationsmodelproxy()->index(global_DBObjects.projectlocationsmodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
+        QModelIndex qi = global_DBObjects.projectlocationsmodelproxy()->index(global_DBObjects.projectlocationsmodelproxy()->mapFromSource(qmi).row(), 2);  // usa a visible column
 
         ui->tableViewLocations->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
         ui->tableViewLocations->scrollTo(qi, QAbstractItemView::PositionAtCenter);
@@ -1046,7 +1081,7 @@ void MainWindow::on_actionOpen_SearchResults_triggered()
         ui->tabWidgetProject->setCurrentIndex(1);
 
         QModelIndex qmi = global_DBObjects.projectteammembersmodel()->findIndex(record_id, 0);
-        QModelIndex qi = global_DBObjects.projectteammembersmodelproxy()->index(global_DBObjects.projectteammembersmodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
+        QModelIndex qi = global_DBObjects.projectteammembersmodelproxy()->index(global_DBObjects.projectteammembersmodelproxy()->mapFromSource(qmi).row(), 3);  // usa a visible column
 
         ui->tableViewTeam->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
         ui->tableViewTeam->scrollTo(qi, QAbstractItemView::PositionAtCenter);
@@ -1077,7 +1112,7 @@ void MainWindow::on_actionOpen_SearchResults_triggered()
         navigateToPage(ui->pageItemDetails);
 
         QModelIndex qmi = global_DBObjects.trackeritemscommentsmodel()->findIndex(record_id, 0);
-        QModelIndex qi = global_DBObjects.trackeritemscommentsmodelproxy()->index(global_DBObjects.trackeritemscommentsmodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
+        QModelIndex qi = global_DBObjects.trackeritemscommentsmodelproxy()->index(global_DBObjects.trackeritemscommentsmodelproxy()->mapFromSource(qmi).row(), 3);  // usa a visible column
 
         ui->tableViewComments->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
         ui->tableViewComments->scrollTo(qi, QAbstractItemView::PositionAtCenter);

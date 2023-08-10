@@ -69,5 +69,4 @@ void PNDateEditDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
     QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
 }
 
-// TODO: can't seem to double click on the first row of the projects list to open the projects
 

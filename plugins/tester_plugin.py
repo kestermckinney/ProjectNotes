@@ -74,7 +74,9 @@ parameters = [
     "TestParameter1",
     "TestParameter2"
 ]
-app = QApplication(sys.argv)
+
+# WARNING: The next line below can cause Project Notes to hang only use it for testing
+#app = QApplication(sys.argv)
 
 pnc = ProjectNotesCommon()
 
