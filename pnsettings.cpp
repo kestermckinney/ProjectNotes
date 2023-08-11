@@ -8,7 +8,7 @@
 
 PNSettings::PNSettings()
 {
-    m_app_config = new QSettings("ProjectNotes3", "AppSettings");
+    m_app_config = new QSettings("ProjectNotes", "AppSettings");
     m_app_config->setFallbacksEnabled(false);
 
     m_plugin_config = new QSettings("ProjectNotes", "PluginSettings");

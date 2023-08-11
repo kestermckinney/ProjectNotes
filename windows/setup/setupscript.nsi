@@ -4,11 +4,11 @@ Unicode True
 RequestExecutionLevel user
 
 ; HM NIS Edit Wizard helper defines
-!define PRODUCT_NAME "Project Notes 3"
+!define PRODUCT_NAME "Project Notes"
 !define PRODUCT_VERSION "3.0.0"
 !define PRODUCT_PUBLISHER "Paul McKinney"
-!define PRODUCT_WEB_SITE "https://github.com/kestermckinney/ProjectNotes3"
-!define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\ProjectNotes3.exe"
+!define PRODUCT_WEB_SITE "https://github.com/kestermckinney/ProjectNotes"
+!define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\ProjectNotes.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
@@ -46,7 +46,7 @@ RequestExecutionLevel user
 ; Instfiles page
 !insertmacro MUI_PAGE_INSTFILES
 ; Finish page
-!define MUI_FINISHPAGE_RUN "$INSTDIR\ProjectNotes3.exe"
+!define MUI_FINISHPAGE_RUN "$INSTDIR\ProjectNotes.exe"
 !insertmacro MUI_PAGE_FINISH
 
 ; Uninstaller pages
@@ -60,8 +60,8 @@ RequestExecutionLevel user
 !system 'cscript build_file_list.vbs'
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
-OutFile "ProjectNotes3-Setup64.exe"
-InstallDir "$PROGRAMFILES64\Project Notes 3"
+OutFile "ProjectNotes-Setup64.exe"
+InstallDir "$PROGRAMFILES64\Project Notes"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
 ShowUnInstDetails show
@@ -70,86 +70,88 @@ Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
 
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\ProjectNotes3.exe"
+  File "..\..\..\build-ProjectNotes-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\ProjectNotes.exe"
 
-  CreateDirectory "$SMPROGRAMS\Project Notes 3"
-  CreateShortCut  "$SMPROGRAMS\Project Notes 3\Project Notes 3.lnk" "$INSTDIR\ProjectNotes3.exe"
-  CreateShortCut  "$DESKTOP\Project Notes 3.lnk" "$INSTDIR\ProjectNotes3.exe"
+  CreateDirectory "$SMPROGRAMS\Project Notes"
+  CreateShortCut  "$SMPROGRAMS\Project Notes\Project Notes.lnk" "$INSTDIR\ProjectNotes.exe"
+  CreateShortCut  "$DESKTOP\Project Notes.lnk" "$INSTDIR\ProjectNotes.exe"
 
   ; Project Notes Needed Libraries
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\ProjectNotes3.exe"
+  File "..\..\..\build-ProjectNotes-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\ProjectNotes.exe"
 
   ; include files that were built
   !include "install_files.nsh"
 
   ; Help files
   SetOutPath "$INSTDIR\docs"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\docs\Project Notes.qch"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\docs\Project Notes.qhc"
+  File "..\..\..\build-ProjectNotes-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\docs\Project Notes.qch"
+  File "..\..\..\build-ProjectNotes-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\docs\Project Notes.qhc"
   
   ; Project Notes Base Plugins
 
   SetOutPath "$INSTDIR\plugins"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\archivenotes_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\archivenotes_plugin.py"
+  File "..\..\plugins\archivenotes_plugin.py"
+  File "..\..\plugins\archivenotes_plugin.py"
   ;cci_connectdrives_plugin.py
   ;cci_ifs_projects_import_plugin.py
   ;cci_ifs_projects_statusreport_plugin.py
   ;cci_scheduleoneonone_plugin.py
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\contactexport_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\contactimport_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\editor_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\emailarchive_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\excelkill_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\globalsettings_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\newchangeorder_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\newmsproject_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\newpowerpoint_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\newriskregister_plugin.py"
+  File "..\..\plugins\contactexport_plugin.py"
+  File "..\..\plugins\contactimport_plugin.py"
+  File "..\..\plugins\editor_plugin.py"
+  File "..\..\plugins\emailarchive_plugin.py"
+  File "..\..\plugins\excelkill_plugin.py"
+  File "..\..\plugins\globalsettings_plugin.py"
+  File "..\..\plugins\newchangeorder_plugin.py"
+  File "..\..\plugins\newmsproject_plugin.py"
+  File "..\..\plugins\newpowerpoint_plugin.py"
+  File "..\..\plugins\newriskregister_plugin.py"
   ; paul_cleanpc_plugin.py
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\schedulecustomerkickoffinvite_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\schedulecustomerlessonslearnedinvite_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\schedulecustomerstatusinvite_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\scheduleinternalkickoffinvite_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\scheduleinternallessonslearnedinvite_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\scheduleinternalstatusinvite_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\sendmeetingnotes_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\sendprojectemail_plugin.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\trackkerreport_plugin.py"
+  File "..\..\plugins\schedulecustomerkickoffinvite_plugin.py"
+  File "..\..\plugins\schedulecustomerlessonslearnedinvite_plugin.py"
+  File "..\..\plugins\schedulecustomerstatusinvite_plugin.py"
+  File "..\..\plugins\scheduleinternalkickoffinvite_plugin.py"
+  File "..\..\plugins\scheduleinternallessonslearnedinvite_plugin.py"
+  File "..\..\plugins\scheduleinternalstatusinvite_plugin.py"
+  File "..\..\plugins\sendmeetingnotes_plugin.py"
+  File "..\..\plugins\sendprojectemailtoattendee_plugin.py"
+  File "..\..\plugins\sendprojectemailtoperson_plugin.py"
+  File "..\..\plugins\sendprojectemailtoteam_plugin.py"
+  File "..\..\plugins\trackkerreport_plugin.py"
   
   SetOutPath "$INSTDIR\plugins\includes"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\includes\common.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\includes\excel_tools.py"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\includes\dialogNotesArchiveOptions.ui"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\includes\dialogStatusRptOptions.ui"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\includes\dialogTrackerRptOptions.ui"
+  File "..\..\plugins\includes\common.py"
+  File "..\..\plugins\includes\excel_tools.py"
+  File "..\..\plugins\includes\dialogNotesArchiveOptions.ui"
+  File "..\..\plugins\includes\dialogStatusRptOptions.ui"
+  File "..\..\plugins\includes\dialogTrackerRptOptions.ui"
 
 
   SetOutPath "$INSTDIR\plugins\templates"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Customer Kick Off Template.ppt"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Customer MES Kick Off Template.ppt"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Full DeltaV Schedule Template.mpp"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Full MES Schedule Template.mpp"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Internal Kick Off Template.ppt"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Lessons Learned Template.xlsx"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Lilly B132 Schedule Template.mpp"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Lilly B314 Schedule Template.mpp"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Lilly IFS B314 Schedule Template.mpp"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Meeting Template.xlsx"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Single Task Template.mpp"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Status Report Template.xlsx"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Tracker Items Template.xlsx"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\Risk Register Template.xlsx"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\plugins\templates\PCR Template.xlsx"
+  File "..\..\plugins\templates\Customer Kick Off Template.ppt"
+  File "..\..\plugins\templates\Customer MES Kick Off Template.ppt"
+  File "..\..\plugins\templates\Full DeltaV Schedule Template.mpp"
+  File "..\..\plugins\templates\Full MES Schedule Template.mpp"
+  File "..\..\plugins\templates\Internal Kick Off Template.ppt"
+  File "..\..\plugins\templates\Lessons Learned Template.xlsx"
+  File "..\..\plugins\templates\Lilly B132 Schedule Template.mpp"
+  File "..\..\plugins\templates\Lilly B314 Schedule Template.mpp"
+  File "..\..\plugins\templates\Lilly IFS B314 Schedule Template.mpp"
+  File "..\..\plugins\templates\Meeting Template.xlsx"
+  File "..\..\plugins\templates\Single Task Template.mpp"
+  File "..\..\plugins\templates\Status Report Template.xlsx"
+  File "..\..\plugins\templates\Tracker Items Template.xlsx"
+  File "..\..\plugins\templates\Risk Register Template.xlsx"
+  File "..\..\plugins\templates\PCR Template.docx"
   
   SetOutPath "$INSTDIR\dictionary"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\index.ini"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\es_ANY.dic"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\es_ANY.aff"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\en_US.dic"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\en_US.aff"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\en_GB.dic"
-  File "..\..\..\build-ProjectNotes3-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\en_GB.aff"
+  File "..\..\..\build-ProjectNotes-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\index.ini"
+  File "..\..\..\build-ProjectNotes-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\es_ANY.dic"
+  File "..\..\..\build-ProjectNotes-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\es_ANY.aff"
+  File "..\..\..\build-ProjectNotes-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\en_US.dic"
+  File "..\..\..\build-ProjectNotes-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\en_US.aff"
+  File "..\..\..\build-ProjectNotes-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\en_GB.dic"
+  File "..\..\..\build-ProjectNotes-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\en_GB.aff"
 
   ; not needed anymore EnVar::AddValue "Path" "$INSTDIR"
 SectionEnd
@@ -157,17 +159,17 @@ SectionEnd
 Section -AdditionalIcons
   SetOutPath $INSTDIR
   WriteIniStr "$INSTDIR\${PRODUCT_NAME}.url" "InternetShortcut" "URL" "${PRODUCT_WEB_SITE}"
-  CreateShortCut "$SMPROGRAMS\Project Notes 3\Website.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
-  CreateShortCut "$SMPROGRAMS\Project Notes 3\Uninstall.lnk" "$INSTDIR\uninst.exe"
+  CreateShortCut "$SMPROGRAMS\Project Notes\Website.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
+  CreateShortCut "$SMPROGRAMS\Project Notes\Uninstall.lnk" "$INSTDIR\uninst.exe"
 SectionEnd
 
 Section -Post
   WriteUninstaller "$INSTDIR\uninst.exe"
-  WriteRegStr HKLM "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\ProjectNotes3.exe"
+  WriteRegStr HKLM "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\ProjectNotes.exe"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName" "$(^Name)"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString" "$\"$INSTDIR\uninst.exe$\""
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\ProjectNotes3.exe"
+  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\ProjectNotes.exe"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
@@ -242,7 +244,9 @@ Section Uninstall
   Delete "$INSTDIR\plugins\scheduleinternallessonslearnedinvite_plugin.py"
   Delete "$INSTDIR\plugins\scheduleinternalstatusinvite_plugin.py"
   Delete "$INSTDIR\plugins\sendmeetingnotes_plugin.py"
-  Delete "$INSTDIR\plugins\sendprojectemail_plugin.py"
+  Delete "$INSTDIR\plugins\sendprojectemailtoattendee_plugin.py"
+  Delete "$INSTDIR\plugins\sendprojectemailtoperson_plugin.py"  
+  Delete "$INSTDIR\plugins\sendprojectemailtoteam_plugin.py"
   Delete "$INSTDIR\plugins\trackkerreport_plugin.py"
   
   Delete "$INSTDIR\plugins\includes\common.py"
@@ -269,7 +273,7 @@ Section Uninstall
   Delete "$INSTDIR\plugins\templates\Status Report Template.xlsx"
   Delete "$INSTDIR\plugins\templates\Tracker Items Template.xlsx"
   Delete "$INSTDIR\plugins\templates\Risk Register Template.xlsx"
-  Delete "$INSTDIR\plugins\templates\PCR Template.xlsx"
+  Delete "$INSTDIR\plugins\templates\PCR Template.docx"
 
   RMDir "$INSTDIR\plugins\templates"
 
@@ -277,14 +281,14 @@ Section Uninstall
   RMDir "$INSTDIR\plugins\__pycache__"
   RMDIR "$INSTDIR\plugins"
 
-  Delete "$INSTDIR\ProjectNotes3.exe"
+  Delete "$INSTDIR\ProjectNotes.exe"
 
-  Delete "$SMPROGRAMS\Project Notes 3\Uninstall.lnk"
-  Delete "$SMPROGRAMS\Project Notes 3\Website.lnk"
-  Delete "$DESKTOP\Project Notes 3.lnk"
-  Delete "$SMPROGRAMS\Project Notes 3\Project Notes 3.lnk"
+  Delete "$SMPROGRAMS\Project Notes\Uninstall.lnk"
+  Delete "$SMPROGRAMS\Project Notes\Website.lnk"
+  Delete "$DESKTOP\Project Notes.lnk"
+  Delete "$SMPROGRAMS\Project Notes\Project Notes.lnk"
 
-  RMDir "$SMPROGRAMS\Project Notes 3"
+  RMDir "$SMPROGRAMS\Project Notes"
   RMDir "$INSTDIR"
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
