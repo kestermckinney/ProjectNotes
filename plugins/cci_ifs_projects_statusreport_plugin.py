@@ -124,6 +124,7 @@ if (platform.system() == 'Windows'):
         while not recordset.EOF:
             count = count + 1
             recordset.MoveNext()
+            QtWidgets.QApplication.processEvents()
 
         if count > 0:
             recordset.MoveFirst()
@@ -152,6 +153,7 @@ if (platform.system() == 'Windows'):
             #print("po line total " + str(mtotalpoline))
 
             recordset.MoveNext()
+            QtWidgets.QApplication.processEvents()
 
         recordset.Close()
 
@@ -220,6 +222,7 @@ if (platform.system() == 'Windows'):
                 pne.replace_cell_tag(sheet, "<MILESTONEINVOICED" + str(count) + ">", "")
 
             recordset.MoveNext()
+            QtWidgets.QApplication.processEvents()
 
         recordset.Close()
         recordset = None
@@ -301,6 +304,7 @@ if (platform.system() == 'Windows'):
 
             # get the milestones
             recordset.MoveNext()
+            QtWidgets.QApplication.processEvents()
 
         recordset.Close()
         recordset = None
@@ -309,6 +313,8 @@ if (platform.system() == 'Windows'):
 
     # processing main function
     def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
+
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -322,8 +328,8 @@ if (platform.system() == 'Windows'):
         # setup global variables
         global OracleUsername
         global ProjectsFolder
-        OracleUsername = pnc.get_global_setting("OracleUsername")
-        ProjectsFolder = pnc.get_global_setting("ProjectsFolder")
+        OracleUsername = pnc.get_plugin_setting("OracleUsername")
+        ProjectsFolder = pnc.get_plugin_setting("ProjectsFolder")
 
         statusdate = QDateTime.currentDateTime()
         executedate = statusdate
@@ -341,8 +347,7 @@ if (platform.system() == 'Windows'):
         ui.m_datePickerRptDateStatus.setCalendarPopup(True)
         ui.setWindowFlags(
             QtCore.Qt.Window |
-            QtCore.Qt.WindowCloseButtonHint |
-            QtCore.Qt.WindowStaysOnTopHint
+            QtCore.Qt.WindowCloseButtonHint 
             )
 
         ui.m_datePickerRptDateStatus.setDateTime(statusdate)
@@ -382,8 +387,7 @@ if (platform.system() == 'Windows'):
         progbar.setWindowTitle("Generating Report...")
         progbar.setWindowFlags(
             QtCore.Qt.Window |
-            QtCore.Qt.WindowCloseButtonHint |
-            QtCore.Qt.WindowStaysOnTopHint
+            QtCore.Qt.WindowCloseButtonHint 
             )
 
         progbar.setMinimumWidth(350)
@@ -426,6 +430,7 @@ if (platform.system() == 'Windows'):
 
 
                 memberrow = memberrow.nextSibling()
+                QtWidgets.QApplication.processEvents()
 
             progval = progval + 1
             progbar.setValue(int(min(progval / progtot * 100, 100)))
@@ -470,6 +475,7 @@ if (platform.system() == 'Windows'):
                     compcount = compcount + 1
 
                 repitemrow = repitemrow.nextSibling()
+                QtWidgets.QApplication.processEvents()
 
             pne.expand_row(sheet, "<INPROGRESS>", progcount)
             pne.expand_row(sheet, "<COMPLETED>", compcount)
@@ -496,6 +502,7 @@ if (platform.system() == 'Windows'):
                     pne.replace_cell_tag(sheet, "<COMPLETED" + str(compcount) + ">", description)
 
                 repitemrow = repitemrow.nextSibling()
+                QtWidgets.QApplication.processEvents()
 
         progval = progval + 1
         #print("going to gather tracker....")
@@ -528,6 +535,7 @@ if (platform.system() == 'Windows'):
                     itemcount = itemcount + 1
 
                 itemrow = itemrow.nextSibling()
+                QtWidgets.QApplication.processEvents()
 
             pne.expand_row(sheet, "<ISSUENAME>", itemcount)
 
@@ -552,6 +560,7 @@ if (platform.system() == 'Windows'):
                 pne.replace_cell_tag(sheet, "<ISSUESTATUS" + str(itemcount) + ">", itemstatus)
 
                 itemrow = itemrow.nextSibling()
+                QtWidgets.QApplication.processEvents()
 
         # don't show task items
         if itemcount == 0:
@@ -724,6 +733,3 @@ f.close()
 
 print(event_data_rightclick(xmldoc.toString()))
 """
-
-
-# TODO: Right click returned XML isn't getting imported

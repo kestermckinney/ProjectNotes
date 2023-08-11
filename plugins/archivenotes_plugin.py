@@ -83,6 +83,8 @@ if (platform.system() == 'Windows'):
 
     # processing main def
     def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
+        
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -92,7 +94,7 @@ if (platform.system() == 'Windows'):
             return ""
 
         # setup global variables
-        ProjectsFolder = pnc.get_global_setting("ProjectsFolder")
+        ProjectsFolder = pnc.get_plugin_setting("ProjectsFolder")
 
         executedate = QDate.currentDate()
         internalreport = False
@@ -160,8 +162,7 @@ if (platform.system() == 'Windows'):
         progbar.setWindowTitle("Archiving...")
         progbar.setWindowFlags(
             QtCore.Qt.Window |
-            QtCore.Qt.WindowCloseButtonHint |
-            QtCore.Qt.WindowStaysOnTopHint
+            QtCore.Qt.WindowCloseButtonHint 
             )
         progbar.setMinimumWidth(350)
         progbar.setCancelButton(None)
@@ -189,7 +190,7 @@ if (platform.system() == 'Windows'):
 
         templatefile = "plugins/templates/Meeting Template.xlsx"
         if not QFile.copy(templatefile, excelreportname):
-            QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + projectfile, QMessageBox.Cancel)
+            QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + excelreportname, QMessageBox.Cancel)
             return ""
 
         handle = pne.open_excel_document(excelreportname)
@@ -253,7 +254,7 @@ if (platform.system() == 'Windows'):
             # EXCEL WON'T AUTOFIT THIS FOR SOME REASON I BELIEVE IT IS BECAUSE THE CELLS ARE MERGED
             #print("replaced title and meeting date....")
 
-            note = pnc.get_column_value(notesrow, "note")
+            note = pnc.to_html(pnc.get_column_value(notesrow, "note"))
             doc = QTextDocument()
             doc.setHtml(note)
             pne.set_cell_by_tag(sheet, "<MEETING_NOTES" + str(itemcount) + ">", "'" + doc.toPlainText() )

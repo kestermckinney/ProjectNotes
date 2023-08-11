@@ -79,6 +79,7 @@ if (platform.system() == 'Windows'):
 
     # processing main function
     def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -115,7 +116,7 @@ if (platform.system() == 'Windows'):
             txt = get_text_invite()
             message.MeetingStatus = 1
             message.Duration = 60
-            message.Location = pnc.get_global_setting("DefaultMeetingLocation")
+            message.Location = pnc.get_plugin_setting("DefaultMeetingLocation")
             message.Body = txt
             outlook.ActiveExplorer().Activate()
             message.Display()

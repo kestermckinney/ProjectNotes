@@ -263,6 +263,7 @@ class ProjectNotesCommon:
                 return(True)
 
         objWMIService = None
+        colProcess = None
 
         return(False)
 
@@ -325,7 +326,7 @@ class ProjectNotesCommon:
         # print("stdout:", result.stdout)
         # print("stderr:", result.stderr)
 
-    def get_global_setting(self, settingname):
+    def get_plugin_setting(self, settingname):
         cfg = QSettings("ProjectNotes","PluginSettings")
         cfg.setFallbacksEnabled(False)
         val = ""
@@ -337,23 +338,23 @@ class ProjectNotesCommon:
         return val
 
     def verify_global_settings(self):
-        pw = self.get_global_setting("OraclePassword")
+        pw = self.get_plugin_setting("OraclePassword")
         if pw == None or pw == "":
             print("OraclePassword not set.")
             QMessageBox.warning(None, "Invalid Global Setting", "OraclePassword must be set in the Global Settigns plugin.", QMessageBox.Ok)
             return(False)
 
-        un = self.get_global_setting("OracleUsername")
+        un = self.get_plugin_setting("OracleUsername")
         if un == None or un == "":
             QMessageBox.warning(None, "Invalid Global Setting", "OracleUsername must be set in the Global Settigns plugin.", QMessageBox.Ok)
             return(False)
 
-        ds = self.get_global_setting("OracleDataSource")
+        ds = self.get_plugin_setting("OracleDataSource")
         if ds == None or ds == "":
             QMessageBox.warning(None, "Invalid Global Setting", "OracleDataSource must be set in the Global Settigns plugin.", QMessageBox.Ok)
             return(False)
 
-        pf = self.get_global_setting("ProjectsFolder")
+        pf = self.get_plugin_setting("ProjectsFolder")
         if pf == None or pf == "" or not QDir(pf).exists():
             QMessageBox.warning(None, "Invalid Global Setting", "ProjectsFolder must be set in the Global Settigns plugin.", QMessageBox.Ok)
             return(False)
@@ -385,9 +386,9 @@ class ProjectNotesCommon:
             print("connect to ADODB requires win32com not supported on this platform")
             return(False)
             
-        op = self.get_global_setting("OraclePassword")
-        ou = self.get_global_setting("OracleUsername")
-        ds = self.get_global_setting("OracleDataSource")
+        op = self.get_plugin_setting("OraclePassword")
+        ou = self.get_plugin_setting("OracleUsername")
+        ds = self.get_plugin_setting("OracleDataSource")
 
         strconnect = "Provider=OraOLEDB.Oracle.1;User ID=" + ou + ";Password=" + op + ";Data Source=" + ds + ";"
 
@@ -462,6 +463,3 @@ class ProjectNotesCommon:
 
         return(projectnumber)
 
-
-#pnc = ProjectNotesCommon()
-#print(pnc.to_xml("This is <a> rest & I wan t' it tow ork  COMPANY LLC â BLUFFTON ÂÃÂÃ crap "))

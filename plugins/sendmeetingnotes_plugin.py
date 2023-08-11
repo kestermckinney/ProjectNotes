@@ -74,6 +74,8 @@ if (platform.system() == 'Windows'):
     pne = ProjectNotesExcelTools()
 
     def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
+
         xmldoc = ""
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
@@ -119,8 +121,6 @@ if (platform.system() == 'Windows'):
 
                             nm = pnc.get_column_value(attendeerow, "name")
                             email = pnc.get_column_value(attendeerow, "email")
-
-                            #TODO: See if note can default to 10pt font size
 
                             if nm != pm:
                                 if (email != None and email != ""):

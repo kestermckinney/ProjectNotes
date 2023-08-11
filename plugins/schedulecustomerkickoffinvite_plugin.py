@@ -74,6 +74,8 @@ if (platform.system() == 'Windows'):
     pne = ProjectNotesExcelTools()
 
     def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
+
         xmlval = QDomDocument()
         xmldoc = ""
 
@@ -113,7 +115,7 @@ if (platform.system() == 'Windows'):
         txt = get_text_invite()
         message.MeetingStatus = 1
         message.Duration = 60
-        message.Location = pnc.get_global_setting("DefaultMeetingLocation")
+        message.Location = pnc.get_plugin_setting("DefaultMeetingLocation")
         message.Body = txt
         outlook.ActiveExplorer().Activate()
         message.Display()
@@ -157,7 +159,7 @@ if (platform.system() == 'Windows'):
         txt = get_text_invite()
         message.MeetingStatus = 1
         message.Duration = 60
-        message.Location = pnc.get_global_setting("DefaultMeetingLocation")
+        message.Location = pnc.get_plugin_setting("DefaultMeetingLocation")
         message.Body = txt
         message.Display()
 

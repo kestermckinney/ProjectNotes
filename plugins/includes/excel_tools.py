@@ -22,9 +22,16 @@ class ProjectNotesExcelTools:
         return(searchresult)
 
     def replace_cell_tag(self, sheet, oldtagname, newtagname):
-        searchrange = sheet.Range("A1", "Z10000") # hopefully this catches everything
-        replaceresult = searchrange.Replace(oldtagname, newtagname[:255], 2)
-        #print("replace cell tag: " + oldtagname + " with " + newtagname + " result: " + str(replaceresult))
+        if oldtagname is None:
+            return False
+
+        if newtagname is None:
+            searchrange = sheet.Range("A1", "Z10000") # hopefully this catches everything
+            replaceresult = searchrange.Replace(oldtagname, "", 2)
+        else:
+            searchrange = sheet.Range("A1", "Z10000") # hopefully this catches everything
+            replaceresult = searchrange.Replace(oldtagname, newtagname[:255], 2)
+            #print("replace cell tag: " + oldtagname + " with " + newtagname + " result: " + str(replaceresult))
 
         return(replaceresult)
 
@@ -142,6 +149,7 @@ class ProjectNotesExcelTools:
                 print("Could not close an EXCEL.EXE process.")
 
         objWMIService = None
+        colProcess = None
 
 # begin testing procedures
 #pne = ProjectNotesExcelTools()

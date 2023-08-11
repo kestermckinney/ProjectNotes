@@ -87,6 +87,7 @@ if (platform.system() == 'Windows'):
         while not recordset.EOF:
             clientsxml = clientsxml + "  <row>\n   <column name=\"client_name\" number=\"1\">" + pnc.to_xml(recordset.Fields.Item("name").Value) + "</column>\n </row>\n"
             recordset.MoveNext()
+            QtWidgets.QApplication.processEvents()
 
         recordset.Close()
         recordset = None
@@ -143,6 +144,7 @@ if (platform.system() == 'Windows'):
             projectsxml = projectsxml + "  </row>\n"
 
             recordset.MoveNext()
+            QtWidgets.QApplication.processEvents()
 
         recordset.Close()
         recordset = None
@@ -200,6 +202,7 @@ if (platform.system() == 'Windows'):
               companyxml = companyxml + "</table>\n"
 
             recordset.MoveNext()
+            QtWidgets.QApplication.processEvents()
 
         recordset.Close()
 
@@ -209,11 +212,15 @@ if (platform.system() == 'Windows'):
         # import the people before the projects team member records
         projectsxml = companyxml + peoplexml + projectsxml
 
+        recordset = None
+
         return projectsxml
 
 
     # processing main function
     def event_menuclick(xmlstr):
+        print("called event: " + __file__)
+        
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -226,8 +233,8 @@ if (platform.system() == 'Windows'):
             return ""
 
         # setup global variables
-        OracleUsername = pnc.get_global_setting("OracleUsername")
-        ProjectsFolder = pnc.get_global_setting("ProjectsFolder")
+        OracleUsername = pnc.get_plugin_setting("OracleUsername")
+        ProjectsFolder = pnc.get_plugin_setting("ProjectsFolder")
 
         QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         QtWidgets.QApplication.processEvents()
@@ -236,8 +243,7 @@ if (platform.system() == 'Windows'):
         progbar.setWindowTitle("Importing...")
         progbar.setWindowFlags(
             QtCore.Qt.Window |
-            QtCore.Qt.WindowCloseButtonHint |
-            QtCore.Qt.WindowStaysOnTopHint
+            QtCore.Qt.WindowCloseButtonHint 
             )
         progbar.setCancelButton(None)
         progbar.setMinimumWidth(350)
@@ -298,8 +304,3 @@ print(str)
 
 
 # TESTED: Phase 1
-
-
-# TODO: Right click menus should include icons from the main menu
-# TODO: You are given option to delete a search record, but it fails.
-# TODO: Filter People by client name text not working

@@ -74,6 +74,8 @@ if (platform.system() == 'Windows'):
     pne = ProjectNotesExcelTools()
 
     def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
+
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -139,5 +141,3 @@ if f.open(QIODevice.ReadOnly):
 
 event_data_rightclick(xmldoc.toString())
 """
-
-# TODO: Disabled plugin seems to still run.  I think it is running on startup.

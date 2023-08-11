@@ -77,6 +77,7 @@ parameters = [
 pnc = ProjectNotesCommon()
 
 def event_menuclick(xmlstr):
+    print("called event: " + __file__)
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
         QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)

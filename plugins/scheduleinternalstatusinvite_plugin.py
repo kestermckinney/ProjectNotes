@@ -18,7 +18,7 @@ from PyQt5.QtGui import QDesktopServices
 pluginname = "Schedule Internal Status"
 plugindescription = "Using Outlook create an invite to the internal status meeting."
 plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
-childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
+childtablesfilter = "projects/project_people" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
 # events must have a data structure and data view specified
 #
@@ -75,6 +75,8 @@ if (platform.system() == 'Windows'):
 
     # processing main function
     def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
+
         xmlval = QDomDocument()
         xmldoc = ""
         
@@ -117,7 +119,7 @@ if (platform.system() == 'Windows'):
         txt = get_text_invite()
         message.MeetingStatus = 1
         message.Duration = 60
-        message.Location = pnc.get_global_setting("DefaultMeetingLocation")
+        message.Location = pnc.get_plugin_setting("DefaultMeetingLocation")
         message.Body = txt
         outlook.ActiveExplorer().Activate()
         message.Display()
@@ -163,7 +165,7 @@ if (platform.system() == 'Windows'):
         txt = get_text_invite()
         message.MeetingStatus = 1
         message.Duration = 60
-        message.Location = pnc.get_global_setting("DefaultMeetingLocation")
+        message.Location = pnc.get_plugin_setting("DefaultMeetingLocation")
         message.Body = txt
         message.Display()
 

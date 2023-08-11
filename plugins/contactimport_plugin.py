@@ -77,6 +77,8 @@ if (platform.system() == 'Windows'):
     pnc = ProjectNotesCommon()
 
     def event_menuclick(xmlstr):
+        print("called event: " + __file__)
+
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -101,8 +103,7 @@ if (platform.system() == 'Windows'):
         progbar.setWindowTitle("Importing...")
         progbar.setWindowFlags(
             QtCore.Qt.Window |
-            QtCore.Qt.WindowCloseButtonHint |
-            QtCore.Qt.WindowStaysOnTopHint
+            QtCore.Qt.WindowCloseButtonHint 
             )
         progbar.setMinimumWidth(350)
         progbar.setCancelButton(None)
@@ -180,5 +181,4 @@ if (platform.system() == 'Windows'):
 #app = QApplication(sys.argv)
 #print(event_menuclick(None))
 
-# TODO: The context menu should be added to the top menu somewhere - maybe the plugins menu under a separator
 # TESTED: Phase 1
