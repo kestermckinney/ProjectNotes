@@ -476,6 +476,8 @@ void MainWindow::setButtonAndMenuStates()
     if (!ui)
         return;
 
+    ui->actionStatus_Bar->setChecked(ui->statusbar->isVisible());
+
     bool dbopen = global_DBObjects.isOpen();
 
     ui->stackedWidget->setVisible(dbopen);
@@ -500,9 +502,13 @@ void MainWindow::setButtonAndMenuStates()
 
         // can only choose export when something is selected
         ui->actionXML_Export->setEnabled(dbopen && sel && !issearch);
+        ui->actionFilter->setEnabled(dbopen);
     }
     else
+    {
         ui->actionXML_Export->setEnabled(false);
+        ui->actionFilter->setEnabled(false);
+    }
 
     bool hascurview = (curview != nullptr);
 
@@ -527,7 +533,7 @@ void MainWindow::setButtonAndMenuStates()
 
     ui->actionClients->setEnabled(dbopen);
     ui->actionPeople->setEnabled(dbopen);
-    ui->actionFilter->setEnabled(dbopen);
+
 
     //plugin menu
     if (m_plugin_manager)

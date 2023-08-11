@@ -197,7 +197,14 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             }
 
             if(insert.exec())
+            {
+                QModelIndex qil = createIndex(t_index.row(), 0);
+                QModelIndex qir = createIndex(t_index.row(), columnCount() - 1);
+
+                emit dataChanged(qil, qir);
+
                 return true;
+            }
 
             QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
                insert.lastError().text() + "\n" + insert.lastQuery(), QMessageBox::Ok);
@@ -236,6 +243,8 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 else
                 {
                     m_cache[t_index.row()].setValue(t_index.column(), value);
+
+                    emit dataChanged(t_index, t_index);
 
                     // check for all of the impacted open recordsets
                     refreshImpactedRecordsets(t_index);
@@ -633,7 +642,6 @@ bool PNSqlQueryModel::copyRecord(QModelIndex t_index)
     // don't copy key record so it is identified as a new record
     for (int i = 1; i < m_sql_query.record().count(); i++)
     {
-
         if (m_column_is_unique[i] == DBUnique)
         {
             newrecord.setValue(i, QString(" Copy of %1").arg(m_cache[t_index.row()].field(i).value().toString()));
@@ -644,15 +652,13 @@ bool PNSqlQueryModel::copyRecord(QModelIndex t_index)
         }
     }
 
-    return addRecord(newrecord);
+    return(addRecord(newrecord));
 }
 
 bool PNSqlQueryModel::addRecord(QSqlRecord& t_newrecord)
 {
     QModelIndex qmi = QModelIndex();
     int row = rowCount((qmi));
-
-    //qDebug() << t_newrecord;
 
     beginInsertRows(qmi, row, row);
     m_cache.append(t_newrecord);
