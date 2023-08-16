@@ -19,9 +19,9 @@ public:
 
     void newRecord() override;
     void setupModels( Ui::MainWindow *t_ui ) override;
-    void toFirst(bool t_open = true);
-    void setButtonAndMenuStates();
-    void setPageTitle();
+    void toFirst(bool t_open = true) override;
+    void setButtonAndMenuStates() override;
+    void setPageTitle() override;
 
 private:
     Ui::MainWindow *ui = nullptr;
