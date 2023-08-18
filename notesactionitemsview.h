@@ -26,7 +26,7 @@ private:
     QStringListModel m_item_priority;//PNDatabaseObjects::item_priority;
 
     // projects list panel delegates
-    PNComboBoxDelegate* m_unfiltered_people_delegate = nullptr;
+//    PNComboBoxDelegate* m_unfiltered_people_delegate = nullptr;
     ComboBoxDelegate* m_action_item_type_delegate = nullptr;
     PNComboBoxDelegate* m_identified_by_delegate = nullptr;
     ComboBoxDelegate* m_priority_delegate = nullptr;

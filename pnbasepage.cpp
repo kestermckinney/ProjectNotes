@@ -50,7 +50,7 @@ void PNBasePage::deleteItem()
 
 void PNBasePage::copyItem()
 {
-    int lastrow = dynamic_cast<PNSqlQueryModel*>(getCurrentModel())->rowCount(QModelIndex());
+    int lastrow = ((PNSqlQueryModel*)getCurrentModel())->rowCount(QModelIndex());
 
     QModelIndexList qi = getCurrentView()->selectionModel()->selectedRows();
 

@@ -40,6 +40,8 @@ public:
     bool setData(const QModelIndex &t_index, const QVariant &t_value, int t_role) override;
     QVariant data(const QModelIndex &t_index, int t_role = Qt::DisplayRole) const override;
 
+    void setCacheData(const QModelIndex &t_index, const QVariant &t_value) { m_cache[t_index.row()].setValue( t_index.column(), t_value); }
+
     bool importXMLNode(const QDomNode& t_domnode);
     bool setData(QDomElement* t_xml_row, bool t_ignore_key);
 

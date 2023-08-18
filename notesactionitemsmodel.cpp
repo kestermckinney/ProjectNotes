@@ -13,9 +13,9 @@ NotesActionItemsModel::NotesActionItemsModel(QObject* t_parent): PNSqlQueryModel
 
     setTableName("item_tracker", "Notes Action Items");
 
-    addColumn(0, tr("Item ID"), DBString, DBSearchable, DBRequired, DBReadOnly);
+    addColumn(0, tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
     addColumn(1, tr("Item"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
-    addColumn(2, tr("t_type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_type);
+    addColumn(2, tr("Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_type);
     addColumn(3, tr("Item Name"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(4, tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name");
