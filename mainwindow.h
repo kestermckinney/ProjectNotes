@@ -112,6 +112,8 @@ private slots:
     void slotTimerEvent(PNPlugin* t_plugin);
     void slotTimerUpdates();
     void on_actionOpen_Item_triggered();
+    void on_actionIncrease_Font_Size_triggered();
+    void on_actionDecrease_Font_Size_triggered();
 
 private:
     Ui::MainWindow *ui;   

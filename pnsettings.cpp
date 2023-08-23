@@ -176,6 +176,13 @@ bool PNSettings::getTableViewState(const QString& t_view_name, QTableView& t_vie
     return true;
 }
 
+int PNSettings::getStoredInt(const QString& t_value_name)
+{
+    QString path = t_value_name;
+
+    return m_app_config->value(path, -1).toInt();
+}
+
 
 int PNSettings::getWindowX(const QString& t_window_name)
 {
@@ -189,6 +196,14 @@ int PNSettings::getWindowY(const QString& t_window_name)
     QString path = t_window_name + "/Y";
 
     return m_app_config->value(path, -1).toInt();
+}
+
+void PNSettings::setStoredInt(const QString& t_value_name, int t_int_val)
+{
+    QString path = t_value_name;
+    QVariant t_value = t_int_val;
+
+    m_app_config->setValue(path, t_value);
 }
 
 void PNSettings::setWindowX(const QString& t_window_name, int X)

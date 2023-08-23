@@ -39,6 +39,8 @@ public:
 
     void setTableSortColumn(const QString& t_view_name, const int t_column, const QString t_direction);
     bool getTableSortColumn(const QString& t_view_name, int& t_column, QString& t_direction);
+    int getStoredInt(const QString& t_value_name);
+    void setStoredInt(const QString& t_value_name, int t_int_value);
 
 private:
     int getWindowX(const QString& t_window_name);

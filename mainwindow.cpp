@@ -25,7 +25,7 @@
 #include <QClipboard>
 #include <QMimeType>
 #include <QMimeData>
-//#include <QDebug>
+#include <QDebug>
 
 #include "mainwindow.h"
 
@@ -48,6 +48,14 @@ MainWindow::MainWindow(QWidget *t_parent)
     m_page_history.clear();
 
     global_Settings.getWindowState("MainWindow", *this);
+    int sz = global_Settings.getStoredInt("DefaultFontSize");
+
+    if (sz == -1)
+        sz = 10;
+
+    QFont af = QApplication::font();
+    af.setPointSize(sz);
+    QApplication::setFont(af);
 
     connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ProjectDetails_triggered()));
     connect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ItemDetails_triggered()));
@@ -1879,6 +1887,57 @@ void MainWindow::on_actionCustom_Plugins_triggered()
     ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/OverviewofPlugins.html"));
 }
 
+
+void MainWindow::on_actionIncrease_Font_Size_triggered()
+{
+    QFont af = QApplication::font();
+    af.setPointSize(af.pointSize() + 1);
+    QApplication::setFont(af);
+
+    global_Settings.setStoredInt("DefaultFontSize",  QApplication::font().pointSize());
+
+    QList<QWidget*> subwidgets = this->findChildren<QWidget*>();
+    QListIterator<QWidget*> it(subwidgets); // iterate through the list of widgets
+    QWidget *awiget;
+
+    while (it.hasNext()) {
+        awiget = it.next(); // take each widget in the list
+        qDebug() << awiget->metaObject()->className();
+
+        if ( QString(awiget->metaObject()->className()).contains("PNTableView") )
+        {
+            qobject_cast<QTableView*>(awiget)->resizeColumnsToContents();
+            qobject_cast<QTableView*>(awiget)->resizeRowsToContents();
+        }
+    }
+
+    global_Settings.setStoredInt("DefaultFontSize",  QApplication::font().pointSize());
+}
+
+
+void MainWindow::on_actionDecrease_Font_Size_triggered()
+{
+    QFont af = QApplication::font();
+    af.setPointSize(af.pointSize() - 1);
+    QApplication::setFont(af);
+
+    QList<QWidget*> subwidgets = this->findChildren<QWidget*>();
+    QListIterator<QWidget*> it(subwidgets); // iterate through the list of widgets
+    QWidget *awiget;
+
+    while (it.hasNext()) {
+        awiget = it.next(); // take each widget in the list
+        qDebug() << awiget->metaObject()->className();
+
+        if ( QString(awiget->metaObject()->className()).contains("PNTableView") )
+        {
+            qobject_cast<QTableView*>(awiget)->resizeColumnsToContents();
+            qobject_cast<QTableView*>(awiget)->resizeRowsToContents();
+        }
+    }
+
+    global_Settings.setStoredInt("DefaultFontSize",  QApplication::font().pointSize());
+}
 
 // TODO: Add spell checking features for QExpandingLineEdit and QLineEdit
 // TODO: Add find feature for QExpandingLineEdit
