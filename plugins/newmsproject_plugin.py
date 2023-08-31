@@ -122,7 +122,10 @@ if (platform.system() == 'Windows'):
         project = win32com.client.Dispatch("MSProject.Application")
         project.Visible = False
 
-        project.FileOpenOrCreate(projectfile)
+        project.FileOpen(projectfile)
+        project.Visible = 1
+
+        project.ActiveProject.ProjectStart = QDateTime.currentDateTime().addDays(-7).toString("MM/dd/yyyy")
 
         project.ReplaceEx("Name", "contains", "PROJECTNAME", basename, True, True, False, 188743694, 7, True)
 
