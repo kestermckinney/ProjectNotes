@@ -454,12 +454,3 @@ xmldoc.setContent(f)
 f.close()
 main_process(xmldoc)
 """
-
-# TESTED: Phase 1
-# TODO: on item details page, setting resolved doesn't refresh to show date
-# TODO: add spell check to QPlainText control - maybe spell check should just check the whole open page???
-# TODO: artifacts don't allow selection of a folder from the three dot button
-# TODO: Remove cornterstone templatest from install
-# TODO: Build a cornerstone plug-ins install
-# TODO: lookup dynamic_cast vs type casting
-# TODO: filter options showing on single item pages
