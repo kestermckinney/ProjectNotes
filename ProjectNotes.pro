@@ -56,6 +56,7 @@ SOURCES += \
     pnsortfilterproxymodel.cpp \
     pnsqlquerymodel.cpp \
     pntableview.cpp \
+    pntexteditdelegate.cpp \
     preferencesdialog.cpp \
     runguard.cpp \
     searchpage.cpp \
@@ -129,6 +130,7 @@ HEADERS += \
     pnsortfilterproxymodel.h \
     pnsqlquerymodel.h \
     pntableview.h \
+    pntexteditdelegate.h \
     preferencesdialog.h \
     runguard.h \
     searchpage.h \

@@ -11,7 +11,7 @@ HelpBrowser::HelpBrowser(QWidget* parent):QTextBrowser(parent)
     m_helpengine = new QHelpEngine(QCoreApplication::applicationDirPath() +
                                    "/docs/Project Notes.qhc", parent);
 
-    m_helpengine->setupData();
+    setOpenExternalLinks(true);
 }
 
 HelpBrowser::~HelpBrowser()

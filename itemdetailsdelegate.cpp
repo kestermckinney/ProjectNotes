@@ -13,6 +13,7 @@
 #include <QCheckBox>
 #include <QMessageBox>
 #include <QPlainTextEdit>
+#include <QScrollBar>
 
 ItemDetailsDelegate::ItemDetailsDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
@@ -112,7 +113,16 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
     case 6:
         {
             QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
+            QTextCursor tc = lineedit->textCursor();
+
+            int v = lineedit->verticalScrollBar()->value();
+            int h = lineedit->horizontalScrollBar()->value();            
+
             lineedit->setPlainText(value.toString());
+
+            lineedit->verticalScrollBar()->setValue(v);
+            lineedit->horizontalScrollBar()->setValue(h);
+            lineedit->setTextCursor(tc);
         }
         break;
     default:

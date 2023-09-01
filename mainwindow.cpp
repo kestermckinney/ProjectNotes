@@ -25,7 +25,7 @@
 #include <QClipboard>
 #include <QMimeType>
 #include <QMimeData>
-#include <QDebug>
+//#include <QDebug>
 
 #include "mainwindow.h"
 
@@ -1902,7 +1902,6 @@ void MainWindow::on_actionIncrease_Font_Size_triggered()
 
     while (it.hasNext()) {
         awiget = it.next(); // take each widget in the list
-        qDebug() << awiget->metaObject()->className();
 
         if ( QString(awiget->metaObject()->className()).contains("PNTableView") )
         {
@@ -1927,7 +1926,6 @@ void MainWindow::on_actionDecrease_Font_Size_triggered()
 
     while (it.hasNext()) {
         awiget = it.next(); // take each widget in the list
-        qDebug() << awiget->metaObject()->className();
 
         if ( QString(awiget->metaObject()->className()).contains("PNTableView") )
         {

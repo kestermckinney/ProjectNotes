@@ -56,6 +56,7 @@ public slots:
     void slotOpenRecord();
     void slotExportRecord();
     void slotFilterRecords();
+    void slotRefreshRecords();
     void slotResetColumns();  
     void slotPluginMenu(PNPlugin* t_plugin);
 
@@ -69,6 +70,7 @@ private:
     QAction *openRecord;
     QAction *exportRecord;
     QAction *filterRecords;
+    QAction *refreshRecords;
     QAction *resetColumns;
     QAction *copyRecord;
 
