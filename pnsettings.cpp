@@ -19,6 +19,17 @@ PNSettings::~PNSettings()
 {
     delete m_app_config;
     delete m_plugin_config;
+
+    if (m_spellchecker)
+        delete m_spellchecker;
+}
+
+PNSpellChecker* PNSettings::spellchecker()
+{
+    if (m_spellchecker == nullptr)
+        m_spellchecker = new PNSpellChecker();
+
+    return m_spellchecker;
 }
 
 QVariant PNSettings::getPluginSetting(const QString& t_plugin_name, const QString& t_parameter_name)

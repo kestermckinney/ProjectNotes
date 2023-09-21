@@ -63,7 +63,6 @@ private:
     QPoint m_pressPos;
     bool m_isMoving = false;
 
-
     QAction *newRecord;
     QAction *deleteRecord;
     QAction *openRecord;

@@ -48,14 +48,18 @@ SOURCES += \
     pndatabaseobjects.cpp \
     pndateeditdelegate.cpp \
     pndateeditex.cpp \
+    pninlinespellchecker.cpp \
     pnlineeditfilebutton.cpp \
     pnlineeditfilebuttondelegate.cpp \
+    pnplaintextedit.cpp \
     pnplugin.cpp \
     pnpluginmanager.cpp \
     pnsettings.cpp \
     pnsortfilterproxymodel.cpp \
+    pnspellchecker.cpp \
     pnsqlquerymodel.cpp \
     pntableview.cpp \
+    pntextedit.cpp \
     preferencesdialog.cpp \
     runguard.cpp \
     searchpage.cpp \
@@ -121,14 +125,18 @@ HEADERS += \
     pndatabaseobjects.h \
     pndateeditdelegate.h \
     pndateeditex.h \
+    pninlinespellchecker.h \
     pnlineeditfilebutton.h \
     pnlineeditfilebuttondelegate.h \
+    pnplaintextedit.h \
     pnplugin.h \
     pnpluginmanager.h \
     pnsettings.h \
     pnsortfilterproxymodel.h \
+    pnspellchecker.h \
     pnsqlquerymodel.h \
     pntableview.h \
+    pntextedit.h \
     preferencesdialog.h \
     runguard.h \
     searchpage.h \

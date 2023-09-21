@@ -8,6 +8,8 @@
 #include "pnsqlquerymodel.h"
 #include "pndatabaseobjects.h"
 #include "aboutdialog.h"
+#include "pnplaintextedit.h"
+#include "pntextedit.h"
 
 #include <QStringListModel>
 #include <QMessageBox>
@@ -41,7 +43,6 @@ MainWindow::MainWindow(QWidget *t_parent)
     setupTextActions();
 
     m_preferences_dialog = new PreferencesDialog(this);
-    m_spellcheck_dialog = new SpellCheckDialog(this);
     m_find_replace_dialog = new FindReplaceDialog(this);
 
     // view state
@@ -451,7 +452,6 @@ MainWindow::~MainWindow()
         CloseDatabase();
 
     delete m_preferences_dialog;
-    delete m_spellcheck_dialog;
     delete m_find_replace_dialog;
 
     delete m_plugin_settings_dialog;
@@ -607,7 +607,7 @@ void MainWindow::setButtonAndMenuStates()
         // determind if we can format text
         bool can_format_text =
             (fw != nullptr) &&
-            (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 );
+            (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 );
 
         // determine if we can text edit
         bool can_text_edit =
@@ -615,16 +615,16 @@ void MainWindow::setButtonAndMenuStates()
                 can_format_text ||
                 (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 ) ||
                 (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "QComboBox") == 0 ) /* ||
-                (strcmp(fw->metaObject()->className(), "QPlainTextEdit") == 0 ) STOPPED HERE */);
+                (strcmp(fw->metaObject()->className(), "QComboBox") == 0 ) ||
+                (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 ) );
 
         // determine if we can find text
         bool can_find_edit =
                 (fw != nullptr) && (
                 can_format_text ||
                 (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "QPlainTextEdit") == 0 ) );
+                (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 ) ||
+                (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 ) );
 
         // can't edit combo boxes not set to editable
         if ( can_text_edit && (strcmp(fw->metaObject()->className(), "QComboBox") == 0)  )
@@ -1602,8 +1602,10 @@ void MainWindow::on_actionUndo_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
-        (dynamic_cast<QTextEdit*>(fw))->undo();
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+        (dynamic_cast<PNTextEdit*>(fw))->undo();
+    else if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+        (dynamic_cast<PNPlainTextEdit*>(fw))->undo();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->undo();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
@@ -1619,8 +1621,10 @@ void MainWindow::on_actionRedo_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
-        (dynamic_cast<QTextEdit*>(fw))->redo();
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+        (dynamic_cast<PNTextEdit*>(fw))->redo();
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+        (dynamic_cast<PNPlainTextEdit*>(fw))->redo();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->redo();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
@@ -1636,8 +1640,10 @@ void MainWindow::on_actionCopy_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
-        (dynamic_cast<QTextEdit*>(fw))->copy();
+    if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+        (dynamic_cast<PNTextEdit*>(fw))->copy();
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+        (dynamic_cast<PNTextEdit*>(fw))->copy();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->copy();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
@@ -1653,8 +1659,10 @@ void MainWindow::on_actionCut_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
-        (dynamic_cast<QTextEdit*>(fw))->cut();
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+        (dynamic_cast<PNTextEdit*>(fw))->cut();
+    if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+        (dynamic_cast<PNPlainTextEdit*>(fw))->cut();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->cut();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
@@ -1670,7 +1678,9 @@ void MainWindow::on_actionPaste_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+        (dynamic_cast<PNTextEdit*>(fw))->paste();
+    if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
         (dynamic_cast<QTextEdit*>(fw))->paste();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->paste();
@@ -1686,8 +1696,10 @@ void MainWindow::on_actionDelete_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
-        (dynamic_cast<QTextEdit*>(fw))->textCursor().insertText("");
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+        (dynamic_cast<PNTextEdit*>(fw))->textCursor().insertText("");
+    if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+        (dynamic_cast<PNPlainTextEdit*>(fw))->textCursor().insertText("");
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->backspace();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
@@ -1703,8 +1715,10 @@ void MainWindow::on_actionSelect_All_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
-        (dynamic_cast<QTextEdit*>(fw))->selectAll();
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+        (dynamic_cast<PNTextEdit*>(fw))->selectAll();
+    else if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+        (dynamic_cast<PNPlainTextEdit*>(fw))->selectAll();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->selectAll();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
@@ -1719,10 +1733,16 @@ void MainWindow::on_actionSpell_Check_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
-        m_spellcheck_dialog->spellCheck(fw);
-    /* STOPPED HERE else if (strcmp(fw->metaObject()->className(), "QPlainTextEdit") == 0 )
-        m_spellcheck_dialog->spellCheck(fw); */
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+    {
+        SpellCheckDialog spellcheck_dialog(this);
+        spellcheck_dialog.spellCheck(fw);
+    }
+    else if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+    {
+        SpellCheckDialog spellcheck_dialog(this);
+        spellcheck_dialog.spellCheck(fw);
+    }
     /*
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->selectAll();
@@ -1884,5 +1904,5 @@ void MainWindow::on_actionCustom_Plugins_triggered()
 // TODO: Add find feature for QExpandingLineEdit
 // TODO: Add find features to QComboBox located in a table view
 // TODO: Add licensing information to all files to be included with the software
-// TODO: Complete Help Menu Items
+// TODO: Make sure find and replace works in PN TextEdit and PN Plain text edit
 

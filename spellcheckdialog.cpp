@@ -4,6 +4,8 @@
 #include "spellcheckdialog.h"
 #include "ui_spellcheckdialog.h"
 #include "pnsettings.h"
+#include "pntextedit.h"
+#include "pnplaintextedit.h"
 #include <QMessageBox>
 //#include <QDebug>
 #include <QFile>
@@ -14,92 +16,15 @@ SpellCheckDialog::SpellCheckDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    QSettings spell_settings(QCoreApplication::applicationDirPath() + "/dictionary/index.ini", QSettings::IniFormat);
-    //qDebug() << QCoreApplication::applicationDirPath();
+    ui->comboBoxDictionaryLanguage->addItems(global_Settings.spellchecker()->dictionaryNames());
+    ui->comboBoxDictionaryLanguage->setCurrentIndex(global_Settings.spellchecker()->defaultDictionaryIndex());
 
-    QStringList dictionaries = spell_settings.childGroups();
-
-    int index = 0;
-    QVariant dicname;
-    QVariant afffile;
-    QVariant dicfile;
-    QString keyname;
-
-    for ( const QString& dictionary : dictionaries )
-    {
-        keyname = QString("%1/%2").arg(dictionary,"Name");
-        dicname = spell_settings.value(keyname);
-        keyname = QString("%1/%2").arg(dictionary,"Aff");
-        afffile = spell_settings.value(keyname);
-        keyname = QString("%1/%2").arg(dictionary,"Dic");
-        dicfile = spell_settings.value(keyname);
-
-        m_DictionaryNames.append(dicname.toString());
-        m_DicFiles.append(dicfile.toString());
-        m_AffFiles.append(afffile.toString());
-
-        ui->comboBoxDictionaryLanguage->addItem(dicname.toString());
-
-        index++;
-    }
-
-    m_DefaultDictionary = global_Settings.getDefaultDictionary().toInt();
-
-    if (m_DicFiles.count() > 0 && m_AffFiles.count() > 0)
-    {
-        ui->comboBoxDictionaryLanguage->setCurrentIndex(m_DefaultDictionary);
-
-        QString dict = QString(QCoreApplication::applicationDirPath() + "/dictionary/" + m_DicFiles[m_DefaultDictionary]);
-        QString aff = QString(QCoreApplication::applicationDirPath() + "/dictionary/" + m_AffFiles[m_DefaultDictionary]);
-
-        QByteArray dictFilePathBA = dict.toLocal8Bit();
-        QByteArray affixFilePathBA = aff.toLocal8Bit();
-
-        if (!QFile::exists(dict) || !QFile::exists(aff))
-        {
-            QMessageBox::critical(this, QObject::tr("Dictionary Files Not Found"),
-                QString(tr("No dictionary files were specified.  You may need to re-install Project Notes.")), QMessageBox::Close);
-        }
-
-        m_spellchecker = new Hunspell(affixFilePathBA.constData(), dictFilePathBA.constData());
-    }
-    else
-    {
-        QMessageBox::critical(this, QObject::tr("Dictionary Files Not Found"),
-            QString(tr("No dictionary files were found.  You may need to re-install Project Notes.")), QMessageBox::Close);
-    }
-
-    if (m_DictionaryNames.count())
-        this->setWindowTitle("Spelling: " + m_DictionaryNames[m_DefaultDictionary]);
-
-    LoadPersonalWordList();
+    this->setWindowTitle("Spelling: " + global_Settings.spellchecker()->defaultDictionaryName());
 }
 
-void SpellCheckDialog::LoadPersonalWordList()
-{
-    QString personalwords = global_Settings.getPersonalDictionary();
-
-    QStringList wordlist = personalwords.split(":");
-
-    if (m_spellchecker)
-        for ( const QString& word : wordlist )
-            m_spellchecker->add(word.toStdString());
-}
-
-void SpellCheckDialog::AddToPersonalWordList(QString& t_word)
-{
-    QString personalwords = global_Settings.getPersonalDictionary();
-
-    if (!personalwords.isEmpty())
-        personalwords += ":";
-
-    personalwords += t_word;
-
-    global_Settings.setPersonalDictionary(personalwords);
-}
 void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
 {
-    if (!m_spellchecker)
+    if (global_Settings.spellchecker()->defaultDictionaryIndex() == -1)
     {
         QMessageBox::critical(this, QObject::tr("Dictionary Files Not Found"),
             QString(tr("No dictionary files were found.  You may need to re-install Project Notes.")), QMessageBox::Close);
@@ -107,22 +32,20 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
     }
 
     SpellCheckDialog::SpellCheckAction spellResult;
-    m_check_widget = dynamic_cast<QTextEdit*>(t_focus_control);
-
-//    QTextCharFormat highlightFormat;
-//    highlightFormat.setBackground(QBrush(QColor(0xff, 0x60, 0x60)));
-//    highlightFormat.setForeground(QBrush(QColor(0, 0, 0)));
 
     // save the position of the current cursor
-    QTextCursor oldCursor = m_check_widget->textCursor();
+    QTextCursor oldCursor;
+
+    if (QString(t_focus_control->metaObject()->className()).compare("PNTextEdit") == 0)
+        oldCursor = dynamic_cast<PNTextEdit*>(t_focus_control)->textCursor();
+    else
+        oldCursor = dynamic_cast<PNPlainTextEdit*>(t_focus_control)->textCursor();
 
     // create a new cursor to walk through the text
-    QTextCursor cursor(m_check_widget->document());
+    QTextCursor cursor(oldCursor);
 
     QList<QTextEdit::ExtraSelection> esList;
 
-    // Don't call cursor.beginEditBlock(), as this prevents the redraw after
-    // changes to the content cursor.beginEditBlock();
     while (!cursor.atEnd())
     {
         QCoreApplication::processEvents();
@@ -141,29 +64,27 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
             word = cursor.selectedText();
         }
 
-        if (!word.isEmpty() && !m_spellchecker->spell(word.toStdString()))
+        if (!word.isEmpty() && !global_Settings.spellchecker()->isGoodWord(word))
         {
             QTextCursor tmpCursor(cursor);
             tmpCursor.setPosition(cursor.anchor());
-            m_check_widget->setTextCursor(tmpCursor);
-            m_check_widget->ensureCursorVisible();
+            tmpCursor.select(QTextCursor::WordUnderCursor);
 
-            // highlight the unknown word
-            QTextEdit::ExtraSelection es;
-            es.cursor = cursor;
-            //es.format = highlightFormat;
+            if (QString(t_focus_control->metaObject()->className()).compare("PNTextEdit") == 0)
+            {
+                dynamic_cast<QTextEdit*>(t_focus_control)->setTextCursor(tmpCursor);
+                dynamic_cast<QTextEdit*>(t_focus_control)->ensureCursorVisible();
+            }
+            else
+            {
+                dynamic_cast<QPlainTextEdit*>(t_focus_control)->setTextCursor(tmpCursor);
+                dynamic_cast<QPlainTextEdit*>(t_focus_control)->ensureCursorVisible();
+            }
 
-            esList << es;
-            m_check_widget->setExtraSelections(esList);
             QCoreApplication::processEvents();
 
             // ask the user what to do
             spellResult = checkWord(word);
-
-            // reset the word highlight
-            esList.clear();
-
-            m_check_widget->setExtraSelections(esList);
 
             QCoreApplication::processEvents();
 
@@ -173,11 +94,10 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
             switch (spellResult)
             {
             case SpellCheckDialog::Change:
-                //qDebug() << "Change Text: " << ui->lineEditChange->text();
                 cursor.insertText(ui->lineEditChange->text());
                 break;
             case SpellCheckDialog::ChangeAll:
-                replaceAll(cursor.position(), m_unknown_word, ui->lineEditChange->text());
+                replaceAll(cursor, m_unknown_word, ui->lineEditChange->text());
                 break;
 
             default:
@@ -189,7 +109,10 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
         cursor.movePosition(QTextCursor::NextWord, QTextCursor::MoveAnchor, 1);
     }
 
-    m_check_widget->setTextCursor(oldCursor);
+    if (QString(t_focus_control->metaObject()->className()).compare("PNTextEdit") == 0)
+        dynamic_cast<QTextEdit*>(t_focus_control)->setTextCursor(oldCursor);
+    else
+        dynamic_cast<QPlainTextEdit*>(t_focus_control)->setTextCursor(oldCursor);
 
     if (spellResult != SpellCheckDialog::AbortCheck)
         QMessageBox::information(
@@ -200,21 +123,7 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
 
 SpellCheckDialog::~SpellCheckDialog()
 {
-    if (m_spellchecker)
-        delete m_spellchecker;
-
     delete ui;
-}
-
-QStringList SpellCheckDialog::suggest(const QString &t_word)
-{
-    QStringList suggestions;
-    std::vector<std::string> wordlist = m_spellchecker->suggest(t_word.toStdString());
-
-    for (std::vector<std::string>::const_iterator i = wordlist.begin(); i != wordlist.end(); ++i)
-        suggestions.append(QString::fromStdString(*i));
-
-    return suggestions;
 }
 
 SpellCheckDialog::SpellCheckAction SpellCheckDialog::checkWord(const QString &t_word)
@@ -223,7 +132,7 @@ SpellCheckDialog::SpellCheckAction SpellCheckDialog::checkWord(const QString &t_
 
     ui->lineEditChange->setText(m_unknown_word);
 
-    QStringList suggestions = suggest(t_word);
+    QStringList suggestions = global_Settings.spellchecker()->suggest(t_word);
 
     ui->listWidgetSuggestions->clear();
     ui->listWidgetSuggestions->addItems(suggestions);
@@ -235,27 +144,15 @@ SpellCheckDialog::SpellCheckAction SpellCheckDialog::checkWord(const QString &t_
     QDialog::exec();
 
     // set the default configured dictionary
-    global_Settings.setDefaultDictionary(QString("%1").arg(m_DefaultDictionary));
+//    global_Settings.setDefaultDictionary(QString("%1").arg(m_DefaultDictionary));
 
     return m_return_code;
 }
 
 void SpellCheckDialog::on_comboBoxDictionaryLanguage_currentIndexChanged(int index)
 {
-    if (m_spellchecker)
-        delete m_spellchecker;
-
-    m_DefaultDictionary = index;
-
-    if (m_DictionaryNames.count())
-        this->setWindowTitle("Spelling: " + m_DictionaryNames[m_DefaultDictionary]);
-
-    QByteArray dictFilePathBA = QString(QCoreApplication::applicationDirPath() + "/dictionary/" + m_DicFiles[m_DefaultDictionary]).toLocal8Bit();
-    QByteArray affixFilePathBA = QString(QCoreApplication::applicationDirPath() + "/dictionary/" + m_AffFiles[m_DefaultDictionary]).toLocal8Bit();
-
-    m_spellchecker = new Hunspell(affixFilePathBA.constData(), dictFilePathBA.constData());
-
-    LoadPersonalWordList();
+    global_Settings.spellchecker()->setDefaultDictionary(index);
+    this->setWindowTitle("Spelling: " + global_Settings.spellchecker()->defaultDictionaryName());
 }
 
 void SpellCheckDialog::on_lineEditChange_returnPressed()
@@ -272,7 +169,7 @@ void SpellCheckDialog::on_pushButtonIgnoreOnce_clicked()
 
 void SpellCheckDialog::on_pushButtonIgnoreAll_clicked()
 {
-    m_spellchecker->add(m_unknown_word.toStdString());
+    global_Settings.spellchecker()->ignoreWord(m_unknown_word);
     m_return_code = IgnoreAll;
     accept();
 }
@@ -280,8 +177,8 @@ void SpellCheckDialog::on_pushButtonIgnoreAll_clicked()
 
 void SpellCheckDialog::on_pushButtonAddToDictionary_clicked()
 {
-    m_spellchecker->add(m_unknown_word.toStdString());
-    AddToPersonalWordList(m_unknown_word);
+    global_Settings.spellchecker()->ignoreWord(m_unknown_word);
+    global_Settings.spellchecker()->AddToPersonalWordList(m_unknown_word);
 
     m_return_code = AddToDict;
     accept();
@@ -296,43 +193,38 @@ void SpellCheckDialog::on_pushButtonChange_clicked()
             ui->lineEditChange->setText( ui->listWidgetSuggestions->currentItem()->text() );
     }
 
-    //qDebug() << "Set Text: " << ui->lineEditChange->text();
-
     m_return_code = Change;
     accept();
-
 }
 
-void SpellCheckDialog::replaceAll(int t_position, const QString &t_old_word, const QString &t_new_word)
+void SpellCheckDialog::replaceAll(QTextCursor t_cursor, const QString&t_old_word, const QString &t_new_word)
 {
-    QTextCursor cursor(m_check_widget->document());
-    cursor.setPosition(t_position-t_old_word.length(), QTextCursor::MoveAnchor);
 
-    while (!cursor.atEnd())
+    while (!t_cursor.atEnd())
     {
         QCoreApplication::processEvents();
-        cursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor, 1);
-        QString word = cursor.selectedText();
+        t_cursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor, 1);
+        QString word = t_cursor.selectedText();
 
         // Workaround for better recognition of words
         // punctuation etc. does not belong to words
         while (!word.isEmpty() &&
              !word.at(0).isLetter() &&
-             cursor.anchor() < cursor.position())
+             t_cursor.anchor() < t_cursor.position())
         {
-            int cursorPos = cursor.position();
-            cursor.setPosition(cursor.anchor() + 1, QTextCursor::MoveAnchor);
-            cursor.setPosition(cursorPos, QTextCursor::KeepAnchor);
-            word = cursor.selectedText();
+            int cursorPos = t_cursor.position();
+            t_cursor.setPosition(t_cursor.anchor() + 1, QTextCursor::MoveAnchor);
+            t_cursor.setPosition(cursorPos, QTextCursor::KeepAnchor);
+            word = t_cursor.selectedText();
         }
 
         if (word == t_old_word)
         {
-            cursor.insertText(t_new_word);
+            t_cursor.insertText(t_new_word);
             QCoreApplication::processEvents();
         }
 
-        cursor.movePosition(QTextCursor::NextWord, QTextCursor::MoveAnchor, 1);
+        t_cursor.movePosition(QTextCursor::NextWord, QTextCursor::MoveAnchor, 1);
     }
 }
 

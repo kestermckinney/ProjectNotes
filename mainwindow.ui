@@ -1113,7 +1113,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QPlainTextEdit" name="plainTextEditDescription"/>
+             <widget class="PNPlainTextEdit" name="plainTextEditDescription"/>
             </item>
             <item>
              <widget class="QLabel" name="labelAssignedTo">
@@ -2502,6 +2502,11 @@
    <class>HelpBrowser</class>
    <extends>QTextBrowser</extends>
    <header>helpbrowser.h</header>
+  </customwidget>
+  <customwidget>
+   <class>PNPlainTextEdit</class>
+   <extends>QPlainTextEdit</extends>
+   <header location="global">pnplaintextedit.h</header>
   </customwidget>
  </customwidgets>
  <resources>

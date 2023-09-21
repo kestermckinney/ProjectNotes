@@ -4,6 +4,7 @@
 //#include <QDebug>
 #include "clientspage.h"
 #include "mainwindow.h"
+#include "pnplaintextedit.h"
 #include "ui_mainwindow.h"
 
 ClientsPage::ClientsPage()

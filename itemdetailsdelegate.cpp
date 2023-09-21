@@ -112,7 +112,10 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
     case 6:
         {
             QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
-            lineedit->setPlainText(value.toString());
+
+            // don't resent buffers if text hasn't changed
+            if (value.toString().compare(lineedit->toPlainText()) != 0)
+                lineedit->setPlainText(value.toString());
         }
         break;
     default:
