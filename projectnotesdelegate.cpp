@@ -25,12 +25,15 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
     {
     case 2: // note title
         {
-            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
-            lineedit->setText(value.toString());
+        QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
 
-            QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
-            if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
-                dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
+        // don't resent buffers if text hasn't changed
+        if (value.toString().compare(lineedit->toPlainText()) != 0)
+            lineedit->setPlainText(value.toString());
+
+        QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+        if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
+            dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 3:
@@ -79,8 +82,8 @@ void ProjectNotesDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t
     {
     case 2: // note title
         {
-            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
-            key_val = lineedit->text();
+            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
+            key_val = lineedit->toPlainText();
 
             QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
             if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())

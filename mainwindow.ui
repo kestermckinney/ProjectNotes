@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>866</width>
-    <height>691</height>
+    <height>799</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -243,14 +243,23 @@
                    </widget>
                   </item>
                   <item row="1" column="0">
-                   <widget class="QLineEdit" name="lineEditMeetingTitle">
+                   <widget class="PNPlainTextEdit" name="plainTextEditMeetingTitle">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                       <horstretch>4</horstretch>
                       <verstretch>0</verstretch>
                      </sizepolicy>
                     </property>
-                    <property name="frame">
+                    <property name="maximumSize">
+                     <size>
+                      <width>16777215</width>
+                      <height>29</height>
+                     </size>
+                    </property>
+                    <property name="tabChangesFocus">
+                     <bool>true</bool>
+                    </property>
+                    <property name="frame" stdset="0">
                      <bool>true</bool>
                     </property>
                    </widget>
@@ -279,7 +288,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QTextEdit" name="textEditNotes">
+                <widget class="PNTextEdit" name="textEditNotes">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                    <horstretch>0</horstretch>
@@ -499,14 +508,23 @@
                 </widget>
                </item>
                <item row="1" column="1">
-                <widget class="QLineEdit" name="lineEditProjectName">
+                <widget class="PNPlainTextEdit" name="plainTextEditProjectName">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                    <horstretch>0</horstretch>
                    <verstretch>0</verstretch>
                   </sizepolicy>
                  </property>
-                 <property name="frame">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>29</height>
+                  </size>
+                 </property>
+                 <property name="tabChangesFocus">
+                  <bool>true</bool>
+                 </property>
+                 <property name="frame" stdset="0">
                   <bool>true</bool>
                  </property>
                 </widget>
@@ -1065,8 +1083,26 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEditName">
-              <property name="frame">
+             <widget class="PNPlainTextEdit" name="plainTextEditName">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>29</height>
+               </size>
+              </property>
+              <property name="sizeAdjustPolicy">
+               <enum>QAbstractScrollArea::AdjustIgnored</enum>
+              </property>
+              <property name="tabChangesFocus">
+               <bool>true</bool>
+              </property>
+              <property name="frame" stdset="0">
                <bool>true</bool>
               </property>
              </widget>
@@ -1361,14 +1397,23 @@
            <number>3</number>
           </property>
           <item>
-           <widget class="QLineEdit" name="lineEditSearchText">
+           <widget class="PNPlainTextEdit" name="plainTextEditSearchText">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <property name="frame">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>29</height>
+             </size>
+            </property>
+            <property name="tabChangesFocus">
+             <bool>true</bool>
+            </property>
+            <property name="frame" stdset="0">
              <bool>true</bool>
             </property>
            </widget>
@@ -1452,7 +1497,7 @@
      <x>0</x>
      <y>0</y>
      <width>866</width>
-     <height>22</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -2507,6 +2552,11 @@
    <class>PNPlainTextEdit</class>
    <extends>QPlainTextEdit</extends>
    <header location="global">pnplaintextedit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>PNTextEdit</class>
+   <extends>QTextEdit</extends>
+   <header location="global">pntextedit.h</header>
   </customwidget>
  </customwidgets>
  <resources>

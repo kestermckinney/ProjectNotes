@@ -1,7 +1,7 @@
 // Copyright (C) 2022, 2023 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
-#include <QDebug>
+//#include <QDebug>
 
 #include "pntextedit.h"
 
@@ -23,10 +23,25 @@ PNTextEdit::~PNTextEdit()
 // connected to textChanged signal to check the spelling
 void PNTextEdit::checkSpelling()
 {
-    QTextCursor qtc = textCursor();
-    QList<QTextEdit::ExtraSelection> es = extraSelections();
+    int newchars = document()->characterCount();
 
-    setExtraSelections( m_inlinespellchecker->spellCheckCursor(qtc, es) );
+    if ( abs(m_oldchars - newchars) > 3 ) // if document has changed significantly check it all, could be a cut paste are new doc
+    {
+        QTextCursor qtc = QTextCursor(document());
+        QList<QTextEdit::ExtraSelection> es = extraSelections();
+        //qDebug() << "checking all document";
+
+        setExtraSelections( m_inlinespellchecker->spellCheckDocument(qtc, es) );
+    }
+    else
+    {
+        QTextCursor qtc = textCursor();
+        QList<QTextEdit::ExtraSelection> es = extraSelections();
+
+        setExtraSelections( m_inlinespellchecker->spellCheckCursor(qtc, es) );
+    }
+
+    m_oldchars = newchars;
 }
 
 void PNTextEdit::contextMenuEvent(QContextMenuEvent *event)

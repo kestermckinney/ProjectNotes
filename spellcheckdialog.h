@@ -27,7 +27,7 @@ public:
     ~SpellCheckDialog();
 
     enum SpellCheckAction {AbortCheck, IgnoreOnce, IgnoreAll,
-                           Change, ChangeAll, AddToDict, ChangeDict};
+                           Change, ChangeAll, AddToDict, ChangeDict, NothingDone};
 
     void spellCheck(QWidget* t_focus_control);
     SpellCheckAction checkWord(const QString &t_word);
@@ -58,6 +58,7 @@ private:
     Ui::SpellCheckDialog *ui;
 
     QString m_unknown_word;
+    QWidget* m_check_widget = nullptr;
 
     //QTextEdit* m_check_widget = nullptr;
     SpellCheckAction m_return_code;

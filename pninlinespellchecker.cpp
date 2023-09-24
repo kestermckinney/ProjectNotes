@@ -2,7 +2,7 @@
 #include "pnsettings.h"
 
 #include <QApplication>
-#include <QDebug>
+//#include <QDebug>
 
 PNInlineSpellChecker::PNInlineSpellChecker(QObject *parent)
     : QObject{parent}
@@ -20,9 +20,14 @@ void PNInlineSpellChecker::buildContextMenu(QMenu& t_menu, QTextCursor& t_cursor
     QString word = t_cursor.selectedText();
     bool badword = !global_Settings.spellchecker()->isGoodWord(word);
 
+    int c = 10;
     if (badword)
         foreach (QString s, global_Settings.spellchecker()->suggest(word))
+        {
             t_menu.addAction(s, [&t_cursor, s, this](){slotCorrectWord(t_cursor, s);});
+            c--;
+            if (c == 0) break; // max 10 itemss
+        }
 
     t_menu.addSeparator();
     t_menu.addAction("Spelling...", [&t_cursor, this](){slotCheckSpelling(t_cursor);});
@@ -119,10 +124,10 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckDocument(QTextC
 QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCursor& t_cursor, QList<QTextEdit::ExtraSelection>& t_extraselections)
 {
     // if set text was called then we need to check the entire document
-    if ( t_cursor.anchor() == 0 && t_cursor.position() == 0)
-    {
-        return spellCheckDocument(t_cursor, t_extraselections);
-    }
+//    if ( t_cursor.anchor() == 0 && t_cursor.position() == 0)
+//    {
+//        return spellCheckDocument(t_cursor, t_extraselections);
+//    }
 
     t_cursor.select(QTextCursor::WordUnderCursor);
 
@@ -132,7 +137,7 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
     ftc.word = t_cursor.selectedText();
 
     QString word = t_cursor.selectedText();
-    qDebug() << ">> selcted " << word << " trimmed " << word.trimmed();
+    //qDebug() << ">> selcted " << word << " trimmed " << word.trimmed();
 
     if (!t_cursor.selectedText().isEmpty())
     {
@@ -142,28 +147,28 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
         {
             if ( cursorsOverlap(*it, ftc))
             {
-                qDebug() << "removing " << ftc.word;
+                //qDebug() << "removing " << ftc.word;
                 it = m_checkque.erase(it);
             }
             else
                 ++it;
         }
 
-        qDebug() << "adding word " << t_cursor.selectedText() << t_cursor.position() << "  " << t_cursor.anchor();
+        //qDebug() << "adding word " << t_cursor.selectedText() << t_cursor.position() << "  " << t_cursor.anchor();
         m_checkque.append(ftc);
     }
 
-    qDebug() << "list size " << m_checkque.count();
+    //qDebug() << "list size " << m_checkque.count();
 
     // check all other words in the queue except the current one8
     // if someone clicks anywhere it will always check the last word
     QList<FixedTextCursor>::iterator it = m_checkque.begin();
     while (it != m_checkque.end())
     {
-        qDebug() << "list: " << (*it).word;
+        //qDebug() << "list: " << (*it).word;
         if ( !cursorsOverlap((*it), ftc) )
         {
-            qDebug() << "checking word: " << (*it).word;
+            //qDebug() << "checking word: " << (*it).word;
 
             if ( !global_Settings.spellchecker()->isGoodWord((*it).word))
             {
@@ -171,7 +176,7 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
                 ntc.setPosition((*it).anchor, QTextCursor::MoveAnchor);
                 ntc.setPosition((*it).position, QTextCursor::KeepAnchor);
 
-                qDebug() << "word is bad: " << ntc.selectedText();
+                //qDebug() << "word is bad: " << ntc.selectedText();
                 removeIfOverlaps(ntc, t_extraselections);
                 addSelection(ntc, t_extraselections);
             }
@@ -182,7 +187,7 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
                 ntc.setPosition((*it).position, QTextCursor::KeepAnchor);
 
                 // if we marked a good word remove it
-                qDebug() << "word is good: " << ntc.selectedText();
+                //qDebug() << "word is good: " << ntc.selectedText();
                 removeIfOverlaps(ntc, t_extraselections);
             }
 
@@ -190,7 +195,7 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
         }
         else
         {
-            qDebug() << "not checking yet: " << (*it).word;
+            //qDebug() << "not checking yet: " << (*it).word;
             ++it;
         }
     }
@@ -219,6 +224,8 @@ void PNInlineSpellChecker::slotAddToDictionary(QTextCursor& t_cursor)
 
     global_Settings.spellchecker()->ignoreWord(word);
     global_Settings.spellchecker()->AddToPersonalWordList(word);
+
+    unmarkWord(word);
 }
 
 void PNInlineSpellChecker::slottIgnoreAll(QTextCursor& t_cursor)
@@ -229,6 +236,8 @@ void PNInlineSpellChecker::slottIgnoreAll(QTextCursor& t_cursor)
     QString word = tc.selectedText();
 
     global_Settings.spellchecker()->ignoreWord(word);
+
+    unmarkWord(word);
 }
 
 void PNInlineSpellChecker::slotIgnore(QTextCursor& t_cursor)
@@ -239,4 +248,66 @@ void PNInlineSpellChecker::slotIgnore(QTextCursor& t_cursor)
     QString word = tc.selectedText();
 
     global_Settings.spellchecker()->ignoreWord(word);
+
+    unmarkCursor(t_cursor);
+}
+
+void PNInlineSpellChecker::unmarkCursor(QTextCursor& t_cursor)
+{
+    // clear the selection
+    QList<QTextEdit::ExtraSelection> es;
+    if (QString(parent()->metaObject()->className()).compare("PNTextEdit") == 0)
+    {
+        es = dynamic_cast<QTextEdit*>(parent())->extraSelections();
+    }
+    else
+    {
+        es = dynamic_cast<QPlainTextEdit*>(parent())->extraSelections();
+    }
+
+    removeIfOverlaps(t_cursor, es);
+    QList<QTextEdit::ExtraSelection>::iterator i;
+
+    if (QString(parent()->metaObject()->className()).compare("PNTextEdit") == 0)
+    {
+        dynamic_cast<QTextEdit*>(parent())->setExtraSelections(es);
+    }
+    else
+    {
+        dynamic_cast<QPlainTextEdit*>(parent())->setExtraSelections(es);
+    }
+}
+
+void PNInlineSpellChecker::unmarkWord(QString& t_word)
+{
+    // clear the selection
+    QList<QTextEdit::ExtraSelection> es;
+    if (QString(parent()->metaObject()->className()).compare("PNTextEdit") == 0)
+    {
+        es = dynamic_cast<QTextEdit*>(parent())->extraSelections();
+    }
+    else
+    {
+        es = dynamic_cast<QPlainTextEdit*>(parent())->extraSelections();
+    }
+
+    QList<QTextEdit::ExtraSelection>::iterator i;
+    for (i = es.begin(); i != es.end(); ++i)
+    {
+        // if spellcheck cursors overlap then remove it
+        if ( (*i).cursor.selectedText().compare(t_word, Qt::CaseInsensitive)
+            && (*i).format.underlineStyle() == QTextCharFormat::SpellCheckUnderline)
+        {
+            es.erase(i);
+        }
+    }
+
+    if (QString(parent()->metaObject()->className()).compare("PNTextEdit") == 0)
+    {
+        dynamic_cast<QTextEdit*>(parent())->setExtraSelections(es);
+    }
+    else
+    {
+        dynamic_cast<QPlainTextEdit*>(parent())->setExtraSelections(es);
+    }
 }

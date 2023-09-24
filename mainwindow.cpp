@@ -1623,7 +1623,7 @@ void MainWindow::on_actionRedo_triggered()
 
     if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
         (dynamic_cast<PNTextEdit*>(fw))->redo();
-    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+    if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
         (dynamic_cast<PNPlainTextEdit*>(fw))->redo();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->redo();
@@ -1641,7 +1641,7 @@ void MainWindow::on_actionCopy_triggered()
     QWidget* fw = this->focusWidget();
 
     if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
-        (dynamic_cast<PNTextEdit*>(fw))->copy();
+        (dynamic_cast<PNPlainTextEdit*>(fw))->copy();
     if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
         (dynamic_cast<PNTextEdit*>(fw))->copy();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
@@ -1681,7 +1681,7 @@ void MainWindow::on_actionPaste_triggered()
     if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
         (dynamic_cast<PNTextEdit*>(fw))->paste();
     if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
-        (dynamic_cast<QTextEdit*>(fw))->paste();
+        (dynamic_cast<QPlainTextEdit*>(fw))->paste();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->paste();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
@@ -1759,8 +1759,10 @@ void MainWindow::on_actionFind_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
         m_find_replace_dialog->showReplaceWindow(dynamic_cast<QTextEdit*>(fw));
+    else if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+        m_find_replace_dialog->showReplaceWindow(dynamic_cast<QPlainTextEdit*>(fw));
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         m_find_replace_dialog->showReplaceWindow(dynamic_cast<QLineEdit*>(fw));
 //    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
@@ -1776,12 +1778,12 @@ void MainWindow::on_actionSearch_triggered()
 
 void MainWindow::on_pushButtonSearch_clicked()
 {
-    global_DBObjects.searchresultsmodel()->PerformSearch(ui->lineEditSearchText->text());
+    global_DBObjects.searchresultsmodel()->PerformSearch(ui->plainTextEditSearchText->toPlainText());
 }
 
 void MainWindow::on_lineEditSearchText_returnPressed()
 {
-    global_DBObjects.searchresultsmodel()->PerformSearch(ui->lineEditSearchText->text());
+    global_DBObjects.searchresultsmodel()->PerformSearch(ui->plainTextEditSearchText->toPlainText());
 }
 
 void MainWindow::on_actionPlugin_Settings_triggered()

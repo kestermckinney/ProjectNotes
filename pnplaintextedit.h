@@ -16,6 +16,8 @@ public:
     PNPlainTextEdit(QWidget *parent = nullptr);
     ~PNPlainTextEdit();
 
+    PNInlineSpellChecker* inlineSpellChecker() { return m_inlinespellchecker; }
+
     void contextMenuEvent(QContextMenuEvent *event) override;
 
 public slots:
@@ -23,6 +25,7 @@ public slots:
 
 private:
     PNInlineSpellChecker* m_inlinespellchecker = nullptr;
+    int m_oldchars = 0;
 };
 
 #endif // PNPLAINTEXTEDIT_H

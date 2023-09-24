@@ -22,7 +22,7 @@ ProjectDetailsPage::~ProjectDetailsPage()
 
 void ProjectDetailsPage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes Project [%1 %2]").arg(ui->lineEditNumber->text(), ui->lineEditProjectName->text().left(50)));
+    topLevelWidget()->setWindowTitle(QString("Project Notes Project [%1 %2]").arg(ui->lineEditNumber->text(), ui->plainTextEditProjectName->toPlainText().left(50)));
 }
 
 void ProjectDetailsPage::newRecord()
@@ -68,7 +68,7 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     m_mapperProjectDetails->setSubmitPolicy(QDataWidgetMapper::AutoSubmit);
 
     m_mapperProjectDetails->addMapping(ui->lineEditNumber, 1);
-    m_mapperProjectDetails->addMapping(ui->lineEditProjectName, 2);
+    m_mapperProjectDetails->addMapping(ui->plainTextEditProjectName, 2);
     m_mapperProjectDetails->addMapping(ui->dateEditLastStatus, 3);
     m_mapperProjectDetails->addMapping(ui->dateEditLastInvoiced, 4);
     m_mapperProjectDetails->addMapping(ui->comboBoxPrimaryContact, 5);

@@ -35,6 +35,8 @@ public:
     void buildContextMenu(QMenu& t_menu, QTextCursor& t_cursor);
     bool cursorsOverlap(FixedTextCursor& t_cur1, FixedTextCursor& t_cur2);
     bool cursorsOverlap(QTextCursor& t_cur1, QTextCursor& t_cur2);
+    void unmarkWord(QString& t_word);
+    void unmarkCursor(QTextCursor& t_cursor);
 
 private slots:
     void slotCorrectWord(QTextCursor& t_cursor, const QString t_word);
