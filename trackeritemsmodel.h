@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #ifndef TRACKERITEMSMODEL_H
 #define TRACKERITEMSMODEL_H
 
@@ -13,6 +16,9 @@ public:
     QVariant data(const QModelIndex &t_index, int t_role = Qt::DisplayRole) const override;
 
     bool openRecord(QModelIndex t_index) override;
+    bool copyRecord(QModelIndex t_index) override;
+
+    QVariant getNextItemNumber(const QVariant& t_project_id);
 };
 
 #endif // TRACKERITEMSMODEL_H

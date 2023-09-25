@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "pnsettings.h"
 #include "mainwindow.h"
 
@@ -5,7 +8,7 @@
 
 PNSettings::PNSettings()
 {
-    m_app_config = new QSettings("ProjectNotes3", "AppSettings");
+    m_app_config = new QSettings("ProjectNotes", "AppSettings");
     m_app_config->setFallbacksEnabled(false);
 
     m_plugin_config = new QSettings("ProjectNotes", "PluginSettings");
@@ -16,6 +19,17 @@ PNSettings::~PNSettings()
 {
     delete m_app_config;
     delete m_plugin_config;
+
+    if (m_spellchecker)
+        delete m_spellchecker;
+}
+
+PNSpellChecker* PNSettings::spellchecker()
+{
+    if (m_spellchecker == nullptr)
+        m_spellchecker = new PNSpellChecker();
+
+    return m_spellchecker;
 }
 
 QVariant PNSettings::getPluginSetting(const QString& t_plugin_name, const QString& t_parameter_name)
@@ -173,6 +187,13 @@ bool PNSettings::getTableViewState(const QString& t_view_name, QTableView& t_vie
     return true;
 }
 
+int PNSettings::getStoredInt(const QString& t_value_name)
+{
+    QString path = t_value_name;
+
+    return m_app_config->value(path, -1).toInt();
+}
+
 
 int PNSettings::getWindowX(const QString& t_window_name)
 {
@@ -186,6 +207,14 @@ int PNSettings::getWindowY(const QString& t_window_name)
     QString path = t_window_name + "/Y";
 
     return m_app_config->value(path, -1).toInt();
+}
+
+void PNSettings::setStoredInt(const QString& t_value_name, int t_int_val)
+{
+    QString path = t_value_name;
+    QVariant t_value = t_int_val;
+
+    m_app_config->setValue(path, t_value);
 }
 
 void PNSettings::setWindowX(const QString& t_window_name, int X)

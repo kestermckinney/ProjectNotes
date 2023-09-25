@@ -1,8 +1,11 @@
-﻿#include "pndatabaseobjects.h"
+﻿// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
+#include "pndatabaseobjects.h"
 #include "databasestructure.h"
 
 #include <QUuid>
-#include <QDebug>
+//#include <QDebug>
 
 // selection values for fields
 QStringList PNDatabaseObjects::item_type = {
@@ -216,11 +219,11 @@ QString PNDatabaseObjects::execute(const QString& t_sql)
     QSqlQuery query;
     query.exec(t_sql);
 
-    QSqlError e = query.lastError();
-    if (e.isValid())
-    {
-        qDebug() << "Exec Error:  " << e.text();
-    }
+//    QSqlError e = query.lastError();
+//    if (e.isValid())
+//    {
+//        qDebug() << "Exec Error:  " << e.text();
+//    }
 
     if (query.next())
         return query.value(0).toString();

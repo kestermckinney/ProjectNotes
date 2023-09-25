@@ -73,6 +73,7 @@ if (platform.system() == 'Windows'):
     pnc = ProjectNotesCommon()
 
     def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -82,7 +83,7 @@ if (platform.system() == 'Windows'):
             return ""
 
         # setup global variable
-        ProjectsFolder = pnc.get_global_setting("ProjectsFolder")
+        ProjectsFolder = pnc.get_plugin_setting("ProjectsFolder")
 
         # prompt for the template to use
         statusdate = QDateTime.currentDateTime()
@@ -188,8 +189,3 @@ print("Finished")
 """
 # TESTED: Phase 1
 
-# TODO: installer doesn't copy over PCR Template.docx
-# TODO: right click menus not processing XML returned
-# TODO: check for a running instance of ProjectNotes so you don't run it twice
-# TODO: make the tracker items comments at least 3 lines high
-# TODO: deletingg a sorted location type deletes the wrong one... probably happens everywhere

@@ -1,6 +1,7 @@
 #include "trackeritemcommentsmodel.h"
 #include "pndatabaseobjects.h"
 #include <QDateTime>
+//#include <QDebug>
 
 TrackerItemCommentsModel::TrackerItemCommentsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
@@ -13,7 +14,7 @@ TrackerItemCommentsModel::TrackerItemCommentsModel(QObject* t_parent): PNSqlQuer
     addColumn(0, tr("Item Updated ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
     addColumn(1, tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
               "item_tracker", "item_id", "item_number");
-    addColumn(2, tr("Updated"), DBDate, DBSearchable, DBRequired);
+    addColumn(2, tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn(3, tr("Comments"), DBString, DBSearchable, DBNotRequired);
     addColumn(4, tr("Updated By"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name"); // itemdetailteamlist, tr("name"), tr("people_id"), true );
@@ -22,9 +23,6 @@ TrackerItemCommentsModel::TrackerItemCommentsModel(QObject* t_parent): PNSqlQuer
     addColumn(7, tr("Item Description"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(8, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(9, tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-
-    addRelatedTable("item_tracker", "item_id", "item_id", "Tracker Item");
-    // TODO: the item tracker list doesn't update when comments are chagned here.. need to test the mark dirty
 
     setOrderBy("lastupdated_date");
 }
@@ -49,20 +47,25 @@ bool TrackerItemCommentsModel::newRecord(const QVariant* t_fk_value1, const QVar
 bool TrackerItemCommentsModel::setData(const QModelIndex &t_index, const QVariant &t_value, int t_role)
 {
     QVariant curdate = QDateTime::currentDateTime().toString("MM/dd/yyyy");
+    QVariant oldvalue = data(t_index, t_role);
+
+    //qDebug() << " for column " << t_index.column() << " got value " << t_value;
 
     if(PNSqlQueryModel::setData(t_index, t_value, t_role))
     {
         // set the date the record was updated
         if (t_index.column() != 2)
         {
-            QVariant oldvalue = data(t_index, t_role);
-
             if (oldvalue != t_value) // don't change the update date if nothing changed
             {
                 QModelIndex qmi = index(t_index.row(), 2);
                 PNSqlQueryModel::setData(qmi, curdate, t_role);
+
+                //qDebug() << "setting auto date " << curdate;
             }
         }
+
+        global_DBObjects.trackeritemsmodel()->setDirty(); // the combined comments can't be set relatable
 
         return true;
     }

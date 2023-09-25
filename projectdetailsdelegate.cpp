@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "projectdetailsdelegate.h"
 #include "pnsqlquerymodel.h"
 #include "pndateeditex.h"
@@ -6,7 +9,7 @@
 
 #include <QLineEdit>
 #include <QComboBox>
-#include <QDebug>
+//#include <QDebug>
 
 ProjectDetailsDelegate::ProjectDetailsDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
@@ -19,15 +22,17 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
 
     switch (t_index.column())
     {
-    case 1:
     case 2:
         {
-            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
-            lineedit->setText(value.toString());
+            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
+
+            // don't resent buffers if text hasn't changed
+            if (value.toString().compare(lineedit->toPlainText()) != 0)
+                lineedit->setPlainText(value.toString());
 
             QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
-            if (((MainWindow*) window)->navigateCurrentPage())
-                ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
+            if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
+                dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 3:
@@ -95,15 +100,14 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
 
     switch (t_index.column())
     {
-    case 1:
     case 2:
         {
-            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
-            key_val = lineedit->text();
+            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
+            key_val = lineedit->toPlainText();
 
             QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
-            if (((MainWindow*) window)->navigateCurrentPage())
-                ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
+            if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
+                dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 3:

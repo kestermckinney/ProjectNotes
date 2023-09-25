@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "projectnotespage.h"
 #include "pndatabaseobjects.h"
 #include "notesactionitemsview.h"
@@ -22,7 +25,7 @@ void ProjectNotesPage::setPageTitle()
 {
     QString project_number= global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,7)).toString();
 
-    topLevelWidget()->setWindowTitle(QString("Project Notes Meeting [%1 %2 %3]").arg(project_number, ui->lineEditMeetingTitle->text(), ui->dateEditMeetingDate->text().left(50)));
+    topLevelWidget()->setWindowTitle(QString("Project Notes Meeting [%1 %2 %3]").arg(project_number, ui->plainTextEditMeetingTitle->toPlainText(), ui->dateEditMeetingDate->text().left(50)));
 }
 
 void ProjectNotesPage::newRecord()
@@ -30,9 +33,9 @@ void ProjectNotesPage::newRecord()
     QVariant note_id = global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,0));
     QVariant project_id = global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,1));
 
-    int lastrow = ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->rowCount(QModelIndex());
+    int lastrow = dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->rowCount(QModelIndex());
 
-    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&note_id, &project_id);
+    dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord(&note_id, &project_id);
 
     getCurrentView()->selectRow(lastrow);
     QModelIndex index = getCurrentView()->model()->index(lastrow, 0);
@@ -67,7 +70,7 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
     setPageModel(global_DBObjects.projecteditingnotesmodel());
     m_mapperProjectNotes->setSubmitPolicy(QDataWidgetMapper::AutoSubmit);
 
-    m_mapperProjectNotes->addMapping(ui->lineEditMeetingTitle, 2);
+    m_mapperProjectNotes->addMapping(ui->plainTextEditMeetingTitle, 2);
     m_mapperProjectNotes->addMapping(ui->textEditNotes, 4);
     m_mapperProjectNotes->addMapping(ui->dateEditMeetingDate, 3);
     m_mapperProjectNotes->addMapping(ui->checkBoxInternalNote, 5);
@@ -78,7 +81,7 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
     setCurrentModel(nullptr);
     setCurrentView(nullptr);
 
-    ui->textEditNotes->setFont(QFont("Segoe UI", 10));
+    ui->textEditNotes->setFontPointSize(10);
 }
 
 void ProjectNotesPage::toFirst(bool t_open)

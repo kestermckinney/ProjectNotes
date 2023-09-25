@@ -86,6 +86,7 @@ if (platform.system() == 'Windows'):
         return cleanname[:70]
 
     def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
         QtWidgets.QApplication.restoreOverrideCursor()
         QtWidgets.QApplication.processEvents()   
 
@@ -131,8 +132,7 @@ if (platform.system() == 'Windows'):
         progbar.setLabelText("Archiving project emails...")
         progbar.setWindowFlags(
             QtCore.Qt.Window |
-            QtCore.Qt.WindowCloseButtonHint |
-            QtCore.Qt.WindowStaysOnTopHint
+            QtCore.Qt.WindowCloseButtonHint 
             )
         progbar.setMinimumWidth(350)
         progbar.setCancelButton(None)
@@ -168,12 +168,15 @@ if (platform.system() == 'Windows'):
             #print("looking in inbox for project " + projnum)
 
             if message.Subject.find(projnum) >= 0:
-                filename = receivedfolder + makefilename(str(message.SentOn), message.Subject) + ".msg"
+                if hasattr(message, "SentOn"):
+                    filename = receivedfolder + makefilename(str(message.SentOn), message.Subject) + ".msg"
 
-                #print (filename + "\n")
+                    #print (filename + "\n")
 
-                if not QFile.exists(filename):
-                    message.SaveAs(filename, 3)
+                    if not QFile.exists(filename):
+                        message.SaveAs(filename, 3)
+                else:
+                    print("Message has no sent date: " + message.Subject)
 
         for message in sent.Items:
             progval = progval + 1
@@ -225,6 +228,3 @@ event_data_rightclick(xmldoc.toString())
 """
 
 # TESTED: Phase 1
-
-# TODO: when copying a meeting it should use the current date, it doesn't copy all atteneeds and does copy the meeting notes.
-

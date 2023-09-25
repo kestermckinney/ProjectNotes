@@ -74,6 +74,10 @@ if (platform.system() == 'Windows'):
     pne = ProjectNotesExcelTools()
 
     def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
+
+        window_title = ""
+
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -117,10 +121,13 @@ if (platform.system() == 'Windows'):
 
             DefaultSignature = message.HTMLBody
 
-            message.Subject = projectnumber + " " + projectname + " - "
-
+            window_title = projectnumber + " " + projectname + " - "
+            message.Subject = window_title
+            
         outlook = None
         message = None
+
+        pnc.bring_window_to_front(window_title)
 
         return ""
 

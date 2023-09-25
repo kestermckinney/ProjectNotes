@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "projectteammembersview.h"
 #include "pndatabaseobjects.h"
 
@@ -24,6 +27,7 @@ void ProjectTeamMembersView::setModel(QAbstractItemModel *t_model)
         setColumnHidden(6, true);
         setColumnHidden(7, true);
         setColumnHidden(8, true);
+        setColumnHidden(9, true);
         // setup model lists
 
         // projects list panel delagets

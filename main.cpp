@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "mainwindow.h"
 #include "runguard.h"
 
@@ -50,8 +53,6 @@ int main(int argc, char *argv[])
         qApp->setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }");
     }
 #endif
-
-
 
     a.setWindowIcon(QIcon(":/icons/logo.png")); // "AppIcon.icns"
     w.show();

@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "pnbasepage.h"
 #include "pndatabaseobjects.h"
 #include "pnsqlquerymodel.h"
@@ -19,17 +22,17 @@ void PNBasePage::setPageTitle()
 
 void PNBasePage::newRecord()
 {
-    int lastrow = ((QSortFilterProxyModel*)getCurrentView()->model())->sourceModel()->rowCount(QModelIndex());
+    int lastrow = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->sourceModel()->rowCount(QModelIndex());
 
-    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord();
+    dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord();
 
     //  check if column is visible
     int col = 1;
     while (!getCurrentView()->isVisible())
         col++;
 
-    QModelIndex index = ((QSortFilterProxyModel*)getCurrentView()->model())->sourceModel()->index(lastrow, col);
-    QModelIndex sort_index = ((QSortFilterProxyModel*)getCurrentView()->model())->mapFromSource(index);
+    QModelIndex index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->sourceModel()->index(lastrow, col);
+    QModelIndex sort_index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->mapFromSource(index);
 
     getCurrentView()->selectionModel()->select(sort_index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     getCurrentView()->scrollTo(sort_index, QAbstractItemView::PositionAtCenter);
@@ -41,7 +44,7 @@ void PNBasePage::deleteItem()
 
     for (int i = qi.count() - 1; i >= 0; i--)
     {
-        ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->deleteRecord(getCurrentModel()->mapToSource(qi[i]));
+        dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->deleteRecord(getCurrentModel()->mapToSource(qi[i]));
     }
 }
 
@@ -53,7 +56,7 @@ void PNBasePage::copyItem()
 
     for (int i = qi.count() - 1; i >= 0; i--)
     {
-        ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->copyRecord(getCurrentModel()->mapToSource(qi[i]));
+        dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->copyRecord(getCurrentModel()->mapToSource(qi[i]));
     }
 
     //  check if column is visible
@@ -61,8 +64,8 @@ void PNBasePage::copyItem()
     while (!getCurrentView()->isVisible())
         col++;
 
-    QModelIndex index = ((QSortFilterProxyModel*)getCurrentView()->model())->sourceModel()->index(lastrow, col);
-    QModelIndex sort_index = ((QSortFilterProxyModel*)getCurrentView()->model())->mapFromSource(index);
+    QModelIndex index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->sourceModel()->index(lastrow, col);
+    QModelIndex sort_index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->mapFromSource(index);
 
     getCurrentView()->selectionModel()->select(sort_index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     getCurrentView()->scrollTo(sort_index, QAbstractItemView::PositionAtCenter);
@@ -74,7 +77,7 @@ void PNBasePage::openItem()
 
     for (int i = qi.count() - 1; i >= 0; i--)
     {
-        ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->openRecord(getCurrentModel()->mapToSource(qi[i]));
+        dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->openRecord(getCurrentModel()->mapToSource(qi[i]));
     }
 }
 
@@ -88,37 +91,16 @@ void PNBasePage::setButtonAndMenuStates()
     Q_UNUSED(t_open);
  }
 
- void PNBasePage::buildPluginMenu(PNPluginManager* t_pm, Ui::MainWindow* t_ui)
+ void PNBasePage::buildPluginMenu(PNPluginManager* t_pm, QMenu* t_menu)
  {
-     // clear any other plugin items
-     QAction* mi = t_ui->menuPlugins->actions().last();
-
-     while ( mi->text().compare("View Console") != 0 )
-     {
-         t_ui->menuPlugins->removeAction(mi);
-         mi = t_ui->menuPlugins->actions().last();
-     }
-
-    t_ui->menuPlugins->addSeparator();
-
-     // add globally available plugins
-     for ( PNPlugin* p : t_pm->getPlugins())
-     {
-         if (p->hasPNPluginMenuEvent() && p->isEnabled())
-         {
-             QAction* act = t_ui->menuPlugins->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
-             act->setIcon(QIcon(":/icons/add-on.png"));
-         }
-     }
-
-     t_ui->menuPlugins->addSeparator();
+    t_menu->addSeparator();
 
     // add menus relevant to the current table
-     for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
+     for ( PNPlugin* p : t_pm->getPlugins())
      {
          if (p->hasDataRightClickEvent(getTableName()) && p->isEnabled())
          {
-             QAction* act = t_ui->menuPlugins->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+             QAction* act = t_menu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
              act->setIcon(QIcon(":/icons/add-on.png"));
          }
      }

@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #ifndef PNPLUGIN_H
 #define PNPLUGIN_H
 
@@ -42,7 +45,7 @@ public:
     QString getPNPluginName() { return m_PNPluginName; }
     QString getPNPluginDescription() { return m_Description; }
     bool isEnabled() { return m_IsEnabled; }
-    void setEnabled(bool enable) { m_IsEnabled = enable; }
+    void setEnabled(bool t_enable);
 
     QStringList getEventNames();
     QStringList getParameterNames() { return m_Parameters;}

@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "notesactionitemsview.h"
 #include "pndatabaseobjects.h"
 
@@ -31,6 +34,7 @@ void NotesActionItemsView::setModel(QAbstractItemModel *t_model)
         PNTableView::setModel(t_model);
 
         // see setbuttonitems for visible columns
+        setColumnHidden(0, true);
         setColumnHidden(1, true);
         setColumnHidden(2, true);
         setColumnHidden(4, true);

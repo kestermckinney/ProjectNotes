@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "projectdetailspage.h"
 #include "pndatabaseobjects.h"
 
@@ -19,16 +22,16 @@ ProjectDetailsPage::~ProjectDetailsPage()
 
 void ProjectDetailsPage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes Project [%1 %2]").arg(ui->lineEditNumber->text(), ui->lineEditProjectName->text().left(50)));
+    topLevelWidget()->setWindowTitle(QString("Project Notes Project [%1 %2]").arg(ui->lineEditNumber->text(), ui->plainTextEditProjectName->toPlainText().left(50)));
 }
 
 void ProjectDetailsPage::newRecord()
 {
     QVariant project_id = global_DBObjects.projectinformationmodelproxy()->data(global_DBObjects.projectinformationmodelproxy()->index(0,0));
 
-    int lastrow = ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->rowCount(QModelIndex());
+    int lastrow = dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->rowCount(QModelIndex());
 
-    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&project_id);
+    dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord(&project_id);
 
     getCurrentView()->selectRow(lastrow);
     QModelIndex index = getCurrentView()->model()->index(lastrow, 0);
@@ -65,7 +68,7 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     m_mapperProjectDetails->setSubmitPolicy(QDataWidgetMapper::AutoSubmit);
 
     m_mapperProjectDetails->addMapping(ui->lineEditNumber, 1);
-    m_mapperProjectDetails->addMapping(ui->lineEditProjectName, 2);
+    m_mapperProjectDetails->addMapping(ui->plainTextEditProjectName, 2);
     m_mapperProjectDetails->addMapping(ui->dateEditLastStatus, 3);
     m_mapperProjectDetails->addMapping(ui->dateEditLastInvoiced, 4);
     m_mapperProjectDetails->addMapping(ui->comboBoxPrimaryContact, 5);

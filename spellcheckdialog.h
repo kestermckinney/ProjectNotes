@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #ifndef SPELLCHECKDIALOG_H
 #define SPELLCHECKDIALOG_H
 
@@ -7,6 +10,7 @@
 #include <QListWidgetItem>
 #include <QLineEdit>
 #include <QTextEdit>
+#include <QPlainTextEdit>
 
 
 namespace Ui {
@@ -23,13 +27,11 @@ public:
     ~SpellCheckDialog();
 
     enum SpellCheckAction {AbortCheck, IgnoreOnce, IgnoreAll,
-                           Change, ChangeAll, AddToDict, ChangeDict};
+                           Change, ChangeAll, AddToDict, ChangeDict, NothingDone};
 
     void spellCheck(QWidget* t_focus_control);
     SpellCheckAction checkWord(const QString &t_word);
-    void replaceAll(int t_position, const QString &t_old_word, const QString &sNew);
-
-    QStringList suggest(const QString &t_word);
+    void replaceAll(QTextCursor t_cursor, const QString &t_old_word, const QString &sNew);
 
 private slots:
     void on_comboBoxDictionaryLanguage_currentIndexChanged(int index);
@@ -55,21 +57,10 @@ private slots:
 private:
     Ui::SpellCheckDialog *ui;
 
-    void LoadPersonalWordList();
-    void AddToPersonalWordList(QString& t_word);
-
-    // spell checker
-    Hunspell* m_spellchecker = nullptr;
-
     QString m_unknown_word;
-    QVector<QString> m_DictionaryNames;
+    QWidget* m_check_widget = nullptr;
 
-
-    int m_DefaultDictionary = 0;
-    QVector<QString> m_DicFiles;
-    QVector<QString> m_AffFiles;
-
-    QTextEdit* m_check_widget = nullptr;
+    //QTextEdit* m_check_widget = nullptr;
     SpellCheckAction m_return_code;
 };
 

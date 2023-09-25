@@ -1,9 +1,14 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #ifndef PNSETTINGS_H
 #define PNSETTINGS_H
 
 #include <QSettings>
 #include <QMainWindow>
 #include <QTableView>
+
+#include "pnspellchecker.h"
 
 class PNSettings
 {
@@ -36,6 +41,10 @@ public:
 
     void setTableSortColumn(const QString& t_view_name, const int t_column, const QString t_direction);
     bool getTableSortColumn(const QString& t_view_name, int& t_column, QString& t_direction);
+    int getStoredInt(const QString& t_value_name);
+    void setStoredInt(const QString& t_value_name, int t_int_value);
+
+    PNSpellChecker* spellchecker();
 
 private:
     int getWindowX(const QString& t_window_name);
@@ -54,10 +63,11 @@ private:
     void setWindowStatusBar(const QString& t_window_name, bool t_status_bar);
     bool getWindowStatusBar(const QString& t_window_name);
 
-
 private:
     QSettings* m_app_config;
     QSettings* m_plugin_config;
+
+    PNSpellChecker* m_spellchecker = nullptr;
 };
 
 static PNSettings global_Settings;

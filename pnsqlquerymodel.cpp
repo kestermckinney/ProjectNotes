@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "pnsqlquerymodel.h"
 #include "pndatabaseobjects.h"
 
@@ -6,7 +9,7 @@
 #include <QSqlRecord>
 #include <QMessageBox>
 #include <QSqlError>
-#include <QDebug>
+//#include <QDebug>
 #include <QDateTime>
 #include <QUuid>
 #include <QRegularExpressionMatch>
@@ -14,6 +17,7 @@
 #include <QDomDocument>
 #include <QDomNode>
 #include <QList>
+#include <QLocale>
 
 QList<PNSqlQueryModel*> PNSqlQueryModel::m_open_recordsets;
 
@@ -55,7 +59,7 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
                 if ( recordset->tablename().compare( m_related_table[i] ) == 0 )
                 {
                     //qDebug() << "Looking Into Table " << recordset->tablename() << " i is " << i;
-                    //qDebug() << "Check if table " << recordset->tablename() << " has column " << m_related_column[i];
+                    //qDebug() << "Check if table " << recordset->tablename() << " has column " << m_related_columns[i];
                     // we found a table to check, look for the related columns
                     for (QString &c : m_related_columns[i])
                     {
@@ -158,8 +162,11 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             // new records will need a new key id set
             m_cache[t_index.row()].setValue(0, QUuid::createUuid().toString());
 
+            QVariant value = t_value;
+            sqlEscape(value, m_column_type[t_index.column()], true);
+
             // set the cached value
-            m_cache[t_index.row()].setValue(t_index.column(), t_value );
+            m_cache[t_index.row()].setValue(t_index.column(), value );
 
             for (int i = 0; i < m_sql_query.record().count(); i++)
             {
@@ -187,13 +194,33 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 if ((m_column_is_editable[i] == DBEditable) || i == 0)
                 {
                     insert.bindValue(bindcount, m_cache[t_index.row()].field(i).value());
-                    //qDebug() << "Value " << m_cache[t_index.row()].field(i).value();
+                    //qDebug() << "Binding Value " << value << " for " << m_cache[t_index.row()].field(i).name() << " non-escaped val: " << m_cache[t_index.row()].field(i).value();
                     bindcount++;
+                }
+
+                // all required fields must be available, otherwise we get a primary key error
+                if ( (m_column_is_required[i] == DBRequired) && m_cache[t_index.row()].field(i).value().isNull() && i != 0)
+                {
+                    // don't insert the record until the required fields are filled in
+                    // make the record a new record again
+                    m_cache[t_index.row()].setValue(0, QVariant());
+                    //qDebug() << "Can't save row column " << i << " is null see -> "  << m_cache[t_index.row()].field(i).value();
+                    return false;
                 }
             }
 
             if(insert.exec())
+            {
+                QModelIndex qil = createIndex(t_index.row(), 0);
+                QModelIndex qir = createIndex(t_index.row(), columnCount() - 1);
+
+                emit dataChanged(qil, qir);
+
+                // check for all of the impacted open recordsets
+                refreshImpactedRecordsets(t_index);
+
                 return true;
+            }
 
             QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
                insert.lastError().text() + "\n" + insert.lastQuery(), QMessageBox::Ok);
@@ -215,7 +242,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             update.addBindValue(keyvalue);
             update.addBindValue(oldvalue);
 
-            qDebug() << "update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)";
+            //qDebug() << "update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)";
             //qDebug() << "Value " << value;
             //qDebug() << "Value " << keyvalue;
             //qDebug() << "Value " << oldvalue;
@@ -232,6 +259,8 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 else
                 {
                     m_cache[t_index.row()].setValue(t_index.column(), value);
+
+                    emit dataChanged(t_index, t_index);
 
                     // check for all of the impacted open recordsets
                     refreshImpactedRecordsets(t_index);
@@ -629,7 +658,6 @@ bool PNSqlQueryModel::copyRecord(QModelIndex t_index)
     // don't copy key record so it is identified as a new record
     for (int i = 1; i < m_sql_query.record().count(); i++)
     {
-
         if (m_column_is_unique[i] == DBUnique)
         {
             newrecord.setValue(i, QString(" Copy of %1").arg(m_cache[t_index.row()].field(i).value().toString()));
@@ -640,15 +668,13 @@ bool PNSqlQueryModel::copyRecord(QModelIndex t_index)
         }
     }
 
-    return addRecord(newrecord);
+    return(addRecord(newrecord));
 }
 
 bool PNSqlQueryModel::addRecord(QSqlRecord& t_newrecord)
 {
     QModelIndex qmi = QModelIndex();
     int row = rowCount((qmi));
-
-    //qDebug() << t_newrecord;
 
     beginInsertRows(qmi, row, row);
     m_cache.append(t_newrecord);

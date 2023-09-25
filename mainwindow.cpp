@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "ui_mainwindow.h"
 
 #include "pntableview.h"
@@ -5,6 +8,8 @@
 #include "pnsqlquerymodel.h"
 #include "pndatabaseobjects.h"
 #include "aboutdialog.h"
+#include "pnplaintextedit.h"
+#include "pntextedit.h"
 
 #include <QStringListModel>
 #include <QMessageBox>
@@ -12,7 +17,6 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QSqlTableModel>
-#include <QDebug>
 #include <QDir>
 #include <QFileDialog>
 #include <QTextEdit>
@@ -23,6 +27,7 @@
 #include <QClipboard>
 #include <QMimeType>
 #include <QMimeData>
+//#include <QDebug>
 
 #include "mainwindow.h"
 
@@ -38,25 +43,32 @@ MainWindow::MainWindow(QWidget *t_parent)
     setupTextActions();
 
     m_preferences_dialog = new PreferencesDialog(this);
-    m_spellcheck_dialog = new SpellCheckDialog(this);
     m_find_replace_dialog = new FindReplaceDialog(this);
 
     // view state
     m_page_history.clear();
 
     global_Settings.getWindowState("MainWindow", *this);
+    int sz = global_Settings.getStoredInt("DefaultFontSize");
 
-    connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
-    connect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
-    connect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
-    connect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectNote_triggered()));
-    connect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_SearchResults_triggered()));
-    connect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpenTeamMember_triggered()));
+    if (sz == -1)
+        sz = 10;
+
+    QFont af = QApplication::font();
+    af.setPointSize(sz);
+    QApplication::setFont(af);
+
+    connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ProjectDetails_triggered()));
+    connect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ItemDetails_triggered()));
+    connect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ItemDetails_triggered()));
+    connect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ProjectNote_triggered()));
+    connect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_SearchResults_triggered()));
+    connect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpenTeamMember_triggered()));
 
     connect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
     connect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
 
-    connect((QApplication*)QApplication::instance(), &QApplication::focusChanged, this, &MainWindow::on_focusChanged);
+    connect(dynamic_cast<QApplication*>(QApplication::instance()), &QApplication::focusChanged, this, &MainWindow::on_focusChanged);
 
     m_plugin_manager = new PNPluginManager(this);
 
@@ -245,7 +257,7 @@ void MainWindow::slotTimerUpdates()
 {
     m_minute_counter++;
 
-    // call all of the startup events
+    // call all of the timer events
     for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
     {
         if ( p->isEnabled() &&
@@ -256,6 +268,7 @@ void MainWindow::slotTimerUpdates()
             p->hasEvery30MinutesEvent())
            )
         {
+            //qDebug() << "calling timer event for " << p->getPNPluginName() << " is enabled " << p->isEnabled();
             slotTimerEvent(p);
         }
     }
@@ -407,12 +420,12 @@ void MainWindow::slotPluginMenu(PNPlugin* t_plugin)
 
 MainWindow::~MainWindow()
 {
-    disconnect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectDetails_triggered()));
-    disconnect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
-    disconnect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ItemDetails_triggered()));
-    disconnect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_ProjectNote_triggered()));
-    disconnect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpen_SearchResults_triggered()));
-    disconnect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow()), this, SLOT(on_actionOpenTeamMember_triggered()));
+    disconnect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ProjectDetails_triggered()));
+    disconnect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ItemDetails_triggered()));
+    disconnect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ItemDetails_triggered()));
+    disconnect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ProjectNote_triggered()));
+    disconnect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_SearchResults_triggered()));
+    disconnect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpenTeamMember_triggered()));
 
     disconnect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
     disconnect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
@@ -447,7 +460,6 @@ MainWindow::~MainWindow()
         CloseDatabase();
 
     delete m_preferences_dialog;
-    delete m_spellcheck_dialog;
     delete m_find_replace_dialog;
 
     delete m_plugin_settings_dialog;
@@ -471,6 +483,8 @@ void MainWindow::setButtonAndMenuStates()
 {
     if (!ui)
         return;
+
+    ui->actionStatus_Bar->setChecked(ui->statusbar->isVisible());
 
     bool dbopen = global_DBObjects.isOpen();
 
@@ -496,9 +510,13 @@ void MainWindow::setButtonAndMenuStates()
 
         // can only choose export when something is selected
         ui->actionXML_Export->setEnabled(dbopen && sel && !issearch);
+        ui->actionFilter->setEnabled(dbopen);
     }
     else
+    {
         ui->actionXML_Export->setEnabled(false);
+        ui->actionFilter->setEnabled(false);
+    }
 
     bool hascurview = (curview != nullptr);
 
@@ -523,7 +541,7 @@ void MainWindow::setButtonAndMenuStates()
 
     ui->actionClients->setEnabled(dbopen);
     ui->actionPeople->setEnabled(dbopen);
-    ui->actionFilter->setEnabled(dbopen);
+
 
     //plugin menu
     if (m_plugin_manager)
@@ -597,7 +615,7 @@ void MainWindow::setButtonAndMenuStates()
         // determind if we can format text
         bool can_format_text =
             (fw != nullptr) &&
-            (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 );
+            (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 );
 
         // determine if we can text edit
         bool can_text_edit =
@@ -605,14 +623,16 @@ void MainWindow::setButtonAndMenuStates()
                 can_format_text ||
                 (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 ) ||
                 (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "QComboBox") == 0 ));
+                (strcmp(fw->metaObject()->className(), "QComboBox") == 0 ) ||
+                (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 ) );
 
         // determine if we can find text
         bool can_find_edit =
                 (fw != nullptr) && (
                 can_format_text ||
                 (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 ));
+                (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 ) ||
+                (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 ) );
 
         // can't edit combo boxes not set to editable
         if ( can_text_edit && (strcmp(fw->metaObject()->className(), "QComboBox") == 0)  )
@@ -679,9 +699,6 @@ void MainWindow::setButtonAndMenuStates()
 
         // view items
         ui->menuView->setEnabled(true);
-
-        // spell check only QTextEdit widgets
-        ui->actionSpell_Check->setEnabled(can_format_text);
 
         // filter tracker items
         ui->actionResolved_Tracker_Action_Items->setChecked(global_DBObjects.getShowResolvedTrackerItems());
@@ -824,7 +841,8 @@ void MainWindow::navigateToPage(PNBasePage* t_widget)
 
     ui->stackedWidget->setCurrentWidget(t_widget);
     t_widget->setPageTitle();
-    t_widget->buildPluginMenu(m_plugin_manager, ui);
+    buildPluginMenu();
+    t_widget->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
 
     setButtonAndMenuStates();
 }
@@ -838,11 +856,12 @@ void MainWindow::navigateBackward()
         QWidget* current = m_navigation_history.at(m_navigation_location);
 
         if (PNSqlQueryModel::refreshDirty())
-            ((PNBasePage*)current)->toFirst(false);
+            dynamic_cast<PNBasePage*>(current)->toFirst(false);
 
         ui->stackedWidget->setCurrentWidget(current);
-        ((PNBasePage*)current)->setPageTitle();
-        ((PNBasePage*)current)->buildPluginMenu(m_plugin_manager, ui);
+        dynamic_cast<PNBasePage*>(current)->setPageTitle();
+        buildPluginMenu();
+        dynamic_cast<PNBasePage*>(current)->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
     }
 
     setButtonAndMenuStates();
@@ -857,19 +876,18 @@ void MainWindow::navigateForward()
         QWidget* current = m_navigation_history.at(m_navigation_location);
 
         if (PNSqlQueryModel::refreshDirty())
-            ((PNBasePage*)current)->toFirst(false);
+            dynamic_cast<PNBasePage*>(current)->toFirst(false);
 
         ui->stackedWidget->setCurrentWidget(current);
-        ((PNBasePage*)current)->setPageTitle();
-        ((PNBasePage*)current)->buildPluginMenu(m_plugin_manager, ui);
+        dynamic_cast<PNBasePage*>(current)->setPageTitle();
+        buildPluginMenu();
+        dynamic_cast<PNBasePage*>(current)->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
     }
 
     setButtonAndMenuStates();
 }
 void MainWindow::CloseDatabase()
 {
-    global_DBObjects.closeDatabase();
-
     // disconnect the search request event
     disconnect(global_DBObjects.peoplemodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     disconnect(global_DBObjects.clientsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
@@ -882,6 +900,8 @@ void MainWindow::CloseDatabase()
     disconnect(global_DBObjects.notesactionitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     disconnect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     disconnect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+
+    global_DBObjects.closeDatabase();
 }
 
 void MainWindow::on_actionClose_Database_triggered()
@@ -966,7 +986,7 @@ void MainWindow::on_actionDelete_Item_triggered()
         navigateCurrentPage()->deleteItem();
 }
 
-void MainWindow::on_actionOpen_ProjectDetails_triggered()
+void MainWindow::slotOpen_ProjectDetails_triggered()
 {
 
     ui->pageProjectDetails->toFirst();
@@ -974,21 +994,21 @@ void MainWindow::on_actionOpen_ProjectDetails_triggered()
     navigateToPage(ui->pageProjectDetails);
 }
 
-void MainWindow::on_actionOpen_ItemDetails_triggered()
+void MainWindow::slotOpen_ItemDetails_triggered()
 {
     ui->pageItemDetails->toFirst();
 
     navigateToPage(ui->pageItemDetails);
 }
 
-void MainWindow::on_actionOpen_ProjectNote_triggered()
+void MainWindow::slotOpen_ProjectNote_triggered()
 {
     ui->pageProjectNote->toFirst();
 
     navigateToPage(ui->pageProjectNote);
 }
 
-void MainWindow::on_actionOpenTeamMember_triggered()
+void MainWindow::slotOpenTeamMember_triggered()
 {
     navigateToPage(ui->pagePeople);
 
@@ -1005,7 +1025,7 @@ void MainWindow::on_actionOpenTeamMember_triggered()
     ui->tableViewPeople->scrollTo(qi, QAbstractItemView::PositionAtCenter);
 }
 
-void MainWindow::on_actionOpen_SearchResults_triggered()
+void MainWindow::slotOpen_SearchResults_triggered()
 {
     // find the selected search result
     QModelIndexList qil = ui->tableViewSearchResults->selectionModel()->selectedIndexes();
@@ -1378,6 +1398,7 @@ void MainWindow::textStyle(int styleIndex)
             style = cursor.currentList()->format().style();
         else
             style = QTextListFormat::ListDisc;
+
         marker = QTextBlockFormat::MarkerType::Unchecked;
         break;
     case 5:
@@ -1385,6 +1406,7 @@ void MainWindow::textStyle(int styleIndex)
             style = cursor.currentList()->format().style();
         else
             style = QTextListFormat::ListDisc;
+
         marker = QTextBlockFormat::MarkerType::Checked;
         break;
     case 6:
@@ -1449,17 +1471,19 @@ void MainWindow::textStyle(int styleIndex)
 void MainWindow::textFamily(const QString &f)
 {
     QTextCharFormat fmt;
-    fmt.setFontFamily(f);
+    // don't use this method is is broken fmt.setFontFamily(f);
+    fmt.setFont(f);
     mergeFormatOnWordOrSelection(fmt);
 }
 
 void MainWindow::mergeFormatOnWordOrSelection(const QTextCharFormat &format)
 {
     QTextCursor cursor = ui->textEditNotes->textCursor();
+
     if (!cursor.hasSelection())
         cursor.select(QTextCursor::WordUnderCursor);
+
     cursor.mergeCharFormat(format);
-    ui->textEditNotes->mergeCurrentCharFormat(format);
 }
 
 void MainWindow::modifyIndentation(int amount)
@@ -1507,6 +1531,8 @@ void MainWindow::textSize(const QString &p)
         QTextCharFormat fmt;
         fmt.setFontPointSize(pointSize);
         mergeFormatOnWordOrSelection(fmt);
+
+        //qDebug() << "Called textSize: " << p;
     }
 }
 
@@ -1584,8 +1610,10 @@ void MainWindow::on_actionUndo_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
-        (dynamic_cast<QTextEdit*>(fw))->undo();
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+        (dynamic_cast<PNTextEdit*>(fw))->undo();
+    else if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+        (dynamic_cast<PNPlainTextEdit*>(fw))->undo();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->undo();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
@@ -1601,8 +1629,10 @@ void MainWindow::on_actionRedo_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
-        (dynamic_cast<QTextEdit*>(fw))->redo();
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+        (dynamic_cast<PNTextEdit*>(fw))->redo();
+    if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+        (dynamic_cast<PNPlainTextEdit*>(fw))->redo();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->redo();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
@@ -1618,8 +1648,10 @@ void MainWindow::on_actionCopy_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
-        (dynamic_cast<QTextEdit*>(fw))->copy();
+    if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+        (dynamic_cast<PNPlainTextEdit*>(fw))->copy();
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+        (dynamic_cast<PNTextEdit*>(fw))->copy();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->copy();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
@@ -1635,8 +1667,10 @@ void MainWindow::on_actionCut_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
-        (dynamic_cast<QTextEdit*>(fw))->cut();
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+        (dynamic_cast<PNTextEdit*>(fw))->cut();
+    if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+        (dynamic_cast<PNPlainTextEdit*>(fw))->cut();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->cut();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
@@ -1652,8 +1686,10 @@ void MainWindow::on_actionPaste_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
-        (dynamic_cast<QTextEdit*>(fw))->paste();
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+        (dynamic_cast<PNTextEdit*>(fw))->paste();
+    if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+        (dynamic_cast<QPlainTextEdit*>(fw))->paste();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->paste();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
@@ -1668,8 +1704,10 @@ void MainWindow::on_actionDelete_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
-        (dynamic_cast<QTextEdit*>(fw))->textCursor().insertText("");
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+        (dynamic_cast<PNTextEdit*>(fw))->textCursor().insertText("");
+    if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+        (dynamic_cast<PNPlainTextEdit*>(fw))->textCursor().insertText("");
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->backspace();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
@@ -1685,8 +1723,10 @@ void MainWindow::on_actionSelect_All_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
-        (dynamic_cast<QTextEdit*>(fw))->selectAll();
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+        (dynamic_cast<PNTextEdit*>(fw))->selectAll();
+    else if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+        (dynamic_cast<PNPlainTextEdit*>(fw))->selectAll();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->selectAll();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
@@ -1701,9 +1741,16 @@ void MainWindow::on_actionSpell_Check_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
-        m_spellcheck_dialog->spellCheck(fw);
-
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+    {
+        SpellCheckDialog spellcheck_dialog(this);
+        spellcheck_dialog.spellCheck(fw);
+    }
+    else if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+    {
+        SpellCheckDialog spellcheck_dialog(this);
+        spellcheck_dialog.spellCheck(fw);
+    }
     /*
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->selectAll();
@@ -1720,8 +1767,10 @@ void MainWindow::on_actionFind_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "QTextEdit") == 0 )
+    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
         m_find_replace_dialog->showReplaceWindow(dynamic_cast<QTextEdit*>(fw));
+    else if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+        m_find_replace_dialog->showReplaceWindow(dynamic_cast<QPlainTextEdit*>(fw));
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         m_find_replace_dialog->showReplaceWindow(dynamic_cast<QLineEdit*>(fw));
 //    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
@@ -1737,12 +1786,12 @@ void MainWindow::on_actionSearch_triggered()
 
 void MainWindow::on_pushButtonSearch_clicked()
 {
-    global_DBObjects.searchresultsmodel()->PerformSearch(ui->lineEditSearchText->text());
+    global_DBObjects.searchresultsmodel()->PerformSearch(ui->plainTextEditSearchText->toPlainText());
 }
 
 void MainWindow::on_lineEditSearchText_returnPressed()
 {
-    global_DBObjects.searchresultsmodel()->PerformSearch(ui->lineEditSearchText->text());
+    global_DBObjects.searchresultsmodel()->PerformSearch(ui->plainTextEditSearchText->toPlainText());
 }
 
 void MainWindow::on_actionPlugin_Settings_triggered()
@@ -1861,9 +1910,58 @@ void MainWindow::on_actionCustom_Plugins_triggered()
 }
 
 
+void MainWindow::on_actionIncrease_Font_Size_triggered()
+{
+    QFont af = QApplication::font();
+    af.setPointSize(af.pointSize() + 1);
+    QApplication::setFont(af);
+
+    global_Settings.setStoredInt("DefaultFontSize",  QApplication::font().pointSize());
+
+    QList<QWidget*> subwidgets = this->findChildren<QWidget*>();
+    QListIterator<QWidget*> it(subwidgets); // iterate through the list of widgets
+    QWidget *awiget;
+
+    while (it.hasNext()) {
+        awiget = it.next(); // take each widget in the list
+
+        if ( QString(awiget->metaObject()->className()).contains("PNTableView") )
+        {
+            qobject_cast<QTableView*>(awiget)->resizeColumnsToContents();
+            qobject_cast<QTableView*>(awiget)->resizeRowsToContents();
+        }
+    }
+
+    global_Settings.setStoredInt("DefaultFontSize",  QApplication::font().pointSize());
+}
+
+
+void MainWindow::on_actionDecrease_Font_Size_triggered()
+{
+    QFont af = QApplication::font();
+    af.setPointSize(af.pointSize() - 1);
+    QApplication::setFont(af);
+
+    QList<QWidget*> subwidgets = this->findChildren<QWidget*>();
+    QListIterator<QWidget*> it(subwidgets); // iterate through the list of widgets
+    QWidget *awiget;
+
+    while (it.hasNext()) {
+        awiget = it.next(); // take each widget in the list
+
+        if ( QString(awiget->metaObject()->className()).contains("PNTableView") )
+        {
+            qobject_cast<QTableView*>(awiget)->resizeColumnsToContents();
+            qobject_cast<QTableView*>(awiget)->resizeRowsToContents();
+        }
+    }
+
+    global_Settings.setStoredInt("DefaultFontSize",  QApplication::font().pointSize());
+}
+
 // TODO: Add spell checking features for QExpandingLineEdit and QLineEdit
 // TODO: Add find feature for QExpandingLineEdit
 // TODO: Add find features to QComboBox located in a table view
 // TODO: Add licensing information to all files to be included with the software
-// TODO: Complete Help Menu Items
+// TODO: Make sure find and replace works in PN TextEdit and PN Plain text edit
 

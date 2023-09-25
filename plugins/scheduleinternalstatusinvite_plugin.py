@@ -18,7 +18,7 @@ from PyQt5.QtGui import QDesktopServices
 pluginname = "Schedule Internal Status"
 plugindescription = "Using Outlook create an invite to the internal status meeting."
 plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
-childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
+childtablesfilter = "projects/project_people" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
 # events must have a data structure and data view specified
 #
@@ -75,8 +75,12 @@ if (platform.system() == 'Windows'):
 
     # processing main function
     def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
+
         xmlval = QDomDocument()
         xmldoc = ""
+
+        window_title = ""
         
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -112,12 +116,13 @@ if (platform.system() == 'Windows'):
             projectrow = project.firstChild()
 
             if not projectrow.isNull():
-                message.Subject = pnc.get_column_value(projectrow, "project_number") + " " + pnc.get_column_value(projectrow, "project_name") + " - Internal Status"
+                window_title = pnc.get_column_value(projectrow, "project_number") + " " + pnc.get_column_value(projectrow, "project_name") + " - Internal Status"
+                message.Subject = window_title
 
         txt = get_text_invite()
         message.MeetingStatus = 1
         message.Duration = 60
-        message.Location = pnc.get_global_setting("DefaultMeetingLocation")
+        message.Location = pnc.get_plugin_setting("DefaultMeetingLocation")
         message.Body = txt
         outlook.ActiveExplorer().Activate()
         message.Display()
@@ -125,50 +130,7 @@ if (platform.system() == 'Windows'):
         outlook = None
         message = None
 
-        return xmldoc
-
-    def main_process_meeting( xmlval ):
-        outlook = win32com.client.Dispatch("Outlook.Application")
-        message = outlook.CreateItem(1)
-
-        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
-        pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
-        co = xmlroot.attributes().namedItem("managing_company_name").nodeValue()
-
-        attendeetable = pnc.find_node(xmlroot, "table", "name", "meeting_attendees")
-
-        if attendeetable:
-            attendeerow = attendeetable.firstChild()
-
-        email = None
-        nm = None
-
-        while not attendeerow.isNull():
-            nm = pnc.get_column_value(attendeerow, "name")
-            email = pnc.get_column_value(attendeerow, "email")
-
-            if nm != pm:
-                if (not email is None and email != ""):
-                    message.Recipients.Add(email)
-
-            attendeerow = attendeerow.nextSibling()
-
-        project = pnc.find_node(xmlroot, "table", "name", "project_notes")
-        if project:
-            projectrow = project.firstChild()
-
-        if not projectrow.isNull():
-            message.Subject = pnc.get_column_value(projectrow, "project_id") + " " + pnc.get_column_value(projectrow, "project_id_name") + " - Internal Status"
-
-        txt = get_text_invite()
-        message.MeetingStatus = 1
-        message.Duration = 60
-        message.Location = pnc.get_global_setting("DefaultMeetingLocation")
-        message.Body = txt
-        message.Display()
-
-        outlook = None
-        message = None
+        pnc.bring_window_to_front(window_title)
 
         return xmldoc
 

@@ -74,6 +74,10 @@ if (platform.system() == 'Windows'):
     pne = ProjectNotesExcelTools()
 
     def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
+
+        window_title = ""
+
         xmlval = QDomDocument()
         xmldoc = ""
         
@@ -108,12 +112,13 @@ if (platform.system() == 'Windows'):
             projectrow = project.firstChild()
 
             if not projectrow.isNull():
-                message.Subject = pnc.get_column_value(projectrow, "project_number") + " " + pnc.get_column_value(projectrow, "project_name") + " - Customer Status"
+                window_title = pnc.get_column_value(projectrow, "project_number") + " " + pnc.get_column_value(projectrow, "project_name") + " - Customer Status"
+                message.Subject = window_title
 
         txt = get_text_invite()
         message.MeetingStatus = 1
         message.Duration = 60
-        message.Location = pnc.get_global_setting("DefaultMeetingLocation")
+        message.Location = pnc.get_plugin_setting("DefaultMeetingLocation")
         message.Body = txt
         outlook.ActiveExplorer().Activate()
         message.Display()
@@ -121,48 +126,7 @@ if (platform.system() == 'Windows'):
         outlook = None
         message = None
 
-        return xmldoc
-
-    def main_process_meeting( xmlval ):
-        outlook = win32com.client.Dispatch("Outlook.Application")
-        message = outlook.CreateItem(1)
-
-        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
-        pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
-
-        attendeetable = pnc.find_node(xmlroot, "table", "name", "meeting_attendees")
-
-        if attendeetable:
-            attendeerow = attendeetable.firstChild()
-
-        email = None
-        nm = None
-
-        while not attendeerow.isNull():
-            nm = pnc.get_column_value(attendeerow, "name")
-            email = pnc.get_column_value(attendeerow, "email")
-            if nm != pm:
-                if (not email is None and email != ""):
-                    message.Recipients.Add(email)
-
-            attendeerow = attendeerow.nextSibling()
-
-        project = pnc.find_node(xmlroot, "table", "name", "project_notes")
-        if project:
-            projectrow = project.firstChild()
-
-        if not projectrow.isNull():
-            message.Subject = pnc.get_column_value(projectrow, "project_id") + " " + pnc.get_column_value(projectrow, "project_id_name") + " - Customer Status"
-
-        txt = get_text_invite()
-        message.MeetingStatus = 1
-        message.Duration = 60
-        message.Location = pnc.get_global_setting("DefaultMeetingLocation")
-        message.Body = txt
-        message.Display()
-
-        outlook = None
-        message = None
+        pnc.bring_window_to_front(window_title)
 
         return xmldoc
 

@@ -1,4 +1,7 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
 
+#include "pnplaintextedit.h"
 #include "itemdetailspage.h"
 #include "pndatabaseobjects.h"
 #include "ui_mainwindow.h"
@@ -19,17 +22,16 @@ ItemDetailsPage::~ItemDetailsPage()
 
 void ItemDetailsPage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes Item [%1 %2 %3]").arg(ui->lineEditNumber->text(), ui->lineEditItemNumber->text(), ui->lineEditName->text().left(50)));
-    //qDebug() << "Item Details Page Set Title";
+    topLevelWidget()->setWindowTitle(QString("Project Notes Item [%1 %2 %3]").arg(ui->lineEditNumber->text(), ui->lineEditItemNumber->text(), ui->plainTextEditName->toPlainText().left(50)));
 }
 
 void ItemDetailsPage::newRecord()
 {
     QVariant tracker_id = global_DBObjects.actionitemsdetailsmodelproxy()->data(global_DBObjects.actionitemsdetailsmodelproxy()->index(0,0));
 
-    int lastrow = ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->rowCount(QModelIndex());
+    int lastrow = dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->rowCount(QModelIndex());
 
-    ((PNSqlQueryModel*)getCurrentModel()->sourceModel())->newRecord(&tracker_id);
+    dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord(&tracker_id);
 
     getCurrentView()->selectRow(lastrow);
     QModelIndex index = getCurrentView()->model()->index(lastrow, 0);
@@ -58,7 +60,7 @@ void ItemDetailsPage::setupModels( Ui::MainWindow *t_ui )
 
     m_mapperItemDetails->addMapping(ui->lineEditItemNumber, 1);
     m_mapperItemDetails->addMapping(ui->comboBoxType, 2);
-    m_mapperItemDetails->addMapping(ui->lineEditName, 3);
+    m_mapperItemDetails->addMapping(ui->plainTextEditName, 3);
     m_mapperItemDetails->addMapping(ui->comboBoxProject, 14);
     m_mapperItemDetails->addMapping(ui->comboBoxMeeting, 13);
     m_mapperItemDetails->addMapping(ui->plainTextEditDescription, 6);

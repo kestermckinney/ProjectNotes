@@ -74,6 +74,9 @@ if (platform.system() == 'Windows'):
     pne = ProjectNotesExcelTools()
 
     def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
+
+        window_title = ""
         xmldoc = ""
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
@@ -120,8 +123,6 @@ if (platform.system() == 'Windows'):
                             nm = pnc.get_column_value(attendeerow, "name")
                             email = pnc.get_column_value(attendeerow, "email")
 
-                            #TODO: See if note can default to 10pt font size
-
                             if nm != pm:
                                 if (email != None and email != ""):
                                     message.Recipients.Add(email)
@@ -152,7 +153,9 @@ if (platform.system() == 'Windows'):
 
                     DefaultSignature = message.HTMLBody
 
-                    message.Subject = pnc.get_column_value(rownode, "project_id") + " " + pnc.get_column_value(rownode, "project_id_name") + " - " + pnc.get_column_value(rownode, "note_date") + " " + pnc.get_column_value(rownode, "note_title") + " Notes"
+                    window_title = pnc.get_column_value(rownode, "project_id") + " " + pnc.get_column_value(rownode, "project_id_name")+ " - " + pnc.get_column_value(rownode, "note_date") + " " + pnc.get_column_value(rownode, "note_title") + " Notes"
+                    message.Subject = window_title 
+
                     message.BodyFormat = 2 # olFormatHTML
                     message.HTMLBody = htmlbody + DefaultSignature
 
@@ -162,6 +165,8 @@ if (platform.system() == 'Windows'):
 
         outlook = None
         message = None
+
+        pnc.bring_window_to_front(window_title)
 
         return ""
 

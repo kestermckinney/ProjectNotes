@@ -1,6 +1,9 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "projectnotesmodel.h"
 #include "pndatabaseobjects.h"
-#include <QDebug>
+//#include <QDebug>
 
 ProjectNotesModel::ProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
@@ -11,7 +14,7 @@ ProjectNotesModel::ProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_paren
     setTableName("project_notes", "Project Notes");
 
     addColumn(0, tr("Note ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
-    addColumn(1, tr("Project ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
+    addColumn(1, tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
               "projects", "project_id", "project_number");
     addColumn(2,  tr("Title"), DBString, DBSearchable, DBNotRequired, DBEditable);
     addColumn(3, tr("Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);

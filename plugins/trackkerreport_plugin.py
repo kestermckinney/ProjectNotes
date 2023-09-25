@@ -74,6 +74,8 @@ if (platform.system() == 'Windows'):
     pne = ProjectNotesExcelTools()
 
     def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
+
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -82,7 +84,7 @@ if (platform.system() == 'Windows'):
         emaillist = ""
 
         # setup global variable
-        ProjectsFolder = pnc.get_global_setting("ProjectsFolder")
+        ProjectsFolder = pnc.get_plugin_setting("ProjectsFolder")
 
         executedate = QDate.currentDate()
         internalreport = False
@@ -98,8 +100,7 @@ if (platform.system() == 'Windows'):
         ui = uic.loadUi("plugins/includes/dialogTrackerRptOptions.ui")
         ui.setWindowFlags(
             QtCore.Qt.Window |
-            QtCore.Qt.WindowCloseButtonHint |
-            QtCore.Qt.WindowStaysOnTopHint
+            QtCore.Qt.WindowCloseButtonHint
             )
 
         ui.m_checkBoxDisplayTracker.setChecked(True)
@@ -160,8 +161,7 @@ if (platform.system() == 'Windows'):
         progbar.setWindowTitle("Generating Report...")
         progbar.setWindowFlags(
             QtCore.Qt.Window |
-            QtCore.Qt.WindowCloseButtonHint |
-            QtCore.Qt.WindowStaysOnTopHint
+            QtCore.Qt.WindowCloseButtonHint
             )
 
         progbar.setMinimumWidth(350)
@@ -454,5 +454,3 @@ xmldoc.setContent(f)
 f.close()
 main_process(xmldoc)
 """
-
-# TESTED: Phase 1

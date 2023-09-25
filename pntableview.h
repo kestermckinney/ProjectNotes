@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #ifndef PNTABLEVIEW_H
 #define PNTABLEVIEW_H
 
@@ -19,7 +22,7 @@ public:
 
 protected:
     bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index)
-    { return false; }
+    { Q_UNUSED(model); Q_UNUSED(option); Q_UNUSED(index); Q_UNUSED(event); return false; }
     QWidget* createEditor(QWidget *, const QStyleOptionViewItem &, const QModelIndex &) const
     { return Q_NULLPTR; }
 
@@ -53,6 +56,7 @@ public slots:
     void slotOpenRecord();
     void slotExportRecord();
     void slotFilterRecords();
+    void slotRefreshRecords();
     void slotResetColumns();  
     void slotPluginMenu(PNPlugin* t_plugin);
 
@@ -60,12 +64,12 @@ private:
     QPoint m_pressPos;
     bool m_isMoving = false;
 
-
     QAction *newRecord;
     QAction *deleteRecord;
     QAction *openRecord;
     QAction *exportRecord;
     QAction *filterRecords;
+    QAction *refreshRecords;
     QAction *resetColumns;
     QAction *copyRecord;
 

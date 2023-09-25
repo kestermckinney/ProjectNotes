@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #ifndef PNSQLQUERYMODEL_H
 #define PNSQLQUERYMODEL_H
 
@@ -13,7 +16,7 @@
 #include <QSqlRecord>
 #include <QSqlField>
 #include <QDomElement>
-#include <QDebug>
+//#include <QDebug>
 
 class PNSqlQueryModel : public QAbstractTableModel
 {
@@ -36,6 +39,8 @@ public:
 
     bool setData(const QModelIndex &t_index, const QVariant &t_value, int t_role) override;
     QVariant data(const QModelIndex &t_index, int t_role = Qt::DisplayRole) const override;
+
+    void setCacheData(const QModelIndex &t_index, const QVariant &t_value) { m_cache[t_index.row()].setValue( t_index.column(), t_value); }
 
     bool importXMLNode(const QDomNode& t_domnode);
     bool setData(QDomElement* t_xml_row, bool t_ignore_key);
@@ -169,7 +174,7 @@ public:
         {
             if (m->isDirty())
             {
-                qDebug() << "Refreshing Dirty Table: " << m->tablename();
+                //qDebug() << "Refreshing Dirty Table: " << m->tablename();
 
                 m->refresh();
                 foundsome = true;

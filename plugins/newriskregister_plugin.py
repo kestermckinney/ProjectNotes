@@ -75,6 +75,7 @@ if (platform.system() == 'Windows'):
 
     # processing main function
     def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -84,7 +85,7 @@ if (platform.system() == 'Windows'):
             return ""
 
         # setup global variable
-        ProjectsFolder = pnc.get_global_setting("ProjectsFolder")
+        ProjectsFolder = pnc.get_plugin_setting("ProjectsFolder")
 
         # prompt for the template to use
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node

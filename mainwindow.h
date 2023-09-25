@@ -1,5 +1,10 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
+
+#include "pnplaintextedit.h"
 
 #include <QMainWindow>
 #include <QStringListModel>
@@ -45,11 +50,11 @@ public:
     void CloseDatabase();
 
 public slots:
-    void on_actionOpen_ProjectDetails_triggered();
-    void on_actionOpen_ItemDetails_triggered();
-    void on_actionOpen_ProjectNote_triggered();
-    void on_actionOpen_SearchResults_triggered();
-    void on_actionOpenTeamMember_triggered();
+    void slotOpen_ProjectDetails_triggered();
+    void slotOpen_ItemDetails_triggered();
+    void slotOpen_ProjectNote_triggered();
+    void slotOpen_SearchResults_triggered();
+    void slotOpenTeamMember_triggered();
     void on_focusChanged(QWidget *t_old, QWidget *t_now);
 
 private slots:
@@ -109,12 +114,13 @@ private slots:
     void slotTimerEvent(PNPlugin* t_plugin);
     void slotTimerUpdates();
     void on_actionOpen_Item_triggered();
+    void on_actionIncrease_Font_Size_triggered();
+    void on_actionDecrease_Font_Size_triggered();
 
 private:
     Ui::MainWindow *ui;   
 
     PreferencesDialog* m_preferences_dialog = nullptr;
-    SpellCheckDialog* m_spellcheck_dialog = nullptr;
     FindReplaceDialog* m_find_replace_dialog = nullptr;
     static PNPluginManager* m_plugin_manager;
     PluginSettingsDialog* m_plugin_settings_dialog = nullptr;

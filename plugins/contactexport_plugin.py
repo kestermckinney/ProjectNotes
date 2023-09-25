@@ -83,6 +83,7 @@ if (platform.system() == 'Windows'):
 
     # processing main function
     def event_menuclick(xmlstr):
+        print("called event: " + __file__)
 
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
@@ -96,8 +97,7 @@ if (platform.system() == 'Windows'):
         progbar.setWindowTitle("Exporting...")
         progbar.setWindowFlags(
             QtCore.Qt.Window |
-            QtCore.Qt.WindowCloseButtonHint |
-            QtCore.Qt.WindowStaysOnTopHint
+            QtCore.Qt.WindowCloseButtonHint 
             )
         progbar.setMinimumWidth(350)
         progbar.setCancelButton(None)

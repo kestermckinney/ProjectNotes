@@ -1,10 +1,13 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "pnplugin.h"
 #include "pnsettings.h"
 
 #include <QObject>
 #include <QString>
 #include <QMessageBox>
-#include <QDebug>
+//#include <QDebug>
 #include <QFileInfo>
 
 bool PNPlugin::loadModule(const QFileInfo& t_filename)
@@ -65,6 +68,8 @@ bool PNPlugin::loadModule(const QFileInfo& t_filename)
 
     if (PyObject_HasAttrString(m_PNPluginModule, "event_data_rightclick"))
         m_DataRightClickEvent = PyObject_GetAttrString(m_PNPluginModule,"event_data_rightclick");
+
+    m_IsEnabled = global_Settings.getPluginEnabled(getPNPluginName());
 
     return true;
 }
@@ -331,10 +336,12 @@ QStringList PNPlugin::getPythonStringList(const QString& t_variablename)
 
     Py_XDECREF(attr);
 
-    //qDebug() << "Parameter count: " << val.count();
-
-    //for ( QString p : val)
-        //qDebug() << "Parameter Loaded: " << p;
-
     return val;
+}
+
+void PNPlugin::setEnabled(bool t_enable)
+{
+    m_IsEnabled = t_enable;
+
+    global_Settings.setPluginEnabled(getPNPluginName(), t_enable );
 }

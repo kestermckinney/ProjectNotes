@@ -15,7 +15,7 @@ from PyQt5.QtGui import QDesktopServices
 
 
 # Project Notes Plugin Parameters
-pluginname = "Send Project Email To Team"
+pluginname = "Send Project Email"
 plugindescription = "Using Outlook create an a new email with project information to the project team"
 plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "projects/project_people" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
@@ -74,10 +74,14 @@ if (platform.system() == 'Windows'):
     pne = ProjectNotesExcelTools()
 
     def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
+
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
             return ""
+
+        window_title = ""
             
         outlook = win32com.client.Dispatch("Outlook.Application")
 
@@ -117,10 +121,13 @@ if (platform.system() == 'Windows'):
 
             DefaultSignature = message.HTMLBody
 
-            message.Subject = projectnumber + " " + projectname + " - "
+            window_title = projectnumber + " " + projectname + " - "
+            message.Subject = window_title
 
         outlook = None
         message = None
+
+        pnc.bring_window_to_front(window_title)
 
         return ""
 
@@ -139,5 +146,3 @@ if f.open(QIODevice.ReadOnly):
 
 event_data_rightclick(xmldoc.toString())
 """
-
-# TODO: Disabled plugin seems to still run.  I think it is running on startup.

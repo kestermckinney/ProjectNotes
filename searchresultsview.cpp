@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "searchresultsview.h"
 #include "pndatabaseobjects.h"
 
@@ -9,7 +12,7 @@ SearchResultsView::SearchResultsView(QWidget* t_parent) : PNTableView(t_parent)
 
 SearchResultsView::~SearchResultsView()
 {
-
+    if (m_text_edit_delegate) delete m_text_edit_delegate;
 }
 
 void SearchResultsView::setModel(QAbstractItemModel *t_model)
@@ -24,6 +27,11 @@ void SearchResultsView::setModel(QAbstractItemModel *t_model)
         setColumnHidden(6, true);
         setColumnHidden(13, true);
         setColumnHidden(14, true);
+
+        // search view delagets
+        m_text_edit_delegate = new PNTextEditDelegate(this);
+
+        setItemDelegateForColumn(3, m_text_edit_delegate);
     }
     else
     {

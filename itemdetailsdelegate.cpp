@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "itemdetailsdelegate.h"
 #include "pnsqlquerymodel.h"
 #include "pndateeditex.h"
@@ -10,6 +13,7 @@
 #include <QCheckBox>
 #include <QMessageBox>
 #include <QPlainTextEdit>
+#include <QScrollBar>
 
 ItemDetailsDelegate::ItemDetailsDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
@@ -23,14 +27,13 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
     switch (t_index.column())
     {
     case 1:
-    case 3:
         {
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             lineedit->setText(value.toString());
 
             QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
-            if (((MainWindow*) window)->navigateCurrentPage())
-                ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
+            if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
+                dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 5:
@@ -106,10 +109,14 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
                 checkbox->setCheckState(Qt::Unchecked);
         }
         break;
+    case 3:
     case 6:
         {
             QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
-            lineedit->setPlainText(value.toString());
+
+            // don't resent buffers if text hasn't changed
+            if (value.toString().compare(lineedit->toPlainText()) != 0)
+                lineedit->setPlainText(value.toString());
         }
         break;
     default:
@@ -127,14 +134,13 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
     switch (t_index.column())
     {
     case 1:
-    case 3:
         {
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             key_val = lineedit->text();
 
             QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
-            if (((MainWindow*) window)->navigateCurrentPage())
-                ((MainWindow*) window)->navigateCurrentPage()->setPageTitle();
+            if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
+                dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 5:
@@ -239,6 +245,7 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
                 key_val = "0";
         }
         break;
+    case 3:
     case 6:
         {
             QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
@@ -255,6 +262,7 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
 
     t_model->setData(t_index, key_val, Qt::EditRole);
 }
+
 
 bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& t_item_id) const
 {

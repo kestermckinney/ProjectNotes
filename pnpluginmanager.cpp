@@ -1,10 +1,13 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include "pnpluginmanager.h"
 
 #include <QDir>
 #include <QDirIterator>
 #include <QCoreApplication>
 #include <QMessageBox>
-#include <QDebug>
+//#include <QDebug>
 #include <QStandardPaths>
 
 struct Stdout

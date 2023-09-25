@@ -1,3 +1,6 @@
+// Copyright (C) 2022, 2023 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
 #ifndef NOTESACTONITEMSVIEW_H
 #define NOTESACTONITEMSVIEW_H
 
@@ -23,7 +26,7 @@ private:
     QStringListModel m_item_priority;//PNDatabaseObjects::item_priority;
 
     // projects list panel delegates
-    PNComboBoxDelegate* m_unfiltered_people_delegate = nullptr;
+//    PNComboBoxDelegate* m_unfiltered_people_delegate = nullptr;
     ComboBoxDelegate* m_action_item_type_delegate = nullptr;
     PNComboBoxDelegate* m_identified_by_delegate = nullptr;
     ComboBoxDelegate* m_priority_delegate = nullptr;
