@@ -142,7 +142,7 @@ Section "MainSection" SEC01
   ;File "..\..\plugins\templates\Status Report Template.xlsx"
   File "..\..\plugins\templates\Tracker Items Template.xlsx"
   File "..\..\plugins\templates\Risk Register Template.xlsx"
-  File "..\..\plugins\templates\PCR Template.docx"
+  ;File "..\..\plugins\templates\PCR Template.docx"
   
   SetOutPath "$INSTDIR\dictionary"
   File "..\..\..\build-ProjectNotes-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\index.ini"

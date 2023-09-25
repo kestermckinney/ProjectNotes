@@ -3,6 +3,8 @@
 
 #include "meetingattendeesmodel.h"
 
+//#include <QDebug>
+
 MeetingAttendeesModel::MeetingAttendeesModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("MeetingAttendeesModel");
@@ -16,8 +18,8 @@ MeetingAttendeesModel::MeetingAttendeesModel(QObject* t_parent): PNSqlQueryModel
               "project_notes", "note_id", "(strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title)");
     addColumn(2, tr("Attendee"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name");
-    addColumn(3, tr("Attendee Name"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBNotUnique);
-    addColumn(4, tr("Project Name"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBNotUnique);
+    addColumn(3, tr("Attendee Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn(4, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(5, tr("Email"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(6, tr("Client Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn(7, tr("Project ID"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
@@ -35,6 +37,8 @@ bool MeetingAttendeesModel::newRecord(const QVariant* t_fk_value1, const QVarian
     Q_UNUSED(t_fk_value2);
 
     QSqlRecord qr = emptyrecord();
+
+    //qDebug() << "note id key " << *t_fk_value1;
 
     qr.setValue(1, *t_fk_value1);
 
