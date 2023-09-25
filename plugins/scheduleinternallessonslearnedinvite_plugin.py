@@ -78,6 +78,8 @@ if (platform.system() == 'Windows'):
 
         xmlval = QDomDocument()
         xmldoc = ""
+
+        window_title = ""
         
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
@@ -113,7 +115,8 @@ if (platform.system() == 'Windows'):
             projectrow = project.firstChild()
 
             if not projectrow.isNull():
-                message.Subject = pnc.get_column_value(projectrow, "project_number") + " " + pnc.get_column_value(projectrow, "project_name") + " - Internal Lessons Learned"
+                window_title = pnc.get_column_value(projectrow, "project_number") + " " + pnc.get_column_value(projectrow, "project_name") + " - Internal Lessons Learned"
+                message.Subject = window_title
 
         txt = get_text_invite()
         message.MeetingStatus = 1
@@ -126,50 +129,8 @@ if (platform.system() == 'Windows'):
         outlook = None
         message = None
 
-        return xmldoc
+        pnc.bring_window_to_front(window_title)
 
-    def main_process_meeting( xmlval ):
-        outlook = win32com.client.Dispatch("Outlook.Application")
-        message = outlook.CreateItem(1)
-
-        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
-        pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
-        co = xmlroot.attributes().namedItem("managing_company_name").nodeValue()
-
-        attendeetable = pnc.find_node(xmlroot, "table", "name", "meeting_attendees")
-
-        if attendeetable:
-            attendeerow = attendeetable.firstChild()
-
-        email = None
-        nm = None
-
-        while not attendeerow.isNull():
-            nm = pnc.get_column_value(attendeerow, "name")
-            email = pnc.get_column_value(attendeerow, "email")
-
-            if nm != pm:
-                if (not email is None and email != ""):
-                    message.Recipients.Add(email)
-
-            attendeerow = attendeerow.nextSibling()
-
-        project = pnc.find_node(xmlroot, "table", "name", "project_notes")
-        if project:
-            projectrow = project.firstChild()
-
-        if not projectrow.isNull():
-            message.Subject = pnc.get_column_value(projectrow, "project_id") + " " + pnc.get_column_value(projectrow, "project_id_name") + " - Internal Lessons Learned"
-
-        txt = get_text_invite()
-        message.MeetingStatus = 1
-        message.Duration = 60
-        message.Location = pnc.get_plugin_setting("DefaultMeetingLocation")
-        message.Body = txt
-        message.Display()
-
-        outlook = None
-        message = None
 
         return xmldoc
 

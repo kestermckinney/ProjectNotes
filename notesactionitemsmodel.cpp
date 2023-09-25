@@ -52,7 +52,7 @@ bool NotesActionItemsModel::newRecord(const QVariant* t_fk_value1, const QVarian
     QSqlRecord qr = emptyrecord();
 
     // determine the max item_number from the database, then determine the max number from the record cache in case new unsaved records were added
-    QString itemnumber_string = global_DBObjects.execute(QString("select max(item_number) from item_tracker where project_id = '%1'").arg(t_fk_value2->toString()));
+    QString itemnumber_string = global_DBObjects.execute(QString("select max(CAST(item_number as integer)) from item_tracker where project_id = '%1'").arg(t_fk_value2->toString()));
     int itemnumber_int = itemnumber_string.toInt();
 
     for ( int i = 0; i < rowCount(QModelIndex()); i++ )

@@ -13,6 +13,7 @@
 #include <QCheckBox>
 #include <QMessageBox>
 #include <QPlainTextEdit>
+#include <QScrollBar>
 
 ItemDetailsDelegate::ItemDetailsDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {

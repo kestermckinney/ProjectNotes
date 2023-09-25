@@ -60,6 +60,7 @@ SOURCES += \
     pnsqlquerymodel.cpp \
     pntableview.cpp \
     pntextedit.cpp \
+    pntexteditdelegate.cpp \
     preferencesdialog.cpp \
     runguard.cpp \
     searchpage.cpp \
@@ -137,6 +138,7 @@ HEADERS += \
     pnsqlquerymodel.h \
     pntableview.h \
     pntextedit.h \
+    pntexteditdelegate.h \
     preferencesdialog.h \
     runguard.h \
     searchpage.h \

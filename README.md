@@ -1,9 +1,9 @@
 # README
 
 # Project Notes
+[![Feature Requests](https://img.shields.io/github/issues/kestermckinney/projectnotes/feature-request.svg)](https://github.com/proectnotes/issues?q=is%3Aopen+is%3Aissue+label%3Afeature-request+sort%3Areactions-%2B1-desc)
+[![Bugs](https://img.shields.io/github/issues/kestermckinney/projectnotes/bug.svg)](https://github.com/kestermckinney/projectnotes/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug)
 
-[![Feature Requests](<lib/NewItem1.png>)](<https://github.com/ProectNotes/issues?q=is:open%20is:issue%20label:feature-request%20sort:reactions-%201-desc>)\
-[![Bugs](<lib/NewItem.png>)](<https://github.com/kestermckinney/ProjectNotes/issues?utf8=✓\&q=is:issue%20is:open%20label:bug>)
 
 ## The Repository
 

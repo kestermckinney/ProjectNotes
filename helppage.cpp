@@ -90,3 +90,4 @@ void HelpPage::setButtonAndMenuStates()
 {
 
 }
+

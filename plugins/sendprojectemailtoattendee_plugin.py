@@ -15,7 +15,7 @@ from PyQt5.QtGui import QDesktopServices
 
 
 # Project Notes Plugin Parameters
-pluginname = "Send Project Email to Attendee"
+pluginname = "Send Project Email"
 plugindescription = "Using Outlook create an a new email with project information for an attendee"
 plugintable = "meeting_attendees" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
@@ -81,6 +81,7 @@ if (platform.system() == 'Windows'):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
             return ""
             
+        window_title = ""
         outlook = win32com.client.Dispatch("Outlook.Application")
 
         message = outlook.CreateItem(0)
@@ -119,10 +120,13 @@ if (platform.system() == 'Windows'):
 
             DefaultSignature = message.HTMLBody
 
-            message.Subject = projectnumber + " " + projectname + " - "
+            window_title =  projectnumber + " " + projectname + " - "
+            message.Subject = window_title
 
         outlook = None
         message = None
+
+        pnc.bring_window_to_front(window_title)
 
         return ""
 

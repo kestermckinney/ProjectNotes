@@ -52,7 +52,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>5</number>
+       <number>6</number>
       </property>
       <widget class="ProjectsListPage" name="pageProjectsList">
        <property name="sizePolicy">
@@ -1435,6 +1435,18 @@
           <property name="frameShape">
            <enum>QFrame::NoFrame</enum>
           </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::SingleSelection</enum>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="verticalHeaderHighlightSections">
+           <bool>false</bool>
+          </attribute>
          </widget>
         </item>
        </layout>
@@ -1561,6 +1573,9 @@
     <addaction name="actionForward"/>
     <addaction name="separator"/>
     <addaction name="actionFilter"/>
+    <addaction name="separator"/>
+    <addaction name="actionIncrease_Font_Size"/>
+    <addaction name="actionDecrease_Font_Size"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -2426,6 +2441,22 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+O</string>
+   </property>
+  </action>
+  <action name="actionIncrease_Font_Size">
+   <property name="text">
+    <string>Increase Font Size</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+=</string>
+   </property>
+  </action>
+  <action name="actionDecrease_Font_Size">
+   <property name="text">
+    <string>Decrease Font Size</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+-</string>
    </property>
   </action>
  </widget>

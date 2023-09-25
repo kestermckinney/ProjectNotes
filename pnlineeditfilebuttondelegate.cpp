@@ -5,7 +5,6 @@
 #include "pnlineeditfilebutton.h"
 
 #include <QCompleter>
-#include <QCompleter>
 #include <QWidget>
 #include <QModelIndex>
 #include <QApplication>

@@ -16,6 +16,7 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QTextStream>
+#include <QMargins>
 
 PNTableView::PNTableView(QWidget *t_parent) : QTableView(t_parent)
 {
@@ -43,6 +44,7 @@ PNTableView::PNTableView(QWidget *t_parent) : QTableView(t_parent)
     openRecord = new QAction(QIcon(":/icons/folder.png"),tr("Open"), this);
     exportRecord = new QAction(tr("XML Export..."), this);
     filterRecords = new QAction(QIcon(":/icons/filter.png"), tr("Filter Settings..."), this);
+    refreshRecords  = new QAction(tr("Refresh"), this);
     resetColumns = new QAction(tr("Reset Columns"), this);
     copyRecord = new QAction(QIcon(":/icons/copy.png"), tr("Copy"), this);
 
@@ -52,6 +54,7 @@ PNTableView::PNTableView(QWidget *t_parent) : QTableView(t_parent)
     connect(openRecord, &QAction::triggered, this, &PNTableView::slotOpenRecord);
     connect(exportRecord, &QAction::triggered, this, &PNTableView::slotExportRecord);
     connect(filterRecords, &QAction::triggered, this, &PNTableView::slotFilterRecords);
+    connect(refreshRecords, &QAction::triggered, this, &PNTableView::slotRefreshRecords);
     connect(resetColumns, &QAction::triggered, this, &PNTableView::slotResetColumns);
     connect(copyRecord, &QAction::triggered, this, &PNTableView::slotCopyRecord);
 }
@@ -66,6 +69,7 @@ PNTableView::~PNTableView()
     disconnect(openRecord, &QAction::triggered, this, &PNTableView::slotOpenRecord);
     disconnect(exportRecord, &QAction::triggered, this, &PNTableView::slotExportRecord);
     disconnect(filterRecords, &QAction::triggered, this, &PNTableView::slotFilterRecords);
+    disconnect(refreshRecords, &QAction::triggered, this, &PNTableView::slotRefreshRecords);
     disconnect(resetColumns, &QAction::triggered, this, &PNTableView::slotResetColumns);
     disconnect(copyRecord, &QAction::triggered, this, &PNTableView::slotCopyRecord);
 
@@ -74,6 +78,7 @@ PNTableView::~PNTableView()
     delete openRecord;
     delete exportRecord;
     delete filterRecords;
+    delete refreshRecords;
     delete resetColumns;
 
     if (m_filterdialog)
@@ -181,8 +186,9 @@ bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
     {
     case QEvent::MouseButtonDblClick:
         if ( ((QMouseEvent*)t_event)->buttons().testFlag(Qt::LeftButton ) )
-        {
-            if (geometry().contains(((QMouseEvent*)t_event)->pos()))
+        {         
+            if ( this->viewport()->rect().contains(((QMouseEvent*)t_event)->pos()) &&
+                 !this->horizontalHeader()->geometry().contains(((QMouseEvent*)t_event)->pos()) )
                 slotOpenRecord();
             else
                 return false;
@@ -208,7 +214,9 @@ bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
 
          auto header = horizontalHeader();
 
-         if (!header->geometry().contains(((QMouseEvent*)t_event)->pos()))
+         QMargins mg(4,4,4,4);
+         QRect rct = header->geometry().marginsRemoved(mg); // only clickable inside rect
+         if (!rct.contains(((QMouseEvent*)t_event)->pos(), true))
              return false;
 
         // If we were dragging a section, then pass the event on.
@@ -220,13 +228,16 @@ bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
             return false;
         }
 
+        // don't sort if on the resizer line
+        if ( header->cursor() == Qt::SplitHCursor )
+            return false;
+
         const int indexAtCursor = header->logicalIndexAt(((QMouseEvent*)t_event)->pos());
 
         if (indexAtCursor == -1)
             return false; // Do nothing, we clicked outside the headers
-
         else if (header->sortIndicatorSection() != indexAtCursor)
-        {
+        {   
             header->setSortIndicator(indexAtCursor, Qt::AscendingOrder);
             header->setSortIndicatorShown(true);
             global_Settings.setTableSortColumn(objectName(), indexAtCursor, "A");
@@ -296,6 +307,7 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
         if (!is_new_record) menu->addAction(exportRecord);
 
         menu->addAction(filterRecords);
+        menu->addAction(refreshRecords);
         menu->addSeparator();
     }
 
@@ -423,6 +435,14 @@ void PNTableView::slotFilterRecords()
 
     m_filterdialog->setSourceModelView((PNSqlQueryModel*)curmodel->sourceModel(), this);
     m_filterdialog->show();
+}
+
+void PNTableView::slotRefreshRecords()
+{
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
+
+    currentmodel->refresh();
 }
 
 void PNTableView::slotResetColumns()
