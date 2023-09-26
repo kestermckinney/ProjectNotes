@@ -32,7 +32,7 @@ QWidget* PNComboBoxDelegate::createEditor(QWidget *t_parent, const QStyleOptionV
     QCompleter* completer = new QCompleter(m_model);
     completer->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
     completer->setCompletionMode(QCompleter::PopupCompletion);
-    //completer->setCaseSensitivity(Qt::CaseInsensitive);
+    completer->setCaseSensitivity(Qt::CaseInsensitive);
     completer->setCompletionColumn(m_display_column);
     editor->setCompleter(completer);
 

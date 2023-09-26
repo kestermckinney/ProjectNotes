@@ -27,7 +27,6 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
     switch (t_index.column())
     {
     case 1:
-    case 3:
         {
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             lineedit->setText(value.toString());
@@ -110,19 +109,14 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
                 checkbox->setCheckState(Qt::Unchecked);
         }
         break;
+    case 3:
     case 6:
         {
             QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
-            QTextCursor tc = lineedit->textCursor();
 
-            int v = lineedit->verticalScrollBar()->value();
-            int h = lineedit->horizontalScrollBar()->value();            
-
-            lineedit->setPlainText(value.toString());
-
-            lineedit->verticalScrollBar()->setValue(v);
-            lineedit->horizontalScrollBar()->setValue(h);
-            lineedit->setTextCursor(tc);
+            // don't resent buffers if text hasn't changed
+            if (value.toString().compare(lineedit->toPlainText()) != 0)
+                lineedit->setPlainText(value.toString());
         }
         break;
     default:
@@ -140,7 +134,6 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
     switch (t_index.column())
     {
     case 1:
-    case 3:
         {
             QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
             key_val = lineedit->text();
@@ -252,6 +245,7 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
                 key_val = "0";
         }
         break;
+    case 3:
     case 6:
         {
             QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);

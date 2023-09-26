@@ -25,7 +25,7 @@ void ProjectNotesPage::setPageTitle()
 {
     QString project_number= global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,7)).toString();
 
-    topLevelWidget()->setWindowTitle(QString("Project Notes Meeting [%1 %2 %3]").arg(project_number, ui->lineEditMeetingTitle->text(), ui->dateEditMeetingDate->text().left(50)));
+    topLevelWidget()->setWindowTitle(QString("Project Notes Meeting [%1 %2 %3]").arg(project_number, ui->plainTextEditMeetingTitle->toPlainText(), ui->dateEditMeetingDate->text().left(50)));
 }
 
 void ProjectNotesPage::newRecord()
@@ -70,7 +70,7 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
     setPageModel(global_DBObjects.projecteditingnotesmodel());
     m_mapperProjectNotes->setSubmitPolicy(QDataWidgetMapper::AutoSubmit);
 
-    m_mapperProjectNotes->addMapping(ui->lineEditMeetingTitle, 2);
+    m_mapperProjectNotes->addMapping(ui->plainTextEditMeetingTitle, 2);
     m_mapperProjectNotes->addMapping(ui->textEditNotes, 4);
     m_mapperProjectNotes->addMapping(ui->dateEditMeetingDate, 3);
     m_mapperProjectNotes->addMapping(ui->checkBoxInternalNote, 5);

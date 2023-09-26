@@ -8,6 +8,8 @@
 #include <QMainWindow>
 #include <QTableView>
 
+#include "pnspellchecker.h"
+
 class PNSettings
 {
 public:
@@ -42,6 +44,8 @@ public:
     int getStoredInt(const QString& t_value_name);
     void setStoredInt(const QString& t_value_name, int t_int_value);
 
+    PNSpellChecker* spellchecker();
+
 private:
     int getWindowX(const QString& t_window_name);
     int getWindowY(const QString& t_window_name);
@@ -59,10 +63,11 @@ private:
     void setWindowStatusBar(const QString& t_window_name, bool t_status_bar);
     bool getWindowStatusBar(const QString& t_window_name);
 
-
 private:
     QSettings* m_app_config;
     QSettings* m_plugin_config;
+
+    PNSpellChecker* m_spellchecker = nullptr;
 };
 
 static PNSettings global_Settings;

@@ -26,12 +26,15 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
     {
     case 2: // note title
         {
-            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
-            lineedit->setText(value.toString());
+        QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
 
-            QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
-            if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
-                dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
+        // don't resent buffers if text hasn't changed
+        if (value.toString().compare(lineedit->toPlainText()) != 0)
+            lineedit->setPlainText(value.toString());
+
+        QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+        if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
+            dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 3:
@@ -54,18 +57,19 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
     case 4: // note
         {
             QTextEdit* textedit = static_cast<QTextEdit*>(t_editor);
-            QTextCursor tc = textedit->textCursor();
-            int v = textedit->verticalScrollBar()->value();
-            int h = textedit->horizontalScrollBar()->value();
 
+            // don't resent buffers if text hasn't changed
             if (value.toString().contains("<html>", Qt::CaseInsensitive))
-                textedit->setHtml(value.toString());
+            {
+                if (value.toString().compare(textedit->toHtml()) != 0)
+                    textedit->setHtml(value.toString());
+            }
             else
-                textedit->setPlainText(value.toString());
+            {
+                if (value.toString().compare(textedit->toPlainText()) != 0)
+                    textedit->setPlainText(value.toString());
+            }
 
-            textedit->verticalScrollBar()->setValue(v);
-            textedit->horizontalScrollBar()->setValue(h);
-            textedit->setTextCursor(tc);
         }
         break;
     case 5: // note internal
@@ -88,8 +92,8 @@ void ProjectNotesDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t
     {
     case 2: // note title
         {
-            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
-            key_val = lineedit->text();
+            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
+            key_val = lineedit->toPlainText();
 
             QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
             if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())

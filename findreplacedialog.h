@@ -7,6 +7,7 @@
 #include <QDialog>
 #include <QLineEdit>
 #include <QTextEdit>
+#include <QPlainTextEdit>
 
 namespace Ui {
 class FindReplaceDialog;
@@ -24,6 +25,7 @@ public:
     bool doFind(bool t_quiet = false);
     void showReplaceWindow(QLineEdit* t_line_edit);
     void showReplaceWindow(QTextEdit* t_text_edit);
+    void showReplaceWindow(QPlainTextEdit* t_plain_text_edit);
 
 private slots:
     void on_lineEditFind_returnPressed();
@@ -43,8 +45,7 @@ private:
     qsizetype m_start_current = 0;
     qsizetype m_end_current = 0;
 
-    QLineEdit* m_find_line = nullptr;
-    QTextEdit* m_find_text = nullptr;
+    QWidget* m_find_widget = nullptr;
 };
 
 #endif // FINDREPLACEDIALOG_H

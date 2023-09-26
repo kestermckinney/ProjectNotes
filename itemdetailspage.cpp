@@ -1,7 +1,9 @@
 // Copyright (C) 2022, 2023 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
+#include <QCompleter>
 
+#include "pnplaintextedit.h"
 #include "itemdetailspage.h"
 #include "pndatabaseobjects.h"
 #include "ui_mainwindow.h"
@@ -22,7 +24,7 @@ ItemDetailsPage::~ItemDetailsPage()
 
 void ItemDetailsPage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes Item [%1 %2 %3]").arg(ui->lineEditNumber->text(), ui->lineEditItemNumber->text(), ui->lineEditName->text().left(50)));
+    topLevelWidget()->setWindowTitle(QString("Project Notes Item [%1 %2 %3]").arg(ui->lineEditNumber->text(), ui->lineEditItemNumber->text(), ui->plainTextEditName->toPlainText().left(50)));
 }
 
 void ItemDetailsPage::newRecord()
@@ -60,7 +62,7 @@ void ItemDetailsPage::setupModels( Ui::MainWindow *t_ui )
 
     m_mapperItemDetails->addMapping(ui->lineEditItemNumber, 1);
     m_mapperItemDetails->addMapping(ui->comboBoxType, 2);
-    m_mapperItemDetails->addMapping(ui->lineEditName, 3);
+    m_mapperItemDetails->addMapping(ui->plainTextEditName, 3);
     m_mapperItemDetails->addMapping(ui->comboBoxProject, 14);
     m_mapperItemDetails->addMapping(ui->comboBoxMeeting, 13);
     m_mapperItemDetails->addMapping(ui->plainTextEditDescription, 6);
@@ -87,18 +89,22 @@ void ItemDetailsPage::setupModels( Ui::MainWindow *t_ui )
     ui->comboBoxProject->setModel(global_DBObjects.projectslistmodel());
     ui->comboBoxProject->setModelColumn(1);
     ui->comboBoxProject->setEditable(true);
+    ui->comboBoxProject->completer()->setCaseSensitivity(Qt::CaseInsensitive);
 
     ui->comboBoxMeeting->setModel(global_DBObjects.actionitemsdetailsmeetingsmodel());
     ui->comboBoxMeeting->setModelColumn(2);
     ui->comboBoxMeeting->setEditable(true);
+    ui->comboBoxMeeting->completer()->setCaseSensitivity(Qt::CaseInsensitive);
 
     ui->comboBoxAssignedTo->setModel(global_DBObjects.teamsmodel());
     ui->comboBoxAssignedTo->setModelColumn(1);
     ui->comboBoxAssignedTo->setEditable(true);
+    ui->comboBoxAssignedTo->completer()->setCaseSensitivity(Qt::CaseInsensitive);
 
     ui->comboBoxIdentifiedBy->setModel(global_DBObjects.teamsmodel());
     ui->comboBoxIdentifiedBy->setModelColumn(1);
     ui->comboBoxIdentifiedBy->setEditable(true);
+    ui->comboBoxIdentifiedBy->completer()->setCaseSensitivity(Qt::CaseInsensitive);
 
 
     ui->tableViewComments->setModel(global_DBObjects.trackeritemscommentsmodelproxy());

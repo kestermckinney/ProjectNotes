@@ -3,6 +3,8 @@
 
 #include "findreplacedialog.h"
 #include "ui_findreplacedialog.h"
+#include "pnplaintextedit.h"
+#include "pntextedit.h"
 
 #include <QRegularExpression>
 #include <QMessageBox>
@@ -37,13 +39,13 @@ qsizetype FindReplaceDialog::getCRLFCount(QString& t_searchstring, qsizetype t_s
 
 bool FindReplaceDialog::doFind(bool t_quiet)
 {
-    if (m_find_line)
+    if (QString(m_find_widget->metaObject()->className()).compare("QLineEdit") == 0)
     {
         QString findstring = ui->lineEditFind->text();
 
         QString searching;
 
-        searching = m_find_line->text();
+        searching = dynamic_cast<QLineEdit*>(m_find_widget)->text();
 
         qsizetype findloc;
 
@@ -67,13 +69,8 @@ bool FindReplaceDialog::doFind(bool t_quiet)
             m_start_current = findloc;
             m_end_current = m_start_current + findstring.length();
 
-            // adjust for CR/LF in string on unix/mac platforms
-    //        qsizetype crlfcount_start = getCRLFCount(searching, 0, m_start_current);
-    //        qsizetype crlfcount_end = getCRLFCount(searching, 0, m_end_current);
-
-            //m_find_line->setSelection(m_start_current - crlfcount_start, m_end_current - crlfcount_end);
-            m_find_line->setSelection(m_start_current, findstring.length());
-            m_find_line->setFocus();
+            dynamic_cast<QLineEdit*>(m_find_widget)->setSelection(m_start_current, findstring.length());
+            dynamic_cast<QLineEdit*>(m_find_widget)->setFocus();
         }
         else
         {
@@ -98,23 +95,35 @@ bool FindReplaceDialog::doFind(bool t_quiet)
     }
     else
     {
-        QTextCursor current = m_find_text->textCursor();
+        QTextCursor current;
         QTextCursor found;
+        QTextDocument* doc;
+
+        if (QString(m_find_widget->metaObject()->className()).compare("PNPlainTextEdit") == 0)
+        {
+            current = dynamic_cast<PNPlainTextEdit*>(m_find_widget)->textCursor();
+            doc = dynamic_cast<PNPlainTextEdit*>(m_find_widget)->document();
+        }
+        else
+        {
+            current = dynamic_cast<PNTextEdit*>(m_find_widget)->textCursor();
+            doc = dynamic_cast<PNTextEdit*>(m_find_widget)->document();
+        }
 
         if (ui->checkBoxUseRegEx->isChecked())
         {
             if (ui->radioButtonDown->isChecked())
                 if ( ui->checkBoxMatchCase->isChecked() )
-                    found = m_find_text->document()->find(
+                    found = doc->find(
                                 QRegularExpression(ui->lineEditFind->text()),
                                 current,
                                 QTextDocument::FindCaseSensitively);
                 else
-                    found = m_find_text->document()->find(
+                    found = doc->find(
                                 QRegularExpression(ui->lineEditFind->text()),
                                 current);
             else
-                found = m_find_text->document()->find(
+                found = doc->find(
                             QRegularExpression(ui->lineEditFind->text()),
                             current,
                             (ui->checkBoxMatchCase->isChecked() ? QTextDocument::FindCaseSensitively|QTextDocument::FindBackward : QTextDocument::FindBackward));
@@ -123,14 +132,14 @@ bool FindReplaceDialog::doFind(bool t_quiet)
         {
             if (ui->radioButtonDown->isChecked())
                 if (ui->checkBoxMatchCase->isChecked())
-                    found = m_find_text->document()->find(ui->lineEditFind->text(),
+                    found = doc->find(ui->lineEditFind->text(),
                                 current,
                                 QTextDocument::FindCaseSensitively);
                 else
-                    found = m_find_text->document()->find(ui->lineEditFind->text(),
+                    found = doc->find(ui->lineEditFind->text(),
                                 current);
             else
-                found = m_find_text->document()->find(ui->lineEditFind->text(),
+                found = doc->find(ui->lineEditFind->text(),
                             current,
                             (ui->checkBoxMatchCase->isChecked() ? QTextDocument::FindCaseSensitively|QTextDocument::FindBackward : QTextDocument::FindBackward) );
         }
@@ -146,10 +155,20 @@ bool FindReplaceDialog::doFind(bool t_quiet)
 
                 if (reply == QMessageBox::Yes)
                 {
-                    if (ui->radioButtonDown->isChecked())
-                        m_find_text->moveCursor(QTextCursor::Start);
+                    if (QString(m_find_widget->metaObject()->className()).compare("PNPlainTextEdit") == 0)
+                    {
+                        if (ui->radioButtonDown->isChecked())
+                            dynamic_cast<PNPlainTextEdit*>(m_find_widget)->moveCursor(QTextCursor::Start);
+                        else
+                            dynamic_cast<PNPlainTextEdit*>(m_find_widget)->moveCursor(QTextCursor::End);
+                    }
                     else
-                        m_find_text->moveCursor(QTextCursor::End);
+                    {
+                        if (ui->radioButtonDown->isChecked())
+                            dynamic_cast<PNTextEdit*>(m_find_widget)->moveCursor(QTextCursor::Start);
+                        else
+                            dynamic_cast<PNTextEdit*>(m_find_widget)->moveCursor(QTextCursor::End);
+                    }
                 }
             }
 
@@ -157,29 +176,34 @@ bool FindReplaceDialog::doFind(bool t_quiet)
         }
         else
         {
-            m_find_text->setTextCursor(found);
+            if (QString(m_find_widget->metaObject()->className()).compare("PNPlainTextEdit") == 0)
+            {
+                dynamic_cast<PNPlainTextEdit*>(m_find_widget)->setTextCursor(found);
+                dynamic_cast<PNPlainTextEdit*>(m_find_widget)->ensureCursorVisible();
+            }
+            else
+            {
+                dynamic_cast<PNTextEdit*>(m_find_widget)->setTextCursor(found);
+                dynamic_cast<PNTextEdit*>(m_find_widget)->ensureCursorVisible();
+            }
+
+            m_find_widget->setFocus();
 
             QCoreApplication::processEvents();
 
             return true;
         }
     }
-
 }
 
 void FindReplaceDialog::showReplaceWindow(QLineEdit* t_line_edit)
 {
-    // setup search window
-    m_find_line = t_line_edit;
-    m_find_text = nullptr;
-
-    QString searching = m_find_line->text();
-
+    m_find_widget = dynamic_cast<QWidget*>(t_line_edit);
 
     qsizetype s, e;
 
-    s = m_find_line->selectionStart();
-    e = m_find_line->selectionEnd();
+    s = t_line_edit->selectionStart();
+    e = t_line_edit->selectionEnd();
 
     // if we have a selection start there
     if (s != -1 && e != -1)
@@ -193,7 +217,7 @@ void FindReplaceDialog::showReplaceWindow(QLineEdit* t_line_edit)
     }
     else
     {
-        qsizetype endsearch = m_find_line->cursorPosition();
+        qsizetype endsearch = t_line_edit->cursorPosition();
 
         // adjust for CR/LF in string on unix/mac platforms
 //        int crlfcount_end = GetCRLFCount(searching, 0, endsearch);
@@ -203,45 +227,27 @@ void FindReplaceDialog::showReplaceWindow(QLineEdit* t_line_edit)
 
     show();
 
-    m_find_line->setFocus();
+    t_line_edit->setFocus();
 }
 
 void FindReplaceDialog::showReplaceWindow(QTextEdit* t_text_edit)
 {
     // setup search window
-    m_find_text = t_text_edit;
-    m_find_line = nullptr;
-
-//    QString searching = m_find_line->text();
-
-//    qsizetype s, e;
-
-//    s = m_find_text->textCursor().selectionStart();
-//    e = m_find_text->textCursor().selectionEnd();
-
-//    // if we have a selection start there
-//    if (s != -1 && e != -1)
-//    {
-//        // adjust for CR/LF in string on unix/mac platforms
-//        //int crlfcount_start = GetCRLFCount(searching, 0, s);
-//        //int crlfcount_end = GetCRLFCount(searching, 0, e);
-
-//        m_start_current = s;// + crlfcount_start;
-//        m_end_current = e;// + crlfcount_end;
-//    }
-//    else
-//    {
-//        qsizetype endsearch = m_find_line->cursorPosition();
-
-        // adjust for CR/LF in string on unix/mac platforms
-//        int crlfcount_end = GetCRLFCount(searching, 0, endsearch);
-
-//        m_start_current = m_end_current = endsearch;// + crlfcount_end;
-//    }
+    m_find_widget = dynamic_cast<QWidget*>(t_text_edit);
 
     show();
 
-    m_find_text->setFocus();
+    m_find_widget->setFocus();
+}
+
+void FindReplaceDialog::showReplaceWindow(QPlainTextEdit* t_plain_text_edit)
+{
+    // setup search window
+    m_find_widget = dynamic_cast<QWidget*>(t_plain_text_edit);
+
+    show();
+
+    m_find_widget->setFocus();
 }
 
 void FindReplaceDialog::on_lineEditFind_returnPressed()
@@ -272,33 +278,27 @@ void FindReplaceDialog::on_pushButtonReplace_clicked()
 
     if (doFind())
     {
-        if (m_find_line)  // replace text in a line edit
+        if (QString(m_find_widget->metaObject()->className()).compare("QLineEdit") == 0)
         {
-            QString searching;
             QString replacestring;
 
-            searching = m_find_line->text();
-
-            // adjust for CR/LF in string on unix/mac platforms
-    //        int crlfcount_start = getCRLFCount(searching, 0, m_start_current);
-    //        int crlfcount_end = getCRLFCount(searching, 0, m_end_current);
-
-            replacestring = m_find_line->text();
+            replacestring = dynamic_cast<QLineEdit*>(m_find_widget)->text();
             replacestring.replace(m_start_current, m_end_current - m_start_current, ui->lineEditReplace->text());
-            m_find_line->setText(replacestring);
-            m_find_line->setSelection(m_start_current, ui->lineEditReplace->text().length());
+            dynamic_cast<QLineEdit*>(m_find_widget)->setText(replacestring);
+            dynamic_cast<QLineEdit*>(m_find_widget)->setSelection(m_start_current, ui->lineEditReplace->text().length());
 
-            //m_find_line->repl   Replace(m_start_current - crlfcount_start, m_end_current - crlfcount_end, ui->lineEditReplace->text());
-            //m_find_line->SetSelection(m_start_current - crlfcount_start, m_end_current - crlfcount_end);
-            m_find_line->setFocus();
+            m_find_widget->setFocus();
         }
         else // replace text in text edit
         {
-            m_find_text->insertPlainText(ui->lineEditReplace->text());
+            if (QString(m_find_widget->metaObject()->className()).compare("PNTextEdit") == 0)
+                dynamic_cast<PNTextEdit*>(m_find_widget)->insertPlainText(ui->lineEditReplace->text());
+            else
+                dynamic_cast<PNPlainTextEdit*>(m_find_widget)->insertPlainText(ui->lineEditReplace->text());
 
             QCoreApplication::processEvents();
 
-            m_find_text->setFocus();
+            m_find_widget->setFocus();
         }
     }
 
@@ -308,28 +308,19 @@ void FindReplaceDialog::on_pushButtonReplaceAll_clicked()
 {
     int count = 0;
 
-    if (m_find_line)
+    if (QString(m_find_widget->metaObject()->className()).compare("QLineEdit") == 0)
     {
-        QString findstring = ui->lineEditFind->text();
         QString replacestring = ui->lineEditReplace->text();
-
-        QString searching = m_find_line->text();
 
         m_start_current = m_end_current = 0;
 
         while (doFind(true))
         {
-            // adjust for CR/LF in string on unix/mac platforms
-    //        int crlfcount_start = getCRLFCount(searching, 0, m_start_current);
-    //        int crlfcount_end = getCRLFCount(searching, 0, m_end_current);
-
-            replacestring = m_find_line->text();
+            replacestring = dynamic_cast<QLineEdit*>(m_find_widget)->text();
             replacestring.replace(m_start_current, m_end_current - m_start_current, ui->lineEditReplace->text());
-            m_find_line->setText(replacestring);
-            m_find_line->setSelection(m_start_current, ui->lineEditReplace->text().length());
-            //m_find_line->repl   Replace(m_start_current - crlfcount_start, m_end_current - crlfcount_end, ui->lineEditReplace->text());
-            //m_find_line->SetSelection(m_start_current - crlfcount_start, m_end_current - crlfcount_end);
-            m_find_line->setFocus();
+            dynamic_cast<QLineEdit*>(m_find_widget)->setText(replacestring);
+            dynamic_cast<QLineEdit*>(m_find_widget)->setSelection(m_start_current, ui->lineEditReplace->text().length());
+            m_find_widget->setFocus();
 
             count++;
         }
@@ -337,9 +328,11 @@ void FindReplaceDialog::on_pushButtonReplaceAll_clicked()
     else
     {
         while (doFind(true))
-        {
-            m_find_text->insertPlainText(ui->lineEditReplace->text());
-            m_find_text->setFocus();
+        {   
+            if (QString(m_find_widget->metaObject()->className()).compare("PNTextEdit") == 0)
+                dynamic_cast<PNTextEdit*>(m_find_widget)->insertPlainText(ui->lineEditReplace->text());
+            else
+                dynamic_cast<PNPlainTextEdit*>(m_find_widget)->insertPlainText(ui->lineEditReplace->text());
 
             count++;
         }

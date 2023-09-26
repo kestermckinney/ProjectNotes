@@ -4,6 +4,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "pnplaintextedit.h"
+
 #include <QMainWindow>
 #include <QStringListModel>
 #include <QStack>
@@ -119,7 +121,6 @@ private:
     Ui::MainWindow *ui;   
 
     PreferencesDialog* m_preferences_dialog = nullptr;
-    SpellCheckDialog* m_spellcheck_dialog = nullptr;
     FindReplaceDialog* m_find_replace_dialog = nullptr;
     static PNPluginManager* m_plugin_manager;
     PluginSettingsDialog* m_plugin_settings_dialog = nullptr;

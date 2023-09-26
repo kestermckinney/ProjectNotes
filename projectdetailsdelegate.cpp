@@ -22,11 +22,13 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
 
     switch (t_index.column())
     {
-    case 1:
     case 2:
         {
-            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
-            lineedit->setText(value.toString());
+            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
+
+            // don't resent buffers if text hasn't changed
+            if (value.toString().compare(lineedit->toPlainText()) != 0)
+                lineedit->setPlainText(value.toString());
 
             QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
             if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
@@ -98,11 +100,10 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
 
     switch (t_index.column())
     {
-    case 1:
     case 2:
         {
-            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
-            key_val = lineedit->text();
+            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
+            key_val = lineedit->toPlainText();
 
             QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
             if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
