@@ -7,6 +7,7 @@
 #include "pntableview.h"
 #include "pndateeditdelegate.h"
 #include "pncheckboxdelegate.h"
+#include "pnplaintexteditdelegate.h"
 #include <QObject>
 
 
@@ -22,6 +23,7 @@ private:
     // projects list panel delegates
     PNDateEditDelegate* m_meeting_date_delegate = nullptr;
     PNCheckBoxDelegate* m_internal_item_delegate = nullptr;
+    PNPlainTextEditDelegate* m_title_delegate = nullptr;
 };
 
 

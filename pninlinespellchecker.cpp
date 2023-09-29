@@ -301,7 +301,7 @@ void PNInlineSpellChecker::unmarkWord(QString& t_word)
     while( i != es.end() )
     {
         // if spellcheck cursors overlap then remove it
-        if ( (*i).cursor.selectedText().compare(t_word, Qt::CaseInsensitive)
+        if ( (*i).cursor.selectedText().compare(t_word, Qt::CaseInsensitive) == 0
             && (*i).format.underlineStyle() == QTextCharFormat::SpellCheckUnderline)
         {
             i = es.erase(i);
@@ -319,3 +319,5 @@ void PNInlineSpellChecker::unmarkWord(QString& t_word)
         dynamic_cast<QPlainTextEdit*>(parent())->setExtraSelections(es);
     }
 }
+
+

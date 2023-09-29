@@ -1,5 +1,6 @@
 #include "statusreportitemsview.h"
 #include "pndatabaseobjects.h"
+#include "pnplaintexteditdelegate.h"
 
 StatusReportItemsView::StatusReportItemsView(QWidget* t_parent) : PNTableView(t_parent)
 {
@@ -10,6 +11,7 @@ StatusReportItemsView::StatusReportItemsView(QWidget* t_parent) : PNTableView(t_
 StatusReportItemsView::~StatusReportItemsView()
 {
     if (m_status_items_status_delegate) delete m_status_items_status_delegate;
+    if (m_status_item_description) delete m_status_item_description;
 }
 
 void StatusReportItemsView::setModel(QAbstractItemModel *t_model)
@@ -26,8 +28,10 @@ void StatusReportItemsView::setModel(QAbstractItemModel *t_model)
 
         // projects list panel delagets
         m_status_items_status_delegate = new ComboBoxDelegate(this, &m_status_items_status);
+        m_status_item_description = new PNPlainTextEditDelegate(this);
 
         setItemDelegateForColumn(2, m_status_items_status_delegate);
+        setItemDelegateForColumn(3, m_status_item_description);
     }
     else
     {

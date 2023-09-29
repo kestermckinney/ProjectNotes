@@ -14,7 +14,7 @@ ProjectDetailsPage::ProjectDetailsPage()
 
 ProjectDetailsPage::~ProjectDetailsPage()
 {
-    if (m_mapperProjectDetails != nullptr)
+    if (m_mapperProjectDetails)
         delete m_mapperProjectDetails;
 
     if (m_project_details_delegate)
@@ -116,13 +116,13 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
 
 void ProjectDetailsPage::toFirst(bool t_open)
 {
-    if (m_mapperProjectDetails != nullptr)
-        m_mapperProjectDetails->toFirst();
-
     if (t_open)
         ui->tabWidgetProject->setCurrentIndex(0);  // always set to the first tab on open
     else
         ui->tabWidgetProject->setCurrentIndex(ui->tabWidgetProject->currentIndex());  // always set to the first tab on open
+
+    if (m_mapperProjectDetails != nullptr)
+        m_mapperProjectDetails->toFirst();
 }
 
 void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)

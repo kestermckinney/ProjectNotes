@@ -13,6 +13,7 @@ ProjectTeamMembersView::~ProjectTeamMembersView()
 {
     if (m_unfiltered_people_delegate) delete m_unfiltered_people_delegate;
     if (m_receive_status_delegate) delete m_receive_status_delegate;
+    if (m_role_delegate) delete m_role_delegate;
 }
 
 void ProjectTeamMembersView::setModel(QAbstractItemModel *t_model)
@@ -33,8 +34,10 @@ void ProjectTeamMembersView::setModel(QAbstractItemModel *t_model)
         // projects list panel delagets
         m_unfiltered_people_delegate = new PNComboBoxDelegate(this, global_DBObjects.unfilteredpeoplemodel());
         m_receive_status_delegate = new PNCheckBoxDelegate(this);
+        m_role_delegate = new PNPlainTextEditDelegate(this);
 
         setItemDelegateForColumn(2, m_unfiltered_people_delegate);
+        setItemDelegateForColumn(5, m_role_delegate);
         setItemDelegateForColumn(4, m_receive_status_delegate);
     }
     else

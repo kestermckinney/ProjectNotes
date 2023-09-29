@@ -8,6 +8,7 @@
 ClientsModel::ClientsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("ClientsModel");
+    setOrderKey(10);
 
     setBaseSql("SELECT client_id, client_name FROM clients");
 

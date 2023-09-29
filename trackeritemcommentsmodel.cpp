@@ -6,6 +6,7 @@
 TrackerItemCommentsModel::TrackerItemCommentsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("TrackerItemCommentsModel");
+    setOrderKey(35);
 
     setBaseSql("SELECT tracker_updated_id, item_id, lastupdated_date, update_note, updated_by, (select i.item_name from item_tracker i where i.item_id=u.item_id) item_name, (select i.item_number from item_tracker i where i.item_id=u.item_id) item_number, (select i.description from item_tracker i where i.item_id=u.item_id) description, (select p.project_name from projects p where p.project_id=(select i.project_id from item_tracker i where i.item_id=u.item_id)) project_name, (select p.project_number from projects p where p.project_id=(select i.project_id from item_tracker i where i.item_id=u.item_id)) project_number FROM item_tracker_updates u");
 

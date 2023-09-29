@@ -150,6 +150,8 @@ public:
     void setReadOnly() { m_read_only = true; }
     bool isExportable() { return m_can_export; }
     void setNoExport() { m_can_export = false; }
+    void setOrderKey(int t_key) { m_order_key = t_key; }
+    int getOrderKey() { return m_order_key; }
 
     QDomElement toQDomElement( QDomDocument* t_xml_document, const QString& t_filter = QString());
     // use this to allow for different filters from the original
@@ -188,6 +190,7 @@ private:
     QString m_tablename;  // the t_table to write data too, also the t_table to sync with other models when changed
     QString m_display_name;
     QString m_base_sql;
+    int m_order_key = 0; // the order key is used to identify record heirarchy - base data is first
 
     QHash<int, DBColumnType> m_column_type;
     QHash<int, DBColumnRequired> m_column_is_required;

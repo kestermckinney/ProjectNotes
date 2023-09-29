@@ -6,6 +6,7 @@
 ActionItemProjectNotesModel::ActionItemProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("ActionItemProjectNotesModel");
+    setOrderKey(40);
 
     setBaseSql("SELECT note_id, project_id, (strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title) as meeting, internal_item FROM project_notes");
 

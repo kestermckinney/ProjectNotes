@@ -5,12 +5,17 @@
 #define CLIENTSLISTVIEW_H
 
 #include "pntableview.h"
+#include "pnplaintexteditdelegate.h"
 
 class ClientsListView : public PNTableView
 {
 public:
     ClientsListView(QWidget* t_parent = nullptr);
+    ~ClientsListView();
     void setModel(QAbstractItemModel *t_model) override;
+
+private:
+    PNPlainTextEditDelegate* m_client_name_delegate;
 };
 
 #endif // CLIENTSLISTVIEW_H

@@ -51,7 +51,24 @@ void PNComboBoxDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_i
 void PNComboBoxDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const
 {
     QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
-    QVariant key_val = m_model->data(m_model->index(comboBox->currentIndex(), m_data_column));
+    int i;// = comboBox->currentIndex();
+    QVariant key_val;
+
+//    if ( i != -1 )
+//    {
+    if (!comboBox->currentText().isEmpty() )
+    {
+        i = comboBox->findText(comboBox->currentText(), Qt::MatchFixedString);
+        if (i >= 0)
+        {
+            comboBox->setCurrentIndex(i);
+            key_val = m_model->data(m_model->index(i, m_data_column));
+        }
+    }
+//    }
+//    else
+//        key_val = m_model->data(m_model->index(i, m_data_column));
+
     t_model->setData(t_index, key_val, Qt::EditRole);
 }
 

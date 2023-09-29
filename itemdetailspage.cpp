@@ -76,6 +76,8 @@ void ItemDetailsPage::setupModels( Ui::MainWindow *t_ui )
     m_mapperItemDetails->addMapping(ui->dateEditLastUpdated, 11);
     m_mapperItemDetails->addMapping(ui->checkBoxInternal, 15);
 
+    ui->plainTextEditDescription->setAllowEnter(true);
+
 
     ui->comboBoxType->clear();
     ui->comboBoxType->addItems(PNDatabaseObjects::item_type);

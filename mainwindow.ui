@@ -52,7 +52,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>5</number>
+       <number>6</number>
       </property>
       <widget class="ProjectsListPage" name="pageProjectsList">
        <property name="sizePolicy">
@@ -253,7 +253,7 @@
                     <property name="maximumSize">
                      <size>
                       <width>16777215</width>
-                      <height>27</height>
+                      <height>20</height>
                      </size>
                     </property>
                     <property name="tabChangesFocus">
@@ -518,7 +518,7 @@
                  <property name="maximumSize">
                   <size>
                    <width>16777215</width>
-                   <height>27</height>
+                   <height>20</height>
                   </size>
                  </property>
                  <property name="tabChangesFocus">
@@ -1093,7 +1093,7 @@
               <property name="maximumSize">
                <size>
                 <width>16777215</width>
-                <height>27</height>
+                <height>20</height>
                </size>
               </property>
               <property name="sizeAdjustPolicy">
@@ -1407,7 +1407,7 @@
             <property name="maximumSize">
              <size>
               <width>16777215</width>
-              <height>27</height>
+              <height>20</height>
              </size>
             </property>
             <property name="tabChangesFocus">
