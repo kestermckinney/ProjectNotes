@@ -4,6 +4,14 @@ if (platform.system() == 'Windows'):
     from win32com.client import GetObject
     import win32com
     import win32api
+    import win32gui
+
+top_windows = []
+
+def windowEnumerationHandler(hwnd, tpwindows):
+    if (platform.system() == 'Windows'):
+        tpwindows.append((hwnd, win32gui.GetWindowText(hwnd)))
+
 
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets
 from PyQt5.QtCore import QDirIterator, QDir, QSettings
@@ -326,12 +334,15 @@ class ProjectNotesCommon:
         # print("stdout:", result.stdout)
         # print("stderr:", result.stderr)
 
-    def get_plugin_setting(self, settingname):
+    def get_plugin_setting(self, settingname, pluginname = None):
         cfg = QSettings("ProjectNotes","PluginSettings")
         cfg.setFallbacksEnabled(False)
         val = ""
 
-        val = cfg.value("Global Settings/" + settingname, "")
+        if pluginname is None:
+            val = cfg.value("Global Settings/" + settingname, "")
+        else:
+            val = cfg.value(pluginname + "/" + settingname, "")
 
         #print("reading global setting: " + settingname + " value: " + val)
 
@@ -398,6 +409,23 @@ class ProjectNotesCommon:
         adodb.Open()
 
         return(adodb)
+
+    def bring_window_to_front(self, title):
+        if (platform.system() != 'Windows'):
+            print("bring window to front requires win32gui not supported on this platform")
+            return
+
+        #QtWidgets.QApplication.processEvents()
+        print("looking for window title " + title)
+        win32gui.EnumWindows(windowEnumerationHandler, top_windows)
+
+        for i in top_windows:
+            if title.lower() in i[1].lower():
+                print("found " +  i[1])
+                win32gui.ShowWindow(i[0],5)
+                win32gui.SetForegroundWindow(i[0])
+                break
+        return
 
     def close(self, adodb):
         if (platform.system() !='Windows'):
