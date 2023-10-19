@@ -27,7 +27,7 @@ QT_END_NAMESPACE
 #include "pluginsettingsdialog.h"
 
 #define PNMajorVersion 3
-#define PNMinorVersion 0
+#define PNMinorVersion 1
 #define PNFixVersion 0
 
 class MainWindow : public QMainWindow
