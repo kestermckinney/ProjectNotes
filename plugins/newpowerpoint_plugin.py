@@ -133,7 +133,7 @@ if (platform.system() == 'Windows'):
         table.appendChild(row)
 
         row.appendChild(pnc.xml_col(docxml, "project_id",None, projnum))
-        row.appendChild(pnc.xml_col(docxml, "location_type", "Generic File (System Identified)", None))
+        row.appendChild(pnc.xml_col(docxml, "location_type", "PowerPoint Document", None))
         row.appendChild(pnc.xml_col(docxml, "location_description", basename, None))
         row.appendChild(pnc.xml_col(docxml, "full_path", projectfile, None))
 
