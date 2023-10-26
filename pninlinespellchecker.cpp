@@ -108,12 +108,23 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckDocument(QTextC
         t_cursor.select(QTextCursor::WordUnderCursor);
         QString word = t_cursor.selectedText();
 
+        // fix a bug with selecting a contraction
+        if (t_cursor.selectionEnd() + 1 < t_cursor.document()->characterCount())
+            if (
+                    t_cursor.document()->characterAt(t_cursor.selectionEnd()) == "'" &&
+                    t_cursor.document()->characterAt(t_cursor.selectionEnd() + 1) == "t"
+                )
+            {
+                t_cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
+                //qDebug() << "reselected to word: " << t_cursor.selectedText();
+                word = t_cursor.selectedText();
+            }
+
         if ( !word.isEmpty() &&
             word.at(0).isLetter() )  // work around for eliminating non-words
         {
             if (!global_Settings.spellchecker()->isGoodWord(word))
             {
-                //removeIfOverlaps(t_cursor, t_extraselections);
                 addSelection(t_cursor, t_extraselections);
             }
         }
@@ -131,13 +142,39 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
 
     t_cursor.select(QTextCursor::WordUnderCursor);
 
+    // fix a bug with selecting a contraction
+    if (t_cursor.position() > 0)
+    if (
+            t_cursor.document()->characterAt(t_cursor.position()-1) == "'"
+        )
+    {
+        t_cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 2);
+        t_cursor.select(QTextCursor::WordUnderCursor);
+        t_cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 1);
+        //qDebug() << "reselected to word: " << t_cursor.selectedText();
+    }
+
+    // fix a bug with selecting a contraction
+    if (t_cursor.position() > 1)
+    if (
+            t_cursor.document()->characterAt(t_cursor.position()-1) == "t" &&
+            t_cursor.document()->characterAt(t_cursor.position()-2) == "'"
+        )
+    {
+        t_cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 3);
+        t_cursor.select(QTextCursor::WordUnderCursor);
+        t_cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
+        //qDebug() << "reselected to word: " << t_cursor.selectedText();
+    }
+
+
     FixedTextCursor ftc;
     ftc.anchor = t_cursor.anchor();
     ftc.position = t_cursor.position();
     ftc.word = t_cursor.selectedText();
 
     QString word = t_cursor.selectedText();
-    //qDebug() << ">> selcted " << word << " trimmed " << word.trimmed();
+    //qDebug() << ">> selcted " << word ;
 
     if (!t_cursor.selectedText().isEmpty())
     {
@@ -206,11 +243,25 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
 void PNInlineSpellChecker::slotCorrectWord(QTextCursor& t_cursor, const QString t_word)
 {
     t_cursor.select(QTextCursor::WordUnderCursor);
+    //qDebug() << "found word: " << t_cursor.selectedText();
+
+    // this is to fix a bug in how Qt selects words
+    if (
+            QString(".,\"';:[]{}()&%$#@!<>/?\\|").contains(t_cursor.selectedText())
+        )
+    {
+        t_cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 2);
+        t_cursor.select(QTextCursor::WordUnderCursor);
+        //qDebug() << "attempted word fix";
+    }
+
     t_cursor.insertText(t_word);
 }
 
 void PNInlineSpellChecker::slotCheckSpelling(QTextCursor& t_cursor)
 {
+    Q_UNUSED(t_cursor)
+
     SpellCheckDialog spellcheck_dialog(dynamic_cast<QWidget*>(parent()));
     spellcheck_dialog.spellCheck(dynamic_cast<QWidget*>(parent()));
 }
@@ -221,6 +272,17 @@ void PNInlineSpellChecker::slotAddToDictionary(QTextCursor& t_cursor)
 
     QTextCursor tc(t_cursor);
     tc.select(QTextCursor::WordUnderCursor);
+
+    // fix a bug with selecting a contraction
+    if (t_cursor.selectionEnd() + 1 < t_cursor.document()->characterCount())
+        if (
+                t_cursor.document()->characterAt(t_cursor.selectionEnd()) == "'" &&
+                t_cursor.document()->characterAt(t_cursor.selectionEnd() + 1) == "t"
+            )
+        {
+            t_cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
+            //qDebug() << "reselected to word: " << t_cursor.selectedText();
+        }
 
     QString word = tc.selectedText();
 
@@ -237,6 +299,17 @@ void PNInlineSpellChecker::slottIgnoreAll(QTextCursor& t_cursor)
     QTextCursor tc(t_cursor);
     tc.select(QTextCursor::WordUnderCursor);
 
+    // fix a bug with selecting a contraction
+    if (t_cursor.selectionEnd() + 1 < t_cursor.document()->characterCount())
+        if (
+                t_cursor.document()->characterAt(t_cursor.selectionEnd()) == "'" &&
+                t_cursor.document()->characterAt(t_cursor.selectionEnd() + 1) == "t"
+            )
+        {
+            t_cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
+            //qDebug() << "reselected to word: " << t_cursor.selectedText();
+        }
+
     QString word = tc.selectedText();
 
     global_Settings.spellchecker()->ignoreWord(word);
@@ -250,6 +323,17 @@ void PNInlineSpellChecker::slotIgnore(QTextCursor& t_cursor)
 
     QTextCursor tc(t_cursor);
     tc.select(QTextCursor::WordUnderCursor);
+
+    // fix a bug with selecting a contraction
+    if (t_cursor.selectionEnd() + 1 < t_cursor.document()->characterCount())
+        if (
+                t_cursor.document()->characterAt(t_cursor.selectionEnd()) == "'" &&
+                t_cursor.document()->characterAt(t_cursor.selectionEnd() + 1) == "t"
+            )
+        {
+            t_cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
+            //qDebug() << "reselected to word: " << t_cursor.selectedText();
+        }
 
     QString word = tc.selectedText();
 

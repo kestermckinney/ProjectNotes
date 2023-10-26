@@ -61,6 +61,7 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
     {
         QCoreApplication::processEvents();
         cursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor, 1);
+
         QString word = cursor.selectedText();
 
         // Workaround for better recognition of words
@@ -75,11 +76,34 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
             word = cursor.selectedText();
         }
 
+        // fix a bug with selecting a contraction
+        if (cursor.selectionEnd() + 1 < cursor.document()->characterCount())
+            if (
+                    cursor.document()->characterAt(cursor.selectionEnd()) == "'" &&
+                    cursor.document()->characterAt(cursor.selectionEnd() + 1) == "t"
+                )
+            {
+                cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
+                //qDebug() << "reselected to word: " << cursor.selectedText();
+                word = cursor.selectedText();
+            }
+
         if (!word.isEmpty() && !global_Settings.spellchecker()->isGoodWord(word))
         {
             QTextCursor tmpCursor(cursor);
             tmpCursor.setPosition(cursor.anchor());
             tmpCursor.select(QTextCursor::WordUnderCursor);
+
+            // fix a bug with selecting a contraction
+            if (tmpCursor.selectionEnd() + 1 < tmpCursor.document()->characterCount())
+                if (
+                        tmpCursor.document()->characterAt(tmpCursor.selectionEnd()) == "'" &&
+                        tmpCursor.document()->characterAt(tmpCursor.selectionEnd() + 1) == "t"
+                    )
+                {
+                    tmpCursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
+                    //qDebug() << "reselected to word: " << cursor.selectedText();
+                }
 
             if (QString(m_check_widget->metaObject()->className()).compare("PNTextEdit") == 0)
             {
