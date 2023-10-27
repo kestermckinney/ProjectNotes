@@ -1,3 +1,4 @@
+
 import platform
 
 if (platform.system() == 'Windows'):
@@ -14,9 +15,9 @@ from PyQt5.QtGui import QDesktopServices
 
 
 # Project Notes Plugin Parameters
-pluginname = "Global Settings"
-plugindescription = "This plugin has no events.  It only saves the settings, so they can be used amongst all plugins."
-plugintable = "" # the table or view that the plugin applies to.  This will enable the right click
+pluginname = "Copy Email to Clipboard"
+plugindescription = "Copies the selected person's email to the clipboard."
+plugintable = "people" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
 # events must have a data structure and data view specified
@@ -65,10 +66,57 @@ childtablesfilter = "" # a list of child tables that can be sent to the plugin. 
 
 # Project Notes Parameters
 parameters = [
-    "OraclePassword",
-    "OracleUsername",
-    "OracleDataSource",
-    "ProjectsFolder",
-    "DefaultMeetingLocation"
 ]
+
+# this plugin is only supported on windows
+if (platform.system() == 'Windows'):
+    pnc = ProjectNotesCommon()
+
+    def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
+
+        xmlval = QDomDocument()
+        if (xmlval.setContent(xmlstr) == False):
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+            return ""
+
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
+
+        if xmlroot:
+
+            email = None
+            nm = None
+
+            teammember = pnc.find_node(xmlroot, "table", "name", "people")
+            if teammember:
+                memberrow = teammember.firstChild()
+
+            while not memberrow.isNull():
+                nm = pnc.get_column_value(memberrow, "name")
+                email = pnc.get_column_value(memberrow, "email")
+
+                if (email is not None and email != ""):
+                    QtWidgets.QApplication.clipboard().setText(email)
+
+                memberrow = memberrow.nextSibling()
+
+
+
+        return ""
+
+# setup test data
+"""
+print("Buld up QDomDocument")
+
+xmldoc = QDomDocument("TestDocument")
+
+f = QFile("exampleproject.xml")
+
+if f.open(QIODevice.ReadOnly):
+    print("example project opened")
+    xmldoc.setContent(f)
+    f.close()
+
+event_data_rightclick(xmldoc.toString())
+"""
 

@@ -349,21 +349,6 @@ class ProjectNotesCommon:
         return val
 
     def verify_global_settings(self):
-        pw = self.get_plugin_setting("OraclePassword")
-        if pw == None or pw == "":
-            print("OraclePassword not set.")
-            QMessageBox.warning(None, "Invalid Global Setting", "OraclePassword must be set in the Global Settigns plugin.", QMessageBox.Ok)
-            return(False)
-
-        un = self.get_plugin_setting("OracleUsername")
-        if un == None or un == "":
-            QMessageBox.warning(None, "Invalid Global Setting", "OracleUsername must be set in the Global Settigns plugin.", QMessageBox.Ok)
-            return(False)
-
-        ds = self.get_plugin_setting("OracleDataSource")
-        if ds == None or ds == "":
-            QMessageBox.warning(None, "Invalid Global Setting", "OracleDataSource must be set in the Global Settigns plugin.", QMessageBox.Ok)
-            return(False)
 
         pf = self.get_plugin_setting("ProjectsFolder")
         if pf == None or pf == "" or not QDir(pf).exists():
