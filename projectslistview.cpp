@@ -18,6 +18,7 @@ ProjectsListView::~ProjectsListView()
     if (m_projects_report_period_delegate) delete m_projects_report_period_delegate;
     if (m_project_invoicing_period_delegate) delete m_project_invoicing_period_delegate;
     if (m_project_status_delegate) delete m_project_status_delegate;
+    if (m_project_name_delegate) delete m_project_name_delegate;
 }
 
 void ProjectsListView::setModel(QAbstractItemModel *t_model)
@@ -42,6 +43,9 @@ void ProjectsListView::setModel(QAbstractItemModel *t_model)
         m_project_invoicing_period_delegate = new ComboBoxDelegate(this, &m_invoicing_period);
         m_project_status_delegate = new ComboBoxDelegate(this, &m_project_status);
 
+        m_project_name_delegate = new PNPlainTextEditDelegate(this);
+
+        setItemDelegateForColumn(2, m_project_name_delegate);
         setItemDelegateForColumn(5, m_unfiltered_people_delegate);
         setItemDelegateForColumn(3, m_project_date_delegate);
         setItemDelegateForColumn(4, m_project_date_delegate);
@@ -49,6 +53,7 @@ void ProjectsListView::setModel(QAbstractItemModel *t_model)
         setItemDelegateForColumn(12, m_projects_report_period_delegate);
         setItemDelegateForColumn(13, m_project_clients_delegate);
         setItemDelegateForColumn(14, m_project_status_delegate);
+
     }
     else
     {

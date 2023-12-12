@@ -3,6 +3,7 @@
 TeamsModel::TeamsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("TeamsModel");
+    setOrderKey(15);
 
     setBaseSql("SELECT teammember_id, b.name, project_id, a.people_id, b.client_id FROM project_people a join people b on a.people_id=b.people_id ");
 

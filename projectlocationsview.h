@@ -6,6 +6,7 @@
 
 #include "pntableview.h"
 #include "pnlineeditfilebuttondelegate.h"
+#include "pnplaintexteditdelegate.h"
 #include "comboboxdelegate.h"
 #include <QObject>
 #include <QStringListModel>
@@ -24,6 +25,7 @@ private:
     // projects list panel delegates
     ComboBoxDelegate* m_file_type_delegate = nullptr;
     PNLineEditFileButtonDelegate* m_file_button_delegate = nullptr;
+    PNPlainTextEditDelegate* m_description_delegate = nullptr;
 };
 
 

@@ -31,7 +31,7 @@ PNTableView::PNTableView(QWidget *t_parent) : QTableView(t_parent)
     QHeaderView *rowView = verticalHeader();
 
     rowView->viewport()->installEventFilter(this);
-    rowView->setDefaultSectionSize(15);
+    rowView->setDefaultSectionSize(20);
 
     setSelectionMode(QAbstractItemView::SingleSelection);
     setSelectionBehavior(QAbstractItemView::SelectRows);

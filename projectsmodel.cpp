@@ -1,6 +1,8 @@
 // Copyright (C) 2022, 2023 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
+#include <QDebug>
+
 #include "projectsmodel.h"
 #include "pndatabaseobjects.h"
 
@@ -10,13 +12,14 @@
 ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
 {
     setObjectName("ProjectsModel");
+    setOrderKey(100);
 
     setBaseSql("select * from projects_view");
     setTableName("projects", "Project");
 
     addColumn(0, tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
     addColumn(1, tr("Number"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
-    addColumn(2, tr("Project Name"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
+    addColumn(2, tr("Project Name"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
     addColumn(3, tr("Status Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
     addColumn(4, tr("Invoice Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
     addColumn(5, tr("Primary Contact"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
@@ -213,4 +216,37 @@ bool ProjectsModel::setData(const QModelIndex &t_index, const QVariant &t_value,
     }
 
     return result;
+}
+
+bool ProjectsModel::copyRecord(QModelIndex t_index)
+{
+    QSqlRecord qr = emptyrecord();
+    QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
+
+    qr.setValue(1, QString("Copy [%2] of %1").arg(data(index(t_index.row(), 1)).toString(), unique_stamp));
+    qr.setValue(2, QString("Copy [%2] of %1").arg(data(index(t_index.row(), 2)).toString(), unique_stamp));
+    qr.setValue(4, QVariant());
+    qr.setValue(5, data(index(t_index.row(), 5)));
+    qr.setValue(6, data(index(t_index.row(), 6)));
+    qr.setValue(7, data(index(t_index.row(), 7)));
+    qr.setValue(8, data(index(t_index.row(), 8)));
+    qr.setValue(9, data(index(t_index.row(), 9)));
+    qr.setValue(10, data(index(t_index.row(), 10)));
+    qr.setValue(11, data(index(t_index.row(), 11)));
+    qr.setValue(12, data(index(t_index.row(), 12)));
+    qr.setValue(13, data(index(t_index.row(), 13)));
+    qr.setValue(14, data(index(t_index.row(), 14)));
+
+    QModelIndex qi = addRecordIndex(qr);
+    setData( index(qi.row(), 3), QVariant(), Qt::EditRole); // force a write to the database
+
+    QVariant oldid = data(index(t_index.row(), 0));
+    QVariant newid = data(index(qi.row(), 0));
+
+    QString insert = "insert into project_people (teammember_id, project_id, people_id, role, receive_status_report) select m.teammember_id || '-" + unique_stamp + "', '" + newid.toString() + "', m.people_id, role, receive_status_report from project_people m where m.project_id ='" + oldid.toString() + "'  and m.people_id not in (select e.people_id from project_people e where e.project_id='" + newid.toString() + "')";
+
+    global_DBObjects.execute(insert);
+    global_DBObjects.projectteammembersmodel()->setDirty();
+
+    return true;
 }

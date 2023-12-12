@@ -3,6 +3,7 @@
 
 #include "projectdetailspage.h"
 #include "pndatabaseobjects.h"
+#include <QCompleter>
 
 #include "ui_mainwindow.h"
 
@@ -13,7 +14,7 @@ ProjectDetailsPage::ProjectDetailsPage()
 
 ProjectDetailsPage::~ProjectDetailsPage()
 {
-    if (m_mapperProjectDetails != nullptr)
+    if (m_mapperProjectDetails)
         delete m_mapperProjectDetails;
 
     if (m_project_details_delegate)
@@ -84,18 +85,22 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
 
     ui->comboBoxInvoicingPeriod->clear();
     ui->comboBoxInvoicingPeriod->addItems(PNDatabaseObjects::invoicing_period);
+
     ui->comboBoxStatusReportPeriod->clear();
     ui->comboBoxStatusReportPeriod->addItems(PNDatabaseObjects::status_report_period);
+
     ui->comboBoxProjectStatus->clear();
     ui->comboBoxProjectStatus->addItems(PNDatabaseObjects::project_status);
 
     ui->comboBoxPrimaryContact->setModel(global_DBObjects.teamsmodel());
     ui->comboBoxPrimaryContact->setModelColumn(1);
     ui->comboBoxPrimaryContact->setEditable(true);
+    ui->comboBoxPrimaryContact->completer()->setCaseSensitivity(Qt::CaseInsensitive);
 
     ui->comboBoxClient->setModel(global_DBObjects.unfilteredclientsmodel());
     ui->comboBoxClient->setModelColumn(1);
     ui->comboBoxClient->setEditable(true);
+    ui->comboBoxClient->completer()->setCaseSensitivity(Qt::CaseInsensitive);
 
 
     ui->tableViewStatusReportItems->setModel(global_DBObjects.statusreportitemsmodelproxy());
@@ -111,13 +116,13 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
 
 void ProjectDetailsPage::toFirst(bool t_open)
 {
-    if (m_mapperProjectDetails != nullptr)
-        m_mapperProjectDetails->toFirst();
-
     if (t_open)
         ui->tabWidgetProject->setCurrentIndex(0);  // always set to the first tab on open
     else
         ui->tabWidgetProject->setCurrentIndex(ui->tabWidgetProject->currentIndex());  // always set to the first tab on open
+
+    if (m_mapperProjectDetails != nullptr)
+        m_mapperProjectDetails->toFirst();
 }
 
 void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)

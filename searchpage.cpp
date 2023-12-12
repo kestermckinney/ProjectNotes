@@ -25,6 +25,8 @@ void SearchPage::setupModels( Ui::MainWindow *t_ui )
     if (!t_ui)
         return;  // closing application
 
+    ui->plainTextEditSearchText->installEventFilter(this);
+
     ui->tableViewSearchResults->setModel(global_DBObjects.searchresultsmodelproxy());
     ui->tableViewSearchResults->selectRow(0);
     setCurrentModel(global_DBObjects.searchresultsmodelproxy());
@@ -36,3 +38,20 @@ void SearchPage::setButtonAndMenuStates()
 
 }
 
+
+bool SearchPage::eventFilter(QObject *watched, QEvent *event)
+{
+    Q_UNUSED(watched);
+
+    if(event->type() == QKeyEvent::KeyPress)
+    {
+        QKeyEvent * ke = static_cast<QKeyEvent*>(event);
+        if(ke->key() == Qt::Key_Return || ke->key() == Qt::Key_Enter)
+        {
+            global_DBObjects.searchresultsmodel()->PerformSearch(ui->plainTextEditSearchText->toPlainText());
+            return true; // do not process this event further
+        }
+    }
+
+    return false;
+}

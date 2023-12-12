@@ -7,6 +7,7 @@
 #include "pntableview.h"
 #include "pncomboboxdelegate.h"
 #include "pncheckboxdelegate.h"
+#include "pnplaintexteditdelegate.h"
 #include <QObject>
 
 class ProjectTeamMembersView : public PNTableView
@@ -21,6 +22,7 @@ private:
     // projects list panel delegates
     PNComboBoxDelegate* m_unfiltered_people_delegate = nullptr;
     PNCheckBoxDelegate* m_receive_status_delegate = nullptr;
+    PNPlainTextEditDelegate* m_role_delegate = nullptr;
 };
 
 #endif // PROJECTTEAMMEMBERSVIEW_H

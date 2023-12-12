@@ -1,6 +1,8 @@
 // Copyright (C) 2022, 2023 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
+#include <QCompleter>
+
 #include "spellcheckdialog.h"
 #include "ui_spellcheckdialog.h"
 #include "pnsettings.h"
@@ -16,17 +18,26 @@ SpellCheckDialog::SpellCheckDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    ui->comboBoxDictionaryLanguage->addItems(global_Settings.spellchecker()->dictionaryNames());
-    ui->comboBoxDictionaryLanguage->setCurrentIndex(global_Settings.spellchecker()->defaultDictionaryIndex());
+    if (!global_Settings.spellchecker()->hasDictionary())
+    {
+        this->setWindowTitle("Spelling: No Dictionary Configured");
+    }
+    else
+    {
+        m_populating = true;
+        ui->comboBoxDictionaryLanguage->addItems(global_Settings.spellchecker()->dictionaryNames());
+        ui->comboBoxDictionaryLanguage->setCurrentIndex(global_Settings.spellchecker()->defaultDictionaryIndex());
 
-    this->setWindowTitle("Spelling: " + global_Settings.spellchecker()->defaultDictionaryName());
+        this->setWindowTitle("Spelling: " + global_Settings.spellchecker()->defaultDictionaryName());
+        m_populating = false;
+    }
 }
 
 void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
 {
     m_check_widget = t_focus_control;
 
-    if (global_Settings.spellchecker()->defaultDictionaryIndex() == -1)
+    if (!global_Settings.spellchecker()->hasDictionary())
     {
         QMessageBox::critical(this, QObject::tr("Dictionary Files Not Found"),
             QString(tr("No dictionary files were found.  You may need to re-install Project Notes.")), QMessageBox::Close);
@@ -50,6 +61,7 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
     {
         QCoreApplication::processEvents();
         cursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor, 1);
+
         QString word = cursor.selectedText();
 
         // Workaround for better recognition of words
@@ -64,11 +76,34 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
             word = cursor.selectedText();
         }
 
+        // fix a bug with selecting a contraction
+        if (cursor.selectionEnd() + 1 < cursor.document()->characterCount())
+            if (
+                    cursor.document()->characterAt(cursor.selectionEnd()) == "'" &&
+                    cursor.document()->characterAt(cursor.selectionEnd() + 1) == "t"
+                )
+            {
+                cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
+                //qDebug() << "reselected to word: " << cursor.selectedText();
+                word = cursor.selectedText();
+            }
+
         if (!word.isEmpty() && !global_Settings.spellchecker()->isGoodWord(word))
         {
             QTextCursor tmpCursor(cursor);
             tmpCursor.setPosition(cursor.anchor());
             tmpCursor.select(QTextCursor::WordUnderCursor);
+
+            // fix a bug with selecting a contraction
+            if (tmpCursor.selectionEnd() + 1 < tmpCursor.document()->characterCount())
+                if (
+                        tmpCursor.document()->characterAt(tmpCursor.selectionEnd()) == "'" &&
+                        tmpCursor.document()->characterAt(tmpCursor.selectionEnd() + 1) == "t"
+                    )
+                {
+                    tmpCursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
+                    //qDebug() << "reselected to word: " << cursor.selectedText();
+                }
 
             if (QString(m_check_widget->metaObject()->className()).compare("PNTextEdit") == 0)
             {
@@ -136,6 +171,8 @@ SpellCheckDialog::~SpellCheckDialog()
 
 SpellCheckDialog::SpellCheckAction SpellCheckDialog::checkWord(const QString &t_word)
 {
+    if (!global_Settings.spellchecker()->hasDictionary()) return AbortCheck;  // no dictionary was setup
+
     m_unknown_word = t_word;
 
     ui->lineEditChange->setText(m_unknown_word);
@@ -151,14 +188,13 @@ SpellCheckDialog::SpellCheckAction SpellCheckDialog::checkWord(const QString &t_
     m_return_code = AbortCheck;
     QDialog::exec();
 
-    // set the default configured dictionary
-//    global_Settings.setDefaultDictionary(QString("%1").arg(m_DefaultDictionary));
-
     return m_return_code;
 }
 
 void SpellCheckDialog::on_comboBoxDictionaryLanguage_currentIndexChanged(int index)
 {
+    if (m_populating) return;
+
     global_Settings.spellchecker()->setDefaultDictionary(index);
     this->setWindowTitle("Spelling: " + global_Settings.spellchecker()->defaultDictionaryName());
 }
@@ -171,6 +207,7 @@ void SpellCheckDialog::on_lineEditChange_returnPressed()
 
 void SpellCheckDialog::on_pushButtonIgnoreOnce_clicked()
 {
+    if (!global_Settings.spellchecker()->hasDictionary()) return;  // no dictionary was setup
 
     if (QString(m_check_widget->metaObject()->className()).compare("PNTextEdit") == 0)
     {
@@ -189,6 +226,8 @@ void SpellCheckDialog::on_pushButtonIgnoreOnce_clicked()
 
 void SpellCheckDialog::on_pushButtonIgnoreAll_clicked()
 {
+    if (!global_Settings.spellchecker()->hasDictionary()) return;  // no dictionary was setup
+
     global_Settings.spellchecker()->ignoreWord(m_unknown_word);
 
     if (QString(m_check_widget->metaObject()->className()).compare("PNTextEdit") == 0)
@@ -207,6 +246,8 @@ void SpellCheckDialog::on_pushButtonIgnoreAll_clicked()
 
 void SpellCheckDialog::on_pushButtonAddToDictionary_clicked()
 {
+    if (!global_Settings.spellchecker()->hasDictionary()) return;  // no dictionary was setup
+
     global_Settings.spellchecker()->ignoreWord(m_unknown_word);
     global_Settings.spellchecker()->AddToPersonalWordList(m_unknown_word);
 

@@ -179,11 +179,15 @@ bool FindReplaceDialog::doFind(bool t_quiet)
             if (QString(m_find_widget->metaObject()->className()).compare("PNPlainTextEdit") == 0)
             {
                 dynamic_cast<PNPlainTextEdit*>(m_find_widget)->setTextCursor(found);
+                dynamic_cast<PNPlainTextEdit*>(m_find_widget)->ensureCursorVisible();
             }
             else
             {
                 dynamic_cast<PNTextEdit*>(m_find_widget)->setTextCursor(found);
+                dynamic_cast<PNTextEdit*>(m_find_widget)->ensureCursorVisible();
             }
+
+            m_find_widget->setFocus();
 
             QCoreApplication::processEvents();
 

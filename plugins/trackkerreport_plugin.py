@@ -93,6 +93,7 @@ if (platform.system() == 'Windows'):
         emailaspdf = False
         emailasexcel = False
         noemail = True
+        isinternal = False
 
         QtWidgets.QApplication.restoreOverrideCursor()
         QtWidgets.QApplication.processEvents()   
@@ -185,7 +186,7 @@ if (platform.system() == 'Windows'):
                 company = pnc.get_column_value(memberrow, "client_name")
 
                 if nm != pm:
-                    if (email != None and email != "" and  ( (internalreport and company == cm) or not internalreport )):
+                    if (email != None and email != "" and  ( (internalreport and company == co) or not internalreport )):
                         if receivers != "":
                             receivers = receivers + ", "
                             emaillist = emaillist + ";"

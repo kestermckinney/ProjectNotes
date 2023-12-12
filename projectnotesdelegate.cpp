@@ -57,18 +57,19 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
     case 4: // note
         {
             QTextEdit* textedit = static_cast<QTextEdit*>(t_editor);
-            QTextCursor tc = textedit->textCursor();
-            int v = textedit->verticalScrollBar()->value();
-            int h = textedit->horizontalScrollBar()->value();
 
+            // don't resent buffers if text hasn't changed
             if (value.toString().contains("<html>", Qt::CaseInsensitive))
-                textedit->setHtml(value.toString());
+            {
+                if (value.toString().compare(textedit->toHtml()) != 0)
+                    textedit->setHtml(value.toString());
+            }
             else
-                textedit->setPlainText(value.toString());
+            {
+                if (value.toString().compare(textedit->toPlainText()) != 0)
+                    textedit->setPlainText(value.toString());
+            }
 
-            textedit->verticalScrollBar()->setValue(v);
-            textedit->horizontalScrollBar()->setValue(h);
-            textedit->setTextCursor(tc);
         }
         break;
     case 5: // note internal

@@ -52,6 +52,7 @@ SOURCES += \
     pnlineeditfilebutton.cpp \
     pnlineeditfilebuttondelegate.cpp \
     pnplaintextedit.cpp \
+    pnplaintexteditdelegate.cpp \
     pnplugin.cpp \
     pnpluginmanager.cpp \
     pnsettings.cpp \
@@ -130,6 +131,7 @@ HEADERS += \
     pnlineeditfilebutton.h \
     pnlineeditfilebuttondelegate.h \
     pnplaintextedit.h \
+    pnplaintexteditdelegate.h \
     pnplugin.h \
     pnpluginmanager.h \
     pnsettings.h \

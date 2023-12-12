@@ -8,6 +8,7 @@
 ProjectNotesModel::ProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("ProjectNotesModel");
+    setOrderKey(50);
 
     setBaseSql("SELECT note_id, project_id, note_title, note_date, note, internal_item, (select project_name from projects p where p.project_id=n.project_id) project_id_name, (select project_number from projects p where p.project_id=n.project_id) project_id_number FROM project_notes n");
 
@@ -83,6 +84,7 @@ bool ProjectNotesModel::setData(const QModelIndex &t_index, const QVariant &t_va
 bool ProjectNotesModel::copyRecord(QModelIndex t_index)
 {
     QSqlRecord qr = emptyrecord();
+    QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
 
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
 
@@ -98,7 +100,7 @@ bool ProjectNotesModel::copyRecord(QModelIndex t_index)
     QVariant oldid = data(index(t_index.row(), 0));
     QVariant newid = data(index(qi.row(), 0));
 
-    QString insert = "insert into meeting_attendees (attendee_id, note_id, person_id) select m.attendee_id || '-cp', '" + newid.toString() + "', m.person_id from meeting_attendees m where m.note_id ='" + oldid.toString() + "'  and m.person_id not in (select e.person_id from meeting_attendees e where e.note_id='" + newid.toString() + "')";
+    QString insert = "insert into meeting_attendees (attendee_id, note_id, person_id) select m.attendee_id || '-" + unique_stamp + "', '" + newid.toString() + "', m.person_id from meeting_attendees m where m.note_id ='" + oldid.toString() + "'  and m.person_id not in (select e.person_id from meeting_attendees e where e.note_id='" + newid.toString() + "')";
 
     global_DBObjects.execute(insert);
     global_DBObjects.meetingattendeesmodel()->setDirty();

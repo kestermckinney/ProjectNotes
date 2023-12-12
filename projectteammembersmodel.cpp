@@ -9,6 +9,7 @@
 ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("ProjectTeamMembersModel");
+    setOrderKey(17);
 
     setBaseSql("SELECT teammember_id, project_id, pp.people_id, name, receive_status_report, pp.role, email, (select pr2.project_number from projects pr2 where pr2.project_id=pp.project_id) project_number, (select pr.project_name from projects pr where pr.project_id=pp.project_id) project_name, (select client_name from clients c where c.client_id=p.client_id) client_name FROM project_people pp left join people p on p.people_id=pp.people_id");
 

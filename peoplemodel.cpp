@@ -9,6 +9,7 @@
 PeopleModel::PeopleModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("PeopleModel");
+    setOrderKey(17);
 
     setBaseSql("SELECT people_id, name, email, office_phone, cell_phone, client_id, role FROM people");
 

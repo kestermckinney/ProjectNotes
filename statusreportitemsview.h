@@ -5,6 +5,7 @@
 #define STATUSREPORTITEMSVIEW_H
 
 #include "comboboxdelegate.h"
+#include "pnplaintexteditdelegate.h"
 #include "pntableview.h"
 
 #include <QObject>
@@ -22,6 +23,7 @@ private:
 
     // projects list panel delegates
     ComboBoxDelegate* m_status_items_status_delegate = nullptr;
+    PNPlainTextEditDelegate* m_status_item_description = nullptr;
 };
 
 #endif // STATUSREPORTITEMSVIEW_H
