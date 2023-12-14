@@ -6,6 +6,7 @@
 
 #include "pncomboboxdelegate.h"
 #include "pndateeditdelegate.h"
+#include "pnplaintexteditdelegate.h"
 #include "comboboxdelegate.h"
 #include "pntableview.h"
 
@@ -31,9 +32,12 @@ private:
     PNComboBoxDelegate* m_unfiltered_people_delegate = nullptr;
     PNComboBoxDelegate* m_project_clients_delegate = nullptr;
     PNDateEditDelegate* m_project_date_delegate = nullptr;
+
     ComboBoxDelegate* m_project_invoicing_period_delegate = nullptr;
     ComboBoxDelegate* m_project_status_delegate = nullptr;
     ComboBoxDelegate* m_projects_report_period_delegate = nullptr;
+
+    PNPlainTextEditDelegate* m_project_name_delegate = nullptr;
 
 };
 

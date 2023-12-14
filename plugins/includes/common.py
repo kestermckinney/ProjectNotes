@@ -4,6 +4,14 @@ if (platform.system() == 'Windows'):
     from win32com.client import GetObject
     import win32com
     import win32api
+    import win32gui
+
+top_windows = []
+
+def windowEnumerationHandler(hwnd, tpwindows):
+    if (platform.system() == 'Windows'):
+        tpwindows.append((hwnd, win32gui.GetWindowText(hwnd)))
+
 
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets
 from PyQt5.QtCore import QDirIterator, QDir, QSettings
@@ -326,33 +334,21 @@ class ProjectNotesCommon:
         # print("stdout:", result.stdout)
         # print("stderr:", result.stderr)
 
-    def get_plugin_setting(self, settingname):
+    def get_plugin_setting(self, settingname, pluginname = None):
         cfg = QSettings("ProjectNotes","PluginSettings")
         cfg.setFallbacksEnabled(False)
         val = ""
 
-        val = cfg.value("Global Settings/" + settingname, "")
+        if pluginname is None:
+            val = cfg.value("Global Settings/" + settingname, "")
+        else:
+            val = cfg.value(pluginname + "/" + settingname, "")
 
         #print("reading global setting: " + settingname + " value: " + val)
 
         return val
 
     def verify_global_settings(self):
-        pw = self.get_plugin_setting("OraclePassword")
-        if pw == None or pw == "":
-            print("OraclePassword not set.")
-            QMessageBox.warning(None, "Invalid Global Setting", "OraclePassword must be set in the Global Settigns plugin.", QMessageBox.Ok)
-            return(False)
-
-        un = self.get_plugin_setting("OracleUsername")
-        if un == None or un == "":
-            QMessageBox.warning(None, "Invalid Global Setting", "OracleUsername must be set in the Global Settigns plugin.", QMessageBox.Ok)
-            return(False)
-
-        ds = self.get_plugin_setting("OracleDataSource")
-        if ds == None or ds == "":
-            QMessageBox.warning(None, "Invalid Global Setting", "OracleDataSource must be set in the Global Settigns plugin.", QMessageBox.Ok)
-            return(False)
 
         pf = self.get_plugin_setting("ProjectsFolder")
         if pf == None or pf == "" or not QDir(pf).exists():
@@ -398,6 +394,23 @@ class ProjectNotesCommon:
         adodb.Open()
 
         return(adodb)
+
+    def bring_window_to_front(self, title):
+        if (platform.system() != 'Windows'):
+            print("bring window to front requires win32gui not supported on this platform")
+            return
+
+        #QtWidgets.QApplication.processEvents()
+        print("looking for window title " + title)
+        win32gui.EnumWindows(windowEnumerationHandler, top_windows)
+
+        for i in top_windows:
+            if title.lower() in i[1].lower():
+                print("found " +  i[1])
+                win32gui.ShowWindow(i[0],5)
+                win32gui.SetForegroundWindow(i[0])
+                break
+        return
 
     def close(self, adodb):
         if (platform.system() !='Windows'):

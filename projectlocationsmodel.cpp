@@ -11,6 +11,7 @@
 ProjectLocationsModel::ProjectLocationsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("ProjedtLocationsModel");
+    setOrderKey(35);
 
     setBaseSql("SELECT location_id, project_id, location_type, location_description, full_path FROM project_locations");
 

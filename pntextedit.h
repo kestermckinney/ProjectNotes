@@ -22,6 +22,7 @@ public:
 
 public slots:
     void checkSpelling();
+    void slotPasteUnformated();
 
 private:
     PNInlineSpellChecker* m_inlinespellchecker = nullptr;

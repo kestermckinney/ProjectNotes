@@ -29,6 +29,7 @@ public:
     bool setDefaultDictionary(const QString& t_name);
     bool isGoodWord(const QString& t_word);
     void ignoreWord(const QString& t_word);
+    bool hasDictionary() { return m_hunspell != nullptr; }
 };
 
 #endif // PNSPELLCHECKER_H

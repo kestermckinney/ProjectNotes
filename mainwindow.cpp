@@ -1751,16 +1751,6 @@ void MainWindow::on_actionSpell_Check_triggered()
         SpellCheckDialog spellcheck_dialog(this);
         spellcheck_dialog.spellCheck(fw);
     }
-    /*
-    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
-        (dynamic_cast<QLineEdit*>(fw))->selectAll();
-    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
-        (dynamic_cast<QLineEdit*>(fw))->selectAll();
-    else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
-        (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->selectAll();
-    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
-        (dynamic_cast<QComboBox*>(fw))->lineEdit()->selectAll();
-        */
 }
 
 void MainWindow::on_actionFind_triggered()
@@ -1773,8 +1763,6 @@ void MainWindow::on_actionFind_triggered()
         m_find_replace_dialog->showReplaceWindow(dynamic_cast<QPlainTextEdit*>(fw));
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         m_find_replace_dialog->showReplaceWindow(dynamic_cast<QLineEdit*>(fw));
-//    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
-//        m_find_replace_dialog->showReplaceWindow(dynamic_cast<QLineEdit*>(fw));
     else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
         m_find_replace_dialog->showReplaceWindow(dynamic_cast<QComboBox*>(fw)->lineEdit());
 }
@@ -1959,9 +1947,4 @@ void MainWindow::on_actionDecrease_Font_Size_triggered()
     global_Settings.setStoredInt("DefaultFontSize",  QApplication::font().pointSize());
 }
 
-// TODO: Add spell checking features for QExpandingLineEdit and QLineEdit
-// TODO: Add find feature for QExpandingLineEdit
-// TODO: Add find features to QComboBox located in a table view
-// TODO: Add licensing information to all files to be included with the software
-// TODO: Make sure find and replace works in PN TextEdit and PN Plain text edit
 

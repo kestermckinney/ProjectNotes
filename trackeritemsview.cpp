@@ -23,6 +23,9 @@ TrackerItemsView::~TrackerItemsView()
     if (m_internal_delegate) delete m_internal_delegate;
     //if (m_client_delegate) delete m_client_delegate;
     if (m_not_editable_delegate) delete m_not_editable_delegate;
+    if (m_item_name_delegate) delete m_item_name_delegate;
+    if (m_description_delegate) delete m_description_delegate;
+
 }
 
 void TrackerItemsView::setModel(QAbstractItemModel *t_model)
@@ -54,13 +57,16 @@ void TrackerItemsView::setModel(QAbstractItemModel *t_model)
         m_internal_delegate = new PNCheckBoxDelegate(this);
         //m_client_delegate = new PNComboBoxDelegate(this, global_DBObjects.unfilteredclientsmodel());
         m_not_editable_delegate = new NotEditableDelegate(this);
-
+        m_item_name_delegate = new PNPlainTextEditDelegate(this);
+        m_description_delegate = new PNPlainTextEditDelegate(this);
 
         // assign delegates to columns
         setItemDelegateForColumn(1, m_not_editable_delegate);
         setItemDelegateForColumn(2, m_action_item_type_delegate);
+        setItemDelegateForColumn(3, m_item_name_delegate);
         setItemDelegateForColumn(4, m_identified_by_delegate);
         setItemDelegateForColumn(5, m_date_identified_delegate);
+        setItemDelegateForColumn(6, m_description_delegate);
         setItemDelegateForColumn(7, m_assigned_to_delegate);
         setItemDelegateForColumn(8, m_priority_delegate);
         setItemDelegateForColumn(9, m_status_delegate);

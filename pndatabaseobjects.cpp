@@ -223,6 +223,7 @@ QString PNDatabaseObjects::execute(const QString& t_sql)
 //    if (e.isValid())
 //    {
 //        qDebug() << "Exec Error:  " << e.text();
+//        qDebug() << "For SQL:  " << t_sql;
 //    }
 
     if (query.next())

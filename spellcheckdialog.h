@@ -62,6 +62,7 @@ private:
 
     //QTextEdit* m_check_widget = nullptr;
     SpellCheckAction m_return_code;
+    bool m_populating = true;
 };
 
 #endif // SPELLCHECKDIALOG_H

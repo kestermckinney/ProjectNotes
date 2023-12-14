@@ -253,7 +253,7 @@
                     <property name="maximumSize">
                      <size>
                       <width>16777215</width>
-                      <height>29</height>
+                      <height>20</height>
                      </size>
                     </property>
                     <property name="tabChangesFocus">
@@ -428,7 +428,7 @@
            </sizepolicy>
           </property>
           <property name="currentIndex">
-           <number>2</number>
+           <number>0</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -518,7 +518,7 @@
                  <property name="maximumSize">
                   <size>
                    <width>16777215</width>
-                   <height>29</height>
+                   <height>20</height>
                   </size>
                  </property>
                  <property name="tabChangesFocus">
@@ -1093,7 +1093,7 @@
               <property name="maximumSize">
                <size>
                 <width>16777215</width>
-                <height>29</height>
+                <height>20</height>
                </size>
               </property>
               <property name="sizeAdjustPolicy">
@@ -1407,7 +1407,7 @@
             <property name="maximumSize">
              <size>
               <width>16777215</width>
-              <height>29</height>
+              <height>20</height>
              </size>
             </property>
             <property name="tabChangesFocus">
@@ -1509,7 +1509,7 @@
      <x>0</x>
      <y>0</y>
      <width>866</width>
-     <height>23</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

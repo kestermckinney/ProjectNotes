@@ -14,6 +14,7 @@ ProjectLocationsView::~ProjectLocationsView()
 {
     if (m_file_type_delegate) delete m_file_type_delegate;
     if (m_file_button_delegate) delete m_file_button_delegate;
+    if (m_description_delegate) delete m_description_delegate;
 }
 
 void ProjectLocationsView::setModel(QAbstractItemModel *t_model)
@@ -33,10 +34,12 @@ void ProjectLocationsView::setModel(QAbstractItemModel *t_model)
         // projects list panel delagets
         m_file_type_delegate = new ComboBoxDelegate(this, &m_file_types);
         m_file_button_delegate = new PNLineEditFileButtonDelegate(this);
+        m_description_delegate = new PNPlainTextEditDelegate(this);
 
         // assign delegates to columns
         setItemDelegateForColumn(2, m_file_type_delegate);
         setItemDelegateForColumn(4, m_file_button_delegate);
+        setItemDelegateForColumn(3, m_description_delegate);
     }
     else
     {

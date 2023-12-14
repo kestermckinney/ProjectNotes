@@ -12,6 +12,7 @@ TrackerItemCommentsView::~TrackerItemCommentsView()
 {
     if (m_date_updated_delegate) delete m_date_updated_delegate;
     if (m_updated_by_delegate) delete m_updated_by_delegate;
+    if (m_comments_delegate) delete m_comments_delegate;
 }
 
 void TrackerItemCommentsView::setModel(QAbstractItemModel *t_model)
@@ -33,9 +34,11 @@ void TrackerItemCommentsView::setModel(QAbstractItemModel *t_model)
         // projects list panel delagets
         m_updated_by_delegate = new PNComboBoxDelegate(this, global_DBObjects.teamsmodel(), 1, 3);
         m_date_updated_delegate = new PNDateEditDelegate(this);
+        m_comments_delegate = new PNPlainTextEditDelegate(this);
 
         setItemDelegateForColumn(4, m_updated_by_delegate);
         setItemDelegateForColumn(2, m_date_updated_delegate);
+        setItemDelegateForColumn(3, m_comments_delegate);
     }
     else
     {

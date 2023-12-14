@@ -8,6 +8,7 @@
 #include "pncomboboxdelegate.h"
 #include "pncheckboxdelegate.h"
 #include "pndateeditdelegate.h"
+#include "pnplaintexteditdelegate.h"
 #include "comboboxdelegate.h"
 #include <QObject>
 #include <QStringListModel>
@@ -41,6 +42,8 @@ private:
     PNCheckBoxDelegate* m_internal_delegate = nullptr;
     //PNComboBoxDelegate* m_client_delegate = nullptr;
     NotEditableDelegate* m_not_editable_delegate = nullptr;
+    PNPlainTextEditDelegate* m_item_name_delegate = nullptr;
+    PNPlainTextEditDelegate* m_description_delegate = nullptr;
 };
 
 

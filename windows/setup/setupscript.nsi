@@ -5,7 +5,7 @@ RequestExecutionLevel user
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "Project Notes"
-!define PRODUCT_VERSION "3.0.0"
+!define PRODUCT_VERSION "3.1.0"
 !define PRODUCT_PUBLISHER "Paul McKinney"
 !define PRODUCT_WEB_SITE "https://github.com/kestermckinney/ProjectNotes"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\ProjectNotes.exe"
@@ -142,7 +142,7 @@ Section "MainSection" SEC01
   ;File "..\..\plugins\templates\Status Report Template.xlsx"
   File "..\..\plugins\templates\Tracker Items Template.xlsx"
   File "..\..\plugins\templates\Risk Register Template.xlsx"
-  File "..\..\plugins\templates\PCR Template.docx"
+  ;File "..\..\plugins\templates\PCR Template.docx"
   
   SetOutPath "$INSTDIR\dictionary"
   File "..\..\..\build-ProjectNotes-Desktop_Qt_5_15_2_MSVC2019_64bit-Release\release\dictionary\index.ini"

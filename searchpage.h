@@ -18,7 +18,9 @@ public:
 private:
     Ui::MainWindow *ui;
 
+
 private slots:
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 };
 

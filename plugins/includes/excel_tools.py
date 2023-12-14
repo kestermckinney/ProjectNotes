@@ -1,9 +1,11 @@
 from win32com.client import GetObject
 import win32com
+from includes.common import ProjectNotesCommon
 
 class ProjectNotesExcelTools:
     def open_excel_document(self, fullpath):
         excel_obj = win32com.client.Dispatch("Excel.Application")
+        excel_obj.Visible = False
         workbook_obj = excel_obj.WorkBooks.Open(fullpath)
 
         excel_obj.CutCopyMode = False  # don't prompt about the
@@ -123,6 +125,10 @@ class ProjectNotesExcelTools:
         else:
             message.HTMLBody = "<html><p>Please see the attached report for project details.</p></html>" + DefaultSignature
             message.Attachments.Add(attachment, 1)
+
+
+        pnc = ProjectNotesCommon()
+        pnc.bring_window_to_front(subject)
 
         outlook = None
         message = None

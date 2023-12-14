@@ -6,6 +6,7 @@
 TrackerItemsModel::TrackerItemsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("TrackerItemsModel");
+    setOrderKey(40);
 
     setBaseSql("select * from item_tracker_view");
 

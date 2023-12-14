@@ -9,7 +9,7 @@
 
 #include <QLineEdit>
 #include <QComboBox>
-//#include <QDebug>
+#include <QDebug>
 
 ProjectDetailsDelegate::ProjectDetailsDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
@@ -54,14 +54,23 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
             PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
 
-            //qDebug() << " Primary Contact Mapper Called";
-
             if (model)
             {
-                QString list_value = model->findValue(value, 3, 1).toString();
-                comboBox->setCurrentText(list_value);
+                QVariant list_value = model->findValue(value, 3, 1);
 
-                //qDebug() << " .. Set text value to " << list_value;
+                if (!list_value.isNull())
+                {
+                    int i = comboBox->findText(list_value.toString(), Qt::MatchFixedString);
+                    if (i >= 0)
+                    {
+                        comboBox->setCurrentIndex(i);
+                        comboBox->setCurrentText(list_value.toString());
+                    }
+                    else
+                        comboBox->setCurrentText(QString());
+                }
+                else
+                     comboBox->setCurrentText(QString());
             }
         }
         break;
@@ -81,8 +90,21 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
 
             if (model)
             {
-                QString list_value = model->findValue(value, 0, 1).toString();
-                comboBox->setCurrentText(list_value);
+                QVariant list_value = model->findValue(value, 0, 1);
+
+                if (!list_value.isNull())
+                {
+                    int i = comboBox->findText(list_value.toString(), Qt::MatchFixedString);
+                    if (i >= 0)
+                    {
+                        comboBox->setCurrentIndex(i);
+                        comboBox->setCurrentText(list_value.toString());
+                    }
+                    else
+                        comboBox->setCurrentText(QString());
+                }
+                else
+                     comboBox->setCurrentText(QString());
             }
         }
         break;
@@ -123,15 +145,18 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
     case 5:
         {
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            int i;
 
-            int i = comboBox->currentIndex();
-            key_val = comboBox->model()->data(comboBox->model()->index(i, 3));
-
-            //  if the value was typed in use the typed in value
-            if (i == 0 && !comboBox->lineEdit()->text().isEmpty())
+            if (!comboBox->currentText().isEmpty() )
             {
-                i = comboBox->findText(comboBox->lineEdit()->text(), Qt::MatchFixedString);
-                key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
+
+                i = comboBox->findText(comboBox->currentText(), Qt::MatchFixedString);
+                comboBox->setCurrentIndex(i);
+
+                if (i >= 0)
+                {
+                    key_val = comboBox->model()->data(comboBox->model()->index(i, 3));
+                }
             }
         }
         break;
@@ -146,15 +171,17 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
     case 13:
         {
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            int i;
 
-            int i = comboBox->currentIndex();
-            key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
-
-            //  if the value was typed in use the typed in value
-            if (i == 0 && !comboBox->lineEdit()->text().isEmpty())
+            if (!comboBox->currentText().isEmpty() )
             {
-                i = comboBox->findText(comboBox->lineEdit()->text(), Qt::MatchFixedString);
-                key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
+                i = comboBox->findText(comboBox->currentText(), Qt::MatchFixedString);
+                comboBox->setCurrentIndex(i);
+
+                if (i >= 0)
+                {
+                    key_val = comboBox->model()->data(comboBox->model()->index(i, 0));
+                }
             }
         }
         break;

@@ -1,6 +1,8 @@
 // Copyright (C) 2022, 2023 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
+#include <QCompleter>
+
 #include "preferencesdialog.h"
 #include "ui_preferencesdialog.h"
 
@@ -38,8 +40,10 @@ void PreferencesDialog::showEvent(QShowEvent *ev)
     {
         ui->comboBoxManagerCompany->setModel(global_DBObjects.unfilteredclientsmodel());
         ui->comboBoxManagerCompany->setModelColumn(1);
+        ui->comboBoxManagerCompany->completer()->setCaseSensitivity(Qt::CaseInsensitive);
         ui->comboBoxProjectManager->setModel(global_DBObjects.unfilteredpeoplemodel());
         ui->comboBoxProjectManager->setModelColumn(1);
+        ui->comboBoxProjectManager->completer()->setCaseSensitivity(Qt::CaseInsensitive);
 
         PNSqlQueryModel *client_model = static_cast<PNSqlQueryModel*>(ui->comboBoxManagerCompany->model());
         client_model->refresh();

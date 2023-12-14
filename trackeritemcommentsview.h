@@ -7,8 +7,9 @@
 #include "pntableview.h"
 
 #include <QObject>
-#include <pndateeditdelegate.h>
-#include <pncomboboxdelegate.h>
+#include "pndateeditdelegate.h"
+#include "pncomboboxdelegate.h"
+#include "pnplaintexteditdelegate.h"
 
 class TrackerItemCommentsView : public PNTableView
 {
@@ -22,7 +23,7 @@ private:
     // projects list panel delegates
     PNComboBoxDelegate* m_updated_by_delegate = nullptr;
     PNDateEditDelegate* m_date_updated_delegate = nullptr;
-
+    PNPlainTextEditDelegate* m_comments_delegate = nullptr;
 };
 
 #endif // TRACKERITEMCOMMENTSVIEW_H

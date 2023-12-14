@@ -31,8 +31,6 @@ PNSpellChecker::PNSpellChecker()
         m_DictionaryNames.append(dicname.toString());
         m_DicFiles.append(dicfile.toString());
         m_AffFiles.append(afffile.toString());
-
-        m_DictionaryNames.append(dicname.toString());
    }
 
     m_DefaultDictionary = global_Settings.getDefaultDictionary().toInt();
@@ -107,6 +105,7 @@ bool PNSpellChecker::setDefaultDictionary(int t_index)
     m_hunspell = new Hunspell(affixFilePathBA.constData(), dictFilePathBA.constData());
 
     LoadPersonalWordList();
+
 
     global_Settings.setDefaultDictionary(QString("%1").arg(m_DefaultDictionary));
 

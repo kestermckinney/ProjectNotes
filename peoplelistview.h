@@ -6,6 +6,7 @@
 
 #include "pntableview.h"
 #include "pncomboboxdelegate.h"
+#include "pnplaintexteditdelegate.h"
 
 class PeopleListView : public PNTableView
 {
@@ -17,6 +18,8 @@ public:
 
 private:
     PNComboBoxDelegate* m_unfiltered_clients_delegate =  nullptr;
+    PNPlainTextEditDelegate* m_name_delegate = nullptr;
+    PNPlainTextEditDelegate* m_role_delegate = nullptr;
 };
 
 #endif // PEOPLELISTVIEW_H
