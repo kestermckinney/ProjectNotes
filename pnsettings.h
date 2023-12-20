@@ -64,8 +64,8 @@ private:
     bool getWindowStatusBar(const QString& t_window_name);
 
 private:
-    QSettings* m_app_config;
-    QSettings* m_plugin_config;
+    QSettings* m_app_config = nullptr;
+    QSettings* m_plugin_config = nullptr;
 
     PNSpellChecker* m_spellchecker = nullptr;
 };
