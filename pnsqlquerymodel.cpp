@@ -1030,7 +1030,7 @@ const QVariant PNSqlQueryModel::findValue(QVariant& t_lookup_value, int t_search
 
     for ( QVector<QSqlRecord>::Iterator itrow = m_cache.begin(); itrow != m_cache.end(); ++itrow )
     {
-        if ( itrow->value(t_search_column).compare(t_lookup_value) == 0 )
+        if ( itrow->value(t_search_column).toString().compare(t_lookup_value.toString()) == 0 )
         {
             //qDebug() << "..FOUND " << itrow->value(t_search_column);
 
@@ -1049,7 +1049,7 @@ const QModelIndex PNSqlQueryModel::findIndex(QVariant& t_lookup_value, int t_sea
 
     for ( QVector<QSqlRecord>::Iterator itrow = m_cache.begin(); itrow != m_cache.end(); ++itrow )
     {
-        if ( itrow->value(t_search_column).compare(t_lookup_value) == 0 )
+        if ( itrow->value(t_search_column).toString().compare(t_lookup_value.toString()) == 0 )
         {
             return index(row, 0); // key is always at 0
         }
@@ -1129,7 +1129,7 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
 
                 if ( m_column_type[hashit.key()] != DBString && m_column_type[hashit.key()] != DBHtml)
                 {
-                    if (m_column_type[hashit.key()] == DBBool && column_value.compare("0") == 0)
+                    if (m_column_type[hashit.key()] == DBBool && column_value.toString().compare("0") == 0)
                     {
                         valuelist += QString(" ( %1 %3 %2").arg(m_sql_query.record().fieldName(hashit.key()), column_value.toString(), compare_op);
                         valuelist += QString(" OR %1 IS NULL) ").arg( m_sql_query.record().fieldName(hashit.key()) );
@@ -1215,7 +1215,7 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                     else
                         instring += QString("%1").arg(column_value.toString());
 
-                    if (m_column_type[colnum] == DBBool && column_value.compare("'0'") == 0)
+                    if (m_column_type[colnum] == DBBool && column_value.toString().compare("'0'") == 0)
                         checkfornullptr = true;
 
                     // the database doesn't store blanks, they are converted to nullptr

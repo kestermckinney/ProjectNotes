@@ -1946,5 +1946,3 @@ void MainWindow::on_actionDecrease_Font_Size_triggered()
 
     global_Settings.setStoredInt("DefaultFontSize",  QApplication::font().pointSize());
 }
-
-
