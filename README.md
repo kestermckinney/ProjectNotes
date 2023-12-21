@@ -41,4 +41,3 @@ Copyright (c) Paul McKinney. All rights reserved.
 Licensed under the [GPL v3.0](<LICENSE.txt>) license.
 
 ***
-_Created with the Personal Edition of HelpNDoc: [Streamline your documentation process with HelpNDoc's WinHelp HLP to CHM conversion feature](<https://www.helpndoc.com/step-by-step-guides/how-to-convert-a-hlp-winhelp-help-file-to-a-chm-html-help-help-file/>)_
