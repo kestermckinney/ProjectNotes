@@ -18,6 +18,7 @@ class PNSpellChecker
 
 public:
     PNSpellChecker();
+    ~PNSpellChecker();
 
     const QStringList dictionaryNames();
     int defaultDictionaryIndex() { return m_DefaultDictionary; }

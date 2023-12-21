@@ -246,6 +246,7 @@ void PNDatabaseObjects::closeDatabase()
     delete m_project_team_members_model;
     delete m_project_locations_model;
     delete m_project_notes_model;
+    delete m_project_editing_notes_model;
     delete m_action_item_project_notes_model;
     delete m_action_item_details_model;
     delete m_action_items_details_meetings_model;
@@ -270,6 +271,7 @@ void PNDatabaseObjects::closeDatabase()
     m_project_team_members_model= nullptr;
     m_project_locations_model= nullptr;
     m_project_notes_model= nullptr;
+    m_project_editing_notes_model = nullptr;
     m_action_item_project_notes_model = nullptr;
     m_action_item_details_model= nullptr;
     m_action_items_details_meetings_model= nullptr;
@@ -294,7 +296,8 @@ void PNDatabaseObjects::closeDatabase()
     delete m_project_team_members_model_proxy;
     delete m_project_locations_model_proxy;
     delete m_project_notes_model_proxy;
-    delete m_action_item_project_notes_model;
+    delete m_project_editing_notes_model_proxy;
+    delete m_action_item_project_notes_model_proxy;
     delete m_action_item_details_model_proxy;
     delete m_action_items_details_meetings_model_proxy;
     delete m_tracker_items_meetings_model_proxy;
@@ -317,7 +320,8 @@ void PNDatabaseObjects::closeDatabase()
     m_project_team_members_model_proxy = nullptr;
     m_project_locations_model_proxy = nullptr;
     m_project_notes_model_proxy = nullptr;
-    m_action_item_project_notes_model = nullptr;
+    m_project_editing_notes_model_proxy = nullptr;
+    m_action_item_project_notes_model_proxy = nullptr;
     m_action_item_details_model_proxy = nullptr;
     m_action_items_details_meetings_model_proxy = nullptr;
     m_tracker_items_meetings_model_proxy = nullptr;

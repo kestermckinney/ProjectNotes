@@ -49,6 +49,12 @@ PNSpellChecker::PNSpellChecker()
                                   QString(QObject::tr("No dictionary files were specified.  You may need to re-install Project Notes.")), QMessageBox::Close);
         }
 
+        if (m_hunspell)
+        {
+            delete m_hunspell;
+            m_hunspell = nullptr;
+        }
+
         m_hunspell = new Hunspell(affixFilePathBA.constData(), dictFilePathBA.constData());
     }
     else
@@ -58,6 +64,15 @@ PNSpellChecker::PNSpellChecker()
     }
 
     LoadPersonalWordList();
+}
+
+PNSpellChecker::~PNSpellChecker()
+{
+    if (m_hunspell)
+    {
+        delete m_hunspell;
+        m_hunspell = nullptr;
+    }
 }
 
 const QStringList PNSpellChecker::dictionaryNames()
@@ -95,7 +110,10 @@ bool PNSpellChecker::setDefaultDictionary(int t_index)
 {
 
     if (m_hunspell)
+    {
         delete m_hunspell;
+        m_hunspell = nullptr;
+    }
 
     m_DefaultDictionary = t_index;
 
