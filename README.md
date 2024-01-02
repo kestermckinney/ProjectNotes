@@ -2,8 +2,8 @@
 
 # Project Notes
 
-[Feature Requests](<https://github.com/projectnotes/issues?q=is:open%20is:issue%20label:feature-request%20sort:reactions-%201-desc>)\
-[Bugs](<https://github.com/kestermckinney/projectnotes/issues?utf8=✓\&q=is:issue%20is:open%20label:bug>)
+![GitHub issues](https://img.shields.io/github/issues-raw/kestermckinney/ProjectNotes)
+![GitHub release (by tag)](https://img.shields.io/github/downloads/kestermckinney/ProjectNotes/v3.1.0/total)
 
 ## The Repository
 
