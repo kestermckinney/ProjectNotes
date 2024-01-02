@@ -2,8 +2,8 @@
 
 # Project Notes
 
-![GitHub issues](https://img.shields.io/github/issues-raw/kestermckinney/ProjectNotes)
-![GitHub release (by tag)](https://img.shields.io/github/downloads/kestermckinney/ProjectNotes/v3.1.0/total)
+[![GitHub issues](https://img.shields.io/github/issues-raw/kestermckinney/ProjectNotes)](<https://github.com/kestermckinney/ProjectNotes/issues>)
+[![GitHub all releases](https://img.shields.io/github/downloads/kestermckinney/ProjectNotes/total)](https://github.com/kestermckinney/ProjectNotes/releases)
 
 ## The Repository
 
