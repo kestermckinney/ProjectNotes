@@ -18,4 +18,5 @@ ActionItemProjectNotesModel::ActionItemProjectNotesModel(QObject* t_parent): PNS
     addColumn(3, tr("Internal Item"), DBBool, DBNotSearchable, DBRequired, DBReadOnly, DBNotUnique);
 
     setOrderBy("note_date");
+    setNoExport();
 }

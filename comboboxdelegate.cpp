@@ -53,5 +53,14 @@ void ComboBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &t_
 
     myOption.text = t_value.toString();
 
+    QVariant bgcolor = t_index.model()->data(t_index, Qt::BackgroundRole);
+    QVariant fgcolor = t_index.model()->data(t_index, Qt::ForegroundRole);
+
+    if (fgcolor.isValid())
+        myOption.palette.setColor(QPalette::Text, fgcolor.value<QColor>());
+
+    if (bgcolor.isValid())
+        myOption.backgroundBrush = QBrush(bgcolor.value<QColor>());
+
     QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
 }

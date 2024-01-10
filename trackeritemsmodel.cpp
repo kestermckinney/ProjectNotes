@@ -125,15 +125,15 @@ QVariant TrackerItemsModel::data(const QModelIndex &t_index, int t_role) const
 {
     if (t_role == Qt::ForegroundRole)
     {
-        if (t_index.column() == 8) // statu
+        if (t_index.column() == 8) // priority
         {
-            QVariant value = data(t_index);
+            QString value = data(t_index).toString();
 
-            if (value == "High")
+            if (value.compare("High") == 0)
             {
                  return QVariant(QCOLOR_RED);
             }
-            else if (value == "Medium")
+            else if (value.compare("Medium") == 0)
             {
                 return QVariant(QCOLOR_YELLOW);
             }
