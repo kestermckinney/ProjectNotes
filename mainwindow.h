@@ -28,7 +28,7 @@ QT_END_NAMESPACE
 
 #define PNMajorVersion 3
 #define PNMinorVersion 1
-#define PNFixVersion 0
+#define PNFixVersion 2
 
 class MainWindow : public QMainWindow
 {
