@@ -21,11 +21,33 @@ ProjectNotesPage::~ProjectNotesPage()
         delete m_project_notes_delegate;
 }
 
+void ProjectNotesPage::openRecord(QVariant& t_record_id)
+{
+    setRecordId(t_record_id);
+
+    global_DBObjects.projecteditingnotesmodel()->setFilter(0, t_record_id.toString());
+    global_DBObjects.projecteditingnotesmodel()->refresh();
+
+    // only select the records another event will be fired to open the window to show them
+    global_DBObjects.meetingattendeesmodel()->setFilter(1, t_record_id.toString());
+    global_DBObjects.meetingattendeesmodel()->refresh();
+
+    global_DBObjects.notesactionitemsmodel()->setFilter(13, t_record_id.toString());
+    global_DBObjects.notesactionitemsmodel()->refresh();
+
+    if (m_mapperProjectNotes != nullptr)
+        m_mapperProjectNotes->toFirst();
+
+    loadState();
+}
+
 void ProjectNotesPage::setPageTitle()
 {
     QString project_number= global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,7)).toString();
+    QString pagetitle = QString("%1 %2 %3").arg(project_number, ui->plainTextEditMeetingTitle->toPlainText(), ui->dateEditMeetingDate->text().left(25));
 
-    topLevelWidget()->setWindowTitle(QString("Project Notes Meeting [%1 %2 %3]").arg(project_number, ui->plainTextEditMeetingTitle->toPlainText(), ui->dateEditMeetingDate->text().left(50)));
+    topLevelWidget()->setWindowTitle(QString("Project Notes Meeting [%1]").arg(pagetitle));
+    setHistoryText(pagetitle);
 }
 
 void ProjectNotesPage::newRecord()
@@ -82,19 +104,6 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
     setCurrentView(nullptr);
 
     ui->textEditNotes->setFontPointSize(10);
-}
-
-void ProjectNotesPage::toFirst(bool t_open)
-{
-    if (m_mapperProjectNotes != nullptr)
-        m_mapperProjectNotes->toFirst();
-
-    if (t_open)
-        ui->tabWidgetNotes->setCurrentIndex(0);  // always set to the first tab on open
-    else
-        ui->tabWidgetNotes->setCurrentIndex(ui->tabWidgetNotes->currentIndex());  // always set to the first tab on open
-
-    //qDebug() << "toFirst for Project Notes Page called";
 }
 
 void ProjectNotesPage::on_tabWidgetNotes_currentChanged(int index)

@@ -14,7 +14,7 @@ public:
 
     void search();
     virtual void setupModels( Ui::MainWindow *t_ui );
-    void setPageTitle();
+    void setPageTitle() override;
     void setButtonAndMenuStates();
 
 public slots:

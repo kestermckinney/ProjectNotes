@@ -4,6 +4,10 @@
 #include "projectlocationsview.h"
 #include "pndatabaseobjects.h"
 
+#include <QFileInfo>
+#include <QDesktopServices>
+#include <QUrl>
+
 ProjectLocationsView::ProjectLocationsView(QWidget* t_parent) : PNTableView(t_parent)
 {
     setObjectName("tableViewProjectLocations");
@@ -47,4 +51,22 @@ void ProjectLocationsView::setModel(QAbstractItemModel *t_model)
     }
 }
 
+void ProjectLocationsView::slotOpenRecord()
+{
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    QModelIndexList qil = this->selectionModel()->selectedRows();
+    auto qi = qil.begin();
+    QModelIndex qq = sortmodel->mapToSource(*qi);
 
+    QVariant location = model()->data(model()->index(qq.row(), 4));
+    QVariant location_type = model()->data(model()->index(qq.row(), 2));
+
+    if ( location_type == "Web Link" )
+    {
+        QDesktopServices::openUrl(QUrl(location.toString(), QUrl::TolerantMode));
+    }
+    else
+    {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(location.toString()));
+    }
+}

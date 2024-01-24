@@ -30,6 +30,17 @@ QT_END_NAMESPACE
 #define PNMinorVersion 1
 #define PNFixVersion 2
 
+#define MAXHISTORYNODES 15
+
+class HistoryNode
+{
+public:
+    HistoryNode(PNBasePage* t_page, QVariant t_record_id, QString t_pagetitle) { m_page = t_page; m_record_id = t_record_id; m_pagetitle = t_pagetitle; }
+    PNBasePage* m_page;
+    QVariant m_record_id;
+    QString m_pagetitle;
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -38,23 +49,23 @@ public:
     MainWindow(QWidget *t_parent = nullptr);
     ~MainWindow();
 
-    void navigateToPage(PNBasePage* t_widget);
+    void navigateToPage(PNBasePage* t_widget, QVariant t_record_id);
     void navigateForward();
     void navigateBackward();
     bool navigateAtEnd() { return (m_navigation_location == (m_navigation_history.count() - 1)); }
     bool navigateAtStart() { return (m_navigation_location <= 0); }
     void navigateClearHistory() { m_navigation_location = -1; m_navigation_history.clear(); }
-    PNBasePage* navigateCurrentPage() { return (m_navigation_location == -1 ? nullptr : m_navigation_history.at(m_navigation_location) ); }
+    PNBasePage* navigateCurrentPage() { return (m_navigation_location == -1 ? nullptr : m_navigation_history.at(m_navigation_location)->m_page ); }
     static PNPluginManager* getPluginManager() { return m_plugin_manager; }
     void buildPluginMenu();
     void CloseDatabase();
 
 public slots:
-    void slotOpen_ProjectDetails_triggered();
-    void slotOpen_ItemDetails_triggered();
-    void slotOpen_ProjectNote_triggered();
-    void slotOpen_SearchResults_triggered();
-    void slotOpenTeamMember_triggered();
+    void slotOpen_ProjectDetails_triggered(QVariant t_record_id);
+    void slotOpen_ItemDetails_triggered(QVariant t_record_id);
+    void slotOpen_ProjectNote_triggered(QVariant t_record_id);
+    void slotOpen_SearchResults_triggered(QVariant t_record_id);
+    void slotOpenTeamMember_triggered(QVariant t_record_id);
     void on_focusChanged(QWidget *t_old, QWidget *t_now);
 
 private slots:
@@ -130,7 +141,7 @@ private:
     // view state
     QList<int> m_page_history;
 
-    QStack<PNBasePage*> m_navigation_history;
+    QStack<HistoryNode*> m_navigation_history;
     int m_navigation_location = -1;
 
     const QString rsrcPath = ":/icons";

@@ -20,6 +20,7 @@ HelpPage::HelpPage()
 void HelpPage::setPageTitle()
 {
     topLevelWidget()->setWindowTitle(QString("Project Notes Help"));
+    setHistoryText("Help");
 }
 
 void HelpPage::setupModels( Ui::MainWindow *t_ui )

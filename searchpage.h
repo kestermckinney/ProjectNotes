@@ -13,7 +13,7 @@ public:
 
     void setupModels( Ui::MainWindow *t_ui );
     void setButtonAndMenuStates();
-    void setPageTitle();
+    void setPageTitle() override;
 
 private:
     Ui::MainWindow *ui;

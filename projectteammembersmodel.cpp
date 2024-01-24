@@ -109,11 +109,3 @@ bool ProjectTeamMembersModel::setData(const QModelIndex &t_index, const QVariant
     return false;
 }
 
-bool ProjectTeamMembersModel::openRecord(QModelIndex t_index)
-{
-    Q_UNUSED(t_index);
-
-    global_DBObjects.peoplemodel()->deactivateUserFilter(global_DBObjects.peoplemodel()->objectName());
-
-    return true;
-}

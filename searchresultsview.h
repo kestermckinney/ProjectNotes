@@ -15,7 +15,6 @@ public:
 
     SearchResultsView(QWidget* t_parent = nullptr);
     ~SearchResultsView();
-
     void setModel(QAbstractItemModel *t_model) override;
 
 private:
