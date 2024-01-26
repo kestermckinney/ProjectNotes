@@ -28,7 +28,7 @@ QT_END_NAMESPACE
 
 #define PNMajorVersion 3
 #define PNMinorVersion 1
-#define PNFixVersion 2
+#define PNFixVersion 3
 
 #define MAXHISTORYNODES 15
 
