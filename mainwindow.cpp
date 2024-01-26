@@ -1133,6 +1133,8 @@ void MainWindow::slotOpen_SearchResults_triggered(QVariant t_record_id)
     else if (data_type == tr("Project Notes"))
     {
         navigateToPage(ui->pageProjectNote, t_record_id);
+
+        ui->tabWidgetNotes->setCurrentIndex(0);
     }
     else if (data_type == tr("Meeting Attendees"))
     {
