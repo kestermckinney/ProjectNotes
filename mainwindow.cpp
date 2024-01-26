@@ -27,6 +27,7 @@
 #include <QClipboard>
 #include <QMimeType>
 #include <QMimeData>
+
 //#include <QDebug>
 
 #include "mainwindow.h"
@@ -47,6 +48,7 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     // view state
     m_page_history.clear();
+    m_forward_back_history.clear();
 
     global_Settings.getWindowState("MainWindow", *this);
     int sz = global_Settings.getStoredInt("DefaultFontSize");
@@ -64,6 +66,7 @@ MainWindow::MainWindow(QWidget *t_parent)
     connect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ProjectNote_triggered(QVariant)));
     connect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_SearchResults_triggered(QVariant)));
     connect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpenTeamMember_triggered(QVariant)));
+    connect(ui->tableViewAtendees, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpenTeamMember_triggered(QVariant)));
 
     connect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
     connect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
@@ -426,6 +429,7 @@ MainWindow::~MainWindow()
     disconnect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ProjectNote_triggered(QVariant)));
     disconnect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_SearchResults_triggered(QVariant)));
     disconnect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpenTeamMember_triggered(QVariant)));
+    disconnect(ui->tableViewAtendees, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpenTeamMember_triggered(QVariant)));
 
     disconnect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
     disconnect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
@@ -458,6 +462,18 @@ MainWindow::~MainWindow()
 
     if (global_DBObjects.isOpen())
         CloseDatabase();
+
+    while (m_page_history.count())
+    {
+        HistoryNode* hn = m_page_history.pop();
+        delete hn;
+    }
+
+    while (m_forward_back_history.count())
+    {
+        HistoryNode* hn = m_forward_back_history.pop();
+        delete hn;
+    }
 
     delete m_preferences_dialog;
     delete m_find_replace_dialog;
@@ -703,6 +719,19 @@ void MainWindow::setButtonAndMenuStates()
         // filter tracker items
         ui->actionResolved_Tracker_Action_Items->setChecked(global_DBObjects.getShowResolvedTrackerItems());
         ui->actionResolved_Tracker_Action_Items->setEnabled(true);
+
+        // clear out page history for a rebuild
+        ui->menuHistory->clear();
+
+        int i = m_page_history.count();
+        while(i)
+        {
+            i--;
+            HistoryNode* hn = m_page_history.at(i);
+            QString title = QString("%1 - %2").arg(hn->m_pagetitle, hn->m_timestamp.toString("MM/dd/yy hh:mm"));
+            QAction* ha = ui->menuHistory->addAction(title, [hn, this](){navigateToPage(hn->m_page, hn->m_record_id);});
+            ha->setPriority(QAction::LowPriority);
+        }
     }
     else
     {
@@ -743,6 +772,9 @@ void MainWindow::setButtonAndMenuStates()
         // filter tracker items
         ui->actionResolved_Tracker_Action_Items->setChecked(false);
         ui->actionResolved_Tracker_Action_Items->setEnabled(false);
+
+        // clear out page history
+        ui->menuHistory->clear();
     }
 }
 
@@ -832,28 +864,25 @@ void MainWindow::navigateToPage(PNBasePage* t_widget, QVariant t_record_id)
     if (navigateCurrentPage())
         navigateCurrentPage()->saveState();
 
-    // if in the middle of the history chop off the remaining history
-    while (m_navigation_location < m_navigation_history.count() - 1)
-    {
-        HistoryNode* hn = m_navigation_history.pop();
-        delete hn;
-    }
-
-    // if past the max delete the node
-    if (m_navigation_history.count() > MAXHISTORYNODES)
-    {
-        HistoryNode* hn = m_navigation_history.pop();
-        delete hn;
-    }
-
     t_widget->openRecord(t_record_id);
 
     ui->stackedWidget->setCurrentWidget(t_widget);
 
     t_widget->setPageTitle();
 
-    m_navigation_location = m_navigation_history.count();
-    m_navigation_history.push(new HistoryNode(t_widget, t_record_id, t_widget->getHistoryText()));
+    HistoryNode* buttonnode = new HistoryNode(t_widget, t_record_id, t_widget->getHistoryText());
+
+    // if in the middle of the button history chop off the remaining history
+    while (m_navigation_location < m_forward_back_history.count() - 1)
+    {
+        HistoryNode* hn = m_forward_back_history.pop();
+        delete hn;
+    }
+
+    m_navigation_location = m_forward_back_history.count();
+    m_forward_back_history.push(buttonnode);
+
+    buildHistory(buttonnode);
 
     buildPluginMenu();
     t_widget->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
@@ -870,7 +899,9 @@ void MainWindow::navigateBackward()
 
         m_navigation_location--;
 
-        HistoryNode* hn = m_navigation_history.at(m_navigation_location);
+        HistoryNode* hn = m_forward_back_history.at(m_navigation_location);
+        buildHistory(hn);
+
         PNBasePage* current = hn->m_page;
         QVariant record_id = hn->m_record_id;
 
@@ -889,14 +920,16 @@ void MainWindow::navigateBackward()
 
 void MainWindow::navigateForward()
 {
-    if (m_navigation_location < (m_navigation_history.count() - 1) )
+    if (m_navigation_location < (m_forward_back_history.count() - 1) )
     {
         if (navigateCurrentPage())
             navigateCurrentPage()->saveState();
 
         m_navigation_location++;
 
-        HistoryNode* hn = m_navigation_history.at(m_navigation_location);
+        HistoryNode* hn = m_forward_back_history.at(m_navigation_location);
+        buildHistory(hn);
+
         PNBasePage* current = hn->m_page;
         QVariant record_id = hn->m_record_id;
 
@@ -912,6 +945,35 @@ void MainWindow::navigateForward()
 
     setButtonAndMenuStates();
 }
+
+void MainWindow::buildHistory(HistoryNode* t_node)
+{
+    HistoryNode* hn = new HistoryNode(t_node->m_page, t_node->m_record_id, t_node->m_pagetitle);
+
+    // remove this page if is in the past
+    int nodecount = 0;
+    while (nodecount < m_page_history.count())
+    {
+        if (m_page_history.at(nodecount)->equals(hn))
+        {
+            delete m_page_history.at(nodecount);
+            m_page_history.remove(nodecount);
+        }
+        else
+            nodecount++;
+    }
+
+    // if past the max delete the node
+    if (m_page_history.count() > MAXHISTORYNODES)
+    {
+        HistoryNode* ohn = m_page_history.pop();
+        delete ohn;
+        m_navigation_location--;
+    }
+
+    m_page_history.push(hn);
+}
+
 void MainWindow::CloseDatabase()
 {
     // disconnect the search request event
@@ -1065,6 +1127,8 @@ void MainWindow::slotOpen_SearchResults_triggered(QVariant t_record_id)
     else if (data_type == tr("Project"))
     {
         navigateToPage(ui->pageProjectDetails, t_record_id);
+
+        ui->tabWidgetProject->setCurrentIndex(0);
     }
     else if (data_type == tr("Project Notes"))
     {

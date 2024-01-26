@@ -34,11 +34,18 @@ QT_END_NAMESPACE
 
 class HistoryNode
 {
-public:
-    HistoryNode(PNBasePage* t_page, QVariant t_record_id, QString t_pagetitle) { m_page = t_page; m_record_id = t_record_id; m_pagetitle = t_pagetitle; }
+ public:
+    void stamp() { m_timestamp = QDateTime::currentDateTime(); }
+    bool equals(HistoryNode* node) {
+        return node->m_page == m_page &&
+               (node->m_pagetitle.compare(m_pagetitle) == 0) &&
+               (node->m_record_id.toString().compare(m_record_id.toString()) == 0); }
+
+    HistoryNode(PNBasePage* t_page, QVariant t_record_id, QString t_pagetitle) { m_page = t_page; m_record_id = t_record_id; m_pagetitle = t_pagetitle; stamp(); }
     PNBasePage* m_page;
     QVariant m_record_id;
     QString m_pagetitle;
+    QDateTime m_timestamp;
 };
 
 class MainWindow : public QMainWindow
@@ -52,10 +59,11 @@ public:
     void navigateToPage(PNBasePage* t_widget, QVariant t_record_id);
     void navigateForward();
     void navigateBackward();
-    bool navigateAtEnd() { return (m_navigation_location == (m_navigation_history.count() - 1)); }
+    bool navigateAtEnd() { return (m_navigation_location == (m_forward_back_history.count() - 1)); }
     bool navigateAtStart() { return (m_navigation_location <= 0); }
-    void navigateClearHistory() { m_navigation_location = -1; m_navigation_history.clear(); }
-    PNBasePage* navigateCurrentPage() { return (m_navigation_location == -1 ? nullptr : m_navigation_history.at(m_navigation_location)->m_page ); }
+    void buildHistory(HistoryNode* t_node);
+    void navigateClearHistory() { m_navigation_location = -1; m_forward_back_history.clear(); }
+    PNBasePage* navigateCurrentPage() { return (m_navigation_location == -1 ? nullptr : m_forward_back_history.at(m_navigation_location)->m_page ); }
     static PNPluginManager* getPluginManager() { return m_plugin_manager; }
     void buildPluginMenu();
     void CloseDatabase();
@@ -138,10 +146,8 @@ private:
     QTimer* m_timer = nullptr;
     long m_minute_counter = 0;
 
-    // view state
-    QList<int> m_page_history;
-
-    QStack<HistoryNode*> m_navigation_history;
+    QStack<HistoryNode*> m_page_history;
+    QStack<HistoryNode*> m_forward_back_history;
     int m_navigation_location = -1;
 
     const QString rsrcPath = ":/icons";
