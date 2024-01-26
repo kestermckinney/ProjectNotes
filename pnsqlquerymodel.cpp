@@ -755,16 +755,6 @@ bool PNSqlQueryModel::deleteRecord(QModelIndex t_index)
     return false;
 }
 
-bool PNSqlQueryModel::openRecord(QModelIndex t_index)
-{
-    Q_UNUSED(t_index)
-
-    QMessageBox::critical(nullptr, QObject::tr("Open Record"),
-       QObject::tr("Open Record must be defined on child objects."), QMessageBox::Ok);
-
-    return false;
-}
-
 QSqlRecord PNSqlQueryModel::emptyrecord()
 {
     QSqlRecord qr = m_sql_query.record();

@@ -372,10 +372,10 @@ void PNTableView::slotOpenRecord()
     QModelIndexList qil = this->selectionModel()->selectedRows();
     auto qi = qil.begin();
     QModelIndex qq = sortmodel->mapToSource(*qi);
+    QModelIndex kqi = currentmodel->index(qq.row(), m_key_to_open_field);
+    QVariant record_id = currentmodel->data(kqi);
 
-    currentmodel->openRecord(qq);
-
-    emit signalOpenRecordWindow();
+    emit signalOpenRecordWindow(record_id);
 }
 
 void PNTableView::slotExportRecord()

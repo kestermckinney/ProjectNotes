@@ -18,6 +18,7 @@ public:
     ~ProjectLocationsView();
 
     void setModel(QAbstractItemModel *t_model) override;
+    void slotOpenRecord();
 
 private:
     QStringListModel m_file_types;//(PNDatabaseObjects::file_types);

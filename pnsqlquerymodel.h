@@ -80,7 +80,6 @@ public:
     virtual bool copyRecord(QModelIndex t_index);
     virtual bool newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr);
     virtual bool deleteRecord(QModelIndex t_index);
-    virtual bool openRecord(QModelIndex t_index);
 
     int rowCount(const QModelIndex &t_parent) const override;
 

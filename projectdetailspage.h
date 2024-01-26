@@ -21,7 +21,7 @@ public:
 
     void newRecord() override;
     void setupModels( Ui::MainWindow *t_ui ) override;
-    void toFirst(bool t_open = true) override;
+    void openRecord(QVariant& t_record_id) override;
     void setButtonAndMenuStates() override;
     void setPageTitle() override;
 

@@ -4,10 +4,6 @@
 #include "projectlocationsmodel.h"
 #include "pndatabaseobjects.h"
 
-#include <QFileInfo>
-#include <QDesktopServices>
-#include <QUrl>
-
 ProjectLocationsModel::ProjectLocationsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("ProjedtLocationsModel");
@@ -112,19 +108,3 @@ bool ProjectLocationsModel::setData(const QModelIndex &t_index, const QVariant &
     return PNSqlQueryModel::setData(t_index, t_value, t_role);
 }
 
-bool ProjectLocationsModel::openRecord(QModelIndex t_index)
-{
-    QVariant location = data(index(t_index.row(), 4));
-    QVariant location_type = data(index(t_index.row(), 2));
-
-    if ( location_type == "Web Link" )
-    {
-        QDesktopServices::openUrl(QUrl(location.toString(), QUrl::TolerantMode));
-    }
-    else
-    {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(location.toString()));
-    }
-
-    return true;
-}

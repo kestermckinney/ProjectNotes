@@ -6,7 +6,8 @@
 
 MeetingAttendeesView::MeetingAttendeesView(QWidget* t_parent) : PNTableView(t_parent)
 {
-
+    setHasOpen(true);
+    setKeyToOpenField(2);
 }
 
 MeetingAttendeesView::~MeetingAttendeesView()

@@ -50,23 +50,6 @@ bool ProjectNotesModel::newRecord(const QVariant* t_fk_value1, const QVariant* t
     return addRecord(qr);
 }
 
-bool ProjectNotesModel::openRecord(QModelIndex t_index)
-{
-    QVariant note_id = data(index(t_index.row(), 0));
-
-    global_DBObjects.projecteditingnotesmodel()->setFilter(0, note_id.toString());
-    global_DBObjects.projecteditingnotesmodel()->refresh();
-
-    // only select the records another event will be fired to open the window to show them
-    global_DBObjects.meetingattendeesmodel()->setFilter(1, note_id.toString());
-    global_DBObjects.meetingattendeesmodel()->refresh();
-
-    global_DBObjects.notesactionitemsmodel()->setFilter(13, note_id.toString());
-    global_DBObjects.notesactionitemsmodel()->refresh();
-
-    return true;
-}
-
 bool ProjectNotesModel::setData(const QModelIndex &t_index, const QVariant &t_value, int t_role)
 {
     bool wasnew = isNewRecord(t_index);

@@ -10,7 +10,8 @@ class PeoplePage : public PNBasePage
 {
 public:
     PeoplePage();
-
+    void openRecord(QVariant &t_record_id) override;
+    void setPageTitle() override;
     virtual void setupModels( Ui::MainWindow *t_ui );
 public slots:
     void setButtonAndMenuStates();
