@@ -13,7 +13,7 @@
 #include <QAbstractItemModel>
 #include <QTextCursor>
 
-#include <QDebug>
+//#include <QDebug>
 
 PNBasePage::PNBasePage(QWidget *parent) : QWidget(parent)
 {
