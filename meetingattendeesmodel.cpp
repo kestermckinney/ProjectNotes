@@ -33,7 +33,7 @@ MeetingAttendeesModel::MeetingAttendeesModel(QObject* t_parent): PNSqlQueryModel
     setOrderBy("people.name");
 }
 
-bool MeetingAttendeesModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex MeetingAttendeesModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value2);
 

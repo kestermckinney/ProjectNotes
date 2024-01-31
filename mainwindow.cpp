@@ -27,6 +27,7 @@
 #include <QClipboard>
 #include <QMimeType>
 #include <QMimeData>
+#include <QDesktopServices>
 
 //#include <QDebug>
 
@@ -67,6 +68,7 @@ MainWindow::MainWindow(QWidget *t_parent)
     connect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_SearchResults_triggered(QVariant)));
     connect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpenTeamMember_triggered(QVariant)));
     connect(ui->tableViewAtendees, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpenTeamMember_triggered(QVariant)));
+    connect(ui->tableViewLocations, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpenLocation_triggered(QVariant)));
 
     connect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
     connect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
@@ -430,6 +432,7 @@ MainWindow::~MainWindow()
     disconnect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_SearchResults_triggered(QVariant)));
     disconnect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpenTeamMember_triggered(QVariant)));
     disconnect(ui->tableViewAtendees, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpenTeamMember_triggered(QVariant)));
+    disconnect(ui->tableViewLocations, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpenLocation_triggered(QVariant)));
 
     disconnect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
     disconnect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
@@ -1093,6 +1096,25 @@ void MainWindow::slotOpenTeamMember_triggered(QVariant t_record_id)
 {
     navigateToPage(ui->pagePeople, t_record_id);
 }
+
+void MainWindow::slotOpenLocation_triggered(QVariant t_record_id)
+{
+    QModelIndex qmi = global_DBObjects.projectlocationsmodel()->findIndex(t_record_id, 0);
+    QModelIndex qi = global_DBObjects.projectlocationsmodelproxy()->index(global_DBObjects.projectlocationsmodelproxy()->mapFromSource(qmi).row(), 2);  // usa a visible column
+
+    QVariant location = ui->tableViewLocations->model()->data(ui->tableViewLocations->model()->index(qi.row(), 4));
+    QVariant location_type = ui->tableViewLocations->model()->data(ui->tableViewLocations->model()->index(qi.row(), 2));
+
+    if ( location_type == "Web Link" )
+    {
+        QDesktopServices::openUrl(QUrl(location.toString(), QUrl::TolerantMode));
+    }
+    else
+    {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(location.toString()));
+    }
+}
+
 
 void MainWindow::slotOpen_SearchResults_triggered(QVariant t_record_id)
 {

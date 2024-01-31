@@ -32,7 +32,7 @@ ProjectLocationsModel::ProjectLocationsModel(QObject* t_parent): PNSqlQueryModel
 }
 
 
-bool ProjectLocationsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex ProjectLocationsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value2);
 

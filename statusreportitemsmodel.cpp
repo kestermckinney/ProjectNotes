@@ -23,7 +23,7 @@ StatusReportItemsModel::StatusReportItemsModel(QObject* t_parent): PNSqlQueryMod
     setOrderBy("status_item_id");
 }
 
-bool StatusReportItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex StatusReportItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value1);
     Q_UNUSED(t_fk_value2);

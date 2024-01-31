@@ -213,17 +213,15 @@ void PNBasePage::openRecord(QVariant& t_record_id)
 
 void PNBasePage::newRecord()
 {
-    int lastrow = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->sourceModel()->rowCount(QModelIndex());
-
-    dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord();
+    QModelIndex index = dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord();
 
     //  check if column is visible
     int col = 1;
-    while (!getCurrentView()->isVisible())
+    while (getCurrentView()->isColumnHidden(col))
         col++;
 
-    QModelIndex index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->sourceModel()->index(lastrow, col);
-    QModelIndex sort_index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->mapFromSource(index);
+    QModelIndex sort_index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->index(
+        dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->mapFromSource(index).row(), col);
 
     getCurrentView()->selectionModel()->select(sort_index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     getCurrentView()->scrollTo(sort_index, QAbstractItemView::PositionAtCenter);
@@ -241,22 +239,21 @@ void PNBasePage::deleteItem()
 
 void PNBasePage::copyItem()
 {
-    int lastrow = ((PNSqlQueryModel*)getCurrentModel())->rowCount(QModelIndex());
-
     QModelIndexList qi = getCurrentView()->selectionModel()->selectedRows();
+    QModelIndex index;
 
     for (int i = qi.count() - 1; i >= 0; i--)
     {
-        dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->copyRecord(getCurrentModel()->mapToSource(qi[i]));
+        index = dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->copyRecord(getCurrentModel()->mapToSource(qi[i]));
     }
 
     //  check if column is visible
     int col = 1;
-    while (!getCurrentView()->isVisible())
+    while (getCurrentView()->isColumnHidden(col))
         col++;
 
-    QModelIndex index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->sourceModel()->index(lastrow, col);
-    QModelIndex sort_index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->mapFromSource(index);
+    QModelIndex sort_index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->index(
+        dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->mapFromSource(index).row(), col);
 
     getCurrentView()->selectionModel()->select(sort_index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     getCurrentView()->scrollTo(sort_index, QAbstractItemView::PositionAtCenter);

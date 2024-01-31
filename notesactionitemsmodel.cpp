@@ -48,7 +48,7 @@ NotesActionItemsModel::NotesActionItemsModel(QObject* t_parent): PNSqlQueryModel
     setOrderBy("item_number");
 }
 
-bool NotesActionItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex NotesActionItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     QSqlRecord qr = emptyrecord();
 

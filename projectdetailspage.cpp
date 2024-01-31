@@ -76,13 +76,20 @@ void ProjectDetailsPage::newRecord()
 {
     QVariant project_id = global_DBObjects.projectinformationmodelproxy()->data(global_DBObjects.projectinformationmodelproxy()->index(0,0));
 
-    int lastrow = dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->rowCount(QModelIndex());
+    QModelIndex index = dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord(&project_id);
 
-    dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord(&project_id);
 
-    getCurrentView()->selectRow(lastrow);
-    QModelIndex index = getCurrentView()->model()->index(lastrow, 0);
-    getCurrentView()->selectionModel()->select(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    //  check if column is visible
+    int col = 1;
+    while (getCurrentView()->isColumnHidden(col))
+        col++;
+
+
+    QModelIndex sort_index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->index(
+        dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->mapFromSource(index).row(), col);
+
+    getCurrentView()->selectionModel()->select(sort_index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    getCurrentView()->scrollTo(sort_index, QAbstractItemView::PositionAtCenter);
 }
 
 void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
