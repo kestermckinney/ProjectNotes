@@ -665,7 +665,7 @@ int PNSqlQueryModel::rowCount(const QModelIndex &t_parent) const
     return m_cache.size();
 }
 
-bool PNSqlQueryModel::copyRecord(QModelIndex t_index)
+const QModelIndex PNSqlQueryModel::copyRecord(QModelIndex t_index)
 {
     QSqlRecord newrecord = emptyrecord();
     QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
@@ -686,25 +686,10 @@ bool PNSqlQueryModel::copyRecord(QModelIndex t_index)
     return(addRecord(newrecord));
 }
 
-bool PNSqlQueryModel::addRecord(QSqlRecord& t_newrecord)
+const QModelIndex PNSqlQueryModel::addRecord(QSqlRecord& t_newrecord)
 {
     QModelIndex qmi = QModelIndex();
     int row = rowCount((qmi));
-
-    beginInsertRows(qmi, row, row);
-    m_cache.append(t_newrecord);
-
-    endInsertRows();
-
-    return true;
-}
-
-const QModelIndex PNSqlQueryModel::addRecordIndex(QSqlRecord& t_newrecord)
-{
-    QModelIndex qmi = QModelIndex();
-    int row = rowCount((qmi));
-
-    //qDebug() << t_newrecord;
 
     beginInsertRows(qmi, row, row);
     m_cache.append(t_newrecord);
@@ -714,7 +699,22 @@ const QModelIndex PNSqlQueryModel::addRecordIndex(QSqlRecord& t_newrecord)
     return index(row, 0);
 }
 
-bool PNSqlQueryModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+//const QModelIndex PNSqlQueryModel::addRecordIndex(QSqlRecord& t_newrecord)
+//{
+//    QModelIndex qmi = QModelIndex();
+//    int row = rowCount((qmi));
+
+//    //qDebug() << t_newrecord;
+
+//    beginInsertRows(qmi, row, row);
+//    m_cache.append(t_newrecord);
+
+//    endInsertRows();
+
+//    return index(row, 0);
+//}
+
+const QModelIndex PNSqlQueryModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value1);
     Q_UNUSED(t_fk_value2);

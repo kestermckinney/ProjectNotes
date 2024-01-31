@@ -54,7 +54,7 @@ ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
     setOrderBy("project_number");
 }
 
-bool ProjectsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex ProjectsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value1);
     Q_UNUSED(t_fk_value2);
@@ -70,9 +70,7 @@ bool ProjectsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_
     qr.setValue(12, tr("Bi-Weekly"));
     qr.setValue(14, tr("Active"));
 
-    addRecord(qr);
-
-    return true;
+    return addRecord(qr);
 }
 
 QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
@@ -218,7 +216,7 @@ bool ProjectsModel::setData(const QModelIndex &t_index, const QVariant &t_value,
     return result;
 }
 
-bool ProjectsModel::copyRecord(QModelIndex t_index)
+const QModelIndex ProjectsModel::copyRecord(QModelIndex t_index)
 {
     QSqlRecord qr = emptyrecord();
     QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
@@ -237,7 +235,7 @@ bool ProjectsModel::copyRecord(QModelIndex t_index)
     qr.setValue(13, data(index(t_index.row(), 13)));
     qr.setValue(14, data(index(t_index.row(), 14)));
 
-    QModelIndex qi = addRecordIndex(qr);
+    QModelIndex qi = addRecord(qr);
     setData( index(qi.row(), 3), QVariant(), Qt::EditRole); // force a write to the database
 
     QVariant oldid = data(index(t_index.row(), 0));
@@ -248,5 +246,5 @@ bool ProjectsModel::copyRecord(QModelIndex t_index)
     global_DBObjects.execute(insert);
     global_DBObjects.projectteammembersmodel()->setDirty();
 
-    return true;
+    return qi;
 }

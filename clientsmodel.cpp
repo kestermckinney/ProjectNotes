@@ -27,7 +27,7 @@ ClientsModel::ClientsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
     setOrderBy("client_name");
 }
 
-bool ClientsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex ClientsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value1);
     Q_UNUSED(t_fk_value2);
@@ -48,7 +48,5 @@ bool ClientsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_v
     QSqlRecord qr = emptyrecord();
     qr.setValue(1, QString("[New Client %1]").arg(num, 2, 10, QLatin1Char('0')));
 
-    addRecord(qr);
-
-    return true;
+    return addRecord(qr);
 }

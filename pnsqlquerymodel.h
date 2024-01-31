@@ -75,10 +75,10 @@ public:
                        int t_role = Qt::EditRole) override;
 
     static QDateTime parseDateTime(QString t_entrydate);
-    virtual bool addRecord(QSqlRecord& t_newrecord);
-    virtual const QModelIndex addRecordIndex(QSqlRecord& t_newrecord);
-    virtual bool copyRecord(QModelIndex t_index);
-    virtual bool newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr);
+    virtual const QModelIndex addRecord(QSqlRecord& t_newrecord);
+    //virtual const QModelIndex addRecordIndex(QSqlRecord& t_newrecord);
+    virtual const QModelIndex copyRecord(QModelIndex t_index);
+    virtual const QModelIndex newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr);
     virtual bool deleteRecord(QModelIndex t_index);
 
     int rowCount(const QModelIndex &t_parent) const override;

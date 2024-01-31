@@ -6,7 +6,7 @@
 
 #include "pnplaintextedit.h"
 
-#include <QMainWindow>
+#include <QMainWindow>7
 #include <QStringListModel>
 #include <QStack>
 #include <QComboBox>
@@ -74,6 +74,7 @@ public slots:
     void slotOpen_ProjectNote_triggered(QVariant t_record_id);
     void slotOpen_SearchResults_triggered(QVariant t_record_id);
     void slotOpenTeamMember_triggered(QVariant t_record_id);
+    void slotOpenLocation_triggered(QVariant t_record_id);
     void on_focusChanged(QWidget *t_old, QWidget *t_now);
 
 private slots:

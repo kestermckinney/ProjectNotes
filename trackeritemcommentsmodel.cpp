@@ -28,7 +28,7 @@ TrackerItemCommentsModel::TrackerItemCommentsModel(QObject* t_parent): PNSqlQuer
     setOrderBy("lastupdated_date");
 }
 
-bool TrackerItemCommentsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex TrackerItemCommentsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value2);
 

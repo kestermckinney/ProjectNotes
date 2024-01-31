@@ -67,7 +67,7 @@ QVariant TrackerItemsModel::getNextItemNumber(const QVariant& t_project_id)
     return QVariant(QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0')));
 }
 
-bool TrackerItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex TrackerItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value2);
 
@@ -160,9 +160,11 @@ QVariant TrackerItemsModel::data(const QModelIndex &t_index, int t_role) const
     return PNSqlQueryModel::data(t_index, t_role);
 }
 
-bool TrackerItemsModel::copyRecord(QModelIndex t_index)
+const QModelIndex TrackerItemsModel::copyRecord(QModelIndex t_index)
 {
-    if (PNSqlQueryModel::copyRecord(t_index))
+    QModelIndex qi = PNSqlQueryModel::copyRecord(t_index);
+
+    if(qi.isValid())
     {
         QVariant project_id = data(index(t_index.row(), 14));
         QVariant next_item_number = getNextItemNumber(project_id);
@@ -171,8 +173,9 @@ bool TrackerItemsModel::copyRecord(QModelIndex t_index)
 
         setCacheData(index(count, 1), next_item_number);
 
-        return true;
+        //return true;
     }
 
-    return false;
+    //return false;
+    return qi;
 }
