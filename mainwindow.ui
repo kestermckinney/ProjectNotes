@@ -1583,7 +1583,6 @@
     </property>
     <addaction name="actionHelp"/>
     <addaction name="actionWhat_s_New"/>
-    <addaction name="actionCustom_Plugins"/>
     <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menuFormat">

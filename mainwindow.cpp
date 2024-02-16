@@ -861,8 +861,14 @@ void MainWindow::openDatabase(QString t_dbfile)
 
 void MainWindow::navigateToPage(PNBasePage* t_widget, QVariant t_record_id)
 {
-    if ( t_widget == navigateCurrentPage() )
-        return;
+    if (navigateCurrentPage())
+    {
+        QString a = t_record_id.toString();
+        QString b = navigateCurrentPage()->getRecordId().toString();
+
+        if ( a.compare(b) == 0 && navigateCurrentPage() == t_widget)
+            return;
+    }
 
     if (navigateCurrentPage())
         navigateCurrentPage()->saveState();
@@ -971,7 +977,6 @@ void MainWindow::buildHistory(HistoryNode* t_node)
     {
         HistoryNode* ohn = m_page_history.pop();
         delete ohn;
-        m_navigation_location--;
     }
 
     m_page_history.push(hn);
@@ -1967,14 +1972,6 @@ void MainWindow::on_actionWhat_s_New_triggered()
     navigateToPage(ui->pageHelp, QVariant());
     ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/Whatsnew.html"));
 }
-
-
-void MainWindow::on_actionCustom_Plugins_triggered()
-{
-    navigateToPage(ui->pageHelp, QVariant());
-    ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/OverviewofPlugins.html"));
-}
-
 
 void MainWindow::on_actionIncrease_Font_Size_triggered()
 {

@@ -6,7 +6,7 @@
 
 #include "pnplaintextedit.h"
 
-#include <QMainWindow>7
+#include <QMainWindow>
 #include <QStringListModel>
 #include <QStack>
 #include <QComboBox>
@@ -28,7 +28,7 @@ QT_END_NAMESPACE
 
 #define PNMajorVersion 3
 #define PNMinorVersion 1
-#define PNFixVersion 3
+#define PNFixVersion 4
 
 #define MAXHISTORYNODES 15
 
@@ -103,7 +103,6 @@ private slots:
     void on_actionHelp_triggered();
     void on_actionGetting_Started_triggered();
     void on_actionWhat_s_New_triggered();
-    void on_actionCustom_Plugins_triggered();
 
     void cursorPositionChanged();
     void alignmentChanged(Qt::Alignment a);
