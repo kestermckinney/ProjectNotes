@@ -30,6 +30,7 @@ public:
     virtual void saveState();
     virtual void loadState();
     virtual void openRecord(QVariant& t_record_id);
+    virtual void submitRecord() { };
 
     PNSortFilterProxyModel*  getCurrentModel() { return m_current_model; }
     PNTableView* getCurrentView() { return m_current_view; }

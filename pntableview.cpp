@@ -295,11 +295,12 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
 
     if (currentmodel && m_has_open && !is_new_record) menu->addAction(openRecord);
 
+    if (currentmodel) menu->addAction(newRecord);
+
     if (currentmodel && !currentmodel->isReadOnly())
     {
         if (!is_new_record)
         {
-            menu->addAction(newRecord);
             menu->addAction(deleteRecord);
             menu->addAction(copyRecord);
         }

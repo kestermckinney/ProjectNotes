@@ -43,6 +43,9 @@ private:
     PNComboBoxDelegate* m_client_delegate = nullptr;
     PNPlainTextEditDelegate* m_item_name_delegate = nullptr;
     PNPlainTextEditDelegate* m_item_description_delegate = nullptr;
+
+public slots:
+    void slotNewRecord() override;
 };
 
 

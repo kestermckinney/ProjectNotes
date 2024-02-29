@@ -24,6 +24,7 @@ public:
     void openRecord(QVariant& t_record_id) override;
     void setButtonAndMenuStates() override;
     void setPageTitle() override;
+    void submitRecord() override {if (m_mapperProjectDetails) m_mapperProjectDetails->submit(); }
 
 private:
     Ui::MainWindow *ui = nullptr;

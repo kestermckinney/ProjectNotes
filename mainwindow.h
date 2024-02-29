@@ -28,9 +28,9 @@ QT_END_NAMESPACE
 
 #define PNMajorVersion 3
 #define PNMinorVersion 1
-#define PNFixVersion 4
+#define PNFixVersion 5
 
-#define MAXHISTORYNODES 15
+#define MAXHISTORYNODES 20
 
 class HistoryNode
 {

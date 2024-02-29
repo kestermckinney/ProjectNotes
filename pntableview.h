@@ -51,7 +51,7 @@ signals:
 public slots:
     virtual void dataRowSelected(const QModelIndex &t_index);
     virtual void dataRowActivated(const QModelIndex &t_index);
-    void slotNewRecord();
+    virtual void slotNewRecord();
     void slotDeleteRecord();
     void slotCopyRecord();
     void slotOpenRecord();

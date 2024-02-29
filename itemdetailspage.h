@@ -22,6 +22,7 @@ public:
     void setupModels( Ui::MainWindow *t_ui ) override;
     void setButtonAndMenuStates() override;
     void setPageTitle() override;
+    void submitRecord() override {if (m_mapperItemDetails) m_mapperItemDetails->submit(); }
 
 private:
     Ui::MainWindow *ui = nullptr;

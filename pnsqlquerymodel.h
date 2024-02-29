@@ -99,6 +99,7 @@ public:
 
     QString constructWhereClause(bool t_include_user_filter = true);
     void setFilter(int t_column_number, const QString& t_filter_value, DBCompareType t_compare = DBCompareType::Equals);
+    QVariant getFilter(int t_column_number);
     bool hasFilter(int t_column_number) const { return m_column_is_filtered[t_column_number];}
     void clearAllFilters();
     void clearFilter(int t_column_number);

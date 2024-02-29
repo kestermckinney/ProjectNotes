@@ -54,6 +54,8 @@ void ProjectDetailsPage::openRecord(QVariant& t_record_id)
     global_DBObjects.projectnotesmodel()->setFilter(1, t_record_id.toString());
     global_DBObjects.projectnotesmodel()->refresh();
 
+    PNSqlQueryModel::refreshDirty();
+
     // only select the records another event will be fired to open the window to show them
     // order is important this needs to be last
     global_DBObjects.projectinformationmodel()->setFilter(0, t_record_id.toString());

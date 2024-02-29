@@ -172,10 +172,7 @@ const QModelIndex TrackerItemsModel::copyRecord(QModelIndex t_index)
         int count = rowCount(QModelIndex()) - 1;
 
         setCacheData(index(count, 1), next_item_number);
-
-        //return true;
     }
 
-    //return false;
     return qi;
 }

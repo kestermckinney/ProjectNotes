@@ -49,3 +49,13 @@ void ProjectLocationsView::setModel(QAbstractItemModel *t_model)
         PNTableView::setModel(t_model);
     }
 }
+
+void ProjectLocationsView::slotNewRecord()
+{
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
+
+    QVariant fk_value1 = dynamic_cast<ProjectLocationsModel*>(currentmodel)->getFilter(1); // get the project id
+
+    dynamic_cast<ProjectLocationsModel*>(currentmodel)->newRecord(&fk_value1);
+}

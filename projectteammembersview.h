@@ -23,6 +23,9 @@ private:
     PNComboBoxDelegate* m_unfiltered_people_delegate = nullptr;
     PNCheckBoxDelegate* m_receive_status_delegate = nullptr;
     PNPlainTextEditDelegate* m_role_delegate = nullptr;
+
+public slots:
+    void slotNewRecord() override;
 };
 
 #endif // PROJECTTEAMMEMBERSVIEW_H

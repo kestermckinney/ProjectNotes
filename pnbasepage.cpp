@@ -208,6 +208,8 @@ void PNBasePage::openRecord(QVariant& t_record_id)
 {
     m_record_id = t_record_id;
 
+    PNSqlQueryModel::refreshDirty();
+
     loadState();
 }
 

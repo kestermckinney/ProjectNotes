@@ -20,6 +20,8 @@ void ClientsPage::openRecord(QVariant& t_record_id)
     {
         global_DBObjects.clientsmodel()->deactivateUserFilter(global_DBObjects.peoplemodel()->objectName());
 
+        PNSqlQueryModel::refreshDirty();
+
         QModelIndex qmi = global_DBObjects.clientsmodel()->findIndex(t_record_id, 0);
         QModelIndex qi = global_DBObjects.clientsmodelproxy()->index(global_DBObjects.clientsmodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
 
@@ -27,7 +29,12 @@ void ClientsPage::openRecord(QVariant& t_record_id)
         ui->tableViewClients->scrollTo(qi, QAbstractItemView::PositionAtCenter);
     }
     else
+    {
+        PNSqlQueryModel::refreshDirty();
         loadState();
+    }
+
+
 }
 
 void ClientsPage::setupModels( Ui::MainWindow *t_ui )

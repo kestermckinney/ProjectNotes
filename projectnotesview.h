@@ -24,6 +24,9 @@ private:
     PNDateEditDelegate* m_meeting_date_delegate = nullptr;
     PNCheckBoxDelegate* m_internal_item_delegate = nullptr;
     PNPlainTextEditDelegate* m_title_delegate = nullptr;
+
+public slots:
+    void slotNewRecord() override;
 };
 
 

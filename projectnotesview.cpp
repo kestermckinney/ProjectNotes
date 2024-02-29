@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "projectnotesview.h"
+#include "projectnotesmodel.h"
 
 ProjectNotesView::ProjectNotesView(QWidget* t_parent) : PNTableView(t_parent)
 {
@@ -44,5 +45,15 @@ void ProjectNotesView::setModel(QAbstractItemModel *t_model)
     {
         PNTableView::setModel(t_model);
     }
+}
+
+void ProjectNotesView::slotNewRecord()
+{
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
+
+    QVariant fk_value1 = dynamic_cast<ProjectNotesModel*>(currentmodel)->getFilter(1); // get the project id
+
+    dynamic_cast<ProjectNotesModel*>(currentmodel)->newRecord(&fk_value1);
 }
 

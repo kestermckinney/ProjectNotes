@@ -871,7 +871,10 @@ void MainWindow::navigateToPage(PNBasePage* t_widget, QVariant t_record_id)
     }
 
     if (navigateCurrentPage())
+    {
         navigateCurrentPage()->saveState();
+        navigateCurrentPage()->submitRecord();
+    }
 
     t_widget->openRecord(t_record_id);
 
@@ -904,7 +907,10 @@ void MainWindow::navigateBackward()
     if (m_navigation_location > 0)
     {
         if (navigateCurrentPage())
+        {
             navigateCurrentPage()->saveState();
+            navigateCurrentPage()->submitRecord();
+        }
 
         m_navigation_location--;
 
@@ -932,7 +938,11 @@ void MainWindow::navigateForward()
     if (m_navigation_location < (m_forward_back_history.count() - 1) )
     {
         if (navigateCurrentPage())
+        {
             navigateCurrentPage()->saveState();
+            navigateCurrentPage()->submitRecord();
+        }
+
 
         m_navigation_location++;
 

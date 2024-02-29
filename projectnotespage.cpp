@@ -25,15 +25,22 @@ void ProjectNotesPage::openRecord(QVariant& t_record_id)
 {
     setRecordId(t_record_id);
 
+    PNSqlQueryModel::refreshDirty();
+
     global_DBObjects.projecteditingnotesmodel()->setFilter(0, t_record_id.toString());
     global_DBObjects.projecteditingnotesmodel()->refresh();
+
+    QVariant project_id = global_DBObjects.projecteditingnotesmodel()->data(
+                global_DBObjects.projecteditingnotesmodel()->index(0, 1)
+                );
 
     // only select the records another event will be fired to open the window to show them
     global_DBObjects.meetingattendeesmodel()->setFilter(1, t_record_id.toString());
     global_DBObjects.meetingattendeesmodel()->refresh();
 
+    global_DBObjects.notesactionitemsmodel()->setFilter(1, project_id.toString());
     global_DBObjects.notesactionitemsmodel()->setFilter(13, t_record_id.toString());
-    global_DBObjects.notesactionitemsmodel()->refresh();
+    global_DBObjects.notesactionitemsmodel()->refresh(); 
 
     if (m_mapperProjectNotes != nullptr)
         m_mapperProjectNotes->toFirst();

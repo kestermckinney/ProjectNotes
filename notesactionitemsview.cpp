@@ -102,3 +102,14 @@ void NotesActionItemsView::setModel(QAbstractItemModel *t_model)
         PNTableView::setModel(t_model);
     }
 }
+
+void NotesActionItemsView::slotNewRecord()
+{
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
+
+    QVariant fk_value1 = dynamic_cast<NotesActionItemsModel*>(currentmodel)->getFilter(14);  // project id
+    QVariant fk_value2 = dynamic_cast<NotesActionItemsModel*>(currentmodel)->getFilter(13); // notet id
+
+    dynamic_cast<NotesActionItemsModel*>(currentmodel)->newRecord(&fk_value1, &fk_value2);
+}

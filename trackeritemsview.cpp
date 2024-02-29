@@ -21,8 +21,6 @@ TrackerItemsView::~TrackerItemsView()
     if (m_meeting_delegate) delete m_meeting_delegate;
     if (m_project_delegate) delete m_project_delegate;
     if (m_internal_delegate) delete m_internal_delegate;
-    //if (m_client_delegate) delete m_client_delegate;
-    if (m_not_editable_delegate) delete m_not_editable_delegate;
     if (m_item_name_delegate) delete m_item_name_delegate;
     if (m_description_delegate) delete m_description_delegate;
 
@@ -55,13 +53,11 @@ void TrackerItemsView::setModel(QAbstractItemModel *t_model)
         m_meeting_delegate = new PNComboBoxDelegate(this, global_DBObjects.trackeritemsmeetingsmodel(), 2, 0);
         m_project_delegate = new PNComboBoxDelegate(this, global_DBObjects.projectslistmodel());
         m_internal_delegate = new PNCheckBoxDelegate(this);
-        //m_client_delegate = new PNComboBoxDelegate(this, global_DBObjects.unfilteredclientsmodel());
-        m_not_editable_delegate = new NotEditableDelegate(this);
+
         m_item_name_delegate = new PNPlainTextEditDelegate(this);
         m_description_delegate = new PNPlainTextEditDelegate(this);
 
         // assign delegates to columns
-        setItemDelegateForColumn(1, m_not_editable_delegate);
         setItemDelegateForColumn(2, m_action_item_type_delegate);
         setItemDelegateForColumn(3, m_item_name_delegate);
         setItemDelegateForColumn(4, m_identified_by_delegate);
@@ -76,7 +72,6 @@ void TrackerItemsView::setModel(QAbstractItemModel *t_model)
         setItemDelegateForColumn(13, m_meeting_delegate);
         setItemDelegateForColumn(14, m_project_delegate);
         setItemDelegateForColumn(15, m_internal_delegate);
-        //setItemDelegateForColumn(18, m_client_delegate);
     }
     else
     {
@@ -84,4 +79,13 @@ void TrackerItemsView::setModel(QAbstractItemModel *t_model)
     }
 }
 
+void TrackerItemsView::slotNewRecord()
+{
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
+
+    QVariant fk_value1 = dynamic_cast<TrackerItemsModel*>(currentmodel)->getFilter(14); // get the project id
+
+    dynamic_cast<TrackerItemsModel*>(currentmodel)->newRecord(&fk_value1);
+}
 

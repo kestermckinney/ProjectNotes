@@ -9,7 +9,6 @@
 #include <QSqlRecord>
 #include <QMessageBox>
 #include <QSqlError>
-#include <QDebug>
 #include <QDateTime>
 #include <QUuid>
 #include <QRegularExpressionMatch>
@@ -1334,6 +1333,16 @@ void PNSqlQueryModel::setFilter(int t_column_number, const QString& t_filter_val
     m_column_is_filtered[t_column_number] = true;
     m_filter_compare_type[t_column_number] = t_compare_type;
 }
+
+QVariant PNSqlQueryModel::getFilter(int t_column_number)
+{
+    if (!m_column_is_filtered[t_column_number])
+        return QVariant();
+
+    return(QVariant(m_filter_value[t_column_number]));
+}
+
+
 
 void PNSqlQueryModel::clearAllFilters()
 {

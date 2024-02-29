@@ -24,6 +24,9 @@ private:
     PNComboBoxDelegate* m_updated_by_delegate = nullptr;
     PNDateEditDelegate* m_date_updated_delegate = nullptr;
     PNPlainTextEditDelegate* m_comments_delegate = nullptr;
+
+public slots:
+    void slotNewRecord() override;
 };
 
 #endif // TRACKERITEMCOMMENTSVIEW_H
