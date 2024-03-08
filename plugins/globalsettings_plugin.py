@@ -65,9 +65,6 @@ childtablesfilter = "" # a list of child tables that can be sent to the plugin. 
 
 # Project Notes Parameters
 parameters = [
-    "OraclePassword",
-    "OracleUsername",
-    "OracleDataSource",
     "ProjectsFolder",
     "DefaultMeetingLocation"
 ]

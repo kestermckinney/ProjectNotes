@@ -1979,8 +1979,7 @@ void MainWindow::on_actionGetting_Started_triggered()
 
 void MainWindow::on_actionWhat_s_New_triggered()
 {
-    navigateToPage(ui->pageHelp, QVariant());
-    ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/Whatsnew.html"));
+    QDesktopServices::openUrl(QUrl("https://github.com/kestermckinney/ProjectNotes/wiki/Release%20Notes", QUrl::TolerantMode));
 }
 
 void MainWindow::on_actionIncrease_Font_Size_triggered()

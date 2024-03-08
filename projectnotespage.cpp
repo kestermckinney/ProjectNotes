@@ -4,6 +4,7 @@
 #include "projectnotespage.h"
 #include "pndatabaseobjects.h"
 #include "notesactionitemsview.h"
+#include <QDebug>
 
 #include "ui_mainwindow.h"
 
@@ -38,7 +39,7 @@ void ProjectNotesPage::openRecord(QVariant& t_record_id)
     global_DBObjects.meetingattendeesmodel()->setFilter(1, t_record_id.toString());
     global_DBObjects.meetingattendeesmodel()->refresh();
 
-    global_DBObjects.notesactionitemsmodel()->setFilter(1, project_id.toString());
+    // not needed global_DBObjects.notesactionitemsmodel()->setFilter(14, project_id.toString());
     global_DBObjects.notesactionitemsmodel()->setFilter(13, t_record_id.toString());
     global_DBObjects.notesactionitemsmodel()->refresh(); 
 
@@ -86,6 +87,9 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
     }
 
     ui->dateEditMeetingDate->setNullable(true);
+
+    qreal fontWidth = QFontMetrics(ui->textEditNotes->currentCharFormat().font()).averageCharWidth();
+    ui->textEditNotes->setTabStopDistance( 3.0 * fontWidth );
 
     if (m_mapperProjectNotes == nullptr)
         m_mapperProjectNotes = new QDataWidgetMapper(this);

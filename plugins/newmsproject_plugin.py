@@ -120,7 +120,6 @@ if (platform.system() == 'Windows'):
 
 
         project = win32com.client.Dispatch("MSProject.Application")
-        project.Visible = False
 
         project.FileOpen(projectfile)
         project.Visible = 1
@@ -130,12 +129,6 @@ if (platform.system() == 'Windows'):
         project.ReplaceEx("Name", "contains", "PROJECTNAME", basename, True, True, False, 188743694, 7, True)
 
         project.FileSave()
-
-        project.Quit()
-
-        project = None
-
-        QDesktopServices.openUrl(QUrl("file:///" + projectfile, QUrl.TolerantMode))
 
         # add the location to the project
         docxml = QDomDocument()

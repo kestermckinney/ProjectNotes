@@ -5,7 +5,7 @@ RequestExecutionLevel user
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "Project Notes"
-!define PRODUCT_VERSION "3.1.4"
+!define PRODUCT_VERSION "3.1.6"
 !define PRODUCT_PUBLISHER "Paul McKinney"
 !define PRODUCT_WEB_SITE "https://github.com/kestermckinney/ProjectNotes"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\ProjectNotes.exe"
@@ -120,6 +120,7 @@ Section "MainSection" SEC01
   File "..\..\plugins\trackkerreport_plugin.py"
   File "..\..\plugins\copy_email_member_plugin.py"
   File "..\..\plugins\copy_email_plugin.py"
+  File "..\..\plugins\findprojectmailperson_plugin.py"
   
   SetOutPath "$INSTDIR\plugins\includes"
   File "..\..\plugins\includes\common.py"
