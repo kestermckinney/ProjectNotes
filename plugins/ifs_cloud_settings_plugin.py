@@ -14,8 +14,8 @@ from PyQt5.QtGui import QDesktopServices
 
 
 # Project Notes Plugin Parameters
-pluginname = "Global Settings"
-plugindescription = "This plugin has no events.  It only saves the settings, so they can be used amongst all plugins."
+pluginname = "IFS Cloud Settings"
+plugindescription = "This plugin has no events.  It only saves the IFS Cloud connection settings, so they can be used amongst all plugins."
 plugintable = "" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
@@ -65,7 +65,9 @@ childtablesfilter = "" # a list of child tables that can be sent to the plugin. 
 
 # Project Notes Parameters
 parameters = [
-    "ProjectsFolder",
-    "DefaultMeetingLocation"
+    "IFSUsername",
+    "IFSPassword",
+    "IFSUrl",
+    "IFSPersonId"
 ]
 
