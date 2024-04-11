@@ -106,7 +106,6 @@ class ProjectNotesExcelTools:
         message = outlook.CreateItem(0)
         message.To = ""
 
-        #wx.wxMessageBox("What:  " .. recipients)
         outlook.ActiveExplorer().Activate()
         message.Display()
 
