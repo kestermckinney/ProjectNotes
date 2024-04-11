@@ -150,12 +150,12 @@ if (platform.system() == 'Windows'):
 
 # setup test data
 """
+import sys
 print("Buld up QDomDocument")
 app = QApplication(sys.argv)
 
-
 xmldoc = QDomDocument("TestDocument")
-f = QFile("exampleproject.xml")
+f = QFile("C:/Users/pamcki/Desktop/project.xml")
 
 if f.open(QIODevice.ReadOnly):
     print("example project opened")
@@ -164,8 +164,7 @@ f.close()
 
 print("Run Test")
 # call when testing outside of Project Notes
-print(main_process(xmldoc).toString())
+print(event_data_rightclick(xmldoc.toString()))
 print("Finished")
-"""
 
-# TESTED: Phase 1
+"""

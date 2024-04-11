@@ -14,7 +14,7 @@ def windowEnumerationHandler(hwnd, tpwindows):
 
 
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets
-from PyQt5.QtCore import QDirIterator, QDir, QSettings
+from PyQt5.QtCore import QDirIterator, QDir, QSettings, QFile
 from PyQt5.QtXml import QDomDocument, QDomNode
 from PyQt5.QtWidgets import QMessageBox, QMainWindow
 
@@ -401,3 +401,45 @@ class ProjectNotesCommon:
 
         return(projectnumber)
 
+    def email_word_file_as_html(self, subject, recipients, attachment, wordfile):
+        if (platform.system() != 'Windows'):
+            print("email_word_file_as_html only supported on Windows")
+            return
+
+        if wordfile is not None:
+            word = win32com.client.Dispatch("Word.Application")
+            word.Visible = 0
+            doc = word.Documents.Open(wordfile)
+            doc.SaveAs(wordfile + ".html", 8)
+            word.Quit()
+            word = None
+
+            file = open(wordfile + ".html", "r")
+            html = file.read()
+            file.close()
+            QFile.remove(wordfile + ".html")
+            dir = QDir(wordfile + "_files")
+            dir.removeRecursively()
+
+        outlook = win32com.client.Dispatch("Outlook.Application")
+        message = outlook.CreateItem(0)
+        message.To = ""
+
+        outlook.ActiveExplorer().Activate()
+        message.Display()
+
+        message.To = recipients
+        DefaultSignature = message.HTMLBody
+
+        message.Subject = subject
+
+        if wordfile is not None:
+            message.HTMLBody = html + DefaultSignature
+
+        if attachment is not None:
+            message.Attachments.Add(attachment, 1)
+
+        self.bring_window_to_front(subject)
+
+        outlook = None
+        message = None
