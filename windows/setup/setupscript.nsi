@@ -92,10 +92,6 @@ Section "MainSection" SEC01
   SetOutPath "$INSTDIR\plugins"
   File "..\..\plugins\archivenotes_plugin.py"
   File "..\..\plugins\archivenotes_plugin.py"
-  ;cci_connectdrives_plugin.py
-  ;cci_ifs_projects_import_plugin.py
-  ;cci_ifs_projects_statusreport_plugin.py
-  ;cci_scheduleoneonone_plugin.py
   File "..\..\plugins\contactexport_plugin.py"
   File "..\..\plugins\contactimport_plugin.py"
   File "..\..\plugins\editor_plugin.py"
@@ -105,8 +101,6 @@ Section "MainSection" SEC01
   File "..\..\plugins\newchangeorder_plugin.py"
   File "..\..\plugins\newmsproject_plugin.py"
   File "..\..\plugins\newpowerpoint_plugin.py"
-  File "..\..\plugins\newriskregister_plugin.py"
-  ; paul_cleanpc_plugin.py
   File "..\..\plugins\schedulecustomerkickoffinvite_plugin.py"
   File "..\..\plugins\schedulecustomerlessonslearnedinvite_plugin.py"
   File "..\..\plugins\schedulecustomerstatusinvite_plugin.py"
@@ -235,7 +229,6 @@ Section Uninstall
   Delete "$INSTDIR\plugins\newchangeorder_plugin.py"
   Delete "$INSTDIR\plugins\newmsproject_plugin.py"
   Delete "$INSTDIR\plugins\newpowerpoint_plugin.py"
-  Delete "$INSTDIR\plugins\newriskregister_plugin.py"
 
   ; paul_cleanpc_plugin.py
   Delete "$INSTDIR\plugins\schedulecustomerkickoffinvite_plugin.py"
@@ -251,7 +244,10 @@ Section Uninstall
   Delete "$INSTDIR\plugins\trackkerreport_plugin.py"
   Delete "$INSTDIR\plugins\copy_email_member_plugin.py"
   Delete "$INSTDIR\plugins\copy_email_plugin.py"
-
+  Delete "$INSTDIR\plugins\findprojectemailperson_plugin.py"
+  Delete "$INSTDIR\plugins\email_as_attachment_plugin.py"
+  Delete "$INSTDIR\plugins\copy_filepath_plugin.py"
+  
   Delete "$INSTDIR\plugins\includes\common.py"
   Delete "$INSTDIR\plugins\includes\excel_tools.py"
   Delete "$INSTDIR\plugins\includes\dialogNotesArchiveOptions.ui"
