@@ -34,7 +34,8 @@ QStringList PNDatabaseObjects::project_status = {
 
 QStringList PNDatabaseObjects::status_item_status = {
     "In Progress",
-    "Completed"
+    "Completed",
+    "Starting"
 };
 
 QStringList PNDatabaseObjects::invoicing_period = {

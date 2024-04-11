@@ -9,7 +9,7 @@ ProjectLocationsModel::ProjectLocationsModel(QObject* t_parent): PNSqlQueryModel
     setObjectName("ProjedtLocationsModel");
     setOrderKey(35);
 
-    setBaseSql("SELECT location_id, project_id, location_type, location_description, full_path FROM project_locations");
+    setBaseSql("SELECT location_id, project_id, location_type, location_description, full_path, (select p.project_number from projects p where p.project_id=pl.project_id) project_number, (select p.project_name from projects p where p.project_id=pl.project_id) project_name FROM project_locations pl");
 
     setTableName("project_locations", "Project Locations");
 
@@ -19,6 +19,8 @@ ProjectLocationsModel::ProjectLocationsModel(QObject* t_parent): PNSqlQueryModel
     addColumn(2, tr("Location Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::file_types);
     addColumn(3, tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(4, tr("Full Path"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(5, tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn(6, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
 //    QStringList key1 = {"project_id", "full_path"};
 

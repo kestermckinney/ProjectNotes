@@ -103,7 +103,8 @@ void PNTableView::slotPluginMenu(PNPlugin* t_plugin)
     QVariant keyval;
 
     auto qi = qil.begin();
-    keyval = currentmodel->data(*qi);
+    QModelIndex qq = sortmodel->mapToSource(*qi);
+    keyval = currentmodel->data(qq);
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
     QApplication::processEvents();

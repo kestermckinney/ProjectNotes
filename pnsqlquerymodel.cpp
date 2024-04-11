@@ -1787,6 +1787,8 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
         return false;
     }
 
+    bool isdelete = (t_xml_row->attribute("delete").compare("true", Qt::CaseInsensitive) == 0);
+
     QString whereclause;
     QString fields;
     QString updatevalues;
@@ -1935,8 +1937,11 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
 
     if (exists_count.toInt() > 0)
     {
-        // update if exists
-        sql = QString("update %1 set %2 where %3").arg(m_tablename, updatevalues, whereclause);
+        // delete or update if exists
+        if (isdelete)
+            sql = QString("delete from %1 where %3").arg(m_tablename, whereclause);
+        else
+            sql = QString("update %1 set %2 where %3").arg(m_tablename, updatevalues, whereclause);
     }
     else
     {
