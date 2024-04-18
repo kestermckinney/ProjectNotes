@@ -1,5 +1,6 @@
 
 import platform
+import re
 
 if (platform.system() == 'Windows'):
     from includes.excel_tools import ProjectNotesExcelTools
@@ -135,7 +136,7 @@ if (platform.system() == 'Windows'):
         replace_text(doc, "<CLIENTNAME>", clientnam)
         replace_text(doc, "<PROJECTNAME>", projnam)
         replace_text(doc, "<CRDATE>", statusdate.toString("MM/dd/yyyy"))
-        replace_text(doc, "<CRNUMBER>", changenum)
+        replace_text(doc, "<CRNUMBER>", re.sub("\D", "", projnum) + '-' + changenum)
 
         doc.Save()
 
