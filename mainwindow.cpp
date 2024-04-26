@@ -27,6 +27,7 @@
 #include <QClipboard>
 #include <QMimeType>
 #include <QMimeData>
+#include <QActionGroup>
 //#include <QDebug>
 
 #include "mainwindow.h"
