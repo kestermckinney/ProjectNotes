@@ -79,8 +79,8 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
         // fix a bug with selecting a contraction
         if (cursor.selectionEnd() + 1 < cursor.document()->characterCount())
             if (
-                    cursor.document()->characterAt(cursor.selectionEnd()) == "'" &&
-                    cursor.document()->characterAt(cursor.selectionEnd() + 1) == "t"
+                    cursor.document()->characterAt(cursor.selectionEnd()) == QChar('\'') &&
+                    cursor.document()->characterAt(cursor.selectionEnd() + 1) == QChar('t')
                 )
             {
                 cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
@@ -97,8 +97,8 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
             // fix a bug with selecting a contraction
             if (tmpCursor.selectionEnd() + 1 < tmpCursor.document()->characterCount())
                 if (
-                        tmpCursor.document()->characterAt(tmpCursor.selectionEnd()) == "'" &&
-                        tmpCursor.document()->characterAt(tmpCursor.selectionEnd() + 1) == "t"
+                        tmpCursor.document()->characterAt(tmpCursor.selectionEnd()) == QChar('\'') &&
+                        tmpCursor.document()->characterAt(tmpCursor.selectionEnd() + 1) == QChar('t')
                     )
                 {
                     tmpCursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);

@@ -111,8 +111,8 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckDocument(QTextC
         // fix a bug with selecting a contraction
         if (t_cursor.selectionEnd() + 1 < t_cursor.document()->characterCount())
             if (
-                    t_cursor.document()->characterAt(t_cursor.selectionEnd()) == "'" &&
-                    t_cursor.document()->characterAt(t_cursor.selectionEnd() + 1) == "t"
+                    t_cursor.document()->characterAt(t_cursor.selectionEnd()) == QChar('\'') &&
+                    t_cursor.document()->characterAt(t_cursor.selectionEnd() + 1) == QChar('t')
                 )
             {
                 t_cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
@@ -145,7 +145,7 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
     // fix a bug with selecting a contraction
     if (t_cursor.position() > 0)
     if (
-            t_cursor.document()->characterAt(t_cursor.position()-1) == "'"
+            t_cursor.document()->characterAt(t_cursor.position()-1) == QChar('\'')
         )
     {
         t_cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 2);
@@ -157,8 +157,8 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
     // fix a bug with selecting a contraction
     if (t_cursor.position() > 1)
     if (
-            t_cursor.document()->characterAt(t_cursor.position()-1) == "t" &&
-            t_cursor.document()->characterAt(t_cursor.position()-2) == "'"
+            t_cursor.document()->characterAt(t_cursor.position()-1) == QChar('t') &&
+            t_cursor.document()->characterAt(t_cursor.position()-2) == QChar('\'')
         )
     {
         t_cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 3);
@@ -276,8 +276,8 @@ void PNInlineSpellChecker::slotAddToDictionary(QTextCursor& t_cursor)
     // fix a bug with selecting a contraction
     if (t_cursor.selectionEnd() + 1 < t_cursor.document()->characterCount())
         if (
-                t_cursor.document()->characterAt(t_cursor.selectionEnd()) == "'" &&
-                t_cursor.document()->characterAt(t_cursor.selectionEnd() + 1) == "t"
+                t_cursor.document()->characterAt(t_cursor.selectionEnd()) == QChar('\'') &&
+                t_cursor.document()->characterAt(t_cursor.selectionEnd() + 1) == QChar('t')
             )
         {
             t_cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
@@ -302,8 +302,8 @@ void PNInlineSpellChecker::slottIgnoreAll(QTextCursor& t_cursor)
     // fix a bug with selecting a contraction
     if (t_cursor.selectionEnd() + 1 < t_cursor.document()->characterCount())
         if (
-                t_cursor.document()->characterAt(t_cursor.selectionEnd()) == "'" &&
-                t_cursor.document()->characterAt(t_cursor.selectionEnd() + 1) == "t"
+                t_cursor.document()->characterAt(t_cursor.selectionEnd()) == QChar('\'') &&
+                t_cursor.document()->characterAt(t_cursor.selectionEnd() + 1) == QChar('t')
             )
         {
             t_cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
@@ -327,8 +327,8 @@ void PNInlineSpellChecker::slotIgnore(QTextCursor& t_cursor)
     // fix a bug with selecting a contraction
     if (t_cursor.selectionEnd() + 1 < t_cursor.document()->characterCount())
         if (
-                t_cursor.document()->characterAt(t_cursor.selectionEnd()) == "'" &&
-                t_cursor.document()->characterAt(t_cursor.selectionEnd() + 1) == "t"
+                t_cursor.document()->characterAt(t_cursor.selectionEnd()) == QChar('\'') &&
+                t_cursor.document()->characterAt(t_cursor.selectionEnd() + 1) == QChar('t')
             )
         {
             t_cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);

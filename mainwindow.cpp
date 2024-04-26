@@ -27,10 +27,8 @@
 #include <QClipboard>
 #include <QMimeType>
 #include <QMimeData>
+#include <QActionGroup>
 #include <QDesktopServices>
-
-//#include <QDebug>
-
 #include "mainwindow.h"
 
 PNPluginManager* MainWindow::m_plugin_manager = nullptr;
