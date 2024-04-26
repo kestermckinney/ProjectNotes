@@ -75,12 +75,11 @@ public:
                        int t_role = Qt::EditRole) override;
 
     static QDateTime parseDateTime(QString t_entrydate);
-    virtual bool addRecord(QSqlRecord& t_newrecord);
-    virtual const QModelIndex addRecordIndex(QSqlRecord& t_newrecord);
-    virtual bool copyRecord(QModelIndex t_index);
-    virtual bool newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr);
+    virtual const QModelIndex addRecord(QSqlRecord& t_newrecord);
+    //virtual const QModelIndex addRecordIndex(QSqlRecord& t_newrecord);
+    virtual const QModelIndex copyRecord(QModelIndex t_index);
+    virtual const QModelIndex newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr);
     virtual bool deleteRecord(QModelIndex t_index);
-    virtual bool openRecord(QModelIndex t_index);
 
     int rowCount(const QModelIndex &t_parent) const override;
 
@@ -100,6 +99,7 @@ public:
 
     QString constructWhereClause(bool t_include_user_filter = true);
     void setFilter(int t_column_number, const QString& t_filter_value, DBCompareType t_compare = DBCompareType::Equals);
+    QVariant getFilter(int t_column_number);
     bool hasFilter(int t_column_number) const { return m_column_is_filtered[t_column_number];}
     void clearAllFilters();
     void clearFilter(int t_column_number);

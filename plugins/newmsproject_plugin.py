@@ -120,7 +120,6 @@ if (platform.system() == 'Windows'):
 
 
         project = win32com.client.Dispatch("MSProject.Application")
-        project.Visible = False
 
         project.FileOpen(projectfile)
         project.Visible = 1
@@ -130,12 +129,6 @@ if (platform.system() == 'Windows'):
         project.ReplaceEx("Name", "contains", "PROJECTNAME", basename, True, True, False, 188743694, 7, True)
 
         project.FileSave()
-
-        project.Quit()
-
-        project = None
-
-        QDesktopServices.openUrl(QUrl("file:///" + projectfile, QUrl.TolerantMode))
 
         # add the location to the project
         docxml = QDomDocument()
@@ -157,12 +150,12 @@ if (platform.system() == 'Windows'):
 
 # setup test data
 """
+import sys
 print("Buld up QDomDocument")
 app = QApplication(sys.argv)
 
-
 xmldoc = QDomDocument("TestDocument")
-f = QFile("exampleproject.xml")
+f = QFile("C:/Users/pamcki/Desktop/project.xml")
 
 if f.open(QIODevice.ReadOnly):
     print("example project opened")
@@ -171,8 +164,7 @@ f.close()
 
 print("Run Test")
 # call when testing outside of Project Notes
-print(main_process(xmldoc).toString())
+print(event_data_rightclick(xmldoc.toString()))
 print("Finished")
-"""
 
-# TESTED: Phase 1
+"""

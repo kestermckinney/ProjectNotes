@@ -38,4 +38,3 @@ void SearchResultsView::setModel(QAbstractItemModel *t_model)
         PNTableView::setModel(t_model);
     }
 }
-

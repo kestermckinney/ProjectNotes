@@ -16,6 +16,7 @@ SearchPage::SearchPage()
 void SearchPage::setPageTitle()
 {
     topLevelWidget()->setWindowTitle(QString("Project Notes Search"));
+    setHistoryText("Search");
 }
 
 void SearchPage::setupModels( Ui::MainWindow *t_ui )

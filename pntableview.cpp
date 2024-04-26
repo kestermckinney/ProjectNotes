@@ -103,7 +103,8 @@ void PNTableView::slotPluginMenu(PNPlugin* t_plugin)
     QVariant keyval;
 
     auto qi = qil.begin();
-    keyval = currentmodel->data(*qi);
+    QModelIndex qq = sortmodel->mapToSource(*qi);
+    keyval = currentmodel->data(qq);
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
     QApplication::processEvents();
@@ -295,11 +296,12 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
 
     if (currentmodel && m_has_open && !is_new_record) menu->addAction(openRecord);
 
+    if (currentmodel) menu->addAction(newRecord);
+
     if (currentmodel && !currentmodel->isReadOnly())
     {
         if (!is_new_record)
         {
-            menu->addAction(newRecord);
             menu->addAction(deleteRecord);
             menu->addAction(copyRecord);
         }
@@ -372,10 +374,10 @@ void PNTableView::slotOpenRecord()
     QModelIndexList qil = this->selectionModel()->selectedRows();
     auto qi = qil.begin();
     QModelIndex qq = sortmodel->mapToSource(*qi);
+    QModelIndex kqi = currentmodel->index(qq.row(), m_key_to_open_field);
+    QVariant record_id = currentmodel->data(kqi);
 
-    currentmodel->openRecord(qq);
-
-    emit signalOpenRecordWindow();
+    emit signalOpenRecordWindow(record_id);
 }
 
 void PNTableView::slotExportRecord()

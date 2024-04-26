@@ -48,7 +48,7 @@ NotesActionItemsModel::NotesActionItemsModel(QObject* t_parent): PNSqlQueryModel
     setOrderBy("item_number");
 }
 
-bool NotesActionItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex NotesActionItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     QSqlRecord qr = emptyrecord();
 
@@ -82,23 +82,5 @@ bool NotesActionItemsModel::newRecord(const QVariant* t_fk_value1, const QVarian
     qr.setValue(15, 0);
 
     return addRecord(qr);
-}
-
-bool NotesActionItemsModel::openRecord(QModelIndex t_index)
-{
-    QVariant record_id = data(index(t_index.row(), 0));
-    QVariant project_id = data(index(t_index.row(), 14));
-
-    // only select the records another event will be fired to open the window to show them
-    global_DBObjects.actionitemsdetailsmodel()->setFilter(0, record_id.toString());
-    global_DBObjects.actionitemsdetailsmodel()->refresh();
-
-    global_DBObjects.actionitemsdetailsmeetingsmodel()->setFilter(1, project_id.toString());
-    global_DBObjects.actionitemsdetailsmeetingsmodel()->refresh();
-
-    global_DBObjects.trackeritemscommentsmodel()->setFilter(1, record_id.toString());
-    global_DBObjects.trackeritemscommentsmodel()->refresh();
-
-    return true;
 }
 

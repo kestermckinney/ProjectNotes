@@ -26,6 +26,9 @@ private:
     ComboBoxDelegate* m_file_type_delegate = nullptr;
     PNLineEditFileButtonDelegate* m_file_button_delegate = nullptr;
     PNPlainTextEditDelegate* m_description_delegate = nullptr;
+
+public slots:
+    void slotNewRecord() override;
 };
 
 

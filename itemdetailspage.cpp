@@ -22,9 +22,36 @@ ItemDetailsPage::~ItemDetailsPage()
         delete m_item_details_delegate;
 }
 
+void ItemDetailsPage::openRecord(QVariant& t_record_id)
+{
+    setRecordId(t_record_id);
+
+    PNSqlQueryModel::refreshDirty();
+
+    // only select the records another event will be fired to open the window to show them
+    global_DBObjects.actionitemsdetailsmodel()->setFilter(0, t_record_id.toString());
+    global_DBObjects.actionitemsdetailsmodel()->refresh();
+
+    global_DBObjects.trackeritemscommentsmodel()->setFilter(1, t_record_id.toString());
+    global_DBObjects.trackeritemscommentsmodel()->refresh();
+
+    QVariant project_id = global_DBObjects.actionitemsdetailsmodel()->data(
+        global_DBObjects.actionitemsdetailsmodel()->index(0, 14));
+
+    global_DBObjects.actionitemsdetailsmeetingsmodel()->setFilter(1, project_id.toString());
+    global_DBObjects.actionitemsdetailsmeetingsmodel()->refresh();
+
+    if (m_mapperItemDetails != nullptr)
+        m_mapperItemDetails->toFirst();
+
+    loadState();
+}
+
 void ItemDetailsPage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes Item [%1 %2 %3]").arg(ui->lineEditNumber->text(), ui->lineEditItemNumber->text(), ui->plainTextEditName->toPlainText().left(50)));
+    QString page_title = QString("%1 %2 %3").arg(ui->lineEditNumber->text(), ui->lineEditItemNumber->text(), ui->plainTextEditName->toPlainText().left(25));
+    topLevelWidget()->setWindowTitle(QString("Project Notes Item [%1]").arg(page_title));
+    setHistoryText(page_title);
 }
 
 void ItemDetailsPage::newRecord()
@@ -117,14 +144,6 @@ void ItemDetailsPage::setupModels( Ui::MainWindow *t_ui )
     setCurrentView( ui->tableViewComments );
 
     ui->tableViewComments->verticalHeader()->setDefaultSectionSize( 15 * 4 );
-}
-
-void ItemDetailsPage::toFirst(bool t_open)
-{
-    Q_UNUSED(t_open)
-
-    if (m_mapperItemDetails != nullptr)
-        m_mapperItemDetails->toFirst();
 }
 
 void ItemDetailsPage::setButtonAndMenuStates()

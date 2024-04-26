@@ -6,7 +6,8 @@
 
 MeetingAttendeesView::MeetingAttendeesView(QWidget* t_parent) : PNTableView(t_parent)
 {
-
+    setHasOpen(true);
+    setKeyToOpenField(2);
 }
 
 MeetingAttendeesView::~MeetingAttendeesView()
@@ -42,3 +43,12 @@ void MeetingAttendeesView::setModel(QAbstractItemModel *t_model)
     }
 }
 
+void MeetingAttendeesView::slotNewRecord()
+{
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
+
+    QVariant fk_value1 = dynamic_cast<MeetingAttendeesModel*>(currentmodel)->getFilter(1); // get the project id
+
+    dynamic_cast<MeetingAttendeesModel*>(currentmodel)->newRecord(&fk_value1);
+}

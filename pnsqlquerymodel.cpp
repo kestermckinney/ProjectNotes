@@ -9,7 +9,6 @@
 #include <QSqlRecord>
 #include <QMessageBox>
 #include <QSqlError>
-#include <QDebug>
 #include <QDateTime>
 #include <QUuid>
 #include <QRegularExpressionMatch>
@@ -665,7 +664,7 @@ int PNSqlQueryModel::rowCount(const QModelIndex &t_parent) const
     return m_cache.size();
 }
 
-bool PNSqlQueryModel::copyRecord(QModelIndex t_index)
+const QModelIndex PNSqlQueryModel::copyRecord(QModelIndex t_index)
 {
     QSqlRecord newrecord = emptyrecord();
     QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
@@ -686,25 +685,10 @@ bool PNSqlQueryModel::copyRecord(QModelIndex t_index)
     return(addRecord(newrecord));
 }
 
-bool PNSqlQueryModel::addRecord(QSqlRecord& t_newrecord)
+const QModelIndex PNSqlQueryModel::addRecord(QSqlRecord& t_newrecord)
 {
     QModelIndex qmi = QModelIndex();
     int row = rowCount((qmi));
-
-    beginInsertRows(qmi, row, row);
-    m_cache.append(t_newrecord);
-
-    endInsertRows();
-
-    return true;
-}
-
-const QModelIndex PNSqlQueryModel::addRecordIndex(QSqlRecord& t_newrecord)
-{
-    QModelIndex qmi = QModelIndex();
-    int row = rowCount((qmi));
-
-    //qDebug() << t_newrecord;
 
     beginInsertRows(qmi, row, row);
     m_cache.append(t_newrecord);
@@ -714,7 +698,22 @@ const QModelIndex PNSqlQueryModel::addRecordIndex(QSqlRecord& t_newrecord)
     return index(row, 0);
 }
 
-bool PNSqlQueryModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+//const QModelIndex PNSqlQueryModel::addRecordIndex(QSqlRecord& t_newrecord)
+//{
+//    QModelIndex qmi = QModelIndex();
+//    int row = rowCount((qmi));
+
+//    //qDebug() << t_newrecord;
+
+//    beginInsertRows(qmi, row, row);
+//    m_cache.append(t_newrecord);
+
+//    endInsertRows();
+
+//    return index(row, 0);
+//}
+
+const QModelIndex PNSqlQueryModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value1);
     Q_UNUSED(t_fk_value2);
@@ -751,16 +750,6 @@ bool PNSqlQueryModel::deleteRecord(QModelIndex t_index)
 
     QMessageBox::critical(nullptr, QObject::tr("Cannot delete record"),
        delrow.lastError().text() + "\n" + delrow.lastQuery(), QMessageBox::Ok);
-
-    return false;
-}
-
-bool PNSqlQueryModel::openRecord(QModelIndex t_index)
-{
-    Q_UNUSED(t_index)
-
-    QMessageBox::critical(nullptr, QObject::tr("Open Record"),
-       QObject::tr("Open Record must be defined on child objects."), QMessageBox::Ok);
 
     return false;
 }
@@ -1345,6 +1334,16 @@ void PNSqlQueryModel::setFilter(int t_column_number, const QString& t_filter_val
     m_filter_compare_type[t_column_number] = t_compare_type;
 }
 
+QVariant PNSqlQueryModel::getFilter(int t_column_number)
+{
+    if (!m_column_is_filtered[t_column_number])
+        return QVariant();
+
+    return(QVariant(m_filter_value[t_column_number]));
+}
+
+
+
 void PNSqlQueryModel::clearAllFilters()
 {
     QHashIterator<int, bool> hashit(m_column_is_filtered);
@@ -1788,6 +1787,8 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
         return false;
     }
 
+    bool isdelete = (t_xml_row->attribute("delete").compare("true", Qt::CaseInsensitive) == 0);
+
     QString whereclause;
     QString fields;
     QString updatevalues;
@@ -1936,8 +1937,11 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
 
     if (exists_count.toInt() > 0)
     {
-        // update if exists
-        sql = QString("update %1 set %2 where %3").arg(m_tablename, updatevalues, whereclause);
+        // delete or update if exists
+        if (isdelete)
+            sql = QString("delete from %1 where %3").arg(m_tablename, whereclause);
+        else
+            sql = QString("update %1 set %2 where %3").arg(m_tablename, updatevalues, whereclause);
     }
     else
     {

@@ -4,16 +4,12 @@
 #include "projectlocationsmodel.h"
 #include "pndatabaseobjects.h"
 
-#include <QFileInfo>
-#include <QDesktopServices>
-#include <QUrl>
-
 ProjectLocationsModel::ProjectLocationsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
 {
     setObjectName("ProjedtLocationsModel");
     setOrderKey(35);
 
-    setBaseSql("SELECT location_id, project_id, location_type, location_description, full_path FROM project_locations");
+    setBaseSql("SELECT location_id, project_id, location_type, location_description, full_path, (select p.project_number from projects p where p.project_id=pl.project_id) project_number, (select p.project_name from projects p where p.project_id=pl.project_id) project_name FROM project_locations pl");
 
     setTableName("project_locations", "Project Locations");
 
@@ -23,6 +19,8 @@ ProjectLocationsModel::ProjectLocationsModel(QObject* t_parent): PNSqlQueryModel
     addColumn(2, tr("Location Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::file_types);
     addColumn(3, tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn(4, tr("Full Path"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn(5, tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn(6, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
 //    QStringList key1 = {"project_id", "full_path"};
 
@@ -36,7 +34,7 @@ ProjectLocationsModel::ProjectLocationsModel(QObject* t_parent): PNSqlQueryModel
 }
 
 
-bool ProjectLocationsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex ProjectLocationsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value2);
 
@@ -112,19 +110,3 @@ bool ProjectLocationsModel::setData(const QModelIndex &t_index, const QVariant &
     return PNSqlQueryModel::setData(t_index, t_value, t_role);
 }
 
-bool ProjectLocationsModel::openRecord(QModelIndex t_index)
-{
-    QVariant location = data(index(t_index.row(), 4));
-    QVariant location_type = data(index(t_index.row(), 2));
-
-    if ( location_type == "Web Link" )
-    {
-        QDesktopServices::openUrl(QUrl(location.toString(), QUrl::TolerantMode));
-    }
-    else
-    {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(location.toString()));
-    }
-
-    return true;
-}

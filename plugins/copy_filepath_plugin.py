@@ -1,3 +1,4 @@
+
 import platform
 
 if (platform.system() == 'Windows'):
@@ -14,9 +15,9 @@ from PyQt5.QtGui import QDesktopServices
 
 
 # Project Notes Plugin Parameters
-pluginname = "Global Settings"
-plugindescription = "This plugin has no events.  It only saves the settings, so they can be used amongst all plugins."
-plugintable = "" # the table or view that the plugin applies to.  This will enable the right click
+pluginname = "Copy Path To Clipboard"
+plugindescription = "Copy the file path to the clipboard."
+plugintable = "project_locations" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
 # events must have a data structure and data view specified
@@ -65,7 +66,53 @@ childtablesfilter = "" # a list of child tables that can be sent to the plugin. 
 
 # Project Notes Parameters
 parameters = [
-    "ProjectsFolder",
-    "DefaultMeetingLocation"
 ]
+
+# this plugin is only supported on windows
+if (platform.system() == 'Windows'):
+    pnc = ProjectNotesCommon()
+
+    def event_data_rightclick(xmlstr):
+        print("called event: " + __file__)
+
+        print(xmlstr)
+
+        xmlval = QDomDocument()
+        if (xmlval.setContent(xmlstr) == False):
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+            return ""
+
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
+
+        if xmlroot:
+            projlocation = pnc.find_node(xmlroot, "table", "name", "project_locations")
+
+            if projlocation:
+                locationrow = projlocation.firstChild()
+
+            while not locationrow.isNull():
+                fp = pnc.get_column_value(locationrow, "full_path")
+
+                if (fp is not None and fp != ""):
+                    QtWidgets.QApplication.clipboard().setText(fp)
+
+                locationrow = locationrow.nextSibling()
+
+        return ""
+
+# setup test data
+"""
+print("Buld up QDomDocument")
+
+xmldoc = QDomDocument("TestDocument")
+
+f = QFile("exampleproject.xml")
+
+if f.open(QIODevice.ReadOnly):
+    print("example project opened")
+    xmldoc.setContent(f)
+    f.close()
+
+event_data_rightclick(xmldoc.toString())
+"""
 

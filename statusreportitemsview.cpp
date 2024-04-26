@@ -39,3 +39,12 @@ void StatusReportItemsView::setModel(QAbstractItemModel *t_model)
     }
 }
 
+void StatusReportItemsView::slotNewRecord()
+{
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
+
+    QVariant fk_value1 = dynamic_cast<StatusReportItemsModel*>(currentmodel)->getFilter(1); // get the project id
+
+    dynamic_cast<StatusReportItemsModel*>(currentmodel)->newRecord(&fk_value1);
+}

@@ -10,8 +10,8 @@ class ProjectsListPage : public PNBasePage
 {
 public:
     ProjectsListPage();
-    void setupModels( Ui::MainWindow *t_ui );    
-    void setPageTitle();
+    void setupModels( Ui::MainWindow *t_ui );
+    void setPageTitle() override;
     void setButtonAndMenuStates();
 
 private:

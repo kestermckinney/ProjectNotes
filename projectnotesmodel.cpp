@@ -30,7 +30,7 @@ ProjectNotesModel::ProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_paren
     setOrderBy("note_date desc");
 }
 
-bool ProjectNotesModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex ProjectNotesModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value2);
 
@@ -50,23 +50,6 @@ bool ProjectNotesModel::newRecord(const QVariant* t_fk_value1, const QVariant* t
     return addRecord(qr);
 }
 
-bool ProjectNotesModel::openRecord(QModelIndex t_index)
-{
-    QVariant note_id = data(index(t_index.row(), 0));
-
-    global_DBObjects.projecteditingnotesmodel()->setFilter(0, note_id.toString());
-    global_DBObjects.projecteditingnotesmodel()->refresh();
-
-    // only select the records another event will be fired to open the window to show them
-    global_DBObjects.meetingattendeesmodel()->setFilter(1, note_id.toString());
-    global_DBObjects.meetingattendeesmodel()->refresh();
-
-    global_DBObjects.notesactionitemsmodel()->setFilter(13, note_id.toString());
-    global_DBObjects.notesactionitemsmodel()->refresh();
-
-    return true;
-}
-
 bool ProjectNotesModel::setData(const QModelIndex &t_index, const QVariant &t_value, int t_role)
 {
     bool wasnew = isNewRecord(t_index);
@@ -81,7 +64,7 @@ bool ProjectNotesModel::setData(const QModelIndex &t_index, const QVariant &t_va
     return result;
 }
 
-bool ProjectNotesModel::copyRecord(QModelIndex t_index)
+const QModelIndex ProjectNotesModel::copyRecord(QModelIndex t_index)
 {
     QSqlRecord qr = emptyrecord();
     QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
@@ -94,7 +77,7 @@ bool ProjectNotesModel::copyRecord(QModelIndex t_index)
     //qr.setValue(4, QVariant());
     qr.setValue(5, 0);
 
-    QModelIndex qi = addRecordIndex(qr);
+    QModelIndex qi = addRecord(qr);
     setData( index(qi.row(), 4), QVariant(), Qt::EditRole);
 
     QVariant oldid = data(index(t_index.row(), 0));
@@ -105,5 +88,5 @@ bool ProjectNotesModel::copyRecord(QModelIndex t_index)
     global_DBObjects.execute(insert);
     global_DBObjects.meetingattendeesmodel()->setDirty();
 
-    return true;
+    return qi;
 }

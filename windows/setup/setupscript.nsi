@@ -5,7 +5,7 @@ RequestExecutionLevel user
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "Project Notes"
-!define PRODUCT_VERSION "3.1.0"
+!define PRODUCT_VERSION "3.1.7"
 !define PRODUCT_PUBLISHER "Paul McKinney"
 !define PRODUCT_WEB_SITE "https://github.com/kestermckinney/ProjectNotes"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\ProjectNotes.exe"
@@ -92,10 +92,6 @@ Section "MainSection" SEC01
   SetOutPath "$INSTDIR\plugins"
   File "..\..\plugins\archivenotes_plugin.py"
   File "..\..\plugins\archivenotes_plugin.py"
-  ;cci_connectdrives_plugin.py
-  ;cci_ifs_projects_import_plugin.py
-  ;cci_ifs_projects_statusreport_plugin.py
-  ;cci_scheduleoneonone_plugin.py
   File "..\..\plugins\contactexport_plugin.py"
   File "..\..\plugins\contactimport_plugin.py"
   File "..\..\plugins\editor_plugin.py"
@@ -105,8 +101,6 @@ Section "MainSection" SEC01
   File "..\..\plugins\newchangeorder_plugin.py"
   File "..\..\plugins\newmsproject_plugin.py"
   File "..\..\plugins\newpowerpoint_plugin.py"
-  File "..\..\plugins\newriskregister_plugin.py"
-  ; paul_cleanpc_plugin.py
   File "..\..\plugins\schedulecustomerkickoffinvite_plugin.py"
   File "..\..\plugins\schedulecustomerlessonslearnedinvite_plugin.py"
   File "..\..\plugins\schedulecustomerstatusinvite_plugin.py"
@@ -118,6 +112,11 @@ Section "MainSection" SEC01
   File "..\..\plugins\sendprojectemailtoperson_plugin.py"
   File "..\..\plugins\sendprojectemailtoteam_plugin.py"
   File "..\..\plugins\trackkerreport_plugin.py"
+  File "..\..\plugins\copy_email_member_plugin.py"
+  File "..\..\plugins\copy_email_plugin.py"
+  File "..\..\plugins\findprojectemailperson_plugin.py"
+  File "..\..\plugins\email_as_attachment_plugin.py"
+  File "..\..\plugins\copy_filepath_plugin.py"
   
   SetOutPath "$INSTDIR\plugins\includes"
   File "..\..\plugins\includes\common.py"
@@ -221,10 +220,6 @@ Section Uninstall
   ; remove all items in the plugins folder
   Delete "$INSTDIR\plugins\archivenotes_plugin.py"
   Delete "$INSTDIR\plugins\archivenotes_plugin.py"
-  ;cci_connectdrives_plugin.py
-  ;cci_ifs_projects_import_plugin.py
-  ;cci_ifs_projects_statusreport_plugin.py
-  ;cci_scheduleoneonone_plugin.py
   Delete "$INSTDIR\plugins\contactexport_plugin.py"
   Delete "$INSTDIR\plugins\contactimport_plugin.py"
   Delete "$INSTDIR\plugins\editor_plugin.py"
@@ -234,7 +229,6 @@ Section Uninstall
   Delete "$INSTDIR\plugins\newchangeorder_plugin.py"
   Delete "$INSTDIR\plugins\newmsproject_plugin.py"
   Delete "$INSTDIR\plugins\newpowerpoint_plugin.py"
-  Delete "$INSTDIR\plugins\newriskregister_plugin.py"
 
   ; paul_cleanpc_plugin.py
   Delete "$INSTDIR\plugins\schedulecustomerkickoffinvite_plugin.py"
@@ -248,29 +242,23 @@ Section Uninstall
   Delete "$INSTDIR\plugins\sendprojectemailtoperson_plugin.py"  
   Delete "$INSTDIR\plugins\sendprojectemailtoteam_plugin.py"
   Delete "$INSTDIR\plugins\trackkerreport_plugin.py"
+  Delete "$INSTDIR\plugins\copy_email_member_plugin.py"
+  Delete "$INSTDIR\plugins\copy_email_plugin.py"
+  Delete "$INSTDIR\plugins\findprojectemailperson_plugin.py"
+  Delete "$INSTDIR\plugins\email_as_attachment_plugin.py"
+  Delete "$INSTDIR\plugins\copy_filepath_plugin.py"
   
   Delete "$INSTDIR\plugins\includes\common.py"
   Delete "$INSTDIR\plugins\includes\excel_tools.py"
   Delete "$INSTDIR\plugins\includes\dialogNotesArchiveOptions.ui"
-  ;Delete "$INSTDIR\plugins\includes\dialogStatusRptOptions.ui"
   Delete "$INSTDIR\plugins\includes\dialogTrackerRptOptions.ui"
 
   Delete "$INSTDIR\plugins\includes\__pycache__\*.*"
   RMDir "$INSTDIR\plugins\includes\__pycache__"
   RMDir "$INSTDIR\plugins\includes"
 
-  ;Delete "$INSTDIR\plugins\templates\Customer Kick Off Template.ppt"
-  ;Delete "$INSTDIR\plugins\templates\Customer MES Kick Off Template.ppt"
-  ;Delete "$INSTDIR\plugins\templates\Full DeltaV Schedule Template.mpp"
-  ;Delete "$INSTDIR\plugins\templates\Full MES Schedule Template.mpp"
-  ;Delete "$INSTDIR\plugins\templates\Internal Kick Off Template.ppt"
   Delete "$INSTDIR\plugins\templates\Lessons Learned Template.xlsx"
-  ;Delete "$INSTDIR\plugins\templates\Lilly B132 Schedule Template.mpp"
-  ;Delete "$INSTDIR\plugins\templates\Lilly B314 Schedule Template.mpp"
-  ;Delete "$INSTDIR\plugins\templates\Lilly IFS B314 Schedule Template.mpp"
   Delete "$INSTDIR\plugins\templates\Meeting Template.xlsx"
-  ;Delete "$INSTDIR\plugins\templates\Single Task Template.mpp"
-  ;Delete "$INSTDIR\plugins\templates\Status Report Template.xlsx"
   Delete "$INSTDIR\plugins\templates\Tracker Items Template.xlsx"
   Delete "$INSTDIR\plugins\templates\Risk Register Template.xlsx"
   Delete "$INSTDIR\plugins\templates\PCR Template.docx"

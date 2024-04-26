@@ -84,6 +84,8 @@ if (platform.system() == 'Windows'):
     # processing main def
     def event_data_rightclick(xmlstr):
         print("called event: " + __file__)
+
+        #print(xmlstr) # debug output
         
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
@@ -189,6 +191,8 @@ if (platform.system() == 'Windows'):
 
 
         templatefile = "plugins/templates/Meeting Template.xlsx"
+        QFile.remove(excelreportname)
+
         if not QFile.copy(templatefile, excelreportname):
             QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + excelreportname, QMessageBox.Cancel)
             return ""
@@ -254,7 +258,7 @@ if (platform.system() == 'Windows'):
             # EXCEL WON'T AUTOFIT THIS FOR SOME REASON I BELIEVE IT IS BECAUSE THE CELLS ARE MERGED
             #print("replaced title and meeting date....")
 
-            note = pnc.to_html(pnc.get_column_value(notesrow, "note"))
+            note = pnc.get_column_value(notesrow, "note")
             doc = QTextDocument()
             doc.setHtml(note)
             pne.set_cell_by_tag(sheet, "<MEETING_NOTES" + str(itemcount) + ">", "'" + doc.toPlainText() )

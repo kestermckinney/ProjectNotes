@@ -4,6 +4,9 @@
 #include "projectlocationsview.h"
 #include "pndatabaseobjects.h"
 
+#include <QFileInfo>
+#include <QUrl>
+
 ProjectLocationsView::ProjectLocationsView(QWidget* t_parent) : PNTableView(t_parent)
 {
     setObjectName("tableViewProjectLocations");
@@ -25,6 +28,8 @@ void ProjectLocationsView::setModel(QAbstractItemModel *t_model)
 
         setColumnHidden(0, true);
         setColumnHidden(1, true);
+        setColumnHidden(5, true);
+        setColumnHidden(6, true);
 
         // see setbuttonitems for visible columns
 
@@ -47,4 +52,12 @@ void ProjectLocationsView::setModel(QAbstractItemModel *t_model)
     }
 }
 
+void ProjectLocationsView::slotNewRecord()
+{
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
 
+    QVariant fk_value1 = dynamic_cast<ProjectLocationsModel*>(currentmodel)->getFilter(1); // get the project id
+
+    dynamic_cast<ProjectLocationsModel*>(currentmodel)->newRecord(&fk_value1);
+}

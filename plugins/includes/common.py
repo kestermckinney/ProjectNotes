@@ -14,7 +14,7 @@ def windowEnumerationHandler(hwnd, tpwindows):
 
 
 from PyQt5 import QtSql, QtGui, QtCore, QtWidgets
-from PyQt5.QtCore import QDirIterator, QDir, QSettings
+from PyQt5.QtCore import QDirIterator, QDir, QSettings, QFile
 from PyQt5.QtXml import QDomDocument, QDomNode
 from PyQt5.QtWidgets import QMessageBox, QMainWindow
 
@@ -204,6 +204,7 @@ class ProjectNotesCommon:
                         xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request", "PDF File", ["*.pdf"] )
                         xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request", "Word Document", ["*.docx"] )
                         xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request", "Word Document", ["*.doc"] )
+                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request Calcs", "Excel Document", ["*.xlsx", "*.xls"] )
 
             return(xmldoc)
 
@@ -293,36 +294,6 @@ class ProjectNotesCommon:
 
         return(False)
 
-    # this doesn't seem to work over a VPN
-    def connect_drives(self):
-        if (platform.system() != 'Windows'):
-            print("connect_drives requires win32com not supported on this platform")
-            return(False)
-            
-        network = win32com.client.Dispatch("WScript.Network")
-
-        if self.ping_server("INDFP03.cornerstonecontrols.local"):
-            #print("ping indfp03 worked...")
-            if not self.check_drive(network, "K:"):
-                network.MapNetworkDrive("K:", "\\\\INDFP03.cornerstonecontrols.local\\DATA", True)
-            if not self.check_drive(network, "P:"):
-                network.MapNetworkDrive("P:", "\\\\INDFP03.cornerstonecontrols.local\\DATA\\ENGINEERING\\PROJECTS", True)
-
-        if self.ping_server("CINVFP01.cornerstonecontrols.local"):
-            #print("ping cinvfp01 worked...")
-            if not self.check_drive(network, "N:"):
-                network.MapNetworkDrive("N:", "\\\\CINVFP01.cornerstonecontrols.local\\DATA", True)
-            if not self.check_drive(network, "O:"):
-                network.MapNetworkDrive("O:", "\\\\CINVFP01.cornerstonecontrols.local\\PROJECTS", True)
-
-        if self.ping_server("CORNERSTONECONTROLS.LOCAL"):
-            #print("ping cornerstonecontrols worked...")
-            if not self.check_drive(network, "R:"):
-                network.MapNetworkDrive("R:", "\\\\CORNERSTONECONTROLS.LOCAL\\COMMON\\Public", True)
-
-        network = None
-        return(None)
-
     def exec_program(self, fullpath):
 
         if (platform.system() == 'Windows'):
@@ -355,45 +326,7 @@ class ProjectNotesCommon:
             QMessageBox.warning(None, "Invalid Global Setting", "ProjectsFolder must be set in the Global Settigns plugin.", QMessageBox.Ok)
             return(False)
 
-        # code below will cause the script to fail if connection settings are wrong
-        if (platform.system() == 'Windows'):
-            adodb = self.connect()
-            rs = win32com.client.Dispatch("ADODB.Recordset")
-            rs.ActiveConnection = adodb
-
-            rs.Open("select sysdate from dual", adodb)
-            st = rs.State
-            #print("State: " +  str(st) + "\n")
-            rs = None
-
-            self.close(adodb)
-            adodb = None
-
-            if st == 0:
-                QMessageBox.warning(None, "Could not connect to Oracle verify parameters are correct in the Global Settigns plugin.", QMessageBox.Ok)
-                return(False)
-        else:
-            print("connect to ADODB requires win32com not supported on this platform")
-
         return(True)
-
-    def connect(self):
-        if (platform.system() != 'Windows'):
-            print("connect to ADODB requires win32com not supported on this platform")
-            return(False)
-            
-        op = self.get_plugin_setting("OraclePassword")
-        ou = self.get_plugin_setting("OracleUsername")
-        ds = self.get_plugin_setting("OracleDataSource")
-
-        strconnect = "Provider=OraOLEDB.Oracle.1;User ID=" + ou + ";Password=" + op + ";Data Source=" + ds + ";"
-
-        adodb = win32com.client.Dispatch("ADODB.Connection")
-
-        adodb.ConnectionString = strconnect;
-        adodb.Open()
-
-        return(adodb)
 
     def bring_window_to_front(self, title):
         if (platform.system() != 'Windows'):
@@ -411,14 +344,6 @@ class ProjectNotesCommon:
                 win32gui.SetForegroundWindow(i[0])
                 break
         return
-
-    def close(self, adodb):
-        if (platform.system() !='Windows'):
-            print("close ADODB requires win32com not supported on this platform")
-            return(False)
-
-        adodb.Close()
-        adodb = None
 
     def scrape_project_name(self, xmldoc):
         projectname = ""
@@ -476,3 +401,45 @@ class ProjectNotesCommon:
 
         return(projectnumber)
 
+    def email_word_file_as_html(self, subject, recipients, attachment, wordfile):
+        if (platform.system() != 'Windows'):
+            print("email_word_file_as_html only supported on Windows")
+            return
+
+        if wordfile is not None:
+            word = win32com.client.Dispatch("Word.Application")
+            word.Visible = 0
+            doc = word.Documents.Open(wordfile)
+            doc.SaveAs(wordfile + ".html", 8)
+            word.Quit()
+            word = None
+
+            file = open(wordfile + ".html", "r")
+            html = file.read()
+            file.close()
+            QFile.remove(wordfile + ".html")
+            dir = QDir(wordfile + "_files")
+            dir.removeRecursively()
+
+        outlook = win32com.client.Dispatch("Outlook.Application")
+        message = outlook.CreateItem(0)
+        message.To = ""
+
+        outlook.ActiveExplorer().Activate()
+        message.Display()
+
+        message.To = recipients
+        DefaultSignature = message.HTMLBody
+
+        message.Subject = subject
+
+        if wordfile is not None:
+            message.HTMLBody = html + DefaultSignature
+
+        if attachment is not None:
+            message.Attachments.Add(attachment, 1)
+
+        self.bring_window_to_front(subject)
+
+        outlook = None
+        message = None

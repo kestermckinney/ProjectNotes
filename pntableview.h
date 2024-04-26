@@ -43,14 +43,15 @@ public:
 
     bool getHasOpen() { return m_has_open; }
     void setHasOpen(bool t_has_open) { m_has_open = t_has_open; }
+    void setKeyToOpenField(int t_key_to_open_field) { m_key_to_open_field = t_key_to_open_field; }
 
 signals:
-    void signalOpenRecordWindow();
+    void signalOpenRecordWindow(QVariant record_id);
 
 public slots:
     virtual void dataRowSelected(const QModelIndex &t_index);
     virtual void dataRowActivated(const QModelIndex &t_index);
-    void slotNewRecord();
+    virtual void slotNewRecord();
     void slotDeleteRecord();
     void slotCopyRecord();
     void slotOpenRecord();
@@ -76,6 +77,7 @@ private:
     bool m_has_open = false;
 
     FilterDataDialog *m_filterdialog = nullptr;
+    int m_key_to_open_field = 0;
 };
 
 #endif // PNTABLEVIEW_H

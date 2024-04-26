@@ -20,6 +20,9 @@ public:
 private:
     // projects list panel delegates
     PNComboBoxDelegate* m_unfiltered_people_delegate = nullptr;
+
+public slots:
+    void slotNewRecord() override;
 };
 
 #endif // MEETINGATTENDEESVIEW_H

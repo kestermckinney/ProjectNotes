@@ -27,7 +27,6 @@ private:
     QStringListModel m_item_priority;
 
     // projects list panel delegates
-    //PNComboBoxDelegate* m_unfiltered_people_delegate = nullptr;
     ComboBoxDelegate* m_action_item_type_delegate = nullptr;
     PNComboBoxDelegate* m_identified_by_delegate = nullptr;
     ComboBoxDelegate* m_priority_delegate = nullptr;
@@ -40,10 +39,12 @@ private:
     PNComboBoxDelegate* m_meeting_delegate = nullptr;
     PNComboBoxDelegate* m_project_delegate = nullptr;
     PNCheckBoxDelegate* m_internal_delegate = nullptr;
-    //PNComboBoxDelegate* m_client_delegate = nullptr;
-    NotEditableDelegate* m_not_editable_delegate = nullptr;
+
     PNPlainTextEditDelegate* m_item_name_delegate = nullptr;
     PNPlainTextEditDelegate* m_description_delegate = nullptr;
+
+public slots:
+    void slotNewRecord() override;
 };
 
 

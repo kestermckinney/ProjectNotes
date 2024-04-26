@@ -18,4 +18,5 @@ ActionItemsDetailsMeetingsModel::ActionItemsDetailsMeetingsModel(QObject* t_pare
     addColumn(3, tr("Internal Item"), DBBool, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
     setOrderBy("note_date");
+    setNoExport();
 }

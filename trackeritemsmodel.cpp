@@ -67,7 +67,7 @@ QVariant TrackerItemsModel::getNextItemNumber(const QVariant& t_project_id)
     return QVariant(QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0')));
 }
 
-bool TrackerItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex TrackerItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value2);
 
@@ -125,15 +125,15 @@ QVariant TrackerItemsModel::data(const QModelIndex &t_index, int t_role) const
 {
     if (t_role == Qt::ForegroundRole)
     {
-        if (t_index.column() == 8) // statu
+        if (t_index.column() == 8) // priority
         {
-            QVariant value = data(t_index);
+            QString value = data(t_index).toString();
 
-            if (value == "High")
+            if (value.compare("High") == 0)
             {
                  return QVariant(QCOLOR_RED);
             }
-            else if (value == "Medium")
+            else if (value.compare("Medium") == 0)
             {
                 return QVariant(QCOLOR_YELLOW);
             }
@@ -160,27 +160,11 @@ QVariant TrackerItemsModel::data(const QModelIndex &t_index, int t_role) const
     return PNSqlQueryModel::data(t_index, t_role);
 }
 
-bool TrackerItemsModel::openRecord(QModelIndex t_index)
+const QModelIndex TrackerItemsModel::copyRecord(QModelIndex t_index)
 {
-    QVariant record_id = data(index(t_index.row(), 0));
-    QVariant project_id = data(index(t_index.row(), 14));
+    QModelIndex qi = PNSqlQueryModel::copyRecord(t_index);
 
-    // only select the records another event will be fired to open the window to show them
-    global_DBObjects.actionitemsdetailsmodel()->setFilter(0, record_id.toString());
-    global_DBObjects.actionitemsdetailsmodel()->refresh();
-
-    global_DBObjects.actionitemsdetailsmeetingsmodel()->setFilter(1, project_id.toString());
-    global_DBObjects.actionitemsdetailsmeetingsmodel()->refresh();
-
-    global_DBObjects.trackeritemscommentsmodel()->setFilter(1, record_id.toString());
-    global_DBObjects.trackeritemscommentsmodel()->refresh();
-
-    return true;
-}
-
-bool TrackerItemsModel::copyRecord(QModelIndex t_index)
-{
-    if (PNSqlQueryModel::copyRecord(t_index))
+    if(qi.isValid())
     {
         QVariant project_id = data(index(t_index.row(), 14));
         QVariant next_item_number = getNextItemNumber(project_id);
@@ -188,9 +172,7 @@ bool TrackerItemsModel::copyRecord(QModelIndex t_index)
         int count = rowCount(QModelIndex()) - 1;
 
         setCacheData(index(count, 1), next_item_number);
-
-        return true;
     }
 
-    return false;
+    return qi;
 }

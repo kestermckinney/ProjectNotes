@@ -24,6 +24,9 @@ private:
     // projects list panel delegates
     ComboBoxDelegate* m_status_items_status_delegate = nullptr;
     PNPlainTextEditDelegate* m_status_item_description = nullptr;
+
+public slots:
+    void slotNewRecord() override;
 };
 
 #endif // STATUSREPORTITEMSVIEW_H

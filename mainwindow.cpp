@@ -28,8 +28,7 @@
 #include <QMimeType>
 #include <QMimeData>
 #include <QActionGroup>
-//#include <QDebug>
-
+#include <QDesktopServices>
 #include "mainwindow.h"
 
 PNPluginManager* MainWindow::m_plugin_manager = nullptr;
@@ -48,6 +47,7 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     // view state
     m_page_history.clear();
+    m_forward_back_history.clear();
 
     global_Settings.getWindowState("MainWindow", *this);
     int sz = global_Settings.getStoredInt("DefaultFontSize");
@@ -59,12 +59,14 @@ MainWindow::MainWindow(QWidget *t_parent)
     af.setPointSize(sz);
     QApplication::setFont(af);
 
-    connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ProjectDetails_triggered()));
-    connect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ItemDetails_triggered()));
-    connect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ItemDetails_triggered()));
-    connect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ProjectNote_triggered()));
-    connect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_SearchResults_triggered()));
-    connect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpenTeamMember_triggered()));
+    connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ProjectDetails_triggered(QVariant)));
+    connect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ItemDetails_triggered(QVariant)));
+    connect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ItemDetails_triggered(QVariant)));
+    connect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ProjectNote_triggered(QVariant)));
+    connect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_SearchResults_triggered(QVariant)));
+    connect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpenTeamMember_triggered(QVariant)));
+    connect(ui->tableViewAtendees, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpenTeamMember_triggered(QVariant)));
+    connect(ui->tableViewLocations, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpenLocation_triggered(QVariant)));
 
     connect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
     connect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
@@ -421,12 +423,14 @@ void MainWindow::slotPluginMenu(PNPlugin* t_plugin)
 
 MainWindow::~MainWindow()
 {
-    disconnect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ProjectDetails_triggered()));
-    disconnect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ItemDetails_triggered()));
-    disconnect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ItemDetails_triggered()));
-    disconnect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_ProjectNote_triggered()));
-    disconnect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpen_SearchResults_triggered()));
-    disconnect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow()), this, SLOT(slotOpenTeamMember_triggered()));
+    disconnect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ProjectDetails_triggered(QVariant)));
+    disconnect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ItemDetails_triggered(QVariant)));
+    disconnect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ItemDetails_triggered(QVariant)));
+    disconnect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ProjectNote_triggered(QVariant)));
+    disconnect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_SearchResults_triggered(QVariant)));
+    disconnect(ui->tableViewTeam, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpenTeamMember_triggered(QVariant)));
+    disconnect(ui->tableViewAtendees, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpenTeamMember_triggered(QVariant)));
+    disconnect(ui->tableViewLocations, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpenLocation_triggered(QVariant)));
 
     disconnect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
     disconnect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
@@ -459,6 +463,18 @@ MainWindow::~MainWindow()
 
     if (global_DBObjects.isOpen())
         CloseDatabase();
+
+    while (m_page_history.count())
+    {
+        HistoryNode* hn = m_page_history.pop();
+        delete hn;
+    }
+
+    while (m_forward_back_history.count())
+    {
+        HistoryNode* hn = m_forward_back_history.pop();
+        delete hn;
+    }
 
     delete m_preferences_dialog;
     delete m_find_replace_dialog;
@@ -704,6 +720,19 @@ void MainWindow::setButtonAndMenuStates()
         // filter tracker items
         ui->actionResolved_Tracker_Action_Items->setChecked(global_DBObjects.getShowResolvedTrackerItems());
         ui->actionResolved_Tracker_Action_Items->setEnabled(true);
+
+        // clear out page history for a rebuild
+        ui->menuHistory->clear();
+
+        int i = m_page_history.count();
+        while(i)
+        {
+            i--;
+            HistoryNode* hn = m_page_history.at(i);
+            QString title = QString("%1 - %2").arg(hn->m_pagetitle, hn->m_timestamp.toString("MM/dd/yy hh:mm"));
+            QAction* ha = ui->menuHistory->addAction(title, [hn, this](){navigateToPage(hn->m_page, hn->m_record_id);});
+            ha->setPriority(QAction::LowPriority);
+        }
     }
     else
     {
@@ -744,6 +773,9 @@ void MainWindow::setButtonAndMenuStates()
         // filter tracker items
         ui->actionResolved_Tracker_Action_Items->setChecked(false);
         ui->actionResolved_Tracker_Action_Items->setEnabled(false);
+
+        // clear out page history
+        ui->menuHistory->clear();
     }
 }
 
@@ -807,7 +839,7 @@ void MainWindow::openDatabase(QString t_dbfile)
     ui->pageHelp->setupModels(ui);
 
     navigateClearHistory();
-    navigateToPage(ui->pageProjectsList);
+    navigateToPage(ui->pageProjectsList, QVariant());
 
     setButtonAndMenuStates();
 
@@ -825,23 +857,43 @@ void MainWindow::openDatabase(QString t_dbfile)
     connect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
 }
 
-void MainWindow::navigateToPage(PNBasePage* t_widget)
+void MainWindow::navigateToPage(PNBasePage* t_widget, QVariant t_record_id)
 {
-    if ( t_widget == navigateCurrentPage() )
-        return;
+    if (navigateCurrentPage())
+    {
+        QString a = t_record_id.toString();
+        QString b = navigateCurrentPage()->getRecordId().toString();
 
-    // if in the middle of the history chop off the remaining history
-    while (m_navigation_location < m_navigation_history.count() - 1)
-        m_navigation_history.pop();
+        if ( a.compare(b) == 0 && navigateCurrentPage() == t_widget)
+            return;
+    }
 
-    m_navigation_location = m_navigation_history.count();
-    m_navigation_history.push(t_widget);   
+    if (navigateCurrentPage())
+    {
+        navigateCurrentPage()->saveState();
+        navigateCurrentPage()->submitRecord();
+    }
 
-    if (PNSqlQueryModel::refreshDirty())
-        t_widget->toFirst(false);
+    t_widget->openRecord(t_record_id);
 
     ui->stackedWidget->setCurrentWidget(t_widget);
+
     t_widget->setPageTitle();
+
+    HistoryNode* buttonnode = new HistoryNode(t_widget, t_record_id, t_widget->getHistoryText());
+
+    // if in the middle of the button history chop off the remaining history
+    while (m_navigation_location < m_forward_back_history.count() - 1)
+    {
+        HistoryNode* hn = m_forward_back_history.pop();
+        delete hn;
+    }
+
+    m_navigation_location = m_forward_back_history.count();
+    m_forward_back_history.push(buttonnode);
+
+    buildHistory(buttonnode);
+
     buildPluginMenu();
     t_widget->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
 
@@ -852,12 +904,23 @@ void MainWindow::navigateBackward()
 {
     if (m_navigation_location > 0)
     {
+        if (navigateCurrentPage())
+        {
+            navigateCurrentPage()->saveState();
+            navigateCurrentPage()->submitRecord();
+        }
+
         m_navigation_location--;
 
-        QWidget* current = m_navigation_history.at(m_navigation_location);
+        HistoryNode* hn = m_forward_back_history.at(m_navigation_location);
+        buildHistory(hn);
 
-        if (PNSqlQueryModel::refreshDirty())
-            dynamic_cast<PNBasePage*>(current)->toFirst(false);
+        PNBasePage* current = hn->m_page;
+        QVariant record_id = hn->m_record_id;
+
+        current->openRecord(record_id);
+
+        // TODO: Eventually remove PNSqlQueryModel::refreshDirty();
 
         ui->stackedWidget->setCurrentWidget(current);
         dynamic_cast<PNBasePage*>(current)->setPageTitle();
@@ -870,14 +933,26 @@ void MainWindow::navigateBackward()
 
 void MainWindow::navigateForward()
 {
-    if (m_navigation_location < (m_navigation_history.count() - 1) )
+    if (m_navigation_location < (m_forward_back_history.count() - 1) )
     {
+        if (navigateCurrentPage())
+        {
+            navigateCurrentPage()->saveState();
+            navigateCurrentPage()->submitRecord();
+        }
+
+
         m_navigation_location++;
 
-        QWidget* current = m_navigation_history.at(m_navigation_location);
+        HistoryNode* hn = m_forward_back_history.at(m_navigation_location);
+        buildHistory(hn);
 
-        if (PNSqlQueryModel::refreshDirty())
-            dynamic_cast<PNBasePage*>(current)->toFirst(false);
+        PNBasePage* current = hn->m_page;
+        QVariant record_id = hn->m_record_id;
+
+        current->openRecord(record_id);
+
+        //TODO: eventually remove PNSqlQueryModel::refreshDirty();//)//TODO: CALL FROM openRecord
 
         ui->stackedWidget->setCurrentWidget(current);
         dynamic_cast<PNBasePage*>(current)->setPageTitle();
@@ -887,6 +962,34 @@ void MainWindow::navigateForward()
 
     setButtonAndMenuStates();
 }
+
+void MainWindow::buildHistory(HistoryNode* t_node)
+{
+    HistoryNode* hn = new HistoryNode(t_node->m_page, t_node->m_record_id, t_node->m_pagetitle);
+
+    // remove this page if is in the past
+    int nodecount = 0;
+    while (nodecount < m_page_history.count())
+    {
+        if (m_page_history.at(nodecount)->equals(hn))
+        {
+            delete m_page_history.at(nodecount);
+            m_page_history.remove(nodecount);
+        }
+        else
+            nodecount++;
+    }
+
+    // if past the max delete the node
+    if (m_page_history.count() > MAXHISTORYNODES)
+    {
+        HistoryNode* ohn = m_page_history.pop();
+        delete ohn;
+    }
+
+    m_page_history.push(hn);
+}
+
 void MainWindow::CloseDatabase()
 {
     // disconnect the search request event
@@ -937,17 +1040,17 @@ void MainWindow::on_actionFilter_triggered()
 
 void MainWindow::on_actionClients_triggered()
 {
-    navigateToPage(ui->pageClients);
+    navigateToPage(ui->pageClients, QVariant());
 }
 
 void MainWindow::on_actionPeople_triggered()
 {
-    navigateToPage(ui->pagePeople);
+    navigateToPage(ui->pagePeople, QVariant());
 }
 
 void MainWindow::on_actionProjects_triggered()
 {
-    navigateToPage(ui->pageProjectsList);
+    navigateToPage(ui->pageProjectsList, QVariant());
 }
 
 void MainWindow::on_actionBack_triggered()
@@ -987,46 +1090,46 @@ void MainWindow::on_actionDelete_Item_triggered()
         navigateCurrentPage()->deleteItem();
 }
 
-void MainWindow::slotOpen_ProjectDetails_triggered()
+void MainWindow::slotOpen_ProjectDetails_triggered(QVariant t_record_id)
 {
-
-    ui->pageProjectDetails->toFirst();
-
-    navigateToPage(ui->pageProjectDetails);
+    navigateToPage(ui->pageProjectDetails, t_record_id);
 }
 
-void MainWindow::slotOpen_ItemDetails_triggered()
+void MainWindow::slotOpen_ItemDetails_triggered(QVariant t_record_id)
 {
-    ui->pageItemDetails->toFirst();
-
-    navigateToPage(ui->pageItemDetails);
+    navigateToPage(ui->pageItemDetails, t_record_id);
 }
 
-void MainWindow::slotOpen_ProjectNote_triggered()
+void MainWindow::slotOpen_ProjectNote_triggered(QVariant t_record_id)
 {
-    ui->pageProjectNote->toFirst();
-
-    navigateToPage(ui->pageProjectNote);
+    navigateToPage(ui->pageProjectNote, t_record_id);
 }
 
-void MainWindow::slotOpenTeamMember_triggered()
+void MainWindow::slotOpenTeamMember_triggered(QVariant t_record_id)
 {
-    navigateToPage(ui->pagePeople);
-
-    QModelIndexList qil = ui->tableViewTeam->selectionModel()->selectedRows();
-    auto qib = qil.begin();
-    QModelIndex qq = global_DBObjects.projectteammembersmodelproxy()->mapToSource(*qib);
-    QVariant record_id = global_DBObjects.projectteammembersmodel()->data(global_DBObjects.projectteammembersmodel()->index(qq.row(), 2));
-
-
-    QModelIndex qmi = global_DBObjects.peoplemodel()->findIndex(record_id, 0);
-    QModelIndex qi = global_DBObjects.peoplemodelproxy()->index(global_DBObjects.peoplemodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
-
-    ui->tableViewPeople->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
-    ui->tableViewPeople->scrollTo(qi, QAbstractItemView::PositionAtCenter);
+    navigateToPage(ui->pagePeople, t_record_id);
 }
 
-void MainWindow::slotOpen_SearchResults_triggered()
+void MainWindow::slotOpenLocation_triggered(QVariant t_record_id)
+{
+    QModelIndex qmi = global_DBObjects.projectlocationsmodel()->findIndex(t_record_id, 0);
+    QModelIndex qi = global_DBObjects.projectlocationsmodelproxy()->index(global_DBObjects.projectlocationsmodelproxy()->mapFromSource(qmi).row(), 2);  // usa a visible column
+
+    QVariant location = ui->tableViewLocations->model()->data(ui->tableViewLocations->model()->index(qi.row(), 4));
+    QVariant location_type = ui->tableViewLocations->model()->data(ui->tableViewLocations->model()->index(qi.row(), 2));
+
+    if ( location_type == "Web Link" )
+    {
+        QDesktopServices::openUrl(QUrl(location.toString(), QUrl::TolerantMode));
+    }
+    else
+    {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(location.toString()));
+    }
+}
+
+
+void MainWindow::slotOpen_SearchResults_triggered(QVariant t_record_id)
 {
     // find the selected search result
     QModelIndexList qil = ui->tableViewSearchResults->selectionModel()->selectedIndexes();
@@ -1038,7 +1141,7 @@ void MainWindow::slotOpen_SearchResults_triggered()
 
     if (data_type == tr("Client"))
     {
-        navigateToPage(ui->pageClients);
+        navigateToPage(ui->pageClients, t_record_id);
 
         QModelIndex qmi = global_DBObjects.clientsmodel()->findIndex(record_id, 0);
         QModelIndex qi = global_DBObjects.clientsmodelproxy()->index(global_DBObjects.clientsmodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
@@ -1048,7 +1151,7 @@ void MainWindow::slotOpen_SearchResults_triggered()
     }
     else if (data_type == tr("People"))
     {
-        navigateToPage(ui->pagePeople);
+        navigateToPage(ui->pagePeople, t_record_id);
 
         QModelIndex qmi = global_DBObjects.peoplemodel()->findIndex(record_id, 0);
         QModelIndex qi = global_DBObjects.peoplemodelproxy()->index(global_DBObjects.peoplemodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
@@ -1058,21 +1161,19 @@ void MainWindow::slotOpen_SearchResults_triggered()
     }
     else if (data_type == tr("Project"))
     {
-        ui->pageProjectDetails->toFirst();
+        navigateToPage(ui->pageProjectDetails, t_record_id);
 
-        navigateToPage(ui->pageProjectDetails);
+        ui->tabWidgetProject->setCurrentIndex(0);
     }
     else if (data_type == tr("Project Notes"))
     {
-        ui->pageProjectNote->toFirst();
+        navigateToPage(ui->pageProjectNote, t_record_id);
 
-        navigateToPage(ui->pageProjectNote);
+        ui->tabWidgetNotes->setCurrentIndex(0);
     }
     else if (data_type == tr("Meeting Attendees"))
     {
-        ui->pageProjectNote->toFirst();
-
-        navigateToPage(ui->pageProjectNote);
+        navigateToPage(ui->pageProjectNote, t_record_id);
         ui->tabWidgetNotes->setCurrentIndex(1);
 
         QModelIndex qmi = global_DBObjects.meetingattendeesmodel()->findIndex(record_id, 0);
@@ -1083,9 +1184,7 @@ void MainWindow::slotOpen_SearchResults_triggered()
     }
     else if (data_type == tr("Project Locations"))
     {
-        ui->pageProjectDetails->toFirst();
-
-        navigateToPage(ui->pageProjectDetails);
+        navigateToPage(ui->pageProjectDetails, t_record_id);
         ui->tabWidgetProject->setCurrentIndex(3);
 
         QModelIndex qmi = global_DBObjects.projectlocationsmodel()->findIndex(record_id, 0);
@@ -1096,10 +1195,7 @@ void MainWindow::slotOpen_SearchResults_triggered()
     }
     else if (data_type == tr("Project Team"))
     {
-        ui->pageProjectDetails->toFirst();
-
-        navigateToPage(ui->pageProjectDetails);
-        ui->tabWidgetProject->setCurrentIndex(1);
+        navigateToPage(ui->pageProjectDetails, t_record_id);
 
         QModelIndex qmi = global_DBObjects.projectteammembersmodel()->findIndex(record_id, 0);
         QModelIndex qi = global_DBObjects.projectteammembersmodelproxy()->index(global_DBObjects.projectteammembersmodelproxy()->mapFromSource(qmi).row(), 3);  // usa a visible column
@@ -1109,9 +1205,7 @@ void MainWindow::slotOpen_SearchResults_triggered()
     }
     else if (data_type == tr("Status Report Item"))
     {
-        ui->pageProjectDetails->toFirst();
-
-        navigateToPage(ui->pageProjectDetails);
+        navigateToPage(ui->pageProjectDetails, t_record_id);
         ui->tabWidgetProject->setCurrentIndex(0);
 
         QModelIndex qmi = global_DBObjects.statusreportitemsmodel()->findIndex(record_id, 0);
@@ -1122,15 +1216,11 @@ void MainWindow::slotOpen_SearchResults_triggered()
     }
     else if (data_type == tr("Item Tracker") )
     {
-        ui->pageItemDetails->toFirst();
-
-        navigateToPage(ui->pageItemDetails);
+        navigateToPage(ui->pageItemDetails, t_record_id);
     }
     else if (data_type == tr("Tracker Update") )
     {
-        ui->pageItemDetails->toFirst();
-
-        navigateToPage(ui->pageItemDetails);
+        navigateToPage(ui->pageItemDetails, t_record_id);
 
         QModelIndex qmi = global_DBObjects.trackeritemscommentsmodel()->findIndex(record_id, 0);
         QModelIndex qi = global_DBObjects.trackeritemscommentsmodelproxy()->index(global_DBObjects.trackeritemscommentsmodelproxy()->mapFromSource(qmi).row(), 3);  // usa a visible column
@@ -1770,7 +1860,7 @@ void MainWindow::on_actionFind_triggered()
 
 void MainWindow::on_actionSearch_triggered()
 {
-    navigateToPage(ui->pageSearch);
+    navigateToPage(ui->pageSearch, QVariant());
 }
 
 void MainWindow::on_pushButtonSearch_clicked()
@@ -1873,31 +1963,22 @@ void MainWindow::on_actionAbout_triggered()
 
 void MainWindow::on_actionHelp_triggered()
 {
-    navigateToPage(ui->pageHelp);
+    navigateToPage(ui->pageHelp, QVariant());
     ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/Introduction.html"));
 }
 
 
 void MainWindow::on_actionGetting_Started_triggered()
 {
-    navigateToPage(ui->pageHelp);
+    navigateToPage(ui->pageHelp, QVariant());
     ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/GettingStarted.html"));
 }
 
 
 void MainWindow::on_actionWhat_s_New_triggered()
 {
-    navigateToPage(ui->pageHelp);
-    ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/Whatsnew.html"));
+    QDesktopServices::openUrl(QUrl("https://github.com/kestermckinney/ProjectNotes/wiki/Release%20Notes", QUrl::TolerantMode));
 }
-
-
-void MainWindow::on_actionCustom_Plugins_triggered()
-{
-    navigateToPage(ui->pageHelp);
-    ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/OverviewofPlugins.html"));
-}
-
 
 void MainWindow::on_actionIncrease_Font_Size_triggered()
 {
@@ -1947,3 +2028,4 @@ void MainWindow::on_actionDecrease_Font_Size_triggered()
 
     global_Settings.setStoredInt("DefaultFontSize",  QApplication::font().pointSize());
 }
+
