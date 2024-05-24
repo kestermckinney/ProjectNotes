@@ -8,12 +8,12 @@ if (platform.system() == 'Windows'):
     from win32 import win32api
 
 from includes.common import ProjectNotesCommon
-from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
-from PyQt5.QtSql import QSqlDatabase
-from PyQt5.QtXml import QDomDocument, QDomNode
-from PyQt5.QtCore import QFile, QIODevice, QDate, QUrl, QDir
-from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
-from PyQt5.QtGui import QDesktopServices, QTextDocument
+from PyQt6 import QtSql, QtGui, QtCore, QtWidgets, uic
+from PyQt6.QtSql import QSqlDatabase
+from PyQt6.QtXml import QDomDocument, QDomNode
+from PyQt6.QtCore import QFile, QIODevice, QDate, QUrl, QDir
+from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
+from PyQt6.QtGui import QDesktopServices, QTextDocument
 
 # Project Notes Plugin Parameters
 pluginname = "Archive Meeting Notes"

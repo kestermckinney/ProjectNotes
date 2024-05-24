@@ -13,14 +13,16 @@ def windowEnumerationHandler(hwnd, tpwindows):
         tpwindows.append((hwnd, win32gui.GetWindowText(hwnd)))
 
 
-from PyQt5 import QtSql, QtGui, QtCore, QtWidgets
-from PyQt5.QtCore import QDirIterator, QDir, QSettings, QFile
-from PyQt5.QtXml import QDomDocument, QDomNode
-from PyQt5.QtWidgets import QMessageBox, QMainWindow
+from PyQt6 import QtSql, QtGui, QtCore, QtWidgets
+from PyQt6.QtCore import QDirIterator, QDir, QSettings, QFile
+from PyQt6.QtXml import QDomDocument, QDomNode
+from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication
+
+from PyQt6.QtCore import QT_VERSION_STR, PYQT_VERSION_STR
+print("Qt: v", QT_VERSION_STR, "\tPyQt: v", PYQT_VERSION_STR)
 
 import re
 import subprocess
-
 
 class ProjectNotesCommon:
 

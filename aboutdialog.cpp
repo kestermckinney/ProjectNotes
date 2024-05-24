@@ -15,7 +15,7 @@ AboutDialog::AboutDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    QString version = QString("Project Notes Version %1.%2.%3").arg(PNMajorVersion).arg(PNMinorVersion).arg(PNFixVersion);
+    QString version = QString("Project Notes Version %1.%2.%3\nQt Version %4").arg(PNMajorVersion).arg(PNMinorVersion).arg(PNFixVersion).arg(QT_VERSION_STR);
     ui->labelVersion->setText(version);
     ui->labelBuild->setText(QString("Build: %1").arg(BUILDV));
 

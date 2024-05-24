@@ -10,7 +10,7 @@
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication::addLibraryPath("./site-packages/PyQt5/Qt5/plugins");
+    QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt5/plugins");
 
     QApplication a(argc, argv);
 
@@ -24,6 +24,9 @@ int main(int argc, char *argv[])
     MainWindow w;
 
 #ifdef Q_OS_WIN
+    if ( a.style()->name().contains("windows11") ) // windows11 style is broken in 6.7
+        qApp->setStyle(QStyleFactory::create("windowsvista"));
+
     QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",QSettings::NativeFormat);
     if(settings.value("AppsUseLightTheme")==0){
         qApp->setStyle(QStyleFactory::create("Fusion"));

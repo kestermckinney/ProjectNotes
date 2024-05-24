@@ -27,8 +27,8 @@ QT_END_NAMESPACE
 #include "pluginsettingsdialog.h"
 
 #define PNMajorVersion 3
-#define PNMinorVersion 1
-#define PNFixVersion 7
+#define PNMinorVersion 2
+#define PNFixVersion 0
 
 #define MAXHISTORYNODES 20
 

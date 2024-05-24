@@ -11,12 +11,12 @@ import platform
 #print(importlib.machinery.all_suffixes())
 
 from includes.common import ProjectNotesCommon
-from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
-from PyQt5.QtSql import QSqlDatabase
-from PyQt5.QtXml import QDomDocument, QDomNode
-from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
-from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
-from PyQt5.QtGui import QDesktopServices
+from PyQt6 import QtSql, QtGui, QtCore, QtWidgets, uic
+from PyQt6.QtSql import QSqlDatabase
+from PyQt6.QtXml import QDomDocument, QDomNode
+from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl
+from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
+from PyQt6.QtGui import QDesktopServices
 
 
 # Project Notes Plugin Parameters

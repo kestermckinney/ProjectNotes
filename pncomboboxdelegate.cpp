@@ -89,6 +89,5 @@ void PNComboBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
     if (bgcolor.isValid())
         myOption.backgroundBrush = QBrush(bgcolor.value<QColor>());
 
-
     QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
 }

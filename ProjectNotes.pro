@@ -1,6 +1,6 @@
 QT       += core gui sql xml help
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 6): QT += widgets
 
 ICON = AppIcon.icns
 

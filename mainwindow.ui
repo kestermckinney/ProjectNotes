@@ -52,7 +52,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>7</number>
       </property>
       <widget class="ProjectsListPage" name="pageProjectsList">
        <property name="sizePolicy">
@@ -124,7 +124,7 @@
         <item>
          <widget class="QTabWidget" name="tabWidgetNotes">
           <property name="currentIndex">
-           <number>0</number>
+           <number>2</number>
           </property>
           <widget class="QWidget" name="tabNote">
            <attribute name="title">
@@ -428,7 +428,7 @@
            </sizepolicy>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>3</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -898,7 +898,7 @@
                <item>
                 <widget class="ProjectNotesView" name="tableViewProjectNotes">
                  <property name="sizePolicy">
-                  <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                    <horstretch>0</horstretch>
                    <verstretch>0</verstretch>
                   </sizepolicy>
@@ -1481,7 +1481,7 @@
             </size>
            </property>
            <property name="currentIndex">
-            <number>1</number>
+            <number>0</number>
            </property>
            <widget class="QWidget" name="tabContents">
             <attribute name="title">
@@ -2425,8 +2425,7 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset theme="text-x-generic">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset theme="text-x-generic"/>
    </property>
    <property name="text">
     <string>C&amp;olor...</string>

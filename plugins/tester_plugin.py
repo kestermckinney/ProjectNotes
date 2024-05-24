@@ -11,12 +11,12 @@ import platform
 #print(importlib.machinery.all_suffixes())
 
 from includes.common import ProjectNotesCommon
-from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
-from PyQt5.QtSql import QSqlDatabase
-from PyQt5.QtXml import QDomDocument, QDomNode
-from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
-from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
-from PyQt5.QtGui import QDesktopServices
+from PyQt6 import QtSql, QtGui, QtCore, QtWidgets, uic
+from PyQt6.QtSql import QSqlDatabase
+from PyQt6.QtXml import QDomDocument, QDomNode
+from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl
+from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
+from PyQt6.QtGui import QDesktopServices
 
 
 # Project Notes Plugin Parameters
@@ -78,6 +78,7 @@ parameters = [
 # WARNING: The next line below can cause Project Notes to hang only use it for testing
 #app = QApplication(sys.argv)
 
+app = app = QApplication(sys.argv)
 pnc = ProjectNotesCommon()
 
 # Project Notes Plugin Events
@@ -169,7 +170,7 @@ def event_data_rightclick(xmlstr):
     print("Tester: Right Click Data Event called...")
     print(xmlstr)
 
-    QMessageBox.critical(None, "how", "Will this work", QMessageBox.Cancel)
+    QMessageBox.critical(None, "how", "Will this work", QMessageBox.StandardButton.Cancel)
 
     # simple test will always change the name back
     retval = """<projectnotes>
@@ -187,9 +188,9 @@ def event_data_rightclick(xmlstr):
 
 
     return retval
-
 """
 print("Testing Plugin")
 EditorFullPath = "notepad.exe"
-event_menuclick("")
+#event_menuclick("")
+event_data_rightclick("")
 """
