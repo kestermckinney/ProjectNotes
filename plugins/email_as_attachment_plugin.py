@@ -86,9 +86,6 @@ if (platform.system() == 'Windows'):
 
         if xmlroot:
             projlocation = pnc.find_node(xmlroot, "table", "name", "project_locations")
-            #projidnode = pnc.find_node(projlocation.firstChild(), "column", "name", "project_id")
-
-            #projnum = projidnode.attributes().namedItem("lookupvalue").nodeValue() 
 
             if projlocation:
                 locationrow = projlocation.firstChild()
