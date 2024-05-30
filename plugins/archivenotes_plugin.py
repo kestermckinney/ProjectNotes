@@ -1,4 +1,3 @@
-
 import sys
 import platform
 
@@ -74,6 +73,7 @@ ProjectsFolder = ""
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
+    #
     pnc = ProjectNotesCommon()
     pne = ProjectNotesExcelTools()
 
@@ -87,9 +87,10 @@ if (platform.system() == 'Windows'):
 
         #print(xmlstr) # debug output
         
+        app = QApplication(sys.argv)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
             return ""
 
         if not pnc.verify_global_settings():
@@ -113,9 +114,9 @@ if (platform.system() == 'Windows'):
         ui.m_datePickerRptDateNotes.setDate(executedate)
         ui.m_datePickerRptDateNotes.setCalendarPopup(True)
         ui.setWindowFlags(
-            QtCore.Qt.Window |
-            QtCore.Qt.WindowCloseButtonHint |
-            QtCore.Qt.WindowStaysOnTopHint
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowType.WindowCloseButtonHint |
+            QtCore.Qt.WindowType.WindowStaysOnTopHint
             )
 
         if ui.exec() == QDialog.Accepted:
@@ -125,10 +126,10 @@ if (platform.system() == 'Windows'):
             emailaspdf = ui.m_radioBoxEmailAsPDF.isChecked()
             emailasexcel = ui.m_radioBoxEmailAsExcel.isChecked()
             noemail = ui.m_radioBoxDoNotEmail.isChecked()
-            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
             QtWidgets.QApplication.processEvents()
         else:
-            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
             QtWidgets.QApplication.processEvents()
             return ""
 
@@ -163,8 +164,8 @@ if (platform.system() == 'Windows'):
         progbar = QProgressDialog()
         progbar.setWindowTitle("Archiving...")
         progbar.setWindowFlags(
-            QtCore.Qt.Window |
-            QtCore.Qt.WindowCloseButtonHint 
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowType.WindowCloseButtonHint 
             )
         progbar.setMinimumWidth(350)
         progbar.setCancelButton(None)
@@ -194,7 +195,7 @@ if (platform.system() == 'Windows'):
         QFile.remove(excelreportname)
 
         if not QFile.copy(templatefile, excelreportname):
-            QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + excelreportname, QMessageBox.Cancel)
+            QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + excelreportname, QMessageBox.StandardButton.Cancel)
             return ""
 
         handle = pne.open_excel_document(excelreportname)
@@ -387,7 +388,7 @@ if (platform.system() == 'Windows'):
 """
 import sys
 print("Buld up QDomDocument")
-app = QApplication(sys.argv)
+#
 
 xmldoc = QDomDocument("TestDocument")
 f = QFile("C:/Users/pamcki/Desktop/project.xml")

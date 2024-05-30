@@ -76,17 +76,15 @@ parameters = [
 ]
 
 # WARNING: The next line below can cause Project Notes to hang only use it for testing
-#app = QApplication(sys.argv)
-
-app = app = QApplication(sys.argv)
 pnc = ProjectNotesCommon()
 
 # Project Notes Plugin Events
 
 def disabled_event_startup(xmlstr):
+    app = QApplication(sys.argv)
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
-        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
         return ""
 
     print("Tester: Event Startup called...")
@@ -95,9 +93,10 @@ def disabled_event_startup(xmlstr):
     return ""
 
 def disabled_event_shutdown(xmlstr):
+    app = QApplication(sys.argv)
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
-        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
         return ""
 
     print("Tester: Event Startup called...")
@@ -106,9 +105,10 @@ def disabled_event_shutdown(xmlstr):
     return ""
 
 def disabled_event_everyminute(xmlstr):
+    app = QApplication(sys.argv)
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
-        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
         return ""
 
     print("Tester: Event Every Minute called...")
@@ -117,9 +117,10 @@ def disabled_event_everyminute(xmlstr):
     return ""
 
 def disabled_event_every5minutes(xmlstr):
+    app = QApplication(sys.argv)
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
-        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
         return ""
 
     print("Tester: Event Every 5 Minutes called...")
@@ -128,9 +129,10 @@ def disabled_event_every5minutes(xmlstr):
     return ""
 
 def disabled_event_every10minutes(xmlstr):
+    app = QApplication(sys.argv)
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
-        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
         return ""
 
     print("Tester: Event Every 10 Minutes called...")
@@ -139,9 +141,10 @@ def disabled_event_every10minutes(xmlstr):
     return ""
 
 def disabled_event_every30minutes(xmlstr):
+    app = QApplication(sys.argv)
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
-        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
         return ""
 
     print("Tester: Event Every 30 Minutes called...")
@@ -149,22 +152,25 @@ def disabled_event_every30minutes(xmlstr):
 
     return ""
 
-def disabled_event_menuclick(xmlstr):
+def event_menuclick(xmlstr):
+    app = QApplication(sys.argv)
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
-        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
         return ""
 
     print("Tester: Event Menu click called...")
-    prin()
-    print(xmlstr)       
+    print(xmlstr) 
+
+    QMessageBox.critical(None, "how", "menu click called", QMessageBox.StandardButton.Cancel)
 
     return ""
 
 def event_data_rightclick(xmlstr):
+    app = QApplication(sys.argv)    
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
-        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
         return ""
 
     print("Tester: Right Click Data Event called...")

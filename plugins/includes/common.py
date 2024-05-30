@@ -18,9 +18,6 @@ from PyQt6.QtCore import QDirIterator, QDir, QSettings, QFile
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication
 
-from PyQt6.QtCore import QT_VERSION_STR, PYQT_VERSION_STR
-print("Qt: v", QT_VERSION_STR, "\tPyQt: v", PYQT_VERSION_STR)
-
 import re
 import subprocess
 
@@ -325,7 +322,7 @@ class ProjectNotesCommon:
 
         pf = self.get_plugin_setting("ProjectsFolder")
         if pf == None or pf == "" or not QDir(pf).exists():
-            QMessageBox.warning(None, "Invalid Global Setting", "ProjectsFolder must be set in the Global Settigns plugin.", QMessageBox.Ok)
+            QMessageBox.warning(None, "Invalid Global Setting", "ProjectsFolder must be set in the Global Settigns plugin.", QMessageBox.StandardButton.Ok)
             return(False)
 
         return(True)

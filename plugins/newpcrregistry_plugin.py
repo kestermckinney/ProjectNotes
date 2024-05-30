@@ -1,4 +1,4 @@
-
+import sys
 import platform
 
 if (platform.system() == 'Windows'):
@@ -6,12 +6,12 @@ if (platform.system() == 'Windows'):
     import win32com
 
 from includes.common import ProjectNotesCommon
-from PyQt5 import QtSql, QtGui, QtCore, QtWidgets, uic
-from PyQt5.QtSql import QSqlDatabase
-from PyQt5.QtXml import QDomDocument, QDomNode
-from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl, QFileInfo, QDir
-from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
-from PyQt5.QtGui import QDesktopServices
+from PyQt6 import QtSql, QtGui, QtCore, QtWidgets, uic
+from PyQt6.QtSql import QSqlDatabase
+from PyQt6.QtXml import QDomDocument, QDomNode
+from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QFileInfo, QDir
+from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
+from PyQt6.QtGui import QDesktopServices
 
 
 # Project Notes Plugin Parameters
@@ -49,14 +49,16 @@ parameters = [
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
+    #
     pnc = ProjectNotesCommon()
 
     # processing main function
     def event_data_rightclick(xmlstr):
         print("called event: " + __file__)
+        app = QApplication(sys.argv)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
             return ""
 
         if not pnc.verify_global_settings():
@@ -97,7 +99,7 @@ if (platform.system() == 'Windows'):
         # copy the file
         if not QDir(projectfile).exists():
             if not QFile(templatefile[0]).copy(projectfile):
-                QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile[0] + " to " + projectfile, QMessageBox.Cancel)
+                QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile[0] + " to " + projectfile, QMessageBox.StandardButton.Cancel)
                 return ""
 
         QDesktopServices.openUrl(QUrl("file:///" + projectfile, QUrl.TolerantMode))
@@ -123,7 +125,7 @@ if (platform.system() == 'Windows'):
 # setup test data
 """
 print("Buld up QDomDocument")
-app = QApplication(sys.argv)
+#
 
 
 xmldoc = QDomDocument("TestDocument")

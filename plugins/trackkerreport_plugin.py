@@ -1,4 +1,4 @@
-
+import sys
 import platform
 
 if (platform.system() == 'Windows'):
@@ -70,15 +70,17 @@ parameters = [
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
+    #
     pnc = ProjectNotesCommon()
     pne = ProjectNotesExcelTools()
 
     def event_data_rightclick(xmlstr):
         print("called event: " + __file__)
 
+        app = QApplication(sys.argv)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
             return ""
             
         emaillist = ""
@@ -100,8 +102,8 @@ if (platform.system() == 'Windows'):
 
         ui = uic.loadUi("plugins/includes/dialogTrackerRptOptions.ui")
         ui.setWindowFlags(
-            QtCore.Qt.Window |
-            QtCore.Qt.WindowCloseButtonHint
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowType.WindowCloseButtonHint
             )
 
         ui.m_checkBoxDisplayTracker.setChecked(True)
@@ -118,7 +120,7 @@ if (platform.system() == 'Windows'):
             emailasexcel = ui.m_radioBoxEmailAsExcel.isChecked()
             noemail = ui.m_radioBoxDoNotEmail.isChecked()
         else:
-            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
             QtWidgets.QApplication.processEvents()
             return ""
 
@@ -132,8 +134,8 @@ if (platform.system() == 'Windows'):
             check_row = check_tag.firstChild()
 
         if not check_row or not check_tag:
-            QMessageBox.warning(None, "No Records", "No tracker or action items are available.", QMessageBox.Ok)
-            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            QMessageBox.warning(None, "No Records", "No tracker or action items are available.", QMessageBox.StandardButton.Ok)
+            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
             QtWidgets.QApplication.processEvents()
             return ""
 
@@ -152,7 +154,7 @@ if (platform.system() == 'Windows'):
             projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
-                QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+                QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
                 QtWidgets.QApplication.processEvents()
                 return ""
         else:
@@ -161,8 +163,8 @@ if (platform.system() == 'Windows'):
         progbar = QProgressDialog()
         progbar.setWindowTitle("Generating Report...")
         progbar.setWindowFlags(
-            QtCore.Qt.Window |
-            QtCore.Qt.WindowCloseButtonHint
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowType.WindowCloseButtonHint
             )
 
         progbar.setMinimumWidth(350)
@@ -214,8 +216,8 @@ if (platform.system() == 'Windows'):
         templatefile ="plugins\\templates\\Tracker Items Template.xlsx"
         QFile.remove(excelreportname)
         if not QFile.copy(templatefile, excelreportname):
-            QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + excelreportname, QMessageBox.Cancel)
-            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + excelreportname, QMessageBox.StandardButton.Cancel)
+            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
             QtWidgets.QApplication.processEvents()
             return ""
 
@@ -436,7 +438,7 @@ if (platform.system() == 'Windows'):
         if keepexcel == False:
             QFile.remove(excelreportname)
 
-        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+        QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
         QtWidgets.QApplication.processEvents()
 
         return ""
@@ -444,7 +446,7 @@ if (platform.system() == 'Windows'):
 # setup test data
 """
 print("Buld up QDomDocument")
-app = QApplication(sys.argv)
+#
 
 xmldoc = QDomDocument("TestDocument")
 f = QFile("exampleproject.xml")

@@ -10,7 +10,7 @@
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt5/plugins");
+    QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/plugins");
 
     QApplication a(argc, argv);
 

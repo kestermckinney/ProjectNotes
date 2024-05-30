@@ -1,4 +1,4 @@
-
+import sys
 import platform
 
 if (platform.system() == 'Windows'):
@@ -70,6 +70,7 @@ parameters = [
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
+    #
     pnc = ProjectNotesCommon()
     pne = ProjectNotesExcelTools()
 
@@ -78,9 +79,10 @@ if (platform.system() == 'Windows'):
 
         window_title = ""
         xmldoc = ""
+        app = QApplication(sys.argv)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
             return ""
  
         outlook = win32com.client.Dispatch("Outlook.Application")
@@ -603,7 +605,7 @@ def get_html_footer():
 """
 import sys
 print("Buld up QDomDocument")
-app = QApplication(sys.argv)
+#
 
 xmldoc = QDomDocument("TestDocument")
 f = QFile("C:/Users/pamcki/Desktop/note.xml")

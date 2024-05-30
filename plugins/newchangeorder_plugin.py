@@ -1,4 +1,4 @@
-
+import sys
 import platform
 import re
 
@@ -71,13 +71,15 @@ parameters = [
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
+    #
     pnc = ProjectNotesCommon()
 
     def event_data_rightclick(xmlstr):
         print("called event: " + __file__)
+        app = QApplication(sys.argv)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
             return ""
 
         if not pnc.verify_global_settings():
@@ -100,7 +102,7 @@ if (platform.system() == 'Windows'):
 
         ok = False
 
-        changenum, ok = QInputDialog.getText(None, "Change Order Number", "Number 0#:", QLineEdit.Normal, "", QtCore.Qt.Window | QtCore.Qt.WindowCloseButtonHint | QtCore.Qt.WindowStaysOnTopHint)
+        changenum, ok = QInputDialog.getText(None, "Change Order Number", "Number 0#:", QLineEdit.Normal, "", QtCore.Qt.WindowType.Window | QtCore.Qt.WindowType.WindowType.WindowCloseButtonHint | QtCore.Qt.WindowType.WindowStaysOnTopHint)
 
         if not ok:
             return None
@@ -123,7 +125,7 @@ if (platform.system() == 'Windows'):
         # copy the file
         if not QFile(projectfile).exists():
             if not QFile(templatefile).copy(projectfile):
-                QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + projectfile, QMessageBox.Cancel)
+                QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + projectfile, QMessageBox.StandardButton.Cancel)
                 return ""
 
         # change the values for the project specifics in the file
@@ -175,7 +177,7 @@ if (platform.system() == 'Windows'):
 """
 import sys
 print("Buld up QDomDocument")
-app = QApplication(sys.argv)
+#
 
 xmldoc = QDomDocument("TestDocument")
 f = QFile("C:/Users/pamcki/Desktop/project.xml")

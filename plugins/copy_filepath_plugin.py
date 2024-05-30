@@ -1,4 +1,4 @@
-
+import sys
 import platform
 
 if (platform.system() == 'Windows'):
@@ -70,6 +70,7 @@ parameters = [
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
+    #
     pnc = ProjectNotesCommon()
 
     def event_data_rightclick(xmlstr):
@@ -77,9 +78,10 @@ if (platform.system() == 'Windows'):
 
         print(xmlstr)
 
+        app = QApplication(sys.argv)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
             return ""
 
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        

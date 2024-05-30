@@ -75,12 +75,14 @@ parameters = [
 ]
 
 pnc = ProjectNotesCommon()
+#
 
 def event_menuclick(xmlstr):
+
     print("called event: " + __file__)
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
-        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
         return ""
 
     print(xmlstr);
@@ -88,7 +90,7 @@ def event_menuclick(xmlstr):
     if (EditorFullPath is None or EditorFullPath == ""):
         QMessageBox.critical(None, "Editor Not Specified",
         "You will need to specify an editor in the Open Editor plugin settings.",
-        QMessageBox.Cancel)
+        QMessageBox.StandardButton.Cancel)
     else:
         pnc.exec_program( EditorFullPath )
     return ""
@@ -97,9 +99,9 @@ def event_menuclick(xmlstr):
 def event_data_rightclick(xmlstr):
     print("data right click")
     print("python val ", xmlstr)
-    QMessageBox.critical(None, "Param", EditorFullPath, QMessageBox.Cancel)
+    QMessageBox.critical(None, "Param", EditorFullPath, QMessageBox.StandardButton.Cancel)
 
-    QMessageBox.critical(None, "String Output Test", "example" + xmlstr, QMessageBox.Cancel)
+    QMessageBox.critical(None, "String Output Test", "example" + xmlstr, QMessageBox.StandardButton.Cancel)
 
 
     #dom = QDomDocument()

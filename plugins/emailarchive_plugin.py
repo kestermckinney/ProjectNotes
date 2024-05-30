@@ -1,4 +1,4 @@
-
+import sys
 import platform
 import os
 import re
@@ -77,6 +77,7 @@ parameters = [
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
+    #
     pnc = ProjectNotesCommon()
 
     def makefilename(datetime, subject):
@@ -90,15 +91,16 @@ if (platform.system() == 'Windows'):
         QtWidgets.QApplication.restoreOverrideCursor()
         QtWidgets.QApplication.processEvents()   
 
+        app = QApplication(sys.argv)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
-            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
             QtWidgets.QApplication.processEvents()
             return ""
 
         if not pnc.verify_global_settings():
-            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
             QtWidgets.QApplication.processEvents()
             return ""
 
@@ -109,7 +111,7 @@ if (platform.system() == 'Windows'):
             QMessageBox.No)
 
         if (answer != QMessageBox.Yes):
-            QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
             QtWidgets.QApplication.processEvents()
             return ""
 
@@ -131,8 +133,8 @@ if (platform.system() == 'Windows'):
         progbar.setValue(0)
         progbar.setLabelText("Archiving project emails...")
         progbar.setWindowFlags(
-            QtCore.Qt.Window |
-            QtCore.Qt.WindowCloseButtonHint 
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowType.WindowCloseButtonHint 
             )
         progbar.setMinimumWidth(350)
         progbar.setCancelButton(None)
@@ -140,7 +142,7 @@ if (platform.system() == 'Windows'):
 
         progval = 0
 
-        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+        QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
         QtWidgets.QApplication.processEvents()
 
 
@@ -213,7 +215,7 @@ if (platform.system() == 'Windows'):
 """
 import sys
 print("Buld up QDomDocument")
-app = QApplication(sys.argv)
+#
 
 xmldoc = QDomDocument("TestDocument")
 f = QFile("C:/Users/pamcki/Desktop/project.xml")

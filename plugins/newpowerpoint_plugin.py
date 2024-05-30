@@ -1,4 +1,4 @@
-
+import sys
 import platform
 
 if (platform.system() == 'Windows'):
@@ -49,14 +49,16 @@ parameters = [
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
+    #
     pnc = ProjectNotesCommon()
 
     # processing main function
     def event_data_rightclick(xmlstr):
         print("called event: " + __file__)
+        app = QApplication(sys.argv)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
             return ""
 
         if not pnc.verify_global_settings():
@@ -97,7 +99,7 @@ if (platform.system() == 'Windows'):
         # copy the file
         if not QDir(projectfile).exists():
             if not QFile(templatefile[0]).copy(projectfile):
-                QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile[0] + " to " + projectfile, QMessageBox.Cancel)
+                QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile[0] + " to " + projectfile, QMessageBox.StandardButton.Cancel)
                 return ""
 
 
@@ -142,7 +144,7 @@ if (platform.system() == 'Windows'):
 # setup test data
 """
 print("Buld up QDomDocument")
-app = QApplication(sys.argv)
+#
 
 
 xmldoc = QDomDocument("TestDocument")

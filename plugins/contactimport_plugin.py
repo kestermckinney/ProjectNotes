@@ -1,4 +1,4 @@
-
+import sys
 import platform
 
 if (platform.system() == 'Windows'):
@@ -74,14 +74,16 @@ parameters = [
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
+    #
     pnc = ProjectNotesCommon()
 
     def event_menuclick(xmlstr):
         print("called event: " + __file__)
 
+        app = QApplication(sys.argv)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
             return ""
 
         outlook = win32com.client.Dispatch("Outlook.Application")
@@ -93,7 +95,7 @@ if (platform.system() == 'Windows'):
 
         #print("count of contacts : " + str(contactsfold.Items.Count))
 
-        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+        QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
         QtWidgets.QApplication.processEvents()
 
         tot_contacts = contactsfold.Items.Count
@@ -102,8 +104,8 @@ if (platform.system() == 'Windows'):
         progbar = QProgressDialog()
         progbar.setWindowTitle("Importing...")
         progbar.setWindowFlags(
-            QtCore.Qt.Window |
-            QtCore.Qt.WindowCloseButtonHint 
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowType.WindowCloseButtonHint 
             )
         progbar.setMinimumWidth(350)
         progbar.setCancelButton(None)
@@ -178,7 +180,7 @@ if (platform.system() == 'Windows'):
 
 #print("Run Test")
 # call when testing outside of Project Notes
-#app = QApplication(sys.argv)
+##
 #print(event_menuclick(None))
 
 # TESTED: Phase 1

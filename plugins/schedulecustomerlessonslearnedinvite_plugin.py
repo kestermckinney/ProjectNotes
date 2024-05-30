@@ -1,4 +1,4 @@
-
+import sys
 import platform
 
 if (platform.system() == 'Windows'):
@@ -70,18 +70,20 @@ parameters = [
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
+    #
     pnc = ProjectNotesCommon()
     pne = ProjectNotesExcelTools()
 
     def event_data_rightclick(xmlstr):
         print("called event: " + __file__)
 
+        app = QApplication(sys.argv)
         xmlval = QDomDocument()
         xmldoc = ""
         window_title = ""
         
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
             return ""
             
         outlook = win32com.client.Dispatch("Outlook.Application")
@@ -151,7 +153,7 @@ During our time we will cover the following areas:
 """
 # setup test data
 print("Buld up QDomDocument")
-app = QApplication(sys.argv)
+#
 
 xmldoc = QDomDocument("TestDocument")
 f = QFile("exampleproject.xml")
