@@ -87,6 +87,9 @@ class ProjectNotesCommon:
         children = node.firstChild()
 
         while not children.isNull():
+            if children.nodeName() == "table":
+                print("comparing: ", children.nodeName() , children.toElement().attribute(attribute))
+
             if ( children.nodeName() == type and children.toElement().attribute(attribute) == name ):
                 return(children)
 
@@ -235,6 +238,7 @@ class ProjectNotesCommon:
         projectfolder = ""
 
         if table is None:
+            print("did not find any project locations")
             return(projectfolder)
 
         row = table.firstChild()
@@ -442,3 +446,24 @@ class ProjectNotesCommon:
 
         outlook = None
         message = None
+
+# setup test data
+
+import sys
+from PyQt6.QtCore import QFile, QIODevice, QDate, QUrl, QDir
+print("Buld up QDomDocument")
+
+app = QApplication(sys.argv)
+xmldoc = QDomDocument("TestDocument")
+f = QFile("C:/Users/pamcki/Desktop/project.xml")
+
+if f.open(QIODevice.OpenModeFlag.ReadOnly):
+    print("example project opened")
+xmldoc.setContent(f)
+pnc = ProjectNotesCommon()
+xmlroot = xmldoc.elementsByTagName("projectnotes").at(0)
+
+projectfolder = pnc.get_projectfolder(xmlroot)
+print("project folder: " + projectfolder)
+f.close()
+

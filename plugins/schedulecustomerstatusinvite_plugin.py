@@ -79,7 +79,7 @@ if (platform.system() == 'Windows'):
 
         window_title = ""
 
-        app = QApplication(sys.argv)
+        # needed to debug app = QApplication(sys.argv)
         xmlval = QDomDocument()
         xmldoc = ""
         

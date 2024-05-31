@@ -153,6 +153,7 @@ public:
     void setOrderKey(int t_key) { m_order_key = t_key; }
     int getOrderKey() { return m_order_key; }
 
+    QString removeInvalidXmlCharacters(const QString &t_input);
     QDomElement toQDomElement( QDomDocument* t_xml_document, const QString& t_filter = QString());
     // use this to allow for different filters from the original
     virtual PNSqlQueryModel* createExportVersion();

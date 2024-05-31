@@ -73,7 +73,6 @@ ProjectsFolder = ""
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
-    #
     pnc = ProjectNotesCommon()
     pne = ProjectNotesExcelTools()
 
@@ -87,7 +86,7 @@ if (platform.system() == 'Windows'):
 
         #print(xmlstr) # debug output
         
-        app = QApplication(sys.argv)
+        # needed to debug app = QApplication(sys.argv)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
@@ -110,16 +109,16 @@ if (platform.system() == 'Windows'):
         QtWidgets.QApplication.restoreOverrideCursor()
         QtWidgets.QApplication.processEvents()   
 
-        ui = uic.loadUi("plugins/includes/dialogNotesArchiveOptions.ui")
+        ui = uic.loadUi("../plugins/includes/dialogNotesArchiveOptions.ui")
         ui.m_datePickerRptDateNotes.setDate(executedate)
         ui.m_datePickerRptDateNotes.setCalendarPopup(True)
         ui.setWindowFlags(
             QtCore.Qt.WindowType.Window |
-            QtCore.Qt.WindowType.WindowType.WindowCloseButtonHint |
+            QtCore.Qt.WindowType.WindowCloseButtonHint |
             QtCore.Qt.WindowType.WindowStaysOnTopHint
             )
 
-        if ui.exec() == QDialog.Accepted:
+        if ui.exec():
             internalreport = ui.m_checkBoxInternalRptNotes.isChecked()
             keepexcel = ui.m_checkBoxExcelRptNotes.isChecked()
             emailashtml = ui.m_radioBoxEmailAsHTML.isChecked()
@@ -140,6 +139,7 @@ if (platform.system() == 'Windows'):
         QtWidgets.QApplication.processEvents()
         projectfolder = pnc.get_projectfolder(xmlroot)
         #print("finding projects table ..")
+        print("found project folder: " + projectfolder)
         QtWidgets.QApplication.processEvents()
         
         projtab = pnc.find_node(xmlroot, "table", "name", "projects")
@@ -165,7 +165,7 @@ if (platform.system() == 'Windows'):
         progbar.setWindowTitle("Archiving...")
         progbar.setWindowFlags(
             QtCore.Qt.WindowType.Window |
-            QtCore.Qt.WindowType.WindowType.WindowCloseButtonHint 
+            QtCore.Qt.WindowType.WindowCloseButtonHint 
             )
         progbar.setMinimumWidth(350)
         progbar.setCancelButton(None)
@@ -385,20 +385,18 @@ if (platform.system() == 'Windows'):
         return ""
 
 # setup test data
-"""
+
 import sys
 print("Buld up QDomDocument")
-#
 
+app = QApplication(sys.argv)
 xmldoc = QDomDocument("TestDocument")
 f = QFile("C:/Users/pamcki/Desktop/project.xml")
 
-if f.open(QIODevice.ReadOnly):
+if f.open(QIODevice.OpenModeFlag.ReadOnly):
     print("example project opened")
 xmldoc.setContent(f)
 f.close()
 
 event_data_rightclick(xmldoc.toString())
-"""
 
-# TESTED: Phase 1

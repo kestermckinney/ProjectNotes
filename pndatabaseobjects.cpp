@@ -615,6 +615,9 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
 QDomDocument* PNDatabaseObjects::createXMLExportDoc(PNSqlQueryModel* t_querymodel, const QString& t_filter)
 {
     QDomDocument* doc = new QDomDocument();
+    QDomProcessingInstruction xmlDecl = doc->createProcessingInstruction("xml", "version=\"1.0\" encoding=\"UTF-8\"");
+    doc->appendChild(xmlDecl);
+
     QDomElement root = doc->createElement("projectnotes");
     doc->appendChild(root).toElement();
 
@@ -841,5 +844,5 @@ void PNDatabaseObjects::addDefaultPMToMeeting(const QString& t_note_id)
     execute(insert);
 }
 
-// TODO: you can remove someone from a team by just reselecting a new persion
+// TODO: you can remove someone from a team by just reselecting a new person
 

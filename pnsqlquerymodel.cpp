@@ -1635,6 +1635,28 @@ int PNSqlQueryModel::getColumnNumber(QString &t_field_name)
     return -1;
 }
 
+QString PNSqlQueryModel::removeInvalidXmlCharacters(const QString &t_input)
+{
+    QString result;
+    result.reserve(t_input.size());
+
+    for (QChar c : t_input) {
+        uint ucs4 = c.unicode();
+        // Valid XML characters are:
+        // U+0009, U+000A, U+000D, U+0020 to U+D7FF, U+E000 to U+FFFD, U+10000 to U+10FFFF
+        if (ucs4 == 0x0009 || ucs4 == 0x000A || ucs4 == 0x000D ||
+            (ucs4 >= 0x0020 && ucs4 <= 0xD7FF) ||
+            (ucs4 >= 0xE000 && ucs4 <= 0xFFFD))
+        {
+            result.append(c);
+        } else if (ucs4 >= 0x10000 && ucs4 <= 0x10FFFF) {
+            result.append(c);
+        }
+    }
+
+    return result;
+}
+
 QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document, const QString& t_filter )
 {
     // if there is a filter let's apply it
@@ -1666,12 +1688,12 @@ QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document, const 
             if (getType(i) == DBHtml)
             {
                 // need a specific type here
-                QDomCDATASection xmlcdata = t_xml_document->createCDATASection(val.toString());
+                QDomCDATASection xmlcdata = t_xml_document->createCDATASection(removeInvalidXmlCharacters(val.toString()));
                 xmlcolumn.appendChild(xmlcdata);
             }
             else
             {
-                QDomText xmltext = t_xml_document->createTextNode(val.toString());
+                QDomText xmltext = t_xml_document->createTextNode(removeInvalidXmlCharacters(val.toString()).toHtmlEscaped());
                 xmlcolumn.appendChild(xmltext);
             }
 

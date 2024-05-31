@@ -91,7 +91,7 @@ if (platform.system() == 'Windows'):
         QtWidgets.QApplication.restoreOverrideCursor()
         QtWidgets.QApplication.processEvents()   
 
-        app = QApplication(sys.argv)
+        # needed to debug app = QApplication(sys.argv)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
@@ -134,7 +134,7 @@ if (platform.system() == 'Windows'):
         progbar.setLabelText("Archiving project emails...")
         progbar.setWindowFlags(
             QtCore.Qt.WindowType.Window |
-            QtCore.Qt.WindowType.WindowType.WindowCloseButtonHint 
+            QtCore.Qt.WindowType.WindowCloseButtonHint 
             )
         progbar.setMinimumWidth(350)
         progbar.setCancelButton(None)

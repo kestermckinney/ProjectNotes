@@ -86,7 +86,7 @@ if (platform.system() == 'Windows'):
     def event_menuclick(xmlstr):
         print("called event: " + __file__)
 
-        app = QApplication(sys.argv)
+        ## needed to debug app = QApplication(sys.argv)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
@@ -98,8 +98,8 @@ if (platform.system() == 'Windows'):
         progbar = QProgressDialog()
         progbar.setWindowTitle("Exporting...")
         progbar.setWindowFlags(
-            QtCore.Qt.WindowType.WindowType.Window |
-            QtCore.Qt.WindowType.WindowType.WindowType.WindowCloseButtonHint 
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowCloseButtonHint 
             )
         progbar.setMinimumWidth(350)
         progbar.setCancelButton(None)

@@ -409,7 +409,7 @@ void PNTableView::slotExportRecord()
 
         QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(exportmodel);
 
-        if (!outfile.open(QFile::WriteOnly | QFile::Truncate))
+        if (!outfile.open(QFile::WriteOnly | QFile::Truncate | QFile::Text))
         {
             QMessageBox::critical(this, tr("Open Failed"), outfile.errorString());
             delete xdoc;
@@ -418,6 +418,7 @@ void PNTableView::slotExportRecord()
         }
 
         QTextStream textstream(&outfile);
+        textstream.setEncoding(QStringConverter::Utf8);
 
         xdoc->save(textstream, 4);
         outfile.close();

@@ -1897,7 +1897,7 @@ void MainWindow::on_actionXML_Import_triggered()
     {
         QFile infile(xmlfile);
 
-        if (!infile.open(QFile::ReadOnly))
+        if (!infile.open(QFile::ReadOnly | QFile::Text))
         {
             QMessageBox::critical(this, tr("Open Failed"), infile.errorString());
             QApplication::restoreOverrideCursor();

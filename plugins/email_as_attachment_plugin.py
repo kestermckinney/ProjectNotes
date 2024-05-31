@@ -78,7 +78,7 @@ if (platform.system() == 'Windows'):
 
         print(xmlstr)
 
-        app = QApplication(sys.argv)
+        # needed to debug app = QApplication(sys.argv)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)

@@ -77,7 +77,7 @@ if (platform.system() == 'Windows'):
     def event_data_rightclick(xmlstr):
         print("called event: " + __file__)
 
-        app = QApplication(sys.argv)
+        # needed to debug app = QApplication(sys.argv)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
@@ -103,7 +103,7 @@ if (platform.system() == 'Windows'):
         ui = uic.loadUi("plugins/includes/dialogTrackerRptOptions.ui")
         ui.setWindowFlags(
             QtCore.Qt.WindowType.Window |
-            QtCore.Qt.WindowType.WindowType.WindowCloseButtonHint
+            QtCore.Qt.WindowType.WindowCloseButtonHint
             )
 
         ui.m_checkBoxDisplayTracker.setChecked(True)
@@ -111,7 +111,7 @@ if (platform.system() == 'Windows'):
         ui.m_checkBoxNewTracker.setChecked(True)
         ui.m_checkBoxAssignedTracker.setChecked(True)
 
-        if ui.exec() == QDialog.Accepted:
+        if ui.exec():
             internalreport = ui.m_checkBoxInternalRptTracker.isChecked()
             keepexcel = ui.m_checkBoxExcelRptTracker.isChecked()
 
@@ -164,7 +164,7 @@ if (platform.system() == 'Windows'):
         progbar.setWindowTitle("Generating Report...")
         progbar.setWindowFlags(
             QtCore.Qt.WindowType.Window |
-            QtCore.Qt.WindowType.WindowType.WindowCloseButtonHint
+            QtCore.Qt.WindowType.WindowCloseButtonHint
             )
 
         progbar.setMinimumWidth(350)

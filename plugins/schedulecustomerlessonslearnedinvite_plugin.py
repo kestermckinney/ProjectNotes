@@ -77,7 +77,7 @@ if (platform.system() == 'Windows'):
     def event_data_rightclick(xmlstr):
         print("called event: " + __file__)
 
-        app = QApplication(sys.argv)
+        # needed to debug app = QApplication(sys.argv)
         xmlval = QDomDocument()
         xmldoc = ""
         window_title = ""

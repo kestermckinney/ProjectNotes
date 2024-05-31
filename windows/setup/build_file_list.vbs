@@ -20,7 +20,7 @@ BuildInstall "$INSTDIR", "C:\Users\Paul McKinney\Documents\python-3.11.3-embed-a
 
 REM some pyton dlls need to be in base install folder
 BuildInstall "$INSTDIR", "C:\Users\Paul McKinney\AppData\Roaming\Python\Python311\site-packages\pywin32_system32", ""
-BuildInstall "$INSTDIR", "C:\Users\Paul McKinney\AppData\Roaming\Python\Python311\site-packages\PyQt5\Qt5\bin", ""
+BuildInstall "$INSTDIR", "C:\Users\Paul McKinney\AppData\Roaming\Python\Python311\site-packages\PyQt6\Qt6\bin", ""
 
 objDelFileToWrite.Write(cleanfolders)
 
