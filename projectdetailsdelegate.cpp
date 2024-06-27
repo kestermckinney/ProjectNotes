@@ -49,7 +49,7 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
             }
             break;
         }
-    case 5:
+    case 5: // primary contact
         {
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
             PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
@@ -142,7 +142,7 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
                 key_val.clear();
         }
         break;
-    case 5:
+    case 5:  // primary contact
         {
             QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
             int i;

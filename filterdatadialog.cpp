@@ -26,7 +26,7 @@ FilterDataDialog::FilterDataDialog(QWidget *m_parent) :
     ui->tableViewColumnName->setUI(this);
 
     QString storename = objectName();
-    global_Settings.getWindowState(storename, *this);
+    global_Settings.getWindowState(storename, this);
 
     m_selected_column = -1;
 }
@@ -34,7 +34,7 @@ FilterDataDialog::FilterDataDialog(QWidget *m_parent) :
 FilterDataDialog::~FilterDataDialog()
 {
     QString storename = objectName();
-    global_Settings.setWindowState(storename, *this);
+    global_Settings.setWindowState(storename, this);
 
     ui->tableViewFilterValues->setModel(nullptr);
     ui->tableViewColumnName->setModel(nullptr);

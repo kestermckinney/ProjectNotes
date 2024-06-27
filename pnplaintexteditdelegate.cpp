@@ -3,8 +3,6 @@
 
 #include "pnplaintexteditdelegate.h"
 #include "pnplaintextedit.h"
-#include "pnsqlquerymodel.h"
-
 #include <QCompleter>
 #include <QCompleter>
 #include <QWidget>
@@ -51,10 +49,6 @@ void PNPlainTextEditDelegate::paint(QPainter *t_painter, const QStyleOptionViewI
 {
     QStyleOptionViewItem myOption = t_option;
 
-    QString value = t_index.model()->data(t_index, Qt::EditRole).toString();
-
-    myOption.text = value;
-
     QVariant bgcolor = t_index.model()->data(t_index, Qt::BackgroundRole);
     QVariant fgcolor = t_index.model()->data(t_index, Qt::ForegroundRole);
 
@@ -64,6 +58,6 @@ void PNPlainTextEditDelegate::paint(QPainter *t_painter, const QStyleOptionViewI
     if (bgcolor.isValid())
         myOption.backgroundBrush = QBrush(bgcolor.value<QColor>());
 
-    QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
+    QStyledItemDelegate::paint(t_painter, myOption, t_index);
 }
 

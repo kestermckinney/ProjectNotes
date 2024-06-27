@@ -9,7 +9,8 @@
 #include <QModelIndex>
 #include <QApplication>
 #include <QString>
-//#include <QDebug>
+#include <QPainter>
+#include <QDebug>
 
 PNComboBoxDelegate::PNComboBoxDelegate(QObject *t_parent, PNSqlQueryModel *t_model, int t_displaycolumn, int t_datacolumn)
 :QStyledItemDelegate(t_parent)
@@ -74,20 +75,29 @@ void PNComboBoxDelegate::updateEditorGeometry(QWidget *t_editor, const QStyleOpt
 
 void PNComboBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const
 {
-    QStyleOptionViewItem myOption = t_option;
-
+    QStyleOptionComboBox myOption;
     QVariant lookupvalue = t_index.model()->data(t_index);
 
-    myOption.text = m_model->findValue(lookupvalue, m_data_column, m_display_column).toString();
+    myOption.currentText = m_model->findValue(lookupvalue, m_data_column, m_display_column).toString();
+    myOption.rect = t_option.rect;
+    myOption.state = t_option.state | QStyle::State_Enabled;
+    myOption.frame = true;
+    myOption.editable = false;
 
     QVariant bgcolor = t_index.model()->data(t_index, Qt::BackgroundRole);
     QVariant fgcolor = t_index.model()->data(t_index, Qt::ForegroundRole);
 
+    t_painter->save();
     if (fgcolor.isValid())
+    {
         myOption.palette.setColor(QPalette::Text, fgcolor.value<QColor>());
+        t_painter->setPen(fgcolor.value<QColor>());
+    }
 
     if (bgcolor.isValid())
-        myOption.backgroundBrush = QBrush(bgcolor.value<QColor>());
+        myOption.palette.setColor(QPalette::Base, bgcolor.value<QColor>());
 
-    QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
+    QApplication::style()->drawComplexControl(QStyle::CC_ComboBox, &myOption, t_painter);
+    QApplication::style()->drawControl(QStyle::CE_ComboBoxLabel, &myOption, t_painter);
+    t_painter->restore();
 }

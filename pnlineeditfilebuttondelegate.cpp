@@ -47,19 +47,19 @@ void PNLineEditFileButtonDelegate::updateEditorGeometry(QWidget *t_editor, const
 void PNLineEditFileButtonDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const
 {
     QStyleOptionViewItem myOption = t_option;
-
-    QString val = t_index.model()->data(t_index, Qt::EditRole).toString();
-
-    myOption.text = val;
-
     QVariant bgcolor = t_index.model()->data(t_index, Qt::BackgroundRole);
     QVariant fgcolor = t_index.model()->data(t_index, Qt::ForegroundRole);
 
+    t_painter->save();
     if (fgcolor.isValid())
+    {
         myOption.palette.setColor(QPalette::Text, fgcolor.value<QColor>());
+        t_painter->setPen(fgcolor.value<QColor>());
+    }
 
     if (bgcolor.isValid())
         myOption.backgroundBrush = QBrush(bgcolor.value<QColor>());
 
-    QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
+    QStyledItemDelegate::paint(t_painter, myOption, t_index);
+    t_painter->restore();
 }

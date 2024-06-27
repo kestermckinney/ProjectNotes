@@ -27,8 +27,8 @@ public:
     QVariant getWindowStateData(const QString& t_state_data_name);
     void setWindowStateData(const QString& t_state_data_name, const QVariant& t_data);
 
-    void setWindowState(const QString& t_window_name, const QWidget& t_window);
-    bool getWindowState(const QString& t_window_name, QWidget& t_window);
+    void setWindowState(const QString& t_window_name, QWidget* t_window);
+    bool getWindowState(const QString& t_window_name, QWidget* t_window);
 
     QString getDefaultDictionary();
     void setDefaultDictionary(const QString& t_dictionary);

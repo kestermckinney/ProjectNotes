@@ -75,7 +75,7 @@ void PNCheckBoxDelegate::updateEditorGeometry(QWidget *t_editor, const QStyleOpt
 }
 
 void PNCheckBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const
-{  
+{
     // Draw our checkbox indicator
     bool value = t_index.data(Qt::EditRole).toBool();
     QStyleOptionButton checkbox_indicator;
@@ -93,10 +93,6 @@ void PNCheckBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
     const int y = t_option.rect.center().y() - checkbox_indicator.rect.height() / 2;
 
     checkbox_indicator.rect.moveTo( x, y );
-
-    if (t_option.state & QStyle::State_Selected) {
-       t_painter->fillRect(t_option.rect, t_option.palette.highlight());
-    }
 
     QApplication::style()->drawControl( QStyle::CE_CheckBox, &checkbox_indicator, t_painter );
 }

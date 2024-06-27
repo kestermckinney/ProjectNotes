@@ -24,10 +24,12 @@ void SearchPage::setupModels( Ui::MainWindow *t_ui )
     ui = t_ui;
 
     if (!t_ui)
+    {
+        ui->plainTextEditSearchText->removeEventFilter(this);
         return;  // closing application
+    }
 
     ui->plainTextEditSearchText->installEventFilter(this);
-
     ui->tableViewSearchResults->setModel(global_DBObjects.searchresultsmodelproxy());
     ui->tableViewSearchResults->selectRow(0);
     setCurrentModel(global_DBObjects.searchresultsmodelproxy());

@@ -86,18 +86,18 @@ void PNSettings::setWindowStateData(const QString& t_state_data_name, const QVar
     m_app_config->setValue(t_state_data_name, t_data);
 }
 
-void PNSettings::setWindowState(const QString& t_window_name, const QWidget& t_window)
+void PNSettings::setWindowState(const QString& t_window_name, QWidget* t_window)
 {
-    setWindowX(t_window_name, t_window.geometry().left());
-    setWindowY(t_window_name, t_window.geometry().top());
-    if (t_window.geometry().height() > 0) setWindowHeight(t_window_name, t_window.geometry().height());
-    if (t_window.geometry().width() > 0) setWindowWidth(t_window_name, t_window.geometry().width());
-    setWindowMaximized(t_window_name, t_window.isMaximized());
-    if (t_window.objectName() == "MainWindow")
-        setWindowStatusBar(t_window_name, ((MainWindow&)t_window).statusBar()->isVisibleTo(&t_window));
+    setWindowX(t_window_name, t_window->geometry().left());
+    setWindowY(t_window_name, t_window->geometry().top());
+    if (t_window->geometry().height() > 0) setWindowHeight(t_window_name, t_window->geometry().height());
+    if (t_window->geometry().width() > 0) setWindowWidth(t_window_name, t_window->geometry().width());
+    setWindowMaximized(t_window_name, t_window->isMaximized());
+    if (t_window->objectName() == "MainWindow")
+        setWindowStatusBar(t_window_name, ((MainWindow*)t_window)->statusBar()->isVisibleTo(t_window));
 }
 
-bool PNSettings::getWindowState(const QString& t_window_name, QWidget& t_window)
+bool PNSettings::getWindowState(const QString& t_window_name, QWidget* t_window)
 {
     int x = getWindowX(t_window_name);
     int y = getWindowY(t_window_name);
@@ -107,15 +107,15 @@ bool PNSettings::getWindowState(const QString& t_window_name, QWidget& t_window)
     if ( x == -1 || y == -1 || w == -1 || h == -1)
          return false;
 
-    t_window.setGeometry(
+    t_window->setGeometry(
                   getWindowX(t_window_name),
                   getWindowY(t_window_name),
                   getWindowWidth(t_window_name),
                   getWindowHeight(t_window_name)
                 );
 
-    if (t_window.objectName() == "MainWindow")
-        ((MainWindow&)t_window).statusBar()->setVisible(getWindowStatusBar(t_window_name));
+    if (t_window->objectName() == "MainWindow")
+        ((MainWindow*)t_window)->statusBar()->setVisible(getWindowStatusBar(t_window_name));
 
     return true;
 }

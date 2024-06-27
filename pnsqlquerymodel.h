@@ -166,7 +166,7 @@ public:
                 return m;
         }
 
-        return nullptr;QVector<QString> m_related_column;
+        return nullptr;
     }
 
     static bool refreshDirty()

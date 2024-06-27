@@ -11,7 +11,7 @@ class PNLineEditFileButtonDelegate : public QStyledItemDelegate
     Q_OBJECT
 
 public:
-    PNLineEditFileButtonDelegate(QObject *t_parent);
+    explicit PNLineEditFileButtonDelegate(QObject *t_parent);
 
     QWidget *createEditor(QWidget *t_parent, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const;
     void setEditorData(QWidget *t_editor, const QModelIndex &t_index) const;

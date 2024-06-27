@@ -49,7 +49,8 @@ MainWindow::MainWindow(QWidget *t_parent)
     m_page_history.clear();
     m_forward_back_history.clear();
 
-    global_Settings.getWindowState("MainWindow", *this);
+    global_Settings.getWindowState("MainWindow", this);
+
     int sz = global_Settings.getStoredInt("DefaultFontSize");
 
     if (sz == -1)
@@ -97,6 +98,7 @@ MainWindow::MainWindow(QWidget *t_parent)
     m_timer = new QTimer(this);
     connect(m_timer, SIGNAL(timeout()), this, SLOT(slotTimerUpdates()));
     m_timer->start(1000*60); // one minute timer event
+
 }
 
 
@@ -459,7 +461,7 @@ MainWindow::~MainWindow()
         }
     }
 
-    global_Settings.setWindowState("MainWindow", *this);
+    global_Settings.setWindowState("MainWindow", this);
 
     if (global_DBObjects.isOpen())
         CloseDatabase();
@@ -920,8 +922,6 @@ void MainWindow::navigateBackward()
 
         current->openRecord(record_id);
 
-        // TODO: Eventually remove PNSqlQueryModel::refreshDirty();
-
         ui->stackedWidget->setCurrentWidget(current);
         dynamic_cast<PNBasePage*>(current)->setPageTitle();
         buildPluginMenu();
@@ -951,8 +951,6 @@ void MainWindow::navigateForward()
         QVariant record_id = hn->m_record_id;
 
         current->openRecord(record_id);
-
-        //TODO: eventually remove PNSqlQueryModel::refreshDirty();//)//TODO: CALL FROM openRecord
 
         ui->stackedWidget->setCurrentWidget(current);
         dynamic_cast<PNBasePage*>(current)->setPageTitle();

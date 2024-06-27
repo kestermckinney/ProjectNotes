@@ -110,7 +110,6 @@ bool TrackerItemsModel::setData(const QModelIndex &t_index, const QVariant &t_va
         // set the date the record was updated
         if (t_index.column() != 11)
         {
-            QVariant oldvalue = data(t_index, t_role);
             QModelIndex qmi = index(t_index.row(), 11);
             PNSqlQueryModel::setData(qmi, curdate, t_role);
         }

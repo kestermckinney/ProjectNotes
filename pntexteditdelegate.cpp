@@ -62,7 +62,7 @@ void PNTextEditDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
     if (bgcolor.isValid())
         myOption.backgroundBrush = QBrush(bgcolor.value<QColor>());
 
-    QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
-
     delete te;
+
+    QStyledItemDelegate::paint(t_painter, myOption, t_index);
 }

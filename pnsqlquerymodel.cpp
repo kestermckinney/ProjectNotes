@@ -50,8 +50,6 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
     if (m_related_table.count() == 0)
         return;
 
-    QVariant key_value = m_cache[t_index.row()].value(0);
-
     QListIterator<PNSqlQueryModel*> it_recordsets(m_open_recordsets);
     PNSqlQueryModel* recordset = nullptr;
 
@@ -1278,7 +1276,6 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                         if (!valuelist.isEmpty())
                             valuelist += tr(" AND ");
 
-                        QString fk_key_val =  m_user_search_string[colnum].toString();
                         valuelist +=  QString(" %4 in (select %1 from %2 where %3)").arg(m_lookup_fk_column_name[colnum], m_lookup_table[colnum], valuerange, m_sql_query.record().fieldName(colnum));
                     }
                     else

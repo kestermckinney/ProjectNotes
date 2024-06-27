@@ -8,6 +8,7 @@
 #include <QModelIndex>
 #include <QApplication>
 #include <QString>
+#include <QPainter>
 
 ComboBoxDelegate::ComboBoxDelegate(QObject *t_parent, QStringListModel *t_model)
 :QStyledItemDelegate(t_parent)
@@ -47,20 +48,27 @@ void ComboBoxDelegate::updateEditorGeometry(QWidget *t_editor, const QStyleOptio
 
 void ComboBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const
 {
-    QStyleOptionViewItem myOption = t_option;
-
-    QVariant t_value = t_index.model()->data(t_index);
-
-    myOption.text = t_value.toString();
+    QStyleOptionComboBox myOption;
+    myOption.currentText = t_index.data(Qt::DisplayRole).toString();
+    myOption.rect = t_option.rect;
+    myOption.state = t_option.state | QStyle::State_Enabled;
+    myOption.frame = true;
+    myOption.editable = false;
 
     QVariant bgcolor = t_index.model()->data(t_index, Qt::BackgroundRole);
     QVariant fgcolor = t_index.model()->data(t_index, Qt::ForegroundRole);
 
+    t_painter->save();
     if (fgcolor.isValid())
+    {
         myOption.palette.setColor(QPalette::Text, fgcolor.value<QColor>());
+        t_painter->setPen(fgcolor.value<QColor>());
+    }
 
     if (bgcolor.isValid())
-        myOption.backgroundBrush = QBrush(bgcolor.value<QColor>());
+        myOption.palette.setColor(QPalette::Base, bgcolor.value<QColor>());
 
-    QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
+    QApplication::style()->drawComplexControl(QStyle::CC_ComboBox, &myOption, t_painter);
+    QApplication::style()->drawControl(QStyle::CE_ComboBoxLabel, &myOption, t_painter);
+    t_painter->restore();
 }

@@ -24,12 +24,14 @@ void PNInlineSpellChecker::buildContextMenu(QMenu& t_menu, QTextCursor& t_cursor
 
     int c = 10;
     if (badword)
+    {
         foreach (QString s, global_Settings.spellchecker()->suggest(word))
         {
             t_menu.addAction(s, [&t_cursor, s, this](){slotCorrectWord(t_cursor, s);});
             c--;
             if (c == 0) break; // max 10 itemss
         }
+    }
 
     t_menu.addSeparator();
     t_menu.addAction("Spelling...", [&t_cursor, this](){slotCheckSpelling(t_cursor);});
@@ -173,7 +175,7 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
     ftc.position = t_cursor.position();
     ftc.word = t_cursor.selectedText();
 
-    QString word = t_cursor.selectedText();
+    //QString word = t_cursor.selectedText();
     //qDebug() << ">> selcted " << word ;
 
     if (!t_cursor.selectedText().isEmpty())
@@ -356,7 +358,6 @@ void PNInlineSpellChecker::unmarkCursor(QTextCursor& t_cursor)
     }
 
     removeIfOverlaps(t_cursor, es);
-    QList<QTextEdit::ExtraSelection>::iterator i;
 
     if (QString(parent()->metaObject()->className()).compare("PNTextEdit") == 0)
     {

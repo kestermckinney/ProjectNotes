@@ -154,12 +154,13 @@ QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
         }
         else if (t_index.column() == 15)  // percent consumed
         {
+            return QVariant(QBrush(QCOLOR_RED, Qt::SolidPattern)); //TODO:  Just testing Red FIX Color not working
             double t_value = data(t_index).toDouble();
 
             if (t_value >= 95.0)
-                return QVariant(QCOLOR_RED);
+                return QVariant(QBrush(QCOLOR_RED));
             else if (t_value >= 90.0)
-                return QVariant(QCOLOR_YELLOW);
+                return QVariant(QBrush(QCOLOR_YELLOW));
         }
         else if (t_index.column() == 17) // cost variance
         {

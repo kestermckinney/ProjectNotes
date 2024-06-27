@@ -54,22 +54,28 @@ void PNDateEditDelegate::updateEditorGeometry(QWidget *t_editor, const QStyleOpt
 
 void PNDateEditDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const
 {
-    QStyleOptionViewItem myOption = t_option;
-
-    QString datevalue = t_index.model()->data(t_index, Qt::EditRole).toString();
-
-    myOption.text = datevalue;
+    QStyleOptionComboBox dateOption;
+    dateOption.rect = t_option.rect;
+    dateOption.state = t_option.state | QStyle::State_Enabled;
+    dateOption.currentText = t_index.data(Qt::DisplayRole).toString();
 
     QVariant bgcolor = t_index.model()->data(t_index, Qt::BackgroundRole);
     QVariant fgcolor = t_index.model()->data(t_index, Qt::ForegroundRole);
 
+    t_painter->save();
+
     if (fgcolor.isValid())
-        myOption.palette.setColor(QPalette::Text, fgcolor.value<QColor>());
+    {
+        dateOption.palette.setColor(QPalette::BrightText, fgcolor.value<QColor>());
+        t_painter->setPen(fgcolor.value<QColor>());
+    }
 
     if (bgcolor.isValid())
-        myOption.backgroundBrush = QBrush(bgcolor.value<QColor>());
+        dateOption.palette.setColor(QPalette::Base, bgcolor.value<QColor>());
 
-    QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
+    QApplication::style()->drawComplexControl(QStyle::CC_ComboBox, &dateOption, t_painter);
+    QApplication::style()->drawControl(QStyle::CE_ComboBoxLabel, &dateOption, t_painter);
+    t_painter->restore();
 }
 
 

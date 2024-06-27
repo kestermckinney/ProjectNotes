@@ -448,7 +448,7 @@ class ProjectNotesCommon:
         message = None
 
 # setup test data
-
+"""
 import sys
 from PyQt6.QtCore import QFile, QIODevice, QDate, QUrl, QDir
 print("Buld up QDomDocument")
@@ -467,3 +467,4 @@ projectfolder = pnc.get_projectfolder(xmlroot)
 print("project folder: " + projectfolder)
 f.close()
 
+"""

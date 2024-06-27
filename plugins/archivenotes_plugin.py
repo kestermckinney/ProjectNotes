@@ -385,7 +385,7 @@ if (platform.system() == 'Windows'):
         return ""
 
 # setup test data
-
+"""
 import sys
 print("Buld up QDomDocument")
 
@@ -399,4 +399,4 @@ xmldoc.setContent(f)
 f.close()
 
 event_data_rightclick(xmldoc.toString())
-
+"""
