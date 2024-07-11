@@ -89,12 +89,18 @@ PyTypeObject StdoutType =
     0,                    /* tp_init */
     0,                    /* tp_alloc */
     0,                    /* tp_new */
+    0,                    /* tp_free */
+    0,                    /* tp_is_gc */
+    0,                    /* tp_bases */
+    0,                    /* tp_mro */
+    0,                    /* tp_cache */
+    0,                    /* tp_subclasses */
 };
 
 PyModuleDef embmodule =
 {
     PyModuleDef_HEAD_INIT,
-    "embeddedconsole", 0, -1, 0,
+    "embeddedconsole", 0, -1, 0, 0, 0, 0, 0,
 };
 
 // Internal state

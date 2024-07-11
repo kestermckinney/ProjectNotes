@@ -12,9 +12,9 @@ public:
     PeoplePage();
     void openRecord(QVariant &t_record_id) override;
     void setPageTitle() override;
-    virtual void setupModels( Ui::MainWindow *t_ui );
+    virtual void setupModels( Ui::MainWindow *t_ui ) override;
 public slots:
-    void setButtonAndMenuStates();
+    void setButtonAndMenuStates() override;
 
 private:
     Ui::MainWindow *ui;

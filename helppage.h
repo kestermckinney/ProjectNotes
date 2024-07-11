@@ -13,9 +13,9 @@ public:
     HelpPage();
 
     void search();
-    virtual void setupModels( Ui::MainWindow *t_ui );
+    virtual void setupModels( Ui::MainWindow *t_ui ) override;
     void setPageTitle() override;
-    void setButtonAndMenuStates();
+    void setButtonAndMenuStates() override;
 
 public slots:
     void showLink(const QUrl &url);
