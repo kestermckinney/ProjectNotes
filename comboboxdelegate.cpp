@@ -48,12 +48,8 @@ void ComboBoxDelegate::updateEditorGeometry(QWidget *t_editor, const QStyleOptio
 
 void ComboBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const
 {
-    QStyleOptionComboBox myOption;
-    myOption.currentText = t_index.data(Qt::DisplayRole).toString();
+    QStyleOptionViewItem myOption = t_option;
     myOption.rect = t_option.rect;
-    myOption.state = t_option.state | QStyle::State_Enabled;
-    myOption.frame = true;
-    myOption.editable = false;
 
     QVariant bgcolor = t_index.model()->data(t_index, Qt::BackgroundRole);
     QVariant fgcolor = t_index.model()->data(t_index, Qt::ForegroundRole);
@@ -68,7 +64,11 @@ void ComboBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &t_
     if (bgcolor.isValid())
         myOption.palette.setColor(QPalette::Base, bgcolor.value<QColor>());
 
-    QApplication::style()->drawComplexControl(QStyle::CC_ComboBox, &myOption, t_painter);
-    QApplication::style()->drawControl(QStyle::CE_ComboBoxLabel, &myOption, t_painter);
+    if (t_option.state & QStyle::State_Selected)
+    {
+        t_painter->fillRect(t_option.rect, t_option.palette.highlight());
+    }
+    QStyledItemDelegate::paint(t_painter, myOption, t_index);
+
     t_painter->restore();
 }

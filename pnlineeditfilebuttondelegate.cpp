@@ -60,6 +60,11 @@ void PNLineEditFileButtonDelegate::paint(QPainter *t_painter, const QStyleOption
     if (bgcolor.isValid())
         myOption.backgroundBrush = QBrush(bgcolor.value<QColor>());
 
+    if (t_option.state & QStyle::State_Selected)
+    {
+        t_painter->fillRect(t_option.rect, t_option.palette.highlight());
+    }
+
     QStyledItemDelegate::paint(t_painter, myOption, t_index);
     t_painter->restore();
 }

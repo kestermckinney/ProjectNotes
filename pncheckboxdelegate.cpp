@@ -94,6 +94,11 @@ void PNCheckBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
 
     checkbox_indicator.rect.moveTo( x, y );
 
+    if (t_option.state & QStyle::State_Selected)
+    {
+        t_painter->fillRect(t_option.rect, t_option.palette.highlight());
+    }
+
     QApplication::style()->drawControl( QStyle::CE_CheckBox, &checkbox_indicator, t_painter );
 }
 

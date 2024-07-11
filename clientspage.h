@@ -10,9 +10,9 @@ class ClientsPage : public PNBasePage
 {
 public:
     ClientsPage();
-    void openRecord(QVariant& t_record_id);
-    virtual void setupModels( Ui::MainWindow *t_ui );
-    void setButtonAndMenuStates();
+    void openRecord(QVariant& t_record_id) override;
+    virtual void setupModels( Ui::MainWindow *t_ui ) override;
+    void setButtonAndMenuStates() override;
     void setPageTitle() override;
 
 private:

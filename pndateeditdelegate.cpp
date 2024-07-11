@@ -54,10 +54,9 @@ void PNDateEditDelegate::updateEditorGeometry(QWidget *t_editor, const QStyleOpt
 
 void PNDateEditDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const
 {
-    QStyleOptionComboBox dateOption;
+    QStyleOptionViewItem dateOption = t_option;
     dateOption.rect = t_option.rect;
     dateOption.state = t_option.state | QStyle::State_Enabled;
-    dateOption.currentText = t_index.data(Qt::DisplayRole).toString();
 
     QVariant bgcolor = t_index.model()->data(t_index, Qt::BackgroundRole);
     QVariant fgcolor = t_index.model()->data(t_index, Qt::ForegroundRole);
@@ -73,8 +72,13 @@ void PNDateEditDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
     if (bgcolor.isValid())
         dateOption.palette.setColor(QPalette::Base, bgcolor.value<QColor>());
 
-    QApplication::style()->drawComplexControl(QStyle::CC_ComboBox, &dateOption, t_painter);
-    QApplication::style()->drawControl(QStyle::CE_ComboBoxLabel, &dateOption, t_painter);
+    if (t_option.state & QStyle::State_Selected)
+    {
+        t_painter->fillRect(t_option.rect, t_option.palette.highlight());
+    }
+
+    QStyledItemDelegate::paint(t_painter, dateOption, t_index);
+
     t_painter->restore();
 }
 

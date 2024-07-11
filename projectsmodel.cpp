@@ -154,17 +154,22 @@ QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
         }
         else if (t_index.column() == 15)  // percent consumed
         {
-            return QVariant(QBrush(QCOLOR_RED, Qt::SolidPattern)); //TODO:  Just testing Red FIX Color not working
-            double t_value = data(t_index).toDouble();
+            QVariant val = data(t_index);
+            this->sqlEscape(val, getType(15));
+
+            double t_value = val.toDouble();
 
             if (t_value >= 95.0)
-                return QVariant(QBrush(QCOLOR_RED));
+                return QVariant(QCOLOR_RED);
             else if (t_value >= 90.0)
-                return QVariant(QBrush(QCOLOR_YELLOW));
+                return QVariant(QCOLOR_YELLOW);
         }
         else if (t_index.column() == 17) // cost variance
         {
-            double t_value = data(t_index).toDouble();
+            QVariant val = data(t_index);
+            this->sqlEscape(val, getType(15));
+
+            double t_value = val.toDouble();
 
             if (t_value >= 10.0)
                 return QVariant(QCOLOR_RED);
@@ -173,16 +178,22 @@ QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
         }
         else if (t_index.column() == 18)  // schedule variance
         {
-            double t_value = data(t_index).toDouble();
+            QVariant val = data(t_index);
+            this->sqlEscape(val, getType(15));
+
+            double t_value = val.toDouble();
 
             if (t_value >= 10.0)
                 return QVariant(QCOLOR_RED);
-            else if (t_value >= 05.0)
+            else if (t_value >= 5.0)
                 return QVariant(QCOLOR_YELLOW);
         }
         else if (t_index.column() == 19)  // percent complete
         {
-            double t_value = data(t_index).toDouble();
+            QVariant val = data(t_index);
+            this->sqlEscape(val, getType(15));
+
+            double t_value = val.toDouble();
 
             if (t_value >= 95.0)
                 return QVariant(QCOLOR_RED);

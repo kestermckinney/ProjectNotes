@@ -11,8 +11,8 @@ class SearchPage : public PNBasePage
 public:
     SearchPage();
 
-    void setupModels( Ui::MainWindow *t_ui );
-    void setButtonAndMenuStates();
+    void setupModels( Ui::MainWindow *t_ui ) override;
+    void setButtonAndMenuStates() override;
     void setPageTitle() override;
 
 private:
