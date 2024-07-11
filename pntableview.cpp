@@ -36,6 +36,10 @@ PNTableView::PNTableView(QWidget *t_parent) : QTableView(t_parent)
     setSelectionMode(QAbstractItemView::SingleSelection);
     setSelectionBehavior(QAbstractItemView::SelectRows);
 
+    rowView->setSelectionMode(QAbstractItemView::SingleSelection);
+    rowView->setSelectionBehavior(QAbstractItemView::SelectRows);
+
+
     connect(this, &QTableView::activated, this, &PNTableView::dataRowActivated);
     connect(this, &QTableView::clicked, this, &PNTableView::dataRowSelected);
 
@@ -266,9 +270,6 @@ bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
 void PNTableView::dataRowSelected(const QModelIndex &t_index)
 {
     Q_UNUSED(t_index);
-
-    ((QWidget*)parent())->setFocus();
-    //setButtonAndMenus fuction is called this method seems to work in linuxF
 }
 
 void PNTableView::dataRowActivated(const QModelIndex &t_index)
