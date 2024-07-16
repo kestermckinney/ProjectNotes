@@ -1,0 +1,15 @@
+# History Menu
+
+# Viewing Previous Pages
+
+When navigating between pages, a page's state is saved to the database.&nbsp; Even after closing Project Notes and reopening it, all current selections and current tab will remain the same for each project.
+
+# Page History
+
+The **History** Menu shows the 20 most recent pages since Project Notes was started.&nbsp; Restarting Project Notes will clear out the **History** Menu.
+
+&nbsp;
+
+
+***
+_Created with the Personal Edition of HelpNDoc: [Transform Your Documentation Workflow with HelpNDoc's Intuitive UI](<https://www.helpndoc.com/feature-tour/stunning-user-interface/>)_
