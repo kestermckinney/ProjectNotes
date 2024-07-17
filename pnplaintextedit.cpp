@@ -29,6 +29,8 @@ PNPlainTextEdit::PNPlainTextEdit(QWidget *parent) : QPlainTextEdit(parent)
 
 PNPlainTextEdit::~PNPlainTextEdit()
 {
+    removeEventFilter(this);
+
     disconnect(this, SIGNAL(textChanged()), this, SLOT(checkSpelling()));
 
     delete m_inlinespellchecker;

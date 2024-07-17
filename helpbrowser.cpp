@@ -11,7 +11,7 @@ HelpBrowser::HelpBrowser(QWidget* parent):QTextBrowser(parent)
     m_helpengine = new QHelpEngine(QCoreApplication::applicationDirPath() +
                                    "/docs/Project Notes.qhc", parent);
 
-    setOpenExternalLinks(true);
+    setOpenExternalLinks(false); //TODO: Fix this is broken in 6.7.2  I should be set to True to open a browser
 }
 
 HelpBrowser::~HelpBrowser()

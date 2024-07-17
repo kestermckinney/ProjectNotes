@@ -1,97 +1,84 @@
 # Project Notes XML
 
-# Understanding Project Notes XML Format
+## Understanding Project Notes XML Format
 
-Nearly all information found in Project Notes can be exported or imported using XML.&nbsp; The best way to understand the XML format is to export it. The format is based around a tree structure described below.&nbsp; XML files can be used to easily exchange information with other Project Notes users.&nbsp; The Lua plugin system uses the XML structure to exchange information between Project Notes and the plugin architecture.&nbsp; Information on how to export a file can be found in [The File Menu](<FileMenu.md>) section.
-
-&nbsp;
+Nearly all information found in Project Notes can be exported or imported using XML. The best way to understand the XML format is to export it. The format is based around a tree structure described below. XML files can be used to easily exchange information with other Project Notes users. The Lua plugin system uses the XML structure to exchange information between Project Notes and the plugin architecture. Information on how to export a file can be found in [The File Menu](<File Menu>) section.
 
 **The XML format:**
 
-\
-\<?xml version="1.0" encoding="UTF-8"?\>\
-\<**projectnotes** filepath="**C:\\Users\\MyAccount\\OneDrive\\Project Notes\\MyDatabase.db**" export\_date="**09/22/2020 12:38 PM**" filter\_field="**project\_id**" project\_manager\_id="**159709810500028597**" managing\_company\_id="**{ba96fb89-6c2d-46db-864c-5be6292b1045}**" managing\_company\_name="**My Company, Inc.**" managing\_manager\_name="**My Name**" filter\_values="**{ba96fb89-6c2d-46db-864c-5be6292b10ef}**"\>\
-**&nbsp;** \<**table** name="**ix\_projects**" filter\_field="**project\_id**" filter\_value="**159709812400019208**"\>\
-**&nbsp;** &nbsp; \<**row** id="**{ba96fb89-6c2d-46db-864c-5be6292b10e4}**" delete="true"\>\
-**&nbsp;** &nbsp; &nbsp; \<**column** name="**project\_number**"\>**P4000**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; \<**column** name="**project\_name**"\>**IT New Server Install**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; \<**column** name="**last\_status\_date**"\>**09/02/2020**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; \<**column** name="**last\_invoice\_date**"\>**09/02/2020**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; \<**column** name="**primary\_contact**" lookupvalue="**Jim Smith**"\>**{ba96fb89-6c2d-46db-864c-5be6292b10e4}**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; \<**column** name="**budget**"\>**$2090.00**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; \<**column** name="**actual**"\>**$649.00**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; \<**column** name="**bcwp**"\>**$649.00**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; \<**column** name="**bcws**"\>**$2090.00**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; \<**column** name="**bac**"\>**$2090.00**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; \<**column** name="**invoicing\_period**"\>**Monthly**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; \<**column** name="**status\_report\_period**"\>**None**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; \<**column** name="**client\_id**" lookupvalue="**Special Law Firm**"\>**{ba96fb89-6c2d-46db-864c-5be6292b10gg}**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; \<**column** name="**project\_status**"\>**Active**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; \<**table** name="**ix\_status\_report\_items**" filter\_field="**project\_id**" filter\_value="**159709812400019208**"/\>\
-**&nbsp;** &nbsp; &nbsp; \<**table** name="**ix\_project\_people**" filter\_field="**project\_id**" filter\_value="**{ba96fb89-6c2d-46db-864c-5be6292b10ef}**"\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; \<**row** id="**{ba96fb89-6c2d-46db-884c-5be6292b10eo}**"\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**project\_id**" lookupvalue="**P4000**"\>**{ba96fb89-6c2d-46db-864c-5be6292b10ef}**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**project\_id\_name**" lookupvalue="**IT New Server Install**"\>**159709812400019208**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**people\_id**" lookupvalue="**Mike Smith**"\>**{7e6df350-ab03-4653-99f1-7abb09bbefa3}**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**role**"\>\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**receive\_status\_report**"\>\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**name**"\>**Mike Smith**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**email**"\>**Mike.Smith@mycompany.com**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**client\_name**"\>**My Company, Inc.**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; \</**row**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; \<**row** id="**159907543300015593**"\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**project\_id**" lookupvalue="**J2627**"\>**{7e6df350-ab03-4653-99f1-7abb09bbefa3}**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**project\_id\_name**" lookupvalue="**IT New Server Install**"\>**159709812400019208**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**people\_id**" lookupvalue="**Jim Smith**"\>**{92ce1e4e-a908-4f6c-8348-c85beb459942}**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**role**"\>**Lead Support**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**receive\_status\_report**"\>**1**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**name**"\>**Jim Smith**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**email**"\>**jim\_smith@speciallawfirm.com**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**client\_name**"\>**Speical Law Firm**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; \</**row**\>\
-**&nbsp;** &nbsp; &nbsp; \</**table**\>\
-**&nbsp;** &nbsp; &nbsp; \<**table** name="**ix\_project\_locations**" filter\_field="**project\_id**" filter\_value="**{7e6df350-ab03-4653-99f1-7abb09bbefa3}**"\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; \<**row** id="**{7e6df350-ab03-4653-99f1-7abb09bbefa3}**"\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**project\_id**" lookupvalue="**P4000**"\>**{56601f6b-30d9-4fc0-a7e1-d367d30a4e52}**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**location\_type**"\>**PDF File**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**location\_description**"\>**Quote : Project Quote.pdf**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**full\_path**"\>**P:\\ProjectFolder\\P4000\_IT New Server Install\\Quotes\\QT9876908.pdf**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; &nbsp; \<**column** name="**project\_id\_name**" lookupvalue="**IT New Server Install**"\>**{3d9f88d9-810b-4e6c-827b-9afeef0dd48f}**\</**column**\>\
-**&nbsp;** &nbsp; &nbsp; &nbsp; \</**row**\>\
-**&nbsp;** &nbsp; &nbsp; \</**table**\>\
-**&nbsp;** &nbsp; &nbsp; \<**table** name="**ix\_project\_notes**" filter\_field="**project\_id**" filter\_value="**{3d9f88d9-810b-4e6c-827b-9afeef0dd48f}**"/\>\
-**&nbsp;** &nbsp; &nbsp; \<**table** name="**ix\_item\_tracker**" filter\_field="**project\_id**" filter\_value="**159709812400019208**"/\>\
-**&nbsp;** &nbsp; \</**row**\>\
-**&nbsp;** \</**table**\>\
-\</**projectnotes**\>
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes filepath="C:UsersMyAccountOneDriveProject NotesMyDatabase.db" export_date="09/22/2020 12:38 PM" filter_field="project_id" project_manager_id="159709810500028597" managing_company_id="{ba96fb89-6c2d-46db-864c-5be6292b1045}" managing_company_name="My Company, Inc." managing_manager_name="My Name" filter_values="{ba96fb89-6c2d-46db-864c-5be6292b10ef}">
+ <table name="ix_projects" filter_field="project_id" filter_value="159709812400019208">
+  <row id="{ba96fb89-6c2d-46db-864c-5be6292b10e4}">
+   <column name="project_number">P4000</column>
+   <column name="project_name">IT New Server Install</column>
+   <column name="last_status_date">09/02/2020</column>
+   <column name="last_invoice_date">09/02/2020</column>
+   <column name="primary_contact" lookupvalue="Jim Smith">{ba96fb89-6c2d-46db-864c-5be6292b10e4}</column>
+   <column name="budget">$2090.00</column>
+   <column name="actual">$649.00</column>
+   <column name="bcwp">$649.00</column>
+   <column name="bcws">$2090.00</column>
+   <column name="bac">$2090.00</column>
+   <column name="invoicing_period">Monthly</column>
+   <column name="status_report_period">None</column>
+   <column name="client_id" lookupvalue="Special Law Firm">{ba96fb89-6c2d-46db-864c-5be6292b10gg}</column>
+   <column name="project_status">Active</column>
+   <table name="ix_status_report_items" filter_field="project_id" filter_value="159709812400019208"/>
+   <table name="ix_project_people" filter_field="project_id" filter_value="{ba96fb89-6c2d-46db-864c-5be6292b10ef}">
+    <row id="{ba96fb89-6c2d-46db-884c-5be6292b10eo}">
+     <column name="project_id" lookupvalue="P4000">{ba96fb89-6c2d-46db-864c-5be6292b10ef}</column>
+     <column name="project_id_name" lookupvalue="IT New Server Install">159709812400019208</column>
+     <column name="people_id" lookupvalue="Mike Smith">{7e6df350-ab03-4653-99f1-7abb09bbefa3}</column>
+     <column name="role"></column>
+     <column name="receive_status_report"></column>
+     <column name="name">Mike Smith</column>
+     <column name="email">Mike.Smith@mycompany.com</column>
+     <column name="client_name">My Company, Inc.</column>
+    </row>
+    <row id="159907543300015593">
+     <column name="project_id" lookupvalue="J2627">{7e6df350-ab03-4653-99f1-7abb09bbefa3}</column>
+     <column name="project_id_name" lookupvalue="IT New Server Install">159709812400019208</column>
+     <column name="people_id" lookupvalue="Jim Smith">{92ce1e4e-a908-4f6c-8348-c85beb459942}</column>
+     <column name="role">Lead Support</column>
+     <column name="receive_status_report">1</column>
+     <column name="name">Jim Smith</column>
+     <column name="email">jim_smith@speciallawfirm.com</column>
+     <column name="client_name">Speical Law Firm</column>
+    </row>
+   </table>
+   <table name="ix_project_locations" filter_field="project_id" filter_value="{7e6df350-ab03-4653-99f1-7abb09bbefa3}">
+    <row id="{7e6df350-ab03-4653-99f1-7abb09bbefa3}">
+     <column name="project_id" lookupvalue="P4000">{56601f6b-30d9-4fc0-a7e1-d367d30a4e52}</column>
+     <column name="location_type">PDF File</column>
+     <column name="location_description">Quote : Project Quote.pdf</column>
+     <column name="full_path">P:ProjectFolderP4000_IT New Server InstallQuotesQT9876908.pdf</column>
+     <column name="project_id_name" lookupvalue="IT New Server Install">{3d9f88d9-810b-4e6c-827b-9afeef0dd48f}</column>
+    </row>
+   </table>
+   <table name="ix_project_notes" filter_field="project_id" filter_value="{3d9f88d9-810b-4e6c-827b-9afeef0dd48f}"/>
+   <table name="ix_item_tracker" filter_field="project_id" filter_value="159709812400019208"/>
+  </row>
+ </table>
+</projectnotes>
+```
 
-&nbsp;
-
-The XML document follows a parent child heiarchy that corresponds to the record relationships found in your database.&nbsp; If a \<row\> has several related records it will contain one or more \<table\> nodes as children.&nbsp; Data in the XML export is often repeated to make plugin writing easier.&nbsp; Below is a table that describes the different node and attribute types.
-
-&nbsp;
+The XML document follows a parent child heiarchy that corresponds to the record relationships found in your database. If a \<row\> has several related records it will contain one or more \<table\> nodes as children. Data in the XML export is often repeated to make plugin writing easier. Below is a table that describes the different node and attribute types.
 
 | **Element** | **Type** | **Description** | **Required For Import** |
 | --- | --- | --- | :---: |
-| \<projectnotes\> | Document Root Node | &nbsp; | Yes |
+| \<projectnotes\> | Document Root Node |  | Yes |
 | filepath | Attribute | The database the XML was exported from | No |
 | export\_date | Attribute | The date the data was exported | No |
 | filter\_field | Attribute | The field filtered to limit the data exported | No |
-| filter\_value | Attribute | The value used to filter the data exported | &nbsp; |
+| filter\_value | Attribute | The value used to filter the data exported |  |
 | project\_manager\_id | Attribute | The database record id of the Project Manager specified in the Preferences | No |
 | managing\_company\_id | Attribute | The database record id of the Managing Company specified in the Preferences | No |
 | managing\_company\_name | Attribute | The name of the Project Manager specified in the Preferences | No |
 | managing\_manager\_name | Attribute | The name of the Managing Company specified in the Preferences | No |
 | \<row\> | Document Node | The database row exported or imported | Yes |
-| id | Attribute | The record id of the record, typically not included on an import.&nbsp; Project Notes generates a globally unique identifier for each record.&nbsp; If specified, the import process will update a specific record.&nbsp; It is important to realize exporting and id from one database into another will cause errors.&nbsp; The receiving database may have similar data with completely different ids.&nbsp; ids are intended to be globally unique when the record is crearted. | No |
-| delete | Attribute | Based on the information specified the import will attempt to delete the specified row.&nbsp; Be aware deleting a parent record will leave the child records abandon. | No |
-| \<column\> | Document Node | The column node to be imported.&nbsp; The value may be the column value, or the lookupvalue may be provided to specify the import lookup the corresponding record id.&nbsp; Typically corresponding record ids are not given as values. | Yes |
+| id | Attribute | The record id of the record, typically not included on an import. Project Notes generates a globally unique identifier for each record. If specified, the import process will update a specific record. It is important to realize exporting and id from one database into another will cause errors. The receiving database may have similar data with completely different ids. ids are intended to be globally unique when the record is crearted. | No |
+2| \<column\> | Document Node | The column node to be imported. The value may be the column value, or the lookupvalue may be provided to specify the import lookup the corresponding record id. Typically corresponding record ids are not given as values. | Yes |
 | name | Attribute | The name of the column to be imported | Yes |
-| lookupvalue | Attribute | In many cases a record relates to another record.&nbsp; For example People and Clients, are related by their record id.&nbsp; To relate records on import, this value should contain the corresponding name.&nbsp; For example:&nbsp; The project\_id field should have this value set to the project\_number.&nbsp; The client\_id field should have this value set to the client name.&nbsp; The people\_id should have this field set to the people name. | Yes |
-
-
-&nbsp;
-
-
-***
-_Created with the Personal Edition of HelpNDoc: [Save time and frustration with HelpNDoc's WinHelp HLP to CHM conversion feature](<https://www.helpndoc.com/step-by-step-guides/how-to-convert-a-hlp-winhelp-help-file-to-a-chm-html-help-help-file/>)_
+| lookupvalue | Attribute | In many cases a record relates to another record. For example People and Clients, are related by their record id. To relate records on import, this value should contain the corresponding name. For example: The project\_id field should have this value set to the project\_number. The client\_id field should have this value set to the client name. The people\_id should have this field set to the people name. | Yes |

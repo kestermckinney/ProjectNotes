@@ -91,11 +91,9 @@ void PNComboBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
     }
 
     if (bgcolor.isValid())
-        myOption.palette.setColor(QPalette::Base, bgcolor.value<QColor>());
-
-    if (t_option.state & QStyle::State_Selected)
     {
-        t_painter->fillRect(t_option.rect, t_option.palette.highlight());
+        myOption.palette.setColor(QPalette::Base, bgcolor.value<QColor>());
+        myOption.palette.setColor(QPalette::AlternateBase, bgcolor.value<QColor>());
     }
 
     QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);

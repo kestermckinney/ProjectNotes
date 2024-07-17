@@ -5,7 +5,7 @@ RequestExecutionLevel user
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "Project Notes"
-!define PRODUCT_VERSION "3.2.0"
+!define PRODUCT_VERSION "3.2.1"
 !define PRODUCT_PUBLISHER "Paul McKinney"
 !define PRODUCT_WEB_SITE "https://github.com/kestermckinney/ProjectNotes"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\ProjectNotes.exe"
@@ -70,22 +70,22 @@ Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
 
-  File "..\..\build\Desktop_Qt_6_5_3_MSVC2019_64bit-Release\release\ProjectNotes.exe"
+  File "..\..\build\Desktop_Qt_6_7_2_MSVC2019_64bit-Release\release\ProjectNotes.exe"
 
   CreateDirectory "$SMPROGRAMS\Project Notes"
   CreateShortCut  "$SMPROGRAMS\Project Notes\Project Notes.lnk" "$INSTDIR\ProjectNotes.exe"
   CreateShortCut  "$DESKTOP\Project Notes.lnk" "$INSTDIR\ProjectNotes.exe"
 
   ; Project Notes Needed Libraries
-  File "..\..\build\Desktop_Qt_6_5_3_MSVC2019_64bit-Release\release\ProjectNotes.exe"
+  File "..\..\build\Desktop_Qt_6_7_2_MSVC2019_64bit-Release\release\ProjectNotes.exe"
 
   ; include files that were built
   !include "install_files.nsh"
 
   ; Help files
   SetOutPath "$INSTDIR\docs"
-  File "..\..\build\Desktop_Qt_6_5_3_MSVC2019_64bit-Release\release\docs\Project Notes.qch"
-  File "..\..\build\Desktop_Qt_6_5_3_MSVC2019_64bit-Release\release\docs\Project Notes.qhc"
+  File "..\..\build\Desktop_Qt_6_7_2_MSVC2019_64bit-Release\release\docs\Project Notes.qch"
+  File "..\..\build\Desktop_Qt_6_7_2_MSVC2019_64bit-Release\release\docs\Project Notes.qhc"
   
   ; Project Notes Base Plugins
 
@@ -145,13 +145,13 @@ Section "MainSection" SEC01
   ;File "..\..\plugins\templates\PCR Template.docx"
   
   SetOutPath "$INSTDIR\dictionary"
-  File "..\..\build\Desktop_Qt_6_5_3_MSVC2019_64bit-Release\release\dictionary\index.ini"
-  File "..\..\build\Desktop_Qt_6_5_3_MSVC2019_64bit-Release\release\dictionary\es_ANY.dic"
-  File "..\..\build\Desktop_Qt_6_5_3_MSVC2019_64bit-Release\release\dictionary\es_ANY.aff"
-  File "..\..\build\Desktop_Qt_6_5_3_MSVC2019_64bit-Release\release\dictionary\en_US.dic"
-  File "..\..\build\Desktop_Qt_6_5_3_MSVC2019_64bit-Release\release\dictionary\en_US.aff"
-  File "..\..\build\Desktop_Qt_6_5_3_MSVC2019_64bit-Release\release\dictionary\en_GB.dic"
-  File "..\..\build\Desktop_Qt_6_5_3_MSVC2019_64bit-Release\release\dictionary\en_GB.aff"
+  File "..\..\build\Desktop_Qt_6_7_2_MSVC2019_64bit-Release\release\dictionary\index.ini"
+  File "..\..\build\Desktop_Qt_6_7_2_MSVC2019_64bit-Release\release\dictionary\es_ANY.dic"
+  File "..\..\build\Desktop_Qt_6_7_2_MSVC2019_64bit-Release\release\dictionary\es_ANY.aff"
+  File "..\..\build\Desktop_Qt_6_7_2_MSVC2019_64bit-Release\release\dictionary\en_US.dic"
+  File "..\..\build\Desktop_Qt_6_7_2_MSVC2019_64bit-Release\release\dictionary\en_US.aff"
+  File "..\..\build\Desktop_Qt_6_7_2_MSVC2019_64bit-Release\release\dictionary\en_GB.dic"
+  File "..\..\build\Desktop_Qt_6_7_2_MSVC2019_64bit-Release\release\dictionary\en_GB.aff"
 
   ; not needed anymore EnVar::AddValue "Path" "$INSTDIR"
 SectionEnd
