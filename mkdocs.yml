@@ -2,19 +2,55 @@ site_name: Project Notes Documentation
 theme:
   name: readthedocs
   highlightjs: true
-#plugins:
-#  - search
-#  - mkdocstrings:
-#      handlers:
-#        # See: https://mkdocstrings.github.io/python/usage/
-#        python:
-#          options:
-#            docstring_style: sphinx
+
+nav:
+  - 'Home': index.md
+  - 'Introduction':
+    - 'Getting Started': Introduction/GettingStarted.md
+    - 'System Requirments': Introduction/SystemRequirements.md
+  - 'Interface Overview':
+    - 'File Menu': InterfaceOverview/FileMenu.md
+    - 'Edit Menu': InterfaceOverview/EditMenu.md
+    - 'Plugins Menu': InterfaceOverview/PluginsMenu.md
+    - 'View Menu': InterfaceOverview/ViewMenu.md
+    - 'History Menu': InterfaceOverview/HistoryMenu.md
+    - 'Project List Page': InterfaceOverview/ProjectListPage.md
+    - 'People List Page': InterfaceOverview/PeopleListPage.md
+    - 'Client List Page': InterfaceOverview/ClientListPage.md
+    - 'Project Page': InterfaceOverview/ProjectPage.md
+    - 'Notes Page': InterfaceOverview/NotesPage.md
+    - 'Item Tacker Page': InterfaceOverview/ItemTrackerPage.md
+    - 'Action Item Detail Page': InterfaceOverview/ActionItemDetailPage.md
+    - 'Toolbar': InterfaceOverview/Toolbar.md
+    - 'Preferences': InterfaceOverview/Preferences.md
+    - 'Presenting to Clients': InterfaceOverview/PresentingToClients.md
+    - 'Filter Tool': InterfaceOverview/FilterTool.md
+    - 'Search Page': InterfaceOverview/SearchPage.md
+    - 'Sorting and Sizing Columns': InterfaceOverview/SortingandSizingColumns.md
+    - 'Earned Value Terms': InterfaceOverview/EarnedValueTerms.md
+  - 'Plugins Overview':
+    - 'Adding Functionality': PluginsOverview/AddingFunctionality.md
+    - 'Project Notes XML': PluginsOverview/ProjectNotesXML.md
+  - 'Standard Plugins':
+    - 'Plugin Settings': StandardPlugins/PluginSettings.md
+    - 'Importing and Exporting Outlook Contacts': StandardPlugins/ImportingandExportingOutlookCont.md
+    - 'Global Settings': StandardPlugins/GlobalSettings.md
+    - 'Meeting Notes Archive': StandardPlugins/MeetingNotesArchive.md
+    - 'Project Email Archive': StandardPlugins/ProjectEmailArchive.md
+    - 'Tracker Report Generation': StandardPlugins/TrackerReportGeneration.md
+    - 'PowerPoint Templates': StandardPlugins/PowerPointTemplates.md
+    - 'Open Editor': StandardPlugins/OpenEditor.md
+    - 'Schedule a Customer Kickoff Meeting (Windows Only)': StandardPlugins/ScheduleaCustomerKickoffMeeting.md
+    - 'Schedule a Customer Lessons Learned Meeting (Windows Only)': StandardPlugins/ScheduleaCustomerLessonsLearned.md
+    - 'Schedule a Customer Status Meeting (Windows Only)': StandardPlugins/ScheduleaCustomerStatusMeeting.md
+    - 'Schedule an Internal Kickoff Meeting (Windows Only)': StandardPlugins/ScheduleanInternalKickoffMeeting.md
+    - 'Schedule an Internal Lessons Learned Meeting (Windows Only)': StandardPlugins/ScheduleanInternalLessonsLearned.md
+    - 'Schedule an Internal Status Meeting (Windows Only)': StandardPlugins/ScheduleanInternalStatusMeeting.md
+    - 'Send Meeting Notes': StandardPlugins/SendMeetingNotes.md
+    - 'Send Project Emails': StandardPlugins/SendProjectEmails.md
+
 markdown_extensions:
   - tables
   - attr_list
   - md_in_html
   - def_list
-#  - markdown_include.include:
-#      base_path: .
-#  - admonition
