@@ -2,7 +2,7 @@
 
 ## Table of contents
 
-- [Introduction](<Home.md>)
+- [Introduction](<index.md>)
   - [Getting Started](<GettingStarted.md>)
   - [System Requirements](<SystemRequirements.md>)
 - [Overview of the user interface](<Overviewoftheuserinterface.md>)
@@ -16,7 +16,7 @@
   - [Client List Page](<ClientListPage.md>)
   - [Project Page](<ProjectPage.md>)
   - [Notes Page](<NotesPage.md>)
-  - [Item Tracker Panel](<ItemTrackerPanel.md>)
+  - [Item Tracker Page](<ItemTrackerPage.md>)
   - [Action Item Detail Page](<ActionItemDetailPage.md>)
   - [Toolbar](<Toolbar.md>)
   - [Preferences](<Preferences.md>)

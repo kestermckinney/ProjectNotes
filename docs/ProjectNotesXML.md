@@ -2,7 +2,7 @@
 
 ## Understanding Project Notes XML Format
 
-Nearly all information found in Project Notes can be exported or imported using XML. The best way to understand the XML format is to export it. The format is based around a tree structure described below. XML files can be used to easily exchange information with other Project Notes users. The Lua plugin system uses the XML structure to exchange information between Project Notes and the plugin architecture. Information on how to export a file can be found in [The File Menu](<File Menu>) section.
+Nearly all information found in Project Notes can be exported or imported using XML. The best way to understand the XML format is to export it. The format is based around a tree structure described below. XML files can be used to easily exchange information with other Project Notes users. The Python plugin system uses the XML structure to exchange information between Project Notes and the plugin architecture. Information on how to export a file can be found in [The File Menu](<FileMenu.md>) section.
 
 **The XML format:**
 
@@ -64,11 +64,11 @@ Nearly all information found in Project Notes can be exported or imported using 
 </projectnotes>
 ```
 
-The XML document follows a parent child heiarchy that corresponds to the record relationships found in your database. If a \<row\> has several related records it will contain one or more \<table\> nodes as children. Data in the XML export is often repeated to make plugin writing easier. Below is a table that describes the different node and attribute types.
+The XML document follows a parent child heiarchy that corresponds to the record relationships found in your database. If a &lt;row> has several related records it will contain one or more &lt;table> nodes as children. Data in the XML export is often repeated to make plugin writing easier. Below is a table that describes the different node and attribute types.
 
 | **Element** | **Type** | **Description** | **Required For Import** |
 | --- | --- | --- | :---: |
-| \<projectnotes\> | Document Root Node |  | Yes |
+| &lt;projectnotes\> | Document Root Node |  | Yes |
 | filepath | Attribute | The database the XML was exported from | No |
 | export\_date | Attribute | The date the data was exported | No |
 | filter\_field | Attribute | The field filtered to limit the data exported | No |
@@ -77,8 +77,10 @@ The XML document follows a parent child heiarchy that corresponds to the record 
 | managing\_company\_id | Attribute | The database record id of the Managing Company specified in the Preferences | No |
 | managing\_company\_name | Attribute | The name of the Project Manager specified in the Preferences | No |
 | managing\_manager\_name | Attribute | The name of the Managing Company specified in the Preferences | No |
-| \<row\> | Document Node | The database row exported or imported | Yes |
+| &lt;row\> | Document Node | The database row exported or imported | Yes |
 | id | Attribute | The record id of the record, typically not included on an import. Project Notes generates a globally unique identifier for each record. If specified, the import process will update a specific record. It is important to realize exporting and id from one database into another will cause errors. The receiving database may have similar data with completely different ids. ids are intended to be globally unique when the record is crearted. | No |
-2| \<column\> | Document Node | The column node to be imported. The value may be the column value, or the lookupvalue may be provided to specify the import lookup the corresponding record id. Typically corresponding record ids are not given as values. | Yes |
+| &lt;column\> | Document Node | The column node to be imported. The value may be the column value, or the lookupvalue may be provided to specify the import lookup the corresponding record id. Typically corresponding record ids are not given as values. | Yes |
 | name | Attribute | The name of the column to be imported | Yes |
 | lookupvalue | Attribute | In many cases a record relates to another record. For example People and Clients, are related by their record id. To relate records on import, this value should contain the corresponding name. For example: The project\_id field should have this value set to the project\_number. The client\_id field should have this value set to the client name. The people\_id should have this field set to the people name. | Yes |
+
+<br>

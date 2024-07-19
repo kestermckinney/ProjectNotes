@@ -12,8 +12,9 @@ Project Notes includes a Python plugin to import from your personal contacts fou
 The plugin uses the Outlook Automation to import and export information. Outlook does not need to be running. If it is not running, Project Notes will run it temporarily to exchange data.
 
 **To import Outlook contacts:**
+
 1. From the **Plugins** menu in **Project Notes**, select **Import Outlook Contacts**.
 
-
 **To export contacts to Outlook:**
+
 1. From the **Plugins** menu in **Project Notes**, select **Export Outlook Contact(s)**.

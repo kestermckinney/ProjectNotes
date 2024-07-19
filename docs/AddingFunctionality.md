@@ -15,7 +15,7 @@ When Project Notes starts it looks into the "plugins" folder and executes all fi
 Python script files follow a general format. This helps to quickly find code when modifying or debugging the script. In most cases, you will copy an existing script in order to create a new plugin.
 
 ### Plugin Naming
-### The global variables pluginname and plugindescription are the plugin name and description that appear in the Project Notes [Plugin Settings](<PluginSettings.md>) window.
+The global variables pluginname and plugindescription are the plugin name and description that appear in the Project Notes [Plugin Settings](<PluginSettings.md>) window.
 
 **Properties**
 
@@ -28,15 +28,16 @@ parameters = [
 ]
 ```
 
-**Plugin Options**
+### Plugin Options
+
 When a plugin is called from the Plugins menu, Startup event, Shutdown event, or timer event, no filtering of rows is applied. If a plugintable is defined, all records in that table are passed to the event. This is a very time consuming option, and should rarely be used. For all other events a plugintable should be defined. The right click on a list view will show the plugin option if the plugintable defined is for the same table that is displayed. The childtablesfilter variable does not have to be defined. You should always try to filter the XML that is sent to the plugin to improve performance. When the childtablesfilter is defined, Project Notes will only include related tables listed. Table names in the string should be separated by the forward slash (/).
 
-**Extendable Events**
+### Extendable Events
 
 The events listed in the table below can be extended in Python plugins. In each event, the specified plugin table and related child records are converted to XML and passed to the plugin as a Python string. If the plugin is called from a right-click on a data item, the XML will only include that item and it's related children. For example, if you right-click a project in the Project List and choose **Export** from the **File** menu, the data exported is the same data that will be exported to a plugin. Using the XML Import and XML Export features of Project Notes are very useful in testing and debugging a Python script plugin. If the defined event returns an XML string, the XML is processed in the same was as the XML Import. Importing XML will update and insert records. There is currently no feature to delete records.
 
 | **Events** | **Description** |
-| --- | --- |
+| :--- | :--- |
 | def event_startup(xmlstr): | Each time Project Notes is started this event is called if it is defined. |
 | def event_shutdown(xmlstr): | Each time Project Notes is shutdown this event is called if it is defined. |
 | def event_everyminute(xmlstr): | Every minute this event is called if it is defined. |
@@ -44,20 +45,19 @@ The events listed in the table below can be extended in Python plugins. In each 
 | def event_every10minutes(xmlstr): | Every 10 minutes this event is called if it is defined. |
 | def event_every30Mmnutes(xmlstr): | Every 30 minutes this event is called if it is defined. |
 | def event_menuclick(xmlstr): | The pluginname will appear in the Plugins menu. When an user selects the menu option, the plugin is called. |
-| def event_data_rightclick(xmlstr): | The pluginname will appear when the list is right clicked and the list contains data from the defined plugintable. When a list is right-clicked and the corresponding plugintable is specified, this event is called if it is defined. |
+| def event_data_rightclick(xmlstr): | The pluginname will appear when the list is right clicked and the list contains data from the defined plugintable. When a list is right-clicked and the corresponding plugintable is specified, this event is called if it is defined. |  
 
+<br>
 
 ### Tables
 
 The tables defined below are options for the data to be passed to the [Python](<www.python.org>) script event function. When defining an event, it is important that the table corresponds with the item associated with the right-click. The XML structures are complex. An export will help you understand the structures betters.
 
-
-
-All elements have an "id" attribute. On an import this attribute is used as a unique identifier and can cause existing data to be overridden. To insert new data, do not used the id identifier or other unique identifiers such as a name or project number when returning or importing XML.\
+All elements have an "id" attribute. On an import this attribute is used as a unique identifier and can cause existing data to be overridden. To insert new data, do not used the id identifier or other unique identifiers such as a name or project number when returning or importing XML.
 
 
 | **Data View** | **Description** |
-| --- | --- |
+| :--- | :--- |
 | clients | The exported XML contains the client names and associated people. |
 | people | The exported XML contains the people and the associated clients. |
 | projects | The exported XML is all inclusive of all project elements including people, meetings notes, meeting action items, meeting attendees, tracker items, locations, notes, project team members, and project locations. |
@@ -69,9 +69,9 @@ All elements have an "id" attribute. On an import this attribute is used as a un
 | item_tracker_updates | The exported XML contains notes attached to tracker and action items. |
 | item_tracker | The exported XML contains action or tracker items. |
 
+<br>
 
-\
-**Basic XML formats**
+### Basic XML formats
 
 The example below show an XML export of a person. Notice child tables contain the **"*filter\_field"*** and **"*filter\_value"*** attributes to define the parent child relationship of the data. Many attributes such as file names and column numbers are provided to give the export further context, but are not used in the import.
 
@@ -91,7 +91,8 @@ The example below show an XML export of a person. Notice child tables contain th
 <projectnotes>
 ```
 
-**Code Example**
+### Code Example
+
 The plugin architecture calls event functions if they have been defined. Below is a common section of code used to respond to events. See other plugins installed with Project Notes for more examples.
 
 ```python

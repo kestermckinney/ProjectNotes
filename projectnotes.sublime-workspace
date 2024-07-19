@@ -3,522 +3,50 @@
 	{
 		"selected_items":
 		[
+			[
+				"Py",
+				"PyQt5"
+			],
+			[
+				"dateEd",
+				"dateEditLastUpdated"
+			],
+			[
+				"set",
+				"setNullable"
+			]
 		]
 	},
 	"buffers":
 	[
 		{
-			"file": "projectnotes3.sublime-project",
+			"file": "docs/ProjectPage.md",
 			"settings":
 			{
-				"buffer_size": 308,
-				"encoding": "UTF-8",
+				"buffer_size": 8167,
 				"line_ending": "Unix"
-			},
-			"undo_stack":
-			[
-				[
-					3,
-					1,
-					"insert",
-					{
-						"characters": "..//P"
-					},
-					"BQAAANQBAAAAAAAA1QEAAAAAAAAAAAAA1QEAAAAAAADWAQAAAAAAAAAAAADWAQAAAAAAANcBAAAAAAAAAAAAANcBAAAAAAAA2AEAAAAAAAAAAAAA2AEAAAAAAADZAQAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA1AEAAAAAAADUAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					4,
-					2,
-					"left_delete",
-					null,
-					"AgAAANgBAAAAAAAA2AEAAAAAAAABAAAAUNcBAAAAAAAA1wEAAAAAAAABAAAALw",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA2QEAAAAAAADZAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					5,
-					1,
-					"insert",
-					{
-						"characters": "ProjectNote"
-					},
-					"CwAAANcBAAAAAAAA2AEAAAAAAAAAAAAA2AEAAAAAAADZAQAAAAAAAAAAAADZAQAAAAAAANoBAAAAAAAAAAAAANoBAAAAAAAA2wEAAAAAAAAAAAAA2wEAAAAAAADcAQAAAAAAAAAAAADcAQAAAAAAAN0BAAAAAAAAAAAAAN0BAAAAAAAA3gEAAAAAAAAAAAAA3gEAAAAAAADfAQAAAAAAAAAAAADfAQAAAAAAAOABAAAAAAAAAAAAAOABAAAAAAAA4QEAAAAAAAAAAAAA4QEAAAAAAADiAQAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA1wEAAAAAAADXAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					6,
-					1,
-					"insert",
-					{
-						"characters": "3/"
-					},
-					"AgAAAOIBAAAAAAAA4wEAAAAAAAAAAAAA4wEAAAAAAADkAQAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA4gEAAAAAAADiAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					11,
-					1,
-					"insert",
-					{
-						"characters": "\n"
-					},
-					"AgAAAJsAAAAAAAAAnAAAAAAAAAAAAAAAnAAAAAAAAACkAAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAmwAAAAAAAACbAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					12,
-					1,
-					"insert_snippet",
-					{
-						"contents": "{$0}"
-					},
-					"AQAAAKQAAAAAAAAApgAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAApAAAAAAAAACkAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					13,
-					1,
-					"run_macro_file",
-					{
-						"file": "res://Packages/Default/Add Line in Braces.sublime-macro"
-					},
-					"BgAAAKUAAAAAAAAApgAAAAAAAAAAAAAApgAAAAAAAACuAAAAAAAAAAAAAACuAAAAAAAAAK8AAAAAAAAAAAAAAK8AAAAAAAAAtwAAAAAAAAAAAAAApgAAAAAAAACmAAAAAAAAAAgAAAAgICAgICAgIKYAAAAAAAAAsgAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAApQAAAAAAAAClAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					14,
-					1,
-					"insert_snippet",
-					{
-						"contents": "\"$0\""
-					},
-					"AQAAALIAAAAAAAAAtAAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAsgAAAAAAAACyAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					15,
-					1,
-					"insert",
-					{
-						"characters": "path"
-					},
-					"BAAAALMAAAAAAAAAtAAAAAAAAAAAAAAAtAAAAAAAAAC1AAAAAAAAAAAAAAC1AAAAAAAAALYAAAAAAAAAAAAAALYAAAAAAAAAtwAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAswAAAAAAAACzAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					17,
-					1,
-					"insert",
-					{
-						"characters": " :"
-					},
-					"AgAAALgAAAAAAAAAuQAAAAAAAAAAAAAAuQAAAAAAAAC6AAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAuAAAAAAAAAC4AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					18,
-					1,
-					"insert",
-					{
-						"characters": " "
-					},
-					"AQAAALoAAAAAAAAAuwAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAugAAAAAAAAC6AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					19,
-					1,
-					"insert_snippet",
-					{
-						"contents": "\"$0\""
-					},
-					"AQAAALsAAAAAAAAAvQAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAuwAAAAAAAAC7AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					20,
-					1,
-					"insert",
-					{
-						"characters": ">?"
-					},
-					"AgAAALwAAAAAAAAAvQAAAAAAAAAAAAAAvQAAAAAAAAC+AAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAvAAAAAAAAAC8AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					21,
-					2,
-					"left_delete",
-					null,
-					"AgAAAL0AAAAAAAAAvQAAAAAAAAABAAAAP7wAAAAAAAAAvAAAAAAAAAABAAAAPg",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAvgAAAAAAAAC+AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					22,
-					1,
-					"insert",
-					{
-						"characters": ">"
-					},
-					"AQAAALwAAAAAAAAAvQAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAvAAAAAAAAAC8AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					23,
-					1,
-					"left_delete",
-					null,
-					"AQAAALwAAAAAAAAAvAAAAAAAAAABAAAAPg",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAvQAAAAAAAAC9AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					24,
-					1,
-					"insert",
-					{
-						"characters": ">>"
-					},
-					"AgAAALwAAAAAAAAAvQAAAAAAAAAAAAAAvQAAAAAAAAC+AAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAvAAAAAAAAAC8AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					25,
-					2,
-					"left_delete",
-					null,
-					"AgAAAL0AAAAAAAAAvQAAAAAAAAABAAAAPrwAAAAAAAAAvAAAAAAAAAABAAAAPg",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAvgAAAAAAAAC+AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					26,
-					1,
-					"insert",
-					{
-						"characters": "../"
-					},
-					"AwAAALwAAAAAAAAAvQAAAAAAAAAAAAAAvQAAAAAAAAC+AAAAAAAAAAAAAAC+AAAAAAAAAL8AAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAvAAAAAAAAAC8AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					27,
-					1,
-					"insert_completion",
-					{
-						"completion": "build-ProjectNotes3-Desktop-Debug",
-						"format": "text",
-						"keep_prefix": false,
-						"must_insert": true,
-						"trigger": "build-ProjectNotes3-Desktop-Debug"
-					},
-					"AQAAAL8AAAAAAAAA4AAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAvwAAAAAAAAC/AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					29,
-					1,
-					"insert",
-					{
-						"characters": "\n"
-					},
-					"AgAAAOEAAAAAAAAA4gAAAAAAAAAAAAAA4gAAAAAAAADuAAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA4QAAAAAAAADhAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					30,
-					1,
-					"insert_snippet",
-					{
-						"contents": "\"$0\""
-					},
-					"AQAAAO4AAAAAAAAA8AAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA7gAAAAAAAADuAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					31,
-					1,
-					"insert",
-					{
-						"characters": "fol"
-					},
-					"AwAAAO8AAAAAAAAA8AAAAAAAAAAAAAAA8AAAAAAAAADxAAAAAAAAAAAAAADxAAAAAAAAAPIAAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA7wAAAAAAAADvAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					32,
-					1,
-					"insert",
-					{
-						"characters": "der+"
-					},
-					"BAAAAPIAAAAAAAAA8wAAAAAAAAAAAAAA8wAAAAAAAAD0AAAAAAAAAAAAAAD0AAAAAAAAAPUAAAAAAAAAAAAAAPUAAAAAAAAA9gAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA8gAAAAAAAADyAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					33,
-					1,
-					"left_delete",
-					null,
-					"AQAAAPUAAAAAAAAA9QAAAAAAAAABAAAAKw",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA9gAAAAAAAAD2AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					34,
-					1,
-					"insert",
-					{
-						"characters": "_in"
-					},
-					"AwAAAPUAAAAAAAAA9gAAAAAAAAAAAAAA9gAAAAAAAAD3AAAAAAAAAAAAAAD3AAAAAAAAAPgAAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA9QAAAAAAAAD1AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					35,
-					1,
-					"insert",
-					{
-						"characters": "clude_p"
-					},
-					"BwAAAPgAAAAAAAAA+QAAAAAAAAAAAAAA+QAAAAAAAAD6AAAAAAAAAAAAAAD6AAAAAAAAAPsAAAAAAAAAAAAAAPsAAAAAAAAA/AAAAAAAAAAAAAAA/AAAAAAAAAD9AAAAAAAAAAAAAAD9AAAAAAAAAP4AAAAAAAAAAAAAAP4AAAAAAAAA/wAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA+AAAAAAAAAD4AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					36,
-					1,
-					"insert",
-					{
-						"characters": "atters"
-					},
-					"BgAAAP8AAAAAAAAAAAEAAAAAAAAAAAAAAAEAAAAAAAABAQAAAAAAAAAAAAABAQAAAAAAAAIBAAAAAAAAAAAAAAIBAAAAAAAAAwEAAAAAAAAAAAAAAwEAAAAAAAAEAQAAAAAAAAAAAAAEAQAAAAAAAAUBAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA/wAAAAAAAAD/AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					38,
-					1,
-					"insert",
-					{
-						"characters": " "
-					},
-					"AQAAAAYBAAAAAAAABwEAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAABgEAAAAAAAAGAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					39,
-					1,
-					"insert_snippet",
-					{
-						"contents": "\"$0\""
-					},
-					"AQAAAAcBAAAAAAAACQEAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAABwEAAAAAAAAHAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					40,
-					1,
-					"run_macro_file",
-					{
-						"file": "res://Packages/Default/Delete Left Right.sublime-macro"
-					},
-					"AgAAAAcBAAAAAAAABwEAAAAAAAABAAAAIgcBAAAAAAAABwEAAAAAAAABAAAAIg",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAACAEAAAAAAAAIAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					41,
-					1,
-					"insert",
-					{
-						"characters": ":"
-					},
-					"AQAAAAcBAAAAAAAACAEAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAABwEAAAAAAAAHAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					42,
-					1,
-					"insert",
-					{
-						"characters": " "
-					},
-					"AQAAAAgBAAAAAAAACQEAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAACAEAAAAAAAAIAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					43,
-					1,
-					"insert_snippet",
-					{
-						"contents": "[$0]"
-					},
-					"AQAAAAkBAAAAAAAACwEAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAACQEAAAAAAAAJAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					44,
-					1,
-					"insert",
-					{
-						"characters": "mic"
-					},
-					"AwAAAAoBAAAAAAAACwEAAAAAAAAAAAAACwEAAAAAAAAMAQAAAAAAAAAAAAAMAQAAAAAAAA0BAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAACgEAAAAAAAAKAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					45,
-					2,
-					"left_delete",
-					null,
-					"AgAAAAwBAAAAAAAADAEAAAAAAAABAAAAYwsBAAAAAAAACwEAAAAAAAABAAAAaQ",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAADQEAAAAAAAANAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					46,
-					1,
-					"insert",
-					{
-						"characters": "oc*"
-					},
-					"AwAAAAsBAAAAAAAADAEAAAAAAAAAAAAADAEAAAAAAAANAQAAAAAAAAAAAAANAQAAAAAAAA4BAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAACwEAAAAAAAALAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					47,
-					1,
-					"insert",
-					{
-						"characters": "h\""
-					},
-					"AgAAAA4BAAAAAAAADwEAAAAAAAAAAAAADwEAAAAAAAAQAQAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAADgEAAAAAAAAOAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					49,
-					1,
-					"insert",
-					{
-						"characters": "\""
-					},
-					"AQAAAAsBAAAAAAAADAEAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAACwEAAAAAAAALAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					52,
-					1,
-					"insert",
-					{
-						"characters": ","
-					},
-					"AQAAAJsAAAAAAAAAnAAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAmwAAAAAAAACbAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					55,
-					1,
-					"insert",
-					{
-						"characters": ","
-					},
-					"AQAAAOIAAAAAAAAA4wAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA4gAAAAAAAADiAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					58,
-					1,
-					"left_delete",
-					null,
-					"AQAAAA0BAAAAAAAADQEAAAAAAAABAAAAIg",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAADgEAAAAAAAAOAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					60,
-					1,
-					"insert",
-					{
-						"characters": "\""
-					},
-					"AQAAAAwBAAAAAAAADQEAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAADAEAAAAAAAAMAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					62,
-					1,
-					"insert",
-					{
-						"characters": "~"
-					},
-					"AQAAABEBAAAAAAAAEgEAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAEQEAAAAAAAARAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					63,
-					1,
-					"left_delete",
-					null,
-					"AQAAABEBAAAAAAAAEQEAAAAAAAABAAAAfg",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAEgEAAAAAAAASAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					65,
-					1,
-					"left_delete",
-					null,
-					"AQAAABEBAAAAAAAAEQEAAAAAAAABAAAAaA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAEgEAAAAAAAASAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					74,
-					1,
-					"insert",
-					{
-						"characters": " ;"
-					},
-					"AgAAAK4CAAAAAAAArwIAAAAAAAAAAAAArwIAAAAAAACwAgAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAArgIAAAAAAACuAgAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					75,
-					1,
-					"insert",
-					{
-						"characters": " Proje"
-					},
-					"BgAAALACAAAAAAAAsQIAAAAAAAAAAAAAsQIAAAAAAACyAgAAAAAAAAAAAACyAgAAAAAAALMCAAAAAAAAAAAAALMCAAAAAAAAtAIAAAAAAAAAAAAAtAIAAAAAAAC1AgAAAAAAAAAAAAC1AgAAAAAAALYCAAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAsAIAAAAAAACwAgAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					76,
-					1,
-					"insert",
-					{
-						"characters": "ctNo"
-					},
-					"BAAAALYCAAAAAAAAtwIAAAAAAAAAAAAAtwIAAAAAAAC4AgAAAAAAAAAAAAC4AgAAAAAAALkCAAAAAAAAAAAAALkCAAAAAAAAugIAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAtgIAAAAAAAC2AgAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					77,
-					1,
-					"insert",
-					{
-						"characters": "tes3"
-					},
-					"BAAAALoCAAAAAAAAuwIAAAAAAAAAAAAAuwIAAAAAAAC8AgAAAAAAAAAAAAC8AgAAAAAAAL0CAAAAAAAAAAAAAL0CAAAAAAAAvgIAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAugIAAAAAAAC6AgAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					85,
-					1,
-					"insert",
-					{
-						"characters": "./"
-					},
-					"AgAAALECAAAAAAAAsgIAAAAAAAAAAAAAsgIAAAAAAACzAgAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAsQIAAAAAAACxAgAAAAAAAAAAAAAAAPC/"
-				]
-			]
+			}
 		}
 	],
 	"build_system": "",
 	"build_system_choices":
 	[
+		[
+			[
+				[
+					"Packages/Python/Python.sublime-build",
+					""
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					"Syntax Check"
+				]
+			],
+			[
+				"Packages/Python/Python.sublime-build",
+				""
+			]
+		]
 	],
 	"build_varint": "",
 	"command_palette":
@@ -528,8 +56,40 @@
 		"selected_items":
 		[
 			[
-				"Package Control: ",
-				"Package Control: List Packages"
+				"instal",
+				"Package Control: Install Package"
+			],
+			[
+				"insta",
+				"Indentation: Convert to Spaces"
+			],
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
+				"pack",
+				"Package Control: Add Channel"
+			],
+			[
+				"markdown",
+				"MarkdownLivePreview: Open Preview"
+			],
+			[
+				"markdownp",
+				"MarkdownLivePreview: Open Preview"
+			],
+			[
+				"install package",
+				"Package Control: Install Package"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"markdow",
+				"Set Syntax: Markdown"
 			]
 		],
 		"width": 0.0
@@ -550,31 +110,149 @@
 		"side_bar_visible": false,
 		"status_bar_visible": false
 	},
+	"expanded_folders":
+	[
+		"/home/paulmckinney/Documents/ProjectNotes",
+		"/home/paulmckinney/Documents/ProjectNotes/docs"
+	],
 	"file_history":
 	[
-		"/home/paulmckinney/Documents/ProjectNotes3/projectnotes3.sublime-project",
-		"/home/paulmckinney/Documents/CustomControlTest/resource.qrc",
-		"/home/paulmckinney/Downloads/texteditexample/textedit.qrc",
-		"/home/paulmckinney/Downloads/texteditexample/textedit.qdoc",
-		"/home/paulmckinney/Downloads/texteditexample/textedit.pro",
-		"/home/paulmckinney/Downloads/texteditexample/textedit.h",
-		"/home/paulmckinney/Downloads/texteditexample/textedit.cpp",
-		"/home/paulmckinney/Downloads/texteditexample/main.cpp",
-		"/home/paulmckinney/Downloads/texteditexample/example.html",
-		"/home/paulmckinney/Downloads/texteditexample/example.md",
-		"/home/paulmckinney/Downloads/vcf2csv.py",
-		"/home/paulmckinney/Downloads/contacts-2022-09-10.vcf",
-		"/home/paulmckinney/Downloads/card.py",
-		"/home/paulmckinney/Documents/sublime_key.txt",
-		"/home/paulmckinney/Documents/ProjectNotes3/mainwindow.ui"
+		"/home/paulmckinney/Documents/ProjectNotes/mkdocs.yml",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/NotesPage.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/OpenEditor.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/PeopleListPage.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/PluginSettings.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/PluginsMenu.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/PowerPointTemplates.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/PresentingToClients.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/Project Notes.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/ProjectEmailArchive.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/ProjectListPage.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/ProjectNotesXML.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/MeetingNotesArchive.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/ItemTrackerPage.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/ImportingandExportingOutlookCont.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/GettingStarted.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/FileMenu.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/FilterTool.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/EarnedValueTerms.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/ClientListPage.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/AddingFunctionality.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/ActionItemDetailPage.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/index.md",
+		"/home/paulmckinney/Documents/ProjectNotes/projectnotes.sublime-project",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/Home.md",
+		"/home/paulmckinney/Documents/test-mkdocs/projectnotes/docs/index.md",
+		"/home/paulmckinney/Documents/test-mkdocs/projectnotes/mkdocs.yml",
+		"/home/paulmckinney/Documents/test-mkdocs/projectnotes/Getting_Started.md",
+		"/home/paulmckinney/Documents/test-docs/source/conf.py",
+		"/home/paulmckinney/Documents/test-docs/source/index.rst",
+		"/home/paulmckinney/Documents/test-docs/source/index_bak.rst_bak",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/copy_email_member_plugin.py",
+		"/home/paulmckinney/.ssh/id_ed25519.pub",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/ScheduleaCustomerKickoffMeeting.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/ScheduleaCustomerLessonsLearnedM.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/ScheduleaCustomerStatusMeeting.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/ScheduleanInternalKickoffMeeting.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/ScheduleanInternalLessonsLearned.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/ScheduleanInternalStatusMeeting.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/SearchPage.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/SendMeetingNotes.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/SendProjectEmails.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/SortingandSizingColumns.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/StandardPlugins.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/SystemRequirements.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/Toolbar.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/TrackerReportGeneration.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/ViewMenu.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/Whatsnew.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/ItemTrackerPanel.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/MeetingNotesArchive.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/NotesPage.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/OpenEditor.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/OverviewofPlugins.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/Overviewoftheuserinterface.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/PeopleListPage.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/PluginSettings.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/PluginsMenu.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/PowerPointTemplates.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/Preferences.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/PresentingToClients.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/Project Notes.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/ProjectEmailArchive.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/ProjectListPage.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/ProjectNotesXML.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/ProjectPage.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/ImportingandExportingOutlookCont.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/GettingStarted.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/GlobalSettings.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/ActionItemDetailPage.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/AddingFunctionality.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/ClientListPage.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/CornerstoneInstallationandSetup.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/EarnedValueTerms.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/EditMenu.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/FileMenu.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/FilterTool.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/FilterTool.html",
+		"/home/paulmckinney/Documents/ProjectNotes/pntextedit.cpp",
+		"/home/paulmckinney/Documents/ProjectNotes/pntextedit.h",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/newpowerpoint_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes/README.md",
+		"/home/paulmckinney/Documents/ProjectNotes/Systemrequirements.md",
+		"/home/paulmckinney/Documents/ProjectNotes/Wiki.md",
+		"/home/paulmckinney/MEGAsync/Sermon Study/What about tolerance.txt",
+		"/home/paulmckinney/MEGAsync/Sermon Planning.txt",
+		"/home/paulmckinney/Documents/ProjectNotes/mainwindow.ui",
+		"/home/paulmckinney/Downloads/README.md",
+		"/home/paulmckinney/Desktop/Guitar Pro 8.desktop",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/tester_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes/ProjectNotes.pro.user",
+		"/home/paulmckinney/MEGAsync/ProjectNotes.pro.user",
+		"/home/paulmckinney/Documents/ProjectNotes/ProjectNotes.pro.user.3c2e273",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/sendprojectemail_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/editor_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/emailarchive_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/cci_scheduleoneonone_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/cci_ifs_projects_statusreport_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/excelkill_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/globalsettings_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/newchangeorder_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/newmsproject_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/newpowerpoint_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/newriskregister_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/paul_cleanpc_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/schedulecustomerkickoffinvite_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/cci_ifs_projects_import_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/schedulecustomerlessonslearnedinvite_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/schedulecustomerstatusinvite_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/scheduleinternalkickoffinvite_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/scheduleinternallessonslearnedinvite_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/scheduleinternalstatusinvite_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/sendmeetingnotes_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/trackkerreport_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/contactexport_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/contactimport_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/archivenotes_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/cci_connectdrives_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/includes/common.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/tester_tools.py",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/includes/dialogNotesArchiveOptions.ui",
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/includes/excel_tools.py",
+		"/home/paulmckinney/Desktop/wonderwhy.xml",
+		"/home/paulmckinney/Documents/ProjectNotes3/mainwindow.ui",
+		"/home/paulmckinney/Documents/ProjectNotes3/searchresultsview.h",
+		"/home/paulmckinney/Documents/ProjectNotes3/searchresultsview.cpp",
+		"/home/paulmckinney/Documents/ProjectNotes3/searchpage.h",
+		"/home/paulmckinney/Documents/ProjectNotes3/searchpage.cpp"
 	],
 	"find":
 	{
-		"height": 28.0
+		"height": 40.0
 	},
 	"find_in_files":
 	{
-		"height": 104.0,
+		"height": 109.0,
 		"where_history":
 		[
 		]
@@ -584,6 +262,7 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"\\<"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -591,6 +270,7 @@
 		"regex": false,
 		"replace_history":
 		[
+			"&lt;"
 		],
 		"reverse": false,
 		"scrollbar_highlights": true,
@@ -607,12 +287,12 @@
 			[
 				{
 					"buffer": 0,
-					"file": "projectnotes3.sublime-project",
+					"file": "docs/ProjectPage.md",
 					"selected": true,
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 308,
+						"buffer_size": 8167,
 						"regions":
 						{
 						},
@@ -625,9 +305,8 @@
 						],
 						"settings":
 						{
-							"syntax": "Packages/JSON/JSON.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
+							"mde.match_heading_hashes": false,
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -646,7 +325,7 @@
 	},
 	"input":
 	{
-		"height": 0.0
+		"height": 43.0
 	},
 	"layout":
 	{
@@ -671,19 +350,27 @@
 		]
 	},
 	"menu_visible": true,
+	"output.SublimeLinter":
+	{
+		"height": 0.0
+	},
 	"output.exec":
 	{
-		"height": 324.0
+		"height": 162.0
 	},
 	"output.find_results":
 	{
 		"height": 0.0
 	},
-	"pinned_build_system": "Qt Build Debug",
-	"project": "projectnotes3.sublime-project",
+	"output.markdown":
+	{
+		"height": 120.0
+	},
+	"pinned_build_system": "",
+	"project": "projectnotes.sublime-project",
 	"replace":
 	{
-		"height": 52.0
+		"height": 72.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -692,6 +379,26 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"Peop",
+				"docs/PeopleListPage.md"
+			],
+			[
+				"itemtr",
+				"docs/ItemTrackerPage.md"
+			],
+			[
+				"import",
+				"docs/ImportingandExportingOutlookCont.md"
+			],
+			[
+				"ind",
+				"docs/index.md"
+			],
+			[
+				"mk",
+				"mkdocs.yml"
+			]
 		],
 		"width": 0.0
 	},
@@ -721,7 +428,7 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 385.0,
+	"side_bar_width": 292.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{

@@ -6,9 +6,10 @@ The **View** menu provides away for you to manage page visibility and project it
 
 ## Hiding Internal Project Items
 
-Items such as **Action/Tracker,** **Meeting Notes,** and **Earned Value** amounts can be marked as internal items. Hiding items marked as internal also hides the **Internal** checkbox, so clients do not have a visual indicator that some items are hidden. When internal items are hidden, they will not be displayed in database search results found in the [File Menu](<File Menu>).
+Items such as **Action/Tracker,** **Meeting Notes,** and **Earned Value** amounts can be marked as internal items. Hiding items marked as internal also hides the **Internal** checkbox, so clients do not have a visual indicator that some items are hidden. When internal items are hidden, they will not be displayed in database search results found in the [File Menu](<FileMenu.md>).
 
 **To hide internal items:**
+
 1. From the **View** menu, uncheck **Internal Items**.
 
 ## Showing and Hiding the Status Bar
@@ -20,6 +21,7 @@ The status bar conveys important information about import and export activity. I
 The Project Page is the home page for the currently open database. By default it lists all currently open projects. To return to the Projects Pages, select **Projects** from the **View** menu.
 
 **To show closed projects:**
+
 1. From the **View** menu, select **Closed Projects**.
 
 ## Showing the Clients Page
@@ -35,6 +37,7 @@ The People Page lists all people in the currently open database. To navigate to 
 When sharing a screen during a meeting, a larger font may help readability. The last font size is saved when Project Notes is closed, and restored on startup.
 
 **To increase the font size:**
+
 1. From the **View** menu, select **Increase Font Size**.
 
 **Te decrease the font size:**
@@ -47,14 +50,17 @@ In most cases only **Tracker/Action** items that aren't resolved will be display
 
 ## Filtering Data
 
-Almost every table view in Project Notes can be filtered. The [Filter Tool](<FilterTool>) is very powerful. To show the [Filter Tool](<Filter Tool>), select **Filter** from the **View** menu.
+Almost every table view in Project Notes can be filtered. The [Filter Tool](<FilterTool.md>) is very powerful. To show the [Filter Tool](<FilterTool.md>), select **Filter** from the **View** menu.
 
 ## Navigating Between Open Pages
 
 Project Notes keeps track of the previous open page. Note: It does not keep track of previously open data on a page. Navigating between pages of the same type will only show the last data open. For example, if multiple meeting notes pages are in the history, they will both display the same record.
 
 **To navigate to the previous page in history:**
-1. Select **\<** from the **View** menu.
+
+1. Select **&lt;** from the **View** menu.
 
 **To navigate to the next page in history:**
-1. Select **\>** from the **View** menu.
+
+1. Select **&gt;** from the **View** menu.
+2. 
