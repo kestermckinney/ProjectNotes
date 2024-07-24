@@ -79,7 +79,7 @@ if (platform.system() == 'Windows'):
 
         window_title = ""
 
-        # needed to debug app = QApplication(sys.argv)
+        
         xmlval = QDomDocument()
         xmldoc = ""
         
@@ -154,7 +154,7 @@ print("Buld up QDomDocument")
 xmldoc = QDomDocument("TestDocument")
 f = QFile("exampleproject.xml")
 
-if f.open(QIODevice.ReadOnly):
+if f.open(QIODevice.OpenModeFlag.ReadOnly):
     print("example project opened")
 xmldoc.setContent(f)
 f.close()

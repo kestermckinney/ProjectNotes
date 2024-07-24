@@ -2,7 +2,10 @@
 	"folders":
 	[
 		{
-			"path": "."
-		}
-	]
+			"path": ".",
+		},
+		{
+			"path": "/home/paulmckinney/Documents/CornerstonePlugins",
+		},
+	],
 }

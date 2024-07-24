@@ -77,7 +77,7 @@ if (platform.system() == 'Windows'):
     def event_data_rightclick(xmlstr):
         print("called event: " + __file__)
 
-        # needed to debug app = QApplication(sys.argv)
+        
         xmlval = QDomDocument()
         xmldoc = ""
 
@@ -180,7 +180,7 @@ print("Buld up QDomDocument")
 xmldoc = QDomDocument("TestDocument")
 f = QFile("C:/Users/pamcki/Desktop/project.xml")
 
-if f.open(QIODevice.ReadOnly):
+if f.open(QIODevice.OpenModeFlag.ReadOnly):
     print("example project opened")
 xmldoc.setContent(f)
 f.close()

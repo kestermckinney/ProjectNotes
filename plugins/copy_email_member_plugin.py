@@ -74,8 +74,7 @@ if (platform.system() == 'Windows'):
     pnc = ProjectNotesCommon()
 
     def event_data_rightclick(xmlstr):
-        print("called event: " + __file__)
-        # needed to debug app = QApplication(sys.argv)
+
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
@@ -113,7 +112,7 @@ xmldoc = QDomDocument("TestDocument")
 
 f = QFile("exampleproject.xml")
 
-if f.open(QIODevice.ReadOnly):
+if f.open(QIODevice.OpenModeFlag.ReadOnly):
     print("example project opened")
     xmldoc.setContent(f)
     f.close()

@@ -20,12 +20,15 @@
 	"buffers":
 	[
 		{
-			"file": "docs/ProjectPage.md",
+			"file": "mkdocs.yml",
 			"settings":
 			{
-				"buffer_size": 8167,
+				"buffer_size": 3018,
 				"line_ending": "Unix"
-			}
+			},
+			"undo_stack":
+			[
+			]
 		}
 	],
 	"build_system": "",
@@ -112,11 +115,12 @@
 	},
 	"expanded_folders":
 	[
-		"/home/paulmckinney/Documents/ProjectNotes",
-		"/home/paulmckinney/Documents/ProjectNotes/docs"
 	],
 	"file_history":
 	[
+		"/home/paulmckinney/Documents/ProjectNotes/peoplelistview.h",
+		"/home/paulmckinney/Documents/ProjectNotes/projectnotes.sublime-project",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/ProjectPage.md",
 		"/home/paulmckinney/Documents/ProjectNotes/mkdocs.yml",
 		"/home/paulmckinney/Documents/ProjectNotes/docs/NotesPage.md",
 		"/home/paulmckinney/Documents/ProjectNotes/docs/OpenEditor.md",
@@ -140,7 +144,6 @@
 		"/home/paulmckinney/Documents/ProjectNotes/docs/AddingFunctionality.md",
 		"/home/paulmckinney/Documents/ProjectNotes/docs/ActionItemDetailPage.md",
 		"/home/paulmckinney/Documents/ProjectNotes/docs/index.md",
-		"/home/paulmckinney/Documents/ProjectNotes/projectnotes.sublime-project",
 		"/home/paulmckinney/Documents/ProjectNotes.wiki/Home.md",
 		"/home/paulmckinney/Documents/test-mkdocs/projectnotes/docs/index.md",
 		"/home/paulmckinney/Documents/test-mkdocs/projectnotes/mkdocs.yml",
@@ -242,13 +245,11 @@
 		"/home/paulmckinney/Desktop/wonderwhy.xml",
 		"/home/paulmckinney/Documents/ProjectNotes3/mainwindow.ui",
 		"/home/paulmckinney/Documents/ProjectNotes3/searchresultsview.h",
-		"/home/paulmckinney/Documents/ProjectNotes3/searchresultsview.cpp",
-		"/home/paulmckinney/Documents/ProjectNotes3/searchpage.h",
-		"/home/paulmckinney/Documents/ProjectNotes3/searchpage.cpp"
+		"/home/paulmckinney/Documents/ProjectNotes3/searchresultsview.cpp"
 	],
 	"find":
 	{
-		"height": 40.0
+		"height": 26.0
 	},
 	"find_in_files":
 	{
@@ -287,26 +288,27 @@
 			[
 				{
 					"buffer": 0,
-					"file": "docs/ProjectPage.md",
+					"file": "mkdocs.yml",
 					"selected": true,
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 8167,
+						"buffer_size": 3018,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								681,
+								681
 							]
 						],
 						"settings":
 						{
-							"mde.match_heading_hashes": false,
-							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
+							"syntax": "Packages/YAML/YAML.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -321,7 +323,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 28.0
+		"height": 26.0
 	},
 	"input":
 	{
@@ -370,7 +372,7 @@
 	"project": "projectnotes.sublime-project",
 	"replace":
 	{
-		"height": 72.0
+		"height": 48.0
 	},
 	"save_all_on_build": true,
 	"select_file":

@@ -87,9 +87,6 @@ class ProjectNotesCommon:
         children = node.firstChild()
 
         while not children.isNull():
-            if children.nodeName() == "table":
-                print("comparing: ", children.nodeName() , children.toElement().attribute(attribute))
-
             if ( children.nodeName() == type and children.toElement().attribute(attribute) == name ):
                 return(children)
 

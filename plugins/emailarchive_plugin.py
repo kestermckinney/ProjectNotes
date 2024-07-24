@@ -87,11 +87,10 @@ if (platform.system() == 'Windows'):
         return cleanname[:70]
 
     def event_data_rightclick(xmlstr):
-        print("called event: " + __file__)
         QtWidgets.QApplication.restoreOverrideCursor()
         QtWidgets.QApplication.processEvents()   
 
-        # needed to debug app = QApplication(sys.argv)
+        
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
@@ -107,10 +106,10 @@ if (platform.system() == 'Windows'):
         answer = QMessageBox.question(None,
             "WARNING: Long Process",
             "WARNING: This process can take some time.  Are you sure you want to continue?",
-            QMessageBox.Yes,
-            QMessageBox.No)
+            QMessageBox.StandardButton.Yes,
+            QMessageBox.StandardButton.No)
 
-        if (answer != QMessageBox.Yes):
+        if (answer != QMessageBox.StandardButton.Yes):
             QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
             QtWidgets.QApplication.processEvents()
             return ""
@@ -220,7 +219,7 @@ print("Buld up QDomDocument")
 xmldoc = QDomDocument("TestDocument")
 f = QFile("C:/Users/pamcki/Desktop/project.xml")
 
-if f.open(QIODevice.ReadOnly):
+if f.open(QIODevice.OpenModeFlag.ReadOnly):
     print("example project opened")
 xmldoc.setContent(f)
 f.close()

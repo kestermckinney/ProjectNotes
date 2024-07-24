@@ -86,7 +86,7 @@ if (platform.system() == 'Windows'):
 
         #print(xmlstr) # debug output
         
-        # needed to debug app = QApplication(sys.argv)
+        
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
@@ -109,7 +109,7 @@ if (platform.system() == 'Windows'):
         QtWidgets.QApplication.restoreOverrideCursor()
         QtWidgets.QApplication.processEvents()   
 
-        ui = uic.loadUi("../plugins/includes/dialogNotesArchiveOptions.ui")
+        ui = uic.loadUi("plugins/includes/dialogNotesArchiveOptions.ui")
         ui.m_datePickerRptDateNotes.setDate(executedate)
         ui.m_datePickerRptDateNotes.setCalendarPopup(True)
         ui.setWindowFlags(
@@ -370,7 +370,7 @@ if (platform.system() == 'Windows'):
             QFile.remove(excelreportname)
 
         if ui.m_checkBoxDisplayNotes.isChecked():
-            QDesktopServices.openUrl(QUrl("file:///" + pdfreportname, QUrl.TolerantMode))
+            QDesktopServices.openUrl(QUrl("file:///" + pdfreportname))
 
         progbar.setValue(100)
         progbar.setLabelText("Finalizing Excel files...")
