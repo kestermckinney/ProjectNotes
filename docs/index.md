@@ -1,6 +1,6 @@
 # Introduction
 
-![Image](<lib/logo1024.png>){align=left} **Project Notes** is a powerful notes management and project metrics aggregator designed for project managers who manage multiple project teams on a regular basis. The aggregator provides an overall health check of active projects. For project meetings with specific team members, Project Notes organizes metrics, notes, and items to specific projects.
+![Image](<img/logo1024.png>){align=left} **Project Notes** is a powerful notes management and project metrics aggregator designed for project managers who manage multiple project teams on a regular basis. The aggregator provides an overall health check of active projects. For project meetings with specific team members, Project Notes organizes metrics, notes, and items to specific projects.
 
 The integrated Python script language makes Project Notes easy to customize to specific needs. Using the Python, Project Notes can be integrated with many different enterprise applications and external data sources.
 

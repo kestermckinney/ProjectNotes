@@ -24,10 +24,78 @@
 	"buffers":
 	[
 		{
-			"file": "/home/paulmckinney/Documents/CornerstonePlugins/README.md",
+			"file": "README.md",
 			"settings":
 			{
-				"buffer_size": 20,
+				"buffer_size": 1675,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			},
+			"undo_stack":
+			[
+				[
+					3,
+					36,
+					"left_delete",
+					null,
+					"JAAAAH0DAAAAAAAAfQMAAAAAAAABAAAAPnwDAAAAAAAAfAMAAAAAAAABAAAAaXsDAAAAAAAAewMAAAAAAAABAAAAa3oDAAAAAAAAegMAAAAAAAABAAAAaXkDAAAAAAAAeQMAAAAAAAABAAAAd3gDAAAAAAAAeAMAAAAAAAABAAAAL3cDAAAAAAAAdwMAAAAAAAABAAAAc3YDAAAAAAAAdgMAAAAAAAABAAAAZXUDAAAAAAAAdQMAAAAAAAABAAAAdHQDAAAAAAAAdAMAAAAAAAABAAAAb3MDAAAAAAAAcwMAAAAAAAABAAAATnIDAAAAAAAAcgMAAAAAAAABAAAAdHEDAAAAAAAAcQMAAAAAAAABAAAAY3ADAAAAAAAAcAMAAAAAAAABAAAAZW8DAAAAAAAAbwMAAAAAAAABAAAAam4DAAAAAAAAbgMAAAAAAAABAAAAb20DAAAAAAAAbQMAAAAAAAABAAAAcmwDAAAAAAAAbAMAAAAAAAABAAAAUGsDAAAAAAAAawMAAAAAAAABAAAAL2oDAAAAAAAAagMAAAAAAAABAAAAeWkDAAAAAAAAaQMAAAAAAAABAAAAZWgDAAAAAAAAaAMAAAAAAAABAAAAbmcDAAAAAAAAZwMAAAAAAAABAAAAbmYDAAAAAAAAZgMAAAAAAAABAAAAaWUDAAAAAAAAZQMAAAAAAAABAAAAa2QDAAAAAAAAZAMAAAAAAAABAAAAY2MDAAAAAAAAYwMAAAAAAAABAAAAbWIDAAAAAAAAYgMAAAAAAAABAAAAcmEDAAAAAAAAYQMAAAAAAAABAAAAZWADAAAAAAAAYAMAAAAAAAABAAAAdF8DAAAAAAAAXwMAAAAAAAABAAAAc14DAAAAAAAAXgMAAAAAAAABAAAAZV0DAAAAAAAAXQMAAAAAAAABAAAAa1wDAAAAAAAAXAMAAAAAAAABAAAAL1sDAAAAAAAAWwMAAAAAAAABAAAAbVoDAAAAAAAAWgMAAAAAAAABAAAAbw",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAB+AwAAAAAAAH4DAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					4,
+					8,
+					"left_delete",
+					null,
+					"CAAAAFkDAAAAAAAAWQMAAAAAAAABAAAAY1gDAAAAAAAAWAMAAAAAAAABAAAALlcDAAAAAAAAVwMAAAAAAAABAAAAYlYDAAAAAAAAVgMAAAAAAAABAAAAdVUDAAAAAAAAVQMAAAAAAAABAAAAaFQDAAAAAAAAVAMAAAAAAAABAAAAdFMDAAAAAAAAUwMAAAAAAAABAAAAaVIDAAAAAAAAUgMAAAAAAAABAAAAZw",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABaAwAAAAAAAFoDAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					5,
+					1,
+					"insert",
+					{
+						"characters": "project"
+					},
+					"BwAAAFIDAAAAAAAAUwMAAAAAAAAAAAAAUwMAAAAAAABUAwAAAAAAAAAAAABUAwAAAAAAAFUDAAAAAAAAAAAAAFUDAAAAAAAAVgMAAAAAAAAAAAAAVgMAAAAAAABXAwAAAAAAAAAAAABXAwAAAAAAAFgDAAAAAAAAAAAAAFgDAAAAAAAAWQMAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABSAwAAAAAAAFIDAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					6,
+					1,
+					"insert",
+					{
+						"characters": "notes.read"
+					},
+					"CgAAAFkDAAAAAAAAWgMAAAAAAAAAAAAAWgMAAAAAAABbAwAAAAAAAAAAAABbAwAAAAAAAFwDAAAAAAAAAAAAAFwDAAAAAAAAXQMAAAAAAAAAAAAAXQMAAAAAAABeAwAAAAAAAAAAAABeAwAAAAAAAF8DAAAAAAAAAAAAAF8DAAAAAAAAYAMAAAAAAAAAAAAAYAMAAAAAAABhAwAAAAAAAAAAAABhAwAAAAAAAGIDAAAAAAAAAAAAAGIDAAAAAAAAYwMAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABZAwAAAAAAAFkDAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					7,
+					1,
+					"insert",
+					{
+						"characters": "thedocs.i"
+					},
+					"CQAAAGMDAAAAAAAAZAMAAAAAAAAAAAAAZAMAAAAAAABlAwAAAAAAAAAAAABlAwAAAAAAAGYDAAAAAAAAAAAAAGYDAAAAAAAAZwMAAAAAAAAAAAAAZwMAAAAAAABoAwAAAAAAAAAAAABoAwAAAAAAAGkDAAAAAAAAAAAAAGkDAAAAAAAAagMAAAAAAAAAAAAAagMAAAAAAABrAwAAAAAAAAAAAABrAwAAAAAAAGwDAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABjAwAAAAAAAGMDAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					8,
+					1,
+					"insert",
+					{
+						"characters": "o>"
+					},
+					"AgAAAGwDAAAAAAAAbQMAAAAAAAAAAAAAbQMAAAAAAABuAwAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABsAwAAAAAAAGwDAAAAAAAAAAAAAAAA8L8"
+				]
+			]
+		},
+		{
+			"file": "mkdocs.yml",
+			"settings":
+			{
+				"buffer_size": 3019,
 				"line_ending": "Unix"
 			}
 		}
@@ -116,11 +184,15 @@
 	},
 	"expanded_folders":
 	[
-		"/home/paulmckinney/Documents/ProjectNotes",
-		"/home/paulmckinney/Documents/ProjectNotes/site"
+		"/home/paulmckinney/Documents/ProjectNotes"
 	],
 	"file_history":
 	[
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/Release-Notes.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/Schedule an Internal Kickoff Meeting Plugin.md",
+		"/home/paulmckinney/Documents/CornerstonePlugins/README.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/Home.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/Action Item Detail Page.md",
 		"/home/paulmckinney/Documents/ProjectNotes/mkdocs.yml",
 		"/home/paulmckinney/Documents/ProjectNotes/qthelp-projectnotes.qhcp",
 		"/home/paulmckinney/Documents/ProjectNotes/qthelp-projectnotes.qhp",
@@ -151,7 +223,6 @@
 		"/home/paulmckinney/Documents/ProjectNotes/docs/AddingFunctionality.md",
 		"/home/paulmckinney/Documents/ProjectNotes/docs/ActionItemDetailPage.md",
 		"/home/paulmckinney/Documents/ProjectNotes/docs/index.md",
-		"/home/paulmckinney/Documents/ProjectNotes.wiki/Home.md",
 		"/home/paulmckinney/Documents/test-mkdocs/projectnotes/docs/index.md",
 		"/home/paulmckinney/Documents/test-mkdocs/projectnotes/mkdocs.yml",
 		"/home/paulmckinney/Documents/test-mkdocs/projectnotes/Getting_Started.md",
@@ -244,11 +315,7 @@
 		"/home/paulmckinney/Documents/ProjectNotes3/plugins/contactexport_plugin.py",
 		"/home/paulmckinney/Documents/ProjectNotes3/plugins/contactimport_plugin.py",
 		"/home/paulmckinney/Documents/ProjectNotes3/plugins/archivenotes_plugin.py",
-		"/home/paulmckinney/Documents/ProjectNotes3/plugins/cci_connectdrives_plugin.py",
-		"/home/paulmckinney/Documents/ProjectNotes3/plugins/includes/common.py",
-		"/home/paulmckinney/Documents/ProjectNotes3/plugins/tester_tools.py",
-		"/home/paulmckinney/Documents/ProjectNotes3/plugins/includes/dialogNotesArchiveOptions.ui",
-		"/home/paulmckinney/Documents/ProjectNotes3/plugins/includes/excel_tools.py"
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/cci_connectdrives_plugin.py"
 	],
 	"find":
 	{
@@ -297,12 +364,41 @@
 			[
 				{
 					"buffer": 0,
-					"file": "/home/paulmckinney/Documents/CornerstonePlugins/README.md",
-					"selected": true,
+					"file": "README.md",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 20,
+						"buffer_size": 1675,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1186,
+								1186
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"stack_multiselect": false,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "mkdocs.yml",
+					"selected": true,
+					"semi_transient": true,
+					"settings":
+					{
+						"buffer_size": 3019,
 						"regions":
 						{
 						},
@@ -315,7 +411,9 @@
 						],
 						"settings":
 						{
-							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
+							"syntax": "Packages/YAML/YAML.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
