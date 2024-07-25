@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"I",
+				"Introduction"
+			],
+			[
 				"Py",
 				"PyQt5"
 			],
@@ -20,15 +24,12 @@
 	"buffers":
 	[
 		{
-			"file": "mkdocs.yml",
+			"file": "/home/paulmckinney/Documents/CornerstonePlugins/README.md",
 			"settings":
 			{
-				"buffer_size": 3018,
+				"buffer_size": 20,
 				"line_ending": "Unix"
-			},
-			"undo_stack":
-			[
-			]
+			}
 		}
 	],
 	"build_system": "",
@@ -115,13 +116,19 @@
 	},
 	"expanded_folders":
 	[
+		"/home/paulmckinney/Documents/ProjectNotes",
+		"/home/paulmckinney/Documents/ProjectNotes/site"
 	],
 	"file_history":
 	[
+		"/home/paulmckinney/Documents/ProjectNotes/mkdocs.yml",
+		"/home/paulmckinney/Documents/ProjectNotes/qthelp-projectnotes.qhcp",
+		"/home/paulmckinney/Documents/ProjectNotes/qthelp-projectnotes.qhp",
+		"/home/paulmckinney/Documents/ProjectNotes/site/index.html",
+		"/home/paulmckinney/Documents/CornerstonePlugins/windows/setup/setupscript.nsi",
 		"/home/paulmckinney/Documents/ProjectNotes/peoplelistview.h",
 		"/home/paulmckinney/Documents/ProjectNotes/projectnotes.sublime-project",
 		"/home/paulmckinney/Documents/ProjectNotes/docs/ProjectPage.md",
-		"/home/paulmckinney/Documents/ProjectNotes/mkdocs.yml",
 		"/home/paulmckinney/Documents/ProjectNotes/docs/NotesPage.md",
 		"/home/paulmckinney/Documents/ProjectNotes/docs/OpenEditor.md",
 		"/home/paulmckinney/Documents/ProjectNotes/docs/PeopleListPage.md",
@@ -241,11 +248,7 @@
 		"/home/paulmckinney/Documents/ProjectNotes3/plugins/includes/common.py",
 		"/home/paulmckinney/Documents/ProjectNotes3/plugins/tester_tools.py",
 		"/home/paulmckinney/Documents/ProjectNotes3/plugins/includes/dialogNotesArchiveOptions.ui",
-		"/home/paulmckinney/Documents/ProjectNotes3/plugins/includes/excel_tools.py",
-		"/home/paulmckinney/Desktop/wonderwhy.xml",
-		"/home/paulmckinney/Documents/ProjectNotes3/mainwindow.ui",
-		"/home/paulmckinney/Documents/ProjectNotes3/searchresultsview.h",
-		"/home/paulmckinney/Documents/ProjectNotes3/searchresultsview.cpp"
+		"/home/paulmckinney/Documents/ProjectNotes3/plugins/includes/excel_tools.py"
 	],
 	"find":
 	{
@@ -256,6 +259,7 @@
 		"height": 109.0,
 		"where_history":
 		[
+			""
 		]
 	},
 	"find_state":
@@ -263,6 +267,10 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"..",
+			"site/",
+			"Status",
+			"status",
 			"\\<"
 		],
 		"highlight": true,
@@ -271,6 +279,7 @@
 		"regex": false,
 		"replace_history":
 		[
+			"",
 			"&lt;"
 		],
 		"reverse": false,
@@ -288,27 +297,25 @@
 			[
 				{
 					"buffer": 0,
-					"file": "mkdocs.yml",
+					"file": "/home/paulmckinney/Documents/CornerstonePlugins/README.md",
 					"selected": true,
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3018,
+						"buffer_size": 20,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								681,
-								681
+								0,
+								0
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/YAML/YAML.sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,

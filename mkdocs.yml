@@ -1,4 +1,5 @@
 site_name: Project Notes Documentation
+
 theme:
   name: readthedocs
   highlightjs: true
