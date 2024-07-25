@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>866</width>
+    <width>879</width>
     <height>799</height>
    </rect>
   </property>
@@ -50,9 +50,6 @@
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
-      </property>
-      <property name="currentIndex">
-       <number>7</number>
       </property>
       <widget class="ProjectsListPage" name="pageProjectsList">
        <property name="sizePolicy">
@@ -1451,54 +1448,6 @@
         </item>
        </layout>
       </widget>
-      <widget class="HelpPage" name="pageHelp">
-       <layout class="QVBoxLayout" name="verticalLayout_10">
-        <property name="spacing">
-         <number>0</number>
-        </property>
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QSplitter" name="splitter">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <widget class="QTabWidget" name="tabWidgetContents">
-           <property name="maximumSize">
-            <size>
-             <width>250</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="currentIndex">
-            <number>0</number>
-           </property>
-           <widget class="QWidget" name="tabContents">
-            <attribute name="title">
-             <string>Contents</string>
-            </attribute>
-           </widget>
-           <widget class="QWidget" name="tabIndex">
-            <attribute name="title">
-             <string>Index</string>
-            </attribute>
-           </widget>
-          </widget>
-          <widget class="HelpBrowser" name="textBrowser"/>
-         </widget>
-        </item>
-       </layout>
-      </widget>
      </widget>
     </item>
    </layout>
@@ -1508,8 +1457,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>866</width>
-     <height>22</height>
+     <width>879</width>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -2108,17 +2057,6 @@
     <string>F1</string>
    </property>
   </action>
-  <action name="actionGetting_Started">
-   <property name="text">
-    <string>Getting Started</string>
-   </property>
-   <property name="toolTip">
-    <string>Open the Getting Started Help Section</string>
-   </property>
-   <property name="statusTip">
-    <string>Open the Getting Started Help Section</string>
-   </property>
-  </action>
   <action name="actionWhat_s_New">
    <property name="text">
     <string>What's New</string>
@@ -2478,11 +2416,6 @@
     <string>Alt+Left</string>
    </property>
   </action>
-  <action name="actionte">
-   <property name="text">
-    <string>te.</string>
-   </property>
-  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -2591,17 +2524,6 @@
    <class>SearchResultsView</class>
    <extends>QTableView</extends>
    <header>searchresultsview.h</header>
-  </customwidget>
-  <customwidget>
-   <class>HelpPage</class>
-   <extends>QWidget</extends>
-   <header>helppage.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>HelpBrowser</class>
-   <extends>QTextBrowser</extends>
-   <header>helpbrowser.h</header>
   </customwidget>
   <customwidget>
    <class>PNPlainTextEdit</class>

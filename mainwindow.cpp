@@ -838,7 +838,6 @@ void MainWindow::openDatabase(QString t_dbfile)
     ui->pageItemDetails->setupModels(ui);
     ui->pageProjectNote->setupModels(ui);
     ui->pageSearch->setupModels(ui);
-    ui->pageHelp->setupModels(ui);
 
     navigateClearHistory();
     navigateToPage(ui->pageProjectsList, QVariant());
@@ -1961,17 +1960,8 @@ void MainWindow::on_actionAbout_triggered()
 
 void MainWindow::on_actionHelp_triggered()
 {
-    navigateToPage(ui->pageHelp, QVariant());
-    ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/Introduction.html"));
+    QDesktopServices::openUrl(QUrl("https://projectnotes.readthedocs.io/", QUrl::TolerantMode));
 }
-
-
-void MainWindow::on_actionGetting_Started_triggered()
-{
-    navigateToPage(ui->pageHelp, QVariant());
-    ui->pageHelp->showLink(QUrl("qthelp://projectnotes/doc/GettingStarted.html"));
-}
-
 
 void MainWindow::on_actionWhat_s_New_triggered()
 {

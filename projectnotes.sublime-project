@@ -5,10 +5,10 @@
 			"path": ".",
 		},
 		{
-			"path": "/home/paulmckinney/Documents/CornerstonePlugins",
+			"path": "../CornerstonePlugins",
 		},
 		{
-			"path": "/home/paulmckinney/Documents/ProjectNotes.wiki"
+			"path": "../ProjectNotes.wiki"
 		},
 	],
 }

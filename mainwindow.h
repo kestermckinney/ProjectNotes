@@ -4,8 +4,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "pnplaintextedit.h"
-
 #include <QMainWindow>
 #include <QStringListModel>
 #include <QStack>
@@ -101,7 +99,6 @@ private slots:
     void on_actionBackup_Database_triggered();
     void on_actionAbout_triggered();
     void on_actionHelp_triggered();
-    void on_actionGetting_Started_triggered();
     void on_actionWhat_s_New_triggered();
 
     void cursorPositionChanged();
