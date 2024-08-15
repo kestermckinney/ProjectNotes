@@ -323,8 +323,30 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
     {
         if (p->hasDataRightClickEvent(table) && p->isEnabled())
         {
-            QAction* act = menu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
-            act->setIcon(QIcon(":/icons/add-on.png"));
+            if (p->getSubmenu().isEmpty())
+            {
+                QAction* act = menu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+                act->setIcon(QIcon(":/icons/add-on.png"));
+            }
+            else
+            {
+                // find the submenu if it exists
+                QMenu* submenu = nullptr;
+
+                for (QAction* action : menu->actions())
+                {
+                    if (action->text().compare(p->getSubmenu(), Qt::CaseInsensitive) == 0)
+                        submenu = action->menu();
+                }
+
+                // if it didn't exist create it
+                if (!submenu)
+                    submenu = menu->addMenu(p->getSubmenu());
+
+                QAction* act = submenu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+                act->setIcon(QIcon(":/icons/add-on.png"));
+
+            }
         }
     }
 

@@ -10,6 +10,7 @@
 #include "aboutdialog.h"
 #include "pnplaintextedit.h"
 #include "pntextedit.h"
+#include "pncombobox.h"
 
 #include <QStringListModel>
 #include <QMessageBox>
@@ -23,7 +24,6 @@
 #include <QFontComboBox>
 #include <QTextList>
 #include <QColorDialog>
-#include <QComboBox>
 #include <QClipboard>
 #include <QMimeType>
 #include <QMimeData>
@@ -98,7 +98,6 @@ MainWindow::MainWindow(QWidget *t_parent)
     m_timer = new QTimer(this);
     connect(m_timer, SIGNAL(timeout()), this, SLOT(slotTimerUpdates()));
     m_timer->start(1000*60); // one minute timer event
-
 }
 
 
@@ -120,8 +119,30 @@ void MainWindow::buildPluginMenu()
     {
         if (p->hasPNPluginMenuEvent() && p->isEnabled())
         {
-            QAction* act = ui->menuPlugins->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
-            act->setIcon(QIcon(":/icons/add-on.png"));
+            if (p->getSubmenu().isEmpty())
+            {
+                QAction* act = ui->menuPlugins->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+                act->setIcon(QIcon(":/icons/add-on.png"));
+            }
+            else
+            {
+                // find the submenu if it exists
+                QMenu* submenu = nullptr;
+
+                for (QAction* action : ui->menuPlugins->actions())
+                {
+                    if (action->text().compare(p->getSubmenu(), Qt::CaseInsensitive) == 0)
+                        submenu = action->menu();
+                }
+
+                // if it didn't exist create it
+                if (!submenu)
+                    submenu = ui->menuPlugins->addMenu(p->getSubmenu());
+
+                QAction* act = submenu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+                act->setIcon(QIcon(":/icons/add-on.png"));
+
+            }
         }
     }
 }
@@ -642,7 +663,7 @@ void MainWindow::setButtonAndMenuStates()
                 can_format_text ||
                 (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 ) ||
                 (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "QComboBox") == 0 ) ||
+                (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 ) ||
                 (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 ) );
 
         // determine if we can find text
@@ -654,9 +675,9 @@ void MainWindow::setButtonAndMenuStates()
                 (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 ) );
 
         // can't edit combo boxes not set to editable
-        if ( can_text_edit && (strcmp(fw->metaObject()->className(), "QComboBox") == 0)  )
+        if ( can_text_edit && (strcmp(fw->metaObject()->className(), "PNComboBox") == 0)  )
         {
-            if ( !(dynamic_cast<QComboBox*>(fw))->isEditable() )
+            if ( !(dynamic_cast<PNComboBox*>(fw))->isEditable() )
                 can_text_edit = false;
         }
 
@@ -1424,7 +1445,7 @@ void MainWindow::setupTextActions()
 
     tb->setAllowedAreas(Qt::TopToolBarArea | Qt::BottomToolBarArea);
 
-    m_combo_box_style = new QComboBox(tb);
+    m_combo_box_style = new PNComboBox(tb);
     tb->addWidget(m_combo_box_style);
     m_combo_box_style->addItem("Standard");
     m_combo_box_style->addItem("Bullet List (Disc)");
@@ -1444,13 +1465,13 @@ void MainWindow::setupTextActions()
     m_combo_box_style->addItem("Heading 5");
     m_combo_box_style->addItem("Heading 6");
 
-    connect(m_combo_box_style, QOverload<int>::of(&QComboBox::activated), this, &MainWindow::textStyle);
+    connect(m_combo_box_style, QOverload<int>::of(&PNComboBox::activated), this, &MainWindow::textStyle);
 
     m_combo_box_font = new QFontComboBox(tb);
     tb->addWidget(m_combo_box_font);
-    connect(m_combo_box_font, &QComboBox::textActivated, this, &MainWindow::textFamily);
+    connect(m_combo_box_font, &PNComboBox::textActivated, this, &MainWindow::textFamily);
 
-    m_combo_box_size = new QComboBox(tb);
+    m_combo_box_size = new PNComboBox(tb);
     m_combo_box_size->setObjectName("comboSize");
     tb->addWidget(m_combo_box_size);
     m_combo_box_size->setEditable(true);
@@ -1460,7 +1481,7 @@ void MainWindow::setupTextActions()
         m_combo_box_size->addItem(QString::number(size));
     m_combo_box_size->setCurrentIndex(standardSizes.indexOf(QApplication::font().pointSize()));
 
-    connect(m_combo_box_size, &QComboBox::textActivated, this, &MainWindow::textSize);
+    connect(m_combo_box_size, &PNComboBox::textActivated, this, &MainWindow::textSize);
 }
 
 void MainWindow::textStyle(int styleIndex)
@@ -1708,8 +1729,8 @@ void MainWindow::on_actionUndo_triggered()
         (dynamic_cast<QLineEdit*>(fw))->undo();
     else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
         (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->undo();
-    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
-        (dynamic_cast<QComboBox*>(fw))->lineEdit()->undo();
+    else if (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 )
+        (dynamic_cast<PNComboBox*>(fw))->lineEdit()->undo();
 }
 
 
@@ -1727,8 +1748,8 @@ void MainWindow::on_actionRedo_triggered()
         (dynamic_cast<QLineEdit*>(fw))->redo();
     else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
         (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->redo();
-    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
-        (dynamic_cast<QComboBox*>(fw))->lineEdit()->redo();
+    else if (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 )
+        (dynamic_cast<PNComboBox*>(fw))->lineEdit()->redo();
 }
 
 
@@ -1746,8 +1767,8 @@ void MainWindow::on_actionCopy_triggered()
         (dynamic_cast<QLineEdit*>(fw))->copy();
     else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
         (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->copy();
-    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
-        (dynamic_cast<QComboBox*>(fw))->lineEdit()->copy();
+    else if (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 )
+        (dynamic_cast<PNComboBox*>(fw))->lineEdit()->copy();
 }
 
 
@@ -1765,8 +1786,8 @@ void MainWindow::on_actionCut_triggered()
         (dynamic_cast<QLineEdit*>(fw))->cut();
     else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
         (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->cut();
-    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
-        (dynamic_cast<QComboBox*>(fw))->lineEdit()->cut();
+    else if (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 )
+        (dynamic_cast<PNComboBox*>(fw))->lineEdit()->cut();
 }
 
 
@@ -1784,8 +1805,8 @@ void MainWindow::on_actionPaste_triggered()
         (dynamic_cast<QLineEdit*>(fw))->paste();
     else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
         (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->paste();
-    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
-        (dynamic_cast<QComboBox*>(fw))->lineEdit()->paste();
+    else if (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 )
+        (dynamic_cast<PNComboBox*>(fw))->lineEdit()->paste();
 }
 
 void MainWindow::on_actionDelete_triggered()
@@ -1802,8 +1823,8 @@ void MainWindow::on_actionDelete_triggered()
         (dynamic_cast<QLineEdit*>(fw))->backspace();
     else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
         (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->copy();
-    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
-        (dynamic_cast<QComboBox*>(fw))->lineEdit()->backspace();
+    else if (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 )
+        (dynamic_cast<PNComboBox*>(fw))->lineEdit()->backspace();
 
 }
 
@@ -1821,8 +1842,8 @@ void MainWindow::on_actionSelect_All_triggered()
         (dynamic_cast<QLineEdit*>(fw))->selectAll();
     else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
         (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->selectAll();
-    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
-        (dynamic_cast<QComboBox*>(fw))->lineEdit()->selectAll();
+    else if (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 )
+        (dynamic_cast<PNComboBox*>(fw))->lineEdit()->selectAll();
 }
 
 void MainWindow::on_actionSpell_Check_triggered()
@@ -1851,8 +1872,8 @@ void MainWindow::on_actionFind_triggered()
         m_find_replace_dialog->showReplaceWindow(dynamic_cast<QPlainTextEdit*>(fw));
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         m_find_replace_dialog->showReplaceWindow(dynamic_cast<QLineEdit*>(fw));
-    else if (strcmp(fw->metaObject()->className(), "QComboBox") == 0 )
-        m_find_replace_dialog->showReplaceWindow(dynamic_cast<QComboBox*>(fw)->lineEdit());
+    else if (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 )
+        m_find_replace_dialog->showReplaceWindow(dynamic_cast<PNComboBox*>(fw)->lineEdit());
 }
 
 void MainWindow::on_actionSearch_triggered()

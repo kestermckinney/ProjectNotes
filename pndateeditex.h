@@ -26,6 +26,7 @@
 #include "widgets_export.h"
 #include <QDateEdit>
 #include <QLineEdit>
+#include <QWheelEvent>
 
 class WIDGETS_EXPORT PNDateEditEx : public QDateEdit
 {
@@ -34,7 +35,7 @@ class WIDGETS_EXPORT PNDateEditEx : public QDateEdit
     Q_PROPERTY(bool nullable READ isNullable WRITE setNullable)
     Q_PROPERTY(bool null READ isNull)
 public:
-    explicit PNDateEditEx(QWidget *parent = 0);
+    explicit PNDateEditEx(QWidget *parent = nullptr);
     ~PNDateEditEx();
 
     QDateTime dateTime() const;
@@ -57,6 +58,7 @@ protected:
     /*! \reimp */ void mousePressEvent(QMouseEvent *event);
     /*! \reimp */ bool focusNextPrevChild(bool next);
     /*! \reimp */ QValidator::State validate(QString &input, int &pos) const;
+    /*! \reimp */ void wheelEvent(QWheelEvent *t_event) override;
 
 public Q_SLOTS:
     /*! \reimp */ void setDateTime(const QDateTime &dateTime);

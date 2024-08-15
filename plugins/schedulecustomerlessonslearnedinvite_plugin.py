@@ -16,6 +16,7 @@ from PyQt6.QtGui import QDesktopServices
 
 # Project Notes Plugin Parameters
 pluginname = "Schedule Customer Lessons Learned"
+pluginsubmenu = "Schedule"
 plugindescription = "Using Outlook create an invite to the customer lessons learned session."
 plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "projects/project_people" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used

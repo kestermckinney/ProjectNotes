@@ -3,13 +3,14 @@
 
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
+#include "pncombobox.h"
 
 #include <QMainWindow>
 #include <QStringListModel>
 #include <QStack>
-#include <QComboBox>
 #include <QTextCharFormat>
 #include <QTimer>
+#include <QComboBox>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }

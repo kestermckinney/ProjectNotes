@@ -46,6 +46,8 @@ PNSqlQueryModel::~PNSqlQueryModel()
 
 void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
 {
+    Q_UNUSED(t_index)
+
     // if no tables rely on this record then jump out of this test
     if (m_related_table.count() == 0)
         return;
@@ -1321,6 +1323,8 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
     if (!valuelist.isEmpty())
         valuelist = QString(" WHERE %1 COLLATE NOCASE ").arg(valuelist);
 
+    //qDebug() << "WHERE CLAUSE: " << valuelist;
+
     return valuelist;
 }
 
@@ -1690,7 +1694,7 @@ QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document, const 
             }
             else
             {
-                QDomText xmltext = t_xml_document->createTextNode(removeInvalidXmlCharacters(val.toString()).toHtmlEscaped());
+                QDomText xmltext = t_xml_document->createTextNode(removeInvalidXmlCharacters(val.toString()));
                 xmlcolumn.appendChild(xmltext);
             }
 

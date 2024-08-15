@@ -7,9 +7,9 @@
 #include "pndatabaseobjects.h"
 #include "mainwindow.h"
 #include "pnbasepage.h"
+#include "pncombobox.h"
 
 #include <QLineEdit>
-#include <QComboBox>
 #include <QCheckBox>
 #include <QMessageBox>
 #include <QPlainTextEdit>
@@ -55,7 +55,7 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
         }
     case 13: // meeting
         {
-            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
             PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
 
             if (model)
@@ -80,7 +80,7 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
         break;
     case 14: // project number
         {
-            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
             PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
 
             if (model)
@@ -107,14 +107,14 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
     case 8:
     case 9:
         {
-            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
             comboBox->setCurrentText(value.toString());
         }
         break;
     case 4:
     case 7:
         {
-            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
             PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
 
             if (model)
@@ -196,7 +196,7 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
         break;
     case 13: // meeting
         {
-            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
             int i;
 
             if (!comboBox->currentText().isEmpty() )
@@ -219,7 +219,7 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
             QVariant item_id = t_model->data(i_qi);
             QVariant project_id = t_model->data(p_qi);
 
-            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
             int i;
 
             if (!comboBox->currentText().isEmpty() )
@@ -257,14 +257,14 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
     case 8:
     case 9:
         {
-            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
             key_val = comboBox->itemText(comboBox->currentIndex());
         }
         break;
     case 4:
     case 7:
         {
-            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
             int i;
 
             if (!comboBox->currentText().isEmpty() )

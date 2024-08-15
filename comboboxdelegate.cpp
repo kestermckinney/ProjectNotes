@@ -3,7 +3,7 @@
 
 #include "comboboxdelegate.h"
 
-#include <QComboBox>
+#include "pncombobox.h"
 #include <QWidget>
 #include <QModelIndex>
 #include <QApplication>
@@ -19,7 +19,7 @@ ComboBoxDelegate::ComboBoxDelegate(QObject *t_parent, QStringListModel *t_model)
 
 QWidget *ComboBoxDelegate::createEditor(QWidget *t_parent, const QStyleOptionViewItem &/* t_option */, const QModelIndex &/* t_index */) const
 {
-    QComboBox* editor = new QComboBox(t_parent);
+    PNComboBox* editor = new PNComboBox(t_parent);
     editor->setEditable(false);
     editor->setModel(m_model);
     editor->setModelColumn(0); // column to display
@@ -29,7 +29,7 @@ QWidget *ComboBoxDelegate::createEditor(QWidget *t_parent, const QStyleOptionVie
 
 void ComboBoxDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_index) const
 {
-    QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+    PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
     QVariant t_value = t_index.model()->data(t_index);
 
     comboBox->setCurrentText(t_value.toString());
@@ -37,7 +37,7 @@ void ComboBoxDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_ind
 
 void ComboBoxDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const
 {
-    QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+    PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
     t_model->setData(t_index, m_model->data(m_model->index(comboBox->currentIndex(), 0)), Qt::EditRole);
 }
 

@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "pncomboboxdelegate.h"
+#include "pncombobox.h"
 
-#include <QComboBox>
 #include <QCompleter>
 #include <QWidget>
 #include <QModelIndex>
@@ -25,7 +25,7 @@ QWidget* PNComboBoxDelegate::createEditor(QWidget *t_parent, const QStyleOptionV
     Q_UNUSED(t_option);
     Q_UNUSED(t_index);
 
-    QComboBox* editor = new QComboBox(t_parent);
+    PNComboBox* editor = new PNComboBox(t_parent);
     editor->setEditable(true);
     editor->setModel(m_model);
     editor->setModelColumn(m_display_column); // column to display
@@ -42,7 +42,7 @@ QWidget* PNComboBoxDelegate::createEditor(QWidget *t_parent, const QStyleOptionV
 
 void PNComboBoxDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_index) const
 {
-    QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+    PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
     QVariant lookupvalue = t_index.model()->data(t_index);
     QString value = m_model->findValue(lookupvalue, m_data_column, m_display_column).toString();
 
@@ -51,7 +51,7 @@ void PNComboBoxDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_i
 
 void PNComboBoxDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const
 {
-    QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+    PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
     int i;
     QVariant key_val;
 

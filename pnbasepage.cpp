@@ -283,8 +283,30 @@ void PNBasePage::setButtonAndMenuStates()
      {
          if (p->hasDataRightClickEvent(getTableName()) && p->isEnabled())
          {
-             QAction* act = t_menu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
-             act->setIcon(QIcon(":/icons/add-on.png"));
+             if (p->getSubmenu().isEmpty())
+             {
+                 QAction* act = t_menu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+                 act->setIcon(QIcon(":/icons/add-on.png"));
+             }
+             else
+             {
+                 // find the submenu if it exists
+                 QMenu* submenu = nullptr;
+
+                 for (QAction* action : t_menu->actions())
+                 {
+                     if (action->text().compare(p->getSubmenu(), Qt::CaseInsensitive) == 0)
+                         submenu = action->menu();
+                 }
+
+                 // if it didn't exist create it
+                 if (!submenu)
+                     submenu = t_menu->addMenu(p->getSubmenu());
+
+                 QAction* act = submenu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+                 act->setIcon(QIcon(":/icons/add-on.png"));
+
+             }
          }
      }
  }

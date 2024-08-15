@@ -43,6 +43,8 @@ bool PNPlugin::loadModule(const QFileInfo& t_filename)
 
     m_ChildTablesFilter = getPythonVariable("childtablesfilter");
 
+    m_Submenu = getPythonVariable("pluginsubmenu");
+
     m_Parameters = getPythonStringList("parameters");
 
     if (PyObject_HasAttrString(m_PNPluginModule, "event_startup"))

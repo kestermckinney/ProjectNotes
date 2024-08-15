@@ -6,9 +6,9 @@
 #include "pndateeditex.h"
 #include "pnbasepage.h"
 #include "mainwindow.h"
+#include "pncombobox.h"
 
 #include <QLineEdit>
-#include <QComboBox>
 #include <QDebug>
 
 ProjectDetailsDelegate::ProjectDetailsDelegate(QObject *parent) : QStyledItemDelegate(parent)
@@ -51,7 +51,7 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
         }
     case 5: // primary contact
         {
-            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
             PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
 
             if (model)
@@ -64,13 +64,21 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
                     if (i >= 0)
                     {
                         comboBox->setCurrentIndex(i);
+                        //qDebug() << "Setting Combo Box Delegate Index to : " << i;
                         comboBox->setCurrentText(list_value.toString());
+                        //qDebug() << "Setting Combo Box Delegate to : " << list_value.toString();
                     }
                     else
+                    {
                         comboBox->setCurrentText(QString());
+                        //qDebug() << "Setting Combo Box Delegate to : EMPTY";
+                    }
                 }
                 else
-                     comboBox->setCurrentText(QString());
+                {
+                    comboBox->setCurrentText(QString());
+                    //qDebug() << "Setting Combo Box Delegate to : EMPTY";
+                }
             }
         }
         break;
@@ -78,14 +86,14 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
     case 12:
     case 14:
         {
-            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
             comboBox->setCurrentText(value.toString());
         }
         break;
 
     case 13:
         {
-            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
             PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
 
             if (model)
@@ -144,7 +152,7 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
         break;
     case 5:  // primary contact
         {
-            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
             int i;
 
             if (!comboBox->currentText().isEmpty() )
@@ -164,13 +172,13 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
     case 12:
     case 14:
         {
-            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
             key_val = comboBox->itemText(comboBox->currentIndex());
         }
         break;
     case 13:
         {
-            QComboBox *comboBox = static_cast<QComboBox*>(t_editor);
+            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
             int i;
 
             if (!comboBox->currentText().isEmpty() )

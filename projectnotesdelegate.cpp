@@ -6,9 +6,9 @@
 #include "pndateeditex.h"
 #include "mainwindow.h"
 #include "pnbasepage.h"
+#include "pncombobox.h"
 
 #include <QLineEdit>
-#include <QComboBox>
 #include <QTextEdit>
 #include <QCheckBox>
 #include <QScrollBar>

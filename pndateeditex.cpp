@@ -273,6 +273,11 @@ void PNDateEditEx::mousePressEvent(QMouseEvent *event)
     }
 }
 
+void PNDateEditEx::wheelEvent(QWheelEvent *t_event)
+{
+    t_event->ignore();  // this helps to avoid accidental value chages
+}
+
 /*!
   \reimp
 */

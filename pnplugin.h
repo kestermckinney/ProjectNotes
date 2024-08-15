@@ -52,11 +52,13 @@ public:
     QString getPluginLocation() { return m_PluginLocation;}
     QString getTableName() { return m_TableName; }
     QString getChildTablesFilter() { return m_ChildTablesFilter; }
+    QString getSubmenu() { return m_Submenu; }
 
 
 private:
     QString m_PluginLocation;
     QString m_PNPluginName;
+    QString m_Submenu; // the submenu to display the plugin in
     QString m_Description;
     QString m_TableName;
     QString m_ChildTablesFilter; // "projects:meeting_notes:action_items" this allows for a smaller projects record export

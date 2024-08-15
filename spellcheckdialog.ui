@@ -52,7 +52,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="comboBoxDictionaryLanguage"/>
+        <widget class="PNComboBox" name="comboBoxDictionaryLanguage"/>
        </item>
       </layout>
      </item>
@@ -125,6 +125,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PNComboBox</class>
+   <extends>QComboBox</extends>
+   <header location="global">pncombobox.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

@@ -3,12 +3,18 @@
 	[
 		{
 			"path": ".",
+			"file_exclude_patterns": ["*.sublime-workspace",".gitattributes", "*.pro.user"],
+			"folder_exclude_patterns": ["build"],
 		},
 		{
 			"path": "../CornerstonePlugins",
+			"file_exclude_patterns": ["*.sublime-workspace",".gitattributes", "*.pro.user"],
+			"folder_exclude_patterns": ["build"],
 		},
 		{
-			"path": "../ProjectNotes.wiki"
+			"path": "../ProjectNotes.wiki",
+			"file_exclude_patterns": ["*.sublime-workspace",".gitattributes", "*.pro.user"],
+			"folder_exclude_patterns": ["build"],
 		},
 	],
 }

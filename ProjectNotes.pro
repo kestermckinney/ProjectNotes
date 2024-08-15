@@ -1,4 +1,5 @@
-QT       += core gui sql xml help
+QT       += core gui sql xml help \
+    widgets
 
 greaterThan(QT_MAJOR_VERSION, 6): QT += widgets
 
@@ -8,6 +9,11 @@ win32: RC_ICONS = icons/logo.ico
 
 # CONFIG += console
 CONFIG += c++11
+
+# Disable qDebug() output in release build
+CONFIG(release, debug|release) {
+    DEFINES += QT_NO_DEBUG_OUTPUT
+}
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -41,6 +47,7 @@ SOURCES += \
     pnbasepage.cpp \
     pncheckboxdelegate.cpp \
     pncolumnmodel.cpp \
+    pncombobox.cpp \
     pncomboboxdelegate.cpp \
     pnconsoledialog.cpp \
     pndatabaseobjects.cpp \
@@ -118,6 +125,7 @@ HEADERS += \
     pnbasepage.h \
     pncheckboxdelegate.h \
     pncolumnmodel.h \
+    pncombobox.h \
     pncomboboxdelegate.h \
     pnconsoledialog.h \
     pndatabaseobjects.h \
