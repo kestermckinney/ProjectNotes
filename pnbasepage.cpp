@@ -285,8 +285,30 @@ void PNBasePage::setButtonAndMenuStates()
          {
              if (p->getSubmenu().isEmpty())
              {
-                 QAction* act = t_menu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
-                 act->setIcon(QIcon(":/icons/add-on.png"));
+                 QAction* bact = nullptr;
+
+                 int pastseparator = 0;
+
+                 for (QAction* action : t_menu->actions())
+                 {
+                     if (pastseparator > 1 && action->text().compare(p->getPNPluginName(), Qt::CaseInsensitive) > 0)
+                         bact = action;
+
+                     if (action->isSeparator())
+                         pastseparator++;
+                 }
+
+                 if (bact)
+                 {
+                     QAction* act = new QAction(QIcon(":/icons/add-on.png"), p->getPNPluginName(), this);
+                     connect(act, &QAction::triggered, this,[p, this](){slotPluginMenu(p);});
+                     t_menu->insertAction(bact, act);
+                 }
+                 else
+                 {
+                    QAction* act = t_menu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+                    act->setIcon(QIcon(":/icons/add-on.png"));
+                 }
              }
              else
              {

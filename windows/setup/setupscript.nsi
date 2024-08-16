@@ -98,6 +98,7 @@ Section "MainSection" SEC01
   File "..\..\plugins\emailarchive_plugin.py"
   File "..\..\plugins\email_as_attachment_plugin.py"
   File "..\..\plugins\excelkill_plugin.py"
+  File "..\..\plugins\wordkill_plugin.py"
   File "..\..\plugins\globalsettings_plugin.py"
   File "..\..\plugins\newchangeorder_plugin.py"
   File "..\..\plugins\newmsproject_plugin.py"
@@ -122,6 +123,7 @@ Section "MainSection" SEC01
   SetOutPath "$INSTDIR\plugins\includes"
   File "..\..\plugins\includes\common.py"
   File "..\..\plugins\includes\excel_tools.py"
+  File "..\..\plugins\includes\word_tools.py"
   File "..\..\plugins\includes\dialogNotesArchiveOptions.ui"
   ;File "..\..\plugins\includes\dialogStatusRptOptions.ui"
   File "..\..\plugins\includes\dialogTrackerRptOptions.ui"
@@ -141,7 +143,7 @@ Section "MainSection" SEC01
   ;File "..\..\plugins\templates\Single Task Template.mpp"
   ;File "..\..\plugins\templates\Status Report Template.xlsx"
   File "..\..\plugins\templates\Tracker Items Template.xlsx"
-  File "..\..\plugins\templates\Risk Register Template.xlsx"
+  ;File "..\..\plugins\templates\Risk Register Template.xlsx"
   ;File "..\..\plugins\templates\PCR Template.docx"
   
   SetOutPath "$INSTDIR\dictionary"
@@ -227,6 +229,7 @@ Section Uninstall
   Delete "$INSTDIR\plugins\emailarchive_plugin.py"
   Delete "$INSTDIR\plugins\email_as_attachment_plugin.py"
   Delete "$INSTDIR\plugins\excelkill_plugin.py"
+  Delete "$INSTDIR\plugins\wordkill_plugin.py"
   Delete "$INSTDIR\plugins\globalsettings_plugin.py"
   Delete "$INSTDIR\plugins\newchangeorder_plugin.py"
   Delete "$INSTDIR\plugins\newmsproject_plugin.py"
@@ -252,6 +255,7 @@ Section Uninstall
   
   Delete "$INSTDIR\plugins\includes\common.py"
   Delete "$INSTDIR\plugins\includes\excel_tools.py"
+  Delete "$INSTDIR\plugins\includes\word_tools.py"
   Delete "$INSTDIR\plugins\includes\dialogNotesArchiveOptions.ui"
   Delete "$INSTDIR\plugins\includes\dialogTrackerRptOptions.ui"
 
@@ -262,8 +266,8 @@ Section Uninstall
   Delete "$INSTDIR\plugins\templates\Lessons Learned Template.xlsx"
   Delete "$INSTDIR\plugins\templates\Meeting Template.xlsx"
   Delete "$INSTDIR\plugins\templates\Tracker Items Template.xlsx"
-  Delete "$INSTDIR\plugins\templates\Risk Register Template.xlsx"
-  Delete "$INSTDIR\plugins\templates\PCR Template.docx"
+  ;Delete "$INSTDIR\plugins\templates\Risk Register Template.xlsx"
+  ;Delete "$INSTDIR\plugins\templates\PCR Template.docx"
 
   RMDir "$INSTDIR\plugins\templates"
 

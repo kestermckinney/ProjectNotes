@@ -121,8 +121,29 @@ void MainWindow::buildPluginMenu()
         {
             if (p->getSubmenu().isEmpty())
             {
-                QAction* act = ui->menuPlugins->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
-                act->setIcon(QIcon(":/icons/add-on.png"));
+                QAction* bact = nullptr;
+                int pastseparator = 0;
+
+                for (QAction* action : ui->menuPlugins->actions())
+                {
+                    if (pastseparator > 0 && action->text().compare(p->getPNPluginName(), Qt::CaseInsensitive) > 0)
+                        bact = action;
+
+                    if (action->isSeparator())
+                        pastseparator++;
+                }
+
+                if (bact)
+                {
+                    QAction* act = new QAction(QIcon(":/icons/add-on.png"), p->getPNPluginName(), this);
+                    connect(act, &QAction::triggered, this,[p, this](){slotPluginMenu(p);});
+                    ui->menuPlugins->insertAction(bact, act);
+                }
+                else
+                {
+                    QAction* act = ui->menuPlugins->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+                    act->setIcon(QIcon(":/icons/add-on.png"));
+                }
             }
             else
             {
