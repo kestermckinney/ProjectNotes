@@ -410,6 +410,16 @@ class ProjectNotesCommon:
             word = win32com.client.Dispatch("Word.Application")
             word.Visible = 0
             doc = word.Documents.Open(wordfile)
+            doc.SpellingChecked = False
+            word.CheckLanguage = False
+            doc.GrammarChecked = False
+            word.AutoCorrect.CorrectCapsLock = False
+            word.AutoCorrect.CorrectDays = False
+            word.AutoCorrect.CorrectHangulAndAlphabet = False
+            word.AutoCorrect.CorrectInitialCaps = False
+            word.AutoCorrect.CorrectKeyboardSetting = False
+            word.AutoCorrect.CorrectSentenceCaps = False
+
             doc.SaveAs(wordfile + ".html", 8)
             word.Quit()
             word = None

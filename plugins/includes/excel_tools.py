@@ -2,11 +2,22 @@ from win32com.client import GetObject
 import win32com
 from includes.common import ProjectNotesCommon
 
+from PyQt6 import QtSql, QtGui, QtCore, QtWidgets
+from PyQt6.QtCore import QDirIterator, QDir, QSettings, QFile
+from PyQt6.QtXml import QDomDocument, QDomNode
+from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication
+
 class ProjectNotesExcelTools:
     def open_excel_document(self, fullpath):
         excel_obj = win32com.client.Dispatch("Excel.Application")
         excel_obj.Visible = False
+        excel_obj.ScreenUpdating = False
+        excel_obj.EnableEvents = False
+
         workbook_obj = excel_obj.WorkBooks.Open(fullpath)
+
+        excel_obj.Calculation = -4109 # xlCalculationManual
+        #excel_obj.CalculateBeforeSave = False
 
         excel_obj.CutCopyMode = False  # don't prompt about the
         excel_obj.DisplayAlerts = False
@@ -141,20 +152,26 @@ class ProjectNotesExcelTools:
 
 
     def killexcelautomation(self):
-        colProcess = None
-        strList = None
-        p = None
+        wmi_service = win32com.client.GetObject("winmgmts:{impersonationLevel=impersonate}!\\\\.\\root\\cimv2")
+        processes = wmi_service.ExecQuery("Select * from Win32_Process Where Name = 'EXCEL.EXE' and CommandLine like '%automation%'")
 
-        objWMIService = win32com.client.GetObject("winmgmts:{impersonationLevel=impersonate}!\\\\.\\root\\cimv2")
-        colProcess = objWMIService.ExecQuery("Select * from Win32_Process Where Name like 'EXCEL.EXE' and CommandLine like '%automation%'")
-        for p in colProcess:
+        closecount = 0
+
+        for p in processes:
             try:
-                p.Terminate()
+                p.Terminate
+                closecount = closecount + 1
             except:
-                print("Could not close an EXCEL.EXE process.")
+                print("WMI Terminate call failed.")
 
-        objWMIService = None
-        colProcess = None
+        if (closecount > 0):
+            QMessageBox.information(None, "Terminated Stranded Excel Programs", "Sucessfully terminated stranded Micorosoft Excel programs running in the background.", QMessageBox.StandardButton.Ok)
+        else:   
+            QMessageBox.information(None, "No Stranded Excel Program Found", "Was not able to terminate stranded Micorosoft Excel programs running in the background.", QMessageBox.StandardButton.Ok)     
+
+        wmi_service = None
+        wmi = None
+
 
 # begin testing procedures
 #pne = ProjectNotesExcelTools()
