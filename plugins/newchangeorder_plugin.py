@@ -16,7 +16,8 @@ from PyQt6.QtGui import QDesktopServices
 
 
 # Project Notes Plugin Parameters
-pluginname = "Get Change Order Template"
+pluginname = "Change Order"
+pluginsubmenu = "Templates"
 plugindescription = "Copy the Change Order template, adding project information to the file."
 plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
@@ -71,12 +72,10 @@ parameters = [
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
-    #
+    
     pnc = ProjectNotesCommon()
 
     def event_data_rightclick(xmlstr):
-        print("called event: " + __file__)
-        app = QApplication(sys.argv)
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
@@ -102,10 +101,10 @@ if (platform.system() == 'Windows'):
 
         ok = False
 
-        changenum, ok = QInputDialog.getText(None, "Change Order Number", "Number 0#:", QLineEdit.Normal, "", QtCore.Qt.WindowType.Window | QtCore.Qt.WindowType.WindowType.WindowCloseButtonHint | QtCore.Qt.WindowType.WindowStaysOnTopHint)
+        changenum, ok = QInputDialog.getText(None, "Change Order Number", "Number 0#:", QLineEdit.EchoMode.Normal, "", QtCore.Qt.WindowType.Window | QtCore.Qt.WindowType.WindowCloseButtonHint | QtCore.Qt.WindowType.WindowStaysOnTopHint)
 
-        if not ok:
-            return None
+        if ok == False:
+            return ""
 
         if (projectfolder is None or projectfolder =="" or not QDir(projectfolder).exists()):
             projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
@@ -177,12 +176,11 @@ if (platform.system() == 'Windows'):
 """
 import sys
 print("Buld up QDomDocument")
-#
 
 xmldoc = QDomDocument("TestDocument")
 f = QFile("C:/Users/pamcki/Desktop/project.xml")
 
-if f.open(QIODevice.ReadOnly):
+if f.open(QIODevice.OpenModeFlag.ReadOnly):
     print("example project opened")
 xmldoc.setContent(f)
 f.close()
@@ -190,5 +188,4 @@ f.close()
 print(event_data_rightclick(xmldoc.toString()))
 print("Finished")
 """
-# TESTED: Phase 1
 

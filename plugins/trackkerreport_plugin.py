@@ -433,8 +433,6 @@ if (platform.system() == 'Windows'):
         progbar.close()
         progbar = None # must be destroyed
 
-        pne.killexcelautomation()
-
         if keepexcel == False:
             QFile.remove(excelreportname)
 

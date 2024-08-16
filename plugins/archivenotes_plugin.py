@@ -379,9 +379,6 @@ if (platform.system() == 'Windows'):
         progbar.close()
         progbar = None # must be destroyed
 
-
-        pne.killexcelautomation()
-
         return ""
 
 # setup test data

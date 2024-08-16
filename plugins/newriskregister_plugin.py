@@ -1,4 +1,4 @@
-import sys
+
 import platform
 
 if (platform.system() == 'Windows'):
@@ -15,7 +15,8 @@ from PyQt6.QtGui import QDesktopServices
 
 
 # Project Notes Plugin Parameters
-pluginname = "Get Risk Register Template"
+pluginname = "Risk Register"
+pluginsubmenu = "Templates"
 plugindescription = "Copy the selected Excel Risk Register template, adding project information to the file."
 plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
@@ -70,15 +71,14 @@ parameters = [
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
-    #
     pnc = ProjectNotesCommon()
     pne = ProjectNotesExcelTools()
 
     # processing main function
     def event_data_rightclick(xmlstr):
-        print("called event: " + __file__)
-        app = QApplication(sys.argv)
+        
         xmlval = QDomDocument()
+
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
             return ""
@@ -134,7 +134,7 @@ if (platform.system() == 'Windows'):
 
         pne.close_excel_document(handle)
 
-        QDesktopServices.openUrl(QUrl("file:///" + projectfile, QUrl.TolerantMode))
+        QDesktopServices.openUrl(QUrl("file:///" + projectfile))
 
         # add the location to the project
         docxml = QDomDocument()
@@ -157,13 +157,13 @@ if (platform.system() == 'Windows'):
 # setup test data
 """
 print("Buld up QDomDocument")
-#
+app = QApplication(sys.argv)
 
 
 xmldoc = QDomDocument("TestDocument")
 f = QFile("exampleproject.xml")
 
-if f.open(QIODevice.ReadOnly):
+if f.open(QIODevice.OpenModeFlag.ReadOnly):
     print("example project opened")
 xmldoc.setContent(f)
 f.close()

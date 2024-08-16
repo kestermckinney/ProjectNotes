@@ -15,7 +15,8 @@ from PyQt6.QtGui import QDesktopServices
 
 
 # Project Notes Plugin Parameters
-pluginname = "Get MS Project Template"
+pluginname = "MS Project"
+pluginsubmenu = "Templates"
 plugindescription = "Copy the selected MS Project Template"
 plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
@@ -74,8 +75,7 @@ if (platform.system() == 'Windows'):
     pnc = ProjectNotesCommon()
 
     def event_data_rightclick(xmlstr):
-        print("called event: " + __file__)
-        # needed to debug app = QApplication(sys.argv)
+
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
@@ -159,7 +159,7 @@ print("Buld up QDomDocument")
 xmldoc = QDomDocument("TestDocument")
 f = QFile("C:/Users/pamcki/Desktop/project.xml")
 
-if f.open(QIODevice.ReadOnly):
+if f.open(QIODevice.OpenModeFlag.ReadOnly):
     print("example project opened")
 xmldoc.setContent(f)
 f.close()
