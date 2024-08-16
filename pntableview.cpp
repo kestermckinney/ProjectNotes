@@ -277,6 +277,24 @@ void PNTableView::dataRowActivated(const QModelIndex &t_index)
     Q_UNUSED(t_index);
 }
 
+void PNTableView::sortMenu(QMenu* t_menu)
+{
+    // Extract actions from the menu
+    QList<QAction*> actions = t_menu->actions();
+
+    // Sort actions alphabetically by text
+    std::sort(actions.begin(), actions.end(), [](QAction* a, QAction* b) {
+        return a->text() < b->text();
+    });
+
+    // Clear the menu and re-add the sorted actions
+    t_menu->clear();
+    for (QAction* action : actions)
+    {
+        t_menu->addAction(action);
+    }
+}
+
 void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
 {
     QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
@@ -333,13 +351,40 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
                 // find the submenu if it exists
                 QMenu* submenu = nullptr;
 
+                int pastseparator = 0;
+
                 for (QAction* action : menu->actions())
                 {
-                    if (action->text().compare(p->getSubmenu(), Qt::CaseInsensitive) == 0)
+                    if (pastseparator > 1 && action->text().compare(p->getSubmenu(), Qt::CaseInsensitive) == 0)
+                    {
                         submenu = action->menu();
+                    }
+
+                    if (action->isSeparator())
+                    {
+                        pastseparator++;
+                    }
                 }
 
-                // if it didn't exist create it
+                // if it didn't exist create it sorted
+                if (!submenu)
+                {
+                    int pastseparator = 0;
+
+                    for (QAction* action : menu->actions())
+                    {
+                        if (pastseparator > 1 && action->text().compare(p->getSubmenu(), Qt::CaseInsensitive) > 0)
+                        {
+                            submenu = new QMenu(p->getSubmenu());
+                            menu->insertMenu(action, submenu);
+                            break;
+                        }
+
+                        if (action->isSeparator())
+                            pastseparator++;
+                    }
+                }
+
                 if (!submenu)
                     submenu = menu->addMenu(p->getSubmenu());
 

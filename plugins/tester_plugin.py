@@ -21,7 +21,7 @@ from PyQt6.QtGui import QDesktopServices
 
 # Project Notes Plugin Parameters
 pluginname = "Testing Plugin" # name used in the menu
-pluginsubmenu = "Test Submenu" # the sub menu to display the plugin in
+pluginsubmenu = "A Test Submenu" # the sub menu to display the plugin in
 plugindescription = "This is test plugin. Supported platforms: Windows, Linux, MacOS"
 plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used

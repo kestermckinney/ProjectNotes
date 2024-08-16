@@ -293,13 +293,36 @@ void PNBasePage::setButtonAndMenuStates()
                  // find the submenu if it exists
                  QMenu* submenu = nullptr;
 
+                 int pastseparator = 0;
+
                  for (QAction* action : t_menu->actions())
                  {
-                     if (action->text().compare(p->getSubmenu(), Qt::CaseInsensitive) == 0)
+                     if (pastseparator > 1 && action->text().compare(p->getSubmenu(), Qt::CaseInsensitive) == 0)
                          submenu = action->menu();
+
+                     if (action->isSeparator())
+                         pastseparator++;
                  }
 
-                 // if it didn't exist create it
+                 // if it didn't exist create it sorted
+                 if (!submenu)
+                 {
+                     int pastseparator = 0;
+
+                     for (QAction* action : t_menu->actions())
+                     {
+                         if (pastseparator > 1 && action->text().compare(p->getSubmenu(), Qt::CaseInsensitive) > 0)
+                         {
+                             submenu = new QMenu(p->getSubmenu());
+                             t_menu->insertMenu(action, submenu);
+                             break;
+                         }
+
+                         if (action->isSeparator())
+                             pastseparator++;
+                     }
+                 }
+
                  if (!submenu)
                      submenu = t_menu->addMenu(p->getSubmenu());
 

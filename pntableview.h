@@ -62,6 +62,8 @@ public slots:
     void slotPluginMenu(PNPlugin* t_plugin);
 
 private:
+    void sortMenu(QMenu* t_menu);
+
     QPoint m_pressPos;
     bool m_isMoving = false;
 

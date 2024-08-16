@@ -135,7 +135,25 @@ void MainWindow::buildPluginMenu()
                         submenu = action->menu();
                 }
 
-                // if it didn't exist create it
+                // if it didn't exist create it sorted
+                if (!submenu)
+                {
+                    int pastseparator = 0;
+
+                    for (QAction* action : ui->menuPlugins->actions())
+                    {
+                        if (pastseparator > 0 && action->text().compare(p->getSubmenu(), Qt::CaseInsensitive) > 0)
+                        {
+                            submenu = new QMenu(p->getSubmenu());
+                            ui->menuPlugins->insertMenu(action, submenu);
+                            break;
+                        }
+
+                        if (action->isSeparator())
+                            pastseparator++;
+                    }
+                }
+
                 if (!submenu)
                     submenu = ui->menuPlugins->addMenu(p->getSubmenu());
 
