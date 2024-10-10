@@ -1110,6 +1110,9 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                 case DBCompareType::NotEqual:
                     compare_op = "<>";
                     break;
+                case DBCompareType::Like:
+                    compare_op = "LIKE";
+                    break;
                 default:
                     compare_op = "=";
                 }
@@ -1785,6 +1788,28 @@ QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document, const 
 PNSqlQueryModel* PNSqlQueryModel::createExportVersion()
 {
     return new PNSqlQueryModel(this);
+}
+
+bool PNSqlQueryModel::setFilter(QDomNode& t_xmlfilter)
+{
+    // Iterate over attributes
+    QDomNamedNodeMap attributes = t_xmlfilter.attributes();
+    for (int i = 0; i < attributes.count(); ++i) {
+        QDomNode attribute = attributes.item(i);
+
+        if (attribute.nodeName().startsWith("filter_field_"))
+        {
+            QString field_name = attribute.nodeValue();
+            QString field_filter_val = attribute.nodeName().replace("filter_field_", "filter_value_");
+            QString filter_value = attributes.namedItem(field_filter_val).nodeValue();
+
+            int c = getColumnNumber(field_name);
+            if (c != -1)
+                setFilter(c, filter_value, DBCompareType::Like);
+        }
+    }
+
+    return true;
 }
 
 bool PNSqlQueryModel::importXMLNode(const QDomNode& t_domnode)  // this should be table level

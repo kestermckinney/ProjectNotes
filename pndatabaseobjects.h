@@ -31,6 +31,8 @@
 #include <QStringList>
 #include <QDateTime>
 #include <QStringListModel>
+#include <QDomAttr>
+#include <QDomNodeList>
 
 // common colors
 #define QCOLOR_YELLOW QColor(173, 172, 58)
@@ -132,7 +134,10 @@ public:
     QString getManagingCompany();
 
     QDomDocument* createXMLExportDoc(PNSqlQueryModel* t_querymodel, const QString& t_filter = QString());
+    QDomDocument* createXMLExportDoc(QList<PNSqlQueryModel*>* t_querymodels);
+
     bool importXMLDoc(const QDomDocument& t_xmldoc);
+    QList<PNSqlQueryModel*>* getData(const QDomDocument& t_xmldoc);
 
     // helper functions
     void addDefaultPMToProject(const QString& t_project_id);

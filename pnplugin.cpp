@@ -274,7 +274,7 @@ QString PNPlugin::getPythonVariable(const QString& t_variablename)
     if (PyObject_HasAttrString(m_PNPluginModule, t_variablename.toStdString().c_str()) == 0)
         return QString();
 
-    PyObject* attr = attr = PyObject_GetAttrString(m_PNPluginModule, t_variablename.toStdString().c_str());
+    PyObject* attr = PyObject_GetAttrString(m_PNPluginModule, t_variablename.toStdString().c_str());
     if (!attr)
     {
         PyErr_PrintEx(0);

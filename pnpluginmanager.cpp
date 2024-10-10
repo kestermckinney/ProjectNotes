@@ -10,6 +10,8 @@
 //#include <QDebug>
 #include <QStandardPaths>
 
+#include "pndatabaseobjects.h"
+
 struct Stdout
 {
     PyObject_HEAD
@@ -42,6 +44,71 @@ PyObject* Stdout_flush(PyObject* self, PyObject* args)
     return Py_BuildValue("");
 }
 
+static PyObject* update_data(PyObject* self, PyObject* args)
+{
+    Q_UNUSED(self);
+
+    const char* input;
+    if (!PyArg_ParseTuple(args, "s", &input))
+    {
+        return PyBool_FromLong(0);
+    }
+
+    QDomDocument xmldoc;
+    QByteArray ba(input);
+
+    xmldoc.setContent(ba);
+
+    long result = global_DBObjects.importXMLDoc(xmldoc);
+
+    return PyBool_FromLong(result);
+}
+
+
+static PyObject* get_data(PyObject* self, PyObject* args)
+{
+    Q_UNUSED(self);
+
+    const char* input;
+    if (!PyArg_ParseTuple(args, "s", &input))
+    {
+        Py_RETURN_NONE;
+    }
+
+    QDomDocument xmldoc;
+    QByteArray ba(input);
+
+    xmldoc.setContent(ba);
+
+    QList<PNSqlQueryModel*>* models = global_DBObjects.getData(xmldoc);
+
+    if (!models)
+    {
+        Py_RETURN_NONE;
+    }
+
+    QDomDocument* returnxmldoc = global_DBObjects.createXMLExportDoc(models);
+
+    qDeleteAll(*models);
+    models->clear();
+    delete models;
+
+    if (!returnxmldoc)
+    {
+        Py_RETURN_NONE;
+    }
+
+    QString xmlstring = returnxmldoc->toString();
+    delete returnxmldoc;
+
+    QByteArray bytearray = xmlstring.toUtf8();
+    char* charBuf = new char[bytearray.size() + 1];
+    memcpy(charBuf, bytearray.data(), bytearray.size());
+
+    PyObject* pyString = PyUnicode_FromString(charBuf);
+    return pyString;
+}
+
 PyMethodDef Stdout_methods[] =
 {
     {"write", Stdout_write, METH_VARARGS, "sys.stdout.write"},
@@ -49,10 +116,17 @@ PyMethodDef Stdout_methods[] =
     {0, 0, 0, 0} // sentinel
 };
 
+PyMethodDef data_methods[] =
+    {
+        {"update_data", update_data, METH_VARARGS, "projectnotes.update_data"},
+        {"get_data", get_data, METH_VARARGS, "projectnotes.get_data"},
+        {0, 0, 0, 0} // sentinel
+};
+
 PyTypeObject StdoutType =
 {
     PyVarObject_HEAD_INIT(0, 0)
-    "embeddedconsole.StdoutType",     /* tp_name */
+    "projectnotes.StdoutType",     /* tp_name */
     sizeof(Stdout),       /* tp_basicsize */
     0,                    /* tp_itemsize */
     0,                    /* tp_dealloc */
@@ -71,7 +145,7 @@ PyTypeObject StdoutType =
     0,                    /* tp_setattro */
     0,                    /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,   /* tp_flags */
-    "embeddedconsole.Stdout objects", /* tp_doc */
+    "projectnotes.Stdout objects", /* tp_doc */
     0,                    /* tp_traverse */
     0,                    /* tp_clear */
     0,                    /* tp_richcompare */
@@ -95,12 +169,21 @@ PyTypeObject StdoutType =
     0,                    /* tp_mro */
     0,                    /* tp_cache */
     0,                    /* tp_subclasses */
+    // 0,                    /* tp_weaklist */
+    // 0,                    /* tp_del */
+    // 0,                    /* tp_version_tag */
+    // 0,                    /* tp_finalize */
+    // 0,                    /* tp_vectorcall */
+    // 0,                    /* tp_watched */
 };
 
 PyModuleDef embmodule =
 {
     PyModuleDef_HEAD_INIT,
-    "embeddedconsole", 0, -1, 0, 0, 0, 0, 0,
+    "projectnotes",
+    "Project Notes module callable from embeded Python",
+    -1,
+    data_methods//, 0, 0, 0, 0,
 };
 
 // Internal state
@@ -175,11 +258,11 @@ PNPluginManager::PNPluginManager(QWidget* t_parent)
 {
     Py_SetProgramName(L"Project Notes 3");
 
-    PyImport_AppendInittab("embeddedconsole", PyInit_embeddedconsole);
+    PyImport_AppendInittab("projectnotes", PyInit_embeddedconsole);
 
     Py_Initialize();
 
-    PyImport_ImportModule("embeddedconsole");
+    PyImport_ImportModule("projectnotes");
     m_console_dialog = new PNConsoleDialog(t_parent);
 
     // load PNPlugin modules

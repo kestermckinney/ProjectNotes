@@ -25,7 +25,7 @@ class PNSqlQueryModel : public QAbstractTableModel
 public:
 
     enum DBColumnType {DBBlob, DBReal, DBDate, DBInteger, DBString, DBUSD, DBPercent, DBDateTime, DBBool, DBHtml};
-    enum DBCompareType {Equals, GreaterThan, LessThan, NotEqual};
+    enum DBCompareType {Equals, GreaterThan, LessThan, NotEqual, Like};
     enum DBColumnRequired {DBRequired, DBNotRequired};
     enum DBColumnSearchable {DBSearchable, DBNotSearchable};
     enum DBColumnUnique {DBUnique, DBNotUnique};
@@ -99,6 +99,8 @@ public:
 
     QString constructWhereClause(bool t_include_user_filter = true);
     void setFilter(int t_column_number, const QString& t_filter_value, DBCompareType t_compare = DBCompareType::Equals);
+    bool setFilter(QDomNode& t_xmlfilter);
+
     QVariant getFilter(int t_column_number);
     bool hasFilter(int t_column_number) const { return m_column_is_filtered[t_column_number];}
     void clearAllFilters();

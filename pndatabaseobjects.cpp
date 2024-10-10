@@ -612,6 +612,36 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
     }
 }
 
+QDomDocument* PNDatabaseObjects::createXMLExportDoc(QList<PNSqlQueryModel*>* t_querymodels)
+{
+    QDomDocument* doc = new QDomDocument();
+    QDomProcessingInstruction xmlDecl = doc->createProcessingInstruction("xml", "version=\"1.0\" encoding=\"UTF-8\"");
+    doc->appendChild(xmlDecl);
+
+    QDomElement root = doc->createElement("projectnotes");
+    doc->appendChild(root).toElement();
+
+    root.setAttribute("filepath", global_DBObjects.getDatabaseFile());
+    root.setAttribute("export_date", QDateTime::currentDateTime().toString("MM/dd/yyyy h:m:s ap"));
+
+    QString companyname = global_DBObjects.execute(QString("select client_name from clients where client_id='%1'").arg(global_DBObjects.getManagingCompany()));
+    QString managername = global_DBObjects.execute(QString("select name from people where people_id='%1'").arg(global_DBObjects.getProjectManager()));
+
+    root.setAttribute("project_manager_id", global_DBObjects.getProjectManager());
+    root.setAttribute("managing_company_id", global_DBObjects.getManagingCompany());
+    root.setAttribute("managing_company_name", companyname);
+    root.setAttribute("managing_manager_name", managername);
+
+    for (PNSqlQueryModel* m : *t_querymodels)
+    {
+        QDomElement e = m->toQDomElement(doc);
+
+        root.appendChild(e);
+    }
+
+    return doc;
+}
+
 QDomDocument* PNDatabaseObjects::createXMLExportDoc(PNSqlQueryModel* t_querymodel, const QString& t_filter)
 {
     QDomDocument* doc = new QDomDocument();
@@ -809,6 +839,168 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     PNSqlQueryModel::refreshDirty();
 
     return true;
+}
+
+QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc)
+{
+    QList<PNSqlQueryModel*> *model_list = new QList<PNSqlQueryModel*>();
+
+    QDomElement root = t_xmldoc.documentElement();
+    QList<QDomNode> domlist;
+
+    // import clients
+    domlist = findTableNodes(root, "clients");
+    if (!domlist.empty())
+    {
+        for (QDomNode& tablenode : domlist)
+        {
+            PNSqlQueryModel* model = new ClientsModel(nullptr);
+            model->setFilter(tablenode);
+            model->refresh();
+            model_list->append(model);
+        }
+
+        domlist.clear();
+    }
+
+    // import people
+    domlist = findTableNodes(root, "people");
+    if (!domlist.empty())
+    {
+        for (QDomNode& tablenode : domlist)
+        {
+            PNSqlQueryModel* model = new PeopleModel(nullptr);
+            model->setFilter(tablenode);
+            model->refresh();
+            model_list->append(model);
+        }
+
+        domlist.clear();
+    }
+
+    // import projects
+    domlist = findTableNodes(root, "projects");
+    if (!domlist.empty())
+    {
+        for (QDomNode& tablenode : domlist)
+        {
+            PNSqlQueryModel* model = new ProjectsModel(nullptr);
+            model->setFilter(tablenode);
+            model->refresh();
+            model_list->append(model);
+        }
+
+        domlist.clear();
+
+    }
+
+    // import project people
+    domlist = findTableNodes(root, "project_people");
+    if (!domlist.empty())
+    {
+        for (QDomNode& tablenode : domlist)
+        {
+            PNSqlQueryModel* model = new ProjectTeamMembersModel(nullptr);
+            model->setFilter(tablenode);
+            model->refresh();
+            model_list->append(model);
+        }
+
+        domlist.clear();
+    }
+
+    // import status report items
+    domlist = findTableNodes(root, "status_report_items");
+    if (!domlist.empty())
+    {
+        for (QDomNode& tablenode : domlist)
+        {
+            PNSqlQueryModel* model = new StatusReportItemsModel(nullptr);
+            model->setFilter(tablenode);
+            model->refresh();
+            model_list->append(model);
+        }
+
+        domlist.clear();
+    }
+
+    // import project locations
+    domlist = findTableNodes(root, "project_locations");
+    if (!domlist.empty())
+    {
+        for (QDomNode& tablenode : domlist)
+        {
+            PNSqlQueryModel* model = new ProjectLocationsModel(nullptr);
+            model->setFilter(tablenode);
+            model->refresh();
+            model_list->append(model);
+        }
+
+        domlist.clear();
+    }
+
+
+    // import project notes
+    domlist = findTableNodes(root, "project_notes");
+    if (!domlist.empty())
+    {
+        for (QDomNode& tablenode : domlist)
+        {
+            PNSqlQueryModel* model = new ProjectNotesModel(nullptr);
+            model->setFilter(tablenode);
+            model->refresh();
+            model_list->append(model);
+        }
+
+        domlist.clear();
+    }
+
+    // import item tracker
+    domlist = findTableNodes(root, "item_tracker");
+    if (!domlist.empty())
+    {
+        for (QDomNode& tablenode : domlist)
+        {
+            PNSqlQueryModel* model = new TrackerItemsModel(nullptr);
+            model->setFilter(tablenode);
+            model->refresh();
+            model_list->append(model);
+        }
+
+        domlist.clear();
+    }
+
+    // import meeting attendees
+    domlist = findTableNodes(root, "meeting_attendees");
+    if (!domlist.empty())
+    {
+        for (QDomNode& tablenode : domlist)
+        {
+            PNSqlQueryModel* model = new MeetingAttendeesModel(nullptr);
+            model->setFilter(tablenode);
+            model->refresh();
+            model_list->append(model);
+        }
+
+        domlist.clear();
+    }
+
+    // import tracker items updates
+    domlist = findTableNodes(root, "item_tracker_updates");
+    if (!domlist.empty())
+    {
+        for (QDomNode& tablenode : domlist)
+        {
+            PNSqlQueryModel* model = new TrackerItemCommentsModel(nullptr);
+            model->setFilter(tablenode);
+            model->refresh();
+            model_list->append(model);
+        }
+
+        domlist.clear();
+    }
+
+    return model_list;
 }
 
 void PNDatabaseObjects::addDefaultPMToProject(const QString& t_project_id)
