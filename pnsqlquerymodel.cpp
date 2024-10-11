@@ -308,6 +308,8 @@ void PNSqlQueryModel::refresh()
 {
     QString orderby;
     QString fullsql;
+    QString skip;
+    QString top;
 
     beginResetModel();
     clear();
@@ -315,12 +317,18 @@ void PNSqlQueryModel::refresh()
     if (!m_order_by.isEmpty() )
         orderby = " order by " + m_order_by;
 
-    fullsql = QString("%1 %2 %3").arg( BaseSQL(), constructWhereClause(), orderby);
+    if (m_top != 0)
+        top = QString("LIMIT %1").arg(m_top);
+
+    if (m_skip != 0 && m_top != 0)
+        skip = QString("OFFSET %1").arg(m_skip);
+
+    fullsql = QString("%1 %2 %3 %4 %5").arg( BaseSQL(), constructWhereClause(), orderby, top, skip);
 
     m_sql_query = QSqlQuery( fullsql );
 
-    //qDebug() << "Refreshing: ";
-    //qDebug() << fullsql;
+    // qDebug() << "Refreshing: ";
+    // qDebug() << fullsql;
 
     // add a blank row for drop downs
     if (m_show_blank)
@@ -1794,6 +1802,13 @@ bool PNSqlQueryModel::setFilter(QDomNode& t_xmlfilter)
 {
     // Iterate over attributes
     QDomNamedNodeMap attributes = t_xmlfilter.attributes();
+
+    if (!attributes.namedItem("skip").isNull())
+        m_skip = attributes.namedItem("skip").nodeValue().toULong();
+
+    if (!attributes.namedItem("top").isNull())
+        m_top = attributes.namedItem("top").nodeValue().toULong();
+
     for (int i = 0; i < attributes.count(); ++i) {
         QDomNode attribute = attributes.item(i);
 
@@ -1801,11 +1816,15 @@ bool PNSqlQueryModel::setFilter(QDomNode& t_xmlfilter)
         {
             QString field_name = attribute.nodeValue();
             QString field_filter_val = attribute.nodeName().replace("filter_field_", "filter_value_");
-            QString filter_value = attributes.namedItem(field_filter_val).nodeValue();
 
-            int c = getColumnNumber(field_name);
-            if (c != -1)
-                setFilter(c, filter_value, DBCompareType::Like);
+            if (!attributes.namedItem(field_filter_val).isNull())
+            {
+                QString filter_value = attributes.namedItem(field_filter_val).nodeValue();
+
+                int c = getColumnNumber(field_name);
+                if (c != -1)
+                    setFilter(c, filter_value, DBCompareType::Like);
+            }
         }
     }
 

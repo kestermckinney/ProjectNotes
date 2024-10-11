@@ -53,6 +53,8 @@ public:
     const QString& displayname() { return m_display_name; }
     void setBaseSql(const QString t_table);
     const QString& BaseSQL() { return m_base_sql; }
+    void setTop(unsigned long t_top) {m_top=t_top; }
+    void setSkip(unsigned long t_skip) {m_top=t_skip; }
 
     Qt::ItemFlags flags(const QModelIndex &t_index) const override;
 
@@ -204,6 +206,8 @@ private:
     QHash<int, bool> m_column_is_filtered;
     QHash<int, QVariant> m_filter_value;
     QHash<int, DBCompareType> m_filter_compare_type;
+    unsigned long m_skip = 0;
+    unsigned long m_top = 0;
 
     QHash<int, bool> m_is_user_filtered;
     QHash<int, QVariantList> m_user_filter_values;

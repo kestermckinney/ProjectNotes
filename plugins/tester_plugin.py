@@ -166,7 +166,7 @@ def event_menuclick(xmlstr):
 
     contact = """<?xml version="1.0" encoding="UTF-8"?>
     <projectnotes>
-    <table name="people" filter_field_1="name" filter_value_1="A%"/>
+    <table name="people" filter_field_1="name" filter_value_1="A%" top="2" skip="1" />
     <table name="clients" filter_field_1="name" filter_value_1="A%"/>
     </projectnotes>
     """

@@ -9,7 +9,7 @@ Nearly all information found in Project Notes can be exported or imported using 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <projectnotes filepath="C:UsersMyAccountOneDriveProject NotesMyDatabase.db" export_date="09/22/2020 12:38 PM" filter_field="project_id" project_manager_id="159709810500028597" managing_company_id="{ba96fb89-6c2d-46db-864c-5be6292b1045}" managing_company_name="My Company, Inc." managing_manager_name="My Name" filter_values="{ba96fb89-6c2d-46db-864c-5be6292b10ef}">
- <table name="ix_projects" filter_field="project_id" filter_value="159709812400019208">
+ <table name="ix_projects" filter_field_1="project_id" filter_value_1="159709812400019208">
   <row id="{ba96fb89-6c2d-46db-864c-5be6292b10e4}">
    <column name="project_number">P4000</column>
    <column name="project_name">IT New Server Install</column>
@@ -71,8 +71,8 @@ The XML document follows a parent child heiarchy that corresponds to the record 
 | &lt;projectnotes\> | Document Root Node |  | Yes |
 | filepath | Attribute | The database the XML was exported from | No |
 | export\_date | Attribute | The date the data was exported | No |
-| filter\_field | Attribute | The field filtered to limit the data exported | No |
-| filter\_value | Attribute | The value used to filter the data exported |  |
+| filter\_field_# | Attribute | The field filtered to limit the data exported.  This used when calling get_data to find results.  Multiple field value pairs can be used as long as # matches. | No |
+| filter\_value_# | Attribute | The value used to filter the data exported   This used when calling get_data to find results.  Multiple field value pairs can be used as long as # matches.|  |
 | project\_manager\_id | Attribute | The database record id of the Project Manager specified in the Preferences | No |
 | managing\_company\_id | Attribute | The database record id of the Managing Company specified in the Preferences | No |
 | managing\_company\_name | Attribute | The name of the Project Manager specified in the Preferences | No |

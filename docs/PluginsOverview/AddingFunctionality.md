@@ -80,7 +80,7 @@ The example below show an XML export of a person. Notice child tables contain th
 ```xml
 <xml version="1.0" encoding="UTF-8">
 <projectnotes filepath="C:\Users\joe\Sample.db" export_date="12/11/2020 01:01 PM" filter_field="people_id" project_manager_id="59709810500028597" managing_company_id="1597098105000493" managing_company_name="Sample Company, Inc." managing_manager_name="Jacob Smith" filter_values="{ba96fb89-6c2d-46db-864c-5be6292b10ef}">
-<table name="ix_people" filter_field="people_id" filter_value="{ba96fb89-6c2d-46db-864c-5be6292b10ef}">
+<table name="ix_people" filter_field_1="people_id" filter_value_1="{ba96fb89-6c2d-46db-864c-5be6292b10ef}">
 <row id="15970981060009492" delete=true>
 <column name="name">Aaron Brown</column>
 <column name="email">Aaron.Brown@somecompany.com</column>
@@ -228,3 +228,47 @@ if (platform.system() == 'Windows'):
 
     return xmldoc
 ```
+
+### Updating Data
+
+Records can be updated from embeded python using the *update_data* method found in the embeded *projectnotes* module.  Project Notes uses the built in XML import capabilities.  Records are identified first by their *id* if available, and then by unique column values such as *name* or *project_number*.  See the code below for an example.
+
+```python
+import projectnotes
+
+contact = """<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes>
+<table name="people">
+        <row id="{3a5adf23-3af4-40c6-bb3c-3ed5baaec0a5}">
+            <column name="people_id">{3a5adf23-3af4-40c6-bb3c-3ed5baaec0a5}</column>
+            <column name="name">Adam Lester</column>
+            <column name="email">adam@someplace.com</column>
+            <column name="office_phone"></column>
+            <column name="cell_phone"></column>
+            <column lookupvalue="Some Company" name="client_id">16757088310005279</column>
+            <column name="role"></column>
+        </row>
+</table>
+</projectnotes>
+"""
+
+projectnotes.update_data(contact)
+
+```
+
+### Fetching Data
+
+Records can be retrieved from embeded python using the *get_data* method found in the embeded *projectnotes* module.  Project Notes uses the built in XML export capabilities.  Records are filtered by the Sqlite LIKE operator based on the *filter_field_#* and *filter_value_#* attributes.  The *skip* attribute can be used to skip over the specified records. The *top* attribute must also be set to use the *skip* attribute.  While the *top* attribute returns the number for rows past the skip.  See the example code below.
+
+```python
+
+    contact = """<?xml version="1.0" encoding="UTF-8"?>
+    <projectnotes>
+    <table name="people" filter_field_1="name" filter_value_1="A%"/>
+    <table name="clients" filter_field_1="name" filter_value_1="A%" skip=5 top=10/>
+    </projectnotes>
+    """
+
+    print(projectnotes.get_data(contact))
+``` 
+

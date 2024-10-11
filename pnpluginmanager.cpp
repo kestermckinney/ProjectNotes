@@ -101,9 +101,11 @@ static PyObject* get_data(PyObject* self, PyObject* args)
     QString xmlstring = returnxmldoc->toString();
     delete returnxmldoc;
 
+    //qDebug() << "sending to pything: " << xmlstring;
+
     QByteArray bytearray = xmlstring.toUtf8();
     char* charBuf = new char[bytearray.size() + 1];
-    memcpy(charBuf, bytearray.data(), bytearray.size());
+    memcpy(charBuf, bytearray.constData(), bytearray.size());
 
     PyObject* pyString = PyUnicode_FromString(charBuf);
     return pyString;
