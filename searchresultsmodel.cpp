@@ -4,7 +4,7 @@
 #include "searchresultsmodel.h"
 #include "pndatabaseobjects.h"
 
-SearchResultsModel::SearchResultsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
+SearchResultsModel::SearchResultsModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {
     setObjectName("SearchResultsModel");
     setOrderKey(200);

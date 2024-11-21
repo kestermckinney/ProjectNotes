@@ -33,12 +33,17 @@
 #include <QStringListModel>
 #include <QDomAttr>
 #include <QDomNodeList>
+#include <QMutex>
 
 // common colors
 #define QCOLOR_YELLOW QColor(173, 172, 58)
 #define QCOLOR_RED QColor(153, 33, 23)
 #define QCOLOR_BLUE QColor(0, 15, 128)
 #define QCOLOR_GRAY QColor(235, 235, 235)
+
+// setup a locking macro
+#define DB_LOCK db_mutex.lock()
+#define DB_UNLOCK db_mutex.unlock()
 
 class PNDatabaseObjects : public QObject
 {
@@ -48,7 +53,12 @@ public:
     bool openDatabase(QString& t_databasepath);
     bool createDatabase(QString& t_databasepath);
     void closeDatabase();
+    QSqlDatabase& getDb() { return m_sqlite_db; }
+
     QString execute(const QString& t_sql);
+    void addModel(PNSqlQueryModel* t_model);
+    void removeModel(PNSqlQueryModel* t_model);
+    QList<PNSqlQueryModel*> getOpenModels() {  return m_open_recordsets; }
 
     void backupDatabase(const QString& t_file);
     bool saveParameter( const QString& t_parametername, const QString& t_parametervalue );
@@ -76,7 +86,6 @@ public:
     ActionItemsDetailsMeetingsModel* trackeritemsmeetingsmodel() { return m_tracker_items_meetings_model; }
     MeetingAttendeesModel* meetingattendeesmodel() { return m_meeting_attendees_model; }
     NotesActionItemsModel* notesactionitemsmodel() { return m_notes_action_items_model; }
-    ItemDetailTeamListModel* itemdetailteamlistmodel() { return m_item_detail_team_list_model; }
     TrackerItemCommentsModel* trackeritemscommentsmodel() { return m_tracker_item_comments_model; }
     TrackerItemsModel* trackeritemsmodel() { return m_project_action_items_model; }
     TrackerItemsModel* actionitemsdetailsmodel() { return m_action_item_details_model; }
@@ -99,7 +108,6 @@ public:
     PNSortFilterProxyModel* trackeritemsmeetingsmodelproxy() { return m_tracker_items_meetings_model_proxy; }
     PNSortFilterProxyModel* meetingattendeesmodelproxy() { return m_meeting_attendees_model_proxy; }
     PNSortFilterProxyModel* notesactionitemsmodelproxy() { return m_notes_action_items_model_proxy; }
-    PNSortFilterProxyModel* itemdetailteamlistmodelproxy() { return m_item_detail_team_list_model_proxy; }
     PNSortFilterProxyModel* trackeritemscommentsmodelproxy() { return m_tracker_item_comments_model_proxy; }
     PNSortFilterProxyModel* trackeritemsmodelproxy() { return m_project_action_items_model_proxy; }
     PNSortFilterProxyModel* actionitemsdetailsmodelproxy() { return m_action_item_details_model_proxy; }
@@ -116,6 +124,10 @@ public:
     static QStringList invoicing_period;
     static QStringList status_report_period;
     static QStringList file_types;
+
+
+    PNSqlQueryModel* findOpenTable(const QString& t_tablename);
+    bool refreshDirty();
 
     // global searches
     void setShowResolvedTrackerItems(bool t_value);
@@ -165,7 +177,6 @@ private:
     ActionItemsDetailsMeetingsModel* m_tracker_items_meetings_model;
     MeetingAttendeesModel* m_meeting_attendees_model;
     NotesActionItemsModel* m_notes_action_items_model;
-    ItemDetailTeamListModel* m_item_detail_team_list_model;
     TrackerItemCommentsModel* m_tracker_item_comments_model;
     TrackerItemsModel* m_project_action_items_model;
     TrackerItemsModel* m_action_item_details_model;
@@ -190,7 +201,6 @@ private:
     PNSortFilterProxyModel* m_tracker_items_meetings_model_proxy;
     PNSortFilterProxyModel* m_meeting_attendees_model_proxy;
     PNSortFilterProxyModel* m_notes_action_items_model_proxy;
-    PNSortFilterProxyModel* m_item_detail_team_list_model_proxy;
     PNSortFilterProxyModel* m_tracker_item_comments_model_proxy;
     PNSortFilterProxyModel* m_project_action_items_model_proxy;
     PNSortFilterProxyModel* m_action_item_details_model_proxy;
@@ -198,11 +208,14 @@ private:
 
     // xml utility functions
     QList<QDomNode> findTableNodes(const QDomNode& t_xmlelement, const QString& t_tablename);
+    // list of created models
+    QList<PNSqlQueryModel*> m_open_recordsets;
 
 signals:
 
 };
 
 extern PNDatabaseObjects global_DBObjects;
+extern QMutex db_mutex;
 
 #endif // PNDATABASEOBJECTS_H

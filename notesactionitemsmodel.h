@@ -9,8 +9,8 @@
 class NotesActionItemsModel : public PNSqlQueryModel
 {
 public:
-    NotesActionItemsModel(QObject* t_parent);
-    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new NotesActionItemsModel(this)); }
+    NotesActionItemsModel(PNDatabaseObjects* t_dbo, bool t_gui = true);
+    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new NotesActionItemsModel(getDBOs(), false)); }
     const QModelIndex newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr) override;
 };
 

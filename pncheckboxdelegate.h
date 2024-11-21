@@ -4,7 +4,7 @@
 #ifndef PNCHECKBOXDELEGATE_H
 #define PNCHECKBOXDELEGATE_H
 
-#include "pnsqlquerymodel.h"
+#include "pndatabaseobjects.h"
 
 #include <QStyledItemDelegate>
 #include <QObject>

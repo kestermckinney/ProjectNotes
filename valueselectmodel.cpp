@@ -1,7 +1,7 @@
 //#include <QDebug>
 #include "valueselectmodel.h"
 
-ValueSelectModel::ValueSelectModel(QObject *t_parent) : PNSqlQueryModel(t_parent)
+ValueSelectModel::ValueSelectModel(PNDatabaseObjects* t_dbo, bool t_gui) : PNSqlQueryModel(t_dbo, t_gui)
 {
     setObjectName("ValueSelectModel");
 

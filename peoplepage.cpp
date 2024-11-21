@@ -18,7 +18,7 @@ void PeoplePage::openRecord(QVariant& t_record_id)
     {
         global_DBObjects.peoplemodel()->deactivateUserFilter(global_DBObjects.peoplemodel()->objectName());
 
-        PNSqlQueryModel::refreshDirty();
+        global_DBObjects.refreshDirty();
 
         QModelIndex qmi = global_DBObjects.peoplemodel()->findIndex(t_record_id, 0);
         QModelIndex qi = global_DBObjects.peoplemodelproxy()->index(global_DBObjects.peoplemodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
@@ -28,7 +28,7 @@ void PeoplePage::openRecord(QVariant& t_record_id)
     }
     else
     {
-        PNSqlQueryModel::refreshDirty();
+        global_DBObjects.refreshDirty();
         loadState();
     }
 }

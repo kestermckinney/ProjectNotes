@@ -4,7 +4,7 @@
 #include "pntableview.h"
 #include "pnsettings.h"
 #include "pndatabaseobjects.h"
-#include "pnsqlquerymodel.h"
+#include "pndatabaseobjects.h"
 #include "mainwindow.h"
 
 //#include <QDebug>
@@ -110,15 +110,15 @@ void PNTableView::slotPluginMenu(PNPlugin* t_plugin)
     QModelIndex qq = sortmodel->mapToSource(*qi);
     keyval = currentmodel->data(qq);
 
-    QApplication::setOverrideCursor(Qt::WaitCursor);
     QApplication::processEvents();
-
 
     PNSqlQueryModel *exportmodel = currentmodel->createExportVersion();
     exportmodel->setFilter(0, keyval.toString());
     exportmodel->refresh();
 
-    QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(exportmodel, t_plugin->getChildTablesFilter());
+    PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(model())->getDBOs();
+
+    QDomDocument* xdoc = dbo->createXMLExportDoc(exportmodel, t_plugin->getChildTablesFilter());
     QString xmlstr = xdoc->toString();
 
     // call the menu plugin with the data structure
@@ -126,21 +126,18 @@ void PNTableView::slotPluginMenu(PNPlugin* t_plugin)
 
     delete xdoc;
 
-    QApplication::restoreOverrideCursor();
     QApplication::processEvents();
 
     if (!response.isEmpty())
     {
-        QApplication::setOverrideCursor(Qt::WaitCursor);
         QApplication::processEvents();
 
         QDomDocument doc;
         doc.setContent(response);
 
-        if (!global_DBObjects.importXMLDoc(doc))
+        if (!dbo->importXMLDoc(doc))
             QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
 
-        QApplication::restoreOverrideCursor();
         QApplication::processEvents();
     }
 }
@@ -498,7 +495,9 @@ void PNTableView::slotExportRecord()
         exportmodel->setFilter(0, keyval.toString());
         exportmodel->refresh();
 
-        QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(exportmodel);
+        PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(currentmodel)->getDBOs();
+
+        QDomDocument* xdoc = dbo->createXMLExportDoc(exportmodel);
 
         if (!outfile.open(QFile::WriteOnly | QFile::Truncate | QFile::Text))
         {

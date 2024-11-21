@@ -9,7 +9,7 @@
 #include <QMessageBox>
 //#include <QDebug>
 #include <QStandardPaths>
-
+#include <QThread>
 #include "pndatabaseobjects.h"
 
 struct Stdout
@@ -59,7 +59,10 @@ static PyObject* update_data(PyObject* self, PyObject* args)
 
     xmldoc.setContent(ba);
 
-    long result = global_DBObjects.importXMLDoc(xmldoc);
+    PNDatabaseObjects dbo;
+    dbo.openDatabase(global_DBObjects.getDatabaseFile());
+    long result = dbo.importXMLDoc(xmldoc);
+    dbo.closeDatabase();
 
     return PyBool_FromLong(result);
 }
@@ -80,14 +83,19 @@ static PyObject* get_data(PyObject* self, PyObject* args)
 
     xmldoc.setContent(ba);
 
-    QList<PNSqlQueryModel*>* models = global_DBObjects.getData(xmldoc);
+    qDebug() << "Embedded Thread " << QThread::currentThreadId();
+
+    PNDatabaseObjects dbo;
+    dbo.openDatabase(global_DBObjects.getDatabaseFile());
+    QList<PNSqlQueryModel*>* models = dbo.getData(xmldoc);
 
     if (!models)
     {
+        dbo.closeDatabase();
         Py_RETURN_NONE;
     }
 
-    QDomDocument* returnxmldoc = global_DBObjects.createXMLExportDoc(models);
+    QDomDocument* returnxmldoc = dbo.createXMLExportDoc(models);
 
     qDeleteAll(*models);
     models->clear();
@@ -95,19 +103,17 @@ static PyObject* get_data(PyObject* self, PyObject* args)
 
     if (!returnxmldoc)
     {
+        dbo.closeDatabase();
         Py_RETURN_NONE;
     }
 
     QString xmlstring = returnxmldoc->toString();
+
+    dbo.closeDatabase();
+
     delete returnxmldoc;
 
-    //qDebug() << "sending to pything: " << xmlstring;
-
-    QByteArray bytearray = xmlstring.toUtf8();
-    char* charBuf = new char[bytearray.size() + 1];
-    memcpy(charBuf, bytearray.constData(), bytearray.size());
-
-    PyObject* pyString = PyUnicode_FromString(charBuf);
+    PyObject* pyString = Py_BuildValue("s", xmlstring.toUtf8().constData());
     return pyString;
 }
 
@@ -237,6 +243,7 @@ void set_stdout(stdout_write_type write)
 
     Stdout* impl_err = reinterpret_cast<Stdout*>(g_stderr);
     impl_err->write = write;
+
     PySys_SetObject("stderr", g_stderr);
 }
 

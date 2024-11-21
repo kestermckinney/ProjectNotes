@@ -3,7 +3,7 @@
 
 //#include <QDebug>
 
-TrackerItemsModel::TrackerItemsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
+TrackerItemsModel::TrackerItemsModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {
     setObjectName("TrackerItemsModel");
     setOrderKey(40);
@@ -52,7 +52,7 @@ TrackerItemsModel::TrackerItemsModel(QObject* t_parent): PNSqlQueryModel(t_paren
 QVariant TrackerItemsModel::getNextItemNumber(const QVariant& t_project_id)
 {
     // determine the max item_number from the database, then determine the max number from the record cache in case new unsaved records were added
-    QString itemnumber_string = global_DBObjects.execute(QString("select max(CAST(item_number as integer)) from item_tracker where project_id = '%1'").arg(t_project_id.toString()));
+    QString itemnumber_string = getDBOs()->execute(QString("select max(CAST(item_number as integer)) from item_tracker where project_id = '%1'").arg(t_project_id.toString()));
     int itemnumber_int = itemnumber_string.toInt();
 
     for ( int i = 0; i < rowCount(QModelIndex()); i++ )
@@ -77,12 +77,12 @@ const QModelIndex TrackerItemsModel::newRecord(const QVariant* t_fk_value1, cons
     QVariant next_item_number = getNextItemNumber(*t_fk_value1);
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
 
-    //qDebug() << "Using project manager id: " << global_DBObjects.getProjectManager();
+    //qDebug() << "Using project manager id: " << m_dbo->getProjectManager();
 
     qr.setValue("project_id", *t_fk_value1);
     qr.setValue(1, next_item_number);  // Need to make a counter that looks good for items
     qr.setValue(2, "Tracker");
-    qr.setValue(4, global_DBObjects.getProjectManager()); // default identified by to the pm
+    qr.setValue(4, getDBOs()->getProjectManager()); // default identified by to the pm
     qr.setValue(5, curdate); // date identified
     qr.setValue(8, "High"); // set a default priority
     qr.setValue(9, "New"); // set a default status

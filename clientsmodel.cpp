@@ -2,10 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "clientsmodel.h"
+#include "pndatabaseobjects.h"
 
 #include <QRegularExpression>
 
-ClientsModel::ClientsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
+ClientsModel::ClientsModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {
     setObjectName("ClientsModel");
     setOrderKey(10);
@@ -32,16 +33,18 @@ const QModelIndex ClientsModel::newRecord(const QVariant* t_fk_value1, const QVa
     Q_UNUSED(t_fk_value1);
     Q_UNUSED(t_fk_value2);
 
-    QSqlQuery select;
+    QSqlQuery select(getDBOs()->getDb());
     select.prepare("select max(client_name) from clients where client_name like '[%'");
     QString maxnum;
 
+    DB_LOCK;
     select.exec();
     if (select.next())
     {
         maxnum = select.value(0).toString();
         maxnum.remove(QRegularExpression("[^0-9]+"));
     }
+    DB_UNLOCK;
 
     int num = maxnum.toInt() + 1;
 

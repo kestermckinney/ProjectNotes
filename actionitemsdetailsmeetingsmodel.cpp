@@ -3,7 +3,7 @@
 
 #include "actionitemsdetailsmeetingsmodel.h"
 
-ActionItemsDetailsMeetingsModel::ActionItemsDetailsMeetingsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
+ActionItemsDetailsMeetingsModel::ActionItemsDetailsMeetingsModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {
     setObjectName("ActionItemsDetailsMeetingsModel");
     setOrderKey(35);

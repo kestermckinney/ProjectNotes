@@ -14,16 +14,26 @@ PNConsoleDialog::PNConsoleDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    QPlainTextEdit* pe = ui->ConsolePlainTextEdit;
     stdout_write_type outwrite;
 
-    outwrite = [pe] (std::string s)
+    outwrite = [this] (std::string s)
     {
-        pe->setPlainText( pe->toPlainText() + QString::fromStdString(s));
-        pe->verticalScrollBar()->setValue(pe->verticalScrollBar()->maximum());
+        emit addTextSignal(QString::fromStdString(s));
     };
+
     set_stdout(outwrite);
 
+    // use signals and slot to support multi-threaded access to the console
+    connect(this, &PNConsoleDialog::addTextSignal, this, &PNConsoleDialog::addTextSlot);
+}
+
+void PNConsoleDialog::addTextSlot(const QString& t_text)
+{
+    QPlainTextEdit* pe = ui->ConsolePlainTextEdit;
+    pe->setPlainText( pe->toPlainText() + t_text);
+    pe->verticalScrollBar()->setValue(pe->verticalScrollBar()->maximum());
+
+    qDebug() << t_text;
 }
 
 PNConsoleDialog::~PNConsoleDialog()

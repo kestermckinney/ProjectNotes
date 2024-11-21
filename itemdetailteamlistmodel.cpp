@@ -3,7 +3,7 @@
 
 #include "itemdetailteamlistmodel.h"
 
-ItemDetailTeamListModel::ItemDetailTeamListModel(QObject* t_parent): PNSqlQueryModel(t_parent)
+ItemDetailTeamListModel::ItemDetailTeamListModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {
     setBaseSql("SELECT teammember_id, b.name, project_id, a.people_id FROM project_people a join people b on a.people_id=b.people_id ");
 

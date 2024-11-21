@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "pnsortfilterproxymodel.h"
-#include "pnsqlquerymodel.h"
+#include "pndatabaseobjects.h"
 
 PNSortFilterProxyModel::PNSortFilterProxyModel(QObject *t_parent): QSortFilterProxyModel(t_parent)
 {

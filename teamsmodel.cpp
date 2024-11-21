@@ -1,6 +1,6 @@
 #include "teamsmodel.h"
 
-TeamsModel::TeamsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
+TeamsModel::TeamsModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {
     setObjectName("TeamsModel");
     setOrderKey(15);

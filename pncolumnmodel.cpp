@@ -5,7 +5,7 @@
 #include "pndatabaseobjects.h"
 #include <QColor>
 
-PNColumnModel::PNColumnModel(QObject *t_parent) : PNSqlQueryModel(t_parent)
+PNColumnModel::PNColumnModel(PNDatabaseObjects* t_dbo, bool t_gui) : PNSqlQueryModel(t_dbo, t_gui)
 {
     setObjectName("PNColumnModel");
 

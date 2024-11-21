@@ -4,7 +4,7 @@
 #include "projectlocationsmodel.h"
 #include "pndatabaseobjects.h"
 
-ProjectLocationsModel::ProjectLocationsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
+ProjectLocationsModel::ProjectLocationsModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {
     setObjectName("ProjedtLocationsModel");
     setOrderKey(35);

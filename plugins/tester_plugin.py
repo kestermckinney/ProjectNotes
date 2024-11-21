@@ -1,6 +1,7 @@
 import sys
 import platform
 import projectnotes
+import threading
 
 #print(sys.path)
 
@@ -15,7 +16,7 @@ from includes.common import ProjectNotesCommon
 from PyQt6 import QtSql, QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtSql import QSqlDatabase
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl
+from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QThread
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
 from PyQt6.QtGui import QDesktopServices
 
@@ -26,6 +27,56 @@ pluginsubmenu = "A Test Submenu" # the sub menu to display the plugin in
 plugindescription = "This is test plugin. Supported platforms: Windows, Linux, MacOS"
 plugintable = "" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
+
+
+
+class Worker1(QThread):
+    def __init__(self, xmlstr):
+        super().__init__()
+        self.xmlstr = xmlstr
+
+    def run(self):
+        #app = QApplication(sys.argv)
+        xmlval = QDomDocument()
+        if (xmlval.setContent(self.xmlstr) == False):
+            print("Unable to parse XML sent to plugin thread 1")
+            return 
+
+        print("thread 1 called")
+
+        contact = """<?xml version="1.0" encoding="UTF-8"?>
+        <projectnotes>
+        <table name="people" filter_field_1="name" filter_value_1="B%" top="2" skip="1" />
+        <table name="clients" filter_field_1="name" filter_value_1="B%" top="3"/>
+        </projectnotes>
+        """
+
+        #projectnotes.update_data(contact)
+        #print(projectnotes.get_data(contact))
+
+
+class Worker2(QThread):
+    def __init__(self, xmlstr):
+        super().__init__()
+        self.xmlstr = xmlstr
+
+    def run(self):
+        xmlval = QDomDocument()
+        if (xmlval.setContent(self.xmlstr) == False):
+            print("Unable to parse XML sent to plugin thread 1")
+            return
+
+        print("thread 2 called")
+
+        contact = """<?xml version="1.0" encoding="UTF-8"?>
+        <projectnotes>
+        <table name="projects" filter_field_1="name" filter_value_1="A%" top="4"/>
+        </projectnotes>
+        """
+
+        #projectnotes.update_data(contact)
+        print(projectnotes.get_data(contact))
+
 
 # events must have a data structure and data view specified
 #
@@ -143,7 +194,6 @@ def disabled_event_every10minutes(xmlstr):
     return ""
 
 def disabled_event_every30minutes(xmlstr):
-    #app = QApplication(sys.argv)
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
         QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
@@ -154,26 +204,43 @@ def disabled_event_every30minutes(xmlstr):
 
     return ""
 
+thread1 = None
+thread2 = None
+
 def event_menuclick(xmlstr):
-    #app = QApplication(sys.argv)
+    thread1 = Worker1(xmlstr)
+    thread2 = Worker2(xmlstr)
+
+
+    if thread1 is not None:
+        if thread1.isRunning():
+            print("Thread 1 is already started")
+            return ""
+
+    if thread2 is not None:
+        if thread2.isRunning():
+            print("Thread 2 is already started")
+            return ""
+
+    thread1.start()
+    thread2.start()
+
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
         QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
         return ""
 
     print("Tester: Event Menu click called...")
-    print(xmlstr) 
 
     contact = """<?xml version="1.0" encoding="UTF-8"?>
     <projectnotes>
-    <table name="people" filter_field_1="name" filter_value_1="A%" top="2" skip="1" />
-    <table name="clients" filter_field_1="name" filter_value_1="A%"/>
+    <table name="people" filter_field_1="name" filter_value_1="C%" top="2" skip="1" />
+    <table name="clients" filter_field_1="name" filter_value_1="C%" top="5" />
     </projectnotes>
     """
 
     #projectnotes.update_data(contact)
-
-    print(projectnotes.get_data(contact))
+    #print(projectnotes.get_data(contact))
 
     QMessageBox.critical(None, "Test Plugin", "menu click called", QMessageBox.StandardButton.Cancel)
 
@@ -207,9 +274,11 @@ def event_data_rightclick(xmlstr):
 
 
     return retval
+
+app = QApplication(sys.argv)
 """
 print("Testing Plugin")
 EditorFullPath = "notepad.exe"
-#event_menuclick("")
-event_data_rightclick("")
+event_menuclick("")
 """
+#event_data_rightclick("")

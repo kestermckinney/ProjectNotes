@@ -5,7 +5,7 @@
 
 //#include <QDebug>
 
-MeetingAttendeesModel::MeetingAttendeesModel(QObject* t_parent): PNSqlQueryModel(t_parent)
+MeetingAttendeesModel::MeetingAttendeesModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {
     setObjectName("MeetingAttendeesModel");
     setOrderKey(40);

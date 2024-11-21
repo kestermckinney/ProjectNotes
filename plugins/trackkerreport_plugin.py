@@ -106,7 +106,7 @@ if (platform.system() == 'Windows'):
             QtCore.Qt.WindowType.WindowCloseButtonHint
             )
 
-        ui.m_checkBoxDisplayTracker.setChecked(True)
+        ui.m_checkBoxDisplayTracker.setChecked(False)
         ui.m_checkBoxItemsTracker.setChecked(True)
         ui.m_checkBoxNewTracker.setChecked(True)
         ui.m_checkBoxAssignedTracker.setChecked(True)

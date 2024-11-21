@@ -1,7 +1,7 @@
 // Copyright (C) 2022, 2023 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
-#include "pnsqlquerymodel.h"
+#include "pndatabaseobjects.h"
 #include "pndatabaseobjects.h"
 
 #include <QString>
@@ -17,31 +17,25 @@
 #include <QDomNode>
 #include <QList>
 #include <QLocale>
+#include <QReadWriteLock>
 
-QList<PNSqlQueryModel*> PNSqlQueryModel::m_open_recordsets;
-
-PNSqlQueryModel::PNSqlQueryModel(QObject *t_parent) : QAbstractTableModel(t_parent)
+PNSqlQueryModel::PNSqlQueryModel(PNDatabaseObjects* t_dbo, bool t_gui) : QAbstractTableModel(t_dbo)
 {
-    QList<PNSqlQueryModel*>::iterator it_recordsets = m_open_recordsets.begin();
+    m_dbo = t_dbo;
+    m_gui = t_gui;
 
-    while(it_recordsets != m_open_recordsets.end())
+    // only recordsets attached to gui need to be updated with related data items changes
+    // non gui mult-threaded recordsets can en up in deadlocks
+    if (m_gui)
     {
-
-        if (this->getOrderKey() < (*it_recordsets)->getOrderKey())
-        {
-            m_open_recordsets.insert(it_recordsets, this);
-            return;
-        }
-
-        it_recordsets++;
+        m_dbo->addModel(this);
     }
-
-    m_open_recordsets.append(this); // add to the list of open recordsets
 }
 
 PNSqlQueryModel::~PNSqlQueryModel()
 {
-    m_open_recordsets.removeAll(this);  // remove from the list of open recordsets
+    if (m_gui)
+        m_dbo->removeModel(this);
 }
 
 void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
@@ -50,9 +44,11 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
 
     // if no tables rely on this record then jump out of this test
     if (m_related_table.count() == 0)
+    {
         return;
+    }
 
-    QListIterator<PNSqlQueryModel*> it_recordsets(m_open_recordsets);
+    QListIterator<PNSqlQueryModel*> it_recordsets(m_dbo->getOpenModels());
     PNSqlQueryModel* recordset = nullptr;
 
     // look through all recordsets that are open
@@ -197,7 +193,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 }
             }
 
-            QSqlQuery insert;
+            QSqlQuery insert(getDBOs()->getDb());
             insert.prepare("insert into " + m_tablename + " ( " + fields + " ) values ( " + values + " )");
 //            qDebug() << "insert into " << m_tablename << " ( " << fields << " ) values ( " << values << " )";
 
@@ -222,18 +218,23 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 }
             }
 
+            DB_LOCK;
             if(insert.exec())
             {
+                DB_UNLOCK;
+
                 QModelIndex qil = createIndex(t_index.row(), 0);
                 QModelIndex qir = createIndex(t_index.row(), columnCount() - 1);
 
                 emit dataChanged(qil, qir);
 
                 // check for all of the impacted open recordsets
-                refreshImpactedRecordsets(t_index);
+                if (m_gui) // some recordsets aren't attached to the gui
+                    refreshImpactedRecordsets(t_index);
 
                 return true;
             }
+            DB_UNLOCK;
 
             QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
                insert.lastError().text() + "\n" + insert.lastQuery(), QMessageBox::Ok);
@@ -249,7 +250,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
 
             sqlEscape(value, m_column_type[t_index.column()], true);
 
-            QSqlQuery update;
+            QSqlQuery update(getDBOs()->getDb());
             update.prepare("update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)");
             update.addBindValue(value);
             update.addBindValue(keyvalue);
@@ -260,10 +261,12 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             //qDebug() << "Value " << keyvalue;
             //qDebug() << "Value " << oldvalue;
 
+            DB_LOCK;
             if(update.exec())
             {
                 if (update.numRowsAffected() == 0)
                 {
+                    DB_UNLOCK;
                     QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
                        QObject::tr("Field was already updated by another process."), QMessageBox::Ok);
 
@@ -271,17 +274,21 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 }
                 else
                 {
+                    DB_UNLOCK;
                     m_cache[t_index.row()].setValue(t_index.column(), value);
 
                     emit dataChanged(t_index, t_index);
 
                     // check for all of the impacted open recordsets
-                    refreshImpactedRecordsets(t_index);
+                    if (m_gui) // some recordsets aren't attached to the gui
+                        refreshImpactedRecordsets(t_index);
+
                     return true;
                 }
             }
             else
             {
+                DB_UNLOCK;
                 QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
                    update.lastError().text() + "\n" + update.lastQuery(), QMessageBox::Ok);
             }
@@ -295,7 +302,7 @@ void PNSqlQueryModel::setBaseSql(const QString t_table)
 {
     m_base_sql = t_table;
 
-    m_sql_query = QSqlQuery( BaseSQL() ); // always build query to get the column names for where clause generation
+    m_sql_query = QSqlQuery( BaseSQL(), getDBOs()->getDb() ); // always build query to get the column names for where clause generation
 }
 
 void PNSqlQueryModel::setTableName(const QString &t_table, const QString &t_display_name)
@@ -325,7 +332,7 @@ void PNSqlQueryModel::refresh()
 
     fullsql = QString("%1 %2 %3 %4 %5").arg( BaseSQL(), constructWhereClause(), orderby, top, skip);
 
-    m_sql_query = QSqlQuery( fullsql );
+    m_sql_query = QSqlQuery( fullsql, getDBOs()->getDb() );
 
     // qDebug() << "Refreshing: ";
     // qDebug() << fullsql;
@@ -735,12 +742,15 @@ bool PNSqlQueryModel::deleteRecord(QModelIndex t_index)
     if (!deleteCheck(t_index))
         return false;
 
-    QSqlQuery delrow;
+    QSqlQuery delrow(getDBOs()->getDb());
     delrow.prepare("delete from " + m_tablename + " where " + m_sql_query.record().fieldName(0) + " = ? ");
     delrow.bindValue(0, m_cache[t_index.row()].field(0).value());
 
+    DB_LOCK;
     if(delrow.exec())
     {
+        DB_UNLOCK;
+
         beginRemoveRows(QModelIndex(), t_index.row(), t_index.row());
 
         m_cache.remove(t_index.row());
@@ -755,6 +765,7 @@ bool PNSqlQueryModel::deleteRecord(QModelIndex t_index)
         return true;
     }
 
+    DB_UNLOCK;
 
     QMessageBox::critical(nullptr, QObject::tr("Cannot delete record"),
        delrow.lastError().text() + "\n" + delrow.lastQuery(), QMessageBox::Ok);
@@ -781,15 +792,21 @@ bool PNSqlQueryModel::isUniqueValue(const QVariant &t_new_value, const QModelInd
     if (m_cache.count() > 0) // if not a new record exclude the current record
         keyvalue = m_cache[t_index.row()].value(0).toString();
 
-    QSqlQuery select;
+    QSqlQuery select(getDBOs()->getDb());
     select.prepare("select count(*) from " + m_tablename + " where " + keycolumnname + " <> ? and " + columnname + " = ?");
     select.bindValue(0, keyvalue);
     select.bindValue(1, t_new_value);
 
+    DB_LOCK;
     select.exec();
     if (select.next())
         if (select.value(0).toInt() > 0)
+        {
+            DB_UNLOCK;
             return false;
+        }
+
+    DB_UNLOCK;
 
     return true;
 }
@@ -854,12 +871,17 @@ bool PNSqlQueryModel::columnChangeCheck(const QModelIndex &t_index)
             // check to see if search should be limited by project
             if (fk_col_name.compare("project_id") == 0)
             {
-                QSqlQuery projsql;
+                QSqlQuery projsql(getDBOs()->getDb());
                 projsql.prepare(QString("select project_number from projects where project_id ='%1'").arg(col_val.toString()));
+
+                DB_LOCK;
+
                 projsql.exec();
 
                 if (projsql.next())
                     project_number_key = projsql.value(0).toString();
+
+                DB_UNLOCK;
             }
             else
             {
@@ -869,14 +891,18 @@ bool PNSqlQueryModel::columnChangeCheck(const QModelIndex &t_index)
 
         if (use_related)
         {
-            QSqlQuery select;
+            QSqlQuery select(getDBOs()->getDb());
             select.prepare("select count(*) from " + m_related_table.at(i) + " where " + where_clause);
+
+            DB_LOCK;
             select.exec();
 
             //qDebug() << "SET VALUE CHECK: " << "select count(*) from " + m_related_table.at(i) + " where " + where_clause;
 
             if (select.next())
                 relatedcount = select.value(0).toInt();
+
+            DB_UNLOCK;
 
             if (relatedcount > 0)
             {
@@ -908,7 +934,7 @@ bool PNSqlQueryModel::columnChangeCheck(const QModelIndex &t_index)
                 key_values.append(primary_key);
             }
 
-            global_DBObjects.searchresultsmodel()->PerformKeySearch( key_columns, key_values );
+            getDBOs()->searchresultsmodel()->PerformKeySearch( key_columns, key_values );
 
             emit callKeySearch();
         }
@@ -953,12 +979,17 @@ bool PNSqlQueryModel::deleteCheck(const QModelIndex &t_index)
             // check to see if search should be limited by project
             if (fk_col_name.compare("project_id") == 0)
             {
-                QSqlQuery projsql;
+                QSqlQuery projsql(getDBOs()->getDb());
                 projsql.prepare(QString("select project_number from projects where project_id ='%1'").arg(col_val.toString()));
+
+                DB_LOCK;
+
                 projsql.exec();
 
                 if (projsql.next())
                     project_number_key = projsql.value(0).toString();
+
+                DB_UNLOCK;
             }
             else
             {
@@ -966,14 +997,19 @@ bool PNSqlQueryModel::deleteCheck(const QModelIndex &t_index)
             }
         }
 
-        QSqlQuery select;
+        QSqlQuery select(getDBOs()->getDb());
         select.prepare("select count(*) from " + m_related_table.at(i) + " where " + where_clause);
+
+        DB_LOCK;
+
         select.exec();
 
         //qDebug() << "DELETE CHECK: " << "select count(*) from " + m_related_table.at(i) + " where " + where_clause;
 
         if (select.next())
             relatedcount = select.value(0).toInt();
+
+        DB_UNLOCK;
 
         if (relatedcount > 0)
         {
@@ -1004,7 +1040,7 @@ bool PNSqlQueryModel::deleteCheck(const QModelIndex &t_index)
                 key_values.append(primary_key);
             }
 
-            global_DBObjects.searchresultsmodel()->PerformKeySearch( key_columns, key_values );
+            getDBOs()->searchresultsmodel()->PerformKeySearch( key_columns, key_values );
 
             emit callKeySearch();
         }
@@ -1060,14 +1096,18 @@ const QModelIndex PNSqlQueryModel::findIndex(QVariant& t_lookup_value, int t_sea
 
 bool PNSqlQueryModel::reloadRecord(const QModelIndex& t_index)
 {
-    QSqlQuery select;
+    QSqlQuery select(getDBOs()->getDb());
     select.prepare(BaseSQL() + " where " + m_sql_query.record().fieldName(0) + " = ? ");
     select.bindValue(0, m_cache[t_index.row()].field(0).value());
+
+    DB_LOCK;
 
     if (select.exec())
     {
         if (select.next())
         {
+            DB_UNLOCK;
+
             m_cache[t_index.row()] = select.record();
 
             emit dataChanged(t_index.model()->index(t_index.row(), 0), t_index.model()->index(t_index.row(), select.record().count()));
@@ -1077,6 +1117,8 @@ bool PNSqlQueryModel::reloadRecord(const QModelIndex& t_index)
             return true;
         }
     }
+
+    DB_UNLOCK;
 
     return false;
 }
@@ -1477,7 +1519,7 @@ void PNSqlQueryModel::activateUserFilter(QString t_filter_name)
 
         parmname = QString("UserFilter:%1:IsActive").arg(filter_name);
 
-        global_DBObjects.saveParameter(parmname, val);
+        getDBOs()->saveParameter(parmname, val);
     }
 }
 
@@ -1496,7 +1538,7 @@ void PNSqlQueryModel::deactivateUserFilter(QString t_filter_name)
 
         parmname = QString("UserFilter:%1:IsActive").arg(filter_name);
 
-        global_DBObjects.saveParameter(parmname, val);
+        getDBOs()->saveParameter(parmname, val);
     }
 }
 
@@ -1511,7 +1553,7 @@ void PNSqlQueryModel::loadLastUserFilterState(QString t_filter_name)
     parmname = QString("UserFilter:%1:IsActive").arg(filter_name);
     parmname.replace(" ", "_", Qt::CaseSensitive);
 
-    val = global_DBObjects.loadParameter(parmname);
+    val = getDBOs()->loadParameter(parmname);
 
     if (val.compare("true") == 0)
         m_user_filter_active = true;
@@ -1562,7 +1604,7 @@ void PNSqlQueryModel::saveUserFilter( QString t_filter_name)
 
     QString parmname = QString("UserFilter:%1").arg(filter_name);
 
-    global_DBObjects.saveParameter( parmname, xml );
+    getDBOs()->saveParameter( parmname, xml );
 }
 
 void PNSqlQueryModel::loadUserFilter( QString t_filter_name)
@@ -1575,7 +1617,7 @@ void PNSqlQueryModel::loadUserFilter( QString t_filter_name)
     parmname = QString("UserFilter:%1").arg(filter_name);
     parmname.replace(" ", "_", Qt::CaseSensitive);
 
-    QString xml = global_DBObjects.loadParameter(parmname);
+    QString xml = getDBOs()->loadParameter(parmname);
 
     if (xml.isEmpty())
     {
@@ -1713,7 +1755,7 @@ QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document, const 
             {
                 QString fk_key_val = row.value(i).toString();
                 QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookup_value_column_name[i], m_lookup_table[i], m_lookup_fk_column_name[i], fk_key_val);
-                QString lookup_value = global_DBObjects.execute(sql);
+                QString lookup_value = getDBOs()->execute(sql);
 
                 if (!lookup_value.isEmpty())
                     xmlcolumn.setAttribute("lookupvalue", lookup_value);
@@ -1732,7 +1774,7 @@ QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document, const 
             if (m_relation_exportable[i] == DBExportable)
             {
                 //find that table in the database objects
-                QListIterator<PNSqlQueryModel*> it_recordsets(m_open_recordsets);
+                QListIterator<PNSqlQueryModel*> it_recordsets(m_dbo->getOpenModels());
                 PNSqlQueryModel* recordset = nullptr;
 
                 // look through all recordsets that are open
@@ -1784,6 +1826,7 @@ QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document, const 
                         break; // only grab the first instance of the related table
                     }
                 }
+
             }
         }
 
@@ -1795,7 +1838,7 @@ QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document, const 
 
 PNSqlQueryModel* PNSqlQueryModel::createExportVersion()
 {
-    return new PNSqlQueryModel(this);
+    return new PNSqlQueryModel(m_dbo);
 }
 
 bool PNSqlQueryModel::setFilter(QDomNode& t_xmlfilter)
@@ -1903,7 +1946,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                             QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookup_fk_column_name[colnum], m_lookup_table[colnum], m_lookup_value_column_name[colnum], lookup_value);
                             //qDebug() << "EXEC LOOKUP EXISTING: " << sql;
 
-                            field_value = global_DBObjects.execute(sql);
+                            field_value = getDBOs()->execute(sql);
                         }
 
                         // if this is a key field add to temp wherer
@@ -1960,7 +2003,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                     QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookup_fk_column_name[colnum], m_lookup_table[colnum], m_lookup_value_column_name[colnum], lookup_value);
                     //qDebug() << "EXEC LOOKUP FOR FIELD VALUE: " << sql;
 
-                    field_value = global_DBObjects.execute(sql);
+                    field_value = getDBOs()->execute(sql);
                 }
 
                 if (!insertvalues.isEmpty())
@@ -1997,7 +2040,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
 
     // check to see if record exists
     QString exists_sql = QString("select count(*) from %1 where %2").arg(m_tablename, whereclause);
-    QString exists_count = global_DBObjects.execute(exists_sql);
+    QString exists_count = getDBOs()->execute(exists_sql);
     QString sql;
 
     //qDebug() << "CHECK EXISTS: " << exists_sql;
@@ -2030,14 +2073,14 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
 
     //qDebug() << "XML Generated SQL: " << sql;
 
-    global_DBObjects.execute(sql);
+    getDBOs()->execute(sql);
 
     return true;
 }
 
 void PNSqlQueryModel::refreshByTableName()
 {
-    QListIterator<PNSqlQueryModel*> it_recordsets(m_open_recordsets);
+    QListIterator<PNSqlQueryModel*> it_recordsets(m_dbo->getOpenModels());
     PNSqlQueryModel* recordset = nullptr;
 
     // look through all recordsets that are open
@@ -2052,6 +2095,7 @@ void PNSqlQueryModel::refreshByTableName()
             recordset->setDirty();
         }
     }
+
 }
 
 bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant &t_value)
@@ -2082,7 +2126,7 @@ bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant
 
             //qDebug() << "Verifying Unique:  " << where;
 
-            QSqlQuery qry;
+            QSqlQuery qry(getDBOs()->getDb());
             qry.prepare(where);
 
             foreach ( const QString f, itk.value() )
@@ -2099,12 +2143,15 @@ bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant
                 }
             }
 
+            DB_LOCK;
+
             qry.exec();
 
             if (qry.next())
             {
                 if ( qry.value(0).toInt() > 0)
                 {
+                    DB_UNLOCK;
 
                     QMessageBox::warning(nullptr, QObject::tr("Cannot update record"),
                        QString("%1 must be unique.").arg(itk.key()));
@@ -2112,6 +2159,8 @@ bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant
                     return false;
                 }
             }
+
+            DB_UNLOCK;
         }
     }
 

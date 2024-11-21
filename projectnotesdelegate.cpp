@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "projectnotesdelegate.h"
-#include "pnsqlquerymodel.h"
+#include "pndatabaseobjects.h"
 #include "pndateeditex.h"
 #include "mainwindow.h"
 #include "pnbasepage.h"

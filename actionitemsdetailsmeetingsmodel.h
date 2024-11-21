@@ -9,8 +9,8 @@
 class ActionItemsDetailsMeetingsModel : public PNSqlQueryModel
 {
 public:
-    ActionItemsDetailsMeetingsModel(QObject* t_parent);
-    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new ActionItemsDetailsMeetingsModel(this)); };
+    ActionItemsDetailsMeetingsModel(PNDatabaseObjects* t_dbo, bool t_gui = true);
+    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new ActionItemsDetailsMeetingsModel(getDBOs(), false)); }
 };
 
 #endif // ACTIONITEMSDETAILSMEETINGSMODEL_H

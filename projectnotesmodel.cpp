@@ -5,7 +5,7 @@
 #include "pndatabaseobjects.h"
 //#include <QDebug>
 
-ProjectNotesModel::ProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_parent)
+ProjectNotesModel::ProjectNotesModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {
     setObjectName("ProjectNotesModel");
     setOrderKey(50);
@@ -58,7 +58,7 @@ bool ProjectNotesModel::setData(const QModelIndex &t_index, const QVariant &t_va
     if (wasnew && result)
     {
         QString note_id = data(index(t_index.row(), 0)).toString();
-        global_DBObjects.addDefaultPMToMeeting(note_id);
+        getDBOs()->addDefaultPMToMeeting(note_id);
     }
 
     return result;
@@ -85,8 +85,8 @@ const QModelIndex ProjectNotesModel::copyRecord(QModelIndex t_index)
 
     QString insert = "insert into meeting_attendees (attendee_id, note_id, person_id) select m.attendee_id || '-" + unique_stamp + "', '" + newid.toString() + "', m.person_id from meeting_attendees m where m.note_id ='" + oldid.toString() + "'  and m.person_id not in (select e.person_id from meeting_attendees e where e.note_id='" + newid.toString() + "')";
 
-    global_DBObjects.execute(insert);
-    global_DBObjects.meetingattendeesmodel()->setDirty();
+    getDBOs()->execute(insert);
+    getDBOs()->meetingattendeesmodel()->setDirty();
 
     return qi;
 }

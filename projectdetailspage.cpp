@@ -54,7 +54,7 @@ void ProjectDetailsPage::openRecord(QVariant& t_record_id)
     global_DBObjects.projectnotesmodel()->setFilter(1, t_record_id.toString());
     global_DBObjects.projectnotesmodel()->refresh();
 
-    PNSqlQueryModel::refreshDirty();
+    global_DBObjects.refreshDirty();
 
     // only select the records another event will be fired to open the window to show them
     // order is important this needs to be last
@@ -166,14 +166,14 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     ui->tableViewTeam->setModel(global_DBObjects.projectteammembersmodelproxy());
     ui->tableViewTeam->setKeyToOpenField(2);
 
-    ui->tableViewTrackerItems->setModel(global_DBObjects.trackeritemsmodelproxy());   
+    ui->tableViewTrackerItems->setModel(global_DBObjects.trackeritemsmodelproxy());
     ui->tableViewLocations->setModel(global_DBObjects.projectlocationsmodelproxy());
     ui->tableViewProjectNotes->setModel(global_DBObjects.projectnotesmodelproxy());
 }
 
 void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
 {
-    PNSqlQueryModel::refreshDirty();
+    global_DBObjects.refreshDirty();
 
     emit setFocus(); // tell the main window to update to call the setButtonsAndMenus function
 

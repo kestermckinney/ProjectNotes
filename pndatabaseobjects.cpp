@@ -5,6 +5,7 @@
 #include "databasestructure.h"
 
 #include <QUuid>
+#include <QThread>
 //#include <QDebug>
 
 // selection values for fields
@@ -63,6 +64,8 @@ QStringList PNDatabaseObjects::file_types = {
 };
 
 PNDatabaseObjects global_DBObjects(nullptr);
+QMutex db_mutex;
+
 
 PNDatabaseObjects::PNDatabaseObjects(QObject *parent) : QObject(parent)
 {
@@ -73,7 +76,7 @@ bool PNDatabaseObjects::createDatabase(QString& t_databasepath)
 {
     m_database_file = t_databasepath;
 
-    m_sqlite_db = QSqlDatabase::addDatabase("QSQLITE");
+    m_sqlite_db = QSqlDatabase::addDatabase("QSQLITE", QUuid::createUuid().toString());
 
     QFile::remove(m_database_file);  // if it exists remove it.  Dialog should have prompted you.
 
@@ -98,21 +101,27 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
 {
     m_database_file = databasepath;
 
-    m_sqlite_db = QSqlDatabase::addDatabase("QSQLITE");
+    DB_LOCK;
+    m_sqlite_db = QSqlDatabase::addDatabase("QSQLITE", QUuid::createUuid().toString());
+    DB_UNLOCK;
 
     if (QFileInfo::exists(m_database_file))
+    {
+        DB_LOCK;
         m_sqlite_db.setDatabaseName(m_database_file);
+        DB_UNLOCK;
+    }
     else
     {
         QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
-            QString(tr("File %1 does not exist.")).arg(m_database_file), QMessageBox::Cancel);
+                              QString(tr("File %1 does not exist.")).arg(m_database_file), QMessageBox::Cancel);
         m_database_file.clear(); // set empty if bad file
         return false;
     }
 
     if (!m_sqlite_db.open()) {
         QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
-            m_sqlite_db.lastError().text(), QMessageBox::Cancel);
+                              m_sqlite_db.lastError().text(), QMessageBox::Cancel);
         m_database_file.clear(); // set empty if bad file
         return false;
     }
@@ -120,110 +129,137 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
     DatabaseStructure ds;
     ds.UpgradeDatabase();
 
-    m_clients_model = new ClientsModel(nullptr);
+    m_clients_model = new ClientsModel(this);
     m_clients_model_proxy = new PNSortFilterProxyModel();
     m_clients_model_proxy->setSourceModel(m_clients_model);
 
-    m_unfilteredclients_model = new ClientsModel(nullptr);
+    m_unfilteredclients_model = new ClientsModel(this);
     m_unfilteredclients_model_proxy = new PNSortFilterProxyModel();
     m_unfilteredclients_model_proxy->setSourceModel(m_unfilteredclients_model);
     m_unfilteredclients_model->setShowBlank();
     m_unfilteredclients_model->setNoExport();
 
-    m_people_model = new PeopleModel(nullptr);
+    m_people_model = new PeopleModel(this);
     m_people_model_proxy = new PNSortFilterProxyModel();
     m_people_model_proxy->setSourceModel(m_people_model);
 
-    m_company_people_model = new PeopleModel(nullptr);
+    m_company_people_model = new PeopleModel(this);
     m_company_people_model_proxy = new PNSortFilterProxyModel();
     m_company_people_model_proxy->setSourceModel(m_company_people_model);
 
-    m_unfiltered_people_model = new PeopleModel(nullptr);
+    m_unfiltered_people_model = new PeopleModel(this);
     m_unfiltered_people_model_proxy = new PNSortFilterProxyModel();
     m_unfiltered_people_model_proxy->setSourceModel(m_unfiltered_people_model);
     m_unfiltered_people_model->setShowBlank();
     m_unfiltered_people_model->setNoExport();
 
-    m_project_information_model = new ProjectsModel(nullptr);
+    m_project_information_model = new ProjectsModel(this);
     m_project_information_model_proxy = new PNSortFilterProxyModel();
     m_project_information_model_proxy->setSourceModel(m_project_information_model);
 
-    m_projects_list_model = new ProjectsListModel(nullptr);
+    m_projects_list_model = new ProjectsListModel(this);
     m_projects_list_model_proxy = new PNSortFilterProxyModel();
     m_projects_list_model_proxy->setSourceModel(m_projects_list_model);
 
-    m_teams_model = new TeamsModel(nullptr);
+    m_teams_model = new TeamsModel(this);
     m_teams_model_proxy = new PNSortFilterProxyModel();
     m_teams_model_proxy->setSourceModel(m_teams_model);
 
-    m_status_report_items_model = new StatusReportItemsModel(nullptr);
+    m_status_report_items_model = new StatusReportItemsModel(this);
     m_status_report_items_model_proxy = new PNSortFilterProxyModel();
     m_status_report_items_model_proxy->setSourceModel(m_status_report_items_model);
 
-    m_project_team_members_model = new ProjectTeamMembersModel(nullptr);
+    m_project_team_members_model = new ProjectTeamMembersModel(this);
     m_project_team_members_model_proxy = new PNSortFilterProxyModel();
     m_project_team_members_model_proxy->setSourceModel(m_project_team_members_model);
 
-    m_project_locations_model = new ProjectLocationsModel(nullptr);
+    m_project_locations_model = new ProjectLocationsModel(this);
     m_project_locations_model_proxy = new PNSortFilterProxyModel();
     m_project_locations_model_proxy->setSourceModel(m_project_locations_model);
 
-    m_project_notes_model = new ProjectNotesModel(nullptr);
+    m_project_notes_model = new ProjectNotesModel(this);
     m_project_notes_model_proxy = new PNSortFilterProxyModel();
     m_project_notes_model_proxy->setSourceModel(m_project_notes_model);
 
-    m_project_editing_notes_model = new ProjectNotesModel(nullptr);
+    m_project_editing_notes_model = new ProjectNotesModel(this);
     m_project_editing_notes_model_proxy = new PNSortFilterProxyModel();
     m_project_editing_notes_model_proxy->setSourceModel(m_project_editing_notes_model);
 
-    m_action_item_project_notes_model = new ActionItemProjectNotesModel(nullptr);
+    m_action_item_project_notes_model = new ActionItemProjectNotesModel(this);
     m_action_item_project_notes_model_proxy = new PNSortFilterProxyModel();
     m_action_item_project_notes_model_proxy->setSourceModel(m_action_item_project_notes_model);
 
-    m_tracker_items_meetings_model = new ActionItemsDetailsMeetingsModel(nullptr);
+    m_tracker_items_meetings_model = new ActionItemsDetailsMeetingsModel(this);
     m_tracker_items_meetings_model_proxy = new PNSortFilterProxyModel();
     m_tracker_items_meetings_model_proxy->setSourceModel(m_tracker_items_meetings_model);
     m_tracker_items_meetings_model->setShowBlank();
     m_tracker_items_meetings_model->setNoExport();
 
-    m_action_items_details_meetings_model = new ActionItemsDetailsMeetingsModel(nullptr);
+    m_action_items_details_meetings_model = new ActionItemsDetailsMeetingsModel(this);
     m_action_items_details_meetings_model_proxy = new PNSortFilterProxyModel();
     m_action_items_details_meetings_model_proxy->setSourceModel(m_action_items_details_meetings_model);
     m_action_items_details_meetings_model->setShowBlank();
     m_action_items_details_meetings_model->setNoExport();
 
-    m_project_action_items_model = new TrackerItemsModel(nullptr);
+    m_project_action_items_model = new TrackerItemsModel(this);
     m_project_action_items_model_proxy = new PNSortFilterProxyModel();
     m_project_action_items_model_proxy->setSourceModel(m_project_action_items_model);
 
-    m_action_item_details_model = new TrackerItemsModel(nullptr);
+    m_action_item_details_model = new TrackerItemsModel(this);
     m_action_item_details_model_proxy = new PNSortFilterProxyModel();
     m_action_item_details_model_proxy->setSourceModel(m_action_item_details_model);
 
-    m_meeting_attendees_model = new MeetingAttendeesModel(nullptr);
+    m_meeting_attendees_model = new MeetingAttendeesModel(this);
     m_meeting_attendees_model_proxy = new PNSortFilterProxyModel();
     m_meeting_attendees_model_proxy->setSourceModel(m_meeting_attendees_model);
 
-    m_notes_action_items_model = new NotesActionItemsModel(nullptr);
+    m_notes_action_items_model = new NotesActionItemsModel(this);
     m_notes_action_items_model_proxy = new PNSortFilterProxyModel();
     m_notes_action_items_model_proxy->setSourceModel(m_notes_action_items_model);
 
-    m_tracker_item_comments_model = new TrackerItemCommentsModel(nullptr);
+    m_tracker_item_comments_model = new TrackerItemCommentsModel(this);
     m_tracker_item_comments_model_proxy = new PNSortFilterProxyModel();
     m_tracker_item_comments_model_proxy->setSourceModel(m_tracker_item_comments_model);
 
-    m_search_results_model = new SearchResultsModel(nullptr);
+    m_search_results_model = new SearchResultsModel(this);
     m_search_results_model_proxy = new PNSortFilterProxyModel();
     m_search_results_model_proxy->setSourceModel(m_search_results_model);
 
     return true;
 }
 
+void PNDatabaseObjects::addModel(PNSqlQueryModel* t_model)
+{
+    QList<PNSqlQueryModel*>::iterator it_recordsets = m_open_recordsets.begin();
+
+    while(it_recordsets != m_open_recordsets.end())
+    {
+
+        if (t_model->getOrderKey() < (*it_recordsets)->getOrderKey())
+        {
+            m_open_recordsets.insert(it_recordsets, t_model);
+
+            return;
+        }
+
+        it_recordsets++;
+    }
+
+    m_open_recordsets.append(t_model); // add to the list of open recordsets
+}
+
+void PNDatabaseObjects::removeModel(PNSqlQueryModel* t_model)
+{
+    m_open_recordsets.removeAll(t_model);  // remove from the list of open recordsets
+}
+
 QString PNDatabaseObjects::execute(const QString& t_sql)
 {
-    QSqlQuery query;
-    query.exec(t_sql);
+    QSqlQuery query(m_sqlite_db);
 
+    DB_LOCK;
+    query.exec(t_sql);
+    DB_UNLOCK;
 //    QSqlError e = query.lastError();
 //    if (e.isValid())
 //    {
@@ -260,7 +296,6 @@ void PNDatabaseObjects::closeDatabase()
     delete m_tracker_item_comments_model;
     delete m_meeting_attendees_model;
     delete m_notes_action_items_model;
-    delete m_item_detail_team_list_model;
 
     delete m_search_results_model;
 
@@ -285,7 +320,6 @@ void PNDatabaseObjects::closeDatabase()
     m_tracker_item_comments_model = nullptr;
     m_meeting_attendees_model= nullptr;
     m_notes_action_items_model= nullptr;
-    m_item_detail_team_list_model = nullptr;
 
     m_search_results_model = nullptr;
 
@@ -310,7 +344,6 @@ void PNDatabaseObjects::closeDatabase()
     delete m_tracker_item_comments_model_proxy;
     delete m_meeting_attendees_model_proxy;
     delete m_notes_action_items_model_proxy;
-    delete m_item_detail_team_list_model_proxy;
     delete m_search_results_model_proxy;
 
     m_clients_model_proxy = nullptr;
@@ -334,10 +367,12 @@ void PNDatabaseObjects::closeDatabase()
     m_tracker_item_comments_model_proxy = nullptr;
     m_meeting_attendees_model_proxy = nullptr;
     m_notes_action_items_model_proxy = nullptr;
-    m_item_detail_team_list_model = nullptr;
     m_search_results_model_proxy = nullptr;
 
+    DB_LOCK;
     m_sqlite_db.close();
+    DB_UNLOCK;
+
     m_database_file.clear();
 }
 
@@ -345,7 +380,10 @@ void PNDatabaseObjects::backupDatabase(const QString& t_file)
 {
     QSqlQuery qry(m_sqlite_db);
     qry.prepare( "BEGIN IMMEDIATE;");
+
+    DB_LOCK;
     qry.exec();
+    DB_UNLOCK;
 
     QFile::remove(t_file); // copy command won't overwrite
     if (!QFile::copy(m_database_file, t_file))
@@ -354,12 +392,15 @@ void PNDatabaseObjects::backupDatabase(const QString& t_file)
     }
 
     qry.prepare( "ROLLBACK;");
+
+    DB_LOCK;
     qry.exec();
+    DB_UNLOCK;
 }
 
 bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QString& t_parametervalue )
 {
-    QSqlQuery select;
+    QSqlQuery select(m_sqlite_db);
     if(!select.prepare("select parameter_value from application_settings where parameter_name = ?;"))
     {
         QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
@@ -367,41 +408,80 @@ bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QSt
     }
 
     select.bindValue(0, t_parametername);
+
+    DB_LOCK;
     if (select.exec())
     {
         if (select.next())
         {
-            QSqlQuery update;
+            QSqlQuery update(m_sqlite_db);
             update.prepare("update application_settings set parameter_value = ? where parameter_name = ?;");
             update.bindValue(0, t_parametervalue);
             update.bindValue(1, t_parametername);
             if (update.exec())
+            {
+                DB_UNLOCK;
                 return true;
+            }
         }
         else
         {
-            QSqlQuery insert;
+            QSqlQuery insert(m_sqlite_db);
             insert.prepare("insert into application_settings (parameter_id, parameter_name, parameter_value) values (?, ?, ?);");
             insert.bindValue(0, QUuid::createUuid().toString());
             insert.bindValue(1, t_parametername);
             insert.bindValue(2, t_parametervalue);
             if (insert.exec())
+            {
+                DB_UNLOCK;
                 return true;
+            }
         }
 
     }
     else
     {
         QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting.  You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()));
+        DB_UNLOCK;
         return false;
     }
+    DB_UNLOCK;
 
     return false;
 }
 
+PNSqlQueryModel* PNDatabaseObjects::findOpenTable(const QString& t_tablename)
+{
+    for ( PNSqlQueryModel* m : getOpenModels())
+    {
+        if (m->tablename().compare(t_tablename, Qt::CaseInsensitive) == 0)
+            return m;
+    }
+
+    return nullptr;
+}
+
+bool PNDatabaseObjects::refreshDirty()
+{
+    bool foundsome = false;
+
+    for ( PNSqlQueryModel* m : getOpenModels())
+    {
+        if (m->isDirty())
+        {
+            //qDebug() << "Refreshing Dirty Table: " << m->tablename();
+
+            m->refresh();
+            foundsome = true;
+        }
+    }
+
+    return foundsome;
+}
+
 QString PNDatabaseObjects::loadParameter( const QVariant& t_parametername )
 {
-    QSqlQuery select;
+    QSqlQuery select(m_sqlite_db);
     if (!select.prepare("select parameter_value from application_settings where parameter_name = ?"))
     {
         QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
@@ -410,16 +490,25 @@ QString PNDatabaseObjects::loadParameter( const QVariant& t_parametername )
 
     select.bindValue(0, t_parametername);
 
+    DB_LOCK;
+
     if (select.exec())
     {
         if (select.next())
+        {
+            DB_UNLOCK;
             return select.value(0).toString();
+        }
         else
+        {
+            DB_UNLOCK;
             return QString();
+        }
     }
     else
     {
         QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
+        DB_UNLOCK;
         return QString();
     }
 }
@@ -621,14 +710,14 @@ QDomDocument* PNDatabaseObjects::createXMLExportDoc(QList<PNSqlQueryModel*>* t_q
     QDomElement root = doc->createElement("projectnotes");
     doc->appendChild(root).toElement();
 
-    root.setAttribute("filepath", global_DBObjects.getDatabaseFile());
+    root.setAttribute("filepath", getDatabaseFile());
     root.setAttribute("export_date", QDateTime::currentDateTime().toString("MM/dd/yyyy h:m:s ap"));
 
-    QString companyname = global_DBObjects.execute(QString("select client_name from clients where client_id='%1'").arg(global_DBObjects.getManagingCompany()));
-    QString managername = global_DBObjects.execute(QString("select name from people where people_id='%1'").arg(global_DBObjects.getProjectManager()));
+    QString companyname = execute(QString("select client_name from clients where client_id='%1'").arg(getManagingCompany()));
+    QString managername = execute(QString("select name from people where people_id='%1'").arg(getProjectManager()));
 
-    root.setAttribute("project_manager_id", global_DBObjects.getProjectManager());
-    root.setAttribute("managing_company_id", global_DBObjects.getManagingCompany());
+    root.setAttribute("project_manager_id", getProjectManager());
+    root.setAttribute("managing_company_id", getManagingCompany());
     root.setAttribute("managing_company_name", companyname);
     root.setAttribute("managing_manager_name", managername);
 
@@ -651,14 +740,14 @@ QDomDocument* PNDatabaseObjects::createXMLExportDoc(PNSqlQueryModel* t_querymode
     QDomElement root = doc->createElement("projectnotes");
     doc->appendChild(root).toElement();
 
-    root.setAttribute("filepath", global_DBObjects.getDatabaseFile());
+    root.setAttribute("filepath", getDatabaseFile());
     root.setAttribute("export_date", QDateTime::currentDateTime().toString("MM/dd/yyyy h:m:s ap"));
 
-    QString companyname = global_DBObjects.execute(QString("select client_name from clients where client_id='%1'").arg(global_DBObjects.getManagingCompany()));
-    QString managername = global_DBObjects.execute(QString("select name from people where people_id='%1'").arg(global_DBObjects.getProjectManager()));
+    QString companyname = execute(QString("select client_name from clients where client_id='%1'").arg(getManagingCompany()));
+    QString managername = execute(QString("select name from people where people_id='%1'").arg(getProjectManager()));
 
-    root.setAttribute("project_manager_id", global_DBObjects.getProjectManager());
-    root.setAttribute("managing_company_id", global_DBObjects.getManagingCompany());
+    root.setAttribute("project_manager_id", getProjectManager());
+    root.setAttribute("managing_company_id", getManagingCompany());
     root.setAttribute("managing_company_name", companyname);
     root.setAttribute("managing_manager_name", managername);
 
@@ -699,7 +788,7 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "clients");
     if (!domlist.empty())
     {
-        ClientsModel clients_model(nullptr);
+        ClientsModel clients_model(this);
 
         for (QDomNode& tablenode : domlist)
             if (!clients_model.importXMLNode(tablenode))
@@ -713,7 +802,7 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "people");
     if (!domlist.empty())
     {
-        PeopleModel people_model(nullptr);
+        PeopleModel people_model(this);
 
         for (QDomNode& tablenode : domlist)
             if(!people_model.importXMLNode(tablenode))
@@ -727,7 +816,7 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "projects");
     if (!domlist.empty())
     {
-        ProjectsModel projects_model(nullptr);
+        ProjectsModel projects_model(this);
 
         for (QDomNode& tablenode : domlist)
             if (!projects_model.importXMLNode(tablenode))
@@ -741,7 +830,7 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "project_people");
     if (!domlist.empty())
     {
-        ProjectTeamMembersModel project_people_model(nullptr);
+        ProjectTeamMembersModel project_people_model(this);
 
         for (QDomNode& tablenode : domlist)
             if (!project_people_model.importXMLNode(tablenode))
@@ -755,7 +844,7 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "status_report_items");
     if (!domlist.empty())
     {
-        StatusReportItemsModel status_report_items_model(nullptr);
+        StatusReportItemsModel status_report_items_model(this);
 
         for (QDomNode& tablenode : domlist)
             if(!status_report_items_model.importXMLNode(tablenode))
@@ -769,7 +858,7 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "project_locations");
     if (!domlist.empty())
     {
-        ProjectLocationsModel project_locations_model(nullptr);
+        ProjectLocationsModel project_locations_model(this);
 
         for (QDomNode& tablenode : domlist)
             if(!project_locations_model.importXMLNode(tablenode))
@@ -784,7 +873,7 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "project_notes");
     if (!domlist.empty())
     {
-        ProjectNotesModel project_notes_model(nullptr);
+        ProjectNotesModel project_notes_model(this);
 
         for (QDomNode& tablenode : domlist)
             if(!project_notes_model.importXMLNode(tablenode))
@@ -798,7 +887,7 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "item_tracker");
     if (!domlist.empty())
     {
-        TrackerItemsModel tracker_items_model(nullptr);
+        TrackerItemsModel tracker_items_model(this);
 
         for (QDomNode& tablenode : domlist)
             if(!tracker_items_model.importXMLNode(tablenode))
@@ -812,7 +901,7 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "meeting_attendees");
     if (!domlist.empty())
     {
-        MeetingAttendeesModel meeting_attendees_model(nullptr);
+        MeetingAttendeesModel meeting_attendees_model(this);
 
         for (QDomNode& tablenode : domlist)
             if(!meeting_attendees_model.importXMLNode(tablenode))
@@ -826,7 +915,7 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "item_tracker_updates");
     if (!domlist.empty())
     {
-        TrackerItemCommentsModel item_tracker_updates_model(nullptr);
+        TrackerItemCommentsModel item_tracker_updates_model(this);
 
         for (QDomNode& tablenode : domlist)
             if(!item_tracker_updates_model.importXMLNode(tablenode))
@@ -836,7 +925,7 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
         item_tracker_updates_model.refreshByTableName();
     }
 
-    PNSqlQueryModel::refreshDirty();
+    refreshDirty();
 
     return true;
 }
@@ -854,7 +943,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new ClientsModel(nullptr);
+            PNSqlQueryModel* model = new ClientsModel(this, false);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -869,7 +958,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new PeopleModel(nullptr);
+            PNSqlQueryModel* model = new PeopleModel(this, false);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -884,7 +973,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new ProjectsModel(nullptr);
+            PNSqlQueryModel* model = new ProjectsModel(this, false);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -900,7 +989,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new ProjectTeamMembersModel(nullptr);
+            PNSqlQueryModel* model = new ProjectTeamMembersModel(this, false);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -915,7 +1004,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new StatusReportItemsModel(nullptr);
+            PNSqlQueryModel* model = new StatusReportItemsModel(this, false);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -930,7 +1019,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new ProjectLocationsModel(nullptr);
+            PNSqlQueryModel* model = new ProjectLocationsModel(this, false);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -946,7 +1035,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new ProjectNotesModel(nullptr);
+            PNSqlQueryModel* model = new ProjectNotesModel(this, false);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -961,7 +1050,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new TrackerItemsModel(nullptr);
+            PNSqlQueryModel* model = new TrackerItemsModel(this, false);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -976,7 +1065,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new MeetingAttendeesModel(nullptr);
+            PNSqlQueryModel* model = new MeetingAttendeesModel(this, false);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -991,7 +1080,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new TrackerItemCommentsModel(nullptr);
+            PNSqlQueryModel* model = new TrackerItemCommentsModel(this, false);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);

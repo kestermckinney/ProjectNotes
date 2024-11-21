@@ -3,7 +3,7 @@
 #include <QDateTime>
 //#include <QDebug>
 
-TrackerItemCommentsModel::TrackerItemCommentsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
+TrackerItemCommentsModel::TrackerItemCommentsModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {
     setObjectName("TrackerItemCommentsModel");
     setOrderKey(35);
@@ -39,7 +39,7 @@ const QModelIndex TrackerItemCommentsModel::newRecord(const QVariant* t_fk_value
     qr.setValue(1, *t_fk_value1);
     qr.setValue(2, curdate); // default to today
     qr.setValue(3, QVariant());
-    qr.setValue(4, global_DBObjects.getProjectManager()); // default updated by to the pm
+    qr.setValue(4, getDBOs()->getProjectManager()); // default updated by to the pm
 
     return addRecord(qr);
 }
@@ -66,7 +66,7 @@ bool TrackerItemCommentsModel::setData(const QModelIndex &t_index, const QVarian
             }
         }
 
-        global_DBObjects.trackeritemsmodel()->setDirty(); // the combined comments can't be set relatable
+        getDBOs()->trackeritemsmodel()->setDirty(); // the combined comments can't be set relatable
 
         return true;
     }

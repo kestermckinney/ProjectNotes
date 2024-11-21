@@ -1,6 +1,7 @@
 // Copyright (C) 2022, 2023 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
+#include "pndatabaseobjects.h"
 #include "filterdatadialog.h"
 #include "ui_filterdatadialog.h"
 #include "pncolumnmodel.h"
@@ -15,11 +16,11 @@ FilterDataDialog::FilterDataDialog(QWidget *m_parent) :
 
     setModal(true);
 
-    m_column_model = new PNColumnModel(this);
+    m_column_model = new PNColumnModel(&global_DBObjects,  this);
     m_column_proxy_model = new PNSortFilterProxyModel(this);
     m_column_proxy_model->setSourceModel(m_column_model);
 
-    m_values_model = new ValueSelectModel(this);
+    m_values_model = new ValueSelectModel(&global_DBObjects, this);
     m_values_proxy_model = new PNSortFilterProxyModel(this);
     m_values_proxy_model->setSourceModel(m_values_model);
 

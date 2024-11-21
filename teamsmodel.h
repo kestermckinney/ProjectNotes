@@ -4,13 +4,14 @@
 #ifndef TEAMSMODEL_H
 #define TEAMSMODEL_H
 
+
 #include "pnsqlquerymodel.h"
 
 class TeamsModel : public PNSqlQueryModel
 {
 public:
-    TeamsModel(QObject* t_parent);
-    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new TeamsModel(this)); };
+    TeamsModel(PNDatabaseObjects* t_dbo, bool t_gui = true);
+    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new TeamsModel(getDBOs(), false)); };
 };
 
 #endif // TEAMSMODEL_H

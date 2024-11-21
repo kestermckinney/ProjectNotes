@@ -3,7 +3,7 @@
 
 #ifndef PNCOMBOBOXDELEGATE_H
 #define PNCOMBOBOXDELEGATE_H
-#include "pnsqlquerymodel.h"
+#include "pndatabaseobjects.h"
 
 #include <QStyledItemDelegate>
 

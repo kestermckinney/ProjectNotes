@@ -5,7 +5,7 @@
 #include "pnsettings.h"
 #include "pndatabaseobjects.h"
 
-NotesActionItemsModel::NotesActionItemsModel(QObject* t_parent): PNSqlQueryModel(t_parent)
+NotesActionItemsModel::NotesActionItemsModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {
     setObjectName("NotesActionItemsModel");
     setOrderKey(35);
@@ -53,7 +53,7 @@ const QModelIndex NotesActionItemsModel::newRecord(const QVariant* t_fk_value1, 
     QSqlRecord qr = emptyrecord();
 
     // determine the max item_number from the database, then determine the max number from the record cache in case new unsaved records were added
-    QString itemnumber_string = global_DBObjects.execute(QString("select max(CAST(item_number as integer)) from item_tracker where project_id = '%1'").arg(t_fk_value2->toString()));
+    QString itemnumber_string = getDBOs()->execute(QString("select max(CAST(item_number as integer)) from item_tracker where project_id = '%1'").arg(t_fk_value2->toString()));
     int itemnumber_int = itemnumber_string.toInt();
 
     for ( int i = 0; i < rowCount(QModelIndex()); i++ )
@@ -72,7 +72,7 @@ const QModelIndex NotesActionItemsModel::newRecord(const QVariant* t_fk_value1, 
 
     qr.setValue(1, QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0')));  // Need to make a counter that looks good for items
     qr.setValue(2, "Action");
-    qr.setValue(4, global_DBObjects.getProjectManager()); // default identified by to the pm
+    qr.setValue(4, getDBOs()->getProjectManager()); // default identified by to the pm
     qr.setValue(5, curdate); // default to today
     qr.setValue(8, "High"); // set a default priority
     qr.setValue(9, "New"); // set a default status

@@ -4,14 +4,14 @@
 #ifndef VALUESELECTMODEL_H
 #define VALUESELECTMODEL_H
 
-#include "pnsqlquerymodel.h"
+#include "pndatabaseobjects.h"
 #include <QObject>
 
 class ValueSelectModel : public PNSqlQueryModel
 {
 public:
-    ValueSelectModel(QObject *t_parent);
-    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new ValueSelectModel(this)); };
+    ValueSelectModel(PNDatabaseObjects* t_dbo, bool t_gui = true);
+    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new ValueSelectModel(getDBOs(), false)); };
     void setValuesColumn(QString t_column);
 
     void setFilteringModel(PNSqlQueryModel* t_model) { m_filtering_model = t_model; };

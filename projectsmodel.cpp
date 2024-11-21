@@ -3,13 +3,12 @@
 
 #include <QDebug>
 
-#include "projectsmodel.h"
 #include "pndatabaseobjects.h"
+#include "projectsmodel.h"
 
 #include <QRegularExpression>
 
-
-ProjectsModel::ProjectsModel(QObject* t_parent) : PNSqlQueryModel(t_parent)
+ProjectsModel::ProjectsModel(PNDatabaseObjects* t_dbo, bool t_gui) : PNSqlQueryModel(t_dbo, t_gui)
 {
     setObjectName("ProjectsModel");
     setOrderKey(100);
@@ -222,7 +221,7 @@ bool ProjectsModel::setData(const QModelIndex &t_index, const QVariant &t_value,
     if (wasnew && result)
     {
         QString project_id = data(index(t_index.row(), 0)).toString();
-        global_DBObjects.addDefaultPMToProject(project_id);
+        getDBOs()->addDefaultPMToProject(project_id);
     }
 
     return result;
@@ -255,8 +254,8 @@ const QModelIndex ProjectsModel::copyRecord(QModelIndex t_index)
 
     QString insert = "insert into project_people (teammember_id, project_id, people_id, role, receive_status_report) select m.teammember_id || '-" + unique_stamp + "', '" + newid.toString() + "', m.people_id, role, receive_status_report from project_people m where m.project_id ='" + oldid.toString() + "'  and m.people_id not in (select e.people_id from project_people e where e.project_id='" + newid.toString() + "')";
 
-    global_DBObjects.execute(insert);
-    global_DBObjects.projectteammembersmodel()->setDirty();
+    getDBOs()->execute(insert);
+    getDBOs()->projectteammembersmodel()->setDirty();
 
     return qi;
 }

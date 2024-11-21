@@ -3,7 +3,7 @@
 
 #include "actionitemprojectnotesmodel.h"
 
-ActionItemProjectNotesModel::ActionItemProjectNotesModel(QObject* t_parent): PNSqlQueryModel(t_parent)
+ActionItemProjectNotesModel::ActionItemProjectNotesModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {
     setObjectName("ActionItemProjectNotesModel");
     setOrderKey(40);

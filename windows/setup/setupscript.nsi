@@ -5,7 +5,7 @@ RequestExecutionLevel user
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "Project Notes"
-!define PRODUCT_VERSION "3.2.1"
+!define PRODUCT_VERSION "3.2.2"
 !define PRODUCT_PUBLISHER "Paul McKinney"
 !define PRODUCT_WEB_SITE "https://github.com/kestermckinney/ProjectNotes"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\ProjectNotes.exe"
@@ -81,28 +81,26 @@ Section "MainSection" SEC01
 
   ; include files that were built
   !include "install_files.nsh"
-
-  ; Help files
-  SetOutPath "$INSTDIR\docs"
-  File "..\..\build\Desktop_Qt_6_7_2_MSVC2019_64bit-Release\release\docs\Project Notes.qch"
-  File "..\..\build\Desktop_Qt_6_7_2_MSVC2019_64bit-Release\release\docs\Project Notes.qhc"
   
   ; Project Notes Base Plugins
-
   SetOutPath "$INSTDIR\plugins"
-  File "..\..\plugins\archivenotes_plugin.py"
   File "..\..\plugins\archivenotes_plugin.py"
   File "..\..\plugins\contactexport_plugin.py"
   File "..\..\plugins\contactimport_plugin.py"
+  File "..\..\plugins\copy_email_member_plugin.py"
+  File "..\..\plugins\copy_email_plugin.py"
+  File "..\..\plugins\copy_filepath_plugin.py"
   File "..\..\plugins\editor_plugin.py"
-  File "..\..\plugins\emailarchive_plugin.py"
   File "..\..\plugins\email_as_attachment_plugin.py"
+  File "..\..\plugins\emailarchive_plugin.py"
   File "..\..\plugins\excelkill_plugin.py"
-  File "..\..\plugins\wordkill_plugin.py"
+  File "..\..\plugins\findprojectemailperson_plugin.py"
   File "..\..\plugins\globalsettings_plugin.py"
   File "..\..\plugins\newchangeorder_plugin.py"
   File "..\..\plugins\newmsproject_plugin.py"
   File "..\..\plugins\newpowerpoint_plugin.py"
+  File "..\..\plugins\newpcrregistry_plugin.py"
+  File "..\..\plugins\open_msproject_plugin.py"
   File "..\..\plugins\schedulecustomerkickoffinvite_plugin.py"
   File "..\..\plugins\schedulecustomerlessonslearnedinvite_plugin.py"
   File "..\..\plugins\schedulecustomerstatusinvite_plugin.py"
@@ -114,37 +112,22 @@ Section "MainSection" SEC01
   File "..\..\plugins\sendprojectemailtoperson_plugin.py"
   File "..\..\plugins\sendprojectemailtoteam_plugin.py"
   File "..\..\plugins\trackkerreport_plugin.py"
-  File "..\..\plugins\copy_email_member_plugin.py"
-  File "..\..\plugins\copy_email_plugin.py"
-  File "..\..\plugins\findprojectemailperson_plugin.py"
-  File "..\..\plugins\email_as_attachment_plugin.py"
-  File "..\..\plugins\copy_filepath_plugin.py"
+  File "..\..\plugins\wordkill_plugin.py"
   
   SetOutPath "$INSTDIR\plugins\includes"
   File "..\..\plugins\includes\common.py"
+  File "..\..\plugins\includes\dialogDuplicateFilesFound.ui"
+  File "..\..\plugins\includes\dialogNotesArchiveOptions.ui"
+  File "..\..\plugins\includes\dialogStatusRptOptions.ui"
+  File "..\..\plugins\includes\dialogTrackerRptOptions.ui"
   File "..\..\plugins\includes\excel_tools.py"
   File "..\..\plugins\includes\word_tools.py"
-  File "..\..\plugins\includes\dialogNotesArchiveOptions.ui"
-  ;File "..\..\plugins\includes\dialogStatusRptOptions.ui"
-  File "..\..\plugins\includes\dialogTrackerRptOptions.ui"
 
 
   SetOutPath "$INSTDIR\plugins\templates"
-  ;File "..\..\plugins\templates\Customer Kick Off Template.ppt"
-  ;File "..\..\plugins\templates\Customer MES Kick Off Template.ppt"
-  ;File "..\..\plugins\templates\Full DeltaV Schedule Template.mpp"
-  ;File "..\..\plugins\templates\Full MES Schedule Template.mpp"
-  ;File "..\..\plugins\templates\Internal Kick Off Template.ppt"
   File "..\..\plugins\templates\Lessons Learned Template.xlsx"
-  ;File "..\..\plugins\templates\Lilly B132 Schedule Template.mpp"
-  ;File "..\..\plugins\templates\Lilly B314 Schedule Template.mpp"
-  ;File "..\..\plugins\templates\Lilly IFS B314 Schedule Template.mpp"
-  File "..\..\plugins\templates\Meeting Template.xlsx"
-  ;File "..\..\plugins\templates\Single Task Template.mpp"
-  ;File "..\..\plugins\templates\Status Report Template.xlsx"
+  File "..\..\plugins\templates\Risk Register Template.xlsx"
   File "..\..\plugins\templates\Tracker Items Template.xlsx"
-  ;File "..\..\plugins\templates\Risk Register Template.xlsx"
-  ;File "..\..\plugins\templates\PCR Template.docx"
   
   SetOutPath "$INSTDIR\dictionary"
   File "..\..\build\Desktop_Qt_6_7_2_MSVC2019_64bit-Release\release\dictionary\index.ini"
@@ -198,10 +181,6 @@ Section Uninstall
 
   ; not needed anymore EnVar::DeleteValue "Path" "$INSTDIR"
 
-  ; Help files
-  Delete "$INSTDIR\docs\Project Notes.qch"
-  Delete "$INSTDIR\docs\Project Notes.qhc"
-
   Delete "$INSTDIR\docs\.Project Notes\*.*"
   RMDir "$INSTDIR\docs\.Project Notes"
   RMDir "$INSTDIR\docs\"
@@ -222,20 +201,22 @@ Section Uninstall
 
   ; remove all items in the plugins folder
   Delete "$INSTDIR\plugins\archivenotes_plugin.py"
-  Delete "$INSTDIR\plugins\archivenotes_plugin.py"
   Delete "$INSTDIR\plugins\contactexport_plugin.py"
   Delete "$INSTDIR\plugins\contactimport_plugin.py"
+  Delete "$INSTDIR\plugins\copy_email_member_plugin.py"
+  Delete "$INSTDIR\plugins\copy_email_plugin.py"
+  Delete "$INSTDIR\plugins\copy_filepath_plugin.py"
   Delete "$INSTDIR\plugins\editor_plugin.py"
-  Delete "$INSTDIR\plugins\emailarchive_plugin.py"
   Delete "$INSTDIR\plugins\email_as_attachment_plugin.py"
+  Delete "$INSTDIR\plugins\emailarchive_plugin.py"
   Delete "$INSTDIR\plugins\excelkill_plugin.py"
-  Delete "$INSTDIR\plugins\wordkill_plugin.py"
+  Delete "$INSTDIR\plugins\findprojectemailperson_plugin.py"
   Delete "$INSTDIR\plugins\globalsettings_plugin.py"
   Delete "$INSTDIR\plugins\newchangeorder_plugin.py"
   Delete "$INSTDIR\plugins\newmsproject_plugin.py"
   Delete "$INSTDIR\plugins\newpowerpoint_plugin.py"
-
-  ; paul_cleanpc_plugin.py
+  Delete "$INSTDIR\plugins\newpcrregistry_plugin.py"
+  Delete "$INSTDIR\plugins\open_msproject_plugin.py"
   Delete "$INSTDIR\plugins\schedulecustomerkickoffinvite_plugin.py"
   Delete "$INSTDIR\plugins\schedulecustomerlessonslearnedinvite_plugin.py"
   Delete "$INSTDIR\plugins\schedulecustomerstatusinvite_plugin.py"
@@ -247,27 +228,24 @@ Section Uninstall
   Delete "$INSTDIR\plugins\sendprojectemailtoperson_plugin.py"  
   Delete "$INSTDIR\plugins\sendprojectemailtoteam_plugin.py"
   Delete "$INSTDIR\plugins\trackkerreport_plugin.py"
-  Delete "$INSTDIR\plugins\copy_email_member_plugin.py"
-  Delete "$INSTDIR\plugins\copy_email_plugin.py"
-  Delete "$INSTDIR\plugins\findprojectemailperson_plugin.py"
   Delete "$INSTDIR\plugins\email_as_attachment_plugin.py"
-  Delete "$INSTDIR\plugins\copy_filepath_plugin.py"
+  Delete "$INSTDIR\plugins\wordkill_plugin.py"
   
   Delete "$INSTDIR\plugins\includes\common.py"
+  Delete "$INSTDIR\plugins\includes\dialogDuplicateFilesFound.ui"
+  Delete "$INSTDIR\plugins\includes\dialogNotesArchiveOptions.ui"
+  Delete "$INSTDIR\plugins\includes\dialogStatusRptOptions.ui"
+  Delete "$INSTDIR\plugins\includes\dialogTrackerRptOptions.ui"
   Delete "$INSTDIR\plugins\includes\excel_tools.py"
   Delete "$INSTDIR\plugins\includes\word_tools.py"
-  Delete "$INSTDIR\plugins\includes\dialogNotesArchiveOptions.ui"
-  Delete "$INSTDIR\plugins\includes\dialogTrackerRptOptions.ui"
 
   Delete "$INSTDIR\plugins\includes\__pycache__\*.*"
   RMDir "$INSTDIR\plugins\includes\__pycache__"
   RMDir "$INSTDIR\plugins\includes"
 
   Delete "$INSTDIR\plugins\templates\Lessons Learned Template.xlsx"
-  Delete "$INSTDIR\plugins\templates\Meeting Template.xlsx"
+  Delete "$INSTDIR\plugins\templates\Risk Register Template.xlsx"
   Delete "$INSTDIR\plugins\templates\Tracker Items Template.xlsx"
-  ;Delete "$INSTDIR\plugins\templates\Risk Register Template.xlsx"
-  ;Delete "$INSTDIR\plugins\templates\PCR Template.docx"
 
   RMDir "$INSTDIR\plugins\templates"
 

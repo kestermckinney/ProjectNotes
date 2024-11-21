@@ -9,8 +9,8 @@
 class ActionItemProjectNotesModel : public PNSqlQueryModel
 {
 public:
-    ActionItemProjectNotesModel(QObject* t_parent);
-    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new ActionItemProjectNotesModel(this)); };
+    ActionItemProjectNotesModel(PNDatabaseObjects* t_dbo, bool t_gui = true);
+    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new ActionItemProjectNotesModel(getDBOs(), false)); }
 };
 
 #endif // ACTIONITEMPROJECTNOTESMODEL_H

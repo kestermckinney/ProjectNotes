@@ -16,7 +16,10 @@
 #include <QSqlRecord>
 #include <QSqlField>
 #include <QDomElement>
+
 //#include <QDebug>
+
+class PNDatabaseObjects;
 
 class PNSqlQueryModel : public QAbstractTableModel
 {
@@ -32,8 +35,10 @@ public:
     enum DBColumnEditable {DBEditable, DBReadOnly};
     enum DBRelationExportable {DBExportable, DBNotExportable};
 
-    PNSqlQueryModel(QObject *parent);
+    PNSqlQueryModel(PNDatabaseObjects* t_dbo, bool t_gui = true);
     ~PNSqlQueryModel();
+
+    PNDatabaseObjects* getDBOs() { return m_dbo; }
 
     void refreshImpactedRecordsets(QModelIndex t_index);
 
@@ -157,44 +162,16 @@ public:
     void setOrderKey(int t_key) { m_order_key = t_key; }
     int getOrderKey() { return m_order_key; }
 
-    QString removeInvalidXmlCharacters(const QString &t_input);
+    static QString removeInvalidXmlCharacters(const QString &t_input);
     QDomElement toQDomElement( QDomDocument* t_xml_document, const QString& t_filter = QString());
     // use this to allow for different filters from the original
     virtual PNSqlQueryModel* createExportVersion();
-
-    static PNSqlQueryModel* findOpenTable(const QString& t_tablename)
-    {
-        for ( PNSqlQueryModel* m : m_open_recordsets)
-        {
-            if (m->tablename().compare(t_tablename, Qt::CaseInsensitive) == 0)
-                return m;
-        }
-
-        return nullptr;
-    }
-
-    static bool refreshDirty()
-    {
-        bool foundsome = false;
-
-        for ( PNSqlQueryModel* m : m_open_recordsets)
-        {
-            if (m->isDirty())
-            {
-                //qDebug() << "Refreshing Dirty Table: " << m->tablename();
-
-                m->refresh();
-                foundsome = true;
-            }
-        }
-
-        return foundsome;
-    }
 
 private:
     QString m_tablename;  // the t_table to write data too, also the t_table to sync with other models when changed
     QString m_display_name;
     QString m_base_sql;
+    bool m_gui; // gui based recordset
     int m_order_key = 0; // the order key is used to identify record heirarchy - base data is first
 
     QHash<int, DBColumnType> m_column_type;
@@ -246,8 +223,7 @@ private:
     bool m_can_export = true;
     bool m_is_dirty = false; // only set to true when related query models have changed
 
-    // list of created models
-    static QList<PNSqlQueryModel*> m_open_recordsets;
+    PNDatabaseObjects* m_dbo;
 
 signals:
     void callKeySearch();

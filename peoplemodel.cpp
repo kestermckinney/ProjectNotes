@@ -6,7 +6,7 @@
 
 #include <QRegularExpression>
 
-PeopleModel::PeopleModel(QObject* t_parent): PNSqlQueryModel(t_parent)
+PeopleModel::PeopleModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {
     setObjectName("PeopleModel");
     setOrderKey(17);

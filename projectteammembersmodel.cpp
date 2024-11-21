@@ -6,7 +6,7 @@
 
 //#include <QDebug>
 
-ProjectTeamMembersModel::ProjectTeamMembersModel(QObject* t_parent): PNSqlQueryModel(t_parent)
+ProjectTeamMembersModel::ProjectTeamMembersModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {
     setObjectName("ProjectTeamMembersModel");
     setOrderKey(17);
@@ -94,11 +94,19 @@ bool ProjectTeamMembersModel::setData(const QModelIndex &t_index, const QVariant
                 // get the default
                 QSqlQuery qry(QString("select role from people where people_id='%1'").arg( data(qi_key).toString() ));
                 //qDebug() << QString("select role from people where people_id='%1'").arg( data(qi_key).toString() );
+
+                DB_LOCK;
+
                 qry.exec();
 
                 if (qry.next())
                 {
+                    DB_UNLOCK;
                     setData(qi, qry.record().value(0), t_role);
+                }
+                else
+                {
+                    DB_UNLOCK;
                 }
             }
         }

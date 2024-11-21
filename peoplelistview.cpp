@@ -24,8 +24,10 @@ void PeopleListView::setModel(QAbstractItemModel *t_model)
 
         setColumnHidden(0, true);
 
+        PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(dynamic_cast<PNSortFilterProxyModel*>(t_model)->sourceModel())->getDBOs();
+
         // setup model lists
-        m_unfiltered_clients_delegate = new PNComboBoxDelegate(this, global_DBObjects.unfilteredclientsmodel());
+        m_unfiltered_clients_delegate = new PNComboBoxDelegate(this, dbo->unfilteredclientsmodel());
         m_name_delegate = new PNPlainTextEditDelegate(this);
         m_role_delegate = new PNPlainTextEditDelegate(this);
 

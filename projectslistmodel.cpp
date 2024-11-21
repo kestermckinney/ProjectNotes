@@ -7,7 +7,7 @@
 #include <QRegularExpression>
 #include <QApplication>
 
-ProjectsListModel::ProjectsListModel(QObject* t_parent) : ProjectsModel(t_parent)
+ProjectsListModel::ProjectsListModel(PNDatabaseObjects* t_dbo, bool t_gui) : ProjectsModel(t_dbo, t_gui)
 {
     setObjectName("ProjectsListModel");
     setOrderKey(110);

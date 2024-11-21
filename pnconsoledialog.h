@@ -19,10 +19,15 @@ public:
     explicit PNConsoleDialog(QWidget *parent = nullptr);
     ~PNConsoleDialog();
 
+signals:
+    void addTextSignal(const QString& t_text);
+
 private slots:
     void on_ClosePushButton_clicked();
 
     void on_ClearPushButton_clicked();
+
+    void addTextSlot(const QString& t_text);
 
 private:
     Ui::PNConsoleDialog *ui;

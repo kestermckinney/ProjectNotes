@@ -5,7 +5,7 @@
 
 #include "pntableview.h"
 #include "projectslistmodel.h"
-#include "pnsqlquerymodel.h"
+#include "pndatabaseobjects.h"
 #include "pndatabaseobjects.h"
 #include "aboutdialog.h"
 #include "pnplaintextedit.h"
@@ -197,7 +197,7 @@ void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
             return;
 
         // determine what table to export
-        PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
+        PNSqlQueryModel* table = global_DBObjects.findOpenTable(t_plugin->getTableName());
 
         if (table)
         {
@@ -223,7 +223,6 @@ void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
 
         if (!response.isEmpty())
         {
-            QApplication::setOverrideCursor(Qt::WaitCursor);
             QApplication::processEvents();
 
             QDomDocument doc;
@@ -232,7 +231,6 @@ void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
             if (!global_DBObjects.importXMLDoc(doc))
                 QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
 
-            QApplication::restoreOverrideCursor();
             QApplication::processEvents();
         }
     }
@@ -243,7 +241,6 @@ void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
 
         if (!response.isEmpty())
         {
-            QApplication::setOverrideCursor(Qt::WaitCursor);
             QApplication::processEvents();
 
             QDomDocument doc;
@@ -252,7 +249,6 @@ void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
             if (!global_DBObjects.importXMLDoc(doc))
                 QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
 
-            QApplication::restoreOverrideCursor();
             QApplication::processEvents();
         }
     }
@@ -263,7 +259,6 @@ void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
 
         if (!response.isEmpty())
         {
-            QApplication::setOverrideCursor(Qt::WaitCursor);
             QApplication::processEvents();
 
             QDomDocument doc;
@@ -272,7 +267,6 @@ void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
             if (!global_DBObjects.importXMLDoc(doc))
                 QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
 
-            QApplication::restoreOverrideCursor();
             QApplication::processEvents();
         }
     }
@@ -283,7 +277,6 @@ void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
 
         if (!response.isEmpty())
         {
-            QApplication::setOverrideCursor(Qt::WaitCursor);
             QApplication::processEvents();
 
             QDomDocument doc;
@@ -292,7 +285,6 @@ void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
             if (!global_DBObjects.importXMLDoc(doc))
                 QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
 
-            QApplication::restoreOverrideCursor();
             QApplication::processEvents();
         }
     }
@@ -303,7 +295,6 @@ void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
 
         if (!response.isEmpty())
         {
-            QApplication::setOverrideCursor(Qt::WaitCursor);
             QApplication::processEvents();
 
             QDomDocument doc;
@@ -312,7 +303,6 @@ void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
             if (!global_DBObjects.importXMLDoc(doc))
                 QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
 
-            QApplication::restoreOverrideCursor();
             QApplication::processEvents();
         }
     }
@@ -350,7 +340,7 @@ void MainWindow::slotStartupEvent(PNPlugin* t_plugin)
             return;
 
         // determine what table to export
-        PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
+        PNSqlQueryModel* table = global_DBObjects.findOpenTable(t_plugin->getTableName());
 
         if (table)
         {
@@ -374,7 +364,6 @@ void MainWindow::slotStartupEvent(PNPlugin* t_plugin)
 
     if (!response.isEmpty())
     {
-        QApplication::setOverrideCursor(Qt::WaitCursor);
         QApplication::processEvents();
 
         QDomDocument doc;
@@ -383,7 +372,6 @@ void MainWindow::slotStartupEvent(PNPlugin* t_plugin)
         if (!global_DBObjects.importXMLDoc(doc))
             QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
 
-        QApplication::restoreOverrideCursor();
         QApplication::processEvents();
     }
 }
@@ -399,7 +387,7 @@ void MainWindow::slotShutdownEvent(PNPlugin* t_plugin)
             return;
 
         // determine what table to export
-        PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
+        PNSqlQueryModel* table = global_DBObjects.findOpenTable(t_plugin->getTableName());
 
         if (table)
         {
@@ -423,7 +411,6 @@ void MainWindow::slotShutdownEvent(PNPlugin* t_plugin)
 
     if (!response.isEmpty())
     {
-        QApplication::setOverrideCursor(Qt::WaitCursor);
         QApplication::processEvents();
 
         QDomDocument doc;
@@ -432,7 +419,6 @@ void MainWindow::slotShutdownEvent(PNPlugin* t_plugin)
         if (!global_DBObjects.importXMLDoc(doc))
             QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
 
-        QApplication::restoreOverrideCursor();
         QApplication::processEvents();
     }
 }
@@ -445,7 +431,7 @@ void MainWindow::slotPluginMenu(PNPlugin* t_plugin)
     if (!t_plugin->getTableName().isEmpty())
     {
         // determine what table to export
-        PNSqlQueryModel* table = PNSqlQueryModel::findOpenTable(t_plugin->getTableName());
+        PNSqlQueryModel* table = global_DBObjects.findOpenTable(t_plugin->getTableName());
 
         if (table)
         {
@@ -469,7 +455,6 @@ void MainWindow::slotPluginMenu(PNPlugin* t_plugin)
 
     if (!response.isEmpty())
     {
-        QApplication::setOverrideCursor(Qt::WaitCursor);
         QApplication::processEvents();
 
         QDomDocument doc;
@@ -478,7 +463,6 @@ void MainWindow::slotPluginMenu(PNPlugin* t_plugin)
         if (!global_DBObjects.importXMLDoc(doc))
             QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
 
-        QApplication::restoreOverrideCursor();
         QApplication::processEvents();
     }
 }
@@ -1224,24 +1208,36 @@ void MainWindow::slotOpen_SearchResults_triggered(QVariant t_record_id)
     }
     else if (data_type == tr("Project Notes"))
     {
+        navigateToPage(ui->pageProjectDetails, fk_id);
         navigateToPage(ui->pageProjectNote, t_record_id);
 
         ui->tabWidgetNotes->setCurrentIndex(0);
     }
     else if (data_type == tr("Meeting Attendees"))
     {
-        navigateToPage(ui->pageProjectNote, t_record_id);
+        QVariant project_id = global_DBObjects.execute(QString("select project_id from project_notes where note_id = '%1'").arg(fk_id.toString()));
+
+        navigateToPage(ui->pageProjectDetails, project_id);
+        ui->tabWidgetProject->setCurrentIndex(4);
+
+        QModelIndex qmi = global_DBObjects.projectnotesmodel()->findIndex(fk_id, 0);
+        QModelIndex qi = global_DBObjects.projectnotesmodelproxy()->index(global_DBObjects.projectnotesmodelproxy()->mapFromSource(qmi).row(), 2);  // usa a visible column
+
+        ui->tableViewProjectNotes->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        ui->tableViewProjectNotes->scrollTo(qi, QAbstractItemView::PositionAtCenter);
+
+        navigateToPage(ui->pageProjectNote, fk_id);
         ui->tabWidgetNotes->setCurrentIndex(1);
 
-        QModelIndex qmi = global_DBObjects.meetingattendeesmodel()->findIndex(record_id, 0);
-        QModelIndex qi = global_DBObjects.meetingattendeesmodelproxy()->index(global_DBObjects.meetingattendeesmodelproxy()->mapFromSource(qmi).row(), 2);  // usa a visible column
+        qmi = global_DBObjects.meetingattendeesmodel()->findIndex(record_id, 0);
+        qi = global_DBObjects.meetingattendeesmodelproxy()->index(global_DBObjects.meetingattendeesmodelproxy()->mapFromSource(qmi).row(), 2);  // usa a visible column
 
         ui->tableViewAtendees->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
         ui->tableViewAtendees->scrollTo(qi, QAbstractItemView::PositionAtCenter);
     }
     else if (data_type == tr("Project Locations"))
     {
-        navigateToPage(ui->pageProjectDetails, t_record_id);
+        navigateToPage(ui->pageProjectDetails, fk_id);
         ui->tabWidgetProject->setCurrentIndex(3);
 
         QModelIndex qmi = global_DBObjects.projectlocationsmodel()->findIndex(record_id, 0);
@@ -1252,7 +1248,8 @@ void MainWindow::slotOpen_SearchResults_triggered(QVariant t_record_id)
     }
     else if (data_type == tr("Project Team"))
     {
-        navigateToPage(ui->pageProjectDetails, t_record_id);
+        navigateToPage(ui->pageProjectDetails, fk_id);
+        ui->tabWidgetProject->setCurrentIndex(1);
 
         QModelIndex qmi = global_DBObjects.projectteammembersmodel()->findIndex(record_id, 0);
         QModelIndex qi = global_DBObjects.projectteammembersmodelproxy()->index(global_DBObjects.projectteammembersmodelproxy()->mapFromSource(qmi).row(), 3);  // usa a visible column
@@ -1262,7 +1259,7 @@ void MainWindow::slotOpen_SearchResults_triggered(QVariant t_record_id)
     }
     else if (data_type == tr("Status Report Item"))
     {
-        navigateToPage(ui->pageProjectDetails, t_record_id);
+        navigateToPage(ui->pageProjectDetails, fk_id);
         ui->tabWidgetProject->setCurrentIndex(0);
 
         QModelIndex qmi = global_DBObjects.statusreportitemsmodel()->findIndex(record_id, 0);
@@ -1273,14 +1270,35 @@ void MainWindow::slotOpen_SearchResults_triggered(QVariant t_record_id)
     }
     else if (data_type == tr("Item Tracker") )
     {
+        navigateToPage(ui->pageProjectDetails, fk_id);
+        ui->tabWidgetProject->setCurrentIndex(2);
+
+        QModelIndex qmi = global_DBObjects.trackeritemsmodel()->findIndex(t_record_id, 0);
+        QModelIndex qi = global_DBObjects.trackeritemsmodelproxy()->index(global_DBObjects.trackeritemsmodelproxy()->mapFromSource(qmi).row(), 3);  // usa a visible column
+
+        ui->tableViewTrackerItems->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        ui->tableViewTrackerItems->scrollTo(qi, QAbstractItemView::PositionAtCenter);
+
         navigateToPage(ui->pageItemDetails, t_record_id);
+
     }
     else if (data_type == tr("Tracker Update") )
     {
-        navigateToPage(ui->pageItemDetails, t_record_id);
+        QVariant datakey = ui->tableViewSearchResults->model()->data(ui->tableViewSearchResults->model()->index(qi.row(), 14));
 
-        QModelIndex qmi = global_DBObjects.trackeritemscommentsmodel()->findIndex(record_id, 0);
-        QModelIndex qi = global_DBObjects.trackeritemscommentsmodelproxy()->index(global_DBObjects.trackeritemscommentsmodelproxy()->mapFromSource(qmi).row(), 3);  // usa a visible column
+        navigateToPage(ui->pageProjectDetails, fk_id);
+        ui->tabWidgetProject->setCurrentIndex(2);
+
+        QModelIndex qmi = global_DBObjects.trackeritemsmodel()->findIndex(datakey, 0);
+        QModelIndex qi = global_DBObjects.trackeritemsmodelproxy()->index(global_DBObjects.trackeritemsmodelproxy()->mapFromSource(qmi).row(), 3);  // usa a visible column
+
+        ui->tableViewTrackerItems->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        ui->tableViewTrackerItems->scrollTo(qi, QAbstractItemView::PositionAtCenter);
+
+        navigateToPage(ui->pageItemDetails, datakey);
+
+        qmi = global_DBObjects.trackeritemscommentsmodel()->findIndex(record_id, 0);
+        qi = global_DBObjects.trackeritemscommentsmodelproxy()->index(global_DBObjects.trackeritemscommentsmodelproxy()->mapFromSource(qmi).row(), 3);  // usa a visible column
 
         ui->tableViewComments->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
         ui->tableViewComments->scrollTo(qi, QAbstractItemView::PositionAtCenter);

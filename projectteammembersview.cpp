@@ -31,8 +31,10 @@ void ProjectTeamMembersView::setModel(QAbstractItemModel *t_model)
         setColumnHidden(9, true);
         // setup model lists
 
+        PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(dynamic_cast<PNSortFilterProxyModel*>(t_model)->sourceModel())->getDBOs();
+
         // projects list panel delagets
-        m_unfiltered_people_delegate = new PNComboBoxDelegate(this, global_DBObjects.unfilteredpeoplemodel());
+        m_unfiltered_people_delegate = new PNComboBoxDelegate(this, dbo->unfilteredpeoplemodel());
         m_receive_status_delegate = new PNCheckBoxDelegate(this);
         m_role_delegate = new PNPlainTextEditDelegate(this);
 

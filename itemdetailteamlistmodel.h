@@ -9,8 +9,8 @@
 class ItemDetailTeamListModel : public PNSqlQueryModel
 {
 public:
-    ItemDetailTeamListModel(QObject* t_parent);
-    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new ItemDetailTeamListModel(this)); };
+    ItemDetailTeamListModel(PNDatabaseObjects* t_dbo, bool t_gui = true);
+    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new ItemDetailTeamListModel(getDBOs(), false)); };
 };
 
 #endif // ITEMDETAILTEAMLISTMODEL_H

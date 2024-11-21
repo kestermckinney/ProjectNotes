@@ -6,7 +6,7 @@
 
 #include "FilterSaveStructure.h"
 #include "pncolumnmodel.h"
-#include "pnsqlquerymodel.h"
+#include "pndatabaseobjects.h"
 
 #include "valueselectmodel.h"
 #include "pnsortfilterproxymodel.h"

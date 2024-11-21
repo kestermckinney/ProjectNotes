@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "itemdetailsdelegate.h"
-#include "pnsqlquerymodel.h"
+#include "pndatabaseobjects.h"
 #include "pndateeditex.h"
 #include "pndatabaseobjects.h"
 #include "mainwindow.h"
@@ -242,9 +242,11 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
                     return;
                 }
 
+                PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(dynamic_cast<PNSortFilterProxyModel*>(t_model)->sourceModel())->getDBOs();
+
                 // reset the filters for all of the drop downs
-                global_DBObjects.actionitemsdetailsmeetingsmodel()->setFilter(1, key_val.toString());
-                global_DBObjects.actionitemsdetailsmeetingsmodel()->refresh();
+                dbo->actionitemsdetailsmeetingsmodel()->setFilter(1, key_val.toString());
+                dbo->actionitemsdetailsmeetingsmodel()->refresh();
 
                 QModelIndex n_qi = t_model->index(t_index.row(), 13);
                 QVariant nothing;
@@ -320,6 +322,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
         select.bindValue(0, t_item_id);
         select.bindValue(1, t_project_id);
 
+        DB_LOCK;
         if (select.exec())
         {
             while (select.next())
@@ -328,6 +331,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
                 msg += "Identified By, " + select.record().value(1).toString() + " is not found on the selected projects team.  Remove or change this person before changing to this project number.\n";
             }
         }
+        DB_UNLOCK;
     }
 
     // check to see if assigned to is in the project team
@@ -337,6 +341,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
         select.bindValue(0, t_item_id);
         select.bindValue(1, t_project_id);
 
+        DB_LOCK;
         if (select.exec())
         {
             while (select.next())
@@ -345,6 +350,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
                 msg += "Assigned To, " + select.record().value(1).toString() + " is not found on the selected projects team.  Remove or change this person before changing to this project number.\n";
             }
         }
+        DB_UNLOCK;
     }
 
     // check to see if updated by value is in team
@@ -354,6 +360,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
         select.bindValue(0, t_item_id);
         select.bindValue(1, t_project_id);
 
+        DB_LOCK;
         if (select.exec())
         {
             while (select.next())
@@ -362,6 +369,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
                 msg += "Comment Updated By, " + select.record().value(1).toString() + " is not found on the selected projects team.  Remove or change this person before changing to this project number.\n";
             }
         }
+        DB_UNLOCK;
     }
 
     if (issuestoresolve)
@@ -377,15 +385,18 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
         select.prepare("select note_id from item_tracker where item_id = ?");
         select.bindValue(0, t_item_id);
 
+        DB_LOCK;
         if (select.exec())
         {
             if (select.next() && !select.record().value(0).isNull())
             {
                 if ( QMessageBox::question(nullptr, QObject::tr("Associatd Meeting"),
                    "The associated meeting will be removed.  Still reassign the project?\n", QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::No )
+                    DB_UNLOCK;
                     return false;
             }
         }
+        DB_UNLOCK;
     }
 
     return true;

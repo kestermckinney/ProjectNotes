@@ -3,7 +3,7 @@
 
 #include "pnbasepage.h"
 #include "pndatabaseobjects.h"
-#include "pnsqlquerymodel.h"
+#include "pndatabaseobjects.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
@@ -208,7 +208,7 @@ void PNBasePage::openRecord(QVariant& t_record_id)
 {
     m_record_id = t_record_id;
 
-    PNSqlQueryModel::refreshDirty();
+    global_DBObjects.refreshDirty();
 
     loadState();
 }
@@ -365,9 +365,7 @@ void PNBasePage::setButtonAndMenuStates()
          QVariant keyval;
          keyval = m_page_model->data(m_page_model->index(0, 0));
 
-         QApplication::setOverrideCursor(Qt::WaitCursor);
          QApplication::processEvents();
-
 
          PNSqlQueryModel *exportmodel = m_page_model->createExportVersion();
          exportmodel->setFilter(0, keyval.toString());
@@ -381,13 +379,11 @@ void PNBasePage::setButtonAndMenuStates()
 
          delete xdoc;
 
-         QApplication::restoreOverrideCursor();
          QApplication::processEvents();
      }
 
      if (!response.isEmpty())
      {
-         QApplication::setOverrideCursor(Qt::WaitCursor);
          QApplication::processEvents();
 
          QDomDocument doc;
@@ -396,7 +392,6 @@ void PNBasePage::setButtonAndMenuStates()
          if (!global_DBObjects.importXMLDoc(doc))
              QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
 
-         QApplication::restoreOverrideCursor();
          QApplication::processEvents();
      }
  }
