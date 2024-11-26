@@ -12,6 +12,8 @@
 #include <QThread>
 #include "pndatabaseobjects.h"
 
+#include <sstream>
+
 struct Stdout
 {
     PyObject_HEAD
@@ -53,6 +55,12 @@ static PyObject* update_data(PyObject* self, PyObject* args)
     {
         return PyBool_FromLong(0);
     }
+
+    std::thread::id threadId = std::this_thread::get_id();
+    std::stringstream ss;
+    ss << threadId;
+
+    qDebug() << "Current thread ID: " << ss.str();
 
     QDomDocument xmldoc;
     QByteArray ba(input);
@@ -214,11 +222,16 @@ PyMODINIT_FUNC PyInit_embeddedconsole(void)
         return 0;
 
     PyObject* m = PyModule_Create(&embmodule);
+
     if (m)
     {
         Py_INCREF(&StdoutType);
         PyModule_AddObject(m, "Stdout", reinterpret_cast<PyObject*>(&StdoutType));
     }
+
+
+
+
     return m;
 }
 

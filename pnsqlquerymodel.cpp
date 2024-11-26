@@ -219,8 +219,10 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             }
 
             DB_LOCK;
+            getDBOs()->getDb().transaction();
             if(insert.exec())
             {
+                getDBOs()->getDb().commit();
                 DB_UNLOCK;
 
                 QModelIndex qil = createIndex(t_index.row(), 0);
@@ -234,6 +236,8 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
 
                 return true;
             }
+
+            getDBOs()->getDb().rollback();
             DB_UNLOCK;
 
             QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
@@ -262,11 +266,14 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             //qDebug() << "Value " << oldvalue;
 
             DB_LOCK;
+            getDBOs()->getDb().transaction();
             if(update.exec())
             {
+                getDBOs()->getDb().commit();
+                DB_UNLOCK;
+
                 if (update.numRowsAffected() == 0)
                 {
-                    DB_UNLOCK;
                     QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
                        QObject::tr("Field was already updated by another process."), QMessageBox::Ok);
 
@@ -274,7 +281,6 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 }
                 else
                 {
-                    DB_UNLOCK;
                     m_cache[t_index.row()].setValue(t_index.column(), value);
 
                     emit dataChanged(t_index, t_index);
@@ -288,6 +294,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             }
             else
             {
+                getDBOs()->getDb().rollback();
                 DB_UNLOCK;
                 QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
                    update.lastError().text() + "\n" + update.lastQuery(), QMessageBox::Ok);
@@ -797,16 +804,13 @@ bool PNSqlQueryModel::isUniqueValue(const QVariant &t_new_value, const QModelInd
     select.bindValue(0, keyvalue);
     select.bindValue(1, t_new_value);
 
-    DB_LOCK;
     select.exec();
     if (select.next())
         if (select.value(0).toInt() > 0)
         {
-            DB_UNLOCK;
             return false;
         }
 
-    DB_UNLOCK;
 
     return true;
 }
@@ -874,14 +878,10 @@ bool PNSqlQueryModel::columnChangeCheck(const QModelIndex &t_index)
                 QSqlQuery projsql(getDBOs()->getDb());
                 projsql.prepare(QString("select project_number from projects where project_id ='%1'").arg(col_val.toString()));
 
-                DB_LOCK;
-
                 projsql.exec();
 
                 if (projsql.next())
                     project_number_key = projsql.value(0).toString();
-
-                DB_UNLOCK;
             }
             else
             {
@@ -894,15 +894,12 @@ bool PNSqlQueryModel::columnChangeCheck(const QModelIndex &t_index)
             QSqlQuery select(getDBOs()->getDb());
             select.prepare("select count(*) from " + m_related_table.at(i) + " where " + where_clause);
 
-            DB_LOCK;
             select.exec();
 
             //qDebug() << "SET VALUE CHECK: " << "select count(*) from " + m_related_table.at(i) + " where " + where_clause;
 
             if (select.next())
                 relatedcount = select.value(0).toInt();
-
-            DB_UNLOCK;
 
             if (relatedcount > 0)
             {
@@ -1100,14 +1097,11 @@ bool PNSqlQueryModel::reloadRecord(const QModelIndex& t_index)
     select.prepare(BaseSQL() + " where " + m_sql_query.record().fieldName(0) + " = ? ");
     select.bindValue(0, m_cache[t_index.row()].field(0).value());
 
-    DB_LOCK;
 
     if (select.exec())
     {
         if (select.next())
         {
-            DB_UNLOCK;
-
             m_cache[t_index.row()] = select.record();
 
             emit dataChanged(t_index.model()->index(t_index.row(), 0), t_index.model()->index(t_index.row(), select.record().count()));
@@ -1117,8 +1111,6 @@ bool PNSqlQueryModel::reloadRecord(const QModelIndex& t_index)
             return true;
         }
     }
-
-    DB_UNLOCK;
 
     return false;
 }
@@ -2001,7 +1993,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                 if (!lookup_value.isNull() && !m_lookup_table[colnum].isEmpty())
                 {
                     QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookup_fk_column_name[colnum], m_lookup_table[colnum], m_lookup_value_column_name[colnum], lookup_value);
-                    //qDebug() << "EXEC LOOKUP FOR FIELD VALUE: " << sql;
+                    qDebug() << "EXEC LOOKUP FOR FIELD VALUE: " << sql;
 
                     field_value = getDBOs()->execute(sql);
                 }
@@ -2147,11 +2139,13 @@ bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant
 
             qry.exec();
 
+            DB_UNLOCK;
+
             if (qry.next())
             {
+
                 if ( qry.value(0).toInt() > 0)
                 {
-                    DB_UNLOCK;
 
                     QMessageBox::warning(nullptr, QObject::tr("Cannot update record"),
                        QString("%1 must be unique.").arg(itk.key()));
@@ -2160,7 +2154,6 @@ bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant
                 }
             }
 
-            DB_UNLOCK;
         }
     }
 

@@ -37,14 +37,12 @@ const QModelIndex ClientsModel::newRecord(const QVariant* t_fk_value1, const QVa
     select.prepare("select max(client_name) from clients where client_name like '[%'");
     QString maxnum;
 
-    DB_LOCK;
     select.exec();
     if (select.next())
     {
         maxnum = select.value(0).toString();
         maxnum.remove(QRegularExpression("[^0-9]+"));
     }
-    DB_UNLOCK;
 
     int num = maxnum.toInt() + 1;
 

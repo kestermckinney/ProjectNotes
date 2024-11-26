@@ -101,15 +101,11 @@ bool PNDatabaseObjects::openDatabase(QString& databasepath)
 {
     m_database_file = databasepath;
 
-    DB_LOCK;
     m_sqlite_db = QSqlDatabase::addDatabase("QSQLITE", QUuid::createUuid().toString());
-    DB_UNLOCK;
 
     if (QFileInfo::exists(m_database_file))
     {
-        DB_LOCK;
         m_sqlite_db.setDatabaseName(m_database_file);
-        DB_UNLOCK;
     }
     else
     {
@@ -258,19 +254,33 @@ QString PNDatabaseObjects::execute(const QString& t_sql)
     QSqlQuery query(m_sqlite_db);
 
     DB_LOCK;
+
+    m_sqlite_db.transaction();
     query.exec(t_sql);
+
+    QSqlError e = query.lastError();
+    if (e.isValid())
+    {
+        m_sqlite_db.rollback();
+
+        qDebug() << "Exec Error:  " << e.text();
+        qDebug() << "For SQL:  " << t_sql;
+    }
+    else
+    {
+        m_sqlite_db.commit();
+    }
+
     DB_UNLOCK;
-//    QSqlError e = query.lastError();
-//    if (e.isValid())
-//    {
-//        qDebug() << "Exec Error:  " << e.text();
-//        qDebug() << "For SQL:  " << t_sql;
-//    }
 
     if (query.next())
+    {
         return query.value(0).toString();
+    }
     else
+    {
         return QString();
+    }
 }
 
 void PNDatabaseObjects::closeDatabase()
@@ -369,9 +379,7 @@ void PNDatabaseObjects::closeDatabase()
     m_notes_action_items_model_proxy = nullptr;
     m_search_results_model_proxy = nullptr;
 
-    DB_LOCK;
     m_sqlite_db.close();
-    DB_UNLOCK;
 
     m_database_file.clear();
 }
@@ -409,20 +417,25 @@ bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QSt
 
     select.bindValue(0, t_parametername);
 
-    DB_LOCK;
     if (select.exec())
     {
+
         if (select.next())
         {
             QSqlQuery update(m_sqlite_db);
             update.prepare("update application_settings set parameter_value = ? where parameter_name = ?;");
             update.bindValue(0, t_parametervalue);
             update.bindValue(1, t_parametername);
+            DB_LOCK;
+            getDb().transaction();
             if (update.exec())
             {
+                getDb().commit();
                 DB_UNLOCK;
                 return true;
             }
+            getDb().rollback();
+            DB_UNLOCK;
         }
         else
         {
@@ -431,21 +444,24 @@ bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QSt
             insert.bindValue(0, QUuid::createUuid().toString());
             insert.bindValue(1, t_parametername);
             insert.bindValue(2, t_parametervalue);
+            DB_LOCK;
+            getDb().transaction();
             if (insert.exec())
             {
+                getDb().commit();
                 DB_UNLOCK;
                 return true;
             }
+            getDb().rollback();
+            DB_UNLOCK;
         }
 
     }
     else
     {
         QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting.  You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()));
-        DB_UNLOCK;
         return false;
     }
-    DB_UNLOCK;
 
     return false;
 }

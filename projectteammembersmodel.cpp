@@ -92,21 +92,14 @@ bool ProjectTeamMembersModel::setData(const QModelIndex &t_index, const QVariant
                 QModelIndex qi_key = index(t_index.row(), 2);
 
                 // get the default
-                QSqlQuery qry(QString("select role from people where people_id='%1'").arg( data(qi_key).toString() ));
+                QSqlQuery qry(QString("select role from people where people_id='%1'").arg( data(qi_key).toString() ), getDBOs()->getDb());
                 //qDebug() << QString("select role from people where people_id='%1'").arg( data(qi_key).toString() );
-
-                DB_LOCK;
 
                 qry.exec();
 
                 if (qry.next())
                 {
-                    DB_UNLOCK;
                     setData(qi, qry.record().value(0), t_role);
-                }
-                else
-                {
-                    DB_UNLOCK;
                 }
             }
         }
