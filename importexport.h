@@ -111,6 +111,7 @@ private:
 
     bool m_IgnoreRecordIds = false;
     */
+    ProjectNotesModel* ix_projects_projectnotes;
     ClientsModel* ix_clients;
     PeopleModel* ix_clients_people;
 

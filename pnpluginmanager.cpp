@@ -12,8 +12,6 @@
 #include <QThread>
 #include "pndatabaseobjects.h"
 
-#include <sstream>
-
 struct Stdout
 {
     PyObject_HEAD
@@ -55,12 +53,6 @@ static PyObject* update_data(PyObject* self, PyObject* args)
     {
         return PyBool_FromLong(0);
     }
-
-    std::thread::id threadId = std::this_thread::get_id();
-    std::stringstream ss;
-    ss << threadId;
-
-    qDebug() << "Current thread ID: " << ss.str();
 
     QDomDocument xmldoc;
     QByteArray ba(input);
@@ -185,12 +177,12 @@ PyTypeObject StdoutType =
     0,                    /* tp_mro */
     0,                    /* tp_cache */
     0,                    /* tp_subclasses */
-    // 0,                    /* tp_weaklist */
-    // 0,                    /* tp_del */
-    // 0,                    /* tp_version_tag */
-    // 0,                    /* tp_finalize */
-    // 0,                    /* tp_vectorcall */
-    // 0,                    /* tp_watched */
+    0,                    /* tp_weaklist */
+    0,                    /* tp_del */
+    0,                    /* tp_version_tag */
+    0,                    /* tp_finalize */
+    0,                    /* tp_vectorcall */
+    0                    /* tp_watched */
 };
 
 PyModuleDef embmodule =
@@ -199,7 +191,7 @@ PyModuleDef embmodule =
     "projectnotes",
     "Project Notes module callable from embeded Python",
     -1,
-    data_methods//, 0, 0, 0, 0,
+    0, /*data_methods*/ 0, 0, 0, 0
 };
 
 // Internal state

@@ -275,8 +275,9 @@ def event_data_rightclick(xmlstr):
 
     return retval
 
-app = QApplication(sys.argv)
 """
+
+app = QApplication(sys.argv)
 print("Testing Plugin")
 EditorFullPath = "notepad.exe"
 event_menuclick("")

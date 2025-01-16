@@ -1,7 +1,3 @@
-import os
-import re
-import sys
-import base64
 import platform
 import msal
 import json
@@ -26,7 +22,7 @@ def windowEnumerationHandler(hwnd, tpwindows):
 from PyQt6 import QtSql, QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtSql import QSqlDatabase
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir
+from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
 from PyQt6.QtGui import QDesktopServices
 
@@ -48,20 +44,24 @@ class TokenAPI:
         if not self.access_token is None:
             # Check if token has not expired
             if (self.token_expires > QDateTime.currentDateTime()):
-                print("token is still good")
                 execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
                 print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
                 return(self.access_token)
 
-        print("start msal")
         cache = msal.SerializableTokenCache()
 
-        if os.path.isfile(self.token_cache_file):
-            if os.path.getsize(self.token_cache_file) > 0:
-                with open(self.token_cache_file, 'r') as f:
-                    cache.deserialize(json.load(f))
+        file = QFile(self.token_cache_file)
+        if file.exists():
+            if file.size() > 0:
+                if file.open(QIODevice.OpenModeFlag.ReadOnly):
+                    json_data = file.readAll().data().decode("utf-8")
+                    file.close()
+                    cache.deserialize(json.loads(json_data))
+                else:
+                    print(f"Could not open {self.token_cache_file}.")
+            else:
+                print(f"File {self.token_cache_file} was empty().")
 
-        print("client app")
         # Initialize the MSAL public client app (no client secret or client id needed)
         app = msal.PublicClientApplication(
             self.application_id,  
@@ -69,12 +69,11 @@ class TokenAPI:
             token_cache=cache
         )
 
-        print("init")
         # Initiating the device code flow
         flow = app.initiate_device_flow(scopes=self.scopes)
 
         if "user_code" not in flow:
-            print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+            print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
             return(None)
 
         self.token_response = None
@@ -90,16 +89,19 @@ class TokenAPI:
             self.token_response = app.acquire_token_interactive(self.scopes)
 
         
-        with open(self.token_cache_file, 'w') as f:
-            json.dump(cache.serialize(), f)
+        file = QFile(self.token_cache_file)
+        if file.open(QIODevice.OpenModeFlag.WriteOnly):
+            jobj = cache.serialize()
+            file.write(json.dumps(jobj).encode("utf-8"))
+            file.close()
+        else:
+            print(f"Failed to open {self.token_cache_file}.")
+
 
         if "access_token" in self.token_response:
 
             expires_in = self.token_response.get("expires_in")
             expires_on = self.token_response.get("expires_on")
-
-            print("expires in", expires_in)
-            print("expires on", expires_on)
 
             if expires_in:
                 # Calculate expiration time from expires_in
@@ -108,36 +110,32 @@ class TokenAPI:
                 # Use expires_on directly
                 self.token_expires = QDateTime.fromSecsSinceEpoch(expires_on)
             else:
-                print("Token response missing expiration information")
+                print("Token response missing expiration information.")
                 self.token_expires = timer.elapsed() / 1000  # Convert milliseconds to seconds
-                print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+                print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
                 return(None)
-
-            print("token expiration time", self.token_expires.toString())
 
             self.access_token = self.token_response["access_token"]
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
         return(self.access_token)
 
 
 class GraphAPITools:
     def __init__(self):
         self.GRAPH_API_ENDPOINT = 'https://graph.microsoft.com'
-        print("x1")
+
         self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)
         self.saved_state_file = self.temporary_folder + '/saved_state.json'
 
         self.headers = None
         self.access_token = None
-        print("x2")
+
 
     def setToken(self, token):
-        print("x3")
         timer = QElapsedTimer()
         timer.start()
-        print("x3")
 
         self.access_token = token
 
@@ -148,7 +146,7 @@ class GraphAPITools:
         }
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
         return(False)
 
     def to_xml(self, val):
@@ -166,7 +164,6 @@ class GraphAPITools:
             for c in val:
                 if (ord(c) > 255):
                     continue
-                    #print("invalid character " + f'&#x{ord(c):04X};' + " removed")
                 elif (ord(c) < 32 or ord(c) > 122):
                     newval = newval + f'&#x{ord(c):04X};'
                 else:
@@ -192,7 +189,6 @@ class GraphAPITools:
             for c in val:
                 if (ord(c) > 255):
                     continue
-                    #print("invalid character " + f'&#x{ord(c):04X};' + " removed")
                 elif (ord(c) < 32 or ord(c) > 122):
                     newval = newval + f'&#x{ord(c):04X};'
                 else:
@@ -202,7 +198,6 @@ class GraphAPITools:
 
     def bring_window_to_front(self, title):
         if (platform.system() != 'Windows'):
-            print("Bring window to front requires win32gui not supported on this platform")
             return
 
         win32gui.EnumWindows(windowEnumerationHandler, top_windows)
@@ -260,8 +255,12 @@ class GraphAPITools:
         return("")
 
     def upload_attachment(self, draft_email_id, file_path):
-        with open(file_path, "rb") as file:
-            file_content = base64.b64encode(file.read()).decode('utf-8')
+
+        file = QFile(file_path)
+        file_content = None
+        if file.open(QIODevice.OpenModeFlag.ReadOnly):
+            file_content = file.readAll().data().decode("utf-8")
+            file.close()
 
         # File attachment structure
         attachment = {
@@ -274,10 +273,8 @@ class GraphAPITools:
         # Upload the attachment to the draft email
         response = requests.post(f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{draft_email_id}/attachments", headers=self.headers, json=attachment)
 
-        if response.status_code == 201:
-            print(f"{file_path} qttachment uploaded successfully")
-        else:
-            print(f"Response Code: {response.status_code} Failed to upload attachment: {file_path}")
+        if response.status_code != 201:
+            print(f"Response Code: {response.status_code} Failed to upload attachment: {file_path}.")
             print(response.json())
 
     def import_batch_of_contacts(self):
@@ -367,9 +364,14 @@ class GraphAPITools:
             print(response.json())
 
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n{xmlclients}{xmldoc}</projectnotes>\n'
-        print("calling update data")
+
+        timer2 = QElapsedTimer()
+        timer2.start()
+        
         projectnotes.update_data(xmldoc)
-        print("called update data")
+
+        execution_time = timer2.elapsed() / 1000  # Convert milliseconds to seconds
+        print(f"Function update_data in '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
 
         # save the new state
         #start over if we returned less than top
@@ -416,9 +418,11 @@ class GraphAPITools:
         top = 500
 
         # get the last state
-        if os.path.isfile(self.saved_state_file):
-            with open(self.saved_state_file, 'r') as f:
-                saved_state = json.load(f)
+        file = QFile(self.saved_state_file)
+        if file.exists():
+            if file.open(QIODevice.OpenModeFlag.ReadOnly):
+                saved_state = json.loads(file.readAll().data().decode("utf-8"))
+                file.close()
 
             skip = saved_state.get(statename, {}).get("skip", 0)
         else:
@@ -436,7 +440,14 @@ class GraphAPITools:
 
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="people" {xmlskip} {xmltop} />\n</projectnotes>\n'
 
+        timer2 = QElapsedTimer()
+        timer2.start()
+        
         xmlresult = projectnotes.get_data(xmldoc)
+
+        execution_time = timer2.elapsed() / 1000  # Convert milliseconds to seconds
+        print(f"Function get_data in '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
+
         
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlresult) == False):
@@ -526,11 +537,13 @@ class GraphAPITools:
         # save the new state
         saved_state.setdefault(statename, {})["skip"] = skip
 
-        with open(self.saved_state_file, 'w') as f:
-            json.dump(saved_state, f)
+        file = QFile(self.saved_state_file)
+        if file.open(QIODevice.OpenModeFlag.WriteOnly):
+            file.write(json.dumps(saved_state, indent=4).encode("utf-8"))
+            file.close()
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
 
         return
 
@@ -663,7 +676,7 @@ class GraphAPITools:
         response = requests.post(events_endpoint, headers=self.headers, json=event_details)
 
         if response.status_code != 201:
-            print(f"Response Code: {response.status_code} Failed to draft the meeting: {meeting_title}")
+            print(f"Response Code: {response.status_code} Failed to draft the meeting: {meeting_title}.")
             print(response.json())
 
 
@@ -791,16 +804,16 @@ class GraphAPITools:
         return ""
 
     def download_project_emails(self, projectnumber, box, top, destination_folder):
-        if not os.path.isdir(destination_folder):
-            os.makedirs(destination_folder)
 
         saved_state_file = destination_folder + "/" + box + "_downloadtracker.json"
 
         # get the last state
         skip = 0
-        if os.path.isfile(saved_state_file):
-            with open(saved_state_file, 'r') as f:
-                saved_state = json.load(f)
+        file = QFile(saved_state_file)
+        if file.exists():
+            if file.open(QIODevice.OpenModeFlag.ReadOnly):
+                saved_state = json.loads(file.readAll().data().decode("utf-8"))
+                file.close()
 
             skip = saved_state.get(box, {}).get("skip", 0)
         else:
@@ -812,8 +825,6 @@ class GraphAPITools:
         # Graph API endpoint to send an email
         graph_api_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/mailFolders/{box}/messages?$filter=contains(subject,'{projectnumber}')&$select=id&$top={top}&$skip={skip}"  
             
-        print(f"listing emails for {graph_api_endpoint}")
-
         # Send email via Graph API
         response = requests.get(graph_api_endpoint, headers=self.headers)
 
@@ -840,7 +851,7 @@ class GraphAPITools:
                     msg_file = destination_folder + "/" + self.makefilename(sent_time, subject) + ".eml"
 
                     # only write it if it doesn't exist
-                    if not os.path.isfile(msg_file):
+                    if not QFile(msg_file).exists():
                         # Construct MSG download URL
                         msg_url = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{email['id']}/$value?$format=MessageFormat MSG"
 
@@ -857,27 +868,33 @@ class GraphAPITools:
                         if msg_response.status_code == 200:
 
                             # Save MSG file
-                            with open(msg_file, "wb") as f:
-                               for chunk in msg_response.iter_content(chunk_size=1024):
-                                   f.write(chunk)
-                               f.close()
+                            file = QFile(msg_file)
+                            if file.open(QIODevice.OpenModeFlag.WriteOnly):
+                                file.write(msg_response)
+                                file.close()
+                            else:
+                                print(f"Failed to write file {msg_file}.")
+
 
                             #print(f"Email saved: {email['id']}.msg")
                         else:
-                            print(f"Resonse Code: {msg_response.status_code} Error downloading MSG: {msg_response.text}")
+                            print(f"Resonse Code: {msg_response.status_code} Error downloading MSG: {msg_response.text}.")
                     else:
                         print(f"{msg_file} email message file already exists.")
 
                 else:
-                    print(f"Response Code: {msg_response.status_code} Error getting message details {msg_response.text}")
+                    print(f"Response Code: {msg_response.status_code} Error getting message details {msg_response.text}.")
         else:
-            print(f"Response Code: {response.status_code} Error downloading emails {response.text}")
+            print(f"Response Code: {response.status_code} Error downloading emails {response.text}.")
 
         # save the new state
         saved_state.setdefault(box, {})["skip"] = skip
 
-        with open(saved_state_file, 'w') as f:
-            json.dump(saved_state, f)
+        file = QFile(saved_state_file)
+        if file.open(QIODevice.OpenModeFlag.WriteOnly):
+            file.write(json.dumps(saved_state, indent=4).encode("utf-8"))
+            file.close()
+
 
     def download_batch_of_emails(self):
         timer = QElapsedTimer()
@@ -893,9 +910,11 @@ class GraphAPITools:
         top = 5 # writing a bunch of email files could be slow
 
         # get the last state
-        if os.path.isfile(self.saved_state_file):
-            with open(self.saved_state_file, 'r') as f:
-                saved_state = json.load(f)
+        file = QFile(self.saved_state_file)
+        if file.exists():
+            if file.open(QIODevice.OpenModeFlag.ReadOnly):
+                saved_state = json.loads(file.readAll().data().decode("utf-8"))
+                file.close()
 
             skip = saved_state.get(statename, {}).get("skip", 0)
         else:
@@ -912,8 +931,15 @@ class GraphAPITools:
             xmltop = f' top="{top}" '
 
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table  filter_field_1="location_description" filter_value_1="Project Folder" name="project_locations" {xmlskip} {xmltop} />\n</projectnotes>\n'
-        #print(xmldoc)
+        
+        timer2 = QElapsedTimer()
+        timer2.start()
+        
         xmlresult = projectnotes.get_data(xmldoc)
+
+        execution_time = timer2.elapsed() / 1000  # Convert milliseconds to seconds
+        print(f"Function get_data in '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
+
         
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlresult) == False):
@@ -937,26 +963,22 @@ class GraphAPITools:
                     projectnumber = self.get_column_value(rownode, "project_number")
                     projectfolder = self.get_column_value(rownode, "full_path")
 
-                    #print("checking for project folder " + projectfolder)
-
                     if QDir(projectfolder).exists():
-                        emailfolder = projectfolder + "\\Correspondence"
-                        sentfolder = emailfolder + "\\Sent Email\\"
-                        receivedfolder = emailfolder + "\\Received Email\\"
+                        emailfolder = projectfolder + "/Correspondence"
+                        sentfolder = emailfolder + "/Sent Email/"
+                        receivedfolder = emailfolder + "/Received Email/"
 
                         if not QDir(emailfolder).exists():
-                            os.mkdir(emailfolder)
+                            QDir.mkpath(emailfolder)
 
                         if not QDir(sentfolder).exists():
-                            os.mkdir(sentfolder)
+                            QDir.mkpath(sentfolder)
 
                         if not QDir(receivedfolder).exists():
-                            os.mkdir(receivedfolder)
+                            QDir.mkpath(receivedfolder)
 
                         self.download_project_emails(projectnumber, "inbox", 8, receivedfolder)
                         self.download_project_emails(projectnumber, "sentitems", 8, sentfolder)
-                    #else:
-                    #    print(f"Project folder '{projectfolder}' was not found.  Skipping email download.")
 
                     rownode = rownode.nextSibling()
 
@@ -968,16 +990,16 @@ class GraphAPITools:
         else:
             skip = skip + top
 
-        #print(f"saving email count skip {skip} locationcount is {locationcount}")
-
         # save the new state
         saved_state.setdefault(statename, {})["skip"] = skip
 
-        with open(self.saved_state_file, 'w') as f:
-            json.dump(saved_state, f)
+        file = QFile(self.saved_state_file)
+        if file.open(QIODevice.OpenModeFlag.WriteOnly):
+            file.write(json.dumps(saved_state, indent=4).encode("utf-8"))
+            file.close()
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
 
         return
 
@@ -996,15 +1018,10 @@ class GraphAPITools:
         # get the last state
         file = QFile(self.saved_state_file)
         if file.exists():
-            print("file exists")
-
             if file.open(QIODevice.OpenModeFlag.ReadOnly):
-                print("file open")
                 saved_state = json.loads(file.readAll().data().decode("utf-8"))
-                print("file read")
                 file.close()
 
-            print("file loaded")
             skip = saved_state.get(statename, {}).get("skip", 0)
         else:
             saved_state = json.loads("{}")
@@ -1012,7 +1029,15 @@ class GraphAPITools:
 
         # just get the project manager people id
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="clients" top="1" skip="0"/>\n</projectnotes>\n'
+
+        timer2 = QElapsedTimer()
+        timer2.start()
+        
         xmlresult = projectnotes.get_data(xmldoc)
+
+        execution_time = timer2.elapsed() / 1000  # Convert milliseconds to seconds
+        print(f"Function get_data in '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
+
 
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlresult) == False):
@@ -1043,9 +1068,11 @@ class GraphAPITools:
 
         timer2 = QElapsedTimer()
         timer2.start()
+
         xmlresult = projectnotes.get_data(xmldoc)
+
         execution_time = timer2.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function get_data '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+        print(f"Function get_data in '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
 
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlresult) == False):
@@ -1240,44 +1267,6 @@ class GraphAPITools:
             file.close()
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
 
         return
-
-# gapi = GraphAPITools()
-# gapi.authenticate();
-
-# gapi.authenticate();
-
-#print(gapi.import_batch_of_contacts())
-#gapi.export_batch_of_contacts()
-
-# xml = """<?xml version="1.0" encoding="UTF-8"?>
-# <projectnotes export_date="10/25/2024 11:29:2 am" filepath="C:/Users/pamcki/OneDrive - Cornerstone Controls/Project Notes/CornerstoneNotes.db" managing_company_id="1597098105000493" managing_company_name="Cornerstone Controls, Inc." managing_manager_name="Paul McKinney" project_manager_id="159709810500028597">
-#     <table name="people">
-#         <row id="15970981060009492">
-#             <column name="people_id">15970981060009492</column>
-#             <column name="name">Aaron Zarse</column>
-#             <column name="email">Aaron.Zarse@cornerstonecontrols.com</column>
-#             <column name="office_phone">(317) 415-2459</column>
-#             <column name="cell_phone">(317) 566-1224</column>
-#             <column lookupvalue="Cornerstone Controls, Inc." name="client_id">1597098105000493</column>
-#             <column name="role">Syncade Lead</column>
-#         </row>
-#     </table>
-# </projectnotes>
-# """
-
-# txtdoc = """<html>
-# Lessons Learned Meeting Agenda<br>
-# </html>
-#"""
-
-#mstart = QDateTime.fromString("2024-10-28 13:00:00", "yyyy-MM-dd HH:mm:ss")
-#mend = mstart.addSecs(3600)
-
-#gapi.draft_a_meeting(xml, "Lessons Learned", txtdoc, "Microsoft Teams", mstart, mend, "Cornerstone Controls, Inc.")
-#gapi.draft_an_email(xml, "Example Subject", txtdoc, "C:\\Users\\pamcki\\Desktop\\P3082 Schedue.mpp", "Cornerstone Controls, Inc.")
-#gapi.download_project_emails("P2952", "inbox", 20, "C:\\Users\\pamcki\\Desktop\\emails")
-#gapi.download_batch_of_emails()
-#gapi.sync_tracker_to_tasks()

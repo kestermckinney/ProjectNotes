@@ -256,7 +256,8 @@ QString PNDatabaseObjects::execute(const QString& t_sql)
     DB_LOCK;
 
     m_sqlite_db.transaction();
-    query.exec(t_sql);
+    //query.exec(t_sql);
+    query.execBatch();
 
     QSqlError e = query.lastError();
     if (e.isValid())

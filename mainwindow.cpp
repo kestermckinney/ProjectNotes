@@ -507,9 +507,6 @@ MainWindow::~MainWindow()
 
     global_Settings.setWindowState("MainWindow", this);
 
-    if (global_DBObjects.isOpen())
-        CloseDatabase();
-
     while (m_page_history.count())
     {
         HistoryNode* hn = m_page_history.pop();
@@ -521,6 +518,9 @@ MainWindow::~MainWindow()
         HistoryNode* hn = m_forward_back_history.pop();
         delete hn;
     }
+
+    if (global_DBObjects.isOpen())
+        CloseDatabase();
 
     delete m_preferences_dialog;
     delete m_find_replace_dialog;

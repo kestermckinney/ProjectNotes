@@ -37,7 +37,7 @@ private:
     Ui::PluginSettingsDialog *ui;
 
     bool m_loading = false; // loading values don't respond to events
-    PNPlugin* m_current_selection = nullptr;
+    PNPlugin* m_current_selection = nullptr;  //TODO: MULTI-THREAD following a reload this will be incorrect
     PNPluginManager* m_plugin_manager = nullptr;
 };
 

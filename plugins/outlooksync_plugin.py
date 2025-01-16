@@ -69,7 +69,7 @@ parameters = [
 # allow authentication calls to use main GUI event loop
 tapi = TokenAPI()
 
-class Worker1(QThread):
+class OutlookSyncWorker(QThread):
     signalStartSync = pyqtSignal(str)
 
 
@@ -82,13 +82,13 @@ class Worker1(QThread):
         timer = QElapsedTimer()
         timer.start()
 
-        print(f"worker thread {threading.get_ident()}")
+        self.setPriority(QThread.Priority.LowestPriority)
 
         gapi = GraphAPITools()
         gapi.setToken(token)
 
-        #gapi.sync_tracker_to_tasks()
-        #gapi.download_batch_of_emails()
+        gapi.sync_tracker_to_tasks()
+        gapi.download_batch_of_emails()
         gapi.import_batch_of_contacts()
         #gapi.export_batch_of_contacts()
 
@@ -99,31 +99,30 @@ class Worker1(QThread):
         self.quit()
         return
 
-app = QApplication(sys.argv) # must call this in debug mode
-thread1 = Worker1()
+#app = QApplication(sys.argv) # must call this in debug mode
+workerthread = OutlookSyncWorker()
 
 def event_menuclick(xmlstr):
-    if thread1.isRunning():
-        print("Thread 1 is already started")
+    if workerthread.isRunning():
+        print("Outlook Sync Still Running.")
         return ""
 
     token = tapi.authenticate()
 
     if token is not None:
-        thread1.start()
-        print("called sync")
-        print(f"main thread {threading.get_ident()}")
-
-        QMetaObject.invokeMethod(thread1, "signalStartSync", Qt.ConnectionType.QueuedConnection, Q_ARG("QString", token))
-
-        print("call done")
+        workerthread.start()
+        print("Invoking Outlook Sync.")
+        QMetaObject.invokeMethod(workerthread, "signalStartSync", Qt.ConnectionType.QueuedConnection, Q_ARG("QString", token))
+        print("Outlook Sync Invoked.")
 
     return ""
 
+def event_everyminute(xmlstr):
+    return event_menuclick(xmlstr)
 
 
 # call when testing outside of Project Notes
 
-# print("Test Outlook Sync")
-# event_menuclick("")
-# app.exec()
+#print("Test Outlook Sync")
+#event_menuclick("")
+#app.exec()

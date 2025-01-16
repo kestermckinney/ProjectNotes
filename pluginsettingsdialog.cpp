@@ -26,6 +26,12 @@ void PluginSettingsDialog::editPluginSettings(PNPluginManager* t_pluginmanager)
 {
     m_plugin_manager = t_pluginmanager;
 
+    // TODO: MULTI-THREAD Can't call this in the middle of loading
+    // if a reload occurs this list of pointers will all be off
+
+    // TODO: MULTI-THREAD Maybe we can lock the plugin manager from reloading when this method is called
+    // the plugin settings dialog still needs to be part of the main GUI thread, so it doesn't pause the python plugin manager
+
     QList<PNPlugin*> plist = m_plugin_manager->getPlugins();
 
     ui->PluginsListWidget->clear();
@@ -49,6 +55,8 @@ void PluginSettingsDialog::selectPlugin(int t_index)
 {
     m_loading = true;
 
+    //TODO: MULTI-THREAD Wait on pluginmanager loading this call
+    // if it has reloaded this function will fail becuase list of pointers will have changed
     QList<PNPlugin*> plist = m_plugin_manager->getPlugins();
     m_current_selection = plist[t_index];
 
@@ -127,10 +135,8 @@ void PluginSettingsDialog::on_EnabledCheckBox_stateChanged(int arg1)
 void PluginSettingsDialog::on_SettingsTableWidget_cellChanged(int row, int column)
 {
     if (m_loading) return; // loading values ignore events
+    // TODO: MULTI-THREAD if the list of plugins get reloaded this function would fail below
 
     if (m_current_selection)
         global_Settings.setPluginSetting(m_current_selection->getPNPluginName(), ui->SettingsTableWidget->item(row, 0)->text(), ui->SettingsTableWidget->item(row, column)->text());
 }
-
-
-
