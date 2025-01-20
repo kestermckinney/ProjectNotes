@@ -31,29 +31,31 @@ set(PROJECT_SOURCES
     aboutdialog.cpp
     filterdatadialog.cpp 
     findreplacedialog.cpp 
-    pluginsettingsdialog.cpp 
-    pnconsoledialog.cpp
+
     preferencesdialog.cpp
     spellcheckdialog.cpp
     aboutdialog.ui 
     filterdatadialog.ui 
     findreplacedialog.ui 
     mainwindow.ui 
-    pluginsettingsdialog.ui 
-    pnconsoledialog.ui 
+
     preferencesdialog.ui 
     spellcheckdialog.ui
+    Resources.qrc
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(ProjectNotes
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        icons/add-on.png icons/back.png icons/clients.png icons/copy.png icons/delete.png icons/deletetext.png icons/editcopy.png icons/editcut.png icons/editpaste.png icons/editredo.png icons/editundo.png icons/filter.png icons/folder.png icons/format-indent-less.png icons/format-indent-more.png icons/forward.png icons/logo.ico icons/logo.png icons/new-record.png icons/people.png icons/projects.png icons/search.png icons/selectall.png icons/settings.png icons/textbold.png icons/textcenter.png icons/textitalic.png icons/textjustify.png icons/textleft.png icons/textright.png icons/textunder.png
-        actionitemprojectnotesmodel.cpp actionitemsdetailsmeetingsmodel.h actionitemsdetailsmeetingsmodel.cpp actionitemprojectnotesmodel.h clientslistview.cpp clientslistview.h clientsmodel.cpp clientsmodel.h clientspage.cpp clientspage.h columnview.cpp columnview.h comboboxdelegate.cpp comboboxdelegate.h databasestructure.cpp databasestructure.h filterdatadialog.cpp filterdatadialog.h filterdatadialog.ui FilterSaveStructure.h importexport.cpp importexport.h itemdetailsdelegate.cpp itemdetailsdelegate.h itemdetailspage.cpp itemdetailspage.h itemdetailteamlistmodel.cpp itemdetailteamlistmodel.h meetingattendeesmodel.cpp meetingattendeesmodel.h meetingattendeesview.cpp meetingattendeesview.h notesactionitemsmodel.cpp notesactionitemsmodel.h notesactionitemsview.cpp notesactionitemsview.h peoplelistview.cpp peoplelistview.h peoplemodel.cpp peoplemodel.h peoplepage.cpp peoplepage.h pnbasepage.cpp pnbasepage.h pncheckboxdelegate.cpp pncheckboxdelegate.h pncolumnmodel.cpp pncolumnmodel.h pncombobox.cpp pncombobox.h pncomboboxdelegate.cpp pncomboboxdelegate.h pndatabaseobjects.cpp pndatabaseobjects.h pndateeditdelegate.cpp pndateeditdelegate.h pndateeditex.cpp pndateeditex.h pninlinespellchecker.cpp pninlinespellchecker.h pnlineeditfilebutton.cpp pnlineeditfilebutton.h pnlineeditfilebuttondelegate.cpp pnlineeditfilebuttondelegate.h pnplugin.h pnplaintexteditdelegate.h pnplaintextedit.h pnplugin.cpp pnplaintexteditdelegate.cpp pnplaintextedit.cpp
-        pnpluginmanager.cpp pnpluginmanager.h pnsettings.cpp pnsettings.h pnsortfilterproxymodel.cpp pnsortfilterproxymodel.h pnspellchecker.cpp pnspellchecker.h pnsqlquerymodel.cpp pnsqlquerymodel.h pntableview.cpp pntableview.h pntextedit.cpp pntextedit.h pntexteditdelegate.cpp pntexteditdelegate.h projectdetailsdelegate.cpp projectdetailsdelegate.h projectdetailspage.cpp projectdetailspage.h projectlocationsmodel.cpp projectlocationsmodel.h projectlocationsview.cpp projectlocationsview.h projectnotesdelegate.cpp projectnotesdelegate.h projectnotesmodel.cpp projectnotesmodel.h projectnotespage.cpp projectnotespage.h projectnotesview.cpp projectnotesview.h projectsmodel.h projectsmodel.cpp projectslistview.h projectslistview.cpp projectslistpage.h projectslistpage.cpp projectslistmodel.h projectslistmodel.cpp projectteammembersmodel.cpp projectteammembersmodel.h projectteammembersview.cpp projectteammembersview.h runguard.cpp runguard.h searchpage.cpp searchpage.h searchresultsmodel.cpp searchresultsmodel.h searchresultsview.cpp searchresultsview.h statusreportitemsmodel.cpp statusreportitemsmodel.h statusreportitemsview.cpp statusreportitemsview.h teamsmodel.cpp teamsmodel.h trackeritemcommentsmodel.cpp trackeritemcommentsmodel.h trackeritemcommentsview.cpp trackeritemcommentsview.h trackeritemsmodel.cpp trackeritemsmodel.h trackeritemsview.cpp trackeritemsview.h valueselectmodel.cpp valuesview.h valuesview.cpp valueselectmodel.h
+        actionitemprojectnotesmodel.cpp actionitemsdetailsmeetingsmodel.h actionitemsdetailsmeetingsmodel.cpp actionitemprojectnotesmodel.h clientslistview.cpp clientslistview.h clientsmodel.cpp clientsmodel.h clientspage.cpp clientspage.h columnview.cpp columnview.h comboboxdelegate.cpp comboboxdelegate.h databasestructure.cpp databasestructure.h filterdatadialog.cpp filterdatadialog.h filterdatadialog.ui FilterSaveStructure.h importexport.cpp importexport.h itemdetailsdelegate.cpp itemdetailsdelegate.h itemdetailspage.cpp itemdetailspage.h itemdetailteamlistmodel.cpp itemdetailteamlistmodel.h meetingattendeesmodel.cpp meetingattendeesmodel.h meetingattendeesview.cpp meetingattendeesview.h notesactionitemsmodel.cpp notesactionitemsmodel.h notesactionitemsview.cpp notesactionitemsview.h peoplelistview.cpp peoplelistview.h peoplemodel.cpp peoplemodel.h peoplepage.cpp peoplepage.h pnbasepage.cpp pnbasepage.h pncheckboxdelegate.cpp pncheckboxdelegate.h pncolumnmodel.cpp pncolumnmodel.h pncombobox.cpp pncombobox.h pncomboboxdelegate.cpp pncomboboxdelegate.h pndatabaseobjects.cpp pndatabaseobjects.h pndateeditdelegate.cpp pndateeditdelegate.h pndateeditex.cpp pndateeditex.h pninlinespellchecker.cpp pninlinespellchecker.h pnlineeditfilebutton.cpp pnlineeditfilebutton.h pnlineeditfilebuttondelegate.cpp pnlineeditfilebuttondelegate.h pnplaintexteditdelegate.h pnplaintextedit.h pnplaintexteditdelegate.cpp pnplaintextedit.cpp
+        pnsettings.cpp pnsettings.h pnsortfilterproxymodel.cpp pnsortfilterproxymodel.h pnspellchecker.cpp pnspellchecker.h pnsqlquerymodel.cpp pnsqlquerymodel.h pntableview.cpp pntableview.h pntextedit.cpp pntextedit.h pntexteditdelegate.cpp pntexteditdelegate.h projectdetailsdelegate.cpp projectdetailsdelegate.h projectdetailspage.cpp projectdetailspage.h projectlocationsmodel.cpp projectlocationsmodel.h projectlocationsview.cpp projectlocationsview.h projectnotesdelegate.cpp projectnotesdelegate.h projectnotesmodel.cpp projectnotesmodel.h projectnotespage.cpp projectnotespage.h projectnotesview.cpp projectnotesview.h projectsmodel.h projectsmodel.cpp projectslistview.h projectslistview.cpp projectslistpage.h projectslistpage.cpp projectslistmodel.h projectslistmodel.cpp projectteammembersmodel.cpp projectteammembersmodel.h projectteammembersview.cpp projectteammembersview.h runguard.cpp runguard.h searchpage.cpp searchpage.h searchresultsmodel.cpp searchresultsmodel.h searchresultsview.cpp searchresultsview.h statusreportitemsmodel.cpp statusreportitemsmodel.h statusreportitemsview.cpp statusreportitemsview.h teamsmodel.cpp teamsmodel.h trackeritemcommentsmodel.cpp trackeritemcommentsmodel.h trackeritemcommentsview.cpp trackeritemcommentsview.h trackeritemsmodel.cpp trackeritemsmodel.h trackeritemsview.cpp trackeritemsview.h valueselectmodel.cpp valuesview.h valuesview.cpp valueselectmodel.h
         pncombobox.cpp pncombobox.h
         spellcheckdialog.cpp spellcheckdialog.h spellcheckdialog.ui
+        plugin.cpp plugin.h pluginmanager.cpp pluginmanager.h
+        logviewer.cpp logviewer.h
+        pythonworker.cpp pythonworker.h QLogger.cpp QLogger.h QLoggerLevel.h QLoggerWriter.cpp QLoggerWriter.h
+        pythonworker.h
     )
 
 # Define target properties for Android with Qt 6 as:
@@ -128,3 +130,10 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMENT "Copying dictionary"
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dictionary/*
 )
+
+# if(WIN32)
+#     set(APP_ICON_RESOURCE resources/app_icon.rc)
+#     configure_file(${APP_ICON_RESOURCE} ${CMAKE_CURRENT_BINARY_DIR}/app_icon.rc COPYONLY)
+#     set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/app_icon.rc PROPERTIES LANGUAGE RC)
+#     target_sources(MyApp PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/app_icon.rc)
+# endif()

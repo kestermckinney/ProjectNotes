@@ -1,12 +1,14 @@
 // Copyright (C) 2022, 2023 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
-#include <QDebug>
-
 #include "pndatabaseobjects.h"
 #include "projectsmodel.h"
 
 #include <QRegularExpression>
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
 
 ProjectsModel::ProjectsModel(PNDatabaseObjects* t_dbo, bool t_gui) : PNSqlQueryModel(t_dbo, t_gui)
 {

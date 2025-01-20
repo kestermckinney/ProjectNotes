@@ -6,7 +6,11 @@
 
 #include <QUuid>
 #include <QThread>
-//#include <QDebug>
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
+
 
 // selection values for fields
 QStringList PNDatabaseObjects::item_type = {

@@ -4,7 +4,11 @@
 #include "projectnotespage.h"
 #include "pndatabaseobjects.h"
 #include "notesactionitemsview.h"
-#include <QDebug>
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
+
 
 #include "ui_mainwindow.h"
 

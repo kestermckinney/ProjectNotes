@@ -39,12 +39,12 @@ public:
     virtual void setButtonAndMenuStates();
     const QString getTableName() { return m_table_name; }
     void setTableName(const QString& t_table_name) { m_table_name = t_table_name; }
-    void buildPluginMenu(PNPluginManager* t_pm, QMenu* t_menu);
+    void buildPluginMenu(PluginManager* t_pm, QMenu* t_menu);
     void setRecordId(QVariant t_record_id) { m_record_id = t_record_id; }
     QVariant getRecordId() { return m_record_id; }
 
 public slots:
-    void slotPluginMenu(PNPlugin* t_plugin);
+    void slotPluginMenu(Plugin* t_plugin, const QString& t_functionname);
 
 private:
     PNSortFilterProxyModel* m_current_model = nullptr;

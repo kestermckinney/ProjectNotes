@@ -2,8 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "meetingattendeesmodel.h"
+#include "QLogger.h"
+#include "QLoggerWriter.h"
 
-//#include <QDebug>
+using namespace QLogger;
+
 
 MeetingAttendeesModel::MeetingAttendeesModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {

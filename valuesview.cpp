@@ -1,6 +1,10 @@
 #include "valuesview.h"
 #include <QMouseEvent>
-//#include <QDebug>
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
+
 
 ValuesView::ValuesView(QWidget *t_parent) : PNTableView(t_parent)
 {

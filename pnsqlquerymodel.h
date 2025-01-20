@@ -16,8 +16,11 @@
 #include <QSqlRecord>
 #include <QSqlField>
 #include <QDomElement>
+#include "QLogger.h"
+#include "QLoggerWriter.h"
 
-//#include <QDebug>
+using namespace QLogger;
+
 
 class PNDatabaseObjects;
 

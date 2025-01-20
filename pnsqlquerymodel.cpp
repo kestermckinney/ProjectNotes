@@ -18,6 +18,10 @@
 #include <QList>
 #include <QLocale>
 #include <QReadWriteLock>
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
 
 PNSqlQueryModel::PNSqlQueryModel(PNDatabaseObjects* t_dbo, bool t_gui) : QAbstractTableModel(t_dbo)
 {

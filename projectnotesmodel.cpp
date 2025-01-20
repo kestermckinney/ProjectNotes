@@ -3,7 +3,11 @@
 
 #include "projectnotesmodel.h"
 #include "pndatabaseobjects.h"
-//#include <QDebug>
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
+
 
 ProjectNotesModel::ProjectNotesModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {

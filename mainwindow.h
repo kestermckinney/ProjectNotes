@@ -22,9 +22,13 @@ QT_END_NAMESPACE
 #include "preferencesdialog.h"
 #include "spellcheckdialog.h"
 #include "findreplacedialog.h"
-#include "pnpluginmanager.h"
-#include "pluginsettingsdialog.h"
+#include "logviewer.h"
+#include "pluginmanager.h"
 
+//TODO: REMOVE #include "pnpluginmanager.h"
+//TODO: REMOVE #include "pluginsettingsdialog.h"
+
+//TODO: get this information from cmakesettings.txt
 #define PNMajorVersion 3
 #define PNMinorVersion 3
 #define PNFixVersion 1
@@ -63,7 +67,7 @@ public:
     void buildHistory(HistoryNode* t_node);
     void navigateClearHistory() { m_navigation_location = -1; m_forward_back_history.clear(); }
     PNBasePage* navigateCurrentPage() { return (m_navigation_location == -1 ? nullptr : m_forward_back_history.at(m_navigation_location)->m_page ); }
-    static PNPluginManager* getPluginManager() { return m_plugin_manager; }
+    static PluginManager* getPluginManager() { return m_plugin_manager; }
     void buildPluginMenu();
     void CloseDatabase();
 
@@ -75,6 +79,8 @@ public slots:
     void slotOpenTeamMember_triggered(QVariant t_record_id);
     void slotOpenLocation_triggered(QVariant t_record_id);
     void on_focusChanged(QWidget *t_old, QWidget *t_now);
+
+    void aboutToQuit();
 
 private slots:
     void setButtonAndMenuStates();
@@ -120,16 +126,16 @@ private slots:
     void on_actionSearch_triggered();
     void on_pushButtonSearch_clicked();
     void on_lineEditSearchText_returnPressed();
-    void on_actionPlugin_Settings_triggered();
-    void on_actionView_Console_triggered();
+    //TODO: REMOVE void on_actionPlugin_Settings_triggered();
+    void on_actionView_LogView_triggered();
     void on_actionXML_Import_triggered();
     void on_actionXML_Export_triggered();
 
-    void slotPluginMenu(PNPlugin* t_plugin);
-    void slotStartupEvent(PNPlugin* t_plugin);
-    void slotShutdownEvent(PNPlugin* t_plugin);
-    void slotTimerEvent(PNPlugin* t_plugin);
-    void slotTimerUpdates();
+    void slotPluginMenu(Plugin* t_plugin, const QString& t_functionname);
+    //TODO: REMOVE void slotStartupEvent(PNPlugin* t_plugin);
+    //TODO: REMOVE void slotShutdownEvent(PNPlugin* t_plugin);
+    //TODO: REMOVE void slotTimerEvent(PNPlugin* t_plugin);
+    //TODO: REMOVE void slotTimerUpdates();
     void on_actionOpen_Item_triggered();
     void on_actionIncrease_Font_Size_triggered();
     void on_actionDecrease_Font_Size_triggered();
@@ -139,10 +145,12 @@ private:
 
     PreferencesDialog* m_preferences_dialog = nullptr;
     FindReplaceDialog* m_find_replace_dialog = nullptr;
-    static PNPluginManager* m_plugin_manager;
-    PluginSettingsDialog* m_plugin_settings_dialog = nullptr;
-    QTimer* m_timer = nullptr;
-    long m_minute_counter = 0;
+    static PluginManager* m_plugin_manager;
+    LogViewer* m_logview_dialog = nullptr;
+
+    //TODO: REMOVE PluginSettingsDialog* m_plugin_settings_dialog = nullptr;
+    //TODO: REMOVE QTimer* m_timer = nullptr;
+    //TODO: REMOVE long m_minute_counter = 0;
 
     QStack<HistoryNode*> m_page_history;
     QStack<HistoryNode*> m_forward_back_history;
@@ -165,7 +173,6 @@ private:
     void indent();
     void textAlign(QAction *a);
     void textColor();
-
 
     QAction *m_actionTextBold;
     QAction *m_actionTextUnderline;

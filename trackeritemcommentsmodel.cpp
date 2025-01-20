@@ -1,7 +1,11 @@
 #include "trackeritemcommentsmodel.h"
 #include "pndatabaseobjects.h"
 #include <QDateTime>
-//#include <QDebug>
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
+
 
 TrackerItemCommentsModel::TrackerItemCommentsModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {

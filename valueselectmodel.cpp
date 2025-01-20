@@ -1,5 +1,9 @@
-//#include <QDebug>
+
 #include "valueselectmodel.h"
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
 
 ValueSelectModel::ValueSelectModel(PNDatabaseObjects* t_dbo, bool t_gui) : PNSqlQueryModel(t_dbo, t_gui)
 {

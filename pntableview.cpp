@@ -6,8 +6,6 @@
 #include "pndatabaseobjects.h"
 #include "pndatabaseobjects.h"
 #include "mainwindow.h"
-
-//#include <QDebug>
 #include <QMouseEvent>
 #include <QApplication>
 #include <QEvent>
@@ -17,6 +15,11 @@
 #include <QFileDialog>
 #include <QTextStream>
 #include <QMargins>
+
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
 
 PNTableView::PNTableView(QWidget *t_parent) : QTableView(t_parent)
 {
@@ -95,7 +98,7 @@ PNTableView::~PNTableView()
 }
 
 
-void PNTableView::slotPluginMenu(PNPlugin* t_plugin)
+void PNTableView::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_exportname)
 {
     QString response;
 
@@ -118,28 +121,29 @@ void PNTableView::slotPluginMenu(PNPlugin* t_plugin)
 
     PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(model())->getDBOs();
 
-    QDomDocument* xdoc = dbo->createXMLExportDoc(exportmodel, t_plugin->getChildTablesFilter());
+    QDomDocument* xdoc = dbo->createXMLExportDoc(exportmodel, t_exportname);
     QString xmlstr = xdoc->toString();
 
     // call the menu plugin with the data structure
-    response = t_plugin->callDataRightClickEvent(xmlstr);
+    t_plugin->callXmlMethod(t_functionname, xmlstr);
+    //response = t_plugin->callDataRightClickEvent(xmlstr);
 
     delete xdoc;
 
-    QApplication::processEvents();
+    // QApplication::processEvents();
 
-    if (!response.isEmpty())
-    {
-        QApplication::processEvents();
+    // if (!response.isEmpty())
+    // {
+    //     QApplication::processEvents();
 
-        QDomDocument doc;
-        doc.setContent(response);
+    //     QDomDocument doc;
+    //     doc.setContent(response);
 
-        if (!dbo->importXMLDoc(doc))
-            QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
+    //     if (!dbo->importXMLDoc(doc))
+    //         QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
 
-        QApplication::processEvents();
-    }
+    //     QApplication::processEvents();
+    // }
 }
 
 void PNTableView::setModel(QAbstractItemModel *t_model)
@@ -334,83 +338,85 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
 
     QString table = ((PNSqlQueryModel*) ((QSortFilterProxyModel*)this->model())->sourceModel())->tablename();
 
-    for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
+    for ( Plugin* p : MainWindow::getPluginManager()->plugins())
     {
-        if (p->hasDataRightClickEvent(table) && p->isEnabled())
+        for (QMap<QString, PluginMenu>::const_iterator it = p->pythonplugin().menus().cbegin(); it != p->pythonplugin().menus().cend(); ++it)
+        //for ( PluginMenu pm : p->pythonplugin().menus()) //TODO: Remove
         {
-            if (p->getSubmenu().isEmpty())
+            if (!it.value().dataexport().isEmpty())
             {
-                QAction* bact = nullptr;
-
-                int pastseparator = 0;
-
-                for (QAction* action : menu->actions())
+                if (it.value().submenu().isEmpty())
                 {
-                    if (pastseparator > 1 && action->text().compare(p->getPNPluginName(), Qt::CaseInsensitive) > 0)
-                        bact = action;
+                    QAction* bact = nullptr;
 
-                    if (action->isSeparator())
-                        pastseparator++;
-                }
-
-                if (bact)
-                {
-                    QAction* act = new QAction(QIcon(":/icons/add-on.png"), p->getPNPluginName(), this);
-                    connect(act, &QAction::triggered, this,[p, this](){slotPluginMenu(p);});
-                    menu->insertAction(bact, act);
-                    //act->setIcon(QIcon(":/icons/add-on.png"));
-                }
-                else
-                {
-                    QAction* act = menu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
-                    act->setIcon(QIcon(":/icons/add-on.png"));
-                }
-            }
-            else
-            {
-                // find the submenu if it exists
-                QMenu* submenu = nullptr;
-
-                int pastseparator = 0;
-
-                for (QAction* action : menu->actions())
-                {
-                    if (pastseparator > 1 && action->text().compare(p->getSubmenu(), Qt::CaseInsensitive) == 0)
-                    {
-                        submenu = action->menu();
-                    }
-
-                    if (action->isSeparator())
-                    {
-                        pastseparator++;
-                    }
-                }
-
-                // if it didn't exist create it sorted
-                if (!submenu)
-                {
                     int pastseparator = 0;
 
                     for (QAction* action : menu->actions())
                     {
-                        if (pastseparator > 1 && action->text().compare(p->getSubmenu(), Qt::CaseInsensitive) > 0)
-                        {
-                            submenu = new QMenu(p->getSubmenu());
-                            menu->insertMenu(action, submenu);
-                            break;
-                        }
+                        if (pastseparator > 1 && action->text().compare(it.key(), Qt::CaseInsensitive) > 0)
+                            bact = action;
 
                         if (action->isSeparator())
                             pastseparator++;
                     }
+
+                    if (bact)
+                    {
+                        QAction* act = new QAction(QIcon(":/icons/add-on.png"), it.key(), this);
+                        connect(act, &QAction::triggered, this,[p, it, this](){slotPluginMenu(p, it.value().functionname(), it.value().dataexport());});
+                        menu->insertAction(bact, act);
+                    }
+                    else
+                    {
+                        QAction* act = menu->addAction(it.key(), [p, it, this](){slotPluginMenu(p, it.value().functionname(), it.value().dataexport());});
+                        act->setIcon(QIcon(":/icons/add-on.png"));
+                    }
                 }
+                else
+                {
+                    // find the submenu if it exists
+                    QMenu* submenu = nullptr;
 
-                if (!submenu)
-                    submenu = menu->addMenu(p->getSubmenu());
+                    int pastseparator = 0;
 
-                QAction* act = submenu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
-                act->setIcon(QIcon(":/icons/add-on.png"));
+                    for (QAction* action : menu->actions())
+                    {
+                        if (pastseparator > 1 && action->text().compare(it.value().submenu(), Qt::CaseInsensitive) == 0)
+                        {
+                            submenu = action->menu();
+                        }
 
+                        if (action->isSeparator())
+                        {
+                            pastseparator++;
+                        }
+                    }
+
+                    // if it didn't exist create it sorted
+                    if (!submenu)
+                    {
+                        int pastseparator = 0;
+
+                        for (QAction* action : menu->actions())
+                        {
+                            if (pastseparator > 1 && action->text().compare(it.value().submenu(), Qt::CaseInsensitive) > 0)
+                            {
+                                submenu = new QMenu(it.value().submenu());
+                                menu->insertMenu(action, submenu);
+                                break;
+                            }
+
+                            if (action->isSeparator())
+                                pastseparator++;
+                        }
+                    }
+
+                    if (!submenu)
+                        submenu = menu->addMenu(it.value().submenu());
+
+                    QAction* act = submenu->addAction(it.key(), [p, it, this](){slotPluginMenu(p, it.value().functionname(), it.value().dataexport());});
+                    act->setIcon(QIcon(":/icons/add-on.png"));
+                }
             }
         }
     }

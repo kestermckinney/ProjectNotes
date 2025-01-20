@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>879</width>
+    <width>932</width>
     <height>799</height>
    </rect>
   </property>
@@ -29,7 +29,7 @@
      <number>0</number>
     </property>
     <property name="sizeConstraint">
-     <enum>QLayout::SetMaximumSize</enum>
+     <enum>QLayout::SizeConstraint::SetMaximumSize</enum>
     </property>
     <property name="leftMargin">
      <number>0</number>
@@ -77,13 +77,13 @@
         <item>
          <widget class="ProjectsListView" name="tableViewProjects">
           <property name="frameShape">
-           <enum>QFrame::NoFrame</enum>
+           <enum>QFrame::Shape::NoFrame</enum>
           </property>
           <property name="selectionMode">
-           <enum>QAbstractItemView::SingleSelection</enum>
+           <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
           </property>
           <property name="selectionBehavior">
-           <enum>QAbstractItemView::SelectRows</enum>
+           <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
           </property>
           <attribute name="verticalHeaderVisible">
            <bool>false</bool>
@@ -152,10 +152,10 @@
                </sizepolicy>
               </property>
               <property name="frameShape">
-               <enum>QFrame::NoFrame</enum>
+               <enum>QFrame::Shape::NoFrame</enum>
               </property>
               <property name="frameShadow">
-               <enum>QFrame::Raised</enum>
+               <enum>QFrame::Shadow::Raised</enum>
               </property>
               <property name="lineWidth">
                <number>0</number>
@@ -179,10 +179,10 @@
                <item>
                 <widget class="QFrame" name="frameMeetingTitle">
                  <property name="frameShape">
-                  <enum>QFrame::NoFrame</enum>
+                  <enum>QFrame::Shape::NoFrame</enum>
                  </property>
                  <property name="frameShadow">
-                  <enum>QFrame::Plain</enum>
+                  <enum>QFrame::Shadow::Plain</enum>
                  </property>
                  <property name="lineWidth">
                   <number>0</number>
@@ -301,7 +301,7 @@
                   <string notr="true"/>
                  </property>
                  <property name="frameShadow">
-                  <enum>QFrame::Plain</enum>
+                  <enum>QFrame::Shadow::Plain</enum>
                  </property>
                 </widget>
                </item>
@@ -342,7 +342,7 @@
                </sizepolicy>
               </property>
               <property name="frameShadow">
-               <enum>QFrame::Plain</enum>
+               <enum>QFrame::Shadow::Plain</enum>
               </property>
              </widget>
             </item>
@@ -383,7 +383,7 @@
                </sizepolicy>
               </property>
               <property name="frameShadow">
-               <enum>QFrame::Plain</enum>
+               <enum>QFrame::Shadow::Plain</enum>
               </property>
              </widget>
             </item>
@@ -428,7 +428,7 @@
            <number>0</number>
           </property>
           <property name="elideMode">
-           <enum>Qt::ElideNone</enum>
+           <enum>Qt::TextElideMode::ElideNone</enum>
           </property>
           <property name="documentMode">
            <bool>true</bool>
@@ -462,14 +462,14 @@
             <item>
              <widget class="QFrame" name="frameStatusItems">
               <property name="frameShape">
-               <enum>QFrame::StyledPanel</enum>
+               <enum>QFrame::Shape::StyledPanel</enum>
               </property>
               <property name="frameShadow">
-               <enum>QFrame::Raised</enum>
+               <enum>QFrame::Shadow::Raised</enum>
               </property>
               <layout class="QFormLayout" name="formLayout">
                <property name="fieldGrowthPolicy">
-                <enum>QFormLayout::ExpandingFieldsGrow</enum>
+                <enum>QFormLayout::FieldGrowthPolicy::ExpandingFieldsGrow</enum>
                </property>
                <item row="0" column="0">
                 <widget class="QLabel" name="labelNumber">
@@ -739,7 +739,7 @@
             <item>
              <widget class="StatusReportItemsView" name="tableViewStatusReportItems">
               <property name="frameShadow">
-               <enum>QFrame::Plain</enum>
+               <enum>QFrame::Shadow::Plain</enum>
               </property>
               <property name="sortingEnabled">
                <bool>true</bool>
@@ -781,7 +781,7 @@
             <item>
              <widget class="ProjectTeamMembersView" name="tableViewTeam">
               <property name="frameShadow">
-               <enum>QFrame::Plain</enum>
+               <enum>QFrame::Shadow::Plain</enum>
               </property>
              </widget>
             </item>
@@ -810,7 +810,7 @@
             <item>
              <widget class="TrackerItemsView" name="tableViewTrackerItems">
               <property name="frameShadow">
-               <enum>QFrame::Plain</enum>
+               <enum>QFrame::Shadow::Plain</enum>
               </property>
              </widget>
             </item>
@@ -839,7 +839,7 @@
             <item>
              <widget class="ProjectLocationsView" name="tableViewLocations">
               <property name="frameShadow">
-               <enum>QFrame::Plain</enum>
+               <enum>QFrame::Shadow::Plain</enum>
               </property>
              </widget>
             </item>
@@ -868,10 +868,10 @@
             <item>
              <widget class="QFrame" name="frameProjectNotes">
               <property name="frameShape">
-               <enum>QFrame::NoFrame</enum>
+               <enum>QFrame::Shape::NoFrame</enum>
               </property>
               <property name="frameShadow">
-               <enum>QFrame::Raised</enum>
+               <enum>QFrame::Shadow::Raised</enum>
               </property>
               <property name="lineWidth">
                <number>0</number>
@@ -907,7 +907,7 @@
                   </size>
                  </property>
                  <property name="frameShadow">
-                  <enum>QFrame::Plain</enum>
+                  <enum>QFrame::Shadow::Plain</enum>
                  </property>
                  <attribute name="horizontalHeaderCascadingSectionResizes">
                   <bool>false</bool>
@@ -943,10 +943,10 @@
         <item>
          <widget class="PeopleListView" name="tableViewPeople">
           <property name="selectionMode">
-           <enum>QAbstractItemView::SingleSelection</enum>
+           <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
           </property>
           <property name="selectionBehavior">
-           <enum>QAbstractItemView::SelectRows</enum>
+           <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
           </property>
           <property name="sortingEnabled">
            <bool>true</bool>
@@ -1033,7 +1033,7 @@
              <number>2</number>
             </property>
             <property name="sizeConstraint">
-             <enum>QLayout::SetDefaultConstraint</enum>
+             <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
             </property>
             <property name="leftMargin">
              <number>5</number>
@@ -1094,7 +1094,7 @@
                </size>
               </property>
               <property name="sizeAdjustPolicy">
-               <enum>QAbstractScrollArea::AdjustIgnored</enum>
+               <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustIgnored</enum>
               </property>
               <property name="tabChangesFocus">
                <bool>true</bool>
@@ -1185,7 +1185,7 @@
             <item>
              <layout class="QFormLayout" name="formLayoutDatesAndStatus">
               <property name="fieldGrowthPolicy">
-               <enum>QFormLayout::ExpandingFieldsGrow</enum>
+               <enum>QFormLayout::FieldGrowthPolicy::ExpandingFieldsGrow</enum>
               </property>
               <property name="horizontalSpacing">
                <number>0</number>
@@ -1351,7 +1351,7 @@
           <item>
            <widget class="TrackerItemCommentsView" name="tableViewComments">
             <property name="frameShape">
-             <enum>QFrame::NoFrame</enum>
+             <enum>QFrame::Shape::NoFrame</enum>
             </property>
            </widget>
           </item>
@@ -1430,13 +1430,13 @@
         <item>
          <widget class="SearchResultsView" name="tableViewSearchResults">
           <property name="frameShape">
-           <enum>QFrame::NoFrame</enum>
+           <enum>QFrame::Shape::NoFrame</enum>
           </property>
           <property name="selectionMode">
-           <enum>QAbstractItemView::SingleSelection</enum>
+           <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
           </property>
           <property name="selectionBehavior">
-           <enum>QAbstractItemView::SelectRows</enum>
+           <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
           </property>
           <attribute name="verticalHeaderVisible">
            <bool>false</bool>
@@ -1457,8 +1457,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>879</width>
-     <height>21</height>
+     <width>932</width>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -1501,8 +1501,7 @@
     <property name="title">
      <string>Pl&amp;ugins</string>
     </property>
-    <addaction name="actionPlugin_Settings"/>
-    <addaction name="actionView_Console"/>
+    <addaction name="actionView_LogView"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -1561,7 +1560,7 @@
     </sizepolicy>
    </property>
    <property name="contextMenuPolicy">
-    <enum>Qt::PreventContextMenu</enum>
+    <enum>Qt::ContextMenuPolicy::PreventContextMenu</enum>
    </property>
    <property name="windowTitle">
     <string>Navigator Toolbar</string>
@@ -1593,7 +1592,6 @@
    <addaction name="actionNew_Item"/>
    <addaction name="actionCopy_Item"/>
    <addaction name="actionDelete_Item"/>
-   <addaction name="actionPlugin_Settings"/>
    <addaction name="actionProjects"/>
    <addaction name="actionPeople"/>
    <addaction name="actionClients"/>
@@ -1603,7 +1601,7 @@
   </widget>
   <widget class="QToolBar" name="toolBarEdit">
    <property name="contextMenuPolicy">
-    <enum>Qt::PreventContextMenu</enum>
+    <enum>Qt::ContextMenuPolicy::PreventContextMenu</enum>
    </property>
    <property name="windowTitle">
     <string>Edit Toolbar</string>
@@ -1628,7 +1626,7 @@
   </widget>
   <widget class="QToolBar" name="toolBarFormat">
    <property name="contextMenuPolicy">
-    <enum>Qt::PreventContextMenu</enum>
+    <enum>Qt::ContextMenuPolicy::PreventContextMenu</enum>
    </property>
    <property name="windowTitle">
     <string>Format Toolbar</string>
@@ -1925,36 +1923,18 @@
     <string>Ctrl+A</string>
    </property>
   </action>
-  <action name="actionPlugin_Settings">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/add-on.png</normaloff>:/icons/add-on.png</iconset>
-   </property>
-   <property name="text">
-    <string>Plugin Settings</string>
-   </property>
-   <property name="toolTip">
-    <string>Open the plugin settings</string>
-   </property>
-   <property name="statusTip">
-    <string>Open the plugin settings</string>
-   </property>
-   <property name="shortcut">
-    <string>Alt+S</string>
-   </property>
-  </action>
-  <action name="actionView_Console">
+  <action name="actionView_LogView">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>View Console</string>
+    <string>View Logs</string>
    </property>
    <property name="toolTip">
-    <string>Open the plugin script console</string>
+    <string>Open the application logs</string>
    </property>
    <property name="statusTip">
-    <string>Open the plugin script console</string>
+    <string>Open the applicaiton logs</string>
    </property>
    <property name="shortcut">
     <string>Alt+L</string>

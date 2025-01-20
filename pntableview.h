@@ -5,8 +5,8 @@
 #define PNTABLEVIEW_H
 
 #include "filterdatadialog.h"
-#include "pnplugin.h"
-#include "pnpluginmanager.h"
+#include "plugin.h"
+#include "pluginmanager.h"
 
 #include <QTableView>
 #include <QObject>
@@ -58,8 +58,8 @@ public slots:
     void slotExportRecord();
     void slotFilterRecords();
     void slotRefreshRecords();
-    void slotResetColumns();  
-    void slotPluginMenu(PNPlugin* t_plugin);
+    void slotResetColumns();
+    void slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_exportname);
 
 private:
     void sortMenu(QMenu* t_menu);

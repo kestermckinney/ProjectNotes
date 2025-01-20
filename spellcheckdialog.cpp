@@ -9,8 +9,11 @@
 #include "pntextedit.h"
 #include "pnplaintextedit.h"
 #include <QMessageBox>
-//#include <QDebug>
 #include <QFile>
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
 
 SpellCheckDialog::SpellCheckDialog(QWidget *parent) :
     QDialog(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint | Qt::WindowCloseButtonHint),

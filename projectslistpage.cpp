@@ -1,11 +1,14 @@
 // Copyright (C) 2022, 2023 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
-//#include <QDebug>
 #include "projectslistpage.h"
 #include "pndatabaseobjects.h"
 
 #include "ui_mainwindow.h"
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
 
 
 ProjectsListPage::ProjectsListPage()

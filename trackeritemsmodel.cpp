@@ -1,7 +1,11 @@
 #include "trackeritemsmodel.h"
 #include "pndatabaseobjects.h"
 
-//#include <QDebug>
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
+
 
 TrackerItemsModel::TrackerItemsModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {

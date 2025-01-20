@@ -4,7 +4,11 @@
 #include "projectteammembersmodel.h"
 #include "pndatabaseobjects.h"
 
-//#include <QDebug>
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
+
 
 ProjectTeamMembersModel::ProjectTeamMembersModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
 {

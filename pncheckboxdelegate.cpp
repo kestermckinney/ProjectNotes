@@ -9,10 +9,14 @@
 #include <QModelIndex>
 #include <QApplication>
 #include <QString>
-//#include <QDebug>
 #include <QLayout>
 #include <QHBoxLayout>
 #include <QPainter>
+
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
 
 PNCheckBoxDelegate::PNCheckBoxDelegate(QObject *t_parent)
 :QStyledItemDelegate(t_parent)

@@ -2,7 +2,7 @@
 
 ## Managing Python Scripts
 
-The Plugins menu provides a way to view, execute, enable, and disable plugins. The Plugins menu as well as many other context menus can be customized by using a Python script. To learn how to customize Project Notes see [Adding Functionality](<../PluginsOverview/AddingFunctionality.md>). The **View Console** option displays a windows that shows all console output from executing Python scripts.
+The Plugins menu provides a way to view, execute, enable, and disable plugins. The Plugins menu as well as many other context menus can be customized by using a Python script. To learn how to customize Project Notes see [Adding Functionality](<../PluginsOverview/AddingFunctionality.md>). The **View Logs** option displays a windows that shows all log output from executing Python scripts.
 
 All menu items below the divider line in the Plugins menu have been added by a Python script.
 

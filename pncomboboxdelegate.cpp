@@ -10,7 +10,11 @@
 #include <QApplication>
 #include <QString>
 #include <QPainter>
-#include <QDebug>
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
+
 
 PNComboBoxDelegate::PNComboBoxDelegate(QObject *t_parent, PNSqlQueryModel *t_model, int t_displaycolumn, int t_datacolumn)
 :QStyledItemDelegate(t_parent)

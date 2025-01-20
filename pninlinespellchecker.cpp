@@ -2,7 +2,10 @@
 #include "pnsettings.h"
 
 #include <QApplication>
-//#include <QDebug>
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
 
 PNInlineSpellChecker::PNInlineSpellChecker(QObject *parent)
     : QObject{parent}

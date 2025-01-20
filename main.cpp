@@ -3,6 +3,7 @@
 
 #include "mainwindow.h"
 #include "runguard.h"
+#include "plugin.h"
 
 #include <QApplication>
 #include <QStyleFactory>
@@ -13,6 +14,9 @@ int main(int argc, char *argv[])
     QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/plugins");
 
     QApplication a(argc, argv);
+
+    qRegisterMetaType<PythonPlugin>();
+    qRegisterMetaType<PluginMenu>();
 
     RunGuard guard( "62d60669-bb94-4a94-88bb-b964890a71f4" );
     if ( !guard.tryToRun() )
@@ -27,6 +31,9 @@ int main(int argc, char *argv[])
 #endif
 
     MainWindow w;
+
+    QObject::connect(&a, &QCoreApplication::aboutToQuit, &w, &MainWindow::aboutToQuit);
+
 
     a.setWindowIcon(QIcon(":/icons/logo.png")); // "AppIcon.icns"
     w.show();

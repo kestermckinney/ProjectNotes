@@ -13,7 +13,11 @@
 #include <QAbstractItemModel>
 #include <QTextCursor>
 
-//#include <QDebug>
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
+//TODO: On a plugin module load you will have to rebuild the plugin menus
 
 PNBasePage::PNBasePage(QWidget *parent) : QWidget(parent)
 {
@@ -274,125 +278,124 @@ void PNBasePage::setButtonAndMenuStates()
 
 }
 
- void PNBasePage::buildPluginMenu(PNPluginManager* t_pm, QMenu* t_menu)
- {
+void PNBasePage::buildPluginMenu(PluginManager* t_pm, QMenu* t_menu)
+{
     t_menu->addSeparator();
 
     // add menus relevant to the current table
-     for ( PNPlugin* p : t_pm->getPlugins())
-     {
-         if (p->hasDataRightClickEvent(getTableName()) && p->isEnabled())
-         {
-             if (p->getSubmenu().isEmpty())
-             {
-                 QAction* bact = nullptr;
+    for ( Plugin* p : t_pm->plugins())
+    {
+        for (QMap<QString, PluginMenu>::const_iterator it = p->pythonplugin().menus().cbegin(); it != p->pythonplugin().menus().cend(); ++it)
+        //for ( PluginMenu pm : p->pythonplugin().menus())  //TODO: Remove
+        {
+            if (it.value().dataexport().isEmpty()) // don't include any right-click data menus
+            {
+                if (it.value().submenu().isEmpty())
+                {
+                    QAction* bact = nullptr;
+                    int pastseparator = 0;
 
-                 int pastseparator = 0;
+                    for (QAction* action : t_menu->actions())
+                    {
+                        if (pastseparator > 0 && action->text().compare(it.key(), Qt::CaseInsensitive) > 0)
+                            bact = action;
 
-                 for (QAction* action : t_menu->actions())
-                 {
-                     if (pastseparator > 1 && action->text().compare(p->getPNPluginName(), Qt::CaseInsensitive) > 0)
-                         bact = action;
+                        if (action->isSeparator())
+                            pastseparator++;
+                    }
 
-                     if (action->isSeparator())
-                         pastseparator++;
-                 }
+                    if (bact)
+                    {
+                        QAction* act = new QAction(QIcon(":/icons/add-on.png"), it.key(), this);
+                        connect(act, &QAction::triggered, this,[p, it, this](){slotPluginMenu(p, it.value().functionname());});
+                        t_menu->insertAction(bact, act);
+                    }
+                    else
+                    {
+                        QAction* act = t_menu->addAction(it.key(), [p, it, this](){slotPluginMenu(p, it.value().functionname());});
+                        act->setIcon(QIcon(":/icons/add-on.png"));
+                    }
+                }
+                else
+                {
+                    // find the submenu if it exists
+                    QMenu* submenu = nullptr;
 
-                 if (bact)
-                 {
-                     QAction* act = new QAction(QIcon(":/icons/add-on.png"), p->getPNPluginName(), this);
-                     connect(act, &QAction::triggered, this,[p, this](){slotPluginMenu(p);});
-                     t_menu->insertAction(bact, act);
-                 }
-                 else
-                 {
-                    QAction* act = t_menu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
+                    for (QAction* action : t_menu->actions())
+                    {
+                        if (action->text().compare(it.value().submenu(), Qt::CaseInsensitive) == 0)
+                            submenu = action->menu();
+                    }
+
+                    // if it didn't exist create it sorted
+                    if (!submenu)
+                    {
+                        int pastseparator = 0;
+
+                        for (QAction* action : t_menu->actions())
+                        {
+                            if (pastseparator > 0 && action->text().compare(it.value().submenu(), Qt::CaseInsensitive) > 0)
+                            {
+                                submenu = new QMenu(it.value().submenu());
+                                t_menu->insertMenu(action, submenu);
+                                break;
+                            }
+
+                            if (action->isSeparator())
+                                pastseparator++;
+                        }
+                    }
+
+                    if (!submenu)
+                        submenu = t_menu->addMenu(it.value().submenu());
+
+                    QAction* act = submenu->addAction(it.key(), [p, it, this](){slotPluginMenu(p, it.value().functionname());});
                     act->setIcon(QIcon(":/icons/add-on.png"));
-                 }
-             }
-             else
-             {
-                 // find the submenu if it exists
-                 QMenu* submenu = nullptr;
+                }
+            }
+        }
+    }
+}
 
-                 int pastseparator = 0;
+void PNBasePage::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname)
+{
+    // QString response;
 
-                 for (QAction* action : t_menu->actions())
-                 {
-                     if (pastseparator > 1 && action->text().compare(p->getSubmenu(), Qt::CaseInsensitive) == 0)
-                         submenu = action->menu();
+    // if (m_page_model)
+    // {
+        // QVariant keyval;
+        // keyval = m_page_model->data(m_page_model->index(0, 0));
 
-                     if (action->isSeparator())
-                         pastseparator++;
-                 }
+        //TODO: Remove QApplication::processEvents();
 
-                 // if it didn't exist create it sorted
-                 if (!submenu)
-                 {
-                     int pastseparator = 0;
+        // PNSqlQueryModel *exportmodel = m_page_model->createExportVersion();
+        // exportmodel->setFilter(0, keyval.toString());
+        // exportmodel->refresh();
 
-                     for (QAction* action : t_menu->actions())
-                     {
-                         if (pastseparator > 1 && action->text().compare(p->getSubmenu(), Qt::CaseInsensitive) > 0)
-                         {
-                             submenu = new QMenu(p->getSubmenu());
-                             t_menu->insertMenu(action, submenu);
-                             break;
-                         }
+        // QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(exportmodel, t_plugin->getChildTablesFilter());
+        // QString xmlstr = xdoc->toString();
 
-                         if (action->isSeparator())
-                             pastseparator++;
-                     }
-                 }
+        // call the menu plugin with the data structure
+        //response = t_plugin->callDataRightClickEvent(xmlstr);
+    t_plugin->callMethod(t_functionname);
 
-                 if (!submenu)
-                     submenu = t_menu->addMenu(p->getSubmenu());
+        // delete xdoc;
 
-                 QAction* act = submenu->addAction(p->getPNPluginName(), [p, this](){slotPluginMenu(p);});
-                 act->setIcon(QIcon(":/icons/add-on.png"));
+        //TODO: Remove QApplication::processEvents();
+    // }
 
-             }
-         }
-     }
- }
+    //TODO: Remove
+    // if (!response.isEmpty())
+    // {
+    //    QApplication::processEvents();
 
- void PNBasePage::slotPluginMenu(PNPlugin* t_plugin)
- {
-     QString response;
+    //    QDomDocument doc;
+    //    doc.setContent(response);
 
-     if (m_page_model)
-     {
-         QVariant keyval;
-         keyval = m_page_model->data(m_page_model->index(0, 0));
+    //    if (!global_DBObjects.importXMLDoc(doc))
+    //        QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
 
-         QApplication::processEvents();
-
-         PNSqlQueryModel *exportmodel = m_page_model->createExportVersion();
-         exportmodel->setFilter(0, keyval.toString());
-         exportmodel->refresh();
-
-         QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(exportmodel, t_plugin->getChildTablesFilter());
-         QString xmlstr = xdoc->toString();
-
-         // call the menu plugin with the data structure
-         response = t_plugin->callDataRightClickEvent(xmlstr);
-
-         delete xdoc;
-
-         QApplication::processEvents();
-     }
-
-     if (!response.isEmpty())
-     {
-         QApplication::processEvents();
-
-         QDomDocument doc;
-         doc.setContent(response);
-
-         if (!global_DBObjects.importXMLDoc(doc))
-             QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
-
-         QApplication::processEvents();
-     }
- }
+    //    QApplication::processEvents();
+    // }
+}
 

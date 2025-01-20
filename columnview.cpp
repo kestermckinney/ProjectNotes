@@ -5,7 +5,11 @@
 #include "columnview.h"
 #include "filterdatadialog.h"
 
-//#include<QDebug>
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
+
 
 ColumnView::ColumnView(QWidget *t_parent) : PNTableView(t_parent)
 {
