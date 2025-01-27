@@ -27,13 +27,18 @@ public:
 
     QList<Plugin*> plugins() const { return m_pluginlist; }
 
+signals:
+    void pluginLoaded(const QString& t_path);
+    void pluginUnLoaded(const QString& t_path);
+
 public slots:
     void unloadAll();
 
 private slots:
-    void onUnloadComplete(const QString &t_modulepath);
-    void onFileChanged(const QString &filePath);
-    void onFolderChanged(const QString &folderPath);
+    void onLoadComplete(const QString& t_modulepath);
+    void onUnloadComplete(const QString& t_modulepath);
+    void onFileChanged(const QString& filePath);
+    void onFolderChanged(const QString& folderPath);
 
 private:
     QList<Plugin*> m_pluginlist;

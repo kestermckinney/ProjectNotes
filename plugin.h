@@ -36,6 +36,7 @@ signals:
     void sendMethod(const QString& t_method);
 
     void moduleUnloaded(const QString& t_modulepath);
+    void moduleLoaded(const QString& t_modulepath);
 
 private slots:
     void onReturnedXml(const QString& t_xml);

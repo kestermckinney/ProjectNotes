@@ -119,7 +119,7 @@ void PNTableView::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname
     exportmodel->setFilter(0, keyval.toString());
     exportmodel->refresh();
 
-    PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(model())->getDBOs();
+    PNDatabaseObjects* dbo = dynamic_cast<PNSqlQueryModel*>(dynamic_cast<QSortFilterProxyModel*>(model())->sourceModel())->getDBOs();
 
     QDomDocument* xdoc = dbo->createXMLExportDoc(exportmodel, t_exportname);
     QString xmlstr = xdoc->toString();
@@ -336,87 +336,88 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
     // check for plugins
     menu->addSeparator();
 
-    QString table = ((PNSqlQueryModel*) ((QSortFilterProxyModel*)this->model())->sourceModel())->tablename();
+    QString table = dynamic_cast<PNSqlQueryModel*> (dynamic_cast<QSortFilterProxyModel*>(this->model())->sourceModel())->tablename();
 
     for ( Plugin* p : MainWindow::getPluginManager()->plugins())
     {
-        for (QMap<QString, PluginMenu>::const_iterator it = p->pythonplugin().menus().cbegin(); it != p->pythonplugin().menus().cend(); ++it)
-        //for ( PluginMenu pm : p->pythonplugin().menus()) //TODO: Remove
+         for ( PluginMenu m : p->pythonplugin().menus())
         {
-            if (!it.value().dataexport().isEmpty())
+            if (m.dataexport().compare(table, Qt::CaseInsensitive) == 0)
             {
-                if (it.value().submenu().isEmpty())
-                {
-                    QAction* bact = nullptr;
+                // TODO: Remove
+                // if (m.submenu().isEmpty())
+                // {
+                //     QAction* bact = nullptr;
 
-                    int pastseparator = 0;
+                //     int pastseparator = 0;
 
-                    for (QAction* action : menu->actions())
-                    {
-                        if (pastseparator > 1 && action->text().compare(it.key(), Qt::CaseInsensitive) > 0)
-                            bact = action;
+                //     for (QAction* action : menu->actions())
+                //     {
+                //         if (pastseparator > 1 && action->text().compare(m.menutitle(), Qt::CaseInsensitive) > 0)
+                //             bact = action;
 
-                        if (action->isSeparator())
-                            pastseparator++;
-                    }
+                //         if (action->isSeparator())
+                //             pastseparator++;
+                //     }
 
-                    if (bact)
-                    {
-                        QAction* act = new QAction(QIcon(":/icons/add-on.png"), it.key(), this);
-                        connect(act, &QAction::triggered, this,[p, it, this](){slotPluginMenu(p, it.value().functionname(), it.value().dataexport());});
-                        menu->insertAction(bact, act);
-                    }
-                    else
-                    {
-                        QAction* act = menu->addAction(it.key(), [p, it, this](){slotPluginMenu(p, it.value().functionname(), it.value().dataexport());});
-                        act->setIcon(QIcon(":/icons/add-on.png"));
-                    }
-                }
-                else
-                {
-                    // find the submenu if it exists
-                    QMenu* submenu = nullptr;
+                //     if (bact)
+                //     {
+                        QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), this);
+                        connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname(), m.dataexport());});
+                        MainWindow::addMenuItem(menu, m.submenu(), m.menutitle(), act, 2);
+                //        menu->insertAction(bact, act);
+                //     }
+                //     else
+                //     {
+                //         QAction* act = menu->addAction(m.menutitle(), [p, m, this](){slotPluginMenu(p, m.functionname(), m.dataexport());});
+                //         act->setIcon(QIcon(":/icons/add-on.png"));
+                //     }
+                // }
+                // else
+                // {
+                //     // find the submenu if it exists
+                //     QMenu* submenu = nullptr;
 
-                    int pastseparator = 0;
+                //     int pastseparator = 0;
 
-                    for (QAction* action : menu->actions())
-                    {
-                        if (pastseparator > 1 && action->text().compare(it.value().submenu(), Qt::CaseInsensitive) == 0)
-                        {
-                            submenu = action->menu();
-                        }
+                //     for (QAction* action : menu->actions())
+                //     {
+                //         if (pastseparator > 1 && action->text().compare(m.submenu(), Qt::CaseInsensitive) == 0)
+                //         {
+                //             submenu = action->menu();
+                //         }
 
-                        if (action->isSeparator())
-                        {
-                            pastseparator++;
-                        }
-                    }
+                //         if (action->isSeparator())
+                //         {
+                //             pastseparator++;
+                //         }
+                //     }
 
-                    // if it didn't exist create it sorted
-                    if (!submenu)
-                    {
-                        int pastseparator = 0;
+                //     // if it didn't exist create it sorted
+                //     if (!submenu)
+                //     {
+                //         int pastseparator = 0;
 
-                        for (QAction* action : menu->actions())
-                        {
-                            if (pastseparator > 1 && action->text().compare(it.value().submenu(), Qt::CaseInsensitive) > 0)
-                            {
-                                submenu = new QMenu(it.value().submenu());
-                                menu->insertMenu(action, submenu);
-                                break;
-                            }
+                //         for (QAction* action : menu->actions())
+                //         {
+                //             if (pastseparator > 1 && action->text().compare(m.submenu(), Qt::CaseInsensitive) > 0)
+                //             {
+                //                 submenu = new QMenu(m.submenu());
+                //                 menu->insertMenu(action, submenu);
+                //                 break;
+                //             }
 
-                            if (action->isSeparator())
-                                pastseparator++;
-                        }
-                    }
+                //             if (action->isSeparator())
+                //                 pastseparator++;
+                //         }
+                //     }
 
-                    if (!submenu)
-                        submenu = menu->addMenu(it.value().submenu());
+                //     if (!submenu)
+                //         submenu = menu->addMenu(m.submenu());
 
-                    QAction* act = submenu->addAction(it.key(), [p, it, this](){slotPluginMenu(p, it.value().functionname(), it.value().dataexport());});
-                    act->setIcon(QIcon(":/icons/add-on.png"));
-                }
+                //     QAction* act = submenu->addAction(m.menutitle(), [p, m, this](){slotPluginMenu(p, m.functionname(), m.dataexport());});
+                //     act->setIcon(QIcon(":/icons/add-on.png"));
+                // }
             }
         }
     }

@@ -1,7 +1,10 @@
 #include <QCoreApplication>
+#include <QDomDocument>
 
 #include "plugin.h"
 #include "QLogger.h"
+#include "pndatabaseobjects.h"
+#include "pnsettings.h"
 
 Plugin::Plugin(QObject *parent, bool isthread)
     : QObject{parent}
@@ -24,6 +27,7 @@ Plugin::Plugin(QObject *parent, bool isthread)
 
     // send commands to python worker
     QObject::connect(this, &Plugin::sendMethodXml, m_pythonworker, &PythonWorker::sendMethodXml);
+    QObject::connect(this, &Plugin::sendMethod, m_pythonworker, &PythonWorker::sendMethod);
     QObject::connect(this, &Plugin::loadModule, m_pythonworker, &PythonWorker::loadModule);
     QObject::connect(this, &Plugin::unloadModule, m_pythonworker, &PythonWorker::unloadModule);
     QObject::connect(this, &Plugin::reloadModule, m_pythonworker, &PythonWorker::reloadModule);
@@ -53,6 +57,7 @@ Plugin::~Plugin()
 
     // send commands to python worker
     QObject::disconnect(this, &Plugin::sendMethodXml, m_pythonworker, &PythonWorker::sendMethodXml);
+    QObject::disconnect(this, &Plugin::sendMethod, m_pythonworker, &PythonWorker::sendMethod);
     QObject::disconnect(this, &Plugin::loadModule, m_pythonworker, &PythonWorker::loadModule);
     QObject::disconnect(this, &Plugin::unloadModule, m_pythonworker, &PythonWorker::unloadModule);
     QObject::disconnect(this, &Plugin::reloadModule, m_pythonworker, &PythonWorker::reloadModule);
@@ -108,8 +113,16 @@ void Plugin::setEnabled(const bool t_enabled)
 
 void Plugin::onReturnedXml(const QString& t_xml)
 {
-    // TODO: process database update
     QLog_Debug(PLUGINSMOD, QString("Plugin: %1 Returned Xml: %2").arg(m_modulepath, t_xml));
+
+    QDomDocument xmldoc;
+
+    xmldoc.setContent(t_xml);
+
+    PNDatabaseObjects dbo;
+    dbo.openDatabase(global_DBObjects.getDatabaseFile());
+    dbo.importXMLDoc(xmldoc);
+    dbo.closeDatabase();
 }
 
 void Plugin::onLoadComplete(const PythonPlugin& t_plugin)
@@ -131,7 +144,9 @@ void Plugin::onLoadComplete(const PythonPlugin& t_plugin)
     if (!members.isEmpty())
         members = "Provided Function(s): " + members;
 
-    QLog_Debug(PLUGINSMOD, QString("Loaded Plugin: %1%2").arg(m_plugin.name(), logMsg));
+    emit moduleLoaded(m_modulepath);
+
+    QLog_Debug(PLUGINSMOD, QString("Loaded Plugin: %1 %2").arg(m_plugin.name(), logMsg));
 }
 
 void Plugin::onUnLoadComplete()

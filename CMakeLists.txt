@@ -1,6 +1,20 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ProjectNotes VERSION 4.0 LANGUAGES CXX)
+project(ProjectNotes VERSION 4.0.0 LANGUAGES CXX)
+
+cmake_minimum_required(VERSION 3.16)
+
+# Optionally, set version components explicitly
+set(APP_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(APP_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(APP_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+
+# Configure the version header file
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/version.h.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/version.h
+    @ONLY
+)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -11,6 +25,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Sql Xml)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Sql Xml)
+
+set(ENV{QT_LOGGING_RULES} "qt.*.debug=true")
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
@@ -110,24 +126,28 @@ if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(ProjectNotes)
 endif()
 
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/plugins
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/plugins ${CMAKE_CURRENT_BINARY_DIR}/plugins
-    COMMENT "Copying plugins"
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/plugins/*
+add_custom_command(TARGET ProjectNotes POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/plugins ${CMAKE_CURRENT_BINARY_DIR}/plugins
+    COMMENT "Creating symbolic link to plugins folder"
+    # COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/plugins
+    # COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/plugins ${CMAKE_CURRENT_BINARY_DIR}/plugins
+    # COMMAND ${CMAKE_COMMAND} -E echo "Copying plugins"
+    # DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/plugins/*
 )
 
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/threads
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/threads ${CMAKE_CURRENT_BINARY_DIR}/threads
-    COMMENT "Copying threads"
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/threads/*
+add_custom_command(TARGET ProjectNotes POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/threads ${CMAKE_CURRENT_BINARY_DIR}/threads
+    COMMENT "Creating symbolic link to threads folder"
+    # COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/threads
+    # COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/threads ${CMAKE_CURRENT_BINARY_DIR}/threads
+    # COMMAND ${CMAKE_COMMAND} -E echo "Copying threads"
+    # DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/threads/*
 )
 
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+add_custom_command(TARGET ProjectNotes POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/dictionary
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/dictionary ${CMAKE_CURRENT_BINARY_DIR}/dictionary
-    COMMENT "Copying dictionary"
+    COMMAND ${CMAKE_COMMAND} -E echo "Copying dictionary"
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dictionary/*
 )
 

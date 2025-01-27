@@ -51,12 +51,7 @@ MainWindow::MainWindow(QWidget *t_parent)
     QString logloc = LogViewer::getLogFileLocation();
     logmanager->addDestination("plugins.log", PLUGINSMOD, LogLevel::Debug, logloc, LogMode::OnlyFile);
     logmanager->addDestination("console.log", CONSOLEMOD, LogLevel::Info, logloc, LogMode::OnlyFile);
-    logmanager->addDestination("projectnotes", PNOTESMOD, LogLevel::Info, logloc, LogMode::OnlyFile);
-
-    //TODO: Remove
-    // QLog_Debug(PLUGINSMOD, QStringLiteral("Plugins log started..."));
-    // QLog_Info(CONSOLEMOD, QStringLiteral("Console log started..."));
-    // QLog_Info(PNOTESMOD, QStringLiteral("ProjectNotes log started..."));
+    logmanager->addDestination("projectnotes.log", PNOTESMOD, LogLevel::Debug, logloc, LogMode::OnlyFile);
 
     logmanager->resume();
 
@@ -68,6 +63,7 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     // view state
     m_page_history.clear();
+    m_navigation_location = -1;
     m_forward_back_history.clear();
 
     global_Settings.getWindowState("MainWindow", this);
@@ -97,30 +93,14 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     m_plugin_manager = new PluginManager(this);
 
-    //TODO: REMOVE m_plugin_settings_dialog = new PluginSettingsDialog(this);
+    connect(m_plugin_manager, &PluginManager::pluginLoaded, this, &MainWindow::onPluginLoaded);
+    connect(m_plugin_manager, &PluginManager::pluginUnLoaded, this, &MainWindow::onPluginUnLoaded);
 
     if (!global_Settings.getLastDatabase().toString().isEmpty())
         if (QFile(global_Settings.getLastDatabase().toString()).exists())
             openDatabase(global_Settings.getLastDatabase().toString());
 
     setButtonAndMenuStates();
-
-    buildPluginMenu();
-
-    //TODO: REMOVE
-    // call all of the startup events
-    // for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
-    // {
-    //     if (p->hasStartupEvent() && p->isEnabled())
-    //     {
-    //         slotStartupEvent(p);
-    //     }
-    // }
-
-    //TODO: REMOVE
-    // m_timer = new QTimer(this);
-    // connect(m_timer, SIGNAL(timeout()), this, SLOT(slotTimerUpdates()));
-    // m_timer->start(1000*60); // one minute timer event
 }
 
 void MainWindow::aboutToQuit()
@@ -128,380 +108,105 @@ void MainWindow::aboutToQuit()
     m_plugin_manager->unloadAll();
 }
 
+void MainWindow::addMenuItem(QMenu* t_menu, const QString& t_submenu, const QString& t_menutitle, QAction* t_action, int t_section)
+{
+    if (t_submenu.isEmpty())
+    {
+        QAction* nextaction = nullptr;
+        int pastseparator = 0;
+
+        for (QAction* action : t_menu->actions())
+        {
+            QString itemtitle = action->text().replace("&","");
+
+            if (pastseparator >= t_section && itemtitle.compare(t_menutitle, Qt::CaseInsensitive) > 0)
+            {
+                nextaction = action;
+                break;
+            }
+
+            if (action->isSeparator())
+                pastseparator++;
+        }
+
+        t_menu->insertAction(nextaction, t_action);
+    }
+    else
+    {
+        // find the submenu if it exists
+        QMenu* submenu = nullptr;
+
+        for (QAction* action : t_menu->actions())
+        {
+            QString itemtitle = action->text().replace("&","");
+
+            if (itemtitle.compare(t_submenu, Qt::CaseInsensitive) == 0 && action->menu() != nullptr)
+            {
+                addMenuItem(action->menu(), QString(), t_menutitle, t_action, 0);
+                return;
+            }
+        }
+
+        // if it didn't exist create it sorted
+        if (!submenu)
+        {
+            int pastseparator = 0;
+            QAction* nextaction = nullptr;
+
+            for (QAction* action : t_menu->actions())
+            {
+                QString itemtitle = action->text().replace("&","");
+
+                if (pastseparator >= t_section && itemtitle.compare(t_submenu, Qt::CaseInsensitive) > 0)
+                {
+                    nextaction = action;
+                    break;
+                }
+
+                if (action->isSeparator())
+                    pastseparator++;
+            }
+
+            submenu = new QMenu(t_submenu);
+            t_menu->insertMenu(nextaction, submenu);
+            addMenuItem(submenu, QString(), t_menutitle, t_action, 0);
+        }
+    }
+}
+
+
 void MainWindow::buildPluginMenu()
 {
     // clear any other plugin items
-    QAction* mi = ui->menuPlugins->actions().last();
+    QMenu *menu = ui->menuPlugins;
+    int itemCount = menu->actions().count() - 1;
 
-    while ( mi->text().compare("View Logs") != 0 ) // see form definition
+    for (int i = itemCount; i > 0; i--)
     {
-        ui->menuPlugins->removeAction(mi);
-        mi = ui->menuPlugins->actions().last();
+        QAction *action = menu->actions().at(i);
+        menu->removeAction(action);
     }
 
-    ui->menuPlugins->addSeparator();
+    menu->addSeparator();
 
     // add globally available plugins
     for ( Plugin* p : m_plugin_manager->plugins())
     {
-        for (QMap<QString, PluginMenu>::const_iterator it = p->pythonplugin().menus().cbegin(); it != p->pythonplugin().menus().cend(); ++it)
-        //for ( PluginMenu pm : p->pythonplugin().menus())  TODO: Remove
+        for ( PluginMenu m : p->pythonplugin().menus())
         {
-            if (it.value().dataexport().isEmpty()) // don't include any right-click data menus
+            if (m.dataexport().isEmpty()) // don't include any right-click data menus
             {
-                if (it.value().submenu().isEmpty())
-                {
-                    QAction* bact = nullptr;
-                    int pastseparator = 0;
-
-                    for (QAction* action : ui->menuPlugins->actions())
-                    {
-                        if (pastseparator > 0 && action->text().compare(it.key(), Qt::CaseInsensitive) > 0)
-                            bact = action;
-
-                        if (action->isSeparator())
-                            pastseparator++;
-                    }
-
-                    if (bact)
-                    {
-                        QAction* act = new QAction(QIcon(":/icons/add-on.png"), it.key(), this);
-                        connect(act, &QAction::triggered, this,[p, it, this](){slotPluginMenu(p, it.value().functionname());});
-                        ui->menuPlugins->insertAction(bact, act);
-                    }
-                    else
-                    {
-                        QAction* act = ui->menuPlugins->addAction(it.key(), [p, it, this](){slotPluginMenu(p, it.value().functionname());});
-                        act->setIcon(QIcon(":/icons/add-on.png"));
-                    }
-                }
-                else
-                {
-                    // find the submenu if it exists
-                    QMenu* submenu = nullptr;
-
-                    for (QAction* action : ui->menuPlugins->actions())
-                    {
-                        if (action->text().compare(it.value().submenu(), Qt::CaseInsensitive) == 0)
-                            submenu = action->menu();
-                    }
-
-                    // if it didn't exist create it sorted
-                    if (!submenu)
-                    {
-                        int pastseparator = 0;
-
-                        for (QAction* action : ui->menuPlugins->actions())
-                        {
-                            if (pastseparator > 0 && action->text().compare(it.value().submenu(), Qt::CaseInsensitive) > 0)
-                            {
-                                submenu = new QMenu(it.value().submenu());
-                                ui->menuPlugins->insertMenu(action, submenu);
-                                break;
-                            }
-
-                            if (action->isSeparator())
-                                pastseparator++;
-                        }
-                    }
-
-                    if (!submenu)
-                        submenu = ui->menuPlugins->addMenu(it.value().submenu());
-
-                    QAction* act = submenu->addAction(it.key(), [p, it, this](){slotPluginMenu(p, it.value().functionname());});
-                    act->setIcon(QIcon(":/icons/add-on.png"));
-                }
+                QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), this);
+                connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname());});
+                addMenuItem(ui->menuPlugins, m.submenu(), m.menutitle(), act, 1);
             }
         }
     }
 }
 
-//TODO: REMOVE
-// void MainWindow::slotTimerEvent(PNPlugin* t_plugin)
-// {
-//     QString xmlstr;
-
-//     if (!t_plugin->getTableName().isEmpty())
-//     {
-//         // this plugin requires an open database
-//         if (!global_DBObjects.isOpen())
-//             return;
-
-//         // determine what table to export
-//         PNSqlQueryModel* table = global_DBObjects.findOpenTable(t_plugin->getTableName());
-
-//         if (table)
-//         {
-//             // build export xml
-//             PNSqlQueryModel* model = table->createExportVersion();
-//             model->refresh();
-//             QDomDocument* doc = global_DBObjects.createXMLExportDoc(model, t_plugin->getChildTablesFilter());
-//             xmlstr = doc->toString();
-//             delete model;
-//             delete doc;
-//         }
-//         else
-//         {
-//             QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1)specified by the plugin does not exist.").arg(t_plugin->getTableName()));
-//             return;
-//         }
-//     }
-
-//     // call the menu plugin with the data structure
-//     if (t_plugin->hasEveryMinuteEvent())
-//     {
-//         QString response = t_plugin->callEveryMinuteEvent(xmlstr);
-
-//         if (!response.isEmpty())
-//         {
-//             QApplication::processEvents();
-
-//             QDomDocument doc;
-//             doc.setContent(response);
-
-//             if (!global_DBObjects.importXMLDoc(doc))
-//                 QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
-
-//             QApplication::processEvents();
-//         }
-//     }
-
-//     if (t_plugin->hasEvery5MinutesEvent() && (m_minute_counter % 5) == 0)
-//     {
-//         QString response = t_plugin->callEvery5MinutesEvent(xmlstr);
-
-//         if (!response.isEmpty())
-//         {
-//             QApplication::processEvents();
-
-//             QDomDocument doc;
-//             doc.setContent(response);
-
-//             if (!global_DBObjects.importXMLDoc(doc))
-//                 QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
-
-//             QApplication::processEvents();
-//         }
-//     }
-
-//     if (t_plugin->hasEvery10MinutesEvent() && (m_minute_counter % 10) == 0)
-//     {
-//         QString response = t_plugin->callEvery10MinutesEvent(xmlstr);
-
-//         if (!response.isEmpty())
-//         {
-//             QApplication::processEvents();
-
-//             QDomDocument doc;
-//             doc.setContent(response);
-
-//             if (!global_DBObjects.importXMLDoc(doc))
-//                 QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
-
-//             QApplication::processEvents();
-//         }
-//     }
-
-//     if (t_plugin->hasEvery15MinutesEvent() && (m_minute_counter % 15) == 0)
-//     {
-//         QString response = t_plugin->callEvery15MinutesEvent(xmlstr);
-
-//         if (!response.isEmpty())
-//         {
-//             QApplication::processEvents();
-
-//             QDomDocument doc;
-//             doc.setContent(response);
-
-//             if (!global_DBObjects.importXMLDoc(doc))
-//                 QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
-
-//             QApplication::processEvents();
-//         }
-//     }
-
-//     if (t_plugin->hasEvery30MinutesEvent() && (m_minute_counter % 30) == 0)
-//     {
-//         QString response = t_plugin->callEvery30MinutesEvent(xmlstr);
-
-//         if (!response.isEmpty())
-//         {
-//             QApplication::processEvents();
-
-//             QDomDocument doc;
-//             doc.setContent(response);
-
-//             if (!global_DBObjects.importXMLDoc(doc))
-//                 QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
-
-//             QApplication::processEvents();
-//         }
-//     }
-// }
-
-//TODO: REMOVE
-// void MainWindow::slotTimerUpdates()
-// {
-//     m_minute_counter++;
-
-//     // call all of the timer events
-//     for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
-//     {
-//         if ( p->isEnabled() &&
-//             (p->hasEveryMinuteEvent() ||
-//             p->hasEvery5MinutesEvent() ||
-//             p->hasEvery10MinutesEvent() ||
-//             p->hasEvery15MinutesEvent() ||
-//             p->hasEvery30MinutesEvent())
-//            )
-//         {
-//             //qDebug() << "calling timer event for " << p->getPNPluginName() << " is enabled " << p->isEnabled();
-//             slotTimerEvent(p);
-//         }
-//     }
-// }
-
-//TODO: REMOVE
-// void MainWindow::slotStartupEvent(PNPlugin* t_plugin)
-// {
-//     QString xmlstr;
-
-//     if (!t_plugin->getTableName().isEmpty())
-//     {
-//         // this plugin requires an open database
-//         if (!global_DBObjects.isOpen())
-//             return;
-
-//         // determine what table to export
-//         PNSqlQueryModel* table = global_DBObjects.findOpenTable(t_plugin->getTableName());
-
-//         if (table)
-//         {
-//             // build export xml
-//             PNSqlQueryModel* model = table->createExportVersion();
-//             model->refresh();
-//             QDomDocument* doc = global_DBObjects.createXMLExportDoc(model, t_plugin->getChildTablesFilter());
-//             xmlstr = doc->toString();
-//             delete model;
-//             delete doc;
-//         }
-//         else
-//         {
-//             QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1)specified by the plugin does not exist.").arg(t_plugin->getTableName()));
-//             return;
-//         }
-//     }
-
-//     // call the menu plugin with the data structure
-//     QString response = t_plugin->callStartupEvent(xmlstr);
-
-//     if (!response.isEmpty())
-//     {
-//         QApplication::processEvents();
-
-//         QDomDocument doc;
-//         doc.setContent(response);
-
-//         if (!global_DBObjects.importXMLDoc(doc))
-//             QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
-
-//         QApplication::processEvents();
-//     }
-// }
-
-//TODO: REMOVE
-// void MainWindow::slotShutdownEvent(PNPlugin* t_plugin)
-// {
-//     QString xmlstr;
-
-//     if (!t_plugin->getTableName().isEmpty())
-//     {
-//         // this plugin requires an open database
-//         if (!global_DBObjects.isOpen())
-//             return;
-
-//         // determine what table to export
-//         PNSqlQueryModel* table = global_DBObjects.findOpenTable(t_plugin->getTableName());
-
-//         if (table)
-//         {
-//             // build export xml
-//             PNSqlQueryModel* model = table->createExportVersion();
-//             model->refresh();
-//             QDomDocument* doc = global_DBObjects.createXMLExportDoc(model, t_plugin->getChildTablesFilter());
-//             xmlstr = doc->toString();
-//             delete model;
-//             delete doc;
-//         }
-//         else
-//         {
-//             QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1)specified by the plugin does not exist.").arg(t_plugin->getTableName()));
-//             return;
-//         }
-//     }
-
-//     // call the menu plugin with the data structure
-//     QString response = t_plugin->callShutdownEvent(xmlstr);
-
-//     if (!response.isEmpty())
-//     {
-//         QApplication::processEvents();
-
-//         QDomDocument doc;
-//         doc.setContent(response);
-
-//         if (!global_DBObjects.importXMLDoc(doc))
-//             QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
-
-//         QApplication::processEvents();
-//     }
-// }
-
-
 void MainWindow::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname)
 {
-    //TODO: Remove
-    // QString xmlstr;
-
-    // if (!t_plugin->dataexport().isEmpty())
-    // {
-    //     // determine what table to export
-    //     PNSqlQueryModel* table = global_DBObjects.findOpenTable(t_plugin->dataexport());
-
-    //     if (table)
-    //     {
-    //         // build export xml
-    //         PNSqlQueryModel* model = table->createExportVersion();
-    //         model->refresh();
-    //         QDomDocument* doc = global_DBObjects.createXMLExportDoc(model, t_plugin->getChildTablesFilter());
-    //         xmlstr = doc->toString();
-    //         delete model;
-    //         delete doc;
-    //     }
-    //     else
-    //     {
-    //         QMessageBox::critical(this, tr("Plugin Call Failed"), QString("The table (%1) specified by the plugin does not exist.").arg(t_plugin->getTableName()));
-    //         return;
-    //     }
-    // }
-
-    // call the menu plugin with the data structure any return xml will get processed when it is sent to the plugin manager
-    //TODO: RemoveQString response = 
     t_plugin->callMethod(t_functionname);
-
-    //TODO: Remove
-    // if (!response.isEmpty())
-    // {
-    //     QApplication::processEvents();
-
-    //     QDomDocument doc;
-    //     doc.setContent(response);
-
-    //     if (!global_DBObjects.importXMLDoc(doc))
-    //         QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
-
-    //     QApplication::processEvents();
-    // }
 }
 
 MainWindow::~MainWindow()
@@ -518,7 +223,9 @@ MainWindow::~MainWindow()
     disconnect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
     disconnect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
 
-    //TODO: REMOVE disconnect(m_timer, SIGNAL(timeout()), this, SLOT(slotTimerUpdates()));
+    disconnect(m_plugin_manager, &PluginManager::pluginLoaded, this, &MainWindow::onPluginLoaded);
+    disconnect(m_plugin_manager, &PluginManager::pluginUnLoaded, this, &MainWindow::onPluginUnLoaded);
+
 
     // need to save the screen layout befor the model is removed from the view
     // The destructor of PNTableview does not save the state
@@ -529,19 +236,6 @@ MainWindow::~MainWindow()
     ui->tableViewTeam->setModel(nullptr);
     ui->tableViewTrackerItems->setModel(nullptr);
     ui->tableViewAtendees->setModel(nullptr);
-
-    // stop all of the timer events
-    //TODO: REMOVE m_timer->stop();
-
-    //TODO: REMOVE
-    // call all of the shutdown events
-    // for ( PNPlugin* p : MainWindow::getPluginManager()->getPlugins())
-    // {
-    //     if (p->hasShutdownEvent() && p->isEnabled())
-    //     {
-    //         slotShutdownEvent(p);
-    //     }
-    // }
 
     global_Settings.setWindowState("MainWindow", this);
 
@@ -562,11 +256,7 @@ MainWindow::~MainWindow()
 
     delete m_preferences_dialog;
     delete m_find_replace_dialog;
-
-    //TODO: REMOVE delete m_plugin_settings_dialog;
     delete m_plugin_manager;
-    //TODO: REMOVE delete m_timer;
-
     delete ui;
 
     ui = nullptr;
@@ -1004,6 +694,7 @@ void MainWindow::navigateBackward()
 
         ui->stackedWidget->setCurrentWidget(current);
         dynamic_cast<PNBasePage*>(current)->setPageTitle();
+
         buildPluginMenu();
         dynamic_cast<PNBasePage*>(current)->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
     }
@@ -1034,6 +725,7 @@ void MainWindow::navigateForward()
 
         ui->stackedWidget->setCurrentWidget(current);
         dynamic_cast<PNBasePage*>(current)->setPageTitle();
+
         buildPluginMenu();
         dynamic_cast<PNBasePage*>(current)->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
     }
@@ -2142,4 +1834,22 @@ void MainWindow::on_actionDecrease_Font_Size_triggered()
     }
 
     global_Settings.setStoredInt("DefaultFontSize",  QApplication::font().pointSize());
+}
+
+void MainWindow::onPluginLoaded(const QString& t_pluginpath)
+{
+    HistoryNode* hn = m_forward_back_history.at(m_navigation_location);
+    PNBasePage* current = hn->m_page;
+
+    buildPluginMenu();
+    dynamic_cast<PNBasePage*>(current)->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
+}
+
+void MainWindow::onPluginUnLoaded(const QString& t_pluginpath)
+{
+    HistoryNode* hn = m_forward_back_history.at(m_navigation_location);
+    PNBasePage* current = hn->m_page;
+
+    buildPluginMenu();
+    dynamic_cast<PNBasePage*>(current)->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
 }

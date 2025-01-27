@@ -12,6 +12,8 @@ public:
     PeoplePage();
     void openRecord(QVariant &t_record_id) override;
     void setPageTitle() override;
+    void buildPluginMenu(PluginManager* t_pm, QMenu* t_menu) override {};  // don't show a data integrated menu
+
     virtual void setupModels( Ui::MainWindow *t_ui ) override;
 public slots:
     void setButtonAndMenuStates() override;

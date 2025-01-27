@@ -29,9 +29,9 @@ QT_END_NAMESPACE
 //TODO: REMOVE #include "pluginsettingsdialog.h"
 
 //TODO: get this information from cmakesettings.txt
-#define PNMajorVersion 3
-#define PNMinorVersion 3
-#define PNFixVersion 1
+// #define PNMajorVersion 3
+// #define PNMinorVersion 3
+// #define PNFixVersion 1
 
 #define MAXHISTORYNODES 20
 
@@ -70,6 +70,7 @@ public:
     static PluginManager* getPluginManager() { return m_plugin_manager; }
     void buildPluginMenu();
     void CloseDatabase();
+    static void addMenuItem(QMenu* t_menu, const QString& t_submenu, const QString& t_menutitle, QAction* t_action, int t_section);
 
 public slots:
     void slotOpen_ProjectDetails_triggered(QVariant t_record_id);
@@ -126,19 +127,17 @@ private slots:
     void on_actionSearch_triggered();
     void on_pushButtonSearch_clicked();
     void on_lineEditSearchText_returnPressed();
-    //TODO: REMOVE void on_actionPlugin_Settings_triggered();
     void on_actionView_LogView_triggered();
     void on_actionXML_Import_triggered();
     void on_actionXML_Export_triggered();
 
     void slotPluginMenu(Plugin* t_plugin, const QString& t_functionname);
-    //TODO: REMOVE void slotStartupEvent(PNPlugin* t_plugin);
-    //TODO: REMOVE void slotShutdownEvent(PNPlugin* t_plugin);
-    //TODO: REMOVE void slotTimerEvent(PNPlugin* t_plugin);
-    //TODO: REMOVE void slotTimerUpdates();
     void on_actionOpen_Item_triggered();
     void on_actionIncrease_Font_Size_triggered();
     void on_actionDecrease_Font_Size_triggered();
+
+    void onPluginLoaded(const QString& t_pluginpath);
+    void onPluginUnLoaded(const QString& t_pluginpath);
 
 private:
     Ui::MainWindow *ui;   
@@ -147,10 +146,6 @@ private:
     FindReplaceDialog* m_find_replace_dialog = nullptr;
     static PluginManager* m_plugin_manager;
     LogViewer* m_logview_dialog = nullptr;
-
-    //TODO: REMOVE PluginSettingsDialog* m_plugin_settings_dialog = nullptr;
-    //TODO: REMOVE QTimer* m_timer = nullptr;
-    //TODO: REMOVE long m_minute_counter = 0;
 
     QStack<HistoryNode*> m_page_history;
     QStack<HistoryNode*> m_forward_back_history;

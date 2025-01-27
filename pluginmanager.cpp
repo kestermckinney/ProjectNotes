@@ -3,8 +3,11 @@
 #include <QDir>
 #include <QDirIterator>
 #include <QCoreApplication>
+#include <QDomDocument>
+
 #include "QLogger.h"
 #include "QLoggerWriter.h"
+#include "pndatabaseobjects.h"
 
 using namespace QLogger;
 
@@ -52,18 +55,17 @@ static PyObject* update_data(PyObject* self, PyObject* args)
     }
     // TODO: add xml data import and export
 
-    // QDomDocument xmldoc;
-    // QByteArray ba(input);
+    QDomDocument xmldoc;
+    QByteArray ba(input);
 
-    // xmldoc.setContent(ba);
+    xmldoc.setContent(ba);
 
-    // PNDatabaseObjects dbo;
-    // dbo.openDatabase(global_DBObjects.getDatabaseFile());
-    // long result = dbo.importXMLDoc(xmldoc);
-    // dbo.closeDatabase();
+    PNDatabaseObjects dbo;
+    dbo.openDatabase(global_DBObjects.getDatabaseFile());
+    int result = dbo.importXMLDoc(xmldoc);
+    dbo.closeDatabase();
 
-    // return PyBool_FromLong(result);
-    return nullptr;
+    return PyBool_FromLong(result);
 }
 
 
@@ -76,43 +78,41 @@ static PyObject* get_data(PyObject* self, PyObject* args)
     {
         Py_RETURN_NONE;
     }
-    // TODO: add xml data import and export
-    // QDomDocument xmldoc;
-    // QByteArray ba(input);
 
-    // xmldoc.setContent(ba);
+    QDomDocument xmldoc;
+    QByteArray ba(input);
 
-    // qDebug() << "Embedded Thread " << QThread::currentThreadId();
+    xmldoc.setContent(ba);
 
-    // PNDatabaseObjects dbo;
-    // dbo.openDatabase(global_DBObjects.getDatabaseFile());
-    // QList<PNSqlQueryModel*>* models = dbo.getData(xmldoc);
+    PNDatabaseObjects dbo;
+    dbo.openDatabase(global_DBObjects.getDatabaseFile());
+    QList<PNSqlQueryModel*>* models = dbo.getData(xmldoc);
 
-    // if (!models)
-    // {
-    //     dbo.closeDatabase();
-    //     Py_RETURN_NONE;
-    // }
+    if (!models)
+    {
+        dbo.closeDatabase();
+        Py_RETURN_NONE;
+    }
 
-    // QDomDocument* returnxmldoc = dbo.createXMLExportDoc(models);
+    QDomDocument* returnxmldoc = dbo.createXMLExportDoc(models);
 
-    // qDeleteAll(*models);
-    // models->clear();
-    // delete models;
+    qDeleteAll(*models);
+    models->clear();
+    delete models;
 
-    // if (!returnxmldoc)
-    // {
-    //     dbo.closeDatabase();
-    //     Py_RETURN_NONE;
-    // }
+    if (!returnxmldoc)
+    {
+        dbo.closeDatabase();
+        Py_RETURN_NONE;
+    }
 
-    // QString xmlstring = returnxmldoc->toString();
+    QString xmlstring = returnxmldoc->toString();
 
-    // dbo.closeDatabase();
+    dbo.closeDatabase();
 
-    // delete returnxmldoc;
+    delete returnxmldoc;
 
-    PyObject* pyString = nullptr; //= Py_BuildValue("s", xmlstring.toUtf8().constData());
+    PyObject* pyString = Py_BuildValue("s", xmlstring.toUtf8().constData());
     return pyString;
 }
 
@@ -190,8 +190,8 @@ PyModuleDef embmodule =
         PyModuleDef_HEAD_INIT,
         "projectnotes",
         "Project Notes module callable from embeded Python",
-        -1//,
-        // data_methods//, 0, 0, 0, 0,
+        -1,
+        data_methods, 0, 0, 0, 0,
 };
 
 // Internal state
@@ -263,8 +263,6 @@ void reset_stdout()
     Py_XDECREF(g_stderr);
     g_stderr = 0;
 }
-
-// TODO:  Check for file changes and trigger module reloads
 
 PluginManager::PluginManager(QObject *parent)
     : QObject{parent}
@@ -394,6 +392,9 @@ void PluginManager::loadPluginFiles(const QString& t_path, bool t_isthread)
 
             m_fileWatcher->addPath(filePath);
 
+            connect(module, &Plugin::moduleLoaded, this, &PluginManager::pluginLoaded);
+            connect(module, &Plugin::moduleUnloaded, this, &PluginManager::pluginUnLoaded);
+
             module->loadPlugin(filePath);
         }
     }
@@ -407,6 +408,9 @@ PluginManager::~PluginManager()
 
     for ( Plugin* p : m_pluginlist)
     {
+        disconnect(p, &Plugin::moduleLoaded, this, &PluginManager::pluginLoaded);
+        disconnect(p, &Plugin::moduleUnloaded, this, &PluginManager::pluginUnLoaded);
+
         delete p;
     }
 
@@ -440,7 +444,6 @@ void PluginManager::onUnloadComplete(const QString &t_modulepath)
         {
             if ((*it)->modulepath().compare(t_modulepath) == 0)
             {
-                disconnect(*it, &Plugin::moduleUnloaded, this, &PluginManager::onFileChanged);
                 m_fileWatcher->removePath(t_modulepath);
 
                 delete *it;
@@ -453,6 +456,8 @@ void PluginManager::onUnloadComplete(const QString &t_modulepath)
             }
         }
     }
+
+    emit pluginUnLoaded(t_modulepath);
 }
 
 void PluginManager::onFileChanged(const QString &filePath)
@@ -476,3 +481,9 @@ void PluginManager::onFolderChanged(const QString &folderPath)
     loadPluginFiles(m_pluginspath, false);
     loadPluginFiles(m_threadspath, true);
 }
+
+void PluginManager::onLoadComplete(const QString& t_modulepath)
+{
+    emit pluginLoaded(t_modulepath);
+}
+
