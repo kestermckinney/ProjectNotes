@@ -1,6 +1,21 @@
 #include "pythonworker.h"
 #include <QFileInfo>
 
+#ifndef PyObject_HasAttrStringWithError // PY_VERSION_HEX < 0x030A0000  // Python 3.10
+static int PyObject_HasAttrStringWithError(PyObject *obj, const char *attr_name) {
+    if (!obj || !attr_name) {
+        PyErr_SetString(PyExc_TypeError, "null argument to PyObject_HasAttrStringWithError");
+        return -1;
+    }
+    int result = PyObject_HasAttrString(obj, attr_name);
+    if (result == 0) {
+        return 0;  // Attribute does not exist
+    } else if (result == -1) {
+        PyErr_Clear();  // Clear error as PyObject_HasAttrString does not set it properly
+    }
+    return result;
+}
+#endif
 
 PythonWorker::PythonWorker(QObject *parent)
     : QObject{parent}
