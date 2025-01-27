@@ -4,6 +4,8 @@
 #include "pnbasepage.h"
 #include "pndatabaseobjects.h"
 #include "pndatabaseobjects.h"
+#include "pythonworker.h"
+#include "plugin.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
@@ -285,104 +287,40 @@ void PNBasePage::buildPluginMenu(PluginManager* t_pm, QMenu* t_menu)
     // add menus relevant to the current table
     for ( Plugin* p : t_pm->plugins())
     {
-        for (QMap<QString, PluginMenu>::const_iterator it = p->pythonplugin().menus().cbegin(); it != p->pythonplugin().menus().cend(); ++it)
-        //for ( PluginMenu pm : p->pythonplugin().menus())  //TODO: Remove
+        for ( PluginMenu m : p->pythonplugin().menus())
         {
-            if (it.value().dataexport().isEmpty()) // don't include any right-click data menus
-            {
-                if (it.value().submenu().isEmpty())
-                {
-                    QAction* bact = nullptr;
-                    int pastseparator = 0;
-
-                    for (QAction* action : t_menu->actions())
-                    {
-                        if (pastseparator > 0 && action->text().compare(it.key(), Qt::CaseInsensitive) > 0)
-                            bact = action;
-
-                        if (action->isSeparator())
-                            pastseparator++;
-                    }
-
-                    if (bact)
-                    {
-                        QAction* act = new QAction(QIcon(":/icons/add-on.png"), it.key(), this);
-                        connect(act, &QAction::triggered, this,[p, it, this](){slotPluginMenu(p, it.value().functionname());});
-                        t_menu->insertAction(bact, act);
-                    }
-                    else
-                    {
-                        QAction* act = t_menu->addAction(it.key(), [p, it, this](){slotPluginMenu(p, it.value().functionname());});
-                        act->setIcon(QIcon(":/icons/add-on.png"));
-                    }
-                }
-                else
-                {
-                    // find the submenu if it exists
-                    QMenu* submenu = nullptr;
-
-                    for (QAction* action : t_menu->actions())
-                    {
-                        if (action->text().compare(it.value().submenu(), Qt::CaseInsensitive) == 0)
-                            submenu = action->menu();
-                    }
-
-                    // if it didn't exist create it sorted
-                    if (!submenu)
-                    {
-                        int pastseparator = 0;
-
-                        for (QAction* action : t_menu->actions())
-                        {
-                            if (pastseparator > 0 && action->text().compare(it.value().submenu(), Qt::CaseInsensitive) > 0)
-                            {
-                                submenu = new QMenu(it.value().submenu());
-                                t_menu->insertMenu(action, submenu);
-                                break;
-                            }
-
-                            if (action->isSeparator())
-                                pastseparator++;
-                        }
-                    }
-
-                    if (!submenu)
-                        submenu = t_menu->addMenu(it.value().submenu());
-
-                    QAction* act = submenu->addAction(it.key(), [p, it, this](){slotPluginMenu(p, it.value().functionname());});
-                    act->setIcon(QIcon(":/icons/add-on.png"));
-                }
+            QString table = dynamic_cast<PNSqlQueryModel*>(m_current_model->sourceModel())->tablename();
+            if (m.dataexport().compare(table, Qt::CaseInsensitive) == 0) // only show right-click data menus
+            {               
+                QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), this);
+                connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname(), m.tablefilter());});
+                MainWindow::addMenuItem(t_menu, m.submenu(), m.menutitle(), act, 2);
             }
         }
     }
 }
 
-void PNBasePage::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname)
+void PNBasePage::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_tablefilter)
 {
-    // QString response;
+    QString response;
 
-    // if (m_page_model)
-    // {
-        // QVariant keyval;
-        // keyval = m_page_model->data(m_page_model->index(0, 0));
+    if (m_page_model)
+    {
+        QVariant keyval;
+        keyval = m_page_model->data(m_page_model->index(0, 0));
 
-        //TODO: Remove QApplication::processEvents();
+        PNSqlQueryModel *exportmodel = m_page_model->createExportVersion();
+        exportmodel->setFilter(0, keyval.toString());
+        exportmodel->refresh();
 
-        // PNSqlQueryModel *exportmodel = m_page_model->createExportVersion();
-        // exportmodel->setFilter(0, keyval.toString());
-        // exportmodel->refresh();
+        QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(exportmodel, t_tablefilter);
+        QString xmlstr = xdoc->toString();
 
-        // QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(exportmodel, t_plugin->getChildTablesFilter());
-        // QString xmlstr = xdoc->toString();
+        //call the menu plugin with the data structure
+        t_plugin->callXmlMethod(t_functionname, xmlstr);
 
-        // call the menu plugin with the data structure
-        //response = t_plugin->callDataRightClickEvent(xmlstr);
-    t_plugin->callMethod(t_functionname);
-
-        // delete xdoc;
-
-        //TODO: Remove QApplication::processEvents();
-    // }
+        delete xdoc;
+    }
 
     //TODO: Remove
     // if (!response.isEmpty())

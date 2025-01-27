@@ -116,18 +116,22 @@ void PythonWorker::loadModule(const QString& t_modulepath)
     else
         m_plugin.setTimerDelay(dlay.toInt());
 
-    //TODO: get the menu structure from the python module
     if (PyObject_HasAttrStringWithError(m_PNPluginModule, "pluginmenus") == 1)
     {
-        PyObject* dict = PyObject_GetAttrString(m_PNPluginModule, "pluginmenus");
-        if (dict)
+        PyObject* dictArray = PyObject_GetAttrString(m_PNPluginModule, "pluginmenus");
+        if (dictArray)
         {
-            PyObject* key, *subdict;
-            Py_ssize_t pos = 0;
+            //PyObject* key, *subdict;  TODO Remvoe
+            //Py_ssize_t pos = 0;
 
-            while (PyDict_Next(dict, &pos, &key, &subdict))
+            //while (PyDict_Next(dictArray, &pos, &key, &subdict))
+            Py_ssize_t len = PyList_Size(dictArray);
+            for (Py_ssize_t i = 0; i < len; ++i)
             {
-                const char* menukey = PyUnicode_AsUTF8(key);
+                PyObject* subdict = PyList_GetItem(dictArray, i);
+
+                //TODO: Remove const char* menukey = PyUnicode_AsUTF8(key);
+                const char* menutitle = nullptr;
                 const char* functionname = nullptr;
                 const char* tablefilter = nullptr;
                 const char* submenu = nullptr;
@@ -136,7 +140,10 @@ void PythonWorker::loadModule(const QString& t_modulepath)
                 // Check if the value is another dictionary
                 if (PyDict_Check(subdict))
                 {
-                    PyObject* value = PyDict_GetItemString(subdict, "functionname");
+                    PyObject* value = PyDict_GetItemString(subdict, "menutitle");
+                    if (value)
+                        menutitle = PyUnicode_AsUTF8(value);
+                    value = PyDict_GetItemString(subdict, "function");
                     if (value)
                         functionname = PyUnicode_AsUTF8(value);
                     value = PyDict_GetItemString(subdict, "tablefilter");
@@ -148,15 +155,14 @@ void PythonWorker::loadModule(const QString& t_modulepath)
                     value = PyDict_GetItemString(subdict, "dataexport");
                     if (value)
                         dataexport = PyUnicode_AsUTF8(value);
-                    value = PyDict_GetItemString(subdict, "functionname");
 
-                    m_plugin.addMenu(QString(menukey),QString(functionname),QString(tablefilter),QString(submenu),QString(dataexport));
+                    m_plugin.addMenu(QString(menutitle),QString(functionname),QString(tablefilter),QString(submenu),QString(dataexport));
                     m_plugin.addMember(QString(functionname));
                 }
             }
         }
 
-        Py_XDECREF(dict);
+        Py_XDECREF(dictArray);
     }
 
     checkForMember("event_startup");
@@ -193,7 +199,6 @@ void PythonWorker::unloadModule()
 
     if (!m_isloaded)
     {
-        QLog_Debug(PLUGINSMOD, QString("Can not unload module %1, because it is not loaded.").arg(m_modulename));
         return;
     }
 
@@ -208,6 +213,8 @@ void PythonWorker::unloadModule()
 
     disconnect(m_timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
     delete m_timer;
+
+    m_plugin.clearMenu();
 
     PyGILState_STATE gstate = PyGILState_Ensure();
     //  TODO RemoveQLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO));
@@ -334,7 +341,9 @@ void PythonWorker::sendMethodXml(const QString& t_method, const QString& t_xml)
         return;
     }
 
-    val = QString(result);
+    val = QString::fromUtf8(result);
+
+    QLog_Debug(PLUGINSMOD, QString("%1 should return %2").arg(Q_FUNC_INFO).arg(val));
 
     Py_XDECREF(func);
     Py_XDECREF(pymethod);

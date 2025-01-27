@@ -1,6 +1,7 @@
 // Copyright (C) 2022, 2023 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
+#include <version.h>
 #include "databasestructure.h"
 #include "mainwindow.h"
 #include "pndatabaseobjects.h"
@@ -417,7 +418,7 @@ bool DatabaseStructure::CreateDatabase()
             FROM projects
     )");
 
-    global_DBObjects.execute(QString("INSERT INTO application_version ( current_version ) VALUES( '%1.%2.%3' ); ").arg(PNMajorVersion).arg(PNMinorVersion).arg(PNFixVersion));
+    global_DBObjects.execute(QString("INSERT INTO application_version ( current_version ) VALUES( '%1.%2.%3' ); ").arg(APP_VERSION_MAJOR).arg(APP_VERSION_MINOR).arg(APP_VERSION_PATCH));
 
     return true;
 }
@@ -960,7 +961,7 @@ bool DatabaseStructure::UpgradeDatabase()
         )");
     }
 
-    global_DBObjects.execute(QString("update application_version set current_version = '%1.%2.%3' where current_version = '%4'; ").arg(PNMajorVersion).arg(PNMinorVersion).arg(PNFixVersion).arg(currentversion));
+    global_DBObjects.execute(QString("update application_version set current_version = '%1.%2.%3' where current_version = '%4'; ").arg(APP_VERSION_MAJOR).arg(APP_VERSION_MINOR).arg(APP_VERSION_PATCH).arg(currentversion));
 
     return true;
 }

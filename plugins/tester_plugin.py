@@ -1,6 +1,6 @@
 import sys
 import platform
-#import projectnotes
+import projectnotes  
 import threading
 import time
 
@@ -10,7 +10,7 @@ from PyQt6.QtSql import QSqlDatabase
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QThread
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
-from PyQt6.QtGui import QDesktopServices
+from PyQt6.QtGui import QDesktopServices  
 
 # Project Notes Plugin Parameters
 pluginname = "Testing Plugin" # name used in the menu
@@ -22,11 +22,19 @@ plugindescription = "This is test plugin. Supported platforms: Windows, Linux, M
 # the table filter filters the XML sent to the plugin to make the export more efficient
 # the menu can be placed under a submenu
 # the function wil only show on the right click if it matches the table specified in dataexport
-pluginmenus = {
-    "Menu 1" : {"function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu", "dataexport" : ""},
-    "Menu 2" : {"function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu", "dataexport" : ""},
-    "Export Project" : {"function" : "event_data_rightclick", "tablefilter" : "", "submenu" : "Test Submenu", "dataexport" : "projects"},
-}
+pluginmenus = [
+    {"menutitle" : "Menu 2", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu B", "dataexport" : ""},
+    {"menutitle" : "Menu 1", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu B", "dataexport" : ""},
+    {"menutitle" : "Menu 2", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu A", "dataexport" : ""},
+    {"menutitle" : "Menu 1", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu A", "dataexport" : ""},
+    {"menutitle" : "Alpha Menu B" , "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
+    {"menutitle" : "Alpha Menu C", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
+    {"menutitle" : "Export Project", "function" : "event_data_rightclick", "tablefilter" : "", "submenu" : "Test Submenu", "dataexport" : "projects"},
+    {"menutitle" : "Beta Menu A", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
+    {"menutitle" : "Gamma Menu A", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
+    {"menutitle" : "Alpha Menu A", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
+    {"menutitle" : "Client Update Test", "function" : "event_data_rightclick", "tablefilter" : "", "submenu" : "", "dataexport" : "clients"},
+]
 
 # events must have a data structure and data view specified
 #
@@ -77,10 +85,6 @@ def get_setting(settingname):
     return val
 
 def event_menuclick():
-    xmlval = QDomDocument()
-    if (xmlval.setContent(xmlstr) == False):
-        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
-        return
 
     print("Tester: Event Menu click called...")
 
@@ -92,9 +96,9 @@ def event_menuclick():
     """
 
     #projectnotes.update_data(contact)
-    #print(projectnotes.get_data(contact))
+    print(projectnotes.get_data(contact))
 
-    QMessageBox.critical(None, "Test Plugin", "menu click called", QMessageBox.StandardButton.Cancel)
+    QMessageBox.information(None, "Test Plugin", "Menu click called.", QMessageBox.StandardButton.Ok)
 
     return ""
 
@@ -108,12 +112,12 @@ def event_data_rightclick(xmlstr):
     print("Tester: Right Click Data Event called...")
     print(xmlstr)
 
-    QMessageBox.critical(None, "how", "Will this work", QMessageBox.StandardButton.Cancel)
+    QMessageBox.information(None, "Data Right-Click Event", "Returning XML", QMessageBox.StandardButton.Ok)
 
     # simple test will always change the name back
     retval = """<projectnotes>
          <table name="clients">
-          <row id="161357299500029810">
+          <row id="161357299500029810">   
            <column name="client_id">161357299500029810</column>
            <column name="client_name">E-Cubed """
 

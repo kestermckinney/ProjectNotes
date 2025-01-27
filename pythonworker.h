@@ -27,6 +27,7 @@ public:
     {
         if (this != &t_pluginmenu)
         {
+            m_menu_title = t_pluginmenu.menutitle();
             m_functionname = t_pluginmenu.functionname();;
             m_tablefilter = t_pluginmenu.tablefilter();
             m_submenu = t_pluginmenu.submenu();
@@ -36,8 +37,8 @@ public:
         return *this;
     }
 
-    // void setMenuTitle(const QString& t_menutitle) {m_menu_title = t_menutitle; }
-    // QString menutitle() const { return m_menu_title; }
+    void setMenuTitle(const QString& t_menutitle) {m_menu_title = t_menutitle; }
+    QString menutitle() const { return m_menu_title; }
     void setFunctionName(const QString& t_functionmame) {m_functionname = t_functionmame;}
     QString functionname() const { return m_functionname;}
     void setTableFilter(const QString& t_tablefilter) {m_tablefilter = t_tablefilter;}
@@ -48,7 +49,7 @@ public:
     QString dataexport() const {return m_dataexport;}
 
 private:
-    //QString m_menu_title;  //TODO: load the menu title from python
+    QString m_menu_title;
     QString m_functionname;
     QString m_tablefilter;
     QString m_submenu;
@@ -65,9 +66,7 @@ public:
         {
             m_name = t_original.name();
             m_description = t_original.description();
-            // m_childtables = t_original.childtables();
             m_members = t_original.members();
-            // m_tables = t_original.tables();
             m_submenu = t_original.submenu();
             m_menus = t_original.menus();
         }
@@ -79,26 +78,31 @@ public:
     QString name() const { return m_name; }
     void setDescription(const QString& t_description) { m_description = t_description; }
     QString description() const { return m_description; }
-    // void setChildTables(const QString& t_childtables) { m_childtables = t_childtables; }
-    // QString childtables() const { return m_childtables; }
     void addMember(const QString& t_member ) { m_members.append(t_member); }
     QStringList members() const { return m_members; }
     bool hasMember(const QString& t_member) const { return m_members.contains(t_member); }
-    // void addTable(const QString& t_table) { m_tables.append(t_table); }
-    // void setTables(const QStringList& t_tables) { m_tables = t_tables; }
-    // QStringList tables() const { return m_tables; }
-    bool supportsTable(const QString& t_menu, const QString& t_table) { if (m_menus.contains(t_menu)) return m_menus[t_menu].dataexport().compare(t_table) == 0; }
+    //TODO: Remove bool supportsTable(const QString& t_menu, const QString& t_table) { if (m_menus.contains(t_menu)) return m_menus[t_menu].dataexport().compare(t_table) == 0; }
     void setSubmenu(const QString& t_submenu) { m_submenu = t_submenu; }
     QString submenu() const { return m_submenu; }
     void setTimerDelay(const int t_timerdelay) { m_timerdelay = t_timerdelay; }
     int timerdelay() { return m_timerdelay; }
-    QMap<QString, PluginMenu> menus() const { return m_menus; }
-    void addMenu(const QString& t_menuname, const QString& t_functionname, const QString& t_tablefilter, const QString& t_submenu, const QString& t_dataexport)
+    QList<PluginMenu> menus() const { return m_menus; }
+    void addMenu(const QString& t_menutitle, const QString& t_functionname, const QString& t_tablefilter, const QString& t_submenu, const QString& t_dataexport)
     {
-        m_menus[t_menuname].setFunctionName(t_functionname);
-        m_menus[t_menuname].setTableFilter(t_tablefilter);
-        m_menus[t_menuname].setSubmenu(t_submenu);
-        m_menus[t_menuname].setDataExport(t_dataexport);
+        PluginMenu m;
+
+        m.setMenuTitle(t_menutitle);
+        m.setFunctionName(t_functionname);
+        m.setTableFilter(t_tablefilter);
+        m.setSubmenu(t_submenu);
+        m.setDataExport(t_dataexport);
+
+        m_menus.append(m);
+    }
+
+    void clearMenu()
+    {
+        m_menus.clear();
     }
 
 private:
@@ -108,7 +112,7 @@ private:
     QStringList m_members;
     QString m_submenu;
 
-    QMap<QString, PluginMenu> m_menus;
+    QList<PluginMenu> m_menus;
 };
 
 Q_DECLARE_METATYPE(PythonPlugin)
