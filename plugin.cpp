@@ -120,9 +120,17 @@ void Plugin::onReturnedXml(const QString& t_xml)
     xmldoc.setContent(t_xml);
 
     PNDatabaseObjects dbo;
-    dbo.openDatabase(global_DBObjects.getDatabaseFile());
-    dbo.importXMLDoc(xmldoc);
-    dbo.closeDatabase();
+
+    if (!dbo.getDatabaseFile().isEmpty())
+    {
+        dbo.openDatabase(global_DBObjects.getDatabaseFile());
+        dbo.importXMLDoc(xmldoc);
+        dbo.closeDatabase();
+    }
+    else
+    {
+        QLog_Debug(PLUGINSMOD, QString("Database was already closed.  XML was not processed."));
+    }
 }
 
 void Plugin::onLoadComplete(const PythonPlugin& t_plugin)

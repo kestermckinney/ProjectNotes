@@ -104,8 +104,11 @@ MainWindow::MainWindow(QWidget *t_parent)
 }
 
 void MainWindow::aboutToQuit()
-{
+{        
     m_plugin_manager->unloadAll();
+
+    // the unloads can produce shutdown events to process
+    QApplication::processEvents();
 }
 
 void MainWindow::addMenuItem(QMenu* t_menu, const QString& t_submenu, const QString& t_menutitle, QAction* t_action, int t_section)

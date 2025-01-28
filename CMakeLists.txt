@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.16)
 
 project(ProjectNotes VERSION 4.0.0 LANGUAGES CXX)
 
-cmake_minimum_required(VERSION 3.16)
-
 # Optionally, set version components explicitly
 set(APP_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(APP_VERSION_MINOR ${PROJECT_VERSION_MINOR})

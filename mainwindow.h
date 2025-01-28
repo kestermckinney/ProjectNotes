@@ -66,7 +66,7 @@ public:
     bool navigateAtStart() { return (m_navigation_location <= 0); }
     void buildHistory(HistoryNode* t_node);
     void navigateClearHistory() { m_navigation_location = -1; m_forward_back_history.clear(); }
-    PNBasePage* navigateCurrentPage() { return (m_navigation_location == -1 ? nullptr : m_forward_back_history.at(m_navigation_location)->m_page ); }
+    PNBasePage* navigateCurrentPage() { return ((m_forward_back_history.count() - 1) < m_navigation_location || m_navigation_location == -1 ? nullptr : m_forward_back_history.at(m_navigation_location)->m_page ); }
     static PluginManager* getPluginManager() { return m_plugin_manager; }
     void buildPluginMenu();
     void CloseDatabase();
