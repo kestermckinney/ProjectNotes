@@ -259,33 +259,45 @@ QString PNDatabaseObjects::execute(const QString& t_sql)
 
     DB_LOCK;
 
-    m_sqlite_db.transaction();
+    // m_sqlite_db.transaction();
     //query.exec(t_sql);
-    query.execBatch();
+    query.prepare(t_sql);
+    query.exec();
+    //query.execBatch();
+
+    QLog_Debug(PNOTESMOD, QString("Execute: %1").arg(t_sql));
 
     QSqlError e = query.lastError();
     if (e.isValid())
     {
-        m_sqlite_db.rollback();
+        // m_sqlite_db.rollback();
 
         qDebug() << "Exec Error:  " << e.text();
-        qDebug() << "For SQL:  " << t_sql;
-    }
-    else
-    {
-        m_sqlite_db.commit();
-    }
 
-    DB_UNLOCK;
+        QLog_Debug(PNOTESMOD, QString("Exec Error: %1").arg(e.text()));
+
+        QLog_Debug(PNOTESMOD, QString("For SQL: %1").arg(t_sql));
+    }
+    // else
+    // {
+    //     m_sqlite_db.commit();
+    // }
+
 
     if (query.next())
     {
-        return query.value(0).toString();
+        QString val = query.value(0).toString();
+        DB_UNLOCK;
+        QLog_Debug(PNOTESMOD, QString("Result: %1").arg(query.value(0).toString()));
+        return val;
     }
     else
     {
+        DB_UNLOCK;
+        QLog_Debug(PNOTESMOD, QString("Result No Record"));
         return QString();
     }
+
 }
 
 void PNDatabaseObjects::closeDatabase()

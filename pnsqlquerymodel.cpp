@@ -1940,7 +1940,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                         if (!lookup_value.isNull() && !m_lookup_table[colnum].isEmpty())
                         {
                             QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookup_fk_column_name[colnum], m_lookup_table[colnum], m_lookup_value_column_name[colnum], lookup_value);
-                            //qDebug() << "EXEC LOOKUP EXISTING: " << sql;
+                            QLog_Debug(PNOTESMOD, QString("EXEC LOOKUP EXISTING: %1").arg(sql));
 
                             field_value = getDBOs()->execute(sql);
                         }
@@ -2039,7 +2039,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
     QString exists_count = getDBOs()->execute(exists_sql);
     QString sql;
 
-    //qDebug() << "CHECK EXISTS: " << exists_sql;
+    QLog_Debug(PNOTESMOD, QString("CHECK EXISTS: %1").arg(exists_sql));
 
     if (exists_count.toInt() > 0)
     {
@@ -2067,7 +2067,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
         sql = QString("insert into %1 (%2) values (%3)").arg(m_tablename, fields, insertvalues);
     }
 
-    //qDebug() << "XML Generated SQL: " << sql;
+    QLog_Debug(PNOTESMOD, QString("XML Generated SQL:%1 ").arg(sql));
 
     getDBOs()->execute(sql);
 
