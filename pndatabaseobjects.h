@@ -50,7 +50,7 @@ class PNDatabaseObjects : public QObject
     Q_OBJECT
 public:
     explicit PNDatabaseObjects(QObject *t_parent = nullptr);
-    bool openDatabase(QString& t_databasepath);
+    bool openDatabase(const QString& t_databasepath, const QString& t_connectionname);
     bool createDatabase(QString& t_databasepath);
     void closeDatabase();
     QSqlDatabase& getDb() { return m_sqlite_db; }

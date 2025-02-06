@@ -319,6 +319,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
 
     // check to see if identified by is in the project team
     {
+        DB_LOCK;
         QSqlQuery select(db);
         select.prepare("select identified_by, (select name from people p where p.people_id=identified_by) people_id_name from item_tracker where item_id = ? and identified_by not in (select people_id from project_people where project_id = ?)");
         select.bindValue(0, t_item_id);
@@ -332,10 +333,12 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
                 msg += "Identified By, " + select.record().value(1).toString() + " is not found on the selected projects team.  Remove or change this person before changing to this project number.\n";
             }
         }
+        DB_UNLOCK;
     }
 
     // check to see if assigned to is in the project team
     {
+        DB_LOCK;
         QSqlQuery select(db);
         select.prepare("select assigned_to, (select name from people p where p.people_id=assigned_to) people_id_name from item_tracker where item_id = ? and assigned_to not in (select people_id from project_people where project_id = ?)");
         select.bindValue(0, t_item_id);
@@ -349,10 +352,12 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
                 msg += "Assigned To, " + select.record().value(1).toString() + " is not found on the selected projects team.  Remove or change this person before changing to this project number.\n";
             }
         }
+        DB_UNLOCK;
     }
 
     // check to see if updated by value is in team
     {
+        DB_LOCK;
         QSqlQuery select(db);
         select.prepare("select updated_by, (select name from people p where p.people_id=updated_by) people_id_name from item_tracker_updates where item_id = ? and updated_by not in (select people_id from project_people where project_id = ? )");
         select.bindValue(0, t_item_id);
@@ -366,6 +371,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
                 msg += "Comment Updated By, " + select.record().value(1).toString() + " is not found on the selected projects team.  Remove or change this person before changing to this project number.\n";
             }
         }
+        DB_UNLOCK;
     }
 
     if (issuestoresolve)
@@ -377,6 +383,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
     // note the meeting value will be cleared
     // have user confirm the change
     {
+        DB_LOCK;
         QSqlQuery select(db);
         select.prepare("select note_id from item_tracker where item_id = ?");
         select.bindValue(0, t_item_id);
@@ -390,6 +397,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
                     return false;
             }
         }
+        DB_UNLOCK;
     }
 
     return true;

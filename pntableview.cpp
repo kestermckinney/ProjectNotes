@@ -344,80 +344,9 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
         {
             if (m.dataexport().compare(table, Qt::CaseInsensitive) == 0)
             {
-                // TODO: Remove
-                // if (m.submenu().isEmpty())
-                // {
-                //     QAction* bact = nullptr;
-
-                //     int pastseparator = 0;
-
-                //     for (QAction* action : menu->actions())
-                //     {
-                //         if (pastseparator > 1 && action->text().compare(m.menutitle(), Qt::CaseInsensitive) > 0)
-                //             bact = action;
-
-                //         if (action->isSeparator())
-                //             pastseparator++;
-                //     }
-
-                //     if (bact)
-                //     {
-                        QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), this);
-                        connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname(), m.dataexport());});
-                        MainWindow::addMenuItem(menu, m.submenu(), m.menutitle(), act, 2);
-                //        menu->insertAction(bact, act);
-                //     }
-                //     else
-                //     {
-                //         QAction* act = menu->addAction(m.menutitle(), [p, m, this](){slotPluginMenu(p, m.functionname(), m.dataexport());});
-                //         act->setIcon(QIcon(":/icons/add-on.png"));
-                //     }
-                // }
-                // else
-                // {
-                //     // find the submenu if it exists
-                //     QMenu* submenu = nullptr;
-
-                //     int pastseparator = 0;
-
-                //     for (QAction* action : menu->actions())
-                //     {
-                //         if (pastseparator > 1 && action->text().compare(m.submenu(), Qt::CaseInsensitive) == 0)
-                //         {
-                //             submenu = action->menu();
-                //         }
-
-                //         if (action->isSeparator())
-                //         {
-                //             pastseparator++;
-                //         }
-                //     }
-
-                //     // if it didn't exist create it sorted
-                //     if (!submenu)
-                //     {
-                //         int pastseparator = 0;
-
-                //         for (QAction* action : menu->actions())
-                //         {
-                //             if (pastseparator > 1 && action->text().compare(m.submenu(), Qt::CaseInsensitive) > 0)
-                //             {
-                //                 submenu = new QMenu(m.submenu());
-                //                 menu->insertMenu(action, submenu);
-                //                 break;
-                //             }
-
-                //             if (action->isSeparator())
-                //                 pastseparator++;
-                //         }
-                //     }
-
-                //     if (!submenu)
-                //         submenu = menu->addMenu(m.submenu());
-
-                //     QAction* act = submenu->addAction(m.menutitle(), [p, m, this](){slotPluginMenu(p, m.functionname(), m.dataexport());});
-                //     act->setIcon(QIcon(":/icons/add-on.png"));
-                // }
+                QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), this);
+                connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname(), m.dataexport());});
+                MainWindow::addMenuItem(menu, m.submenu(), m.menutitle(), act, 2);
             }
         }
     }

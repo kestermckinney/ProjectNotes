@@ -19,18 +19,18 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(PNDatabaseObjects* t_dbo, bool 
 
     setTableName("project_people", "Project People");
 
-    addColumn(0, tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
-    addColumn(1, tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
+    addColumn("teammember_id", tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("project_id", tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
             "projects", "project_id", "project_number");
-    addColumn(2, tr("Name"), DBString, DBNotSearchable, DBNotRequired, DBEditable, DBNotUnique,
+    addColumn("people_id", tr("Name"), DBString, DBNotSearchable, DBNotRequired, DBEditable, DBNotUnique,
             "people", "people_id", "name");
-    addColumn(3, tr("Name"), DBString, DBSearchable, DBNotRequired, DBReadOnly);
-    addColumn(4, tr("Receive Status"), DBBool, DBSearchable, DBNotRequired, DBEditable);
-    addColumn(5, tr("Role"), DBString, DBSearchable, DBNotRequired, DBEditable);
-    addColumn(6, tr("Email"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
-    addColumn(7, tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
-    addColumn(8, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
-    addColumn(9, tr("Client Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
+    addColumn("name", tr("Name"), DBString, DBSearchable, DBNotRequired, DBReadOnly);
+    addColumn("recieve_status_report", tr("Receive Status"), DBBool, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("role", tr("Role"), DBString, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("email", tr("Email"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
+    addColumn("project_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
+    addColumn("project_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
+    addColumn("client_name", tr("Client Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
 
     QStringList key1 = {"project_id", "people_id"};
 
@@ -75,9 +75,9 @@ const QModelIndex ProjectTeamMembersModel::newRecord(const QVariant* t_fk_value1
     Q_UNUSED(t_fk_value1);
     Q_UNUSED(t_fk_value2);
 
-    QSqlRecord qr = emptyrecord();
+    QVector<QVariant> qr = emptyrecord();
 
-    qr.setValue("project_id", *t_fk_value1);
+    qr[getColumnNumber("project_id")] = *t_fk_value1;
 
     return addRecord(qr);
 }
@@ -94,16 +94,26 @@ bool ProjectTeamMembersModel::setData(const QModelIndex &t_index, const QVariant
             if (data(qi).isNull())
             {
                 QModelIndex qi_key = index(t_index.row(), 2);
+                DB_LOCK;
+
 
                 // get the default
-                QSqlQuery qry(QString("select role from people where people_id='%1'").arg( data(qi_key).toString() ), getDBOs()->getDb());
+                QSqlQuery qry(getDBOs()->getDb());
+                qry.prepare(QString("select role from people where people_id='%1'").arg( data(qi_key).toString()));
                 //qDebug() << QString("select role from people where people_id='%1'").arg( data(qi_key).toString() );
 
                 qry.exec();
 
                 if (qry.next())
                 {
+
+                    DB_UNLOCK;
                     setData(qi, qry.record().value(0), t_role);
+                }
+                else
+                {
+
+                    DB_UNLOCK;
                 }
             }
         }

@@ -13,7 +13,7 @@ ValueSelectModel::ValueSelectModel(PNDatabaseObjects* t_dbo, bool t_gui) : PNSql
 
     setTableName("Values", "Values");
 
-    addColumn(0, tr("Values"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
+    addColumn("Vals", tr("Values"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
     setReadOnly();
 
     refresh();
@@ -41,7 +41,7 @@ void ValueSelectModel::setValuesColumn(QString t_column)
     else
         where = " where ";
 
-    QString fieldnm = m_filtering_model->emptyrecord().fieldName(col);
+    QString fieldnm = m_filtering_model->emptyrecord()[col].toString();
 
     setType(0, m_filtering_model->getType(col));
     QString sql = "select distinct " + fieldnm + " from ( " + m_filtering_model->BaseSQL() + where + fieldnm + " is not null )";

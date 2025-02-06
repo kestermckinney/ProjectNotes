@@ -15,8 +15,8 @@ ClientsModel::ClientsModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryMode
 
     setTableName("clients", "Clients");
 
-    addColumn(0, tr("Client ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
-    addColumn(1, tr("Client Name"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
+    addColumn("client_id", tr("Client ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("client_name", tr("Client Name"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
 
     addRelatedTable("people", "client_id", "client_id", "People");
     addRelatedTable("projects", "client_id", "client_id", "Projects");
@@ -33,6 +33,7 @@ const QModelIndex ClientsModel::newRecord(const QVariant* t_fk_value1, const QVa
     Q_UNUSED(t_fk_value1);
     Q_UNUSED(t_fk_value2);
 
+    DB_LOCK;
     QSqlQuery select(getDBOs()->getDb());
     select.prepare("select max(client_name) from clients where client_name like '[%'");
     QString maxnum;
@@ -43,11 +44,12 @@ const QModelIndex ClientsModel::newRecord(const QVariant* t_fk_value1, const QVa
         maxnum = select.value(0).toString();
         maxnum.remove(QRegularExpression("[^0-9]+"));
     }
+    DB_UNLOCK;
 
     int num = maxnum.toInt() + 1;
 
-    QSqlRecord qr = emptyrecord();
-    qr.setValue(1, QString("[New Client %1]").arg(num, 2, 10, QLatin1Char('0')));
+    QVector<QVariant> qr = emptyrecord();
+    qr[1] = QString("[New Client %1]").arg(num, 2, 10, QLatin1Char('0'));
 
     return addRecord(qr);
 }

@@ -14,26 +14,26 @@ NotesActionItemsModel::NotesActionItemsModel(PNDatabaseObjects* t_dbo, bool t_gu
 
     setTableName("item_tracker", "Notes Action Items");
 
-    addColumn(0, tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
-    addColumn(1, tr("Item"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
-    addColumn(2, tr("Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_type);
-    addColumn(3, tr("Item Name"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(4, tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+    addColumn("item_id", tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
+    addColumn("item_number", tr("Item"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
+    addColumn("item_type", tr("Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_type);
+    addColumn("item_name", tr("Item Name"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("identified_by", tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name");
-    addColumn(5, tr("Date Identified"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(6, tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(7, tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+    addColumn("date_identified", tr("Date Identified"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("description", tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("assigned_to", tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name");
-    addColumn(8, tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_priority);
-    addColumn(9, tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_status);
-    addColumn(10, tr("Date Due"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(11, tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
-    addColumn(12, tr("Date Resolved"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(13, tr("Note"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+    addColumn("priority", tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_priority);
+    addColumn("status", tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_status);
+    addColumn("date_due", tr("Date Due"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("last_update", tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
+    addColumn("date_resolved", tr("Date Resolved"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("note_id", tr("Note"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "project_notes", "note_id", "(strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title)");
-    addColumn(14, tr("Project ID"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+    addColumn("project_id", tr("Project ID"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "projects", "project_id", "project_number");
-    addColumn(15, tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("internal_item", tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
     QStringList key1 = {"project_id", "item_number"};
 
@@ -50,7 +50,7 @@ NotesActionItemsModel::NotesActionItemsModel(PNDatabaseObjects* t_dbo, bool t_gu
 
 const QModelIndex NotesActionItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
-    QSqlRecord qr = emptyrecord();
+    QVector<QVariant> qr = emptyrecord();
 
     // determine the max item_number from the database, then determine the max number from the record cache in case new unsaved records were added
     QString itemnumber_string = getDBOs()->execute(QString("select max(CAST(item_number as integer)) from item_tracker where project_id = '%1'").arg(t_fk_value2->toString()));
@@ -67,19 +67,19 @@ const QModelIndex NotesActionItemsModel::newRecord(const QVariant* t_fk_value1, 
 
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
 
-    qr.setValue(13, *t_fk_value1); // note id
-    qr.setValue(14, *t_fk_value2); // project id
+    qr[13] = *t_fk_value1; // note id
+    qr[14] = *t_fk_value2; // project id
 
-    qr.setValue(1, QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0')));  // Need to make a counter that looks good for items
-    qr.setValue(2, "Action");
-    qr.setValue(4, getDBOs()->getProjectManager()); // default identified by to the pm
-    qr.setValue(5, curdate); // default to today
-    qr.setValue(8, "High"); // set a default priority
-    qr.setValue(9, "New"); // set a default status
-    qr.setValue(10, QVariant());
-    qr.setValue(11, curdate); // date data as entered
-    qr.setValue(12, QVariant());
-    qr.setValue(15, 0);
+    qr[1] = QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0'));  // Need to make a counter that looks good for items
+    qr[2] = "Action";
+    qr[4] = getDBOs()->getProjectManager(); // default identified by to the pm
+    qr[5] = curdate; // default to today
+    qr[8] = "High"; // set a default priority
+    qr[9] = "New"; // set a default status
+    // qr[10] = QVariant());
+    qr[11] = curdate; // date data as entered
+    // qr[12] = QVariant(); todo: not needed
+    qr[15] = 0;
 
     return addRecord(qr);
 }

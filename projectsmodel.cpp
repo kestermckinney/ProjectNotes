@@ -18,29 +18,29 @@ ProjectsModel::ProjectsModel(PNDatabaseObjects* t_dbo, bool t_gui) : PNSqlQueryM
     setBaseSql("select * from projects_view");
     setTableName("projects", "Project");
 
-    addColumn(0, tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
-    addColumn(1, tr("Number"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
-    addColumn(2, tr("Project Name"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
-    addColumn(3, tr("Status Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
-    addColumn(4, tr("Invoice Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
-    addColumn(5, tr("Primary Contact"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+    addColumn("project_id", tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
+    addColumn("project_number", tr("Number"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
+    addColumn("project_name", tr("Project Name"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
+    addColumn("last_status_date", tr("Status Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("last_invoice_date", tr("Invoice Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("primary_contact", tr("Primary Contact"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name");
-    addColumn(6, tr("Budget"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
-    addColumn(7, tr("Actual"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
-    addColumn(8, tr("BCWP"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
-    addColumn(9, tr("BCWS"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
-    addColumn(10, tr("BAC"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
-    addColumn(11, tr("Invoice Period"), DBString, DBSearchable, DBNotRequired, DBEditable);
-    addColumn(12, tr("Report Period"), DBString, DBSearchable, DBNotRequired, DBEditable);
-    addColumn(13, tr("Client"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+    addColumn("budget", tr("Budget"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("actual", tr("Actual"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("bcwp", tr("BCWP"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("bcws", tr("BCWS"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("bac", tr("BAC"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("invoicing_period", tr("Invoice Period"), DBString, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("status_report_period", tr("Report Period"), DBString, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("client_id", tr("Client"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "clients", "client_id", "client_name");
-    addColumn(14, tr("Status"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::project_status);
-    addColumn(15, tr("Consumed"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
-    addColumn(16, tr("EAC"), DBUSD, DBSearchable, DBNotRequired, DBReadOnly);
-    addColumn(17, tr("CV"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
-    addColumn(18, tr("SV"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
-    addColumn(19, tr("Completed"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
-    addColumn(20, tr("CPI"), DBReal, DBSearchable, DBNotRequired, DBReadOnly);
+    addColumn("project_status", tr("Status"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::project_status);
+    addColumn("pct_consumed", tr("Consumed"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
+    addColumn("eac", tr("EAC"), DBUSD, DBSearchable, DBNotRequired, DBReadOnly);
+    addColumn("cv", tr("CV"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
+    addColumn("sv", tr("SV"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
+    addColumn("pct_complete", tr("Completed"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
+    addColumn("cpi", tr("CPI"), DBReal, DBSearchable, DBNotRequired, DBReadOnly);
 
     addRelatedTable("project_notes", "project_id", "project_id", "Meeting", DBExportable);
     addRelatedTable("item_tracker", "project_id", "project_id", "Action/Tracker Item", DBExportable);
@@ -62,14 +62,14 @@ const QModelIndex ProjectsModel::newRecord(const QVariant* t_fk_value1, const QV
 
     QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
 
-    QSqlRecord qr = emptyrecord();
-    qr.setValue(1, QString("[%1]").arg(unique_stamp));
-    qr.setValue(2, QString("[New Project %1]").arg(unique_stamp));
-    qr.setValue(3, QVariant());
-    qr.setValue(4, QVariant());
-    qr.setValue(11, tr("Monthly"));
-    qr.setValue(12, tr("Bi-Weekly"));
-    qr.setValue(14, tr("Active"));
+    QVector<QVariant> qr = emptyrecord();
+    qr[1] = QString("[%1]").arg(unique_stamp);
+    qr[2] = QString("[New Project %1]").arg(unique_stamp);
+    // qr[3, QVariant()); todo: not needed
+    // qr[4, QVariant());
+    qr[11] = tr("Monthly");
+    qr[12] = tr("Bi-Weekly");
+    qr[14] = tr("Active");
 
     return addRecord(qr);
 }
@@ -231,22 +231,22 @@ bool ProjectsModel::setData(const QModelIndex &t_index, const QVariant &t_value,
 
 const QModelIndex ProjectsModel::copyRecord(QModelIndex t_index)
 {
-    QSqlRecord qr = emptyrecord();
+    QVector<QVariant> qr = emptyrecord();
     QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
 
-    qr.setValue(1, QString("Copy [%2] of %1").arg(data(index(t_index.row(), 1)).toString(), unique_stamp));
-    qr.setValue(2, QString("Copy [%2] of %1").arg(data(index(t_index.row(), 2)).toString(), unique_stamp));
-    qr.setValue(4, QVariant());
-    qr.setValue(5, data(index(t_index.row(), 5)));
-    qr.setValue(6, data(index(t_index.row(), 6)));
-    qr.setValue(7, data(index(t_index.row(), 7)));
-    qr.setValue(8, data(index(t_index.row(), 8)));
-    qr.setValue(9, data(index(t_index.row(), 9)));
-    qr.setValue(10, data(index(t_index.row(), 10)));
-    qr.setValue(11, data(index(t_index.row(), 11)));
-    qr.setValue(12, data(index(t_index.row(), 12)));
-    qr.setValue(13, data(index(t_index.row(), 13)));
-    qr.setValue(14, data(index(t_index.row(), 14)));
+    qr[1] = QString("Copy [%2] of %1").arg(data(index(t_index.row(), 1)).toString(), unique_stamp);
+    qr[2] = QString("Copy [%2] of %1").arg(data(index(t_index.row(), 2)).toString(), unique_stamp);
+    // qr[4] = QVariant()); todo: not needed
+    qr[5] = data(index(t_index.row(), 5));
+    qr[6] = data(index(t_index.row(), 6));
+    qr[7] = data(index(t_index.row(), 7));
+    qr[8] = data(index(t_index.row(), 8));
+    qr[9] = data(index(t_index.row(), 9));
+    qr[10] = data(index(t_index.row(), 10));
+    qr[11] = data(index(t_index.row(), 11));
+    qr[12] = data(index(t_index.row(), 12));
+    qr[13] = data(index(t_index.row(), 13));
+    qr[14] = data(index(t_index.row(), 14));
 
     QModelIndex qi = addRecord(qr);
     setData( index(qi.row(), 3), QVariant(), Qt::EditRole); // force a write to the database

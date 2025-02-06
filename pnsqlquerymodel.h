@@ -48,7 +48,7 @@ public:
     bool setData(const QModelIndex &t_index, const QVariant &t_value, int t_role) override;
     QVariant data(const QModelIndex &t_index, int t_role = Qt::DisplayRole) const override;
 
-    void setCacheData(const QModelIndex &t_index, const QVariant &t_value) { m_cache[t_index.row()].setValue( t_index.column(), t_value); }
+    void setCacheData(const QModelIndex &t_index, const QVariant &t_value) { m_cache[t_index.row()][t_index.column()] = t_value; }
 
     bool importXMLNode(const QDomNode& t_domnode);
     bool setData(QDomElement* t_xml_row, bool t_ignore_key);
@@ -69,10 +69,10 @@ public:
     void sqlEscape(QVariant& t_column_value, DBColumnType t_column_type, bool t_no_quote = false) const;
     void reformatValue(QVariant& t_column_value, DBColumnType t_column_type) const;
 
-    void addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable,
+    void addColumn(const QString& t_column_name, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable,
                    DBColumnRequired t_required = DBNotRequired, DBColumnEditable t_edit_table = DBEditable, DBColumnUnique t_unique = DBNotUnique,
                    const QString& t_lookup_table = QString(), const QString& t_lookup_fk_column_name = QString(), const QString& t_lookup_value_column_name = QString());
-    void addColumn(int t_column_number, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable, DBColumnRequired t_required,
+    void addColumn(const QString& t_column_name, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable, DBColumnRequired t_required,
                                     DBColumnEditable t_editable, DBColumnUnique t_unique, QStringList* t_valuelist);
     void addRelatedTable(const QString& t_table_name, const QString& t_column_name, const QString& t_fk_column_name, const QString& t_title, const DBRelationExportable t_exportable = DBNotExportable);
     void addRelatedTable(const QString& t_table_name, const QStringList& t_column_names, const QStringList& t_fk_column_names, const QString& t_title, const DBRelationExportable t_exportable = DBNotExportable);
@@ -85,8 +85,7 @@ public:
                        int t_role = Qt::EditRole) override;
 
     static QDateTime parseDateTime(QString t_entrydate);
-    virtual const QModelIndex addRecord(QSqlRecord& t_newrecord);
-    //virtual const QModelIndex addRecordIndex(QSqlRecord& t_newrecord);
+    virtual const QModelIndex addRecord(QVector<QVariant>& t_newrecord);
     virtual const QModelIndex copyRecord(QModelIndex t_index);
     virtual const QModelIndex newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr);
     virtual bool deleteRecord(QModelIndex t_index);
@@ -100,7 +99,7 @@ public:
     bool deleteCheck(const QModelIndex &t_index);
     bool columnChangeCheck(const QModelIndex &t_index);
 
-    QSqlRecord emptyrecord();
+    QVector<QVariant> emptyrecord();
     const QVariant findValue(QVariant& t_lookup_value, int t_search_column, int t_return_column);
     const QModelIndex findIndex(QVariant& t_lookup_value, int t_search_column);
     void setShowBlank(bool t_show = true) { m_show_blank = t_show; }
@@ -152,9 +151,9 @@ public:
     void setDirty() { m_is_dirty = true; } // records need refreshed when underlying database tables have changed
     DBColumnType getType( const int t_column ) const { return m_column_type[t_column]; }
     void setType( const int t_column, const DBColumnType t_column_type ) { m_column_type[t_column] = t_column_type; }
-    QString getColumnName( int t_column ) { return m_sql_query.record().fieldName(t_column); }
+    QString getColumnName( int t_column ) { return m_column_name[t_column]; } //todo: remove { return m_sql_query.record().fieldName(t_column); }
     QString getColumnName( QString& t_display_name );
-    int getColumnNumber( QString& t_field_name );
+    int getColumnNumber(const QString& t_field_name );
 
     bool isReadOnly() { return m_read_only; }
     bool isUniqueColumn(int t_column) { return (m_column_is_unique[t_column] == DBUnique); }
@@ -176,7 +175,9 @@ private:
     QString m_base_sql;
     bool m_gui; // gui based recordset
     int m_order_key = 0; // the order key is used to identify record heirarchy - base data is first
+    int m_column_count = 0;
 
+    QHash<int, QString> m_column_name;
     QHash<int, DBColumnType> m_column_type;
     QHash<int, DBColumnRequired> m_column_is_required;
     QHash<int, DBColumnSearchable> m_column_is_searchable;
@@ -213,8 +214,8 @@ private:
     QVector<QString> m_relation_title;
     QVector<DBRelationExportable> m_relation_exportable;
 
-    QSqlQuery m_sql_query;
-    QVector<QSqlRecord> m_cache;
+    //todo: remove QSqlQuery m_sql_query;
+    QVector<QVector<QVariant>> m_cache;
     QVector<QHash<int, QVariant> > m_headers;
 
     bool m_show_blank = false;

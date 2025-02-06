@@ -17,17 +17,17 @@ MeetingAttendeesModel::MeetingAttendeesModel(PNDatabaseObjects* t_dbo, bool t_gu
 
     setTableName("meeting_attendees", "Attendees");
 
-    addColumn(0, tr("Attendee ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBUnique);
-    addColumn(1, tr("Note ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
+    addColumn("attendee_id", tr("Attendee ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBUnique);
+    addColumn("note_Id", tr("Note ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
               "project_notes", "note_id", "(strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title)");
-    addColumn(2, tr("Attendee"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
+    addColumn("person_id", tr("Attendee"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name");
-    addColumn(3, tr("Attendee Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn(4, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn(5, tr("Email"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn(6, tr("Client Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn(7, tr("Project ID"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn(8, tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("name", tr("Attendee Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("project_id_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("email", tr("Email"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("client_name", tr("Client Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("project_id", tr("Project ID"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("project_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
     QStringList key1 = {"note_id", "people_id"};
 
@@ -40,11 +40,11 @@ const QModelIndex MeetingAttendeesModel::newRecord(const QVariant* t_fk_value1, 
 {
     Q_UNUSED(t_fk_value2);
 
-    QSqlRecord qr = emptyrecord();
+    QVector<QVariant> qr = emptyrecord();
 
     //qDebug() << "note id key " << *t_fk_value1;
 
-    qr.setValue(1, *t_fk_value1);
+    qr[1] = *t_fk_value1;
 
     return addRecord(qr);
 }

@@ -13,7 +13,7 @@ PNColumnModel::PNColumnModel(PNDatabaseObjects* t_dbo, bool t_gui) : PNSqlQueryM
 
     setTableName("Columns", "Columns");
 
-    addColumn(0, tr("Column"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
+    addColumn("Column", tr("Column"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
     setReadOnly();
 
     refresh();

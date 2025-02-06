@@ -19,7 +19,6 @@
 #include "QLoggerWriter.h"
 
 using namespace QLogger;
-//TODO: On a plugin module load you will have to rebuild the plugin menus
 
 PNBasePage::PNBasePage(QWidget *parent) : QWidget(parent)
 {
@@ -321,19 +320,5 @@ void PNBasePage::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname,
 
         delete xdoc;
     }
-
-    //TODO: Remove
-    // if (!response.isEmpty())
-    // {
-    //    QApplication::processEvents();
-
-    //    QDomDocument doc;
-    //    doc.setContent(response);
-
-    //    if (!global_DBObjects.importXMLDoc(doc))
-    //        QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
-
-    //    QApplication::processEvents();
-    // }
 }
 

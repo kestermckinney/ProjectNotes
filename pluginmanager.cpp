@@ -4,6 +4,7 @@
 #include <QDirIterator>
 #include <QCoreApplication>
 #include <QDomDocument>
+#include <frameobject.h>
 
 #include "QLogger.h"
 #include "QLoggerWriter.h"
@@ -44,6 +45,28 @@ PyObject* Stdout_flush(PyObject* self, PyObject* args)
     return Py_BuildValue("");
 }
 
+static PyObject* getCallerModuleName()
+{
+    // Get the current frame
+    PyFrameObject* frame = PyEval_GetFrame();
+
+    if (frame) {
+        // Get the global namespace dictionary
+        PyObject* globals = PyFrame_GetGlobals(frame);
+
+        if (globals) {
+            // Get the module name from the globals dictionary
+            PyObject* moduleName = PyDict_GetItemString(globals, "__name__");
+
+            if (moduleName) {
+                return moduleName;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
 static PyObject* update_data(PyObject* self, PyObject* args)
 {
     Q_UNUSED(self);
@@ -53,7 +76,11 @@ static PyObject* update_data(PyObject* self, PyObject* args)
     {
         return PyBool_FromLong(0);
     }
-    // TODO: add xml data import and export
+
+    //TODO: opening the database twice not writing
+
+    PyObject* pycaller = getCallerModuleName();
+    QString caller = QString::fromUtf8(PyUnicode_AsUTF8(pycaller));
 
     QDomDocument xmldoc;
     QByteArray ba(input);
@@ -61,9 +88,11 @@ static PyObject* update_data(PyObject* self, PyObject* args)
     xmldoc.setContent(ba);
 
     PNDatabaseObjects dbo;
-    dbo.openDatabase(global_DBObjects.getDatabaseFile());
+    dbo.openDatabase(global_DBObjects.getDatabaseFile(), caller);
     int result = dbo.importXMLDoc(xmldoc);
     dbo.closeDatabase();
+
+    Py_XDECREF(pycaller);
 
     return PyBool_FromLong(result);
 }
@@ -79,13 +108,16 @@ static PyObject* get_data(PyObject* self, PyObject* args)
         Py_RETURN_NONE;
     }
 
+    PyObject* pycaller = getCallerModuleName();
+    QString caller = QString::fromUtf8(PyUnicode_AsUTF8(pycaller));
+
     QDomDocument xmldoc;
     QByteArray ba(input);
 
     xmldoc.setContent(ba);
 
     PNDatabaseObjects dbo;
-    dbo.openDatabase(global_DBObjects.getDatabaseFile());
+    dbo.openDatabase(global_DBObjects.getDatabaseFile(), caller);
     QList<PNSqlQueryModel*>* models = dbo.getData(xmldoc);
 
     if (!models)
@@ -109,6 +141,8 @@ static PyObject* get_data(PyObject* self, PyObject* args)
     QString xmlstring = returnxmldoc->toString();
 
     dbo.closeDatabase();
+
+    Py_XDECREF(pycaller);
 
     delete returnxmldoc;
 
@@ -348,8 +382,6 @@ PluginManager::PluginManager(QObject *parent)
         PyObject* path = PyList_GetItem(pathAttribute, i);
         paths += QString("Module: %1\n").arg(PyUnicode_AsUTF8(path));
     }
-
-    // QLog_Debug(PLUGINSMOD, paths); TODO: Remove
 
     m_pythreadstate = PyEval_SaveThread();
 

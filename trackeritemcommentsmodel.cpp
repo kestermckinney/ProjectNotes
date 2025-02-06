@@ -16,18 +16,18 @@ TrackerItemCommentsModel::TrackerItemCommentsModel(PNDatabaseObjects* t_dbo, boo
 
     setTableName("item_tracker_updates", "Tracker Comments");
 
-    addColumn(0, tr("Item Updated ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
-    addColumn(1, tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
+    addColumn("tracker_updated_id", tr("Item Updated ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("item_id", tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
               "item_tracker", "item_id", "item_number");
-    addColumn(2, tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
-    addColumn(3, tr("Comments"), DBString, DBSearchable, DBNotRequired);
-    addColumn(4, tr("Updated By"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
+    addColumn("lastupdated_date", tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
+    addColumn("update_note", tr("Comments"), DBString, DBSearchable, DBNotRequired);
+    addColumn("updated_by", tr("Updated By"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name"); // itemdetailteamlist, tr("name"), tr("people_id"), true );
-    addColumn(5, tr("Item Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn(6, tr("Item Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn(7, tr("Item Description"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn(8, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn(9, tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("item_name", tr("Item Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("item_number", tr("Item Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("description", tr("Item Description"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("project_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("project_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
     setOrderBy("lastupdated_date");
 }
@@ -36,14 +36,14 @@ const QModelIndex TrackerItemCommentsModel::newRecord(const QVariant* t_fk_value
 {
     Q_UNUSED(t_fk_value2);
 
-    QSqlRecord qr = emptyrecord();
+    QVector<QVariant> qr = emptyrecord();
 
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
 
-    qr.setValue(1, *t_fk_value1);
-    qr.setValue(2, curdate); // default to today
-    qr.setValue(3, QVariant());
-    qr.setValue(4, getDBOs()->getProjectManager()); // default updated by to the pm
+    qr[1] = *t_fk_value1;
+    qr[2] = curdate; // default to today
+    //todo: not neededqr[3] = QVariant();
+    qr[4] = getDBOs()->getProjectManager(); // default updated by to the pm
 
     return addRecord(qr);
 }

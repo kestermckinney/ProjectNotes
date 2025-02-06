@@ -95,7 +95,6 @@ def event_menuclick():
     </projectnotes>
     """
 
-    #projectnotes.update_data(contact)
     print(projectnotes.get_data(contact))
 
     QMessageBox.information(None, "Test Plugin", "Menu click called.", QMessageBox.StandardButton.Ok)
@@ -113,6 +112,19 @@ def event_data_rightclick(xmlstr):
     print(xmlstr)
 
     QMessageBox.information(None, "Data Right-Click Event", "Returning XML", QMessageBox.StandardButton.Ok)
+
+
+    retval = """<projectnotes>
+         <table name="projects">
+          <row id="16714573320006157">   
+           <column name="project_id">16714573320006157</column>
+            <column name="project_name">PaperWorks Boiler Combustion Configuration XXX</column>
+          </row>
+         </table>
+        </projectnotes>"""
+
+    projectnotes.update_data(retval)
+
 
     # simple test will always change the name back
     retval = """<projectnotes>

@@ -121,10 +121,7 @@ void Plugin::onReturnedXml(const QString& t_xml)
 
     if (!global_DBObjects.getDatabaseFile().isEmpty())
     {
-        PNDatabaseObjects dbo;
-        dbo.openDatabase(global_DBObjects.getDatabaseFile());
-        dbo.importXMLDoc(xmldoc);
-        dbo.closeDatabase();
+        global_DBObjects.importXMLDoc(xmldoc);
     }
     else
     {

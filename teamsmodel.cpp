@@ -9,13 +9,13 @@ TeamsModel::TeamsModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_
 
     setTableName("project_people", "Project People");
 
-    addColumn(0, tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
-    addColumn(1, tr("Name"), DBString, DBSearchable, DBRequired);
-    addColumn(2, tr("Project ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
+    addColumn("teammember_id", tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
+    addColumn("name", tr("Name"), DBString, DBSearchable, DBRequired);
+    addColumn("project_id", tr("Project ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "projects", "project_id", "project_number");
-    addColumn(3, tr("People ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
+    addColumn("people_id", tr("People ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name");
-    addColumn(4, tr("Client ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
+    addColumn("client_id", tr("Client ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "clients", "client_id", "client_name");
 
     QStringList key1 = {"project_id", "people_id"};

@@ -1,7 +1,7 @@
 #include "pythonworker.h"
 #include <QFileInfo>
 
-#if PY_VERSION_HEX < 0x030A0000  // Python 3.10
+#if PY_VERSION_HEX < 0x03130000 // Python 3.10
 static int PyObject_HasAttrStringWithError(PyObject *obj, const char *attr_name) {
     if (!obj || !attr_name) {
         PyErr_SetString(PyExc_TypeError, "null argument to PyObject_HasAttrStringWithError");
@@ -145,7 +145,6 @@ void PythonWorker::loadModule(const QString& t_modulepath)
             {
                 PyObject* subdict = PyList_GetItem(dictArray, i);
 
-                //TODO: Remove const char* menukey = PyUnicode_AsUTF8(key);
                 const char* menutitle = nullptr;
                 const char* functionname = nullptr;
                 const char* tablefilter = nullptr;

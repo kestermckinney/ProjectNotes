@@ -18,15 +18,15 @@ ProjectNotesModel::ProjectNotesModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSq
 
     setTableName("project_notes", "Project Notes");
 
-    addColumn(0, tr("Note ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
-    addColumn(1, tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
+    addColumn("note_id", tr("Note ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("project_id", tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
               "projects", "project_id", "project_number");
-    addColumn(2,  tr("Title"), DBString, DBSearchable, DBNotRequired, DBEditable);
-    addColumn(3, tr("Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
-    addColumn(4, tr("Note"), DBHtml, DBSearchable, DBNotRequired, DBEditable);
-    addColumn(5, tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable);
-    addColumn(6, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
-    addColumn(7, tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
+    addColumn("note_title",  tr("Title"), DBString, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("note_date", tr("Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("note", tr("Note"), DBHtml, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("internal_item", tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("project_id_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
+    addColumn("project_id_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
 
     addRelatedTable("item_tracker", "note_id", "note_id", "Action Item", DBExportable);
     addRelatedTable("meeting_attendees", "note_id", "note_id", "Meeting Attendee", DBExportable);
@@ -40,16 +40,16 @@ const QModelIndex ProjectNotesModel::newRecord(const QVariant* t_fk_value1, cons
 
     //qDebug() << "Adding a new note with fk1: " << *t_fk_value1;
 
-    QSqlRecord qr = emptyrecord();
+    QVector<QVariant> qr = emptyrecord();
 
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
     QVariant notetitle = QString("[Meeting Notes for %1]").arg(QDateTime::currentDateTime().toString("MM/dd/yyyy"));
 
-    qr.setValue(1, *t_fk_value1);
-    qr.setValue(2, notetitle);
-    qr.setValue(3, curdate);
-    qr.setValue(4, QVariant());
-    qr.setValue(5, 0);
+    qr[1] = *t_fk_value1;
+    qr[2] = notetitle;
+    qr[3] = curdate;
+    // qr[4] = QVariant()); todo: not needed
+    qr[5] = 0;
 
     return addRecord(qr);
 }
@@ -70,16 +70,16 @@ bool ProjectNotesModel::setData(const QModelIndex &t_index, const QVariant &t_va
 
 const QModelIndex ProjectNotesModel::copyRecord(QModelIndex t_index)
 {
-    QSqlRecord qr = emptyrecord();
+    QVector<QVariant> qr = emptyrecord();
     QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
 
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
 
-    qr.setValue(1, data(index(t_index.row(), 1)));
-    qr.setValue(2, data(index(t_index.row(), 2)));
-    qr.setValue(3, curdate);
-    //qr.setValue(4, QVariant());
-    qr.setValue(5, 0);
+    qr[1] = data(index(t_index.row(), 1));
+    qr[2] = data(index(t_index.row(), 2));
+    qr[3] = curdate;
+    //qr[4, QVariant());
+    qr[5] = 0;
 
     QModelIndex qi = addRecord(qr);
     setData( index(qi.row(), 4), QVariant(), Qt::EditRole);

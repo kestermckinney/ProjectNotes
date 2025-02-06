@@ -72,6 +72,8 @@ public:
     void CloseDatabase();
     static void addMenuItem(QMenu* t_menu, const QString& t_submenu, const QString& t_menutitle, QAction* t_action, int t_section);
 
+    QString mainConnectionName() const { return m_main_connection_name; }
+
 public slots:
     void slotOpen_ProjectDetails_triggered(QVariant t_record_id);
     void slotOpen_ItemDetails_triggered(QVariant t_record_id);
@@ -188,6 +190,8 @@ private:
     QComboBox* m_combo_box_style;
     QComboBox* m_combo_box_font;
     QComboBox* m_combo_box_size;
+
+    QString m_main_connection_name = "mainconnection";
 };
 
 

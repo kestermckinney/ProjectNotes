@@ -15,14 +15,14 @@ PeopleModel::PeopleModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(
 
     setTableName("people", "People");
 
-    addColumn(0, tr("People ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
-    addColumn(1, tr("Name"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
-    addColumn(2, tr("Email"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(3, tr("Office Phone"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(4, tr("Cell Phone"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(5, tr("Client"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+    addColumn("people_id", tr("People ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("name", tr("Name"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
+    addColumn("email", tr("Email"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("office_phone", tr("Office Phone"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("cell_phone", tr("Cell Phone"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("client_id", tr("Client"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
             "clients", "client_id", "client_name");
-    addColumn(6, tr("Role"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("role", tr("Role"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
     addRelatedTable("item_tracker", "assigned_to", "people_id", "Assigned Item");
     addRelatedTable("item_tracker", "identified_by", "people_id", "Identified By Item");

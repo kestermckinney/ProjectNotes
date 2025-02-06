@@ -81,7 +81,6 @@ public:
     void addMember(const QString& t_member ) { m_members.append(t_member); }
     QStringList members() const { return m_members; }
     bool hasMember(const QString& t_member) const { return m_members.contains(t_member); }
-    //TODO: Remove bool supportsTable(const QString& t_menu, const QString& t_table) { if (m_menus.contains(t_menu)) return m_menus[t_menu].dataexport().compare(t_table) == 0; }
     void setSubmenu(const QString& t_submenu) { m_submenu = t_submenu; }
     QString submenu() const { return m_submenu; }
     void setTimerDelay(const int t_timerdelay) { m_timerdelay = t_timerdelay; }

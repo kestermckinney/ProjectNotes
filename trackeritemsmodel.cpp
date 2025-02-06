@@ -16,33 +16,33 @@ TrackerItemsModel::TrackerItemsModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSq
 
     setTableName("item_tracker", "Project Action Items");
 
-    addColumn(0, tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
-    addColumn(1, tr("Item"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
-    addColumn(2, tr("Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
-    addColumn(3, tr("Item Name"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(4, tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+    addColumn("item_id", tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("item_number", tr("Item"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
+    addColumn("item_type", tr("Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
+    addColumn("item_name", tr("Item Name"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("identified_by", tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name");
 
-    addColumn(5, tr("Date Identified"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(6, tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(7, tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+    addColumn("date_identified", tr("Date Identified"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("description", tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("assigned_to", tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name");
 
-    addColumn(8, tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_priority);
-    addColumn(9, tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_status);
-    addColumn(10, tr("Date Due"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(11, tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
-    addColumn(12, tr("Date Resolved"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("priority", tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_priority);
+    addColumn("status", tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_status);
+    addColumn("date_due", tr("Date Due"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("last_updated", tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
+    addColumn("date_resolved", tr("Date Resolved"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
-    addColumn(13, tr("Meeting"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+    addColumn("note_id", tr("Meeting"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
                "project_notes", "note_id", "(strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title)");
-    addColumn(14, tr("Project"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
+    addColumn("project_id", tr("Project"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "projects", "project_id", "project_number");
-    addColumn(15, tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(16, tr("Comments"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn(17, tr("Project Status"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn(18, tr("Client"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn(19, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("internal_item", tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("comments", tr("Comments"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("projet_status", tr("Project Status"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("client_id", tr("Client"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("project_id_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
     QStringList key1 = {"project_id", "item_number"};
 
@@ -77,23 +77,23 @@ const QModelIndex TrackerItemsModel::newRecord(const QVariant* t_fk_value1, cons
 
     //qDebug() << "Adding new tracker item with fk1: " << t_fk_value1->toString() << " and fk2: " << t_fk_value2;
 
-    QSqlRecord qr = emptyrecord();
+    QVector<QVariant> qr = emptyrecord();
     QVariant next_item_number = getNextItemNumber(*t_fk_value1);
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
 
     //qDebug() << "Using project manager id: " << m_dbo->getProjectManager();
 
-    qr.setValue("project_id", *t_fk_value1);
-    qr.setValue(1, next_item_number);  // Need to make a counter that looks good for items
-    qr.setValue(2, "Tracker");
-    qr.setValue(4, getDBOs()->getProjectManager()); // default identified by to the pm
-    qr.setValue(5, curdate); // date identified
-    qr.setValue(8, "High"); // set a default priority
-    qr.setValue(9, "New"); // set a default status
-    qr.setValue(10, QVariant());
-    qr.setValue(11, curdate); // date data as updated
-    qr.setValue(12, QVariant()); // date resolved
-    qr.setValue(15, 0);
+    qr[getColumnNumber("project_id")] = *t_fk_value1;
+    qr[1] = next_item_number;  // Need to make a counter that looks good for items
+    qr[2] = "Tracker";
+    qr[4] = getDBOs()->getProjectManager(); // default identified by to the pm
+    qr[5] = curdate; // date identified
+    qr[8] = "High"; // set a default priority
+    qr[9] = "New"; // set a default status
+    //todo: not needed? qr[10] = QVariant();
+    qr[11] = curdate; // date data as updated
+    //todo: not needed? qr[12] = QVariant(); // date resolved
+    qr[15] = 0;
 
     return addRecord(qr);
 }

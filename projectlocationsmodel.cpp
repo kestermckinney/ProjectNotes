@@ -13,14 +13,14 @@ ProjectLocationsModel::ProjectLocationsModel(PNDatabaseObjects* t_dbo, bool t_gu
 
     setTableName("project_locations", "Project Locations");
 
-    addColumn(0, tr("Location ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
-    addColumn(1, tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
+    addColumn("location_id", tr("Location ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("project_id", tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
               "projects", "project_id", "project_number");
-    addColumn(2, tr("Location Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::file_types);
-    addColumn(3, tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(4, tr("Full Path"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn(5, tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn(6, tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("location_type", tr("Location Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::file_types);
+    addColumn("location_description", tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("full_path", tr("Full Path"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("project_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("project_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
 //    QStringList key1 = {"project_id", "full_path"};
 
@@ -38,13 +38,13 @@ const QModelIndex ProjectLocationsModel::newRecord(const QVariant* t_fk_value1, 
 {
     Q_UNUSED(t_fk_value2);
 
-    QSqlRecord qr = emptyrecord();
+    QVector<QVariant> qr = emptyrecord();
 
-    // let system generate id qr.setValue(0, QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0')));  // Need to make a counter that looks good for items
-    qr.setValue(1, *t_fk_value1);
-    qr.setValue(2, "Generic File (System Identified)");
-    qr.setValue(3, QVariant());
-    qr.setValue(4, QVariant());
+    // let system generate id qr[0, QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0')));  // Need to make a counter that looks good for items
+    qr[1] = *t_fk_value1;
+    qr[2] = "Generic File (System Identified)";
+    // qr[3] = QVariant());
+    // qr[4] = QVariant()); todo: not needed
 
     return addRecord(qr);
 }

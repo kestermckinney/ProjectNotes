@@ -584,7 +584,7 @@ void MainWindow::on_actionNew_Database_triggered()
 
 void MainWindow::openDatabase(QString t_dbfile)
 {
-    if (!global_DBObjects.openDatabase(t_dbfile))
+    if (!global_DBObjects.openDatabase(t_dbfile, mainConnectionName()))
         return;
 
     // load and refresh all of the models in order of their dependancy relationships
@@ -1679,11 +1679,6 @@ void MainWindow::on_lineEditSearchText_returnPressed()
 {
     global_DBObjects.searchresultsmodel()->PerformSearch(ui->plainTextEditSearchText->toPlainText());
 }
-
-// void MainWindow::on_actionPlugin_Settings_triggered()
-// {
-//     //TODO: REMOVE m_plugin_settings_dialog->editPluginSettings(m_plugin_manager);
-// }
 
 void MainWindow::on_actionView_LogView_triggered()
 {

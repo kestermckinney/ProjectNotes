@@ -10,11 +10,11 @@ StatusReportItemsModel::StatusReportItemsModel(PNDatabaseObjects* t_dbo, bool t_
 
     setTableName("status_report_items", "Status Report Items");
 
-    addColumn(0, tr("Status Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
-    addColumn(1, tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
+    addColumn("status_item_id", tr("Status Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("project_id", tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
               "projects", "project_id", "project_number");
-    addColumn(2,  tr("Category"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::status_item_status);
-    addColumn(3, tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("task_category",  tr("Category"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::status_item_status);
+    addColumn("task_description", tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable);
 
     QStringList key1 = {"project_id", "task_description"};
 
@@ -28,11 +28,11 @@ const QModelIndex StatusReportItemsModel::newRecord(const QVariant* t_fk_value1,
     Q_UNUSED(t_fk_value1);
     Q_UNUSED(t_fk_value2);
 
-    QSqlRecord qr = emptyrecord();
+    QVector<QVariant> qr = emptyrecord();
 
-    qr.setValue("project_id", *t_fk_value1);
-    qr.setValue("task_category", "In Progress");
-    qr.setValue("task_description", "[New Status Item]");
+    qr[getColumnNumber("project_id")] = *t_fk_value1;
+    qr[getColumnNumber("task_category")] = "In Progress";
+    qr[getColumnNumber("task_description")] = "[New Status Item]";
 
     return addRecord(qr);
 }

@@ -9,11 +9,11 @@ ItemDetailTeamListModel::ItemDetailTeamListModel(PNDatabaseObjects* t_dbo, bool 
 
     setTableName("people", "Team Members");
 
-    addColumn(0, tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
-    addColumn(1, tr("Name"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique);
-    addColumn(2, tr("Project ID"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique,
+    addColumn("teammember_id", tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("name", tr("Name"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique);
+    addColumn("project_id", tr("Project ID"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique,
               "projects", "project_id", "project_number");
-    addColumn(3, tr("People ID"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique,
+    addColumn("people_id", tr("People ID"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique,
                "people", "people_id", "name");
 
     setOrderBy("name");
