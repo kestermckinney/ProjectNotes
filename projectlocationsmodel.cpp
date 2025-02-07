@@ -43,8 +43,6 @@ const QModelIndex ProjectLocationsModel::newRecord(const QVariant* t_fk_value1, 
     // let system generate id qr[0, QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0')));  // Need to make a counter that looks good for items
     qr[1] = *t_fk_value1;
     qr[2] = "Generic File (System Identified)";
-    // qr[3] = QVariant());
-    // qr[4] = QVariant()); todo: not needed
 
     return addRecord(qr);
 }

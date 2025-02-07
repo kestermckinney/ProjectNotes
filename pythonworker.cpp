@@ -61,7 +61,7 @@ void PythonWorker::emitError()
         // Clean up error state
         PyErr_Clear();
 
-        QLog_Info(CONSOLEMOD, errorMsg);
+        QLog_Info(CONSOLELOG, errorMsg);
     }
 }
 
@@ -73,13 +73,10 @@ void PythonWorker::checkForMember(const QString& t_member)
 
 void PythonWorker::loadModule(const QString& t_modulepath)
 {
-    // QLog_Debug(PLUGINSMOD, QString("Entered load slot for '%1").arg(t_modulepath)); TODO Remove
-
     QMutexLocker locker(&m_loadingmutex);
     m_isloading = true;
 
     PyGILState_STATE gstate = PyGILState_Ensure();
-    // QLog_Debug(PLUGINSMOD, QString("Called GIL Ensure State in '%1'.").arg(Q_FUNC_INFO));
 
     m_modulepath = t_modulepath;
 
@@ -90,8 +87,8 @@ void PythonWorker::loadModule(const QString& t_modulepath)
     if (!fileinfo.exists())
     {
         PyGILState_Release(gstate);
-        // QLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO));
-        QLog_Debug(PLUGINSMOD, QString("'%1' no longer exists. Load cancelled.").arg(m_modulename));
+
+        QLog_Info(APPLOG, QString("'%1' no longer exists. Load cancelled.").arg(m_modulename));
         return;
     }
 
@@ -102,25 +99,22 @@ void PythonWorker::loadModule(const QString& t_modulepath)
     {
         emitError();
         PyGILState_Release(gstate);
-        // QLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO)); TODO Remove
         return;
     }
 
     m_plugin.setName(getPythonVariable("pluginname"));
     if (m_plugin.name().isEmpty())
     {
-        QLog_Info(CONSOLEMOD, QString("plugin name for module %1 can not be empty.").arg(m_modulename));
+        QLog_Info(CONSOLELOG, QString("plugin name for module %1 can not be empty.").arg(m_modulename));
         PyGILState_Release(gstate);
-        // QLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO)); TODO Remove
         return;
     }
 
     m_plugin.setDescription(getPythonVariable("plugindescription"));
     if (m_plugin.description().isEmpty())
     {
-        QLog_Info(CONSOLEMOD, QString("plugin description for module %1 can not be empty.").arg(m_modulename));
+        QLog_Info(CONSOLELOG, QString("plugin description for module %1 can not be empty.").arg(m_modulename));
         PyGILState_Release(gstate);
-        //QLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO)); TODO Remove
         return;
     }
 
@@ -184,9 +178,6 @@ void PythonWorker::loadModule(const QString& t_modulepath)
     checkForMember("event_timer");
 
     PyGILState_Release(gstate);
-    // QLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO)); TODO Remove
-
-    //QLog_Debug(PLUGINSMOD, QString("Load Thread is %1").arg((quintptr)QThread::currentThread(), QT_POINTER_SIZE * 2, 16, QChar('0')));TODO Remove
 
     m_timer = new QTimer();
     m_timer->start(1000*60 * m_plugin.timerdelay()); // one minute timer event
@@ -204,7 +195,6 @@ void PythonWorker::loadModule(const QString& t_modulepath)
         sendMethod("event_startup");
     }
 
-    // QLog_Debug(PLUGINSMOD, "Load Complete."); TODO Remove
 }
 
 void PythonWorker::unloadModule()
@@ -231,7 +221,6 @@ void PythonWorker::unloadModule()
     m_plugin.clearMenu();
 
     PyGILState_STATE gstate = PyGILState_Ensure();
-    //  TODO RemoveQLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO));
 
     PyObject* sysModules = PyImport_GetModuleDict();
     if (!sysModules)
@@ -239,7 +228,6 @@ void PythonWorker::unloadModule()
         emitError();
 
         PyGILState_Release(gstate);
-        // QLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO)); TODO Remove
         return;
     }
 
@@ -248,10 +236,6 @@ void PythonWorker::unloadModule()
     {
         emitError();
     }
-    // elseTODO Remove
-    // {
-    //     QLog_Debug(PLUGINSMOD, QString("Module '%1' successfully removed from sys.modules.").arg(m_modulename));
-    // }
 
     // Run garbage collection
     PyObject* gcModule = PyImport_ImportModule("gc");
@@ -272,7 +256,6 @@ void PythonWorker::unloadModule()
     Py_XDECREF(m_PNPluginModule);
 
     PyGILState_Release(gstate);
-    // QLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO)); TODO Remove
 
     m_isloading = false;
     m_isloaded = false;
@@ -294,18 +277,17 @@ void PythonWorker::sendMethodXml(const QString& t_method, const QString& t_xml)
     if (m_isloading)
         if (!m_loadwait.wait(&m_loadingmutex, 10000))
         {
-            QLog_Debug(PLUGINSMOD, QString("Module took to long to load! SendMethodXML cancelled."));
+            QLog_Info(APPLOG, QString("Module took to long to load! SendMethodXML cancelled."));
             return;
         }
 
     if (!m_isloaded)
     {
-        QLog_Debug(PLUGINSMOD, QString("Module is not loaded! SendMethodXml cancelled."));
+        QLog_Info(APPLOG, QString("Module is not loaded! SendMethodXml cancelled."));
         return;
     }
 
     PyGILState_STATE gstate = PyGILState_Ensure();
-    // QLog_Debug(PLUGINSMOD, QString("Called GIL Ensure State in '%1'.").arg(Q_FUNC_INFO)); TODO Remove
 
     char* result;
     QString val;
@@ -316,7 +298,6 @@ void PythonWorker::sendMethodXml(const QString& t_method, const QString& t_xml)
         emitError();
 
         PyGILState_Release(gstate);
-        // QLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO)); TODO Remove
         return;
     }
 
@@ -326,7 +307,6 @@ void PythonWorker::sendMethodXml(const QString& t_method, const QString& t_xml)
         emitError();
 
         PyGILState_Release(gstate);
-        // QLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO)); TODO Remove
         return;
     }
 
@@ -338,7 +318,6 @@ void PythonWorker::sendMethodXml(const QString& t_method, const QString& t_xml)
         Py_XDECREF(pymethod);
 
         PyGILState_Release(gstate);
-        // QLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO));TODO Remove
         return;
     }
 
@@ -351,19 +330,15 @@ void PythonWorker::sendMethodXml(const QString& t_method, const QString& t_xml)
         Py_XDECREF(pymethod);
 
         PyGILState_Release(gstate);
-        // QLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO));
         return;
     }
 
     val = QString::fromUtf8(result);
 
-    QLog_Debug(PLUGINSMOD, QString("%1 should return %2").arg(Q_FUNC_INFO).arg(val));
-
     Py_XDECREF(func);
     Py_XDECREF(pymethod);
 
     PyGILState_Release(gstate);
-    // QLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO));TODO Remove
 
     emit returnXml(val);
 }
@@ -374,18 +349,17 @@ void PythonWorker::sendMethod(const QString& t_method)
     if (m_isloading)
         if (!m_loadwait.wait(&m_loadingmutex, 10000))
         {
-            QLog_Debug(PLUGINSMOD, QString("Module took to long to load! SendMethod cancelled."));
+            QLog_Info(APPLOG, QString("Module took to long to load! SendMethod cancelled."));
             return;
         }
 
     if (!m_isloaded)
     {
-        QLog_Debug(PLUGINSMOD, QString("Module is not loaded! SendMethod cancelled."));
+        QLog_Info(APPLOG, QString("Module is not loaded! SendMethod cancelled."));
         return;
     }
 
     PyGILState_STATE gstate = PyGILState_Ensure();
-    // QLog_Debug(PLUGINSMOD, QString("Called GIL Ensure State in '%1'.").arg(Q_FUNC_INFO)); TODO Remove
 
     char* result;
     QString val;
@@ -396,7 +370,6 @@ void PythonWorker::sendMethod(const QString& t_method)
         emitError();
 
         PyGILState_Release(gstate);
-        // QLog_Debug(PLUGINSMOD, QString("Called GIL Ensure State in '%1'.").arg(Q_FUNC_INFO)); TODO Remove
         return;
     }
 
@@ -407,7 +380,6 @@ void PythonWorker::sendMethod(const QString& t_method)
         Py_XDECREF(pymethod);
 
         PyGILState_Release(gstate);
-        // QLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO)); TODO Remove
         return;
     }
 
@@ -418,7 +390,6 @@ void PythonWorker::sendMethod(const QString& t_method)
         Py_XDECREF(pymethod);
 
         PyGILState_Release(gstate);
-        // QLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO)); TODO Remove
 
         return;
     }
@@ -429,15 +400,12 @@ void PythonWorker::sendMethod(const QString& t_method)
     Py_XDECREF(pymethod);
 
     PyGILState_Release(gstate);
-    // QLog_Debug(PLUGINSMOD, QString("Called GIL Release State in '%1'.").arg(Q_FUNC_INFO));TODO Remove
 
     emit returnXml(val);
 }
 
 void PythonWorker::timerUpdate()
 {
-    // QLog_Debug(PLUGINSMOD, "Timer event called.");TODO Remove
-
     // call the menu plugin with the data structure
     if (m_plugin.hasMember("event_timer"))
     {

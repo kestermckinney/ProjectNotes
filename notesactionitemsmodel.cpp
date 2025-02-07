@@ -76,9 +76,7 @@ const QModelIndex NotesActionItemsModel::newRecord(const QVariant* t_fk_value1, 
     qr[5] = curdate; // default to today
     qr[8] = "High"; // set a default priority
     qr[9] = "New"; // set a default status
-    // qr[10] = QVariant());
     qr[11] = curdate; // date data as entered
-    // qr[12] = QVariant(); todo: not needed
     qr[15] = 0;
 
     return addRecord(qr);

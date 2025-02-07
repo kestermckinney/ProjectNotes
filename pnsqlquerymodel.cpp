@@ -1,6 +1,8 @@
 // Copyright (C) 2022, 2023 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
+//todo: find out how to make sure thread will update the screen if data changes.
+//todo: may need to createa PNColum class and clean up all the diffrent QVectors
 #include "pndatabaseobjects.h"
 #include "pndatabaseobjects.h"
 
@@ -77,7 +79,6 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
                     for (QString &c : m_related_columns[i])
                     {
                         int ck_col = recordset->getColumnNumber(c);
-                        //todo: remove int ck_col = recordset->m_sql_query.record().indexOf(c);
 
                         // if related column is being used then search
                         if (ck_col != -1)
@@ -105,7 +106,7 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
 int PNSqlQueryModel::columnCount(const QModelIndex &t_parent) const
 {
     if (!t_parent.isValid())
-        return m_column_count; //todo: remove m_sql_query.record().count();
+        return m_column_count;
     else
         return 0;
 }
@@ -182,7 +183,6 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             // set the cached value
             m_cache[t_index.row()][t_index.column()] = value;
 
-            //todo: remove for (int i = 0; i < m_sql_query.record().count(); i++)
             for (int i = 0; i < m_column_count; i++)
             {
                 if ((m_column_is_editable[i] == DBEditable) || i == 0)
@@ -193,7 +193,6 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                     if (!values.isEmpty())
                         values += ", ";
 
-//todo: remove                    fields += m_sql_query.record().fieldName(i);
                     fields += m_column_name[i];
 
                     values += " ? ";
@@ -202,10 +201,8 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
 
             QSqlQuery insert(getDBOs()->getDb());
             insert.prepare("insert into " + m_tablename + " ( " + fields + " ) values ( " + values + " )");
-//todo: remove            qDebug() << "insert into " << m_tablename << " ( " << fields << " ) values ( " << values << " )";
 
             int bindcount = 0;
- //todo: remove           for (int i = 0; i < m_sql_query.record().count(); i++)
             for (int i = 0; i < m_column_count; i++)
             {
                 if ((m_column_is_editable[i] == DBEditable) || i == 0)
@@ -315,14 +312,6 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
 void PNSqlQueryModel::setBaseSql(const QString t_table)
 {
     m_base_sql = t_table;
-
-    //todo: remove
-    // getDBOs()->getDb().transaction();
-    // m_sql_query = QSqlQuery(getDBOs()->getDb() ); // always build query to get the column names for where clause generation
-    // m_sql_query.setForwardOnly(true);
-    // m_sql_query.prepare(BaseSQL());
-    // m_sql_query.exec(); // TODO: do we need this to get column access??
-    // getDBOs()->getDb().commit();
 }
 
 void PNSqlQueryModel::setTableName(const QString &t_table, const QString &t_display_name)
@@ -375,7 +364,7 @@ void PNSqlQueryModel::refresh()
         for (int i = 0; i < sql_query.record().count(); i++)
             record[i] = sql_query.value(i);
 
-        m_cache.append(record); //todo: this might just add all the vector??? warning
+        m_cache.append(record);
     }
     getDBOs()->getDb().commit();
 
@@ -554,7 +543,6 @@ QVariant PNSqlQueryModel::headerData(int t_section, Qt::Orientation t_orientatio
 
             if (t_role == Qt::DisplayRole && m_column_count > t_section)
                 return m_column_name[t_section];
-//todo: remove                return m_sql_query.record().fieldName(t_section);
         }
     }
 
@@ -804,11 +792,6 @@ bool PNSqlQueryModel::deleteRecord(QModelIndex t_index)
 
 QVector<QVariant> PNSqlQueryModel::emptyrecord()
 {
-    //todo: remove
-    // QSqlRecord qr = m_sql_query.record();
-    // qr.clearValues();
-
-    // return qr;
     QVector<QVariant> record(m_column_count);
     return record;
 }
@@ -816,9 +799,9 @@ QVector<QVariant> PNSqlQueryModel::emptyrecord()
 bool PNSqlQueryModel::isUniqueValue(const QVariant &t_new_value, const QModelIndex &t_index)
 {
     DB_LOCK;
-    QString keycolumnname = m_column_name[0]; //todo: remove m_sql_query.record().fieldName(0);
+    QString keycolumnname = m_column_name[0];
 
-    QString columnname = m_column_name[t_index.column()]; //todo: remove] m_sql_query.record().fieldName(t_index.column());
+    QString columnname = m_column_name[t_index.column()];
 
     QVariant keyvalue;
 
@@ -1980,7 +1963,9 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                         if (!lookup_value.isNull() && !m_lookup_table[colnum].isEmpty())
                         {
                             QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookup_fk_column_name[colnum], m_lookup_table[colnum], m_lookup_value_column_name[colnum], lookup_value);
-                            QLog_Debug(PNOTESMOD, QString("EXEC LOOKUP EXISTING: %1").arg(sql));
+#ifdef QT_DEBUG
+                            QLog_Debug(DEBUGLOG, QString("EXEC LOOKUP EXISTING: %1").arg(sql));
+#endif
 
                             field_value = getDBOs()->execute(sql);
                         }
@@ -2079,8 +2064,6 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
     QString exists_count = getDBOs()->execute(exists_sql);
     QString sql;
 
-    QLog_Debug(PNOTESMOD, QString("CHECK EXISTS: %1").arg(exists_sql));
-
     if (exists_count.toInt() > 0)
     {
         // delete or update if exists
@@ -2107,7 +2090,9 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
         sql = QString("insert into %1 (%2) values (%3)").arg(m_tablename, fields, insertvalues);
     }
 
-    QLog_Debug(PNOTESMOD, QString("XML Generated SQL:%1 ").arg(sql));
+#ifdef QT_DEBUG
+    QLog_Debug(DEBUGLOG, QString("XML Generated SQL:%1 ").arg(sql));
+#endif
 
     getDBOs()->execute(sql);
 

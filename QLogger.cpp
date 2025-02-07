@@ -10,9 +10,9 @@ Q_DECLARE_METATYPE(QLogger::LogMode)
 Q_DECLARE_METATYPE(QLogger::LogFileDisplay)
 Q_DECLARE_METATYPE(QLogger::LogMessageDisplay)
 
-const QString PLUGINSMOD = "plugins";
-const QString CONSOLEMOD = "console";
-const QString PNOTESMOD = "projectnotes";
+const QString DEBUGLOG = "debuglog";
+const QString CONSOLELOG = "console";
+const QString APPLOG = "projectnotes";
 
 namespace QLogger
 {

@@ -28,9 +28,9 @@
 #include <QMap>
 #include <QVariant>
 
-extern const QString PLUGINSMOD;
-extern const QString CONSOLEMOD;
-extern const QString PNOTESMOD;
+extern const QString DEBUGLOG;
+extern const QString CONSOLELOG;
+extern const QString APPLOG;
 
 namespace QLogger
 {

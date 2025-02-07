@@ -48,7 +48,6 @@ const QModelIndex ProjectNotesModel::newRecord(const QVariant* t_fk_value1, cons
     qr[1] = *t_fk_value1;
     qr[2] = notetitle;
     qr[3] = curdate;
-    // qr[4] = QVariant()); todo: not needed
     qr[5] = 0;
 
     return addRecord(qr);

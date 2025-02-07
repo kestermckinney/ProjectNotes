@@ -65,8 +65,6 @@ const QModelIndex ProjectsModel::newRecord(const QVariant* t_fk_value1, const QV
     QVector<QVariant> qr = emptyrecord();
     qr[1] = QString("[%1]").arg(unique_stamp);
     qr[2] = QString("[New Project %1]").arg(unique_stamp);
-    // qr[3, QVariant()); todo: not needed
-    // qr[4, QVariant());
     qr[11] = tr("Monthly");
     qr[12] = tr("Bi-Weekly");
     qr[14] = tr("Active");
@@ -236,7 +234,6 @@ const QModelIndex ProjectsModel::copyRecord(QModelIndex t_index)
 
     qr[1] = QString("Copy [%2] of %1").arg(data(index(t_index.row(), 1)).toString(), unique_stamp);
     qr[2] = QString("Copy [%2] of %1").arg(data(index(t_index.row(), 2)).toString(), unique_stamp);
-    // qr[4] = QVariant()); todo: not needed
     qr[5] = data(index(t_index.row(), 5));
     qr[6] = data(index(t_index.row(), 6));
     qr[7] = data(index(t_index.row(), 7));

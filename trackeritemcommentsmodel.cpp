@@ -42,7 +42,6 @@ const QModelIndex TrackerItemCommentsModel::newRecord(const QVariant* t_fk_value
 
     qr[1] = *t_fk_value1;
     qr[2] = curdate; // default to today
-    //todo: not neededqr[3] = QVariant();
     qr[4] = getDBOs()->getProjectManager(); // default updated by to the pm
 
     return addRecord(qr);

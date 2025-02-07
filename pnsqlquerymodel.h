@@ -151,7 +151,7 @@ public:
     void setDirty() { m_is_dirty = true; } // records need refreshed when underlying database tables have changed
     DBColumnType getType( const int t_column ) const { return m_column_type[t_column]; }
     void setType( const int t_column, const DBColumnType t_column_type ) { m_column_type[t_column] = t_column_type; }
-    QString getColumnName( int t_column ) { return m_column_name[t_column]; } //todo: remove { return m_sql_query.record().fieldName(t_column); }
+    QString getColumnName( int t_column ) { return m_column_name[t_column]; }
     QString getColumnName( QString& t_display_name );
     int getColumnNumber(const QString& t_field_name );
 
@@ -214,7 +214,6 @@ private:
     QVector<QString> m_relation_title;
     QVector<DBRelationExportable> m_relation_exportable;
 
-    //todo: remove QSqlQuery m_sql_query;
     QVector<QVector<QVariant>> m_cache;
     QVector<QHash<int, QVariant> > m_headers;
 

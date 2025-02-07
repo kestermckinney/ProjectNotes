@@ -90,9 +90,7 @@ const QModelIndex TrackerItemsModel::newRecord(const QVariant* t_fk_value1, cons
     qr[5] = curdate; // date identified
     qr[8] = "High"; // set a default priority
     qr[9] = "New"; // set a default status
-    //todo: not needed? qr[10] = QVariant();
     qr[11] = curdate; // date data as updated
-    //todo: not needed? qr[12] = QVariant(); // date resolved
     qr[15] = 0;
 
     return addRecord(qr);

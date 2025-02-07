@@ -49,9 +49,12 @@ MainWindow::MainWindow(QWidget *t_parent)
     QLoggerManager *logmanager = QLoggerManager::getInstance();
 
     QString logloc = LogViewer::getLogFileLocation();
-    logmanager->addDestination("plugins.log", PLUGINSMOD, LogLevel::Debug, logloc, LogMode::OnlyFile);
-    logmanager->addDestination("console.log", CONSOLEMOD, LogLevel::Info, logloc, LogMode::OnlyFile);
-    logmanager->addDestination("projectnotes.log", PNOTESMOD, LogLevel::Debug, logloc, LogMode::OnlyFile);
+    #ifdef QT_DEBUG
+        logmanager->addDestination("debugging.log", DEBUGLOG, LogLevel::Debug, logloc, LogMode::OnlyFile);
+    #endif
+
+    logmanager->addDestination("console.log", CONSOLELOG, LogLevel::Info, logloc, LogMode::OnlyFile);
+    logmanager->addDestination("projectnotes.log", APPLOG, LogLevel::Info, logloc, LogMode::OnlyFile);
 
     logmanager->resume();
 

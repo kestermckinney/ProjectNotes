@@ -86,9 +86,14 @@ bool PNDatabaseObjects::createDatabase(QString& t_databasepath)
 
     m_sqlite_db.setDatabaseName(m_database_file);
 
-    if (!m_sqlite_db.open()) {
-        QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
-            m_sqlite_db.lastError().text(), QMessageBox::Cancel);
+    if (!m_sqlite_db.open())
+    {
+        if (m_gui)
+            QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
+                m_sqlite_db.lastError().text(), QMessageBox::Cancel);
+
+        QLog_Info(APPLOG, QString("Cannot open database. %1").arg(m_sqlite_db.lastError().text()));
+
         m_database_file.clear(); // set empty if bad file
         return false;
     }
@@ -101,9 +106,10 @@ bool PNDatabaseObjects::createDatabase(QString& t_databasepath)
     return true;
 }
 
-bool PNDatabaseObjects::openDatabase(const QString& t_databasepath, const QString& t_connectionname)
+bool PNDatabaseObjects::openDatabase(const QString& t_databasepath, const QString& t_connectionname, bool t_gui)
 {
     m_database_file = t_databasepath;
+    m_gui = t_gui;
 
     if (QSqlDatabase::contains(t_connectionname))
         m_sqlite_db = QSqlDatabase::database(t_connectionname);
@@ -116,15 +122,24 @@ bool PNDatabaseObjects::openDatabase(const QString& t_databasepath, const QStrin
     }
     else
     {
-        QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
+        if (m_gui)
+            QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
                               QString(tr("File %1 does not exist.")).arg(m_database_file), QMessageBox::Cancel);
+
+        QLog_Info(APPLOG, QString(tr("Cannot open database. File %1 does not exist.")).arg(m_database_file));
+
         m_database_file.clear(); // set empty if bad file
         return false;
     }
 
-    if (!m_sqlite_db.open()) {
-        QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
-                              m_sqlite_db.lastError().text(), QMessageBox::Cancel);
+    if (!m_sqlite_db.open())
+    {
+        if (m_gui)
+            QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
+                                  m_sqlite_db.lastError().text(), QMessageBox::Cancel);
+
+        QLog_Info(APPLOG, QString("Cannot open database. %1").arg(m_sqlite_db.lastError().text()));
+
         m_database_file.clear(); // set empty if bad file
         return false;
     }
@@ -132,102 +147,105 @@ bool PNDatabaseObjects::openDatabase(const QString& t_databasepath, const QStrin
     m_sqlite_db.setConnectOptions("QSQLITE_ENABLE_SHARED_CACHE");
     m_sqlite_db.setConnectOptions("QSQLITE_BUSY_TIMEOUT=400");
 
-    DatabaseStructure ds;
-    ds.UpgradeDatabase();
+    if (m_gui)
+    {
+        DatabaseStructure ds;
+        ds.UpgradeDatabase();
+    }
 
-    m_clients_model = new ClientsModel(this);
+    m_clients_model = new ClientsModel(this, m_gui);
     m_clients_model_proxy = new PNSortFilterProxyModel();
     m_clients_model_proxy->setSourceModel(m_clients_model);
 
-    m_unfilteredclients_model = new ClientsModel(this);
+    m_unfilteredclients_model = new ClientsModel(this, m_gui);
     m_unfilteredclients_model_proxy = new PNSortFilterProxyModel();
     m_unfilteredclients_model_proxy->setSourceModel(m_unfilteredclients_model);
     m_unfilteredclients_model->setShowBlank();
     m_unfilteredclients_model->setNoExport();
 
-    m_people_model = new PeopleModel(this);
+    m_people_model = new PeopleModel(this, m_gui);
     m_people_model_proxy = new PNSortFilterProxyModel();
     m_people_model_proxy->setSourceModel(m_people_model);
 
-    m_company_people_model = new PeopleModel(this);
+    m_company_people_model = new PeopleModel(this, m_gui);
     m_company_people_model_proxy = new PNSortFilterProxyModel();
     m_company_people_model_proxy->setSourceModel(m_company_people_model);
 
-    m_unfiltered_people_model = new PeopleModel(this);
+    m_unfiltered_people_model = new PeopleModel(this, m_gui);
     m_unfiltered_people_model_proxy = new PNSortFilterProxyModel();
     m_unfiltered_people_model_proxy->setSourceModel(m_unfiltered_people_model);
     m_unfiltered_people_model->setShowBlank();
     m_unfiltered_people_model->setNoExport();
 
-    m_project_information_model = new ProjectsModel(this);
+    m_project_information_model = new ProjectsModel(this, m_gui);
     m_project_information_model_proxy = new PNSortFilterProxyModel();
     m_project_information_model_proxy->setSourceModel(m_project_information_model);
 
-    m_projects_list_model = new ProjectsListModel(this);
+    m_projects_list_model = new ProjectsListModel(this, m_gui);
     m_projects_list_model_proxy = new PNSortFilterProxyModel();
     m_projects_list_model_proxy->setSourceModel(m_projects_list_model);
 
-    m_teams_model = new TeamsModel(this);
+    m_teams_model = new TeamsModel(this, m_gui);
     m_teams_model_proxy = new PNSortFilterProxyModel();
     m_teams_model_proxy->setSourceModel(m_teams_model);
 
-    m_status_report_items_model = new StatusReportItemsModel(this);
+    m_status_report_items_model = new StatusReportItemsModel(this, m_gui);
     m_status_report_items_model_proxy = new PNSortFilterProxyModel();
     m_status_report_items_model_proxy->setSourceModel(m_status_report_items_model);
 
-    m_project_team_members_model = new ProjectTeamMembersModel(this);
+    m_project_team_members_model = new ProjectTeamMembersModel(this, m_gui);
     m_project_team_members_model_proxy = new PNSortFilterProxyModel();
     m_project_team_members_model_proxy->setSourceModel(m_project_team_members_model);
 
-    m_project_locations_model = new ProjectLocationsModel(this);
+    m_project_locations_model = new ProjectLocationsModel(this, m_gui);
     m_project_locations_model_proxy = new PNSortFilterProxyModel();
     m_project_locations_model_proxy->setSourceModel(m_project_locations_model);
 
-    m_project_notes_model = new ProjectNotesModel(this);
+    m_project_notes_model = new ProjectNotesModel(this, m_gui);
     m_project_notes_model_proxy = new PNSortFilterProxyModel();
     m_project_notes_model_proxy->setSourceModel(m_project_notes_model);
 
-    m_project_editing_notes_model = new ProjectNotesModel(this);
+    m_project_editing_notes_model = new ProjectNotesModel(this, m_gui);
     m_project_editing_notes_model_proxy = new PNSortFilterProxyModel();
     m_project_editing_notes_model_proxy->setSourceModel(m_project_editing_notes_model);
 
-    m_action_item_project_notes_model = new ActionItemProjectNotesModel(this);
+    m_action_item_project_notes_model = new ActionItemProjectNotesModel(this, m_gui);
     m_action_item_project_notes_model_proxy = new PNSortFilterProxyModel();
     m_action_item_project_notes_model_proxy->setSourceModel(m_action_item_project_notes_model);
 
-    m_tracker_items_meetings_model = new ActionItemsDetailsMeetingsModel(this);
+    m_tracker_items_meetings_model = new ActionItemsDetailsMeetingsModel(this, m_gui);
     m_tracker_items_meetings_model_proxy = new PNSortFilterProxyModel();
     m_tracker_items_meetings_model_proxy->setSourceModel(m_tracker_items_meetings_model);
     m_tracker_items_meetings_model->setShowBlank();
     m_tracker_items_meetings_model->setNoExport();
 
-    m_action_items_details_meetings_model = new ActionItemsDetailsMeetingsModel(this);
+    m_action_items_details_meetings_model = new ActionItemsDetailsMeetingsModel(this, m_gui);
     m_action_items_details_meetings_model_proxy = new PNSortFilterProxyModel();
     m_action_items_details_meetings_model_proxy->setSourceModel(m_action_items_details_meetings_model);
     m_action_items_details_meetings_model->setShowBlank();
     m_action_items_details_meetings_model->setNoExport();
 
-    m_project_action_items_model = new TrackerItemsModel(this);
+    m_project_action_items_model = new TrackerItemsModel(this, m_gui);
     m_project_action_items_model_proxy = new PNSortFilterProxyModel();
     m_project_action_items_model_proxy->setSourceModel(m_project_action_items_model);
 
-    m_action_item_details_model = new TrackerItemsModel(this);
+    m_action_item_details_model = new TrackerItemsModel(this, m_gui);
     m_action_item_details_model_proxy = new PNSortFilterProxyModel();
     m_action_item_details_model_proxy->setSourceModel(m_action_item_details_model);
 
-    m_meeting_attendees_model = new MeetingAttendeesModel(this);
+    m_meeting_attendees_model = new MeetingAttendeesModel(this, m_gui);
     m_meeting_attendees_model_proxy = new PNSortFilterProxyModel();
     m_meeting_attendees_model_proxy->setSourceModel(m_meeting_attendees_model);
 
-    m_notes_action_items_model = new NotesActionItemsModel(this);
+    m_notes_action_items_model = new NotesActionItemsModel(this, m_gui);
     m_notes_action_items_model_proxy = new PNSortFilterProxyModel();
     m_notes_action_items_model_proxy->setSourceModel(m_notes_action_items_model);
 
-    m_tracker_item_comments_model = new TrackerItemCommentsModel(this);
+    m_tracker_item_comments_model = new TrackerItemCommentsModel(this, m_gui);
     m_tracker_item_comments_model_proxy = new PNSortFilterProxyModel();
     m_tracker_item_comments_model_proxy->setSourceModel(m_tracker_item_comments_model);
 
-    m_search_results_model = new SearchResultsModel(this);
+    m_search_results_model = new SearchResultsModel(this, m_gui);
     m_search_results_model_proxy = new PNSortFilterProxyModel();
     m_search_results_model_proxy->setSourceModel(m_search_results_model);
 
@@ -272,13 +290,17 @@ QString PNDatabaseObjects::execute(const QString& t_sql)
             query.prepare(t_sql);
             query.exec();
 
-            QLog_Debug(PNOTESMOD, QString("Execute: %1").arg(t_sql));
+#ifdef QT_DEBUG
+            QLog_Debug(DEBUGLOG, QString("Execute: %1").arg(t_sql));
+#endif
 
             QSqlError e = query.lastError();
             if (e.isValid())
             {
                 m_sqlite_db.rollback();
-                QLog_Debug(PNOTESMOD, QString("Exec Error: %1").arg(e.text()));
+#ifdef QT_DEBUG
+                QLog_Debug(DEBUGLOG, QString("Exec Error: %1").arg(e.text()));
+#endif
             }
             else
             {
@@ -289,17 +311,23 @@ QString PNDatabaseObjects::execute(const QString& t_sql)
             if (query.next())
             {
                 val = query.value(0).toString();
-                QLog_Debug(PNOTESMOD, QString("Result: %1").arg(query.value(0).toString()));
+#ifdef QT_DEBUG
+                QLog_Debug(DEBUGLOG, QString("Result: %1").arg(query.value(0).toString()));
+#endif
             }
+#ifdef QT_DEBUG
             else
             {
-                QLog_Debug(PNOTESMOD, QString("Result No Record"));
+                QLog_Debug(DEBUGLOG, QString("Result No Record"));
             }
+#endif
         }
+#ifdef QT_DEBUG
         else
         {
-            QLog_Debug(PNOTESMOD, QString("Was not able lock for a transaction."));
+            QLog_Debug(DEBUGLOG, QString("Was not able lock for a transaction."));
         }
+#endif
     }
     DB_UNLOCK;
 
@@ -418,7 +446,10 @@ void PNDatabaseObjects::backupDatabase(const QString& t_file)
     QFile::remove(t_file); // copy command won't overwrite
     if (!QFile::copy(m_database_file, t_file))
     {
-        QMessageBox::critical(nullptr, QObject::tr("Database Backup Failed"), QString("Failed to backup the database.") );
+        if (m_gui)
+            QMessageBox::critical(nullptr, QObject::tr("Database Backup Failed"), QString("Failed to backup the database.") );
+
+        QLog_Info(APPLOG, QString("Database Backup Failed. Failed to backup the database."));
     }
 
     qry.prepare( "ROLLBACK;");
@@ -434,7 +465,11 @@ bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QSt
     QSqlQuery select(m_sqlite_db);
     if(!select.prepare("select parameter_value from application_settings where parameter_name = ?;"))
     {
-        QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
+        if (m_gui)
+            QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
+
+        QLog_Info(APPLOG, QString("Database Access Failed. Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
+
         return false;
     }
 
@@ -480,7 +515,12 @@ bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QSt
     else
     {
         DB_UNLOCK;
-        QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting.  You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()));
+
+        if (m_gui)
+            QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting.  You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()));
+
+        QLog_Info(APPLOG, QString("Database Access Failed.  Database Access Failed. Failed to access a saved setting.  You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()));
+
         return false;
     }
 
@@ -522,7 +562,11 @@ QString PNDatabaseObjects::loadParameter( const QVariant& t_parametername )
     QSqlQuery select(m_sqlite_db);
     if (!select.prepare("select parameter_value from application_settings where parameter_name = ?"))
     {
-        QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
+        if (m_gui)
+            QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
+
+        QLog_Info(APPLOG, QString("Database Access Failed. Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
+
         return QString();
     }
 
@@ -545,7 +589,11 @@ QString PNDatabaseObjects::loadParameter( const QVariant& t_parametername )
     }
     else
     {
-        QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
+        if (m_gui)
+            QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
+
+        QLog_Info(APPLOG, QString("Database Access Failed. Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
+
         DB_UNLOCK;
         return QString();
     }
@@ -826,8 +874,9 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "clients");
     if (!domlist.empty())
     {
-        QLog_Debug(PNOTESMOD, "importXMLDoc processing clients.");
-
+#ifdef QT_DEBUG
+        QLog_Debug(DEBUGLOG, "importXMLDoc processing clients.");
+#endif
         ClientsModel clients_model(this);
 
         for (QDomNode& tablenode : domlist)
@@ -842,8 +891,9 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "people");
     if (!domlist.empty())
     {
-        QLog_Debug(PNOTESMOD, "importXMLDoc processing people.");
-
+#ifdef QT_DEBUG
+        QLog_Debug(DEBUGLOG, "importXMLDoc processing people.");
+#endif
         PeopleModel people_model(this);
 
         for (QDomNode& tablenode : domlist)
@@ -858,8 +908,9 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "projects");
     if (!domlist.empty())
     {
-        QLog_Debug(PNOTESMOD, "importXMLDoc processing projects.");
-
+#ifdef QT_DEBUG
+        QLog_Debug(DEBUGLOG, "importXMLDoc processing projects.");
+#endif
         ProjectsModel projects_model(this);
 
         for (QDomNode& tablenode : domlist)
@@ -874,8 +925,9 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "project_people");
     if (!domlist.empty())
     {
-        QLog_Debug(PNOTESMOD, "importXMLDoc processing project_people.");
-
+#ifdef QT_DEBUG
+        QLog_Debug(DEBUGLOG, "importXMLDoc processing project_people.");
+#endif
         ProjectTeamMembersModel project_people_model(this);
 
         for (QDomNode& tablenode : domlist)
@@ -890,8 +942,9 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "status_report_items");
     if (!domlist.empty())
     {
-        QLog_Debug(PNOTESMOD, "importXMLDoc processing status_report_items.");
-
+#ifdef QT_DEBUG
+        QLog_Debug(DEBUGLOG, "importXMLDoc processing status_report_items.");
+#endif
         StatusReportItemsModel status_report_items_model(this);
 
         for (QDomNode& tablenode : domlist)
@@ -906,8 +959,9 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "project_locations");
     if (!domlist.empty())
     {
-        QLog_Debug(PNOTESMOD, "importXMLDoc processing project_locations.");
-
+#ifdef QT_DEBUG
+        QLog_Debug(DEBUGLOG, "importXMLDoc processing project_locations.");
+#endif
         ProjectLocationsModel project_locations_model(this);
 
         for (QDomNode& tablenode : domlist)
@@ -923,8 +977,9 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "project_notes");
     if (!domlist.empty())
     {
-        QLog_Debug(PNOTESMOD, "importXMLDoc processing project_notes.");
-
+#ifdef QT_DEBUG
+        QLog_Debug(DEBUGLOG, "importXMLDoc processing project_notes.");
+#endif
         ProjectNotesModel project_notes_model(this);
 
         for (QDomNode& tablenode : domlist)
@@ -939,8 +994,9 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "item_tracker");
     if (!domlist.empty())
     {
-        QLog_Debug(PNOTESMOD, "importXMLDoc processing item_tracker.");
-
+#ifdef QT_DEBUG
+        QLog_Debug(DEBUGLOG, "importXMLDoc processing item_tracker.");
+#endif
         TrackerItemsModel tracker_items_model(this);
 
         for (QDomNode& tablenode : domlist)
@@ -955,8 +1011,9 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "meeting_attendees");
     if (!domlist.empty())
     {
-        QLog_Debug(PNOTESMOD, "importXMLDoc processing meeting_attendees.");
-
+#ifdef QT_DEBUG
+        QLog_Debug(DEBUGLOG, "importXMLDoc processing meeting_attendees.");
+#endif
         MeetingAttendeesModel meeting_attendees_model(this);
 
         for (QDomNode& tablenode : domlist)
@@ -971,8 +1028,9 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
     domlist = findTableNodes(root, "item_tracker_updates");
     if (!domlist.empty())
     {
-        QLog_Debug(PNOTESMOD, "importXMLDoc processing item_tracker_updates.");
-
+#ifdef QT_DEBUG
+        QLog_Debug(DEBUGLOG, "importXMLDoc processing item_tracker_updates.");
+#endif
         TrackerItemCommentsModel item_tracker_updates_model(this);
 
         for (QDomNode& tablenode : domlist)

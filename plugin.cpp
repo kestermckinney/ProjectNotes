@@ -14,15 +14,17 @@ Plugin::Plugin(QObject *parent, bool isthread)
     if (isthread)
     {
         m_thread = new QThread();
-
-        QLog_Debug(PLUGINSMOD, QString("Created plugin thread %1 for PythonWorker.").arg((quintptr)m_thread, QT_POINTER_SIZE * 2, 16, QChar('0')));
-
+#ifdef QT_DEBUG
+        QLog_Debug(DEBUGLOG, QString("Created plugin thread %1 for PythonWorker.").arg((quintptr)m_thread, QT_POINTER_SIZE * 2, 16, QChar('0')));
+#endif
         m_pythonworker->moveToThread(m_thread);
 
+#ifdef QT_DEBUG
         if (m_thread != m_pythonworker->thread())
         {
-            QLog_Debug(PLUGINSMOD, "FAILED TO MOVE THREAD TO NEW PYTHONWORKER.");
+            QLog_Debug(DEBUGLOG, "FAILED TO MOVE THREAD TO NEW PYTHONWORKER.");
         }
+#endif
     }
 
     // send commands to python worker
@@ -43,7 +45,7 @@ Plugin::Plugin(QObject *parent, bool isthread)
 
 Plugin::~Plugin()
 {
-    // TODO: This doesn't work because the signal won't get to the queue in time.
+    // TODO: This doesn't seem work because the signal won't get to the queue in time.
     emit unloadModule();
 
     QCoreApplication::processEvents();
@@ -113,8 +115,9 @@ void Plugin::setEnabled(const bool t_enabled)
 
 void Plugin::onReturnedXml(const QString& t_xml)
 {
-    QLog_Debug(PLUGINSMOD, QString("Plugin: %1 Returned Xml: %2").arg(m_modulepath, t_xml));
-
+#ifdef QT_DEBUG
+    QLog_Debug(DEBUGLOG, QString("Plugin: %1 Returned Xml: %2").arg(m_modulepath, t_xml));
+#endif
     QDomDocument xmldoc;
 
     xmldoc.setContent(t_xml);
@@ -125,7 +128,7 @@ void Plugin::onReturnedXml(const QString& t_xml)
     }
     else
     {
-        QLog_Debug(PLUGINSMOD, QString("Database was already closed.  XML was not processed."));
+        QLog_Info(APPLOG, QString("Database was already closed.  XML was not processed."));
     }
 }
 
@@ -149,14 +152,16 @@ void Plugin::onLoadComplete(const PythonPlugin& t_plugin)
         members = "Provided Function(s): " + members;
 
     emit moduleLoaded(m_modulepath);
-
-    QLog_Debug(PLUGINSMOD, QString("Loaded Plugin: %1 %2").arg(m_plugin.name(), logMsg));
+#ifdef QT_DEBUG
+    QLog_Debug(DEBUGLOG, QString("Loaded Plugin: %1 %2").arg(m_plugin.name(), logMsg));
+#endif
 }
 
 void Plugin::onUnLoadComplete()
 {
-    QLog_Debug(PLUGINSMOD, QString("Unloaded Plugin: %1").arg(m_plugin.name()));
-
+#ifdef QT_DEBUG
+    QLog_Debug(DEBUGLOG, QString("Unloaded Plugin: %1").arg(m_plugin.name()));
+#endif
     m_loaded = false;
 
     emit moduleUnloaded(m_modulepath);

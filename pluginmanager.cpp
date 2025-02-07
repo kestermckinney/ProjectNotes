@@ -77,8 +77,6 @@ static PyObject* update_data(PyObject* self, PyObject* args)
         return PyBool_FromLong(0);
     }
 
-    //TODO: opening the database twice not writing
-
     PyObject* pycaller = getCallerModuleName();
     QString caller = QString::fromUtf8(PyUnicode_AsUTF8(pycaller));
 
@@ -88,7 +86,7 @@ static PyObject* update_data(PyObject* self, PyObject* args)
     xmldoc.setContent(ba);
 
     PNDatabaseObjects dbo;
-    dbo.openDatabase(global_DBObjects.getDatabaseFile(), caller);
+    dbo.openDatabase(global_DBObjects.getDatabaseFile(), caller, false);
     int result = dbo.importXMLDoc(xmldoc);
     dbo.closeDatabase();
 
@@ -117,7 +115,7 @@ static PyObject* get_data(PyObject* self, PyObject* args)
     xmldoc.setContent(ba);
 
     PNDatabaseObjects dbo;
-    dbo.openDatabase(global_DBObjects.getDatabaseFile(), caller);
+    dbo.openDatabase(global_DBObjects.getDatabaseFile(), caller, false);
     QList<PNSqlQueryModel*>* models = dbo.getData(xmldoc);
 
     if (!models)
@@ -321,7 +319,7 @@ PluginManager::PluginManager(QObject *parent)
     if (PyStatus_Exception(status))
     {
         PyConfig_Clear(&config);
-        QLog_Debug(PLUGINSMOD,QString("Embeded Python failed to start."));
+        QLog_Info(CONSOLELOG,QString("Embeded Python failed to start."));
         return;
     }
 
@@ -342,7 +340,7 @@ PluginManager::PluginManager(QObject *parent)
         if (text == "\n")
             return;
 
-        QLog_Info(CONSOLEMOD, QString::fromStdString(text));
+        QLog_Info(CONSOLELOG, QString::fromStdString(text));
     };
 
     set_stdout(outwrite);
@@ -357,13 +355,13 @@ PluginManager::PluginManager(QObject *parent)
     PyRun_SimpleString(win32lib.toUtf8().constData());
     PyRun_SimpleString(pythonwin.toUtf8().constData());
 
-    QLog_Debug(PLUGINSMOD, QString("Embedded Python Version %1").arg(Py_GetVersion()));
+    QLog_Info(CONSOLELOG, QString("Embedded Python Version %1").arg(Py_GetVersion()));
 
     // Get the sys module
     PyObject* sysModule = PyImport_ImportModule("sys");
     if (sysModule == NULL)
     {
-        QLog_Debug(PLUGINSMOD, QString("Failed to import sys module"));
+        QLog_Info(CONSOLELOG, QString("Failed to import sys module"));
         return;
     }
 
@@ -371,7 +369,7 @@ PluginManager::PluginManager(QObject *parent)
     PyObject* pathAttribute = PyObject_GetAttrString(sysModule, "path");
     if (pathAttribute == NULL)
     {
-        QLog_Debug(PLUGINSMOD, QString("Failed to get sys.path attribute"));
+        QLog_Info(CONSOLELOG, QString("Failed to get sys.path attribute"));
         return;
     }
 
@@ -465,7 +463,7 @@ void PluginManager::unloadAll()
 
 void PluginManager::onUnloadComplete(const QString &t_modulepath)
 {
-    QLog_Debug(PLUGINSMOD, QString("Module '%1' unloaded.").arg(t_modulepath));
+    QLog_Info(CONSOLELOG, QString("Module '%1' unloaded.").arg(t_modulepath));
 
     QFileInfo file(t_modulepath);
 
@@ -480,7 +478,7 @@ void PluginManager::onUnloadComplete(const QString &t_modulepath)
 
                 delete *it;
                 it = m_pluginlist.erase(it);
-                QLog_Debug(PLUGINSMOD, QString("Module '%1' no longer exists. Thread stopped.").arg(t_modulepath));
+                QLog_Info(CONSOLELOG, QString("Module '%1' no longer exists. Thread stopped.").arg(t_modulepath));
             }
             else
             {
@@ -494,7 +492,7 @@ void PluginManager::onUnloadComplete(const QString &t_modulepath)
 
 void PluginManager::onFileChanged(const QString &filePath)
 {
-    QLog_Debug(PLUGINSMOD, QString("Module file '%1' changed.").arg(filePath));
+    QLog_Info(CONSOLELOG, QString("Module file '%1' changed.").arg(filePath));
 
     QFileInfo file(filePath);
 
@@ -503,7 +501,7 @@ void PluginManager::onFileChanged(const QString &filePath)
         if ((*it)->modulepath().compare(filePath) == 0)
         {
             (*it)->reloadPlugin();
-            QLog_Debug(PLUGINSMOD, QString("Module '%1' reload requested.").arg(filePath));
+            QLog_Info(CONSOLELOG, QString("Module '%1' reload requested.").arg(filePath));
         }
     }
 }
