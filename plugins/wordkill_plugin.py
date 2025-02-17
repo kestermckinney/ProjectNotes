@@ -48,12 +48,13 @@ if (platform.system() == 'Windows'):
 
     def event_menuclick():
         pne.killwordautomation()
-        return ""
+        return ""  
  
 # call when testing outside of Project Notes
 """
 app = QApplication(sys.argv)
 
 print("Kill Word Automations")
-event_menuclick("")
+event_menuclick("") 
 """
+ 

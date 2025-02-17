@@ -79,6 +79,9 @@ QString LogViewer::getLogFileLocation()
 void LogViewer::onFileChanged(const QString &filePath)
 {
     QFile file(filePath);
+
+    // qDebug() << "checking file: " << filePath;
+
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         return;
     }
@@ -87,8 +90,10 @@ void LogViewer::onFileChanged(const QString &filePath)
     QString content = in.readAll();
     file.close();
 
-    if (m_fileTabs.contains(filePath))
+    if (m_fileTabs.contains(filePath))  //TODO: this probably has the & symble
     {
+        // qDebug() << "reloading file: " << filePath;
+
         QPlainTextEdit *editor = m_fileTabs[filePath];
         editor->setPlainText(content);
         editor->verticalScrollBar()->setValue(editor->verticalScrollBar()->maximum());
@@ -105,10 +110,10 @@ void LogViewer::onFolderChanged(const QString &folderPath)
 
     for (const QFileInfo &fileInfo : files)
     {
-        if (!m_fileTabs.contains(fileInfo.fileName()))
-        {
-            const QString filePath = fileInfo.absoluteFilePath();
+        const QString filePath = fileInfo.absoluteFilePath();
 
+        if (!m_fileTabs.contains(filePath))
+        {
             QFile file(filePath);
             if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
             {
@@ -126,7 +131,8 @@ void LogViewer::onFolderChanged(const QString &folderPath)
 
             m_tabWidget->addTab(editor, fileInfo.fileName());
 
-            m_fileTabs[fileInfo.fileName()] = editor;
+            //qDebug() << "adding file as: " << filePath;
+            m_fileTabs[filePath] = editor;
             m_fileWatcher->addPath(filePath);
         }
     }

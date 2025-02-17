@@ -43,6 +43,7 @@ pluginmenus = [
 #      item_tracker_updates
 #      item_tracker
 
+
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
     pne = ProjectNotesExcelTools()
