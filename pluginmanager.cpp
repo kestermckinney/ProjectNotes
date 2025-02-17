@@ -299,16 +299,19 @@ void reset_stdout()
 PluginManager::PluginManager(QObject *parent)
     : QObject{parent}
 {
+
     m_pluginspath = QCoreApplication::applicationDirPath() + "/plugins/";
     m_threadspath = QCoreApplication::applicationDirPath() + "/threads/";
 
+    QString pythonpath =  QCoreApplication::applicationDirPath();
     QString pluginspath = QString("sys.path.append(\"%1\")").arg(m_pluginspath);
     QString threadspath = QString("sys.path.append(\"%1\")").arg(m_threadspath);
-    QString pythonzip = QString("sys.path.append(\"%1\")").arg(QCoreApplication::applicationDirPath() + "/python311.zip");
-    QString sitepackages = QString("sys.path.append(\"%1\")").arg(QCoreApplication::applicationDirPath() + "/site-packages");
-    QString win32path = QString("sys.path.append(\"%1\")").arg(QCoreApplication::applicationDirPath() + "/site-packages/win32");
-    QString win32lib = QString("sys.path.append(\"%1\")").arg(QCoreApplication::applicationDirPath() + "/site-packages/win32/lib");
-    QString pythonwin = QString("sys.path.append(\"%1\")").arg(QCoreApplication::applicationDirPath() + "/site-packages/Pythonwin");
+
+    QString pythonzip = QString("sys.path.append(\"%1\")").arg(pythonpath + "/python313.zip");
+    QString sitepackages = QString("sys.path.append(\"%1\")").arg(pythonpath + "/site-packages");
+    QString win32path = QString("sys.path.append(\"%1\")").arg(pythonpath + "/site-packages/win32");
+    QString win32lib = QString("sys.path.append(\"%1\")").arg(pythonpath + "/site-packages/win32/lib");
+    QString pythonwin = QString("sys.path.append(\"%1\")").arg(pythonpath + "/site-packages/Pythonwin");
 
     PyStatus status;
     PyConfig config;
@@ -354,32 +357,18 @@ PluginManager::PluginManager(QObject *parent)
     PyRun_SimpleString(win32path.toUtf8().constData());
     PyRun_SimpleString(win32lib.toUtf8().constData());
     PyRun_SimpleString(pythonwin.toUtf8().constData());
+// #ifdef QT_DEBUG
+// TODO: remove
+//     PyRun_SimpleString(QString("import os").toUtf8().constData());
+//     PyRun_SimpleString(QString("print(os.path.dirname(sys.executable))").toUtf8().constData());
+//     PyRun_SimpleString(QString("sys.path.append('c:/Program Files/Python313/Lib/site-packages')").toUtf8().constData());
+//     PyRun_SimpleString(QString("sys.path.append('c:/Program Files/Python313/Lib/site-packages/win32')").toUtf8().constData());
+//     PyRun_SimpleString(QString("sys.path.append('c:/Program Files/Python313/Lib/site-packages/win32/lib')").toUtf8().constData());
+//     PyRun_SimpleString(QString("sys.path.append('c:/Program Files/Python313/Lib/site-packages/pythonwin')").toUtf8().constData());
+//     PyRun_SimpleString(QString("sys.path.append('c:/Program Files/Python313/Lib/site-packages/pywin32_system32')").toUtf8().constData());
+// #endif
 
     QLog_Info(CONSOLELOG, QString("Embedded Python Version %1").arg(Py_GetVersion()));
-
-    // Get the sys module
-    PyObject* sysModule = PyImport_ImportModule("sys");
-    if (sysModule == NULL)
-    {
-        QLog_Info(CONSOLELOG, QString("Failed to import sys module"));
-        return;
-    }
-
-    // Get the path attribute from the sys module
-    PyObject* pathAttribute = PyObject_GetAttrString(sysModule, "path");
-    if (pathAttribute == NULL)
-    {
-        QLog_Info(CONSOLELOG, QString("Failed to get sys.path attribute"));
-        return;
-    }
-
-    // Print the paths
-    QString paths = "Installed module paths:\n";
-    for (int i = 0; i < PyList_Size(pathAttribute); ++i)
-    {
-        PyObject* path = PyList_GetItem(pathAttribute, i);
-        paths += QString("Module: %1\n").arg(PyUnicode_AsUTF8(path));
-    }
 
     m_pythreadstate = PyEval_SaveThread();
 

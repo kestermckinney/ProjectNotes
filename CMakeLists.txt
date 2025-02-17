@@ -24,7 +24,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Sql Xml)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Sql Xml)
 
-set(ENV{QT_LOGGING_RULES} "qt.*.debug=true")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(ENV{QT_LOGGING_RULES} "qt.*.debug=true")
+endif()
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
@@ -32,10 +34,24 @@ message(STATUS "Python3 executable: ${Python3_EXECUTABLE}")
 message(STATUS "Python3 library: ${Python3_LIBRARIES}")
 message(STATUS "Python3 include dir: ${Python3_INCLUDE_DIRS}")
 
+
 # Find the Hunspell library
 #find_package(Hunspell REQUIRED)
-set(Hunspell_INCLUDE_DIRS /usr/include/hunspell)
-set(HUNSPELL_LIBRARIES hunspell-1.7)
+if (WIN32)
+    # this isn't the best way to do this, but for now until i figure out a better way
+    set(Hunspell_INCLUDE_DIRS "C:/Users/Paul McKinney/Documents/hunspell/src")
+
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(HUNSPELL_LIBRARIES "C:/Users/Paul McKinney/Documents/hunspell/msvc/x64/Debug_dll/libhunspell.lib")
+        set(HUNSPELL_DLL "C:/Users/Paul McKinney/Documents/hunspell/msvc/x64/Debug_dll/libhunspell.dll")
+    elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+        set(HUNSPELL_LIBRARIES "C:/Users/Paul McKinney/Documents/hunspell/msvc/x64/Release_dll/libhunspell.lib")
+        set(HUNSPELL_DLL "C:/Users/Paul McKinney/Documents/hunspell/msvc/x64/Release_dll/libhunspell.dll")
+    endif()
+else()
+    set(Hunspell_INCLUDE_DIRS /usr/include/hunspell)
+    set(HUNSPELL_LIBRARIES hunspell-1.7)
+endif()
 
 include_directories(${Hunspell_INCLUDE_DIRS})
 
@@ -97,7 +113,7 @@ link_directories(${Python3_INCLUDE_DIRS})
 # Include the source directory in the include directories for the executable
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(ProjectNotes PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${Python3_LIBRARIES} Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml ${HUNSPELL_LIBRARIES})
+target_link_libraries(ProjectNotes PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${Python3_LIBRARIES} Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml "${HUNSPELL_LIBRARIES}")
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
@@ -148,6 +164,14 @@ add_custom_command(TARGET ProjectNotes POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo "Copying dictionary"
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dictionary/*
 )
+
+if(WIN32)
+    add_custom_command(TARGET ProjectNotes POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy ${HUNSPELL_DLL} ${CMAKE_CURRENT_BINARY_DIR}/libhunspell.dll
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying Hunspell"
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*
+    )
+endif()
 
 # if(WIN32)
 #     set(APP_ICON_RESOURCE resources/app_icon.rc)
