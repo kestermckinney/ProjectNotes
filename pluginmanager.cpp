@@ -1,3 +1,4 @@
+#include "mainwindow.h"
 #include "pluginmanager.h"
 
 #include <QDir>
@@ -148,6 +149,23 @@ static PyObject* get_data(PyObject* self, PyObject* args)
     return pyString;
 }
 
+static PyObject* force_reload(PyObject* self, PyObject* args)
+{
+    Q_UNUSED(self);
+
+    const char* modulename;
+    if (!PyArg_ParseTuple(args, "s", &modulename))
+    {
+        Py_RETURN_NONE;
+    }
+
+    // put the reload request on the queue
+    MainWindow::getPluginManager()->forceReload(QString(modulename));
+
+    Py_RETURN_NONE;
+}
+
+
 
 PyMethodDef Stdout_methods[] =
 {
@@ -160,6 +178,7 @@ PyMethodDef data_methods[] =
     {
         {"update_data", update_data, METH_VARARGS, "projectnotes.update_data"},
         {"get_data", get_data, METH_VARARGS, "projectnotes.get_data"},
+        {"force_reload", force_reload, METH_VARARGS, "projectnotes.force_reload"},
         {0, 0, 0, 0} // sentinel
 };
 
@@ -379,6 +398,7 @@ PluginManager::PluginManager(QObject *parent)
 
     connect(m_fileWatcher, &QFileSystemWatcher::fileChanged, this, &PluginManager::onFileChanged);
     connect(m_fileWatcher, &QFileSystemWatcher::directoryChanged, this, &PluginManager::onFolderChanged);
+    connect(this, &PluginManager::pluginForceReload, this, &PluginManager::onForceReload);
 
     loadPluginFiles(m_pluginspath, false);
     loadPluginFiles(m_threadspath, true);
@@ -424,6 +444,7 @@ PluginManager::~PluginManager()
 {
     disconnect(m_fileWatcher, &QFileSystemWatcher::fileChanged, this, &PluginManager::onFileChanged);
     disconnect(m_fileWatcher, &QFileSystemWatcher::directoryChanged, this, &PluginManager::onFolderChanged);
+    disconnect(this, &PluginManager::pluginForceReload, this, &PluginManager::onForceReload);
 
     for ( Plugin* p : m_pluginlist)
     {
@@ -479,20 +500,42 @@ void PluginManager::onUnloadComplete(const QString &t_modulepath)
     emit pluginUnLoaded(t_modulepath);
 }
 
-void PluginManager::onFileChanged(const QString &filePath)
+void PluginManager::onFileChanged(const QString &t_filepath)
 {
-    QLog_Info(CONSOLELOG, QString("Module file '%1' changed.").arg(filePath));
+    QLog_Info(CONSOLELOG, QString("Module file '%1' changed.").arg(t_filepath));
 
-    QFileInfo file(filePath);
+    QFileInfo file(t_filepath);
 
     for (auto it = m_pluginlist.begin(); it != m_pluginlist.end(); ++it)
     {
-        if ((*it)->modulepath().compare(filePath) == 0)
+        if ((*it)->modulepath().compare(t_filepath, Qt::CaseInsensitive) == 0)
         {
             (*it)->reloadPlugin();
-            QLog_Info(CONSOLELOG, QString("Module '%1' reload requested.").arg(filePath));
+            QLog_Info(CONSOLELOG, QString("Module '%1' reload requested.").arg(t_filepath));
+            return;
         }
     }
+
+    QLog_Info(CONSOLELOG, QString("Module file '%1' was not found. Module reload failed.").arg(t_filepath));
+}
+
+void PluginManager::onForceReload(const QString &t_module)
+{
+    QString basemodule = QFileInfo(t_module).baseName();
+
+    for (auto it = m_pluginlist.begin(); it != m_pluginlist.end(); ++it)
+    {
+        QString checkmodule = QFileInfo((*it)->modulepath()).baseName();
+
+        if (checkmodule.compare(basemodule, Qt::CaseInsensitive) == 0)
+        {
+            (*it)->reloadPlugin();
+            QLog_Info(CONSOLELOG, QString("Module '%1' force reload requested.").arg(t_module));
+            return;
+        }
+    }
+
+    QLog_Info(CONSOLELOG, QString("Module '%1' was not found. Module reload failed.").arg(t_module));
 }
 
 void PluginManager::onFolderChanged(const QString &folderPath)
@@ -506,3 +549,7 @@ void PluginManager::onLoadComplete(const QString& t_modulepath)
     emit pluginLoaded(t_modulepath);
 }
 
+void PluginManager::forceReload(const QString& t_module)
+{
+    emit pluginForceReload(t_module);
+}

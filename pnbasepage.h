@@ -44,7 +44,7 @@ public:
     QVariant getRecordId() { return m_record_id; }
 
 public slots:
-    void slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_tablefilter);
+    void slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_tablefilter, const QString& t_parameter);
 
 private:
     PNSortFilterProxyModel* m_current_model = nullptr;

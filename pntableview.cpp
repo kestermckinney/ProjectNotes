@@ -98,7 +98,7 @@ PNTableView::~PNTableView()
 }
 
 
-void PNTableView::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_exportname)
+void PNTableView::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_exportname, const QString& t_parameter)
 {
     QString response;
 
@@ -125,25 +125,9 @@ void PNTableView::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname
     QString xmlstr = xdoc->toString();
 
     // call the menu plugin with the data structure
-    t_plugin->callXmlMethod(t_functionname, xmlstr);
-    //response = t_plugin->callDataRightClickEvent(xmlstr);
+    t_plugin->callXmlMethod(t_functionname, xmlstr, t_parameter);
 
     delete xdoc;
-
-    // QApplication::processEvents();
-
-    // if (!response.isEmpty())
-    // {
-    //     QApplication::processEvents();
-
-    //     QDomDocument doc;
-    //     doc.setContent(response);
-
-    //     if (!dbo->importXMLDoc(doc))
-    //         QMessageBox::critical(this, tr("Plugin Response Failed"), "Parsing XML file failed.");
-
-    //     QApplication::processEvents();
-    // }
 }
 
 void PNTableView::setModel(QAbstractItemModel *t_model)
@@ -345,7 +329,7 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
             if (m.dataexport().compare(table, Qt::CaseInsensitive) == 0)
             {
                 QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), this);
-                connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname(), m.dataexport());});
+                connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname(), m.dataexport(), m.parameter());});
                 MainWindow::addMenuItem(menu, m.submenu(), m.menutitle(), act, 2);
             }
         }

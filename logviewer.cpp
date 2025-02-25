@@ -153,9 +153,10 @@ void LogViewer::onClearLog()
         {
             m_tabWidget->removeTab(currentIndex);
             m_fileWatcher->removePath(filePath);
-            // m_fileWatcher->removePath(m_folderPath);
-            // m_fileWatcher->addPath(m_folderPath);
-            m_fileTabs.remove(fileName);
+            // unless i restart the watcher it doesn't catch the new file
+            m_fileWatcher->removePath(m_folderPath);
+            m_fileWatcher->addPath(m_folderPath);
+            m_fileTabs.remove(filePath);
         }
     }
 }

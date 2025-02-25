@@ -133,7 +133,7 @@ private slots:
     void on_actionXML_Import_triggered();
     void on_actionXML_Export_triggered();
 
-    void slotPluginMenu(Plugin* t_plugin, const QString& t_functionname);
+    void slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_parameter);
     void on_actionOpen_Item_triggered();
     void on_actionIncrease_Font_Size_triggered();
     void on_actionDecrease_Font_Size_triggered();

@@ -203,16 +203,16 @@ void MainWindow::buildPluginMenu()
             if (m.dataexport().isEmpty()) // don't include any right-click data menus
             {
                 QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), this);
-                connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname());});
+                connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname(), m.parameter());});
                 addMenuItem(ui->menuPlugins, m.submenu(), m.menutitle(), act, 1);
             }
         }
     }
 }
 
-void MainWindow::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname)
+void MainWindow::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_parameter)
 {
-    t_plugin->callMethod(t_functionname);
+    t_plugin->callMethod(t_functionname, t_parameter);
 }
 
 MainWindow::~MainWindow()

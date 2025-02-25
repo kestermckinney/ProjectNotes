@@ -21,8 +21,8 @@ public:
     void unloadPlugin();
     void reloadPlugin();
 
-    void callXmlMethod(const QString& t_method, const QString& t_xml);
-    void callMethod(const QString& t_method);
+    void callXmlMethod(const QString& t_method, const QString& t_xml, const QString& t_parameter);
+    void callMethod(const QString& t_method, const QString& t_parameter);
     bool hasMethod(const QString& t_method) const;
 
     QString modulepath() const { return m_modulepath; }
@@ -32,8 +32,8 @@ signals:
     void unloadModule();
     void reloadModule();
 
-    void sendMethodXml(const QString& t_method, const QString& t_xml);
-    void sendMethod(const QString& t_method);
+    void sendMethodXml(const QString& t_method, const QString& t_xml, const QString& t_parameter);
+    void sendMethod(const QString& t_method, const QString& t_parameter);
 
     void moduleUnloaded(const QString& t_modulepath);
     void moduleLoaded(const QString& t_modulepath);

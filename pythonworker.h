@@ -31,6 +31,7 @@ public:
             m_tablefilter = t_pluginmenu.tablefilter();
             m_submenu = t_pluginmenu.submenu();
             m_dataexport = t_pluginmenu.dataexport();
+            m_parameter = t_pluginmenu.parameter();
         }
 
         return *this;
@@ -46,6 +47,9 @@ public:
     QString submenu() const {return m_submenu;}
     void setDataExport(const QString& t_dataexport) {m_dataexport = t_dataexport;}
     QString dataexport() const {return m_dataexport;}
+    void setParameter(const QString& t_parameter) {m_parameter = t_parameter;}
+    QString parameter() const {return m_parameter;}
+
 
 private:
     QString m_menu_title;
@@ -53,6 +57,7 @@ private:
     QString m_tablefilter;
     QString m_submenu;
     QString m_dataexport;
+    QString m_parameter;
 };
 
 class PythonPlugin
@@ -85,7 +90,7 @@ public:
     void setTimerDelay(const int t_timerdelay) { m_timerdelay = t_timerdelay; }
     int timerdelay() { return m_timerdelay; }
     QList<PluginMenu> menus() const { return m_menus; }
-    void addMenu(const QString& t_menutitle, const QString& t_functionname, const QString& t_tablefilter, const QString& t_submenu, const QString& t_dataexport)
+    void addMenu(const QString& t_menutitle, const QString& t_functionname, const QString& t_tablefilter, const QString& t_submenu, const QString& t_dataexport, const QString& t_parameter)
     {
         PluginMenu m;
 
@@ -94,6 +99,7 @@ public:
         m.setTableFilter(t_tablefilter);
         m.setSubmenu(t_submenu);
         m.setDataExport(t_dataexport);
+        m.setParameter(t_parameter);
 
         m_menus.append(m);
     }
@@ -149,8 +155,8 @@ public slots:
     void reloadModule();
     bool isLoading() { return m_isloading; }
 
-    void sendMethodXml(const QString& t_method, const QString& t_xml);
-    void sendMethod(const QString& t_method);
+    void sendMethodXml(const QString& t_method, const QString& t_xml, const QString& t_parameter);
+    void sendMethod(const QString& t_method, const QString& t_parameter);
 
 private slots:
     void timerUpdate();

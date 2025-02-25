@@ -1,22 +1,22 @@
 #include "pythonworker.h"
 #include <QFileInfo>
 
-// TODO: remoe
-// #if PY_VERSION_HEX < 0x03130000 // Python 3.10
-// static int PyObject_HasAttrStringWithError(PyObject *obj, const char *attr_name) {
-//     if (!obj || !attr_name) {
-//         PyErr_SetString(PyExc_TypeError, "null argument to PyObject_HasAttrStringWithError");
-//         return -1;
-//     }
-//     int result = PyObject_HasAttrString(obj, attr_name);
-//     if (result == 0) {
-//         return 0;  // Attribute does not exist
-//     } else if (result == -1) {
-//         PyErr_Clear();  // Clear error as PyObject_HasAttrString does not set it properly
-//     }
-//     return result;
-// }
-// #endif
+// TODO: remove
+#if PY_VERSION_HEX < 0x03130000 // Python 3.10
+static int PyObject_HasAttrStringWithError(PyObject *obj, const char *attr_name) {
+    if (!obj || !attr_name) {
+        PyErr_SetString(PyExc_TypeError, "null argument to PyObject_HasAttrStringWithError");
+        return -1;
+    }
+    int result = PyObject_HasAttrString(obj, attr_name);
+    if (result == 0) {
+        return 0;  // Attribute does not exist
+    } else if (result == -1) {
+        PyErr_Clear();  // Clear error as PyObject_HasAttrString does not set it properly
+    }
+    return result;
+}
+#endif
 
 PythonWorker::PythonWorker(QObject *parent)
     : QObject{parent}
@@ -145,6 +145,7 @@ void PythonWorker::loadModule(const QString& t_modulepath)
                 const char* tablefilter = nullptr;
                 const char* submenu = nullptr;
                 const char* dataexport = nullptr;
+                const char* parameter = nullptr;
 
                 // Check if the value is another dictionary
                 if (PyDict_Check(subdict))
@@ -164,8 +165,11 @@ void PythonWorker::loadModule(const QString& t_modulepath)
                     value = PyDict_GetItemString(subdict, "dataexport");
                     if (value)
                         dataexport = PyUnicode_AsUTF8(value);
+                    value = PyDict_GetItemString(subdict, "parameter");
+                    if (value)
+                        parameter = PyUnicode_AsUTF8(value);
 
-                    m_plugin.addMenu(QString(menutitle),QString(functionname),QString(tablefilter),QString(submenu),QString(dataexport));
+                    m_plugin.addMenu(QString(menutitle),QString(functionname),QString(tablefilter),QString(submenu),QString(dataexport),QString(parameter));
                     m_plugin.addMember(QString(functionname));
                 }
             }
@@ -193,7 +197,7 @@ void PythonWorker::loadModule(const QString& t_modulepath)
 
     if (m_plugin.hasMember("event_startup"))
     {
-        sendMethod("event_startup");
+        sendMethod("event_startup", "");
     }
 
 }
@@ -209,7 +213,7 @@ void PythonWorker::unloadModule()
 
     if (m_plugin.hasMember("event_shutdown"))
     {
-        sendMethod("event_shutdown");
+        sendMethod("event_shutdown", "");
     }
 
     m_isloading = true;
@@ -272,7 +276,7 @@ void PythonWorker::reloadModule()
     loadModule(m_modulepath);
 }
 
-void PythonWorker::sendMethodXml(const QString& t_method, const QString& t_xml)
+void PythonWorker::sendMethodXml(const QString& t_method, const QString& t_xml, const QString& t_parameter)
 {
     // if loading or unloading wait to try the call
     if (m_isloading)
@@ -302,7 +306,7 @@ void PythonWorker::sendMethodXml(const QString& t_method, const QString& t_xml)
         return;
     }
 
-    PyObject* pargs = Py_BuildValue("(s)", t_xml.toUtf8().data());
+    PyObject* pargs = Py_BuildValue("(ss)", t_xml.toUtf8().data(), t_parameter.toUtf8().data());
     if (!pargs)
     {
         emitError();
@@ -344,7 +348,7 @@ void PythonWorker::sendMethodXml(const QString& t_method, const QString& t_xml)
     emit returnXml(val);
 }
 
-void PythonWorker::sendMethod(const QString& t_method)
+void PythonWorker::sendMethod(const QString& t_method, const QString& t_parameter)
 {
     // if loading or unloading wait to try the call
     if (m_isloading)
@@ -374,15 +378,27 @@ void PythonWorker::sendMethod(const QString& t_method)
         return;
     }
 
-    PyObject* func = PyObject_CallObject(pymethod, nullptr);
+    PyObject* pargs = Py_BuildValue("(s)", t_parameter.toUtf8().data());
+    if (!pargs)
+    {
+        emitError();
+
+        PyGILState_Release(gstate);
+        return;
+    }
+
+    PyObject* func = PyObject_CallObject(pymethod, pargs);
     if (!func)
     {
         emitError();
+        Py_XDECREF(pargs);
         Py_XDECREF(pymethod);
 
         PyGILState_Release(gstate);
         return;
     }
+
+    Py_XDECREF(pargs);
 
     if (!PyArg_Parse(func, "s", &result))                /* convert to C */
     {
@@ -410,7 +426,7 @@ void PythonWorker::timerUpdate()
     // call the menu plugin with the data structure
     if (m_plugin.hasMember("event_timer"))
     {
-        sendMethod("event_timer");
+        sendMethod("event_timer", "");
     }
 }
 

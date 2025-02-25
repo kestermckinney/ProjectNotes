@@ -23,18 +23,20 @@ plugindescription = "This is test plugin. Supported platforms: Windows, Linux, M
 # the menu can be placed under a submenu
 # the function wil only show on the right click if it matches the table specified in dataexport
 pluginmenus = [
-    {"menutitle" : "Menu 2", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu B", "dataexport" : ""},
+    {"menutitle" : "Menu 2", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu B", "dataexport" : "", "parameter" : "look at me"},
     {"menutitle" : "Menu 1", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu B", "dataexport" : ""},
     {"menutitle" : "Menu 2", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu A", "dataexport" : ""},
-    {"menutitle" : "Menu 1", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu A", "dataexport" : ""},
+    {"menutitle" : "Force Reload Of tester_plugin", "function" : "force_reload", "tablefilter" : "", "submenu" : "Test Submenu A", "dataexport" : ""},
     {"menutitle" : "Alpha Menu B" , "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
     {"menutitle" : "Alpha Menu C", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
-    {"menutitle" : "Export Project", "function" : "event_data_rightclick", "tablefilter" : "", "submenu" : "Test Submenu", "dataexport" : "projects"},
+    {"menutitle" : "Export Project", "function" : "event_data_rightclick", "tablefilter" : "", "submenu" : "Test Submenu", "dataexport" : "projects", "parameter" : "look at me projects"},
     {"menutitle" : "Beta Menu A", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
     {"menutitle" : "Gamma Menu A", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
     {"menutitle" : "Alpha Menu A", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
-    {"menutitle" : "Client Update Test", "function" : "event_data_rightclick", "tablefilter" : "", "submenu" : "", "dataexport" : "clients"},
+    {"menutitle" : "Client Update Test", "function" : "event_data_rightclick", "tablefilter" : "", "submenu" : "", "dataexport" : "clients", "parameter" : "look at me clients"},
 ]
+
+#pluginmenus.append({"menutitle" :"Test Menu C", "function" : "menu_click",  "tablefilter" : "", "submenu" : "test submenu", "dataexport" : "", "parameter" : "parm" })  
 
 # events must have a data structure and data view specified
 #
@@ -84,9 +86,17 @@ def get_setting(settingname):
 
     return val
 
-def event_menuclick():
+def force_reload(parameter):
+    print("going to try to restart")
+
+    projectnotes.force_reload("tester_plugin")
+
+    return ""
+
+def event_menuclick(parameter):
 
     print("Tester: Event Menu click called...")
+    print("parameter passed: ", parameter)
 
     contact = """<?xml version="1.0" encoding="UTF-8"?>
     <projectnotes>
@@ -101,14 +111,14 @@ def event_menuclick():
 
     return ""
 
-def event_data_rightclick(xmlstr):
-    #app = QApplication(sys.argv)    
+def event_data_rightclick(xmlstr, parameter): 
     xmlval = QDomDocument()
     if (xmlval.setContent(xmlstr) == False):
         QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
         return
 
     print("Tester: Right Click Data Event called...")
+    print("parameter passed: ", parameter)
     print(xmlstr)
 
     QMessageBox.information(None, "Data Right-Click Event", "Returning XML", QMessageBox.StandardButton.Ok)
@@ -143,11 +153,8 @@ def event_data_rightclick(xmlstr):
 
     return retval  
 
-"""
 
-app = QApplication(sys.argv)
-print("Testing Plugin")
-EditorFullPath = "notepad.exe"
-event_menuclick("")
-"""
-#event_data_rightclick("")
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    print("Testing Plugin")
+    event_menuclick("")

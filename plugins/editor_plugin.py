@@ -1,34 +1,30 @@
 import sys
 import platform
 
-#print(sys.path)
-
-#if (platform.system() == 'Windows'):
-#    from includes.excel_tools import ProjectNotesExcelTools
-#    import win32com
-
-#import importlib.machinery
-#print(importlib.machinery.all_suffixes())
-
 from includes.common import ProjectNotesCommon
-from PyQt6 import QtSql, QtGui, QtCore, QtWidgets, uic
-from PyQt6.QtSql import QSqlDatabase
-from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl
-from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
+from PyQt6.QtWidgets import QMessageBox, QApplication
 from PyQt6.QtGui import QDesktopServices
-
 
 # Project Notes Plugin Parameters
 pluginname = "Open Editor" # name used in the menu
 plugindescription = "Open the specified editor. Supported platforms: Windows, Linux, MacOS"
-plugintable = "" # the table or view that the plugin applies to.  This will enable the right click
-childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
+
+# define menus to be added to ProjectNotes Plugins menu and data export/import right click.
+# the menutitle is the menu name
+# the function value is the the python function to be called
+# the table filter filters the XML sent to the plugin to make the export more efficient
+# the menu can be placed under a submenu
+# the function wil only show on the right click if it matches the table specified in dataexport
+# if a dataexport value exist the menu will not appear on the plugin menu
+pluginmenus = [
+    {"menutitle" : "Edior", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
+]
 
 # events must have a data structure and data view specified
 #
 # Structures:
-#      string          The event will pass a python string containing XML and will expect the plugin to return an XML string
+#      string          The event will pass a python string when dataexport is defined containing XML.  
+#                      The plugin can return an XML string to be processed by ProjectNotes.
 #
 # Data Views:
 #      clients
@@ -36,86 +32,29 @@ childtablesfilter = "" # a list of child tables that can be sent to the plugin. 
 #      projects
 #      project_people
 #      status_report_items
-#      project_locations
+#      project_locations 
 #      project_notes
 #      meeting_attendees
 #      item_tracker_updates
 #      item_tracker
 
-# Supported Events
-
-# def event_startup(xmlstr):
-#     return ""
-#
-# def event_shutdown(xmlstr):
-#     return ""
-#
-# def event_everyminute(xmlstr):
-#     return ""
-#
-# def event_every5minutes(xmlstr):
-#     return ""
-#
-# def event_every10minutes(xmlstr):
-#     return ""
-#
-# def event_every30Mmnutes(xmlstr):
-#     return ""
-#
-# def event_menuclick(xmlstr):
-#     return ""
-
-# Parameters specified here will show in the Project Notes plugin settings window
-# the global variable name must be specified as a string value to be read by project notes
-# Project Notes will set these values before calling any defs
-
-# Project Notes Parameters
-parameters = [
-    "EditorFullPath"
-]
-
-pnc = ProjectNotesCommon()
-#
-
-def event_menuclick(xmlstr):
+def event_menuclick(parameter):
+    pnc = ProjectNotesCommon()
 
     print("called event: " + __file__)
-    xmlval = QDomDocument()
-    if (xmlval.setContent(xmlstr) == False):
-        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
-        return ""
 
-    print(xmlstr);
+    EditorFullPath = pnc.get_plugin_setting("EditorPath", "Custom Editor")
+
+    #print(f"Editor Path: {EditorFullPath}")
         
     if (EditorFullPath is None or EditorFullPath == ""):
-        QMessageBox.critical(None, "Editor Not Specified",
-        "You will need to specify an editor in the Open Editor plugin settings.",
-        QMessageBox.StandardButton.Cancel)
+        QMessageBox.critical(None, "Editor Not Specified", "You will need to specify an editor in the Open Editor plugin settings.", QMessageBox.StandardButton.Cancel)
     else:
         pnc.exec_program( EditorFullPath )
     return ""
-
-"""
-def event_data_rightclick(xmlstr):
-    print("data right click")
-    print("python val ", xmlstr)
-    QMessageBox.critical(None, "Param", EditorFullPath, QMessageBox.StandardButton.Cancel)
-
-    QMessageBox.critical(None, "String Output Test", "example" + xmlstr, QMessageBox.StandardButton.Cancel)
-
-
-    #dom = QDomDocument()
-    #dom.setContent(xmlstr)
-
-    #print(dom.toString())
-
-    return "<html/>"
-"""
 
 """
 print("Testing Plugin")
 EditorFullPath = "notepad.exe"
 event_menuclick("")
 """
-
-# TESTED: Phase 1

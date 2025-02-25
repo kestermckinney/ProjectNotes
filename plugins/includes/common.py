@@ -1,4 +1,5 @@
 import platform
+import os
 
 if (platform.system() == 'Windows'):
     from win32com.client import GetObject
@@ -139,73 +140,73 @@ class ProjectNotesCommon:
             colnode = colnode.nextSibling()
         return("")
 
-    def find_projectfiles(self, projectnumber, subfolder, filedescription, filetypedescription, namefilter):
-        xmldoc = ""
+    # def find_projectfiles(self, projectnumber, subfolder, filedescription, filetypedescription, namefilter):
+    #     xmldoc = ""
 
-        #print("== initiating find project files in " + subfolder)
-        it = QDirIterator(subfolder, namefilter)
+    #     #print("== initiating find project files in " + subfolder)
+    #     it = QDirIterator(subfolder, namefilter)
 
-        while it.hasNext():
-            it.next()
-            filename = it.fileName()
-            #print("-> found file name : " + filename)
+    #     while it.hasNext():
+    #         it.next()
+    #         filename = it.fileName()
+    #         #print("-> found file name : " + filename)
 
-            if filename.lower().find("template") == -1 and not it.fileInfo().isDir(): # don't show templates
-                xmldoc = xmldoc + "<row>\n"
-                xmldoc = xmldoc + "<column name=\"project_id\" lookupvalue=\"" + self.to_xml(projectnumber) + "\"></column>\n"
-                xmldoc = xmldoc + "<column name=\"location_type\">" + self.to_xml(filetypedescription) + "</column>\n"
-                xmldoc = xmldoc + "<column name=\"location_description\">" + self.to_xml(filedescription) + " : " + self.to_xml(it.fileName()) + "</column>\n"
-                xmldoc = xmldoc + "<column name=\"full_path\">" + self.to_xml(subfolder + "\\" + filename) + "</column>\n"
-                xmldoc = xmldoc + "</row>\n"
+    #         if filename.lower().find("template") == -1 and not it.fileInfo().isDir(): # don't show templates
+    #             xmldoc = xmldoc + "<row>\n"
+    #             xmldoc = xmldoc + "<column name=\"project_id\" lookupvalue=\"" + self.to_xml(projectnumber) + "\"></column>\n"
+    #             xmldoc = xmldoc + "<column name=\"location_type\">" + self.to_xml(filetypedescription) + "</column>\n"
+    #             xmldoc = xmldoc + "<column name=\"location_description\">" + self.to_xml(filedescription) + " : " + self.to_xml(it.fileName()) + "</column>\n"
+    #             xmldoc = xmldoc + "<column name=\"full_path\">" + self.to_xml(subfolder + "\\" + filename) + "</column>\n"
+    #             xmldoc = xmldoc + "</row>\n"
 
-        return(xmldoc)
+    #     return(xmldoc)
 
-    def find_projectlocations(self, projectnumber, projects_folder):
-        xmldoc = ""
+    # def find_projectlocations(self, projectnumber, projects_folder):
+    #     xmldoc = ""
 
 
-        if QDir(projects_folder).exists():
+    #     if QDir(projects_folder).exists():
 
-            it = QDirIterator(projects_folder, {"*" + projectnumber + "*"})
-            while it.hasNext():
-                it.next()
-                foldername = projects_folder + "\\" + it.fileName();
+    #         it = QDirIterator(projects_folder, {"*" + projectnumber + "*"})
+    #         while it.hasNext():
+    #             it.next()
+    #             foldername = projects_folder + "\\" + it.fileName();
 
-                if it.fileInfo().isDir():
-                    xmldoc = xmldoc + "<row>\n"
-                    xmldoc = xmldoc + "<column name=\"project_id\" number=\"1\" lookupvalue=\"" + self.to_xml(projectnumber) + "\"></column>\n"
-                    xmldoc = xmldoc + "<column name=\"location_type\" number=\"2\">File Folder</column>\n"
-                    xmldoc = xmldoc + "<column name=\"location_description\" number=\"3\">Project Folder</column>\n"
-                    xmldoc = xmldoc + "<column name=\"full_path\" number=\"4\">" + self.to_xml(foldername) + "\\Project Management</column>\n"
-                    xmldoc = xmldoc + "</row>\n"
+    #             if it.fileInfo().isDir():
+    #                 xmldoc = xmldoc + "<row>\n"
+    #                 xmldoc = xmldoc + "<column name=\"project_id\" number=\"1\" lookupvalue=\"" + self.to_xml(projectnumber) + "\"></column>\n"
+    #                 xmldoc = xmldoc + "<column name=\"location_type\" number=\"2\">File Folder</column>\n"
+    #                 xmldoc = xmldoc + "<column name=\"location_description\" number=\"3\">Project Folder</column>\n"
+    #                 xmldoc = xmldoc + "<column name=\"full_path\" number=\"4\">" + self.to_xml(foldername) + "\\Project Management</column>\n"
+    #                 xmldoc = xmldoc + "</row>\n"
 
-                    #print("found folder name : " + foldername)
+    #                 #print("found folder name : " + foldername)
 
-                    # link all ms project files
-                    if QDir(foldername + "\\Project Management\\Schedule").exists():
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Schedule", "Project Schedule", "Microsoft Project", ["*.mpp"] )
+    #                 # link all ms project files
+    #                 if QDir(foldername + "\\Project Management\\Schedule").exists():
+    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Schedule", "Project Schedule", "Microsoft Project", ["*.mpp"] )
 
-                    # link all purchase orders
-                    if QDir(foldername + "\\Project Management\\Purchase Orders").exists():
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Purchase Orders", "Customer PO", "PDF File", ["*.pdf"] )
+    #                 # link all purchase orders
+    #                 if QDir(foldername + "\\Project Management\\Purchase Orders").exists():
+    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Purchase Orders", "Customer PO", "PDF File", ["*.pdf"] )
 
-                    # link all quotes
-                    if QDir(foldername + "\\Project Management\\Quotes").exists():
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Quotes", "Quote", "PDF File", ["*.pdf"] )
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Quotes", "Estimate", "Excel Document", ["*.xlsx", "*.xls"] )
+    #                 # link all quotes
+    #                 if QDir(foldername + "\\Project Management\\Quotes").exists():
+    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Quotes", "Quote", "PDF File", ["*.pdf"] )
+    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Quotes", "Estimate", "Excel Document", ["*.xlsx", "*.xls"] )
 
-                    # link all quotes
-                    if QDir(foldername + "\\Project Management\\Risk Management").exists():
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Risk Management", "Risk Register", "Excel Document", ["*.xlsx"] )
+    #                 # link all quotes
+    #                 if QDir(foldername + "\\Project Management\\Risk Management").exists():
+    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Risk Management", "Risk Register", "Excel Document", ["*.xlsx"] )
 
-                    # link all PCRs
-                    if QDir(foldername + "\\Project Management\\PCR\'s").exists():
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request", "PDF File", ["*.pdf"] )
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request", "Word Document", ["*.docx"] )
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request", "Word Document", ["*.doc"] )
-                        xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request Calcs", "Excel Document", ["*.xlsx", "*.xls"] )
+    #                 # link all PCRs
+    #                 if QDir(foldername + "\\Project Management\\PCR\'s").exists():
+    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request", "PDF File", ["*.pdf"] )
+    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request", "Word Document", ["*.docx"] )
+    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request", "Word Document", ["*.doc"] )
+    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request Calcs", "Excel Document", ["*.xlsx", "*.xls"] )
 
-            return(xmldoc)
+    #         return(xmldoc)
 
     #   return xmldoc
 
@@ -251,48 +252,48 @@ class ProjectNotesCommon:
 
         return(projectfolder)
 
-    def ping_server(self, servername):
-        if (platform.system() != 'Windows'):
-            print("ping_server requires win32com not supported on this platform")
-            return(False)
+    # def ping_server(self, servername):
+    #     if (platform.system() != 'Windows'):
+    #         print("ping_server requires win32com not supported on this platform")
+    #         return(False)
 
-        colProcess = None
-        strList = None
-        p = None
+    #     colProcess = None
+    #     strList = None
+    #     p = None
 
-        objWMIService = win32com.client.GetObject("winmgmts:{impersonationLevel=impersonate}!\\\\")
-        colProcess = objWMIService.ExecQuery("select * from Win32_PingStatus where address = '" + servername + "'")
+    #     objWMIService = win32com.client.GetObject("winmgmts:{impersonationLevel=impersonate}!\\\\")
+    #     colProcess = objWMIService.ExecQuery("select * from Win32_PingStatus where address = '" + servername + "'")
 
-        print(objWMIService)
-        for p in colProcess:
-            print("found row " + p.Address)
-            if p.StatusCode:
-                print("srv: " + servername + " stat: " + str(p.StatusCode))
-            if p.StatusCode == 0 and not p.StatusCode is None:
-                return(True)
+    #     print(objWMIService)
+    #     for p in colProcess:
+    #         print("found row " + p.Address)
+    #         if p.StatusCode:
+    #             print("srv: " + servername + " stat: " + str(p.StatusCode))
+    #         if p.StatusCode == 0 and not p.StatusCode is None:
+    #             return(True)
 
-        objWMIService = None
-        colProcess = None
+    #     objWMIService = None
+    #     colProcess = None
 
-        return(False)
+    #     return(False)
 
-    def check_drive(self, network, letter):
-        if (platform.system() != 'Windows'):
-            print("check_drive requires win32com not supported on this platform")
-            return(False)
+    # def check_drive(self, network, letter):
+    #     if (platform.system() != 'Windows'):
+    #         print("check_drive requires win32com not supported on this platform")
+    #         return(False)
 
-        drives = network.EnumNetworkDrives()
+    #     drives = network.EnumNetworkDrives()
 
-        i = 0
-        while i < drives.count():
-            k = drives.Item(i)
-            # print ("enm: " .. k .. " arg: " .. letter .. "\n")
-            if k == letter:
-                return(True)
+    #     i = 0
+    #     while i < drives.count():
+    #         k = drives.Item(i)
+    #         # print ("enm: " .. k .. " arg: " .. letter .. "\n")
+    #         if k == letter:
+    #             return(True)
 
-            i = i + 1
+    #         i = i + 1
 
-        return(False)
+    #     return(False)
 
     def exec_program(self, fullpath):
 
@@ -308,16 +309,23 @@ class ProjectNotesCommon:
     def get_plugin_setting(self, settingname, pluginname = None):
         cfg = QSettings("ProjectNotes","PluginSettings")
         cfg.setFallbacksEnabled(False)
-        val = ""
+        value = ""
 
         if pluginname is None:
-            val = cfg.value("Global Settings/" + settingname, "")
+            value = cfg.value("Global Settings/" + settingname, "")
         else:
-            val = cfg.value(pluginname + "/" + settingname, "")
+            value = cfg.value(pluginname + "/" + settingname, "")
 
-        #print("reading global setting: " + settingname + " value: " + val)
+        return value
 
-        return val
+    def set_plugin_setting(self, settingname, pluginname = None, value = ""):
+        cfg = QSettings("ProjectNotes","PluginSettings")
+        cfg.setFallbacksEnabled(False)
+
+        if pluginname is None:
+            cfg.setValue("Global Settings/" + settingname, value)
+        else:
+            cfg.setValue(pluginname + "/" + settingname, value)
 
     def verify_global_settings(self):
 
@@ -401,6 +409,63 @@ class ProjectNotesCommon:
 
         return(projectnumber)
 
+    def replace_variables(self, source_string, node, table_name = None, row_number = None):
+        expanded_string = source_string
+        table_string = None
+        row = None
+
+        if node.isElement():
+            element = node.toElement()
+            tag_name = element.tagName()
+
+            #check for key attributes in the root tag
+            if element.hasAttribute("managing_company_name"):
+                name_value = element.attribute("managing_company_name")
+                expanded_string = expanded_string.replace("[$managing_company_name]", name_value)   
+
+            if element.hasAttribute("managing_manager_name"):
+                name_value = element.attribute("managing_manager_name")
+                expanded_string = expanded_string.replace("[$managing_manager_name]", name_value)  
+
+            if element.hasAttribute("project_manager_id"):
+                name_value = element.attribute("project_manager_id")
+                expanded_string = expanded_string.replace("[$project_manager_id]", name_value)    
+
+            if tag_name == "column": # and table_name is not None:
+                if element.hasAttribute("name"):
+                    name_value = element.attribute("name")
+                    element_text = None
+
+                    if element.hasAttribute("lookupvalue"):
+                        element_text = element.attribute("lookupvalue")
+                    else:
+                        element_text = element.text().strip()
+
+                    expanded_string = expanded_string.replace(f"[${table_name}.{name_value}.{row_number}]", element_text)
+
+            if tag_name == "table":
+                # child elements are going to be columns or another table
+                if element.hasAttribute("name"):
+                    table_string = element.attribute("name")
+                    row = 0  # we need to start couting rows
+
+            if tag_name == "row":
+                    table_string = table_name # pass the current table down to the column
+                    row = row_number  # pass the current row down to the column leve
+
+        child = node.firstChild()
+
+        while not child.isNull():
+            if child.isElement():
+                if child.toElement().tagName() == "row" and table_string is not None:
+                    row += 1
+
+            expanded_string = self.replace_variables(expanded_string, child, table_string, row)
+            child = child.nextSibling()
+
+
+        return expanded_string
+  
     def email_word_file_as_html(self, subject, recipients, attachment, wordfile):
         if (platform.system() != 'Windows'):
             print("email_word_file_as_html only supported on Windows")
@@ -462,7 +527,7 @@ print("Buld up QDomDocument")
 
 app = QApplication(sys.argv)
 xmldoc = QDomDocument("TestDocument")
-f = QFile("C:/Users/pamcki/Desktop/project.xml")
+f = QFile("/home/paulmckinney/Desktop/project.xml")
 
 if f.open(QIODevice.OpenModeFlag.ReadOnly):
     print("example project opened")
@@ -472,6 +537,14 @@ xmlroot = xmldoc.elementsByTagName("projectnotes").at(0)
 
 projectfolder = pnc.get_projectfolder(xmlroot)
 print("project folder: " + projectfolder)
+
+original = "look for [$project_notes.project_id.1] to show"
+print("replaced " + pnc.replace_variables(original, xmlroot))
+
+original = "look for [$managing_company_name] to show"
+print("replaced " + pnc.replace_variables(original, xmlroot))
+
+
 f.close()
 
 """

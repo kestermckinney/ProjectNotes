@@ -292,14 +292,14 @@ void PNBasePage::buildPluginMenu(PluginManager* t_pm, QMenu* t_menu)
             if (m.dataexport().compare(table, Qt::CaseInsensitive) == 0) // only show right-click data menus
             {               
                 QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), this);
-                connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname(), m.tablefilter());});
+                connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname(), m.tablefilter(), m.parameter());});
                 MainWindow::addMenuItem(t_menu, m.submenu(), m.menutitle(), act, 2);
             }
         }
     }
 }
 
-void PNBasePage::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_tablefilter)
+void PNBasePage::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_tablefilter, const QString& t_parameter)
 {
     QString response;
 
@@ -316,7 +316,7 @@ void PNBasePage::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname,
         QString xmlstr = xdoc->toString();
 
         //call the menu plugin with the data structure
-        t_plugin->callXmlMethod(t_functionname, xmlstr);
+        t_plugin->callXmlMethod(t_functionname, xmlstr, t_parameter);
 
         delete xdoc;
     }

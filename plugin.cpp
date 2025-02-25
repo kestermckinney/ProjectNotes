@@ -75,14 +75,14 @@ Plugin::~Plugin()
         delete m_thread;
 }
 
-void Plugin::callXmlMethod(const QString& t_method, const QString& t_xml)
+void Plugin::callXmlMethod(const QString& t_method, const QString& t_xml, const QString& t_parameter)
 {
-    emit sendMethodXml(t_method, t_xml);
+    emit sendMethodXml(t_method, t_xml, t_parameter);
 }
 
-void Plugin::callMethod(const QString& t_method)
+void Plugin::callMethod(const QString& t_method, const QString& t_parameter)
 {
-    emit sendMethod(t_method);
+    emit sendMethod(t_method, t_parameter);
 }
 
 bool Plugin::hasMethod(const QString& t_method) const
