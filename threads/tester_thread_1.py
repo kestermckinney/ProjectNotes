@@ -31,21 +31,21 @@ plugintimerevent = 1 # how many minutes between the timer event
 # Project Notes Plugin Events
 
 def event_startup(parameter):
-    print("Test Thread 1: Startup event called...")
+    #print("Test Thread 1: Startup event called...")
 
     return ""
 
 def event_shutdown(parameter):
-    print("Test Thread 1: Shutdown event called...")
+    #print("Test Thread 1: Shutdown event called...")
 
     return ""
 
 def event_timer(parameter):
     for count in range(1, 300):
         time.sleep(0.05)
-        print(f"Thread 1 - event minute counter {count}")
+        #print(f"Thread 1 - event minute counter {count}")
 
-    print("Test Thread 1: Timer event called...")
+    #print("Test Thread 1: Timer event called...")
 
     return ""
 

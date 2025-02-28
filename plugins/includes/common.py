@@ -1,5 +1,6 @@
 import platform
 import os
+import json
 
 if (platform.system() == 'Windows'):
     from win32com.client import GetObject
@@ -15,7 +16,7 @@ def windowEnumerationHandler(hwnd, tpwindows):
 
 
 from PyQt6 import QtSql, QtGui, QtCore, QtWidgets
-from PyQt6.QtCore import QDirIterator, QDir, QSettings, QFile
+from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QSettings
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication
 
@@ -23,6 +24,55 @@ import re
 import subprocess
 
 class ProjectNotesCommon:
+    def __init__(self):
+        self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)
+        self.saved_state_file = self.temporary_folder + '/saved_state.json'
+
+    def get_save_state(self, state_name):
+        # get the last state
+        skip = 0
+        file = QFile(self.saved_state_file)
+        if file.exists():
+            if file.open(QIODevice.OpenModeFlag.ReadOnly):
+                saved_state = json.loads(file.readAll().data().decode("utf-8"))
+                file.close()
+
+            skip = saved_state.get(state_name, {}).get("skip", 0)
+        else:
+            saved_state = json.loads("{}")
+            print(f"Failed to load previous state {state_name}.")
+
+        return skip
+
+    def state_range_attrib(self, top, skip):
+        xmlskip = ""
+        xmltop = ""
+
+        if (skip >= 0):
+            xmlskip = f' skip="{skip}" '
+
+        if (top > 0):
+            xmltop = f' top="{top}" '
+
+        return f"{xmlskip} {xmltop}"
+
+    def set_save_state(self, state_name, oldskip, top, nodecount):
+        saved_state = json.loads("{}")
+        skip = oldskip
+
+        #start over the full count was not returned
+        if nodecount < top: 
+            skip = 0
+        else:
+            skip = skip + top
+
+        # save the new state
+        saved_state.setdefault(state_name, {})["skip"] = skip
+
+        file = QFile(self.saved_state_file)
+        if file.open(QIODevice.OpenModeFlag.WriteOnly):
+            file.write(json.dumps(saved_state, indent=4).encode("utf-8"))
+            file.close()    
 
     def to_xml(self, val):
         if val is None:
@@ -418,6 +468,8 @@ class ProjectNotesCommon:
             element = node.toElement()
             tag_name = element.tagName()
 
+            #print(f"parsinng {tag_name}")
+
             #check for key attributes in the root tag
             if element.hasAttribute("managing_company_name"):
                 name_value = element.attribute("managing_company_name")
@@ -441,6 +493,7 @@ class ProjectNotesCommon:
                     else:
                         element_text = element.text().strip()
 
+                    #print(f"attempting replace [${table_name}.{name_value}.{row_number}] ")
                     expanded_string = expanded_string.replace(f"[${table_name}.{name_value}.{row_number}]", element_text)
 
             if tag_name == "table":

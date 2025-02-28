@@ -112,7 +112,7 @@ void LogViewer::onFolderChanged(const QString &folderPath)
     {
         const QString filePath = fileInfo.absoluteFilePath();
 
-        if (!m_fileTabs.contains(filePath))
+        if (!m_fileTabs.contains(filePath) && m_fileTabs.count() < 20)  // only load 20 tabs
         {
             QFile file(filePath);
             if (!file.open(QIODevice::ReadOnly | QIODevice::Text))

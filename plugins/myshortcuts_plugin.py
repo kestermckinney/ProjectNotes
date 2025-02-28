@@ -49,9 +49,6 @@ def populate_menu_from_json(json_string):
     data = json.loads(json_string)
 
     if (len(data) > 0):
-        # Get the column headers from the first row
-        column_headers = list(data[0].keys())
-
         # Populate the table with data
         # make sure to filter the xml to the top level.  We doon't want to get the full projeect xml
         for row, row_data in enumerate(data): 

@@ -243,20 +243,21 @@ void PythonWorker::unloadModule()
     }
 
     // Run garbage collection
-    PyObject* gcModule = PyImport_ImportModule("gc");
-    if (gcModule)
-    {
-        PyObject* result = PyObject_CallMethod(gcModule, "collect", nullptr);
-        if (result)
-        {
-            Py_DECREF(result);
-        }
-        Py_DECREF(gcModule);
-    }
-    else
-    {
-        PyErr_Print();
-    }
+    // todo: this section kept crashing
+    // PyObject* gcModule = PyImport_ImportModule("gc");
+    // if (gcModule)
+    // {
+    //     PyObject* result = PyObject_CallMethod(gcModule, "collect", nullptr);
+    //     if (result)
+    //     {
+    //         Py_DECREF(result);
+    //     }
+    //     Py_DECREF(gcModule);
+    // }
+    // else
+    // {
+    //     PyErr_Print();
+    // }
 
     Py_XDECREF(m_PNPluginModule);
 

@@ -203,7 +203,7 @@ private:
 
    LogMode mDefaultMode = LogMode::OnlyFile;
    LogLevel mDefaultLevel = LogLevel::Warning;
-   int mDefaultMaxFileSize = 1024 * 1024; //! @note 1Mio
+   int mDefaultMaxFileSize = 1024 * 1024 * 110; //! @note 1Mio
    LogMessageDisplays mDefaultMessageOptions = LogMessageDisplay::Default;
    QString mNewLogsFolder;
 
