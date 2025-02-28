@@ -102,7 +102,6 @@ class FileFinderSettings(QDialog):
 
         delegate = ComboBoxDelegate()
         delegate.setItems([
-           "Project Folder",
            "Quote",
            "Functional Design",
            "Estimate",
