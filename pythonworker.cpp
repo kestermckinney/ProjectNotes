@@ -2,6 +2,7 @@
 #include <QFileInfo>
 
 // TODO: remove
+#ifndef Q_OS_WIN
 #if PY_VERSION_HEX < 0x03130000 // Python 3.10
 static int PyObject_HasAttrStringWithError(PyObject *obj, const char *attr_name) {
     if (!obj || !attr_name) {
@@ -16,6 +17,7 @@ static int PyObject_HasAttrStringWithError(PyObject *obj, const char *attr_name)
     }
     return result;
 }
+#endif
 #endif
 
 PythonWorker::PythonWorker(QObject *parent)

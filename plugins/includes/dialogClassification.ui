@@ -59,11 +59,6 @@
          </property>
          <item>
           <property name="text">
-           <string>Project Folder</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
            <string>Quote</string>
           </property>
          </item>

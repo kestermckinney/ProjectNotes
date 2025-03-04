@@ -2,20 +2,22 @@ import platform
 import os
 import json
 
-if (platform.system() == 'Windows'):
-    from win32com.client import GetObject
-    import win32com
-    import win32api
-    import win32gui
+# todo: make compatible
+# if (platform.system() == 'Windows'):
+#     from win32com.client import GetObject
+#     import win32com
+#     import win32api
+#     import win32gui
 
 top_windows = []
 
-def windowEnumerationHandler(hwnd, tpwindows):
-    if (platform.system() == 'Windows'):
-        tpwindows.append((hwnd, win32gui.GetWindowText(hwnd)))
+#todo: make compatible
+# def windowEnumerationHandler(hwnd, tpwindows):
+#     if (platform.system() == 'Windows'):
+#         tpwindows.append((hwnd, win32gui.GetWindowText(hwnd)))
 
 
-from PyQt6 import QtSql, QtGui, QtCore, QtWidgets
+from PyQt6 import QtGui, QtCore, QtWidgets
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QSettings
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication
@@ -346,15 +348,12 @@ class ProjectNotesCommon:
     #     return(False)
 
     def exec_program(self, fullpath):
+        #todo: make compatible
+        # if (platform.system() == 'Windows'):
+        #     win32api.WinExec( fullpath )
+        # else:
+        os.system( fullpath ) # i think this will work on Linux
 
-        if (platform.system() == 'Windows'):
-            win32api.WinExec( fullpath )
-        else:
-            #result = subprocess.Popen( [fullpath] ) #, capture_output=False)
-            os.system( fullpath ) # i think this will work on Linux
-
-        # print("stdout:", result.stdout)
-        # print("stderr:", result.stderr)
 
     def get_plugin_setting(self, settingname, pluginname = None):
         cfg = QSettings("ProjectNotes","PluginSettings")
@@ -386,22 +385,23 @@ class ProjectNotesCommon:
 
         return(True)
 
-    def bring_window_to_front(self, title):
-        if (platform.system() != 'Windows'):
-            print("bring window to front requires win32gui not supported on this platform")
-            return
+    #todo: make compatible
+    # def bring_window_to_front(self, title):
+    #     if (platform.system() != 'Windows'):
+    #         print("bring window to front requires win32gui not supported on this platform")
+    #         return
 
-        #QtWidgets.QApplication.processEvents()
-        print("looking for window title " + title)
-        win32gui.EnumWindows(windowEnumerationHandler, top_windows)
+    #     #QtWidgets.QApplication.processEvents()
+    #     print("looking for window title " + title)
+    #     win32gui.EnumWindows(windowEnumerationHandler, top_windows)
 
-        for i in top_windows:
-            if title.lower() in i[1].lower():
-                print("found " +  i[1])
-                win32gui.ShowWindow(i[0],5)
-                win32gui.SetForegroundWindow(i[0])
-                break
-        return
+    #     for i in top_windows:
+    #         if title.lower() in i[1].lower():
+    #             print("found " +  i[1])
+    #             win32gui.ShowWindow(i[0],5)
+    #             win32gui.SetForegroundWindow(i[0])
+    #             break
+    #     return
 
     def scrape_project_name(self, xmldoc):
         projectname = ""
@@ -519,58 +519,59 @@ class ProjectNotesCommon:
 
         return expanded_string
   
-    def email_word_file_as_html(self, subject, recipients, attachment, wordfile):
-        if (platform.system() != 'Windows'):
-            print("email_word_file_as_html only supported on Windows")
-            return
+    # make compatible
+    # def email_word_file_as_html(self, subject, recipients, attachment, wordfile):
+    #     if (platform.system() != 'Windows'):
+    #         print("email_word_file_as_html only supported on Windows")
+    #         return
 
-        if wordfile is not None:
-            word = win32com.client.Dispatch("Word.Application")
-            word.Visible = 0
-            doc = word.Documents.Open(wordfile)
-            doc.SpellingChecked = False
-            word.CheckLanguage = False
-            doc.GrammarChecked = False
-            word.AutoCorrect.CorrectCapsLock = False
-            word.AutoCorrect.CorrectDays = False
-            word.AutoCorrect.CorrectHangulAndAlphabet = False
-            word.AutoCorrect.CorrectInitialCaps = False
-            word.AutoCorrect.CorrectKeyboardSetting = False
-            word.AutoCorrect.CorrectSentenceCaps = False
+    #     if wordfile is not None:
+    #         word = win32com.client.Dispatch("Word.Application")
+    #         word.Visible = 0
+    #         doc = word.Documents.Open(wordfile)
+    #         doc.SpellingChecked = False
+    #         word.CheckLanguage = False
+    #         doc.GrammarChecked = False
+    #         word.AutoCorrect.CorrectCapsLock = False
+    #         word.AutoCorrect.CorrectDays = False
+    #         word.AutoCorrect.CorrectHangulAndAlphabet = False
+    #         word.AutoCorrect.CorrectInitialCaps = False
+    #         word.AutoCorrect.CorrectKeyboardSetting = False
+    #         word.AutoCorrect.CorrectSentenceCaps = False
 
-            doc.SaveAs(wordfile + ".html", 8)
-            word.Quit()
-            word = None
+    #         doc.SaveAs(wordfile + ".html", 8)
+    #         word.Quit()
+    #         word = None
 
-            file = open(wordfile + ".html", "r")
-            html = file.read()
-            file.close()
-            QFile.remove(wordfile + ".html")
-            dir = QDir(wordfile + "_files")
-            dir.removeRecursively()
+    #         file = open(wordfile + ".html", "r")
+    #         html = file.read()
+    #         file.close()
+    #         QFile.remove(wordfile + ".html")
+    #         dir = QDir(wordfile + "_files")
+    #         dir.removeRecursively()
 
-        outlook = win32com.client.Dispatch("Outlook.Application")
-        message = outlook.CreateItem(0)
-        message.To = ""
+    #     outlook = win32com.client.Dispatch("Outlook.Application")
+    #     message = outlook.CreateItem(0)
+    #     message.To = ""
 
-        outlook.ActiveExplorer().Activate()
-        message.Display()
+    #     outlook.ActiveExplorer().Activate()
+    #     message.Display()
 
-        message.To = recipients
-        DefaultSignature = message.HTMLBody
+    #     message.To = recipients
+    #     DefaultSignature = message.HTMLBody
 
-        message.Subject = subject
+    #     message.Subject = subject
 
-        if wordfile is not None:
-            message.HTMLBody = html + DefaultSignature
+    #     if wordfile is not None:
+    #         message.HTMLBody = html + DefaultSignature
 
-        if attachment is not None:
-            message.Attachments.Add(attachment, 1)
+    #     if attachment is not None:
+    #         message.Attachments.Add(attachment, 1)
 
-        self.bring_window_to_front(subject)
+    #     self.bring_window_to_front(subject)
 
-        outlook = None
-        message = None
+    #     outlook = None
+    #     message = None
 
 # setup test data
 """

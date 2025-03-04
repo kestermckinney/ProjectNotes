@@ -3,7 +3,7 @@ import platform
 #import projectnotes
 import time
 
-from PyQt6.QtSql import QSqlDatabase
+
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QThread
 from PyQt6.QtGui import QDesktopServices

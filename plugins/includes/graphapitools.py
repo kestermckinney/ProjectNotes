@@ -19,8 +19,8 @@ def windowEnumerationHandler(hwnd, tpwindows):
     if (platform.system() == 'Windows'):
         tpwindows.append((hwnd, win32gui.GetWindowText(hwnd)))
 
-from PyQt6 import QtSql, QtGui, QtCore, QtWidgets, uic
-from PyQt6.QtSql import QSqlDatabase
+from PyQt6 import QtGui, QtCore, QtWidgets, uic
+
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog

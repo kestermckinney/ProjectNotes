@@ -124,11 +124,14 @@ class FileFinderSettings(QDialog):
         x = self.pnc.get_plugin_setting("X", self.settings_pluginname)
         y = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
         w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
-        h = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
+        h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
 
         lc1 = self.pnc.get_plugin_setting("lc1", self.settings_pluginname)
         mc1 = self.pnc.get_plugin_setting("mc1", self.settings_pluginname)
         mc2 = self.pnc.get_plugin_setting("mc2", self.settings_pluginname)
+
+        # print(f"loading dimensions {x},{y},{w},{h}")
+        # print(f"loading column sizes {lc1},{mc1},{mc2}")
 
         if (lc1 != '' and mc1 != '' and mc2 != ''):
             self.ui.tableSearchLocations.setColumnWidth(0, int(lc1))
@@ -233,7 +236,7 @@ class FileFinderSettings(QDialog):
         self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
         self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
-        self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.size().height()}")
+        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
         self.pnc.set_plugin_setting("lc1", self.settings_pluginname, f"{self.ui.tableSearchLocations.columnWidth(0)}")
         self.pnc.set_plugin_setting("mc1", self.settings_pluginname, f"{self.ui.tableClassifications.columnWidth(0)}")
@@ -262,7 +265,7 @@ class EditorSettings(QDialog):
         x = self.pnc.get_plugin_setting("X", self.settings_pluginname)
         y = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
         w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
-        h = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
+        h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
 
         self.editor_path = self.pnc.get_plugin_setting("EditorPath", self.settings_pluginname)
         self.ui.lineEditFullPath.setText(self.editor_path)
@@ -295,7 +298,7 @@ class EditorSettings(QDialog):
         self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
         self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
-        self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.size().height()}")
+        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
         # Call the base class implementation
         super().closeEvent(event)
@@ -319,7 +322,7 @@ class OutlookIntegrationSettings(QDialog):
         x = self.pnc.get_plugin_setting("X", self.settings_pluginname)
         y = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
         w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
-        h = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
+        h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
 
         self.ui.comboBoxIntegrationType.setCurrentText(self.pnc.get_plugin_setting("IntegrationType", self.settings_pluginname))
         self.ui.lineEditApplicationID.setText(self.pnc.get_plugin_setting("ApplicationID", self.settings_pluginname))
@@ -355,7 +358,7 @@ class OutlookIntegrationSettings(QDialog):
         self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
         self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
-        self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.size().height()}")
+        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
         # Call the base class implementation
         super().closeEvent(event)
@@ -401,7 +404,7 @@ class MyShortcutSettings(QDialog):
         x = self.pnc.get_plugin_setting("X", self.settings_pluginname)
         y = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
         w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
-        h = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
+        h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
 
         c1 = self.pnc.get_plugin_setting("c1", self.settings_pluginname)
         c2 = self.pnc.get_plugin_setting("c2", self.settings_pluginname)
@@ -482,7 +485,7 @@ class MyShortcutSettings(QDialog):
         self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
         self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
-        self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.size().height()}")
+        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
         self.pnc.set_plugin_setting("c1", self.settings_pluginname, f"{self.ui.tableShortcuts.columnWidth(0)}")
         self.pnc.set_plugin_setting("c2", self.settings_pluginname, f"{self.ui.tableShortcuts.columnWidth(1)}")

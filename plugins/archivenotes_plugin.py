@@ -7,8 +7,7 @@ if (platform.system() == 'Windows'):
     from win32 import win32api
 
 from includes.common import ProjectNotesCommon
-from PyQt6 import QtSql, QtGui, QtCore, QtWidgets, uic
-from PyQt6.QtSql import QSqlDatabase
+from PyQt6 import QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtCore import QFile, QIODevice, QDate, QUrl, QDir
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
