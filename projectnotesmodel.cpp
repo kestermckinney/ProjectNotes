@@ -9,7 +9,7 @@
 using namespace QLogger;
 
 
-ProjectNotesModel::ProjectNotesModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
+ProjectNotesModel::ProjectNotesModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
 {
     setObjectName("ProjectNotesModel");
     setOrderKey(50);

@@ -9,8 +9,8 @@
 class ClientsModel : public PNSqlQueryModel
 {
 public:
-    ClientsModel(PNDatabaseObjects* t_dbo, bool t_gui = true);
-    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new ClientsModel(getDBOs(), false)); }
+    ClientsModel(PNDatabaseObjects* t_dbo);
+    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new ClientsModel(getDBOs())); }
     const QModelIndex newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr) override;
 };
 

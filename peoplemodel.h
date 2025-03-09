@@ -9,8 +9,8 @@
 class PeopleModel : public PNSqlQueryModel
 {
 public:
-    PeopleModel(PNDatabaseObjects* t_dbo, bool t_gui = true);
-    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new PeopleModel(getDBOs(), false)); };
+    PeopleModel(PNDatabaseObjects* t_dbo);
+    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new PeopleModel(getDBOs())); };
 };
 
 #endif // PEOPLEMODEL_H

@@ -7,7 +7,7 @@
 using namespace QLogger;
 
 
-TrackerItemsModel::TrackerItemsModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
+TrackerItemsModel::TrackerItemsModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
 {
     setObjectName("TrackerItemsModel");
     setOrderKey(40);

@@ -7,7 +7,7 @@
 #include <QRegularExpression>
 #include <QApplication>
 
-ProjectsListModel::ProjectsListModel(PNDatabaseObjects* t_dbo, bool t_gui) : ProjectsModel(t_dbo, t_gui)
+ProjectsListModel::ProjectsListModel(PNDatabaseObjects* t_dbo) : ProjectsModel(t_dbo)
 {
     setObjectName("ProjectsListModel");
     setOrderKey(110);

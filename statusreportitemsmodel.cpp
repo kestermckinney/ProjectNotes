@@ -1,7 +1,7 @@
 #include "statusreportitemsmodel.h"
 #include "pndatabaseobjects.h"
 
-StatusReportItemsModel::StatusReportItemsModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
+StatusReportItemsModel::StatusReportItemsModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
 {
     setObjectName("StatusReportItemsModel");
     setOrderKey(40);

@@ -130,7 +130,7 @@ class FileFinderSettings(QDialog):
         mc1 = self.pnc.get_plugin_setting("mc1", self.settings_pluginname)
         mc2 = self.pnc.get_plugin_setting("mc2", self.settings_pluginname)
 
-        # print(f"loading dimensions {x},{y},{w},{h}")
+        #print(f"loading dimensions {int(x)},{int(y)},{int(w)},{int(h)}")
         # print(f"loading column sizes {lc1},{mc1},{mc2}")
 
         if (lc1 != '' and mc1 != '' and mc2 != ''):
@@ -197,6 +197,9 @@ class FileFinderSettings(QDialog):
             value = self.ui.tableSearchLocations.removeRow(row)
 
     def addclassification(self):
+        self.ui_class.comboBoxClassification.setCurrentText('')
+        self.ui_class.lineEditPatternMatch.setText('')
+
         if (self.ui_class.exec()):
             row_count = self.ui.tableClassifications.rowCount()
             self.ui.tableClassifications.setRowCount(row_count + 1)

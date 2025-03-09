@@ -10,8 +10,8 @@
 class ValueSelectModel : public PNSqlQueryModel
 {
 public:
-    ValueSelectModel(PNDatabaseObjects* t_dbo, bool t_gui = true);
-    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new ValueSelectModel(getDBOs(), false)); };
+    ValueSelectModel(PNDatabaseObjects* t_dbo);
+    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new ValueSelectModel(getDBOs())); };
     void setValuesColumn(QString t_column);
 
     void setFilteringModel(PNSqlQueryModel* t_model) { m_filtering_model = t_model; };

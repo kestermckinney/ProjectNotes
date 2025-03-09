@@ -67,6 +67,7 @@ public:
     void setGlobalSearches( bool t_refresh );
     QString& getDatabaseFile() { return m_database_file; }
     bool isOpen() { return !m_database_file.isEmpty(); }
+    bool hasGUI() { return m_gui; }
 
     ClientsModel* clientsmodel() { return m_clients_model; }
     ClientsModel* unfilteredclientsmodel() { return m_unfilteredclients_model; }

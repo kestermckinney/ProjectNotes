@@ -5,7 +5,7 @@
 #include "pnsettings.h"
 #include "pndatabaseobjects.h"
 
-NotesActionItemsModel::NotesActionItemsModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
+NotesActionItemsModel::NotesActionItemsModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
 {
     setObjectName("NotesActionItemsModel");
     setOrderKey(35);

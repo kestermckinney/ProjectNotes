@@ -25,10 +25,10 @@
 
 using namespace QLogger;
 
-PNSqlQueryModel::PNSqlQueryModel(PNDatabaseObjects* t_dbo, bool t_gui) : QAbstractTableModel(t_dbo)
+PNSqlQueryModel::PNSqlQueryModel(PNDatabaseObjects* t_dbo) : QAbstractTableModel(t_dbo)
 {
     m_dbo = t_dbo;
-    m_gui = t_gui;
+    m_gui = m_dbo->hasGUI();
 
     // only recordsets attached to gui need to be updated with related data items changes
     // non gui mult-threaded recordsets can en up in deadlocks
@@ -139,8 +139,13 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
         {
             if (t_value.isNull() || t_value == "")
             {
-                QMessageBox::critical(nullptr, QObject::tr("Cannot update record"),
-                   m_headers[t_index.column()][Qt::EditRole].toString() + QObject::tr(" is a required field."), QMessageBox::Ok);
+                if (m_gui)
+                {
+                    QMessageBox::critical(nullptr, QObject::tr("Cannot update record"),
+                       m_headers[t_index.column()][Qt::EditRole].toString() + QObject::tr(" is a required field."), QMessageBox::Ok);
+                }
+
+                QLog_Info(APPLOG, QString("%1 is a required field.").arg(m_headers[t_index.column()][Qt::EditRole].toString()));
 
                 return false;
             }
@@ -154,8 +159,13 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
         {
             if (!isUniqueValue(t_value, t_index))
             {
-                QMessageBox::critical(nullptr, QObject::tr("Cannot update record"),
-                   m_headers[t_index.column()][Qt::EditRole].toString() + QObject::tr(" must be a unique value."), QMessageBox::Ok);
+                if (m_gui)
+                {
+                    QMessageBox::critical(nullptr, QObject::tr("Cannot update record"),
+                       m_headers[t_index.column()][Qt::EditRole].toString() + QObject::tr(" must be a unique value."), QMessageBox::Ok);
+                }
+
+                QLog_Info(APPLOG, QString("%1 must be a unique value..").arg(m_headers[t_index.column()][Qt::EditRole].toString()));
 
                 reloadRecord(t_index);
 
@@ -244,8 +254,13 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             getDBOs()->getDb().rollback();
             DB_UNLOCK;
 
-            QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
-               insert.lastError().text() + "\n" + insert.lastQuery(), QMessageBox::Ok);
+            if (m_gui)
+            {
+                QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
+                   insert.lastError().text() + "\n" + insert.lastQuery(), QMessageBox::Ok);
+            }
+
+            QLog_Info(APPLOG, QString("Cannot insert record.  %1").arg(insert.lastError().text() + "\n" + insert.lastQuery()));
         }
         else
         {
@@ -264,11 +279,6 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             update.addBindValue(keyvalue);
             update.addBindValue(oldvalue);
 
-//            qDebug() << "update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)";
-            //qDebug() << "Value " << value;
-            //qDebug() << "Value " << keyvalue;
-            //qDebug() << "Value " << oldvalue;
-
             DB_LOCK;
             getDBOs()->getDb().transaction();
             if(update.exec())
@@ -278,8 +288,13 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
 
                 if (update.numRowsAffected() == 0)
                 {
-                    QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
-                       QObject::tr("Field was already updated by another process."), QMessageBox::Ok);
+                    if (m_gui)
+                    {
+                        QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
+                           QObject::tr("Field was already updated by another process."), QMessageBox::Ok);
+                    }
+
+                    QLog_Info(APPLOG, QString("Field was already updated by another process."));
 
                     reloadRecord(t_index);
                 }
@@ -300,8 +315,15 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
             {
                 getDBOs()->getDb().rollback();
                 DB_UNLOCK;
-                QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
-                   update.lastError().text() + "\n" + update.lastQuery(), QMessageBox::Ok);
+
+                if (m_gui)
+                {
+                    QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
+                       update.lastError().text() + "\n" + update.lastQuery(), QMessageBox::Ok);
+                }
+
+                QLog_Info(APPLOG, QString("Cannot update value.  %1").arg(update.lastError().text() + "\n" + update.lastQuery()));
+
             }
         }
     }
@@ -784,8 +806,13 @@ bool PNSqlQueryModel::deleteRecord(QModelIndex t_index)
 
     DB_UNLOCK;
 
-    QMessageBox::critical(nullptr, QObject::tr("Cannot delete record"),
-       delrow.lastError().text() + "\n" + delrow.lastQuery(), QMessageBox::Ok);
+    if (m_gui)
+    {
+        QMessageBox::critical(nullptr, QObject::tr("Cannot delete record"),
+           delrow.lastError().text() + "\n" + delrow.lastQuery(), QMessageBox::Ok);
+    }
+
+    QLog_Info(APPLOG, QString("Cannot delete record.  %1").arg(delrow.lastError().text() + "\n" + delrow.lastQuery()));
 
     return false;
 }
@@ -930,28 +957,31 @@ bool PNSqlQueryModel::columnChangeCheck(const QModelIndex &t_index)
 
     if (reference_count > 0)
     {
-        message = QObject::tr("The ") + m_display_name + QObject::tr(" record is referenced in the following records:\n\n") + message +
-                 QObject::tr("\nYou cannot change the ") + m_display_name + QObject::tr(" record until the assocated records are changed. Would you like to run a search for all related records?");
-
-        if ( QMessageBox::question(nullptr, QObject::tr("Cannot change record"),
-           message, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
+        if (m_gui)
         {
-            if (!project_number_key.isEmpty())
-            {
-                key_columns.append("project_number");
-                key_values.append(project_number_key);
-                key_columns.append("datakey");
-                key_values.append(primary_key);
-            }
-            else
-            {
-                key_columns.append("datakey");
-                key_values.append(primary_key);
-            }
+            message = QObject::tr("The ") + m_display_name + QObject::tr(" record is referenced in the following records:\n\n") + message +
+                     QObject::tr("\nYou cannot change the ") + m_display_name + QObject::tr(" record until the assocated records are changed. Would you like to run a search for all related records?");
 
-            getDBOs()->searchresultsmodel()->PerformKeySearch( key_columns, key_values );
+            if ( QMessageBox::question(nullptr, QObject::tr("Cannot change record"),
+               message, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
+            {
+                if (!project_number_key.isEmpty())
+                {
+                    key_columns.append("project_number");
+                    key_values.append(project_number_key);
+                    key_columns.append("datakey");
+                    key_values.append(primary_key);
+                }
+                else
+                {
+                    key_columns.append("datakey");
+                    key_values.append(primary_key);
+                }
 
-            emit callKeySearch();
+                getDBOs()->searchresultsmodel()->PerformKeySearch( key_columns, key_values );
+
+                emit callKeySearch();
+            }
         }
 
         return false;
@@ -1036,39 +1066,47 @@ bool PNSqlQueryModel::deleteCheck(const QModelIndex &t_index)
 
     if (reference_count > 0)
     {
-        message = QObject::tr("The ") + m_display_name + QObject::tr(" record is referenced in the following records:\n\n") + message +
-                 QObject::tr("\nYou cannot delete the ") + m_display_name + QObject::tr(" record until the assocated records are deleted. Would you like to run a search for all related records?");
-
-        if ( QMessageBox::question(nullptr, QObject::tr("Cannot delete record"),
-           message, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
+        if (m_gui)
         {
-            if (!project_number_key.isEmpty())
-            {
-                key_columns.append("project_number");
-                key_values.append(project_number_key);
-                key_columns.append("datakey");
-                key_values.append(primary_key);
-            }
-            else
-            {
-                key_columns.append("datakey");
-                key_values.append(primary_key);
-            }
+            message = QObject::tr("The ") + m_display_name + QObject::tr(" record is referenced in the following records:\n\n") + message +
+                     QObject::tr("\nYou cannot delete the ") + m_display_name + QObject::tr(" record until the assocated records are deleted. Would you like to run a search for all related records?");
 
-            getDBOs()->searchresultsmodel()->PerformKeySearch( key_columns, key_values );
+            if ( QMessageBox::question(nullptr, QObject::tr("Cannot delete record"),
+               message, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
+            {
+                if (!project_number_key.isEmpty())
+                {
+                    key_columns.append("project_number");
+                    key_values.append(project_number_key);
+                    key_columns.append("datakey");
+                    key_values.append(primary_key);
+                }
+                else
+                {
+                    key_columns.append("datakey");
+                    key_values.append(primary_key);
+                }
 
-            emit callKeySearch();
+                getDBOs()->searchresultsmodel()->PerformKeySearch( key_columns, key_values );
+
+                emit callKeySearch();
+            }
         }
 
         return false;
     }
     else
     {
-        if ( QMessageBox::question(nullptr, QObject::tr("Delete record?"),
-            QObject::tr("Are you sure you want to delete this ") + m_display_name + QObject::tr(" record?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
-            return true;
+        if (m_gui)
+        {
+            if ( QMessageBox::question(nullptr, QObject::tr("Delete record?"),
+                QObject::tr("Are you sure you want to delete this ") + m_display_name + QObject::tr(" record?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
+                return true;
+            else
+                return false;
+        }
         else
-            return false;
+            return true;
     }
 }
 
@@ -2037,7 +2075,11 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                 // if list of values doesn't contain this value the record need rejected
                 if (m_lookup_values[colnum] && !m_lookup_values[colnum]->contains(field_value.toString(), Qt::CaseSensitive))
                 {
-                    QMessageBox::critical(nullptr, QObject::tr("Invalid Field Value"), QString("""%1"" is not a valid field value.").arg(field_value.toString()));
+                    if (m_gui)
+                        QMessageBox::critical(nullptr, QObject::tr("Invalid Field Value"), QString("""%1"" is not a valid field value.").arg(field_value.toString()));
+
+                    QLog_Info(APPLOG, QString("""%1"" is not a valid field value.").arg(field_value.toString()));
+
                     return false;
                 }
 
@@ -2175,9 +2217,13 @@ bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant
 
                 if ( qry.value(0).toInt() > 0)
                 {
+                    if (m_gui)
+                    {
+                        QMessageBox::warning(nullptr, QObject::tr("Cannot update record"),
+                           QString("%1 must be unique.").arg(itk.key()));
+                    }
 
-                    QMessageBox::warning(nullptr, QObject::tr("Cannot update record"),
-                       QString("%1 must be unique.").arg(itk.key()));
+                    QLog_Info(APPLOG, QString("Cannot update record. ""%1""  must be unique.").arg(itk.key()));
 
                     DB_UNLOCK;
 

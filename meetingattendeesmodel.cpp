@@ -8,7 +8,7 @@
 using namespace QLogger;
 
 
-MeetingAttendeesModel::MeetingAttendeesModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
+MeetingAttendeesModel::MeetingAttendeesModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
 {
     setObjectName("MeetingAttendeesModel");
     setOrderKey(40);

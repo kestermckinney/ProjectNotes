@@ -38,7 +38,7 @@ public:
     enum DBColumnEditable {DBEditable, DBReadOnly};
     enum DBRelationExportable {DBExportable, DBNotExportable};
 
-    PNSqlQueryModel(PNDatabaseObjects* t_dbo, bool t_gui = true);
+    PNSqlQueryModel(PNDatabaseObjects* t_dbo);
     ~PNSqlQueryModel();
 
     PNDatabaseObjects* getDBOs() { return m_dbo; }

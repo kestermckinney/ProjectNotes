@@ -21,7 +21,7 @@ plugintimerevent = 1 # how many minutes between the timer event
 
 pluginmenus = [
     {"menutitle" : "Find All Fiiles", "function" : "event_timer", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
-    {"menutitle" : "Find Project Files", "function" : "event_data_rightclick", "tablefilter" : "projects", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : ""},
+    {"menutitle" : "Find Project Files", "function" : "event_data_rightclick", "tablefilter" : "projects", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : ""}
 ]
 
 # all events return an xml string that can be processed by ProjectNotes
@@ -48,25 +48,26 @@ class  FileFinder:
         self.classifications = self.pnc.get_plugin_setting("Classifications", self.settings_pluginname)
 
     # using the specified filters match file types and include them in teh Artifacts list
-    def filter_match_files(self, project_xml, parent_folder, basefolder = False):
+    def filter_match_files(self, project_xml, parent_folder, basefolder):
         xmldoc = ""
 
         projectnumber = self.pnc.get_column_value(project_xml, "project_number")
+        re_pattern = re.compile(r"(?:[^a-zA-Z0-9]|^)" + re.escape(projectnumber) + r"(?:[^a-zA-Z0-9]|^)", re.IGNORECASE)
 
         if QDir(parent_folder).exists():
 
-            it = QDirIterator(parent_folder, QDir.Filter.Files | QDir.Filter.Dirs | QDir.Filter.NoDotAndDotDot, QDirIterator.IteratorFlag.Subdirectories | QDirIterator.IteratorFlag.FollowSymlinks)
+            it = QDirIterator(parent_folder, QDir.Filter.Files | QDir.Filter.Dirs | QDir.Filter.NoDotAndDotDot, QDirIterator.IteratorFlag.FollowSymlinks)
 
             #print(f"working on project {projectnumber} in {parent_folder}")
 
             while it.hasNext():
                 it.next()
 
-                #print(f"iterrator found {it.filePath()}")
+                #print(f"iterrator found {it.filePath()} basefolder is {basefolder} looking for project {projectnumber}")
 
                 if basefolder:
                     # determine if this is the base project folddr
-                    if it.fileInfo().isDir() and re.search(r"(^|\s)" + projectnumber + r"(\s|$)", it.fileName(), re.IGNORECASE) is not None:
+                    if it.fileInfo().isDir() and re_pattern.match(it.fileName()):
                         xmldoc += "<row>\n"
                         xmldoc += f"<column name=\"project_id\" lookupvalue=\"{self.pnc.to_xml(projectnumber)}\"></column>\n"
                         xmldoc += "<column name=\"location_type\">File Folder</column>\n"
@@ -74,21 +75,23 @@ class  FileFinder:
                         xmldoc += f"<column name=\"full_path\">{self.pnc.to_xml(it.filePath())}</column>\n"
                         xmldoc += "</row>\n"
 
-                        xmldoc += self.filter_match_files(project_xml, it.filePath())
+                        xmldoc += self.filter_match_files(project_xml, it.filePath(), False)
 
-                        print(f"identified project folder {it.filePath()}")
-
-                        return xmldoc
+                        #print(f"identified project folder {it.filePath()}")
                 else:
                     if it.fileInfo().isDir():
-                        xmldoc += self.filter_match_files(project_xml, it.filePath())
+                        #print(f"traversing folder {it.filePath()}")
+                        xmldoc += self.filter_match_files(project_xml, it.filePath(), False)
 
                     data = json.loads(self.classifications)
+
+                    #print(f"found {Len(data)} classifications")
 
                     if (len(data) > 0):
                         for row, row_data in enumerate(data): 
                             pattern = row_data["Pattern Match"]
-                            pattern = self.pnc.replace_variables(pattern, project_xml, "projects", 1) 
+
+                            # hold on patten replcement pattern = self.pnc.replace_variables(pattern, project_xml, "projects", 1) 
 
                             #print(f"variable replaced pattern {pattern}")
 
@@ -107,7 +110,7 @@ class  FileFinder:
                                     elif it.filePath().lower().endswith(".doc"):
                                         locationtype = "Word Document"          
                                     elif it.filePath().lower().endswith(".pdf"):
-                                        locationtype = "PDF"          
+                                        locationtype = "PDF File"          
                                     elif it.filePath().lower().endswith(".mpp"):
                                         locationtype = "Microsoft Project"          
                                     elif it.filePath().lower().endswith(".pptx"):
@@ -122,13 +125,17 @@ class  FileFinder:
                                 xmldoc += f"<column name=\"full_path\" number=\"4\">{self.pnc.to_xml(it.filePath())}</column>\n"
                                 xmldoc += "</row>\n"
 
-                                print(f"found file {projectnumber} {it.filePath()}")
+                                #print(f"found file {projectnumber} {it.filePath()}")
 
         return xmldoc
 
     # Project Notes Plugin Events
     def find_project_folders(self, project_xml):
         xmldoc = ""
+
+        
+        projectnumber = self.pnc.get_column_value(project_xml, "project_number")
+        #print(f"focusing on project {projectnumber}")
 
         # look through base folders and identify folders that are associated with specific project numbers
         data = json.loads(self.search_locations)
@@ -154,7 +161,7 @@ class  FileFinder:
         statename = "file_finder"
 
         skip = 0
-        top = 10
+        top = 100
 
         skip = self.pnc.get_save_state(statename)
 
@@ -237,11 +244,13 @@ def event_timer(parameter):
     return ""
 
 def event_data_rightclick(xmlstr, parameter):
-
     ff = FileFinder()
+
     projectnumber = ff.get_projectnumber(xmlstr)
+
     if projectnumber is not None:
         ff.parse_by_project(False, projectnumber)
+
     return ""
 
 #todo: setup the  plugin to do default searching

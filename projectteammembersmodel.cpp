@@ -10,7 +10,7 @@
 using namespace QLogger;
 
 
-ProjectTeamMembersModel::ProjectTeamMembersModel(PNDatabaseObjects* t_dbo, bool t_gui): PNSqlQueryModel(t_dbo, t_gui)
+ProjectTeamMembersModel::ProjectTeamMembersModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
 {
     setObjectName("ProjectTeamMembersModel");
     setOrderKey(17);

@@ -9,7 +9,7 @@
 class ProjectsListModel : public ProjectsModel
 {
 public:
-    ProjectsListModel(PNDatabaseObjects* t_dbo, bool t_gui = true);
+    ProjectsListModel(PNDatabaseObjects* t_dbo);
 };
 
 #endif // PROJECTSMODEL_H

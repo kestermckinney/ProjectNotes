@@ -153,99 +153,99 @@ bool PNDatabaseObjects::openDatabase(const QString& t_databasepath, const QStrin
         ds.UpgradeDatabase();
     }
 
-    m_clients_model = new ClientsModel(this, m_gui);
+    m_clients_model = new ClientsModel(this);
     m_clients_model_proxy = new PNSortFilterProxyModel();
     m_clients_model_proxy->setSourceModel(m_clients_model);
 
-    m_unfilteredclients_model = new ClientsModel(this, m_gui);
+    m_unfilteredclients_model = new ClientsModel(this);
     m_unfilteredclients_model_proxy = new PNSortFilterProxyModel();
     m_unfilteredclients_model_proxy->setSourceModel(m_unfilteredclients_model);
     m_unfilteredclients_model->setShowBlank();
     m_unfilteredclients_model->setNoExport();
 
-    m_people_model = new PeopleModel(this, m_gui);
+    m_people_model = new PeopleModel(this);
     m_people_model_proxy = new PNSortFilterProxyModel();
     m_people_model_proxy->setSourceModel(m_people_model);
 
-    m_company_people_model = new PeopleModel(this, m_gui);
+    m_company_people_model = new PeopleModel(this);
     m_company_people_model_proxy = new PNSortFilterProxyModel();
     m_company_people_model_proxy->setSourceModel(m_company_people_model);
 
-    m_unfiltered_people_model = new PeopleModel(this, m_gui);
+    m_unfiltered_people_model = new PeopleModel(this);
     m_unfiltered_people_model_proxy = new PNSortFilterProxyModel();
     m_unfiltered_people_model_proxy->setSourceModel(m_unfiltered_people_model);
     m_unfiltered_people_model->setShowBlank();
     m_unfiltered_people_model->setNoExport();
 
-    m_project_information_model = new ProjectsModel(this, m_gui);
+    m_project_information_model = new ProjectsModel(this);
     m_project_information_model_proxy = new PNSortFilterProxyModel();
     m_project_information_model_proxy->setSourceModel(m_project_information_model);
 
-    m_projects_list_model = new ProjectsListModel(this, m_gui);
+    m_projects_list_model = new ProjectsListModel(this);
     m_projects_list_model_proxy = new PNSortFilterProxyModel();
     m_projects_list_model_proxy->setSourceModel(m_projects_list_model);
 
-    m_teams_model = new TeamsModel(this, m_gui);
+    m_teams_model = new TeamsModel(this);
     m_teams_model_proxy = new PNSortFilterProxyModel();
     m_teams_model_proxy->setSourceModel(m_teams_model);
 
-    m_status_report_items_model = new StatusReportItemsModel(this, m_gui);
+    m_status_report_items_model = new StatusReportItemsModel(this);
     m_status_report_items_model_proxy = new PNSortFilterProxyModel();
     m_status_report_items_model_proxy->setSourceModel(m_status_report_items_model);
 
-    m_project_team_members_model = new ProjectTeamMembersModel(this, m_gui);
+    m_project_team_members_model = new ProjectTeamMembersModel(this);
     m_project_team_members_model_proxy = new PNSortFilterProxyModel();
     m_project_team_members_model_proxy->setSourceModel(m_project_team_members_model);
 
-    m_project_locations_model = new ProjectLocationsModel(this, m_gui);
+    m_project_locations_model = new ProjectLocationsModel(this);
     m_project_locations_model_proxy = new PNSortFilterProxyModel();
     m_project_locations_model_proxy->setSourceModel(m_project_locations_model);
 
-    m_project_notes_model = new ProjectNotesModel(this, m_gui);
+    m_project_notes_model = new ProjectNotesModel(this);
     m_project_notes_model_proxy = new PNSortFilterProxyModel();
     m_project_notes_model_proxy->setSourceModel(m_project_notes_model);
 
-    m_project_editing_notes_model = new ProjectNotesModel(this, m_gui);
+    m_project_editing_notes_model = new ProjectNotesModel(this);
     m_project_editing_notes_model_proxy = new PNSortFilterProxyModel();
     m_project_editing_notes_model_proxy->setSourceModel(m_project_editing_notes_model);
 
-    m_action_item_project_notes_model = new ActionItemProjectNotesModel(this, m_gui);
+    m_action_item_project_notes_model = new ActionItemProjectNotesModel(this);
     m_action_item_project_notes_model_proxy = new PNSortFilterProxyModel();
     m_action_item_project_notes_model_proxy->setSourceModel(m_action_item_project_notes_model);
 
-    m_tracker_items_meetings_model = new ActionItemsDetailsMeetingsModel(this, m_gui);
+    m_tracker_items_meetings_model = new ActionItemsDetailsMeetingsModel(this);
     m_tracker_items_meetings_model_proxy = new PNSortFilterProxyModel();
     m_tracker_items_meetings_model_proxy->setSourceModel(m_tracker_items_meetings_model);
     m_tracker_items_meetings_model->setShowBlank();
     m_tracker_items_meetings_model->setNoExport();
 
-    m_action_items_details_meetings_model = new ActionItemsDetailsMeetingsModel(this, m_gui);
+    m_action_items_details_meetings_model = new ActionItemsDetailsMeetingsModel(this);
     m_action_items_details_meetings_model_proxy = new PNSortFilterProxyModel();
     m_action_items_details_meetings_model_proxy->setSourceModel(m_action_items_details_meetings_model);
     m_action_items_details_meetings_model->setShowBlank();
     m_action_items_details_meetings_model->setNoExport();
 
-    m_project_action_items_model = new TrackerItemsModel(this, m_gui);
+    m_project_action_items_model = new TrackerItemsModel(this);
     m_project_action_items_model_proxy = new PNSortFilterProxyModel();
     m_project_action_items_model_proxy->setSourceModel(m_project_action_items_model);
 
-    m_action_item_details_model = new TrackerItemsModel(this, m_gui);
+    m_action_item_details_model = new TrackerItemsModel(this);
     m_action_item_details_model_proxy = new PNSortFilterProxyModel();
     m_action_item_details_model_proxy->setSourceModel(m_action_item_details_model);
 
-    m_meeting_attendees_model = new MeetingAttendeesModel(this, m_gui);
+    m_meeting_attendees_model = new MeetingAttendeesModel(this);
     m_meeting_attendees_model_proxy = new PNSortFilterProxyModel();
     m_meeting_attendees_model_proxy->setSourceModel(m_meeting_attendees_model);
 
-    m_notes_action_items_model = new NotesActionItemsModel(this, m_gui);
+    m_notes_action_items_model = new NotesActionItemsModel(this);
     m_notes_action_items_model_proxy = new PNSortFilterProxyModel();
     m_notes_action_items_model_proxy->setSourceModel(m_notes_action_items_model);
 
-    m_tracker_item_comments_model = new TrackerItemCommentsModel(this, m_gui);
+    m_tracker_item_comments_model = new TrackerItemCommentsModel(this);
     m_tracker_item_comments_model_proxy = new PNSortFilterProxyModel();
     m_tracker_item_comments_model_proxy->setSourceModel(m_tracker_item_comments_model);
 
-    m_search_results_model = new SearchResultsModel(this, m_gui);
+    m_search_results_model = new SearchResultsModel(this);
     m_search_results_model_proxy = new PNSortFilterProxyModel();
     m_search_results_model_proxy->setSourceModel(m_search_results_model);
 
@@ -1059,7 +1059,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new ClientsModel(this, false);
+            PNSqlQueryModel* model = new ClientsModel(this);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -1074,7 +1074,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new PeopleModel(this, false);
+            PNSqlQueryModel* model = new PeopleModel(this);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -1089,7 +1089,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new ProjectsModel(this, false);
+            PNSqlQueryModel* model = new ProjectsModel(this);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -1105,7 +1105,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new ProjectTeamMembersModel(this, false);
+            PNSqlQueryModel* model = new ProjectTeamMembersModel(this);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -1120,7 +1120,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new StatusReportItemsModel(this, false);
+            PNSqlQueryModel* model = new StatusReportItemsModel(this);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -1135,7 +1135,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new ProjectLocationsModel(this, false);
+            PNSqlQueryModel* model = new ProjectLocationsModel(this);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -1151,7 +1151,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new ProjectNotesModel(this, false);
+            PNSqlQueryModel* model = new ProjectNotesModel(this);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -1166,7 +1166,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new TrackerItemsModel(this, false);
+            PNSqlQueryModel* model = new TrackerItemsModel(this);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -1181,7 +1181,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new MeetingAttendeesModel(this, false);
+            PNSqlQueryModel* model = new MeetingAttendeesModel(this);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);
@@ -1196,7 +1196,7 @@ QList<PNSqlQueryModel*>* PNDatabaseObjects::getData(const QDomDocument& t_xmldoc
     {
         for (QDomNode& tablenode : domlist)
         {
-            PNSqlQueryModel* model = new TrackerItemCommentsModel(this, false);
+            PNSqlQueryModel* model = new TrackerItemCommentsModel(this);
             model->setFilter(tablenode);
             model->refresh();
             model_list->append(model);

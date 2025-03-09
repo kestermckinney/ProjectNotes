@@ -9,8 +9,8 @@
 class SearchResultsModel : public PNSqlQueryModel
 {
 public:
-    SearchResultsModel(PNDatabaseObjects* t_dbo, bool t_gui = true);
-    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new SearchResultsModel(getDBOs(), false)); }
+    SearchResultsModel(PNDatabaseObjects* t_dbo);
+    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new SearchResultsModel(getDBOs())); }
     void PerformSearch(const QString& t_search_value);
     void PerformKeySearch(const QStringList& t_search_fields, const QStringList& t_search_values);
 };

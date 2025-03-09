@@ -16,11 +16,11 @@ FilterDataDialog::FilterDataDialog(QWidget *m_parent) :
 
     setModal(true);
 
-    m_column_model = new PNColumnModel(&global_DBObjects,  this);
+    m_column_model = new PNColumnModel(&global_DBObjects);
     m_column_proxy_model = new PNSortFilterProxyModel(this);
     m_column_proxy_model->setSourceModel(m_column_model);
 
-    m_values_model = new ValueSelectModel(&global_DBObjects, this);
+    m_values_model = new ValueSelectModel(&global_DBObjects);
     m_values_proxy_model = new PNSortFilterProxyModel(this);
     m_values_proxy_model->setSourceModel(m_values_model);
 
