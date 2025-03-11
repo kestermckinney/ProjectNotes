@@ -91,8 +91,6 @@ static PyObject* update_data(PyObject* self, PyObject* args)
     int result = dbo.importXMLDoc(xmldoc);
     dbo.closeDatabase();
 
-    Py_XDECREF(pycaller);
-
     return PyBool_FromLong(result);
 }
 
@@ -140,8 +138,6 @@ static PyObject* get_data(PyObject* self, PyObject* args)
     QString xmlstring = returnxmldoc->toString();
 
     dbo.closeDatabase();
-
-    Py_XDECREF(pycaller);
 
     delete returnxmldoc;
 

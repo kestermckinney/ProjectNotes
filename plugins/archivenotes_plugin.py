@@ -209,7 +209,7 @@ if (platform.system() == 'Windows'):
         notes = pnc.find_node(xmlroot, "table", "name", "project_notes")
         itemcount = 0
 
-        if notes:
+        if not notes.isNull():
             notesrow = notes.firstChild()
 
             while not notesrow.isNull():
@@ -271,7 +271,7 @@ if (platform.system() == 'Windows'):
 
             attendees = pnc.find_node(notesrow, "table", "name", "meeting_attendees")
             attendeelist = ""
-            if attendees:
+            if not attendees.isNull():
                 attendeerow = attendees.firstChild()
 
                 while not attendeerow.isNull():

@@ -97,7 +97,7 @@ if (platform.system() == 'Windows'):
         nm = None
 
         teammember = pnc.find_node(xmlroot, "table", "name", "project_people")
-        if teammember:
+        if not teammember.isNull():
             memberrow = teammember.firstChild()
 
             while not memberrow.isNull():
@@ -110,7 +110,7 @@ if (platform.system() == 'Windows'):
                 memberrow = memberrow.nextSibling()
 
         project = pnc.find_node(xmlroot, "table", "name", "projects")
-        if project:
+        if not project.isNull():
             projectrow = project.firstChild()
 
             if not projectrow.isNull():

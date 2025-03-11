@@ -222,6 +222,8 @@ class  FileFinder:
         if xmldoc != "":
             xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="project_locations">{xmldoc}</table>\n</projectnotes>\n'
 
+        print(xmldoc)
+
         projectnotes.update_data(xmldoc)
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds

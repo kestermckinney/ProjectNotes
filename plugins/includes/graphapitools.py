@@ -20,7 +20,7 @@ def windowEnumerationHandler(hwnd, tpwindows):
         tpwindows.append((hwnd, win32gui.GetWindowText(hwnd)))
 
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
-
+from common import ProjectNotesCommon
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
@@ -28,8 +28,24 @@ from PyQt6.QtGui import QDesktopServices
 
 class TokenAPI:
     def __init__(self):
-        self.tenant_id = 'cornerstonecontrols.com'
-        self.application_id = "a1786502-3fc6-4e15-94e9-b10b24d1c668"  # this if for MIGR Use "common" for multi-tenant or app-specific tenant id
+        super().__init__()
+
+        self.pnc = ProjectNotesCommon()
+
+        #self.tenant_id = 'cornerstonecontrols.com'
+        #self.application_id = "a1786502-3fc6-4e15-94e9-b10b24d1c668"  # this if for MIGR Use "common" for multi-tenant or app-specific tenant id
+
+        self.settings_pluginname = "Outlook Integration"
+        # self.use_graph_api = (self.pnc.get_plugin_setting("IntegrationType", self.settings_pluginname) == "Office 365 Application")
+        self.application_id = self.pnc.get_plugin_setting("ApplicationID", self.settings_pluginname)
+        self.tenant_id = self.pnc.get_plugin_setting("TenantID", self.settings_pluginname)
+        # self.sync_contacts = self.pnc.get_plugin_setting("SyncContacts", self.settings_pluginname).lower() == "true")
+        # self.sync_todo_with_due = self.pnc.get_plugin_setting("SyncToDoWithDue", self.settings_pluginname).lower() == "true")
+        # self.sync_todo_without_due = self.pnc.get_plugin_setting("SyncToDoDoWithoutDue", self.settings_pluginname).lower() == "true")
+        # self.backup_emails = self.pnc.get_plugin_setting("BackupEmails", self.settings_pluginname).lower() == "true")
+        # self.backup_inbox_folder = self.pnc.get_plugin_setting("BackupInBoxFolder", self.settings_pluginname)
+        # self.backup_sent_folder = self.pnc.get_plugin_setting("BackupSentFolder", self.settings_pluginname)
+
         self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)
         self.token_cache_file = self.temporary_folder + '/token_cache.json'
         self.scopes = ["Mail.Send", "Mail.ReadWrite", "Contacts.Read", "Contacts.ReadWrite","Calendars.ReadWrite", "Tasks.ReadWrite"]
@@ -124,10 +140,19 @@ class TokenAPI:
 
 class GraphAPITools:
     def __init__(self):
+        super().__init__()
+
+        self.pnc = ProjectNotesCommon()
         self.GRAPH_API_ENDPOINT = 'https://graph.microsoft.com'
 
-        self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)
-        self.saved_state_file = self.temporary_folder + '/saved_state.json'
+        self.settings_pluginname = "Outlook Integration"
+        self.use_graph_api = (self.pnc.get_plugin_setting("IntegrationType", self.settings_pluginname) == "Office 365 Application")
+        self.sync_contacts = self.pnc.get_plugin_setting("SyncContacts", self.settings_pluginname).lower() == "true")
+        self.sync_todo_with_due = self.pnc.get_plugin_setting("SyncToDoWithDue", self.settings_pluginname).lower() == "true")
+        self.sync_todo_without_due = self.pnc.get_plugin_setting("SyncToDoDoWithoutDue", self.settings_pluginname).lower() == "true")
+        self.backup_emails = self.pnc.get_plugin_setting("BackupEmails", self.settings_pluginname).lower() == "true")
+        self.backup_inbox_folder = self.pnc.get_plugin_setting("BackupInBoxFolder", self.settings_pluginname)
+        self.backup_sent_folder = self.pnc.get_plugin_setting("BackupSentFolder", self.settings_pluginname)
 
         self.headers = None
         self.access_token = None
@@ -148,53 +173,6 @@ class GraphAPITools:
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
         print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
         return(False)
-
-    def to_xml(self, val):
-        if val is None:
-            return ("")
-        else:
-            newval = ""
-
-            val = val.replace("&", "&amp;")
-            val = val.replace(">", "&gt;")
-            val = val.replace("<", "&lt;")
-            val = val.replace("\"", "&quot;")
-            val = val.replace("'", "&apos;")
-
-            for c in val:
-                if (ord(c) > 255):
-                    continue
-                elif (ord(c) < 32 or ord(c) > 122):
-                    newval = newval + f'&#x{ord(c):04X};'
-                else:
-                    newval = newval + c
-
-            return(newval)
-
-    def to_html(self, val):
-        if val is None:
-            return ("")
-        else:
-            newval = ""
-
-            val = val.replace("&", "&amp;")
-            val = val.replace(">", "&gt;")
-            val = val.replace("<", "&lt;")
-            val = val.replace("\"", "&quot;")
-            val = val.replace("'", "&apos;")
-            val = val.replace(" ", "&#160;")
-            val = val.replace("\n", "<br>")
-            val = val.replace("\t", "&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;")
-
-            for c in val:
-                if (ord(c) > 255):
-                    continue
-                elif (ord(c) < 32 or ord(c) > 122):
-                    newval = newval + f'&#x{ord(c):04X};'
-                else:
-                    newval = newval + c
-
-            return(newval)
 
     def bring_window_to_front(self, title):
         if (platform.system() != 'Windows'):
@@ -219,40 +197,6 @@ class GraphAPITools:
         cleanname = id + "-" + re.sub(r"[`!@#$%^&*()+\\|{}/';:<>,.~?\"\]\[]", "_", subject)
         # there is no guarantee this length will work.  It depends on system settigns and the base path length
         return cleanname[:70]
-
-    def find_node(self, node, type, attribute, name):
-        children = node.firstChild()
-
-        while not children.isNull():
-            if ( children.nodeName() == type and children.toElement().attribute(attribute) == name ):
-                return(children)
-
-            subsearch = self.find_node(children, type, attribute, name)
-            if not subsearch.isNull():
-                return(subsearch)
-
-            children = children.nextSibling()  
-
-        return(children)
-
-    def get_column_value(self, node, name):
-        if node is None:
-            return(None)
-
-        colnode = node.firstChild()
-
-        while not colnode.isNull():
-            if colnode.nodeName() == "column":
-                if colnode.attributes().namedItem("name").nodeValue() == name:
-                    lookupvalue = colnode.attributes().namedItem("lookupvalue").nodeValue()
-
-                    if (not lookupvalue is None and not lookupvalue == ""):
-                        return(lookupvalue)
-                    else:
-                        return(colnode.toElement().text())
-
-            colnode = colnode.nextSibling()
-        return("")
 
     def upload_attachment(self, draft_email_id, file_path):
 
@@ -286,17 +230,7 @@ class GraphAPITools:
         skip = 0
         top = 500
 
-        # get the last state
-        file = QFile(self.saved_state_file)
-        if file.exists():
-            if file.open(QIODevice.OpenModeFlag.ReadOnly):
-                saved_state = json.loads(file.readAll().data().decode("utf-8"))
-                file.close()
-
-            skip = saved_state.get(statename, {}).get("skip", 0)
-        else:
-            saved_state = json.loads("{}")
-            print(f"Failed to load previous state for contact import.")
+        skip = self.pnc.get_save_state(statename)
 
         # Endpoint to get the list of contacts
         contacts_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/contacts"
@@ -330,28 +264,28 @@ class GraphAPITools:
             for contact in contacts:
                 contactcount = contactcount + 1
                 xmldoc += '<row>\n'
-                xmldoc += f'<column name="name">{self.to_xml(contact.get("displayName", ""))}</column>\n'
+                xmldoc += f'<column name="name">{self.pnc.to_xml(contact.get("displayName", ""))}</column>\n'
 
                 emails = contact.get("emailAddresses", [{"address": ""}])
 
                 if len(emails) > 0:
-                    xmldoc += f'<column name="email">{self.to_xml(emails[0]["address"])}</column>\n'
+                    xmldoc += f'<column name="email">{self.pnc.to_xml(emails[0]["address"])}</column>\n'
                 # else:
                 #     xmldoc += f'<column name="email"></column>\n'
 
                 phones = contact.get("businessPhones", [])
 
                 if len(phones) > 0:
-                    xmldoc += f'<column name="office_phone">{self.to_xml(phones[0])}</column>\n'
+                    xmldoc += f'<column name="office_phone">{self.pnc.to_xml(phones[0])}</column>\n'
                 # else:
                 #     xmldoc += f'<column name="office_phone"></column>\n'
 
-                xmldoc += f'<column name="cell_phone">{self.to_xml(contact.get("mobilePhone", ""))}</column>\n'
-                xmldoc += f'<column name="client_id" lookupvalue="{self.to_xml(contact.get("companyName", ""))}"></column>\n'
-                xmldoc += f'<column name="role">{self.to_xml(contact.get("jobTitle", ""))}</column>\n'
+                xmldoc += f'<column name="cell_phone">{self.pnc.to_xml(contact.get("mobilePhone", ""))}</column>\n'
+                xmldoc += f'<column name="client_id" lookupvalue="{self.pnc.to_xml(contact.get("companyName", ""))}"></column>\n'
+                xmldoc += f'<column name="role">{self.pnc.to_xml(contact.get("jobTitle", ""))}</column>\n'
                 xmldoc += '</row>\n'
 
-                xmlclients = xmlclients + f'<row><column name="client_name">{self.to_xml(contact.get("companyName", ""))}</column></row>\n'
+                xmlclients = xmlclients + f'<row><column name="client_name">{self.pnc.to_xml(contact.get("companyName", ""))}</column></row>\n'
 
             if (xmldoc != ""):
                 xmldoc = '<table name="people">\n' + xmldoc + '</table>\n'
@@ -365,29 +299,9 @@ class GraphAPITools:
 
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n{xmlclients}{xmldoc}</projectnotes>\n'
 
-        timer2 = QElapsedTimer()
-        timer2.start()
-        
         projectnotes.update_data(xmldoc)
 
-        execution_time = timer2.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function update_data in '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
-
-        # save the new state
-        #start over if we returned less than top
-        if (contactcount < top):
-            skip = 0
-        else:
-            skip = skip + top
-
-        #print(f"saving skip {skip} processed {contactcount}")
-
-        saved_state.setdefault(statename, {})["skip"] = skip
-
-        file = QFile(self.saved_state_file)
-        if file.open(QIODevice.OpenModeFlag.WriteOnly):
-            file.write(json.dumps(saved_state, indent=4).encode("utf-8"))
-            file.close()
+        self.pnc.set_save_state(statename, skip, top, contactcount)
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
         print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
@@ -395,6 +309,10 @@ class GraphAPITools:
         return
 
     def export_batch_of_contacts(self):
+
+        if not self.sync_contacts:  #  sync contacts is disabled
+            return
+
         timer = QElapsedTimer()
         timer.start()
 
@@ -417,37 +335,11 @@ class GraphAPITools:
         skip = 0
         top = 500
 
-        # get the last state
-        file = QFile(self.saved_state_file)
-        if file.exists():
-            if file.open(QIODevice.OpenModeFlag.ReadOnly):
-                saved_state = json.loads(file.readAll().data().decode("utf-8"))
-                file.close()
+        skip = self.pnc.get_save_state(statename)
 
-            skip = saved_state.get(statename, {}).get("skip", 0)
-        else:
-            saved_state = json.loads("{}")
-            print(f"Failed to load previous state to export contacts.")
+        xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="people" {self.pnc.state_range_attrib(top, skip)} />\n</projectnotes>\n'
 
-        xmlskip = ""
-        xmltop = ""
-
-        if (skip > 0):
-            xmlskip = f' skip="{skip}"" '
-
-        if (top > 0):
-            xmltop = f' top="{top}" '
-
-        xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="people" {xmlskip} {xmltop} />\n</projectnotes>\n'
-
-        timer2 = QElapsedTimer()
-        timer2.start()
-        
         xmlresult = projectnotes.get_data(xmldoc)
-
-        execution_time = timer2.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function get_data in '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
-
         
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlresult) == False):
@@ -528,19 +420,7 @@ class GraphAPITools:
 
             childnode = childnode.nextSibling()
 
-        #start over if we went past the end
-        if (contactcount < top): 
-            skip = 0
-        else:
-            skip = skip + top
-
-        # save the new state
-        saved_state.setdefault(statename, {})["skip"] = skip
-
-        file = QFile(self.saved_state_file)
-        if file.open(QIODevice.OpenModeFlag.WriteOnly):
-            file.write(json.dumps(saved_state, indent=4).encode("utf-8"))
-            file.close()
+        self.pnc.set_save_state(statename, skip, top, contactcount)
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
         print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
@@ -566,14 +446,14 @@ class GraphAPITools:
         nm = None
         pco = None
 
-        teammember = self.find_node(xmlroot, "table", "name", "project_people")
+        teammember = self.pnc.find_node(xmlroot, "table", "name", "project_people")
         if not teammember.isNull():
             memberrow = teammember.firstChild()
 
             while not memberrow.isNull():
-                nm = self.get_column_value(memberrow, "name")
-                email = self.get_column_value(memberrow, "email")
-                pco = self.get_column_value(memberrow, "client_name")
+                nm = self.pnc.get_column_value(memberrow, "name")
+                email = self.pnc.get_column_value(memberrow, "email")
+                pco = self.pnc.get_column_value(memberrow, "client_name")
 
                 # if filtering by company only includ matching client names
                 # don't email to yourself, exclude the PM
@@ -590,14 +470,14 @@ class GraphAPITools:
 
                 memberrow = memberrow.nextSibling()
 
-        teammember = self.find_node(xmlroot, "table", "name", "meeting_attendees")
-        if teammember:
+        teammember = self.pnc.find_node(xmlroot, "table", "name", "meeting_attendees")
+        if not teammember.isNull():
             memberrow = teammember.firstChild()
 
             while not memberrow.isNull():
-                nm = self.get_column_value(memberrow, "name")
-                email = self.get_column_value(memberrow, "email")
-                pco = self.get_column_value(memberrow, "client_name")
+                nm = self.pnc.get_column_value(memberrow, "name")
+                email = self.pnc.get_column_value(memberrow, "email")
+                pco = self.pnc.get_column_value(memberrow, "client_name")
 
                 if nm != pm:
                     if (email is not None and email != "" and (company_filter == False or pco == co)):
@@ -612,16 +492,16 @@ class GraphAPITools:
 
                 memberrow = memberrow.nextSibling()
 
-        teammember = self.find_node(xmlroot, "table", "name", "people")
-        if teammember:
+        teammember = self.pnc.find_node(xmlroot, "table", "name", "people")
+        if not teammember.isNull():
             memberrow = teammember.firstChild()
 
             while not memberrow.isNull():
-                nm = self.get_column_value(memberrow, "name")
-                email = self.get_column_value(memberrow, "email")
+                nm = self.pnc.get_column_value(memberrow, "name")
+                email = self.pnc.get_column_value(memberrow, "email")
 
-                colnode = self.find_node(memberrow, "column", "name", "client_id")
-                if colnode.attributes().namedItem("lookupvalue").nodeValue() is not None and colnode.attributes().namedItem("lookupvalue").nodeValue() != '':
+                colnode = self.pnc.find_node(memberrow, "column", "name", "client_id")
+                if not colnode.isNull() and colnode.attributes().namedItem("lookupvalue").nodeValue() is not None and colnode.attributes().namedItem("lookupvalue").nodeValue() != '':
                     pco = colnode.attributes().namedItem("lookupvalue").nodeValue()
 
                 if nm != pm:
@@ -640,12 +520,12 @@ class GraphAPITools:
 
         meeting_title = subject
 
-        project = self.find_node(xmlroot, "table", "name", "projects")
+        project = self.pnc.find_node(xmlroot, "table", "name", "projects")
         if not project.isNull():
             projectrow = project.firstChild()
 
             if not projectrow.isNull():
-                meeting_title = self.get_column_value(projectrow, "project_number") + " " + self.get_column_value(projectrow, "project_name") + f" - {subject}"
+                meeting_title = self.pnc.get_column_value(projectrow, "project_number") + " " + self.pnc.get_column_value(projectrow, "project_name") + f" - {subject}"
 
         # Endpoint to create an event (in the draft state)
         events_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/events"
@@ -703,14 +583,14 @@ class GraphAPITools:
         nm = None
         pco = None
 
-        teammember = self.find_node(xmlroot, "table", "name", "project_people")
+        teammember = self.pnc.find_node(xmlroot, "table", "name", "project_people")
         if not teammember.isNull():
             memberrow = teammember.firstChild()
 
             while not memberrow.isNull():
-                nm = self.get_column_value(memberrow, "name")
-                email = self.get_column_value(memberrow, "email")
-                pco = self.get_column_value(memberrow, "client_name")
+                nm = self.pnc.get_column_value(memberrow, "name")
+                email = self.pnc.get_column_value(memberrow, "email")
+                pco = self.pnc.get_column_value(memberrow, "client_name")
 
                 # if filtering by company only includ matching client names
                 # don't email to yourself, exclude the PM
@@ -725,14 +605,14 @@ class GraphAPITools:
 
                 memberrow = memberrow.nextSibling()
 
-        teammember = self.find_node(xmlroot, "table", "name", "meeting_attendees")
-        if teammember:
+        teammember = self.pnc.find_node(xmlroot, "table", "name", "meeting_attendees")
+        if not teammember.isNul():
             memberrow = teammember.firstChild()
 
             while not memberrow.isNull():
-                nm = self.get_column_value(memberrow, "name")
-                email = self.get_column_value(memberrow, "email")
-                pco = self.get_column_value(memberrow, "client_name")
+                nm = self.pnc.get_column_value(memberrow, "name")
+                email = self.pnc.get_column_value(memberrow, "email")
+                pco = self.pnc.get_column_value(memberrow, "client_name")
 
                 if nm != pm:
                     if (email is not None and email != "" and (company_filter is None or  pco == company_filter)):
@@ -745,16 +625,16 @@ class GraphAPITools:
 
                 memberrow = memberrow.nextSibling()
 
-        teammember = self.find_node(xmlroot, "table", "name", "people")
-        if teammember:
+        teammember = self.pnc.find_node(xmlroot, "table", "name", "people")
+        if not teammember.isNull():
             memberrow = teammember.firstChild()
 
             while not memberrow.isNull():
-                nm = self.get_column_value(memberrow, "name")
-                email = self.get_column_value(memberrow, "email")
+                nm = self.pnc.get_column_value(memberrow, "name")
+                email = self.pnc.get_column_value(memberrow, "email")
 
-                colnode = self.find_node(memberrow, "column", "name", "client_id")
-                if colnode.attributes().namedItem("lookupvalue").nodeValue() is not None and colnode.attributes().namedItem("lookupvalue").nodeValue() != '':
+                colnode = self.pnc.find_node(memberrow, "column", "name", "client_id")
+                if not colnode.isNull() and colnode.attributes().namedItem("lookupvalue").nodeValue() is not None and colnode.attributes().namedItem("lookupvalue").nodeValue() != '':
                     pco = colnode.attributes().namedItem("lookupvalue").nodeValue()
 
                 if nm != pm:
@@ -771,12 +651,12 @@ class GraphAPITools:
 
         email_subject = subject
 
-        project = self.find_node(xmlroot, "table", "name", "projects")
+        project = self.pnc.find_node(xmlroot, "table", "name", "projects")
         if not project.isNull():
             projectrow = project.firstChild()
 
             if not projectrow.isNull():
-                email_subject = self.get_column_value(projectrow, "project_number") + " " + self.get_column_value(projectrow, "project_name") + f" - {subject}"
+                email_subject = self.pnc.get_column_value(projectrow, "project_number") + " " + self.pnc.get_column_value(projectrow, "project_name") + f" - {subject}"
         
         # Graph API endpoint to send an email
         graph_api_endpoint = f'{self.GRAPH_API_ENDPOINT}/v1.0/me/messages'
@@ -805,22 +685,9 @@ class GraphAPITools:
 
     def download_project_emails(self, projectnumber, box, top, destination_folder):
 
-        saved_state_file = destination_folder + "/" + box + "_downloadtracker.json"
+        statename = destination_folder + "_" + box + "_downloadtracker"
 
-        # get the last state
-        skip = 0
-        file = QFile(saved_state_file)
-        if file.exists():
-            if file.open(QIODevice.OpenModeFlag.ReadOnly):
-                saved_state = json.loads(file.readAll().data().decode("utf-8"))
-                file.close()
-
-            skip = saved_state.get(box, {}).get("skip", 0)
-        else:
-            saved_state = json.loads("{}")
-            print(f"Failed to load previous state to download project emails.")
-
-        #print(f"skip is {skip} for {destination_folder}")
+        skip = self.pnc.get_save_state(statename)
 
         # Graph API endpoint to send an email
         graph_api_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/mailFolders/{box}/messages?$filter=contains(subject,'{projectnumber}')&$select=id&$top={top}&$skip={skip}"  
@@ -887,59 +754,38 @@ class GraphAPITools:
         else:
             print(f"Response Code: {response.status_code} Error downloading emails {response.text}.")
 
-        # save the new state
-        saved_state.setdefault(box, {})["skip"] = skip
-
-        file = QFile(saved_state_file)
-        if file.open(QIODevice.OpenModeFlag.WriteOnly):
-            file.write(json.dumps(saved_state, indent=4).encode("utf-8"))
-            file.close()
+        self.pnc.set_save_state(statename, skip, top, 0) # never redownload emails
 
 
     def download_batch_of_emails(self):
         timer = QElapsedTimer()
         timer.start()
 
+        if not self.use_graph_api:  # office 365 integration is disabled
+            return
 
-        #TODO: add an option to sync emails or disable it
+        if not self.backup_emails:  #backup emails disabled
+            return
+
+        if self.backup_sent_folder == "":
+            print("No backup folder was specified for Sent Items.")
+            return
+
+        if self.backup_inbox_folder == "":
+            print("No backup folder was specified for InBox Items.")
+            return
 
         saved_state = None
         statename = "emails_export"
 
         skip = 0
-        top = 5 # writing a bunch of email files could be slow
+        top = 50 # writing a bunch of email files could be slow
 
-        # get the last state
-        file = QFile(self.saved_state_file)
-        if file.exists():
-            if file.open(QIODevice.OpenModeFlag.ReadOnly):
-                saved_state = json.loads(file.readAll().data().decode("utf-8"))
-                file.close()
+        skip = self.pnc.get_save_state(statename)
 
-            skip = saved_state.get(statename, {}).get("skip", 0)
-        else:
-            saved_state = json.loads("{}")
-            print(f"Failed to load previous state in download batch of emails.")
-
-        xmlskip = ""
-        xmltop = ""
-
-        if (skip >= 0):
-            xmlskip = f' skip="{skip}" '
-
-        if (top > 0):
-            xmltop = f' top="{top}" '
-
-        xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table  filter_field_1="location_description" filter_value_1="Project Folder" name="project_locations" {xmlskip} {xmltop} />\n</projectnotes>\n'
-        
-        timer2 = QElapsedTimer()
-        timer2.start()
+        xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table  filter_field_1="location_description" filter_value_1="Project Folder" name="project_locations" {self.pnc.state_range_attrib(top, skip)} />\n</projectnotes>\n'
         
         xmlresult = projectnotes.get_data(xmldoc)
-
-        execution_time = timer2.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function get_data in '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
-
         
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlresult) == False):
@@ -960,8 +806,8 @@ class GraphAPITools:
                 while not rownode.isNull():
                     locationcount = locationcount + 1
                     
-                    projectnumber = self.get_column_value(rownode, "project_number")
-                    projectfolder = self.get_column_value(rownode, "full_path")
+                    projectnumber = self.pnc.get_column_value(rownode, "project_number")
+                    projectfolder = self.pnc.get_column_value(rownode, "full_path")
 
                     if QDir(projectfolder).exists():
                         emailfolder = projectfolder + "/Correspondence"
@@ -984,19 +830,7 @@ class GraphAPITools:
 
             childnode = childnode.nextSibling()
 
-        #start over the full count was not returned
-        if locationcount < top: 
-            skip = 0
-        else:
-            skip = skip + top
-
-        # save the new state
-        saved_state.setdefault(statename, {})["skip"] = skip
-
-        file = QFile(self.saved_state_file)
-        if file.open(QIODevice.OpenModeFlag.WriteOnly):
-            file.write(json.dumps(saved_state, indent=4).encode("utf-8"))
-            file.close()
+        self.pnc.set_save_state(statename, skip, top, locationcount)
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
         print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
@@ -1004,6 +838,10 @@ class GraphAPITools:
         return
 
     def sync_tracker_to_tasks(self):
+
+        if not self.sync_todo_with_due and not self.sync_todo_without_due:  # task sync is disabled
+            return
+
         timer = QElapsedTimer()
         timer.start()
 
@@ -1013,19 +851,7 @@ class GraphAPITools:
         skip = 0
         top = 100
 
-        # get the last state
-
-        # get the last state
-        file = QFile(self.saved_state_file)
-        if file.exists():
-            if file.open(QIODevice.OpenModeFlag.ReadOnly):
-                saved_state = json.loads(file.readAll().data().decode("utf-8"))
-                file.close()
-
-            skip = saved_state.get(statename, {}).get("skip", 0)
-        else:
-            saved_state = json.loads("{}")
-            print(f"Failed to load previous state in sync tracker items to tasks.")
+        skip = self.pnc.get_save_state(statename)
 
         # just get the project manager people id
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="clients" top="1" skip="0"/>\n</projectnotes>\n'
@@ -1055,16 +881,7 @@ class GraphAPITools:
             print("Failed to identify the project manager sync tracker items to tasks.")
             return 
 
-        xmlskip = ""
-        xmltop = ""
-
-        if (skip >= 0):
-            xmlskip = f' skip="{skip}" '
-
-        if (top > 0):
-            xmltop = f' top="{top}" '
-
-        xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="item_tracker" {xmlskip} {xmltop} />\n</projectnotes>\n'
+        xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="item_tracker" filter_name_1="assigned_to" filter_value_1="{pmid}" {self.pnc.state_range_attrib(top, skip)} />\n</projectnotes>\n'
 
         timer2 = QElapsedTimer()
         timer2.start()
@@ -1252,19 +1069,7 @@ class GraphAPITools:
 
             childnode = childnode.nextSibling()
 
-        #if we went past the end of available rows, reset
-        if (rowcount < top): 
-            skip = 0
-        else:
-            skip = skip + top
-
-        # save the new state
-        saved_state.setdefault(statename, {})["skip"] = skip
-
-        file = QFile(self.saved_state_file)
-        if file.open(QIODevice.OpenModeFlag.WriteOnly):
-            file.write(json.dumps(saved_state, indent=4).encode("utf-8"))
-            file.close()
+        self.pnc.set_save_state(statename, skip, top, rowcount)
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
         print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")

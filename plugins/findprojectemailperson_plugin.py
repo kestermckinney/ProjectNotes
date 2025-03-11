@@ -99,7 +99,7 @@ if (platform.system() == 'Windows'):
             email = None
 
             teammember = pnc.find_node(xmlroot, "table", "name", "project_people")
-            if teammember:
+            if not teammember.isNull():
                 memberrow = teammember.firstChild()
 
             while not memberrow.isNull():

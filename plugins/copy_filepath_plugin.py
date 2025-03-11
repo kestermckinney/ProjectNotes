@@ -84,7 +84,7 @@ if (platform.system() == 'Windows'):
         if xmlroot:
             projlocation = pnc.find_node(xmlroot, "table", "name", "project_locations")
 
-            if projlocation:
+            if not projlocation.isNull():
                 locationrow = projlocation.firstChild()
 
             while not locationrow.isNull():

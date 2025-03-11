@@ -112,7 +112,7 @@ if (platform.system() == 'Windows'):
                     pnc.get_column_value(rownode, "note_title"))
 
                     attendeetable = pnc.find_node(rownode, "table", "name", "meeting_attendees")
-                    if attendeetable:
+                    if not attendeetable.isNull():
                         attendeerow = attendeetable.firstChild()
 
                         attendeelist = ""
@@ -136,7 +136,7 @@ if (platform.system() == 'Windows'):
                     htmlbody = htmlbody + get_html_trackerheader()
 
                     trackertable = pnc.find_node(rownode, "table", "name", "item_tracker")
-                    if trackertable:
+                    if not trackertable.isNull():
                         trackerrow = trackertable.firstChild()
 
                         while not trackerrow.isNull():
