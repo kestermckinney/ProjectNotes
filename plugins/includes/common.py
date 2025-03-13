@@ -471,19 +471,20 @@ class ProjectNotesCommon:
             #print(f"parsinng {tag_name}")
 
             #check for key attributes in the root tag
-            if element.hasAttribute("managing_company_name"):
-                name_value = element.attribute("managing_company_name")
-                expanded_string = expanded_string.replace("[$managing_company_name]", name_value)   
+            if tag_name == "projectnotes":
+                if element.hasAttribute("managing_company_name"):
+                    name_value = element.attribute("managing_company_name")
+                    expanded_string = expanded_string.replace("[$managing_company_name]", name_value)   
 
-            if element.hasAttribute("managing_manager_name"):
-                name_value = element.attribute("managing_manager_name")
-                expanded_string = expanded_string.replace("[$managing_manager_name]", name_value)  
+                if element.hasAttribute("managing_manager_name"):
+                    name_value = element.attribute("managing_manager_name")
+                    expanded_string = expanded_string.replace("[$managing_manager_name]", name_value)  
 
-            if element.hasAttribute("project_manager_id"):
-                name_value = element.attribute("project_manager_id")
-                expanded_string = expanded_string.replace("[$project_manager_id]", name_value)    
+                if element.hasAttribute("project_manager_id"):
+                    name_value = element.attribute("project_manager_id")
+                    expanded_string = expanded_string.replace("[$project_manager_id]", name_value)    
 
-            if tag_name == "column": # and table_name is not None:
+            elif tag_name == "column": # and table_name is not None:
                 if element.hasAttribute("name"):
                     name_value = element.attribute("name")
                     element_text = None
@@ -496,13 +497,15 @@ class ProjectNotesCommon:
                     #print(f"attempting replace [${table_name}.{name_value}.{row_number}] ")
                     expanded_string = expanded_string.replace(f"[${table_name}.{name_value}.{row_number}]", element_text)
 
-            if tag_name == "table":
+                return expanded_string
+
+            elif tag_name == "table":
                 # child elements are going to be columns or another table
                 if element.hasAttribute("name"):
                     table_string = element.attribute("name")
                     row = 0  # we need to start couting rows
 
-            if tag_name == "row":
+            elif tag_name == "row":
                     table_string = table_name # pass the current table down to the column
                     row = row_number  # pass the current row down to the column leve
 

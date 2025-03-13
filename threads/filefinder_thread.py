@@ -91,7 +91,7 @@ class  FileFinder:
                         for row, row_data in enumerate(data): 
                             pattern = row_data["Pattern Match"]
 
-                            # hold on patten replcement pattern = self.pnc.replace_variables(pattern, project_xml, "projects", 1) 
+                            pattern = self.pnc.replace_variables(pattern, project_xml, "projects", 1) 
 
                             #print(f"variable replaced pattern {pattern}")
 
@@ -121,7 +121,7 @@ class  FileFinder:
                                 xmldoc += "<row>\n"
                                 xmldoc += f"<column name=\"project_id\" lookupvalue=\"{self.pnc.to_xml(projectnumber)}\"></column>\n"
                                 xmldoc += f"<column name=\"location_type\">{locationtype}</column>\n"
-                                xmldoc += f"<column name=\"location_description\">{row_data["Classification"]} : {it.fileInfo().fileName()}</column>\n"
+                                xmldoc += f"<column name=\"location_description\">{row_data["Classification"]} : {self.pnc.to_xml(it.fileInfo().fileName())}</column>\n"
                                 xmldoc += f"<column name=\"full_path\" number=\"4\">{self.pnc.to_xml(it.filePath())}</column>\n"
                                 xmldoc += "</row>\n"
 
@@ -223,6 +223,8 @@ class  FileFinder:
             xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="project_locations">{xmldoc}</table>\n</projectnotes>\n'
 
         projectnotes.update_data(xmldoc)
+
+        #print(xmldoc)
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
         print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
