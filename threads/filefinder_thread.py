@@ -222,6 +222,8 @@ class  FileFinder:
         if xmldoc != "":
             xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="project_locations">{xmldoc}</table>\n</projectnotes>\n'
 
+        print(xmldoc)
+
         projectnotes.update_data(xmldoc)
 
         #print(xmldoc)

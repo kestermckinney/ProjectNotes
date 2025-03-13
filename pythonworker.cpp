@@ -456,28 +456,32 @@ int PythonWorker::setPythonVariable(const QString& t_variablename, const QString
 
 QString PythonWorker::getPythonVariable(const QString& t_variablename)
 {
+    QString val;
+
     if (PyObject_HasAttrStringWithError(m_PNPluginModule, t_variablename.toStdString().c_str()) != 1)
     {
-        return QString();
+        return val;
     }
 
     PyObject* attr = PyObject_GetAttrString(m_PNPluginModule, t_variablename.toStdString().c_str());
     if (!attr)
     {
         emitError();
-        return QString();
+        return val;
     }
 
     const char* str = PyUnicode_AsUTF8(attr);
     if (!str)
     {
         emitError();
-        return QString();
+        return val;
     }
+
+    val = QString::fromUtf8(str);
 
     Py_XDECREF(attr);
 
-    return QString(str);
+    return val;
 }
 
 QStringList PythonWorker::getPythonStringList(const QString& t_variablename)
@@ -493,14 +497,14 @@ QStringList PythonWorker::getPythonStringList(const QString& t_variablename)
     if (!attr)
     {
         emitError();
-        return QStringList();
+        return val;
     }
 
     if (!PyList_Check(attr))
     {
         emitError();
         Py_XDECREF(attr);
-        return QStringList();
+        return val;
     }
 
     Py_ssize_t sz = PyList_Size(attr);
@@ -511,7 +515,7 @@ QStringList PythonWorker::getPythonStringList(const QString& t_variablename)
         if (!item)
         {
             emitError();
-            return QStringList();
+            return val;
         }
 
         const char* str = PyUnicode_AsUTF8(item);

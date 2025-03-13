@@ -179,7 +179,7 @@ if (platform.system() == 'Windows'):
         progbar.setLabelText("looking up recipients...")
 
         teammember = pnc.find_node(xmlroot, "table", "name", "project_people")
-        if teammember:
+        if not teammember.isNull():
             memberrow = teammember.firstChild()
 
             while not memberrow.isNull():
@@ -357,7 +357,7 @@ if (platform.system() == 'Windows'):
                 comment = ""
                 trackerupdates = pnc.find_node(repitemrow, "table", "name", "item_tracker_updates")
 
-                if trackerupdates:
+                if not trackerupdates.isNull():
                     updaterow = trackerupdates.firstChild()
 
                     while not updaterow.isNull():

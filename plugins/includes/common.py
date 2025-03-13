@@ -131,28 +131,19 @@ class ProjectNotesCommon:
             return(val)
 
     def find_node(self, node, type, attribute, name):
-        if node is None:
-            return(None)
-
-        #print("looking at node: ", name)
-        
-        QtWidgets.QApplication.processEvents()
         children = node.firstChild()
 
         while not children.isNull():
             if ( children.nodeName() == type and children.toElement().attribute(attribute) == name ):
                 return(children)
 
-            #print("node check : " + children.nodeName())
-            QtWidgets.QApplication.processEvents()
-
             subsearch = self.find_node(children, type, attribute, name)
-            if subsearch is not None:
+            if not subsearch.isNull():
                 return(subsearch)
 
-            children = children.nextSibling()
+            children = children.nextSibling()  
 
-        return(None)
+        return(children)
 
     def find_node_by2(self, node, type, attribute1, name1, attribute2, name2):
         if node is None:
@@ -192,76 +183,6 @@ class ProjectNotesCommon:
             colnode = colnode.nextSibling()
         return("")
 
-    # def find_projectfiles(self, projectnumber, subfolder, filedescription, filetypedescription, namefilter):
-    #     xmldoc = ""
-
-    #     #print("== initiating find project files in " + subfolder)
-    #     it = QDirIterator(subfolder, namefilter)
-
-    #     while it.hasNext():
-    #         it.next()
-    #         filename = it.fileName()
-    #         #print("-> found file name : " + filename)
-
-    #         if filename.lower().find("template") == -1 and not it.fileInfo().isDir(): # don't show templates
-    #             xmldoc = xmldoc + "<row>\n"
-    #             xmldoc = xmldoc + "<column name=\"project_id\" lookupvalue=\"" + self.to_xml(projectnumber) + "\"></column>\n"
-    #             xmldoc = xmldoc + "<column name=\"location_type\">" + self.to_xml(filetypedescription) + "</column>\n"
-    #             xmldoc = xmldoc + "<column name=\"location_description\">" + self.to_xml(filedescription) + " : " + self.to_xml(it.fileName()) + "</column>\n"
-    #             xmldoc = xmldoc + "<column name=\"full_path\">" + self.to_xml(subfolder + "\\" + filename) + "</column>\n"
-    #             xmldoc = xmldoc + "</row>\n"
-
-    #     return(xmldoc)
-
-    # def find_projectlocations(self, projectnumber, projects_folder):
-    #     xmldoc = ""
-
-
-    #     if QDir(projects_folder).exists():
-
-    #         it = QDirIterator(projects_folder, {"*" + projectnumber + "*"})
-    #         while it.hasNext():
-    #             it.next()
-    #             foldername = projects_folder + "\\" + it.fileName();
-
-    #             if it.fileInfo().isDir():
-    #                 xmldoc = xmldoc + "<row>\n"
-    #                 xmldoc = xmldoc + "<column name=\"project_id\" number=\"1\" lookupvalue=\"" + self.to_xml(projectnumber) + "\"></column>\n"
-    #                 xmldoc = xmldoc + "<column name=\"location_type\" number=\"2\">File Folder</column>\n"
-    #                 xmldoc = xmldoc + "<column name=\"location_description\" number=\"3\">Project Folder</column>\n"
-    #                 xmldoc = xmldoc + "<column name=\"full_path\" number=\"4\">" + self.to_xml(foldername) + "\\Project Management</column>\n"
-    #                 xmldoc = xmldoc + "</row>\n"
-
-    #                 #print("found folder name : " + foldername)
-
-    #                 # link all ms project files
-    #                 if QDir(foldername + "\\Project Management\\Schedule").exists():
-    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Schedule", "Project Schedule", "Microsoft Project", ["*.mpp"] )
-
-    #                 # link all purchase orders
-    #                 if QDir(foldername + "\\Project Management\\Purchase Orders").exists():
-    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Purchase Orders", "Customer PO", "PDF File", ["*.pdf"] )
-
-    #                 # link all quotes
-    #                 if QDir(foldername + "\\Project Management\\Quotes").exists():
-    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Quotes", "Quote", "PDF File", ["*.pdf"] )
-    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Quotes", "Estimate", "Excel Document", ["*.xlsx", "*.xls"] )
-
-    #                 # link all quotes
-    #                 if QDir(foldername + "\\Project Management\\Risk Management").exists():
-    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\Risk Management", "Risk Register", "Excel Document", ["*.xlsx"] )
-
-    #                 # link all PCRs
-    #                 if QDir(foldername + "\\Project Management\\PCR\'s").exists():
-    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request", "PDF File", ["*.pdf"] )
-    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request", "Word Document", ["*.docx"] )
-    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request", "Word Document", ["*.doc"] )
-    #                     xmldoc = xmldoc + self.find_projectfiles(projectnumber, foldername + "\\Project Management\\PCR\'s", "Change Request Calcs", "Excel Document", ["*.xlsx", "*.xls"] )
-
-    #         return(xmldoc)
-
-    #   return xmldoc
-
     def xml_col(self, xmldoc, name, content, lookupvalue):
         colnode = xmldoc.createElement("column")
         colnode.setAttribute("name", name)
@@ -287,7 +208,7 @@ class ProjectNotesCommon:
         table = self.find_node(node.toElement(), "table", "name", "project_locations")
         projectfolder = ""
 
-        if table is None:
+        if table.isNull():
             print("did not find any project locations")
             return(projectfolder)
 
@@ -303,49 +224,6 @@ class ProjectNotesCommon:
             row = row.nextSibling()
 
         return(projectfolder)
-
-    # def ping_server(self, servername):
-    #     if (platform.system() != 'Windows'):
-    #         print("ping_server requires win32com not supported on this platform")
-    #         return(False)
-
-    #     colProcess = None
-    #     strList = None
-    #     p = None
-
-    #     objWMIService = win32com.client.GetObject("winmgmts:{impersonationLevel=impersonate}!\\\\")
-    #     colProcess = objWMIService.ExecQuery("select * from Win32_PingStatus where address = '" + servername + "'")
-
-    #     print(objWMIService)
-    #     for p in colProcess:
-    #         print("found row " + p.Address)
-    #         if p.StatusCode:
-    #             print("srv: " + servername + " stat: " + str(p.StatusCode))
-    #         if p.StatusCode == 0 and not p.StatusCode is None:
-    #             return(True)
-
-    #     objWMIService = None
-    #     colProcess = None
-
-    #     return(False)
-
-    # def check_drive(self, network, letter):
-    #     if (platform.system() != 'Windows'):
-    #         print("check_drive requires win32com not supported on this platform")
-    #         return(False)
-
-    #     drives = network.EnumNetworkDrives()
-
-    #     i = 0
-    #     while i < drives.count():
-    #         k = drives.Item(i)
-    #         # print ("enm: " .. k .. " arg: " .. letter .. "\n")
-    #         if k == letter:
-    #             return(True)
-
-    #         i = i + 1
-
-    #     return(False)
 
     def exec_program(self, fullpath):
         #todo: make compatible
@@ -409,7 +287,7 @@ class ProjectNotesCommon:
         lookupvalue = None
 
         col = self.find_node(xmldoc, "column", "name", "project_name")
-        if col:
+        if not col.isNull():
             lookupvalue = col.attributes().namedItem("lookupvalue").nodeValue()
             contents = col.toElement().text()
 
@@ -420,7 +298,7 @@ class ProjectNotesCommon:
 
         if projectname == "" or projectname is None:
             col = self.find_node(xmldoc, "column", "name", "project_id_name")
-            if col:
+            if not col.isNull():
                 lookupvalue = col.attributes().namedItem("lookupvalue").nodeValue()
                 contents = col.toElement().text()
 
@@ -437,7 +315,7 @@ class ProjectNotesCommon:
         lookupvalue = None
 
         col = self.find_node(xmldoc, "column", "name", "project_number")
-        if col:
+        if not col.isNull():
             lookupvalue = col.attributes().namedItem("lookupvalue").nodeValue()
             contents = col.toElement().text()
 
@@ -448,7 +326,7 @@ class ProjectNotesCommon:
 
         if projectnumber == "" or projectnumber is None:
             col = self.find_node(xmldoc, "column", "name", "project_id")
-            if col:
+            if not col.isNull():
                 lookupvalue = col.attributes().namedItem("lookupvalue").nodeValue()
                 contents = col.toElement().text()
 
