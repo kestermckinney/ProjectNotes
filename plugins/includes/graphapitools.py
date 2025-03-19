@@ -20,7 +20,7 @@ def windowEnumerationHandler(hwnd, tpwindows):
         tpwindows.append((hwnd, win32gui.GetWindowText(hwnd)))
 
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
-from common import ProjectNotesCommon
+from includes.common import ProjectNotesCommon
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
@@ -147,10 +147,10 @@ class GraphAPITools:
 
         self.settings_pluginname = "Outlook Integration"
         self.use_graph_api = (self.pnc.get_plugin_setting("IntegrationType", self.settings_pluginname) == "Office 365 Application")
-        self.sync_contacts = self.pnc.get_plugin_setting("SyncContacts", self.settings_pluginname).lower() == "true")
-        self.sync_todo_with_due = self.pnc.get_plugin_setting("SyncToDoWithDue", self.settings_pluginname).lower() == "true")
-        self.sync_todo_without_due = self.pnc.get_plugin_setting("SyncToDoDoWithoutDue", self.settings_pluginname).lower() == "true")
-        self.backup_emails = self.pnc.get_plugin_setting("BackupEmails", self.settings_pluginname).lower() == "true")
+        self.sync_contacts = (self.pnc.get_plugin_setting("SyncContacts", self.settings_pluginname).lower() == "true")
+        self.sync_todo_with_due = (self.pnc.get_plugin_setting("SyncToDoWithDue", self.settings_pluginname).lower() == "true")
+        self.sync_todo_without_due = (self.pnc.get_plugin_setting("SyncToDoDoWithoutDue", self.settings_pluginname).lower() == "true")
+        self.backup_emails = (self.pnc.get_plugin_setting("BackupEmails", self.settings_pluginname).lower() == "true")
         self.backup_inbox_folder = self.pnc.get_plugin_setting("BackupInBoxFolder", self.settings_pluginname)
         self.backup_sent_folder = self.pnc.get_plugin_setting("BackupSentFolder", self.settings_pluginname)
 
@@ -849,7 +849,7 @@ class GraphAPITools:
         statename = "tracker_export"
 
         skip = 0
-        top = 100
+        top = 1000
 
         skip = self.pnc.get_save_state(statename)
 
@@ -949,12 +949,11 @@ class GraphAPITools:
                     itemname = None
                     itemdescription = None
                     datedue = ""
-                    createddate = ""
-                    updateddate = ""
+                    createddate = QDateTime()
+                    updateddate = QDateTime()
                     status = None
                     priority = None
                     comments = None
-                    projectstatus = None
                     assignedto = None
 
                     while not colnode.isNull():
@@ -991,9 +990,6 @@ class GraphAPITools:
                         if colnode.attributes().namedItem("name").nodeValue() == "status":
                             status = content.strip()
 
-                        if colnode.attributes().namedItem("name").nodeValue() == "project_status":
-                            projectstatus = content.strip()
-
                         if colnode.attributes().namedItem("name").nodeValue() == "assigned_to":
                             assignedto = content.strip()
 
@@ -1010,16 +1006,20 @@ class GraphAPITools:
                     # look for to-do task
                     prefix = f"{projectnumber}-{itemnumber}"
 
+                    print(f'looking into todo id: {prefix} assignedto: {assignedto}  pmid: {pmid} status: {status} ')
+
                     task_id = None
                     for lst in todos:
+                        print(f'looking through todos: {lst["title"]}')
                         if lst["title"].startswith(prefix):
                             task_id = lst["id"]
                             break
 
 
-                    if ((status == "New" or status == "Assigned") and projectstatus == "Active" and assignedto == pmid) :
+                    if ((status == "New" or status == "Assigned") and assignedto == pmid):
                         #TODO need an option to set time of day for alarms
                         #TODO need to be able to turn on and off sync options
+                        print(f'found a new assigned task {task_id}')
                         url = f"https://graph.microsoft.com/v1.0/me/todo/lists/{list_id}/tasks"
 
                         if task_id is not None:
@@ -1045,6 +1045,8 @@ class GraphAPITools:
                             task_data["isReminderOn"] = True
                             task_data["dueDateTime"] = { "dateTime" : datedue.toUTC().toString("yyyy-MM-ddThh:mm:ss.ss"), "timeZone" : "UTC" }
                             task_data["reminderDateTime"] = { "dateTime" : datedue.toUTC().toString("yyyy-MM-ddThh:mm:ss.ss"), "timeZone" : "UTC" }
+
+                        print(f'going to add: {task_data}')
 
                         response = None
                         if task_id is None:

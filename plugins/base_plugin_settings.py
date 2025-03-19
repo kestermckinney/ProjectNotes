@@ -1,3 +1,4 @@
+import os
 import sys
 import platform
 import threading
@@ -23,7 +24,7 @@ plugindescription = "This plugin provide settigns input for the base install set
 # if a dataexport value exist the menu will not appear on the plugin menu
 pluginmenus = [
     {"menutitle" : "File Collector", "function" : "menuFileCollectorSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
-    {"menutitle" : "Edior", "function" : "menuEditorSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "Editor", "function" : "menuEditorSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "Outlook Integration", "function" : "menuOutlookIntegrationSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "My Shortcuts", "function" : "menuMyShortcutSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
 ]
@@ -518,7 +519,7 @@ def menuMyShortcutSettings(parameter):
 # Use code below for testing
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    menuMyShortcutSettings("") 
+    menuOutlookIntegrationSettings("") 
     sys.exit(app.exec())
 
 #todo: add the ability to quickly add a team member that isn't in the       databse

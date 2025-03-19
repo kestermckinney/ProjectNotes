@@ -11,11 +11,19 @@
 #include "QLogger.h"
 #include "QLoggerWriter.h"
 
+#ifdef _DEBUG
+#pragma push_macro("slots")
+#undef slots
+#undef _DEBUG
+#include "Python.h"
+#define _DEBUG
+#pragma pop_macro("slots")
+#else
 #pragma push_macro("slots")
 #undef slots
 #include "Python.h"
 #pragma pop_macro("slots")
-
+#endif
 
 
 class PluginMenu

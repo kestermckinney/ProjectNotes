@@ -39,7 +39,6 @@ void PythonWorker::emitError()
         // Convert to string for printing
         PyObject* ptypeStr = PyObject_Str(ptype);
         PyObject* pvalueStr = PyObject_Str(pvalue);
-        PyObject* ptracebackStr = PyObject_Str(ptraceback);
 
         QString errorMsg;
 
@@ -55,10 +54,26 @@ void PythonWorker::emitError()
             Py_DECREF(pvalueStr);
         }
 
-        if (ptracebackStr)
+        if (ptraceback)
         {
-            errorMsg += QString("Traceback: %1 ").arg(PyUnicode_AsUTF8(ptracebackStr));
-            Py_DECREF(ptracebackStr);
+            PyObject *tb_module = PyImport_ImportModule("traceback");
+            if (tb_module)
+            {
+                PyObject *tb_str = PyObject_CallMethod(tb_module, "format_tb", "O", ptraceback);
+                if (tb_str)
+                {
+                    PyObject *tb_str_repr = PyObject_Str(tb_str);
+
+                    errorMsg += QString("Traceback: %1 ").arg(PyUnicode_AsUTF8(tb_str_repr));
+
+                    Py_DECREF(tb_str_repr);
+                    Py_DECREF(tb_str);
+                }
+
+                Py_DECREF(tb_module);
+            }
+
+            Py_DECREF(ptraceback);
         }
 
         // Clean up error state
