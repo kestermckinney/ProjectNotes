@@ -3,7 +3,7 @@
 
 // TODO: remove
 #ifndef Q_OS_WIN
-#if PY_VERSION_HEX < 0x03130000 // Python 3.10
+#if PY_VERSION_HEX < 0x030C0000 // Python 3.10
 static int PyObject_HasAttrStringWithError(PyObject *obj, const char *attr_name) {
     if (!obj || !attr_name) {
         PyErr_SetString(PyExc_TypeError, "null argument to PyObject_HasAttrStringWithError");

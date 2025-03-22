@@ -50,7 +50,7 @@ class OutlookSync:
         gapi = GraphAPITools()
         gapi.setToken(token)
 
-        gapi.sync_tracker_to_tasks()
+        gapi.sync_tracker_to_tasks(None)
         #gapi.download_batch_of_emails()
         #gapi.import_batch_of_contacts()
         #gapi.export_batch_of_contacts()
@@ -60,14 +60,14 @@ class OutlookSync:
 
         return
 
-    def syncTrackerItems(self, token):
+    def syncTrackerItems(self, token, parameter):
         timer = QElapsedTimer()
         timer.start()
 
         gapi = GraphAPITools()
         gapi.setToken(token)
 
-        gapi.sync_tracker_to_tasks()
+        gapi.sync_tracker_to_tasks(parameter)
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
         print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
@@ -93,7 +93,7 @@ def menuSyncTrackerItems(parameter):
 
     if token is not None:
         o365 = OutlookSync()
-        o365.syncTrackerItems(token)
+        o365.syncTrackerItems(token, parameter)
     else:
         print("No token was returned.  Office 365 sync failed.")
 

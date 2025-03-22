@@ -837,11 +837,7 @@ class GraphAPITools:
 
         return
 
-    def sync_tracker_to_tasks(self):
-
-        if not self.sync_todo_with_due and not self.sync_todo_without_due:  # task sync is disabled
-            return
-
+    def sync_tracker_to_tasks(self, parameter):
         timer = QElapsedTimer()
         timer.start()
 
@@ -850,6 +846,10 @@ class GraphAPITools:
 
         skip = 0
         top = 1000
+
+        # if syncing all items
+        if parameter == "all":
+            top = 10000
 
         skip = self.pnc.get_save_state(statename)
 
@@ -887,6 +887,8 @@ class GraphAPITools:
         timer2.start()
 
         xmlresult = projectnotes.get_data(xmldoc)
+
+
 
         execution_time = timer2.elapsed() / 1000  # Convert milliseconds to seconds
         print(f"Function get_data in '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
@@ -1016,10 +1018,10 @@ class GraphAPITools:
                             break
 
 
-                    if ((status == "New" or status == "Assigned") and assignedto == pmid):
+                    if ((status == "New" or status == "Assigned") and assignedto == pmid) and ( (datedue.isValid() and self.sync_todo_with_due) or (not datedue.isValid() and self.sync_todo_without_due)):
                         #TODO need an option to set time of day for alarms
                         #TODO need to be able to turn on and off sync options
-                        print(f'found a new assigned task {task_id}')
+                        #print(f'found a new assigned task {task_id}')
                         url = f"https://graph.microsoft.com/v1.0/me/todo/lists/{list_id}/tasks"
 
                         if task_id is not None:
@@ -1046,7 +1048,7 @@ class GraphAPITools:
                             task_data["dueDateTime"] = { "dateTime" : datedue.toUTC().toString("yyyy-MM-ddThh:mm:ss.ss"), "timeZone" : "UTC" }
                             task_data["reminderDateTime"] = { "dateTime" : datedue.toUTC().toString("yyyy-MM-ddThh:mm:ss.ss"), "timeZone" : "UTC" }
 
-                        print(f'going to add: {task_data}')
+                        #print(f'going to add: {task_data}')
 
                         response = None
                         if task_id is None:
@@ -1059,6 +1061,8 @@ class GraphAPITools:
 
                             if response.status_code != 200:
                                 print(f"\nFailed to update task '{prefix} {projectname} {itemname}': {response.status_code}\n\n {response.text}\n\n")
+
+
                     elif task_id is not None:
                         delete_url = f"https://graph.microsoft.com/v1.0/me/todo/lists/{list_id}/tasks/{task_id}"
                         delete_response = requests.delete(delete_url, headers=self.headers)
