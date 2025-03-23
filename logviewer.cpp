@@ -2,6 +2,7 @@
 #include "pnsettings.h"
 #include <QStandardPaths>
 #include <QPushButton>
+#include <QTextBlock>
 
 
 LogLoader::LogLoader(const QString& filePath)
@@ -225,12 +226,22 @@ void LogViewer::onInsertContent(const QString& filePath, const QString& content)
 
         editor->setUpdatesEnabled(false);
         QTextCursor cursor = editor->textCursor();
+
+        int lines = editor->verticalScrollBar()->maximum();
+        int scrollvalue = editor->verticalScrollBar()->value();
+
         cursor.movePosition(QTextCursor::Start);
         cursor.insertText(content);
+
+        int newlines = editor->verticalScrollBar()->maximum();
 
         // hold at bottom and show scrolling if it was
         if (wasatbottom)
             editor->verticalScrollBar()->setValue(editor->verticalScrollBar()->maximum());
+        else
+        {
+            editor->verticalScrollBar()->setValue(scrollvalue + (newlines - lines));
+        }
 
         editor->setUpdatesEnabled(true);
     }
@@ -245,13 +256,24 @@ void LogViewer::onUpdateContent(const QString& filePath, const QString& content)
         bool wasatbottom = (editor->verticalScrollBar()->maximum() == editor->verticalScrollBar()->value());
 
         editor->setUpdatesEnabled(false);
+
+        int lines = editor->verticalScrollBar()->maximum();
+        int scrollvalue = editor->verticalScrollBar()->value();
+
         QTextCursor cursor = editor->textCursor();
+
         cursor.movePosition(QTextCursor::End);
         cursor.insertText(content);
+
+        int newlines = editor->verticalScrollBar()->maximum();
 
         // hold at bottom and show scrolling if it was
         if (wasatbottom)
             editor->verticalScrollBar()->setValue(editor->verticalScrollBar()->maximum());
+        else
+        {
+            editor->verticalScrollBar()->setValue(scrollvalue + (newlines - lines));
+        }
 
         editor->setUpdatesEnabled(true);
     }

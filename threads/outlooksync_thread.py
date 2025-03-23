@@ -18,7 +18,7 @@ plugintimerevent = 1 # how many minutes between the timer event
 pluginmenus = [
     {"menutitle" : "Sync Tracker Items", "function" : "menuSyncTrackerItems", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
     {"menutitle" : "Download All Emails", "function" : "event_data_rightclick", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
-    {"menutitle" : "Import Contacts", "function" : "event_data_rightclick", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
+    {"menutitle" : "Sync Contacts", "function" : "menuSyncContacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
 ]
 
 # all events return an xml string that can be processed by ProjectNotes
@@ -52,7 +52,7 @@ class OutlookSync:
 
         gapi.sync_tracker_to_tasks(None)
         #gapi.download_batch_of_emails()
-        #gapi.import_batch_of_contacts()
+        gapi.import_batch_of_contacts(None)
         #gapi.export_batch_of_contacts()
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
@@ -74,6 +74,21 @@ class OutlookSync:
 
         return        
 
+    def syncContacts(self, token, parameter):
+        timer = QElapsedTimer()
+        timer.start()
+
+        gapi = GraphAPITools()
+        gapi.setToken(token)
+
+        gapi.import_batch_of_contacts(parameter)
+
+        execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
+        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+
+        return        
+
+
 def event_data_rightclick(xmlstr, parameter):
     token = tapi.authenticate()
 
@@ -94,6 +109,17 @@ def menuSyncTrackerItems(parameter):
     if token is not None:
         o365 = OutlookSync()
         o365.syncTrackerItems(token, parameter)
+    else:
+        print("No token was returned.  Office 365 sync failed.")
+
+    return ""
+
+def menuSyncContacts(parameter):
+    token = tapi.authenticate()
+
+    if token is not None:
+        o365 = OutlookSync()
+        o365.syncContacts(token, parameter)
     else:
         print("No token was returned.  Office 365 sync failed.")
 

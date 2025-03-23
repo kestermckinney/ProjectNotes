@@ -221,7 +221,11 @@ class GraphAPITools:
             print(f"Response Code: {response.status_code} Failed to upload attachment: {file_path}.")
             print(response.json())
 
-    def import_batch_of_contacts(self):
+    def import_batch_of_contacts(self, parameter):
+
+        if not self.sync_contacts:  #  sync contacts is disabled
+            return
+
         timer = QElapsedTimer()
         timer.start()
         
@@ -230,7 +234,10 @@ class GraphAPITools:
         skip = 0
         top = 500
 
-        skip = self.pnc.get_save_state(statename)
+        if parameter == "all":
+            top = 10000
+        else:
+            skip = self.pnc.get_save_state(statename)
 
         # Endpoint to get the list of contacts
         contacts_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/contacts"
@@ -756,7 +763,6 @@ class GraphAPITools:
 
         self.pnc.set_save_state(statename, skip, top, 0) # never redownload emails
 
-
     def download_batch_of_emails(self):
         timer = QElapsedTimer()
         timer.start()
@@ -850,8 +856,8 @@ class GraphAPITools:
         # if syncing all items
         if parameter == "all":
             top = 10000
-
-        skip = self.pnc.get_save_state(statename)
+        else:
+            skip = self.pnc.get_save_state(statename)
 
         # just get the project manager people id
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="clients" top="1" skip="0"/>\n</projectnotes>\n'
@@ -996,11 +1002,11 @@ class GraphAPITools:
                             assignedto = content.strip()
 
                         if colnode.attributes().namedItem("name").nodeValue() == "priority":
-                            priority = "1"
+                            priority = "normal"
                             if content == "High":
-                                priority = "2"
+                                priority = "high"
                             if content == "Low":
-                                priority = "0"
+                                priority = "low"
 
                         colnode = colnode.nextSibling()
 
@@ -1008,20 +1014,30 @@ class GraphAPITools:
                     # look for to-do task
                     prefix = f"{projectnumber}-{itemnumber}"
 
-                    print(f'looking into todo id: {prefix} assignedto: {assignedto}  pmid: {pmid} status: {status} ')
 
                     task_id = None
+                    old_item = None
                     for lst in todos:
-                        print(f'looking through todos: {lst["title"]}')
+                        #print(f'looking through todos: {lst["title"]}')
                         if lst["title"].startswith(prefix):
                             task_id = lst["id"]
+                            
+                            old_item = {
+                                "title": lst["title"],
+                                "importance" : lst["importance"],
+                                "body" : 
+                                {
+                                    "content" : lst["body"]["content"],
+                                    "contentType" : "text",
+                                }
+                            }
                             break
 
 
                     if ((status == "New" or status == "Assigned") and assignedto == pmid) and ( (datedue.isValid() and self.sync_todo_with_due) or (not datedue.isValid() and self.sync_todo_without_due)):
-                        #TODO need an option to set time of day for alarms
-                        #TODO need to be able to turn on and off sync options
-                        #print(f'found a new assigned task {task_id}')
+                        #TODO: need an option to set time of day for alarms
+                        #TODO: only changes to body text or description trigger an update Reminder date changes don't
+
                         url = f"https://graph.microsoft.com/v1.0/me/todo/lists/{list_id}/tasks"
 
                         if task_id is not None:
@@ -1037,18 +1053,20 @@ class GraphAPITools:
                             }
                         }
 
-                        if createddate is not None and createddate.isValid():
-                            task_data["createdDateTime"] = createddate.toUTC().toString("yyyy-MM-ddThh:mm:ss.ssZ")
-
-                        if updateddate  is not None and  updateddate.isValid():
-                            task_data["lastModifiedDateTime"] = updateddate.toUTC().toString("yyyy-MM-ddThh:mm:ssZ")
+                        jsonisdiff = (not (old_item == task_data))
 
                         if datedue  is not None and datedue.isValid():
                             task_data["isReminderOn"] = True
                             task_data["dueDateTime"] = { "dateTime" : datedue.toUTC().toString("yyyy-MM-ddThh:mm:ss.ss"), "timeZone" : "UTC" }
                             task_data["reminderDateTime"] = { "dateTime" : datedue.toUTC().toString("yyyy-MM-ddThh:mm:ss.ss"), "timeZone" : "UTC" }
 
-                        #print(f'going to add: {task_data}')
+                        if createddate is not None and createddate.isValid():
+                            task_data["createdDateTime"] = createddate.toUTC().toString("yyyy-MM-ddThh:mm:ss.ssZ")
+
+                        if updateddate  is not None and  updateddate.isValid():
+                            task_data["lastModifiedDateTime"] = updateddate.toUTC().toString("yyyy-MM-ddThh:mm:ssZ")
+                        else:
+                            task_data["lastModifiedDateTime"] = QDateTime.currentDateTime().toUTC().toString("yyyy-MM-ddThh:mm:ssZ")
 
                         response = None
                         if task_id is None:
@@ -1056,7 +1074,11 @@ class GraphAPITools:
 
                             if response.status_code != 201:
                                 print(f"\nFailed to add task '{prefix} {projectname} {itemname}': {response.status_code}\n\n {response.text}\n\n")
-                        else:
+
+                        elif jsonisdiff: # don't update it everytiome
+                            # print(task_data)
+                            # print(old_item)
+
                             response = requests.patch(url, headers=self.headers, json=task_data)
 
                             if response.status_code != 200:
