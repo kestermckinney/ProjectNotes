@@ -3,9 +3,8 @@ import msal
 import json
 import requests
 import inspect
-
+import re
 import projectnotes
-
 
 if (platform.system() == 'Windows'):
     from win32com.client import GetObject
@@ -20,9 +19,9 @@ def windowEnumerationHandler(hwnd, tpwindows):
         tpwindows.append((hwnd, win32gui.GetWindowText(hwnd)))
 
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
-from common import ProjectNotesCommon
+from includes.common import ProjectNotesCommon
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument
+from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QTextStream
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
 from PyQt6.QtGui import QDesktopServices
 
@@ -147,10 +146,11 @@ class GraphAPITools:
 
         self.settings_pluginname = "Outlook Integration"
         self.use_graph_api = (self.pnc.get_plugin_setting("IntegrationType", self.settings_pluginname) == "Office 365 Application")
-        self.sync_contacts = self.pnc.get_plugin_setting("SyncContacts", self.settings_pluginname).lower() == "true")
-        self.sync_todo_with_due = self.pnc.get_plugin_setting("SyncToDoWithDue", self.settings_pluginname).lower() == "true")
-        self.sync_todo_without_due = self.pnc.get_plugin_setting("SyncToDoDoWithoutDue", self.settings_pluginname).lower() == "true")
-        self.backup_emails = self.pnc.get_plugin_setting("BackupEmails", self.settings_pluginname).lower() == "true")
+        self.import_contacts = (self.pnc.get_plugin_setting("ImportContacts", self.settings_pluginname).lower() == "true")
+        self.export_contacts = (self.pnc.get_plugin_setting("ExportContacts", self.settings_pluginname).lower() == "true")
+        self.sync_todo_with_due = (self.pnc.get_plugin_setting("SyncToDoWithDue", self.settings_pluginname).lower() == "true")
+        self.sync_todo_without_due = (self.pnc.get_plugin_setting("SyncToDoDoWithoutDue", self.settings_pluginname).lower() == "true")
+        self.backup_emails = (self.pnc.get_plugin_setting("BackupEmails", self.settings_pluginname).lower() == "true")
         self.backup_inbox_folder = self.pnc.get_plugin_setting("BackupInBoxFolder", self.settings_pluginname)
         self.backup_sent_folder = self.pnc.get_plugin_setting("BackupSentFolder", self.settings_pluginname)
 
@@ -221,7 +221,13 @@ class GraphAPITools:
             print(f"Response Code: {response.status_code} Failed to upload attachment: {file_path}.")
             print(response.json())
 
-    def import_batch_of_contacts(self):
+    def import_batch_of_contacts(self, parameter):
+        if not self.use_graph_api:  # office 365 integration is disabled
+            return
+
+        if not self.import_contacts:  #  import contacts is disabled
+            return
+
         timer = QElapsedTimer()
         timer.start()
         
@@ -230,7 +236,10 @@ class GraphAPITools:
         skip = 0
         top = 500
 
-        skip = self.pnc.get_save_state(statename)
+        if parameter == "all":
+            top = 10000
+        else:
+            skip = self.pnc.get_save_state(statename)
 
         # Endpoint to get the list of contacts
         contacts_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/contacts"
@@ -308,9 +317,11 @@ class GraphAPITools:
 
         return
 
-    def export_batch_of_contacts(self):
+    def export_batch_of_contacts(self, parameter):
+        if not self.use_graph_api:  # office 365 integration is disabled
+            return
 
-        if not self.sync_contacts:  #  sync contacts is disabled
+        if not self.export_contacts:  #  sync contacts is disabled
             return
 
         timer = QElapsedTimer()
@@ -335,7 +346,10 @@ class GraphAPITools:
         skip = 0
         top = 500
 
-        skip = self.pnc.get_save_state(statename)
+        if parameter == "all":
+            top = 10000
+        else:
+            skip = self.pnc.get_save_state(statename)
 
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="people" {self.pnc.state_range_attrib(top, skip)} />\n</projectnotes>\n'
 
@@ -411,6 +425,7 @@ class GraphAPITools:
 
                         # Make a POST request to create a new contact
                         response = requests.post(contacts_endpoint, headers=self.headers, json=contact_details)
+                        #print(f"adding: {contact_details}")
 
                         if response.status_code != 201:
                             print(f"Response Code: {response.status_code} Failed to add contact: {fullname}.")
@@ -428,6 +443,8 @@ class GraphAPITools:
         return
 
     def draft_a_meeting(self, xmlstr, subject, content, datetime_start, datetime_end, company_filter):
+        if not self.use_graph_api:  # office 365 integration is disabled
+            return
 
         xmlval = QDomDocument()
         xmldoc = ""
@@ -566,6 +583,8 @@ class GraphAPITools:
         return ""
 
     def draft_an_email(self, xmlstr, subject, content, attachment, company_filter):
+        if not self.use_graph_api:  # office 365 integration is disabled
+            return
 
         xmlval = QDomDocument()
         xmldoc = ""
@@ -685,7 +704,9 @@ class GraphAPITools:
 
     def download_project_emails(self, projectnumber, box, top, destination_folder):
 
-        statename = destination_folder + "_" + box + "_downloadtracker"
+        statename = projectnumber + "_" + box + "_downloadtracker"
+
+        print(f"Downloading email to {destination_folder} and saving progress in {statename}.")
 
         skip = self.pnc.get_save_state(statename)
 
@@ -717,6 +738,8 @@ class GraphAPITools:
                 if msg_response.status_code == 200:
                     msg_file = destination_folder + "/" + self.makefilename(sent_time, subject) + ".eml"
 
+                    #print(f"saving email to file: {msg_file}")
+
                     # only write it if it doesn't exist
                     if not QFile(msg_file).exists():
                         # Construct MSG download URL
@@ -729,21 +752,23 @@ class GraphAPITools:
                         }
 
                         # Download MSG file
-                        msg_response = requests.get(msg_url, headers=msg_headers, stream=True)
+                        msg_response = requests.get(msg_url, headers=msg_headers)
 
                         # Check response status code
                         if msg_response.status_code == 200:
 
                             # Save MSG file
                             file = QFile(msg_file)
-                            if file.open(QIODevice.OpenModeFlag.WriteOnly):
-                                file.write(msg_response)
+                            if file.open(QIODevice.OpenModeFlag.WriteOnly | QIODevice.OpenModeFlag.Text):
+                                #file.write(msg_response.text)
+                                stream = QTextStream(file)
+                                stream << msg_response.text
                                 file.close()
                             else:
                                 print(f"Failed to write file {msg_file}.")
 
 
-                            #print(f"Email saved: {email['id']}.msg")
+                            #print(f"Email saved: {msg_file}")
                         else:
                             print(f"Resonse Code: {msg_response.status_code} Error downloading MSG: {msg_response.text}.")
                     else:
@@ -756,8 +781,7 @@ class GraphAPITools:
 
         self.pnc.set_save_state(statename, skip, top, 0) # never redownload emails
 
-
-    def download_batch_of_emails(self):
+    def download_batch_of_emails(self, xmlstr):
         timer = QElapsedTimer()
         timer.start()
 
@@ -776,16 +800,37 @@ class GraphAPITools:
             return
 
         saved_state = None
-        statename = "emails_export"
+        statename = "project_emails_export"
 
         skip = 0
-        top = 50 # writing a bunch of email files could be slow
+        top = 10 # writing a bunch of email files could be slow only do 10 projects at a time
+        top_emails = 30 # however download up to 30 emails from each box at a time
+
+        if xmlstr is not None:
+            top = 10000 # downloading all email for a project
 
         skip = self.pnc.get_save_state(statename)
 
-        xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table  filter_field_1="location_description" filter_value_1="Project Folder" name="project_locations" {self.pnc.state_range_attrib(top, skip)} />\n</projectnotes>\n'
+        projectfilter = ""
+
+        if xmlstr is not None:
+            pxmlval = QDomDocument()
+            if (pxmlval.setContent(xmlstr) == False):
+                print("Unable to parse XML returned from Project Notes in emails download.")
+                return
+
+            pxmlroot = pxmlval.documentElement()
+
+            projectnumber = self.pnc.scrape_project_number(pxmlroot)
+            print(f"Downloading all emails for project {projectnumber}")
+
+            projectfilter = f' filter_field_2="project_number" filter_value_2="{projectnumber}" '
+
+        xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table  filter_field_1="location_description" filter_value_1="Project Folder" {projectfilter} name="project_locations" {self.pnc.state_range_attrib(top, skip)} />\n</projectnotes>\n'
         
         xmlresult = projectnotes.get_data(xmldoc)
+
+        #print(xmlresult)
         
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlresult) == False):
@@ -814,17 +859,23 @@ class GraphAPITools:
                         sentfolder = emailfolder + "/Sent Email/"
                         receivedfolder = emailfolder + "/Received Email/"
 
+                        qd = QDir()
+
+                        #print(f"email folder: {emailfolder}")
+
                         if not QDir(emailfolder).exists():
-                            QDir.mkpath(emailfolder)
+                            qd.mkpath(emailfolder)
+
+                        #print(f"sent folder: {sentfolder}")
 
                         if not QDir(sentfolder).exists():
-                            QDir.mkpath(sentfolder)
+                            qd.mkpath(sentfolder)
 
                         if not QDir(receivedfolder).exists():
-                            QDir.mkpath(receivedfolder)
+                            qd.mkpath(receivedfolder)
 
-                        self.download_project_emails(projectnumber, "inbox", 8, receivedfolder)
-                        self.download_project_emails(projectnumber, "sentitems", 8, sentfolder)
+                        self.download_project_emails(projectnumber, "inbox", top_emails, receivedfolder)
+                        self.download_project_emails(projectnumber, "sentitems", top_emails, sentfolder)
 
                     rownode = rownode.nextSibling()
 
@@ -837,9 +888,8 @@ class GraphAPITools:
 
         return
 
-    def sync_tracker_to_tasks(self):
-
-        if not self.sync_todo_with_due and not self.sync_todo_without_due:  # task sync is disabled
+    def sync_tracker_to_tasks(self, parameter):
+        if not self.use_graph_api:  # office 365 integration is disabled
             return
 
         timer = QElapsedTimer()
@@ -849,9 +899,13 @@ class GraphAPITools:
         statename = "tracker_export"
 
         skip = 0
-        top = 100
+        top = 1000
 
-        skip = self.pnc.get_save_state(statename)
+        # if syncing all items
+        if parameter == "all":
+            top = 10000
+        else:
+            skip = self.pnc.get_save_state(statename)
 
         # just get the project manager people id
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="clients" top="1" skip="0"/>\n</projectnotes>\n'
@@ -887,6 +941,8 @@ class GraphAPITools:
         timer2.start()
 
         xmlresult = projectnotes.get_data(xmldoc)
+
+
 
         execution_time = timer2.elapsed() / 1000  # Convert milliseconds to seconds
         print(f"Function get_data in '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
@@ -949,12 +1005,11 @@ class GraphAPITools:
                     itemname = None
                     itemdescription = None
                     datedue = ""
-                    createddate = ""
-                    updateddate = ""
+                    createddate = QDateTime()
+                    updateddate = QDateTime()
                     status = None
                     priority = None
                     comments = None
-                    projectstatus = None
                     assignedto = None
 
                     while not colnode.isNull():
@@ -991,18 +1046,15 @@ class GraphAPITools:
                         if colnode.attributes().namedItem("name").nodeValue() == "status":
                             status = content.strip()
 
-                        if colnode.attributes().namedItem("name").nodeValue() == "project_status":
-                            projectstatus = content.strip()
-
                         if colnode.attributes().namedItem("name").nodeValue() == "assigned_to":
                             assignedto = content.strip()
 
                         if colnode.attributes().namedItem("name").nodeValue() == "priority":
-                            priority = "1"
+                            priority = "normal"
                             if content == "High":
-                                priority = "2"
+                                priority = "high"
                             if content == "Low":
-                                priority = "0"
+                                priority = "low"
 
                         colnode = colnode.nextSibling()
 
@@ -1010,16 +1062,30 @@ class GraphAPITools:
                     # look for to-do task
                     prefix = f"{projectnumber}-{itemnumber}"
 
+
                     task_id = None
+                    old_item = None
                     for lst in todos:
+                        #print(f'looking through todos: {lst["title"]}')
                         if lst["title"].startswith(prefix):
                             task_id = lst["id"]
+                            
+                            old_item = {
+                                "title": lst["title"],
+                                "importance" : lst["importance"],
+                                "body" : 
+                                {
+                                    "content" : lst["body"]["content"],
+                                    "contentType" : "text",
+                                }
+                            }
                             break
 
 
-                    if ((status == "New" or status == "Assigned") and projectstatus == "Active" and assignedto == pmid) :
-                        #TODO need an option to set time of day for alarms
-                        #TODO need to be able to turn on and off sync options
+                    if ((status == "New" or status == "Assigned") and assignedto == pmid) and ( (datedue.isValid() and self.sync_todo_with_due) or (not datedue.isValid() and self.sync_todo_without_due)):
+                        #TODO: need an option to set time of day for alarms
+                        #TODO: only changes to body text or description trigger an update Reminder date changes don't
+
                         url = f"https://graph.microsoft.com/v1.0/me/todo/lists/{list_id}/tasks"
 
                         if task_id is not None:
@@ -1035,16 +1101,20 @@ class GraphAPITools:
                             }
                         }
 
-                        if createddate is not None and createddate.isValid():
-                            task_data["createdDateTime"] = createddate.toUTC().toString("yyyy-MM-ddThh:mm:ss.ssZ")
-
-                        if updateddate  is not None and  updateddate.isValid():
-                            task_data["lastModifiedDateTime"] = updateddate.toUTC().toString("yyyy-MM-ddThh:mm:ssZ")
+                        jsonisdiff = (not (old_item == task_data))
 
                         if datedue  is not None and datedue.isValid():
                             task_data["isReminderOn"] = True
                             task_data["dueDateTime"] = { "dateTime" : datedue.toUTC().toString("yyyy-MM-ddThh:mm:ss.ss"), "timeZone" : "UTC" }
                             task_data["reminderDateTime"] = { "dateTime" : datedue.toUTC().toString("yyyy-MM-ddThh:mm:ss.ss"), "timeZone" : "UTC" }
+
+                        if createddate is not None and createddate.isValid():
+                            task_data["createdDateTime"] = createddate.toUTC().toString("yyyy-MM-ddThh:mm:ss.ssZ")
+
+                        if updateddate  is not None and  updateddate.isValid():
+                            task_data["lastModifiedDateTime"] = updateddate.toUTC().toString("yyyy-MM-ddThh:mm:ssZ")
+                        else:
+                            task_data["lastModifiedDateTime"] = QDateTime.currentDateTime().toUTC().toString("yyyy-MM-ddThh:mm:ssZ")
 
                         response = None
                         if task_id is None:
@@ -1052,11 +1122,17 @@ class GraphAPITools:
 
                             if response.status_code != 201:
                                 print(f"\nFailed to add task '{prefix} {projectname} {itemname}': {response.status_code}\n\n {response.text}\n\n")
-                        else:
+
+                        elif jsonisdiff: # don't update it everytiome
+                            # print(task_data)
+                            # print(old_item)
+
                             response = requests.patch(url, headers=self.headers, json=task_data)
 
                             if response.status_code != 200:
                                 print(f"\nFailed to update task '{prefix} {projectname} {itemname}': {response.status_code}\n\n {response.text}\n\n")
+
+
                     elif task_id is not None:
                         delete_url = f"https://graph.microsoft.com/v1.0/me/todo/lists/{list_id}/tasks/{task_id}"
                         delete_response = requests.delete(delete_url, headers=self.headers)
@@ -1075,3 +1151,8 @@ class GraphAPITools:
         print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
 
         return
+
+
+#TODO: need to setup code to check which type of outlook integration has been selected
+#TODO: should i export contacts when using o365 integration??? maybe just as a manual export
+#TODO: if i change an included module, projectnotes wont reload the plugins using it

@@ -32,7 +32,7 @@
    <item>
     <layout class="QFormLayout" name="formLayout">
      <property name="labelAlignment">
-      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+      <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
      </property>
      <property name="horizontalSpacing">
       <number>4</number>
@@ -88,59 +88,66 @@
       </widget>
      </item>
      <item row="4" column="1">
-      <widget class="QCheckBox" name="checkBoxSyncContacts">
+      <widget class="QCheckBox" name="checkBoxImportContacts">
        <property name="text">
-        <string>Sync Contacts</string>
+        <string>Import Contacts</string>
        </property>
       </widget>
      </item>
-     <item row="7" column="1">
+     <item row="8" column="1">
       <widget class="QCheckBox" name="checkBoxBackupEmails">
        <property name="text">
         <string>Backup Emails</string>
        </property>
       </widget>
      </item>
-     <item row="5" column="1">
+     <item row="6" column="1">
       <widget class="QCheckBox" name="checkBoxSyncToDoWithDue">
        <property name="text">
         <string>Sync ToDo tems with Due Dates</string>
        </property>
       </widget>
      </item>
-     <item row="6" column="1">
+     <item row="7" column="1">
       <widget class="QCheckBox" name="checkBoxSyncToDoWithoutDue">
        <property name="text">
         <string>Sync ToDo Items without Due Dates</string>
        </property>
       </widget>
      </item>
-     <item row="8" column="1">
+     <item row="10" column="1">
       <widget class="QLineEdit" name="lineEditBackupInboxFolder"/>
      </item>
-     <item row="8" column="0">
+     <item row="10" column="0">
       <widget class="QLabel" name="labelBackupInboxFolder">
        <property name="text">
         <string>Bakup Inbox Folder:</string>
        </property>
       </widget>
      </item>
-     <item row="9" column="0">
+     <item row="11" column="0">
       <widget class="QLabel" name="labelBackupSentFolder">
        <property name="text">
         <string>Backup Sent Folder:</string>
        </property>
       </widget>
      </item>
-     <item row="9" column="1">
+     <item row="11" column="1">
       <widget class="QLineEdit" name="lineEditBackupSentFolder"/>
+     </item>
+     <item row="5" column="1">
+      <widget class="QCheckBox" name="checkBoxExportContacts">
+       <property name="text">
+        <string>Export New Contacts</string>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
    <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
-      <enum>Qt::Vertical</enum>
+      <enum>Qt::Orientation::Vertical</enum>
      </property>
      <property name="sizeHint" stdset="0">
       <size>
@@ -153,10 +160,10 @@
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set>
      </property>
     </widget>
    </item>

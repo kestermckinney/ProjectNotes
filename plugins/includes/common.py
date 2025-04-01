@@ -28,7 +28,7 @@ import subprocess
 class ProjectNotesCommon:
     def __init__(self):
         self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)
-        self.saved_state_file = self.temporary_folder + '/saved_state.json'
+        self.saved_state_file = self.temporary_folder + '/projectnotes_saved_state.json'
 
     def get_save_state(self, state_name):
         # get the last state
@@ -70,6 +70,8 @@ class ProjectNotesCommon:
 
         # save the new state
         saved_state.setdefault(state_name, {})["skip"] = skip
+
+        print(f"saving progress into file {self.saved_state_file} for {state_name}")
 
         file = QFile(self.saved_state_file)
         if file.open(QIODevice.OpenModeFlag.WriteOnly):
@@ -349,19 +351,20 @@ class ProjectNotesCommon:
             #print(f"parsinng {tag_name}")
 
             #check for key attributes in the root tag
-            if element.hasAttribute("managing_company_name"):
-                name_value = element.attribute("managing_company_name")
-                expanded_string = expanded_string.replace("[$managing_company_name]", name_value)   
+            if tag_name == "projectnotes":
+                if element.hasAttribute("managing_company_name"):
+                    name_value = element.attribute("managing_company_name")
+                    expanded_string = expanded_string.replace("[$managing_company_name]", name_value)   
 
-            if element.hasAttribute("managing_manager_name"):
-                name_value = element.attribute("managing_manager_name")
-                expanded_string = expanded_string.replace("[$managing_manager_name]", name_value)  
+                if element.hasAttribute("managing_manager_name"):
+                    name_value = element.attribute("managing_manager_name")
+                    expanded_string = expanded_string.replace("[$managing_manager_name]", name_value)  
 
-            if element.hasAttribute("project_manager_id"):
-                name_value = element.attribute("project_manager_id")
-                expanded_string = expanded_string.replace("[$project_manager_id]", name_value)    
+                if element.hasAttribute("project_manager_id"):
+                    name_value = element.attribute("project_manager_id")
+                    expanded_string = expanded_string.replace("[$project_manager_id]", name_value)    
 
-            if tag_name == "column": # and table_name is not None:
+            elif tag_name == "column": # and table_name is not None:
                 if element.hasAttribute("name"):
                     name_value = element.attribute("name")
                     element_text = None
@@ -374,13 +377,15 @@ class ProjectNotesCommon:
                     #print(f"attempting replace [${table_name}.{name_value}.{row_number}] ")
                     expanded_string = expanded_string.replace(f"[${table_name}.{name_value}.{row_number}]", element_text)
 
-            if tag_name == "table":
+                return expanded_string
+
+            elif tag_name == "table":
                 # child elements are going to be columns or another table
                 if element.hasAttribute("name"):
                     table_string = element.attribute("name")
                     row = 0  # we need to start couting rows
 
-            if tag_name == "row":
+            elif tag_name == "row":
                     table_string = table_name # pass the current table down to the column
                     row = row_number  # pass the current row down to the column leve
 

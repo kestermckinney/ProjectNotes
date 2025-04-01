@@ -17,7 +17,7 @@ plugindescription = "Open the specified editor. Supported platforms: Windows, Li
 # the function wil only show on the right click if it matches the table specified in dataexport
 # if a dataexport value exist the menu will not appear on the plugin menu
 pluginmenus = [
-    {"menutitle" : "Edior", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
+    {"menutitle" : "Editor", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
 ]
 
 # events must have a data structure and data view specified

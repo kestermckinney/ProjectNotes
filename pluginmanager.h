@@ -1,10 +1,19 @@
 #ifndef PLUGINMANAGER_H
 #define PLUGINMANAGER_H
 
+#ifdef _DEBUG
+#pragma push_macro("slots")
+#undef slots
+#undef _DEBUG
+#include "Python.h"
+#define _DEBUG
+#pragma pop_macro("slots")
+#else
 #pragma push_macro("slots")
 #undef slots
 #include "Python.h"
 #pragma pop_macro("slots")
+#endif
 
 #include <QObject>
 #include "plugin.h"

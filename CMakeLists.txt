@@ -30,23 +30,23 @@ endif()
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
-message(STATUS "Python3 executable: ${Python3_EXECUTABLE}")
-message(STATUS "Python3 library: ${Python3_LIBRARIES}")
-message(STATUS "Python3 include dir: ${Python3_INCLUDE_DIRS}")
+# Ensure we use the release libraries even in debug mode
+set(Python3_LIBRARIES ${Python3_LIBRARY_RELEASE})
+set(Python3_LIBRARY_DIRS ${Python3_LIBRARY_DIRS_RELEASE})
 
 
 # Find the Hunspell library
 #find_package(Hunspell REQUIRED)
 if (WIN32)
     # this isn't the best way to do this, but for now until i figure out a better way
-    set(Hunspell_INCLUDE_DIRS "C:/Users/Paul McKinney/Documents/hunspell/src")
+    set(Hunspell_INCLUDE_DIRS "C:/Users/paulmckinney/Documents/hunspell/src")
 
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        set(HUNSPELL_LIBRARIES "C:/Users/Paul McKinney/Documents/hunspell/msvc/x64/Debug_dll/libhunspell.lib")
-        set(HUNSPELL_DLL "C:/Users/Paul McKinney/Documents/hunspell/msvc/x64/Debug_dll/libhunspell.dll")
+        set(HUNSPELL_LIBRARIES "C:/Users/paulmckinney/Documents/hunspell/msvc/x64/Debug_dll/libhunspell.lib")
+        set(HUNSPELL_DLL "C:/Users/paulmckinney/Documents/hunspell/msvc/x64/Debug_dll/libhunspell.dll")
     elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-        set(HUNSPELL_LIBRARIES "C:/Users/Paul McKinney/Documents/hunspell/msvc/x64/Release_dll/libhunspell.lib")
-        set(HUNSPELL_DLL "C:/Users/Paul McKinney/Documents/hunspell/msvc/x64/Release_dll/libhunspell.dll")
+        set(HUNSPELL_LIBRARIES "C:/Users/paulmckinney/Documents/hunspell/msvc/x64/Release_dll/libhunspell.lib")
+        set(HUNSPELL_DLL "C:/Users/paulmckinney/Documents/hunspell/msvc/x64/Release_dll/libhunspell.dll")
     endif()
 else()
     set(Hunspell_INCLUDE_DIRS /usr/include/hunspell)
@@ -106,9 +106,15 @@ else()
     endif()
 endif()
 
+
+# see what libraries we are really using for python
+message(STATUS "Python3 executable: ${Python3_EXECUTABLE}")
+message(STATUS "Python3 library: ${Python3_LIBRARIES}")
+message(STATUS "Python3 include dir: ${Python3_INCLUDE_DIRS}")
+
 # include directories for Python
 include_directories(${Python3_INCLUDE_DIRS})
-link_directories(${Python3_INCLUDE_DIRS})
+link_directories(${Python3_LIBRARY_DIRS})
 
 # Include the source directory in the include directories for the executable
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

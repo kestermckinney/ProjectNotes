@@ -336,6 +336,10 @@ QString PNDatabaseObjects::execute(const QString& t_sql)
 
 void PNDatabaseObjects::closeDatabase()
 {
+    // don't close twice
+    if (m_database_file.isEmpty())
+        return;
+
     delete m_clients_model;
     delete m_unfilteredclients_model;
     delete m_people_model;
