@@ -28,7 +28,7 @@ import subprocess
 class ProjectNotesCommon:
     def __init__(self):
         self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)
-        self.saved_state_file = self.temporary_folder + '/saved_state.json'
+        self.saved_state_file = self.temporary_folder + '/projectnotes_saved_state.json'
 
     def get_save_state(self, state_name):
         # get the last state
@@ -70,6 +70,8 @@ class ProjectNotesCommon:
 
         # save the new state
         saved_state.setdefault(state_name, {})["skip"] = skip
+
+        print(f"saving progress into file {self.saved_state_file} for {state_name}")
 
         file = QFile(self.saved_state_file)
         if file.open(QIODevice.OpenModeFlag.WriteOnly):

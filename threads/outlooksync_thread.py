@@ -17,11 +17,12 @@ plugintimerevent = 1 # how many minutes between the timer event
 
 pluginmenus = [
     {"menutitle" : "Sync Tracker Items", "function" : "menuSyncTrackerItems", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
-    {"menutitle" : "Download All Emails", "function" : "event_data_rightclick", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
-    {"menutitle" : "Sync Contacts", "function" : "menuSyncContacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
+    {"menutitle" : "Download All Emails", "function" : "menuRightClickDownloadEmails", "tablefilter" : "projecs", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : "all"},
+    {"menutitle" : "Import Contacts", "function" : "menuImportContacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
+    {"menutitle" : "Export New Contacts", "function" : "menuExportContacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
 ]
 
-# all events return an xml string that can be processed by ProjectNotes
+# all events return an xml string that can be processed by ProjectNotes 
 #
 # Supported Events
 
@@ -51,9 +52,9 @@ class OutlookSync:
         gapi.setToken(token)
 
         gapi.sync_tracker_to_tasks(None)
-        #gapi.download_batch_of_emails()
         gapi.import_batch_of_contacts(None)
-        #gapi.export_batch_of_contacts()
+        gapi.export_batch_of_contacts(None)
+        gapi.download_batch_of_emails(None)
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
         print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
@@ -74,7 +75,7 @@ class OutlookSync:
 
         return        
 
-    def syncContacts(self, token, parameter):
+    def ImportContacts(self, token, parameter):
         timer = QElapsedTimer()
         timer.start()
 
@@ -89,7 +90,47 @@ class OutlookSync:
         return        
 
 
-def event_data_rightclick(xmlstr, parameter):
+    def ExportContacts(self, token, parameter):
+        timer = QElapsedTimer()
+        timer.start()
+
+        gapi = GraphAPITools()
+        gapi.setToken(token)
+
+        gapi.export_batch_of_contacts(parameter)
+
+        execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
+        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+
+        return        
+
+    def syncProjectEmails(self, token, xmlstr):
+        timer = QElapsedTimer()
+        timer.start()
+
+        gapi = GraphAPITools()
+        gapi.setToken(token)
+
+        gapi.download_batch_of_emails(xmlstr)
+
+        execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
+        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+
+        return        
+
+
+def menuRightClickDownloadEmails(xmlstr, parameter):
+    token = tapi.authenticate()
+
+    if token is not None:
+        o365 = OutlookSync()
+        o365.syncProjectEmails(token, xmlstr)
+    else:
+        print("No token was returned.  Office 365 sync failed.")
+
+    return ""
+
+def event_timer(parameter):
     token = tapi.authenticate()
 
     if token is not None:
@@ -99,9 +140,6 @@ def event_data_rightclick(xmlstr, parameter):
         print("No token was returned.  Office 365 sync failed.")
 
     return ""
-
-def event_timer(parameter):
-    return event_data_rightclick("", parameter)
 
 def menuSyncTrackerItems(parameter):
     token = tapi.authenticate()
@@ -114,12 +152,23 @@ def menuSyncTrackerItems(parameter):
 
     return ""
 
-def menuSyncContacts(parameter):
+def menuExportContacts(parameter):
     token = tapi.authenticate()
 
     if token is not None:
         o365 = OutlookSync()
-        o365.syncContacts(token, parameter)
+        o365.ExportContacts(token, parameter)
+    else:
+        print("No token was returned.  Office 365 sync failed.")
+
+    return ""
+
+def menuImportContacts(parameter):
+    token = tapi.authenticate()
+
+    if token is not None:
+        o365 = OutlookSync()
+        o365.ImportContacts(token, parameter)
     else:
         print("No token was returned.  Office 365 sync failed.")
 
