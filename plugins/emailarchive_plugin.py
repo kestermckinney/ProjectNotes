@@ -4,7 +4,6 @@ import os
 import re
 
 if (platform.system() == 'Windows'):
-    from includes.excel_tools import ProjectNotesExcelTools
     import win32com
 
 from includes.common import ProjectNotesCommon

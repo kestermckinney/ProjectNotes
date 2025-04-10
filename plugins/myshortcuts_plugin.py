@@ -63,7 +63,6 @@ def menu_click(parameter):
     return event_data_rightclick("", parameter)
 
 def event_data_rightclick(xmlstr, parameter):
-    print("called event: " + __file__)
 
     xmlval = QDomDocument()
 

@@ -338,6 +338,8 @@ class OutlookIntegrationSettings(QDialog):
         self.ui.checkBoxBackupEmails.setChecked(self.pnc.get_plugin_setting("BackupEmails", self.settings_pluginname).lower() == "true")
         self.ui.lineEditBackupInboxFolder.setText(self.pnc.get_plugin_setting("BackupInBoxFolder", self.settings_pluginname))
         self.ui.lineEditBackupSentFolder.setText(self.pnc.get_plugin_setting("BackupSentFolder", self.settings_pluginname))
+        self.ui.checkBoxSendO365.setChecked(self.pnc.get_plugin_setting("SendO365", self.settings_pluginname).lower() == "true")
+        self.ui.checkBoxScheduleO365.setChecked(self.pnc.get_plugin_setting("ScheduleO365", self.settings_pluginname).lower() == "true")
 
         if (x != '' and y != '' and w != '' and h != ''):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
@@ -356,6 +358,10 @@ class OutlookIntegrationSettings(QDialog):
         self.pnc.set_plugin_setting("BackupEmails", self.settings_pluginname, "true" if self.ui.checkBoxBackupEmails.isChecked() else "false")
         self.pnc.set_plugin_setting("BackupInBoxFolder", self.settings_pluginname, self.ui.lineEditBackupInboxFolder.text())
         self.pnc.set_plugin_setting("BackupSentFolder", self.settings_pluginname, self.ui.lineEditBackupSentFolder.text())
+        self.pnc.set_plugin_setting("ScheduleO365", self.settings_pluginname, "true" if self.ui.checkBoxScheduleO365.isChecked() else "false")
+        self.pnc.set_plugin_setting("SendO365", self.settings_pluginname, "true" if self.ui.checkBoxSendO365.isChecked() else "false")
+
+        projectnotes.force_reload("outlooksync_thread")
 
         self.ui.close()
 

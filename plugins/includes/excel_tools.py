@@ -171,9 +171,3 @@ class ProjectNotesExcelTools:
 
         wmi_service = None
         wmi = None
-
-
-# begin testing procedures
-#pne = ProjectNotesExcelTools()
-#pne.killexcelautomation()
-#pne.open_excel_document("C:/Users/pamcki/OneDrive - Cornerstone Controls/Documents/ProjectNotes_plugins/TestExcel.xlsx")

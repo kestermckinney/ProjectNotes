@@ -22,19 +22,20 @@ plugindescription = "This is test plugin. Supported platforms: Windows, Linux, M
 # the table filter filters the XML sent to the plugin to make the export more efficient
 # the menu can be placed under a submenu
 # the function wil only show on the right click if it matches the table specified in dataexport
-pluginmenus = [
-    {"menutitle" : "Menu 2", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu B", "dataexport" : "", "parameter" : "look at me"},
-    {"menutitle" : "Menu 1", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu B", "dataexport" : ""},
-    {"menutitle" : "Menu 2", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu A", "dataexport" : ""},
-    {"menutitle" : "Force Reload Of tester_plugin", "function" : "force_reload", "tablefilter" : "", "submenu" : "Test Submenu A", "dataexport" : ""},
-    {"menutitle" : "Alpha Menu B" , "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
-    {"menutitle" : "Alpha Menu C", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
-    {"menutitle" : "Export Project", "function" : "event_data_rightclick", "tablefilter" : "", "submenu" : "Test Submenu", "dataexport" : "projects", "parameter" : "look at me projects"},
-    {"menutitle" : "Beta Menu A", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
-    {"menutitle" : "Gamma Menu A", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
-    {"menutitle" : "Alpha Menu A", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
-    {"menutitle" : "Client Update Test", "function" : "event_data_rightclick", "tablefilter" : "", "submenu" : "", "dataexport" : "clients", "parameter" : "look at me clients"},
-]
+
+# pluginmenus = [
+#     {"menutitle" : "Menu 2", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu B", "dataexport" : "", "parameter" : "look at me"},
+#     {"menutitle" : "Menu 1", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu B", "dataexport" : ""},
+#     {"menutitle" : "Menu 2", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Test Submenu A", "dataexport" : ""},
+#     {"menutitle" : "Force Reload Of tester_plugin", "function" : "force_reload", "tablefilter" : "", "submenu" : "Test Submenu A", "dataexport" : ""},
+#     {"menutitle" : "Alpha Menu B" , "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
+#     {"menutitle" : "Alpha Menu C", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
+#     {"menutitle" : "Export Project", "function" : "event_data_rightclick", "tablefilter" : "", "submenu" : "Test Submenu", "dataexport" : "projects", "parameter" : "look at me projects"},
+#     {"menutitle" : "Beta Menu A", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
+#     {"menutitle" : "Gamma Menu A", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
+#     {"menutitle" : "Alpha Menu A", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "", "dataexport" : ""},
+#     {"menutitle" : "Client Update Test", "function" : "event_data_rightclick", "tablefilter" : "", "submenu" : "", "dataexport" : "clients", "parameter" : "look at me clients"},
+# ]
 
 #pluginmenus.append({"menutitle" :"Test Menu C", "function" : "menu_click",  "tablefilter" : "", "submenu" : "test submenu", "dataexport" : "", "parameter" : "parm" })  
 

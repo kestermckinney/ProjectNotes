@@ -56,13 +56,3 @@ class ProjectNotesWordTools:
 
         wmi_service = None
         wmi = None
-
-# begin testing procedures
-"""
-app = QApplication(sys.argv)
-
-pnw = ProjectNotesWordTools()
-hn = pnw.open_word_document("C:\\Users\\pamcki\\Documents\\Example Quote Doc.docx")
-#pnw.close_word_document(hn)
-pnw.killwordautomation()
-"""

@@ -2,10 +2,8 @@ import sys
 import platform
 
 if (platform.system() == 'Windows'):
-    from includes.excel_tools import ProjectNotesExcelTools
     import win32com
 
-from includes.common import ProjectNotesCommon
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl
@@ -18,6 +16,9 @@ pluginname = "Export Outlook Contacts"
 plugindescription = "Export contacts and assocated companies to Outlook."
 plugintable = "people" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
+
+pluginmenus = []
+
 
 # events must have a data structure and data view specified
 #
@@ -72,10 +73,7 @@ ProjectsFolder = ""
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
-    #
-    pnc = ProjectNotesCommon()
-    pne = ProjectNotesExcelTools()
-
+    
     def find_contact( list, fullname ):
         for contact in list:
             if contact[1] == fullname.strip().upper():

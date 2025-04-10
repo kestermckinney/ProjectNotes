@@ -2,10 +2,8 @@ import sys
 import platform
 
 if (platform.system() == 'Windows'):
-    from includes.excel_tools import ProjectNotesExcelTools
     import win32com
 
-from includes.common import ProjectNotesCommon
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl
@@ -73,8 +71,6 @@ parameters = [
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
-    #
-    pnc = ProjectNotesCommon()
 
     def event_menuclick(xmlstr):
         print("called event: " + __file__)

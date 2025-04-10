@@ -6,7 +6,8 @@ import threading
 # make sure includes folder can be found
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../plugins')))
 
-from includes.graphapitools import GraphAPITools, TokenAPI
+from includes.common import ProjectNotesCommon
+from includes.graphapi_tools import GraphAPITools, TokenAPI
 from PyQt6.QtCore import QDateTime, QElapsedTimer, QCoreApplication
 
 
@@ -15,12 +16,21 @@ pluginname = "Outlook Integration"
 plugindescription = "Imports Outlook contacts, Exports Contacts that don't already exist in Outlook, Exports project related emails, and Export the project managers assigned active tracker and action items.  All activites are done using the Microsoft Graph API."
 plugintimerevent = 1 # how many minutes between the timer event
 
-pluginmenus = [
-    {"menutitle" : "Sync Tracker Items", "function" : "menuSyncTrackerItems", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
-    {"menutitle" : "Download All Emails", "function" : "menuRightClickDownloadEmails", "tablefilter" : "projecs", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : "all"},
-    {"menutitle" : "Import Contacts", "function" : "menuImportContacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
-    {"menutitle" : "Export New Contacts", "function" : "menuExportContacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
-]
+pluginmenus = []
+
+stopevent = False  # after a key failure the event will stop processing
+
+pnc = ProjectNotesCommon()
+
+use_graph_api = (pnc.get_plugin_setting("IntegrationType", "Outlook Integration") == "Office 365 Application")
+
+if use_graph_api: 
+    pluginmenus = [
+        {"menutitle" : "Sync Tracker Items", "function" : "menuSyncTrackerItems", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
+        {"menutitle" : "Download All Emails", "function" : "menuRightClickDownloadEmails", "tablefilter" : "projecs", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : "all"},
+        {"menutitle" : "Import Contacts", "function" : "menuImportContacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
+        {"menutitle" : "Export New Contacts", "function" : "menuExportContacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
+    ]
 
 # all events return an xml string that can be processed by ProjectNotes 
 #
@@ -126,18 +136,24 @@ def menuRightClickDownloadEmails(xmlstr, parameter):
         o365 = OutlookSync()
         o365.syncProjectEmails(token, xmlstr)
     else:
-        print("No token was returned.  Office 365 sync failed.")
+        print("No token was returned.  Office 365 sync failed.  Make sure Outlook Integrations are configured correctly.")
 
     return ""
 
 def event_timer(parameter):
+    global stopevent
+    
+    if stopevent:
+        return ""
+
     token = tapi.authenticate()
 
     if token is not None:
         o365 = OutlookSync()
         o365.syncEverything(token)
     else:
-        print("No token was returned.  Office 365 sync failed.")
+        print("No token was returned.  Office 365 sync failed.  Make sure Outlook Integrations are configured correctly.")
+        stopevent = True # don't flood the logs
 
     return ""
 
@@ -148,7 +164,7 @@ def menuSyncTrackerItems(parameter):
         o365 = OutlookSync()
         o365.syncTrackerItems(token, parameter)
     else:
-        print("No token was returned.  Office 365 sync failed.")
+        print("No token was returned.  Office 365 sync failed.  Make sure Outlook Integrations are configured correctly.")
 
     return ""
 
@@ -159,7 +175,7 @@ def menuExportContacts(parameter):
         o365 = OutlookSync()
         o365.ExportContacts(token, parameter)
     else:
-        print("No token was returned.  Office 365 sync failed.")
+        print("No token was returned.  Office 365 sync failed.  Make sure Outlook Integrations are configured correctly.")
 
     return ""
 
@@ -170,7 +186,7 @@ def menuImportContacts(parameter):
         o365 = OutlookSync()
         o365.ImportContacts(token, parameter)
     else:
-        print("No token was returned.  Office 365 sync failed.")
+        print("No token was returned.  Office 365 sync failed.  Make sure Outlook Integrations are configured correctly.")
 
     return ""
 

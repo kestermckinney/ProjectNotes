@@ -40,11 +40,11 @@ void PythonWorker::emitError()
         PyObject* ptypeStr = PyObject_Str(ptype);
         PyObject* pvalueStr = PyObject_Str(pvalue);
 
-        QString errorMsg;
+        QString errorMsg = QString("Module: %1 ").arg(m_modulename);
 
         if (ptypeStr)
         {
-            errorMsg = QString("Error Type: %1" ).arg(PyUnicode_AsUTF8(ptypeStr));
+            errorMsg += QString("Error Type: %1" ).arg(PyUnicode_AsUTF8(ptypeStr));
             Py_DECREF(ptypeStr);
         }
 

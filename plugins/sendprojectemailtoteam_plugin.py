@@ -129,7 +129,7 @@ if (platform.system() == 'Windows'):
         outlook = None
         message = None
 
-        pnc.bring_window_to_front(window_title)
+        self.bring_window_to_front(window_title)
 
         return ""
 

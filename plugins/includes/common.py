@@ -9,7 +9,7 @@ import json
 #     import win32api
 #     import win32gui
 
-top_windows = []
+# top_windows = []
 
 #todo: make compatible
 # def windowEnumerationHandler(hwnd, tpwindows):
@@ -71,7 +71,7 @@ class ProjectNotesCommon:
         # save the new state
         saved_state.setdefault(state_name, {})["skip"] = skip
 
-        print(f"saving progress into file {self.saved_state_file} for {state_name}")
+        #print(f"saving progress into file {self.saved_state_file} for {state_name}")
 
         file = QFile(self.saved_state_file)
         if file.open(QIODevice.OpenModeFlag.WriteOnly):

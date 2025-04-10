@@ -182,10 +182,14 @@ void QLoggerWriter::enqueue(const QDateTime &date, const QString &threadId, cons
    QString text;
    if (mMessageOptions.testFlag(LogMessageDisplay::Default))
    {
-      text = QString("[%1][%2][%3][%4]%5 %6")
-                 .arg(levelToText(level), module)
-                 .arg(date.toSecsSinceEpoch())
-                 .arg(threadId, fileLine, message);
+      // text = QString("[%1][%2][%3][%4]%5 %6")
+      //            .arg(levelToText(level), module)
+      //            .arg(date.toString("yyyy-MM-ddTHH:mm:ss.zzz"))  // reformat to more readable
+      //            .arg(threadId, fileLine, message);
+       text = QString("[%1][%2][%3]%4 %5")  // remove the threadid
+                  .arg(levelToText(level), module)
+                  .arg(date.toString("yyyy-MM-ddTHH:mm:ss.zzz"))  // reformat to more readable
+                  .arg(fileLine, message);
    }
    else
    {
@@ -196,10 +200,10 @@ void QLoggerWriter::enqueue(const QDateTime &date, const QString &threadId, cons
          text.append(QString("[%1]").arg(module));
 
       if (mMessageOptions.testFlag(LogMessageDisplay::DateTime))
-         text.append(QString("[%1]").arg(date.toSecsSinceEpoch()));
+         text.append(QString("[%1]").arg(date.toString("yyyy-MM-ddTHH:mm:ss.zzz"))); // reformat to more readable
 
-      if (mMessageOptions.testFlag(LogMessageDisplay::ThreadId))
-         text.append(QString("[%1]").arg(threadId));
+      // if (mMessageOptions.testFlag(LogMessageDisplay::ThreadId))  // remove the thread id
+      //    text.append(QString("[%1]").arg(threadId));
 
       if (!fileLine.isEmpty())
       {

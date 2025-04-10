@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>817</width>
-    <height>313</height>
+    <height>356</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -139,6 +139,20 @@
       <widget class="QCheckBox" name="checkBoxExportContacts">
        <property name="text">
         <string>Export New Contacts</string>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="1">
+      <widget class="QCheckBox" name="checkBoxSendO365">
+       <property name="text">
+        <string>Send Emails using Office 365</string>
+       </property>
+      </widget>
+     </item>
+     <item row="13" column="1">
+      <widget class="QCheckBox" name="checkBoxScheduleO365">
+       <property name="text">
+        <string>Schedule Meetings using Office 365</string>
        </property>
       </widget>
      </item>

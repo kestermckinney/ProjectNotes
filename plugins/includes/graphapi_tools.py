@@ -53,6 +53,14 @@ class TokenAPI:
         self.access_token = None
 
     def authenticate(self):
+        # return nothing if not configured
+        if self.tenant_id == "":
+            return None
+
+        if self.application_id == "":
+            return None
+
+
         timer = QElapsedTimer()
         timer.start()
 
@@ -218,8 +226,9 @@ class GraphAPITools:
         response = requests.post(f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{draft_email_id}/attachments", headers=self.headers, json=attachment)
 
         if response.status_code != 201:
-            print(f"Response Code: {response.status_code} Failed to upload attachment: {file_path}.")
-            print(response.json())
+            return f"Response Code: {response.status_code} Failed to upload attachment: {file_path}.  Server Responded: {response.json()}"
+
+        return None
 
     def import_batch_of_contacts(self, parameter):
         if not self.use_graph_api:  # office 365 integration is disabled
@@ -582,107 +591,13 @@ class GraphAPITools:
 
         return ""
 
-    def draft_an_email(self, xmlstr, subject, content, attachment, company_filter):
-        if not self.use_graph_api:  # office 365 integration is disabled
-            return
-
-        xmlval = QDomDocument()
-        xmldoc = ""
-
-        addresses = []
-        
-        if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to draft an email.",QMessageBox.StandardButton.Cancel)
-            return ""
-            
-        xmlroot = xmlval.documentElement()
-        pm = xmlroot.toElement().attribute("managing_manager_name")
-
-        email = None
-        nm = None
-        pco = None
-
-        teammember = self.pnc.find_node(xmlroot, "table", "name", "project_people")
-        if not teammember.isNull():
-            memberrow = teammember.firstChild()
-
-            while not memberrow.isNull():
-                nm = self.pnc.get_column_value(memberrow, "name")
-                email = self.pnc.get_column_value(memberrow, "email")
-                pco = self.pnc.get_column_value(memberrow, "client_name")
-
-                # if filtering by company only includ matching client names
-                # don't email to yourself, exclude the PM
-                if (nm != pm):
-                    if (email is not None and email != "" and (company_filter is None or pco == company_filter)):
-                        addresses.append(
-                        {
-                            "emailAddress": {
-                                "address": email
-                            }
-                        })
-
-                memberrow = memberrow.nextSibling()
-
-        teammember = self.pnc.find_node(xmlroot, "table", "name", "meeting_attendees")
-        if not teammember.isNul():
-            memberrow = teammember.firstChild()
-
-            while not memberrow.isNull():
-                nm = self.pnc.get_column_value(memberrow, "name")
-                email = self.pnc.get_column_value(memberrow, "email")
-                pco = self.pnc.get_column_value(memberrow, "client_name")
-
-                if nm != pm:
-                    if (email is not None and email != "" and (company_filter is None or  pco == company_filter)):
-                        addresses.append(
-                        {
-                            "emailAddress": {
-                                "address": email
-                            }
-                        })
-
-                memberrow = memberrow.nextSibling()
-
-        teammember = self.pnc.find_node(xmlroot, "table", "name", "people")
-        if not teammember.isNull():
-            memberrow = teammember.firstChild()
-
-            while not memberrow.isNull():
-                nm = self.pnc.get_column_value(memberrow, "name")
-                email = self.pnc.get_column_value(memberrow, "email")
-
-                colnode = self.pnc.find_node(memberrow, "column", "name", "client_id")
-                if not colnode.isNull() and colnode.attributes().namedItem("lookupvalue").nodeValue() is not None and colnode.attributes().namedItem("lookupvalue").nodeValue() != '':
-                    pco = colnode.attributes().namedItem("lookupvalue").nodeValue()
-
-                if nm != pm:
-                    if (email is not None and email != "" and (company_filter is None or pco == company_filter)):
-                        addresses.append(
-                        {
-                            "emailAddress": {
-                                "address": email
-                            }
-                        })
-
-                memberrow = memberrow.nextSibling()
-
-
-        email_subject = subject
-
-        project = self.pnc.find_node(xmlroot, "table", "name", "projects")
-        if not project.isNull():
-            projectrow = project.firstChild()
-
-            if not projectrow.isNull():
-                email_subject = self.pnc.get_column_value(projectrow, "project_number") + " " + self.pnc.get_column_value(projectrow, "project_name") + f" - {subject}"
-        
+    def draft_an_email(self, addresses, subject, content, attachments):
         # Graph API endpoint to send an email
         graph_api_endpoint = f'{self.GRAPH_API_ENDPOINT}/v1.0/me/messages'
         
         # Email data structure
         email_data = {
-                "subject": email_subject,
+                "subject": subject,
                 "body": {
                     "contentType": "HTML",
                     "content": content
@@ -694,13 +609,14 @@ class GraphAPITools:
         response = requests.post(graph_api_endpoint, headers=self.headers, json=email_data)
 
         if response.status_code == 201:
-            if attachment is not None:
-                self.upload_attachment(response.json()['id'], attachment)
+            for attachment in attachments:
+                msg = self.upload_attachment(response.json()['id'], attachment)
+                if msg is not None:
+                    return msg # error 
         else:
-            print(f"Error: {response.status_code} Failed to draft email: {email_subject}.")
-            print(response.json())
+            return f"Error: {response.status_code} Failed to draft email: {email_subject}.  Server Responded: {response.json()}"
 
-        return ""
+        return None
 
     def download_project_emails(self, projectnumber, box, top, destination_folder):
 

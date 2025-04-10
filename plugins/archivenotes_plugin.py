@@ -19,6 +19,9 @@ plugindescription = "Generate meeting notes archive based on the options selecte
 plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "projects/project_notes/meeting_attendees/item_tracker/project_locations" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
+pluginmenus = []
+
+
 # events must have a data structure and data view specified
 #
 # Structures:
