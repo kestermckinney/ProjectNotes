@@ -72,7 +72,10 @@ Plugin::~Plugin()
     delete m_pythonworker;
 
     if (m_thread)
+    {
         delete m_thread;
+        m_thread = nullptr;
+    }
 }
 
 void Plugin::callXmlMethod(const QString& t_method, const QString& t_xml, const QString& t_parameter)
@@ -118,17 +121,21 @@ void Plugin::onReturnedXml(const QString& t_xml)
 #ifdef QT_DEBUG
     QLog_Debug(DEBUGLOG, QString("Plugin: %1 Returned Xml: %2").arg(m_modulepath, t_xml));
 #endif
-    QDomDocument xmldoc;
 
-    xmldoc.setContent(t_xml);
+    if (!t_xml.isEmpty())
+    {
+        QDomDocument xmldoc;
 
-    if (!global_DBObjects.getDatabaseFile().isEmpty())
-    {
-        global_DBObjects.importXMLDoc(xmldoc);
-    }
-    else
-    {
-        QLog_Info(APPLOG, QString("Database was already closed.  XML was not processed."));
+        xmldoc.setContent(t_xml);
+
+        if (!global_DBObjects.getDatabaseFile().isEmpty())
+        {
+            global_DBObjects.importXMLDoc(xmldoc);
+        }
+        else
+        {
+            QLog_Info(APPLOG, QString("Database was already closed.  XML was not processed."));
+        }
     }
 }
 

@@ -471,3 +471,6 @@ class ProjectNotesOutlookTools:
         self.bring_window_to_front(window_title)
 
         return None
+
+
+  #

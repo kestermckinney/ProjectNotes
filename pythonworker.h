@@ -58,7 +58,6 @@ public:
     void setParameter(const QString& t_parameter) {m_parameter = t_parameter;}
     QString parameter() const {return m_parameter;}
 
-
 private:
     QString m_menu_title;
     QString m_functionname;
@@ -81,6 +80,7 @@ public:
             m_members = t_original.members();
             m_submenu = t_original.submenu();
             m_menus = t_original.menus();
+            m_imported_modules = t_original.imports();
         }
 
         return *this;
@@ -112,6 +112,12 @@ public:
         m_menus.append(m);
     }
 
+    QStringList imports() const { return m_imported_modules; }
+    void addImport(const QString& t_import)
+    {
+        m_imported_modules.append(t_import);
+    }
+
     void clearMenu()
     {
         m_menus.clear();
@@ -125,6 +131,8 @@ private:
     QString m_submenu;
 
     QList<PluginMenu> m_menus;
+    QStringList m_imported_modules;
+
 };
 
 Q_DECLARE_METATYPE(PythonPlugin)

@@ -1,5 +1,6 @@
 #include "pythonworker.h"
 #include <QFileInfo>
+#include <QCoreApplication>
 
 // TODO: remove
 #ifndef Q_OS_WIN
@@ -118,6 +119,64 @@ void PythonWorker::loadModule(const QString& t_modulepath)
         emitError();
         PyGILState_Release(gstate);
         return;
+    }
+
+    // Get the sys.modules dictionary
+    PyObject* sysModules = PyImport_GetModuleDict();
+
+    // Check if we successfully got the dictionary
+    if (!sysModules) {
+        emitError();
+        PyGILState_Release(gstate);
+        return;
+    }
+
+    QString pluginspath = QCoreApplication::applicationDirPath() + "/plugins";
+    QString threadspath = QCoreApplication::applicationDirPath() + "/threads";
+
+    // Iterate over the dictionary items
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+
+    // this will get all modules, which is not ideal
+    // basically any time a module in a sub folder changes all plugins will reload
+    while (PyDict_Next(sysModules, &pos, &key, &value))
+    {
+        const char* moduleName = PyUnicode_AsUTF8(key);
+
+        if (moduleName)
+        {
+            // Get the __file__ attribute of the module
+            PyObject* fileAttr = PyObject_GetAttrString(value, "__file__");
+
+            if (fileAttr)
+            {
+                const char* filePath = PyUnicode_AsUTF8(fileAttr);
+                if (filePath)
+                {
+                    QString path = filePath;
+                    path.replace("\\", "/");
+
+                    QFileInfo fi = QFileInfo(path);
+
+                    // don't add any code in the base folders to the imports list - basically we are assuming any file in the child folder could be imported
+                    if ( fi.absolutePath().compare(pluginspath, Qt::CaseInsensitive) != 0 && fi.absolutePath().compare(threadspath, Qt::CaseInsensitive) != 0 )
+                    {
+                        if (path.startsWith(pluginspath, Qt::CaseInsensitive) || path.startsWith(threadspath, Qt::CaseInsensitive))
+                        {
+                            m_plugin.addImport(path);
+                        }
+                    }
+                }
+
+                Py_DECREF(fileAttr); // Decrement the reference count
+            }
+            else
+            {
+                // Clear the error since some modules don't have a __file__ attribute
+                PyErr_Clear();
+            }
+        }
     }
 
     m_plugin.setName(getPythonVariable("pluginname"));

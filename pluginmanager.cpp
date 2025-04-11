@@ -365,6 +365,7 @@ PluginManager::PluginManager(QObject *parent)
 
     // load PNPlugin modules
     PyRun_SimpleString("import sys");
+    PyRun_SimpleString("import inspect");
     PyRun_SimpleString(pluginspath.toUtf8().constData());
     PyRun_SimpleString(threadspath.toUtf8().constData());
     PyRun_SimpleString(pythonzip.toUtf8().constData());
@@ -372,16 +373,6 @@ PluginManager::PluginManager(QObject *parent)
     PyRun_SimpleString(win32path.toUtf8().constData());
     PyRun_SimpleString(win32lib.toUtf8().constData());
     PyRun_SimpleString(pythonwin.toUtf8().constData());
-// #ifdef QT_DEBUG
-// TODO: remove
-//     PyRun_SimpleString(QString("import os").toUtf8().constData());
-//     PyRun_SimpleString(QString("print(os.path.dirname(sys.executable))").toUtf8().constData());
-//     PyRun_SimpleString(QString("sys.path.append('c:/Program Files/Python313/Lib/site-packages')").toUtf8().constData());
-//     PyRun_SimpleString(QString("sys.path.append('c:/Program Files/Python313/Lib/site-packages/win32')").toUtf8().constData());
-//     PyRun_SimpleString(QString("sys.path.append('c:/Program Files/Python313/Lib/site-packages/win32/lib')").toUtf8().constData());
-//     PyRun_SimpleString(QString("sys.path.append('c:/Program Files/Python313/Lib/site-packages/pythonwin')").toUtf8().constData());
-//     PyRun_SimpleString(QString("sys.path.append('c:/Program Files/Python313/Lib/site-packages/pywin32_system32')").toUtf8().constData());
-// #endif
 
     QLog_Info(CONSOLELOG, QString("Embedded Python Version %1").arg(Py_GetVersion()));
 
@@ -389,8 +380,8 @@ PluginManager::PluginManager(QObject *parent)
 
     // Set up file watcher
     m_fileWatcher = new QFileSystemWatcher(this);
-    m_fileWatcher->addPath(m_pluginspath);
-    m_fileWatcher->addPath(m_threadspath);
+    watchFolder(m_pluginspath);
+    watchFolder(m_threadspath);
 
     connect(m_fileWatcher, &QFileSystemWatcher::fileChanged, this, &PluginManager::onFileChanged);
     connect(m_fileWatcher, &QFileSystemWatcher::directoryChanged, this, &PluginManager::onFolderChanged);
@@ -398,6 +389,17 @@ PluginManager::PluginManager(QObject *parent)
 
     loadPluginFiles(m_pluginspath, false);
     loadPluginFiles(m_threadspath, true);
+}
+
+void PluginManager::watchFolder(const QString& t_path)
+{
+    m_fileWatcher->addPath(t_path);
+
+    QDirIterator it(t_path, QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+        // Add each subdirectory to the watcher
+        m_fileWatcher->addPath(it.next());
+    }
 }
 
 void PluginManager::loadPluginFiles(const QString& t_path, bool t_isthread)
@@ -425,10 +427,8 @@ void PluginManager::loadPluginFiles(const QString& t_path, bool t_isthread)
             Plugin* module = new Plugin(this, t_isthread);
             m_pluginlist.append(module);
 
-            m_fileWatcher->addPath(filePath);
-
-            connect(module, &Plugin::moduleLoaded, this, &PluginManager::pluginLoaded);
-            connect(module, &Plugin::moduleUnloaded, this, &PluginManager::pluginUnLoaded);
+            connect(module, &Plugin::moduleLoaded, this, &PluginManager::onLoadComplete);
+            connect(module, &Plugin::moduleUnloaded, this, &PluginManager::onUnloadComplete);
 
             module->loadPlugin(filePath);
         }
@@ -444,8 +444,8 @@ PluginManager::~PluginManager()
 
     for ( Plugin* p : m_pluginlist)
     {
-        disconnect(p, &Plugin::moduleLoaded, this, &PluginManager::pluginLoaded);
-        disconnect(p, &Plugin::moduleUnloaded, this, &PluginManager::pluginUnLoaded);
+        disconnect(p, &Plugin::moduleLoaded, this, &PluginManager::onLoadComplete);
+        disconnect(p, &Plugin::moduleUnloaded, this, &PluginManager::onUnloadComplete);
 
         delete p;
     }
@@ -504,15 +504,22 @@ void PluginManager::onFileChanged(const QString &t_filepath)
 
     for (auto it = m_pluginlist.begin(); it != m_pluginlist.end(); ++it)
     {
-        if ((*it)->modulepath().compare(t_filepath, Qt::CaseInsensitive) == 0)
+        bool related_import = false;
+
+        QStringList imp = (*it)->pythonplugin().imports();
+        for (auto iti = imp.begin(); iti != imp.end(); ++iti)
+        {
+            if ( (*iti).compare(t_filepath, Qt::CaseInsensitive) == 0 )
+            {
+                related_import = true;
+            }
+        }
+
+        if (related_import || (*it)->modulepath().compare(t_filepath, Qt::CaseInsensitive) == 0)
         {
             (*it)->reloadPlugin();
-            QLog_Info(CONSOLELOG, QString("Module '%1' reload requested.").arg(t_filepath));
-            return;
         }
     }
-
-    QLog_Info(CONSOLELOG, QString("Module file '%1' was not found. Module reload failed.").arg(t_filepath));
 }
 
 void PluginManager::onForceReload(const QString &t_module)
@@ -526,7 +533,6 @@ void PluginManager::onForceReload(const QString &t_module)
         if (checkmodule.compare(basemodule, Qt::CaseInsensitive) == 0)
         {
             (*it)->reloadPlugin();
-            QLog_Info(CONSOLELOG, QString("Module '%1' force reload requested.").arg(t_module));
             return;
         }
     }
@@ -542,6 +548,27 @@ void PluginManager::onFolderChanged(const QString &folderPath)
 
 void PluginManager::onLoadComplete(const QString& t_modulepath)
 {
+    QLog_Info(CONSOLELOG, QString("Module file '%1' load complete.").arg(t_modulepath));
+
+    QString basemodule = QFileInfo(t_modulepath).baseName();
+
+    m_fileWatcher->addPath(t_modulepath);
+
+    // add all of the imported modules to the file tracker
+    for (auto it = m_pluginlist.begin(); it != m_pluginlist.end(); ++it)
+    {
+        QString checkmodule = QFileInfo((*it)->modulepath()).baseName();
+
+        if (checkmodule.compare(basemodule, Qt::CaseInsensitive) == 0)
+        {
+            QStringList imp = (*it)->pythonplugin().imports();
+            for (auto iti = imp.begin(); iti != imp.end(); ++iti)
+            {
+                m_fileWatcher->addPath(*iti);
+            }
+        }
+    }
+
     emit pluginLoaded(t_modulepath);
 }
 

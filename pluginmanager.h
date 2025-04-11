@@ -52,6 +52,7 @@ private slots:
     void onForceReload(const QString& t_module);
 
 private:
+    void watchFolder(const QString& t_path);
     QList<Plugin*> m_pluginlist;
     PyThreadState* m_pythreadstate;
     QFileSystemWatcher *m_fileWatcher;

@@ -9,13 +9,6 @@ import json
 #     import win32api
 #     import win32gui
 
-# top_windows = []
-
-#todo: make compatible
-# def windowEnumerationHandler(hwnd, tpwindows):
-#     if (platform.system() == 'Windows'):
-#         tpwindows.append((hwnd, win32gui.GetWindowText(hwnd)))
-
 
 from PyQt6 import QtGui, QtCore, QtWidgets
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QSettings
@@ -257,31 +250,12 @@ class ProjectNotesCommon:
             cfg.setValue(pluginname + "/" + settingname, value)
 
     def verify_global_settings(self):
-
         pf = self.get_plugin_setting("ProjectsFolder")
         if pf == None or pf == "" or not QDir(pf).exists():
             QMessageBox.warning(None, "Invalid Global Setting", "ProjectsFolder must be set in the Global Settigns plugin.", QMessageBox.StandardButton.Ok)
             return(False)
 
         return(True)
-
-    #todo: make compatible
-    # def bring_window_to_front(self, title):
-    #     if (platform.system() != 'Windows'):
-    #         print("bring window to front requires win32gui not supported on this platform")
-    #         return
-
-    #     #QtWidgets.QApplication.processEvents()
-    #     print("looking for window title " + title)
-    #     win32gui.EnumWindows(windowEnumerationHandler, top_windows)
-
-    #     for i in top_windows:
-    #         if title.lower() in i[1].lower():
-    #             print("found " +  i[1])
-    #             win32gui.ShowWindow(i[0],5)
-    #             win32gui.SetForegroundWindow(i[0])
-    #             break
-    #     return
 
     def scrape_project_name(self, xmldoc):
         projectname = ""
@@ -485,3 +459,5 @@ print("replaced " + pnc.replace_variables(original, xmlroot))
 f.close()
 
 """
+
+#
