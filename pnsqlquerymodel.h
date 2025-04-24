@@ -166,8 +166,6 @@ public:
 
     static QString removeInvalidXmlCharacters(const QString &t_input);
     QDomElement toQDomElement( QDomDocument* t_xml_document, const QString& t_filter = QString());
-    // use this to allow for different filters from the original
-    virtual PNSqlQueryModel* createExportVersion();
 
 private:
     QString m_tablename;  // the t_table to write data too, also the t_table to sync with other models when changed

@@ -119,8 +119,6 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
 
 void ProjectNotesPage::on_tabWidgetNotes_currentChanged(int index)
 {
-    //qDebug() << "Project Notes Page on current tab changed called";
-
     global_DBObjects.refreshDirty();
 
     emit setFocus(); // tell the main window to update to call the setButtonsAndMenus function

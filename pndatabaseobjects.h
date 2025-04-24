@@ -59,6 +59,7 @@ public:
     void addModel(PNSqlQueryModel* t_model);
     void removeModel(PNSqlQueryModel* t_model);
     QList<PNSqlQueryModel*> getOpenModels() {  return m_open_recordsets; }
+    PNSqlQueryModel* createExportObject(const QString& t_table_name);
 
     void backupDatabase(const QString& t_file);
     bool saveParameter( const QString& t_parametername, const QString& t_parametervalue );

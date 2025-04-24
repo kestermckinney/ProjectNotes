@@ -277,6 +277,41 @@ void PNDatabaseObjects::removeModel(PNSqlQueryModel* t_model)
     m_open_recordsets.removeAll(t_model);  // remove from the list of open recordsets
 }
 
+PNSqlQueryModel* PNDatabaseObjects::createExportObject(const QString& t_table_name)
+{
+    if (t_table_name.compare("clients", Qt::CaseInsensitive) == 0)
+        return new ClientsModel(this);
+    else if (t_table_name.compare("people", Qt::CaseInsensitive) == 0)
+        return new PeopleModel(this);
+    else if (t_table_name.compare("projects", Qt::CaseInsensitive) == 0)
+        return new ProjectsModel(this);
+    // this one has less fields
+    // else if (t_table_name.compare("project_people", Qt::CaseInsensitive) == 0)
+    //     return new TeamsModel(this);
+    else if (t_table_name.compare("status_report_items", Qt::CaseInsensitive) == 0)
+        return new StatusReportItemsModel(this);
+    else if (t_table_name.compare("project_people", Qt::CaseInsensitive) == 0)
+        return new ProjectTeamMembersModel(this); // use this one because it hase more related fields for exporting
+    else if (t_table_name.compare("project_locations", Qt::CaseInsensitive) == 0)
+        return new ProjectLocationsModel(this);
+    else if (t_table_name.compare("project_notes", Qt::CaseInsensitive) == 0)
+        return new ProjectNotesModel(this); // has id and and name of project
+    // else if (t_table_name.compare("project_notes", Qt::CaseInsensitive) == 0)
+    //     return new ActionItemProjectNotesModel(this); // is just a list with the title
+    // else if (t_table_name.compare("project_notes", Qt::CaseInsensitive) == 0)
+    //     return new ActionItemsDetailsMeetingsModel(this);  // just has titles for a list
+    else if (t_table_name.compare("item_tracker", Qt::CaseInsensitive) == 0)
+        return new TrackerItemsModel(this);
+    else if (t_table_name.compare("meeting_attendees", Qt::CaseInsensitive) == 0)
+        return new MeetingAttendeesModel(this);
+    else if (t_table_name.compare("item_tracker", Qt::CaseInsensitive) == 0)
+        return new NotesActionItemsModel(this);
+    else if (t_table_name.compare("item_tracker_updates", Qt::CaseInsensitive) == 0)
+        return new TrackerItemCommentsModel(this);
+    else
+        return nullptr;
+}
+
 QString PNDatabaseObjects::execute(const QString& t_sql)
 {
     QString val;

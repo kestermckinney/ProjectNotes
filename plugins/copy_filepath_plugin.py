@@ -1,3 +1,6 @@
+"""
+replaced by base plugin
+
 import sys
 import platform
 
@@ -15,7 +18,7 @@ from PyQt6.QtGui import QDesktopServices
 
 # Project Notes Plugin Parameters
 pluginname = "Copy Path To Clipboard"
-plugindescription = "Copy the file path to the clipboard."
+plugindescription  "Copy the file path to the clipboard."
 plugintable = "project_locations" # the table or view that the plugin applies to.  This will enable the right click
 childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
 
@@ -96,6 +99,7 @@ if (platform.system() == 'Windows'):
                 locationrow = locationrow.nextSibling()
 
         return ""
+"""
 
 # setup test data
 """

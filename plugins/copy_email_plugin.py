@@ -1,3 +1,6 @@
+"""
+replaced by base plugin
+
 import sys
 import platform
 
@@ -10,7 +13,7 @@ from PyQt6 import QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
-from PyQt6.QtGui import QDesktopServices
+from PyQt6.QtGui import QDesktopServices, QClipboard
 
 
 # Project Notes Plugin Parameters
@@ -104,6 +107,7 @@ if (platform.system() == 'Windows'):
 
 
         return ""
+"""
 
 # setup test data
 """

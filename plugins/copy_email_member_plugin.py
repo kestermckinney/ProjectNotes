@@ -1,3 +1,6 @@
+"""
+replaced by base_plugin
+
 import sys
 import platform
 
@@ -103,6 +106,7 @@ if (platform.system() == 'Windows'):
 
         return ""
 
+"""
 # setup test data
 """
 print("Buld up QDomDocument")
@@ -118,4 +122,3 @@ if f.open(QIODevice.OpenModeFlag.ReadOnly):
 
 event_data_rightclick(xmldoc.toString())
 """
-

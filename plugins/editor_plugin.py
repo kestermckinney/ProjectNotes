@@ -1,3 +1,6 @@
+"""
+replaced by base plugin
+
 import sys
 import platform
 
@@ -52,6 +55,7 @@ def event_menuclick(parameter):
     else:
         pnc.exec_program( EditorFullPath )
     return ""
+"""
 
 """
 print("Testing Plugin")

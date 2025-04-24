@@ -430,6 +430,8 @@ void PluginManager::loadPluginFiles(const QString& t_path, bool t_isthread)
             connect(module, &Plugin::moduleLoaded, this, &PluginManager::onLoadComplete);
             connect(module, &Plugin::moduleUnloaded, this, &PluginManager::onUnloadComplete);
 
+            m_fileWatcher->addPath(filePath);  // track the main module here, if it fails to load due to an error you can change the file and it will retry
+
             module->loadPlugin(filePath);
         }
     }
@@ -551,8 +553,6 @@ void PluginManager::onLoadComplete(const QString& t_modulepath)
     QLog_Info(CONSOLELOG, QString("Module file '%1' load complete.").arg(t_modulepath));
 
     QString basemodule = QFileInfo(t_modulepath).baseName();
-
-    m_fileWatcher->addPath(t_modulepath);
 
     // add all of the imported modules to the file tracker
     for (auto it = m_pluginlist.begin(); it != m_pluginlist.end(); ++it)

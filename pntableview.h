@@ -59,7 +59,7 @@ public slots:
     void slotFilterRecords();
     void slotRefreshRecords();
     void slotResetColumns();
-    void slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_exportname, const QString& t_parameter);
+    void slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_exportname, const QString& t_tablefilter, const QString& t_parameter);
 
 private:
     void sortMenu(QMenu* t_menu);

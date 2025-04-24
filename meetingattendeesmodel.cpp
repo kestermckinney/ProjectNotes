@@ -18,7 +18,7 @@ MeetingAttendeesModel::MeetingAttendeesModel(PNDatabaseObjects* t_dbo): PNSqlQue
     setTableName("meeting_attendees", "Attendees");
 
     addColumn("attendee_id", tr("Attendee ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBUnique);
-    addColumn("note_Id", tr("Note ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
+    addColumn("note_id", tr("Note ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
               "project_notes", "note_id", "(strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title)");
     addColumn("person_id", tr("Attendee"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name");

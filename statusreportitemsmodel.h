@@ -10,7 +10,6 @@ class StatusReportItemsModel : public PNSqlQueryModel
 {
 public:
     StatusReportItemsModel(PNDatabaseObjects* t_dbo);
-    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new StatusReportItemsModel(getDBOs())); };
     const QModelIndex newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr) override;
 };
 

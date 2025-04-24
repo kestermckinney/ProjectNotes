@@ -98,7 +98,7 @@ PNTableView::~PNTableView()
 }
 
 
-void PNTableView::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_exportname, const QString& t_parameter)
+void PNTableView::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_exportname, const QString& t_tablefilter, const QString& t_parameter)
 {
     QString response;
 
@@ -115,13 +115,14 @@ void PNTableView::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname
 
     QApplication::processEvents();
 
-    PNSqlQueryModel *exportmodel = currentmodel->createExportVersion();
+    PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(currentmodel)->getDBOs();
+    PNSqlQueryModel *exportmodel = dbo->createExportObject(currentmodel->tablename());
+
     exportmodel->setFilter(0, keyval.toString());
     exportmodel->refresh();
 
-    PNDatabaseObjects* dbo = dynamic_cast<PNSqlQueryModel*>(dynamic_cast<QSortFilterProxyModel*>(model())->sourceModel())->getDBOs();
 
-    QDomDocument* xdoc = dbo->createXMLExportDoc(exportmodel, t_exportname);
+    QDomDocument* xdoc = dbo->createXMLExportDoc(exportmodel, t_tablefilter);
     QString xmlstr = xdoc->toString();
 
     // call the menu plugin with the data structure
@@ -329,7 +330,7 @@ void PNTableView::contextMenuEvent(QContextMenuEvent *t_e)
             if (m.dataexport().compare(table, Qt::CaseInsensitive) == 0)
             {
                 QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), this);
-                connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname(), m.dataexport(), m.parameter());});
+                connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname(), m.dataexport(), m.tablefilter(), m.parameter());});
                 MainWindow::addMenuItem(menu, m.submenu(), m.menutitle(), act, 2);
             }
         }
@@ -411,11 +412,10 @@ void PNTableView::slotExportRecord()
     {
         QFile outfile(xmlfile);
 
-        PNSqlQueryModel *exportmodel = currentmodel->createExportVersion();
+        PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(currentmodel)->getDBOs();
+        PNSqlQueryModel *exportmodel = dbo->createExportObject(currentmodel->tablename());
         exportmodel->setFilter(0, keyval.toString());
         exportmodel->refresh();
-
-        PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(currentmodel)->getDBOs();
 
         QDomDocument* xdoc = dbo->createXMLExportDoc(exportmodel);
 

@@ -1818,6 +1818,8 @@ QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document, const 
                     xmlcolumn.setAttribute("lookupvalue", lookup_value);
             }
 
+            //qDebug() << "column: " << m_column_name[i] << " table: " << this->tablename() << " value: " << val.toString();
+
             xmlrow.appendChild(xmlcolumn);
         }
 
@@ -1830,24 +1832,24 @@ QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document, const 
             // it would be too much data
             if (m_relation_exportable[i] == DBExportable)
             {
-                //find that table in the database objects
-                QListIterator<PNSqlQueryModel*> it_recordsets(m_dbo->getOpenModels());
-                PNSqlQueryModel* recordset = nullptr;
+                // //find that table in the database objects
+                // QListIterator<PNSqlQueryModel*> it_recordsets(m_dbo->getOpenModels());
+                // PNSqlQueryModel* recordset = nullptr;
 
-                // look through all recordsets that are open
-                while(it_recordsets.hasNext())
-                {
-                    recordset = it_recordsets.next();
+                // // look through all recordsets that are open
+                // while(it_recordsets.hasNext())
+                // {
+                //     recordset = it_recordsets.next();
 
-                    if ( recordset->tablename().compare( m_related_table[i] ) == 0 &&
-                         recordset->isExportable() &&
-                         (  ( !t_filter.isEmpty() && t_filter.contains(recordset->tablename(), Qt::CaseInsensitive) ) || t_filter.isEmpty()  ) // don't refresh the recordset if it is filtered
-                         )
-                    {
-                        //qDebug() << "Found table " << tablename() << " column " << m_related_fk_column[i] << " related to " << recordset->tablename() << " column " << m_related_column[i];
+                //     if ( recordset->tablename().compare( m_related_table[i] ) == 0 &&
+                //          recordset->isExportable() &&
+                //          (  ( !t_filter.isEmpty() && t_filter.contains(recordset->tablename(), Qt::CaseInsensitive) ) || t_filter.isEmpty()  ) // don't refresh the recordset if it is filtered
+                //          )
+                //     {
+                //         qDebug() << "Found table " << tablename() << " column " << m_related_fk_columns[i] << " related to " << recordset->tablename() << " column " << m_related_columns[i];
 
                         // create an export version of that querymodel
-                        PNSqlQueryModel* export_version = recordset->createExportVersion();
+                        PNSqlQueryModel* export_version = m_dbo->createExportObject(m_related_table[i]);
 
                         //set the filter for the export version
                         for (int c = 0; c < m_related_columns[i].count(); c++)
@@ -1880,9 +1882,9 @@ QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document, const 
                         xmlrow.appendChild(qd);
 
                         delete export_version;
-                        break; // only grab the first instance of the related table
-                    }
-                }
+                        //break; // only grab the first instance of the related table
+                //    }
+                // }
 
             }
         }
@@ -1891,11 +1893,6 @@ QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document, const 
     }
 
     return xmltable;
-}
-
-PNSqlQueryModel* PNSqlQueryModel::createExportVersion()
-{
-    return new PNSqlQueryModel(m_dbo);
 }
 
 bool PNSqlQueryModel::setFilter(QDomNode& t_xmlfilter)

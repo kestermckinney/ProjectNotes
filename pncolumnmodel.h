@@ -13,7 +13,6 @@ class PNColumnModel : public PNSqlQueryModel
 {
 public:
     PNColumnModel(PNDatabaseObjects* t_dbo);
-    PNSqlQueryModel* createExportVersion() override { return dynamic_cast<PNSqlQueryModel*>(new PNColumnModel(getDBOs())); };
     void setColumnModel(PNSqlQueryModel* t_columnmodel);
     void setSavedFilters(QHash<QString, FilterSaveStructure>* t_filters) { m_saved_filters = t_filters; };
     void setFilteringModel(PNSqlQueryModel* t_model) { m_filtering_model = t_model; };

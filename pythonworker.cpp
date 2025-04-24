@@ -42,45 +42,82 @@ void PythonWorker::emitError()
         PyObject* pvalueStr = PyObject_Str(pvalue);
 
         QString errorMsg = QString("Module: %1 ").arg(m_modulename);
+        QLog_Info(CONSOLELOG, errorMsg);
+        qDebug() << errorMsg;
 
         if (ptypeStr)
         {
-            errorMsg += QString("Error Type: %1" ).arg(PyUnicode_AsUTF8(ptypeStr));
+            errorMsg = QString("Error Type: %1" ).arg(PyUnicode_AsUTF8(ptypeStr));
+            QLog_Info(CONSOLELOG, errorMsg);
+            qDebug() << errorMsg;
             Py_DECREF(ptypeStr);
         }
 
         if (pvalueStr)
         {
-            errorMsg += QString("Error Value: %1 ").arg(PyUnicode_AsUTF8(pvalueStr));
+            errorMsg = QString("Error Value: %1 ").arg(PyUnicode_AsUTF8(pvalueStr));
+            QLog_Info(CONSOLELOG, errorMsg);
+            qDebug() << errorMsg;
             Py_DECREF(pvalueStr);
         }
 
         if (ptraceback)
         {
-            PyObject *tb_module = PyImport_ImportModule("traceback");
-            if (tb_module)
+            PyObject *traceback_module = PyImport_ImportModule("traceback");
+            if (traceback_module)
             {
-                PyObject *tb_str = PyObject_CallMethod(tb_module, "format_tb", "O", ptraceback);
-                if (tb_str)
+                // Get the format_tb function
+                PyObject* format_tb_func = PyObject_GetAttrString(traceback_module, "format_tb");
+                if (format_tb_func)
                 {
-                    PyObject *tb_str_repr = PyObject_Str(tb_str);
+                    // Call format_tb to get the traceback as a list of strings
+                    PyObject* tb_list = PyObject_CallFunctionObjArgs(format_tb_func, ptraceback, NULL);
+                    if (tb_list == NULL)
+                    {
+                        // Get the length of the list
+                        Py_ssize_t size = PyList_Size(tb_list);
 
-                    errorMsg += QString("Traceback: %1 ").arg(PyUnicode_AsUTF8(tb_str_repr));
+                        // Iterate over the list and send each string to qDebug()
+                        for (Py_ssize_t i = 0; i < size; ++i)
+                        {
+                            PyObject* tb_str = PyList_GetItem(tb_list, i);
+                            const char* c_str = PyUnicode_AsUTF8(tb_str);
 
-                    Py_DECREF(tb_str_repr);
-                    Py_DECREF(tb_str);
+                            QLog_Info(CONSOLELOG, c_str);
+
+                            qDebug() << QString::fromUtf8(c_str).trimmed();
+                        }
+
+                        Py_DECREF(ptraceback);
+                    }
+
+                    Py_DECREF(format_tb_func);
                 }
 
-                Py_DECREF(tb_module);
+                // PyObject *tb_str = PyObject_CallMethod(tb_module, "format_tb", "O", ptraceback);
+                // if (tb_str)
+                // {
+                //     PyObject *tb_str_repr = PyObject_Str(tb_str);
+
+                //     QString trace_message = PyUnicode_AsUTF8(tb_str_repr);
+                //     trace_message.replace("\\\\\\", "\\");
+
+                //     errorMsg = QString("Traceback: %1 ").arg(trace_message);
+                //     QLog_Info(CONSOLELOG, errorMsg);
+                //     qDebug() << errorMsg;
+
+                //     Py_DECREF(tb_str_repr);
+                //     Py_DECREF(tb_str);
+                // }
+
+                Py_DECREF(traceback_module);
             }
 
-            Py_DECREF(ptraceback);
+            //Py_DECREF(ptraceback);
         }
 
         // Clean up error state
         PyErr_Clear();
-
-        QLog_Info(CONSOLELOG, errorMsg);
     }
 }
 

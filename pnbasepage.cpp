@@ -281,6 +281,9 @@ void PNBasePage::setButtonAndMenuStates()
 
 void PNBasePage::buildPluginMenu(PluginManager* t_pm, QMenu* t_menu)
 {
+    if (!m_current_model)
+        return; // no recordset to associate menu items with
+
     t_menu->addSeparator();
 
     // add menus relevant to the current table
@@ -308,7 +311,7 @@ void PNBasePage::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname,
         QVariant keyval;
         keyval = m_page_model->data(m_page_model->index(0, 0));
 
-        PNSqlQueryModel *exportmodel = m_page_model->createExportVersion();
+        PNSqlQueryModel *exportmodel = global_DBObjects.createExportObject(m_page_model->tablename());
         exportmodel->setFilter(0, keyval.toString());
         exportmodel->refresh();
 
