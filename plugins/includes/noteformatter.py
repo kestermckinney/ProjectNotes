@@ -25,8 +25,6 @@ class NoteFormatter:
 		    return ""
 
 		xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node    
-		# pm = xmlroot.toElement().attribute("managing_manager_name")
-		# co = xmlroot.toElement().attribute("managing_company_name")
 
 		childnode = xmlroot.firstChild()
 		attendeelist = ""
@@ -48,14 +46,6 @@ class NoteFormatter:
 		        				attendeelist = attendeelist + ", "
 
 		        			attendeelist = attendeelist + self.pnc.get_column_value(attendeerow, "name")
-
-		        			# nm = self.pnc.get_column_value(attendeerow, "name")
-		        			# email = self.pnc.get_column_value(attendeerow, "email")
-
-		        			# if nm != pm:
-		        			# 	if (email != None and email != ""):
-		        			# 		message.Recipients.Add(email)
-
 		        			attendeerow = attendeerow.nextSibling()
 
 		        	self.note_html = self.note_html + self.get_html_attendee(attendeelist)

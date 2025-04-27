@@ -98,9 +98,6 @@ void PNBasePage::saveState()
 
     QString parmname = QString("PageState:%1:%2").arg(objectName(), m_record_id.toString());
 
-//    qDebug() << "save state of " << parmname;
-//    qDebug() << xml;
-
     global_DBObjects.saveParameter( parmname, xml );
 }
 
@@ -111,9 +108,6 @@ void PNBasePage::loadState()
     parmname = QString("PageState:%1:%2").arg(objectName(), m_record_id.toString());
 
     QString xml = global_DBObjects.loadParameter(parmname);
-
-//    qDebug() << "load state of " << parmname;
-//    qDebug() << xml;
 
     if (xml.isEmpty())
         return;
@@ -291,7 +285,8 @@ void PNBasePage::buildPluginMenu(PluginManager* t_pm, QMenu* t_menu)
     {
         for ( PluginMenu m : p->pythonplugin().menus())
         {
-            QString table = dynamic_cast<PNSqlQueryModel*>(m_current_model->sourceModel())->tablename();
+            // QString table = dynamic_cast<PNSqlQueryModel*>(m_current_model->sourceModel())->tablename();
+            QString table = m_page_model->tablename();  //TODO: is this the right table for the page menu?
             if (m.dataexport().compare(table, Qt::CaseInsensitive) == 0) // only show right-click data menus
             {               
                 QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), this);

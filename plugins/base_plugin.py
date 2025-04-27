@@ -8,9 +8,10 @@ import projectnotes
 from includes.common import ProjectNotesCommon
 from includes.noteformatter import NoteFormatter
 from includes.graphapi_tools import GraphAPITools, TokenAPI
-from includes.outlook_tools import ProjectNotesOutlookTools
+if (platform.system() == 'Windows'):
+    from includes.outlook_tools import ProjectNotesOutlookTools
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
-from PyQt6.QtCore import Qt, QRect
+from PyQt6.QtCore import Qt, QRect 
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QDialog, QFileDialog, QWidget, QTableWidgetItem, QStyledItemDelegate, QComboBox
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtGui import QDesktopServices, QClipboard

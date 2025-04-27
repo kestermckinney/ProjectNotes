@@ -25,14 +25,6 @@ QT_END_NAMESPACE
 #include "logviewer.h"
 #include "pluginmanager.h"
 
-//TODO: REMOVE #include "pnpluginmanager.h"
-//TODO: REMOVE #include "pluginsettingsdialog.h"
-
-//TODO: get this information from cmakesettings.txt
-// #define PNMajorVersion 3
-// #define PNMinorVersion 3
-// #define PNFixVersion 1
-
 #define MAXHISTORYNODES 20
 
 class HistoryNode
@@ -68,7 +60,6 @@ public:
     void navigateClearHistory() { m_navigation_location = -1; m_forward_back_history.clear(); }
     PNBasePage* navigateCurrentPage() { return ((m_forward_back_history.count() - 1) < m_navigation_location || m_navigation_location == -1 ? nullptr : m_forward_back_history.at(m_navigation_location)->m_page ); }
     static PluginManager* getPluginManager() { return m_plugin_manager; }
-    void buildPluginMenu();
     void CloseDatabase();
     static void addMenuItem(QMenu* t_menu, const QString& t_submenu, const QString& t_menutitle, QAction* t_action, int t_section);
 
@@ -142,7 +133,9 @@ private slots:
     void onPluginUnLoaded(const QString& t_pluginpath);
 
 private:
-    Ui::MainWindow *ui;   
+    void buildPluginMenu(PNBasePage* t_current_page);
+
+    Ui::MainWindow *ui;
 
     PreferencesDialog* m_preferences_dialog = nullptr;
     FindReplaceDialog* m_find_replace_dialog = nullptr;

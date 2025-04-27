@@ -111,7 +111,7 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
     ui->tableViewAtendees->setModel(global_DBObjects.meetingattendeesmodelproxy());
     ui->tableViewActionItems->setModel(global_DBObjects.notesactionitemsmodelproxy());
 
-    setCurrentModel(nullptr);
+    setCurrentModel(global_DBObjects.projecteditingnotesmodelproxy());
     setCurrentView(nullptr);
 
     ui->textEditNotes->setFontPointSize(10);
@@ -126,7 +126,7 @@ void ProjectNotesPage::on_tabWidgetNotes_currentChanged(int index)
     switch ( index )
     {
     case 0:
-        setCurrentModel(nullptr);
+        setCurrentModel(global_DBObjects.projecteditingnotesmodelproxy());
         setCurrentView(nullptr);
         this->setFocus();
         break;
@@ -138,7 +138,6 @@ void ProjectNotesPage::on_tabWidgetNotes_currentChanged(int index)
     case 2:
         setCurrentModel(global_DBObjects.notesactionitemsmodelproxy());
         setCurrentView(ui->tableViewActionItems);
-
         ui->tableViewActionItems->setFocus();
         break;
     }

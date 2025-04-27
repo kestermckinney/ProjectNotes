@@ -142,21 +142,26 @@ void MainWindow::addMenuItem(QMenu* t_menu, const QString& t_submenu, const QStr
         // find the submenu if it exists
         QMenu* submenu = nullptr;
 
+        int pastseparator = 0;
+
         for (QAction* action : t_menu->actions())
         {
             QString itemtitle = action->text().replace("&","");
 
-            if (itemtitle.compare(t_submenu, Qt::CaseInsensitive) == 0 && action->menu() != nullptr)
+            if (pastseparator >= t_section && itemtitle.compare(t_submenu, Qt::CaseInsensitive) == 0 && action->menu() != nullptr)
             {
                 addMenuItem(action->menu(), QString(), t_menutitle, t_action, 0);
                 return;
             }
+
+            if (action->isSeparator())
+                pastseparator++;
         }
 
         // if it didn't exist create it sorted
         if (!submenu)
         {
-            int pastseparator = 0;
+            pastseparator = 0;
             QAction* nextaction = nullptr;
 
             for (QAction* action : t_menu->actions())
@@ -181,7 +186,7 @@ void MainWindow::addMenuItem(QMenu* t_menu, const QString& t_submenu, const QStr
 }
 
 
-void MainWindow::buildPluginMenu()
+void MainWindow::buildPluginMenu(PNBasePage* t_current_page)
 {
     // clear any other plugin items
     QMenu *menu = ui->menuPlugins;
@@ -208,6 +213,10 @@ void MainWindow::buildPluginMenu()
             }
         }
     }
+
+    // if we have a current page add it's items to the plugin menu
+    if (t_current_page)
+        t_current_page->buildPluginMenu(m_plugin_manager, menu);
 }
 
 void MainWindow::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_parameter)
@@ -672,8 +681,7 @@ void MainWindow::navigateToPage(PNBasePage* t_widget, QVariant t_record_id)
 
     buildHistory(buttonnode);
 
-    buildPluginMenu();
-    t_widget->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
+    buildPluginMenu(t_widget);
 
     setButtonAndMenuStates();
 }
@@ -701,8 +709,7 @@ void MainWindow::navigateBackward()
         ui->stackedWidget->setCurrentWidget(current);
         dynamic_cast<PNBasePage*>(current)->setPageTitle();
 
-        buildPluginMenu();
-        dynamic_cast<PNBasePage*>(current)->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
+        buildPluginMenu(dynamic_cast<PNBasePage*>(current));
     }
 
     setButtonAndMenuStates();
@@ -732,8 +739,7 @@ void MainWindow::navigateForward()
         ui->stackedWidget->setCurrentWidget(current);
         dynamic_cast<PNBasePage*>(current)->setPageTitle();
 
-        buildPluginMenu();
-        dynamic_cast<PNBasePage*>(current)->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
+        buildPluginMenu(dynamic_cast<PNBasePage*>(current));
     }
 
     setButtonAndMenuStates();
@@ -1842,8 +1848,7 @@ void MainWindow::onPluginLoaded(const QString& t_pluginpath)
     HistoryNode* hn = m_forward_back_history.at(m_navigation_location);
     PNBasePage* current = hn->m_page;
 
-    buildPluginMenu();
-    dynamic_cast<PNBasePage*>(current)->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
+    buildPluginMenu(dynamic_cast<PNBasePage*>(current));
 }
 
 void MainWindow::onPluginUnLoaded(const QString& t_pluginpath)
@@ -1851,6 +1856,5 @@ void MainWindow::onPluginUnLoaded(const QString& t_pluginpath)
     HistoryNode* hn = m_forward_back_history.at(m_navigation_location);
     PNBasePage* current = hn->m_page;
 
-    buildPluginMenu();
-    dynamic_cast<PNBasePage*>(current)->buildPluginMenu(m_plugin_manager, ui->menuPlugins);
+    buildPluginMenu(dynamic_cast<PNBasePage*>(current));
 }
