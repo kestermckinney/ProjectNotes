@@ -35,11 +35,15 @@ pluginmenus = [
     {"menutitle" : "Copy Path to Clipboard", "function" : "menuCopyPath", "tablefilter" : "project_locations", "submenu" : "", "dataexport" : "project_locations"}, 
     {"menutitle" : "Script Editor", "function" : "menuOpenEditor", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""},
     {"menutitle" : "Send Meeting Notes", "function" : "menuSendNotes", "tablefilter" : "", "submenu" : "", "dataexport" : "project_notes"},
+    {"menutitle" : "Send Email", "function" : "menuSendProjectEmail", "tablefilter" : "projects/project_people", "submenu" : "", "dataexport" : "projects"},
+    {"menutitle" : "Send Internal Email", "function" : "menuSendInternalProjectEmail", "tablefilter" : "projects/project_people", "submenu" : "", "dataexport" : "projects"},
+    {"menutitle" : "Send Email", "function" : "menuSendProjectEmail", "tablefilter" : "project_people", "submenu" : "", "dataexport" : "project_people"},
+    {"menutitle" : "Send Email", "function" : "menuSendProjectEmail", "tablefilter" : "", "submenu" : "", "dataexport" : "people"},
+    {"menutitle" : "Email as Attachment", "function" : "menuSendProjectEmail", "tablefilter" : "project_locations", "submenu" : "", "dataexport" : "project_locations"},
 
     {"menutitle" : "Export Meeting Notes", "function" : "menuExportMeetingNotes", "tablefilter" : "projects/project_notes/meeting_attendees/item_tracker/project_locations", "submenu" : "Utilities", "dataexport" : "projects"}, #todo
     {"menutitle" : "Export Contacts to Outlook", "function" : "menuExportContactsToOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""},   #todo make dynamic for linux
     {"menutitle" : "Import Contacts from Outlook", "function" : "menuImportContactsFromOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""},   #todo make dynamic for linux
-    {"menutitle" : "Email as Attachment", "function" : "menuEmailAttachment", "tablefilter" : "project_locations", "submenu" : "", "dataexport" : "project_locations"},   #todo make dynamic for linux
     {"menutitle" : "My Shortcuts", "function" : "menuMyShortcutSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
 ]
 
@@ -153,6 +157,8 @@ class BasePlugins:
 
         addresses = []
         attachments = []
+        project_number = None
+        project_name = None
         
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to draft an email.",QMessageBox.StandardButton.Cancel)
@@ -173,6 +179,8 @@ class BasePlugins:
                 nm = self.pnc.get_column_value(memberrow, "name")
                 email = self.pnc.get_column_value(memberrow, "email")
                 pco = self.pnc.get_column_value(memberrow, "client_name")
+                project_number = self.pnc.get_column_value(memberrow, "project_number")
+                project_name = self.pnc.get_column_value(memberrow, "project_name")
 
                 # if filtering by company only includ matching client names
                 # don't email to yourself, exclude the PM
@@ -187,11 +195,8 @@ class BasePlugins:
 
                 memberrow = memberrow.nextSibling()
 
-        print("starting attendee search")
-
         teammember = self.pnc.find_node(xmlroot, "table", "name", "meeting_attendees")
         if not teammember.isNull():
-            print("we found something")
             memberrow = teammember.firstChild()
 
             while not memberrow.isNull():
@@ -199,10 +204,8 @@ class BasePlugins:
                 nm = self.pnc.get_column_value(memberrow, "name")
                 email = self.pnc.get_column_value(memberrow, "email")
 
-                print(email)
-
                 if nm != pm:
-                    if (email is not None and email != ""):
+                    if (email is not None and email != "" and (company_filter is None or pco == company_filter)):
                         addresses.append(
                         {
                             "emailAddress": {
@@ -244,7 +247,9 @@ class BasePlugins:
 
             if not projectrow.isNull():
                 email_subject = f"{self.pnc.get_column_value(projectrow, "project_number")} {self.pnc.get_column_value(projectrow, "project_name")} - {subject}"
-                
+        elif not project_number is None:
+            email_subject = f"{project_number} {project_name} - {subject}"
+
 
         projlocation = self.pnc.find_node(xmlroot, "table", "name", "project_locations")
 
@@ -257,6 +262,10 @@ class BasePlugins:
                 attachments.append(fp)
 
                 locationrow = locationrow.nextSibling()
+
+        # if a single attchment was specified, add it
+        if not attachment is None:
+            attachments.append(attachment)
 
         # determine what method to use to send emails
         use_graph_api = (self.pnc.get_plugin_setting("IntegrationType", "Outlook Integration") == "Office 365 Application")
@@ -327,13 +336,27 @@ def menuOpenEditor(parameter):
     baseplugin = BasePlugins()
     return baseplugin.open_editor()
 
-def menuSendProjectEmail(xmlstr, parameter):
-    baseplugin = BasePlugins()
-    return baseplugin.send_an_email(xmlstr, "", "", None, False)
+def menuSendInternalProjectEmail(xmlstr, parameter):
+    xmlval = QDomDocument()
+    
+    if (xmlval.setContent(xmlstr) == False):
+        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to draft an email.",QMessageBox.StandardButton.Cancel)
+        return ""
+        
+    xmlroot = xmlval.documentElement()
 
-def menuSendNotes(xmlstr, parameter):
+    co = xmlroot.toElement().attribute("managing_company_name")
+
+    baseplugin = BasePlugins()
+    return baseplugin.send_an_email(xmlstr, "", "", None, co)
+
+def menuSendProjectEmail(xmlstr, parameter):
     print(xmlstr)
     baseplugin = BasePlugins()
+    return baseplugin.send_an_email(xmlstr, "", "", None, None)
+
+def menuSendNotes(xmlstr, parameter):
+    baseplugin = BasePlugins()
     nf = NoteFormatter(xmlstr)
-    return baseplugin.send_an_email(xmlstr, nf.getSubject(), nf.getHTML(), None, False)
+    return baseplugin.send_an_email(xmlstr, nf.getSubject(), nf.getHTML(), None, None)
 

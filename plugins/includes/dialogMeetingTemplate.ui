@@ -60,6 +60,16 @@
      </item>
      <item>
       <property name="text">
+       <string>Only Client</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Exclude Client</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
        <string>Individual</string>
       </property>
      </item>

@@ -16,8 +16,8 @@ top_windows = []
 
 def windowEnumerationHandler(hwnd, tpwindows):
     if (platform.system() == 'Windows'):
-        tpwindows.append((hwnd, win32gui.GetWindowText(hwnd)))
-
+        tpwindows.append((hwnd, win32gui.GetWindowText(hwnd))
+)
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 from includes.common import ProjectNotesCommon
 from PyQt6.QtXml import QDomDocument, QDomNode
