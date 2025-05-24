@@ -4,7 +4,7 @@ import platform
 import threading
 import time
 import json
-## TODO import projectnotes
+import projectnotes
 
 from includes.common import ProjectNotesCommon
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
@@ -27,6 +27,7 @@ pluginmenus = [
     {"menutitle" : "Editor", "function" : "menuEditorSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "Outlook Integration", "function" : "menuOutlookIntegrationSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "My Shortcuts", "function" : "menuMyShortcutSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "Meeting Types", "function" : "menuMeetingTypesSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
 ]
 
 # events must have a data structure and data view specified
@@ -514,14 +515,14 @@ class MeetingTypesSettings(QDialog):
         self.pnc = ProjectNotesCommon()
         self.settings_pluginname = "Meeting Types"
 
-        self.ui = uic.loadUi("../plugins/includes/dialogMeetingTypes.ui", self)
+        self.ui = uic.loadUi("plugins/includes/dialogMeetingTypes.ui", self)
 
         self.ui.setWindowFlags(
             QtCore.Qt.WindowType.Window |
             QtCore.Qt.WindowType.WindowCloseButtonHint
             )
  
-        self.ui_template = uic.loadUi("../plugins/includes/dialogMeetingTemplate.ui")
+        self.ui_template = uic.loadUi("plugins/includes/dialogMeetingTemplate.ui")
         self.ui_template.setWindowFlags(
             QtCore.Qt.WindowType.Window |
             QtCore.Qt.WindowType.WindowCloseButtonHint
@@ -553,17 +554,19 @@ class MeetingTypesSettings(QDialog):
         c1 = self.pnc.get_plugin_setting("c1", self.settings_pluginname)
         c2 = self.pnc.get_plugin_setting("c2", self.settings_pluginname)
         c3 = self.pnc.get_plugin_setting("c3", self.settings_pluginname)
+        c4 = self.pnc.get_plugin_setting("c4", self.settings_pluginname)
 
         print(f"loading dimensions {int(x)},{int(y)},{int(w)},{int(h)}")
-        print(f"loading column sizes {c1},{c2},{c3}")
+        print(f"loading column sizes {c1},{c2},{c3},{c4}")
 
         geometry = self.pnc.get_plugin_setting("types_geometry", self.settings_pluginname)
 
-        if (c1 != '' and c2 != '' and c3 != ''):
+        if (c1 != '' and c2 != '' and c3 != ''and c4 != ''):
             print("setting column widths")
             self.ui.tableWidgetMeetingTypes.setColumnWidth(0, int(c1))
             self.ui.tableWidgetMeetingTypes.setColumnWidth(1, int(c2))
             self.ui.tableWidgetMeetingTypes.setColumnWidth(2, int(c3))
+            self.ui.tableWidgetMeetingTypes.setColumnWidth(3, int(c4))
 
         if (x != '' and y != '' and w != '' and h != ''):
             print("setting window dimensions")
@@ -613,7 +616,8 @@ class MeetingTypesSettings(QDialog):
             self.ui.tableWidgetMeetingTypes.setRowCount(row_count + 1)
             self.ui.tableWidgetMeetingTypes.setItem(row_count, 0, QTableWidgetItem(self.ui_template.lineEditType.text()))
             self.ui.tableWidgetMeetingTypes.setItem(row_count, 1, QTableWidgetItem(self.ui_template.comboBoxInvitees.currentText()))
-            self.ui.tableWidgetMeetingTypes.setItem(row_count, 2, QTableWidgetItem(self.ui_template.textEditTemplate.toHtml()))
+            self.ui.tableWidgetMeetingTypes.setItem(row_count, 2, QTableWidgetItem(self.ui_template.lineEditSubject.text()))
+            self.ui.tableWidgetMeetingTypes.setItem(row_count, 3, QTableWidgetItem(self.ui_template.textEditTemplate.toHtml()))
 
     def edittype(self):
         row = self.ui.tableWidgetMeetingTypes.currentRow()
@@ -621,16 +625,19 @@ class MeetingTypesSettings(QDialog):
         if (row > -1):
             mtype = self.ui.tableWidgetMeetingTypes.item(row, 0).text()
             matt = self.ui.tableWidgetMeetingTypes.item(row, 1).text()
-            mhtml = self.ui.tableWidgetMeetingTypes.item(row, 2).text() 
+            mhtml = self.ui.tableWidgetMeetingTypes.item(row, 3).text() 
+            subj = self.ui.tableWidgetMeetingTypes.item(row, 2).text() 
 
             self.ui_template.comboBoxInvitees.setCurrentText(matt)
             self.ui_template.lineEditType.setText(mtype)
+            self.ui_template.lineEditSubject.setText(subj)
             self.ui_template.textEditTemplate.setHtml(mhtml)
 
             if (self.ui_template.exec()):
                 self.ui.tableWidgetMeetingTypes.setItem(row, 0, QTableWidgetItem(self.ui_template.lineEditType.text()))
                 self.ui.tableWidgetMeetingTypes.setItem(row, 1, QTableWidgetItem(self.ui_template.comboBoxInvitees.currentText()))
-                self.ui.tableWidgetMeetingTypes.setItem(row, 2, QTableWidgetItem(self.ui_template.textEditTemplate.toHtml()))
+                self.ui.tableWidgetMeetingTypes.setItem(row, 2, QTableWidgetItem(self.ui_template.lineEditSubject.text()))
+                self.ui.tableWidgetMeetingTypes.setItem(row, 3, QTableWidgetItem(self.ui_template.textEditTemplate.toHtml()))
 
     def deletetype(self):
         row = self.ui.tableWidgetMeetingTypes.currentRow()
@@ -643,20 +650,21 @@ class MeetingTypesSettings(QDialog):
 
         self.ui.close()
 
+        projectnotes.force_reload("base_plugin")
+
+
     def closeEvent(self, event):
         print("saving values")
-        # # Save window position and size
-        g = self.ui.getGeometry()
-
-        self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{g.}")
-        self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.ui.pos().y()}")
-        self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.ui.size().width()}")
-        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.ui.size().height()}")
+        # Save window position and size
+        self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
+        self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
+        self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
+        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
         self.pnc.set_plugin_setting("c1", self.settings_pluginname, f"{self.ui.tableWidgetMeetingTypes.columnWidth(0)}")
         self.pnc.set_plugin_setting("c2", self.settings_pluginname, f"{self.ui.tableWidgetMeetingTypes.columnWidth(1)}")
         self.pnc.set_plugin_setting("c3", self.settings_pluginname, f"{self.ui.tableWidgetMeetingTypes.columnWidth(2)}")
-
+        self.pnc.set_plugin_setting("c4", self.settings_pluginname, f"{self.ui.tableWidgetMeetingTypes.columnWidth(3)}")
 
         # Call the base class implementation
         super().closeEvent(event)

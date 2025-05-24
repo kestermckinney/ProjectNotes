@@ -28,6 +28,15 @@
    </property>
    <item>
     <widget class="QTableWidget" name="tableWidgetMeetingTypes">
+     <property name="editTriggers">
+      <set>QAbstractItemView::EditTrigger::AnyKeyPressed|QAbstractItemView::EditTrigger::DoubleClicked|QAbstractItemView::EditTrigger::EditKeyPressed</set>
+     </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+     </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+     </property>
      <column>
       <property name="text">
        <string>Meeting Type</string>
@@ -36,6 +45,11 @@
      <column>
       <property name="text">
        <string>Invitees</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Subject</string>
       </property>
      </column>
      <column>

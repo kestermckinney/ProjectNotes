@@ -307,6 +307,172 @@ class BasePlugins:
 
         return ""
 
+    def schedule_a_meeting(self, xmlstr, subject, content, attachment, company_filter):
+        xmlval = QDomDocument()
+        xmldoc = ""
+
+        addresses = []
+        attachments = []
+        project_number = None
+        project_name = None
+        
+        if (xmlval.setContent(xmlstr) == False):
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to draft an email.",QMessageBox.StandardButton.Cancel)
+            return ""
+            
+        xmlroot = xmlval.documentElement()
+        pm = xmlroot.toElement().attribute("managing_manager_name")
+
+        email = None
+        nm = None
+        pco = None
+
+        teammember = self.pnc.find_node(xmlroot, "table", "name", "project_people")
+        if not teammember.isNull():
+            memberrow = teammember.firstChild()
+
+            while not memberrow.isNull():
+                nm = self.pnc.get_column_value(memberrow, "name")
+                email = self.pnc.get_column_value(memberrow, "email")
+                pco = self.pnc.get_column_value(memberrow, "client_name")
+                project_number = self.pnc.get_column_value(memberrow, "project_number")
+                project_name = self.pnc.get_column_value(memberrow, "project_name")
+
+                # if filtering by company only includ matching client names
+                # don't email to yourself, exclude the PM
+                if (nm != pm):
+                    if (email is not None and email != "" and (company_filter is None or pco == company_filter)):
+                        addresses.append(
+                        {
+                            "emailAddress": {
+                                "address": email,
+                                "name": nm
+                            },
+                            "type": "required"
+                        })
+
+                memberrow = memberrow.nextSibling()
+
+        teammember = self.pnc.find_node(xmlroot, "table", "name", "meeting_attendees")
+        if not teammember.isNull():
+            memberrow = teammember.firstChild()
+
+            while not memberrow.isNull():
+
+                nm = self.pnc.get_column_value(memberrow, "name")
+                email = self.pnc.get_column_value(memberrow, "email")
+
+                if nm != pm:
+                    if (email is not None and email != "" and (company_filter is None or pco == company_filter)):
+                        addresses.append(
+                        {
+                            "emailAddress": {
+                                "address": email,
+                                "name": nm
+                            },
+                            "type": "required"
+                        })
+
+                memberrow = memberrow.nextSibling()
+
+        teammember = self.pnc.find_node(xmlroot, "table", "name", "people")
+        if not teammember.isNull():
+            memberrow = teammember.firstChild()
+
+            while not memberrow.isNull():
+                nm = self.pnc.get_column_value(memberrow, "name")
+                email = self.pnc.get_column_value(memberrow, "email")
+
+                colnode = self.pnc.find_node(memberrow, "column", "name", "client_id")
+                if not colnode.isNull() and colnode.attributes().namedItem("lookupvalue").nodeValue() is not None and colnode.attributes().namedItem("lookupvalue").nodeValue() != '':
+                    pco = colnode.attributes().namedItem("lookupvalue").nodeValue()
+
+                if nm != pm:
+                    if (email is not None and email != "" and (company_filter is None or pco == company_filter)):
+                        addresses.append(
+                        {
+                            "emailAddress": {
+                                "address": email,
+                                "name": nm
+                            },
+                            "type": "required"
+                        })
+
+                memberrow = memberrow.nextSibling()
+
+
+        meeting_subject = subject
+
+        project = self.pnc.find_node(xmlroot, "table", "name", "projects")
+        if not project.isNull():
+            projectrow = project.firstChild()
+
+            if not projectrow.isNull():
+                meeting_subject = f"{self.pnc.get_column_value(projectrow, "project_number")} {self.pnc.get_column_value(projectrow, "project_name")} - {subject}"
+        elif not project_number is None:
+            meeting_subject = f"{project_number} {project_name} - {subject}"
+
+
+        projlocation = self.pnc.find_node(xmlroot, "table", "name", "project_locations")
+
+        if not projlocation.isNull():
+            locationrow = projlocation.firstChild()
+
+            while not locationrow.isNull():
+                fp = self.pnc.get_column_value(locationrow, "full_path")
+
+                attachments.append(fp)
+
+                locationrow = locationrow.nextSibling()
+
+        # if a single attchment was specified, add it
+        if not attachment is None:
+            attachments.append(attachment)
+
+        # determine what method to use to send emails
+        use_graph_api = (self.pnc.get_plugin_setting("IntegrationType", "Outlook Integration") == "Office 365 Application")
+        use_o365 = self.pnc.get_plugin_setting("SendO365", "Outlook Integration").lower() == "true"
+
+        if use_o365 and use_graph_api:
+            token = tapi.authenticate()
+
+            if token is not None:
+                gapi = GraphAPITools()
+                gapi.setToken(token)
+
+                starttime = QDateTime.currentDateTime()
+                starttime.setTime(QTime(starttime.time().hour() + 1, 0))
+                endtime = starttime.addSecs(3600)
+
+                msg = gapi.draft_a_meeting(addresses, meeting_subject, content, starttime, endtime)
+                if msg is not None:
+                    print(msg)
+                    QMessageBox.critical(None, "Cannot Draft a Meeting", msg, QMessageBox.StandardButton.Ok)
+                    return ""
+
+                return ""
+
+            else:
+                msg = "No token was returned.  Office 365 sync failed.  Make sure Outlook Integrations are configured correctly."
+                print(msg)
+                QMessageBox.critical(None, "Cannot Draft a Meeting", msg, QMessageBox.StandardButton.Ok)
+                return ""
+
+        elif platform.system() == 'Windows':
+            pnot = ProjectNotesOutlookTools()
+
+            msg = pnot.schedule_meeting(addresses, email_subject, content)
+            if msg is not None:
+                print(msg)
+                QMessageBox.critical(None, "Cannot Send Email", msg, QMessageBox.StandardButton.Ok)
+                return ""
+
+        msg = "Sending email using Outlook is not supported on this operating system."
+        print(msg)
+        QMessageBox.critical(None, "Not Supported", msg,QMessageBox.StandardButton.Ok)
+
+        return ""
+
     def open_editor(self):
         EditorFullPath = self.pnc.get_plugin_setting("EditorPath", "Custom Editor")
             
@@ -315,6 +481,75 @@ class BasePlugins:
         else:
             self.pnc.exec_program( EditorFullPath )
         return ""
+
+def populate_menu_from_json(json_string):
+    global json_menu_data
+
+    menu_array = []
+
+    # nothing was saved
+    if (json_string is None or json_string == ""):
+        return ""
+
+    json_menu_data = json.loads(json_string)
+
+    if (len(json_menu_data) > 0):
+        # Populate the table with data
+        # make sure to filter the xml to the top level.  We doon't want to get the full projeect xml
+        for row, row_data in enumerate(json_menu_data): 
+            tablefilter = None
+            dataexport = None
+
+            inviteees = row_data["Invitees"]
+
+            if (inviteees == "Individual"):
+                menu_array.append({"menutitle" : row_data["Meeting Type"], "function" : "menuScheduleMeeting",  "tablefilter" : "people", "submenu" : "Schedule Meeting", "dataexport" : "people", "parameter" : row_data["Meeting Type"] })
+            else:
+                menu_array.append({"menutitle" : row_data["Meeting Type"], "function" : "menuScheduleMeeting",  "tablefilter" : "projects/project_people", "submenu" : "Schedule Meeting", "dataexport" : "projects", "parameter" : row_data["Meeting Type"] })
+                menu_array.append({"menutitle" : row_data["Meeting Type"], "function" : "menuScheduleMeeting",  "tablefilter" : "project_notes/meeting_attendees", "submenu" : "Schedule Meeting", "dataexport" : "project_notes", "parameter" : row_data["Meeting Type"] })
+
+    return menu_array
+
+def menuScheduleMeeting(xmlstr, parameter):
+    global json_menu_data
+
+    xmlval = QDomDocument()
+
+    if (xmlval.setContent(xmlstr) == False):
+        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+        return ""
+
+    xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
+
+    # find meeting type
+    meeting_type = None
+    for d in json_menu_data:
+        meet = d.get('Meeting Type')
+        if meet == parameter:
+            meeting_type = d
+
+    if meeting_type is None or len(meeting_type) == 0:
+        QMessageBox.critical(None, "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.",QMessageBox.StandardButton.Cancel)
+        return ""
+
+    meeting_template = meeting_type.get('Template')
+    invitees = meeting_type.get('Invitees')
+    subject = meeting_type.get('Subject')
+    company_filter = None #TODO add this
+
+
+    meeting_template_filled_in = self.pnc.replace_variables(meeting_template, xmlroot)
+    subject_filled_in = self.pnc.replace_variables(subject, xmlroot)
+
+    baseplugin = BasePlugins()
+    baseplugin.schedule_a_meeting(xmlstr, subject_filled_in, meeting_template_filled_in, None, company_filter)
+
+    return ""
+
+pnc = ProjectNotesCommon()
+json_menu_data = None
+menu_data = pnc.get_plugin_setting("MeetingTypes", "Meeting Types")
+pluginmenus.append(populate_menu_from_json(menu_data))
 
 def menuCopyContactEmail(xmlstr, parameter):
     baseplugin = BasePlugins()
@@ -351,7 +586,6 @@ def menuSendInternalProjectEmail(xmlstr, parameter):
     return baseplugin.send_an_email(xmlstr, "", "", None, co)
 
 def menuSendProjectEmail(xmlstr, parameter):
-    print(xmlstr)
     baseplugin = BasePlugins()
     return baseplugin.send_an_email(xmlstr, "", "", None, None)
 

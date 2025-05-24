@@ -76,6 +76,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QLabel" name="labelSubject">
+     <property name="text">
+      <string>Subject:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="lineEditSubject"/>
+   </item>
+   <item>
     <widget class="QLabel" name="labelTemplate">
      <property name="text">
       <string>Template:</string>

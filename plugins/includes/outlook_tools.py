@@ -355,20 +355,15 @@ class ProjectNotesOutlookTools:
             progbar.setValue(int(min(progval / progtot * 100, 100)))
             progbar.setLabelText("Parsing Sent items...")
             QtWidgets.QApplication.processEvents()
-            #print("looking in sent mail for project " + projnum)
 
             if message.Subject.find(projnum) >= 0:
                 filename = sentfolder + makefilename(str(message.SentOn), message.Subject) + ".msg"
 
-                #print (filename + "\n")
-
                 if not QFile.exists(filename):
                     message.SaveAs(filename, 3)
 
-
         mail_enum = None
         message = None
-
 
         outlook = None
         mapi = None
@@ -382,52 +377,14 @@ class ProjectNotesOutlookTools:
         progbar = None # must be destroyed
         return ""
 
-    def schedule_meeting(self, xmlstr, subject, body, include_client):
-        xmlval = QDomDocument()
-        xmldoc = ""
-
-        window_title = ""
-
-        if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
-            return ""
-
+    def schedule_meeting(self, addresses, subject, body)
         outlook = win32com.client.Dispatch("Outlook.Application")
         message = outlook.CreateItem(1)
 
-        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
-        pm = xmlroot.toElement().attribute("managing_manager_name")
-        co = xmlroot.toElement().attribute("managing_company_name")
+        for address in addresses:
+            message.Recipients.Add(address["emailAddress"]["email"])
 
-        email = None
-        nm = None
-
-        teammember = self.pnc.find_node(xmlroot, "table", "name", "project_people")
-        if not teammember.isNull():
-            memberrow = teammember.firstChild()
-
-            while not memberrow.isNull():
-                nm = self.pnc.get_column_value(memberrow, "name")
-                email = self.pnc.get_column_value(memberrow, "email")
-                pco = self.pnc.get_column_value(memberrow, "client_name")
-
-                if nm != pm:
-                    if not include_client:
-                        if (email is not None and email != "" and pco == co):
-                            message.Recipients.Add(email)
-                    else:
-                        if (email is not None and email != ""):
-                            message.Recipients.Add(email)
-
-                memberrow = memberrow.nextSibling()
-
-        project = self.pnc.find_node(xmlroot, "table", "name", "projects")
-        if not project.isNull():
-            projectrow = project.firstChild()
-
-            if not projectrow.isNull():
-                window_title = self.pnc.get_column_value(projectrow, "project_number") + " " + self.pnc.get_column_value(projectrow, "project_name") + " - " + subject
-                message.Subject = window_title
+        message.Subject = subject
 
         message.MeetingStatus = 1
         message.Duration = 60
@@ -439,13 +396,11 @@ class ProjectNotesOutlookTools:
         outlook = None
         message = None
 
-        self.bring_window_to_front(window_title)
+        self.bring_window_to_front(subject)
 
-        return xmldoc
+        return None
 
     def send_email(self, addresses, subject, content, attachments):
-        window_title = ""
-            
         outlook = win32com.client.Dispatch("Outlook.Application")
 
         message = outlook.CreateItem(0)
@@ -459,8 +414,7 @@ class ProjectNotesOutlookTools:
 
         DefaultSignature = message.HTMLBody
 
-        window_title = f"{projectnumber} {projectname} - {subject}"
-        message.Subject = window_title
+        message.Subject = subject
         message.HTMLBody = content + DefaultSignature
 
         for attachment in attachments:
@@ -469,9 +423,6 @@ class ProjectNotesOutlookTools:
         outlook = None
         message = None
 
-        self.bring_window_to_front(window_title)
+        self.bring_window_to_front(subject)
 
         return None
-
-
-  #

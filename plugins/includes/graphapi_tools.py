@@ -18,6 +18,7 @@ def windowEnumerationHandler(hwnd, tpwindows):
     if (platform.system() == 'Windows'):
         tpwindows.append((hwnd, win32gui.GetWindowText(hwnd))
 )
+        
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 from includes.common import ProjectNotesCommon
 from PyQt6.QtXml import QDomDocument, QDomNode
@@ -164,7 +165,6 @@ class GraphAPITools:
 
         self.headers = None
         self.access_token = None
-
 
     def setToken(self, token):
         timer = QElapsedTimer()
@@ -451,107 +451,9 @@ class GraphAPITools:
 
         return
 
-    def draft_a_meeting(self, xmlstr, subject, content, datetime_start, datetime_end, company_filter):
+    def draft_a_meeting(self, addresses, subject, content, datetime_start, datetime_end):
         if not self.use_graph_api:  # office 365 integration is disabled
             return
-
-        xmlval = QDomDocument()
-        xmldoc = ""
-
-        addresses = []
-        
-        if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to draft a meeting.",QMessageBox.StandardButton.Cancel)
-            return ""
-            
-        xmlroot = xmlval.documentElement()
-        pm = xmlroot.toElement().attribute("managing_manager_name")
-        co = xmlroot.toElement().attribute("managing_company_name")
-
-        email = None
-        nm = None
-        pco = None
-
-        teammember = self.pnc.find_node(xmlroot, "table", "name", "project_people")
-        if not teammember.isNull():
-            memberrow = teammember.firstChild()
-
-            while not memberrow.isNull():
-                nm = self.pnc.get_column_value(memberrow, "name")
-                email = self.pnc.get_column_value(memberrow, "email")
-                pco = self.pnc.get_column_value(memberrow, "client_name")
-
-                # if filtering by company only includ matching client names
-                # don't email to yourself, exclude the PM
-                if (nm != pm):
-                    if (email is not None and email != "" and (company_filter == False or pco == co)):
-                        addresses.append(
-                            {
-                                "emailAddress": {
-                                    "address": email,
-                                    "name": nm
-                                },
-                                "type": "required"
-                            })
-
-                memberrow = memberrow.nextSibling()
-
-        teammember = self.pnc.find_node(xmlroot, "table", "name", "meeting_attendees")
-        if not teammember.isNull():
-            memberrow = teammember.firstChild()
-
-            while not memberrow.isNull():
-                nm = self.pnc.get_column_value(memberrow, "name")
-                email = self.pnc.get_column_value(memberrow, "email")
-                pco = self.pnc.get_column_value(memberrow, "client_name")
-
-                if nm != pm:
-                    if (email is not None and email != "" and (company_filter == False or pco == co)):
-                        addresses.append(
-                            {
-                                "emailAddress": {
-                                    "address": email,
-                                    "name": nm
-                                },
-                                "type": "required"
-                            })
-
-                memberrow = memberrow.nextSibling()
-
-        teammember = self.pnc.find_node(xmlroot, "table", "name", "people")
-        if not teammember.isNull():
-            memberrow = teammember.firstChild()
-
-            while not memberrow.isNull():
-                nm = self.pnc.get_column_value(memberrow, "name")
-                email = self.pnc.get_column_value(memberrow, "email")
-
-                colnode = self.pnc.find_node(memberrow, "column", "name", "client_id")
-                if not colnode.isNull() and colnode.attributes().namedItem("lookupvalue").nodeValue() is not None and colnode.attributes().namedItem("lookupvalue").nodeValue() != '':
-                    pco = colnode.attributes().namedItem("lookupvalue").nodeValue()
-
-                if nm != pm:
-                    if (email is not None and email != "" and (company_filter == False or pco == co)):
-                        addresses.append(
-                            {
-                                "emailAddress": {
-                                    "address": email,
-                                    "name": nm
-                                },
-                                "type": "required"
-                            })
-
-                memberrow = memberrow.nextSibling()
-
-
-        meeting_title = subject
-
-        project = self.pnc.find_node(xmlroot, "table", "name", "projects")
-        if not project.isNull():
-            projectrow = project.firstChild()
-
-            if not projectrow.isNull():
-                meeting_title = self.pnc.get_column_value(projectrow, "project_number") + " " + self.pnc.get_column_value(projectrow, "project_name") + f" - {subject}"
 
         # Endpoint to create an event (in the draft state)
         events_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/events"
@@ -560,7 +462,7 @@ class GraphAPITools:
         formatted_datetime_end = datetime_end.toUTC().toString("yyyy-MM-ddThh:mm:ss")
 
         event_details = {
-            "subject": meeting_title,
+            "subject": subject,
             "body": {
                 "contentType": "HTML",
                 "content": content,
@@ -581,15 +483,13 @@ class GraphAPITools:
         # Make a POST request to create the draft event
         response = requests.post(events_endpoint, headers=self.headers, json=event_details)
 
+        msg = None
         if response.status_code != 201:
-            print(f"Response Code: {response.status_code} Failed to draft the meeting: {meeting_title}.")
+            msg = f"Response Code: {response.status_code} Failed to draft the meeting: {meeting_title}."
+            print(msg)
             print(response.json())
 
-
-        # bring outlook to the forefront, I don't think we can select the drafted meetig though
-        self.bring_window_to_front("Outlook")
-
-        return ""
+        return msg
 
     def draft_an_email(self, addresses, subject, content, attachments):
         # Graph API endpoint to send an email
