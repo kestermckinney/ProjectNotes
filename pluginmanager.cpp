@@ -358,7 +358,7 @@ PluginManager::PluginManager(QObject *parent)
         if (text == "\n")
             return;
 
-        QLog_Info(CONSOLELOG, QString::fromStdString(text));
+        QLog_Info(CONSOLELOG, QString::fromStdString(text).trimmed());
     };
 
     set_stdout(outwrite);

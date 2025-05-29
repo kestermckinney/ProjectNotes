@@ -132,9 +132,6 @@ class FileFinderSettings(QDialog):
         mc1 = self.pnc.get_plugin_setting("mc1", self.settings_pluginname)
         mc2 = self.pnc.get_plugin_setting("mc2", self.settings_pluginname)
 
-        #print(f"loading dimensions {int(x)},{int(y)},{int(w)},{int(h)}")
-        # print(f"loading column sizes {lc1},{mc1},{mc2}")
-
         if (lc1 != '' and mc1 != '' and mc2 != ''):
             self.ui.tableSearchLocations.setColumnWidth(0, int(lc1))
             self.ui.tableClassifications.setColumnWidth(0, int(mc1))
@@ -556,20 +553,18 @@ class MeetingTypesSettings(QDialog):
         c3 = self.pnc.get_plugin_setting("c3", self.settings_pluginname)
         c4 = self.pnc.get_plugin_setting("c4", self.settings_pluginname)
 
-        print(f"loading dimensions {int(x)},{int(y)},{int(w)},{int(h)}")
-        print(f"loading column sizes {c1},{c2},{c3},{c4}")
-
         geometry = self.pnc.get_plugin_setting("types_geometry", self.settings_pluginname)
 
         if (c1 != '' and c2 != '' and c3 != ''and c4 != ''):
-            print("setting column widths")
+            print(f"loading column sizes {c1},{c2},{c3},{c4}")
+
             self.ui.tableWidgetMeetingTypes.setColumnWidth(0, int(c1))
             self.ui.tableWidgetMeetingTypes.setColumnWidth(1, int(c2))
             self.ui.tableWidgetMeetingTypes.setColumnWidth(2, int(c3))
             self.ui.tableWidgetMeetingTypes.setColumnWidth(3, int(c4))
 
         if (x != '' and y != '' and w != '' and h != ''):
-            print("setting window dimensions")
+            print(f"loading dimensions {int(x)},{int(y)},{int(w)},{int(h)}")
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
         self.show()

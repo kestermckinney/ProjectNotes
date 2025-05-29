@@ -377,7 +377,7 @@ class ProjectNotesOutlookTools:
         progbar = None # must be destroyed
         return ""
 
-    def schedule_meeting(self, addresses, subject, body)
+    def schedule_meeting(self, addresses, subject, body):
         outlook = win32com.client.Dispatch("Outlook.Application")
         message = outlook.CreateItem(1)
 

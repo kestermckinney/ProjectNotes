@@ -36,6 +36,7 @@ void PythonWorker::emitError()
         // Fetch error information
         PyObject *ptype, *pvalue, *ptraceback;
         PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+        PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
 
         // Convert to string for printing
         PyObject* ptypeStr = PyObject_Str(ptype);
@@ -66,54 +67,46 @@ void PythonWorker::emitError()
             PyObject *traceback_module = PyImport_ImportModule("traceback");
             if (traceback_module)
             {
-                // Get the format_tb function
-                PyObject* format_tb_func = PyObject_GetAttrString(traceback_module, "format_tb");
-                if (format_tb_func)
+                if (traceback_module)
                 {
-                    // Call format_tb to get the traceback as a list of strings
-                    PyObject* tb_list = PyObject_CallFunctionObjArgs(format_tb_func, ptraceback, NULL);
-                    if (tb_list == NULL)
+                    // Get format_exception function
+                    PyObject *formatExc = PyObject_GetAttrString(traceback_module, "format_exception");
+
+                    if (formatExc && PyCallable_Check(formatExc))
                     {
-                        // Get the length of the list
-                        Py_ssize_t size = PyList_Size(tb_list);
+                        // Call format_exception to get the stack trace
+                        PyObject *args = PyTuple_Pack(3, ptype, pvalue ? pvalue : Py_None, ptraceback ? ptraceback : Py_None);
+                        PyObject *traceList = PyObject_CallObject(formatExc, args);
 
-                        // Iterate over the list and send each string to qDebug()
-                        for (Py_ssize_t i = 0; i < size; ++i)
+                        if (traceList && PyList_Check(traceList))
                         {
-                            PyObject* tb_str = PyList_GetItem(tb_list, i);
-                            const char* c_str = PyUnicode_AsUTF8(tb_str);
+                            // Convert the stack trace to a QString
+                            for (Py_ssize_t i = 0; i < PyList_Size(traceList); ++i)
+                            {
+                                PyObject *line = PyList_GetItem(traceList, i);
+                                if (PyUnicode_Check(line))
+                                {
+                                    QString errorMsg = QString::fromUtf8(PyUnicode_AsUTF8(line)).trimmed();
+                                    QLog_Info(CONSOLELOG, errorMsg);
+                                    qDebug() << errorMsg;
 
-                            QLog_Info(CONSOLELOG, c_str);
-
-                            qDebug() << QString::fromUtf8(c_str).trimmed();
+                                }
+                            }
                         }
 
-                        Py_DECREF(ptraceback);
+                        Py_XDECREF(args);
+                        Py_XDECREF(traceList);
+                        Py_XDECREF(formatExc);
                     }
+                    Py_XDECREF(traceback_module);
 
-                    Py_DECREF(format_tb_func);
                 }
 
-                // PyObject *tb_str = PyObject_CallMethod(tb_module, "format_tb", "O", ptraceback);
-                // if (tb_str)
-                // {
-                //     PyObject *tb_str_repr = PyObject_Str(tb_str);
-
-                //     QString trace_message = PyUnicode_AsUTF8(tb_str_repr);
-                //     trace_message.replace("\\\\\\", "\\");
-
-                //     errorMsg = QString("Traceback: %1 ").arg(trace_message);
-                //     QLog_Info(CONSOLELOG, errorMsg);
-                //     qDebug() << errorMsg;
-
-                //     Py_DECREF(tb_str_repr);
-                //     Py_DECREF(tb_str);
-                // }
-
-                Py_DECREF(traceback_module);
+                // Clean up exception objects
+                Py_XDECREF(ptype);
+                Py_XDECREF(pvalue);
+                Py_XDECREF(ptraceback);
             }
-
-            //Py_DECREF(ptraceback);
         }
 
         // Clean up error state

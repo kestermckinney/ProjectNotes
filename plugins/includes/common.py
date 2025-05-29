@@ -2,14 +2,6 @@ import platform
 import os
 import json
 
-# todo: make compatible
-# if (platform.system() == 'Windows'):
-#     from win32com.client import GetObject
-#     import win32com
-#     import win32api
-#     import win32gui
-
-
 from PyQt6 import QtGui, QtCore, QtWidgets
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QSettings
 from PyQt6.QtXml import QDomDocument, QDomNode

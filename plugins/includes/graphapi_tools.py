@@ -48,7 +48,7 @@ class TokenAPI:
 
         self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)
         self.token_cache_file = self.temporary_folder + '/token_cache.json'
-        self.scopes = ["Mail.Send", "Mail.ReadWrite", "Contacts.Read", "Contacts.ReadWrite","Calendars.ReadWrite", "Tasks.ReadWrite"]
+        self.scopes = ["Mail.Send", "Mail.ReadWrite", "Contacts.Read", "Contacts.ReadWrite","Calendars.ReadWrite", "Tasks.ReadWrite", "MailboxSettings.Read"]
         self.token_expires = None
         self.token_response = None
         self.access_token = None
@@ -455,11 +455,13 @@ class GraphAPITools:
         if not self.use_graph_api:  # office 365 integration is disabled
             return
 
+        tzone = self.get_user_timezone()
+
         # Endpoint to create an event (in the draft state)
         events_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/events"
 
-        formatted_datetime_start = datetime_start.toUTC().toString("yyyy-MM-ddThh:mm:ss")
-        formatted_datetime_end = datetime_end.toUTC().toString("yyyy-MM-ddThh:mm:ss")
+        formatted_datetime_start = datetime_start.toString("yyyy-MM-ddThh:mm:ss")
+        formatted_datetime_end = datetime_end.toString("yyyy-MM-ddThh:mm:ss")
 
         event_details = {
             "subject": subject,
@@ -469,11 +471,11 @@ class GraphAPITools:
             },
             "start": {
                 "dateTime": formatted_datetime_start,
-                "timeZone": "UTC"
+                "timeZone": tzone
             },
             "end": {
                 "dateTime": formatted_datetime_end,
-                "timeZone": "UTC"
+                "timeZone": tzone
             },
             "attendees": addresses,
             "isDraft": True,  # This ensures the meeting is drafted and not sent
@@ -485,7 +487,7 @@ class GraphAPITools:
 
         msg = None
         if response.status_code != 201:
-            msg = f"Response Code: {response.status_code} Failed to draft the meeting: {meeting_title}."
+            msg = f"Response Code: {response.status_code} Failed to draft the meeting: {subject}."
             print(msg)
             print(response.json())
 
@@ -517,6 +519,21 @@ class GraphAPITools:
             return f"Error: {response.status_code} Failed to draft email: {email_subject}.  Server Responded: {response.json()}"
 
         return None
+
+    def get_user_timezone(self):
+        # Graph API endpoint to send an email
+        graph_api_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/mailboxSettings"  
+            
+        # Send email via Graph API
+        response = requests.get(graph_api_endpoint, headers=self.headers)
+
+        # Check response status code
+        if response.status_code == 200:
+            # Parse JSON response
+            return response.json()["timeZone"]
+
+        return "UTC"
+
 
     def download_project_emails(self, projectnumber, box, top, destination_folder):
 
