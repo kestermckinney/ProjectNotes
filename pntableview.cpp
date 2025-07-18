@@ -125,6 +125,9 @@ void PNTableView::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname
     QDomDocument* xdoc = dbo->createXMLExportDoc(exportmodel, t_tablefilter);
     QString xmlstr = xdoc->toString();
 
+    qDebug() << xmlstr;
+    qDebug() << t_tablefilter;
+
     // call the menu plugin with the data structure
     t_plugin->callXmlMethod(t_functionname, xmlstr, t_parameter);
 

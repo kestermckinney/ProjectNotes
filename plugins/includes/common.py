@@ -8,7 +8,6 @@ from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication
 
 import re
-import subprocess
 
 class ProjectNotesCommon:
     def __init__(self):

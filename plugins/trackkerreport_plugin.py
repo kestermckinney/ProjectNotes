@@ -17,13 +17,13 @@ from PyQt6.QtGui import QDesktopServices
 # Project Notes Plugin Parameters
 pluginname = "Generate Tracker Report"
 plugindescription = "Generate a tracker report based on the options selected."
-plugintable = "projects" # the table or view that the plugin applies to.  This will enable the right click
-childtablesfilter = "projects/item_tracker/item_tracker_updates/project_locations/project_people" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
+pluginmenus = []
 
 # events must have a data structure and data view specified
 #
 # Structures:
-#      string          The event will pass a python string containing XML and will expect the plugin to return an XML string
+#      string          The event will pass a python string when dataexport is defined containing XML. 
+#                      The plugin can return an XML string to be processed by ProjectNotes.
 #
 # Data Views:
 #      clients
@@ -31,42 +31,11 @@ childtablesfilter = "projects/item_tracker/item_tracker_updates/project_location
 #      projects
 #      project_people
 #      status_report_items
-#      project_locations
+#      project_locations 
 #      project_notes
 #      meeting_attendees
 #      item_tracker_updates
 #      item_tracker
-
-# Supported Events
-
-# def event_startup(xmlstr):
-#     return ""
-#
-# def event_shutdown(xmlstr):
-#     return ""
-#
-# def event_everyminute(xmlstr):
-#     return ""
-#
-# def event_every5minutes(xmlstr):
-#     return ""
-#
-# def event_every10minutes(xmlstr):
-#     return ""
-#
-# def event_every30Mmnutes(xmlstr):
-#     return ""
-#
-# def event_menuclick(xmlstr):
-#     return ""
-
-# Parameters specified here will show in the Project Notes plugin settings window
-# the global variable name must be specified as a string value to be read by project notes
-# Project Notes will set these values before calling any defs
-
-# Project Notes Parameters
-parameters = [
-]
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
@@ -74,7 +43,7 @@ if (platform.system() == 'Windows'):
     pnc = ProjectNotesCommon()
     pne = ProjectNotesExcelTools()
 
-    def event_data_rightclick(xmlstr):
+    def menuGenerateTrackerReport(xmlstr, parameter):
         print("called event: " + __file__)
 
         
@@ -100,7 +69,7 @@ if (platform.system() == 'Windows'):
         QtWidgets.QApplication.restoreOverrideCursor()
         QtWidgets.QApplication.processEvents()   
 
-        ui = uic.loadUi("plugins/includes/dialogTrackerRptOptions.ui")
+        ui = uic.loadUi("plugins/forms/dialogTrackerRptOptions.ui")
         ui.setWindowFlags(
             QtCore.Qt.WindowType.Window |
             QtCore.Qt.WindowType.WindowCloseButtonHint
@@ -440,6 +409,9 @@ if (platform.system() == 'Windows'):
         QtWidgets.QApplication.processEvents()
 
         return ""
+
+pluginmenus.append({"menutitle" : "Generate Tracker Report", "function" : "menuGenerateTrackerReport", "tablefilter" : "projects/item_tracker/item_tracker_updates/project_locations/project_people", "submenu" : "", "dataexport" : "projects"})
+
         
 # setup test data
 """

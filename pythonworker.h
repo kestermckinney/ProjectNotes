@@ -158,6 +158,7 @@ private:
     int setPythonVariable(const QString& t_variablename, const QString& t_value);
     QString getPythonVariable(const QString& t_variablename);
     QStringList getPythonStringList(const QString& t_variablename);
+    void findImportedModules(const QString& pythonFilePath);
 
 signals:
     // signals to caller

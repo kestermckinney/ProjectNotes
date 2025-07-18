@@ -1,10 +1,6 @@
 import sys
 import platform
 
-if (platform.system() == 'Windows'):
-    from includes.excel_tools import ProjectNotesExcelTools
-    import win32com
-
 from includes.common import ProjectNotesCommon
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 
@@ -17,13 +13,14 @@ from PyQt6.QtGui import QDesktopServices
 # Project Notes Plugin Parameters
 pluginname = "Send Meeting Notes"
 plugindescription = "Using Outlook sends meeting notes out for the selected meeting."
-plugintable = "project_notes" # the table or view that the plugin applies to.  This will enable the right click
-childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
+
+pluginmenus = []
 
 # events must have a data structure and data view specified
 #
 # Structures:
-#      string          The event will pass a python string containing XML and will expect the plugin to return an XML string
+#      string          The event will pass a python string when dataexport is defined containing XML. 
+#                      The plugin can return an XML string to be processed by ProjectNotes.
 #
 # Data Views:
 #      clients
@@ -31,146 +28,109 @@ childtablesfilter = "" # a list of child tables that can be sent to the plugin. 
 #      projects
 #      project_people
 #      status_report_items
-#      project_locations
+#      project_locations 
 #      project_notes
 #      meeting_attendees
 #      item_tracker_updates
 #      item_tracker
 
-# Supported Events
+pnc = ProjectNotesCommon()
 
-# def event_startup(xmlstr):
-#     return ""
-#
-# def event_shutdown(xmlstr):
-#     return ""
-#
-# def event_everyminute(xmlstr):
-#     return ""
-#
-# def event_every5minutes(xmlstr):
-#     return ""
-#
-# def event_every10minutes(xmlstr):
-#     return ""
-#
-# def event_every30Mmnutes(xmlstr):
-#     return ""
-#
-# def event_menuclick(xmlstr):
-#     return ""
-
-# Parameters specified here will show in the Project Notes plugin settings window
-# the global variable name must be specified as a string value to be read by project notes
-# Project Notes will set these values before calling any defs
-
-# Project Notes Parameters
-parameters = [
-]
-
-# this plugin is only supported on windows
-if (platform.system() == 'Windows'):
-    #
-    pnc = ProjectNotesCommon()
-    pne = ProjectNotesExcelTools()
-
-    def event_data_rightclick(xmlstr):
-        print("called event: " + __file__)
-
-        window_title = ""
-        xmldoc = ""
-        
-        xmlval = QDomDocument()
-        if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
-            return ""
- 
-        outlook = win32com.client.Dispatch("Outlook.Application")
-        message = outlook.CreateItem(0)
-        message.To = ""
-
-        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
-        pm = xmlroot.toElement().attribute("managing_manager_name")
-        co = xmlroot.toElement().attribute("managing_company_name")
-
-        htmlbody = ""
-
-        childnode = xmlroot.firstChild()
-
-        email = None
-        nm = None
-
-        while not childnode.isNull():
-
-            if childnode.attributes().namedItem("name").nodeValue() == "project_notes":
-                rownode = childnode.firstChild()
-
-                while not rownode.isNull():
-                    htmlbody = htmlbody + get_html_header(pnc.get_column_value(rownode, "project_id"),
-                    pnc.get_column_value(rownode, "project_id_name"),
-                    pnc.get_column_value(rownode, "note_date"),
-                    pnc.get_column_value(rownode, "note_title"))
-
-                    attendeetable = pnc.find_node(rownode, "table", "name", "meeting_attendees")
-                    if not attendeetable.isNull():
-                        attendeerow = attendeetable.firstChild()
-
-                        attendeelist = ""
-                        while not attendeerow.isNull():
-                            if attendeelist != "":
-                                attendeelist = attendeelist + ", "
-
-                            attendeelist = attendeelist + pnc.get_column_value(attendeerow, "name")
-
-                            nm = pnc.get_column_value(attendeerow, "name")
-                            email = pnc.get_column_value(attendeerow, "email")
-
-                            if nm != pm:
-                                if (email != None and email != ""):
-                                    message.Recipients.Add(email)
-
-                            attendeerow = attendeerow.nextSibling()
-
-                    htmlbody = htmlbody + get_html_attendee(attendeelist)
-                    htmlbody = htmlbody + get_html_notes(pnc.get_column_value(rownode, "note"))
-                    htmlbody = htmlbody + get_html_trackerheader()
-
-                    trackertable = pnc.find_node(rownode, "table", "name", "item_tracker")
-                    if not trackertable.isNull():
-                        trackerrow = trackertable.firstChild()
-
-                        while not trackerrow.isNull():
-                            htmlbody = htmlbody + get_html_trackerrow(
-                            pnc.get_column_value(trackerrow, "item_name"),
-                            pnc.get_column_value(trackerrow, "assigned_to"),
-                            pnc.get_column_value(trackerrow, "status"),
-                            pnc.get_column_value(trackerrow, "date_due") )
-
-                            trackerrow = trackerrow.nextSibling()
-
-                    htmlbody = htmlbody + get_html_footer()
-
-                    message.Display()
-                    outlook.ActiveExplorer().Activate()
-
-                    DefaultSignature = message.HTMLBody
-
-                    window_title = pnc.get_column_value(rownode, "project_id") + " " + pnc.get_column_value(rownode, "project_id_name")+ " - " + pnc.get_column_value(rownode, "note_date") + " " + pnc.get_column_value(rownode, "note_title") + " Notes"
-                    message.Subject = window_title 
-
-                    message.BodyFormat = 2 # olFormatHTML
-                    message.HTMLBody = htmlbody + DefaultSignature
-
-                    rownode = rownode.nextSibling()
-
-            childnode = childnode.nextSibling()
-
-        outlook = None
-        message = None
-
-        pnc.bring_window_to_front(window_title)
-
+def menuSendNotes(xmlstr, parameter):
+    window_title = ""
+    xmldoc = ""
+    
+    xmlval = QDomDocument()
+    if (xmlval.setContent(xmlstr) == False):
+        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
         return ""
+
+    outlook = win32com.client.Dispatch("Outlook.Application")
+    message = outlook.CreateItem(0)
+    message.To = ""
+
+    xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
+    pm = xmlroot.toElement().attribute("managing_manager_name")
+    co = xmlroot.toElement().attribute("managing_company_name")
+
+    htmlbody = ""
+
+    childnode = xmlroot.firstChild()
+
+    email = None
+    nm = None
+
+    while not childnode.isNull():
+
+        if childnode.attributes().namedItem("name").nodeValue() == "project_notes":
+            rownode = childnode.firstChild()
+
+            while not rownode.isNull():
+                htmlbody = htmlbody + get_html_header(pnc.get_column_value(rownode, "project_id"),
+                pnc.get_column_value(rownode, "project_id_name"),
+                pnc.get_column_value(rownode, "note_date"),
+                pnc.get_column_value(rownode, "note_title"))
+
+                attendeetable = pnc.find_node(rownode, "table", "name", "meeting_attendees")
+                if not attendeetable.isNull():
+                    attendeerow = attendeetable.firstChild()
+
+                    attendeelist = ""
+                    while not attendeerow.isNull():
+                        if attendeelist != "":
+                            attendeelist = attendeelist + ", "
+
+                        attendeelist = attendeelist + pnc.get_column_value(attendeerow, "name")
+
+                        nm = pnc.get_column_value(attendeerow, "name")
+                        email = pnc.get_column_value(attendeerow, "email")
+
+                        if nm != pm:
+                            if (email != None and email != ""):
+                                message.Recipients.Add(email)
+
+                        attendeerow = attendeerow.nextSibling()
+
+                htmlbody = htmlbody + get_html_attendee(attendeelist)
+                htmlbody = htmlbody + get_html_notes(pnc.get_column_value(rownode, "note"))
+                htmlbody = htmlbody + get_html_trackerheader()
+
+                trackertable = pnc.find_node(rownode, "table", "name", "item_tracker")
+                if not trackertable.isNull():
+                    trackerrow = trackertable.firstChild()
+
+                    while not trackerrow.isNull():
+                        htmlbody = htmlbody + get_html_trackerrow(
+                        pnc.get_column_value(trackerrow, "item_name"),
+                        pnc.get_column_value(trackerrow, "assigned_to"),
+                        pnc.get_column_value(trackerrow, "status"),
+                        pnc.get_column_value(trackerrow, "date_due") )
+
+                        trackerrow = trackerrow.nextSibling()
+
+                htmlbody = htmlbody + get_html_footer()
+
+                message.Display()
+                outlook.ActiveExplorer().Activate()
+
+                DefaultSignature = message.HTMLBody
+
+                window_title = pnc.get_column_value(rownode, "project_id") + " " + pnc.get_column_value(rownode, "project_id_name")+ " - " + pnc.get_column_value(rownode, "note_date") + " " + pnc.get_column_value(rownode, "note_title") + " Notes"
+                message.Subject = window_title 
+
+                message.BodyFormat = 2 # olFormatHTML
+                message.HTMLBody = htmlbody + DefaultSignature
+
+                rownode = rownode.nextSibling()
+
+        childnode = childnode.nextSibling()
+
+    outlook = None
+    message = None
+
+    pnc.bring_window_to_front(window_title)
+
+    return ""
 
 
 def get_html_header(projectnumber, projectname, day, title):
@@ -600,6 +560,9 @@ def get_html_footer():
     </html>
     """
     return htmldoc
+
+
+pluginmenus.append({"menutitle" : "Send Meeting Notes", "function" : "menuSendNotes", "tablefilter" : "", "submenu" : "", "dataexport" : "project_notes"})
 
 # setup test data
 """

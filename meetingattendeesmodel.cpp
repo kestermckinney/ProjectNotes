@@ -42,8 +42,6 @@ const QModelIndex MeetingAttendeesModel::newRecord(const QVariant* t_fk_value1, 
 
     QVector<QVariant> qr = emptyrecord();
 
-    //qDebug() << "note id key " << *t_fk_value1;
-
     qr[1] = *t_fk_value1;
 
     return addRecord(qr);

@@ -19,9 +19,7 @@ from PyQt6.QtGui import QDesktopServices
 pluginname = "Close Stranded Word"
 plugindescription = "Closes all of the abandon Word automation object processes."
 
-pluginmenus = [
-    {"menutitle" : "Close Stranded Word", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""},
-]
+pluginmenus = []
 
 # events must have a data structure and data view specified
 #
@@ -46,10 +44,12 @@ pluginmenus = [
 if (platform.system() == 'Windows'):
     pne = ProjectNotesWordTools()
 
-    def event_menuclick():
+    def menuKillWord(xmlstr, parameter):
         pne.killwordautomation()
         return ""  
  
+    pluginmenus.append({"menutitle" : "Close Stranded Word", "function" : "menuKillWord", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""})
+
 # call when testing outside of Project Notes
 """
 app = QApplication(sys.argv)

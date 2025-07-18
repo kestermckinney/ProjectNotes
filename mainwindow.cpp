@@ -1438,8 +1438,6 @@ void MainWindow::textSize(const QString &p)
         QTextCharFormat fmt;
         fmt.setFontPointSize(pointSize);
         mergeFormatOnWordOrSelection(fmt);
-
-        //qDebug() << "Called textSize: " << p;
     }
 }
 

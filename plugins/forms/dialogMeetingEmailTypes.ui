@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>dialogMeetingTypes</class>
- <widget class="QDialog" name="dialogMeetingTypes">
+ <class>dialogMeetingEmailTypes</class>
+ <widget class="QDialog" name="dialogMeetingEmailTypes">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Meeting Types Settings</string>
+   <string>Meeting and Email Types Settings</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
@@ -27,7 +27,7 @@
     <number>4</number>
    </property>
    <item>
-    <widget class="QTableWidget" name="tableWidgetMeetingTypes">
+    <widget class="QTableWidget" name="tableWidgetMeetingEmailTypes">
      <property name="editTriggers">
       <set>QAbstractItemView::EditTrigger::AnyKeyPressed|QAbstractItemView::EditTrigger::DoubleClicked|QAbstractItemView::EditTrigger::EditKeyPressed</set>
      </property>
@@ -39,7 +39,12 @@
      </property>
      <column>
       <property name="text">
-       <string>Meeting Type</string>
+       <string>Type</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Name</string>
       </property>
      </column>
      <column>
@@ -104,7 +109,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>dialogMeetingTypes</receiver>
+   <receiver>dialogMeetingEmailTypes</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -120,7 +125,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>dialogMeetingTypes</receiver>
+   <receiver>dialogMeetingEmailTypes</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

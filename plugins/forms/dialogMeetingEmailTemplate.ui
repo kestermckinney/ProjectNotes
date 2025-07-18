@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>dialogMeetingTemplate</class>
- <widget class="QDialog" name="dialogMeetingTemplate">
+ <class>dialogMeetingEmailTemplate</class>
+ <widget class="QDialog" name="dialogMeetingEmailTemplate">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Meeting Template</string>
+   <string>Meeting or Email Template</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
@@ -37,7 +37,28 @@
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="lineEditType"/>
+    <widget class="QComboBox" name="comboBoxType">
+     <item>
+      <property name="text">
+       <string>Email</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Meeting</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="labelName">
+     <property name="text">
+      <string>Name:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="lineEditName"/>
    </item>
    <item>
     <widget class="QLabel" name="labelInvitees">
@@ -50,17 +71,7 @@
     <widget class="QComboBox" name="comboBoxInvitees">
      <item>
       <property name="text">
-       <string>Internal Project Team</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Full Project Team</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Only Client</string>
+       <string>Attachment Only</string>
       </property>
      </item>
      <item>
@@ -70,7 +81,22 @@
      </item>
      <item>
       <property name="text">
+       <string>Full Project Team</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
        <string>Individual</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Internal Project Team</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Only Client</string>
       </property>
      </item>
     </widget>
@@ -112,7 +138,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>dialogMeetingTemplate</receiver>
+   <receiver>dialogMeetingEmailTemplate</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -128,7 +154,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>dialogMeetingTemplate</receiver>
+   <receiver>dialogMeetingEmailTemplate</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

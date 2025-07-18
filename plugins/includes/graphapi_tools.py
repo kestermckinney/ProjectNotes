@@ -225,6 +225,8 @@ class GraphAPITools:
         # Upload the attachment to the draft email
         response = requests.post(f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{draft_email_id}/attachments", headers=self.headers, json=attachment)
 
+        print(f"uploading {file_path} as an attachment")
+
         if response.status_code != 201:
             return f"Response Code: {response.status_code} Failed to upload attachment: {file_path}.  Server Responded: {response.json()}"
 

@@ -1,29 +1,30 @@
 import sys
 import platform
 
-if (platform.system() == 'Windows'):
-    from includes.excel_tools import ProjectNotesExcelTools
-    import win32com
-
 from includes.common import ProjectNotesCommon
+
+if (platform.system() == 'Windows'):
+    import win32com
+    from win32 import win32api    
+    from includes.outlook_tools import ProjectNotesOutlookTools
+
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
-
+from PyQt6.QtCore import Qt, QRect, QDateTime, QTime, QFile, QIODevice
+from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QDialog, QFileDialog, QWidget, QTableWidgetItem, QStyledItemDelegate, QComboBox
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl
-from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
-from PyQt6.QtGui import QDesktopServices
-
+from PyQt6.QtGui import QDesktopServices, QClipboard
 
 # Project Notes Plugin Parameters
 pluginname = "Find Project Email"
 plugindescription = "Using Outlook find email related to the project sent to or from the selected person."
-plugintable = "project_people" # the table or view that the plugin applies to.  This will enable the right click
-childtablesfilter = "" # a list of child tables that can be sent to the plugin.  This will be used to exclude items like notes or action items when they aren't used
+
+pluginmenus = []
 
 # events must have a data structure and data view specified
 #
 # Structures:
-#      string          The event will pass a python string containing XML and will expect the plugin to return an XML string
+#      string          The event will pass a python string when dataexport is defined containing XML. 
+#                      The plugin can return an XML string to be processed by ProjectNotes.
 #
 # Data Views:
 #      clients
@@ -31,54 +32,19 @@ childtablesfilter = "" # a list of child tables that can be sent to the plugin. 
 #      projects
 #      project_people
 #      status_report_items
-#      project_locations
+#      project_locations 
 #      project_notes
 #      meeting_attendees
 #      item_tracker_updates
 #      item_tracker
-
-# Supported Events
-
-# def event_startup(xmlstr):
-#     return ""
-#
-# def event_shutdown(xmlstr):
-#     return ""
-#
-# def event_everyminute(xmlstr):
-#     return ""
-#
-# def event_every5minutes(xmlstr):
-#     return ""
-#
-# def event_every10minutes(xmlstr):
-#     return ""
-#
-# def event_every30Mmnutes(xmlstr):
-#     return ""
-#
-# def event_menuclick(xmlstr):
-#     return ""
-
-# Parameters specified here will show in the Project Notes plugin settings window
-# the global variable name must be specified as a string value to be read by project notes
-# Project Notes will set these values before calling any defs
-
-# Project Notes Parameters
-parameters = [
-]
-
+ 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
-    #
     pnc = ProjectNotesCommon()
-    pne = ProjectNotesExcelTools()
 
-    def event_data_rightclick(xmlstr):
-        print("called event: " + __file__)
+    def menuFindEmail(xmlstr, parameter):
 
         window_title = ""
-
         
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
@@ -118,6 +84,11 @@ if (platform.system() == 'Windows'):
 
         return ""
 
+
+    pluginmenus.append({"menutitle" : "Find Project Email", "function" : "menuFindEmail", "tablefilter" : "project_people", "submenu" : "Utilities", "dataexport" : "project_people"})
+    pluginmenus.append({"menutitle" : "Find Project Email", "function" : "menuFindEmail", "tablefilter" : "meeting_attendees", "submenu" : "Utilities", "dataexport" : "meeting_attendees"})
+
+
 # setup test data
 """
 print("Buld up QDomDocument")
@@ -131,6 +102,6 @@ if f.open(QIODevice.OpenModeFlag.ReadOnly):
     xmldoc.setContent(f)
     f.close()
 
-event_data_rightclick(xmldoc.toString())
+menuFindEmail(xmldoc.toString(), None)
 
 """

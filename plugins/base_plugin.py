@@ -35,16 +35,7 @@ pluginmenus = [
     {"menutitle" : "Copy Path to Clipboard", "function" : "menuCopyPath", "tablefilter" : "project_locations", "submenu" : "", "dataexport" : "project_locations"}, 
     {"menutitle" : "Script Editor", "function" : "menuOpenEditor", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""},
     {"menutitle" : "Send Meeting Notes", "function" : "menuSendNotes", "tablefilter" : "", "submenu" : "", "dataexport" : "project_notes"},
-    {"menutitle" : "Send Email", "function" : "menuSendProjectEmail", "tablefilter" : "projects/project_people", "submenu" : "", "dataexport" : "projects"},
-    {"menutitle" : "Send Internal Email", "function" : "menuSendInternalProjectEmail", "tablefilter" : "projects/project_people", "submenu" : "", "dataexport" : "projects"},
-    {"menutitle" : "Send Email", "function" : "menuSendProjectEmail", "tablefilter" : "project_people", "submenu" : "", "dataexport" : "project_people"},
-    {"menutitle" : "Send Email", "function" : "menuSendProjectEmail", "tablefilter" : "", "submenu" : "", "dataexport" : "people"},
-    {"menutitle" : "Email as Attachment", "function" : "menuSendProjectEmail", "tablefilter" : "project_locations", "submenu" : "", "dataexport" : "project_locations"},
-
-    {"menutitle" : "Export Meeting Notes", "function" : "menuExportMeetingNotes", "tablefilter" : "projects/project_notes/meeting_attendees/item_tracker/project_locations", "submenu" : "Utilities", "dataexport" : "projects"}, #todo
-    {"menutitle" : "Export Contacts to Outlook", "function" : "menuExportContactsToOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""},   #todo make dynamic for linux
-    {"menutitle" : "Import Contacts from Outlook", "function" : "menuImportContactsFromOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""},   #todo make dynamic for linux
-    {"menutitle" : "My Shortcuts", "function" : "menuMyShortcutSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    #{"menutitle" : "My Shortcuts", "function" : "menuMyShortcutSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
 ]
 
 # events must have a data structure and data view specified
@@ -296,24 +287,24 @@ class BasePlugins:
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to draft an email.",QMessageBox.StandardButton.Cancel)
             return ""
             
+        print(xmlstr)
+
         xmlroot = xmlval.documentElement()
 
-        email_body_filled_in = pnc.replace_variables(content, xmlroot)
+        email_body_filled_in = self.pnc.replace_variables(content, xmlroot)
 
         addresses = self.list_builder(xmlroot, "email", invitees)
 
         email_subject = self.pnc.replace_variables(subject, xmlroot)
 
-        projlocation = self.pnc.find_node(xmlroot, "table", "name", "project_locations")
+        locations = self.pnc.find_node(xmlroot, "table", "name", "project_locations")
 
-        if not projlocation.isNull():
-            locationrow = projlocation.firstChild()
+        if not locations.isNull():
+            locationrow = locations.firstChild()
 
             while not locationrow.isNull():
                 fp = self.pnc.get_column_value(locationrow, "full_path")
-
                 attachments.append(fp)
-
                 locationrow = locationrow.nextSibling()
 
         # if a single attchment was specified, add it
@@ -377,16 +368,14 @@ class BasePlugins:
         meeting_subject = self.pnc.replace_variables(subject, xmlroot)
         meeting_template_filled_in = pnc.replace_variables(content, xmlroot)
 
-        projlocation = self.pnc.find_node(xmlroot, "table", "name", "project_locations")
+        locations = self.pnc.find_node(xmlroot, "table", "name", "project_locations")
 
-        if not projlocation.isNull():
-            locationrow = projlocation.firstChild()
+        if not locations.isNull():
+            locationrow = locations.firstChild()
 
             while not locationrow.isNull():
                 fp = self.pnc.get_column_value(locationrow, "full_path")
-
                 attachments.append(fp)
-
                 locationrow = locationrow.nextSibling()
 
         # if a single attchment was specified, add it
@@ -448,7 +437,7 @@ class BasePlugins:
             self.pnc.exec_program( EditorFullPath )
         return ""
 
-def populate_menu_from_json(json_string):
+def populate_dynamic_menu(json_string):
     global json_menu_data
     global pluginmenus
 
@@ -467,38 +456,72 @@ def populate_menu_from_json(json_string):
 
             inviteees = row_data["Invitees"]
 
-            if (inviteees == "Individual"):
-                pluginmenus.append({"menutitle" : row_data["Meeting Type"], "function" : "menuScheduleMeeting",  "tablefilter" : "people", "submenu" : "Schedule Meeting", "dataexport" : "people", "parameter" : row_data["Meeting Type"] })
+            if row_data["Type"] == "Email":
+                if (inviteees == "Individual"):
+                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "people", "submenu" : "Send Email", "dataexport" : "people", "parameter" : row_data["Name"] })
+                elif (inviteees == "Attachment Only"):
+                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "project_locations", "submenu" : "Send Email", "dataexport" : "project_locations", "parameter" : row_data["Name"] })                    
+                else:
+                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "projects/project_people", "submenu" : "Send Email", "dataexport" : "projects", "parameter" : row_data["Name"] })
+                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "project_notes/meeting_attendees", "submenu" : "Send Email", "dataexport" : "project_notes", "parameter" : row_data["Name"] })
             else:
-                pluginmenus.append({"menutitle" : row_data["Meeting Type"], "function" : "menuScheduleMeeting",  "tablefilter" : "projects/project_people", "submenu" : "Schedule Meeting", "dataexport" : "projects", "parameter" : row_data["Meeting Type"] })
-                pluginmenus.append({"menutitle" : row_data["Meeting Type"], "function" : "menuScheduleMeeting",  "tablefilter" : "project_notes/meeting_attendees", "submenu" : "Schedule Meeting", "dataexport" : "project_notes", "parameter" : row_data["Meeting Type"] })
+                if (inviteees == "Individual"):
+                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuScheduleMeeting",  "tablefilter" : "people", "submenu" : "Schedule Meeting", "dataexport" : "people", "parameter" : row_data["Name"] })
+                elif (inviteees == "Attachment Only"):
+                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuScheduleMeeting",  "tablefilter" : "project_locations", "submenu" : "Schedule Meeting", "dataexport" : "project_locations", "parameter" : row_data["Name"] })                    
+                else:
+                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuScheduleMeeting",  "tablefilter" : "projects/project_people", "submenu" : "Schedule Meeting", "dataexport" : "projects", "parameter" : row_data["Name"] })
+                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuScheduleMeeting",  "tablefilter" : "project_notes/meeting_attendees", "submenu" : "Schedule Meeting", "dataexport" : "project_notes", "parameter" : row_data["Name"] })
 
-            print("... adding menu item f{row_data['Meeting Type']}")
-
+    if (platform.system() == 'Windows'):
+        pluginmenus.append({"menutitle" : "Export Contacts to Outlook", "function" : "menuExportContactsToOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""})
+        pluginmenus.append({"menutitle" : "Import Contacts from Outlook", "function" : "menuImportContactsFromOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""})
 
 def menuScheduleMeeting(xmlstr, parameter):
     global json_menu_data
 
     # find meeting type
-    meeting_type = None
+    nam = None
     for d in json_menu_data:
-        meet = d.get('Meeting Type')
-        if meet == parameter:
-            meeting_type = d
+        itemname = d.get('Name')
+        if itemname == parameter:
+            nam = d
 
-    if meeting_type is None or len(meeting_type) == 0:
+    if nam is None or len(nam) == 0:
         QMessageBox.critical(None, "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.",QMessageBox.StandardButton.Cancel)
         return ""
 
-    meeting_template = meeting_type.get('Template')
-    invitees = meeting_type.get('Invitees')
-    subject = meeting_type.get('Subject')
+    template = nam.get('Template')
+    invitees = nam.get('Invitees')
+    subject = nam.get('Subject')
 
     baseplugin = BasePlugins()
-    baseplugin.schedule_a_meeting(xmlstr, subject, meeting_template, None, invitees)
+    baseplugin.schedule_a_meeting(xmlstr, subject, template, None, invitees)
 
     return ""
 
+def menuSendEmail(xmlstr, parameter):
+    global json_menu_data
+
+    # find meeting type
+    nam = None
+    for d in json_menu_data:
+        itemname = d.get('Name')
+        if itemname == parameter:
+            nam = d
+
+    if nam is None or len(nam) == 0:
+        QMessageBox.critical(None, "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.",QMessageBox.StandardButton.Cancel)
+        return ""
+
+    template = nam.get('Template')
+    invitees = nam.get('Invitees')
+    subject = nam.get('Subject')
+
+    baseplugin = BasePlugins()
+    baseplugin.send_an_email(xmlstr, subject, template, None, invitees)
+
+    return ""
 
 def menuCopyContactEmail(xmlstr, parameter):
     baseplugin = BasePlugins()
@@ -520,14 +543,6 @@ def menuOpenEditor(parameter):
     baseplugin = BasePlugins()
     return baseplugin.open_editor()
 
-def menuSendInternalProjectEmail(xmlstr, parameter):
-    baseplugin = BasePlugins()
-    return baseplugin.send_an_email(xmlstr, "[$projects.project_number.1] [$projects.project_name.1] - ", "", None, "Exclude Client")
-
-def menuSendProjectEmail(xmlstr, parameter):
-    baseplugin = BasePlugins()
-    return baseplugin.send_an_email(xmlstr, "[$projects.project_number.1] [$projects.project_name.1] - ", "", None, "Full Project Team")
-
 def menuSendNotes(xmlstr, parameter):
     baseplugin = BasePlugins()
     nf = NoteFormatter(xmlstr)
@@ -535,6 +550,6 @@ def menuSendNotes(xmlstr, parameter):
 
 pnc = ProjectNotesCommon()
 json_menu_data = None
-menu_data = pnc.get_plugin_setting("MeetingTypes", "Meeting Types")
-populate_menu_from_json(menu_data)
+menu_data = pnc.get_plugin_setting("MeetingEmailTypes", "Meeting And Email Types")
+populate_dynamic_menu(menu_data)
 

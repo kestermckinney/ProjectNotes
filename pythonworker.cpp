@@ -1,6 +1,11 @@
 #include "pythonworker.h"
 #include <QFileInfo>
 #include <QCoreApplication>
+#include <QStringList>
+#include <QFile>
+#include <QTextStream>
+#include <QDir>
+#include <QRegularExpression>
 
 // TODO: remove
 #ifndef Q_OS_WIN
@@ -34,7 +39,7 @@ void PythonWorker::emitError()
     if (PyErr_Occurred())
     {
         // Fetch error information
-        PyObject *ptype, *pvalue, *ptraceback;
+        PyObject *ptype = nullptr, *pvalue = nullptr, *ptraceback = nullptr;
         PyErr_Fetch(&ptype, &pvalue, &ptraceback);
         PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
 
@@ -67,46 +72,43 @@ void PythonWorker::emitError()
             PyObject *traceback_module = PyImport_ImportModule("traceback");
             if (traceback_module)
             {
-                if (traceback_module)
+                // Get format_exception function
+                PyObject *formatExc = PyObject_GetAttrString(traceback_module, "format_tb");
+
+                if (formatExc) // && PyCallable_Check(formatExc))
                 {
-                    // Get format_exception function
-                    PyObject *formatExc = PyObject_GetAttrString(traceback_module, "format_exception");
+                    // Call format_exception to get the stack trace
+                    PyObject *args = PyTuple_Pack(3, ptype, pvalue ? pvalue : Py_None, ptraceback ? ptraceback : Py_None);
+                    PyObject *traceList = PyObject_CallObject(formatExc, args);
 
-                    if (formatExc && PyCallable_Check(formatExc))
+                    if (traceList && PyList_Check(traceList))
                     {
-                        // Call format_exception to get the stack trace
-                        PyObject *args = PyTuple_Pack(3, ptype, pvalue ? pvalue : Py_None, ptraceback ? ptraceback : Py_None);
-                        PyObject *traceList = PyObject_CallObject(formatExc, args);
-
-                        if (traceList && PyList_Check(traceList))
+                        // Convert the stack trace to a QString
+                        for (Py_ssize_t i = 0; i < PyList_Size(traceList); ++i)
                         {
-                            // Convert the stack trace to a QString
-                            for (Py_ssize_t i = 0; i < PyList_Size(traceList); ++i)
+                            PyObject *line = PyList_GetItem(traceList, i);
+                            if (PyUnicode_Check(line))
                             {
-                                PyObject *line = PyList_GetItem(traceList, i);
-                                if (PyUnicode_Check(line))
-                                {
-                                    QString errorMsg = QString::fromUtf8(PyUnicode_AsUTF8(line)).trimmed();
-                                    QLog_Info(CONSOLELOG, errorMsg);
-                                    qDebug() << errorMsg;
+                                QString errorMsg = QString::fromUtf8(PyUnicode_AsUTF8(line)).trimmed();
+                                QLog_Info(CONSOLELOG, errorMsg);
+                                qDebug() << errorMsg;
 
-                                }
                             }
                         }
-
-                        Py_XDECREF(args);
-                        Py_XDECREF(traceList);
-                        Py_XDECREF(formatExc);
                     }
-                    Py_XDECREF(traceback_module);
 
+                    Py_XDECREF(args);
+                    Py_XDECREF(traceList);
+                    Py_XDECREF(formatExc);
                 }
+                Py_XDECREF(traceback_module);
 
-                // Clean up exception objects
-                Py_XDECREF(ptype);
-                Py_XDECREF(pvalue);
-                Py_XDECREF(ptraceback);
             }
+
+            // Clean up exception objects
+            // Py_XDECREF(ptype);
+            // Py_XDECREF(pvalue);
+            Py_XDECREF(ptraceback);
         }
 
         // Clean up error state
@@ -151,63 +153,7 @@ void PythonWorker::loadModule(const QString& t_modulepath)
         return;
     }
 
-    // Get the sys.modules dictionary
-    PyObject* sysModules = PyImport_GetModuleDict();
-
-    // Check if we successfully got the dictionary
-    if (!sysModules) {
-        emitError();
-        PyGILState_Release(gstate);
-        return;
-    }
-
-    QString pluginspath = QCoreApplication::applicationDirPath() + "/plugins";
-    QString threadspath = QCoreApplication::applicationDirPath() + "/threads";
-
-    // Iterate over the dictionary items
-    Py_ssize_t pos = 0;
-    PyObject *key, *value;
-
-    // this will get all modules, which is not ideal
-    // basically any time a module in a sub folder changes all plugins will reload
-    while (PyDict_Next(sysModules, &pos, &key, &value))
-    {
-        const char* moduleName = PyUnicode_AsUTF8(key);
-
-        if (moduleName)
-        {
-            // Get the __file__ attribute of the module
-            PyObject* fileAttr = PyObject_GetAttrString(value, "__file__");
-
-            if (fileAttr)
-            {
-                const char* filePath = PyUnicode_AsUTF8(fileAttr);
-                if (filePath)
-                {
-                    QString path = filePath;
-                    path.replace("\\", "/");
-
-                    QFileInfo fi = QFileInfo(path);
-
-                    // don't add any code in the base folders to the imports list - basically we are assuming any file in the child folder could be imported
-                    if ( fi.absolutePath().compare(pluginspath, Qt::CaseInsensitive) != 0 && fi.absolutePath().compare(threadspath, Qt::CaseInsensitive) != 0 )
-                    {
-                        if (path.startsWith(pluginspath, Qt::CaseInsensitive) || path.startsWith(threadspath, Qt::CaseInsensitive))
-                        {
-                            m_plugin.addImport(path);
-                        }
-                    }
-                }
-
-                Py_DECREF(fileAttr); // Decrement the reference count
-            }
-            else
-            {
-                // Clear the error since some modules don't have a __file__ attribute
-                PyErr_Clear();
-            }
-        }
-    }
+    findImportedModules(m_PluginLocation);
 
     m_plugin.setName(getPythonVariable("pluginname"));
     if (m_plugin.name().isEmpty())
@@ -226,7 +172,6 @@ void PythonWorker::loadModule(const QString& t_modulepath)
     }
 
     QString dlay = getPythonVariable("plugintimerdelay");
-
     if (dlay.isEmpty())
         m_plugin.setTimerDelay(1);
     else
@@ -235,13 +180,11 @@ void PythonWorker::loadModule(const QString& t_modulepath)
     if (PyObject_HasAttrStringWithError(m_PNPluginModule, "pluginmenus") == 1)
     {
         PyObject* dictArray = PyObject_GetAttrString(m_PNPluginModule, "pluginmenus");
-        if (dictArray)
+        if (dictArray && PyList_Check(dictArray))
         {
-            //PyObject* key, *subdict;  TODO Remvoe
-            //Py_ssize_t pos = 0;
-
-            //while (PyDict_Next(dictArray, &pos, &key, &subdict))
             Py_ssize_t len = PyList_Size(dictArray);
+
+
             for (Py_ssize_t i = 0; i < len; ++i)
             {
                 PyObject* subdict = PyList_GetItem(dictArray, i);
@@ -348,23 +291,6 @@ void PythonWorker::unloadModule()
         emitError();
     }
 
-    // Run garbage collection
-    // todo: this section kept crashing
-    // PyObject* gcModule = PyImport_ImportModule("gc");
-    // if (gcModule)
-    // {
-    //     PyObject* result = PyObject_CallMethod(gcModule, "collect", nullptr);
-    //     if (result)
-    //     {
-    //         Py_DECREF(result);
-    //     }
-    //     Py_DECREF(gcModule);
-    // }
-    // else
-    // {
-    //     PyErr_Print();
-    // }
-
     Py_XDECREF(m_PNPluginModule);
 
     PyGILState_Release(gstate);
@@ -417,6 +343,7 @@ void PythonWorker::sendMethodXml(const QString& t_method, const QString& t_xml, 
     if (!pargs)
     {
         emitError();
+        Py_XDECREF(pymethod);
 
         PyGILState_Release(gstate);
         return;
@@ -489,6 +416,7 @@ void PythonWorker::sendMethod(const QString& t_method, const QString& t_paramete
     if (!pargs)
     {
         emitError();
+        Py_XDECREF(pymethod);
 
         PyGILState_Release(gstate);
         return;
@@ -578,6 +506,7 @@ QString PythonWorker::getPythonVariable(const QString& t_variablename)
     if (!str)
     {
         emitError();
+        Py_XDECREF(attr);
         return val;
     }
 
@@ -631,4 +560,81 @@ QStringList PythonWorker::getPythonStringList(const QString& t_variablename)
     Py_XDECREF(attr);
 
     return val;
+}
+
+void PythonWorker::findImportedModules(const QString& pythonFilePath)
+{
+    // Open the Python script file
+    QFile file(pythonFilePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        return; // Return if file cannot be opened
+    }
+
+    // Get the directory of the Python script
+    QDir scriptDir(QFileInfo(pythonFilePath).absolutePath());
+
+    // Get the application directory for .ui files
+    QDir appDir(QCoreApplication::applicationDirPath());
+
+    QTextStream in(&file);
+    // Regular expression to match import statements
+    QRegularExpression importRegex(R"(^\s*(?:import|from)\s+([\w.]+)(?:\s+import\s+[\w, ]+)?\s*$)");
+
+    // Regular expression for loadUi calls
+    QRegularExpression loadUiRegex(R"(\bloadUi\s*\(\s*['"]([^'"]+\.ui)['"]\s*(?:,\s*[^\)]+)?\s*\))");
+
+    while (!in.atEnd())
+    {
+        QString line = in.readLine().trimmed();
+
+        // Skip empty lines and comments
+        if (line.isEmpty() || line.startsWith('#'))
+        {
+            continue;
+        }
+
+        // Match import statements
+        QRegularExpressionMatch match = importRegex.match(line);
+        if (match.hasMatch())
+        {
+            QString moduleName = match.captured(1);
+
+            // Split module name by dots for submodules
+            QStringList moduleParts = moduleName.split('.');
+            QString modulePath = moduleParts.join('/');
+
+            // Check for both .py and .pyc files, and directory modules (__init__.py)
+            QStringList possiblePaths = {
+                scriptDir.absoluteFilePath(modulePath + ".py"),
+                scriptDir.absoluteFilePath(modulePath + ".pyc"),
+                scriptDir.absoluteFilePath(modulePath + "/__init__.py")
+            };
+
+            // Add valid paths to the result
+            for (const QString& path : possiblePaths)
+            {
+                if (QFile::exists(path))
+                {
+                    m_plugin.addImport(QDir::cleanPath(path));
+                }
+            }
+        }
+
+        // Match loadUi calls
+        QRegularExpressionMatch loadUiMatch = loadUiRegex.match(line);
+        if (loadUiMatch.hasMatch())
+        {
+            QString uiFileName = loadUiMatch.captured(1);
+            QString uiFilePath = appDir.absoluteFilePath(uiFileName);
+
+            // Add valid .ui file path to the result
+            if (QFile::exists(uiFilePath))
+            {
+                m_plugin.addImport(QDir::cleanPath(uiFilePath));
+            }
+        }
+    }
+
+    file.close();
 }

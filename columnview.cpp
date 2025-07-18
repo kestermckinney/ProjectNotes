@@ -39,18 +39,14 @@ void ColumnView::dataRowSelected(const QModelIndex &t_index)
     QAbstractItemDelegate* delegate = m_source_view->itemDelegateForColumn(col);
     m_values_view->setItemDelegateForColumn(0, delegate);
 
-    //qDebug() << "Finding All The Selections:";
-
     // set all of the selected values
     for (int i = 0; i < m_values_view->model()->rowCount(QModelIndex()); i++)
     {
         QVariant val = m_values_view->model()->data(m_values_view->model()->index(i, 0));
-        //qDebug() << "Found: " << val << " for column " << dbcolname;
 
         if ( (*m_saved_filters)[dbcolname].ColumnValues.contains(val.toString()) )
         {
             m_values_view->selectRow(i);
-            //qDebug() << "Selected: " << val;
         }
 
     }

@@ -121,7 +121,6 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckDocument(QTextC
                 )
             {
                 t_cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
-                //qDebug() << "reselected to word: " << t_cursor.selectedText();
                 word = t_cursor.selectedText();
             }
 
@@ -156,7 +155,6 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
         t_cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 2);
         t_cursor.select(QTextCursor::WordUnderCursor);
         t_cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 1);
-        //qDebug() << "reselected to word: " << t_cursor.selectedText();
     }
 
     // fix a bug with selecting a contraction
@@ -169,7 +167,6 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
         t_cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 3);
         t_cursor.select(QTextCursor::WordUnderCursor);
         t_cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
-        //qDebug() << "reselected to word: " << t_cursor.selectedText();
     }
 
 
@@ -177,9 +174,6 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
     ftc.anchor = t_cursor.anchor();
     ftc.position = t_cursor.position();
     ftc.word = t_cursor.selectedText();
-
-    //QString word = t_cursor.selectedText();
-    //qDebug() << ">> selcted " << word ;
 
     if (!t_cursor.selectedText().isEmpty())
     {
@@ -189,28 +183,23 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
         {
             if ( cursorsOverlap(*it, ftc))
             {
-                //qDebug() << "removing " << ftc.word;
                 it = m_checkque.erase(it);
             }
             else
                 ++it;
         }
 
-        //qDebug() << "adding word " << t_cursor.selectedText() << t_cursor.position() << "  " << t_cursor.anchor();
         m_checkque.append(ftc);
     }
 
-    //qDebug() << "list size " << m_checkque.count();
 
     // check all other words in the queue except the current one8
     // if someone clicks anywhere it will always check the last word
     QList<FixedTextCursor>::iterator it = m_checkque.begin();
     while (it != m_checkque.end())
     {
-        //qDebug() << "list: " << (*it).word;
         if ( !cursorsOverlap((*it), ftc) )
         {
-            //qDebug() << "checking word: " << (*it).word;
 
             if ( !global_Settings.spellchecker()->isGoodWord((*it).word))
             {
@@ -218,7 +207,6 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
                 ntc.setPosition((*it).anchor, QTextCursor::MoveAnchor);
                 ntc.setPosition((*it).position, QTextCursor::KeepAnchor);
 
-                //qDebug() << "word is bad: " << ntc.selectedText();
                 removeIfOverlaps(ntc, t_extraselections);
                 addSelection(ntc, t_extraselections);
             }
@@ -229,7 +217,6 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
                 ntc.setPosition((*it).position, QTextCursor::KeepAnchor);
 
                 // if we marked a good word remove it
-                //qDebug() << "word is good: " << ntc.selectedText();
                 removeIfOverlaps(ntc, t_extraselections);
             }
 
@@ -237,7 +224,6 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
         }
         else
         {
-            //qDebug() << "not checking yet: " << (*it).word;
             ++it;
         }
     }
@@ -248,7 +234,6 @@ QList<QTextEdit::ExtraSelection> PNInlineSpellChecker::spellCheckCursor(QTextCur
 void PNInlineSpellChecker::slotCorrectWord(QTextCursor& t_cursor, const QString t_word)
 {
     t_cursor.select(QTextCursor::WordUnderCursor);
-    //qDebug() << "found word: " << t_cursor.selectedText();
 
     // this is to fix a bug in how Qt selects words
     if (
@@ -257,7 +242,6 @@ void PNInlineSpellChecker::slotCorrectWord(QTextCursor& t_cursor, const QString 
     {
         t_cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, 2);
         t_cursor.select(QTextCursor::WordUnderCursor);
-        //qDebug() << "attempted word fix";
     }
 
     t_cursor.insertText(t_word);
@@ -312,7 +296,6 @@ void PNInlineSpellChecker::slottIgnoreAll(QTextCursor& t_cursor)
             )
         {
             t_cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
-            //qDebug() << "reselected to word: " << t_cursor.selectedText();
         }
 
     QString word = tc.selectedText();
@@ -337,7 +320,6 @@ void PNInlineSpellChecker::slotIgnore(QTextCursor& t_cursor)
             )
         {
             t_cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 2);
-            //qDebug() << "reselected to word: " << t_cursor.selectedText();
         }
 
     QString word = tc.selectedText();

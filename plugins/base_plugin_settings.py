@@ -8,7 +8,7 @@ import projectnotes
 
 from includes.common import ProjectNotesCommon
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
-from PyQt6.QtCore import Qt, QRect
+from PyQt6.QtCore import Qt, QRect, QSettings
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QDialog, QFileDialog, QWidget, QTableWidgetItem, QStyledItemDelegate, QComboBox
 
 # Project Notes Plugin Parameters
@@ -27,7 +27,8 @@ pluginmenus = [
     {"menutitle" : "Editor", "function" : "menuEditorSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "Outlook Integration", "function" : "menuOutlookIntegrationSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "My Shortcuts", "function" : "menuMyShortcutSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
-    {"menutitle" : "Meeting Types", "function" : "menuMeetingTypesSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "Meeting and Email Types", "function" : "menuMeetingEmailTypesSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "Settings Migrator", "function" : "menuSettingsMigrator", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
 ]
 
 # events must have a data structure and data view specified
@@ -82,13 +83,13 @@ class FileFinderSettings(QDialog):
         self.pnc = ProjectNotesCommon()
         self.settings_pluginname = "File Finder"
 
-        self.ui = uic.loadUi("plugins/includes/dialogFileFinder.ui", self)
+        self.ui = uic.loadUi("plugins/forms/dialogFileFinder.ui", self)
         self.ui.setWindowFlags(
             QtCore.Qt.WindowType.Window |
             QtCore.Qt.WindowType.WindowCloseButtonHint
             )
  
-        self.ui_class = uic.loadUi("plugins/includes/dialogClassification.ui")
+        self.ui_class = uic.loadUi("plugins/forms/dialogClassification.ui")
         self.ui_class.setWindowFlags(
             QtCore.Qt.WindowType.Window |
             QtCore.Qt.WindowType.WindowCloseButtonHint
@@ -255,7 +256,7 @@ class EditorSettings(QDialog):
         self.pnc = ProjectNotesCommon()
         self.settings_pluginname = "Custom Editor"
 
-        self.ui = uic.loadUi("plugins/includes/dialogEditor.ui", self)
+        self.ui = uic.loadUi("plugins/forms/dialogEditor.ui", self)
         self.ui.setWindowFlags(
             QtCore.Qt.WindowType.Window |
             QtCore.Qt.WindowType.WindowCloseButtonHint
@@ -313,7 +314,7 @@ class OutlookIntegrationSettings(QDialog):
         self.pnc = ProjectNotesCommon()
         self.settings_pluginname = "Outlook Integration"
 
-        self.ui = uic.loadUi("plugins/includes/dialogOutlookIntegrationOptions.ui", self)
+        self.ui = uic.loadUi("plugins/forms/dialogOutlookIntegrationOptions.ui", self)
         self.ui.setWindowFlags(
             QtCore.Qt.WindowType.Window |
             QtCore.Qt.WindowType.WindowCloseButtonHint
@@ -380,7 +381,7 @@ class MyShortcutSettings(QDialog):
         self.pnc = ProjectNotesCommon()
         self.settings_pluginname = "My Shortcuts"
 
-        self.ui = uic.loadUi("plugins/includes/dialogMyShortcuts.ui", self)
+        self.ui = uic.loadUi("plugins/forms/dialogMyShortcuts.ui", self)
         self.ui.setWindowFlags(
             QtCore.Qt.WindowType.Window |
             QtCore.Qt.WindowType.WindowCloseButtonHint
@@ -505,21 +506,21 @@ class MyShortcutSettings(QDialog):
         # Call the base class implementation
         super().closeEvent(event)
 
-class MeetingTypesSettings(QDialog):
+class MeetingEmailTypesSettings(QDialog):
     def __init__(self):
         super().__init__()
 
         self.pnc = ProjectNotesCommon()
-        self.settings_pluginname = "Meeting Types"
+        self.settings_pluginname = "Meeting and Email Types"
 
-        self.ui = uic.loadUi("plugins/includes/dialogMeetingTypes.ui", self)
+        self.ui = uic.loadUi("plugins/forms/dialogMeetingEmailTypes.ui", self)
 
         self.ui.setWindowFlags(
             QtCore.Qt.WindowType.Window |
             QtCore.Qt.WindowType.WindowCloseButtonHint
             )
  
-        self.ui_template = uic.loadUi("plugins/includes/dialogMeetingTemplate.ui")
+        self.ui_template = uic.loadUi("plugins/forms/dialogMeetingEmailTemplate.ui")
         self.ui_template.setWindowFlags(
             QtCore.Qt.WindowType.Window |
             QtCore.Qt.WindowType.WindowCloseButtonHint
@@ -536,12 +537,13 @@ class MeetingTypesSettings(QDialog):
            "Exclude Client",
            "Only Client",
            "Full Project Team",
-           "Individual"]) #TODO: this might be really helpful for emails also
+           "Individual",
+           "Attachment Only"])
 
-        self.ui.tableWidgetMeetingTypes.setItemDelegateForColumn(1, delegate)
+        self.ui.tableWidgetMeetingEmailTypes.setItemDelegateForColumn(1, delegate)
 
-        self.meeting_types = self.pnc.get_plugin_setting("MeetingTypes", self.settings_pluginname)
-        self.populate_table_from_json(self.meeting_types, self.ui.tableWidgetMeetingTypes)
+        self.meeting_types = self.pnc.get_plugin_setting("MeetingEmailTypes", self.settings_pluginname)
+        self.populate_table_from_json(self.meeting_types, self.ui.tableWidgetMeetingEmailTypes)
 
         x = self.pnc.get_plugin_setting("X", self.settings_pluginname)
         y = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
@@ -552,16 +554,18 @@ class MeetingTypesSettings(QDialog):
         c2 = self.pnc.get_plugin_setting("c2", self.settings_pluginname)
         c3 = self.pnc.get_plugin_setting("c3", self.settings_pluginname)
         c4 = self.pnc.get_plugin_setting("c4", self.settings_pluginname)
+        c5 = self.pnc.get_plugin_setting("c5", self.settings_pluginname)
 
         geometry = self.pnc.get_plugin_setting("types_geometry", self.settings_pluginname)
 
-        if (c1 != '' and c2 != '' and c3 != ''and c4 != ''):
+        if (c1 != '' and c2 != '' and c3 != '' and c4 != '' and c5 != ''):
             print(f"loading column sizes {c1},{c2},{c3},{c4}")
 
-            self.ui.tableWidgetMeetingTypes.setColumnWidth(0, int(c1))
-            self.ui.tableWidgetMeetingTypes.setColumnWidth(1, int(c2))
-            self.ui.tableWidgetMeetingTypes.setColumnWidth(2, int(c3))
-            self.ui.tableWidgetMeetingTypes.setColumnWidth(3, int(c4))
+            self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(0, int(c1))
+            self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(1, int(c2))
+            self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(2, int(c3))
+            self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(3, int(c4))
+            self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(5, int(c5))
 
         if (x != '' and y != '' and w != '' and h != ''):
             print(f"loading dimensions {int(x)},{int(y)},{int(w)},{int(h)}")
@@ -602,46 +606,51 @@ class MeetingTypesSettings(QDialog):
                     qtable.setItem(row, column, QTableWidgetItem(value))
 
     def addtype(self):
+        self.ui_template.comboBoxType.setCurrentText("Meeting")
+        self.ui_template.lineEditName.setText('')
         self.ui_template.comboBoxInvitees.setCurrentText('')
-        self.ui_template.lineEditType.setText('')
         self.ui_template.textEditTemplate.setHtml('')
 
         if (self.ui_template.exec()):
-            row_count = self.ui.tableWidgetMeetingTypes.rowCount()
-            self.ui.tableWidgetMeetingTypes.setRowCount(row_count + 1)
-            self.ui.tableWidgetMeetingTypes.setItem(row_count, 0, QTableWidgetItem(self.ui_template.lineEditType.text()))
-            self.ui.tableWidgetMeetingTypes.setItem(row_count, 1, QTableWidgetItem(self.ui_template.comboBoxInvitees.currentText()))
-            self.ui.tableWidgetMeetingTypes.setItem(row_count, 2, QTableWidgetItem(self.ui_template.lineEditSubject.text()))
-            self.ui.tableWidgetMeetingTypes.setItem(row_count, 3, QTableWidgetItem(self.ui_template.textEditTemplate.toHtml()))
+            row_count = self.ui.tableWidgetMeetingEmailTypes.rowCount()
+            self.ui.tableWidgetMeetingEmailTypes.setRowCount(row_count + 1)
+            self.ui.tableWidgetMeetingEmailTypes.setItem(row_count, 0, QTableWidgetItem(self.ui_template.comboBoxType.currentText()))
+            self.ui.tableWidgetMeetingEmailTypes.setItem(row_count, 1, QTableWidgetItem(self.ui_template.lineEditName.text()))
+            self.ui.tableWidgetMeetingEmailTypes.setItem(row_count, 2, QTableWidgetItem(self.ui_template.comboBoxInvitees.currentText()))
+            self.ui.tableWidgetMeetingEmailTypes.setItem(row_count, 3, QTableWidgetItem(self.ui_template.lineEditSubject.text()))
+            self.ui.tableWidgetMeetingEmailTypes.setItem(row_count, 4, QTableWidgetItem(self.ui_template.textEditTemplate.toHtml()))
 
     def edittype(self):
-        row = self.ui.tableWidgetMeetingTypes.currentRow()
+        row = self.ui.tableWidgetMeetingEmailTypes.currentRow()
 
         if (row > -1):
-            mtype = self.ui.tableWidgetMeetingTypes.item(row, 0).text()
-            matt = self.ui.tableWidgetMeetingTypes.item(row, 1).text()
-            mhtml = self.ui.tableWidgetMeetingTypes.item(row, 3).text() 
-            subj = self.ui.tableWidgetMeetingTypes.item(row, 2).text() 
+            mtype = self.ui.tableWidgetMeetingEmailTypes.item(row, 0).text()
+            nam = self.ui.tableWidgetMeetingEmailTypes.item(row, 1).text()
+            matt = self.ui.tableWidgetMeetingEmailTypes.item(row, 2).text()
+            subj = self.ui.tableWidgetMeetingEmailTypes.item(row, 3).text() 
+            mhtml = self.ui.tableWidgetMeetingEmailTypes.item(row, 4).text() 
 
+            self.ui_template.comboBoxType.setCurrentText(mtype)
+            self.ui_template.lineEditName.setText(nam)
             self.ui_template.comboBoxInvitees.setCurrentText(matt)
-            self.ui_template.lineEditType.setText(mtype)
             self.ui_template.lineEditSubject.setText(subj)
             self.ui_template.textEditTemplate.setHtml(mhtml)
 
             if (self.ui_template.exec()):
-                self.ui.tableWidgetMeetingTypes.setItem(row, 0, QTableWidgetItem(self.ui_template.lineEditType.text()))
-                self.ui.tableWidgetMeetingTypes.setItem(row, 1, QTableWidgetItem(self.ui_template.comboBoxInvitees.currentText()))
-                self.ui.tableWidgetMeetingTypes.setItem(row, 2, QTableWidgetItem(self.ui_template.lineEditSubject.text()))
-                self.ui.tableWidgetMeetingTypes.setItem(row, 3, QTableWidgetItem(self.ui_template.textEditTemplate.toHtml()))
+                self.ui.tableWidgetMeetingEmailTypes.setItem(row, 0, QTableWidgetItem(self.ui_template.comboBoxType.currentText()))
+                self.ui.tableWidgetMeetingEmailTypes.setItem(row, 1, QTableWidgetItem(self.ui_template.lineEditName.text()))
+                self.ui.tableWidgetMeetingEmailTypes.setItem(row, 2, QTableWidgetItem(self.ui_template.comboBoxInvitees.currentText()))
+                self.ui.tableWidgetMeetingEmailTypes.setItem(row, 3, QTableWidgetItem(self.ui_template.lineEditSubject.text()))
+                self.ui.tableWidgetMeetingEmailTypes.setItem(row, 4, QTableWidgetItem(self.ui_template.textEditTemplate.toHtml()))
 
     def deletetype(self):
-        row = self.ui.tableWidgetMeetingTypes.currentRow()
+        row = self.ui.tableWidgetMeetingEmailTypes.currentRow()
         if (row > -1):
-            value = self.ui.tableWidgetMeetingTypes.removeRow(row)
+            value = self.ui.tableWidgetMeetingEmailTypes.removeRow(row)
 
     def save_settings(self):
-        self.meeting_types = self.copy_table_to_json(self.ui.tableWidgetMeetingTypes)
-        self.pnc.set_plugin_setting("MeetingTypes", self.settings_pluginname, self.meeting_types)
+        self.meeting_types = self.copy_table_to_json(self.ui.tableWidgetMeetingEmailTypes)
+        self.pnc.set_plugin_setting("MeetingEmailTypes", self.settings_pluginname, self.meeting_types)
 
         self.ui.close()
 
@@ -656,10 +665,181 @@ class MeetingTypesSettings(QDialog):
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
         self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
-        self.pnc.set_plugin_setting("c1", self.settings_pluginname, f"{self.ui.tableWidgetMeetingTypes.columnWidth(0)}")
-        self.pnc.set_plugin_setting("c2", self.settings_pluginname, f"{self.ui.tableWidgetMeetingTypes.columnWidth(1)}")
-        self.pnc.set_plugin_setting("c3", self.settings_pluginname, f"{self.ui.tableWidgetMeetingTypes.columnWidth(2)}")
-        self.pnc.set_plugin_setting("c4", self.settings_pluginname, f"{self.ui.tableWidgetMeetingTypes.columnWidth(3)}")
+        self.pnc.set_plugin_setting("c1", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(0)}")
+        self.pnc.set_plugin_setting("c2", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(1)}")
+        self.pnc.set_plugin_setting("c3", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(2)}")
+        self.pnc.set_plugin_setting("c4", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(3)}")
+        self.pnc.set_plugin_setting("c5", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(4)}")
+
+        # Call the base class implementation
+        super().closeEvent(event)
+
+
+class SettingsMigrator(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.pnc = ProjectNotesCommon()
+        self.settings_pluginname = "Settings Migrator"
+
+        self.ui = uic.loadUi("plugins/forms/dialogSettingsMigrator.ui", self)
+
+        self.ui.setWindowFlags(
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowCloseButtonHint
+            )
+ 
+        self.ui.pushButtonExport.clicked.connect(self.export_settings)
+        self.ui.pushButtonImport.clicked.connect(self.import_settings)
+        self.ui.pushButtonDelete.clicked.connect(self.delete_settings)
+        self.ui.pushButtonClose.clicked.connect(self.close)
+
+        self.load_all_plugin_settings()
+
+        x = self.pnc.get_plugin_setting("X", self.settings_pluginname)
+        y = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
+        w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
+        h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
+
+        if (x != '' and y != '' and w != '' and h != ''):
+            self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
+
+        self.show()
+
+    def load_all_plugin_settings(self):
+        self.listWidgetPlugins.clear()
+
+        settings = QSettings("ProjectNotes","PluginSettings")
+        
+        # Get all keys in the group
+        keys = settings.childGroups()
+        
+        # Add keys to the QListWidget
+        for key in keys:
+            self.listWidgetPlugins.addItem(key)
+        
+
+    def export_settings(self):
+        # Open file dialog to get save location
+        file_dialog = QFileDialog(self)
+        file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+        file_dialog.setNameFilter("JSON files (*.json)")
+        file_dialog.setDefaultSuffix("json")
+
+        if not file_dialog.exec():
+            return # User cancelled the dialog
+
+        output_file = file_dialog.selectedFiles()[0]
+
+        if output_file is None:
+            return
+
+        selected_groups = [item.text() for item in self.listWidgetPlugins.selectedItems()]
+
+        settings_dict = {}
+        
+        # Get all top-level groups
+        settings = QSettings("ProjectNotes","PluginSettings")
+        
+        # Iterate through each group
+        for group in selected_groups:
+            settings.beginGroup(group)
+            settings_dict[group] = {}
+            
+            # Get all keys in the current group
+            keys = settings.allKeys()
+            for key in keys:
+                # Store the key-value pair
+                settings_dict[group][key] = settings.value(key)
+            
+            settings.endGroup()
+        
+        # Write to JSON file
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(settings_dict, f, indent=4, sort_keys=True)
+
+        return
+
+    def import_settings(self):
+        # Initialize QSettings (replace with your organization and application name)
+        settings = QSettings("ProjectNotes","PluginSettings")
+        
+        # Open file dialog to select JSON file
+        file_dialog = QFileDialog(self)
+        file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
+        file_dialog.setNameFilter("JSON files (*.json)")
+        
+        if not file_dialog.exec():
+            return # User cancelled the dialog
+
+        input_file = file_dialog.selectedFiles()[0]
+
+        if input_file is None:
+            return
+        
+        # Read JSON file
+        try:
+            with open(input_file, 'r', encoding='utf-8') as f:
+                settings_dict = json.load(f)
+        except Exception as e:
+            print(f"Error reading JSON file: {e}")
+            QMessageBox.critical(None, "Cannot Parse JSON", "Unable to import settings.",QMessageBox.StandardButton.Cancel)
+            return
+        
+        # Import settings into QSettings
+        try:
+            for group, keys in settings_dict.items():
+                settings.beginGroup(group)
+                for key, value in keys.items():
+                    settings.setValue(key, value)
+                settings.endGroup()
+        except Exception as e:
+            print(f"Error importing settings: {e}")
+            QMessageBox.critical(None, "Cannot Parse JSON", "Unable to import settings.",QMessageBox.StandardButton.Cancel)
+
+        self.load_all_plugin_settings()
+
+        return
+
+    def delete_settings(self):
+
+        # Show confirmation dialog
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Confirm Deletion")
+        msg_box.setText("Are you sure you want to delete the selected settings?")
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        msg_box.setIcon(QMessageBox.Icon.Warning)
+        
+        if msg_box.exec() != QMessageBox.StandardButton.Yes:        
+            return # User cancelled
+
+        selected_groups = [item.text() for item in self.listWidgetPlugins.selectedItems()]
+        if not selected_groups:
+            return  # No groups selected
+        
+        # Initialize QSettings
+        settings = QSettings("ProjectNotes","PluginSettings")
+        
+        # Remove each selected group
+        try:
+            for group in selected_groups:
+                settings.remove(group)
+        except Exception as e:
+            print(f"Error deleting settings group: {e}")
+            QMessageBox.critical(None, "Cannot Delete Settings", "An error occured while removing settings settings.",QMessageBox.StandardButton.Cancel)
+
+        self.load_all_plugin_settings()
+        
+        return
+
+    def closeEvent(self, event):
+        print("saving values")
+        # Save window position and size
+        self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
+        self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
+        self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
+        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
         # Call the base class implementation
         super().closeEvent(event)
@@ -681,17 +861,21 @@ def menuMyShortcutSettings(parameter):
     settings_dialog = MyShortcutSettings()
     return ""
 
-def menuMeetingTypesSettings(parameter):
-    print("called meeting types config")
-    settings_dialog = MeetingTypesSettings()
+def menuMeetingEmailTypesSettings(parameter):
+    settings_dialog = MeetingEmailTypesSettings()
     return ""
+
+def menuSettingsMigrator(parameter):
+    settings_dialog = SettingsMigrator()
+    return ""
+
 
 # Use code below for testing
 if __name__ == '__main__':
     print("Entered __main__")
     app = QApplication(sys.argv)
     #menuOutlookIntegrationSettings("") 
-    menuMeetingTypesSettings("")
+    menuMeetingEmailTypesSettings("")
     sys.exit(app.exec())
 
 #todo: add the ability to quickly add a team member that isn't in the       databse
