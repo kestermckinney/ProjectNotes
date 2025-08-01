@@ -10,7 +10,7 @@ Nearly all information found in Project Notes can be exported or imported using 
 <?xml version="1.0" encoding="UTF-8"?>
 <projectnotes filepath="C:UsersMyAccountOneDriveProject NotesMyDatabase.db" export_date="09/22/2020 12:38 PM" filter_field="project_id" project_manager_id="159709810500028597" managing_company_id="{ba96fb89-6c2d-46db-864c-5be6292b1045}" managing_company_name="My Company, Inc." managing_manager_name="My Name" filter_values="{ba96fb89-6c2d-46db-864c-5be6292b10ef}">
  <table name="ix_projects" filter_field_1="project_id" filter_value_1="159709812400019208">
-  <row id="{ba96fb89-6c2d-46db-864c-5be6292b10e4}">
+  <row id="{ba96fb89-6c2d-46db-864c-5be6292b10e4}" delete=true>
    <column name="project_number">P4000</column>
    <column name="project_name">IT New Server Install</column>
    <column name="last_status_date">09/02/2020</column>
@@ -71,6 +71,7 @@ The XML document follows a parent child heiarchy that corresponds to the record 
 | &lt;projectnotes\> | Document Root Node |  | Yes |
 | filepath | Attribute | The database the XML was exported from | No |
 | export\_date | Attribute | The date the data was exported | No |
+| delete | Attribute | When delete is set to true the record will be deleted.  This method does not account for related records and could leave records abandonded in the database if not used correctly. |
 | filter\_field_# | Attribute | The field filtered to limit the data exported.  This used when calling get_data to find results.  Multiple field value pairs can be used as long as # matches. | No |
 | filter\_value_# | Attribute | The value used to filter the data exported   This used when calling get_data to find results.  Multiple field value pairs can be used as long as # matches.|  |
 | project\_manager\_id | Attribute | The database record id of the Project Manager specified in the Preferences | No |

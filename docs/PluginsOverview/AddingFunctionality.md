@@ -8,27 +8,52 @@ For documentation on the Qt framework see [https://doc.qt.io/qt-6/index.html.](<
 
 For examples on how to use PyQt6 see [https://build-system.fman.io/pyqt6-tutorial](<https://build-system.fman.io/pyqt6-tutorial>)
 
+### Muiltithreading
+
+There are two fundamental types of plugins main thread and background threads. The main thread plugins reside in the plugins folder and can display user interface elements.  Background threads reside in the threads folder and should not display user interface items. The Qt framework does not support messaging UI elements in background threads.  Both plugin types are based upon Python scripting, however each require different elements to be present within the script.
+
 ### Python Script File Locations
 
-When Project Notes starts it looks into the "plugins" folder and executes all files ending in ".py". Events are customized when their corresponding functions are defined in a Python plugin. The variables also define Property values the plugin will use.
+When Project Notes starts it looks into the "plugins" and "threads" folder and executes all files ending in ".py". Events are customized when their corresponding functions are defined in a Python plugin.
 
 ### Python Script File Structures
 
-Python script files follow a general format. This helps to quickly find code when modifying or debugging the script. In most cases, you will copy an existing script in order to create a new plugin.
+Python script files follow a general format. This helps to quickly find code when modifying or debugging the script. In most cases, an existing script can be copied to create a new plugin.
 
 ### Plugin Naming
-The global variables pluginname and plugindescription are the plugin name and description that appear in the Project Notes [Plugin Settings](<../StandardPlugins/PluginSettings.md>) window.
-
-**Properties**
-
-Properties are global variables used in Python script. To tell Project Notes to use a global variable as a property the name of the global variable needs to appear in the global parameters array as shown below.
+The global variables pluginname and plugindescription are the plugin name and description are used to identify plugins internally.  The configuration group in the Windows registy or Linux and MacOS configuation files is where a plugins settings are stored.  Below is an example of how these variables are defined in Python.
 
 ```python
-#Project Notes Parameters
-parameters = [
-  "EditorFullPath"
+# Project Notes Plugin Parameters
+pluginname = "Base Plugins Settings" # name used in the menu
+plugindescription = "This plugin provide settigns input for the base install set of plugins. Supported platforms: Windows, Linux, MacOS"
+```
+
+### Plugin Menu Customization
+
+Project Notes plugin architecture provide the ability to add new menu items to the **Plugins** menu as well as right-click menus for specific types of data. Plugin menus are defined using a Python list of dictionaries.  The pluginmenus list variable can be populated statically as shown below, or built dynamically.
+
+```python
+pluginmenus = [
+    {"menutitle" : "File Collector", "function" : "menuFileCollectorSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "Editor", "function" : "menuEditorSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "Outlook Integration", "function" : "menuOutlookIntegrationSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "My Shortcuts", "function" : "menuMyShortcutSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "Meeting and Email Types", "function" : "menuMeetingEmailTypesSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "Settings Migrator", "function" : "menuSettingsMigrator", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
 ]
 ```
+
+#### Dictionary Keys for Menus
+| **Key** | **Description** |
+| :--- | :--- |
+| menutitle | The text that will show in the right-click or **Plugins** menu. |
+| function | The python function that will be called when the menu is triggered. For functions called from the **Plugins** menu, only one parameter is provided.  For functions called from a right-click on a data type, the first parameter is an XML string, and the second is a string parameter. |
+| tablefilter | The table filter is used to filter the xml sent to the menu event.  If the value is empty the entire data tree will be exported.  Applying the table filter reduces the cost of generating the xml.  For example when exporting a project record all data associated with the project will be exported if a filter is not applied.  If a filter of "projects/project_notes" were used only the project record and assocated notes records would be included. |
+| submenu | If a submenu value is specified the menutitle will appear under the submenu text. |
+| dataexport | The record type the menu applies to.  If this value is empty, the **Plugins** menu is used. |
+
+<br>
 
 ### Plugin Options
 
@@ -36,18 +61,13 @@ When a plugin is called from the Plugins menu, Startup event, Shutdown event, or
 
 ### Extendable Events
 
-The events listed in the table below can be extended in Python plugins. In each event, the specified plugin table and related child records are converted to XML and passed to the plugin as a Python string. If the plugin is called from a right-click on a data item, the XML will only include that item and it's related children. For example, if you right-click a project in the Project List and choose **Export** from the **File** menu, the data exported is the same data that will be exported to a plugin. Using the XML Import and XML Export features of Project Notes are very useful in testing and debugging a Python script plugin. If the defined event returns an XML string, the XML is processed in the same was as the XML Import. Importing XML will update and insert records. There is currently no feature to delete records.
+The events listed in the table below can be extended in Python plugins. In each event, the specified plugin table and related child records are converted to XML and passed to the plugin as a Python string. If the plugin is called from a right-click on a data item, the XML will only include that item and it's related children. For example, if you right-click a project in the Project List and choose **Export** from the **File** menu, the data exported is the same data that will be exported to a plugin. Using the XML Import and XML Export features of Project Notes are very useful in testing and debugging a Python script plugin. If the defined event returns an XML string, the XML is processed in the same was as the XML Import. Importing XML will update, insert, or delete records.
 
-| **Events** | **Description** |
+| **Event** | **Description** |
 | :--- | :--- |
-| def event_startup(xmlstr): | Each time Project Notes is started this event is called if it is defined. |
-| def event_shutdown(xmlstr): | Each time Project Notes is shutdown this event is called if it is defined. |
-| def event_everyminute(xmlstr): | Every minute this event is called if it is defined. |
-| def event_every5minutes(xmlstr): | Every 5 minutes this event is called if it is defined. |
-| def event_every10minutes(xmlstr): | Every 10 minutes this event is called if it is defined. |
-| def event_every30Mmnutes(xmlstr): | Every 30 minutes this event is called if it is defined. |
-| def event_menuclick(xmlstr): | The pluginname will appear in the Plugins menu. When an user selects the menu option, the plugin is called. |
-| def event_data_rightclick(xmlstr): | The pluginname will appear when the list is right clicked and the list contains data from the defined plugintable. When a list is right-clicked and the corresponding plugintable is specified, this event is called if it is defined. |  
+| event\_startup | The startup event executes when the the plugin is first loaded. |
+| event\_shutdown | The shutdown executes just before the plugin is unloaded. |
+| event\_timer | This event is only used in a thread.  The frequency the event is triggered is defined by the "plugintimerevent" variable defined in the script.  If the variable is not defined the default value is 1 for every one minute. |
 
 <br>
 
@@ -75,7 +95,7 @@ All elements have an "id" attribute. On an import this attribute is used as a un
 
 ### Basic XML formats
 
-The example below show an XML export of a person. Notice child tables contain the **"*filter\_field"*** and **"*filter\_value"*** attributes to define the parent child relationship of the data. Many attributes such as file names and column numbers are provided to give the export further context, but are not used in the import.
+The example below show an XML export of a person. Notice child tables contain the **"*filter\_field"*** and **"*filter\_value"*** attributes to define the parent child relationship of the data. Many attributes such as file names and column numbers are provided to give the export further context, but are not used in the import. A more detailed description can be found in [Project Notes XML](ProjectNotesXML.md). 
 
 ```xml
 <xml version="1.0" encoding="UTF-8">
