@@ -1,7 +1,5 @@
 # Project Notes XML
 
-## Understanding Project Notes XML Format
-
 Nearly all information found in Project Notes can be exported or imported using XML. The best way to understand the XML format is to export it. The format is based around a tree structure described below. XML files can be used to easily exchange information with other Project Notes users. The Python plugin system uses the XML structure to exchange information between Project Notes and the plugin architecture. Information on how to export a file can be found in [The File Menu](<../InterfaceOverview/FileMenu.md>) section.
 
 **The XML format:**

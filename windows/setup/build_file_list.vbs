@@ -8,19 +8,20 @@ REM use !include "remove_files.nsh"
 
 Set objInstFileToWrite = CreateObject("Scripting.FileSystemObject").OpenTextFile("install_files.nsh",2,true)
 Set objDelFileToWrite = CreateObject("Scripting.FileSystemObject").OpenTextFile("remove_files.nsh",2,true)
-name_exclusions = ";__pycache__;PyInstaller;pyinstaller-5.8.0.dist-info;pyinstaller_hooks_contrib-2023.0.dist-info;pip-23.0.1.dist-info;pip;_pyinstaller_hooks_contrib;pywin32_system32;bin;"
+name_exclusions = ";__pycache__;_yaml;mkdocs-1.6.1.dist-info;mkdocs_material-9.6.16.dist-info;mkdocs_material_extensions-1.3.1.dist-info;mkdocs_get_deps-0.2.0.dist-info;mkdocs_get_deps;mkdocs;pywin32_system32;bin;PyYAML-6.0.2.dist-info;six-1.17.0.dist-info;yaml"
 
 Set oFSO = CreateObject("Scripting.FileSystemObject")
 
 cleanfolders = "" & vbCrLF & vbCrLF
 
-BuildInstall "$INSTDIR\site-packages", "C:\Users\Paul McKinney\AppData\Roaming\Python\Python311\site-packages", name_exclusions
+BuildInstall "$INSTDIR\site-packages", "C:\Users\paulmckinney\AppData\Roaming\Python\Python313\site-packages", name_exclusions
+BuildInstall "$INSTDIR\site-packages", "C:\program files\python313\lib\site-packages", ""
 
-BuildInstall "$INSTDIR", "C:\Users\Paul McKinney\Documents\python-3.11.3-embed-amd64", ""
+BuildInstall "$INSTDIR", "C:\Users\paulmckinney\Documents\python-3.13.2-embed-amd64", ""
 
 REM some pyton dlls need to be in base install folder
-BuildInstall "$INSTDIR", "C:\Users\Paul McKinney\AppData\Roaming\Python\Python311\site-packages\pywin32_system32", ""
-BuildInstall "$INSTDIR", "C:\Users\Paul McKinney\AppData\Roaming\Python\Python311\site-packages\PyQt6\Qt6\bin", ""
+BuildInstall "$INSTDIR", "C:\program files\python313\lib\site-packages\pywin32_system32", ""
+BuildInstall "$INSTDIR", "C:\program files\python313\lib\site-packages\PyQt6\Qt6\bin", ""
 
 objDelFileToWrite.Write(cleanfolders)
 

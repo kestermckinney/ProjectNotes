@@ -216,11 +216,11 @@ class ProjectNotesCommon:
         # if (platform.system() == 'Windows'):
         #     win32api.WinExec( fullpath )
         # else:
-        os.system( fullpath ) # i think this will work on Linux
+        os.startfile( fullpath ) # i think this will work on Linux
 
 
     def get_plugin_setting(self, settingname, pluginname = None):
-        cfg = QSettings("ProjectNotes","PluginSettings")
+        cfg = QSettings("ProjectNotes4Beta","PluginSettings")
         cfg.setFallbacksEnabled(False)
         value = ""
 
@@ -232,7 +232,7 @@ class ProjectNotesCommon:
         return value
 
     def set_plugin_setting(self, settingname, pluginname = None, value = ""):
-        cfg = QSettings("ProjectNotes","PluginSettings")
+        cfg = QSettings("ProjectNotes4Beta","PluginSettings")
         cfg.setFallbacksEnabled(False)
 
         if pluginname is None:

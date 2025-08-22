@@ -1843,16 +1843,16 @@ void MainWindow::on_actionDecrease_Font_Size_triggered()
 
 void MainWindow::onPluginLoaded(const QString& t_pluginpath)
 {
-    HistoryNode* hn = m_forward_back_history.at(m_navigation_location);
-    PNBasePage* current = hn->m_page;
+    HistoryNode* hn = (m_navigation_location >= 0 ? m_forward_back_history.at(m_navigation_location) : nullptr);
+    PNBasePage* current = hn ? hn->m_page : nullptr;
 
     buildPluginMenu(dynamic_cast<PNBasePage*>(current));
 }
 
 void MainWindow::onPluginUnLoaded(const QString& t_pluginpath)
 {
-    HistoryNode* hn = m_forward_back_history.at(m_navigation_location);
-    PNBasePage* current = hn->m_page;
+    HistoryNode* hn = (m_navigation_location >= 0 ? m_forward_back_history.at(m_navigation_location) : nullptr);
+    PNBasePage* current = hn ? hn->m_page : nullptr;
 
     buildPluginMenu(dynamic_cast<PNBasePage*>(current));
 }

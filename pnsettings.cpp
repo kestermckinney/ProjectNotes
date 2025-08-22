@@ -8,10 +8,10 @@
 
 PNSettings::PNSettings()
 {
-    m_app_config = new QSettings("ProjectNotes", "AppSettings");
+    m_app_config = new QSettings("ProjectNotes4Beta", "AppSettings");
     m_app_config->setFallbacksEnabled(false);
 
-    m_plugin_config = new QSettings("ProjectNotes", "PluginSettings");
+    m_plugin_config = new QSettings("ProjectNotes4Beta", "PluginSettings");
     m_plugin_config->setFallbacksEnabled(false);
 }
 

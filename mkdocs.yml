@@ -34,13 +34,14 @@ nav:
     - 'Project Notes XML': PluginsOverview/ProjectNotesXML.md
   - 'Standard Plugins':
     - 'Plugin Settings': StandardPlugins/PluginSettings.md
+    - 'File Collector' : StandardPlugins/FileCollector.md
     - 'Importing and Exporting Outlook Contacts': StandardPlugins/ImportingandExportingOutlookCont.md
     - 'Global Settings': StandardPlugins/GlobalSettings.md
     - 'Meeting Notes Archive': StandardPlugins/MeetingNotesArchive.md
     - 'Project Email Archive': StandardPlugins/ProjectEmailArchive.md
     - 'Tracker Report Generation': StandardPlugins/TrackerReportGeneration.md
     - 'PowerPoint Templates': StandardPlugins/PowerPointTemplates.md
-    - 'Open Editor': StandardPlugins/OpenEditor.md
+    - 'Editor': StandardPlugins/Editor.md
     - 'Schedule a Customer Kickoff Meeting (Windows Only)': StandardPlugins/ScheduleaCustomerKickoffMeeting.md
     - 'Schedule a Customer Lessons Learned Meeting (Windows Only)': StandardPlugins/ScheduleaCustomerLessonsLearned.md
     - 'Schedule a Customer Status Meeting (Windows Only)': StandardPlugins/ScheduleaCustomerStatusMeeting.md

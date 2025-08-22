@@ -2,7 +2,7 @@
 
 Project Notes includes a number of standard Python plugins. These plugins can be copied and modified in order to suit the needs of your organization. It is recommended that you build your own installation that includes your custom plugins as well as additional instructions.
 
-Functionality can be extended using the [Python](<http://www.python.org>) scripting language to process input XML from Project Notes and return XML. Extensions are generally access from right-click menus and the Plugins menu. Some extensions can be added to startup and shutdown as well as regularly occurring timers. Project Notes is distributed with the Python run time. The [Qt](<http://qt.io>) framework is distributed is included as well. Project Notes is written based upon the Qt framework in order to make it a cross platform application. In order to take advantage of the Qt framework in plugins the [PyQt6](<http://https://www.riverbankcomputing.com/software/pyqt/>) module for Python is also distributed with Project Notes.
+Functionality can be extended using the [Python](<http://www.python.org>) scripting language to process input XML from Project Notes and return XML. Extensions are generally accessed from right-click menus and the Plugins menu. Some extensions can be added to startup and shutdown as well as regularly occurring timers. Project Notes is distributed with the Python run time. The [Qt](<http://qt.io>) framework is distributed is included as well. Project Notes is written based upon the Qt framework in order to make it a cross platform application. In order to take advantage of the Qt framework in plugins the [PyQt6](<http://https://www.riverbankcomputing.com/software/pyqt/>) module for Python is also distributed with Project Notes.
 
 For documentation on the Qt framework see [https://doc.qt.io/qt-6/index.html.](<https://doc.qt.io/qt-6/index.html>)
 
@@ -10,7 +10,7 @@ For examples on how to use PyQt6 see [https://build-system.fman.io/pyqt6-tutoria
 
 ### Muiltithreading
 
-There are two fundamental types of plugins main thread and background threads. The main thread plugins reside in the plugins folder and can display user interface elements.  Background threads reside in the threads folder and should not display user interface items. The Qt framework does not support messaging UI elements in background threads.  Both plugin types are based upon Python scripting, however each require different elements to be present within the script.
+There are two fundamental types of plugins main thread and background threads. The main thread plugins reside in the "plugins" folder and can display user interface elements.  Background threads reside in the threads folder and should not display user interface items. The Qt framework does not support messaging UI elements in background threads.  Both plugin types are based upon Python scripting, however each require different elements to be present within the script.
 
 ### Python Script File Locations
 
@@ -21,7 +21,7 @@ When Project Notes starts it looks into the "plugins" and "threads" folder and e
 Python script files follow a general format. This helps to quickly find code when modifying or debugging the script. In most cases, an existing script can be copied to create a new plugin.
 
 ### Plugin Naming
-The global variables pluginname and plugindescription are the plugin name and description are used to identify plugins internally.  The configuration group in the Windows registy or Linux and MacOS configuation files is where a plugins settings are stored.  Below is an example of how these variables are defined in Python.
+The global variables pluginname and plugindescription are the plugin name and description are used to identify plugins internally.  The plugin name is used to name the configuration group. The configuration group in the Windows registy or Linux and MacOS configuation files is where a plugins settings are stored.  Below is an example of how these variables are defined in Python.
 
 ```python
 # Project Notes Plugin Parameters
@@ -44,6 +44,12 @@ pluginmenus = [
 ]
 ```
 
+The example below demonstrates how a plugin menu can be generated dynamically at load time.
+
+```python
+    pluginmenus.append({"menutitle" : "Open MS Project", "function" : "menuOpenMSProject", "tablefilter" : "projects/project_locations", "submenu" : "", "dataexport" : "projects"})
+```
+
 #### Dictionary Keys for Menus
 | **Key** | **Description** |
 | :--- | :--- |
@@ -57,7 +63,7 @@ pluginmenus = [
 
 ### Plugin Options
 
-When a plugin is called from the Plugins menu, Startup event, Shutdown event, or timer event, no filtering of rows is applied. If a plugintable is defined, all records in that table are passed to the event. This is a very time consuming option, and should rarely be used. For all other events a plugintable should be defined. The right click on a list view will show the plugin option if the plugintable defined is for the same table that is displayed. The childtablesfilter variable does not have to be defined. You should always try to filter the XML that is sent to the plugin to improve performance. When the childtablesfilter is defined, Project Notes will only include related tables listed. Table names in the string should be separated by the forward slash (/).
+When a plugin is called from the Plugins menu, Startup event, Shutdown event, or timer event, no XML export is sent to the event handler.  For all other events a dataexport table should be defined. The right click on a list view will show the plugin option if the dataexport table defined is for the same table that is displayed. The tablesfilter variable does not have to be defined. You should always try to filter the XML that is sent to the plugin to improve performance. When the tablesfilter is defined, Project Notes will only include related tables listed. Table names in the string should be separated by the forward slash (/).  See the example in the Python script above.
 
 ### Extendable Events
 
@@ -118,134 +124,63 @@ The example below show an XML export of a person. Notice child tables contain th
 The plugin architecture calls event functions if they have been defined. Below is a common section of code used to respond to events. See other plugins installed with Project Notes for more examples.
 
 ```python
-import platform
-
-if (platform.system() == 'Windows'):
-  from includes.excel_tools import ProjectNotesExcelTools
-  import win32com
+# make sure includes folder can be found
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../plugins')))
 
 from includes.common import ProjectNotesCommon
-from PyQt5 import QtGui, QtCore, QtWidgets, uic
-from PyQt5.QtXml import QDomDocument, QDomNode
-from PyQt5.QtCore import QFile, QIODevice, QDateTime, QUrl
-from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
-from PyQt5.QtGui import QDesktopServices
+from PyQt6.QtXml import QDomDocument, QDomNode
+from PyQt6.QtCore import QDateTime, QElapsedTimer, QDir, QDirIterator, QFileInfo
 
+# Project Notes Plugin Parameters
+pluginname = "File Finder Thread" # name used in the menu
+plugindescription = "This is test thread. Supported platforms: Windows, Linux, MacOS"
+plugintimerevent = 1 # how many minutes between the timer event
 
-# Project Notes Plugin Parameters*
-pluginname = "Schedule Customer Lessons Learned"
-plugindescription = "Using Outlook create an invite to the customer lessons learned session."
-plugintable = "projects" # the table or view that the plugin applies to. This will enable the right click*
-childtablesfilter = "projects/project_people" # a list of child tables that can be sent to the plugin. This will be used to exclude items like notes or action items when they aren't used*
-
-# events must have a data structure and data view specified*
-#*
-# Structures:*
-#   string     The event will pass a python string containing XML and will expect the plugin to return an XML string*
-#*
-# Data Views:*
-#   clients*
-#   people*
-#   projects*
-#   project_people*
-#   status_report_items*
-#   project_locations*
-#   project_notes*
-#   meeting_attendees*
-#   item_tracker_updates*
-#   item_tracker*
-
-# Supported Events*
-
-# def event_startup(xmlstr):*
-#   return ""*
-#*
-# def event_shutdown(xmlstr):*
-#   return ""*
-#*
-# def event_everyminute(xmlstr):*
-#   return ""*
-#*
-# def event_every5minutes(xmlstr):*
-#   return ""*
-#*
-# def event_every10minutes(xmlstr):*
-#   return ""*
-#*
-# def event_every30Mmnutes(xmlstr):*
-#   return ""*
-#*
-# def event_menuclick(xmlstr):*
-#   return ""*
-
-# Parameters specified here will show in the Project Notes plugin settings window*
-# the global variable name must be specified as a string value to be read by project notes*
-# Project Notes will set these values before calling any defs*
-
-# Project Notes Parameters*
-parameters = [
+pluginmenus = [
+    {"menutitle" : "Find All Fiiles", "function" : "event_timer", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
+    {"menutitle" : "Find Project Files", "function" : "event_data_rightclick", "tablefilter" : "projects", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : ""}
 ]
 
-# this plugin is only supported on windows*
-if (platform.system() == 'Windows'):
-  pnc = ProjectNotesCommon()
-  pne = ProjectNotesExcelTools()
+# all events return an xml string that can be processed by ProjectNotes
+#
+# Supported Events
 
-  **def** event_data_rightclick(xmlstr):
-    print("called event: " + **__file__**)
+# def event_startup(parameter):
+#     return
+#
+# def event_shutdown(parameter):
+#     return
+#
+# def event_timer(parameter):
+#     return
+#
 
-    xmlval = QDomDocument()
-    xmldoc = ""
-    window_title = ""
-    
-    if (xmlval.setContent(xmlstr) == **False**):
-      QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.Cancel)
-      return ""
-      
-    outlook = win32com.client.Dispatch("Outlook.Application")
-    message = outlook.CreateItem(1)
+class  FileFinder:
+    def __init__(self):
+        super().__init__()
 
-    xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node    *
-    pm = xmlroot.toElement().attribute("managing_manager_name")
+        self.pnc = ProjectNotesCommon()
+        self.settings_pluginname = "File Finder"
+        self.search_locations = self.pnc.get_plugin_setting("SearchLocations", self.settings_pluginname)
+        self.classifications = self.pnc.get_plugin_setting("Classifications", self.settings_pluginname)
 
-    email = None
-    nm = None
+    # ... code removed for simplicity
 
-    teammember = pnc.find_node(xmlroot, "table", "name", "project_people")
-    if teammember:
-      memberrow = teammember.firstChild()
+def event_timer(parameter):
+    ff = FileFinder()
+    ff.parse_by_project((parameter == "all"))
 
-      while not memberrow.isNull():
-        nm = pnc.get_column_value(memberrow, "name")
-        email = pnc.get_column_value(memberrow, "email")
-        if nm != pm:
-          if (email is not None **and** email != ""):
-            message.Recipients.Add(email)
+    return ""
 
-        memberrow = memberrow.nextSibling()
+def event_data_rightclick(xmlstr, parameter):
+    ff = FileFinder()
 
-    project = pnc.find_node(xmlroot, "table", "name", "projects")
-    if project:
-      projectrow = project.firstChild()
+    projectnumber = ff.get_projectnumber(xmlstr)
 
-      if not projectrow.isNull():
-        window_title = pnc.get_column_value(projectrow, "project_number") + " " + pnc.get_column_value(projectrow, "project_name") + " - Lessons Learned"
-        message.Subject = window_title
+    if projectnumber is not None:
+        ff.parse_by_project(False, projectnumber)
 
-    txt = get_text_invite()
-    message.MeetingStatus = 1
-    message.Duration = 60
-    message.Location = pnc.get_plugin_setting("DefaultMeetingLocation")
-    message.Body = txt
-    outlook.ActiveExplorer().Activate()
-    message.Display()
-
-    outlook = None
-    message = None
-
-    pnc.bring_window_to_front(window_title)
-
-    return xmldoc
+    return ""
 ```
 
 ### Updating Data

@@ -72,7 +72,7 @@ plugindescription = "This is test plugin. Supported platforms: Windows, Linux, M
 # Project Notes Plugin Events
 
 def get_global_setting(settingname):
-    cfg = QSettings("ProjectNotes","PluginSettings")
+    cfg = QSettings("ProjectNotes4Beta","PluginSettings")
     cfg.setFallbacksEnabled(False)
 
     val = cfg.value("Global Settings/" + settingname, "")
@@ -80,7 +80,7 @@ def get_global_setting(settingname):
     return val
 
 def get_setting(settingname):
-    cfg = QSettings("ProjectNotes","PluginSettings")
+    cfg = QSettings("ProjectNotes4Beta","PluginSettings")
     cfg.setFallbacksEnabled(False)
 
     val = cfg.value(pluginname + "/" + settingname, "")

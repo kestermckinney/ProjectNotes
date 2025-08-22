@@ -138,6 +138,8 @@ class FileFinderSettings(QDialog):
             self.ui.tableClassifications.setColumnWidth(0, int(mc1))
             self.ui.tableClassifications.setColumnWidth(1, int(mc2))
 
+            print(f"loading file finder columns {lc1}, {mc1}, {mc2}")
+
         if (x != '' and y != '' and w != '' and h != ''):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
@@ -709,7 +711,7 @@ class SettingsMigrator(QDialog):
     def load_all_plugin_settings(self):
         self.listWidgetPlugins.clear()
 
-        settings = QSettings("ProjectNotes","PluginSettings")
+        settings = QSettings("ProjectNotes4Beta","PluginSettings")
         
         # Get all keys in the group
         keys = settings.childGroups()
@@ -739,7 +741,7 @@ class SettingsMigrator(QDialog):
         settings_dict = {}
         
         # Get all top-level groups
-        settings = QSettings("ProjectNotes","PluginSettings")
+        settings = QSettings("ProjectNotes4Beta","PluginSettings")
         
         # Iterate through each group
         for group in selected_groups:
@@ -762,7 +764,7 @@ class SettingsMigrator(QDialog):
 
     def import_settings(self):
         # Initialize QSettings (replace with your organization and application name)
-        settings = QSettings("ProjectNotes","PluginSettings")
+        settings = QSettings("ProjectNotes4Beta","PluginSettings")
         
         # Open file dialog to select JSON file
         file_dialog = QFileDialog(self)
@@ -819,7 +821,7 @@ class SettingsMigrator(QDialog):
             return  # No groups selected
         
         # Initialize QSettings
-        settings = QSettings("ProjectNotes","PluginSettings")
+        settings = QSettings("ProjectNotes4Beta","PluginSettings")
         
         # Remove each selected group
         try:
