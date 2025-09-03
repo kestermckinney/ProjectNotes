@@ -5,7 +5,7 @@ import sys
 from PyQt6 import QtSql, QtGui, QtCore, QtWidgets
 from PyQt6.QtCore import QDirIterator, QDir, QSettings, QFile
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication
+from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog
 from includes.common import ProjectNotesCommon
 
 top_windows = []

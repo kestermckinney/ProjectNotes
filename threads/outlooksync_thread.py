@@ -13,7 +13,7 @@ from PyQt6.QtCore import QDateTime, QElapsedTimer, QCoreApplication
 
 # Project Notes Plugin Parameters
 pluginname = "Outlook Integration"
-plugindescription = "Imports Outlook contacts, Exports Contacts that don't already exist in Outlook, Exports project related emails, and Export the project managers assigned active tracker and action items.  All activites are done using the Microsoft Graph API."
+plugindescription = "Imporst Outlook contacts, Exports Contacts that don't already exist in Outlook, Exports project related emails, and Export the project managers assigned active tracker and action items.  All activites are done using the Microsoft Graph API."
 plugintimerevent = 1 # how many minutes between the timer event
 
 pluginmenus = []
@@ -28,8 +28,8 @@ if use_graph_api:
     pluginmenus = [
         {"menutitle" : "Sync Tracker Items", "function" : "menuSyncTrackerItems", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
         {"menutitle" : "Download All Emails", "function" : "menuRightClickDownloadEmails", "tablefilter" : "projecs", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : "all"},
-        {"menutitle" : "Import Contacts", "function" : "menuImportContacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
-        {"menutitle" : "Export New Contacts", "function" : "menuExportContacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
+        {"menutitle" : "Import Contacts from Office 365", "function" : "menuImportContacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
+        {"menutitle" : "Export New Contacts to Office 365", "function" : "menuExportContacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
     ]
 
 # all events return an xml string that can be processed by ProjectNotes 

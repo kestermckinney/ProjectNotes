@@ -102,6 +102,7 @@ class FileFinderSettings(QDialog):
         self.ui.pushButtonEditClassification.clicked.connect(self.editclassification)
         self.ui.pushButtonDeleteClassification.clicked.connect(self.deleteclassification)
         self.ui.buttonBox.accepted.connect(self.save_settings)
+        self.ui.buttonBox.rejected.connect(self.reject_changes)
 
         delegate = ComboBoxDelegate()
         delegate.setItems([
@@ -227,16 +228,7 @@ class FileFinderSettings(QDialog):
         if (row > -1):
             value = self.ui.tableClassifications.removeRow(row)
 
-    def save_settings(self):
-        self.search_locations = self.copy_table_to_json(self.ui.tableSearchLocations)
-        self.pnc.set_plugin_setting("SearchLocations", self.settings_pluginname, self.search_locations)
-
-        self.classifications = self.copy_table_to_json(self.ui.tableClassifications)
-        self.pnc.set_plugin_setting("Classifications", self.settings_pluginname, self.classifications)
-
-        self.ui.close()
-
-    def closeEvent(self, event):
+    def save_window_state(self):
         # Save window position and size
         self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
         self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
@@ -246,6 +238,28 @@ class FileFinderSettings(QDialog):
         self.pnc.set_plugin_setting("lc1", self.settings_pluginname, f"{self.ui.tableSearchLocations.columnWidth(0)}")
         self.pnc.set_plugin_setting("mc1", self.settings_pluginname, f"{self.ui.tableClassifications.columnWidth(0)}")
         self.pnc.set_plugin_setting("mc2", self.settings_pluginname, f"{self.ui.tableClassifications.columnWidth(1)}")
+
+        print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+
+    def save_settings(self):
+        self.search_locations = self.copy_table_to_json(self.ui.tableSearchLocations)
+        self.pnc.set_plugin_setting("SearchLocations", self.settings_pluginname, self.search_locations)
+
+        self.classifications = self.copy_table_to_json(self.ui.tableClassifications)
+        self.pnc.set_plugin_setting("Classifications", self.settings_pluginname, self.classifications)
+
+        self.save_window_state()
+        self.accept()
+
+    def reject_changes(self):
+        self.save_window_state()
+        
+        # Call the base class implementation
+        self.reject()
+
+    def closeEvent(self, event):
+
+        self.save_window_state()
 
         # Call the base class implementation
         super().closeEvent(event)
@@ -266,6 +280,7 @@ class EditorSettings(QDialog):
 
         self.ui.pushButtonFilePick.clicked.connect(self.editlocation)
         self.ui.buttonBox.accepted.connect(self.save_settings)
+        self.ui.buttonBox.rejected.connect(self.reject_changes)
 
         x = self.pnc.get_plugin_setting("X", self.settings_pluginname)
         y = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
@@ -292,18 +307,30 @@ class EditorSettings(QDialog):
         if (file_path is not None and file_path != ''):
             self.ui.lineEditFullPath.setText(file_path)        
 
-    def save_settings(self):
-        self.editor_path = self.ui.lineEditFullPath.text()
-        self.pnc.set_plugin_setting("EditorPath", self.settings_pluginname, self.editor_path)
-
-        self.ui.close()
-
-    def closeEvent(self, event):
+    def save_window_state(self):
         # Save window position and size
         self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
         self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
         self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
+
+        print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+
+    def save_settings(self):
+        self.editor_path = self.ui.lineEditFullPath.text()
+        self.pnc.set_plugin_setting("EditorPath", self.settings_pluginname, self.editor_path)
+
+        self.save_window_state()
+        self.accept()
+
+    def reject_changes(self):
+        self.save_window_state()
+        
+        # Call the base class implementation
+        self.reject()
+
+    def closeEvent(self, event):
+        self.save_window_state()
 
         # Call the base class implementation
         super().closeEvent(event)
@@ -323,6 +350,7 @@ class OutlookIntegrationSettings(QDialog):
             )
 
         self.ui.buttonBox.accepted.connect(self.save_settings)
+        self.ui.buttonBox.rejected.connect(self.reject_changes)
 
         x = self.pnc.get_plugin_setting("X", self.settings_pluginname)
         y = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
@@ -332,7 +360,7 @@ class OutlookIntegrationSettings(QDialog):
         self.ui.comboBoxIntegrationType.setCurrentText(self.pnc.get_plugin_setting("IntegrationType", self.settings_pluginname))
         self.ui.lineEditApplicationID.setText(self.pnc.get_plugin_setting("ApplicationID", self.settings_pluginname))
         self.ui.lineEditTenantID.setText(self.pnc.get_plugin_setting("TenantID", self.settings_pluginname))
-        self.ui.checkBoxExportContacts.setChecked(self.pnc.get_plugin_setting("ExportContacts", self.settings_pluginname).lower() == "true")
+        self.ui.checkBoxImportContacts.setChecked(self.pnc.get_plugin_setting("ImportContacts", self.settings_pluginname).lower() == "true")
         self.ui.checkBoxExportContacts.setChecked(self.pnc.get_plugin_setting("ExportContacts", self.settings_pluginname).lower() == "true")
         self.ui.checkBoxSyncToDoWithDue.setChecked(self.pnc.get_plugin_setting("SyncToDoWithDue", self.settings_pluginname).lower() == "true")
         self.ui.checkBoxSyncToDoWithoutDue.setChecked(self.pnc.get_plugin_setting("SyncToDoDoWithoutDue", self.settings_pluginname).lower() == "true")
@@ -347,12 +375,21 @@ class OutlookIntegrationSettings(QDialog):
 
         self.show()
 
+    def save_window_state(self):
+        # Save window position and size
+        self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
+        self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
+        self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
+        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
+
+        print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+
     def save_settings(self):
 
         self.pnc.set_plugin_setting("IntegrationType", self.settings_pluginname, self.ui.comboBoxIntegrationType.currentText())
         self.pnc.set_plugin_setting("ApplicationID", self.settings_pluginname, self.ui.lineEditApplicationID.text())
         self.pnc.set_plugin_setting("TenantID", self.settings_pluginname, self.ui.lineEditTenantID.text())
-        self.pnc.set_plugin_setting("ExportContacts", self.settings_pluginname, "true" if self.ui.checkBoxExportContacts.isChecked() else "false")
+        self.pnc.set_plugin_setting("ImportContacts", self.settings_pluginname, "true" if self.ui.checkBoxImportContacts.isChecked() else "false")
         self.pnc.set_plugin_setting("ExportContacts", self.settings_pluginname, "true" if self.ui.checkBoxExportContacts.isChecked() else "false")
         self.pnc.set_plugin_setting("SyncToDoWithDue", self.settings_pluginname, "true" if self.ui.checkBoxSyncToDoWithDue.isChecked() else "false")
         self.pnc.set_plugin_setting("SyncToDoDoWithoutDue", self.settings_pluginname, "true" if self.ui.checkBoxSyncToDoWithoutDue.isChecked() else "false")
@@ -364,15 +401,17 @@ class OutlookIntegrationSettings(QDialog):
 
         projectnotes.force_reload("outlooksync_thread")
 
-        self.ui.close()
+        self.save_window_state()
+        self.accept()
+
+    def reject_changes(self):
+        self.save_window_state()
+        
+        # Call the base class implementation
+        self.reject()
 
     def closeEvent(self, event):
-        # Save window position and size
-        self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
-        self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
-        self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
-        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
-
+        self.save_window_state()
         # Call the base class implementation
         super().closeEvent(event)
 
@@ -393,6 +432,7 @@ class MyShortcutSettings(QDialog):
         self.ui.pushButtonEditShortcut.clicked.connect(self.editshortcut)
         self.ui.pushButtonDeleteShortcut.clicked.connect(self.deleteshortcut)
         self.ui.buttonBox.accepted.connect(self.save_settings)
+        self.ui.buttonBox.rejected.connect(self.reject_changes)
 
         delegate = ComboBoxDelegate(self.ui, False)
         delegate.setItems([
@@ -485,15 +525,7 @@ class MyShortcutSettings(QDialog):
         if (row > -1):
             value = self.ui.tableShortcuts.removeRow(row)
 
-    def save_settings(self):
-        self.myshortcuts = self.copy_table_to_json(self.ui.tableShortcuts)
-        self.pnc.set_plugin_setting("MyShortcuts", self.settings_pluginname, self.myshortcuts)
-
-        projectnotes.force_reload("myshortcuts_plugin")
-
-        self.ui.close()
-
-    def closeEvent(self, event):
+    def save_window_state(self):
         # Save window position and size
         self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
         self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
@@ -505,6 +537,26 @@ class MyShortcutSettings(QDialog):
         self.pnc.set_plugin_setting("c3", self.settings_pluginname, f"{self.ui.tableShortcuts.columnWidth(2)}")
         self.pnc.set_plugin_setting("c4", self.settings_pluginname, f"{self.ui.tableShortcuts.columnWidth(3)}")
 
+
+        print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+
+    def save_settings(self):
+        self.myshortcuts = self.copy_table_to_json(self.ui.tableShortcuts)
+        self.pnc.set_plugin_setting("MyShortcuts", self.settings_pluginname, self.myshortcuts)
+
+        projectnotes.force_reload("myshortcuts_plugin")
+
+        self.save_window_state()
+        self.accept()
+
+    def reject_changes(self):
+        self.save_window_state()
+        
+        # Call the base class implementation
+        self.reject()        
+
+    def closeEvent(self, event):
+        self.save_window_state()
         # Call the base class implementation
         super().closeEvent(event)
 
@@ -532,6 +584,7 @@ class MeetingEmailTypesSettings(QDialog):
         self.ui.pushButtonEditType.clicked.connect(self.edittype)
         self.ui.pushButtonDeleteType.clicked.connect(self.deletetype)
         self.ui.buttonBox.accepted.connect(self.save_settings)
+        self.ui.buttonBox.rejected.connect(self.reject_changes)
 
         delegate = ComboBoxDelegate()
         delegate.setItems([
@@ -650,17 +703,7 @@ class MeetingEmailTypesSettings(QDialog):
         if (row > -1):
             value = self.ui.tableWidgetMeetingEmailTypes.removeRow(row)
 
-    def save_settings(self):
-        self.meeting_types = self.copy_table_to_json(self.ui.tableWidgetMeetingEmailTypes)
-        self.pnc.set_plugin_setting("MeetingEmailTypes", self.settings_pluginname, self.meeting_types)
-
-        self.ui.close()
-
-        projectnotes.force_reload("base_plugin")
-
-
-    def closeEvent(self, event):
-        print("saving values")
+    def save_window_state(self):
         # Save window position and size
         self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
         self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
@@ -673,6 +716,25 @@ class MeetingEmailTypesSettings(QDialog):
         self.pnc.set_plugin_setting("c4", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(3)}")
         self.pnc.set_plugin_setting("c5", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(4)}")
 
+        print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+
+    def save_settings(self):
+        self.meeting_types = self.copy_table_to_json(self.ui.tableWidgetMeetingEmailTypes)
+        self.pnc.set_plugin_setting("MeetingEmailTypes", self.settings_pluginname, self.meeting_types)
+
+        projectnotes.force_reload("base_plugin")
+
+        self.save_window_state()
+        self.accept()
+
+    def reject_changes(self):
+        self.save_window_state()
+        
+        # Call the base class implementation
+        self.reject()
+
+    def closeEvent(self, event):
+        self.save_window_state()        
         # Call the base class implementation
         super().closeEvent(event)
 
@@ -835,14 +897,23 @@ class SettingsMigrator(QDialog):
         
         return
 
-    def closeEvent(self, event):
-        print("saving values")
+    def save_window_state(self):
         # Save window position and size
         self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
         self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
         self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
+        print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+
+    def reject_changes(self):
+        self.save_window_state()
+        
+        # Call the base class implementation
+        self.reject()
+
+    def closeEvent(self, event):
+        self.save_window_state()
         # Call the base class implementation
         super().closeEvent(event)
 

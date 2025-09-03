@@ -287,7 +287,7 @@ class BasePlugins:
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to draft an email.",QMessageBox.StandardButton.Cancel)
             return ""
             
-        print(xmlstr)
+        #print(xmlstr)
 
         xmlroot = xmlval.documentElement()
 
@@ -446,6 +446,7 @@ def populate_dynamic_menu(json_string):
         return
 
     json_menu_data = json.loads(json_string)
+    use_graph_api = (pnc.get_plugin_setting("IntegrationType", "Outlook Integration") == "Office 365 Application")
 
     if (len(json_menu_data) > 0):
         # Populate the table with data
@@ -473,9 +474,9 @@ def populate_dynamic_menu(json_string):
                     pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuScheduleMeeting",  "tablefilter" : "projects/project_people", "submenu" : "Schedule Meeting", "dataexport" : "projects", "parameter" : row_data["Name"] })
                     pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuScheduleMeeting",  "tablefilter" : "project_notes/meeting_attendees", "submenu" : "Schedule Meeting", "dataexport" : "project_notes", "parameter" : row_data["Name"] })
 
-    if (platform.system() == 'Windows'):
-        pluginmenus.append({"menutitle" : "Export Contacts to Outlook", "function" : "menuExportContactsToOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""})
-        pluginmenus.append({"menutitle" : "Import Contacts from Outlook", "function" : "menuImportContactsFromOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""})
+    if (platform.system() == 'Windows' and not use_graph_api):
+        pluginmenus.append({"menutitle" : "Export Contacts to Outlook", "function" : "menuExportContactsToOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
+        pluginmenus.append({"menutitle" : "Import Contacts from Outlook", "function" : "menuImportContactsFromOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
 
 def menuScheduleMeeting(xmlstr, parameter):
     global json_menu_data
@@ -547,6 +548,22 @@ def menuSendNotes(xmlstr, parameter):
     baseplugin = BasePlugins()
     nf = NoteFormatter(xmlstr)
     return baseplugin.send_an_email(xmlstr, nf.getSubject(), nf.getHTML(), None, "Full Project Team")
+
+def menuImportContactsFromOutlook(parameter):
+    pnot = ProjectNotesOutlookTools()
+    pnot.import_contacts("")
+
+    return ""
+
+def menuExportContactsFromOutlook(parameter):
+    pnot = ProjectNotesOutlookTools()
+
+    xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="people" />\n</projectnotes>\n'
+    xmlresult = projectnotes.get_data(xmldoc)
+
+    pnot.export_contacts(xmlresult)
+
+    return ""
 
 pnc = ProjectNotesCommon()
 json_menu_data = None

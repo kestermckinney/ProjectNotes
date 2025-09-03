@@ -2,10 +2,9 @@ import platform
 import os
 import json
 
-from PyQt6 import QtGui, QtCore, QtWidgets
+from PyQt6 import QtCore
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QSettings
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication
 
 import re
 
@@ -240,14 +239,6 @@ class ProjectNotesCommon:
         else:
             cfg.setValue(pluginname + "/" + settingname, value)
 
-    def verify_global_settings(self):
-        pf = self.get_plugin_setting("ProjectsFolder")
-        if pf == None or pf == "" or not QDir(pf).exists():
-            QMessageBox.warning(None, "Invalid Global Setting", "ProjectsFolder must be set in the Global Settigns plugin.", QMessageBox.StandardButton.Ok)
-            return(False)
-
-        return(True)
-
     def scrape_project_name(self, xmldoc):
         projectname = ""
         contents = None
@@ -451,3 +442,5 @@ f.close()
 
 """
 
+# TODO: background tasks close open Qt Windows need to fix that
+# TODO: when closing project notes sometimes background tasks keep it open
