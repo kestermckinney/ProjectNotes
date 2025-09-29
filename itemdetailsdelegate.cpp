@@ -68,7 +68,7 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
                     if (i >= 0)
                     {
                         comboBox->setCurrentIndex(i);
-                        comboBox->setCurrentText(list_value.toString());
+                        // test do you need to do this after you set the index comboBox->setCurrentText(list_value.toString());
                     }
                     else
                         comboBox->setCurrentText(QString());
@@ -93,7 +93,7 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
                     if (i >= 0)
                     {
                         comboBox->setCurrentIndex(i);
-                        comboBox->setCurrentText(list_value.toString());
+                        // test set current text after index comboBox->setCurrentText(list_value.toString());
                     }
                     else
                         comboBox->setCurrentText(QString());
@@ -127,7 +127,7 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
                     if (i >= 0)
                     {
                         comboBox->setCurrentIndex(i);
-                        comboBox->setCurrentText(list_value.toString());
+                        // test do you need to set current text after setting the index comboBox->setCurrentText(list_value.toString());
                     }
                     else
                         comboBox->setCurrentText(QString());
