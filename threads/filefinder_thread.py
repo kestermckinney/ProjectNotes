@@ -135,7 +135,7 @@ class  FileFinder:
 
         
         projectnumber = self.pnc.get_column_value(project_xml, "project_number")
-        #print(f"focusing on project {projectnumber}")
+        print(f"Looking for artifacts for project {projectnumber}")
 
         # look through base folders and identify folders that are associated with specific project numbers
         data = json.loads(self.search_locations)
@@ -161,13 +161,13 @@ class  FileFinder:
         statename = "file_finder"
 
         skip = 0
-        top = 100
+        top = 5
 
         skip = self.pnc.get_save_state(statename)
 
         if all_projects:
             skip = 0
-            top = 10000
+            top = 200
 
         xmldoc = ""
         data_request = None

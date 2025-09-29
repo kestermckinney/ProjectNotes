@@ -1,12 +1,15 @@
 from includes.common import ProjectNotesCommon
 from PyQt6 import QtCore
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QDir, QFileInfo
+from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QDir, QFileInfo, QElapsedTimer
 from urllib3.exceptions import InsecureRequestWarning 
 
 import requests
+import inspect
 import json
 from urllib3.exceptions import InsecureRequestWarning 
+
+import projectnotes
 
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
@@ -24,13 +27,36 @@ class IFSCommon:
         self.domain_user = self.pnc.get_plugin_setting("DomainUser", self.settings_pluginname)
         self.domain_password = self.pnc.get_plugin_setting("DomainPassword", self.settings_pluginname)
 
+    def has_settings(self):
+        if self.ifs_username is None or self.ifs_username == '':
+            return False
+
+        if self.ifs_url is None or self.ifs_url == '':
+            return False
+
+        if self.ifs_password is None or self.ifs_password == '':
+            return False
+
+        if self.ifs_person_id is None or self.ifs_person_id == '':
+            return False
+
+        if self.report_server is None or self.report_server == '':
+            return False
+
+        if self.domain_user is None or self.domain_user == '':
+            return False
+
+        if self.domain_password is None or self.domain_password == '':
+            return False
+
+        return True
+
     def getearnedvaluemetrics(self, projectid):
             request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectMonitoringHandling.svc/Projects(ProjectId=%27' + projectid + '%27)/ProjectAnalysisArray?$apply=aggregate(Bcws%20with%20sum%20as%20Bcws_aggr_,Bcwp%20with%20sum%20as%20Bcwp_aggr_,Acwp%20with%20sum%20as%20Acwp_aggr_,Bac%20with%20sum%20as%20Bac_aggr_,Etc%20with%20sum%20as%20Etc_aggr_,Eac%20with%20sum%20as%20Eac_aggr_,Vac%20with%20sum%20as%20Vac_aggr_,Cv%20with%20sum%20as%20Cv_aggr_,Sv%20with%20sum%20as%20Sv_aggr_)'
 
             result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
             if (result.status_code != 200):
-                QMessageBox.critical(None, "ODATA Request Failed", result.reason + ": " + result.text + " " + request_url, QMessageBox.StandardButton.Ok)
                 print("ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
                 return ""
 
@@ -44,7 +70,6 @@ class IFSCommon:
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
         if (result.status_code != 200):
-            QMessageBox.critical(None, "ODATA Request Failed", result.reason + ": " + result.text + " " + request_url, QMessageBox.StandardButton.Ok)
             print("ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
             return ""
 
@@ -58,7 +83,6 @@ class IFSCommon:
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
         if (result.status_code != 200):
-            QMessageBox.critical(None, "ODATA Request Failed", result.reason + ": " + result.text + " " + request_url, QMessageBox.StandardButton.Ok)
             print("ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
             return ""
 
@@ -72,7 +96,6 @@ class IFSCommon:
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
         if (result.status_code != 200):
-            QMessageBox.critical(None, "ODATA Request Failed", result.reason + ": " + result.text + " " + request_url, QMessageBox.StandardButton.Ok)
             print("ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
             return ""
 
@@ -263,7 +286,6 @@ class IFSCommon:
         # print("to: " + savelocation)
 
         if (result.status_code != 200):
-            QMessageBox.critical(None, "File Download Failed", result.reason + ": " + result.text, QMessageBox.StandardButton.Ok)
             print("File Download Failed", result.reason + ": " + result.text)
             return False
 
@@ -273,13 +295,46 @@ class IFSCommon:
 
         return True
 
-    def getprojectsxml(self, rgroups, clientsdict, rd):
-        request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectsHandling.svc/Projects?$filter=(((Objstate%20eq%20IfsApp.ProjectsHandling.ProjectState%27Initialized%27%20or%20Objstate%20eq%20IfsApp.ProjectsHandling.ProjectState%27Started%27%20or%20Objstate%20eq%20IfsApp.ProjectsHandling.ProjectState%27Approved%27))%20and%20Manager%20eq%20%27' + self.ifs_person_id + '%27)&$select=BudgetControlOn,ControlAsBudgeted,ControlOnTotalBudget,ProjUniquePurchase,ProjUniqueSale,State,ProjectId,Objstate,Objgrants,Name,Company,CustomerCategory,CustomerId,FinancialProjectExist,History,DefaultSite,ProjectPngExists,CheckForecast,Description,CompanyName,Manager,AccessOnOff,PlanStart,PlanFinish,ActualStart,ActualFinish,ApprovedDate,CloseDate,CancelDate,FrozenDate,EarnedValueMethod,BaselineRevisionNumber,Cf_Lastinvoiced,luname,keyref&$expand=AccountingProjectRef($select=ProjectGroup,Objgrants,luname,keyref),ManagerRef($select=Name,luname,keyref),CustomerIdRef($select=Name,Objgrants,luname,keyref)'
+    def getprojectsxml(self, rgroups, clientsdict, rd, parameter):
+
+        saved_state = None
+        statename = "ifs_projects_import"
+        skip = 0
+        top = 10
+
+        projectcount = 0
+
+        segment = ""
+
+        if parameter == "all":
+            top = 300
+        else:
+            skip = self.pnc.get_save_state(statename)
+
+        # if (skip > 0 or top > 0):
+        #     segment = segment + "?"
+
+        if (skip > 0):
+            segment = segment + f"$skip={skip}"
+
+        if (skip > 0 and top > 0):
+            segment = segment + "&"
+
+        if (top > 0):
+            segment = segment + f"$top={top}"
+
+        if (skip > 0 or top > 0):
+         segment = segment + "&"
+
+        segment = segment + "$orderby=ProjectId&"
+
+        request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectsHandling.svc/Projects?' + segment + '$filter=(((Objstate%20eq%20IfsApp.ProjectsHandling.ProjectState%27Initialized%27%20or%20Objstate%20eq%20IfsApp.ProjectsHandling.ProjectState%27Started%27%20or%20Objstate%20eq%20IfsApp.ProjectsHandling.ProjectState%27Approved%27))%20and%20Manager%20eq%20%27' + self.ifs_person_id + '%27)&$select=BudgetControlOn,ControlAsBudgeted,ControlOnTotalBudget,ProjUniquePurchase,ProjUniqueSale,State,ProjectId,Objstate,Objgrants,Name,Company,CustomerCategory,CustomerId,FinancialProjectExist,History,DefaultSite,ProjectPngExists,CheckForecast,Description,CompanyName,Manager,AccessOnOff,PlanStart,PlanFinish,ActualStart,ActualFinish,ApprovedDate,CloseDate,CancelDate,FrozenDate,EarnedValueMethod,BaselineRevisionNumber,Cf_Lastinvoiced,luname,keyref&$expand=AccountingProjectRef($select=ProjectGroup,Objgrants,luname,keyref),ManagerRef($select=Name,luname,keyref),CustomerIdRef($select=Name,Objgrants,luname,keyref)'
 
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
+        #print(f"Query for projects is : {request_url}")
+
         if (result.status_code != 200):
-            QMessageBox.critical(None, "ODATA Request Failed", result.reason + ": " + result.text + " " + request_url, QMessageBox.StandardButton.Ok)
             print("ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
             return ""
 
@@ -289,6 +344,9 @@ class IFSCommon:
         #print(json.dumps(json_result, indent=4))
 
         for rowval in json_result['value']:
+
+            projectcount = projectcount + 1
+
             rd['companyname'] = rowval['CompanyName']
 
             rd['projectsxmlrows'] = rd['projectsxmlrows']  + "  <row>\n"
@@ -305,8 +363,8 @@ class IFSCommon:
 
             rd['projectsxmlrows']  = rd['projectsxmlrows']  + "    <column name=\"project_status\">Active</column>\n"
 
-            metrics = ifsc.getearnedvaluemetrics(rowval['ProjectId'])
-            costmetrics = ifsc.getcostmetrics(rowval['ProjectId'])
+            metrics = self.getearnedvaluemetrics(rowval['ProjectId'])
+            costmetrics = self.getcostmetrics(rowval['ProjectId'])
 
             rd['projectsxmlrows']  = rd['projectsxmlrows']  + "    <column name=\"budget\">" + str(costmetrics['Baseline_aggr_']) + "</column>\n"
             rd['projectsxmlrows']  = rd['projectsxmlrows']  + "    <column name=\"actual\">" + str(costmetrics['Used_aggr_']) + "</column>\n"
@@ -315,17 +373,19 @@ class IFSCommon:
             rd['projectsxmlrows']  = rd['projectsxmlrows']  + "    <column name=\"bac\">" + str(metrics['Bac_aggr_']) + "</column>\n"
             rd['projectsxmlrows']  = rd['projectsxmlrows']  + "  </row>\n"
 
-            rd['projectlocationsxmlrows'] = rd['projectlocationsxmlrows'] + self.pnc.find_projectlocations( rowval['ProjectId'], ProjectsFolder)
+            #TODO: maybe just let file finder do this on  it's own rd['projectlocationsxmlrows'] = rd['projectlocationsxmlrows'] + self.pnc.find_projectlocations( rowval['ProjectId'], ProjectsFolder)
 
-            getteammembersxml(rgroups, clientsdict, rowval['ProjectId'], rd )
+            self.getteammembersxml(rgroups, clientsdict, rowval['ProjectId'], rd )
+
+        self.pnc.set_save_state(statename, skip, top, projectcount)
+
             
-    def getresourcegroups(rgroups):
-        request_url = IFSUrl + '/main/ifsapplications/projection/v1/ResourceGroupsHandling.svc/ResourceSet?$select=ResourceId,Description'
+    def getresourcegroups(self, rgroups):
+        request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ResourceGroupsHandling.svc/ResourceSet?$select=ResourceId,Description'
 
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Content-Type" : "application/json"})
 
         if (result.status_code != 200):
-            QMessageBox.critical(None, "ODATA Request Failed", result.reason + ": " + result.text + " " + request_url, QMessageBox.StandardButton.Ok)
             print("ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
             return ""
 
@@ -340,13 +400,12 @@ class IFSCommon:
             rgroups[value['ResourceId']] = value['Description']        
 
 
-    def getteammembersxml(rgroups, clientsdict, projectid, rd):
-        request_url = IFSUrl + '/main/ifsapplications/projection/v1/ProjectResourcePlanningHandling.svc/ProjectSet(ProjectId=%27' + projectid + '%27)/ProjectAllocationArray?$apply=groupby((EmployeeName,ResourceId))'
+    def getteammembersxml(self, rgroups, clientsdict, projectid, rd):
+        request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectResourcePlanningHandling.svc/ProjectSet(ProjectId=%27' + projectid + '%27)/ProjectAllocationArray?$apply=groupby((EmployeeName,ResourceId))'
         
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
         if (result.status_code != 200):
-            QMessageBox.critical(None, "ODATA Request Failed", result.reason + ": " + result.text + " " + request_url, QMessageBox.StandardButton.Ok)
             print("ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
             return ""
 
@@ -373,4 +432,54 @@ class IFSCommon:
 
             # only add the company name once to the client list
             clientsdict[rd['companyname']] = True
+
+    def syncIFSProjects(self, parameter):
+        timer = QElapsedTimer()
+        timer.start()
+
+        clientsdict = {}
+        rgroups = {}
+
+        rd = {}
+        rd['companyname'] = ''
+        rd['clientsxmlrows'] = ''
+        rd['projectsxmlrows'] = ''
+        rd['projectlocationsxmlrows'] = ''
+        rd['peoplexmlrows'] = ''
+        rd['projectpeoplexmlrows'] = ''
+
+        docxml = "<projectnotes>\n"
+
+        self.getresourcegroups(rgroups)
+
+        self.getprojectsxml(rgroups, clientsdict, rd, parameter)
+
+        docxml = docxml + "<table name=\"clients\">\n"
+        for k in clientsdict:
+            docxml = docxml +  "  <row>\n   <column name=\"client_name\">" + self.pnc.to_xml(k) + "</column>\n </row>\n"
+        docxml = docxml +  "</table>\n"
+
+        docxml = docxml + "<table name=\"people\">\n"
+        docxml = docxml + rd['peoplexmlrows']
+        docxml = docxml + "</table>\n"
+
+        docxml = docxml + "<table name=\"projects\">\n"
+        docxml = docxml + rd['projectsxmlrows']
+        docxml = docxml + "</table>\n"
+
+        docxml = docxml + "<table name=\"project_people\">\n"
+        docxml = docxml + rd['projectpeoplexmlrows']
+        docxml = docxml + "</table>\n"
+
+        docxml = docxml + "<table name=\"project_locations\">\n"
+        docxml = docxml + rd['projectlocationsxmlrows']
+        docxml = docxml + "</table>\n"
+
+        docxml = docxml + "</projectnotes>\n"
+
+        projectnotes.update_data(docxml)
+
+        execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
+        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+
 

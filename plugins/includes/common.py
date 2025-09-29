@@ -14,6 +14,9 @@ class ProjectNotesCommon:
         self.saved_state_file = self.temporary_folder + '/projectnotes_saved_state.json'
 
     def get_save_state(self, state_name):
+        
+        #print(f"Attempting to read save state {state_name} to {self.saved_state_file}.")
+
         # get the last state
         skip = 0
         file = QFile(self.saved_state_file)
@@ -42,7 +45,8 @@ class ProjectNotesCommon:
         return f"{xmlskip} {xmltop}"
 
     def set_save_state(self, state_name, oldskip, top, nodecount):
-        saved_state = json.loads("{}")
+        #print(f"Attempting to write save state {state_name} to {self.saved_state_file}.")
+
         skip = oldskip
 
         #start over the full count was not returned
@@ -51,15 +55,19 @@ class ProjectNotesCommon:
         else:
             skip = skip + top
 
-        # save the new state
-        saved_state.setdefault(state_name, {})["skip"] = skip
-
-        #print(f"saving progress into file {self.saved_state_file} for {state_name}")
-
         file = QFile(self.saved_state_file)
-        if file.open(QIODevice.OpenModeFlag.WriteOnly):
+        if file.open(QIODevice.OpenModeFlag.ReadWrite):
+            saved_state = json.loads(file.readAll().data().decode("utf-8") or "{}")
+        
+            file.resize(0)
+
+            # save the new state
+            saved_state.setdefault(state_name, {})["skip"] = skip
+
             file.write(json.dumps(saved_state, indent=4).encode("utf-8"))
-            file.close()    
+            file.close()
+        else:
+            print(f"Failed to save state {state_name} to {self.saved_state_file}.")
 
     def to_xml(self, val):
         if val is None:
@@ -74,11 +82,9 @@ class ProjectNotesCommon:
             val = val.replace("'", "&apos;")
 
             for c in val:
-                if (ord(c) > 255):
-                    print("invalid character " + f'&#x{ord(c):04X};' + " removed")
-                elif (ord(c) < 32 or ord(c) > 122):
+                if (ord(c) < 32 or ord(c) > 122):
                     newval = newval + f'&#x{ord(c):04X};'
-                else:
+                elif (ord(c) <= 255):
                     newval = newval + c
 
             return(newval)
@@ -99,11 +105,9 @@ class ProjectNotesCommon:
             val = val.replace("\t", "&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;")
 
             for c in val:
-                if (ord(c) > 255):
-                    print("invalid character " + f'&#x{ord(c):04X};' + " removed")
-                elif (ord(c) < 32 or ord(c) > 122):
+                if (ord(c) < 32 or ord(c) > 122):
                     newval = newval + f'&#x{ord(c):04X};'
-                else:
+                elif (ord(c) <= 255):
                     newval = newval + c
 
             return(newval)
