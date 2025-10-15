@@ -1,4 +1,3 @@
-import platform
 import os
 import json
 
@@ -12,6 +11,9 @@ class ProjectNotesCommon:
     def __init__(self):
         self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)
         self.saved_state_file = self.temporary_folder + '/projectnotes_saved_state.json'
+
+    def get_temporary_folder(self):
+        return self.temporary_folder
 
     def get_save_state(self, state_name):
         
@@ -215,10 +217,6 @@ class ProjectNotesCommon:
         return(projectfolder)
 
     def exec_program(self, fullpath):
-        #todo: make compatible
-        # if (platform.system() == 'Windows'):
-        #     win32api.WinExec( fullpath )
-        # else:
         os.startfile( fullpath ) # i think this will work on Linux
 
 
@@ -361,7 +359,7 @@ class ProjectNotesCommon:
 
 
         return expanded_string
-  
+
     # make compatible
     # def email_word_file_as_html(self, subject, recipients, attachment, wordfile):
     #     if (platform.system() != 'Windows'):

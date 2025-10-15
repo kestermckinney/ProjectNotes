@@ -30,19 +30,9 @@ class TokenAPI:
 
         self.pnc = ProjectNotesCommon()
 
-        #self.tenant_id = 'cornerstonecontrols.com'
-        #self.application_id = "a1786502-3fc6-4e15-94e9-b10b24d1c668"  # this if for MIGR Use "common" for multi-tenant or app-specific tenant id
-
         self.settings_pluginname = "Outlook Integration"
-        # self.use_graph_api = (self.pnc.get_plugin_setting("IntegrationType", self.settings_pluginname) == "Office 365 Application")
         self.application_id = self.pnc.get_plugin_setting("ApplicationID", self.settings_pluginname)
         self.tenant_id = self.pnc.get_plugin_setting("TenantID", self.settings_pluginname)
-        # self.sync_contacts = self.pnc.get_plugin_setting("SyncContacts", self.settings_pluginname).lower() == "true")
-        # self.sync_todo_with_due = self.pnc.get_plugin_setting("SyncToDoWithDue", self.settings_pluginname).lower() == "true")
-        # self.sync_todo_without_due = self.pnc.get_plugin_setting("SyncToDoDoWithoutDue", self.settings_pluginname).lower() == "true")
-        # self.backup_emails = self.pnc.get_plugin_setting("BackupEmails", self.settings_pluginname).lower() == "true")
-        # self.backup_inbox_folder = self.pnc.get_plugin_setting("BackupInBoxFolder", self.settings_pluginname)
-        # self.backup_sent_folder = self.pnc.get_plugin_setting("BackupSentFolder", self.settings_pluginname)
 
         self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)
         self.token_cache_file = self.temporary_folder + '/token_cache.json'
@@ -164,7 +154,7 @@ class GraphAPITools:
         self.headers = None
         self.access_token = None
 
-    def setToken(self, token):
+    def set_token(self, token):
         timer = QElapsedTimer()
         timer.start()
 
@@ -198,7 +188,7 @@ class GraphAPITools:
                 break
         return
 
-    def makefilename(self, datetime, subject):
+    def make_filename(self, datetime, subject):
         id = re.sub(r"[-`!@#$%^&*()+\\|{}/';:<>,.~?\"\]\[ ]", "", datetime)
         cleanname = id + "-" + re.sub(r"[`!@#$%^&*()+\\|{}/';:<>,.~?\"\]\[]", "_", subject)
         # there is no guarantee this length will work.  It depends on system settigns and the base path length
@@ -569,7 +559,7 @@ class GraphAPITools:
                 sent_time = message_data["sentDateTime"]
 
                 if msg_response.status_code == 200:
-                    msg_file = destination_folder + "/" + self.makefilename(sent_time, subject) + ".eml"
+                    msg_file = destination_folder + "/" + self.make_filename(sent_time, subject) + ".eml"
 
                     #print(f"saving email to file: {msg_file}")
 
@@ -688,24 +678,14 @@ class GraphAPITools:
                     projectfolder = self.pnc.get_column_value(rownode, "full_path")
 
                     if QDir(projectfolder).exists():
-                        emailfolder = projectfolder + "/Correspondence"
-                        sentfolder = emailfolder + "/Sent Email/"
-                        receivedfolder = emailfolder + "/Received Email/"
-
-                        qd = QDir()
-
-                        #print(f"email folder: {emailfolder}")
-
-                        if not QDir(emailfolder).exists():
-                            qd.mkpath(emailfolder)
-
-                        #print(f"sent folder: {sentfolder}")
+                        sentfolder = projectfolder + "/" + self.backup_sent_folder
+                        receivedfolder = projectfolder + "/" + self.backup_inbox_folder
 
                         if not QDir(sentfolder).exists():
-                            qd.mkpath(sentfolder)
+                            QDir().mkpath(sentfolder)
 
                         if not QDir(receivedfolder).exists():
-                            qd.mkpath(receivedfolder)
+                            QDir().mkpath(receivedfolder)
 
                         self.download_project_emails(projectnumber, "inbox", top_emails, receivedfolder)
                         self.download_project_emails(projectnumber, "sentitems", top_emails, sentfolder)
@@ -986,6 +966,4 @@ class GraphAPITools:
         return
 
 
-#TODO: need to setup code to check which type of outlook integration has been selected
 #TODO: should i export contacts when using o365 integration??? maybe just as a manual export
-#TODO: if i change an included module, projectnotes wont reload the plugins using it

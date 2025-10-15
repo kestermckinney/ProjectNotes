@@ -64,13 +64,16 @@ class IFSCloudSettings(QDialog):
         self.report_server = self.pnc.get_plugin_setting("ReportServer", self.settings_pluginname)
         self.ui.lineEditReportServer.setText(self.report_server)
 
+        self.sync_tracker_items = self.pnc.get_plugin_setting("SyncTrackerItems", self.settings_pluginname)
+        self.ui.m_checkBoxSyncTrackerItems.setChecked(self.sync_tracker_items.lower() == "true")
+
         x = self.pnc.get_plugin_setting("X", self.settings_pluginname)
         y = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
         w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
         h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
 
         if (x != '' and y != '' and w != '' and h != ''):
-            print(f"loading dimensions {int(x)},{int(y)},{int(w)},{int(h)}")
+            # print(f"loading dimensions {int(x)},{int(y)},{int(w)},{int(h)}")
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
         self.show()
@@ -82,7 +85,7 @@ class IFSCloudSettings(QDialog):
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
         self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
-        print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
 
     def save_settings(self):
 
@@ -106,6 +109,8 @@ class IFSCloudSettings(QDialog):
 
         self.report_server = self.ui.lineEditReportServer.text()
         self.pnc.set_plugin_setting("ReportServer", self.settings_pluginname, self.report_server)
+
+        self.pnc.set_plugin_setting("SyncTrackerItems", self.settings_pluginname, "true" if self.ui.m_checkBoxSyncTrackerItems.isChecked() else "false")
 
         self.save_window_state()
         self.accept()

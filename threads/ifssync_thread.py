@@ -19,14 +19,11 @@ plugintimerevent = 1 # how many minutes between the timer event
 
 pluginmenus = []
 
-stopevent = False  # after a key failure the event will stop processing
-
-#pnc = ProjectNotesCommon()
 ifs = IFSCommon()
 
-if ifs.has_settings(): 
+if ifs.get_has_settings(): 
     pluginmenus = [
-        {"menutitle" : "Import IFS Projects", "function" : "menuImportIFSProjects", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
+        {"menutitle" : "Import IFS Projects", "function" : "menuimport_ifs_projects", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
     ]
 
 # all events return an xml string that can be processed by ProjectNotes 
@@ -44,38 +41,20 @@ if ifs.has_settings():
 #
 
 def event_timer(parameter):
-    global stopevent
-    
-    if stopevent:
-        return ""
+    if ifs.get_has_settings():
+        ifs.import_ifs_projects("")
 
-    if ifs.has_settings():
-        ifs.syncIFSProjects("")
-
-    #    print("No token was returned.  Office 365 sync failed.  Make sure Outlook Integrations are configured correctly.")
-    #    stopevent = True # don't flood the logs
-    # STOPPED HERE need to make project import work in blocks of items like graphAPI
+        if ifs.get_sync_tracker_items():
+            ifs.export_ifs_tracker_items("")
 
     return ""
 
-def menuImportIFSProjects(parameter):
-    global stopevent
-    
-    if stopevent:
-        return ""
+def menuimport_ifs_projects(parameter):
+    if ifs.get_has_settings():
+        ifs.import_ifs_projects("all") 
 
-    if ifs.has_settings():
-        ifs.syncIFSProjects("all")
-
-    #    print("No token was returned.  Office 365 sync failed.  Make sure Outlook Integrations are configured correctly.")
-    #    stopevent = True # don't flood the logs
-    # STOPPED HERE need to make project import work in blocks of items like graphAPI
+        if ifs.get_sync_tracker_items():
+            ifs.export_ifs_tracker_items("all")
 
     return ""
 
-
-# call when testing outside of Project Notes
-
-#print("Test Outlook Sync")
-#event_menuclick("")
-#app.exec()

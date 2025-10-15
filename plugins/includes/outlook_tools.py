@@ -10,7 +10,7 @@ from includes.common import ProjectNotesCommon
 
 top_windows = []
 
-def windowEnumerationHandler(hwnd, topwindows):
+def handler_window_enumerator(hwnd, topwindows):
     topwindows.append((hwnd, win32gui.GetWindowText(hwnd)))
 
 class ProjectNotesOutlookTools:
@@ -18,9 +18,18 @@ class ProjectNotesOutlookTools:
         super().__init__()
 
         self.pnc = ProjectNotesCommon()
+        self.settings_pluginname = "Outlook Integration"
+        # self.use_graph_api = (self.pnc.get_plugin_setting("IntegrationType", self.settings_pluginname) == "Office 365 Application")
+        # self.import_contacts = (self.pnc.get_plugin_setting("ImportContacts", self.settings_pluginname).lower() == "true")
+        # self.export_contacts = (self.pnc.get_plugin_setting("ExportContacts", self.settings_pluginname).lower() == "true")
+        # self.sync_todo_with_due = (self.pnc.get_plugin_setting("SyncToDoWithDue", self.settings_pluginname).lower() == "true")
+        # self.sync_todo_without_due = (self.pnc.get_plugin_setting("SyncToDoDoWithoutDue", self.settings_pluginname).lower() == "true")
+        # self.backup_emails = (self.pnc.get_plugin_setting("BackupEmails", self.settings_pluginname).lower() == "true")
+        self.backup_inbox_folder = self.pnc.get_plugin_setting("BackupInBoxFolder", self.settings_pluginname)
+        self.backup_sent_folder = self.pnc.get_plugin_setting("BackupSentFolder", self.settings_pluginname)
 
     def bring_window_to_front(self, title):
-        win32gui.EnumWindows(windowEnumerationHandler, top_windows)
+        win32gui.EnumWindows(handler_window_enumerator, top_windows)
 
         for i in top_windows:
             if title.lower() in i[1].lower():
@@ -252,7 +261,7 @@ class ProjectNotesOutlookTools:
 
         return xmldoc
 
-    def makefilename(self, datetime, subject):
+    def make_filename(self, datetime, subject):
         id = re.sub(r"[-`!@#$%^&*()+\\|{}/';:<>,.~?\"\]\[ ]", "", datetime)
         cleanname = id + "-" + self.pnc.valid_filename(subject)
         # there is no guarantee this length will work.  It depends on system settigns and the base path length
@@ -315,15 +324,14 @@ class ProjectNotesOutlookTools:
         QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
         QtWidgets.QApplication.processEvents()
 
-
-        sentfolder = projectfolder + "\\Correspondence\\Sent Email\\"
-        receivedfolder = projectfolder + "\\Correspondence\\Received Email\\"
+        sentfolder = projectfolder + "/" + self.backup_sent_folder
+        receivedfolder = projectfolder + "/" + self.backup_inbox_folder
 
         if not QDir(sentfolder).exists():
-            os.mkdir(sentfolder)
+            QDir().mkpath(sentfolder)
 
         if not QDir(receivedfolder).exists():
-            os.mkdir(receivedfolder)
+            QDir().mkpath(receivedfolder)
 
         outlook = win32com.client.Dispatch("Outlook.Application")
         mapi = outlook.GetNamespace("MAPI")
@@ -337,11 +345,10 @@ class ProjectNotesOutlookTools:
             progbar.setValue(int(min(progval / progtot * 100, 100)))
             progbar.setLabelText("Parsing Inbox items...")
             QtWidgets.QApplication.processEvents()
-            #print("looking in inbox for project " + projnum)
 
             if message.Subject.find(projnum) >= 0:
                 if hasattr(message, "SentOn"):
-                    filename = receivedfolder + makefilename(str(message.SentOn), message.Subject) + ".msg"
+                    filename = receivedfolder + make_filename(str(message.SentOn), message.Subject) + ".msg"
 
                     #print (filename + "\n")
 
@@ -357,7 +364,7 @@ class ProjectNotesOutlookTools:
             QtWidgets.QApplication.processEvents()
 
             if message.Subject.find(projnum) >= 0:
-                filename = sentfolder + makefilename(str(message.SentOn), message.Subject) + ".msg"
+                filename = sentfolder + make_filename(str(message.SentOn), message.Subject) + ".msg"
 
                 if not QFile.exists(filename):
                     message.SaveAs(filename, 3)

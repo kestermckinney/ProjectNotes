@@ -20,9 +20,10 @@ from PyQt6.QtGui import QDesktopServices
 pluginname = "Close Stranded Excel"
 plugindescription = "Closes all of the abandon Excel automation object processes."
 
-pluginmenus = [
-    {"menutitle" : "Close Stranded Excel", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""},
-]
+if (platform.system() == 'Windows'):
+    pluginmenus = [
+        {"menutitle" : "Close Stranded Excel", "function" : "event_menuclick", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""},
+    ]
 
 # events must have a data structure and data view specified
 #
@@ -47,7 +48,7 @@ pluginmenus = [
 if (platform.system() == 'Windows'):
     pne = ProjectNotesExcelTools()
 
-    def event_menuclick():
+    def event_menuclick(parameter):
         pne.killexcelautomation()
         return ""
 

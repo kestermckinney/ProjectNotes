@@ -26,8 +26,10 @@ class IFSCommon:
         self.report_server = self.pnc.get_plugin_setting("ReportServer", self.settings_pluginname)
         self.domain_user = self.pnc.get_plugin_setting("DomainUser", self.settings_pluginname)
         self.domain_password = self.pnc.get_plugin_setting("DomainPassword", self.settings_pluginname)
+        self.sync_tracker_items = self.pnc.get_plugin_setting("SyncTrackerItems", self.settings_pluginname)
 
-    def has_settings(self):
+
+    def get_has_settings(self):
         if self.ifs_username is None or self.ifs_username == '':
             return False
 
@@ -51,59 +53,62 @@ class IFSCommon:
 
         return True
 
-    def getearnedvaluemetrics(self, projectid):
+    def get_sync_tracker_items(self):
+        return self.sync_tracker_items
+
+    def get_earned_value_metrics(self, projectid):
             request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectMonitoringHandling.svc/Projects(ProjectId=%27' + projectid + '%27)/ProjectAnalysisArray?$apply=aggregate(Bcws%20with%20sum%20as%20Bcws_aggr_,Bcwp%20with%20sum%20as%20Bcwp_aggr_,Acwp%20with%20sum%20as%20Acwp_aggr_,Bac%20with%20sum%20as%20Bac_aggr_,Etc%20with%20sum%20as%20Etc_aggr_,Eac%20with%20sum%20as%20Eac_aggr_,Vac%20with%20sum%20as%20Vac_aggr_,Cv%20with%20sum%20as%20Cv_aggr_,Sv%20with%20sum%20as%20Sv_aggr_)'
 
             result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
             if (result.status_code != 200):
-                print("ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
+                print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
                 return ""
 
             json_result = result.json()
 
             return(json_result['value'][0])
 
-    def getcostmetrics(self, projectid):
+    def get_cost_metrics(self, projectid):
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectMonitoringHandling.svc/Projects(ProjectId=%27' + projectid + '%27)/ProjectCostArray?$apply=aggregate(Estimated%20with%20sum%20as%20Estimated_aggr_,Planned%20with%20sum%20as%20Planned_aggr_,Baseline%20with%20sum%20as%20Baseline_aggr_,EarnedValue%20with%20sum%20as%20EarnedValue_aggr_,ScheduledWork%20with%20sum%20as%20ScheduledWork_aggr_,PlannedCommitted%20with%20sum%20as%20PlannedCommitted_aggr_,Committed%20with%20sum%20as%20Committed_aggr_,Used%20with%20sum%20as%20Used_aggr_,Actual%20with%20sum%20as%20Actual_aggr_)'
 
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
         if (result.status_code != 200):
-            print("ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
+            print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
             return ""
 
         json_result = result.json()
 
         return(json_result['value'][0])
 
-    def getopenactivities(self, projectid):
+    def get_open_activities(self, projectid):
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ActivityListHandling.svc/Activities?$filter=((((Objstate%20eq%20IfsApp.ActivityListHandling.ActivityState%27Planned%27%20or%20Objstate%20eq%20IfsApp.ActivityListHandling.ActivityState%27Released%27))%20and%20(ProjectId%20eq%20%27' + projectid + '%27)))&$orderby=ShortName,ActivityNo&$select=ProjectId,Description,EarlyStartDate,EarlyFinishDate,Manager,Company,CCusPoSeq,ActivitySeq,Objstate,Objgrants,ProgressCost,ProgressHours,ActivityNo,ProgressTemplate,SubProjectId,AccessOn,EarlyStart,ActualStart,EarlyFinish,ActualFinish,TotalWorkDays,ShortName,ProgressMethod,ExcludeResourceProgress,ManualProgressLevel,ManualProgressCost,ManualProgressHours,EstimatedProgress,ProgressTemplateStep,PlannedCostDriver,Note,LateStart,LateFinish,luname,keyref&$expand=ProjectRef($select=Name,Objgrants,luname,keyref),SubProjectRef($select=Description,Objgrants,luname,keyref)'
 
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
         if (result.status_code != 200):
-            print("ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
+            print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
             return ""
 
         json_result = result.json()
 
         return(json_result)
 
-    def getactivitytasks(self, activityseq):
+    def get_activity_tasks(self, activityseq):
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectScopeAndScheduleHandling.svc/Activities(ActivitySeq=' + str(activityseq) + ')/ActivityTasks?$orderby=TaskId&$select=TaskId,Name,Info,Completed,Objgrants,CompletedDate,luname,keyref'
 
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
         if (result.status_code != 200):
-            print("ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
+            print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
             return ""
 
         json_result = result.json()
 
         return(json_result)
         
-    def getstatusitems(self, project_num, json_data, dayspan):
+    def get_status_items(self, project_num, json_data, dayspan):
         xml = '<table name="status_report_items">\n'
 
         if 'value' in json_data:
@@ -166,7 +171,7 @@ class IFSCommon:
 
         return(xml)
 
-    def createactivitytask(self, activityseq, projectid, taskid, name, description, assignedto, dateupdated, datedue, dateresolved, identifiedby, priority, status):
+    def create_activity_task(self, activityseq, projectid, taskid, name, description, assignedto, dateupdated, datedue, dateresolved, identifiedby, priority, status):
         docdata = {
             "TaskId": taskid,
             "Name": name,
@@ -197,14 +202,16 @@ class IFSCommon:
         # print("sending doc:")
         # print(json.dumps(docdata, indent=4))
 
-        request_url = self.ifs_url + "/main/ifsapplications/projection/v1/CreateActivityTask.svc/TaskSet"
+        request_url = self.ifs_url + "/main/ifsapplications/projection/v1/create_activity_task.svc/TaskSet"
+
+        print(f"Creating Activity in IFS, makeing url request: {request_url}")
 
         result = requests.post(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), json=docdata, headers={"Content-Type": "application/json"})
         
         if (result.status_code != 201):
-            # print("CREATE ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
+            print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
 
-            # print("Debug JSON: createactivitytask")
+            # print("Debug JSON: create_activity_task")
             # json_result = result.json()
             # print(json.dumps(json_result, indent=4))
 
@@ -212,7 +219,7 @@ class IFSCommon:
 
         return True
 
-    def updateactivitytask(self, activityseq, projectid, taskid, name, description, assignedto, dateupdated, datedue, dateresolved, identifiedby, priority, status):
+    def update_activity_task(self, activityseq, projectid, taskid, name, description, assignedto, dateupdated, datedue, dateresolved, identifiedby, priority, status):
         docdata = {
             "Name": name,
             "Info": description,
@@ -241,15 +248,17 @@ class IFSCommon:
 
         request_url = self.ifs_url + "/int/ifsapplications/entity/v1/ActivityTaskEntity.svc/ActivityTaskSet(TaskId='" + taskid + "')"
 
+        #print(f"Updating Activity in IFS, makeing url request: {request_url}")
+
         result = requests.patch(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), json=docdata, headers={"Content-Type": "application/json"})
         
         if (result.status_code != 200):
-            #print("UPDATE ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
+            print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
             return False
 
         return True
 
-    def deleteactivitytask(self, activityseq, projectid, taskid):
+    def delete_activity_task(self, activityseq, projectid, taskid):
         docdata = {
             "Name": "Works like a champ",
             "Info": "It is a Text",
@@ -262,15 +271,17 @@ class IFSCommon:
 
         request_url = self.ifs_url + "/int/ifsapplications/entity/v1/ActivityTaskEntity.svc/ActivityTaskSet(TaskId='" + taskid + "')"
 
+        #print(f"Deleting Activity in IFS, makeing url request: {request_url}")
+
         result = requests.delete(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), json=docdata, headers={"Content-Type": "application/json", "If-Match": "*"})
         
         if (result.status_code != 204):
-            #print("DELETE ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
+            print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
             return False
 
         return True
 
-    def getissuesactivity(self, json_data):
+    def get_issues_activity(self, json_data):
         if 'value' in json_data:
             for j in json_data['value']:
                 if 'ActivitySeq' in j:
@@ -279,14 +290,11 @@ class IFSCommon:
 
         return None
 
-    def downloadreport(self, reporturl, savelocation):
+    def download_report(self, reporturl, savelocation):
         result = requests.get(reporturl,  auth=(self.domain_user, self.domain_password))
 
-        # print("pepareing to download: " + reporturl)
-        # print("to: " + savelocation)
-
         if (result.status_code != 200):
-            print("File Download Failed", result.reason + ": " + result.text)
+            print(f"File Download Failed {result.reason}: {result.text}")
             return False
 
         QFile.remove(savelocation) 
@@ -311,9 +319,6 @@ class IFSCommon:
         else:
             skip = self.pnc.get_save_state(statename)
 
-        # if (skip > 0 or top > 0):
-        #     segment = segment + "?"
-
         if (skip > 0):
             segment = segment + f"$skip={skip}"
 
@@ -335,7 +340,7 @@ class IFSCommon:
         #print(f"Query for projects is : {request_url}")
 
         if (result.status_code != 200):
-            print("ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
+            print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
             return ""
 
         json_result = result.json()
@@ -349,44 +354,44 @@ class IFSCommon:
 
             rd['companyname'] = rowval['CompanyName']
 
-            rd['projectsxmlrows'] = rd['projectsxmlrows']  + "  <row>\n"
+            rd['projectsxmlrows'] +=  "  <row>\n"
 
-            rd['projectsxmlrows']  = rd['projectsxmlrows']  + "    <column name=\"project_number\">" + self.pnc.to_xml(rowval['ProjectId']) + "</column>\n"
-            rd['projectsxmlrows']  = rd['projectsxmlrows']  + "    <column name=\"project_name\">" + self.pnc.to_xml(rowval['Description']) + "</column>\n"
-            rd['projectsxmlrows']  = rd['projectsxmlrows']  + "    <column name=\"last_invoice_date\">" + self.pnc.to_xml(rowval['Cf_Lastinvoiced']) + "</column>\n"
+            rd['projectsxmlrows'] +=  "    <column name=\"project_number\">" + self.pnc.to_xml(rowval['ProjectId']) + "</column>\n"
+            rd['projectsxmlrows'] +=  "    <column name=\"project_name\">" + self.pnc.to_xml(rowval['Description']) + "</column>\n"
+            rd['projectsxmlrows'] +=  "    <column name=\"last_invoice_date\">" + self.pnc.to_xml(rowval['Cf_Lastinvoiced']) + "</column>\n"
 
             if rowval['CustomerIdRef'] is not None:
-                rd['projectsxmlrows']  = rd['projectsxmlrows']  + "    <column name=\"client_id\" lookupvalue=\"" + self.pnc.to_xml(rowval['CustomerIdRef']['Name']) + "\"></column>\n"
+                rd['projectsxmlrows'] +=  "    <column name=\"client_id\" lookupvalue=\"" + self.pnc.to_xml(rowval['CustomerIdRef']['Name']) + "\"></column>\n"
                 
                 # only add the company name once to the client list
                 clientsdict[rowval['CustomerIdRef']['Name']] = True
 
-            rd['projectsxmlrows']  = rd['projectsxmlrows']  + "    <column name=\"project_status\">Active</column>\n"
+            rd['projectsxmlrows'] +=  "    <column name=\"project_status\">Active</column>\n"
 
-            metrics = self.getearnedvaluemetrics(rowval['ProjectId'])
-            costmetrics = self.getcostmetrics(rowval['ProjectId'])
+            metrics = self.get_earned_value_metrics(rowval['ProjectId'])
+            costmetrics = self.get_cost_metrics(rowval['ProjectId'])
 
-            rd['projectsxmlrows']  = rd['projectsxmlrows']  + "    <column name=\"budget\">" + str(costmetrics['Baseline_aggr_']) + "</column>\n"
-            rd['projectsxmlrows']  = rd['projectsxmlrows']  + "    <column name=\"actual\">" + str(costmetrics['Used_aggr_']) + "</column>\n"
-            rd['projectsxmlrows']  = rd['projectsxmlrows']  + "    <column name=\"bcwp\">" + str(costmetrics['EarnedValue_aggr_']) + "</column>\n"
-            rd['projectsxmlrows']  = rd['projectsxmlrows']  + "    <column name=\"bcws\">" + str(costmetrics['ScheduledWork_aggr_']) + "</column>\n"
-            rd['projectsxmlrows']  = rd['projectsxmlrows']  + "    <column name=\"bac\">" + str(metrics['Bac_aggr_']) + "</column>\n"
-            rd['projectsxmlrows']  = rd['projectsxmlrows']  + "  </row>\n"
+            rd['projectsxmlrows'] +=  "    <column name=\"budget\">" + str(costmetrics['Baseline_aggr_']) + "</column>\n"
+            rd['projectsxmlrows'] +=  "    <column name=\"actual\">" + str(costmetrics['Used_aggr_']) + "</column>\n"
+            rd['projectsxmlrows'] +=  "    <column name=\"bcwp\">" + str(costmetrics['EarnedValue_aggr_']) + "</column>\n"
+            rd['projectsxmlrows'] +=  "    <column name=\"bcws\">" + str(costmetrics['ScheduledWork_aggr_']) + "</column>\n"
+            rd['projectsxmlrows'] +=  "    <column name=\"bac\">" + str(metrics['Bac_aggr_']) + "</column>\n"
+            rd['projectsxmlrows'] +=  "  </row>\n"
 
             #TODO: maybe just let file finder do this on  it's own rd['projectlocationsxmlrows'] = rd['projectlocationsxmlrows'] + self.pnc.find_projectlocations( rowval['ProjectId'], ProjectsFolder)
 
-            self.getteammembersxml(rgroups, clientsdict, rowval['ProjectId'], rd )
+            self.get_team_members_xml(rgroups, clientsdict, rowval['ProjectId'], rd )
 
         self.pnc.set_save_state(statename, skip, top, projectcount)
 
             
-    def getresourcegroups(self, rgroups):
+    def get_resource_groups(self, rgroups):
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ResourceGroupsHandling.svc/ResourceSet?$select=ResourceId,Description'
 
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Content-Type" : "application/json"})
 
         if (result.status_code != 200):
-            print("ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
+            print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
             return ""
 
         #print(result.content)
@@ -400,13 +405,13 @@ class IFSCommon:
             rgroups[value['ResourceId']] = value['Description']        
 
 
-    def getteammembersxml(self, rgroups, clientsdict, projectid, rd):
+    def get_team_members_xml(self, rgroups, clientsdict, projectid, rd):
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectResourcePlanningHandling.svc/ProjectSet(ProjectId=%27' + projectid + '%27)/ProjectAllocationArray?$apply=groupby((EmployeeName,ResourceId))'
         
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
         if (result.status_code != 200):
-            print("ODATA Request Failed", result.reason + ": " + result.text + " " + request_url)
+            print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
             return ""
 
         json_result = result.json()
@@ -416,24 +421,24 @@ class IFSCommon:
 
         for rowval in json_result['value']:
 
-            rd['projectpeoplexmlrows'] = rd['projectpeoplexmlrows'] + "  <row>\n"
+            rd['projectpeoplexmlrows'] += "  <row>\n"
 
-            rd['projectpeoplexmlrows'] = rd['projectpeoplexmlrows'] + "    <column name=\"project_id\" lookupvalue=\"" + self.pnc.to_xml(projectid) + "\"></column>\n"
-            rd['projectpeoplexmlrows'] = rd['projectpeoplexmlrows'] + "    <column name=\"people_id\" lookupvalue=\"" + self.pnc.to_xml(rowval['EmployeeName']) + "\"></column>\n"
-            rd['projectpeoplexmlrows'] = rd['projectpeoplexmlrows'] + "    <column name=\"role\">" + self.pnc.to_xml(rgroups[rowval['ResourceId']]) + "</column>\n"
-            rd['projectpeoplexmlrows'] = rd['projectpeoplexmlrows'] + "  </row>\n"
+            rd['projectpeoplexmlrows'] += "    <column name=\"project_id\" lookupvalue=\"" + self.pnc.to_xml(projectid) + "\"></column>\n"
+            rd['projectpeoplexmlrows'] += "    <column name=\"people_id\" lookupvalue=\"" + self.pnc.to_xml(rowval['EmployeeName']) + "\"></column>\n"
+            rd['projectpeoplexmlrows'] += "    <column name=\"role\">" + self.pnc.to_xml(rgroups[rowval['ResourceId']]) + "</column>\n"
+            rd['projectpeoplexmlrows'] += "  </row>\n"
 
-            rd['peoplexmlrows'] = rd['peoplexmlrows'] + "  <row>\n"
+            rd['peoplexmlrows'] += "  <row>\n"
 
-            rd['peoplexmlrows'] = rd['peoplexmlrows'] + "    <column name=\"name\">" + self.pnc.to_xml(rowval['EmployeeName']) + "</column>\n"
-            rd['peoplexmlrows'] = rd['peoplexmlrows'] + "    <column name=\"client_id\" lookupvalue=\"" + self.pnc.to_xml(rd['companyname']) + "\"></column>\n"
+            rd['peoplexmlrows'] += "    <column name=\"name\">" + self.pnc.to_xml(rowval['EmployeeName']) + "</column>\n"
+            rd['peoplexmlrows'] += "    <column name=\"client_id\" lookupvalue=\"" + self.pnc.to_xml(rd['companyname']) + "\"></column>\n"
 
-            rd['peoplexmlrows'] = rd['peoplexmlrows'] + "  </row>\n"
+            rd['peoplexmlrows'] += "  </row>\n"
 
             # only add the company name once to the client list
             clientsdict[rd['companyname']] = True
 
-    def syncIFSProjects(self, parameter):
+    def import_ifs_projects(self, parameter):
         timer = QElapsedTimer()
         timer.start()
 
@@ -450,36 +455,160 @@ class IFSCommon:
 
         docxml = "<projectnotes>\n"
 
-        self.getresourcegroups(rgroups)
+        self.get_resource_groups(rgroups)
 
         self.getprojectsxml(rgroups, clientsdict, rd, parameter)
 
-        docxml = docxml + "<table name=\"clients\">\n"
+        docxml += "<table name=\"clients\">\n"
         for k in clientsdict:
-            docxml = docxml +  "  <row>\n   <column name=\"client_name\">" + self.pnc.to_xml(k) + "</column>\n </row>\n"
-        docxml = docxml +  "</table>\n"
+            docxml +=  "  <row>\n   <column name=\"client_name\">" + self.pnc.to_xml(k) + "</column>\n </row>\n"
+        docxml +=  "</table>\n"
 
-        docxml = docxml + "<table name=\"people\">\n"
-        docxml = docxml + rd['peoplexmlrows']
-        docxml = docxml + "</table>\n"
+        docxml += "<table name=\"people\">\n"
+        docxml += rd['peoplexmlrows']
+        docxml += "</table>\n"
 
-        docxml = docxml + "<table name=\"projects\">\n"
-        docxml = docxml + rd['projectsxmlrows']
-        docxml = docxml + "</table>\n"
+        docxml += "<table name=\"projects\">\n"
+        docxml += rd['projectsxmlrows']
+        docxml += "</table>\n"
 
-        docxml = docxml + "<table name=\"project_people\">\n"
-        docxml = docxml + rd['projectpeoplexmlrows']
-        docxml = docxml + "</table>\n"
+        docxml += "<table name=\"project_people\">\n"
+        docxml += rd['projectpeoplexmlrows']
+        docxml += "</table>\n"
 
-        docxml = docxml + "<table name=\"project_locations\">\n"
-        docxml = docxml + rd['projectlocationsxmlrows']
-        docxml = docxml + "</table>\n"
+        docxml += "<table name=\"project_locations\">\n"
+        docxml += rd['projectlocationsxmlrows']
+        docxml += "</table>\n"
 
-        docxml = docxml + "</projectnotes>\n"
+        docxml += "</projectnotes>\n"
 
         projectnotes.update_data(docxml)
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
         print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
 
+    def export_ifs_project_tracker_items(self, project_id, project_number):
+        print(f"Gathering tracker items for {project_number}...")
+
+        xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table filter_field_1="project_id" filter_value_1="{project_id}" name="item_tracker" />\n</projectnotes>\n'
+        xmlresult = projectnotes.get_data(xmldoc)
+
+        #print(f"Tracker search returned: {xmlresult}")
+        
+        xmlval = QDomDocument()
+        xmlval.setContent(xmlresult)
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node  
+
+        # show all tracker items
+        trackeritems = self.pnc.find_node(xmlroot, "table", "name", "item_tracker")
+
+        isinternal = 0
+        itemcount = 0
+        itemstatus = ""
+        itemtype = ""
+
+        if not trackeritems is None:
+            itemrow = trackeritems.firstChild()
+
+
+            # find the ISSUES Activity
+            jsact = self.get_open_activities(project_number)
+            issuesseq = self.get_issues_activity(jsact)
+
+            if not issuesseq is None:           
+                itemrow = trackeritems.firstChild()
+
+                while not itemrow.isNull():
+                    isinternal = self.pnc.get_column_value(itemrow, "internal_item")
+                    itemstatus = self.pnc.get_column_value(itemrow, "status")
+                    itemtype = self.pnc.get_column_value(itemrow, "item_type")
+                    ifsitemid = project_number + self.pnc.get_column_value(itemrow, "item_number")
+
+                    print(f"Identified Issue {ifsitemid} in project {project_number}")
+
+                    duedate = None
+                    assignedto = ''
+                    dateupdated = None
+                    dateresolved = None
+                    identifiedby = ''
+                    priority = ''
+                    status = ''
+
+                    if self.pnc.get_column_value(itemrow, "date_due") is not None:
+                        duedate = QDateTime.fromString(self.pnc.get_column_value(itemrow, "date_due"),'MM/dd/yyyy')
+
+                    if self.pnc.get_column_value(itemrow, "last_update") is not None:
+                        dateupdated = QDateTime.fromString(self.pnc.get_column_value(itemrow, "last_update"),'MM/dd/yyyy')
+
+                    if self.pnc.get_column_value(itemrow, "date_resolved") is not None:
+                        dateresolved = QDateTime.fromString(self.pnc.get_column_value(itemrow, "date_resolved"),'MM/dd/yyyy')
+
+                    if self.pnc.get_column_value(itemrow, "assigned_to") is not None:
+                        colnode = self.pnc.find_node(itemrow, "column", "name", "assigned_to")
+                        if colnode.attributes().namedItem("lookupvalue").nodeValue() is not None and colnode.attributes().namedItem("lookupvalue").nodeValue() != '':
+                            assignedto = colnode.attributes().namedItem("lookupvalue").nodeValue()
+
+                    if self.pnc.get_column_value(itemrow, "identified_by") is not None:
+                        colnode = self.pnc.find_node(itemrow, "column", "name", "identified_by")
+                        if colnode.attributes().namedItem("lookupvalue").nodeValue() is not None and colnode.attributes().namedItem("lookupvalue").nodeValue() != '':
+                            identifiedby = colnode.attributes().namedItem("lookupvalue").nodeValue()
+
+                    priority = self.pnc.get_column_value(itemrow, "priority")
+                    desc = self.pnc.get_column_value(itemrow, "description")
+                    status = self.pnc.get_column_value(itemrow, "status")
+
+                    if (isinternal != "1" and itemtype == "Tracker" and (itemstatus == "Assigned" or itemstatus == "New")):
+                        if not self.update_activity_task(issuesseq, project_number, ifsitemid, self.pnc.get_column_value(itemrow, "item_name"), desc, assignedto, dateupdated, duedate, dateresolved, identifiedby, priority, status):
+                            self.create_activity_task(issuesseq, project_number, ifsitemid, self.pnc.get_column_value(itemrow, "item_name"), desc, assignedto, dateupdated, duedate, dateresolved, identifiedby, priority, status)
+                    else:
+                        self.delete_activity_task(issuesseq, project_number, ifsitemid)    
+                    
+                    itemcount = itemcount + 1
+
+                    itemrow = itemrow.nextSibling()
+
+    # IMPORTANT:  This plugin relys on custom fields on the TASK Entity.  You'll need to evaluate the REST calls to determine the field info
+    def export_ifs_tracker_items(self, parameter):
+        timer = QElapsedTimer()
+        timer.start()
+
+        saved_state = None
+        statename = "ifs_tracker_export"
+        skip = 0
+        top = 10
+
+        projectcount = 0
+
+        if parameter == "all":
+            top = 300
+        else:
+            skip = self.pnc.get_save_state(statename)
+
+        xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table filter_field_1="project_status" filter_value_1="Active" name="projects" {self.pnc.state_range_attrib(top, skip)} />\n</projectnotes>\n'
+        xmlresult = projectnotes.get_data(xmldoc)
+        
+        xmlval = QDomDocument()
+        xmlval.setContent(xmlresult)
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node  
+
+        # find all projects
+        projects = self.pnc.find_node(xmlroot, "table", "name", "projects")
+
+        if not projects is None:
+            projectrow = projects.firstChild()
+
+            while not projectrow.isNull():
+                project_number = self.pnc.get_column_value(projectrow, "project_number")
+                project_id = self.pnc.get_column_value(projectrow, "project_id")
+                
+                projectcount += 1
+
+                self.export_ifs_project_tracker_items(project_id, project_number)
+
+                projectrow = projectrow.nextSibling()
+
+        self.pnc.set_save_state(statename, skip, top, projectcount)
+
+        execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
+        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
 

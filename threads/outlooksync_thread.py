@@ -18,7 +18,7 @@ plugintimerevent = 1 # how many minutes between the timer event
 
 pluginmenus = []
 
-stopevent = False  # after a key failure the event will stop processing
+stopevent = False  # after a token authentication failure the event will stop processing
 
 pnc = ProjectNotesCommon()
 
@@ -54,12 +54,12 @@ class OutlookSync:
     def __init__(self):
         super().__init__()
     
-    def syncEverything(self, token):
+    def sync_outlook_items(self, token):
         timer = QElapsedTimer()
         timer.start()
 
         gapi = GraphAPITools()
-        gapi.setToken(token)
+        gapi.set_token(token)
 
         gapi.sync_tracker_to_tasks(None)
         gapi.import_batch_of_contacts(None)
@@ -71,12 +71,12 @@ class OutlookSync:
 
         return
 
-    def syncTrackerItems(self, token, parameter):
+    def sync_tracker_items(self, token, parameter):
         timer = QElapsedTimer()
         timer.start()
 
         gapi = GraphAPITools()
-        gapi.setToken(token)
+        gapi.set_token(token)
 
         gapi.sync_tracker_to_tasks(parameter)
 
@@ -85,12 +85,12 @@ class OutlookSync:
 
         return        
 
-    def ImportContacts(self, token, parameter):
+    def import_contacts(self, token, parameter):
         timer = QElapsedTimer()
         timer.start()
 
         gapi = GraphAPITools()
-        gapi.setToken(token)
+        gapi.set_token(token)
 
         gapi.import_batch_of_contacts(parameter)
 
@@ -100,12 +100,12 @@ class OutlookSync:
         return        
 
 
-    def ExportContacts(self, token, parameter):
+    def export_contacts(self, token, parameter):
         timer = QElapsedTimer()
         timer.start()
 
         gapi = GraphAPITools()
-        gapi.setToken(token)
+        gapi.set_token(token)
 
         gapi.export_batch_of_contacts(parameter)
 
@@ -114,12 +114,12 @@ class OutlookSync:
 
         return        
 
-    def syncProjectEmails(self, token, xmlstr):
+    def download_project_emails(self, token, xmlstr):
         timer = QElapsedTimer()
         timer.start()
 
         gapi = GraphAPITools()
-        gapi.setToken(token)
+        gapi.set_token(token)
 
         gapi.download_batch_of_emails(xmlstr)
 
@@ -134,7 +134,7 @@ def menuRightClickDownloadEmails(xmlstr, parameter):
 
     if token is not None:
         o365 = OutlookSync()
-        o365.syncProjectEmails(token, xmlstr)
+        o365.download_project_emails(token, xmlstr)
     else:
         print("No token was returned.  Office 365 sync failed.  Make sure Outlook Integrations are configured correctly.")
 
@@ -150,7 +150,7 @@ def event_timer(parameter):
 
     if token is not None:
         o365 = OutlookSync()
-        o365.syncEverything(token)
+        o365.sync_outlook_items(token)
     else:
         print("No token was returned.  Office 365 sync failed.  Make sure Outlook Integrations are configured correctly.")
         stopevent = True # don't flood the logs
@@ -162,7 +162,7 @@ def menuSyncTrackerItems(parameter):
 
     if token is not None:
         o365 = OutlookSync()
-        o365.syncTrackerItems(token, parameter)
+        o365.sync_tracker_items(token, parameter)
     else:
         print("No token was returned.  Office 365 sync failed.  Make sure Outlook Integrations are configured correctly.")
 
@@ -173,7 +173,7 @@ def menuExportContacts(parameter):
 
     if token is not None:
         o365 = OutlookSync()
-        o365.ExportContacts(token, parameter)
+        o365.export_contacts(token, parameter)
     else:
         print("No token was returned.  Office 365 sync failed.  Make sure Outlook Integrations are configured correctly.")
 
@@ -184,7 +184,7 @@ def menuImportContacts(parameter):
 
     if token is not None:
         o365 = OutlookSync()
-        o365.ImportContacts(token, parameter)
+        o365.import_contacts(token, parameter)
     else:
         print("No token was returned.  Office 365 sync failed.  Make sure Outlook Integrations are configured correctly.")
 

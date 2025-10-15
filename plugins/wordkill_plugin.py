@@ -44,17 +44,9 @@ pluginmenus = []
 if (platform.system() == 'Windows'):
     pne = ProjectNotesWordTools()
 
-    def menuKillWord(xmlstr, parameter):
+    def menuKillWord(parameter):
         pne.killwordautomation()
         return ""  
  
     pluginmenus.append({"menutitle" : "Close Stranded Word", "function" : "menuKillWord", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""})
 
-# call when testing outside of Project Notes
-"""
-app = QApplication(sys.argv)
-
-print("Kill Word Automations")
-event_menuclick("") 
-"""
- 

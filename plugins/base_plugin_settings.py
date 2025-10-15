@@ -239,7 +239,7 @@ class FileFinderSettings(QDialog):
         self.pnc.set_plugin_setting("mc1", self.settings_pluginname, f"{self.ui.tableClassifications.columnWidth(0)}")
         self.pnc.set_plugin_setting("mc2", self.settings_pluginname, f"{self.ui.tableClassifications.columnWidth(1)}")
 
-        print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
 
     def save_settings(self):
         self.search_locations = self.copy_table_to_json(self.ui.tableSearchLocations)
@@ -314,7 +314,7 @@ class EditorSettings(QDialog):
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
         self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
-        print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
 
     def save_settings(self):
         self.editor_path = self.ui.lineEditFullPath.text()
@@ -538,7 +538,7 @@ class MyShortcutSettings(QDialog):
         self.pnc.set_plugin_setting("c4", self.settings_pluginname, f"{self.ui.tableShortcuts.columnWidth(3)}")
 
 
-        print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
 
     def save_settings(self):
         self.myshortcuts = self.copy_table_to_json(self.ui.tableShortcuts)
@@ -716,7 +716,7 @@ class MeetingEmailTypesSettings(QDialog):
         self.pnc.set_plugin_setting("c4", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(3)}")
         self.pnc.set_plugin_setting("c5", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(4)}")
 
-        print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
 
     def save_settings(self):
         self.meeting_types = self.copy_table_to_json(self.ui.tableWidgetMeetingEmailTypes)
@@ -904,7 +904,7 @@ class SettingsMigrator(QDialog):
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
         self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
-        print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
 
     def reject_changes(self):
         self.save_window_state()

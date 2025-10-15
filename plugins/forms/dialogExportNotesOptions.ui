@@ -93,7 +93,7 @@
    <item>
     <widget class="QCheckBox" name="m_checkBoxExcelRptNotes">
      <property name="text">
-      <string>Generate Excel Report</string>
+      <string>Generate HTML Report</string>
      </property>
     </widget>
    </item>
@@ -119,9 +119,9 @@
        <number>4</number>
       </property>
       <item>
-       <widget class="QRadioButton" name="m_radioBoxEmailAsHTML">
+       <widget class="QRadioButton" name="m_radioBoxEmailAsInlineHTML">
         <property name="text">
-         <string>Email as HTML</string>
+         <string>Email as Inline HTML</string>
         </property>
         <property name="checked">
          <bool>true</bool>
@@ -136,9 +136,9 @@
        </widget>
       </item>
       <item>
-       <widget class="QRadioButton" name="m_radioBoxEmailAsExcel">
+       <widget class="QRadioButton" name="m_radioBoxEmailAsHTML">
         <property name="text">
-         <string>Email as an Excel attachment</string>
+         <string>Email as an HTML attachment</string>
         </property>
        </widget>
       </item>
