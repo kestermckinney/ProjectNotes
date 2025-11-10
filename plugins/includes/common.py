@@ -114,6 +114,15 @@ class ProjectNotesCommon:
 
             return(newval)
 
+    def strip_html_body(self, html):
+        # Remove everything between <header> and </header>, including the tags
+        html = re.sub(r'<header>.*?</header>', '', html, flags=re.DOTALL)
+        
+        # Remove <html> and </html> tags, but keep their content
+        html = re.sub(r'</?html>', '', html)
+        
+        return html.strip()
+
     def valid_filename(self, val):
         if val is None:
             return(None)

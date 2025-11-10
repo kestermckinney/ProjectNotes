@@ -1,5 +1,6 @@
 from win32com.client import GetObject
 import win32com
+import win32gui
 import sys
 
 from PyQt6 import QtSql, QtGui, QtCore, QtWidgets
@@ -389,7 +390,7 @@ class ProjectNotesOutlookTools:
         message = outlook.CreateItem(1)
 
         for address in addresses:
-            message.Recipients.Add(address["emailAddress"]["email"])
+            message.Recipients.Add(address["emailAddress"]["address"])
 
         message.Subject = subject
 
@@ -414,7 +415,7 @@ class ProjectNotesOutlookTools:
         message.To = ""
 
         for address in addresses:
-            message.Recipients.Add(address["emailAddress"]["email"])
+            message.Recipients.Add(address["emailAddress"]["address"])
 
         message.Display()
         outlook.ActiveExplorer().Activate()

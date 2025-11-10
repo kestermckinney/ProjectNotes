@@ -273,7 +273,7 @@ def menuOpenEditor(parameter):
 def menuSendNotes(xmlstr, parameter):
     baseplugin = BasePlugins()
     nf = NoteFormatter(xmlstr)
-    return baseplugin.send_an_email(xmlstr, nf.getSubject(), nf.getHTML(), None, "Full Project Team")
+    return baseplugin.send_an_email(xmlstr, nf.getSubject(), nf.getHTML(), None, "Full Project Team") #TODO: this probably won't work to use "FuLL Project Team", it may need to be Meeting Attendees a new type
 
 def menuImportContactsFromOutlook(parameter):
     pnot = ProjectNotesOutlookTools()

@@ -1,16 +1,22 @@
 import sys
+import os
 import platform
 import projectnotes  
 import threading
 import time
+import importlib
 
 #from includes.common import ProjectNotesCommon
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QThread
-from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
+#from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
 from PyQt6.QtGui import QDesktopServices  
+from PyQt6.QtWidgets import (QApplication, QDialog, QListWidget, QPushButton, 
+                             QLineEdit, QVBoxLayout, QHBoxLayout, QFileDialog, QMessageBox)
+
+import exportnotes_plugin
 
 # Project Notes Plugin Parameters
 pluginname = "Testing Plugin" # name used in the menu
@@ -154,8 +160,137 @@ def event_data_rightclick(xmlstr, parameter):
 
     return retval  
 
+# Dictionary mapping test names to function names
+TEST_FUNCTIONS = {
+    "Export Meeting Notes": { "module": "exportnotes_plugin", "function": "menuExportMeetingNotes", "parameter": "" },
+}
+
+# Sample test functions (replace with actual implementations)
+def validate_process_parameters(xml_content):
+    """Sample function to process XML content for process parameter validation using QDomDocument."""
+    try:
+        doc = QDomDocument()
+        if not doc.setContent(xml_content):
+            return "Error: Invalid XML content."
+        root = doc.documentElement()
+        return f"Processing XML for Validate Process Parameters: Root tag = {root.tagName()}"
+        # Add actual processing logic here (e.g., validate parameters for pharma process)
+    except Exception as e:
+        return f"Error processing XML: {str(e)}"
+
+def analyze_batch_data(xml_content):
+    """Sample function to analyze batch data from XML using QDomDocument."""
+    try:
+        doc = QDomDocument()
+        if not doc.setContent(xml_content):
+            return "Error: Invalid XML content."
+        root = doc.documentElement()
+        return f"Analyzing batch data from XML: Root tag = {root.tagName()}"
+        # Add actual analysis logic here (e.g., batch quality metrics)
+    except Exception as e:
+        return f"Error processing XML: {str(e)}"
+
+def simulate_digital_twin(xml_content):
+    """Sample function to simulate digital twin from XML using QDomDocument."""
+    try:
+        doc = QDomDocument()
+        if not doc.setContent(xml_content):
+            return "Error: Invalid XML content."
+        root = doc.documentElement()
+        return f"Simulating digital twin with XML: Root tag = {root.tagName()}"
+        # Add actual digital twin simulation logic here (e.g., process simulation)
+    except Exception as e:
+        return f"Error processing XML: {str(e)}"
+
+class TestDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Test Execution Dialog")
+        self.setMinimumWidth(400)
+        self.init_ui()
+
+    def init_ui(self):
+        # Main layout
+        layout = QVBoxLayout()
+
+        # List widget for test names
+        self.test_list = QListWidget()
+        self.test_list.addItems(TEST_FUNCTIONS.keys())
+        layout.addWidget(self.test_list)
+
+        # File selection button and text box
+        file_layout = QHBoxLayout()
+        self.file_input = QLineEdit()
+        self.file_input.setReadOnly(True)
+        self.file_input.setPlaceholderText("Select an XML file...")
+        file_layout.addWidget(self.file_input)
+
+        self.select_file_btn = QPushButton("Select XML File")
+        self.select_file_btn.clicked.connect(self.select_file)
+        file_layout.addWidget(self.select_file_btn)
+        layout.addLayout(file_layout)
+
+        # Execute test button
+        self.execute_btn = QPushButton("Execute Test")
+        self.execute_btn.clicked.connect(self.execute_test)
+        layout.addWidget(self.execute_btn)
+
+        self.setLayout(layout)
+
+    def select_file(self):
+        """Open file dialog to select an XML file."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select XML File", "", "XML Files (*.xml);;All Files (*)"
+        )
+        if file_path:
+            self.file_input.setText(file_path)
+
+    def execute_test(self):
+        """Execute the selected test with the XML file contents."""
+        selected_items = self.test_list.selectedItems()
+        file_path = self.file_input.text()
+
+        # Validate selections
+        if not selected_items:
+            QMessageBox.warning(self, "Error", "Please select a test from the list.")
+            return
+        if not file_path:
+            QMessageBox.warning(self, "Error", "Please select an XML file.")
+            return
+
+        test_name = selected_items[0].text()
+        test_dict = TEST_FUNCTIONS.get(test_name)
+        function_name = test_dict["function"]
+        module_name =  test_dict["module"]
+        parameter_value = test_dict["parameter"]
+
+        print(f"Calling function {module_name}.{function_name} with parameter: {parameter_value}")
+
+        #try:
+        # Read XML file contents
+        with open(file_path, 'r', encoding='utf-8') as file:
+            xml_content = file.read()
+
+        # Call the corresponding function
+        #func = globals()[function_name]
+        module = importlib.import_module(module_name)
+        func = getattr(module, function_name)
+        result = func(xml_content, parameter_value)
+
+        # Show result
+        QMessageBox.information(self, "Test Result", result)
+        # except FileNotFoundError:
+        #     QMessageBox.critical(self, "Error", "Selected XML file could not be found.")
+        # except KeyError:
+        #     QMessageBox.critical(self, "Error", f"No function defined for test: {test_name}")
+        # except Exception as e:
+        #     QMessageBox.critical(self, "Error", f"Error executing test: {str(e)}")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    print("Testing Plugin")
-    event_menuclick("")
+
+    os.chdir("..")
+
+    dialog = TestDialog()
+    dialog.show()
+    sys.exit(app.exec())

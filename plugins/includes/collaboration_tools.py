@@ -4,6 +4,7 @@ import platform
 from PyQt6 import QtCore
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QSettings
 from PyQt6.QtXml import QDomDocument, QDomNode
+from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QDialog, QFileDialog, QWidget, QTableWidgetItem, QStyledItemDelegate, QComboBox
 
 from includes.graphapi_tools import GraphAPITools, TokenAPI
 if (platform.system() == 'Windows'):
@@ -24,10 +25,10 @@ class CollaborationTools:
 
         addresses = []
 
-        projects = self.find_node(xmlroot, "table", "name", "projects")
+        projects = self.pnc.find_node(xmlroot, "table", "name", "projects")
         if not projects.isNull():
             project = projects.firstChild()
-            cli = self.get_column_value(project, "client_id")
+            cli = self.pnc.get_column_value(project, "client_id")
 
 
         if invitees == "Internal Project Team":
@@ -47,14 +48,14 @@ class CollaborationTools:
         nm = None
         pco = None
 
-        teammember = self.find_node(xmlroot, "table", "name", "project_people")
+        teammember = self.pnc.find_node(xmlroot, "table", "name", "project_people")
         if not teammember.isNull():
             memberrow = teammember.firstChild()
 
             while not memberrow.isNull():
-                nm = self.get_column_value(memberrow, "name")
-                email = self.get_column_value(memberrow, "email")
-                pco = self.get_column_value(memberrow, "client_name")
+                nm = self.pnc.get_column_value(memberrow, "name")
+                email = self.pnc.get_column_value(memberrow, "email")
+                pco = self.pnc.get_column_value(memberrow, "client_name")
 
                 # if filtering by company only includ matching client names
                 # don't email to yourself, exclude the PM
@@ -80,15 +81,15 @@ class CollaborationTools:
 
                 memberrow = memberrow.nextSibling()
 
-        teammember = self.find_node(xmlroot, "table", "name", "meeting_attendees")
+        teammember = self.pnc.find_node(xmlroot, "table", "name", "meeting_attendees")
         if not teammember.isNull():
             memberrow = teammember.firstChild()
 
             while not memberrow.isNull():
 
-                nm = self.get_column_value(memberrow, "name")
-                email = self.get_column_value(memberrow, "email")
-                pco = self.get_column_value(memberrow, "client_name")
+                nm = self.pnc.get_column_value(memberrow, "name")
+                email = self.pnc.get_column_value(memberrow, "email")
+                pco = self.pnc.get_column_value(memberrow, "client_name")
 
                 if nm != pm:
                     if (email is not None and email != "" and (company_filter is None or pco == company_filter) and (company_exclude is None or pco != company_exclude)):
@@ -111,16 +112,16 @@ class CollaborationTools:
 
                 memberrow = memberrow.nextSibling()
 
-        teammember = self.find_node(xmlroot, "table", "name", "people")
+        teammember = self.pnc.find_node(xmlroot, "table", "name", "people")
         if not teammember.isNull():
             memberrow = teammember.firstChild()
 
             while not memberrow.isNull():
-                nm = self.get_column_value(memberrow, "name")
-                email = self.get_column_value(memberrow, "email")
-                pco = self.get_column_value(memberrow, "client_id")
+                nm = self.pnc.get_column_value(memberrow, "name")
+                email = self.pnc.get_column_value(memberrow, "email")
+                pco = self.pnc.get_column_value(memberrow, "client_id")
 
-                colnode = self.find_node(memberrow, "column", "name", "client_id")
+                colnode = self.pnc.find_node(memberrow, "column", "name", "client_id")
                 if not colnode.isNull() and colnode.attributes().namedItem("lookupvalue").nodeValue() is not None and colnode.attributes().namedItem("lookupvalue").nodeValue() != '':
                     pco = colnode.attributes().namedItem("lookupvalue").nodeValue()
 
@@ -147,7 +148,7 @@ class CollaborationTools:
 
         return addresses
   
-    def send_an_email(self, xmlstr, subject, content, attachment, invitees):
+    def send_an_email(self, xmlstr, subject, content, attachment, invitees, ignoreattachments=False):
         xmlval = QDomDocument()
         xmldoc = ""
 
@@ -161,29 +162,30 @@ class CollaborationTools:
             
         xmlroot = xmlval.documentElement()
 
-        email_body_filled_in = self.replace_variables(content, xmlroot)
+        email_body_filled_in = self.pnc.strip_html_body(self.pnc.replace_variables(content, xmlroot))
 
         addresses = self.list_builder(xmlroot, "email", invitees)
 
-        email_subject = self.replace_variables(subject, xmlroot)
+        email_subject = self.pnc.replace_variables(subject, xmlroot)
 
-        locations = self.find_node(xmlroot, "table", "name", "project_locations")
+        if not ignoreattachments:
+            locations = self.pnc.find_node(xmlroot, "table", "name", "project_locations")
 
-        if not locations.isNull():
-            locationrow = locations.firstChild()
+            if not locations.isNull():
+                locationrow = locations.firstChild()
 
-            while not locationrow.isNull():
-                fp = self.get_column_value(locationrow, "full_path")
-                attachments.append(fp)
-                locationrow = locationrow.nextSibling()
+                while not locationrow.isNull():
+                    fp = self.pnc.get_column_value(locationrow, "full_path")
+                    attachments.append(fp)
+                    locationrow = locationrow.nextSibling()
 
-        # if a single attchment was specified, add it
-        if not attachment is None:
-            attachments.append(attachment)
+            # if a single attchment was specified, add it
+            if not attachment is None:
+                attachments.append(attachment)
 
         # determine what method to use to send emails
-        use_graph_api = (self.get_plugin_setting("IntegrationType", "Outlook Integration") == "Office 365 Application")
-        use_o365 = self.get_plugin_setting("SendO365", "Outlook Integration").lower() == "true"
+        use_graph_api = (self.pnc.get_plugin_setting("IntegrationType", "Outlook Integration") == "Office 365 Application")
+        use_o365 = self.pnc.get_plugin_setting("SendO365", "Outlook Integration").lower() == "true"
 
         if use_o365 and use_graph_api:
             token = tapi.authenticate()
@@ -215,6 +217,8 @@ class CollaborationTools:
                 QMessageBox.critical(None, "Cannot Send Email", msg, QMessageBox.StandardButton.Ok)
                 return ""
 
+            return ""
+
         msg = "Sending email using Outlook is not supported on this operating system."
         print(msg)
         QMessageBox.critical(None, "Not Supported", msg,QMessageBox.StandardButton.Ok)
@@ -235,16 +239,16 @@ class CollaborationTools:
 
         addresses = self.list_builder(xmlroot, "meeting", invitees)
 
-        meeting_subject = self.replace_variables(subject, xmlroot)
-        meeting_template_filled_in = replace_variables(content, xmlroot)
+        meeting_subject = self.pnc.replace_variables(subject, xmlroot)
+        meeting_template_filled_in = self.pnc.replace_variables(content, xmlroot)
 
-        locations = self.find_node(xmlroot, "table", "name", "project_locations")
+        locations = self.pnc.find_node(xmlroot, "table", "name", "project_locations")
 
         if not locations.isNull():
             locationrow = locations.firstChild()
 
             while not locationrow.isNull():
-                fp = self.get_column_value(locationrow, "full_path")
+                fp = self.pnc.get_column_value(locationrow, "full_path")
                 attachments.append(fp)
                 locationrow = locationrow.nextSibling()
 
@@ -253,8 +257,8 @@ class CollaborationTools:
             attachments.append(attachment)
 
         # determine what method to use to send emails
-        use_graph_api = (self.get_plugin_setting("IntegrationType", "Outlook Integration") == "Office 365 Application")
-        use_o365 = self.get_plugin_setting("ScheduleO365", "Outlook Integration").lower() == "true"
+        use_graph_api = (self.pnc.get_plugin_setting("IntegrationType", "Outlook Integration") == "Office 365 Application")
+        use_o365 = self.pnc.get_plugin_setting("ScheduleO365", "Outlook Integration").lower() == "true"
 
         if use_o365 and use_graph_api:
             token = tapi.authenticate()

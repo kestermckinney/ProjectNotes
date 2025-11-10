@@ -91,7 +91,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QCheckBox" name="m_checkBoxExcelRptNotes">
+    <widget class="QCheckBox" name="m_checkBoxHTMLRptNotes">
      <property name="text">
       <string>Generate HTML Report</string>
      </property>
