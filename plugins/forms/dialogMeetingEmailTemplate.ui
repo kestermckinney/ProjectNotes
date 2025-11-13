@@ -67,6 +67,52 @@
      </property>
     </widget>
    </item>
+
+   <item>
+    <widget class="QLabel" name="labelData">
+     <property name="text">
+      <string>Data Type:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QComboBox" name="comboBoxData">
+     <item>
+      <property name="text">
+       <string>people</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>projects</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>project_people</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>meeting_attendees</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>project_locations</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>project_notes</string>
+      </property>
+      <property name="text">
+       <string>item_tracker</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+
    <item>
     <widget class="QComboBox" name="comboBoxInvitees">
      <item>

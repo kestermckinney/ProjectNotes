@@ -184,6 +184,8 @@ def populate_dynamic_menu(json_string):
             if row_data["Type"] == "Email":
                 if (inviteees == "Individual"):
                     pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "people", "submenu" : "Send Email", "dataexport" : "people", "parameter" : row_data["Name"] })
+                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "meeting_attendees", "submenu" : "Send Email", "dataexport" : "meeting_attendees", "parameter" : row_data["Name"] })
+                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "project_people", "submenu" : "Send Email", "dataexport" : "project_people", "parameter" : row_data["Name"] })
                 elif (inviteees == "Attachment Only"):
                     pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "project_locations", "submenu" : "Send Email", "dataexport" : "project_locations", "parameter" : row_data["Name"] })                    
                 else:

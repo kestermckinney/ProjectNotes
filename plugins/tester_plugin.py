@@ -16,7 +16,24 @@ from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtWidgets import (QApplication, QDialog, QListWidget, QPushButton, 
                              QLineEdit, QVBoxLayout, QHBoxLayout, QFileDialog, QMessageBox)
 
+# import all modules that should determine deployment packages to include with Python
+# these will all have test functions
 import exportnotes_plugin
+import base_plugin
+import base_plugin_settings
+import excelkill_plugin
+import findprojectemailperson_plugin
+import ifscloud_plugin_settings
+import myshortcuts_plugin
+import newchangeorder_plugin
+import newmsproject_plugin
+import newpcrregistry_plugin
+import newpowerpoint_plugin
+import newriskregister_plugin
+import open_msproject_plugin
+import trackkerreport_plugin
+import wordkill_plugin
+
 
 # Project Notes Plugin Parameters
 pluginname = "Testing Plugin" # name used in the menu
@@ -163,6 +180,14 @@ def event_data_rightclick(xmlstr, parameter):
 # Dictionary mapping test names to function names
 TEST_FUNCTIONS = {
     "Export Meeting Notes": { "module": "exportnotes_plugin", "function": "menuExportMeetingNotes", "parameter": "" },
+
+    "File Collector" : { "module" : "base_plugin_settings" , "function" : "menuFileCollectorSettings", "parameter": None},
+    "Editor" : { "module" : "base_plugin_settings" , "function" : "menuEditorSettings", "parameter": None },
+    "Outlook Integration" : { "module" : "base_plugin_settings" , "function" : "menuOutlookIntegrationSettings", "parameter": None },
+    "My Shortcuts" : { "module" : "base_plugin_settings" , "function" : "menuMyShortcutSettings", "parameter": None },
+    "Meeting and Email Types" : { "module" : "base_plugin_settings" , "function" : "menuMeetingEmailTypesSettings", "parameter": None },
+    "Settings Migrator" : { "module" : "base_plugin_settings" , "function" : "menuSettingsMigrator", "parameter": None },
+
 }
 
 # Sample test functions (replace with actual implementations)
@@ -275,7 +300,11 @@ class TestDialog(QDialog):
         #func = globals()[function_name]
         module = importlib.import_module(module_name)
         func = getattr(module, function_name)
-        result = func(xml_content, parameter_value)
+        result = None
+        if parameter_value is None:
+            result = func(xml_content)
+        else:
+            result = func(xml_content, parameter_value)
 
         # Show result
         QMessageBox.information(self, "Test Result", result)

@@ -586,8 +586,26 @@ class MeetingEmailTypesSettings(QDialog):
         self.ui.buttonBox.accepted.connect(self.save_settings)
         self.ui.buttonBox.rejected.connect(self.reject_changes)
 
-        delegate = ComboBoxDelegate()
+        type_delegate = ComboBoxDelegate(self.ui, False)
+        type_delegate.setItems([
+            "Email",
+            "Meeting"])
+
+        delegate = ComboBoxDelegate(self.ui, False)
         delegate.setItems([
+            "clients",
+            "people",
+            "projects",
+            "project_people",
+            "status_report_items",
+            "project_locations ",
+            "project_notes",
+            "meeting_attendees",
+            "item_tracker_updates",
+            "item_tracker"])
+
+        group_delegate = ComboBoxDelegate(self.ui, False)
+        group_delegate.setItems([
            "Internal Project Team",
            "Exclude Client",
            "Only Client",
@@ -595,7 +613,9 @@ class MeetingEmailTypesSettings(QDialog):
            "Individual",
            "Attachment Only"])
 
-        self.ui.tableWidgetMeetingEmailTypes.setItemDelegateForColumn(1, delegate)
+        self.ui.tableWidgetMeetingEmailTypes.setItemDelegateForColumn(0, type_delegate)
+        self.ui.tableWidgetMeetingEmailTypes.setItemDelegateForColumn(2, group_delegate)
+        self.ui.tableWidgetMeetingEmailTypes.setItemDelegateForColumn(5, delegate)
 
         self.meeting_types = self.pnc.get_plugin_setting("MeetingEmailTypes", self.settings_pluginname)
         self.populate_table_from_json(self.meeting_types, self.ui.tableWidgetMeetingEmailTypes)
@@ -610,17 +630,19 @@ class MeetingEmailTypesSettings(QDialog):
         c3 = self.pnc.get_plugin_setting("c3", self.settings_pluginname)
         c4 = self.pnc.get_plugin_setting("c4", self.settings_pluginname)
         c5 = self.pnc.get_plugin_setting("c5", self.settings_pluginname)
+        c6 = self.pnc.get_plugin_setting("c6", self.settings_pluginname)
 
         geometry = self.pnc.get_plugin_setting("types_geometry", self.settings_pluginname)
 
-        if (c1 != '' and c2 != '' and c3 != '' and c4 != '' and c5 != ''):
-            print(f"loading column sizes {c1},{c2},{c3},{c4}")
+        if (c1 != '' and c2 != '' and c3 != '' and c4 != '' and c5 != '' and c6 != ''):
+            print(f"loading column sizes {c1},{c2},{c3},{c4},{c5},{c6}")
 
             self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(0, int(c1))
             self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(1, int(c2))
             self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(2, int(c3))
             self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(3, int(c4))
-            self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(5, int(c5))
+            self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(4, int(c5))
+            self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(5, int(c6))
 
         if (x != '' and y != '' and w != '' and h != ''):
             print(f"loading dimensions {int(x)},{int(y)},{int(w)},{int(h)}")
@@ -664,7 +686,9 @@ class MeetingEmailTypesSettings(QDialog):
         self.ui_template.comboBoxType.setCurrentText("Meeting")
         self.ui_template.lineEditName.setText('')
         self.ui_template.comboBoxInvitees.setCurrentText('')
+        self.ui_template.lineEditSubject.setText('')
         self.ui_template.textEditTemplate.setHtml('')
+        self.ui_template.comboBoxData.setCurrentText("people")
 
         if (self.ui_template.exec()):
             row_count = self.ui.tableWidgetMeetingEmailTypes.rowCount()
@@ -674,6 +698,7 @@ class MeetingEmailTypesSettings(QDialog):
             self.ui.tableWidgetMeetingEmailTypes.setItem(row_count, 2, QTableWidgetItem(self.ui_template.comboBoxInvitees.currentText()))
             self.ui.tableWidgetMeetingEmailTypes.setItem(row_count, 3, QTableWidgetItem(self.ui_template.lineEditSubject.text()))
             self.ui.tableWidgetMeetingEmailTypes.setItem(row_count, 4, QTableWidgetItem(self.ui_template.textEditTemplate.toHtml()))
+            self.ui.tableWidgetMeetingEmailTypes.setItem(row_count, 5, QTableWidgetItem(self.ui_template.comboBoxData.currentText()))
 
     def edittype(self):
         row = self.ui.tableWidgetMeetingEmailTypes.currentRow()
@@ -684,10 +709,12 @@ class MeetingEmailTypesSettings(QDialog):
             matt = self.ui.tableWidgetMeetingEmailTypes.item(row, 2).text()
             subj = self.ui.tableWidgetMeetingEmailTypes.item(row, 3).text() 
             mhtml = self.ui.tableWidgetMeetingEmailTypes.item(row, 4).text() 
+            data = self.ui.tableWidgetMeetingEmailTypes.item(row, 5).text() 
 
             self.ui_template.comboBoxType.setCurrentText(mtype)
             self.ui_template.lineEditName.setText(nam)
             self.ui_template.comboBoxInvitees.setCurrentText(matt)
+            self.ui_template.comboBoxData.setCurrentText(data)
             self.ui_template.lineEditSubject.setText(subj)
             self.ui_template.textEditTemplate.setHtml(mhtml)
 
@@ -697,6 +724,7 @@ class MeetingEmailTypesSettings(QDialog):
                 self.ui.tableWidgetMeetingEmailTypes.setItem(row, 2, QTableWidgetItem(self.ui_template.comboBoxInvitees.currentText()))
                 self.ui.tableWidgetMeetingEmailTypes.setItem(row, 3, QTableWidgetItem(self.ui_template.lineEditSubject.text()))
                 self.ui.tableWidgetMeetingEmailTypes.setItem(row, 4, QTableWidgetItem(self.ui_template.textEditTemplate.toHtml()))
+                self.ui.tableWidgetMeetingEmailTypes.setItem(row, 5, QTableWidgetItem(self.ui_template.comboBoxData.currentText()))
 
     def deletetype(self):
         row = self.ui.tableWidgetMeetingEmailTypes.currentRow()
@@ -715,6 +743,7 @@ class MeetingEmailTypesSettings(QDialog):
         self.pnc.set_plugin_setting("c3", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(2)}")
         self.pnc.set_plugin_setting("c4", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(3)}")
         self.pnc.set_plugin_setting("c5", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(4)}")
+        self.pnc.set_plugin_setting("c6", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(5)}")
 
         # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
 
@@ -947,8 +976,10 @@ def menuSettingsMigrator(parameter):
 if __name__ == '__main__':
     print("Entered __main__")
     app = QApplication(sys.argv)
+    os.chdir("..")
     #menuOutlookIntegrationSettings("") 
     menuMeetingEmailTypesSettings("")
+    #menuFileCollectorSettings("")
     sys.exit(app.exec())
 
 #todo: add the ability to quickly add a team member that isn't in the       databse
