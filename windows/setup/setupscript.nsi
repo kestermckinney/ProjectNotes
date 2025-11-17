@@ -70,14 +70,14 @@ Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
 
-  File "..\..\build\Desktop_Qt_6_8_1_MSVC2022_64bit-Release\ProjectNotes.exe"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\ProjectNotes.exe"
 
   CreateDirectory "$SMPROGRAMS\Project Notes 4 Beta"
   CreateShortCut  "$SMPROGRAMS\Project Notes 4 Beta\Project Notes 4 Beta.lnk" "$INSTDIR\ProjectNotes.exe"
   CreateShortCut  "$DESKTOP\Project Notes 4 Beta.lnk" "$INSTDIR\ProjectNotes.exe"
 
   ; Project Notes Needed Libraries
-  File "..\..\build\Desktop_Qt_6_8_1_MSVC2022_64bit-Release\ProjectNotes.exe"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\ProjectNotes.exe"
   File "..\..\..\hunspell\msvc\x64\Release_dll\libhunspell.dll"
 
   ; include files that were built
@@ -90,6 +90,7 @@ Section "MainSection" SEC01
   File "..\..\plugins\excelkill_plugin.py"
   File "..\..\plugins\exportnotes_plugin.py"
   File "..\..\plugins\findprojectemailperson_plugin.py"
+  File "..\..\plugins\ifscloud_plugin_settings.py"
   File "..\..\plugins\myshortcuts_plugin.py"
   File "..\..\plugins\newchangeorder_plugin.py"
   File "..\..\plugins\newmsproject_plugin.py"
@@ -102,15 +103,15 @@ Section "MainSection" SEC01
   File "..\..\plugins\wordkill_plugin.py"
 
   SetOutPath "$INSTDIR\plugins\includes"
+  File "..\..\plugins\includes\collaboration_tools.py"
   File "..\..\plugins\includes\common.py"
   File "..\..\plugins\includes\excel_tools.py"
-  File "..\..\plugins\includes\word_tools.py"
   File "..\..\plugins\includes\graphapi_tools.py"
+  File "..\..\plugins\includes\ifs_tools.py"
   File "..\..\plugins\includes\noteformatter.py"
   File "..\..\plugins\includes\outlook_tools.py"
   File "..\..\plugins\includes\word_tools.py"
-
-
+  
   SetOutPath "$INSTDIR\plugins\forms"
   File "..\..\plugins\forms\dialogClassification.ui"
   File "..\..\plugins\forms\dialogDuplicateFilesFound.ui"
@@ -126,19 +127,25 @@ Section "MainSection" SEC01
   File "..\..\plugins\forms\dialogStatusRptOptions.ui"
   File "..\..\plugins\forms\dialogTrackerRptOptions.ui"
 
+  ; Project Notes Base Plugin Threads
+  SetOutPath "$INSTDIR\threads"
+  File "..\..\threads\filefinder_thread.py"
+  File "..\..\threads\ifssync_thread.py"
+  File "..\..\threads\outlooksync_thread.py"
+
   SetOutPath "$INSTDIR\plugins\templates"
   File "..\..\plugins\templates\Lessons Learned Template.xlsx"
   File "..\..\plugins\templates\Risk Register Template.xlsx"
   File "..\..\plugins\templates\Tracker Items Template.xlsx"
   
   SetOutPath "$INSTDIR\dictionary"
-  File "..\..\build\Desktop_Qt_6_8_1_MSVC2022_64bit-Release\dictionary\index.ini"
-  File "..\..\build\Desktop_Qt_6_8_1_MSVC2022_64bit-Release\dictionary\es_ANY.dic"
-  File "..\..\build\Desktop_Qt_6_8_1_MSVC2022_64bit-Release\dictionary\es_ANY.aff"
-  File "..\..\build\Desktop_Qt_6_8_1_MSVC2022_64bit-Release\dictionary\en_US.dic"
-  File "..\..\build\Desktop_Qt_6_8_1_MSVC2022_64bit-Release\dictionary\en_US.aff"
-  File "..\..\build\Desktop_Qt_6_8_1_MSVC2022_64bit-Release\dictionary\en_GB.dic"
-  File "..\..\build\Desktop_Qt_6_8_1_MSVC2022_64bit-Release\dictionary\en_GB.aff"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\dictionary\index.ini"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\dictionary\es_ANY.dic"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\dictionary\es_ANY.aff"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\dictionary\en_US.dic"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\dictionary\en_US.aff"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\dictionary\en_GB.dic"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\dictionary\en_GB.aff"
 
   ; not needed anymore EnVar::AddValue "Path" "$INSTDIR"
 SectionEnd

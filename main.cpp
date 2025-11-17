@@ -12,6 +12,10 @@
 int main(int argc, char *argv[])
 {
     QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/plugins");
+    QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/plugins/bin");
+
+    // Set the attribute before creating QApplication this was needed for QWebView would work
+    QCoreApplication::setAttribute(Qt::ApplicationAttribute::AA_ShareOpenGLContexts);
 
     QApplication a(argc, argv);
 
@@ -24,11 +28,6 @@ int main(int argc, char *argv[])
         QMessageBox::critical(nullptr, "Only One Instance", QString("Only one instance of Project Notes can be running at a time."));
         return 0;
     }
-
-#ifdef Q_OS_WIN
-    if ( a.style()->name().contains("windows11") ) // windows11 style is broken in 6.7
-        qApp->setStyle(QStyleFactory::create("windowsvista"));
-#endif
 
     MainWindow w;
 

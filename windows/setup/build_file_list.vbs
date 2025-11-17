@@ -14,8 +14,7 @@ Set oFSO = CreateObject("Scripting.FileSystemObject")
 
 cleanfolders = "" & vbCrLF & vbCrLF
 
-BuildInstall "$INSTDIR\site-packages", "C:\Users\paulmckinney\AppData\Roaming\Python\Python313\site-packages", name_exclusions
-BuildInstall "$INSTDIR\site-packages", "C:\program files\python313\lib\site-packages", ""
+BuildInstall "$INSTDIR\site-packages", "C:\program files\python313\lib\site-packages", name_exclusions
 
 BuildInstall "$INSTDIR", "C:\Users\paulmckinney\Documents\python-3.13.2-embed-amd64", ""
 
@@ -31,6 +30,7 @@ objInstFileToWrite.Close
 Set objInstFileToWrite = Nothing
 
 Sub BuildInstall(byval baseinstall, byval basefolder, byval exclusions)
+  WScript.StdOut.WriteLine "Searching folder " & basefolder
 
   set oCurFolder = oFSO.GetFolder(basefolder)
 
