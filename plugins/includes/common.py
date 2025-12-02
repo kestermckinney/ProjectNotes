@@ -1,9 +1,11 @@
 import os
+import sys
 import json
 
 from PyQt6 import QtCore
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QSettings
 from PyQt6.QtXml import QDomDocument, QDomNode
+from PyQt6.QtWidgets import QApplication, QMainWindow
 
 import re
 
@@ -11,6 +13,19 @@ class ProjectNotesCommon:
     def __init__(self):
         self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)
         self.saved_state_file = self.temporary_folder + '/projectnotes_saved_state.json'
+
+        self.app = QApplication.instance()
+        
+        if self.app is None:
+            print("WARNING!! Creating a new QApplication instance!")
+            self.app = QApplication(sys.argv)
+
+        self.mainwindow = next((w for w in QApplication.topLevelWidgets() if isinstance(w, QMainWindow)), None)
+
+        print(f"mainwindow set to {self.mainwindow}")
+
+    def get_main_window(self):
+        return self.mainwindow
 
     def get_temporary_folder(self):
         return self.temporary_folder

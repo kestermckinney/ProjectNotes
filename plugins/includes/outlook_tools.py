@@ -39,7 +39,6 @@ class ProjectNotesOutlookTools:
                 break
         return
 
-
     def find_contact(self, list, fullname ):
         for contact in list:
             if contact[1] == fullname.strip().upper():

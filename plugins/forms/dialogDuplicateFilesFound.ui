@@ -35,7 +35,7 @@
    <item>
     <widget class="QListWidget" name="m_listWidgetFiles">
      <property name="selectionBehavior">
-      <enum>QAbstractItemView::SelectItems</enum>
+      <enum>QAbstractItemView::SelectionBehavior::SelectItems</enum>
      </property>
      <property name="sortingEnabled">
       <bool>true</bool>
@@ -45,7 +45,7 @@
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="standardButtons">
-      <set>QDialogButtonBox::NoButton</set>
+      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set>
      </property>
     </widget>
    </item>

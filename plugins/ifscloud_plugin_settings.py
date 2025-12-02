@@ -4,7 +4,6 @@ import platform
 import threading
 import time
 import json
-#import projectnotes
 
 from includes.common import ProjectNotesCommon
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
@@ -28,8 +27,8 @@ pluginmenus = [
 
 # File Finder populates the list of files associated with a project
 class IFSCloudSettings(QDialog):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
 
         self.pnc = ProjectNotesCommon()
         self.settings_pluginname = "IFS Cloud"
@@ -39,6 +38,7 @@ class IFSCloudSettings(QDialog):
             QtCore.Qt.WindowType.Window |
             QtCore.Qt.WindowType.WindowCloseButtonHint
             )
+        self.ui.setModal(True)
  
         self.ui.buttonBox.accepted.connect(self.save_settings)
         self.ui.buttonBox.rejected.connect(self.reject_changes)
@@ -75,8 +75,6 @@ class IFSCloudSettings(QDialog):
         if (x != '' and y != '' and w != '' and h != ''):
             # print(f"loading dimensions {int(x)},{int(y)},{int(w)},{int(h)}")
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
-
-        self.show()
 
     def save_window_state(self):
         # Save window position and size
@@ -128,9 +126,11 @@ class IFSCloudSettings(QDialog):
         super().closeEvent(event)
 
 def menuIFSCloudSettings(parameter):
-    settings_dialog = IFSCloudSettings()
+    ifc.show()
     return ""
 
+pnc = ProjectNotesCommon()
+ifc = IFSCloudSettings(pnc.get_main_window())
 
 # Use code below for testing
 if __name__ == '__main__':

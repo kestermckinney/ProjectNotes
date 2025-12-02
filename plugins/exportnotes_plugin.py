@@ -1,23 +1,21 @@
-import sys
-import platform
-import time
+import subprocess
+import os
 
 from includes.common import ProjectNotesCommon
 from includes.collaboration_tools import CollaborationTools
 
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import QFile, QIODevice, QDate, QUrl, QDir, QMarginsF, QRectF, QTextStream, QStringConverter
+from PyQt6.QtCore import QFile, QIODevice, QDate, QDir, QTextStream, QStringConverter, QProcess, QMarginsF, QUrl, QTimer
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
-from PyQt6.QtGui import QDesktopServices, QTextDocument
-from PyQt6.QtGui import QPdfWriter, QPageSize, QPageLayout, QPainter
+from PyQt6.QtGui import QDesktopServices, QPageLayout, QPageSize
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 
 # Project Notes Plugin Parameters
 pluginname = "Export Meeting Notes"
 plugindescription = "Generate meeting notes to be exported.  Notes can be exported as HTML or a PDF."
 
-pluginmenus = [{"menutitle" : "Meeting Notes", "function" : "menuExportMeetingNotes", "tablefilter" : "projects/project_notes/meeting_attendees/item_tracker", "submenu" : "Export", "dataexport" : "projects"}]
+pluginmenus = [{"menutitle" : "Meeting Notes", "function" : "menuExportMeetingNotes", "tablefilter" : "projects/project_notes/meeting_attendees/item_tracker/project_locations", "submenu" : "Export", "dataexport" : "projects"}]
 
 # events must have a data structure and data view specified
 #
@@ -36,9 +34,6 @@ pluginmenus = [{"menutitle" : "Meeting Notes", "function" : "menuExportMeetingNo
 #      meeting_attendees
 #      item_tracker_updates
 #      item_tracker
-
-
-pnc = ProjectNotesCommon()
 
 def generateHeader(project_number, project_name):
     html = """
@@ -1082,7 +1077,6 @@ def generateMeetingHeaderRow(meeting_title, meeting_date, attendee_names, meetin
 
     return html
 
-
 def generateActionItemRow(item, assignedto, status, duedate):
     html = f"""
     <tr style='mso-yfti-irow:10;height:25.5pt'>
@@ -1125,7 +1119,6 @@ def generateActionItemRow(item, assignedto, status, duedate):
     """
 
     return html
-
 
 def generateMeetingFooterRow():
     html = """
@@ -1189,27 +1182,26 @@ def generateFooter(reportdate):
 
     return html
 
+class MeetingsExporter(QDialog):
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
+        self.ui = uic.loadUi("plugins/forms/dialogExportNotesOptions.ui", self)
+        self.ui.m_datePickerRptDateNotes.setDate(self.executedate)
+        self.ui.m_datePickerRptDateNotes.setCalendarPopup(True)
+        self.ui.setWindowFlags(
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowCloseButtonHint |
+            QtCore.Qt.WindowType.WindowStaysOnTopHint
+            )
+        self.ui.setModal(True)
 
-class PdfGenerator:
-    def __init__(self, html_content, output_path):
-        self.html_content = html_content
-        self.output_path = output_path
-        self.web_view = QWebEngineView()
-        self.page_layout = None
+        #self.ui.buttonBox.accepted.connect(self.export_notes)
+        self.ui.pushButtonOK.clicked.connect(self.export_notes)
+        self.ui.pushButtonCancel.clicked.connect(self.close_dialog)
 
-        # Load HTML content
-        self.web_view.setHtml(self.html_content)
+        self.xmlstr = None
+        self.html_content = None
 
-        # Connect loadFinished signal to trigger PDF generation
-        self.web_view.loadFinished.connect(self.generate_pdf)   
-        self.pdf_is_done = False
-
-    def generate_pdf(self, success):
-        if not success:
-            print("Failed to process HTML into PDF format.")
-            return
-
-        self.pdf_is_done = False
 
         # Define page layout (A4, portrait, 20pt margins)
         self.page_layout = QPageLayout()
@@ -1220,6 +1212,20 @@ class PdfGenerator:
         # Compute printable dimensions (in pixels, assuming 96 DPI)
         self.page_width_px = self.page_layout.paintRectPixels(96).width()
         self.page_height_px = self.page_layout.paintRectPixels(96).height()
+
+        self.web_view = QWebEngineView(self.ui)
+        self.web_view.loadFinished.connect(self.on_load_finished)
+        self.ui.verticalLayout_2.layout().addWidget(self.web_view)
+
+    def close_dialog(self):
+        self.hide()
+
+    def on_load_finished(self, success):
+        if not success:
+            print(f"Failed to process html.")
+            return
+
+        print("Html load finished")
 
         # JavaScript to get content dimensions and apply scale
         js_code = f"""
@@ -1253,297 +1259,304 @@ class PdfGenerator:
         }})();
         """
         
+        # Connect pdfPrintingFinished signal to handle completion
+        self.web_view.page().pdfPrintingFinished.connect(self.pdf_printed)
+
         # Run JS and then generate PDF
         self.web_view.page().runJavaScript(js_code, self.generate_pdf_after_scale)
 
-        # Connect pdfPrintingFinished signal to handle completion
-        self.web_view.page().pdfPrintingFinished.connect(self.on_pdf_generated)
+        print("Finished generate_pdf call")
 
     def generate_pdf_after_scale(self, scale):
         # Generate PDF
-        self.web_view.page().printToPdf(self.output_path, self.page_layout)
+        self.web_view.page().printToPdf(self.pdfreportname, self.page_layout)
+        print("Finished generate_pdf_after_scale")
 
-    def on_pdf_generated(self, path, success):
-        print(f"PDF generation {'succeeded' if success else 'failed'} at {path}")
-        self.pdf_is_done = True
+    def set_xml_doc(self, xmlval):
+        self.xmlstr = xmlval
 
-    def wait(self):
-        while not self.pdf_is_done:
-            QtWidgets.QApplication.processEvents()
-            time.sleep(0.01)
+    def export_notes(self):
+        xmldoc = QDomDocument()
+        if (xmldoc.setContent(self.xmlstr) == False):
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+            return ""
+
+        self.executedate = QDate.currentDate()
+
+        self.project_htmlreportname = ""
+        self.project_pdfreportname = ""
+        self.htmlreportname = ""
+        self.pdfreportname = ""
+
+        self.internalreport = self.ui.m_checkBoxInternalRptNotes.isChecked()
+        self.keephtml = self.ui.m_checkBoxHTMLRptNotes.isChecked()
+        self.emailasinlinehtml = self.ui.m_radioBoxEmailAsInlineHTML.isChecked()
+        self.emailaspdf = self.ui.m_radioBoxEmailAsPDF.isChecked()
+        self.emailashtml = self.ui.m_radioBoxEmailAsHTML.isChecked()
+        self.noemail = self.ui.m_radioBoxDoNotEmail.isChecked()
+        QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
+        QtWidgets.QApplication.processEvents()
+
+        xmlroot = xmldoc.elementsByTagName("projectnotes").at(0) # get root node
+        pm = xmlroot.toElement().attribute("managing_manager_name")
+
+        #print("locating project folder...")
+        QtWidgets.QApplication.processEvents()
+        projectfolder = pnc.get_projectfolder(xmlroot)
+        #print("finding projects table ..")
+        print("found project folder: " + projectfolder)
+        QtWidgets.QApplication.processEvents()
+        
+        projtab = pnc.find_node(xmlroot, "table", "name", "projects")
+        projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
+        projdes = pnc.get_column_value(projtab.firstChild(), "project_name")
+
+        email = False
+        nm = None
+        stat = None
+        receivers = ""
+
+        if (projectfolder is None or projectfolder ==""):
+            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
+
+            if projectfolder == "" or projectfolder is None:
+                return ""
+        else:
+            projectfolder = projectfolder + "/Meeting Minutes/"
+
+        projectfolder = projectfolder + "/"
+
+        self.progbar = QProgressDialog(self)
+        self.progbar.setWindowTitle("Exporting...")
+        self.progbar.setWindowFlags(
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowCloseButtonHint 
+            )
+        self.progbar.setMinimumWidth(350)
+        self.progbar.setCancelButton(None)
+        self.progbar.show()
+
+        progval = 0
+        progtot = 6
+
+        progval = progval + 1
+        self.progbar.setValue(int(min(progval / progtot * 100, 100)))
+        self.progbar.setLabelText("Copying files...")
+
+        temporaryfolder = pnc.get_temporary_folder() + "/"
+
+        if self.internalreport:
+            self.htmlreportname = temporaryfolder + projnum + " Meeting Minutes Internal.html"
+            self.pdfreportname = temporaryfolder + projnum + " Meeting Minutes Internal.pdf"
+        else:
+            self.htmlreportname = temporaryfolder + projnum + " Meeting Minutes.html"
+            self.pdfreportname = temporaryfolder + projnum + " Meeting Minutes.pdf"
+
+        self.html_content = generateHeader(projnum, projdes)
+
+        progval = progval + 1
+        self.progbar.setValue(int(min(progval / progtot * 100, 100)))
+        self.progbar.setLabelText("Gathering notes...")
+
+        # count expand out excell rows for status report items
+        notes = pnc.find_node(xmlroot, "table", "name", "project_notes")
+        itemcount = 0
+
+        if not notes.isNull():
+            notesrow = notes.firstChild()
+
+            while not notesrow.isNull():
+                QtWidgets.QApplication.processEvents()
+                isinternal = pnc.get_column_value(notesrow, "internal_item")
+
+                if isinternal == "1" and self.internalreport:
+                    itemcount = itemcount + 1
+                elif isinternal != "1":
+                    itemcount = itemcount + 1
+
+                notesrow = notesrow.nextSibling()
+
+            progtot = progtot + itemcount
+
+            progval = progval + 1
+            self.progbar.setValue(int(min(progval / progtot * 100, 100)))
+            self.progbar.setLabelText("Gathering notes...")
+
+            itemcount = 0
+            notesrow = notes.firstChild()
+
+            while not notesrow.isNull():
+                QtWidgets.QApplication.processEvents()
+                isinternal = pnc.get_column_value(notesrow, "internal_item")
+                includeitem = False
+
+                if isinternal == "1" and self.internalreport:
+                    includeitem = True
+                elif isinternal != "1":
+                    includeitem = True
+
+                if includeitem:
+                    itemcount = itemcount + 1
+
+                progval = progval + 1
+                self.progbar.setValue(int(min(progval / progtot * 100, 100)))
+                self.progbar.setLabelText("Gathering notes...")
+
+                note = pnc.get_column_value(notesrow, "note")
+                attendees = pnc.find_node(notesrow, "table", "name", "meeting_attendees")
+                attendeelist = ""
+                if not attendees.isNull():
+                    attendeerow = attendees.firstChild()
+
+                    while not attendeerow.isNull():
+                        QtWidgets.QApplication.processEvents()
+                        if attendeelist != "" :
+                            attendeelist = attendeelist + ", "
+
+                        attendeelist = attendeelist + pnc.get_column_value(attendeerow, "name")
+                        #print("processing attendees...")
+                        attendeerow = attendeerow.nextSibling()
+
+                self.html_content += generateMeetingHeaderRow(pnc.get_column_value(notesrow, "note_title"), pnc.get_column_value(notesrow, "note_date"), attendeelist, note) 
+
+                trackeritems = pnc.find_node(notesrow, "table", "name", "item_tracker")
+
+                trackercount = 0
+                if trackeritems:
+                    trackerrow = trackeritems.firstChild()
+
+                    while not trackerrow.isNull():
+                        QtWidgets.QApplication.processEvents()
+                        trackercount = trackercount + 1
+
+                        self.html_content += generateActionItemRow(pnc.get_column_value(trackerrow, "item_name"), pnc.get_column_value(trackerrow, "assigned_to"), pnc.get_column_value(trackerrow, "status"), pnc.get_column_value(trackerrow, "date_due")) 
+
+                        trackerrow = trackerrow.nextSibling()
+
+                
+                self.html_content += generateMeetingFooterRow()
+
+                notesrow = notesrow.nextSibling()
+
+            self.html_content += generateFooter(self.executedate.toString("MM/dd/yyyy"))
+
+            progval = progval + 1
+            self.progbar.setValue(int(min(progval / progtot * 100, 100)))
+            self.progbar.setLabelText("Finalizing files...")
+
+            # should we email?
+            if self.noemail == False :
+                self.subject = projnum + " " + projdes + " - " + self.executedate.toString("MM/dd/yyyy")
+
+            file = QFile(self.htmlreportname)
+            if file.open(QFile.OpenModeFlag.WriteOnly):
+                stream = QTextStream(file)
+                stream.setEncoding(QStringConverter.Encoding.Utf8)
+                stream << self.html_content
+                file.close()
+            else:
+                print(f"Error attempting to write {self.htmlreportname}")
+
+            # establish final file names and locations
+            if self.internalreport:
+                self.project_htmlreportname = projectfolder + projnum + " Meeting Minutes Internal.html"
+                self.project_pdfreportname = projectfolder + projnum + " Meeting Minutes Internal.pdf"
+            else:
+                self.project_htmlreportname = projectfolder + projnum + " Meeting Minutes.html"
+                self.project_pdfreportname = projectfolder + projnum + " Meeting Minutes.pdf"
+
+        print(f"ready to generate pdf from {self.htmlreportname}")
+        # call pdf generator
+        self.progbar.setLabelText("Finalizing files...")
+        self.web_view.load(QUrl.fromLocalFile(self.htmlreportname)) # trigger the load
+
+    def pdf_printed(self, success: bool):
+        if success:
+            print(f"PDF saved: {self.pdfreportname}")
+        else:
+            print("Failed to generate PDF")
+
+        ct = CollaborationTools()
+
+        if self.emailasinlinehtml:
+                ct.send_an_email(self.xmlstr, self.subject, self.html_content, None, "", True)
+        elif self.emailashtml:
+                ct.send_an_email(self.xmlstr, self.subject, self.html_content, self.htmlreportname, "", True)
+        elif self.emailaspdf:
+                ct.send_an_email(self.xmlstr, self.subject, self.html_content, self.pdfreportname, "", True)
+
+        QFile.remove(self.project_pdfreportname)
+        if not QFile(self.pdfreportname).copy(self.project_pdfreportname):
+            QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.pdfreportname + " to " + self.project_pdfreportname, QMessageBox.StandardButton.Cancel)
+
+        if self.keephtml == False:
+            QFile.remove(self.htmlreportname)
+        else:
+            QFile.remove(self.project_htmlreportname)
+            if not QFile(self.htmlreportname).copy(self.project_htmlreportname):
+                QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.htmlreportname + " to " + self.project_htmlreportname, QMessageBox.StandardButton.Cancel)
+
+        if self.ui.m_checkBoxDisplayNotes.isChecked():
+            try:
+                QDesktopServices.openUrl(QUrl("file:///" + self.project_pdfreportname))
+            except:
+                print(f"An error occured trying to open {self.project_pdfreportname}")
+                pass
+
+        QFile.remove(self.pdfreportname)
+
+        self.progbar.setValue(100)
+
+        self.progbar.hide()
+        self.progbar.close()
+        self.progbar = None # must be destroyed
+
+        QtWidgets.QApplication.restoreOverrideCursor()
+
+        self.hide()
+
 
 # processing main def
 def menuExportMeetingNotes(xmlstr, parameter):
-    xmlval = QDomDocument()
-    if (xmlval.setContent(xmlstr) == False):
-        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
-        return ""
-
-    ct = CollaborationTools()
-
-    executedate = QDate.currentDate()
-    internalreport = False
-    keephtml = False
-    emailasinlinehtml = False
-    emailaspdf = False
-    emailashtml = False
-    noemail = True
-
-    project_htmlreportname = ""
-    project_pdfreportname = ""
-    htmlreportname = ""
-    pdfreportname = ""
+    mex.set_xml_doc(xmlstr)
 
     QtWidgets.QApplication.restoreOverrideCursor()
     QtWidgets.QApplication.processEvents()   
 
-    ui = uic.loadUi("plugins/forms/dialogExportNotesOptions.ui")
-    ui.m_datePickerRptDateNotes.setDate(executedate)
-    ui.m_datePickerRptDateNotes.setCalendarPopup(True)
-    ui.setWindowFlags(
-        QtCore.Qt.WindowType.Window |
-        QtCore.Qt.WindowType.WindowCloseButtonHint |
-        QtCore.Qt.WindowType.WindowStaysOnTopHint
-        )
-
-    if ui.exec():
-        internalreport = ui.m_checkBoxInternalRptNotes.isChecked()
-        keephtml = ui.m_checkBoxHTMLRptNotes.isChecked()
-        emailasinlinehtml = ui.m_radioBoxEmailAsInlineHTML.isChecked()
-        emailaspdf = ui.m_radioBoxEmailAsPDF.isChecked()
-        emailashtml = ui.m_radioBoxEmailAsHTML.isChecked()
-        noemail = ui.m_radioBoxDoNotEmail.isChecked()
-        QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
-        QtWidgets.QApplication.processEvents()
-    else:
-        #QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
-        QtWidgets.QApplication.restoreOverrideCursor()
-        QtWidgets.QApplication.processEvents()
-        return ""
-
-    xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
-    pm = xmlroot.toElement().attribute("managing_manager_name")
-
-    #print("locating project folder...")
-    QtWidgets.QApplication.processEvents()
-    projectfolder = pnc.get_projectfolder(xmlroot)
-    #print("finding projects table ..")
-    print("found project folder: " + projectfolder)
-    QtWidgets.QApplication.processEvents()
-    
-    projtab = pnc.find_node(xmlroot, "table", "name", "projects")
-    projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
-    projdes = pnc.get_column_value(projtab.firstChild(), "project_name")
-
-    email = False
-    nm = None
-    stat = None
-    receivers = ""
-
-    if (projectfolder is None or projectfolder ==""):
-        projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
-
-        if projectfolder == "" or projectfolder is None:
-            return ""
-    else:
-        projectfolder = projectfolder + "/Meeting Minutes/"
-
-    projectfolder = projectfolder + "/"
-
-    progbar = QProgressDialog()
-    progbar.setWindowTitle("Exporting...")
-    progbar.setWindowFlags(
-        QtCore.Qt.WindowType.Window |
-        QtCore.Qt.WindowType.WindowCloseButtonHint 
-        )
-    progbar.setMinimumWidth(350)
-    progbar.setCancelButton(None)
-    progbar.show()
-
-    progval = 0
-    progtot = 6
-
-    progval = progval + 1
-    progbar.setValue(int(min(progval / progtot * 100, 100)))
-    progbar.setLabelText("Copying files...")
-
-    temporaryfolder = pnc.get_temporary_folder() + "/"
-
-    if internalreport:
-        htmlreportname = temporaryfolder + projnum + " Meeting Minutes Internal.html"
-        pdfreportname = temporaryfolder + projnum + " Meeting Minutes Internal.pdf"
-    else:
-        htmlreportname = temporaryfolder + projnum + " Meeting Minutes.html"
-        pdfreportname = temporaryfolder + projnum + " Meeting Minutes.pdf"
-
-    html = generateHeader(projnum, projdes)
-
-    progval = progval + 1
-    progbar.setValue(int(min(progval / progtot * 100, 100)))
-    progbar.setLabelText("Gathering notes...")
-
-    # count expand out excell rows for status report items
-    notes = pnc.find_node(xmlroot, "table", "name", "project_notes")
-    itemcount = 0
-
-    if not notes.isNull():
-        notesrow = notes.firstChild()
-
-        while not notesrow.isNull():
-            QtWidgets.QApplication.processEvents()
-            isinternal = pnc.get_column_value(notesrow, "internal_item")
-
-            if isinternal == "1" and internalreport:
-                itemcount = itemcount + 1
-            elif isinternal != "1":
-                itemcount = itemcount + 1
-
-            notesrow = notesrow.nextSibling()
-
-        progtot = progtot + itemcount
-
-        progval = progval + 1
-        progbar.setValue(int(min(progval / progtot * 100, 100)))
-        progbar.setLabelText("Gathering notes...")
-
-    itemcount = 0
-    notesrow = notes.firstChild()
-
-    while not notesrow.isNull():
-        QtWidgets.QApplication.processEvents()
-        isinternal = pnc.get_column_value(notesrow, "internal_item")
-        includeitem = False
-
-        if isinternal == "1" and internalreport:
-            includeitem = True
-        elif isinternal != "1":
-            includeitem = True
-
-        if includeitem:
-            itemcount = itemcount + 1
-
-        progval = progval + 1
-        progbar.setValue(int(min(progval / progtot * 100, 100)))
-        progbar.setLabelText("Gathering notes...")
-
-        note = pnc.get_column_value(notesrow, "note")
-        attendees = pnc.find_node(notesrow, "table", "name", "meeting_attendees")
-        attendeelist = ""
-        if not attendees.isNull():
-            attendeerow = attendees.firstChild()
-
-            while not attendeerow.isNull():
-                QtWidgets.QApplication.processEvents()
-                if attendeelist != "" :
-                    attendeelist = attendeelist + ", "
-
-                attendeelist = attendeelist + pnc.get_column_value(attendeerow, "name")
-                #print("processing attendees...")
-                attendeerow = attendeerow.nextSibling()
-
-        html += generateMeetingHeaderRow(pnc.get_column_value(notesrow, "note_title"), pnc.get_column_value(notesrow, "note_date"), attendeelist, note) 
-
-        trackeritems = pnc.find_node(notesrow, "table", "name", "item_tracker")
-
-        trackercount = 0
-        if trackeritems:
-            trackerrow = trackeritems.firstChild()
-
-            while not trackerrow.isNull():
-                QtWidgets.QApplication.processEvents()
-                trackercount = trackercount + 1
-
-                html += generateActionItemRow(pnc.get_column_value(trackerrow, "item_name"), pnc.get_column_value(trackerrow, "assigned_to"), pnc.get_column_value(trackerrow, "status"), pnc.get_column_value(trackerrow, "date_due")) 
-
-                trackerrow = trackerrow.nextSibling()
-
-        
-        html += generateMeetingFooterRow()
-
-        notesrow = notesrow.nextSibling()
-
-    html += generateFooter("1/1/2010")
-
-    progval = progval + 1
-    progbar.setValue(int(min(progval / progtot * 100, 100)))
-    progbar.setLabelText("Finalizing files...")
-
-    # generate PDFs
-
-    # should we email?
-    if noemail == False :
-        subject = projnum + " " + projdes + " - " + executedate.toString("MM/dd/yyyy")
-
-    file = QFile(htmlreportname)
-    if file.open(QFile.OpenModeFlag.WriteOnly):
-        stream = QTextStream(file)
-        stream.setEncoding(QStringConverter.Encoding.Utf8)
-        stream << html
-        file.close()
-    else:
-        print(f"Error attempting to write {htmlreportname}")
-
-    if emailasinlinehtml:
-            ct.send_an_email(xmlstr, subject, html, None, "", True)
-    elif emailashtml:
-            ct.send_an_email(xmlstr, subject, html, htmlreportname, "", True)
-    elif emailaspdf:
-            ct.send_an_email(xmlstr, subject, html, pdfreportname, "", True)
-
-    # move from temporary location
-    if internalreport:
-        project_htmlreportname = projectfolder + projnum + " Meeting Minutes Internal.html"
-        project_pdfreportname = projectfolder + projnum + " Meeting Minutes Internal.pdf"
-    else:
-        project_htmlreportname = projectfolder + projnum + " Meeting Minutes.html"
-        project_pdfreportname = projectfolder + projnum + " Meeting Minutes.pdf"
-
-    pdfgen = PdfGenerator(html, pdfreportname)
-
-    pdfgen.wait()
-
-    QFile.remove(project_pdfreportname)
-    if not QFile(pdfreportname).copy(project_pdfreportname):
-        QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + pdfreportname + " to " + project_pdfreportname, QMessageBox.StandardButton.Cancel)
-
-    if keephtml == False:
-        QFile.remove(htmlreportname)
-    else:
-        QFile.remove(project_htmlreportname)
-        if not QFile(htmlreportname).copy(project_htmlreportname):
-            QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + htmlreportname + " to " + project_htmlreportname, QMessageBox.StandardButton.Cancel)
-
-    if ui.m_checkBoxDisplayNotes.isChecked():
-        QDesktopServices.openUrl(QUrl("file:///" + project_pdfreportname))
-
-    QFile.remove(pdfreportname)
-
-    progbar.setValue(100)
-    progbar.setLabelText("Finalizing Excel files...")
-
-    progbar.hide()
-    progbar.close()
-    progbar = None # must be destroyed
-
-    QtWidgets.QApplication.restoreOverrideCursor()
+    mex.show()
 
     return ""
 
+# keep the instance of windows open to avoid sending the main app a close message
+pnc = None
+mex = None
 
-# setup test data
+#setup test data
+if __name__ == '__main__':
+    import os
+    import sys
+    os.chdir("..")
 
-# import sys
-# print("Buld up QDomDocument")
+    app = QApplication(sys.argv)
+    pnc = ProjectNotesCommon()
+    mex = MeetingsExporter()
 
-# app = QApplication(sys.argv)
+    xml_content = ""
+    with open("C:\\Users\\pamcki\\OneDrive - Cornerstone Controls\\Documents\\Work In Progress\\XML\\project.xml", 'r', encoding='utf-8') as file:
+        xml_content = file.read()
+    mex.set_xml_doc(xml_content)
+    mex.show()
 
-# html = generateHeader("P400", "Project Name")
-# html += generateMeetingHeaderRow("Title", "1/1/2001", "Bob, Sam, Jill", "This is my really long note.") 
-# html += generateActionItemRow("Item Description", "Bob Smith", "Assigned", "4/3/2005") 
-# html += generateActionItemRow("Item Description", "Bob Smith", "Assigned", "4/3/2005") 
-# html += generateMeetingFooterRow()
-# html += generateFooter("1/1/2010")
+    # html = generateHeader("P400", "Project Name")
+    # html += generateMeetingHeaderRow("Title", "1/1/2001", "Bob, Sam, Jill", "This is my really long note.") 
+    # html += generateActionItemRow("Item Description", "Bob Smith", "Assigned", "4/3/2005") 
+    # html += generateActionItemRow("Item Description", "Bob Smith", "Assigned", "4/3/2005") 
+    # html += generateMeetingFooterRow()
+    # html += generateFooter("1/1/2010")
 
-# pdfgen = PdfGenerator(html, "c:/users/pamcki/Desktop/test.pdf")
-# pdfgen.wait()
+    # menuExportMeetingNotes("","")
 
+    app.exec()
+else:
+    pnc = ProjectNotesCommon()
+    mex = MeetingsExporter(pnc.get_main_window())

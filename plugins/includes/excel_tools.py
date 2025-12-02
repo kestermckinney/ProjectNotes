@@ -1,11 +1,19 @@
 from win32com.client import GetObject
 import win32com
+import win32api
+import win32gui
+
 from includes.common import ProjectNotesCommon
 
 from PyQt6 import QtSql, QtGui, QtCore, QtWidgets
 from PyQt6.QtCore import QDirIterator, QDir, QSettings, QFile
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication
+
+top_windows = []
+
+def handler_window_enumerator(hwnd, topwindows):
+    topwindows.append((hwnd, win32gui.GetWindowText(hwnd)))
 
 class ProjectNotesExcelTools:
     def open_excel_document(self, fullpath):
@@ -33,6 +41,16 @@ class ProjectNotesExcelTools:
         searchresult = searchrange.Find(tagname)
 
         return(searchresult)
+
+    def bring_window_to_front(self, title):
+        win32gui.EnumWindows(handler_window_enumerator, top_windows)
+
+        for i in top_windows:
+            if title.lower() in i[1].lower():
+                win32gui.ShowWindow(i[0],5)
+                win32gui.SetForegroundWindow(i[0])
+                break
+        return
 
     def replace_cell_tag(self, sheet, oldtagname, newtagname):
         if oldtagname is None:
@@ -137,8 +155,7 @@ class ProjectNotesExcelTools:
             message.Attachments.Add(attachment, 1)
 
 
-        pnc = ProjectNotesCommon()
-        pnc.bring_window_to_front(subject)
+        self.bring_window_to_front(subject)
 
         outlook = None
         message = None

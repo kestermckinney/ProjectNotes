@@ -75,10 +75,20 @@ class ComboBoxDelegate(QStyledItemDelegate):
     def updateEditorGeometry(self, editor, option, index):
         editor.setGeometry(option.rect)
 
+class ClassificationEdit(QDialog):
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
+
+        self.ui = uic.loadUi("plugins/forms/dialogClassification.ui", self)
+        self.ui.setWindowFlags(
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowCloseButtonHint
+            )
+
 # File Finder populates the list of files associated with a project
 class FileFinderSettings(QDialog):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
 
         self.pnc = ProjectNotesCommon()
         self.settings_pluginname = "File Finder"
@@ -89,11 +99,8 @@ class FileFinderSettings(QDialog):
             QtCore.Qt.WindowType.WindowCloseButtonHint
             )
  
-        self.ui_class = uic.loadUi("plugins/forms/dialogClassification.ui")
-        self.ui_class.setWindowFlags(
-            QtCore.Qt.WindowType.Window |
-            QtCore.Qt.WindowType.WindowCloseButtonHint
-            )
+        self.ui_class = ClassificationEdit(self.ui)
+        self.ui_class.buttonBox.accepted.connect(self.update_classification_row)
 
         self.ui.pushButtonAddLocation.clicked.connect(self.addlocation)
         self.ui.pushButtonEditLocation.clicked.connect(self.editlocation)
@@ -104,7 +111,7 @@ class FileFinderSettings(QDialog):
         self.ui.buttonBox.accepted.connect(self.save_settings)
         self.ui.buttonBox.rejected.connect(self.reject_changes)
 
-        delegate = ComboBoxDelegate()
+        delegate = ComboBoxDelegate(self.ui, False)
         delegate.setItems([
            "Quote",
            "Functional Design",
@@ -144,8 +151,6 @@ class FileFinderSettings(QDialog):
         if (x != '' and y != '' and w != '' and h != ''):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
-        self.show()
-
     def copy_table_to_json(self, qtable):
         data = []
         for row in range(qtable.rowCount()):
@@ -178,6 +183,13 @@ class FileFinderSettings(QDialog):
                     value = row_data.get(header, '')
                     qtable.setItem(row, column, QTableWidgetItem(value))
 
+    def update_classification_row(self):
+        if (self.edit_classification_row >= self.ui.tableClassifications.rowCount()):
+            self.ui.tableClassifications.setRowCount(self.edit_classification_row + 1)
+
+        self.ui.tableClassifications.setItem(self.edit_classification_row, 0, QTableWidgetItem(self.ui_class.comboBoxClassification.currentText()))
+        self.ui.tableClassifications.setItem(self.edit_classification_row, 1, QTableWidgetItem(self.ui_class.lineEditPatternMatch.text()))
+
     def addlocation(self):
         folder_path = QFileDialog.getExistingDirectory(caption="Select a folder")
         if (folder_path is not None and folder_path != ''):
@@ -200,28 +212,25 @@ class FileFinderSettings(QDialog):
             value = self.ui.tableSearchLocations.removeRow(row)
 
     def addclassification(self):
+        self.edit_classification_row = self.ui.tableClassifications.rowCount()
         self.ui_class.comboBoxClassification.setCurrentText('')
         self.ui_class.lineEditPatternMatch.setText('')
+        self.ui_class.setModal(True)
 
-        if (self.ui_class.exec()):
-            row_count = self.ui.tableClassifications.rowCount()
-            self.ui.tableClassifications.setRowCount(row_count + 1)
-            self.ui.tableClassifications.setItem(row_count, 0, QTableWidgetItem(self.ui_class.comboBoxClassification.currentText()))
-            self.ui.tableClassifications.setItem(row_count, 1, QTableWidgetItem(self.ui_class.lineEditPatternMatch.text()))
+        self.ui_class.show()
 
     def editclassification(self):
-        row = self.ui.tableClassifications.currentRow()
+        self.edit_classification_row = self.ui.tableClassifications.currentRow()
 
-        if (row > -1):
-            clss = self.ui.tableClassifications.item(row, 0).text()
-            pat = self.ui.tableClassifications.item(row, 1).text()
+        if (self.edit_classification_row > -1):
+            clss = self.ui.tableClassifications.item(self.edit_classification_row, 0).text()
+            pat = self.ui.tableClassifications.item(self.edit_classification_row, 1).text()
 
             self.ui_class.comboBoxClassification.setCurrentText(clss)
             self.ui_class.lineEditPatternMatch.setText(pat)
+            self.ui_class.setModal(True)
 
-            if (self.ui_class.exec()):
-                self.ui.tableClassifications.setItem(row, 0, QTableWidgetItem(self.ui_class.comboBoxClassification.currentText()))
-                self.ui.tableClassifications.setItem(row, 1, QTableWidgetItem(self.ui_class.lineEditPatternMatch.text()))
+            self.ui_class.show()
 
     def deleteclassification(self):
         row = self.ui.tableClassifications.currentRow()
@@ -266,8 +275,8 @@ class FileFinderSettings(QDialog):
 
 # Custom Editor Setting
 class EditorSettings(QDialog):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
 
         self.pnc = ProjectNotesCommon()
         self.settings_pluginname = "Custom Editor"
@@ -292,8 +301,6 @@ class EditorSettings(QDialog):
 
         if (x != '' and y != '' and w != '' and h != ''):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
-
-        self.show()
 
     def editlocation(self):
         value = self.ui.lineEditFullPath.text()
@@ -337,8 +344,8 @@ class EditorSettings(QDialog):
 
 # Outlook Integration Settings
 class OutlookIntegrationSettings(QDialog):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
 
         self.pnc = ProjectNotesCommon()
         self.settings_pluginname = "Outlook Integration"
@@ -348,6 +355,7 @@ class OutlookIntegrationSettings(QDialog):
             QtCore.Qt.WindowType.Window |
             QtCore.Qt.WindowType.WindowCloseButtonHint
             )
+        self.setModal(True)
 
         self.ui.buttonBox.accepted.connect(self.save_settings)
         self.ui.buttonBox.rejected.connect(self.reject_changes)
@@ -372,8 +380,6 @@ class OutlookIntegrationSettings(QDialog):
 
         if (x != '' and y != '' and w != '' and h != ''):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
-
-        self.show()
 
     def save_window_state(self):
         # Save window position and size
@@ -416,8 +422,8 @@ class OutlookIntegrationSettings(QDialog):
         super().closeEvent(event)
 
 class MyShortcutSettings(QDialog):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
 
         self.pnc = ProjectNotesCommon()
         self.settings_pluginname = "My Shortcuts"
@@ -427,6 +433,7 @@ class MyShortcutSettings(QDialog):
             QtCore.Qt.WindowType.Window |
             QtCore.Qt.WindowType.WindowCloseButtonHint
             )
+        self.ui.setModal(True)
  
         self.ui.pushButtonAddShortcut.clicked.connect(self.addshortcut)
         self.ui.pushButtonEditShortcut.clicked.connect(self.editshortcut)
@@ -473,8 +480,6 @@ class MyShortcutSettings(QDialog):
         if (x != '' and y != '' and w != '' and h != ''):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
-        self.show()
-
     def copy_table_to_json(self, qtable):
         data = []
         for row in range(qtable.rowCount()):
@@ -508,14 +513,12 @@ class MyShortcutSettings(QDialog):
                     qtable.setItem(row, column, QTableWidgetItem(value))
 
     def addshortcut(self):
-
         row_count = self.ui.tableShortcuts.rowCount()
         self.ui.tableShortcuts.setRowCount(row_count + 1)
         self.ui.tableShortcuts.setItem(row_count, 0, QTableWidgetItem("[New Shortcut]"))
 
     def editshortcut(self):
         row = self.ui.tableShortcuts.currentRow()
-
         if (row > -1):
             self.ui.tableShortcuts.setCurrentCell(row, 0)
             self.ui.tableShortcuts.edit(self.ui.tableShortcuts.currentIndex())
@@ -536,7 +539,6 @@ class MyShortcutSettings(QDialog):
         self.pnc.set_plugin_setting("c2", self.settings_pluginname, f"{self.ui.tableShortcuts.columnWidth(1)}")
         self.pnc.set_plugin_setting("c3", self.settings_pluginname, f"{self.ui.tableShortcuts.columnWidth(2)}")
         self.pnc.set_plugin_setting("c4", self.settings_pluginname, f"{self.ui.tableShortcuts.columnWidth(3)}")
-
 
         # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
 
@@ -560,9 +562,20 @@ class MyShortcutSettings(QDialog):
         # Call the base class implementation
         super().closeEvent(event)
 
+class EditMETemplate(QDialog):
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
+
+        self.ui = uic.loadUi("plugins/forms/dialogMeetingEmailTemplate.ui", self)
+        self.ui.setWindowFlags(
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowCloseButtonHint
+            )
+        self.ui.setModal(True)
+
 class MeetingEmailTypesSettings(QDialog):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
 
         self.pnc = ProjectNotesCommon()
         self.settings_pluginname = "Meeting and Email Types"
@@ -573,13 +586,8 @@ class MeetingEmailTypesSettings(QDialog):
             QtCore.Qt.WindowType.Window |
             QtCore.Qt.WindowType.WindowCloseButtonHint
             )
+        self.ui.setModal(True)
  
-        self.ui_template = uic.loadUi("plugins/forms/dialogMeetingEmailTemplate.ui")
-        self.ui_template.setWindowFlags(
-            QtCore.Qt.WindowType.Window |
-            QtCore.Qt.WindowType.WindowCloseButtonHint
-            )
-
         self.ui.pushButtonAddType.clicked.connect(self.addtype)
         self.ui.pushButtonEditType.clicked.connect(self.edittype)
         self.ui.pushButtonDeleteType.clicked.connect(self.deletetype)
@@ -648,7 +656,8 @@ class MeetingEmailTypesSettings(QDialog):
             print(f"loading dimensions {int(x)},{int(y)},{int(w)},{int(h)}")
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
-        self.show()
+        self.ui_template = EditMETemplate(self.ui)
+        self.ui_template.buttonBox.accepted.connect(self.update_row)
 
     def copy_table_to_json(self, qtable):
         data = []
@@ -682,34 +691,39 @@ class MeetingEmailTypesSettings(QDialog):
                     value = row_data.get(header, '')
                     qtable.setItem(row, column, QTableWidgetItem(value))
 
+    def update_row(self):
+        if (self.edit_row >= self.ui.tableWidgetMeetingEmailTypes.rowCount()):
+            self.ui.tableWidgetMeetingEmailTypes.setRowCount(self.edit_row + 1)
+
+        self.ui.tableWidgetMeetingEmailTypes.setItem(self.edit_row, 0, QTableWidgetItem(self.ui_template.comboBoxType.currentText()))
+        self.ui.tableWidgetMeetingEmailTypes.setItem(self.edit_row, 1, QTableWidgetItem(self.ui_template.lineEditName.text()))
+        self.ui.tableWidgetMeetingEmailTypes.setItem(self.edit_row, 2, QTableWidgetItem(self.ui_template.comboBoxInvitees.currentText()))
+        self.ui.tableWidgetMeetingEmailTypes.setItem(self.edit_row, 3, QTableWidgetItem(self.ui_template.lineEditSubject.text()))
+        self.ui.tableWidgetMeetingEmailTypes.setItem(self.edit_row, 4, QTableWidgetItem(self.ui_template.textEditTemplate.toHtml()))
+        self.ui.tableWidgetMeetingEmailTypes.setItem(self.edit_row, 5, QTableWidgetItem(self.ui_template.comboBoxData.currentText()))
+
     def addtype(self):
+        self.edit_row = self.ui.tableWidgetMeetingEmailTypes.rowCount()
+
         self.ui_template.comboBoxType.setCurrentText("Meeting")
         self.ui_template.lineEditName.setText('')
         self.ui_template.comboBoxInvitees.setCurrentText('')
         self.ui_template.lineEditSubject.setText('')
         self.ui_template.textEditTemplate.setHtml('')
         self.ui_template.comboBoxData.setCurrentText("people")
-
-        if (self.ui_template.exec()):
-            row_count = self.ui.tableWidgetMeetingEmailTypes.rowCount()
-            self.ui.tableWidgetMeetingEmailTypes.setRowCount(row_count + 1)
-            self.ui.tableWidgetMeetingEmailTypes.setItem(row_count, 0, QTableWidgetItem(self.ui_template.comboBoxType.currentText()))
-            self.ui.tableWidgetMeetingEmailTypes.setItem(row_count, 1, QTableWidgetItem(self.ui_template.lineEditName.text()))
-            self.ui.tableWidgetMeetingEmailTypes.setItem(row_count, 2, QTableWidgetItem(self.ui_template.comboBoxInvitees.currentText()))
-            self.ui.tableWidgetMeetingEmailTypes.setItem(row_count, 3, QTableWidgetItem(self.ui_template.lineEditSubject.text()))
-            self.ui.tableWidgetMeetingEmailTypes.setItem(row_count, 4, QTableWidgetItem(self.ui_template.textEditTemplate.toHtml()))
-            self.ui.tableWidgetMeetingEmailTypes.setItem(row_count, 5, QTableWidgetItem(self.ui_template.comboBoxData.currentText()))
+        self.ui_template.setModal(True)
+        self.ui_template.show()
 
     def edittype(self):
-        row = self.ui.tableWidgetMeetingEmailTypes.currentRow()
+        self.edit_row = self.ui.tableWidgetMeetingEmailTypes.currentRow()
 
-        if (row > -1):
-            mtype = self.ui.tableWidgetMeetingEmailTypes.item(row, 0).text()
-            nam = self.ui.tableWidgetMeetingEmailTypes.item(row, 1).text()
-            matt = self.ui.tableWidgetMeetingEmailTypes.item(row, 2).text()
-            subj = self.ui.tableWidgetMeetingEmailTypes.item(row, 3).text() 
-            mhtml = self.ui.tableWidgetMeetingEmailTypes.item(row, 4).text() 
-            data = self.ui.tableWidgetMeetingEmailTypes.item(row, 5).text() 
+        if (self.edit_row > -1):
+            mtype = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 0).text()
+            nam = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 1).text()
+            matt = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 2).text()
+            subj = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 3).text() 
+            mhtml = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 4).text() 
+            data = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 5).text() 
 
             self.ui_template.comboBoxType.setCurrentText(mtype)
             self.ui_template.lineEditName.setText(nam)
@@ -717,14 +731,8 @@ class MeetingEmailTypesSettings(QDialog):
             self.ui_template.comboBoxData.setCurrentText(data)
             self.ui_template.lineEditSubject.setText(subj)
             self.ui_template.textEditTemplate.setHtml(mhtml)
-
-            if (self.ui_template.exec()):
-                self.ui.tableWidgetMeetingEmailTypes.setItem(row, 0, QTableWidgetItem(self.ui_template.comboBoxType.currentText()))
-                self.ui.tableWidgetMeetingEmailTypes.setItem(row, 1, QTableWidgetItem(self.ui_template.lineEditName.text()))
-                self.ui.tableWidgetMeetingEmailTypes.setItem(row, 2, QTableWidgetItem(self.ui_template.comboBoxInvitees.currentText()))
-                self.ui.tableWidgetMeetingEmailTypes.setItem(row, 3, QTableWidgetItem(self.ui_template.lineEditSubject.text()))
-                self.ui.tableWidgetMeetingEmailTypes.setItem(row, 4, QTableWidgetItem(self.ui_template.textEditTemplate.toHtml()))
-                self.ui.tableWidgetMeetingEmailTypes.setItem(row, 5, QTableWidgetItem(self.ui_template.comboBoxData.currentText()))
+            self.ui_template.setModal(True)
+            self.ui_template.show()
 
     def deletetype(self):
         row = self.ui.tableWidgetMeetingEmailTypes.currentRow()
@@ -767,10 +775,9 @@ class MeetingEmailTypesSettings(QDialog):
         # Call the base class implementation
         super().closeEvent(event)
 
-
 class SettingsMigrator(QDialog):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
 
         self.pnc = ProjectNotesCommon()
         self.settings_pluginname = "Settings Migrator"
@@ -781,7 +788,8 @@ class SettingsMigrator(QDialog):
             QtCore.Qt.WindowType.Window |
             QtCore.Qt.WindowType.WindowCloseButtonHint
             )
- 
+        self.ui.setModal(True)
+        
         self.ui.pushButtonExport.clicked.connect(self.export_settings)
         self.ui.pushButtonImport.clicked.connect(self.import_settings)
         self.ui.pushButtonDelete.clicked.connect(self.delete_settings)
@@ -796,8 +804,6 @@ class SettingsMigrator(QDialog):
 
         if (x != '' and y != '' and w != '' and h != ''):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
-
-        self.show()
 
     def load_all_plugin_settings(self):
         self.listWidgetPlugins.clear()
@@ -818,8 +824,9 @@ class SettingsMigrator(QDialog):
         file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
         file_dialog.setNameFilter("JSON files (*.json)")
         file_dialog.setDefaultSuffix("json")
+        file_dialog.setModal(True)
 
-        if not file_dialog.exec():
+        if not file_dialog.show():
             return # User cancelled the dialog
 
         output_file = file_dialog.selectedFiles()[0]
@@ -861,8 +868,9 @@ class SettingsMigrator(QDialog):
         file_dialog = QFileDialog(self)
         file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
         file_dialog.setNameFilter("JSON files (*.json)")
+        file_dialog.setModal(True)
         
-        if not file_dialog.exec():
+        if not file_dialog.show():
             return # User cancelled the dialog
 
         input_file = file_dialog.selectedFiles()[0]
@@ -903,8 +911,9 @@ class SettingsMigrator(QDialog):
         msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         msg_box.setDefaultButton(QMessageBox.StandardButton.No)
         msg_box.setIcon(QMessageBox.Icon.Warning)
+        msg_box.setModal(True)
         
-        if msg_box.exec() != QMessageBox.StandardButton.Yes:        
+        if msg_box.show() != QMessageBox.StandardButton.Yes:        
             return # User cancelled
 
         selected_groups = [item.text() for item in self.listWidgetPlugins.selectedItems()]
@@ -946,31 +955,37 @@ class SettingsMigrator(QDialog):
         # Call the base class implementation
         super().closeEvent(event)
 
-
 def menuFileCollectorSettings(parameter):
-    settings_dialog = FileFinderSettings() 
+    ffs.show()
     return ""
 
 def menuEditorSettings(parameter):
-    settings_dialog = EditorSettings()
+    es.show()
     return ""
 
 def menuOutlookIntegrationSettings(parameter):
-    settings_dialog = OutlookIntegrationSettings()
+    ois.show()
     return ""
 
 def menuMyShortcutSettings(parameter):
-    settings_dialog = MyShortcutSettings()
+    mss.show()
     return ""
 
 def menuMeetingEmailTypesSettings(parameter):
-    settings_dialog = MeetingEmailTypesSettings()
+    mets.show()
     return ""
 
 def menuSettingsMigrator(parameter):
-    settings_dialog = SettingsMigrator()
+    sm.show()
     return ""
 
+pnc = ProjectNotesCommon()
+mets = MeetingEmailTypesSettings(pnc.get_main_window())
+sm = SettingsMigrator(pnc.get_main_window())
+mss = MyShortcutSettings(pnc.get_main_window())
+ois = OutlookIntegrationSettings(pnc.get_main_window())
+es = EditorSettings(pnc.get_main_window())
+ffs = FileFinderSettings(pnc.get_main_window())
 
 # Use code below for testing
 if __name__ == '__main__':

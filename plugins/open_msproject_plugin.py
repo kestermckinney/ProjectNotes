@@ -39,12 +39,25 @@ pluginmenus = []
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
-    pnc = ProjectNotesCommon()
+
+    class SelectProject(QDialog):
+        def __init__(self, parent: QMainWindow = None):
+            super().__init__(parent)
+            self.ui = uic.loadUi("plugins/forms/dialogDuplicateFilesFound.ui", self)
+            self.ui.buttonBox.accepted.connect(self.open_project)
+
+        def open_project(self):
+            selected_items = self.ui.m_listWidgetFiles.selectedItems()
+
+            # Check if there are any selected items
+            if selected_items:
+                # Get the text of the first selected item
+                openfile = selected_items[0].text()
+
+            if not openfile is None:
+                QDesktopServices.openUrl(QUrl("file:///" + openfile))
 
     def menuOpenMSProject(xmlstr, parameter):
-
-        ui = uic.loadUi("plugins/forms/dialogDuplicateFilesFound.ui")
-        
         openfile = None
         filelist = []
         xmlval = QDomDocument()
@@ -70,31 +83,23 @@ if (platform.system() == 'Windows'):
 
                 locationrow = locationrow.nextSibling()
 
-        QtWidgets.QApplication.restoreOverrideCursor()
-        QtWidgets.QApplication.processEvents()
 
         if len(filelist) > 1:
-            ui.m_listWidgetFiles.addItems(filelist)
-            if ui.exec():
-                # Get the selected items
-                selected_items = ui.m_listWidgetFiles.selectedItems()
-
-                # Check if there are any selected items
-                if selected_items:
-                    # Get the text of the first selected item
-                    openfile = selected_items[0].text()
-            else:
-                openfile = None
-
-        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.CursorShape.WaitCursor)
-        QtWidgets.QApplication.processEvents()
-
-        if not openfile is None:
-            QDesktopServices.openUrl(QUrl("file:///" + openfile))
+            QtWidgets.QApplication.restoreOverrideCursor()
+            QtWidgets.QApplication.processEvents()
+            sp.ui.m_listWidgetFiles.clear()
+            sp.ui.m_listWidgetFiles.addItems(filelist)
+            sp.show()
+        else:
+            if len(filelist) == 1:
+                QDesktopServices.openUrl(QUrl("file:///" + filelist[0]))
 
         return ""
 
     pluginmenus.append({"menutitle" : "Open MS Project", "function" : "menuOpenMSProject", "tablefilter" : "projects/project_locations", "submenu" : "", "dataexport" : "projects"})
+
+    pnc = ProjectNotesCommon()
+    sp = SelectProject(pnc.get_main_window())
 
 # setup test data
 """

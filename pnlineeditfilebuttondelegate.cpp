@@ -68,3 +68,5 @@ void PNLineEditFileButtonDelegate::paint(QPainter *t_painter, const QStyleOption
     QStyledItemDelegate::paint(t_painter, myOption, t_index);
     t_painter->restore();
 }
+
+//TODO: fix this so it highlights correctly in version 6.10

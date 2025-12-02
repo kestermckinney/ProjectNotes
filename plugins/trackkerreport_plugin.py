@@ -37,25 +37,44 @@ pluginmenus = []
 #      item_tracker_updates
 #      item_tracker
 
-# this plugin is only supported on windows
-if (platform.system() == 'Windows'):
-    #
-    pnc = ProjectNotesCommon()
-    pne = ProjectNotesExcelTools()
 
-    def menuGenerateTrackerReport(xmlstr, parameter):
-        print("called event: " + __file__)
+class GenerateTrackerReport(QDialog):
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
 
-        
+        self.ui = uic.loadUi("plugins/forms/dialogTrackerRptOptions.ui", self)
+        self.ui.setWindowFlags(
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowCloseButtonHint
+            )
+
+        self.ui.m_checkBoxDisplayTracker.setChecked(False)
+        self.ui.m_checkBoxItemsTracker.setChecked(True)
+        self.ui.m_checkBoxNewTracker.setChecked(True)
+        self.ui.m_checkBoxAssignedTracker.setChecked(True)
+
+        self.ui.setModal(True)
+
+        self.ui.pushButtonOK.clicked.connect(self.generate_tracker)
+        self.ui.pushButtonCancel.clicked.connect(self.close_dialog)
+
+        self.xmlstr = None
+
+    def close_dialog(self):
+        self.hide()
+
+    def set_xml_doc(self, xmlval):
+        self.xmlstr = xmlval
+
+    def generate_tracker(self):
+        pne = ProjectNotesExcelTools()
+
         xmlval = QDomDocument()
-        if (xmlval.setContent(xmlstr) == False):
+        if (xmlval.setContent(self.xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
-            return ""
+            return
             
         emaillist = ""
-
-        # setup global variable
-        ProjectsFolder = pnc.get_plugin_setting("ProjectsFolder")
 
         executedate = QDate.currentDate()
         internalreport = False
@@ -66,32 +85,13 @@ if (platform.system() == 'Windows'):
         noemail = True
         isinternal = False
 
-        QtWidgets.QApplication.restoreOverrideCursor()
-        QtWidgets.QApplication.processEvents()   
+        internalreport = self.ui.m_checkBoxInternalRptTracker.isChecked()
+        keepexcel = self.ui.m_checkBoxExcelRptTracker.isChecked()
 
-        ui = uic.loadUi("plugins/forms/dialogTrackerRptOptions.ui")
-        ui.setWindowFlags(
-            QtCore.Qt.WindowType.Window |
-            QtCore.Qt.WindowType.WindowCloseButtonHint
-            )
-
-        ui.m_checkBoxDisplayTracker.setChecked(False)
-        ui.m_checkBoxItemsTracker.setChecked(True)
-        ui.m_checkBoxNewTracker.setChecked(True)
-        ui.m_checkBoxAssignedTracker.setChecked(True)
-
-        if ui.exec():
-            internalreport = ui.m_checkBoxInternalRptTracker.isChecked()
-            keepexcel = ui.m_checkBoxExcelRptTracker.isChecked()
-
-            emailashtml = ui.m_radioBoxEmailAsHTML.isChecked()
-            emailaspdf = ui.m_radioBoxEmailAsPDF.isChecked()
-            emailasexcel = ui.m_radioBoxEmailAsExcel.isChecked()
-            noemail = ui.m_radioBoxDoNotEmail.isChecked()
-        else:
-            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
-            QtWidgets.QApplication.processEvents()
-            return ""
+        emailashtml = self.ui.m_radioBoxEmailAsHTML.isChecked()
+        emailaspdf = self.ui.m_radioBoxEmailAsPDF.isChecked()
+        emailasexcel = self.ui.m_radioBoxEmailAsExcel.isChecked()
+        noemail = self.ui.m_radioBoxDoNotEmail.isChecked()
 
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
         pm = xmlroot.toElement().attribute("managing_manager_name")
@@ -104,9 +104,8 @@ if (platform.system() == 'Windows'):
 
         if not check_row or not check_tag:
             QMessageBox.warning(None, "No Records", "No tracker or action items are available.", QMessageBox.StandardButton.Ok)
-            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
-            QtWidgets.QApplication.processEvents()
-            return ""
+            self.ui.hide()
+            return
 
         projtab = pnc.find_node(xmlroot, "table", "name", "projects")
         projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
@@ -123,13 +122,12 @@ if (platform.system() == 'Windows'):
             projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
-                QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
-                QtWidgets.QApplication.processEvents()
-                return ""
+                self.ui.hide()
+                return
         else:
-            projectfolder = projectfolder + "\\Issues List\\"
+            projectfolder = projectfolder + "/Project Management/Issues List/"
 
-        progbar = QProgressDialog()
+        progbar = QProgressDialog(self.ui)
         progbar.setWindowTitle("Generating Report...")
         progbar.setWindowFlags(
             QtCore.Qt.WindowType.Window |
@@ -141,7 +139,6 @@ if (platform.system() == 'Windows'):
         progbar.show()
         progval = 0
         progtot = 7
-
 
         progval = progval + 1
         progbar.setValue(int(min(progval / progtot * 100, 100)))
@@ -175,21 +172,19 @@ if (platform.system() == 'Windows'):
         excelreportname = ""
         pdfreportname = ""
 
-        if ui.m_checkBoxInternalRptTracker.isChecked():
+        if self.ui.m_checkBoxInternalRptTracker.isChecked():
             excelreportname = projectfolder + projnum + " Tracker Report Internal.xlsx"
             pdfreportname = projectfolder + projnum + " Tracker Report Internal.pdf"
         else:
             excelreportname = projectfolder + projnum + " Tracker Report.xlsx"
             pdfreportname = projectfolder + projnum + " Tracker Report.pdf"
 
-        templatefile ="plugins\\templates\\Tracker Items Template.xlsx"
+        templatefile ="plugins/templates/Tracker Items Template.xlsx"
         QFile.remove(excelreportname)
         if not QFile.copy(templatefile, excelreportname):
             QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + excelreportname, QMessageBox.StandardButton.Cancel)
-            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
-            QtWidgets.QApplication.processEvents()
-            return ""
-
+            progbar.close()
+            return
 
         handle = pne.open_excel_document(excelreportname)
         sheet = handle['workbook'].Sheets("Item Tracker")
@@ -214,29 +209,29 @@ if (platform.system() == 'Windows'):
                 status = pnc.get_column_value(repitemrow, "status")
 
                 # determine internal inclusion
-                if isinternal == "1" and ui.m_checkBoxInternalRptTracker.isChecked():
+                if isinternal == "1" and self.ui.m_checkBoxInternalRptTracker.isChecked():
                     includeiteminternal = True
                 elif isinternal == "0" or isinternal == "":
                     includeiteminternal = True
 
                 # determine item type to include
-                if itemtype == "Tracker" and ui.m_checkBoxItemsTracker.isChecked():
+                if itemtype == "Tracker" and self.ui.m_checkBoxItemsTracker.isChecked():
                     includeitemtype = True
 
-                if itemtype == "Action" and ui.m_checkBoxActionTracker.isChecked():
+                if itemtype == "Action" and self.ui.m_checkBoxActionTracker.isChecked():
                     includeitemtype = True
 
                 # determine if it is an included status
-                if status == "New" and ui.m_checkBoxNewTracker.isChecked():
+                if status == "New" and self.ui.m_checkBoxNewTracker.isChecked():
                     includeitemstatus = True
 
-                if status == "Assigned" and ui.m_checkBoxAssignedTracker.isChecked():
+                if status == "Assigned" and self.ui.m_checkBoxAssignedTracker.isChecked():
                     includeitemstatus = True
 
-                if status == "Defered" and ui.m_checkBoxDeferedTracker.isChecked():
+                if status == "Defered" and self.ui.m_checkBoxDeferedTracker.isChecked():
                     includeitemstatus = True
 
-                if status == "Resolved" and ui.m_checkBoxResolvedTracker.isChecked():
+                if status == "Resolved" and self.ui.m_checkBoxResolvedTracker.isChecked():
                     includeitemstatus = True
 
                 if status == "Cancelled" and ui.m_checkBoxCancelledTracker.isChecked():
@@ -248,7 +243,7 @@ if (platform.system() == 'Windows'):
                 repitemrow = repitemrow.nextSibling()
 
         #don't show the internal column on customer version
-        if ui.m_checkBoxInternalRptTracker.isChecked() == False:
+        if self.ui.m_checkBoxInternalRptTracker.isChecked() == False:
             intcol = pne.find_cell_tag(sheet, "<INTERNAL_ITEM>")
             if intcol:
                 intcol.EntireColumn.Delete()
@@ -271,32 +266,32 @@ if (platform.system() == 'Windows'):
             status = pnc.get_column_value(repitemrow, "status")
 
             # determine internal inclusion
-            if isinternal == "1" and ui.m_checkBoxInternalRptTracker.isChecked():
+            if isinternal == "1" and self.ui.m_checkBoxInternalRptTracker.isChecked():
                 includeiteminternal = True
             elif isinternal == "0" or isinternal == "":
                 includeiteminternal = True
 
             # determine item type to include
-            if itemtype == "Tracker" and ui.m_checkBoxItemsTracker.isChecked():
+            if itemtype == "Tracker" and self.ui.m_checkBoxItemsTracker.isChecked():
                 includeitemtype = True
 
-            if itemtype == "Action" and ui.m_checkBoxActionTracker.isChecked():
+            if itemtype == "Action" and self.ui.m_checkBoxActionTracker.isChecked():
                 includeitemtype = True
 
             # determine if it is an included status
-            if status == "New" and ui.m_checkBoxNewTracker.isChecked():
+            if status == "New" and self.ui.m_checkBoxNewTracker.isChecked():
                 includeitemstatus = True
 
-            if status == "Assigned" and ui.m_checkBoxAssignedTracker.isChecked():
+            if status == "Assigned" and self.ui.m_checkBoxAssignedTracker.isChecked():
                 includeitemstatus = True
 
-            if status == "Defered" and ui.m_checkBoxDeferedTracker.isChecked():
+            if status == "Defered" and self.ui.m_checkBoxDeferedTracker.isChecked():
                 includeitemstatus = True
 
-            if status == "Resolved" and ui.m_checkBoxResolvedTracker.isChecked():
+            if status == "Resolved" and self.ui.m_checkBoxResolvedTracker.isChecked():
                 includeitemstatus = True
 
-            if status == "Cancelled" and ui.m_checkBoxCancelledTracker.isChecked():
+            if status == "Cancelled" and self.ui.m_checkBoxCancelledTracker.isChecked():
                 includeitemstatus = True
 
             if includeiteminternal and includeitemtype and includeitemstatus:
@@ -375,10 +370,15 @@ if (platform.system() == 'Windows'):
 
         progval = progval + 1
         progbar.setValue(int(min(progval / progtot * 100, 100)))
-        progbar.setLabelText("Finalizing Excel files +.")
+        progbar.setLabelText("Finalizing Excel files...")
 
         # generate PDFs
         pne.save_excel_as_pdf(handle, sheet, pdfreportname)
+
+        ## testing why does window close
+        progbar.close()
+        self.ui.hide()
+        return
 
         # should we email?
         if noemail == False:
@@ -393,37 +393,56 @@ if (platform.system() == 'Windows'):
 
             pne.close_excel_document(handle)
 
-        if ui.m_checkBoxDisplayTracker.isChecked():
+        progbar.setValue(100)
+
+        if self.ui.m_checkBoxDisplayTracker.isChecked():
             QDesktopServices.openUrl(QUrl("file:///" + pdfreportname))
 
-        progbar.setValue(100)
-        progbar.setLabelText("Finalizing Excel files...")
-        progbar.hide()
-        progbar.close()
         progbar = None # must be destroyed
 
         if keepexcel == False:
             QFile.remove(excelreportname)
 
-        QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
-        QtWidgets.QApplication.processEvents()
+        self.ui.hide()
 
-        return ""
+# keep the instance of windows open to avoid sending the main app a close message
+pnc = None
+gtr = None
 
-pluginmenus.append({"menutitle" : "Generate Tracker Report", "function" : "menuGenerateTrackerReport", "tablefilter" : "projects/item_tracker/item_tracker_updates/project_locations/project_people", "submenu" : "", "dataexport" : "projects"})
+#setup test data
+if __name__ == '__main__':
+    import os
+    import sys
+    os.chdir("..")
 
-        
-# setup test data
-"""
-print("Buld up QDomDocument")
-#
+    app = QApplication(sys.argv)
+    pnc = ProjectNotesCommon()
+    gtr = GenerateTrackerReport()
 
-xmldoc = QDomDocument("TestDocument")
-f = QFile("exampleproject.xml")
+    xml_content = ""
+    with open("C:\\Users\\pamcki\\OneDrive - Cornerstone Controls\\Documents\\Work In Progress\\XML\\project.xml", 'r', encoding='utf-8') as file:
+        xml_content = file.read()
+    gtr.set_xml_doc(xml_content)
+    gtr.show()
 
-if f.open(QIODevice.OpenModeFlag.ReadOnly):
-    print("example project opened")
-xmldoc.setContent(f)
-f.close()
-main_process(xmldoc)
-"""
+    app.exec()
+else:
+    pnc = ProjectNotesCommon()
+    gtr = GenerateTrackerReport(pnc.get_main_window())
+
+
+def menuGenerateTrackerReport(xmlstr, parameter):        
+    gtr.set_xml_doc(xmlstr)
+
+    QtWidgets.QApplication.restoreOverrideCursor()
+    QtWidgets.QApplication.processEvents()   
+
+    #TODO: maybe we don't want to have project notes set the cursor before going into the plugin
+
+    gtr.show()
+
+    return ""
+
+# this plugin is only supported on windows
+if (platform.system() == 'Windows'):
+    pluginmenus.append({"menutitle" : "Generate Tracker Report", "function" : "menuGenerateTrackerReport", "tablefilter" : "projects/item_tracker/item_tracker_updates/project_locations/project_people", "submenu" : "", "dataexport" : "projects"})
