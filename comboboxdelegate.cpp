@@ -45,30 +45,3 @@ void ComboBoxDelegate::updateEditorGeometry(QWidget *t_editor, const QStyleOptio
 {
     t_editor->setGeometry(t_option.rect);
 }
-
-void ComboBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const
-{
-    QStyleOptionViewItem myOption = t_option;
-    myOption.rect = t_option.rect;
-
-    QVariant bgcolor = t_index.model()->data(t_index, Qt::BackgroundRole);
-    QVariant fgcolor = t_index.model()->data(t_index, Qt::ForegroundRole);
-
-    t_painter->save();
-    if (fgcolor.isValid())
-    {
-        myOption.palette.setColor(QPalette::Text, fgcolor.value<QColor>());
-        t_painter->setPen(fgcolor.value<QColor>());
-    }
-
-    if (bgcolor.isValid())
-        myOption.palette.setColor(QPalette::Base, bgcolor.value<QColor>());
-
-    if (t_option.state & QStyle::State_Selected)
-    {
-        t_painter->fillRect(t_option.rect, t_option.palette.highlight());
-    }
-    QStyledItemDelegate::paint(t_painter, myOption, t_index);
-
-    t_painter->restore();
-}

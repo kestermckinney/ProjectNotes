@@ -54,30 +54,11 @@ void PNDateEditDelegate::updateEditorGeometry(QWidget *t_editor, const QStyleOpt
 
 void PNDateEditDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const
 {
-    QStyleOptionViewItem dateOption = t_option;
-    dateOption.rect = t_option.rect;
-    dateOption.state = t_option.state | QStyle::State_Enabled;
-
-    QVariant bgcolor = t_index.model()->data(t_index, Qt::BackgroundRole);
-    QVariant fgcolor = t_index.model()->data(t_index, Qt::ForegroundRole);
-
     t_painter->save();
 
-    if (fgcolor.isValid())
-    {
-        dateOption.palette.setColor(QPalette::BrightText, fgcolor.value<QColor>());
-        t_painter->setPen(fgcolor.value<QColor>());
-    }
+    t_painter->fillRect(t_option.rect, t_option.palette.base().color());
 
-    if (bgcolor.isValid())
-        dateOption.palette.setColor(QPalette::Base, bgcolor.value<QColor>());
-
-    if (t_option.state & QStyle::State_Selected)
-    {
-        t_painter->fillRect(t_option.rect, t_option.palette.highlight());
-    }
-
-    QStyledItemDelegate::paint(t_painter, dateOption, t_index);
+    QStyledItemDelegate::paint(t_painter, t_option, t_index);
 
     t_painter->restore();
 }

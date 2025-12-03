@@ -96,7 +96,7 @@ void PNBasePage::saveState()
     // Write the output to a QString.
     QString xml = doc.toString();
 
-    QLog_Info(APPLOG, QString("SAVING STATE: %1").arg(xml));
+    // QLog_Info(APPLOG, QString("SAVING STATE: %1").arg(xml));
 
 
     QString parmname = QString("PageState:%1:%2").arg(objectName(), m_record_id.toString());
@@ -112,7 +112,7 @@ void PNBasePage::loadState()
 
     QString xml = global_DBObjects.loadParameter(parmname);
 
-    QLog_Info(APPLOG, QString("LOADING STATE: %1").arg(xml));
+    // QLog_Info(APPLOG, QString("LOADING STATE: %1").arg(xml));
 
     if (xml.isEmpty())
         return;

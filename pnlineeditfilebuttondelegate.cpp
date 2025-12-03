@@ -43,30 +43,3 @@ void PNLineEditFileButtonDelegate::updateEditorGeometry(QWidget *t_editor, const
 {
     t_editor->setGeometry(t_option.rect);
 }
-
-void PNLineEditFileButtonDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const
-{
-    QStyleOptionViewItem myOption = t_option;
-    QVariant bgcolor = t_index.model()->data(t_index, Qt::BackgroundRole);
-    QVariant fgcolor = t_index.model()->data(t_index, Qt::ForegroundRole);
-
-    t_painter->save();
-    if (fgcolor.isValid())
-    {
-        myOption.palette.setColor(QPalette::Text, fgcolor.value<QColor>());
-        t_painter->setPen(fgcolor.value<QColor>());
-    }
-
-    if (bgcolor.isValid())
-        myOption.backgroundBrush = QBrush(bgcolor.value<QColor>());
-
-    if (t_option.state & QStyle::State_Selected)
-    {
-        t_painter->fillRect(t_option.rect, t_option.palette.highlight());
-    }
-
-    QStyledItemDelegate::paint(t_painter, myOption, t_index);
-    t_painter->restore();
-}
-
-//TODO: fix this so it highlights correctly in version 6.10

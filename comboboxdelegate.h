@@ -19,7 +19,6 @@ public:
     void setEditorData(QWidget *t_editor, const QModelIndex &t_index) const override;
     void setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const override;
     void updateEditorGeometry(QWidget *t_editor, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const override;
-    void paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const override;
 
 private:
     QStringListModel* m_model;

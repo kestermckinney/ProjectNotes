@@ -25,7 +25,7 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(PNDatabaseObjects* t_dbo): PNSq
     addColumn("people_id", tr("Name"), DBString, DBNotSearchable, DBNotRequired, DBEditable, DBNotUnique,
             "people", "people_id", "name");
     addColumn("name", tr("Name"), DBString, DBSearchable, DBNotRequired, DBReadOnly);
-    addColumn("recieve_status_report", tr("Receive Status"), DBBool, DBSearchable, DBNotRequired, DBEditable);
+    addColumn("receive_status_report", tr("Receive Status"), DBBool, DBSearchable, DBNotRequired, DBEditable);
     addColumn("role", tr("Role"), DBString, DBSearchable, DBNotRequired, DBEditable);
     addColumn("email", tr("Email"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
     addColumn("project_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);

@@ -218,7 +218,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 if ((m_column_is_editable[i] == DBEditable) || i == 0)
                 {
                     insert.bindValue(bindcount, m_cache[t_index.row()][i]);
-//                    qDebug() << "Binding Value " << value << " for " << m_cache[t_index.row()].field(i).name() << " non-escaped val: " << m_cache[t_index.row()].field(i).value();
+                    // qDebug() << "Binding Value " << m_cache[t_index.row()][i] << " for " <<  this->getColumnName(i);
                     bindcount++;
                 }
 
@@ -228,7 +228,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                     // don't insert the record until the required fields are filled in
                     // make the record a new record again
                     m_cache[t_index.row()][0] = QVariant();
-//                    qDebug() << "Can't save row column " << i << " is null see -> "  << m_cache[t_index.row()].field(i).value();
+                    // qDebug() << "Can't save row column " << i << " is null see -> "  << m_cache[t_index.row()].field(i).value();
                     return false;
                 }
             }

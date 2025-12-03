@@ -17,6 +17,15 @@ int main(int argc, char *argv[])
     // Set the attribute before creating QApplication this was needed for QWebView would work
     QCoreApplication::setAttribute(Qt::ApplicationAttribute::AA_ShareOpenGLContexts);
 
+#if defined(Q_OS_WIN)
+    QString processPath = QCoreApplication::applicationDirPath() + "/QtWebEngineProcess.exe";   // adjust if you moved it
+
+    if (QFile(processPath).exists())
+    {
+        qputenv("QTWEBENGINE_PROCESS_PATH", processPath.toUtf8());
+    }
+#endif
+
     QApplication a(argc, argv);
 
     qRegisterMetaType<PythonPlugin>();

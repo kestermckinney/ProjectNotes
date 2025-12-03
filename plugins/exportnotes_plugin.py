@@ -1185,8 +1185,9 @@ def generateFooter(reportdate):
 class MeetingsExporter(QDialog):
     def __init__(self, parent: QMainWindow = None):
         super().__init__(parent)
+
+
         self.ui = uic.loadUi("plugins/forms/dialogExportNotesOptions.ui", self)
-        self.ui.m_datePickerRptDateNotes.setDate(self.executedate)
         self.ui.m_datePickerRptDateNotes.setCalendarPopup(True)
         self.ui.setWindowFlags(
             QtCore.Qt.WindowType.Window |
@@ -1194,6 +1195,8 @@ class MeetingsExporter(QDialog):
             QtCore.Qt.WindowType.WindowStaysOnTopHint
             )
         self.ui.setModal(True)
+
+        self.set_execute_date(QDate.currentDate())
 
         #self.ui.buttonBox.accepted.connect(self.export_notes)
         self.ui.pushButtonOK.clicked.connect(self.export_notes)
@@ -1216,6 +1219,10 @@ class MeetingsExporter(QDialog):
         self.web_view = QWebEngineView(self.ui)
         self.web_view.loadFinished.connect(self.on_load_finished)
         self.ui.verticalLayout_2.layout().addWidget(self.web_view)
+
+    def set_execute_date(self, edate):
+        self.executedate = edate
+        self.ui.m_datePickerRptDateNotes.setDate(self.executedate)
 
     def close_dialog(self):
         self.hide()
@@ -1281,8 +1288,6 @@ class MeetingsExporter(QDialog):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
             return ""
 
-        self.executedate = QDate.currentDate()
-
         self.project_htmlreportname = ""
         self.project_pdfreportname = ""
         self.htmlreportname = ""
@@ -1322,9 +1327,10 @@ class MeetingsExporter(QDialog):
             if projectfolder == "" or projectfolder is None:
                 return ""
         else:
-            projectfolder = projectfolder + "/Meeting Minutes/"
+            # this specific folder path may need to be configurable
+            projectfolder = projectfolder + "/Project Management/Meeting Minutes"
 
-        projectfolder = projectfolder + "/"
+        projectfolder += "/"
 
         self.progbar = QProgressDialog(self)
         self.progbar.setWindowTitle("Exporting...")
@@ -1522,6 +1528,8 @@ def menuExportMeetingNotes(xmlstr, parameter):
 
     QtWidgets.QApplication.restoreOverrideCursor()
     QtWidgets.QApplication.processEvents()   
+
+    mex.set_execute_date(QDate.currentDate())
 
     mex.show()
 

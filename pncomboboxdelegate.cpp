@@ -84,22 +84,5 @@ void PNComboBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
 
     myOption.text = m_model->findValue(lookupvalue, m_data_column, m_display_column).toString();
 
-    QVariant bgcolor = t_index.model()->data(t_index, Qt::BackgroundRole);
-    QVariant fgcolor = t_index.model()->data(t_index, Qt::ForegroundRole);
-
-    t_painter->save();
-    if (fgcolor.isValid())
-    {
-        myOption.palette.setColor(QPalette::Text, fgcolor.value<QColor>());
-        t_painter->setPen(fgcolor.value<QColor>());
-    }
-
-    if (bgcolor.isValid())
-    {
-        myOption.palette.setColor(QPalette::Base, bgcolor.value<QColor>());
-        myOption.palette.setColor(QPalette::AlternateBase, bgcolor.value<QColor>());
-    }
-
     QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
-    t_painter->restore();
 }

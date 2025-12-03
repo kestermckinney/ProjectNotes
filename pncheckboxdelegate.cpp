@@ -80,9 +80,34 @@ void PNCheckBoxDelegate::updateEditorGeometry(QWidget *t_editor, const QStyleOpt
 
 void PNCheckBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &t_option, const QModelIndex &t_index) const
 {
+    QStyleOptionViewItem myOption = t_option;
+    myOption.text = " ";
+
+    QVariant bgcolor = t_index.model()->data(t_index, Qt::BackgroundRole);
+    QVariant fgcolor = t_index.model()->data(t_index, Qt::ForegroundRole);
+
+    t_painter->save();
+    if (fgcolor.isValid())
+    {
+        myOption.palette.setColor(QPalette::Text, fgcolor.value<QColor>());
+        t_painter->setPen(fgcolor.value<QColor>());
+    }
+
+    if (bgcolor.isValid())
+    {
+        myOption.palette.setColor(QPalette::Base, bgcolor.value<QColor>());
+        myOption.palette.setColor(QPalette::AlternateBase, bgcolor.value<QColor>());
+    }
+
+    // you have to draw this to get the highlighting to work correctly
+    QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
+
     // Draw our checkbox indicator
     bool value = t_index.data(Qt::EditRole).toBool();
     QStyleOptionButton checkbox_indicator;
+
+    checkbox_indicator.state |= t_option.state;
+    checkbox_indicator.palette = t_option.palette;
 
     // Set our button state to enabled
     checkbox_indicator.state |= QStyle::State_Enabled;
@@ -92,16 +117,10 @@ void PNCheckBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
     checkbox_indicator.rect = QApplication::style()->subElementRect( QStyle::SE_CheckBoxIndicator, &checkbox_indicator, NULL );
 
     // Position our indicator
-
     const int x = t_option.rect.center().x() - checkbox_indicator.rect.width() / 2;
     const int y = t_option.rect.center().y() - checkbox_indicator.rect.height() / 2;
 
     checkbox_indicator.rect.moveTo( x, y );
-
-    if (t_option.state & QStyle::State_Selected)
-    {
-        t_painter->fillRect(t_option.rect, t_option.palette.highlight());
-    }
 
     QApplication::style()->drawControl( QStyle::CE_CheckBox, &checkbox_indicator, t_painter );
 }
