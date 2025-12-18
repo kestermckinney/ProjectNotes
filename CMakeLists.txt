@@ -74,10 +74,20 @@ set(PROJECT_SOURCES
     Resources.qrc
 )
 
+if(WIN32)
+    set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/appicon.rc")
+elseif(APPLE)
+    set(MACOSX_BUNDLE_ICON_FILE AppIcon.icns)
+    target_sources(ProjectNotes PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/AppIcon.icns")
+    set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/AppIcon.icns" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    set_target_properties(ProjectNotes PROPERTIES MACOSX_BUNDLE TRUE)
+endif()
+
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(ProjectNotes
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        ${APP_ICON_RESOURCE_WINDOWS}
         actionitemprojectnotesmodel.cpp actionitemsdetailsmeetingsmodel.h actionitemsdetailsmeetingsmodel.cpp actionitemprojectnotesmodel.h clientslistview.cpp clientslistview.h clientsmodel.cpp clientsmodel.h clientspage.cpp clientspage.h columnview.cpp columnview.h comboboxdelegate.cpp comboboxdelegate.h databasestructure.cpp databasestructure.h filterdatadialog.cpp filterdatadialog.h filterdatadialog.ui FilterSaveStructure.h importexport.cpp importexport.h itemdetailsdelegate.cpp itemdetailsdelegate.h itemdetailspage.cpp itemdetailspage.h itemdetailteamlistmodel.cpp itemdetailteamlistmodel.h meetingattendeesmodel.cpp meetingattendeesmodel.h meetingattendeesview.cpp meetingattendeesview.h notesactionitemsmodel.cpp notesactionitemsmodel.h notesactionitemsview.cpp notesactionitemsview.h peoplelistview.cpp peoplelistview.h peoplemodel.cpp peoplemodel.h peoplepage.cpp peoplepage.h pnbasepage.cpp pnbasepage.h pncheckboxdelegate.cpp pncheckboxdelegate.h pncolumnmodel.cpp pncolumnmodel.h pncombobox.cpp pncombobox.h pncomboboxdelegate.cpp pncomboboxdelegate.h pndatabaseobjects.cpp pndatabaseobjects.h pndateeditdelegate.cpp pndateeditdelegate.h pndateeditex.cpp pndateeditex.h pninlinespellchecker.cpp pninlinespellchecker.h pnlineeditfilebutton.cpp pnlineeditfilebutton.h pnlineeditfilebuttondelegate.cpp pnlineeditfilebuttondelegate.h pnplaintexteditdelegate.h pnplaintextedit.h pnplaintexteditdelegate.cpp pnplaintextedit.cpp
         pnsettings.cpp pnsettings.h pnsortfilterproxymodel.cpp pnsortfilterproxymodel.h pnspellchecker.cpp pnspellchecker.h pnsqlquerymodel.cpp pnsqlquerymodel.h pntableview.cpp pntableview.h pntextedit.cpp pntextedit.h pntexteditdelegate.cpp pntexteditdelegate.h projectdetailsdelegate.cpp projectdetailsdelegate.h projectdetailspage.cpp projectdetailspage.h projectlocationsmodel.cpp projectlocationsmodel.h projectlocationsview.cpp projectlocationsview.h projectnotesdelegate.cpp projectnotesdelegate.h projectnotesmodel.cpp projectnotesmodel.h projectnotespage.cpp projectnotespage.h projectnotesview.cpp projectnotesview.h projectsmodel.h projectsmodel.cpp projectslistview.h projectslistview.cpp projectslistpage.h projectslistpage.cpp projectslistmodel.h projectslistmodel.cpp projectteammembersmodel.cpp projectteammembersmodel.h projectteammembersview.cpp projectteammembersview.h runguard.cpp runguard.h searchpage.cpp searchpage.h searchresultsmodel.cpp searchresultsmodel.h searchresultsview.cpp searchresultsview.h statusreportitemsmodel.cpp statusreportitemsmodel.h statusreportitemsview.cpp statusreportitemsview.h teamsmodel.cpp teamsmodel.h trackeritemcommentsmodel.cpp trackeritemcommentsmodel.h trackeritemcommentsview.cpp trackeritemcommentsview.h trackeritemsmodel.cpp trackeritemsmodel.h trackeritemsview.cpp trackeritemsview.h valueselectmodel.cpp valuesview.h valuesview.cpp valueselectmodel.h
         pncombobox.cpp pncombobox.h

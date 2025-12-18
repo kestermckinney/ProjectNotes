@@ -8,7 +8,7 @@ REM use !include "remove_files.nsh"
 
 Set objInstFileToWrite = CreateObject("Scripting.FileSystemObject").OpenTextFile("install_files.nsh",2,true)
 Set objDelFileToWrite = CreateObject("Scripting.FileSystemObject").OpenTextFile("remove_files.nsh",2,true)
-name_exclusions = ";__pycache__;_yaml;mkdocs-1.6.1.dist-info;mkdocs_material-9.6.16.dist-info;mkdocs_material_extensions-1.3.1.dist-info;mkdocs_get_deps-0.2.0.dist-info;mkdocs_get_deps;mkdocs;pywin32_system32;bin;PyYAML-6.0.2.dist-info;six-1.17.0.dist-info;yaml"
+name_exclusions = ";__pycache__;_yaml;mkdocs-1.6.1.dist-info;mkdocs_material-9.6.16.dist-info;mkdocs_material_extensions-1.3.1.dist-info;mkdocs_get_deps-0.2.0.dist-info;mkdocs_get_deps;mkdocs;PyYAML-6.0.2.dist-info;six-1.17.0.dist-info;yaml"
 
 Set oFSO = CreateObject("Scripting.FileSystemObject")
 
@@ -19,8 +19,12 @@ BuildInstall "$INSTDIR\site-packages", "C:\program files\python313\lib\site-pack
 BuildInstall "$INSTDIR", "C:\Users\paulmckinney\Documents\python-3.13.2-embed-amd64", ""
 
 REM some pyton dlls need to be in base install folder
-BuildInstall "$INSTDIR", "C:\program files\python313\lib\site-packages\pywin32_system32", ""
-BuildInstall "$INSTDIR", "C:\program files\python313\lib\site-packages\PyQt6\Qt6\bin", ""
+REM Should remove.. we don't want items we dont' need in the install folder
+REM BuildInstall "$INSTDIR", "C:\program files\python313\lib\site-packages\pywin32_system32", ""
+REM BuildInstall "$INSTDIR", "C:\program files\python313\lib\site-packages\PyQt6\Qt6\bin", ""
+
+REM BuildInstall "$INSTDIR\resources","C:\Qt\6.10.0\msvc2022_64\resources", ""
+REM BuildInstall "$INSTDIR\qtwebengine_locales","C:\Qt\6.10.0\msvc2022_64\translations\qtwebengine_locales", ""
 
 objDelFileToWrite.Write(cleanfolders)
 

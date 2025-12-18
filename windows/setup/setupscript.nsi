@@ -77,8 +77,20 @@ Section "MainSection" SEC01
   CreateShortCut  "$DESKTOP\Project Notes 4 Beta.lnk" "$INSTDIR\ProjectNotes.exe"
 
   ; Project Notes Needed Libraries
-  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\ProjectNotes.exe"
   File "..\..\..\hunspell\msvc\x64\Release_dll\libhunspell.dll"
+
+  ; Core Qt libraries
+  File "C:\Qt\6.10.0\msvc2022_64\bin\Qt6Core.dll"
+  File "C:\Qt\6.10.0\msvc2022_64\bin\Qt6Gui.dll"
+  File "C:\Qt\6.10.0\msvc2022_64\bin\Qt6Sql.dll"
+  File "C:\Qt\6.10.0\msvc2022_64\bin\Qt6Widgets.dll"
+  File "C:\Qt\6.10.0\msvc2022_64\bin\Qt6Xml.dll"
+
+  ; C Runtime
+  File "C:\Windows\System32\msvcp_win.dll"
+  File "C:\Windows\System32\msvcp140.dll"
+  File "C:\Windows\System32\msvcp140_1.dll"
+  File "C:\Windows\System32\msvcp140_2.dll"
 
   ; include files that were built
   !include "install_files.nsh"
@@ -98,7 +110,6 @@ Section "MainSection" SEC01
   File "..\..\plugins\newpowerpoint_plugin.py"
   File "..\..\plugins\newriskregister_plugin.py"
   File "..\..\plugins\open_msproject_plugin.py"
-  File "..\..\plugins\sendmeetingnotes_plugin.py"
   File "..\..\plugins\trackkerreport_plugin.py"
   File "..\..\plugins\wordkill_plugin.py"
 
@@ -187,13 +198,6 @@ FunctionEnd
 
 Section Uninstall
   ; SetShellVarContext all ; only use when RequestExecutionLevel admin
-
-  ; not needed anymore EnVar::DeleteValue "Path" "$INSTDIR"
-
-  Delete "$INSTDIR\docs\.Project Notes 4 Beta\*.*"
-  RMDir "$INSTDIR\docs\.Project Notes 4 Beta"
-  RMDir "$INSTDIR\docs\"
-
   !include "remove_files.nsh"
 
   ; remove base itms and dictionaris
@@ -221,21 +225,21 @@ Section Uninstall
   Delete "$INSTDIR\plugins\newpowerpoint_plugin.py"
   Delete "$INSTDIR\plugins\newriskregister_plugin.py"
   Delete "$INSTDIR\plugins\open_msproject_plugin.py"
-  Delete "$INSTDIR\plugins\sendmeetingnotes_plugin.py"
   Delete "$INSTDIR\plugins\trackkerreport_plugin.py"
   Delete "$INSTDIR\plugins\wordkill_plugin.py"
   
   
+  Delete "$INSTDIR\plugins\includes\collaboration_tools.py"
   Delete "$INSTDIR\plugins\includes\common.py"
   Delete "$INSTDIR\plugins\includes\excel_tools.py"
-  Delete "$INSTDIR\plugins\includes\word_tools.py"
   Delete "$INSTDIR\plugins\includes\graphapi_tools.py"
+  Delete "$INSTDIR\plugins\includes\ifs_tools.py"
   Delete "$INSTDIR\plugins\includes\noteformatter.py"
   Delete "$INSTDIR\plugins\includes\outlook_tools.py"
   Delete "$INSTDIR\plugins\includes\word_tools.py"
 
   Delete "$INSTDIR\plugins\forms\dialogClassification.ui"
-  Delete "$INSTDIR\lugins\forms\dialogDuplicateFilesFound.ui"
+  Delete "$INSTDIR\plugins\forms\dialogDuplicateFilesFound.ui"
   Delete "$INSTDIR\plugins\forms\dialogEditor.ui"
   Delete "$INSTDIR\plugins\forms\dialogExportNotesOptions.ui"
   Delete "$INSTDIR\plugins\forms\dialogFileFinder.ui"
@@ -244,10 +248,9 @@ Section Uninstall
   Delete "$INSTDIR\plugins\forms\dialogMeetingEmailTypes.ui"
   Delete "$INSTDIR\plugins\forms\dialogMyShortcuts.ui"
   Delete "$INSTDIR\plugins\forms\dialogOutlookIntegrationOptions.ui"
-  Delete "$INSTDIR\forms\dialogSettingsMigrator.ui"
-  Delete "$INSTDIR\forms\dialogStatusRptOptions.ui"
+  Delete "$INSTDIR\plugins\forms\dialogSettingsMigrator.ui"
+  Delete "$INSTDIR\plugins\forms\dialogStatusRptOptions.ui"
   Delete "$INSTDIR\plugins\forms\dialogTrackerRptOptions.ui"
-
 
   Delete "$INSTDIR\plugins\forms\__pycache__\*.*"
   RMDir "$INSTDIR\plugins\forms\__pycache__"
@@ -267,9 +270,30 @@ Section Uninstall
   RMDir "$INSTDIR\plugins\__pycache__"
   RMDIR "$INSTDIR\plugins"
 
+  Delete "$INSTDIR\threads\filefinder_thread.py"
+  Delete "$INSTDIR\threads\ifssync_thread.py"
+  Delete "$INSTDIR\threads\outlooksync_thread.py"
+
+  Delete "$INSTDIR\threads\__pycache__\*.*"
+  RMDir "$INSTDIR\threads\__pycache__"
+  RMDIR "$INSTDIR\threads"
+
   Delete "$INSTDIR\ProjectNotes.exe"
   Delete "$INSTDIR\libhunspell.dll"
 
+  ; Core Qt libraries
+  Delete "$INSTDIR\Qt6Core.dll"
+  Delete "$INSTDIR\Qt6Gui.dll"
+  Delete "$INSTDIR\Qt6Sql.dll"
+  Delete "$INSTDIR\Qt6Widgets.dll"
+  Delete "$INSTDIR\Qt6Xml.dll"
+  Delete "$INSTDIR\qt.conf"
+
+  ; C Runtime
+  Delete "$INSTDIR\msvcp_win.dll"
+  Delete "$INSTDIR\msvcp140.dll"
+  Delete "$INSTDIR\msvcp140_1.dll"
+  Delete "$INSTDIR\msvcp140_2.dll"
 
   Delete "$SMPROGRAMS\Project Notes 4 Beta\Uninstall.lnk"
   Delete "$SMPROGRAMS\Project Notes 4 Beta\Website.lnk"

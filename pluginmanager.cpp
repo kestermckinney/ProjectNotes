@@ -328,6 +328,10 @@ PluginManager::PluginManager(QObject *parent)
     QString win32lib = QString("sys.path.append(\"%1\")").arg(pythonpath + "/site-packages/win32/lib");
     QString pythonwin = QString("sys.path.append(\"%1\")").arg(pythonpath + "/site-packages/Pythonwin");
 
+#ifdef Q_OS_WIN
+    QString pythondlls = QString("os.add_dll_directory(\"%1\")").arg(pythonpath + "/site-packages/PyQt6/Qt6/bin");
+#endif
+
     PyStatus status;
     PyConfig config;
 
@@ -341,9 +345,19 @@ PluginManager::PluginManager(QObject *parent)
         return;
     }
 
+    if (QFile("python.exe").exists())
+    {
+        QLog_Info(CONSOLELOG,QString("Setting application Python instance to isolated."));
+        PyConfig_SetBytesString(&config, &config.home, "python");   // relative or absolute
+        config.isolated = 1;      // No user site packages, no system Python
+        config.use_environment = 0; // Prevent env vars like PATH, PYTHONPATH
+    }
+
     PyImport_AppendInittab("projectnotes", PyInit_embeddedconsole);
 
-    Py_Initialize();
+    //Py_Initialize();
+    Py_InitializeFromConfig(&config);
+    PyConfig_Clear(&config);
 
     PyImport_ImportModule("projectnotes");
 
@@ -373,6 +387,11 @@ PluginManager::PluginManager(QObject *parent)
     PyRun_SimpleString(win32path.toUtf8().constData());
     PyRun_SimpleString(win32lib.toUtf8().constData());
     PyRun_SimpleString(pythonwin.toUtf8().constData());
+
+#ifdef Q_OS_WIN
+    PyRun_SimpleString("import os");
+    PyRun_SimpleString(pythondlls.toUtf8().constData());
+#endif
 
     QLog_Info(CONSOLELOG, QString("Embedded Python Version %1").arg(Py_GetVersion()));
 
