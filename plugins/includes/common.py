@@ -1,6 +1,8 @@
 import os
 import sys
 import json
+import platform
+import subprocess
 
 from PyQt6 import QtCore
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QSettings
@@ -241,7 +243,12 @@ class ProjectNotesCommon:
         return(projectfolder)
 
     def exec_program(self, fullpath):
-        os.startfile( fullpath ) # i think this will work on Linux
+        #os.startfile( fullpath ) # i think this will work on Linux
+        
+        if platform.system() == 'Windows':
+            subprocess.Popen([fullpath], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        else:
+            subprocess.Popen([fullpath])
 
 
     def get_plugin_setting(self, settingname, pluginname = None):
