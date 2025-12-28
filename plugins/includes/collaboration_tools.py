@@ -218,10 +218,10 @@ class CollaborationTools:
                 return ""
 
             return ""
-
-        msg = "Sending email using Outlook is not supported on this operating system."
-        print(msg)
-        QMessageBox.critical(None, "Not Supported", msg,QMessageBox.StandardButton.Ok)
+        else:
+            msg = "Sending email using Outlook is not supported on this operating system."
+            print(msg)
+            QMessageBox.critical(None, "Not Supported", msg,QMessageBox.StandardButton.Ok)
 
         return ""
 
@@ -240,7 +240,7 @@ class CollaborationTools:
         addresses = self.list_builder(xmlroot, "meeting", invitees)
 
         meeting_subject = self.pnc.replace_variables(subject, xmlroot)
-        meeting_template_filled_in = self.pnc.replace_variables(content, xmlroot)
+        meeting_template_filled_in = self.pnc.strip_html_body(self.pnc.replace_variables(content, xmlroot))
 
         locations = self.pnc.find_node(xmlroot, "table", "name", "project_locations")
 
@@ -293,10 +293,10 @@ class CollaborationTools:
                 print(msg)
                 QMessageBox.critical(None, "Cannot Send Email", msg, QMessageBox.StandardButton.Ok)
                 return ""
-
-        msg = "Sending email using Outlook is not supported on this operating system."
-        print(msg)
-        QMessageBox.critical(None, "Not Supported", msg,QMessageBox.StandardButton.Ok)
+        else:
+            msg = "Sending email using Outlook is not supported on this operating system."
+            print(msg)
+            QMessageBox.critical(None, "Not Supported", msg,QMessageBox.StandardButton.Ok)
 
         return ""
 

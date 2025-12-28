@@ -11,6 +11,10 @@ from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDia
 from PyQt6.QtGui import QDesktopServices, QPageLayout, QPageSize
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 
+# try and get more logs
+os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--enable-logging=stderr --log-level=0"
+
+
 # Project Notes Plugin Parameters
 pluginname = "Export Meeting Notes"
 plugindescription = "Generate meeting notes to be exported.  Notes can be exported as HTML or a PDF."
@@ -1531,7 +1535,11 @@ def menuExportMeetingNotes(xmlstr, parameter):
 
     mex.set_execute_date(QDate.currentDate())
 
+    print("Calling web view show.")
+
     mex.show()
+
+    print("Finished calling web view show.")
 
     return ""
 

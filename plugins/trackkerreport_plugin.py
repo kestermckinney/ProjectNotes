@@ -182,6 +182,7 @@ class GenerateTrackerReport(QDialog):
         templatefile ="plugins/templates/Tracker Items Template.xlsx"
         QFile.remove(excelreportname)
         if not QFile.copy(templatefile, excelreportname):
+            print("Unable to copy template. Could not copy " + templatefile + " to " + excelreportname)
             QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + excelreportname, QMessageBox.StandardButton.Cancel)
             progbar.close()
             return
@@ -372,13 +373,14 @@ class GenerateTrackerReport(QDialog):
         progbar.setValue(int(min(progval / progtot * 100, 100)))
         progbar.setLabelText("Finalizing Excel files...")
 
+
         # generate PDFs
         pne.save_excel_as_pdf(handle, sheet, pdfreportname)
 
         ## testing why does window close
-        progbar.close()
-        self.ui.hide()
-        return
+        # progbar.close()
+        # self.ui.hide()
+        # return
 
         # should we email?
         if noemail == False:
@@ -446,3 +448,6 @@ def menuGenerateTrackerReport(xmlstr, parameter):
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
     pluginmenus.append({"menutitle" : "Generate Tracker Report", "function" : "menuGenerateTrackerReport", "tablefilter" : "projects/item_tracker/item_tracker_updates/project_locations/project_people", "submenu" : "", "dataexport" : "projects"})
+
+#TODO: Rework templating system to use the same tags as the email and meetings templates.
+#TODO: when creating files it assumes the CCI folder structure.  It needs to be customizable

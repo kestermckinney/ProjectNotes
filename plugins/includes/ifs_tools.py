@@ -406,6 +406,7 @@ class IFSCommon:
 
 
     def get_team_members_xml(self, rgroups, clientsdict, projectid, rd):
+        return #TODO: Fix IFS 25R1 broke it
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectResourcePlanningHandling.svc/ProjectSet(ProjectId=%27' + projectid + '%27)/ProjectAllocationArray?$apply=groupby((EmployeeName,ResourceId))'
         
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})

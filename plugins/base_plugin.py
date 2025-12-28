@@ -36,7 +36,6 @@ pluginmenus = [
     {"menutitle" : "Copy Path to Clipboard", "function" : "menuCopyPath", "tablefilter" : "project_locations", "submenu" : "", "dataexport" : "project_locations"}, 
     {"menutitle" : "Script Editor", "function" : "menuOpenEditor", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""},
     {"menutitle" : "Send Meeting Notes", "function" : "menuSendNotes", "tablefilter" : "", "submenu" : "", "dataexport" : "project_notes"},
-    #{"menutitle" : "My Shortcuts", "function" : "menuMyShortcutSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
 ]
 
 # events must have a data structure and data view specified
@@ -298,3 +297,7 @@ json_menu_data = None
 menu_data = pnc.get_plugin_setting("MeetingEmailTypes", "Meeting And Email Types")
 populate_dynamic_menu(menu_data)
 
+#TODO: Fix or rework tracker report export
+#TODO: Fix the status report integration with SSRS
+#TODO: Fix or change the template fillout features
+#TODO: Setup meetings to test
