@@ -1,6 +1,8 @@
 import os
 import sys
 import json
+import platform
+import subprocess
 
 from PyQt6 import QtCore
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QSettings
@@ -241,7 +243,12 @@ class ProjectNotesCommon:
         return(projectfolder)
 
     def exec_program(self, fullpath):
-        os.startfile( fullpath ) # i think this will work on Linux
+        #os.startfile( fullpath ) # i think this will work on Linux
+        
+        if platform.system() == 'Windows':
+            subprocess.Popen([fullpath], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        else:
+            subprocess.Popen([fullpath])
 
 
     def get_plugin_setting(self, settingname, pluginname = None):
@@ -384,60 +391,6 @@ class ProjectNotesCommon:
 
         return expanded_string
 
-    # make compatible
-    # def email_word_file_as_html(self, subject, recipients, attachment, wordfile):
-    #     if (platform.system() != 'Windows'):
-    #         print("email_word_file_as_html only supported on Windows")
-    #         return
-
-    #     if wordfile is not None:
-    #         word = win32com.client.Dispatch("Word.Application")
-    #         word.Visible = 0
-    #         doc = word.Documents.Open(wordfile)
-    #         doc.SpellingChecked = False
-    #         word.CheckLanguage = False
-    #         doc.GrammarChecked = False
-    #         word.AutoCorrect.CorrectCapsLock = False
-    #         word.AutoCorrect.CorrectDays = False
-    #         word.AutoCorrect.CorrectHangulAndAlphabet = False
-    #         word.AutoCorrect.CorrectInitialCaps = False
-    #         word.AutoCorrect.CorrectKeyboardSetting = False
-    #         word.AutoCorrect.CorrectSentenceCaps = False
-
-    #         doc.SaveAs(wordfile + ".html", 8)
-    #         word.Quit()
-    #         word = None
-
-    #         file = open(wordfile + ".html", "r")
-    #         html = file.read()
-    #         file.close()
-    #         QFile.remove(wordfile + ".html")
-    #         dir = QDir(wordfile + "_files")
-    #         dir.removeRecursively()
-
-    #     outlook = win32com.client.Dispatch("Outlook.Application")
-    #     message = outlook.CreateItem(0)
-    #     message.To = ""
-
-    #     outlook.ActiveExplorer().Activate()
-    #     message.Display()
-
-    #     message.To = recipients
-    #     DefaultSignature = message.HTMLBody
-
-    #     message.Subject = subject
-
-    #     if wordfile is not None:
-    #         message.HTMLBody = html + DefaultSignature
-
-    #     if attachment is not None:
-    #         message.Attachments.Add(attachment, 1)
-
-    #     self.bring_window_to_front(subject)
-
-    #     outlook = None
-    #     message = None
-
 # setup test data
 """
 import sys
@@ -468,5 +421,4 @@ f.close()
 
 """
 
-# TODO: background tasks close open Qt Windows need to fix that
 # TODO: when closing project notes sometimes background tasks keep it open

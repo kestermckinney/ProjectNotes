@@ -2,6 +2,7 @@ from win32com.client import GetObject
 import win32com
 import win32gui
 import sys
+import time
 
 from PyQt6 import QtSql, QtGui, QtCore, QtWidgets
 from PyQt6.QtCore import QDirIterator, QDir, QSettings, QFile
@@ -349,6 +350,7 @@ class ProjectNotesOutlookTools:
             if message.Subject.find(projnum) >= 0:
                 if hasattr(message, "SentOn"):
                     filename = receivedfolder + make_filename(str(message.SentOn), message.Subject) + ".msg"
+                    filename = filename.replace("/", "\\")
 
                     #print (filename + "\n")
 
@@ -365,6 +367,7 @@ class ProjectNotesOutlookTools:
 
             if message.Subject.find(projnum) >= 0:
                 filename = sentfolder + make_filename(str(message.SentOn), message.Subject) + ".msg"
+                filename = filename.replace("/", "\\")
 
                 if not QFile.exists(filename):
                     message.SaveAs(filename, 3)
@@ -391,14 +394,24 @@ class ProjectNotesOutlookTools:
         for address in addresses:
             message.Recipients.Add(address["emailAddress"]["address"])
 
-        message.Subject = subject
+        # create a temporary email item to convert the HTML to RTF
+        temp_mail = outlook.CreateItem(0)
+        temp_mail.HTMLBody = body
+
+        rtf_body = temp_mail.GetInspector.WordEditor.Content.FormattedText
 
         message.MeetingStatus = 1
         message.Duration = 60
-        message.Location = self.pnc.get_plugin_setting("DefaultMeetingLocation")
-        message.Body = body
+        message.Subject = subject
+
         outlook.ActiveExplorer().Activate()
         message.Display()
+
+        word_editor = message.GetInspector.WordEditor
+        word_editor.Range(0, 0).FormattedText = rtf_body
+
+        temp_mail.Close(0)
+        del temp_mail
 
         outlook = None
         message = None

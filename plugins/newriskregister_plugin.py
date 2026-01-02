@@ -51,12 +51,6 @@ if (platform.system() == 'Windows'):
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
             return ""
-            
-        if not pnc.verify_global_settings():
-            return ""
-
-        # setup global variable
-        ProjectsFolder = pnc.get_plugin_setting("ProjectsFolder")
 
         # prompt for the template to use
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
@@ -74,23 +68,22 @@ if (platform.system() == 'Windows'):
             if projectfolder == "" or projectfolder is None:
                 return ""
         else:
-            projectfolder = projectfolder + "\\Risk Management\\"
+            projectfolder = projectfolder + "\\Project Management\\Risk Management\\"
 
-        templatefile = QFileDialog.getOpenFileName(None, "Select the Excel Template", QDir.currentPath() + "\\plugins\\templates\\","Excel files (*Risk*.xls;*Risk*.xlsx;*Risk*.xlsm)|*Risk*.xls;*Risk*.xlsx;*Risk*.xlstm")
+        templatefile =  "plugins\\templates\\Risk Register Template.xlsx"
 
-        if templatefile is None or templatefile[0] == "":
-            return ""
-
-        tempfileinfo = QFileInfo(templatefile[0])
+        tempfileinfo = QFileInfo(templatefile)
         basename = projnum + " " + tempfileinfo.baseName() + "." + tempfileinfo.suffix()
         basename = basename.replace(" Template", "")
 
         projectfile = projectfolder + basename
 
+        projectfile = projectfile.replace("/", "\\") # office products have to have backslash
+
         # copy the file
-        if not QDir(projectfile).exists():
-            if not QFile(templatefile[0]).copy(projectfile):
-                QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile[0] + " to " + projectfile, QMessageBox.StandardButton.Cancel)
+        if not QFile(projectfile).exists():
+            if not QFile(templatefile).copy(projectfile):
+                QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + projectfile, QMessageBox.StandardButton.Cancel)
                 return ""
 
 
@@ -125,24 +118,18 @@ if (platform.system() == 'Windows'):
 
     pluginmenus.append({"menutitle" : "Risk Register", "function" : "menuRiskRegistry", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
 
-# setup test data
-"""
-print("Buld up QDomDocument")
-app = QApplication(sys.argv)
+#setup test data
+if __name__ == '__main__':
+    import os
+    import sys
+    os.chdir("..")
 
+    app = QApplication(sys.argv)
 
-xmldoc = QDomDocument("TestDocument")
-f = QFile("exampleproject.xml")
+    xml_content = ""
+    with open("C:\\Users\\pamcki\\OneDrive - Cornerstone Controls\\Documents\\Work In Progress\\XML\\project.xml", 'r', encoding='utf-8') as file:
+        xml_content = file.read()
 
-if f.open(QIODevice.OpenModeFlag.ReadOnly):
-    print("example project opened")
-xmldoc.setContent(f)
-f.close()
+    menuRiskRegistry(xml_content, "")    
 
-print("Run Test")
-# call when testing outside of Project Notes
-print(main_process(xmldoc).toString())
-print("Finished")
-"""
-
-# TESTED: Phase 1
+    app.exec()

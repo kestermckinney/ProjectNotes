@@ -290,19 +290,6 @@ class IFSCommon:
 
         return None
 
-    def download_report(self, reporturl, savelocation):
-        result = requests.get(reporturl,  auth=(self.domain_user, self.domain_password))
-
-        if (result.status_code != 200):
-            print(f"File Download Failed {result.reason}: {result.text}")
-            return False
-
-        QFile.remove(savelocation) 
-        with open(savelocation, mode="wb") as file:
-            file.write(result.content)
-
-        return True
-
     def getprojectsxml(self, rgroups, clientsdict, rd, parameter):
 
         saved_state = None
@@ -406,6 +393,7 @@ class IFSCommon:
 
 
     def get_team_members_xml(self, rgroups, clientsdict, projectid, rd):
+        return #TODO: Fix IFS 25R1 broke it
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectResourcePlanningHandling.svc/ProjectSet(ProjectId=%27' + projectid + '%27)/ProjectAllocationArray?$apply=groupby((EmployeeName,ResourceId))'
         
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})

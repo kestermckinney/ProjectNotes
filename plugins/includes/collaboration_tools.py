@@ -22,6 +22,7 @@ class CollaborationTools:
         cli = None
         company_filter = None
         company_exclude = None
+        receives_status = False
 
         addresses = []
 
@@ -43,6 +44,8 @@ class CollaborationTools:
         elif invitees == "Individual":
             company_filter = None
             company_exclude = None
+        elif invitees == "Receives Status":
+            receives_status = True
 
         email = None
         nm = None
@@ -56,11 +59,12 @@ class CollaborationTools:
                 nm = self.pnc.get_column_value(memberrow, "name")
                 email = self.pnc.get_column_value(memberrow, "email")
                 pco = self.pnc.get_column_value(memberrow, "client_name")
+                rs = (self.pnc.get_column_value(memberrow, "receive_status_report") == "1")
 
                 # if filtering by company only includ matching client names
                 # don't email to yourself, exclude the PM
                 if (nm != pm):
-                    if (email is not None and email != "" and (company_filter is None or pco == company_filter) and (company_exclude is None or pco != company_exclude)):
+                    if (email is not None and email != "" and ((company_filter is None or pco == company_filter) and (company_exclude is None or pco != company_exclude)) or (rs and receives_status)):
                         if listtype == "email": 
                             addresses.append(
                             {
@@ -218,10 +222,10 @@ class CollaborationTools:
                 return ""
 
             return ""
-
-        msg = "Sending email using Outlook is not supported on this operating system."
-        print(msg)
-        QMessageBox.critical(None, "Not Supported", msg,QMessageBox.StandardButton.Ok)
+        else:
+            msg = "Sending email using Outlook is not supported on this operating system."
+            print(msg)
+            QMessageBox.critical(None, "Not Supported", msg,QMessageBox.StandardButton.Ok)
 
         return ""
 
@@ -240,7 +244,7 @@ class CollaborationTools:
         addresses = self.list_builder(xmlroot, "meeting", invitees)
 
         meeting_subject = self.pnc.replace_variables(subject, xmlroot)
-        meeting_template_filled_in = self.pnc.replace_variables(content, xmlroot)
+        meeting_template_filled_in = self.pnc.strip_html_body(self.pnc.replace_variables(content, xmlroot))
 
         locations = self.pnc.find_node(xmlroot, "table", "name", "project_locations")
 
@@ -293,10 +297,10 @@ class CollaborationTools:
                 print(msg)
                 QMessageBox.critical(None, "Cannot Send Email", msg, QMessageBox.StandardButton.Ok)
                 return ""
-
-        msg = "Sending email using Outlook is not supported on this operating system."
-        print(msg)
-        QMessageBox.critical(None, "Not Supported", msg,QMessageBox.StandardButton.Ok)
+        else:
+            msg = "Sending email using Outlook is not supported on this operating system."
+            print(msg)
+            QMessageBox.critical(None, "Not Supported", msg,QMessageBox.StandardButton.Ok)
 
         return ""
 

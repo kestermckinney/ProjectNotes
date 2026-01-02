@@ -614,12 +614,13 @@ class MeetingEmailTypesSettings(QDialog):
 
         group_delegate = ComboBoxDelegate(self.ui, False)
         group_delegate.setItems([
-           "Internal Project Team",
+           "Attachment Only",
            "Exclude Client",
-           "Only Client",
            "Full Project Team",
            "Individual",
-           "Attachment Only"])
+           "Internal Project Team",
+           "Only Client",           
+           "Receives Status"])
 
         self.ui.tableWidgetMeetingEmailTypes.setItemDelegateForColumn(0, type_delegate)
         self.ui.tableWidgetMeetingEmailTypes.setItemDelegateForColumn(2, group_delegate)

@@ -125,10 +125,20 @@ class ProjectNotesExcelTools:
             cutrange.EntireRow.Delete()
 
     def save_excel_as_pdf(self, handle, sheet, filename):
-        #handle['excel'].CutCopyMode = 0  -- don't prompt about the clipboard
-        #handle['excel'].DisplayAlerts = 0
+        # handle['excel'].CutCopyMode = 0  # don't prompt about the clipboard
+        # handle['excel'].DisplayAlerts = 0
 
-        sheet.ExportAsFixedFormat(0, filename) #, 0, 1, 0, 0)
+        cleanpath = filename.replace("/", "\\")
+
+        QFile.remove(cleanpath)
+
+        try:
+            sheet.ExportAsFixedFormat(0, cleanpath, 0, 1)
+        except Exception as e:  # catches any Python exception
+            # If it’s a COM error, the details are in e.args
+            print(f'Error: {e} Attempting To Save: {cleanpath}')
+            if hasattr(e, 'args') and e.args:
+                print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
     def email_excel_html(self, sheet, subject, recipients, attachment):
         outlook = win32com.client.Dispatch("Outlook.Application")
