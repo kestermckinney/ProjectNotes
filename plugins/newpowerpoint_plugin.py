@@ -51,12 +51,6 @@ if (platform.system() == 'Windows'):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
             return ""
 
-        if not pnc.verify_global_settings():
-            return ""
-
-        # setup global variable
-        ProjectsFolder = pnc.get_plugin_setting("ProjectsFolder")
-
         # prompt for the template to use
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
         projectfolder = pnc.get_projectfolder(xmlroot)
@@ -73,7 +67,7 @@ if (platform.system() == 'Windows'):
             if projectfolder == "" or projectfolder is None:
                 return ""
         else:
-            projectfolder = projectfolder + "\\Meeting Minutes\\"
+            projectfolder = projectfolder + "\\Project Management\\Meeting Minutes\\"
 
         templatefile = QFileDialog.getOpenFileName(None, "Select the PowerPoint Template", QDir.currentPath() + "\\plugins\\templates\\","PowerPoint files (*.ppt;*.pptx;*.pptm)|*.ppt;*.pptx;*.pptm")
 
@@ -86,9 +80,11 @@ if (platform.system() == 'Windows'):
 
         projectfile = projectfolder + basename
 
+        projectfile = projectfile.replace("/", "\\") # office products have to have backslash
+
         # copy the file
-        if not QDir(projectfile).exists():
-            if not QFile(templatefile[0]).copy(projectfile):
+        if not QFile(projectfile).exists():
+            if not QFile(template[0]).copy(projectfile):
                 QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile[0] + " to " + projectfile, QMessageBox.StandardButton.Cancel)
                 return ""
 
@@ -133,23 +129,19 @@ if (platform.system() == 'Windows'):
 
     pluginmenus.append({"menutitle" : "PowerPoint", "function" : "menuPowerPoint", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
 
-# setup test data
-"""
-print("Buld up QDomDocument")
-#
 
+#setup test data
+if __name__ == '__main__':
+    import os
+    import sys
+    os.chdir("..")
 
-xmldoc = QDomDocument("TestDocument")
-f = QFile("exampleproject.xml")
+    app = QApplication(sys.argv)
 
-if f.open(QIODevice.OpenModeFlag.ReadOnly):
-    print("example project opened")
-xmldoc.setContent(f)
-f.close()
+    xml_content = ""
+    with open("C:\\Users\\pamcki\\OneDrive - Cornerstone Controls\\Documents\\Work In Progress\\XML\\project.xml", 'r', encoding='utf-8') as file:
+        xml_content = file.read()
 
-print("Run Test")
-# call when testing outside of Project Notes
-print(main_process(xmldoc).toString())
-print("Finished")
-"""
-# TESTED: Phase 1
+    menuPowerPoint(xml_content, "")    
+
+    app.exec()

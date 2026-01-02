@@ -49,12 +49,7 @@ if (platform.system() == 'Windows'):
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
             return ""
-            
-        if not pnc.verify_global_settings():
-            return ""
-
-        # setup global variable
-        ProjectsFolder = pnc.get_plugin_setting("ProjectsFolder")
+        
 
         # prompt for the template to use
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
@@ -66,14 +61,15 @@ if (platform.system() == 'Windows'):
         projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
         projnam = pnc.get_column_value(projtab.firstChild(), "project_name")
 
+        print(f"Searching for output folder {projectfolder}")
+
         if (projectfolder is None or projectfolder =="" or not QDir(projectfolder).exists()):
             projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
                 return ""
         else:
-            projectfolder = projectfolder + "\\Schedule\\"
-
+            projectfolder = projectfolder + "\\Project Management\\Schedule\\"
 
         templatefile = QFileDialog.getOpenFileName(None, "Select the MS Project Template", QDir.currentPath() + "\\plugins\\templates\\","Project files (*.mpp)|*.mpp")
 
@@ -82,6 +78,8 @@ if (platform.system() == 'Windows'):
 
         basename = projnam[:30]
         projectfile = projectfolder + basename + ".mpp"
+
+        projectfile = projectfile.replace("/", "\\")
 
         # copy the file
         if not QFile(projectfile).exists():
@@ -95,7 +93,7 @@ if (platform.system() == 'Windows'):
         project.FileOpen(projectfile)
         project.Visible = 1
 
-        project.ActiveProject.ProjectStart = QDateTime.currentDateTime().addDays(-7).toString("MM/dd/yyyy")
+        # this causes the project to error since all project dates are in the past // project.ActiveProject.ProjectStart = QDateTime.currentDateTime().addDays(-7).toString("MM/dd/yyyy")
 
         project.ReplaceEx("Name", "contains", "PROJECTNAME", basename, True, True, False, 188743694, 7, True)
 
@@ -119,25 +117,20 @@ if (platform.system() == 'Windows'):
 
         return docxml.toString()
 
-    pluginmenus.append({"menutitle" : "MS Project", "function" : "menuMSProject", "tablefilter" : "projects", "submenu" : "Templates", "dataexport" : "projects"})
+    pluginmenus.append({"menutitle" : "MS Project", "function" : "menuMSProject", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
 
-# setup test data
-"""
-import sys
-print("Buld up QDomDocument")
-#
+#setup test data
+if __name__ == '__main__':
+    import os
+    import sys
+    os.chdir("..")
 
-xmldoc = QDomDocument("TestDocument")
-f = QFile("C:/Users/pamcki/Desktop/project.xml")
+    app = QApplication(sys.argv)
 
-if f.open(QIODevice.OpenModeFlag.ReadOnly):
-    print("example project opened")
-xmldoc.setContent(f)
-f.close()
+    xml_content = ""
+    with open("C:\\Users\\pamcki\\OneDrive - Cornerstone Controls\\Documents\\Work In Progress\\XML\\project.xml", 'r', encoding='utf-8') as file:
+        xml_content = file.read()
 
-print("Run Test")
-# call when testing outside of Project Notes
-print(event_data_rightclick(xmldoc.toString()))
-print("Finished")
+    menuMSProject(xml_content, "")
 
-"""
+    app.exec()

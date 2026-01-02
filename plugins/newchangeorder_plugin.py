@@ -50,12 +50,6 @@ if (platform.system() == 'Windows'):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
             return ""
 
-        if not pnc.verify_global_settings():
-            return ""
-
-        # setup global variable
-        ProjectsFolder = pnc.get_plugin_setting("ProjectsFolder")
-
         # prompt for the template to use
         statusdate = QDateTime.currentDateTime()
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
@@ -81,7 +75,7 @@ if (platform.system() == 'Windows'):
             if projectfolder == "" or projectfolder is None:
                 return ""
         else:
-            projectfolder = projectfolder + "\\PCR\'s\\"
+            projectfolder = projectfolder + "\\Project Management\\PCR\'s\\"
 
         templatefile =  "plugins\\templates\\PCR Template.docx"
         tempfileinfo = QFileInfo(templatefile)
@@ -89,6 +83,8 @@ if (platform.system() == 'Windows'):
         basename = basename.replace(" Template", "")
 
         projectfile = projectfolder + basename
+
+        projectfile = projectfile.replace("/", "\\") # office products have to have backslash
 
         # copy the file
         if not QFile(projectfile).exists():
@@ -98,7 +94,6 @@ if (platform.system() == 'Windows'):
 
         # change the values for the project specifics in the file
         word = win32com.client.DispatchEx("Word.Application")
-        print(projectfile)
 
         doc = word.Documents.Open(projectfile)
 
@@ -140,24 +135,21 @@ if (platform.system() == 'Windows'):
         #return doc.Content.Find.Execute(searchtext, 0, 0, 0, 0, 0, 1, 1, 0, replacetext, 2, 0, 0, 0, 0, 0, 1, 0, 0, 0)
         return doc.Content.Find.Execute(searchtext, False, False, False, False, False, True, 1, False, replacetext, 2)
 
-    pluginmenus.append({"menutitle" : "Change Order", "function" : "menuChangeOrder", "tablefilter" : "", "submenu" : "", "dataexport" : "projects"})
+    pluginmenus.append({"menutitle" : "Change Order", "function" : "menuChangeOrder", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
 
 
+#setup test data
+if __name__ == '__main__':
+    import os
+    import sys
+    os.chdir("..")
 
-# setup test data
-"""
-import sys
-print("Buld up QDomDocument")
+    app = QApplication(sys.argv)
 
-xmldoc = QDomDocument("TestDocument")
-f = QFile("C:/Users/pamcki/Desktop/project.xml")
+    xml_content = ""
+    with open("C:\\Users\\pamcki\\OneDrive - Cornerstone Controls\\Documents\\Work In Progress\\XML\\project.xml", 'r', encoding='utf-8') as file:
+        xml_content = file.read()
 
-if f.open(QIODevice.OpenModeFlag.ReadOnly):
-    print("example project opened")
-xmldoc.setContent(f)
-f.close()
+    menuChangeOrder(xml_content, "")
 
-print(event_data_rightclick(xmldoc.toString()))
-print("Finished")
-"""
-
+    app.exec()
