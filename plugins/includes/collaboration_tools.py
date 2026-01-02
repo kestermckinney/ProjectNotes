@@ -22,6 +22,7 @@ class CollaborationTools:
         cli = None
         company_filter = None
         company_exclude = None
+        receives_status = False
 
         addresses = []
 
@@ -43,6 +44,8 @@ class CollaborationTools:
         elif invitees == "Individual":
             company_filter = None
             company_exclude = None
+        elif invitees == "Receives Status":
+            receives_status = True
 
         email = None
         nm = None
@@ -56,11 +59,12 @@ class CollaborationTools:
                 nm = self.pnc.get_column_value(memberrow, "name")
                 email = self.pnc.get_column_value(memberrow, "email")
                 pco = self.pnc.get_column_value(memberrow, "client_name")
+                rs = (self.pnc.get_column_value(memberrow, "receive_status_report") == "1")
 
                 # if filtering by company only includ matching client names
                 # don't email to yourself, exclude the PM
                 if (nm != pm):
-                    if (email is not None and email != "" and (company_filter is None or pco == company_filter) and (company_exclude is None or pco != company_exclude)):
+                    if (email is not None and email != "" and ((company_filter is None or pco == company_filter) and (company_exclude is None or pco != company_exclude)) or (rs and receives_status)):
                         if listtype == "email": 
                             addresses.append(
                             {

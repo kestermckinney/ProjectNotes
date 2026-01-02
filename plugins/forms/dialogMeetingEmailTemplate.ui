@@ -145,6 +145,11 @@
        <string>Only Client</string>
       </property>
      </item>
+     <item>
+      <property name="text">
+       <string>"Receives Status"</string>
+      </property>
+     </item>
     </widget>
    </item>
    <item>

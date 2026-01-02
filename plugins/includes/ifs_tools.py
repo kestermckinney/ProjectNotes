@@ -290,19 +290,6 @@ class IFSCommon:
 
         return None
 
-    def download_report(self, reporturl, savelocation):
-        result = requests.get(reporturl,  auth=(self.domain_user, self.domain_password))
-
-        if (result.status_code != 200):
-            print(f"File Download Failed {result.reason}: {result.text}")
-            return False
-
-        QFile.remove(savelocation) 
-        with open(savelocation, mode="wb") as file:
-            file.write(result.content)
-
-        return True
-
     def getprojectsxml(self, rgroups, clientsdict, rd, parameter):
 
         saved_state = None

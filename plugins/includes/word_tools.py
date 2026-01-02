@@ -11,7 +11,9 @@ class ProjectNotesWordTools:
     def open_word_document(self, fullpath):
         word = win32com.client.DispatchEx("Word.Application")
 
-        doc = word.Documents.Open(fullpath)
+        cleanpath = fullpath.replace("/", "\\")
+
+        doc = word.Documents.Open(cleanpath)
         word.Visible = False
         word.ScreenUpdating = False
         word.DisplayAlerts = 0
@@ -56,3 +58,45 @@ class ProjectNotesWordTools:
 
         wmi_service = None
         wmi = None
+
+    def get_html_version_of_word_doc(self, wordfile, temphtmlfile):
+
+        if wordfile is not None:
+            cleandocpath = wordfile.replace("/", "\\")
+            cleanhtmlpath = temphtmlfile.replace("/", "\\")
+
+            word = win32com.client.Dispatch("Word.Application")
+            word.Visible = 0
+            doc = word.Documents.Open(cleandocpath)
+            doc.SpellingChecked = False
+            word.CheckLanguage = False
+            doc.GrammarChecked = False
+            word.AutoCorrect.CorrectCapsLock = False
+            word.AutoCorrect.CorrectDays = False
+            word.AutoCorrect.CorrectHangulAndAlphabet = False
+            word.AutoCorrect.CorrectInitialCaps = False
+            word.AutoCorrect.CorrectKeyboardSetting = False
+            word.AutoCorrect.CorrectSentenceCaps = False
+
+            # remove any old output
+            QFile.remove(cleanhtmlpath)
+            dir = QDir(cleanhtmlpath + "_files")
+            dir.removeRecursively()
+
+            doc.SaveAs(cleanhtmlpath, 8)
+
+            word.Quit()
+            word = None
+
+            file = open(cleanhtmlpath, "r")
+            html = file.read()
+            file.close()
+
+            # remove any old output
+            QFile.remove(cleanhtmlpath)
+            dir = QDir(cleanhtmlpath + "_files")
+            dir.removeRecursively()
+
+            return html
+
+        return None

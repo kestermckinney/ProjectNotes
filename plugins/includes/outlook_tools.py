@@ -350,6 +350,7 @@ class ProjectNotesOutlookTools:
             if message.Subject.find(projnum) >= 0:
                 if hasattr(message, "SentOn"):
                     filename = receivedfolder + make_filename(str(message.SentOn), message.Subject) + ".msg"
+                    filename = filename.replace("/", "\\")
 
                     #print (filename + "\n")
 
@@ -366,6 +367,7 @@ class ProjectNotesOutlookTools:
 
             if message.Subject.find(projnum) >= 0:
                 filename = sentfolder + make_filename(str(message.SentOn), message.Subject) + ".msg"
+                filename = filename.replace("/", "\\")
 
                 if not QFile.exists(filename):
                     message.SaveAs(filename, 3)
