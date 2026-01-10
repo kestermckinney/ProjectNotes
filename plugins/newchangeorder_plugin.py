@@ -47,7 +47,7 @@ if (platform.system() == 'Windows'):
     def menuChangeOrder(xmlstr, parameter):
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
         # prompt for the template to use
@@ -86,10 +86,16 @@ if (platform.system() == 'Windows'):
 
         projectfile = projectfile.replace("/", "\\") # office products have to have backslash
 
+        if not pnc.folder_exists(projectfile):
+            msg = f'Folder for "{projectfile}" does not exist.  Cannot copy the template.'
+            print(msg)
+            QMessageBox.critical(None, "Folder Does Not Exist")
+            return ""
+
         # copy the file
         if not QFile(projectfile).exists():
             if not QFile(templatefile).copy(projectfile):
-                QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + projectfile, QMessageBox.StandardButton.Cancel)
+                QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + projectfile)
                 return ""
 
         # change the values for the project specifics in the file

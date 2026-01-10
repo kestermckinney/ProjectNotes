@@ -68,7 +68,7 @@ class BasePlugins:
 
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
@@ -122,7 +122,7 @@ class BasePlugins:
     def copy_path_to_clipboard(self, xmlstr):
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
@@ -149,7 +149,7 @@ class BasePlugins:
         if (EditorFullPath is None or EditorFullPath == ""):
             msg = "You will need to specify an editor in the Open Editor plugin settings."
             print(msg)
-            QMessageBox.critical(None, "Editor Not Specified", msg, QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Editor Not Specified", msg)
         else:
             self.pnc.exec_program( EditorFullPath )
         return ""
@@ -216,7 +216,7 @@ def menuScheduleMeeting(xmlstr, parameter):
             nam = d
 
     if nam is None or len(nam) == 0:
-        QMessageBox.critical(None, "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.",QMessageBox.StandardButton.Cancel)
+        QMessageBox.critical(None, "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.")
         return ""
 
     template = nam.get('Template')
@@ -239,7 +239,7 @@ def menuSendEmail(xmlstr, parameter):
             nam = d
 
     if nam is None or len(nam) == 0:
-        QMessageBox.critical(None, "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.",QMessageBox.StandardButton.Cancel)
+        QMessageBox.critical(None, "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.")
         return ""
 
     template = nam.get('Template')
@@ -298,6 +298,7 @@ menu_data = pnc.get_plugin_setting("MeetingEmailTypes", "Meeting And Email Types
 populate_dynamic_menu(menu_data)
 
 #TODO: Fix or rework tracker report export
-#TODO: Fix the status report integration with SSRS
 #TODO: Fix or change the template fillout features
-#TODO: Setup meetings to test
+#TODO: when data is sent back to project notes the screen needs to refresh
+#TODO: need to check URL availability to avoid crashes and errors -> basically test url first
+#TODO: add code to ignore the project_notes.py file.

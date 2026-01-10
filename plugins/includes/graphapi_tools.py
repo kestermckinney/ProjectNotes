@@ -2,6 +2,7 @@ import platform
 import msal
 import json
 import requests
+import base64
 import inspect
 import re
 import projectnotes
@@ -50,14 +51,14 @@ class TokenAPI:
             return None
 
 
-        timer = QElapsedTimer()
-        timer.start()
+        # timer = QElapsedTimer()
+        # timer.start()
 
         if not self.access_token is None:
             # Check if token has not expired
             if (self.token_expires > QDateTime.currentDateTime()):
-                execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
-                print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+                # execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
+                # print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
                 return(self.access_token)
 
         cache = msal.SerializableTokenCache()
@@ -123,14 +124,14 @@ class TokenAPI:
                 self.token_expires = QDateTime.fromSecsSinceEpoch(expires_on)
             else:
                 print("Token response missing expiration information.")
-                self.token_expires = timer.elapsed() / 1000  # Convert milliseconds to seconds
-                print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
+                # self.token_expires = timer.elapsed() / 1000  # Convert milliseconds to seconds
+                # print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
                 return(None)
 
             self.access_token = self.token_response["access_token"]
 
-        execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
+        # execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
+        # print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
         return(self.access_token)
 
 
@@ -155,8 +156,8 @@ class GraphAPITools:
         self.access_token = None
 
     def set_token(self, token):
-        timer = QElapsedTimer()
-        timer.start()
+        # timer = QElapsedTimer()
+        # timer.start()
 
         self.access_token = token
 
@@ -166,26 +167,29 @@ class GraphAPITools:
             'Content-Type': 'application/json'
         }
 
-        execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
+        # execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
+        # print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
         return(False)
 
     def bring_window_to_front(self, title):
         if (platform.system() != 'Windows'):
             return
 
-        win32gui.EnumWindows(windowEnumerationHandler, top_windows)
+        try:
+            win32gui.EnumWindows(handler_window_enumerator, top_windows)
 
-        for i in top_windows:
-            if title.lower() in i[1].lower():
-                # sometimes a window of a duplicate name gets closed
-                if win32gui.IsWindow(i[0]):
+            for i in top_windows:
+                if title.lower() in i[1].lower():
                     win32gui.ShowWindow(i[0],5)
-
-                # sometimes a window of a duplicate name gets closed
-                if win32gui.IsWindow(i[0]):
                     win32gui.SetForegroundWindow(i[0])
-                break
+                    break
+
+        except Exception as e:  # catches any Python exception
+            # If it’s a COM error, the details are in e.args
+            print(f'Error: {e} Attempting to bring window {title} to the foreground.')
+            if hasattr(e, 'args') and e.args:
+                print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
+
         return
 
     def make_filename(self, datetime, subject):
@@ -213,7 +217,7 @@ class GraphAPITools:
         # Upload the attachment to the draft email
         response = requests.post(f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{draft_email_id}/attachments", headers=self.headers, json=attachment)
 
-        print(f"uploading {file_path} as an attachment")
+        #print(f"uploading {file_path} as an attachment")
 
         if response.status_code != 201:
             return f"Response Code: {response.status_code} Failed to upload attachment: {file_path}.  Server Responded: {response.json()}"
@@ -227,8 +231,8 @@ class GraphAPITools:
         if not self.import_contacts:  #  import contacts is disabled
             return
 
-        timer = QElapsedTimer()
-        timer.start()
+        # timer = QElapsedTimer()
+        # timer.start()
         
         saved_state = None
         statename = "people_import"
@@ -239,6 +243,10 @@ class GraphAPITools:
             top = 10000
         else:
             skip = self.pnc.get_save_state(statename)
+
+            if skip is None:
+                print("Failed to get save state.  Will try to import contacts again.")
+                return
 
         # Endpoint to get the list of contacts
         contacts_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/contacts"
@@ -309,10 +317,11 @@ class GraphAPITools:
 
         projectnotes.update_data(xmldoc)
 
-        self.pnc.set_save_state(statename, skip, top, contactcount)
+        if self.pnc.set_save_state(statename, skip, top, contactcount) is None:
+            print("Failed to set save state.  Will try to import the same contacts again.")
 
-        execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+        # execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
+        # print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
 
         return
 
@@ -323,8 +332,8 @@ class GraphAPITools:
         if not self.export_contacts:  #  sync contacts is disabled
             return
 
-        timer = QElapsedTimer()
-        timer.start()
+        # timer = QElapsedTimer()
+        # timer.start()
 
         # need to get all contacts first to search for existing ones
         # Endpoint to get the list of contacts
@@ -349,6 +358,10 @@ class GraphAPITools:
             top = 10000
         else:
             skip = self.pnc.get_save_state(statename)
+
+            if skip is None:
+                print("Failed to get save state.  Will try to export contacts again.")
+                return
 
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="people" {self.pnc.state_range_attrib(top, skip)} />\n</projectnotes>\n'
 
@@ -434,10 +447,11 @@ class GraphAPITools:
 
             childnode = childnode.nextSibling()
 
-        self.pnc.set_save_state(statename, skip, top, contactcount)
+        if self.pnc.set_save_state(statename, skip, top, contactcount) is None:
+            print("Failed to set save state.  Will try to export contacts again.")
 
-        execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
+        # execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
+        # print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
 
         return
 
@@ -529,84 +543,210 @@ class GraphAPITools:
 
         statename = projectnumber + "_" + box + "_downloadtracker"
 
-        print(f"Downloading email to {destination_folder} and saving progress in {statename}.")
 
         skip = self.pnc.get_save_state(statename)
+        emailcount = 0
 
-        # Graph API endpoint to send an email
+        if skip is None:
+            print("Failed to get save state.  Will try to download email again.")
+            return
+
+        print(f"Checking for new email for project {projectnumber} starting at {skip} and {top} items.")
+
+        # Graph API get list of messages
+        #graph_api_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/search/query"
         graph_api_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/mailFolders/{box}/messages?$filter=contains(subject,'{projectnumber}')&$select=id&$top={top}&$skip={skip}"  
+
+        # jsonpayload = {
+        #     "requests": [
+        #         {
+        #             "entityTypes": ["message"],
+        #             "query": {
+        #                 "queryString": f"subject:{projectnumber}"
+        #             },
+        #             "from": skip,
+        #             "size": top,
+        #             "fields" : ["id", "subject","sentDateTime"],
+        #             "folder": f"/me/mailFolders/{box}"
+        #         }
+        #     ]
+        # }
+
+        #print(f"Email request URL: {graph_api_endpoint}")
             
-        # Send email via Graph API
+        # get email list via Graph API
         response = requests.get(graph_api_endpoint, headers=self.headers)
+        #response = requests.post(graph_api_endpoint, headers=self.headers, data=json.dumps(jsonpayload))
 
         # Check response status code
         if response.status_code == 200:
             # Parse JSON response
+            data = response.json()
+             # Parse JSON response
             emails = response.json()["value"]
 
-            # Download emails
-            for email in emails:
-                skip = skip + 1 # don't download past the end
+            print(f"Query Response: \n{json.dumps(data, indent=4)}")
+
+            # if not 'value' in data or len(data["value"]) == 0 or not 'hitsContainers' in data["value"][0] or len(data["value"][0]["hitsContainers"]) == 0 or not 'hits' in data["value"][0]["hitsContainers"][0]:
+            #     print(f"No email found in {box} for {projectnumber}")
+            #     return
+
+            # hits = data["value"][0]["hitsContainers"][0]["hits"]
+
+            # print(f"Retrieved {len(hits)} emails starting at count {skip} from {box} containing {projectnumber} in the subject")                
+
+            for email in emails: #enumerate(hits):
+                emailcount += 1 # don't download past the end
 
                 # Construct MSG download URL
                 msg_url = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{email['id']}"
                 msg_response = requests.get(msg_url, headers=self.headers)
 
-                message_data = json.loads(msg_response.text)
-
-                # Extract the subject and sent time
-                subject = message_data["subject"]
-                sent_time = message_data["sentDateTime"]
-
                 if msg_response.status_code == 200:
+                    print(f'parsing response text from {msg_url}')
+                    message_data = json.loads(msg_response.text)
+
+                    print(f"Currently at email count {emailcount}")
+                    subject = message_data["subject"]
+                    sent_time = message_data["sentDateTime"]
+
+                    # if msg_response.status_code == 200:
                     msg_file = destination_folder + "/" + self.make_filename(sent_time, subject) + ".eml"
 
-                    #print(f"saving email to file: {msg_file}")
+                    print(f"saving email to file: {msg_file}")
 
                     # only write it if it doesn't exist
                     if not QFile(msg_file).exists():
-                        # Construct MSG download URL
-                        msg_url = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{email['id']}/$value?$format=MessageFormat MSG"
+                        self.download_email(self.access_token, email['id'], msg_file)
+                        # # Construct MSG download URL
+                        # #msg_url = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{email[1]['hitId']}/$value?$format=MessageFormat MSG"
+                        # msg_url = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{email['id']}/$value" #?$format=MessageFormat MSG"
 
-                        # MSG download headers
-                        msg_headers = {
-                            "Authorization": f"Bearer {self.access_token}",
-                            "Accept": "application/msg"
-                        }
+                        # # MSG download headers
+                        # msg_headers = {
+                        #     "Authorization": f"Bearer {self.access_token}",
+                        #     "Content-Type": "application/eml"
+                        #     #"Accept": "application/msg"
+                        # }
 
-                        # Download MSG file
-                        msg_response = requests.get(msg_url, headers=msg_headers)
+                        # # Download MSG file
+                        # msg_response = requests.get(msg_url, headers=msg_headers)
 
-                        # Check response status code
-                        if msg_response.status_code == 200:
+                        # # Check response status code
+                        # if msg_response.status_code == 200:
 
-                            # Save MSG file
-                            file = QFile(msg_file)
-                            if file.open(QIODevice.OpenModeFlag.WriteOnly | QIODevice.OpenModeFlag.Text):
-                                #file.write(msg_response.text)
-                                stream = QTextStream(file)
-                                stream << msg_response.text
-                                file.close()
-                            else:
-                                print(f"Failed to write file {msg_file}.")
+                        #     # Save MSG file
+                        #     file = QFile(msg_file)
+                        #     if file.open(QIODevice.OpenModeFlag.WriteOnly | QIODevice.OpenModeFlag.Text):
+                        #         stream = QTextStream(file)
+                        #         stream << msg_response.content
+                        #         file.close()
+                        #     else:
+                        #         print(f"Failed to write file {msg_file}.")
 
 
-                            #print(f"Email saved: {msg_file}")
-                        else:
-                            print(f"Resonse Code: {msg_response.status_code} Error downloading MSG: {msg_response.text}.")
+                        #     #print(f"Email saved: {msg_file}")
+                        # else:
+                        #     print(f"Resonse Code: {msg_response.status_code} Error downloading MSG: {msg_response.text}.")
                     else:
                         print(f"{msg_file} email message file already exists.")
-
                 else:
                     print(f"Response Code: {msg_response.status_code} Error getting message details {msg_response.text}.")
         else:
             print(f"Response Code: {response.status_code} Error downloading emails {response.text}.")
 
-        self.pnc.set_save_state(statename, skip, top, 0) # never redownload emails
+        if self.pnc.set_save_state(statename, skip, emailcount, emailcount) is None: # never redownload emails
+            print("Failed to set save state.  Will try to download the same email again.")
+
+
+    def download_email(self, graph_token, message_id, email_file):
+        """
+        Download an email using the Microsoft Graph API and save it as a .eml file.
+
+        Args:
+            graph_token (str): Microsoft Graph API access token
+            message_id (str): ID of the email message to download
+            email_file (str): Path to save the email file (.eml)
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        # Set API endpoint and headers
+        endpoint = f"https://graph.microsoft.com/v1.0/me/messages/{message_id}?$expand=attachments"
+        headers = {
+            "Authorization": f"Bearer {graph_token}",
+            "Content-Type": "application/json"
+        }
+
+        # Send GET request to download email
+        response = requests.get(endpoint, headers=headers)
+
+
+        # Check if successful
+        if response.status_code == 200:
+            # Parse JSON response
+            email_data = response.json()
+
+            print(f'Email JSON:\n{json.dumps(email_data, indent=4)}\nEnd Email JSON')
+
+            # Extract email headers and body
+            subject = email_data.get("subject", "")
+            from_addr = email_data.get("from", {}).get("emailAddress", {}).get("address", "")
+            to_addrs = [r.get("emailAddress", {}).get("address", "") for r in email_data.get("toRecipients", [])]
+            cc_addrs = [r.get("emailAddress", {}).get("address", "") for r in email_data.get("ccRecipients", [])]
+            body = email_data.get("body", {}).get("content", "")
+
+            # Create .eml file content
+            eml_content = f"Subject: {subject}\r\n"
+            eml_content += f"From: {from_addr}\r\n"
+            eml_content += f"To: {', '.join(to_addrs)}\r\n"
+            if cc_addrs:
+                eml_content += f"Cc: {', '.join(cc_addrs)}\r\n"
+            eml_content += "MIME-Version: 1.0\r\n"
+            eml_content += "Content-Type: multipart/mixed;\r\n boundary=\"boundary_1\"\r\n\r\n"
+            eml_content += "--boundary_1\r\n"
+            eml_content += "Content-Type: text/html; charset=utf-8\r\n\r\n"
+            eml_content += body
+            eml_content += "\r\n--boundary_1\r\n"
+
+            # Add attachments
+            for attachment in email_data.get("attachments", []):
+                attachment_id = attachment.get("id", "")
+                attachment_name = attachment.get("name", "")
+                attachment_response = requests.get(f"https://graph.microsoft.com/v1.0/me/messages/{message_id}/attachments/{attachment_id}/$value", headers=headers)
+                if attachment_response.status_code == 200:
+                    attachment_content = attachment_response.content
+                    eml_content += f"Content-Type: application/octet-stream; name=\"{attachment_name}\"\r\n"
+                    eml_content += f"Content-Transfer-Encoding: base64\r\n"
+                    eml_content += f"Content-Disposition: attachment; filename=\"{attachment_name}\"\r\n\r\n"
+                    eml_content += base64.b64encode(attachment_content).decode("utf-8")
+                    eml_content += "\r\n--boundary_1\r\n"
+                else:
+                    print(f"Error downloading attachment {attachment_name}: {attachment_response.status_code}")
+
+            eml_content += "--boundary_1--\r\n"
+
+            # Save email to file
+            # with open(email_file, "w", encoding="utf-8") as f:
+            #     f.write(eml_content)
+
+            # Save MSG file
+            file = QFile(email_file)
+            if file.open(QIODevice.OpenModeFlag.WriteOnly | QIODevice.OpenModeFlag.Text):
+                stream = QTextStream(file)
+                stream << eml_content
+                file.close()
+            else:
+                print(f"Failed to write file {msg_file}.")
+
+            return True
+        else:
+            print(f"Error: {response.status_code} {response.text}")
+            return False
 
     def download_batch_of_emails(self, xmlstr):
-        timer = QElapsedTimer()
-        timer.start()
+        # timer = QElapsedTimer()
+        # timer.start()
 
         if not self.use_graph_api:  # office 365 integration is disabled
             return
@@ -633,6 +773,10 @@ class GraphAPITools:
             top = 10000 # downloading all email for a project
 
         skip = self.pnc.get_save_state(statename)
+
+        if skip is None:
+            print("Failed to get save state.  Will try to download emails again.")
+            return
 
         projectfilter = ""
 
@@ -694,10 +838,11 @@ class GraphAPITools:
 
             childnode = childnode.nextSibling()
 
-        self.pnc.set_save_state(statename, skip, top, locationcount)
+        if self.pnc.set_save_state(statename, skip, top, locationcount) is None:
+            print("Failed to set save state.  Will try to import download the same email again.")
 
-        execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
+        # execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
+        # print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
 
         return
 
@@ -705,8 +850,8 @@ class GraphAPITools:
         if not self.use_graph_api:  # office 365 integration is disabled
             return
 
-        timer = QElapsedTimer()
-        timer.start()
+        # timer = QElapsedTimer()
+        # timer.start()
 
         saved_state = None
         statename = "tracker_export"
@@ -720,17 +865,20 @@ class GraphAPITools:
         else:
             skip = self.pnc.get_save_state(statename)
 
+        if skip is None:
+            print("Failed to get save state.  Will try to tracker items again.")
+            return
+
         # just get the project manager people id
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="clients" top="1" skip="0"/>\n</projectnotes>\n'
 
-        timer2 = QElapsedTimer()
-        timer2.start()
+        # timer2 = QElapsedTimer()
+        # timer2.start()
         
         xmlresult = projectnotes.get_data(xmldoc)
 
-        execution_time = timer2.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function get_data in '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
-
+        # execution_time = timer2.elapsed() / 1000  # Convert milliseconds to seconds
+        # print(f"Function get_data in '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
 
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlresult) == False):
@@ -750,15 +898,13 @@ class GraphAPITools:
 
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="item_tracker" filter_name_1="assigned_to" filter_value_1="{pmid}" {self.pnc.state_range_attrib(top, skip)} />\n</projectnotes>\n'
 
-        timer2 = QElapsedTimer()
-        timer2.start()
+        # timer2 = QElapsedTimer()
+        # timer2.start()
 
         xmlresult = projectnotes.get_data(xmldoc)
 
-
-
-        execution_time = timer2.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function get_data in '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
+        # execution_time = timer2.elapsed() / 1000  # Convert milliseconds to seconds
+        # print(f"Function get_data in '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
 
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlresult) == False):
@@ -958,10 +1104,11 @@ class GraphAPITools:
 
             childnode = childnode.nextSibling()
 
-        self.pnc.set_save_state(statename, skip, top, rowcount)
+        if self.pnc.set_save_state(statename, skip, top, rowcount) is None:
+            print("Failed to set save state.  Will try to import download the same email again.")
 
-        execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
-        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
+        # execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
+        # print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
 
         return
 

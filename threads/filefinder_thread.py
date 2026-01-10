@@ -164,6 +164,9 @@ class  FileFinder:
         top = 5
 
         skip = self.pnc.get_save_state(statename)
+        if skip is None:
+            print("Failed to get save state.  Will try to find project files again.")
+            return
 
         if all_projects:
             skip = 0
@@ -217,7 +220,12 @@ class  FileFinder:
 
             childnode = childnode.nextSibling()
 
-        self.pnc.set_save_state(statename, skip, top, nodecount)
+        if self.pnc.set_save_state(statename, skip, top, nodecount) is None:
+            print("Failed to set save state.  Will try to search for project files again.")
+            
+            execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
+            print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
+            return
 
         if xmldoc != "":
             xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="project_locations">{xmldoc}</table>\n</projectnotes>\n'

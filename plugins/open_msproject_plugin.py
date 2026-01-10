@@ -63,7 +63,7 @@ if (platform.system() == 'Windows'):
         xmlval = QDomDocument()
 
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
@@ -78,8 +78,9 @@ if (platform.system() == 'Windows'):
                 checkfile = pnc.get_column_value(locationrow, "full_path")
 
                 if checkfile[-4:] == ".mpp":
-                    filelist.append(checkfile)
-                    openfile = checkfile
+                    if QFile(checkfile).exists():
+                        filelist.append(checkfile)
+                        openfile = checkfile
 
                 locationrow = locationrow.nextSibling()
 
@@ -90,9 +91,10 @@ if (platform.system() == 'Windows'):
             sp.ui.m_listWidgetFiles.clear()
             sp.ui.m_listWidgetFiles.addItems(filelist)
             sp.show()
-        else:
-            if len(filelist) == 1:
+        elif len(filelist) == 1:
                 QDesktopServices.openUrl(QUrl("file:///" + filelist[0]))
+        else:
+            QMessageBox.critical(None, "No MS Project File Found", "No MS Project files were found.  Check files are listed in Artifacts and they are accessible.")            
 
         return ""
 

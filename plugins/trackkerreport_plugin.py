@@ -71,7 +71,7 @@ class GenerateTrackerReport(QDialog):
 
         xmlval = QDomDocument()
         if (xmlval.setContent(self.xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return
             
         emaillist = ""
@@ -126,6 +126,12 @@ class GenerateTrackerReport(QDialog):
                 return
         else:
             projectfolder = projectfolder + "/Project Management/Issues List/"
+
+        if not pnc.folder_exists(projectfolder):
+            msg = f'Folder "{projectfolder}" does not exist.  Cannot generate the report.'
+            print(msg)
+            QMessageBox.critical(None, "Folder Does Not Exist", msg)
+            return
 
         progbar = QProgressDialog(self.ui)
         progbar.setWindowTitle("Generating Report...")
@@ -183,7 +189,7 @@ class GenerateTrackerReport(QDialog):
         QFile.remove(excelreportname)
         if not QFile.copy(templatefile, excelreportname):
             print("Unable to copy template. Could not copy " + templatefile + " to " + excelreportname)
-            QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + excelreportname, QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + excelreportname)
             progbar.close()
             return
 

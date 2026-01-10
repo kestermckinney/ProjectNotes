@@ -1289,7 +1289,7 @@ class MeetingsExporter(QDialog):
     def export_notes(self):
         xmldoc = QDomDocument()
         if (xmldoc.setContent(self.xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
         self.project_htmlreportname = ""
@@ -1335,6 +1335,12 @@ class MeetingsExporter(QDialog):
             projectfolder = projectfolder + "/Project Management/Meeting Minutes"
 
         projectfolder += "/"
+
+        if not pnc.folder_exists(projectfolder):
+            msg = f"Folder {projectfolder} does not exist.  Cannot generate the report."
+            print(msg)
+            QMessageBox.critical(None, "Folder Does Not Exist")
+            return
 
         self.progbar = QProgressDialog(self)
         self.progbar.setWindowTitle("Exporting...")
@@ -1497,14 +1503,14 @@ class MeetingsExporter(QDialog):
 
         QFile.remove(self.project_pdfreportname)
         if not QFile(self.pdfreportname).copy(self.project_pdfreportname):
-            QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.pdfreportname + " to " + self.project_pdfreportname, QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.pdfreportname + " to " + self.project_pdfreportname)
 
         if self.keephtml == False:
             QFile.remove(self.htmlreportname)
         else:
             QFile.remove(self.project_htmlreportname)
             if not QFile(self.htmlreportname).copy(self.project_htmlreportname):
-                QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.htmlreportname + " to " + self.project_htmlreportname, QMessageBox.StandardButton.Cancel)
+                QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.htmlreportname + " to " + self.project_htmlreportname)
 
         if self.ui.m_checkBoxDisplayNotes.isChecked():
             try:

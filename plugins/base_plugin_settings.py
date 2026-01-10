@@ -146,7 +146,7 @@ class FileFinderSettings(QDialog):
             self.ui.tableClassifications.setColumnWidth(0, int(mc1))
             self.ui.tableClassifications.setColumnWidth(1, int(mc2))
 
-            print(f"loading file finder columns {lc1}, {mc1}, {mc2}")
+            #print(f"loading file finder columns {lc1}, {mc1}, {mc2}")
 
         if (x != '' and y != '' and w != '' and h != ''):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
@@ -644,7 +644,7 @@ class MeetingEmailTypesSettings(QDialog):
         geometry = self.pnc.get_plugin_setting("types_geometry", self.settings_pluginname)
 
         if (c1 != '' and c2 != '' and c3 != '' and c4 != '' and c5 != '' and c6 != ''):
-            print(f"loading column sizes {c1},{c2},{c3},{c4},{c5},{c6}")
+            #print(f"loading column sizes {c1},{c2},{c3},{c4},{c5},{c6}")
 
             self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(0, int(c1))
             self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(1, int(c2))
@@ -654,7 +654,7 @@ class MeetingEmailTypesSettings(QDialog):
             self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(5, int(c6))
 
         if (x != '' and y != '' and w != '' and h != ''):
-            print(f"loading dimensions {int(x)},{int(y)},{int(w)},{int(h)}")
+            #print(f"loading dimensions {int(x)},{int(y)},{int(w)},{int(h)}")
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
         self.ui_template = EditMETemplate(self.ui)
@@ -885,7 +885,7 @@ class SettingsMigrator(QDialog):
                 settings_dict = json.load(f)
         except Exception as e:
             print(f"Error reading JSON file: {e}")
-            QMessageBox.critical(None, "Cannot Parse JSON", "Unable to import settings.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Parse JSON", "Unable to import settings.")
             return
         
         # Import settings into QSettings
@@ -897,7 +897,7 @@ class SettingsMigrator(QDialog):
                 settings.endGroup()
         except Exception as e:
             print(f"Error importing settings: {e}")
-            QMessageBox.critical(None, "Cannot Parse JSON", "Unable to import settings.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Parse JSON", "Unable to import settings.")
 
         self.load_all_plugin_settings()
 
@@ -930,7 +930,7 @@ class SettingsMigrator(QDialog):
                 settings.remove(group)
         except Exception as e:
             print(f"Error deleting settings group: {e}")
-            QMessageBox.critical(None, "Cannot Delete Settings", "An error occured while removing settings settings.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Delete Settings", "An error occured while removing settings settings.")
 
         self.load_all_plugin_settings()
         

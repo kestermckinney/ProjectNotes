@@ -31,13 +31,23 @@ class ProjectNotesOutlookTools:
         self.backup_sent_folder = self.pnc.get_plugin_setting("BackupSentFolder", self.settings_pluginname)
 
     def bring_window_to_front(self, title):
-        win32gui.EnumWindows(handler_window_enumerator, top_windows)
+        try:
+            win32gui.EnumWindows(handler_window_enumerator, top_windows)
 
-        for i in top_windows:
-            if title.lower() in i[1].lower():
-                win32gui.ShowWindow(i[0],5)
-                win32gui.SetForegroundWindow(i[0])
-                break
+            for i in top_windows:
+                if title.lower() in i[1].lower():
+                    win32gui.ShowWindow(i[0],5)
+                    win32gui.SetForegroundWindow(i[0])
+                    break
+
+        except Exception as e:  # catches any Python exception
+            # If it’s a COM error, the details are in e.args
+            msg = f'Error: {e} Attempting to bring window {title} to the foreground.'
+            print(msg)
+            QMessageBox.critical(None, "Python Exception", msg)
+            if hasattr(e, 'args') and e.args:
+                print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
+
         return
 
     def find_contact(self, list, fullname ):
@@ -49,7 +59,7 @@ class ProjectNotesOutlookTools:
     def export_contacts(self, xmlstr):
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
         QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
@@ -66,94 +76,103 @@ class ProjectNotesOutlookTools:
         progbar.show()
 
 
-        outlook = win32com.client.Dispatch("Outlook.Application")
-        mapi = outlook.GetNamespace("MAPI")
-        contactsfold = mapi.GetDefaultFolder(10) # olFolderContacts
+        try:
+            outlook = win32com.client.Dispatch("Outlook.Application")
+            mapi = outlook.GetNamespace("MAPI")
+            contactsfold = mapi.GetDefaultFolder(10) # olFolderContacts
 
-        # load all contacts into memory
-        cont_enum = contactsfold.Items
-        contactlist = []
-        for contact in cont_enum:
-            if hasattr(contact, "FullName"):
-                cols = []
-                cols.append(contact)
-                cols.append(contact.FullName.strip().upper())
-                contactlist.append(cols)
+            # load all contacts into memory
+            cont_enum = contactsfold.Items
+            contactlist = []
+            for contact in cont_enum:
+                if hasattr(contact, "FullName"):
+                    cols = []
+                    cols.append(contact)
+                    cols.append(contact.FullName.strip().upper())
+                    contactlist.append(cols)
 
-        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
+            xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
 
-        childnode = xmlroot.firstChild()
-        tot_contacts = childnode.childNodes().count()
+            childnode = xmlroot.firstChild()
+            tot_contacts = childnode.childNodes().count()
 
-        cur_contacts = 0
+            cur_contacts = 0
 
-        while not childnode.isNull():
+            while not childnode.isNull():
 
-            if childnode.attributes().namedItem("name").nodeValue() == "people":
-                rownode = childnode.firstChild()
+                if childnode.attributes().namedItem("name").nodeValue() == "people":
+                    rownode = childnode.firstChild()
 
-                while not rownode.isNull():
-                    cur_contacts = cur_contacts + 1
+                    while not rownode.isNull():
+                        cur_contacts = cur_contacts + 1
 
-                    progbar.setValue(int(cur_contacts / tot_contacts * 100))
-                    progbar.setLabelText("Exporting Contacts...")
-                    QtWidgets.QApplication.processEvents()
+                        progbar.setValue(int(cur_contacts / tot_contacts * 100))
+                        progbar.setLabelText("Exporting Contacts...")
+                        QtWidgets.QApplication.processEvents()
 
-                    colnode = rownode.firstChild()
+                        colnode = rownode.firstChild()
 
-                    fullname = None
-                    company = None
-                    workphone = None
-                    workemail = None
-                    cellphone = None
-                    jobtitle = None
+                        fullname = None
+                        company = None
+                        workphone = None
+                        workemail = None
+                        cellphone = None
+                        jobtitle = None
 
-                    while not colnode.isNull():
-                        content = colnode.toElement().text()
+                        while not colnode.isNull():
+                            content = colnode.toElement().text()
 
-                        if colnode.attributes().namedItem("name").nodeValue() == "name":
-                            fullname = content
+                            if colnode.attributes().namedItem("name").nodeValue() == "name":
+                                fullname = content
 
-                        if colnode.attributes().namedItem("name").nodeValue() == "email":
-                            workemail = content
+                            if colnode.attributes().namedItem("name").nodeValue() == "email":
+                                workemail = content
 
-                        if colnode.attributes().namedItem("name").nodeValue() == "office_phone":
-                            workphone = content
+                            if colnode.attributes().namedItem("name").nodeValue() == "office_phone":
+                                workphone = content
 
-                        if colnode.attributes().namedItem("name").nodeValue() == "cell_phone":
-                            cellphone = content
+                            if colnode.attributes().namedItem("name").nodeValue() == "cell_phone":
+                                cellphone = content
 
-                        if colnode.attributes().namedItem("name").nodeValue() == "client_id":
-                            company = colnode.attributes().namedItem("lookupvalue").nodeValue()
+                            if colnode.attributes().namedItem("name").nodeValue() == "client_id":
+                                company = colnode.attributes().namedItem("lookupvalue").nodeValue()
 
-                        if colnode.attributes().namedItem("name").nodeValue() == "role":
-                            jobtitle = content
+                            if colnode.attributes().namedItem("name").nodeValue() == "role":
+                                jobtitle = content
 
-                        colnode = colnode.nextSibling()
+                            colnode = colnode.nextSibling()
 
-                    #print("Exporting ..." + fullname)
+                        #print("Exporting ..." + fullname)
 
-                    #searchname = find_contact(outlook, fullname, mapi, contactsfold)
-                    searchname = self.find_contact(contactlist, fullname)
+                        #searchname = find_contact(outlook, fullname, mapi, contactsfold)
+                        searchname = self.find_contact(contactlist, fullname)
 
-                    if searchname == None:
-                        searchname = contactsfold.Items.Add()
+                        if searchname == None:
+                            searchname = contactsfold.Items.Add()
 
-                    searchname.FullName = fullname
-                    searchname.CompanyName = company
-                    searchname.BusinessTelephoneNumber = workphone
-                    searchname.MobileTelephoneNumber = cellphone
-                    searchname.Email1Address = workemail
-                    searchname.JobTitle = jobtitle
-                    searchname.Save()
+                        searchname.FullName = fullname
+                        searchname.CompanyName = company
+                        searchname.BusinessTelephoneNumber = workphone
+                        searchname.MobileTelephoneNumber = cellphone
+                        searchname.Email1Address = workemail
+                        searchname.JobTitle = jobtitle
+                        searchname.Save()
 
-                    rownode = rownode.nextSibling()
+                        rownode = rownode.nextSibling()
 
-            childnode = childnode.nextSibling()
+                childnode = childnode.nextSibling()
 
-        outlook = None
-        mapi = None
-        contactsfold = None
+            outlook = None
+            mapi = None
+            contactsfold = None
+
+        except Exception as e:  # catches any Python exception
+            # If it’s a COM error, the details are in e.args
+            msg = f'Error: {e} Attempting to export contacts from Outlook.'
+            print(msg)
+            QMessageBox.critical(None, "Python Exception", msg)
+            if hasattr(e, 'args') and e.args:
+                print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
         progbar.hide()
         progbar.close()
@@ -167,91 +186,100 @@ class ProjectNotesOutlookTools:
     def import_contacts(self, xmlstr):
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
-        outlook = win32com.client.Dispatch("Outlook.Application")
-        mapi = outlook.GetNamespace("MAPI")
-        contactsfold = mapi.GetDefaultFolder(10) # olFolderContacts
+        try:
+            outlook = win32com.client.Dispatch("Outlook.Application")
+            mapi = outlook.GetNamespace("MAPI")
+            contactsfold = mapi.GetDefaultFolder(10) # olFolderContacts
 
-        xmlclients = ""
-        xmldoc = ""
+            xmlclients = ""
+            xmldoc = ""
 
-        #print("count of contacts : " + str(contactsfold.Items.Count))
+            #print("count of contacts : " + str(contactsfold.Items.Count))
 
-        QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
-        QtWidgets.QApplication.processEvents()
-
-        tot_contacts = contactsfold.Items.Count
-        cur_contacts = 0
-
-        progbar = QProgressDialog()
-        progbar.setWindowTitle("Importing...")
-        progbar.setWindowFlags(
-            QtCore.Qt.WindowType.Window |
-            QtCore.Qt.WindowType.WindowCloseButtonHint 
-            )
-        progbar.setMinimumWidth(350)
-        progbar.setCancelButton(None)
-        progbar.show()
-
-
-        cont_enum = contactsfold.Items
-        for contact in cont_enum:
-            cur_contacts = cur_contacts + 1
-
-            progbar.setValue(int(cur_contacts / tot_contacts * 100))
-            progbar.setLabelText("Importing Contacts...")
+            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
             QtWidgets.QApplication.processEvents()
 
-            # olContactItem
-            if contact is not None:
-                if hasattr(contact, "FullName"):
-                    #print("importing ... " + contact.FullName)
-                    xmldoc = xmldoc + "<row>\n"
+            tot_contacts = contactsfold.Items.Count
+            cur_contacts = 0
 
-                    xmldoc = xmldoc + "<column name=\"name\">" + self.pnc.to_xml(contact.FullName.strip()) + "</column>\n"
+            progbar = QProgressDialog()
+            progbar.setWindowTitle("Importing...")
+            progbar.setWindowFlags(
+                QtCore.Qt.WindowType.Window |
+                QtCore.Qt.WindowType.WindowCloseButtonHint 
+                )
+            progbar.setMinimumWidth(350)
+            progbar.setCancelButton(None)
+            progbar.show()
 
-                    if contact.Email1Address is not None:
-                        # make sure the email address looks valid
-                        if "@" in contact.Email1Address: 
-                            xmldoc = xmldoc + "<column name=\"email\">" + self.pnc.to_xml(contact.Email1Address.strip()) + "</column>\n"
-                        else:
-                            print("email address is corrupt for " + contact.FullName)
 
-                    if contact.BusinessTelephoneNumber is not None:
-                        xmldoc = xmldoc + "<column name=\"office_phone\">" + self.pnc.to_xml(contact.BusinessTelephoneNumber.strip()) + "</column>\n"
+            cont_enum = contactsfold.Items
+            for contact in cont_enum:
+                cur_contacts = cur_contacts + 1
 
-                    if contact.MobileTelephoneNumber is not None:
-                        xmldoc = xmldoc + "<column name=\"cell_phone\">" + self.pnc.to_xml(contact.MobileTelephoneNumber.strip()) + "</column>\n"
+                progbar.setValue(int(cur_contacts / tot_contacts * 100))
+                progbar.setLabelText("Importing Contacts...")
+                QtWidgets.QApplication.processEvents()
 
-                    if contact.JobTitle is not None:
-                        xmldoc = xmldoc + "<column name=\"role\">" + self.pnc.to_xml(contact.JobTitle.strip()) + "</column>\n"
+                # olContactItem
+                if contact is not None:
+                    if hasattr(contact, "FullName"):
+                        #print("importing ... " + contact.FullName)
+                        xmldoc = xmldoc + "<row>\n"
 
-                    # add the company name as a sub tablenode
-                    if (contact.CompanyName is not None and contact.CompanyName != ''):
-                        xmldoc = xmldoc + "<column name=\"client_id\" number=\"5\" lookupvalue=\"" + self.pnc.to_xml(contact.CompanyName.strip()) + "\"></column>\n"
-                        xmlclients = xmlclients + "<row><column name=\"client_name\">" + self.pnc.to_xml(contact.CompanyName.strip()) + "</column></row>\n"
+                        xmldoc = xmldoc + "<column name=\"name\">" + self.pnc.to_xml(contact.FullName.strip()) + "</column>\n"
 
-                    xmldoc = xmldoc + "</row>\n"
-            else:
-                print("Corrupt Contact Record Found")
+                        if contact.Email1Address is not None:
+                            # make sure the email address looks valid
+                            if "@" in contact.Email1Address: 
+                                xmldoc = xmldoc + "<column name=\"email\">" + self.pnc.to_xml(contact.Email1Address.strip()) + "</column>\n"
+                            else:
+                                print("email address is corrupt for " + contact.FullName)
 
-        xmldoc = """
-        <projectnotes>
-        <table name="clients">
-        """ + xmlclients + """
-        </table>
-        <table name="people">
-        """ + xmldoc + """
-        </table>
-        </projectnotes>
-        """
+                        if contact.BusinessTelephoneNumber is not None:
+                            xmldoc = xmldoc + "<column name=\"office_phone\">" + self.pnc.to_xml(contact.BusinessTelephoneNumber.strip()) + "</column>\n"
 
-        outlook = None
-        mapi = None
-        contactsfold = None
-        cont_enum = None
+                        if contact.MobileTelephoneNumber is not None:
+                            xmldoc = xmldoc + "<column name=\"cell_phone\">" + self.pnc.to_xml(contact.MobileTelephoneNumber.strip()) + "</column>\n"
+
+                        if contact.JobTitle is not None:
+                            xmldoc = xmldoc + "<column name=\"role\">" + self.pnc.to_xml(contact.JobTitle.strip()) + "</column>\n"
+
+                        # add the company name as a sub tablenode
+                        if (contact.CompanyName is not None and contact.CompanyName != ''):
+                            xmldoc = xmldoc + "<column name=\"client_id\" number=\"5\" lookupvalue=\"" + self.pnc.to_xml(contact.CompanyName.strip()) + "\"></column>\n"
+                            xmlclients = xmlclients + "<row><column name=\"client_name\">" + self.pnc.to_xml(contact.CompanyName.strip()) + "</column></row>\n"
+
+                        xmldoc = xmldoc + "</row>\n"
+                else:
+                    print("Corrupt Contact Record Found")
+
+            xmldoc = """
+            <projectnotes>
+            <table name="clients">
+            """ + xmlclients + """
+            </table>
+            <table name="people">
+            """ + xmldoc + """
+            </table>
+            </projectnotes>
+            """
+
+            outlook = None
+            mapi = None
+            contactsfold = None
+            cont_enum = None
+
+        except Exception as e:  # catches any Python exception
+            # If it’s a COM error, the details are in e.args
+            msg = f'Error: {e} Attempting to import contacts into Outlook.'
+            print(msg)
+            QMessageBox.critical(None, "Python Exception", msg)
+            if hasattr(e, 'args') and e.args:
+                print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
         progbar.hide()
         progbar.close()
@@ -274,7 +302,7 @@ class ProjectNotesOutlookTools:
 
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
             QtWidgets.QApplication.processEvents()
             return ""
@@ -334,51 +362,61 @@ class ProjectNotesOutlookTools:
         if not QDir(receivedfolder).exists():
             QDir().mkpath(receivedfolder)
 
-        outlook = win32com.client.Dispatch("Outlook.Application")
-        mapi = outlook.GetNamespace("MAPI")
-        #mailfold = mapi.Folders.GetFirst()
-        inbox = mapi.GetDefaultFolder(6)
-        sent = mapi.GetDefaultFolder(5)
 
-        progtot = inbox.Items.Count + sent.Items.Count
-        for message in inbox.Items:
-            progval = progval + 1
-            progbar.setValue(int(min(progval / progtot * 100, 100)))
-            progbar.setLabelText("Parsing Inbox items...")
-            QtWidgets.QApplication.processEvents()
+        try:
+            outlook = win32com.client.Dispatch("Outlook.Application")
+            mapi = outlook.GetNamespace("MAPI")
+            #mailfold = mapi.Folders.GetFirst()
+            inbox = mapi.GetDefaultFolder(6)
+            sent = mapi.GetDefaultFolder(5)
 
-            if message.Subject.find(projnum) >= 0:
-                if hasattr(message, "SentOn"):
-                    filename = receivedfolder + make_filename(str(message.SentOn), message.Subject) + ".msg"
+            progtot = inbox.Items.Count + sent.Items.Count
+            for message in inbox.Items:
+                progval = progval + 1
+                progbar.setValue(int(min(progval / progtot * 100, 100)))
+                progbar.setLabelText("Parsing Inbox items...")
+                QtWidgets.QApplication.processEvents()
+
+                if message.Subject.find(projnum) >= 0:
+                    if hasattr(message, "SentOn"):
+                        filename = receivedfolder + make_filename(str(message.SentOn), message.Subject) + ".msg"
+                        filename = filename.replace("/", "\\")
+
+                        #print (filename + "\n")
+
+                        if not QFile.exists(filename):
+                            message.SaveAs(filename, 3)
+                    else:
+                        print("Message has no sent date: " + message.Subject)
+
+            for message in sent.Items:
+                progval = progval + 1
+                progbar.setValue(int(min(progval / progtot * 100, 100)))
+                progbar.setLabelText("Parsing Sent items...")
+                QtWidgets.QApplication.processEvents()
+
+                if message.Subject.find(projnum) >= 0:
+                    filename = sentfolder + make_filename(str(message.SentOn), message.Subject) + ".msg"
                     filename = filename.replace("/", "\\")
-
-                    #print (filename + "\n")
 
                     if not QFile.exists(filename):
                         message.SaveAs(filename, 3)
-                else:
-                    print("Message has no sent date: " + message.Subject)
 
-        for message in sent.Items:
-            progval = progval + 1
-            progbar.setValue(int(min(progval / progtot * 100, 100)))
-            progbar.setLabelText("Parsing Sent items...")
-            QtWidgets.QApplication.processEvents()
+            mail_enum = None
+            message = None
 
-            if message.Subject.find(projnum) >= 0:
-                filename = sentfolder + make_filename(str(message.SentOn), message.Subject) + ".msg"
-                filename = filename.replace("/", "\\")
+            outlook = None
+            mapi = None
+            contactsfold = None
+            cont_enum = None
 
-                if not QFile.exists(filename):
-                    message.SaveAs(filename, 3)
-
-        mail_enum = None
-        message = None
-
-        outlook = None
-        mapi = None
-        contactsfold = None
-        cont_enum = None
+        except Exception as e:  # catches any Python exception
+            # If it’s a COM error, the details are in e.args
+            msg = f'Error: {e} Attempting to export email from Outlook.'
+            print(msg)
+            QMessageBox.critical(None, "Python Exception", msg)
+            if hasattr(e, 'args') and e.args:
+                print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
         progbar.setValue(100)
         progbar.setLabelText("Complete ...")
@@ -388,60 +426,77 @@ class ProjectNotesOutlookTools:
         return ""
 
     def schedule_meeting(self, addresses, subject, body):
-        outlook = win32com.client.Dispatch("Outlook.Application")
-        message = outlook.CreateItem(1)
+        try:
+            outlook = win32com.client.Dispatch("Outlook.Application")
+            message = outlook.CreateItem(1)
 
-        for address in addresses:
-            message.Recipients.Add(address["emailAddress"]["address"])
+            for address in addresses:
+                message.Recipients.Add(address["emailAddress"]["address"])
 
-        # create a temporary email item to convert the HTML to RTF
-        temp_mail = outlook.CreateItem(0)
-        temp_mail.HTMLBody = body
+            # create a temporary email item to convert the HTML to RTF
+            temp_mail = outlook.CreateItem(0)
+            temp_mail.HTMLBody = body
 
-        rtf_body = temp_mail.GetInspector.WordEditor.Content.FormattedText
+            rtf_body = temp_mail.GetInspector.WordEditor.Content.FormattedText
 
-        message.MeetingStatus = 1
-        message.Duration = 60
-        message.Subject = subject
+            message.MeetingStatus = 1
+            message.Duration = 60
+            message.Subject = subject
 
-        outlook.ActiveExplorer().Activate()
-        message.Display()
+            outlook.ActiveExplorer().Activate()
+            message.Display()
 
-        word_editor = message.GetInspector.WordEditor
-        word_editor.Range(0, 0).FormattedText = rtf_body
+            word_editor = message.GetInspector.WordEditor
+            word_editor.Range(0, 0).FormattedText = rtf_body
 
-        temp_mail.Close(0)
-        del temp_mail
+            temp_mail.Close(0)
+            del temp_mail
 
-        outlook = None
-        message = None
+            outlook = None
+            message = None
+        except Exception as e:  # catches any Python exception
+            # If it’s a COM error, the details are in e.args
+            msg = f'Error: {e} Attempting to schedule meeting {subject} in Outlook.'
+            print(msg)
+            QMessageBox.critical(None, "Python Exception", msg)
+            if hasattr(e, 'args') and e.args:
+                print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
         self.bring_window_to_front(subject)
 
         return None
 
     def send_email(self, addresses, subject, content, attachments):
-        outlook = win32com.client.Dispatch("Outlook.Application")
+        try:
+            outlook = win32com.client.Dispatch("Outlook.Application")
 
-        message = outlook.CreateItem(0)
-        message.To = ""
+            message = outlook.CreateItem(0)
+            message.To = ""
 
-        for address in addresses:
-            message.Recipients.Add(address["emailAddress"]["address"])
+            for address in addresses:
+                message.Recipients.Add(address["emailAddress"]["address"])
 
-        message.Display()
-        outlook.ActiveExplorer().Activate()
+            message.Display()
+            outlook.ActiveExplorer().Activate()
 
-        DefaultSignature = message.HTMLBody
+            DefaultSignature = message.HTMLBody
 
-        message.Subject = subject
-        message.HTMLBody = content + DefaultSignature
+            message.Subject = subject
+            message.HTMLBody = content + DefaultSignature
 
-        for attachment in attachments:
-            message.Attachments.Add(attachment, 1)
+            for attachment in attachments:
+                message.Attachments.Add(attachment, 1)
 
-        outlook = None
-        message = None
+            outlook = None
+            message = None
+
+        except Exception as e:  # catches any Python exception
+            # If it’s a COM error, the details are in e.args
+            msg = f'Error: {e} Attempting to send email {subject} in Outlook.'
+            print(msg)
+            QMessageBox.critical(None, "Python Exception", msg)
+            if hasattr(e, 'args') and e.args:
+                print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
         self.bring_window_to_front(subject)
 

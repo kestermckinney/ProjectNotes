@@ -90,7 +90,7 @@ class GenerateSSRSReport(QDialog):
     def generate_report(self):
         xmlval = QDomDocument()
         if (xmlval.setContent(self.xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return
 
         self.report_server = pnc.get_plugin_setting("ReportServer", "IFS Cloud")
@@ -113,6 +113,7 @@ class GenerateSSRSReport(QDialog):
         projectfolder = pnc.get_projectfolder(xmlroot)
         pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
 
+
         if (projectfolder is None or projectfolder ==""):
             projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
 
@@ -120,6 +121,12 @@ class GenerateSSRSReport(QDialog):
                 return("")
         else:
             projectfolder = projectfolder + "\\Project Management\\Status Reports\\"
+
+        if not pnc.folder_exists(projectfolder):
+            msg = f'Folder "{projectfolder}" does not exist.  Cannot download the report.'
+            print(msg)
+            QMessageBox.critical(None, "Folder Does Not Exist", msg)
+            return
 
         progbar = QProgressDialog(self.ui)
         progbar.setWindowTitle("Generating Report...")

@@ -5,7 +5,7 @@ import platform
 import subprocess
 
 from PyQt6 import QtCore
-from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QSettings
+from PyQt6.QtCore import QFile, QLockFile, QFileInfo, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QSettings
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtWidgets import QApplication, QMainWindow
 
@@ -15,6 +15,8 @@ class ProjectNotesCommon:
     def __init__(self):
         self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)
         self.saved_state_file = self.temporary_folder + '/projectnotes_saved_state.json'
+        self.lock_file = self.saved_state_file + '.lock'
+        self.lock = QLockFile(self.lock_file)
 
         self.app = QApplication.instance()
         
@@ -23,8 +25,6 @@ class ProjectNotesCommon:
             self.app = QApplication(sys.argv)
 
         self.mainwindow = next((w for w in QApplication.topLevelWidgets() if isinstance(w, QMainWindow)), None)
-
-        print(f"mainwindow set to {self.mainwindow}")
 
     def get_main_window(self):
         return self.mainwindow
@@ -38,16 +38,32 @@ class ProjectNotesCommon:
 
         # get the last state
         skip = 0
-        file = QFile(self.saved_state_file)
-        if file.exists():
-            if file.open(QIODevice.OpenModeFlag.ReadOnly):
-                saved_state = json.loads(file.readAll().data().decode("utf-8"))
-                file.close()
 
-            skip = saved_state.get(state_name, {}).get("skip", 0)
+        if self.lock.tryLock(10000):
+            file = QFile(self.saved_state_file)
+            if file.exists():
+                if file.open(QIODevice.OpenModeFlag.ReadOnly):
+                    saved_state = json.loads(file.readAll().data().decode("utf-8"))
+                    file.close()
+
+                skip = saved_state.get(state_name, {}).get("skip", 0)
+            else:
+                saved_state = json.loads("{}")
+                print(f"Failed to load previous state {state_name}.")
+
+                return None
+
+            self.lock.unlock()
         else:
-            saved_state = json.loads("{}")
-            print(f"Failed to load previous state {state_name}.")
+            print("Could not acquire lock within 10 seconds.")
+
+            error = self.lock.error()
+            if error == QLockFile.LockFailedError:
+                print("File is currently locked by another process/thread.")
+            elif error == QLockFile.PermissionError:
+                print("Permission denied.")
+
+            return None
 
         return skip
 
@@ -74,19 +90,34 @@ class ProjectNotesCommon:
         else:
             skip = skip + top
 
-        file = QFile(self.saved_state_file)
-        if file.open(QIODevice.OpenModeFlag.ReadWrite):
-            saved_state = json.loads(file.readAll().data().decode("utf-8") or "{}")
-        
-            file.resize(0)
+        if self.lock.tryLock(10000):
+            file = QFile(self.saved_state_file)
+            if file.open(QIODevice.OpenModeFlag.ReadWrite):
+                saved_state = json.loads(file.readAll().data().decode("utf-8") or "{}")
+            
+                file.resize(0)
 
-            # save the new state
-            saved_state.setdefault(state_name, {})["skip"] = skip
+                # save the new state
+                saved_state.setdefault(state_name, {})["skip"] = skip
 
-            file.write(json.dumps(saved_state, indent=4).encode("utf-8"))
-            file.close()
+                file.write(json.dumps(saved_state, indent=4).encode("utf-8"))
+                file.close()
+            else:
+                print(f"Failed to save state {state_name} to {self.saved_state_file}.")
+
+            self.lock.unlock()
         else:
-            print(f"Failed to save state {state_name} to {self.saved_state_file}.")
+            print("Could not acquire lock within 10 seconds.")
+
+            error = lock.error()
+            if error == QLockFile.LockFailedError:
+                print("File is currently locked by another process/thread.")
+            elif error == QLockFile.PermissionError:
+                print("Permission denied.")
+
+            return None
+
+        return skip
 
     def to_xml(self, val):
         if val is None:
@@ -327,6 +358,12 @@ class ProjectNotesCommon:
                 projectnumber = contents
 
         return(projectnumber)
+
+    def folder_exists(self, filename):
+        qfi = QFileInfo(filename)
+        ap = qfi.absolutePath()
+
+        return QDir(ap).exists()
 
     def replace_variables(self, source_string, node, table_name = None, row_number = None):
         expanded_string = source_string
