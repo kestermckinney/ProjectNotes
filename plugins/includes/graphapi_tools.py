@@ -22,7 +22,7 @@ def windowEnumerationHandler(hwnd, tpwindows):
         
 from includes.common import ProjectNotesCommon
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QTextStream
+from PyQt6.QtCore import Qt, QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QTextStream, QStringConverter
 from PyQt6.QtGui import QDesktopServices
 
 class TokenAPI:
@@ -193,8 +193,11 @@ class GraphAPITools:
         return
 
     def make_filename(self, datetime, subject):
-        id = re.sub(r"[-`!@#$%^&*()+\\|{}/';:<>,.~?\"\]\[ ]", "", datetime)
-        cleanname = id + "-" + re.sub(r"[`!@#$%^&*()+\\|{}/';:<>,.~?\"\]\[]", "_", subject)
+        qdt = QDateTime.fromString(datetime, Qt.DateFormat.ISODate)
+        iso_string = qdt.toString(Qt.DateFormat.ISODate)  # UTC we want it to be the same format as the GraphAPI
+
+        id = re.sub(r"[-`!@#$%^&*()+\\|{}/';:<>,.~?\"\]\[ ]", "", iso_string)
+        cleanname = id + "-" + self.pnc.valid_filename(subject)
         # there is no guarantee this length will work.  It depends on system settigns and the base path length
         return cleanname[:70]
 
@@ -551,32 +554,13 @@ class GraphAPITools:
             print("Failed to get save state.  Will try to download email again.")
             return
 
-        print(f"Checking for new email for project {projectnumber} starting at {skip} and {top} items.")
+        #print(f"Checking for new email for project {projectnumber} starting at {skip} and {top} items.")
 
         # Graph API get list of messages
-        #graph_api_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/search/query"
-        graph_api_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/mailFolders/{box}/messages?$filter=contains(subject,'{projectnumber}')&$select=id&$top={top}&$skip={skip}"  
-
-        # jsonpayload = {
-        #     "requests": [
-        #         {
-        #             "entityTypes": ["message"],
-        #             "query": {
-        #                 "queryString": f"subject:{projectnumber}"
-        #             },
-        #             "from": skip,
-        #             "size": top,
-        #             "fields" : ["id", "subject","sentDateTime"],
-        #             "folder": f"/me/mailFolders/{box}"
-        #         }
-        #     ]
-        # }
-
-        #print(f"Email request URL: {graph_api_endpoint}")
-            
+        graph_api_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/mailFolders/{box}/messages?$filter=contains(subject,'{projectnumber}')&$select=id&$top={top}&$skip={skip}" 
+        
         # get email list via Graph API
         response = requests.get(graph_api_endpoint, headers=self.headers)
-        #response = requests.post(graph_api_endpoint, headers=self.headers, data=json.dumps(jsonpayload))
 
         # Check response status code
         if response.status_code == 200:
@@ -585,17 +569,7 @@ class GraphAPITools:
              # Parse JSON response
             emails = response.json()["value"]
 
-            print(f"Query Response: \n{json.dumps(data, indent=4)}")
-
-            # if not 'value' in data or len(data["value"]) == 0 or not 'hitsContainers' in data["value"][0] or len(data["value"][0]["hitsContainers"]) == 0 or not 'hits' in data["value"][0]["hitsContainers"][0]:
-            #     print(f"No email found in {box} for {projectnumber}")
-            #     return
-
-            # hits = data["value"][0]["hitsContainers"][0]["hits"]
-
-            # print(f"Retrieved {len(hits)} emails starting at count {skip} from {box} containing {projectnumber} in the subject")                
-
-            for email in emails: #enumerate(hits):
+            for email in emails:
                 emailcount += 1 # don't download past the end
 
                 # Construct MSG download URL
@@ -603,53 +577,24 @@ class GraphAPITools:
                 msg_response = requests.get(msg_url, headers=self.headers)
 
                 if msg_response.status_code == 200:
-                    print(f'parsing response text from {msg_url}')
+                    # print(f'parsing response text from {msg_url}')
                     message_data = json.loads(msg_response.text)
 
-                    print(f"Currently at email count {emailcount}")
+                    #print(f"Currently at email count {emailcount}")
                     subject = message_data["subject"]
                     sent_time = message_data["sentDateTime"]
 
                     # if msg_response.status_code == 200:
-                    msg_file = destination_folder + "/" + self.make_filename(sent_time, subject) + ".eml"
+                    eml_file = destination_folder + "/" + self.make_filename(sent_time, subject) + ".eml"
+                    msg_file = destination_folder + "/" + self.make_filename(sent_time, subject) + ".msg"
 
-                    print(f"saving email to file: {msg_file}")
+                    #print(f"saving email to file: {msg_file}")
 
                     # only write it if it doesn't exist
-                    if not QFile(msg_file).exists():
-                        self.download_email(self.access_token, email['id'], msg_file)
-                        # # Construct MSG download URL
-                        # #msg_url = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{email[1]['hitId']}/$value?$format=MessageFormat MSG"
-                        # msg_url = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{email['id']}/$value" #?$format=MessageFormat MSG"
-
-                        # # MSG download headers
-                        # msg_headers = {
-                        #     "Authorization": f"Bearer {self.access_token}",
-                        #     "Content-Type": "application/eml"
-                        #     #"Accept": "application/msg"
-                        # }
-
-                        # # Download MSG file
-                        # msg_response = requests.get(msg_url, headers=msg_headers)
-
-                        # # Check response status code
-                        # if msg_response.status_code == 200:
-
-                        #     # Save MSG file
-                        #     file = QFile(msg_file)
-                        #     if file.open(QIODevice.OpenModeFlag.WriteOnly | QIODevice.OpenModeFlag.Text):
-                        #         stream = QTextStream(file)
-                        #         stream << msg_response.content
-                        #         file.close()
-                        #     else:
-                        #         print(f"Failed to write file {msg_file}.")
-
-
-                        #     #print(f"Email saved: {msg_file}")
-                        # else:
-                        #     print(f"Resonse Code: {msg_response.status_code} Error downloading MSG: {msg_response.text}.")
+                    if not QFile(msg_file).exists() and not QFile(eml_file).exists(): # don't save both versions
+                        self.download_email(self.access_token, email['id'], eml_file)
                     else:
-                        print(f"{msg_file} email message file already exists.")
+                        print(f"{eml_file} email message file already exists.")
                 else:
                     print(f"Response Code: {msg_response.status_code} Error getting message details {msg_response.text}.")
         else:
@@ -658,83 +603,231 @@ class GraphAPITools:
         if self.pnc.set_save_state(statename, skip, emailcount, emailcount) is None: # never redownload emails
             print("Failed to set save state.  Will try to download the same email again.")
 
+    # provide a eml formated base64 string
+    def format_base64_76(self, text):
+        return '\n'.join(text[i:i+76] for i in range(0, len(text), 76))
+
 
     def download_email(self, graph_token, message_id, email_file):
-        """
-        Download an email using the Microsoft Graph API and save it as a .eml file.
-
-        Args:
-            graph_token (str): Microsoft Graph API access token
-            message_id (str): ID of the email message to download
-            email_file (str): Path to save the email file (.eml)
-
-        Returns:
-            bool: True if successful, False otherwise
-        """
         # Set API endpoint and headers
-        endpoint = f"https://graph.microsoft.com/v1.0/me/messages/{message_id}?$expand=attachments"
-        headers = {
-            "Authorization": f"Bearer {graph_token}",
-            "Content-Type": "application/json"
-        }
-
-        # Send GET request to download email
-        response = requests.get(endpoint, headers=headers)
-
+        graph_api_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{message_id}?$expand=attachments"
+        response = requests.get(graph_api_endpoint, headers=self.headers)
 
         # Check if successful
         if response.status_code == 200:
             # Parse JSON response
-            email_data = response.json()
+            data = response.json()
 
-            print(f'Email JSON:\n{json.dumps(email_data, indent=4)}\nEnd Email JSON')
+            #print(f'Email JSON:\n{json.dumps(data, indent=4)}\nEnd Email JSON')
 
-            # Extract email headers and body
-            subject = email_data.get("subject", "")
-            from_addr = email_data.get("from", {}).get("emailAddress", {}).get("address", "")
-            to_addrs = [r.get("emailAddress", {}).get("address", "") for r in email_data.get("toRecipients", [])]
-            cc_addrs = [r.get("emailAddress", {}).get("address", "") for r in email_data.get("ccRecipients", [])]
-            body = email_data.get("body", {}).get("content", "")
+            has_attach = (data.get('attachments') is not None) and (len(data.get('attachments')) > 0)
+            boundary = data.get('internetMessageId').replace('@','').replace('.','').replace('<','').replace('>', '').replace('-','').upper()
+            msg_boundary = f'_MSG_{boundary}_'
+            att_boundary = f'_ATT_{boundary}_'
 
-            # Create .eml file content
-            eml_content = f"Subject: {subject}\r\n"
-            eml_content += f"From: {from_addr}\r\n"
-            eml_content += f"To: {', '.join(to_addrs)}\r\n"
-            if cc_addrs:
-                eml_content += f"Cc: {', '.join(cc_addrs)}\r\n"
-            eml_content += "MIME-Version: 1.0\r\n"
-            eml_content += "Content-Type: multipart/mixed;\r\n boundary=\"boundary_1\"\r\n\r\n"
-            eml_content += "--boundary_1\r\n"
-            eml_content += "Content-Type: text/html; charset=utf-8\r\n\r\n"
-            eml_content += body
-            eml_content += "\r\n--boundary_1\r\n"
+            eml = ""
+            val = data.get('internetMessageId', None)
+            eml += f'Received: from {val}\n' if val else ''
 
-            # Add attachments
-            for attachment in email_data.get("attachments", []):
-                attachment_id = attachment.get("id", "")
-                attachment_name = attachment.get("name", "")
-                attachment_response = requests.get(f"https://graph.microsoft.com/v1.0/me/messages/{message_id}/attachments/{attachment_id}/$value", headers=headers)
-                if attachment_response.status_code == 200:
-                    attachment_content = attachment_response.content
-                    eml_content += f"Content-Type: application/octet-stream; name=\"{attachment_name}\"\r\n"
-                    eml_content += f"Content-Transfer-Encoding: base64\r\n"
-                    eml_content += f"Content-Disposition: attachment; filename=\"{attachment_name}\"\r\n\r\n"
-                    eml_content += base64.b64encode(attachment_content).decode("utf-8")
-                    eml_content += "\r\n--boundary_1\r\n"
-                else:
-                    print(f"Error downloading attachment {attachment_name}: {attachment_response.status_code}")
+            val = data.get('from', None)
+            val = val.get('emailAddress', None) if val else None
+            name = val.get('name', '') if val else ''
+            address = val.get('address', None) if val else None
+            eml += f'From: "{name}" <{address}>\n' if address else ""
 
-            eml_content += "--boundary_1--\r\n"
+            alist = ''
+            for too in data.get('toRecipients'):
+                val = too.get('emailAddress', None) if val else None
+                name = val.get('name', '') if val else ''
+                address = val.get('address', None) if val else None                
+                alist += ", " if alist != '' else ''
+                alist += f'"{name}" <{address}>' if address else ""
 
-            # Save email to file
-            # with open(email_file, "w", encoding="utf-8") as f:
-            #     f.write(eml_content)
+            eml += f'To: {alist}\n' if alist != '' else ''
+
+            alist = ''
+            for too in data.get('ccRecipients'):
+                val = too.get('emailAddress', None) if val else None
+                name = val.get('name', '') if val else ''
+                address = val.get('address', None) if val else None                
+                alist += ", " if alist != '' else ''
+                alist += f'"{name}" <{address}>' if address else ""
+
+            eml += f'CC: {alist}\n' if alist != '' else ''
+
+            alist = ''
+            for too in data.get('bccRecipients'):
+                val = too.get('emailAddress', None) if val else None
+                name = val.get('name', '') if val else ''
+                address = val.get('address', None) if val else None                
+                alist += ", " if alist != '' else ''
+                alist += f'"{name}" <{address}>' if address else ""
+
+            eml += f'BCC: {alist}\n' if alist != '' else ''
+
+            val = data.get('subject')
+            eml += f'Subject: {val}\n' if val else ''
+
+            val = data.get('internetMessageId')
+            eml += f'Message-ID: {val}\n' if val else ''
+
+            alist = ''
+            for too in data.get('replyTo'):
+                val = too.get('emailAddress', None) if val else None
+                name = val.get('name', '') if val else ''
+                address = val.get('address', None) if val else None                
+                alist += ", " if alist != '' else ''
+                alist += f'"{name}" <{address}>' if address else ''
+
+            eml += f'In-Reply-To: {alist}\n' if alist != '' else ''
+
+            val = data.get('conversationId')
+            eml += f'Thread-Index: {val}\n' if val else ''
+
+            eml += f'Date: {QDateTime.currentDateTime().toString("ddd, dd MMM yyyy HH:mm:ss +0000")}\n'
+
+            if has_attach:
+                eml += 'X-MS-Has-Attach: yes\n'
+                eml += 'Content-Type: multipart/related;\n'
+                eml += f'\tboundary="{att_boundary}";\n'
+                eml += '\ttype="multipart/alternative"\n'
+                eml += 'MIME-Version: 1.0\n\n'
+
+                eml += f'--{att_boundary}\n'
+                eml += 'Content-Type: multipart/alternative;\n'
+                eml += f'\tboundary="{msg_boundary}"\n\n'
+            else:
+                eml += 'X-MS-Has-Attach: no\n'
+                eml += 'Content-Type: multipart/mixed;\n'
+                eml += f'\tboundary="{msg_boundary}"\n'
+                eml += 'MIME-Version: 1.0\n\n'
+
+            eml += f'--{msg_boundary}\n'
+            eml += 'Content-Type: text/html; charset="Windows-1252"\nContent-Transfer-Encoding: quoted-printable\n\n'
+
+            val = data.get('body', None)
+            content = val.get('content', '') if val else ''
+            content = content.replace('’','&#8217;')
+            content = content.replace('…', '&#8230;')
+            content = content.replace('–', '&#8212;')
+            content = content.replace('⋅','&#183;')
+            content = content.replace('“', '&#8220;')
+            content = content.replace('”', '&#8221;')
+            content = content.replace('•', '&#183;')
+
+            eml += content
+
+            eml += f'\n\n--{msg_boundary}--\n\n'
+
+            alist = ''
+            for fi in data.get('attachments'):
+                #print("Attachments Listed:")
+
+                alist += f'--{att_boundary}\n'
+                val = fi.get('contentType', '')
+                name = fi.get('name', '')
+                alist += f'Content-Type: {val}; \n\tname="{name}"\n'
+                alist += f'Content-Description: {name}\n'
+                
+                inline = 'attachment;'
+                if fi.get('isInline', False):
+                    inline = "inline;"
+
+                alist += f'Content-Disposition: {inline} filename="{name}";\n'
+                size = fi.get('size')
+                alist += f'\tsize={size};' if size else ''
+
+                val = fi.get('lastModifiedDateTime', None)
+                if val:
+                    dt = QDateTime.fromString(val, Qt.DateFormat.ISODate)
+                    alist += f' creation-date: "{dt.toString("ddd, dd MMM yyyy HH:mm:ss +0000")}";\n'
+                    alist += f'\tmodification-date: "{dt.toString("ddd, dd MMM yyyy HH:mm:ss +0000")}"\n'
+
+                val = fi.get('contentId', None)
+                alist += f'Content-ID: <{val}>\n' if val else ''
+
+                alist += 'Content-Transfer-Encoding: base64\n\n'
+
+                alist += self.format_base64_76(fi.get('contentBytes', ''))
+
+                alist += '\n\n'
+
+            eml += alist
+
+            if alist != '':
+                eml += f'\n\n--{att_boundary}--\n\n'
+
+            """
+            EML from Mapping
+            Received:
+                internetMessageId
+                #Note a lot of header information missing
+            From:
+                from: emailAddress:
+            To:
+                toRecipients: emailAddress:
+
+            CC:
+                toRecipients: emailAddress:
+            Subject:
+                subject
+            Thread-Topic:
+                ????
+            Message-ID:
+                internetMessageId:
+            References:
+                ????
+            In-Reply-To:
+                replyTo: emailAddress:
+            Thread-Topic:
+                ????
+            Thread-Index:
+                conversationId
+            Date:
+                current utc date and time
+            Accept-Language: ???
+            Content-Language: ???
+            Content-Type: multipart/mixed;
+                boundary="_005_BL0PR18MB2227DE7E1CD2FFBDF7E44498E485ABL0PR18MB2227nampPNOTES_"
+            MIME-Version: 1.0
+            
+            --_005_BL0PR18MB2227DE7E1CD2FFBDF7E44498E485ABL0PR18MB2227nampPNOTES_
+            Content-Type: text/plain; charset="us-ascii"
+                contentType:
+                content: ??? can we convert html??
+
+            --_005_BL0PR18MB2227DE7E1CD2FFBDF7E44498E485ABL0PR18MB2227nampPNOTES_
+            Content-Type: text/html; charset="us-ascii"
+
+                contentType:
+                content:
+
+            --_005_BL0PR18MB2227DE7E1CD2FFBDF7E44498E485ABL0PR18MB2227nampPNOTES_
+            """
+
+            """
+            File Attachments are as follows
+            from json attachments array
+
+            --_005_BL0PR18MB2227DE7E1CD2FFBDF7E44498E485ABL0PR18MB2227nampPNOTES_
+            Content-Type: contentType: application/pdf; name="name:"
+            Content-Description: name:
+            Content-Disposition: attachment; filename="name:";
+                size=size:; creation-date=lastModifiedDateTime: but use this format??"Thu, 08 Jan 2026 14:49:29 GMT";
+                modification-date=lastModifiedDateTime: "Thu, 08 Jan 2026 14:49:39 GMT"
+            Content-Transfer-Encoding: base64
+
+
+            --_005_BL0PR18MB2227DE7E1CD2FFBDF7E44498E485ABL0PR18MB2227nampPNOTES_
+            """
+
 
             # Save MSG file
             file = QFile(email_file)
             if file.open(QIODevice.OpenModeFlag.WriteOnly | QIODevice.OpenModeFlag.Text):
                 stream = QTextStream(file)
-                stream << eml_content
+                stream.setEncoding(QStringConverter.Encoding.Utf8)  # Set the codec to UTF-8
+                stream << eml
                 file.close()
             else:
                 print(f"Failed to write file {msg_file}.")

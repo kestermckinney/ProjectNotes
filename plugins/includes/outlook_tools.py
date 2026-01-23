@@ -3,11 +3,12 @@ import win32com
 import win32gui
 import sys
 import time
+import re
 
 from PyQt6 import QtSql, QtGui, QtCore, QtWidgets
-from PyQt6.QtCore import QDirIterator, QDir, QSettings, QFile
+from PyQt6.QtCore import Qt, QDirIterator, QDir, QSettings, QFile, QDateTime
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog
+from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QFileDialog
 from includes.common import ProjectNotesCommon
 
 top_windows = []
@@ -21,12 +22,6 @@ class ProjectNotesOutlookTools:
 
         self.pnc = ProjectNotesCommon()
         self.settings_pluginname = "Outlook Integration"
-        # self.use_graph_api = (self.pnc.get_plugin_setting("IntegrationType", self.settings_pluginname) == "Office 365 Application")
-        # self.import_contacts = (self.pnc.get_plugin_setting("ImportContacts", self.settings_pluginname).lower() == "true")
-        # self.export_contacts = (self.pnc.get_plugin_setting("ExportContacts", self.settings_pluginname).lower() == "true")
-        # self.sync_todo_with_due = (self.pnc.get_plugin_setting("SyncToDoWithDue", self.settings_pluginname).lower() == "true")
-        # self.sync_todo_without_due = (self.pnc.get_plugin_setting("SyncToDoDoWithoutDue", self.settings_pluginname).lower() == "true")
-        # self.backup_emails = (self.pnc.get_plugin_setting("BackupEmails", self.settings_pluginname).lower() == "true")
         self.backup_inbox_folder = self.pnc.get_plugin_setting("BackupInBoxFolder", self.settings_pluginname)
         self.backup_sent_folder = self.pnc.get_plugin_setting("BackupSentFolder", self.settings_pluginname)
 
@@ -291,25 +286,23 @@ class ProjectNotesOutlookTools:
         return xmldoc
 
     def make_filename(self, datetime, subject):
-        id = re.sub(r"[-`!@#$%^&*()+\\|{}/';:<>,.~?\"\]\[ ]", "", datetime)
+        qdt = QDateTime.fromString(datetime, Qt.DateFormat.ISODate)
+        iso_string = qdt.toString(Qt.DateFormat.ISODate)  # UTC we want it to be the same format as the GraphAPI
+
+        id = re.sub(r"[-`!@#$%^&*()+\\|{}/';:<>,.~?\"\]\[ ]", "", iso_string)
         cleanname = id + "-" + self.pnc.valid_filename(subject)
         # there is no guarantee this length will work.  It depends on system settigns and the base path length
         return cleanname[:70]
 
-    def export_email(self, xmlstr):
+    def download_emails(self, xmlstr):
         QtWidgets.QApplication.restoreOverrideCursor()
         QtWidgets.QApplication.processEvents()   
 
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
-            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
-            QtWidgets.QApplication.processEvents()
-            return ""
-
-        if not self.pnc.verify_global_settings():
-            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
-            QtWidgets.QApplication.processEvents()
+            QtWidgets.QApplication.restoreOverrideCursor()
+            QtWidgets.QApplication.processEvents()  
             return ""
 
         answer = QMessageBox.question(None,
@@ -319,8 +312,8 @@ class ProjectNotesOutlookTools:
             QMessageBox.StandardButton.No)
 
         if (answer != QMessageBox.StandardButton.Yes):
-            QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
-            QtWidgets.QApplication.processEvents()
+            QtWidgets.QApplication.restoreOverrideCursor()
+            QtWidgets.QApplication.processEvents()  
             return ""
 
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
@@ -379,12 +372,14 @@ class ProjectNotesOutlookTools:
 
                 if message.Subject.find(projnum) >= 0:
                     if hasattr(message, "SentOn"):
-                        filename = receivedfolder + make_filename(str(message.SentOn), message.Subject) + ".msg"
+                        filename = receivedfolder + "/" + self.make_filename(str(message.SentOn), message.Subject) + ".msg"
+                        eml_filename = receivedfolder + "/" + self.make_filename(str(message.SentOn), message.Subject) + ".eml"
                         filename = filename.replace("/", "\\")
+                        eml_filename = eml_filename.replace("/", "\\")
 
                         #print (filename + "\n")
 
-                        if not QFile.exists(filename):
+                        if not QFile.exists(filename) and not QFile.exists(eml_filename):
                             message.SaveAs(filename, 3)
                     else:
                         print("Message has no sent date: " + message.Subject)
@@ -396,10 +391,12 @@ class ProjectNotesOutlookTools:
                 QtWidgets.QApplication.processEvents()
 
                 if message.Subject.find(projnum) >= 0:
-                    filename = sentfolder + make_filename(str(message.SentOn), message.Subject) + ".msg"
+                    filename = sentfolder + "/" + self.make_filename(str(message.SentOn), message.Subject) + ".msg"
+                    eml_filename = sentfolder + "/" + self.make_filename(str(message.SentOn), message.Subject) + ".eml"
                     filename = filename.replace("/", "\\")
+                    eml_filename = eml_filename.replace("/", "\\")
 
-                    if not QFile.exists(filename):
+                    if not QFile.exists(filename) and not QFile.exists(eml_filename):
                         message.SaveAs(filename, 3)
 
             mail_enum = None
@@ -423,6 +420,10 @@ class ProjectNotesOutlookTools:
         progbar.hide()
         progbar.close()
         progbar = None # must be destroyed
+
+        QtWidgets.QApplication.restoreOverrideCursor()
+        QtWidgets.QApplication.processEvents()  
+
         return ""
 
     def schedule_meeting(self, addresses, subject, body):

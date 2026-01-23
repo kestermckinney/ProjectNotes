@@ -202,7 +202,7 @@ def populate_dynamic_menu(json_string):
     if (platform.system() == 'Windows' and not use_graph_api):
         pluginmenus.append({"menutitle" : "Export Contacts to Outlook", "function" : "menuExportContactsToOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
         pluginmenus.append({"menutitle" : "Import Contacts from Outlook", "function" : "menuImportContactsFromOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
-
+        pluginmenus.append({"menutitle" : "Download Emails from Outlook", "function" : "menuDownloadEmailsFromOutlook", "tablefilter" : "projects/project_locations", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : ""})
 
 
 def menuScheduleMeeting(xmlstr, parameter):
@@ -292,6 +292,12 @@ def menuExportContactsFromOutlook(parameter):
 
     return ""
 
+def menuDownloadEmailsFromOutlook(xmlstr, parameter):
+    pnot = ProjectNotesOutlookTools()
+    pnot.download_emails(xmlstr)
+
+    return ""
+
 pnc = ProjectNotesCommon()
 json_menu_data = None
 menu_data = pnc.get_plugin_setting("MeetingEmailTypes", "Meeting And Email Types")
@@ -302,3 +308,5 @@ populate_dynamic_menu(menu_data)
 #TODO: when data is sent back to project notes the screen needs to refresh
 #TODO: need to check URL availability to avoid crashes and errors -> basically test url first
 #TODO: add code to ignore the project_notes.py file.
+#TODO: Make sure the Quick Add for a team member is there with a drop down for company
+#TODO: Why do log messages get stuck until next log message is processed

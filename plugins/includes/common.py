@@ -58,9 +58,9 @@ class ProjectNotesCommon:
             print("Could not acquire lock within 10 seconds.")
 
             error = self.lock.error()
-            if error == QLockFile.LockFailedError:
+            if error == QLockFile.LockError.LockFailedError:
                 print("File is currently locked by another process/thread.")
-            elif error == QLockFile.PermissionError:
+            elif error == QLockFile.LockError.PermissionError:
                 print("Permission denied.")
 
             return None
