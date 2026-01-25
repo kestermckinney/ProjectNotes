@@ -41,7 +41,7 @@ if ifs.get_has_settings():
 #
 
 def event_timer(parameter):
-    if ifs.get_has_settings():
+    if ifs.get_has_settings() and ifs.url_is_available():
         ifs.import_ifs_projects("")
 
         if ifs.get_sync_tracker_items():
@@ -50,7 +50,7 @@ def event_timer(parameter):
     return ""
 
 def menuimport_ifs_projects(parameter):
-    if ifs.get_has_settings():
+    if ifs.get_has_settings() and ifs.url_is_available():
         ifs.import_ifs_projects("all") 
 
         if ifs.get_sync_tracker_items():
