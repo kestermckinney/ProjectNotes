@@ -55,7 +55,7 @@ class ProjectNotesCommon:
 
             self.lock.unlock()
         else:
-            print("Could not acquire lock within 10 seconds.")
+            print("Could not acquire lock within 10 seconds.  Could not get state.")
 
             error = self.lock.error()
             if error == QLockFile.LockError.LockFailedError:
@@ -107,7 +107,7 @@ class ProjectNotesCommon:
 
             self.lock.unlock()
         else:
-            print("Could not acquire lock within 10 seconds.")
+            print("Could not acquire lock within 10 seconds. Could not save state.")
 
             error = lock.error()
             if error == QLockFile.LockFailedError:
