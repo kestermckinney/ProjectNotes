@@ -1,7 +1,10 @@
-from win32com.client import GetObject
-import win32com
-import win32api
-import win32gui
+import platform
+
+if (platform.system() == 'Windows'):
+    from win32com.client import GetObject
+    import win32com
+    import win32api
+    import win32gui
 
 from includes.common import ProjectNotesCommon
 

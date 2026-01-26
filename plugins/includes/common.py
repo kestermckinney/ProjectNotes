@@ -51,8 +51,6 @@ class ProjectNotesCommon:
                 saved_state = json.loads("{}")
                 print(f"Failed to load previous state {state_name}.")
 
-                return None
-
             self.lock.unlock()
         else:
             print("Could not acquire lock within 10 seconds.  Could not get state.")

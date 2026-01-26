@@ -1,6 +1,10 @@
-from win32com.client import GetObject
-import win32com
-import win32gui
+import platform
+
+if (platform.system() == 'Windows'):
+    from win32com.client import GetObject
+    import win32com
+    import win32gui
+    
 import sys
 import time
 import re

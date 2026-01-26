@@ -1,5 +1,8 @@
-from win32com.client import GetObject
-import win32com
+import platform
+
+if (platform.system() == 'Windows'):
+    from win32com.client import GetObject
+    import win32com
 import sys
 
 from PyQt6 import QtSql, QtGui, QtCore, QtWidgets

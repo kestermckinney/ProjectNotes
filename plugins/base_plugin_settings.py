@@ -827,7 +827,7 @@ class SettingsMigrator(QDialog):
         file_dialog.setDefaultSuffix("json")
         file_dialog.setModal(True)
 
-        if not file_dialog.show():
+        if not file_dialog.exec():
             return # User cancelled the dialog
 
         output_file = file_dialog.selectedFiles()[0]
@@ -871,7 +871,7 @@ class SettingsMigrator(QDialog):
         file_dialog.setNameFilter("JSON files (*.json)")
         file_dialog.setModal(True)
         
-        if not file_dialog.show():
+        if not file_dialog.exec():
             return # User cancelled the dialog
 
         input_file = file_dialog.selectedFiles()[0]

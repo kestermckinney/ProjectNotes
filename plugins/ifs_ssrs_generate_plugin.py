@@ -87,6 +87,13 @@ class GenerateSSRSReport(QDialog):
 
         return True
 
+    def url_is_available(self, url):
+        try:
+            response = requests.head(url)
+            return response.status_code < 400
+        except requests.ConnectionError:
+            return False
+
     def generate_report(self):
         xmlval = QDomDocument()
         if (xmlval.setContent(self.xmlstr) == False):
@@ -96,6 +103,13 @@ class GenerateSSRSReport(QDialog):
         self.report_server = pnc.get_plugin_setting("ReportServer", "IFS Cloud")
         self.domain_user = pnc.get_plugin_setting("DomainUser", "IFS Cloud")
         self.domain_password = pnc.get_plugin_setting("DomainPassword", "IFS Cloud")
+
+        if not self.url_is_available(self.report_server):
+            msg = f'The report server "{self.report_server}" is not available.  Cannot download the report.'
+            print(msg)
+            QMessageBox.critical(None, "Server Not Available", msg)
+            self.hide()
+            return
 
         emaillist = ""
 

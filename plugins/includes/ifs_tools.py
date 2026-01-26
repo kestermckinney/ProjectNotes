@@ -28,6 +28,12 @@ class IFSCommon:
         self.domain_password = self.pnc.get_plugin_setting("DomainPassword", self.settings_pluginname)
         self.sync_tracker_items = self.pnc.get_plugin_setting("SyncTrackerItems", self.settings_pluginname)
 
+    def url_is_available(self):
+        try:
+            response = requests.head(self.ifs_url)
+            return response.status_code < 400
+        except requests.ConnectionError:
+            return False
 
     def get_has_settings(self):
         if self.ifs_username is None or self.ifs_username == '':
@@ -374,7 +380,7 @@ class IFSCommon:
             self.get_team_members_xml(rgroups, clientsdict, rowval['ProjectId'], rd )
 
         if self.pnc.set_save_state(statename, skip, top, projectcount) is None:
-            print("Failes to set save state. Will retreive the same projects list again.")
+            print("Failed to set save state. Will retreive the same projects list again.")
 
             
     def get_resource_groups(self, rgroups):
