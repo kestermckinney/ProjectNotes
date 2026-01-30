@@ -68,7 +68,7 @@ class BasePlugins:
 
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
@@ -122,7 +122,7 @@ class BasePlugins:
     def copy_path_to_clipboard(self, xmlstr):
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
@@ -149,7 +149,7 @@ class BasePlugins:
         if (EditorFullPath is None or EditorFullPath == ""):
             msg = "You will need to specify an editor in the Open Editor plugin settings."
             print(msg)
-            QMessageBox.critical(None, "Editor Not Specified", msg, QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Editor Not Specified", msg)
         else:
             self.pnc.exec_program( EditorFullPath )
         return ""
@@ -202,7 +202,7 @@ def populate_dynamic_menu(json_string):
     if (platform.system() == 'Windows' and not use_graph_api):
         pluginmenus.append({"menutitle" : "Export Contacts to Outlook", "function" : "menuExportContactsToOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
         pluginmenus.append({"menutitle" : "Import Contacts from Outlook", "function" : "menuImportContactsFromOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
-
+        pluginmenus.append({"menutitle" : "Download Emails from Outlook", "function" : "menuDownloadEmailsFromOutlook", "tablefilter" : "projects/project_locations", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : ""})
 
 
 def menuScheduleMeeting(xmlstr, parameter):
@@ -216,7 +216,7 @@ def menuScheduleMeeting(xmlstr, parameter):
             nam = d
 
     if nam is None or len(nam) == 0:
-        QMessageBox.critical(None, "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.",QMessageBox.StandardButton.Cancel)
+        QMessageBox.critical(None, "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.")
         return ""
 
     template = nam.get('Template')
@@ -239,7 +239,7 @@ def menuSendEmail(xmlstr, parameter):
             nam = d
 
     if nam is None or len(nam) == 0:
-        QMessageBox.critical(None, "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.",QMessageBox.StandardButton.Cancel)
+        QMessageBox.critical(None, "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.")
         return ""
 
     template = nam.get('Template')
@@ -292,12 +292,18 @@ def menuExportContactsFromOutlook(parameter):
 
     return ""
 
+def menuDownloadEmailsFromOutlook(xmlstr, parameter):
+    pnot = ProjectNotesOutlookTools()
+    pnot.download_emails(xmlstr)
+
+    return ""
+
 pnc = ProjectNotesCommon()
 json_menu_data = None
 menu_data = pnc.get_plugin_setting("MeetingEmailTypes", "Meeting And Email Types")
 populate_dynamic_menu(menu_data)
 
-#TODO: Fix or rework tracker report export
-#TODO: Fix the status report integration with SSRS
-#TODO: Fix or change the template fillout features
-#TODO: Setup meetings to test
+#TODO: VER 4.1 Fix or rework tracker report export
+#TODO: VER 4.1 Fix or change the template fillout features 
+#TODO: VER 4.1 Make sure the Quick Add for a team member is there with a drop down for company
+

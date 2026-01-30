@@ -10,12 +10,12 @@ from includes.common import ProjectNotesCommon
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QFileInfo, QDir
+from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QFileInfo, QDir, QRect
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog, QInputDialog, QLineEdit
 from PyQt6.QtGui import QDesktopServices
 
 # Project Notes Plugin Parameters
-pluginname = "Change Order"
+pluginname = "New Change Order"
 plugindescription = "Copy the Change Order template, adding project information to the file."
 
 pluginmenus = []
@@ -38,8 +38,63 @@ pluginmenus = []
 #      item_tracker_updates
 #      item_tracker
 
-# this plugin is only supported on windows
+# Custom Setting
+class NewChangeOrderSettings(QDialog):
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
+        self.settings_pluginname = "New Change Order"
 
+        self.ui = uic.loadUi("plugins/forms/dialogExportLocation.ui", self)
+        self.ui.setWindowTitle("New Change Order Sub Folder")
+        self.ui.setWindowFlags(
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowCloseButtonHint
+            )
+        self.ui.setModal(True)
+
+        self.ui.buttonBox.accepted.connect(self.save_settings)
+        self.ui.buttonBox.rejected.connect(self.reject_changes)
+
+        x = pnc.get_plugin_setting("X", self.settings_pluginname)
+        y = pnc.get_plugin_setting("Y", self.settings_pluginname)
+        w = pnc.get_plugin_setting("W", self.settings_pluginname)
+        h = pnc.get_plugin_setting("H", self.settings_pluginname)
+
+        self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
+        self.ui.lineEditExportSubFolder.setText(self.export_subfolder)
+
+        if (x != '' and y != '' and w != '' and h != ''):
+            self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
+
+    def save_window_state(self):
+        # Save window position and size
+        pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
+        pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
+        pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
+        pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
+
+        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+
+    def save_settings(self):
+        self.export_subfolder = self.ui.lineEditExportSubFolder.text()
+        pnc.set_plugin_setting("ExportSubFolder", self.settings_pluginname, self.export_subfolder)
+
+        self.save_window_state()
+        self.accept()
+
+    def reject_changes(self):
+        self.save_window_state()
+        
+        # Call the base class implementation
+        self.reject()
+
+    def closeEvent(self, event):
+        self.save_window_state()
+
+        # Call the base class implementation
+        super().closeEvent(event)
+
+# this plugin is only supported on windows
 if (platform.system() == 'Windows'):
     
     pnc = ProjectNotesCommon()
@@ -47,7 +102,7 @@ if (platform.system() == 'Windows'):
     def menuChangeOrder(xmlstr, parameter):
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
         # prompt for the template to use
@@ -69,13 +124,15 @@ if (platform.system() == 'Windows'):
         if ok == False:
             return ""
 
+        export_subfolder = pnc.get_plugin_setting("ExportSubFolder", "New Change Order")
+
         if (projectfolder is None or projectfolder =="" or not QDir(projectfolder).exists()):
             projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
                 return ""
         else:
-            projectfolder = projectfolder + "\\Project Management\\PCR\'s\\"
+            projectfolder = projectfolder + f"/{export_subfolder}/"
 
         templatefile =  "plugins\\templates\\PCR Template.docx"
         tempfileinfo = QFileInfo(templatefile)
@@ -86,10 +143,16 @@ if (platform.system() == 'Windows'):
 
         projectfile = projectfile.replace("/", "\\") # office products have to have backslash
 
+        if not pnc.folder_exists(projectfile):
+            msg = f'Folder for "{projectfile}" does not exist.  Cannot copy the template.'
+            print(msg)
+            QMessageBox.critical(None, "Folder Does Not Exist")
+            return ""
+
         # copy the file
         if not QFile(projectfile).exists():
             if not QFile(templatefile).copy(projectfile):
-                QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + projectfile, QMessageBox.StandardButton.Cancel)
+                QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + projectfile)
                 return ""
 
         # change the values for the project specifics in the file
@@ -135,7 +198,14 @@ if (platform.system() == 'Windows'):
         #return doc.Content.Find.Execute(searchtext, 0, 0, 0, 0, 0, 1, 1, 0, replacetext, 2, 0, 0, 0, 0, 0, 1, 0, 0, 0)
         return doc.Content.Find.Execute(searchtext, False, False, False, False, False, True, 1, False, replacetext, 2)
 
+    def menuSettings(parameter):
+        ncs.show()
+        return ""
+
+    ncs = NewChangeOrderSettings()
+
     pluginmenus.append({"menutitle" : "Change Order", "function" : "menuChangeOrder", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
+    pluginmenus.append({"menutitle" : "New Change Order", "function" : "menuSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
 
 
 #setup test data

@@ -28,6 +28,12 @@ class IFSCommon:
         self.domain_password = self.pnc.get_plugin_setting("DomainPassword", self.settings_pluginname)
         self.sync_tracker_items = self.pnc.get_plugin_setting("SyncTrackerItems", self.settings_pluginname)
 
+    def url_is_available(self):
+        try:
+            response = requests.head(self.ifs_url)
+            return response.status_code < 400
+        except requests.ConnectionError:
+            return False
 
     def get_has_settings(self):
         if self.ifs_username is None or self.ifs_username == '':
@@ -306,6 +312,10 @@ class IFSCommon:
         else:
             skip = self.pnc.get_save_state(statename)
 
+            if skip is None:
+                print("Failed to get save state.  Will try to get projects list again.")
+                return ""
+
         if (skip > 0):
             segment = segment + f"$skip={skip}"
 
@@ -365,11 +375,10 @@ class IFSCommon:
             rd['projectsxmlrows'] +=  "    <column name=\"bac\">" + str(metrics['Bac_aggr_']) + "</column>\n"
             rd['projectsxmlrows'] +=  "  </row>\n"
 
-            #TODO: maybe just let file finder do this on  it's own rd['projectlocationsxmlrows'] = rd['projectlocationsxmlrows'] + self.pnc.find_projectlocations( rowval['ProjectId'], ProjectsFolder)
-
             self.get_team_members_xml(rgroups, clientsdict, rowval['ProjectId'], rd )
 
-        self.pnc.set_save_state(statename, skip, top, projectcount)
+        if self.pnc.set_save_state(statename, skip, top, projectcount) is None:
+            print("Failed to set save state. Will retreive the same projects list again.")
 
             
     def get_resource_groups(self, rgroups):
@@ -393,7 +402,7 @@ class IFSCommon:
 
 
     def get_team_members_xml(self, rgroups, clientsdict, projectid, rd):
-        return #TODO: Fix IFS 25R1 broke it
+        return #TODO: VER 4.3 Fix IFS 25R1 broke it
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectResourcePlanningHandling.svc/ProjectSet(ProjectId=%27' + projectid + '%27)/ProjectAllocationArray?$apply=groupby((EmployeeName,ResourceId))'
         
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
@@ -572,6 +581,10 @@ class IFSCommon:
         else:
             skip = self.pnc.get_save_state(statename)
 
+            if skip is None:
+                print("Failed to get save state.  Will try to export tracker items again.")
+                return
+
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table filter_field_1="project_status" filter_value_1="Active" name="projects" {self.pnc.state_range_attrib(top, skip)} />\n</projectnotes>\n'
         xmlresult = projectnotes.get_data(xmldoc)
         
@@ -595,7 +608,8 @@ class IFSCommon:
 
                 projectrow = projectrow.nextSibling()
 
-        self.pnc.set_save_state(statename, skip, top, projectcount)
+        if self.pnc.set_save_state(statename, skip, top, projectcount) is None:
+            print("Failed to save state.  Will export the same tracker items again.")
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
         print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")

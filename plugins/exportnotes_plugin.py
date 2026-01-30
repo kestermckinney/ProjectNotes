@@ -6,7 +6,7 @@ from includes.collaboration_tools import CollaborationTools
 
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import QFile, QIODevice, QDate, QDir, QTextStream, QStringConverter, QProcess, QMarginsF, QUrl, QTimer
+from PyQt6.QtCore import QFile, QIODevice, QDate, QDir, QTextStream, QStringConverter, QProcess, QMarginsF, QUrl, QTimer, QRect
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
 from PyQt6.QtGui import QDesktopServices, QPageLayout, QPageSize
 from PyQt6.QtWebEngineWidgets import QWebEngineView
@@ -19,7 +19,10 @@ os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--enable-logging=stderr --log-level=
 pluginname = "Export Meeting Notes"
 plugindescription = "Generate meeting notes to be exported.  Notes can be exported as HTML or a PDF."
 
-pluginmenus = [{"menutitle" : "Meeting Notes", "function" : "menuExportMeetingNotes", "tablefilter" : "projects/project_notes/meeting_attendees/item_tracker/project_locations", "submenu" : "Export", "dataexport" : "projects"}]
+pluginmenus = [
+    {"menutitle" : "Meeting Notes", "function" : "menuExportMeetingNotes", "tablefilter" : "projects/project_notes/meeting_attendees/item_tracker/project_locations", "submenu" : "Export", "dataexport" : "projects"},
+    {"menutitle" : "Export Notes", "function" : "menuSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""}
+]
 
 # events must have a data structure and data view specified
 #
@@ -38,6 +41,62 @@ pluginmenus = [{"menutitle" : "Meeting Notes", "function" : "menuExportMeetingNo
 #      meeting_attendees
 #      item_tracker_updates
 #      item_tracker
+
+# Custom Setting
+class ExportNotesSettings(QDialog):
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
+        self.settings_pluginname = "Export Meeting Notes"
+
+        self.ui = uic.loadUi("plugins/forms/dialogExportLocation.ui", self)
+        self.ui.setWindowTitle("Notes Export Sub Folder")
+        self.ui.setWindowFlags(
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowCloseButtonHint
+            )
+        self.ui.setModal(True)
+
+        self.ui.buttonBox.accepted.connect(self.save_settings)
+        self.ui.buttonBox.rejected.connect(self.reject_changes)
+
+        x = pnc.get_plugin_setting("X", self.settings_pluginname)
+        y = pnc.get_plugin_setting("Y", self.settings_pluginname)
+        w = pnc.get_plugin_setting("W", self.settings_pluginname)
+        h = pnc.get_plugin_setting("H", self.settings_pluginname)
+
+        self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
+        self.ui.lineEditExportSubFolder.setText(self.export_subfolder)
+
+        if (x != '' and y != '' and w != '' and h != ''):
+            self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
+
+    def save_window_state(self):
+        # Save window position and size
+        pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
+        pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
+        pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
+        pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
+
+        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+
+    def save_settings(self):
+        self.export_subfolder = self.ui.lineEditExportSubFolder.text()
+        pnc.set_plugin_setting("ExportSubFolder", self.settings_pluginname, self.export_subfolder)
+
+        self.save_window_state()
+        self.accept()
+
+    def reject_changes(self):
+        self.save_window_state()
+        
+        # Call the base class implementation
+        self.reject()
+
+    def closeEvent(self, event):
+        self.save_window_state()
+
+        # Call the base class implementation
+        super().closeEvent(event)
 
 def generateHeader(project_number, project_name):
     html = """
@@ -1189,7 +1248,7 @@ def generateFooter(reportdate):
 class MeetingsExporter(QDialog):
     def __init__(self, parent: QMainWindow = None):
         super().__init__(parent)
-
+        self.settings_pluginname = "Export Meeting Notes"
 
         self.ui = uic.loadUi("plugins/forms/dialogExportNotesOptions.ui", self)
         self.ui.m_datePickerRptDateNotes.setCalendarPopup(True)
@@ -1289,7 +1348,7 @@ class MeetingsExporter(QDialog):
     def export_notes(self):
         xmldoc = QDomDocument()
         if (xmldoc.setContent(self.xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.",QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
         self.project_htmlreportname = ""
@@ -1315,6 +1374,8 @@ class MeetingsExporter(QDialog):
         #print("finding projects table ..")
         print("found project folder: " + projectfolder)
         QtWidgets.QApplication.processEvents()
+
+        self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
         
         projtab = pnc.find_node(xmlroot, "table", "name", "projects")
         projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
@@ -1332,9 +1393,15 @@ class MeetingsExporter(QDialog):
                 return ""
         else:
             # this specific folder path may need to be configurable
-            projectfolder = projectfolder + "/Project Management/Meeting Minutes"
+            projectfolder = projectfolder + f"/{self.export_subfolder}/"
 
         projectfolder += "/"
+
+        if not pnc.folder_exists(projectfolder):
+            msg = f"Folder {projectfolder} does not exist.  Cannot generate the report."
+            print(msg)
+            QMessageBox.critical(None, "Folder Does Not Exist")
+            return
 
         self.progbar = QProgressDialog(self)
         self.progbar.setWindowTitle("Exporting...")
@@ -1497,14 +1564,14 @@ class MeetingsExporter(QDialog):
 
         QFile.remove(self.project_pdfreportname)
         if not QFile(self.pdfreportname).copy(self.project_pdfreportname):
-            QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.pdfreportname + " to " + self.project_pdfreportname, QMessageBox.StandardButton.Cancel)
+            QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.pdfreportname + " to " + self.project_pdfreportname)
 
         if self.keephtml == False:
             QFile.remove(self.htmlreportname)
         else:
             QFile.remove(self.project_htmlreportname)
             if not QFile(self.htmlreportname).copy(self.project_htmlreportname):
-                QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.htmlreportname + " to " + self.project_htmlreportname, QMessageBox.StandardButton.Cancel)
+                QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.htmlreportname + " to " + self.project_htmlreportname)
 
         if self.ui.m_checkBoxDisplayNotes.isChecked():
             try:
@@ -1543,9 +1610,14 @@ def menuExportMeetingNotes(xmlstr, parameter):
 
     return ""
 
+def menuSettings(parameter):
+    ens.show()
+    return ""
+
 # keep the instance of windows open to avoid sending the main app a close message
 pnc = None
 mex = None
+ens = None
 
 #setup test data
 if __name__ == '__main__':
@@ -1556,6 +1628,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     pnc = ProjectNotesCommon()
     mex = MeetingsExporter()
+    ens = ExportNotesSettings()
 
     xml_content = ""
     with open("C:\\Users\\pamcki\\OneDrive - Cornerstone Controls\\Documents\\Work In Progress\\XML\\project.xml", 'r', encoding='utf-8') as file:
@@ -1576,3 +1649,4 @@ if __name__ == '__main__':
 else:
     pnc = ProjectNotesCommon()
     mex = MeetingsExporter(pnc.get_main_window())
+    ens = ExportNotesSettings()

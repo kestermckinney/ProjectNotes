@@ -142,6 +142,9 @@ def menuRightClickDownloadEmails(xmlstr, parameter):
 
 def event_timer(parameter):
     global stopevent
+
+    if not use_graph_api:
+        return ""
     
     if stopevent:
         return ""
