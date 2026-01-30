@@ -89,7 +89,12 @@ static PyObject* update_data(PyObject* self, PyObject* args)
     PNDatabaseObjects dbo;
     dbo.openDatabase(global_DBObjects.getDatabaseFile(), caller, false);
     int result = dbo.importXMLDoc(xmldoc);
+
+    global_DBObjects.setAllDirty(); // get all the dirty tables from the temporaty database object
+
     dbo.closeDatabase();
+
+    emit MainWindow::getPluginManager()->pluginRefreshRequest();
 
     return PyBool_FromLong(result);
 }
@@ -433,6 +438,12 @@ void PluginManager::loadPluginFiles(const QString& t_path, bool t_isthread)
         bool notfound = true;
         QString filePath = fileit.fileInfo().absoluteFilePath();
 
+        if (filePath.contains("projectnotes.py", Qt::CaseInsensitive))
+        {
+            QLog_Info(CONSOLELOG, QString("Ignoring module file '%1'.").arg(filePath));
+            continue;
+        }
+
         for (auto it = m_pluginlist.begin(); it != m_pluginlist.end(); ++it)
         {
             if ((*it)->modulepath().compare(filePath) == 0)
@@ -519,6 +530,12 @@ void PluginManager::onUnloadComplete(const QString &t_modulepath)
 
 void PluginManager::onFileChanged(const QString &t_filepath)
 {
+    if (t_filepath.contains("projectnotes.py", Qt::CaseInsensitive))
+    {
+        QLog_Info(CONSOLELOG, QString("Ignoring module file change '%1'.").arg(t_filepath));
+        return;
+    }
+
     QLog_Info(CONSOLELOG, QString("Module file '%1' changed.").arg(t_filepath));
 
     QFileInfo file(t_filepath);
@@ -545,6 +562,12 @@ void PluginManager::onFileChanged(const QString &t_filepath)
 
 void PluginManager::onForceReload(const QString &t_module)
 {
+    if (t_module.contains("projectnotes.py", Qt::CaseInsensitive))
+    {
+        QLog_Info(CONSOLELOG, QString("Ignoring forced reload file change '%1'.").arg(t_module));
+        return;
+    }
+
     QString basemodule = QFileInfo(t_module).baseName();
 
     for (auto it = m_pluginlist.begin(); it != m_pluginlist.end(); ++it)

@@ -130,6 +130,7 @@ public:
 
     PNSqlQueryModel* findOpenTable(const QString& t_tablename);
     bool refreshDirty();
+    bool setAllDirty();
 
     // global searches
     void setShowResolvedTrackerItems(bool t_value);

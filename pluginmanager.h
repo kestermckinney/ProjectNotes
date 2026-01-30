@@ -40,6 +40,7 @@ signals:
     void pluginLoaded(const QString& t_path);
     void pluginUnLoaded(const QString& t_path);
     void pluginForceReload(const QString& t_module);
+    void pluginRefreshRequest();
 
 public slots:
     void unloadAll();

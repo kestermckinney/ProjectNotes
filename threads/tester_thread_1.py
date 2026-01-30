@@ -1,6 +1,6 @@
 import sys
 import platform
-#import projectnotes
+import projectnotes
 import time
 
 
@@ -41,11 +41,23 @@ def event_shutdown(parameter):
     return ""
 
 def event_timer(parameter):
-    for count in range(1, 300):
-        time.sleep(0.05)
-        #print(f"Thread 1 - event minute counter {count}")
 
-    #print("Test Thread 1: Timer event called...")
+    print("Test Thread 1: Timer event called...")
+
+    docxml = "<projectnotes>\n"
+    docxml += "<table name=\"people\">\n"
+    docxml += "  <row>" #" id=\"99.9\">\n"
+    #docxml += "    <column name=\"people_id\">99.9</column>\n"
+    docxml += "    <column name=\"name\">Able To Test</column>\n"
+    docxml += "    <column name=\"role\">Time Is " + QDateTime.currentDateTime().toString() + "</column>\n"
+    docxml += "    <column name=\"client_id\" lookupvalue=\"Cornerstone Controls, Inc.\"></column>\n"
+    docxml += "  </row>\n"
+    docxml += "</table>\n"
+    docxml += "</projectnotes>\n"
+
+    print(docxml)
+
+    projectnotes.update_data(docxml) # need to test and see if screen will refresh automatically
 
     return ""
 

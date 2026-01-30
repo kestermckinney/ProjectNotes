@@ -24,6 +24,7 @@ QT_END_NAMESPACE
 #include "findreplacedialog.h"
 #include "logviewer.h"
 #include "pluginmanager.h"
+#include "watchthreadsdialog.h"
 
 #define MAXHISTORYNODES 20
 
@@ -131,6 +132,7 @@ private slots:
 
     void onPluginLoaded(const QString& t_pluginpath);
     void onPluginUnLoaded(const QString& t_pluginpath);
+    void onRefreshRequested();
 
 private:
     void buildPluginMenu(PNBasePage* t_current_page);
@@ -139,6 +141,8 @@ private:
 
     PreferencesDialog* m_preferences_dialog = nullptr;
     FindReplaceDialog* m_find_replace_dialog = nullptr;
+    WatchThreadsDialog* m_watch_threads_dialog= nullptr;
+
     static PluginManager* m_plugin_manager;
     LogViewer* m_logview_dialog = nullptr;
 

@@ -24,8 +24,6 @@ class ProjectNotesCommon:
 
         self.mainwindow = next((w for w in QApplication.topLevelWidgets() if isinstance(w, QMainWindow)), None)
 
-        print(f"mainwindow set to {self.mainwindow}")
-
     def get_main_window(self):
         return self.mainwindow
 

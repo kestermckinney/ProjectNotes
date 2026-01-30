@@ -26,6 +26,7 @@ public:
     bool hasMethod(const QString& t_method) const;
 
     QString modulepath() const { return m_modulepath; }
+    QString pluginname() const { return m_pluginname; }
 
 signals:
     void loadModule(const QString& t_module);
@@ -48,6 +49,7 @@ private:
     QThread* m_thread = nullptr;
     PythonPlugin m_plugin;
     QString m_modulepath;
+    QString m_pluginname;
 
     bool m_enabled = false;
     bool m_loaded = false;

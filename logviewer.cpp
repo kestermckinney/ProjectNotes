@@ -295,6 +295,7 @@ void LogViewer::onFolderChanged(const QString &folderPath)
         {            
             QPlainTextEdit *editor = new QPlainTextEdit(this);
             editor->setReadOnly(true);
+            editor->setWordWrapMode(QTextOption::NoWrap);
             editor->verticalScrollBar()->setValue(editor->verticalScrollBar()->maximum());
 
             m_tabWidget->addTab(editor, fileInfo.fileName());

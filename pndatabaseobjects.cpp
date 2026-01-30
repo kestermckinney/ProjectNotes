@@ -594,6 +594,19 @@ bool PNDatabaseObjects::refreshDirty()
     return foundsome;
 }
 
+bool PNDatabaseObjects::setAllDirty()
+{
+    bool foundsome = false;
+
+    for ( PNSqlQueryModel* m : getOpenModels())
+    {
+        m->setDirty();
+        foundsome = true;
+    }
+
+    return foundsome;
+}
+
 QString PNDatabaseObjects::loadParameter( const QVariant& t_parametername )
 {
     QSqlQuery select(m_sqlite_db);

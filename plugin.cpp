@@ -143,25 +143,11 @@ void Plugin::onLoadComplete(const PythonPlugin& t_plugin)
 {
     m_plugin = t_plugin;
 
+    m_pluginname = t_plugin.name(); // keep the plugin name handy for displays
+
     m_loaded = true;
 
-    QString logMsg;
-
-    QString members;
-    for (QString s : m_plugin.members())
-    {
-        if (!members.isEmpty())
-            members += ", ";
-        members += s;
-    }
-
-    if (!members.isEmpty())
-        members = "Provided Function(s): " + members;
-
     emit moduleLoaded(m_modulepath);
-#ifdef QT_DEBUG
-    QLog_Debug(DEBUGLOG, QString("Loaded Plugin: %1 %2").arg(m_plugin.name(), logMsg));
-#endif
 }
 
 void Plugin::onUnLoadComplete()

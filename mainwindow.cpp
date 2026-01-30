@@ -63,6 +63,7 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     m_preferences_dialog = new PreferencesDialog(this);
     m_find_replace_dialog = new FindReplaceDialog(this);
+    m_watch_threads_dialog = new WatchThreadsDialog(this);
 
     // view state
     m_page_history.clear();
@@ -98,17 +99,23 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     connect(m_plugin_manager, &PluginManager::pluginLoaded, this, &MainWindow::onPluginLoaded);
     connect(m_plugin_manager, &PluginManager::pluginUnLoaded, this, &MainWindow::onPluginUnLoaded);
+    connect(m_plugin_manager, &PluginManager::pluginRefreshRequest, this, &MainWindow::onRefreshRequested);
 
     if (!global_Settings.getLastDatabase().toString().isEmpty())
         if (QFile(global_Settings.getLastDatabase().toString()).exists())
             openDatabase(global_Settings.getLastDatabase().toString());
 
     setButtonAndMenuStates();
+
+    m_watch_threads_dialog->show();
+
 }
 
 void MainWindow::aboutToQuit()
 {        
     m_plugin_manager->unloadAll();
+
+    m_watch_threads_dialog->show();
 
     // the unloads can produce shutdown events to process
     QApplication::processEvents();
@@ -226,6 +233,8 @@ void MainWindow::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname,
 
 MainWindow::~MainWindow()
 {
+    //TODO: put in a pop up to show plugins that are still running
+
     disconnect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ProjectDetails_triggered(QVariant)));
     disconnect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ItemDetails_triggered(QVariant)));
     disconnect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ItemDetails_triggered(QVariant)));
@@ -240,6 +249,7 @@ MainWindow::~MainWindow()
 
     disconnect(m_plugin_manager, &PluginManager::pluginLoaded, this, &MainWindow::onPluginLoaded);
     disconnect(m_plugin_manager, &PluginManager::pluginUnLoaded, this, &MainWindow::onPluginUnLoaded);
+    disconnect(m_plugin_manager, &PluginManager::pluginRefreshRequest, this, &MainWindow::onRefreshRequested);
 
 
     // need to save the screen layout befor the model is removed from the view
@@ -271,6 +281,7 @@ MainWindow::~MainWindow()
 
     delete m_preferences_dialog;
     delete m_find_replace_dialog;
+    delete m_watch_threads_dialog;
     delete m_plugin_manager;
     delete ui;
 
@@ -1855,4 +1866,9 @@ void MainWindow::onPluginUnLoaded(const QString& t_pluginpath)
     PNBasePage* current = hn ? hn->m_page : nullptr;
 
     buildPluginMenu(dynamic_cast<PNBasePage*>(current));
+}
+
+void MainWindow::onRefreshRequested()
+{
+    global_DBObjects.refreshDirty();
 }
