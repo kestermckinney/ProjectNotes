@@ -286,6 +286,7 @@ class EditorSettings(QDialog):
             QtCore.Qt.WindowType.Window |
             QtCore.Qt.WindowType.WindowCloseButtonHint
             )
+        self.ui.setModal(True)
 
         self.ui.pushButtonFilePick.clicked.connect(self.editlocation)
         self.ui.buttonBox.accepted.connect(self.save_settings)
@@ -997,5 +998,3 @@ if __name__ == '__main__':
     menuMeetingEmailTypesSettings("")
     #menuFileCollectorSettings("")
     sys.exit(app.exec())
-
-#todo: add the ability to quickly add a team member that isn't in the       databse

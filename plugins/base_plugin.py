@@ -303,10 +303,7 @@ json_menu_data = None
 menu_data = pnc.get_plugin_setting("MeetingEmailTypes", "Meeting And Email Types")
 populate_dynamic_menu(menu_data)
 
-#TODO: Fix or rework tracker report export
-#TODO: Fix or change the template fillout features
-#TODO: when data is sent back to project notes the screen needs to refresh
-#TODO: need to check URL availability to avoid crashes and errors -> basically test url first
-#TODO: add code to ignore the project_notes.py file.
-#TODO: Make sure the Quick Add for a team member is there with a drop down for company
-#TODO: Why do log messages get stuck until next log message is processed
+#TODO: VER 4.1 Fix or rework tracker report export
+#TODO: VER 4.1 Fix or change the template fillout features 
+#TODO: VER 4.1 Make sure the Quick Add for a team member is there with a drop down for company
+

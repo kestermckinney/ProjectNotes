@@ -9,7 +9,7 @@ from includes.common import ProjectNotesCommon
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import QFile, QIODevice, QDate, QUrl, QDir, QFileInfo
+from PyQt6.QtCore import QFile, QIODevice, QDate, QUrl, QDir, QFileInfo, QRect
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
 from PyQt6.QtGui import QDesktopServices
 
@@ -37,11 +37,67 @@ pluginmenus = []
 #      item_tracker_updates
 #      item_tracker
 
+# Custom Setting
+class TrackerReportSettings(QDialog):
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
+        self.settings_pluginname = "Tracker Report"
+
+        self.ui = uic.loadUi("plugins/forms/dialogExportLocation.ui", self)
+        self.ui.setWindowTitle("Tracker Report Export Sub Folder")
+        self.ui.setWindowFlags(
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowCloseButtonHint
+            )
+        self.ui.setModal(True)
+
+        self.ui.buttonBox.accepted.connect(self.save_settings)
+        self.ui.buttonBox.rejected.connect(self.reject_changes)
+
+        x = pnc.get_plugin_setting("X", self.settings_pluginname)
+        y = pnc.get_plugin_setting("Y", self.settings_pluginname)
+        w = pnc.get_plugin_setting("W", self.settings_pluginname)
+        h = pnc.get_plugin_setting("H", self.settings_pluginname)
+
+        self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
+        self.ui.lineEditExportSubFolder.setText(self.export_subfolder)
+
+        if (x != '' and y != '' and w != '' and h != ''):
+            self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
+
+    def save_window_state(self):
+        # Save window position and size
+        pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
+        pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
+        pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
+        pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
+
+        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+
+    def save_settings(self):
+        self.export_subfolder = self.ui.lineEditExportSubFolder.text()
+        pnc.set_plugin_setting("ExportSubFolder", self.settings_pluginname, self.export_subfolder)
+
+        self.save_window_state()
+        self.accept()
+
+    def reject_changes(self):
+        self.save_window_state()
+        
+        # Call the base class implementation
+        self.reject()
+
+    def closeEvent(self, event):
+        self.save_window_state()
+
+        # Call the base class implementation
+        super().closeEvent(event)
 
 class GenerateTrackerReport(QDialog):
     def __init__(self, parent: QMainWindow = None):
         super().__init__(parent)
 
+        self.settings_pluginname = "Tracker Report"
         self.ui = uic.loadUi("plugins/forms/dialogTrackerRptOptions.ui", self)
         self.ui.setWindowFlags(
             QtCore.Qt.WindowType.Window |
@@ -59,6 +115,7 @@ class GenerateTrackerReport(QDialog):
         self.ui.pushButtonCancel.clicked.connect(self.close_dialog)
 
         self.xmlstr = None
+        self.export_subfolder = None
 
     def close_dialog(self):
         self.hide()
@@ -75,6 +132,8 @@ class GenerateTrackerReport(QDialog):
             return
             
         emaillist = ""
+
+        self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
 
         executedate = QDate.currentDate()
         internalreport = False
@@ -125,7 +184,7 @@ class GenerateTrackerReport(QDialog):
                 self.ui.hide()
                 return
         else:
-            projectfolder = projectfolder + "/Project Management/Issues List/"
+            projectfolder = projectfolder + f"/{self.export_subfolder}/"
 
         if not pnc.folder_exists(projectfolder):
             msg = f'Folder "{projectfolder}" does not exist.  Cannot generate the report.'
@@ -416,6 +475,7 @@ class GenerateTrackerReport(QDialog):
 # keep the instance of windows open to avoid sending the main app a close message
 pnc = None
 gtr = None
+trs = None
 
 #setup test data
 if __name__ == '__main__':
@@ -426,6 +486,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     pnc = ProjectNotesCommon()
     gtr = GenerateTrackerReport()
+    trs = TrackerReportSettings()
 
     xml_content = ""
     with open("C:\\Users\\pamcki\\OneDrive - Cornerstone Controls\\Documents\\Work In Progress\\XML\\project.xml", 'r', encoding='utf-8') as file:
@@ -437,15 +498,17 @@ if __name__ == '__main__':
 else:
     pnc = ProjectNotesCommon()
     gtr = GenerateTrackerReport(pnc.get_main_window())
+    trs = TrackerReportSettings()
 
+def menuSettings(parameter):
+    trs.show()
+    return ""
 
 def menuGenerateTrackerReport(xmlstr, parameter):        
     gtr.set_xml_doc(xmlstr)
 
     QtWidgets.QApplication.restoreOverrideCursor()
     QtWidgets.QApplication.processEvents()   
-
-    #TODO: maybe we don't want to have project notes set the cursor before going into the plugin
 
     gtr.show()
 
@@ -454,6 +517,7 @@ def menuGenerateTrackerReport(xmlstr, parameter):
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
     pluginmenus.append({"menutitle" : "Generate Tracker Report", "function" : "menuGenerateTrackerReport", "tablefilter" : "projects/item_tracker/item_tracker_updates/project_locations/project_people", "submenu" : "", "dataexport" : "projects"})
+    pluginmenus.append({"menutitle" : "Tracker Report", "function" : "menuSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
 
-#TODO: Rework templating system to use the same tags as the email and meetings templates.
-#TODO: when creating files it assumes the CCI folder structure.  It needs to be customizable
+
+#TODO: VER 4.1 Rework templating system to use the same tags as the email and meetings templates.

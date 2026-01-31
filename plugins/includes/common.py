@@ -455,5 +455,3 @@ print("replaced " + pnc.replace_variables(original, xmlroot))
 f.close()
 
 """
-
-# TODO: when closing project notes sometimes background tasks keep it open

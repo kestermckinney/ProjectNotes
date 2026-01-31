@@ -375,8 +375,6 @@ class IFSCommon:
             rd['projectsxmlrows'] +=  "    <column name=\"bac\">" + str(metrics['Bac_aggr_']) + "</column>\n"
             rd['projectsxmlrows'] +=  "  </row>\n"
 
-            #TODO: maybe just let file finder do this on  it's own rd['projectlocationsxmlrows'] = rd['projectlocationsxmlrows'] + self.pnc.find_projectlocations( rowval['ProjectId'], ProjectsFolder)
-
             self.get_team_members_xml(rgroups, clientsdict, rowval['ProjectId'], rd )
 
         if self.pnc.set_save_state(statename, skip, top, projectcount) is None:
@@ -404,7 +402,7 @@ class IFSCommon:
 
 
     def get_team_members_xml(self, rgroups, clientsdict, projectid, rd):
-        return #TODO: Fix IFS 25R1 broke it
+        return #TODO: VER 4.3 Fix IFS 25R1 broke it
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectResourcePlanningHandling.svc/ProjectSet(ProjectId=%27' + projectid + '%27)/ProjectAllocationArray?$apply=groupby((EmployeeName,ResourceId))'
         
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})

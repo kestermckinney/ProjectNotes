@@ -12,7 +12,7 @@ from includes.collaboration_tools import CollaborationTools
 from PyQt6 import QtSql, QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtSql import QSqlDatabase
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QDate
+from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QDate, QRect
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
 from PyQt6.QtGui import QDesktopServices
 
@@ -39,10 +39,66 @@ pluginmenus = []
 #      meeting_attendees
 #      item_tracker_updates
 #      item_tracker
+# Custom Setting
+class SSRSSettings(QDialog):
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
+        self.settings_pluginname = "SSRS Generate"
+
+        self.ui = uic.loadUi("plugins/forms/dialogExportLocation.ui", self)
+        self.ui.setWindowTitle("SQL Report Export Sub Folder")
+        self.ui.setWindowFlags(
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowCloseButtonHint
+            )
+        self.ui.setModal(True)
+
+        self.ui.buttonBox.accepted.connect(self.save_settings)
+        self.ui.buttonBox.rejected.connect(self.reject_changes)
+
+        x = pnc.get_plugin_setting("X", self.settings_pluginname)
+        y = pnc.get_plugin_setting("Y", self.settings_pluginname)
+        w = pnc.get_plugin_setting("W", self.settings_pluginname)
+        h = pnc.get_plugin_setting("H", self.settings_pluginname)
+
+        self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
+        self.ui.lineEditExportSubFolder.setText(self.export_subfolder)
+
+        if (x != '' and y != '' and w != '' and h != ''):
+            self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
+
+    def save_window_state(self):
+        # Save window position and size
+        pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
+        pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
+        pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
+        pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
+
+        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+
+    def save_settings(self):
+        self.export_subfolder = self.ui.lineEditExportSubFolder.text()
+        pnc.set_plugin_setting("ExportSubFolder", self.settings_pluginname, self.export_subfolder)
+
+        self.save_window_state()
+        self.accept()
+
+    def reject_changes(self):
+        self.save_window_state()
+        
+        # Call the base class implementation
+        self.reject()
+
+    def closeEvent(self, event):
+        self.save_window_state()
+
+        # Call the base class implementation
+        super().closeEvent(event)
 
 class GenerateSSRSReport(QDialog):
     def __init__(self, parent: QMainWindow = None):
         super().__init__(parent)
+        self.settings_pluginname = "SSRS Generate"
 
         self.ui = uic.loadUi("plugins/forms/dialogSSRSOptions.ui", self)
         self.ui.m_datePickerRptDate.setCalendarPopup(True)
@@ -62,6 +118,7 @@ class GenerateSSRSReport(QDialog):
         self.report_url = None
 
         self.statusdate = QDateTime.currentDateTime()
+        self.export_subfolder = None
 
     def close_dialog(self):
         self.hide()
@@ -90,7 +147,7 @@ class GenerateSSRSReport(QDialog):
     def url_is_available(self, url):
         try:
             response = requests.head(url)
-            return response.status_code < 400
+            return response.status_code > 0
         except requests.ConnectionError:
             return False
 
@@ -104,7 +161,9 @@ class GenerateSSRSReport(QDialog):
         self.domain_user = pnc.get_plugin_setting("DomainUser", "IFS Cloud")
         self.domain_password = pnc.get_plugin_setting("DomainPassword", "IFS Cloud")
 
-        if not self.url_is_available(self.report_server):
+        self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
+
+        if not self.url_is_available(f"http://{self.report_server}/reports/browse/"):
             msg = f'The report server "{self.report_server}" is not available.  Cannot download the report.'
             print(msg)
             QMessageBox.critical(None, "Server Not Available", msg)
@@ -134,7 +193,7 @@ class GenerateSSRSReport(QDialog):
             if projectfolder == "" or projectfolder is None:
                 return("")
         else:
-            projectfolder = projectfolder + "\\Project Management\\Status Reports\\"
+            projectfolder = projectfolder + f"/{self.export_subfolder}/"
 
         if not pnc.folder_exists(projectfolder):
             msg = f'Folder "{projectfolder}" does not exist.  Cannot download the report.'
@@ -289,6 +348,7 @@ class GenerateSSRSReport(QDialog):
 # keep the instance of windows open to avoid sending the main app a close message
 pnc = None
 gssrsr = None
+ss = None
 
 #setup test data
 if __name__ == '__main__':
@@ -299,6 +359,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     pnc = ProjectNotesCommon()
     gssrsr = GenerateSSRSReport()
+    ss = SSRSSettings()
 
     xml_content = ""
     with open("C:\\Users\\pamcki\\OneDrive - Cornerstone Controls\\Documents\\Work In Progress\\XML\\project.xml", 'r', encoding='utf-8') as file:
@@ -310,7 +371,11 @@ if __name__ == '__main__':
 else:
     pnc = ProjectNotesCommon()
     gssrsr = GenerateSSRSReport(pnc.get_main_window())
+    ss = SSRSSettings()
 
+def menuSettings(parameter):
+    ss.show()
+    return ""
 
 def menuGenerateSSRSReport(xmlstr, parameter):        
     gssrsr.set_xml_doc(xmlstr, parameter)
@@ -318,7 +383,7 @@ def menuGenerateSSRSReport(xmlstr, parameter):
     QtWidgets.QApplication.restoreOverrideCursor()
     QtWidgets.QApplication.processEvents()   
 
-    #TODO: maybe we don't want to have project notes set the cursor before going into the plugin
+    #TODO: VER 4.0 maybe we don't want to have project notes set the cursor before going into the plugin
 
     gssrsr.show()
 
@@ -327,3 +392,4 @@ def menuGenerateSSRSReport(xmlstr, parameter):
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
     pluginmenus.append({"menutitle" : "Generate Status Report", "function" : "menuGenerateSSRSReport", "tablefilter" : "projects/item_tracker/item_tracker_updates/project_locations/project_people", "submenu" : "", "dataexport" : "projects", "parameter" : "/ReportServer/Pages/ReportViewer.aspx?%2fProd%2fLead+Engineers%2fProject+Status+Report&ProjectId=[$projects.project_number.1]&StatusDate=[$REPORTDATE]&ReportPeriod=[$projects.status_report_period.1]"})
+    pluginmenus.append({"menutitle" : "SQL Report", "function" : "menuSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})

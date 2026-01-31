@@ -9,13 +9,13 @@ from includes.common import ProjectNotesCommon
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QFileInfo, QDir
+from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QFileInfo, QDir, QRect
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QProgressDialog, QDialog, QFileDialog
 from PyQt6.QtGui import QDesktopServices
 
 
 # Project Notes Plugin Parameters
-pluginname = "PCR Registry"
+pluginname = "PCR Register"
 plugindescription = "Copy the selected PowerPoint template, adding project information to the file."
 
 pluginmenus = []
@@ -38,12 +38,68 @@ pluginmenus = []
 #      item_tracker_updates
 #      item_tracker
 
+# Custom Setting
+class NewPCRRegisterSettings(QDialog):
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
+        self.settings_pluginname = "New PCR Register"
+
+        self.ui = uic.loadUi("plugins/forms/dialogExportLocation.ui", self)
+        self.ui.setWindowTitle("New PCR Register Sub Folder")
+        self.ui.setWindowFlags(
+            QtCore.Qt.WindowType.Window |
+            QtCore.Qt.WindowType.WindowCloseButtonHint
+            )
+        self.ui.setModal(True)
+
+        self.ui.buttonBox.accepted.connect(self.save_settings)
+        self.ui.buttonBox.rejected.connect(self.reject_changes)
+
+        x = pnc.get_plugin_setting("X", self.settings_pluginname)
+        y = pnc.get_plugin_setting("Y", self.settings_pluginname)
+        w = pnc.get_plugin_setting("W", self.settings_pluginname)
+        h = pnc.get_plugin_setting("H", self.settings_pluginname)
+
+        self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
+        self.ui.lineEditExportSubFolder.setText(self.export_subfolder)
+
+        if (x != '' and y != '' and w != '' and h != ''):
+            self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
+
+    def save_window_state(self):
+        # Save window position and size
+        pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
+        pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
+        pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
+        pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
+
+        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+
+    def save_settings(self):
+        self.export_subfolder = self.ui.lineEditExportSubFolder.text()
+        pnc.set_plugin_setting("ExportSubFolder", self.settings_pluginname, self.export_subfolder)
+
+        self.save_window_state()
+        self.accept()
+
+    def reject_changes(self):
+        self.save_window_state()
+        
+        # Call the base class implementation
+        self.reject()
+
+    def closeEvent(self, event):
+        self.save_window_state()
+
+        # Call the base class implementation
+        super().closeEvent(event)
+
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
     pnc = ProjectNotesCommon()
 
     # processing main function
-    def menuPCRRegistry(xmlstr, parameter):
+    def menuPCRRegister(xmlstr, parameter):
 
         xmlval = QDomDocument()
 
@@ -61,14 +117,15 @@ if (platform.system() == 'Windows'):
         projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
         projnam = pnc.get_column_value(projtab.firstChild(), "project_name")
 
+        export_subfolder = pnc.get_plugin_setting("ExportSubFolder", "New PCR Register")
+
         if (projectfolder is None or projectfolder =="" or not QDir(projectfolder).exists()):
             projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
                 return ""
         else:
-            projectfolder = projectfolder + "\\Project Management\\PCR's\\"
-
+            projectfolder = projectfolder + f"/{export_subfolder}/"
 
         templatefile =  "plugins\\templates\\PCR Registry Template.xlsx"
 
@@ -112,7 +169,14 @@ if (platform.system() == 'Windows'):
 
         return docxml.toString()
 
-    pluginmenus.append({"menutitle" : "PCR Registry", "function" : "menuPCRRegistry", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
+    def menuSettings(parameter):
+        npr.show()
+        return ""
+
+    npr = NewPCRRegisterSettings()
+
+    pluginmenus.append({"menutitle" : "PCR Register", "function" : "menuPCRRegister", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
+    pluginmenus.append({"menutitle" : "New PCR Register", "function" : "menuSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
 
 #setup test data
 if __name__ == '__main__':

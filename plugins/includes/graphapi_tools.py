@@ -1206,4 +1206,4 @@ class GraphAPITools:
         return
 
 
-#TODO: should i export contacts when using o365 integration??? maybe just as a manual export
+#TODO: VER 4.1 should i export contacts when using o365 integration??? maybe just as a manual export

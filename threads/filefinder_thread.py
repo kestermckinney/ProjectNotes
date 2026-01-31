@@ -265,4 +265,4 @@ def event_data_rightclick(xmlstr, parameter):
 
     return ""
 
-#todo: setup the  plugin to do default searching
+#TODO: VER 4.1 setup the  plugin to do default searching
