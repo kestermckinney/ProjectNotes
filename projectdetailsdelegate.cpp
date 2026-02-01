@@ -74,20 +74,15 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
                         qDebug() << "We found the list item.";
 
                         comboBox->setCurrentIndex(i);
-                        //qDebug() << "Setting Combo Box Delegate Index to : " << i;
-                        // test removing this to fix blanking values comboBox->setCurrentText(list_value.toString());
-                        //qDebug() << "Setting Combo Box Delegate to : " << list_value.toString();
                     }
                     else
                     {
                         comboBox->setCurrentText(QString());
-                        //qDebug() << "Setting Combo Box Delegate to : EMPTY";
                     }
                 }
                 else
                 {
                     comboBox->setCurrentText(QString());
-                    //qDebug() << "Setting Combo Box Delegate to : EMPTY";
                 }
             }
         }

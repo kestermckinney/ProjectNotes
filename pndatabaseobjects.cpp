@@ -285,9 +285,6 @@ PNSqlQueryModel* PNDatabaseObjects::createExportObject(const QString& t_table_na
         return new PeopleModel(this);
     else if (t_table_name.compare("projects", Qt::CaseInsensitive) == 0)
         return new ProjectsModel(this);
-    // this one has less fields
-    // else if (t_table_name.compare("project_people", Qt::CaseInsensitive) == 0)
-    //     return new TeamsModel(this);
     else if (t_table_name.compare("status_report_items", Qt::CaseInsensitive) == 0)
         return new StatusReportItemsModel(this);
     else if (t_table_name.compare("project_people", Qt::CaseInsensitive) == 0)
@@ -296,10 +293,6 @@ PNSqlQueryModel* PNDatabaseObjects::createExportObject(const QString& t_table_na
         return new ProjectLocationsModel(this);
     else if (t_table_name.compare("project_notes", Qt::CaseInsensitive) == 0)
         return new ProjectNotesModel(this); // has id and and name of project
-    // else if (t_table_name.compare("project_notes", Qt::CaseInsensitive) == 0)
-    //     return new ActionItemProjectNotesModel(this); // is just a list with the title
-    // else if (t_table_name.compare("project_notes", Qt::CaseInsensitive) == 0)
-    //     return new ActionItemsDetailsMeetingsModel(this);  // just has titles for a list
     else if (t_table_name.compare("item_tracker", Qt::CaseInsensitive) == 0)
         return new TrackerItemsModel(this);
     else if (t_table_name.compare("meeting_attendees", Qt::CaseInsensitive) == 0)
@@ -803,15 +796,12 @@ void PNDatabaseObjects::setGlobalSearches( bool t_refresh )
 
     if (getGlobalProjectFilter().isEmpty())
     {
-        //trackeritemsmodel()->clearFilter(14);
         // don't clear this one becasue we may have it open  projectinformationmodel()->clearFilter(0);
         projectslistmodel()->clearFilter(0);
         searchresultsmodel()->clearFilter(7);
     }
     else
     {
-        //trackeritemsmodel()->setFilter(14, getGlobalProjectFilter());
-        // don't set this one only do the lists projectinformationmodel()->setFilter(0, getGlobalProjectFilter());
         projectslistmodel()->setFilter(0, getGlobalProjectFilter());
 
         QString projectnumber = execute(QString("select project_number from projects where project_id = '%1'").arg(getGlobalProjectFilter()));
@@ -1287,5 +1277,5 @@ void PNDatabaseObjects::addDefaultPMToMeeting(const QString& t_note_id)
     execute(insert);
 }
 
-// TODO: you can remove someone from a team by just reselecting a new person
+// TODO: VER 4.1 you can remove someone from a team by just reselecting a new person
 

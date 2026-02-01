@@ -24,7 +24,6 @@ QT_END_NAMESPACE
 #include "findreplacedialog.h"
 #include "logviewer.h"
 #include "pluginmanager.h"
-#include "watchthreadsdialog.h"
 
 #define MAXHISTORYNODES 20
 
@@ -75,7 +74,8 @@ public slots:
     void slotOpenLocation_triggered(QVariant t_record_id);
     void on_focusChanged(QWidget *t_old, QWidget *t_now);
 
-    void aboutToQuit();
+protected:
+    void closeEvent(QCloseEvent *event) override;
 
 private slots:
     void setButtonAndMenuStates();
@@ -133,6 +133,7 @@ private slots:
     void onPluginLoaded(const QString& t_pluginpath);
     void onPluginUnLoaded(const QString& t_pluginpath);
     void onRefreshRequested();
+    void onTimerWaitForThreads();
 
 private:
     void buildPluginMenu(PNBasePage* t_current_page);
@@ -141,7 +142,6 @@ private:
 
     PreferencesDialog* m_preferences_dialog = nullptr;
     FindReplaceDialog* m_find_replace_dialog = nullptr;
-    WatchThreadsDialog* m_watch_threads_dialog= nullptr;
 
     static PluginManager* m_plugin_manager;
     LogViewer* m_logview_dialog = nullptr;
@@ -189,6 +189,7 @@ private:
     QComboBox* m_combo_box_size;
 
     QString m_main_connection_name = "mainconnection";
+    QTimer* m_wait_for_threads_timer = nullptr;
 };
 
 

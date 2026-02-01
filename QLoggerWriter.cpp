@@ -182,13 +182,9 @@ void QLoggerWriter::enqueue(const QDateTime &date, const QString &threadId, cons
    QString text;
    if (mMessageOptions.testFlag(LogMessageDisplay::Default))
    {
-      // text = QString("[%1][%2][%3][%4]%5 %6")
-      //            .arg(levelToText(level), module)
-      //            .arg(date.toString("yyyy-MM-ddTHH:mm:ss.zzz"))  // reformat to more readable
-      //            .arg(threadId, fileLine, message);
-       text = QString("[%1][%2][%3]%4 %5")  // remove the threadid
+       text = QString("[%1][%2][%3]%4 %5")
                   .arg(levelToText(level), module)
-                  .arg(date.toString("yyyy-MM-ddTHH:mm:ss.zzz"))  // reformat to more readable
+                  .arg(date.toString("yyyy-MM-ddTHH:mm:ss.zzz"))
                   .arg(fileLine, message);
    }
    else
@@ -200,11 +196,7 @@ void QLoggerWriter::enqueue(const QDateTime &date, const QString &threadId, cons
          text.append(QString("[%1]").arg(module));
 
       if (mMessageOptions.testFlag(LogMessageDisplay::DateTime))
-         text.append(QString("[%1]").arg(date.toString("yyyy-MM-ddTHH:mm:ss.zzz"))); // reformat to more readable
-
-      // if (mMessageOptions.testFlag(LogMessageDisplay::ThreadId))  // remove the thread id
-      //    text.append(QString("[%1]").arg(threadId));
-
+         text.append(QString("[%1]").arg(date.toString("yyyy-MM-ddTHH:mm:ss.zzz")));
       if (!fileLine.isEmpty())
       {
          if (fileLine.startsWith(QChar::Space))

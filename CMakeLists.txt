@@ -96,7 +96,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         logviewer.cpp logviewer.h
         pythonworker.cpp pythonworker.h QLogger.cpp QLogger.h QLoggerLevel.h QLoggerWriter.cpp QLoggerWriter.h
         pythonworker.h
-        watchthreadsdialog.h watchthreadsdialog.cpp watchthreadsdialog.ui
+
     )
 
 # Define target properties for Android with Qt 6 as:

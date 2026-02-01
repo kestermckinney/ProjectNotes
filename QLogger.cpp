@@ -177,7 +177,7 @@ void QLoggerManager::enqueueMessage(const QString &module, LogLevel level, const
    const auto logWriter = mModuleDest.value(module, nullptr);
    const auto isLogEnabled = logWriter && logWriter->getMode() != LogMode::Disabled && !logWriter->isStop();
 
-   if (isLogEnabled) //TODO: removed this to avoid messages not showing until next write && logWriter->getLevel() <= level)
+   if (isLogEnabled) //KPM: removed this to avoid messages not showing until next write && logWriter->getLevel() <= level)
    {
       const auto threadId = QString("%1").arg((quintptr)QThread::currentThread(), QT_POINTER_SIZE * 2, 16, QChar('0'));
       const auto fileName = file.mid(file.lastIndexOf('/') + 1);

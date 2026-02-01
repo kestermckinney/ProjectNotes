@@ -59,5 +59,7 @@ def event_timer(parameter):
 
     projectnotes.update_data(docxml) # need to test and see if screen will refresh automatically
 
+    time.sleep(6)
+
     return ""
 

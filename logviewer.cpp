@@ -48,7 +48,7 @@ void LogLoader::loadFile()
         {
             qint64 topofchunck = qMax(file.size() - 8192, 0);
 
-            // on the first call //todo: this may not be needed
+            // on the first call
             if (m_top_position == -1)
             {
                 m_top_position = topofchunck;

@@ -17,7 +17,7 @@ from PyQt6.QtCore import QDateTime, QElapsedTimer, QDir, QDirIterator, QFileInfo
 # Project Notes Plugin Parameters
 pluginname = "File Finder Thread" # name used in the menu
 plugindescription = "This is test thread. Supported platforms: Windows, Linux, MacOS"
-plugintimerevent = 1 # how many minutes between the timer event
+plugintimerevent = 3 # how many minutes between the timer event
 
 pluginmenus = [
     {"menutitle" : "Find All Fiiles", "function" : "event_timer", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},

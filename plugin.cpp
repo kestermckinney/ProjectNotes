@@ -45,11 +45,6 @@ Plugin::Plugin(QObject *parent, bool isthread)
 
 Plugin::~Plugin()
 {
-    // TODO: This doesn't seem work because the signal won't get to the queue in time.
-    emit unloadModule();
-
-    QCoreApplication::processEvents();
-
     if (m_thread)
     {
         // give the thead 15 seconds to quit
@@ -95,7 +90,7 @@ bool Plugin::hasMethod(const QString& t_method) const
 
 void Plugin::setEnabled(const bool t_enabled)
 {
-    // TODO: save the enabled disabled value in settings
+    // TODO: VER 4.1 save the enabled disabled value in settings
 
     if (t_enabled && !m_enabled)
     {

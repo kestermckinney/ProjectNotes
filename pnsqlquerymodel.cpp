@@ -1,7 +1,6 @@
 // Copyright (C) 2022, 2023 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
-//todo: find out how to make sure thread will update the screen if data changes.
 //todo: may need to createa PNColum class and clean up all the diffrent QVectors
 #include "pndatabaseobjects.h"
 #include "pndatabaseobjects.h"
@@ -62,8 +61,6 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
     {
         recordset = it_recordsets.next();
 
-        //qDebug() << "Searching for Table " << recordset->tablename();
-
         // look through all related tables and uses of the same table to see if the recordset is match
         // don't check against yourself
         if ( recordset != this)
@@ -73,8 +70,6 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
                 // if this is a realated table look for related columns
                 if ( recordset->tablename().compare( m_related_table[i] ) == 0 )
                 {
-                    //qDebug() << "Looking Into Table " << recordset->tablename() << " i is " << i;
-                    //qDebug() << "Check if table " << recordset->tablename() << " has column " << m_related_columns[i];
                     // we found a table to check, look for the related columns
                     for (QString &c : m_related_columns[i])
                     {
@@ -84,7 +79,6 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
                         if (ck_col != -1)
                         {
                             recordset->setDirty();  // refresh when ne page active
-                            //qDebug() << "Marking table: " << recordset->tablename() << " as dirty.";
                             break; // just need to identify one column
                         }
                     }
@@ -94,10 +88,7 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
             // if it is the same table in a different recordset reload it
             if ( recordset->tablename().compare(tablename()) == 0 )
             {
-                //qDebug() << "Found " << tablename() << " in another model";
-
                 recordset->setDirty();
-                //qDebug() << "Marking table: " << recordset->tablename() << " as dirty based on same table name.";
             }
         }
     }
@@ -369,9 +360,6 @@ void PNSqlQueryModel::refresh()
     sql_query.setForwardOnly(true);
     sql_query.prepare(fullsql);
     sql_query.exec();
-
-    // qDebug() << "Refreshing: ";
-    // qDebug() << fullsql;
 
     // add a blank row for drop downs
     if (m_show_blank)
@@ -752,21 +740,6 @@ const QModelIndex PNSqlQueryModel::addRecord(QVector<QVariant>& t_newrecord)
     return index(row, 0);
 }
 
-//const QModelIndex PNSqlQueryModel::addRecordIndex(QSqlRecord& t_newrecord)
-//{
-//    QModelIndex qmi = QModelIndex();
-//    int row = rowCount((qmi));
-
-//    //qDebug() << t_newrecord;
-
-//    beginInsertRows(qmi, row, row);
-//    m_cache.append(t_newrecord);
-
-//    endInsertRows();
-
-//    return index(row, 0);
-//}
-
 const QModelIndex PNSqlQueryModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
 {
     Q_UNUSED(t_fk_value1);
@@ -1112,19 +1085,13 @@ bool PNSqlQueryModel::deleteCheck(const QModelIndex &t_index)
 
 const QVariant PNSqlQueryModel::findValue(QVariant& t_lookup_value, int t_search_column, int t_return_column)
 {
-    //qDebug() << "start search for " << t_lookup_value << " in " << m_tablename;
-
     for ( QVector<QVector<QVariant>>::Iterator itrow = m_cache.begin(); itrow != m_cache.end(); ++itrow )
     {
         if ( (*itrow)[t_search_column].toString().compare(t_lookup_value.toString()) == 0 )
         {
-            //qDebug() << "..FOUND " << itrow->value(t_search_column);
-
             return (*itrow)[t_return_column]; // key is always at 0
         }
     }
-
-   // qDebug() << "ERROR -> Could Not Find " << t_lookup_value;
 
     return QVariant();
 }
@@ -1168,8 +1135,6 @@ bool PNSqlQueryModel::reloadRecord(const QModelIndex& t_index)
             DB_UNLOCK;
 
             emit dataChanged(t_index.model()->index(t_index.row(), 0), t_index.model()->index(t_index.row(), select.record().count()));
-
-            //qDebug() << "emmiting data changed for " << tablename() << " object " << objectName() << " row " << t_index.row() << " for columns 0 to " << select.record().count();
 
             return true;
         }
@@ -1238,8 +1203,6 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
                 }
                 else
                 {
-                    //qDebug() << "Table Naame: " << BaseSQL() << " Column Num: " << hashit.key() << "  Column Name: " << m_sql_query.record().fieldName(hashit.key());
-
                     sqlEscape(column_value, m_column_type[hashit.key()]);
                     valuelist += QString("%1 %3 '%2'").arg( m_column_name[hashit.key()], column_value.toString(), compare_op);
                 }
@@ -1832,60 +1795,40 @@ QDomElement PNSqlQueryModel::toQDomElement( QDomDocument* t_xml_document, const 
             // it would be too much data
             if (m_relation_exportable[i] == DBExportable)
             {
-                // //find that table in the database objects
-                // QListIterator<PNSqlQueryModel*> it_recordsets(m_dbo->getOpenModels());
-                // PNSqlQueryModel* recordset = nullptr;
+                // create an export version of that querymodel
+                PNSqlQueryModel* export_version = m_dbo->createExportObject(m_related_table[i]);
 
-                // // look through all recordsets that are open
-                // while(it_recordsets.hasNext())
-                // {
-                //     recordset = it_recordsets.next();
+                //set the filter for the export version
+                for (int c = 0; c < m_related_columns[i].count(); c++)
+                {
+                    QString col_name = m_related_columns[i].at(c);
+                    QString fk_col_name = m_related_fk_columns[i].at(c);
 
-                //     if ( recordset->tablename().compare( m_related_table[i] ) == 0 &&
-                //          recordset->isExportable() &&
-                //          (  ( !t_filter.isEmpty() && t_filter.contains(recordset->tablename(), Qt::CaseInsensitive) ) || t_filter.isEmpty()  ) // don't refresh the recordset if it is filtered
-                //          )
-                //     {
-                //         qDebug() << "Found table " << tablename() << " column " << m_related_fk_columns[i] << " related to " << recordset->tablename() << " column " << m_related_columns[i];
+                    int col = export_version->getColumnNumber(col_name);
+                    int fkcol = getColumnNumber(fk_col_name);
 
-                        // create an export version of that querymodel
-                        PNSqlQueryModel* export_version = m_dbo->createExportObject(m_related_table[i]);
+                    export_version->setFilter(col, row.value(fkcol).toString());
+                }
 
-                        //set the filter for the export version
-                        for (int c = 0; c < m_related_columns[i].count(); c++)
-                        {
-                            QString col_name = m_related_columns[i].at(c);
-                            QString fk_col_name = m_related_fk_columns[i].at(c);
+                export_version->refresh();
 
-                            int col = export_version->getColumnNumber(col_name);
-                            int fkcol = getColumnNumber(fk_col_name);
+                QDomElement qd = export_version->toQDomElement( t_xml_document, t_filter );
 
-                            export_version->setFilter(col, row.value(fkcol).toString());
-                        }
+                for (int c = 0; c < m_related_columns[i].count(); c++)
+                {
+                    QString col_name = m_related_columns[i].at(c);
+                    QString fk_col_name = m_related_fk_columns[i].at(c);
 
-                        export_version->refresh();
+                    int fkcol = getColumnNumber(fk_col_name);
 
-                        QDomElement qd = export_version->toQDomElement( t_xml_document, t_filter );
+                    qd.setAttribute(QString("filter_field_%1").arg(c + 1), col_name);
+                    qd.setAttribute(QString("filter_value_%1").arg(c + 1), row.value(fkcol).toString());
+                }
 
-                        for (int c = 0; c < m_related_columns[i].count(); c++)
-                        {
-                            QString col_name = m_related_columns[i].at(c);
-                            QString fk_col_name = m_related_fk_columns[i].at(c);
+                // add the new XML to the current row
+                xmlrow.appendChild(qd);
 
-                            int fkcol = getColumnNumber(fk_col_name);
-
-                            qd.setAttribute(QString("filter_field_%1").arg(c + 1), col_name);
-                            qd.setAttribute(QString("filter_value_%1").arg(c + 1), row.value(fkcol).toString());
-                        }
-
-                        // add the new XML to the current row
-                        xmlrow.appendChild(qd);
-
-                        delete export_version;
-                        //break; // only grab the first instance of the related table
-                //    }
-                // }
-
+                delete export_version;
             }
         }
 
@@ -2057,7 +2000,6 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                 if (!lookup_value.isNull() && !m_lookup_table[colnum].isEmpty())
                 {
                     QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookup_fk_column_name[colnum], m_lookup_table[colnum], m_lookup_value_column_name[colnum], lookup_value);
-                    //qDebug() << "EXEC LOOKUP FOR FIELD VALUE: " << sql;
 
                     field_value = getDBOs()->execute(sql);
                 }

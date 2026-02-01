@@ -53,9 +53,6 @@ int main(int argc, char *argv[])
 
     MainWindow w;
 
-    QObject::connect(&a, &QCoreApplication::aboutToQuit, &w, &MainWindow::aboutToQuit);
-
-
     a.setWindowIcon(QIcon(":/icons/logo.png")); // "AppIcon.icns"
     w.show();
 

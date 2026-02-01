@@ -290,8 +290,7 @@ void PNBasePage::buildPluginMenu(PluginManager* t_pm, QMenu* t_menu)
     {
         for ( PluginMenu m : p->pythonplugin().menus())
         {
-            // QString table = dynamic_cast<PNSqlQueryModel*>(m_current_model->sourceModel())->tablename();
-            QString table = m_page_model->tablename();  //TODO: is this the right table for the page menu?
+            QString table = m_page_model->tablename();
             if (m.dataexport().compare(table, Qt::CaseInsensitive) == 0) // only show right-click data menus
             {               
                 QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), this);

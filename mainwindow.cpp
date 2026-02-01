@@ -63,7 +63,6 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     m_preferences_dialog = new PreferencesDialog(this);
     m_find_replace_dialog = new FindReplaceDialog(this);
-    m_watch_threads_dialog = new WatchThreadsDialog(this);
 
     // view state
     m_page_history.clear();
@@ -106,19 +105,6 @@ MainWindow::MainWindow(QWidget *t_parent)
             openDatabase(global_Settings.getLastDatabase().toString());
 
     setButtonAndMenuStates();
-
-    m_watch_threads_dialog->show();
-
-}
-
-void MainWindow::aboutToQuit()
-{        
-    m_plugin_manager->unloadAll();
-
-    m_watch_threads_dialog->show();
-
-    // the unloads can produce shutdown events to process
-    QApplication::processEvents();
 }
 
 void MainWindow::addMenuItem(QMenu* t_menu, const QString& t_submenu, const QString& t_menutitle, QAction* t_action, int t_section)
@@ -233,8 +219,6 @@ void MainWindow::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname,
 
 MainWindow::~MainWindow()
 {
-    //TODO: put in a pop up to show plugins that are still running
-
     disconnect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ProjectDetails_triggered(QVariant)));
     disconnect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ItemDetails_triggered(QVariant)));
     disconnect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ItemDetails_triggered(QVariant)));
@@ -279,9 +263,15 @@ MainWindow::~MainWindow()
     if (global_DBObjects.isOpen())
         CloseDatabase();
 
+    if (m_wait_for_threads_timer)
+    {
+        disconnect(m_wait_for_threads_timer, &QTimer::timeout, this, &MainWindow::onTimerWaitForThreads);
+
+        delete m_wait_for_threads_timer;
+    }
+
     delete m_preferences_dialog;
     delete m_find_replace_dialog;
-    delete m_watch_threads_dialog;
     delete m_plugin_manager;
     delete ui;
 
@@ -1871,4 +1861,45 @@ void MainWindow::onPluginUnLoaded(const QString& t_pluginpath)
 void MainWindow::onRefreshRequested()
 {
     global_DBObjects.refreshDirty();
+}
+
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    int loaded_count = m_plugin_manager->loadedCount();
+
+    if (loaded_count)
+    {
+        m_plugin_manager->unloadAll();
+
+        ui->centralwidget->setEnabled(false);
+        ui->menubar->setEnabled(false);
+        ui->toolBarEdit->setEnabled(false);
+        ui->toolBarFormat->setEnabled(false);
+        ui->toolBarNavigator->setEnabled(false);
+
+        m_wait_for_threads_timer = new QTimer();
+        connect(m_wait_for_threads_timer, &QTimer::timeout, this, &MainWindow::onTimerWaitForThreads);
+        m_wait_for_threads_timer->start(800);
+
+        event->ignore();
+        return;
+    }
+
+    event->accept();
+}
+
+static int fan_index = 0;
+
+void MainWindow::onTimerWaitForThreads()
+{
+    const char* fan = "-\\|/";
+    fan_index = (fan_index + 1) % 4;
+
+    int loaded_count = m_plugin_manager->loadedCount();
+
+    if (loaded_count == 0)
+        this->close();  // once all plugins are unloaded we can quit
+
+    ui->statusbar->showMessage(QString("Waiting for plugins to finish... %1  %2 plugins are still active.").arg(fan[fan_index]).arg(loaded_count));
 }

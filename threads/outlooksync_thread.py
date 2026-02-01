@@ -14,7 +14,7 @@ from PyQt6.QtCore import QDateTime, QElapsedTimer, QCoreApplication
 # Project Notes Plugin Parameters
 pluginname = "Outlook Integration"
 plugindescription = "Imporst Outlook contacts, Exports Contacts that don't already exist in Outlook, Exports project related emails, and Export the project managers assigned active tracker and action items.  All activites are done using the Microsoft Graph API."
-plugintimerevent = 1 # how many minutes between the timer event
+plugintimerevent = 2 # how many minutes between the timer event
 
 pluginmenus = []
 

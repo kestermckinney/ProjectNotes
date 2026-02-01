@@ -618,3 +618,14 @@ void PluginManager::forceReload(const QString& t_module)
 {
     emit pluginForceReload(t_module);
 }
+
+int PluginManager::loadedCount()
+{
+    int loaded_count = 0;
+
+    for (auto p : plugins())
+        if (p->loaded())
+            loaded_count++;
+
+    return(loaded_count);
+}

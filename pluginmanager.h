@@ -35,6 +35,7 @@ public:
 
     QList<Plugin*> plugins() const { return m_pluginlist; }
     void forceReload(const QString& t_module);
+    int loadedCount();
 
 signals:
     void pluginLoaded(const QString& t_path);
