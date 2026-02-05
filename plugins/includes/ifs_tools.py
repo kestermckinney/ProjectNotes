@@ -282,7 +282,7 @@ class IFSCommon:
         result = requests.delete(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), json=docdata, headers={"Content-Type": "application/json", "If-Match": "*"})
         
         if (result.status_code != 204):
-            print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
+            #print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
             return False
 
         return True
@@ -301,7 +301,7 @@ class IFSCommon:
         saved_state = None
         statename = "ifs_projects_import"
         skip = 0
-        top = 10
+        top = 5
 
         projectcount = 0
 
@@ -485,7 +485,7 @@ class IFSCommon:
         print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
 
     def export_ifs_project_tracker_items(self, project_id, project_number):
-        print(f"Gathering tracker items for {project_number}...")
+        #print(f"Gathering tracker items for {project_number}...")
 
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table filter_field_1="project_id" filter_value_1="{project_id}" name="item_tracker" />\n</projectnotes>\n'
         xmlresult = projectnotes.get_data(xmldoc)
@@ -521,7 +521,7 @@ class IFSCommon:
                     itemtype = self.pnc.get_column_value(itemrow, "item_type")
                     ifsitemid = project_number + self.pnc.get_column_value(itemrow, "item_number")
 
-                    print(f"Identified Issue {ifsitemid} in project {project_number}")
+                    #print(f"Identified Issue {ifsitemid} in project {project_number}")
 
                     duedate = None
                     assignedto = ''
@@ -572,7 +572,7 @@ class IFSCommon:
         saved_state = None
         statename = "ifs_tracker_export"
         skip = 0
-        top = 10
+        top = 5
 
         projectcount = 0
 
