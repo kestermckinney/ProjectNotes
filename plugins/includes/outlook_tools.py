@@ -37,13 +37,12 @@ class ProjectNotesOutlookTools:
                 if title.lower() in i[1].lower():
                     win32gui.ShowWindow(i[0],5)
                     win32gui.SetForegroundWindow(i[0])
-                    break
+                    return
 
         except Exception as e:  # catches any Python exception
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to bring window {title} to the foreground.'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 

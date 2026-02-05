@@ -32,15 +32,19 @@ class ProjectNotesCommon:
     def get_temporary_folder(self):
         return self.temporary_folder
 
-    def get_save_state(self, state_name):
-        
-        #print(f"Attempting to read save state {state_name} to {self.saved_state_file}.")
+    def get_save_state(self, state_name, state_file = None):
 
+        save_file = None
+        if state_file:
+            save_file = state_file
+        else:
+            save_file = self.saved_state_file
+        
         # get the last state
         skip = 0
 
         if self.lock.tryLock(10000):
-            file = QFile(self.saved_state_file)
+            file = QFile(save_file)
             if file.exists():
                 if file.open(QIODevice.OpenModeFlag.ReadOnly):
                     saved_state = json.loads(file.readAll().data().decode("utf-8"))
@@ -49,7 +53,7 @@ class ProjectNotesCommon:
                 skip = saved_state.get(state_name, {}).get("skip", 0)
             else:
                 saved_state = json.loads("{}")
-                print(f"Failed to load previous state {state_name}.")
+                #print(f"Failed to load previous state {state_name}.")
 
             self.lock.unlock()
         else:
@@ -77,8 +81,12 @@ class ProjectNotesCommon:
 
         return f"{xmlskip} {xmltop}"
 
-    def set_save_state(self, state_name, oldskip, top, nodecount):
-        #print(f"Attempting to write save state {state_name} to {self.saved_state_file}.")
+    def set_save_state(self, state_name, oldskip, top, nodecount, state_file = None):
+        save_file = None
+        if state_file:
+            save_file = state_file
+        else:
+            save_file = self.saved_state_file
 
         skip = oldskip
 
@@ -89,7 +97,7 @@ class ProjectNotesCommon:
             skip = skip + top
 
         if self.lock.tryLock(10000):
-            file = QFile(self.saved_state_file)
+            file = QFile(save_file)
             if file.open(QIODevice.OpenModeFlag.ReadWrite):
                 saved_state = json.loads(file.readAll().data().decode("utf-8") or "{}")
             

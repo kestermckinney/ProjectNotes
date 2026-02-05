@@ -240,7 +240,7 @@ class GraphAPITools:
         saved_state = None
         statename = "people_import"
         skip = 0
-        top = 500
+        top = 40
 
         if parameter == "all":
             top = 10000
@@ -331,7 +331,6 @@ class GraphAPITools:
     def export_batch_of_contacts(self, parameter):
         if not self.use_graph_api:  # office 365 integration is disabled
             return
-
         if not self.export_contacts:  #  sync contacts is disabled
             return
 
@@ -355,7 +354,7 @@ class GraphAPITools:
         statename = "people_export"
 
         skip = 0
-        top = 500
+        top = 40
 
         if parameter == "all":
             top = 10000
@@ -545,9 +544,10 @@ class GraphAPITools:
     def download_project_emails(self, projectnumber, box, top, destination_folder):
 
         statename = projectnumber + "_" + box + "_downloadtracker"
+        statefile = f"{destination_folder}/download_state.json"
 
 
-        skip = self.pnc.get_save_state(statename)
+        skip = self.pnc.get_save_state(statename, statefile)
         emailcount = 0
 
         if skip is None:
@@ -600,7 +600,7 @@ class GraphAPITools:
         else:
             print(f"Response Code: {response.status_code} Error downloading emails {response.text}.")
 
-        if self.pnc.set_save_state(statename, skip, emailcount, emailcount) is None: # never redownload emails
+        if self.pnc.set_save_state(statename, skip, emailcount, emailcount, statefile) is None: # never redownload emails
             print("Failed to set save state.  Will try to download the same email again.")
 
     # provide a eml formated base64 string
@@ -703,7 +703,7 @@ class GraphAPITools:
                 eml += 'MIME-Version: 1.0\n\n'
 
             eml += f'--{msg_boundary}\n'
-            eml += 'Content-Type: text/html; charset="Windows-1252"\nContent-Transfer-Encoding: quoted-printable\n\n'
+            eml += 'Content-Type: text/html; charset="us-ascii"\n\n'
 
             val = data.get('body', None)
             content = val.get('content', '') if val else ''
@@ -859,8 +859,8 @@ class GraphAPITools:
         statename = "project_emails_export"
 
         skip = 0
-        top = 10 # writing a bunch of email files could be slow only do 10 projects at a time
-        top_emails = 30 # however download up to 30 emails from each box at a time
+        top = 5 # writing a bunch of email files could be slow only do 5 projects at a time
+        top_emails = 20 # however download up to 20 emails from each box at a time
 
         if xmlstr is not None:
             top = 10000 # downloading all email for a project
@@ -887,7 +887,7 @@ class GraphAPITools:
             projectfilter = f' filter_field_2="project_number" filter_value_2="{projectnumber}" '
 
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table  filter_field_1="location_description" filter_value_1="Project Folder" {projectfilter} name="project_locations" {self.pnc.state_range_attrib(top, skip)} />\n</projectnotes>\n'
-        
+        #TODO: This gets projects that are closed too.  However, it won't write if folder doesn't exist.
         xmlresult = projectnotes.get_data(xmldoc)
 
         #print(xmlresult)
@@ -950,7 +950,7 @@ class GraphAPITools:
         statename = "tracker_export"
 
         skip = 0
-        top = 1000
+        top = 20
 
         # if syncing all items
         if parameter == "all":

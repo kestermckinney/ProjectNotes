@@ -46,6 +46,7 @@ class CollaborationTools:
             company_exclude = None
         elif invitees == "Receives Status":
             receives_status = True
+            company_filter = "__ONLY_STATUS__"
 
         email = None
         nm = None
@@ -164,7 +165,7 @@ class CollaborationTools:
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to draft an email.")
             return ""
             
-        xmlroot = xmlval.documentElement()
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
 
         email_body_filled_in = self.pnc.strip_html_body(self.pnc.replace_variables(content, xmlroot))
 

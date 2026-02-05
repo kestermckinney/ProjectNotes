@@ -17,7 +17,7 @@ from PyQt6.QtCore import QDateTime, QElapsedTimer, QDir, QDirIterator, QFileInfo
 # Project Notes Plugin Parameters
 pluginname = "File Finder Thread" # name used in the menu
 plugindescription = "This is test thread. Supported platforms: Windows, Linux, MacOS"
-plugintimerevent = 3 # how many minutes between the timer event
+plugintimerevent = 1 # how many minutes between the timer event
 
 pluginmenus = [
     {"menutitle" : "Find All Fiiles", "function" : "event_timer", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
@@ -46,6 +46,9 @@ class  FileFinder:
         self.settings_pluginname = "File Finder"
         self.search_locations = self.pnc.get_plugin_setting("SearchLocations", self.settings_pluginname)
         self.classifications = self.pnc.get_plugin_setting("Classifications", self.settings_pluginname)
+        self.classifications_list = None
+        self.project_patterns = []
+
 
     # using the specified filters match file types and include them in teh Artifacts list
     def filter_match_files(self, project_xml, parent_folder, basefolder):
@@ -63,69 +66,65 @@ class  FileFinder:
             while it.hasNext():
                 it.next()
 
-                #print(f"iterrator found {it.filePath()} basefolder is {basefolder} looking for project {projectnumber}")
+                file_path = it.filePath()
+
+                #print(f"iterrator found {file_path} basefolder is {basefolder} looking for project {projectnumber}")
 
                 if basefolder:
                     # determine if this is the base project folddr
-                    if it.fileInfo().isDir() and re_pattern.match(it.fileName()):
+                    if it.fileInfo().isDir() and re_pattern.search(it.fileName()):
                         xmldoc += "<row>\n"
                         xmldoc += f"<column name=\"project_id\" lookupvalue=\"{self.pnc.to_xml(projectnumber)}\"></column>\n"
                         xmldoc += "<column name=\"location_type\">File Folder</column>\n"
                         xmldoc += "<column name=\"location_description\">Project Folder</column>\n"
-                        xmldoc += f"<column name=\"full_path\">{self.pnc.to_xml(it.filePath())}</column>\n"
+                        xmldoc += f"<column name=\"full_path\">{self.pnc.to_xml(file_path)}</column>\n"
                         xmldoc += "</row>\n"
 
-                        xmldoc += self.filter_match_files(project_xml, it.filePath(), False)
+                        xmldoc += self.filter_match_files(project_xml, file_path, False)
 
-                        #print(f"identified project folder {it.filePath()}")
+                        #print(f"identified project folder {file_path}")
                 else:
                     if it.fileInfo().isDir():
-                        #print(f"traversing folder {it.filePath()}")
-                        xmldoc += self.filter_match_files(project_xml, it.filePath(), False)
-
-                    data = json.loads(self.classifications)
+                        #print(f"traversing folder {file_path}")
+                        xmldoc += self.filter_match_files(project_xml, file_path, False)
 
                     #print(f"found {Len(data)} classifications")
 
-                    if (len(data) > 0):
-                        for row, row_data in enumerate(data): 
-                            pattern = row_data["Pattern Match"]
+                    for value in self.project_patterns: 
+                        # test if we have a pattern match for  the file   
+                        cla = value["Classification"]
+                        pat = value["Pattern"]
 
-                            pattern = self.pnc.replace_variables(pattern, project_xml, "projects", 1) 
+                        if pat.search(file_path):
+                            locationtype = "Generic File (System Identified)"
+                            if it.fileInfo().isDir():
+                                locationtype = "File Folder"
+                            else:
+                                if file_path.lower().endswith(".xlsx"):
+                                    locationtype = "Excel Document"
+                                elif file_path.lower().endswith(".xls"):
+                                    locationtype = "Excel Document"                                        
+                                elif file_path.lower().endswith(".docx"):
+                                    locationtype = "Word Document"          
+                                elif file_path.lower().endswith(".doc"):
+                                    locationtype = "Word Document"          
+                                elif file_path.lower().endswith(".pdf"):
+                                    locationtype = "PDF File"          
+                                elif file_path.lower().endswith(".mpp"):
+                                    locationtype = "Microsoft Project"          
+                                elif file_path.lower().endswith(".pptx"):
+                                    locationtype = "PowerPoint Document"
+                                elif file_path.lower().startswith("http"):
+                                    locationtype = "Web Link"
 
-                            #print(f"variable replaced pattern {pattern}")
+                            xmldoc += "<row>\n"
+                            xmldoc += f"<column name=\"project_id\" lookupvalue=\"{self.pnc.to_xml(projectnumber)}\"></column>\n"
+                            xmldoc += f"<column name=\"location_type\">{locationtype}</column>\n"
+                            xmldoc += f"<column name=\"location_description\">{cla} : {self.pnc.to_xml(it.fileInfo().fileName())}</column>\n"
+                            xmldoc += f"<column name=\"full_path\" number=\"4\">{self.pnc.to_xml(file_path)}</column>\n"
+                            xmldoc += "</row>\n"
 
-                            # test if we have a pattern match for  the file     
-                            if re.search(pattern, it.filePath(), re.IGNORECASE) is not None:
-                                locationtype = "Generic File (System Identified)"
-                                if it.fileInfo().isDir():
-                                    locationtype = "File Folder"
-                                else:
-                                    if it.filePath().lower().endswith(".xlsx"):
-                                        locationtype = "Excel Document"
-                                    elif it.filePath().lower().endswith(".xls"):
-                                        locationtype = "Excel Document"                                        
-                                    elif it.filePath().lower().endswith(".docx"):
-                                        locationtype = "Word Document"          
-                                    elif it.filePath().lower().endswith(".doc"):
-                                        locationtype = "Word Document"          
-                                    elif it.filePath().lower().endswith(".pdf"):
-                                        locationtype = "PDF File"          
-                                    elif it.filePath().lower().endswith(".mpp"):
-                                        locationtype = "Microsoft Project"          
-                                    elif it.filePath().lower().endswith(".pptx"):
-                                        locationtype = "PowerPoint Document"
-                                    elif it.filePath().lower().startswith("http"):
-                                        locationtype = "Web Link"
-
-                                xmldoc += "<row>\n"
-                                xmldoc += f"<column name=\"project_id\" lookupvalue=\"{self.pnc.to_xml(projectnumber)}\"></column>\n"
-                                xmldoc += f"<column name=\"location_type\">{locationtype}</column>\n"
-                                xmldoc += f"<column name=\"location_description\">{row_data["Classification"]} : {self.pnc.to_xml(it.fileInfo().fileName())}</column>\n"
-                                xmldoc += f"<column name=\"full_path\" number=\"4\">{self.pnc.to_xml(it.filePath())}</column>\n"
-                                xmldoc += "</row>\n"
-
-                                #print(f"found file {projectnumber} {it.filePath()}")
+                            #print(f"found file {projectnumber} {file_path}")
 
         return xmldoc
 
@@ -133,20 +132,31 @@ class  FileFinder:
     def find_project_folders(self, project_xml):
         xmldoc = ""
 
-        
         projectnumber = self.pnc.get_column_value(project_xml, "project_number")
-        print(f"Looking for artifacts for project {projectnumber}")
+        #print(f"Looking for artifacts for project {projectnumber}")
+
+        self.project_patterns = []
+        for row, row_data in enumerate(self.classifications_list): 
+            di = {}
+            pat = self.pnc.replace_variables(row_data["Pattern Match"], project_xml, "projects", 1)
+            
+            di["Classification"] = row_data["Classification"]
+            di["Pattern"] = re.compile(pat, re.IGNORECASE)
+
+            self.project_patterns.append(di)
+
+            #print(f"Building pattern matches for classifcation {row_data["Classification"]} using {pat}")
+            
 
         # look through base folders and identify folders that are associated with specific project numbers
         data = json.loads(self.search_locations)
 
-        if (len(data) > 0):
-            for row, row_data in enumerate(data): 
-                folder = row_data["Location"]
+        for row, row_data in enumerate(data): 
+            folder = row_data["Location"]
 
-                #print(f"starting search in folder {folder}")
+            #print(f"starting search in folder {folder}")
 
-                xmldoc += self.filter_match_files(project_xml, folder, True)
+            xmldoc += self.filter_match_files(project_xml, folder, True)
 
         return xmldoc
 
@@ -174,6 +184,8 @@ class  FileFinder:
 
         xmldoc = ""
         data_request = None
+
+        self.classifications_list = json.loads(self.classifications)
 
         # store progress, don't go through all projects at once
 

@@ -178,26 +178,10 @@ def populate_dynamic_menu(json_string):
             tablefilter = None
             dataexport = None
 
-            inviteees = row_data["Invitees"]
-
             if row_data["Type"] == "Email":
-                if (inviteees == "Individual"):
-                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "people", "submenu" : "Send Email", "dataexport" : "people", "parameter" : row_data["Name"] })
-                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "meeting_attendees", "submenu" : "Send Email", "dataexport" : "meeting_attendees", "parameter" : row_data["Name"] })
-                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "project_people", "submenu" : "Send Email", "dataexport" : "project_people", "parameter" : row_data["Name"] })
-                elif (inviteees == "Attachment Only"):
-                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "project_locations", "submenu" : "Send Email", "dataexport" : "project_locations", "parameter" : row_data["Name"] })                    
-                else:
-                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "projects/project_people", "submenu" : "Send Email", "dataexport" : "projects", "parameter" : row_data["Name"] })
-                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "project_notes/meeting_attendees", "submenu" : "Send Email", "dataexport" : "project_notes", "parameter" : row_data["Name"] })
+                pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : row_data["Data Type"], "submenu" : "Send Email", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
             else:
-                if (inviteees == "Individual"):
-                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuScheduleMeeting",  "tablefilter" : "people", "submenu" : "Schedule Meeting", "dataexport" : "people", "parameter" : row_data["Name"] })
-                elif (inviteees == "Attachment Only"):
-                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuScheduleMeeting",  "tablefilter" : "project_locations", "submenu" : "Schedule Meeting", "dataexport" : "project_locations", "parameter" : row_data["Name"] })                    
-                else:
-                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuScheduleMeeting",  "tablefilter" : "projects/project_people", "submenu" : "Schedule Meeting", "dataexport" : "projects", "parameter" : row_data["Name"] })
-                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuScheduleMeeting",  "tablefilter" : "project_notes/meeting_attendees", "submenu" : "Schedule Meeting", "dataexport" : "project_notes", "parameter" : row_data["Name"] })
+                pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuScheduleMeeting",  "tablefilter" : row_data["Data Type"], "submenu" : "Schedule Meeting", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
 
     if (platform.system() == 'Windows' and not use_graph_api):
         pluginmenus.append({"menutitle" : "Export Contacts to Outlook", "function" : "menuExportContactsToOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
@@ -306,4 +290,14 @@ populate_dynamic_menu(menu_data)
 #TODO: VER 4.1 Fix or rework tracker report export
 #TODO: VER 4.1 Fix or change the template fillout features 
 #TODO: VER 4.1 Make sure the Quick Add for a team member is there with a drop down for company
-
+#TODO: VER 4.0 when refreshing the selection in the table view is lost
+#TODO: VER 4.0 can it bet setup on the table view to not highlight the cell when cursor hovers over it
+#TODO: VER 4.0 primary contact field does not always stay when you set it...!!!!!!  I am suspecting the refresh dirty is doing it
+#TODO: VER 4.0 looks like the refresh is causing screen flickers
+#TODO: VER 4.0 try Qt 6.8.... and Python 14
+#TODO: VER 4.0 modules unload and reload does not seem to change the loaded python code in all cases
+#TODO: VER 4.0 when creating a new row the refresh in the background clears your row
+#TODO: VER 4.0 the time is off in the QLogger console log
+#TODO: VER 4.0 the check box in the table view is messed up when you click on it
+#TODO: VER 4.0 HOLY MOLEY the background refresh caused the notes field to wipe!!!
+#TODO: VER 4.0 Keep the editor from using Segoe UI all the time.

@@ -135,7 +135,9 @@ class GenerateSSRSReport(QDialog):
         result = requests.get(reporturl,  auth=(self.domain_user, self.domain_password))
 
         if (result.status_code != 200):
-            print(f"File Download Failed {result.reason}: {result.text}")
+            msg = f"File Download Failed {result.reason}: {result.text}"
+            print(msg)
+            QMessageBox.critical(None, "Download Failed", msg)
             return False
 
         QFile.remove(savelocation) 
@@ -266,6 +268,7 @@ class GenerateSSRSReport(QDialog):
         base_url = base_url.replace("&ReportPeriod=Bi-Weekly", "&ReportPeriod=14")
         base_url = base_url.replace("&ReportPeriod=Weekly", "&ReportPeriod=7")
         base_url = base_url.replace("&ReportPeriod=Monthly", "&ReportPeriod=30")
+        base_url = base_url.replace("&ReportPeriod=None", "&ReportPeriod=30")
 
         #default to monthly if nothing was specified
         base_url = base_url.replace("&ReportPeriod=&", "&ReportPeriod=30&")
@@ -287,14 +290,22 @@ class GenerateSSRSReport(QDialog):
 
         # project status report fixed
         if emailashtml or emailasword or keepword:
-            self.download_report(wordurl, basereportdocx)
+            if not self.download_report(wordurl, basereportdocx):
+                progbar.hide()
+                progbar.close()
+                self.hide()
+                return
 
         progval = progval + 1
         progbar.setValue(int(min(progval / progtot * 100, 100)))
         progbar.setLabelText("Downloading files...")
         QtWidgets.QApplication.processEvents()   
 
-        self.download_report(pdfurl, basereportpdf)
+        if not self.download_report(pdfurl, basereportpdf):
+            progbar.hide()
+            progbar.close()
+            self.hide()
+            return
 
         dochtml = None
 
@@ -309,7 +320,8 @@ class GenerateSSRSReport(QDialog):
                 temphtmlfile = pnc.get_temporary_folder() + "/" + self.statusdate.toString("yyyyMMdd") + projnum + "statusreport.html"
                 dochtml = pnwt.get_html_version_of_word_doc(basereportdocx, temphtmlfile)
 
-                ct.send_an_email(self.xmlstr, subject, dochtml, None, "Receives Status", True)                
+                if dochtml:
+                    ct.send_an_email(self.xmlstr, subject, dochtml, None, "Receives Status", True)                
             elif emailasword:
                 ct.send_an_email(self.xmlstr, subject, "", [basereportdocx], "Receives Status", False)
             elif emailaspdf:
