@@ -123,6 +123,8 @@ void PNCheckBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
     checkbox_indicator.rect.moveTo( x, y );
 
     QApplication::style()->drawControl( QStyle::CE_CheckBox, &checkbox_indicator, t_painter );
+
+    t_painter->restore();
 }
 
 Qt::ItemFlags PNCheckBoxDelegate::flags ( const QModelIndex & t_index ) const

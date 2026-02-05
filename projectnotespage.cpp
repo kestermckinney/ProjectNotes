@@ -30,8 +30,6 @@ void ProjectNotesPage::openRecord(QVariant& t_record_id)
 {
     setRecordId(t_record_id);
 
-    global_DBObjects.refreshDirty();
-
     global_DBObjects.projecteditingnotesmodel()->setFilter(0, t_record_id.toString());
     global_DBObjects.projecteditingnotesmodel()->refresh();
 
@@ -119,8 +117,6 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
 
 void ProjectNotesPage::on_tabWidgetNotes_currentChanged(int index)
 {
-    global_DBObjects.refreshDirty();
-
     emit setFocus(); // tell the main window to update to call the setButtonsAndMenus function
 
     switch ( index )

@@ -571,35 +571,6 @@ PNSqlQueryModel* PNDatabaseObjects::findOpenTable(const QString& t_tablename)
     return nullptr;
 }
 
-bool PNDatabaseObjects::refreshDirty()
-{
-    bool foundsome = false;
-
-    for ( PNSqlQueryModel* m : getOpenModels())
-    {
-        if (m->isDirty())
-        {
-            m->refresh();
-            foundsome = true;
-        }
-    }
-
-    return foundsome;
-}
-
-bool PNDatabaseObjects::setAllDirty()
-{
-    bool foundsome = false;
-
-    for ( PNSqlQueryModel* m : getOpenModels())
-    {
-        m->setDirty();
-        foundsome = true;
-    }
-
-    return foundsome;
-}
-
 QString PNDatabaseObjects::loadParameter( const QVariant& t_parametername )
 {
     QSqlQuery select(m_sqlite_db);
@@ -923,7 +894,6 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
                 return false;
 
         domlist.clear();
-        clients_model.refreshByTableName();
     }
 
     // import people
@@ -940,7 +910,6 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
                 return false;
 
         domlist.clear();
-        people_model.refreshByTableName();
     }
 
     // import projects
@@ -957,7 +926,6 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
                 return false;
 
         domlist.clear();
-        projects_model.refreshByTableName();
     }
 
     // import project people
@@ -974,7 +942,6 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
                 return false;
 
         domlist.clear();
-        project_people_model.refreshByTableName();
     }
 
     // import status report items
@@ -991,7 +958,6 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
                 return false;
 
         domlist.clear();
-        status_report_items_model.refreshByTableName();
     }
 
     // import project locations
@@ -1008,7 +974,6 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
                 return false;
 
         domlist.clear();
-        project_locations_model.refreshByTableName();
     }
 
 
@@ -1026,7 +991,6 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
                 return false;
 
         domlist.clear();
-        project_notes_model.refreshByTableName();
     }
 
     // import item tracker
@@ -1043,7 +1007,6 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
                 return false;
 
         domlist.clear();
-        tracker_items_model.refreshByTableName();
     }
 
     // import meeting attendees
@@ -1060,7 +1023,6 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
                 return false;
 
         domlist.clear();
-        meeting_attendees_model.refreshByTableName();
     }
 
     // import tracker items updates
@@ -1077,10 +1039,7 @@ bool PNDatabaseObjects::importXMLDoc(const QDomDocument& t_xmldoc)
                 return false;
 
         domlist.clear();
-        item_tracker_updates_model.refreshByTableName();
     }
-
-    refreshDirty();
 
     return true;
 }
@@ -1270,11 +1229,81 @@ void PNDatabaseObjects::addDefaultPMToMeeting(const QString& t_note_id)
 
     QString insert = QString("insert into meeting_attendees (attendee_id, person_id, note_id) select '%3', '%2', '%1' where not exists (select 1 from meeting_attendees where note_id = '%1' and person_id = '%2' )").arg(t_note_id).arg(pm).arg(guid);
 
-    meetingattendeesmodel()->setDirty();
-    teamsmodel()->setDirty();
-    projectteammembersmodel()->setDirty();
-
     execute(insert);
+
+    // make sure displays get updated
+    global_DBObjects.pushRowChange("project_notes", "project_id", t_note_id);
+    global_DBObjects.pushRowChange("project_people", "teammember_id", guid2);
+    global_DBObjects.pushRowChange("meeting_attendees", "attendee_id", guid);
+    global_DBObjects.updateDisplayData();
+}
+
+// Push a new change; skips if exact duplicate already exists
+void PNDatabaseObjects::pushRowChange(const QString& t_table, const QString& t_column, const QVariant& t_value)
+{
+    KeyColumnChange newChange{t_table, t_column, t_value};
+    if (!m_key_column_changes.contains(newChange))
+    {
+        m_key_column_changes.append(newChange);
+    }
+}
+
+// Pop the last added change; returns true if successful, false if empty
+bool PNDatabaseObjects::popRowChange(KeyColumnChange& t_outChange)
+{
+    if (m_key_column_changes.isEmpty())
+    {
+        return false;
+    }
+
+    t_outChange = m_key_column_changes.takeLast();
+    return true;
+}
+
+// Bonus: merge changes from another store (skipping duplicates)
+void PNDatabaseObjects::addColumnChanges(const PNDatabaseObjects& t_source)
+{
+    for (const KeyColumnChange& ch : t_source.m_key_column_changes)
+    {
+        if (!m_key_column_changes.contains(ch))
+        {
+            m_key_column_changes.append(ch);
+        }
+    }
+}
+
+void PNDatabaseObjects::updateDisplayData()
+{
+    KeyColumnChange keyColChange;
+
+    while (popRowChange(keyColChange))
+    {
+        PNSqlQueryModel* recordset = nullptr;
+
+        QListIterator<PNSqlQueryModel*> it_recordsets(getOpenModels());
+
+        // look through all recordsets that are open
+        while(it_recordsets.hasNext())
+        {
+            recordset = it_recordsets.next();
+
+            if (recordset->tablename().compare( keyColChange.table) == 0)
+            {
+                int ck_col = recordset->getColumnNumber(keyColChange.column);
+
+                // if related column is being used then search
+                if (ck_col != -1)
+                {
+                    QModelIndex qmi = recordset->findIndex(keyColChange.value, ck_col);
+                    if (qmi.isValid())
+                    {
+                        recordset->reloadRecord(qmi);
+                        // qDebug() << "Updating display for table " << recordset->tablename() << " column " << keyColChange.column << " row " << qmi.row() << " with value " << keyColChange.value;
+                    }
+                }
+            }
+        }
+    }
 }
 
 // TODO: VER 4.1 you can remove someone from a team by just reselecting a new person

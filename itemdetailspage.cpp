@@ -26,8 +26,6 @@ void ItemDetailsPage::openRecord(QVariant& t_record_id)
 {
     setRecordId(t_record_id);
 
-    global_DBObjects.refreshDirty();
-
     // only select the records another event will be fired to open the window to show them
     global_DBObjects.actionitemsdetailsmodel()->setFilter(0, t_record_id.toString());
     global_DBObjects.actionitemsdetailsmodel()->refresh();

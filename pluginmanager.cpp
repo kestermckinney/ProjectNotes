@@ -90,7 +90,7 @@ static PyObject* update_data(PyObject* self, PyObject* args)
     dbo.openDatabase(global_DBObjects.getDatabaseFile(), caller, false);
     int result = dbo.importXMLDoc(xmldoc);
 
-    global_DBObjects.setAllDirty(); // get all the dirty tables from the temporaty database object
+    global_DBObjects.addColumnChanges(dbo);
 
     dbo.closeDatabase();
 

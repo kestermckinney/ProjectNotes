@@ -1740,6 +1740,8 @@ void MainWindow::on_actionXML_Import_triggered()
         }
 
         infile.close();
+
+        global_DBObjects.updateDisplayData();
     }
 
     QApplication::restoreOverrideCursor();
@@ -1860,7 +1862,7 @@ void MainWindow::onPluginUnLoaded(const QString& t_pluginpath)
 
 void MainWindow::onRefreshRequested()
 {
-    global_DBObjects.refreshDirty();
+    global_DBObjects.updateDisplayData();
 }
 
 
