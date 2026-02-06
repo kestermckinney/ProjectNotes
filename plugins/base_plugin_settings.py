@@ -727,6 +727,9 @@ class MeetingEmailTypesSettings(QDialog):
             mhtml = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 4).text() 
             data = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 5).text() 
 
+            self.ui_template.textEditTemplate.setFontFamily("Arial")
+            self.ui_template.textEditTemplate.setFontSize("11")
+            
             self.ui_template.comboBoxType.setCurrentText(mtype)
             self.ui_template.lineEditName.setText(nam)
             self.ui_template.comboBoxInvitees.setCurrentText(matt)

@@ -290,14 +290,5 @@ populate_dynamic_menu(menu_data)
 #TODO: VER 4.1 Fix or rework tracker report export
 #TODO: VER 4.1 Fix or change the template fillout features 
 #TODO: VER 4.1 Make sure the Quick Add for a team member is there with a drop down for company
-#TODO: VER 4.0 when refreshing the selection in the table view is lost
-#TODO: VER 4.0 can it bet setup on the table view to not highlight the cell when cursor hovers over it
-#TODO: VER 4.0 primary contact field does not always stay when you set it...!!!!!!  I am suspecting the refresh dirty is doing it
-#TODO: VER 4.0 looks like the refresh is causing screen flickers
-#TODO: VER 4.0 try Qt 6.8.... and Python 14
-#TODO: VER 4.0 modules unload and reload does not seem to change the loaded python code in all cases
-#TODO: VER 4.0 when creating a new row the refresh in the background clears your row
-#TODO: VER 4.0 the time is off in the QLogger console log
-#TODO: VER 4.0 the check box in the table view is messed up when you click on it
-#TODO: VER 4.0 HOLY MOLEY the background refresh caused the notes field to wipe!!!
-#TODO: VER 4.0 Keep the editor from using Segoe UI all the time.
+#TODO: VER 4.1 try Qt 6.8.... and Python 14
+#TODO: VER 4.1 modules unload and reload does not seem to change the loaded python code in all cases
