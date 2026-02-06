@@ -17,6 +17,12 @@ PNTextEdit::PNTextEdit(QWidget *parent) : QTextEdit(parent)
     m_inlinespellchecker = new PNInlineSpellChecker(this);
 
     connect(this, SIGNAL(textChanged()), this, SLOT(checkSpelling()));
+
+    setFont(QFont("Arial", 12));
+
+    QTextCharFormat fmt;
+    fmt.setFont(QFont("Arial", 12));
+    textCursor().mergeCharFormat(fmt);
 }
 
 PNTextEdit::~PNTextEdit()

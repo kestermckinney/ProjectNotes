@@ -1,7 +1,6 @@
 // Copyright (C) 2022, 2023 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
-//todo: may need to createa PNColum class and clean up all the diffrent QVectors
 #include "pndatabaseobjects.h"
 #include "pndatabaseobjects.h"
 
@@ -1925,9 +1924,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
         }
     }
 
-
     // if using keys don't check for unique values
-    //TODO: test this i don't think it is working
     if (keyvalue.isNull())
     {
         // Loop through unique keys to find one that can be used to identify a record without the record id

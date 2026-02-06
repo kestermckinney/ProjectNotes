@@ -68,7 +68,7 @@ void ProjectDetailsPage::openRecord(QVariant& t_record_id)
 void ProjectDetailsPage::setPageTitle()
 {
     QString  page_title = QString("%1 %2").arg(ui->lineEditNumber->text(), ui->plainTextEditProjectName->toPlainText().left(25));
-    topLevelWidget()->setWindowTitle(QString("Project Notes 4 Beta Project [%1]").arg(page_title));
+    topLevelWidget()->setWindowTitle(QString("Project Notes Project [%1]").arg(page_title));
     setHistoryText(page_title);
 }
 

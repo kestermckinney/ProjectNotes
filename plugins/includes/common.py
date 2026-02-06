@@ -289,7 +289,7 @@ class ProjectNotesCommon:
 
 
     def get_plugin_setting(self, settingname, pluginname = None):
-        cfg = QSettings("ProjectNotes4Beta","PluginSettings")
+        cfg = QSettings("ProjectNotes","PluginSettings")
         cfg.setFallbacksEnabled(False)
         value = ""
 
@@ -301,7 +301,7 @@ class ProjectNotesCommon:
         return value
 
     def set_plugin_setting(self, settingname, pluginname = None, value = ""):
-        cfg = QSettings("ProjectNotes4Beta","PluginSettings")
+        cfg = QSettings("ProjectNotes","PluginSettings")
         cfg.setFallbacksEnabled(False)
 
         if pluginname is None:

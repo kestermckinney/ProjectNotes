@@ -51,7 +51,7 @@ void PeoplePage::setButtonAndMenuStates()
 
 void PeoplePage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes 4 Beta People"));
+    topLevelWidget()->setWindowTitle(QString("Project Notes People"));
 
     if (getRecordId().isNull())
     {

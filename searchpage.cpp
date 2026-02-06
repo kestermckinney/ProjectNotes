@@ -18,7 +18,7 @@ SearchPage::SearchPage()
 
 void SearchPage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes 4 Beta Search"));
+    topLevelWidget()->setWindowTitle(QString("Project Notes Search"));
     setHistoryText("Search");
 }
 

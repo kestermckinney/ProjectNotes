@@ -21,7 +21,6 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QTextEdit>
-#include <QFontComboBox>
 #include <QTextList>
 #include <QColorDialog>
 #include <QClipboard>
@@ -1267,6 +1266,9 @@ void MainWindow::setupTextActions()
     connect(m_combo_box_style, QOverload<int>::of(&PNComboBox::activated), this, &MainWindow::textStyle);
 
     m_combo_box_font = new QFontComboBox(tb);
+    m_combo_box_font->setFontFilters(QFontComboBox::AllFonts);
+    m_combo_box_font->setWritingSystem(QFontDatabase::Any);
+    m_combo_box_font->setCurrentFont(QFont("Arial", 11));
     tb->addWidget(m_combo_box_font);
     connect(m_combo_box_font, &PNComboBox::textActivated, this, &MainWindow::textFamily);
 
@@ -1278,7 +1280,8 @@ void MainWindow::setupTextActions()
     const QList<int> standardSizes = QFontDatabase::standardSizes();
     for (int size : standardSizes)
         m_combo_box_size->addItem(QString::number(size));
-    m_combo_box_size->setCurrentIndex(standardSizes.indexOf(QApplication::font().pointSize()));
+    // m_combo_box_size->setCurrentIndex(standardSizes.indexOf(QApplication::font().pointSize()));
+    m_combo_box_size->setCurrentIndex(m_combo_box_size->findText("11"));
 
     connect(m_combo_box_size, &PNComboBox::textActivated, this, &MainWindow::textSize);
 }

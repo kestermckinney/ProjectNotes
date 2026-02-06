@@ -813,7 +813,7 @@ class SettingsMigrator(QDialog):
     def load_all_plugin_settings(self):
         self.listWidgetPlugins.clear()
 
-        settings = QSettings("ProjectNotes4Beta","PluginSettings")
+        settings = QSettings("ProjectNotes","PluginSettings")
         
         # Get all keys in the group
         keys = settings.childGroups()
@@ -844,7 +844,7 @@ class SettingsMigrator(QDialog):
         settings_dict = {}
         
         # Get all top-level groups
-        settings = QSettings("ProjectNotes4Beta","PluginSettings")
+        settings = QSettings("ProjectNotes","PluginSettings")
         
         # Iterate through each group
         for group in selected_groups:
@@ -867,7 +867,7 @@ class SettingsMigrator(QDialog):
 
     def import_settings(self):
         # Initialize QSettings (replace with your organization and application name)
-        settings = QSettings("ProjectNotes4Beta","PluginSettings")
+        settings = QSettings("ProjectNotes","PluginSettings")
         
         # Open file dialog to select JSON file
         file_dialog = QFileDialog(self)
@@ -926,7 +926,7 @@ class SettingsMigrator(QDialog):
             return  # No groups selected
         
         # Initialize QSettings
-        settings = QSettings("ProjectNotes4Beta","PluginSettings")
+        settings = QSettings("ProjectNotes","PluginSettings")
         
         # Remove each selected group
         try:

@@ -36,6 +36,6 @@ void ProjectsListPage::setButtonAndMenuStates()
 
 void ProjectsListPage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes 4 Beta"));
+    topLevelWidget()->setWindowTitle(QString("Project Notes"));
     setHistoryText("Projects List");
 }

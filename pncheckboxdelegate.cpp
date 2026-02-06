@@ -67,13 +67,21 @@ void PNCheckBoxDelegate::updateEditorGeometry(QWidget *t_editor, const QStyleOpt
     // Set our button state to enabled
     checkbox_indicator.state |= QStyle::State_Enabled;
 
-    // Get our deimensions
-    checkbox_indicator.rect = QApplication::style()->subElementRect( QStyle::SE_CheckBoxIndicator, &checkbox_indicator, NULL );
+    QSize checkBoxSize = QApplication::style()->sizeFromContents(
+        QStyle::CT_CheckBox, &checkbox_indicator, QSize());
 
-    const int x = t_option.rect.center().x() - checkbox_indicator.rect.width() / 2;
-    const int y = t_option.rect.center().y() - checkbox_indicator.rect.height() / 2;
+    // make it slightly wider so it draws better
+    checkBoxSize.setWidth(checkBoxSize.width() * 1.3);
 
-    checkbox_indicator.rect.moveTo( x, y );
+    // Center it horizontally and vertically
+    QRect checkRect = QRect(
+        t_option.rect.left() + (t_option.rect.width()  - checkBoxSize.width())  / 2,
+        t_option.rect.top()  + (t_option.rect.height() - checkBoxSize.height()) / 2,
+        checkBoxSize.width(),
+        checkBoxSize.height()
+        );
+
+    checkbox_indicator.rect = checkRect;
 
     t_editor->setGeometry(checkbox_indicator.rect);
 }
@@ -114,13 +122,21 @@ void PNCheckBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
     checkbox_indicator.state |= (value) ? QStyle::State_On : QStyle::State_Off;
 
     // Get our deimensions
-    checkbox_indicator.rect = QApplication::style()->subElementRect( QStyle::SE_CheckBoxIndicator, &checkbox_indicator, NULL );
+    QSize checkBoxSize = QApplication::style()->sizeFromContents(
+        QStyle::CT_CheckBox, &checkbox_indicator, QSize());
 
-    // Position our indicator
-    const int x = t_option.rect.center().x() - checkbox_indicator.rect.width() / 2;
-    const int y = t_option.rect.center().y() - checkbox_indicator.rect.height() / 2;
+    // make it slightly wider so it draws better
+    checkBoxSize.setWidth(checkBoxSize.width() * 1.3);
 
-    checkbox_indicator.rect.moveTo( x, y );
+    // Center it horizontally and vertically
+    QRect checkRect = QRect(
+        t_option.rect.left() + (t_option.rect.width()  - checkBoxSize.width())  / 2,
+        t_option.rect.top()  + (t_option.rect.height() - checkBoxSize.height()) / 2,
+        checkBoxSize.width(),
+        checkBoxSize.height()
+        );
+
+    checkbox_indicator.rect = checkRect;
 
     QApplication::style()->drawControl( QStyle::CE_CheckBox, &checkbox_indicator, t_painter );
 

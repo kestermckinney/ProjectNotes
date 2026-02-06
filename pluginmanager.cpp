@@ -342,7 +342,7 @@ PluginManager::PluginManager(QObject *parent)
 
     PyConfig_InitPythonConfig(&config);
 
-    status = PyConfig_SetString(&config, &config.program_name, L"Project Notes 4 Beta");
+    status = PyConfig_SetString(&config, &config.program_name, L"Project Notes");
     if (PyStatus_Exception(status))
     {
         PyConfig_Clear(&config);
