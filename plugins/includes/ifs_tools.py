@@ -1,4 +1,5 @@
 from includes.common import ProjectNotesCommon
+#from common import ProjectNotesCommon
 from PyQt6 import QtCore
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QDir, QFileInfo, QElapsedTimer
@@ -394,16 +395,16 @@ class IFSCommon:
 
         json_result = result.json()
 
-        #print("Debug JSON:")
-        #print(json.dumps(json_result, indent=4))
+        # print("Debug JSON:")
+        # print(json.dumps(json_result, indent=4))
 
         for value in json_result['value']:
             rgroups[value['ResourceId']] = value['Description']        
 
 
     def get_team_members_xml(self, rgroups, clientsdict, projectid, rd):
-        return #TODO: VER 4.3 Fix IFS 25R1 broke it
-        request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectResourcePlanningHandling.svc/ProjectSet(ProjectId=%27' + projectid + '%27)/ProjectAllocationArray?$apply=groupby((EmployeeName,ResourceId))'
+        #return #TODO: VER 4.3 Fix IFS 25R1 broke it
+        request_url = self.ifs_url + "https://ifs.cornerstonecontrols.com//main/ifsapplications/projection/v1/ProjectResourceAllocationsHandling.svc/ProjResourceAllocations?$filter=(ProjectId%20eq%20%27" + projectid + "%27)&$expand=EmployeeIdRef($select=EmployeeName)" 
         
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
@@ -413,15 +414,15 @@ class IFSCommon:
 
         json_result = result.json()
 
-        #print("Debug JSON:")
-        #print(json.dumps(json_result, indent=4))
+        print("Debug JSON:")
+        print(json.dumps(json_result, indent=4))
 
         for rowval in json_result['value']:
 
             rd['projectpeoplexmlrows'] += "  <row>\n"
 
             rd['projectpeoplexmlrows'] += "    <column name=\"project_id\" lookupvalue=\"" + self.pnc.to_xml(projectid) + "\"></column>\n"
-            rd['projectpeoplexmlrows'] += "    <column name=\"people_id\" lookupvalue=\"" + self.pnc.to_xml(rowval['EmployeeName']) + "\"></column>\n"
+            rd['projectpeoplexmlrows'] += "    <column name=\"people_id\" lookupvalue=\"" + self.pnc.to_xml(rowval['EmployeeIdRef']['EmployeeName']) + "\"></column>\n"
             rd['projectpeoplexmlrows'] += "    <column name=\"role\">" + self.pnc.to_xml(rgroups[rowval['ResourceId']]) + "</column>\n"
             rd['projectpeoplexmlrows'] += "  </row>\n"
 
@@ -613,4 +614,22 @@ class IFSCommon:
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
         print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+
+#setup test data
+if __name__ == '__main__':
+    import os
+    import sys
+
+
+    os.chdir("..")
+
+    ifs = IFSCommon()
+
+    clientsdict = {}
+    rgroups = {}
+
+    rd = {}
+
+    #ifs.get_resource_groups(rgroups)
+    #ifs.get_team_members_xml(rgroups, clientsdict, 'P3114M', rd)
 

@@ -42,7 +42,7 @@ def event_shutdown(parameter):
 
 def event_timer(parameter):
 
-    print("Test Thread 1: Timer event called...")
+    #print("Test Thread 1: Timer event called...")
 
     docxml = "<projectnotes>\n"
     docxml += "<table name=\"people\">\n"
@@ -55,11 +55,11 @@ def event_timer(parameter):
     docxml += "</table>\n"
     docxml += "</projectnotes>\n"
 
-    print(docxml)
+    #print(docxml)
 
-    projectnotes.update_data(docxml) # need to test and see if screen will refresh automatically
+    #projectnotes.update_data(docxml) # need to test and see if screen will refresh automatically
 
-    time.sleep(6)
+    #time.sleep(6)
 
     return ""
 

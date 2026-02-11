@@ -179,9 +179,9 @@ def populate_dynamic_menu(json_string):
             dataexport = None
 
             if row_data["Type"] == "Email":
-                pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : row_data["Data Type"], "submenu" : "Send Email", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
+                pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "projects/project_people/people/project_notes/meeting_attendees/project_locations", "submenu" : "Send Email", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
             else:
-                pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuScheduleMeeting",  "tablefilter" : row_data["Data Type"], "submenu" : "Schedule Meeting", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
+                pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuScheduleMeeting",  "tablefilter" : "projects/project_people/people/project_notes/meeting_attendees/project_locations", "submenu" : "Schedule Meeting", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
 
     if (platform.system() == 'Windows' and not use_graph_api):
         pluginmenus.append({"menutitle" : "Export Contacts to Outlook", "function" : "menuExportContactsToOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
@@ -292,3 +292,9 @@ populate_dynamic_menu(menu_data)
 #TODO: VER 4.1 Make sure the Quick Add for a team member is there with a drop down for company
 #TODO: VER 4.1 try Qt 6.8.... and Python 14
 #TODO: VER 4.1 modules unload and reload does not seem to change the loaded python code in all cases
+#TODO: VER 4.0.1 when creating a team list, you switch to select the primary conact but the dropdown isn't updated.
+#TODO: VER 4.0.1 when you select import contacts menu option, you don't know if it is working
+#TODO: VER 4.0.1 the console.log isn't staying up to date in the log viewer screen, the log get's too big for the viewer... need to figure out what limits i am hitting
+#TODO: VER 4.0.1 the filter dialog doesn't show a list of values to select.
+#TODO: VER 4.0.1 when copying a meeting not all attendees are copied.
+#TODO: VER 4.0.1 should not update the download_state.json file when nothing changes

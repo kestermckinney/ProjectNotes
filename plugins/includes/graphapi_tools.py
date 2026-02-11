@@ -320,8 +320,9 @@ class GraphAPITools:
 
         projectnotes.update_data(xmldoc)
 
-        if self.pnc.set_save_state(statename, skip, top, contactcount) is None:
-            print("Failed to set save state.  Will try to import the same contacts again.")
+        if contactcount > 0:
+            if self.pnc.set_save_state(statename, skip, top, contactcount) is None:
+                print("Failed to set save state.  Will try to import the same contacts again.")
 
         # execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
         # print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
@@ -449,8 +450,9 @@ class GraphAPITools:
 
             childnode = childnode.nextSibling()
 
-        if self.pnc.set_save_state(statename, skip, top, contactcount) is None:
-            print("Failed to set save state.  Will try to export contacts again.")
+        if contactcount > 0:
+            if self.pnc.set_save_state(statename, skip, top, contactcount) is None:
+                print("Failed to set save state.  Will try to export contacts again.")
 
         # execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
         # print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
@@ -600,8 +602,9 @@ class GraphAPITools:
         else:
             print(f"Response Code: {response.status_code} Error downloading emails {response.text}.")
 
-        if self.pnc.set_save_state(statename, skip, emailcount, emailcount, statefile) is None: # never redownload emails
-            print("Failed to set save state.  Will try to download the same email again.")
+        if emailcount > 0:
+            if self.pnc.set_save_state(statename, skip, emailcount, emailcount, statefile) is None: # never redownload emails
+                print("Failed to set save state.  Will try to download the same email again.")
 
     # provide a eml formated base64 string
     def format_base64_76(self, text):
@@ -931,8 +934,9 @@ class GraphAPITools:
 
             childnode = childnode.nextSibling()
 
-        if self.pnc.set_save_state(statename, skip, top, locationcount) is None:
-            print("Failed to set save state.  Will try to import download the same email again.")
+        if locationcount > 0:
+            if self.pnc.set_save_state(statename, skip, top, locationcount) is None:
+                print("Failed to set save state.  Will try to import download the same email again.")
 
         # execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
         # print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
@@ -1197,8 +1201,9 @@ class GraphAPITools:
 
             childnode = childnode.nextSibling()
 
-        if self.pnc.set_save_state(statename, skip, top, rowcount) is None:
-            print("Failed to set save state.  Will try to import download the same email again.")
+        if rowcount > 0:
+            if self.pnc.set_save_state(statename, skip, top, rowcount) is None:
+                print("Failed to set save state.  Will try to import download the same email again.")
 
         # execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
         # print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
