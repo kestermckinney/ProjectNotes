@@ -11,6 +11,8 @@
 #include <QTextCharFormat>
 #include <QTimer>
 #include <QComboBox>
+#include <QFontComboBox>
+#include <QFontDatabase>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -64,6 +66,10 @@ public:
     static void addMenuItem(QMenu* t_menu, const QString& t_submenu, const QString& t_menutitle, QAction* t_action, int t_section);
 
     QString mainConnectionName() const { return m_main_connection_name; }
+
+    QFontComboBox* fontComboBox() { return m_combo_box_font; }
+    QComboBox* fontSizeComboBox() { return m_combo_box_size; }
+    QComboBox* fontStyleComboBox() { return m_combo_box_style; }
 
 public slots:
     void slotOpen_ProjectDetails_triggered(QVariant t_record_id);
@@ -185,7 +191,7 @@ private:
     QAction *m_actionPaste;
 
     QComboBox* m_combo_box_style;
-    QComboBox* m_combo_box_font;
+    QFontComboBox* m_combo_box_font;
     QComboBox* m_combo_box_size;
 
     QString m_main_connection_name = "mainconnection";

@@ -90,7 +90,7 @@ static PyObject* update_data(PyObject* self, PyObject* args)
     dbo.openDatabase(global_DBObjects.getDatabaseFile(), caller, false);
     int result = dbo.importXMLDoc(xmldoc);
 
-    global_DBObjects.setAllDirty(); // get all the dirty tables from the temporaty database object
+    global_DBObjects.addColumnChanges(dbo);
 
     dbo.closeDatabase();
 
@@ -342,7 +342,7 @@ PluginManager::PluginManager(QObject *parent)
 
     PyConfig_InitPythonConfig(&config);
 
-    status = PyConfig_SetString(&config, &config.program_name, L"Project Notes 4 Beta");
+    status = PyConfig_SetString(&config, &config.program_name, L"Project Notes");
     if (PyStatus_Exception(status))
     {
         PyConfig_Clear(&config);

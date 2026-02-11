@@ -1,7 +1,6 @@
 // Copyright (C) 2022, 2023 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
-//todo: may need to createa PNColum class and clean up all the diffrent QVectors
 #include "pndatabaseobjects.h"
 #include "pndatabaseobjects.h"
 
@@ -78,17 +77,27 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
                         // if related column is being used then search
                         if (ck_col != -1)
                         {
-                            recordset->setDirty();  // refresh when ne page active
-                            break; // just need to identify one column
+                            QVariant val = m_cache[t_index.row()].value(0);
+                            QModelIndex qmi = recordset->findIndex(val, ck_col);
+                            if (qmi.isValid())
+                            {
+                                recordset->reloadRecord(qmi);
+                                // qDebug() << "Marking table " << recordset->tablename() << " column " << c << " row " << qmi.row();
+                            }
                         }
                     }
                 }
-            }
+                else if( recordset->tablename().compare(tablename()) == 0)  // if it is the same table in a different recordset it still needs updated
+                {
+                    QVariant val = m_cache[t_index.row()].value(0);
+                    QModelIndex qmi = recordset->findIndex(val, 0);
+                    if (qmi.isValid())
+                    {
+                        recordset->reloadRecord(qmi);
+                        // qDebug() << "Marking table " << recordset->tablename() << " by key column column row " << qmi.row();
+                    }
+                }
 
-            // if it is the same table in a different recordset reload it
-            if ( recordset->tablename().compare(tablename()) == 0 )
-            {
-                recordset->setDirty();
             }
         }
     }
@@ -1909,9 +1918,11 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
         keyvalue = t_xml_row->attribute("id");
 
         if (!keyvalue.isNull())
+        {
             whereclause = QString(" %1 = '%2'").arg(keyfield, keyvalue);
+            getDBOs()->pushRowChange(tablename(), keyfield, keyvalue);  // track change to update display later
+        }
     }
-
 
     // if using keys don't check for unique values
     if (keyvalue.isNull())
@@ -1956,6 +1967,9 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                             if (!temp_where.isEmpty())
                                 temp_where += " and ";
                             temp_where += QString(" %1 = '%2'").arg(field_name, field_value.toString());
+
+                            getDBOs()->pushRowChange(tablename(), field_name, field_value); // track change to update display later
+
                             found_count++;
                         }
                     }
@@ -1985,6 +1999,14 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
             QString lookup_value = element.toElement().attribute("lookupvalue");
 
             int colnum = getColumnNumber(field_name);
+
+            // if the keyval was included set it
+            if (colnum == 0)
+            {
+                keyvalue = field_value.toString();
+                whereclause = QString(" %1 = '%2'").arg(keyfield, keyvalue);
+                getDBOs()->pushRowChange(tablename(), keyfield, keyvalue);  // track change to update display later
+            }
 
             // if key column is specified blank or null don't use it
             // don't use if it isn't an editable column
@@ -2060,12 +2082,18 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
         if (!fields.isEmpty())
             fields += ",";
 
-        fields += getColumnName(0); // get the key field name
+        QString keycol = getColumnName(0); // get the key field name
+        fields += keycol;
 
         if (!insertvalues.isEmpty())
             insertvalues += ",";
 
-        insertvalues += QString("'%1'").arg(QUuid::createUuid().toString());
+        if (keyvalue.isNull())
+            keyvalue = QUuid::createUuid().toString();
+
+        insertvalues += QString("'%1'").arg(keyvalue);
+
+        getDBOs()->pushRowChange(tablename(), keycol, keyvalue);  // track change to update display later
 
 
         sql = QString("insert into %1 (%2) values (%3)").arg(m_tablename, fields, insertvalues);
@@ -2078,26 +2106,6 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
     getDBOs()->execute(sql);
 
     return true;
-}
-
-void PNSqlQueryModel::refreshByTableName()
-{
-    QListIterator<PNSqlQueryModel*> it_recordsets(m_dbo->getOpenModels());
-    PNSqlQueryModel* recordset = nullptr;
-
-    // look through all recordsets that are open
-    while(it_recordsets.hasNext())
-    {
-        recordset = it_recordsets.next();
-
-        // look through all related tables and uses of the same table to see if the recordset is match
-        // don't check against yourself, especially when importing you are just using a empty recordset
-        if ( recordset != this && this->tablename().compare(recordset->tablename()) == 0)
-        {
-            recordset->setDirty();
-        }
-    }
-
 }
 
 bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant &t_value)

@@ -54,8 +54,6 @@ void ProjectDetailsPage::openRecord(QVariant& t_record_id)
     global_DBObjects.projectnotesmodel()->setFilter(1, t_record_id.toString());
     global_DBObjects.projectnotesmodel()->refresh();
 
-    global_DBObjects.refreshDirty();
-
     // only select the records another event will be fired to open the window to show them
     // order is important this needs to be last
     global_DBObjects.projectinformationmodel()->setFilter(0, t_record_id.toString());
@@ -70,7 +68,7 @@ void ProjectDetailsPage::openRecord(QVariant& t_record_id)
 void ProjectDetailsPage::setPageTitle()
 {
     QString  page_title = QString("%1 %2").arg(ui->lineEditNumber->text(), ui->plainTextEditProjectName->toPlainText().left(25));
-    topLevelWidget()->setWindowTitle(QString("Project Notes 4 Beta Project [%1]").arg(page_title));
+    topLevelWidget()->setWindowTitle(QString("Project Notes Project [%1]").arg(page_title));
     setHistoryText(page_title);
 }
 
@@ -173,8 +171,6 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
 
 void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)
 {
-    global_DBObjects.refreshDirty();
-
     emit setFocus(); // tell the main window to update to call the setButtonsAndMenus function
 
     switch ( index )

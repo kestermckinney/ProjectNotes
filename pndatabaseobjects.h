@@ -45,6 +45,19 @@
 #define DB_LOCK db_mutex.lock()
 #define DB_UNLOCK db_mutex.unlock()
 
+struct KeyColumnChange {
+    QString table;
+    QString column;
+    QVariant value;
+
+    // Equality operator for duplicate checking
+    bool operator==(const KeyColumnChange& other) const {
+        return table == other.table &&
+               column == other.column &&
+               value == other.value;
+    }
+};
+
 class PNDatabaseObjects : public QObject
 {
     Q_OBJECT
@@ -117,6 +130,16 @@ public:
     SearchResultsModel* searchresultsmodel() { return m_search_results_model; }
     PNSortFilterProxyModel* searchresultsmodelproxy() { return m_search_results_model_proxy; }
 
+    // keep track of records updated, so you can reload the row in the display
+    // Push a new change; skips if exact duplicate already exists
+    void pushRowChange(const QString& t_table, const QString& t_column, const QVariant& t_value);
+
+    // Pop the last added change; returns true if successful, false if empty
+    bool popRowChange(KeyColumnChange& t_outChange);
+    void addColumnChanges(const PNDatabaseObjects& t_source);
+    void updateDisplayData();
+
+
     // selection values for fields
     static QStringList item_type;
     static QStringList item_status;
@@ -129,8 +152,6 @@ public:
 
 
     PNSqlQueryModel* findOpenTable(const QString& t_tablename);
-    bool refreshDirty();
-    bool setAllDirty();
 
     // global searches
     void setShowResolvedTrackerItems(bool t_value);
@@ -214,6 +235,9 @@ private:
     QList<QDomNode> findTableNodes(const QDomNode& t_xmlelement, const QString& t_tablename);
     // list of created models
     QList<PNSqlQueryModel*> m_open_recordsets;
+
+    // keep track of key column changes to update display
+    QList<KeyColumnChange> m_key_column_changes;
 
 signals:
 

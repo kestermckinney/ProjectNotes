@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Project Notes 4 Beta</string>
+   <string>Project Notes</string>
   </property>
   <property name="windowIcon">
    <iconset resource="Resources.qrc">
@@ -82,6 +82,9 @@
           <property name="frameShape">
            <enum>QFrame::Shape::NoFrame</enum>
           </property>
+          <property name="editTriggers">
+           <set>QAbstractItemView::EditTrigger::AnyKeyPressed|QAbstractItemView::EditTrigger::DoubleClicked|QAbstractItemView::EditTrigger::EditKeyPressed|QAbstractItemView::EditTrigger::SelectedClicked</set>
+          </property>
           <property name="selectionMode">
            <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
           </property>
@@ -127,7 +130,7 @@
         <item>
          <widget class="QTabWidget" name="tabWidgetNotes">
           <property name="currentIndex">
-           <number>2</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tabNote">
            <attribute name="title">
@@ -350,6 +353,9 @@
               <property name="frameShadow">
                <enum>QFrame::Shadow::Plain</enum>
               </property>
+              <property name="editTriggers">
+               <set>QAbstractItemView::EditTrigger::AnyKeyPressed|QAbstractItemView::EditTrigger::DoubleClicked|QAbstractItemView::EditTrigger::EditKeyPressed|QAbstractItemView::EditTrigger::SelectedClicked</set>
+              </property>
              </widget>
             </item>
            </layout>
@@ -391,6 +397,9 @@
               <property name="frameShadow">
                <enum>QFrame::Shadow::Plain</enum>
               </property>
+              <property name="editTriggers">
+               <set>QAbstractItemView::EditTrigger::AnyKeyPressed|QAbstractItemView::EditTrigger::DoubleClicked|QAbstractItemView::EditTrigger::EditKeyPressed|QAbstractItemView::EditTrigger::SelectedClicked</set>
+              </property>
              </widget>
             </item>
            </layout>
@@ -431,7 +440,7 @@
            </sizepolicy>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>2</number>
           </property>
           <property name="elideMode">
            <enum>Qt::TextElideMode::ElideNone</enum>
@@ -747,6 +756,9 @@
               <property name="frameShadow">
                <enum>QFrame::Shadow::Plain</enum>
               </property>
+              <property name="editTriggers">
+               <set>QAbstractItemView::EditTrigger::AnyKeyPressed|QAbstractItemView::EditTrigger::DoubleClicked|QAbstractItemView::EditTrigger::EditKeyPressed|QAbstractItemView::EditTrigger::SelectedClicked</set>
+              </property>
               <property name="sortingEnabled">
                <bool>true</bool>
               </property>
@@ -789,6 +801,9 @@
               <property name="frameShadow">
                <enum>QFrame::Shadow::Plain</enum>
               </property>
+              <property name="editTriggers">
+               <set>QAbstractItemView::EditTrigger::AnyKeyPressed|QAbstractItemView::EditTrigger::DoubleClicked|QAbstractItemView::EditTrigger::EditKeyPressed|QAbstractItemView::EditTrigger::SelectedClicked</set>
+              </property>
              </widget>
             </item>
            </layout>
@@ -818,6 +833,9 @@
               <property name="frameShadow">
                <enum>QFrame::Shadow::Plain</enum>
               </property>
+              <property name="editTriggers">
+               <set>QAbstractItemView::EditTrigger::AnyKeyPressed|QAbstractItemView::EditTrigger::DoubleClicked|QAbstractItemView::EditTrigger::EditKeyPressed|QAbstractItemView::EditTrigger::SelectedClicked</set>
+              </property>
              </widget>
             </item>
            </layout>
@@ -846,6 +864,9 @@
              <widget class="ProjectLocationsView" name="tableViewLocations">
               <property name="frameShadow">
                <enum>QFrame::Shadow::Plain</enum>
+              </property>
+              <property name="editTriggers">
+               <set>QAbstractItemView::EditTrigger::AnyKeyPressed|QAbstractItemView::EditTrigger::DoubleClicked|QAbstractItemView::EditTrigger::EditKeyPressed|QAbstractItemView::EditTrigger::SelectedClicked</set>
               </property>
              </widget>
             </item>
@@ -915,6 +936,9 @@
                  <property name="frameShadow">
                   <enum>QFrame::Shadow::Plain</enum>
                  </property>
+                 <property name="editTriggers">
+                  <set>QAbstractItemView::EditTrigger::AnyKeyPressed|QAbstractItemView::EditTrigger::DoubleClicked|QAbstractItemView::EditTrigger::EditKeyPressed|QAbstractItemView::EditTrigger::SelectedClicked</set>
+                 </property>
                  <attribute name="horizontalHeaderCascadingSectionResizes">
                   <bool>false</bool>
                  </attribute>
@@ -948,6 +972,9 @@
         </property>
         <item>
          <widget class="PeopleListView" name="tableViewPeople">
+          <property name="editTriggers">
+           <set>QAbstractItemView::EditTrigger::AnyKeyPressed|QAbstractItemView::EditTrigger::DoubleClicked|QAbstractItemView::EditTrigger::EditKeyPressed|QAbstractItemView::EditTrigger::SelectedClicked</set>
+          </property>
           <property name="selectionMode">
            <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
           </property>
@@ -986,6 +1013,15 @@
         </property>
         <item>
          <widget class="ClientsListView" name="tableViewClients">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Ignored" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="editTriggers">
+           <set>QAbstractItemView::EditTrigger::AnyKeyPressed|QAbstractItemView::EditTrigger::DoubleClicked|QAbstractItemView::EditTrigger::EditKeyPressed|QAbstractItemView::EditTrigger::SelectedClicked</set>
+          </property>
           <property name="sortingEnabled">
            <bool>true</bool>
           </property>
@@ -1359,6 +1395,9 @@
             <property name="frameShape">
              <enum>QFrame::Shape::NoFrame</enum>
             </property>
+            <property name="editTriggers">
+             <set>QAbstractItemView::EditTrigger::AnyKeyPressed|QAbstractItemView::EditTrigger::DoubleClicked|QAbstractItemView::EditTrigger::EditKeyPressed|QAbstractItemView::EditTrigger::SelectedClicked</set>
+            </property>
            </widget>
           </item>
          </layout>
@@ -1437,6 +1476,9 @@
          <widget class="SearchResultsView" name="tableViewSearchResults">
           <property name="frameShape">
            <enum>QFrame::Shape::NoFrame</enum>
+          </property>
+          <property name="editTriggers">
+           <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
           </property>
           <property name="selectionMode">
            <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>

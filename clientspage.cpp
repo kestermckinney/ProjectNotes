@@ -23,8 +23,6 @@ void ClientsPage::openRecord(QVariant& t_record_id)
     {
         global_DBObjects.clientsmodel()->deactivateUserFilter(global_DBObjects.peoplemodel()->objectName());
 
-        global_DBObjects.refreshDirty();
-
         QModelIndex qmi = global_DBObjects.clientsmodel()->findIndex(t_record_id, 0);
         QModelIndex qi = global_DBObjects.clientsmodelproxy()->index(global_DBObjects.clientsmodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
 
@@ -33,7 +31,6 @@ void ClientsPage::openRecord(QVariant& t_record_id)
     }
     else
     {
-        global_DBObjects.refreshDirty();
         loadState();
     }
 

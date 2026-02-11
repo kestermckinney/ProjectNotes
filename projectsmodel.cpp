@@ -254,7 +254,8 @@ const QModelIndex ProjectsModel::copyRecord(QModelIndex t_index)
     QString insert = "insert into project_people (teammember_id, project_id, people_id, role, receive_status_report) select m.teammember_id || '-" + unique_stamp + "', '" + newid.toString() + "', m.people_id, role, receive_status_report from project_people m where m.project_id ='" + oldid.toString() + "'  and m.people_id not in (select e.people_id from project_people e where e.project_id='" + newid.toString() + "')";
 
     getDBOs()->execute(insert);
-    getDBOs()->projectteammembersmodel()->setDirty();
+    getDBOs()->pushRowChange("project_people", "project_id", newid);
+    getDBOs()->updateDisplayData();
 
     return qi;
 }

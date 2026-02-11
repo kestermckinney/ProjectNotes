@@ -4,7 +4,7 @@ Unicode True
 RequestExecutionLevel user
 
 ; HM NIS Edit Wizard helper defines
-!define PRODUCT_NAME "Project Notes 4 Beta"
+!define PRODUCT_NAME "Project Notes"
 !define PRODUCT_VERSION "4.0.0"
 !define PRODUCT_PUBLISHER "Paul McKinney"
 !define PRODUCT_WEB_SITE "https://github.com/kestermckinney/ProjectNotes"
@@ -61,7 +61,7 @@ RequestExecutionLevel user
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 OutFile "ProjectNotes-Setup64.exe"
-InstallDir "$PROGRAMFILES64\Project Notes 4 Beta"
+InstallDir "$PROGRAMFILES64\Project Notes"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
 ShowUnInstDetails show
@@ -72,9 +72,9 @@ Section "MainSection" SEC01
 
   File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\ProjectNotes.exe"
 
-  CreateDirectory "$SMPROGRAMS\Project Notes 4 Beta"
-  CreateShortCut  "$SMPROGRAMS\Project Notes 4 Beta\Project Notes 4 Beta.lnk" "$INSTDIR\ProjectNotes.exe"
-  CreateShortCut  "$DESKTOP\Project Notes 4 Beta.lnk" "$INSTDIR\ProjectNotes.exe"
+  CreateDirectory "$SMPROGRAMS\Project Notes"
+  CreateShortCut  "$SMPROGRAMS\Project Notes\Project Note.lnk" "$INSTDIR\ProjectNotes.exe"
+  CreateShortCut  "$DESKTOP\Project Notes.lnk" "$INSTDIR\ProjectNotes.exe"
 
   ; Project Notes Needed Libraries
   File "..\..\..\hunspell\msvc\x64\Release_dll\libhunspell.dll"
@@ -300,12 +300,12 @@ Section Uninstall
   Delete "$INSTDIR\msvcp140_1.dll"
   Delete "$INSTDIR\msvcp140_2.dll"
 
-  Delete "$SMPROGRAMS\Project Notes 4 Beta\Uninstall.lnk"
-  Delete "$SMPROGRAMS\Project Notes 4 Beta\Website.lnk"
-  Delete "$DESKTOP\Project Notes 4 Beta.lnk"
-  Delete "$SMPROGRAMS\Project Notes\Project Notes 4 Beta.lnk"
+  Delete "$SMPROGRAMS\Project Notes\Uninstall.lnk"
+  Delete "$SMPROGRAMS\Project Notes\Website.lnk"
+  Delete "$DESKTOP\Project Notes.lnk"
+  Delete "$SMPROGRAMS\Project Notes\Project Notes.lnk"
 
-  RMDir "$SMPROGRAMS\Project Notes 4 Beta"
+  RMDir "$SMPROGRAMS\Project Notes"
   RMDir "$INSTDIR"
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"

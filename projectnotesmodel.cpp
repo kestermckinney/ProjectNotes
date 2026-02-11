@@ -89,7 +89,8 @@ const QModelIndex ProjectNotesModel::copyRecord(QModelIndex t_index)
     QString insert = "insert into meeting_attendees (attendee_id, note_id, person_id) select m.attendee_id || '-" + unique_stamp + "', '" + newid.toString() + "', m.person_id from meeting_attendees m where m.note_id ='" + oldid.toString() + "'  and m.person_id not in (select e.person_id from meeting_attendees e where e.note_id='" + newid.toString() + "')";
 
     getDBOs()->execute(insert);
-    getDBOs()->meetingattendeesmodel()->setDirty();
+    getDBOs()->pushRowChange("meeting_attendees", "note_id", newid);
+    getDBOs()->updateDisplayData();
 
     return qi;
 }

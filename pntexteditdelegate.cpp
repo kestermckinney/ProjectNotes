@@ -20,6 +20,10 @@ QWidget *PNTextEditDelegate::createEditor(QWidget *t_parent, const QStyleOptionV
 {
     QTextEdit* editor = new QTextEdit(t_parent);
 
+    editor->setFont(QFont("Arial", 11));
+    editor->setFontFamily("Arial");
+    editor->setFontPointSize(11);
+
     return editor;
 }
 
@@ -29,6 +33,13 @@ void PNTextEditDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_i
     QString val = t_index.model()->data(t_index, Qt::EditRole).toString();
 
     text_edit->setHtml(val);
+
+    if (val.isEmpty())
+    {
+        dynamic_cast<QTextEdit*>(t_editor)->setFont(QFont("Arial", 11));
+        dynamic_cast<QTextEdit*>(t_editor)->setFontFamily("Arial");
+        dynamic_cast<QTextEdit*>(t_editor)->setFontPointSize(11);
+    }
 }
 
 void PNTextEditDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const

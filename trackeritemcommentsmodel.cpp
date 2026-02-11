@@ -38,7 +38,7 @@ const QModelIndex TrackerItemCommentsModel::newRecord(const QVariant* t_fk_value
 
     QVector<QVariant> qr = emptyrecord();
 
-    QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
+    QVariant curdate = QDateTime::currentSecsSinceEpoch();
 
     qr[1] = *t_fk_value1;
     qr[2] = curdate; // default to today
@@ -68,8 +68,6 @@ bool TrackerItemCommentsModel::setData(const QModelIndex &t_index, const QVarian
                 //qDebug() << "setting auto date " << curdate;
             }
         }
-
-        getDBOs()->trackeritemsmodel()->setDirty(); // the combined comments can't be set relatable
 
         return true;
     }

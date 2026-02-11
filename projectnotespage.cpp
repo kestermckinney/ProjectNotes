@@ -30,8 +30,6 @@ void ProjectNotesPage::openRecord(QVariant& t_record_id)
 {
     setRecordId(t_record_id);
 
-    global_DBObjects.refreshDirty();
-
     global_DBObjects.projecteditingnotesmodel()->setFilter(0, t_record_id.toString());
     global_DBObjects.projecteditingnotesmodel()->refresh();
 
@@ -54,7 +52,7 @@ void ProjectNotesPage::setPageTitle()
     QString project_number= global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,7)).toString();
     QString pagetitle = QString("%1 %2 %3").arg(project_number, ui->plainTextEditMeetingTitle->toPlainText(), ui->dateEditMeetingDate->text().left(25));
 
-    topLevelWidget()->setWindowTitle(QString("Project Notes 4 Beta Meeting [%1]").arg(pagetitle));
+    topLevelWidget()->setWindowTitle(QString("Project Notes Meeting [%1]").arg(pagetitle));
     setHistoryText(pagetitle);
 }
 
@@ -113,14 +111,10 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
 
     setCurrentModel(global_DBObjects.projecteditingnotesmodelproxy());
     setCurrentView(nullptr);
-
-    ui->textEditNotes->setFontPointSize(10);
 }
 
 void ProjectNotesPage::on_tabWidgetNotes_currentChanged(int index)
 {
-    global_DBObjects.refreshDirty();
-
     emit setFocus(); // tell the main window to update to call the setButtonsAndMenus function
 
     switch ( index )

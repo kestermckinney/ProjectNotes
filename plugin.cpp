@@ -126,6 +126,7 @@ void Plugin::onReturnedXml(const QString& t_xml)
         if (!global_DBObjects.getDatabaseFile().isEmpty())
         {
             global_DBObjects.importXMLDoc(xmldoc);
+            global_DBObjects.updateDisplayData();
         }
         else
         {
