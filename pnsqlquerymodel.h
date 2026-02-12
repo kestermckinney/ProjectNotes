@@ -89,6 +89,9 @@ public:
     virtual const QModelIndex copyRecord(QModelIndex t_index);
     virtual const QModelIndex newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr);
     virtual bool deleteRecord(QModelIndex t_index);
+    bool copyAndFilterRow(QModelIndex& t_qmi, PNSqlQueryModel& t_pnmodel);
+    void deleteRelatedRecords(QVariant& t_keyval);
+    void removeCacheRecord(QModelIndex t_index);
 
     int rowCount(const QModelIndex &t_parent) const override;
 
