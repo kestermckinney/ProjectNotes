@@ -702,6 +702,15 @@ void PNSqlQueryModel::addColumn(const QString& t_column_name, const QString& t_d
     m_column_count++;
 }
 
+void PNSqlQueryModel::renameColumn(const int t_column_number, const QString& t_column_name, const QString& t_display_name)
+{
+    if (t_column_number < m_column_count)
+    {
+        m_column_name[t_column_number] = t_column_name;
+        setHeaderData(t_column_number, Qt::Horizontal, t_display_name);
+    }
+}
+
 int PNSqlQueryModel::rowCount(const QModelIndex &t_parent) const
 {
     if (t_parent.isValid())
@@ -1225,6 +1234,9 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
     // in the filter tool then add them to the where clause
     if (m_user_filter_active && t_include_user_filter)
     {
+
+        // qDebug() << "m_is_user_filtered count is " << m_is_user_filtered.count();
+
         // iterate through all the fields and apply the user filters if they have them
         // user search strings will search a foreign key value and not the foreign key id
         QHashIterator<int, bool> hashitsrch(m_is_user_filtered);
@@ -1233,6 +1245,8 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
             hashitsrch.next();
 
             int colnum = hashitsrch.key();
+
+            // qDebug() << " -- key() found was " << colnum << " value() found was " << hashitsrch.value();
 
             if ( m_is_user_filtered[colnum] || m_is_user_range_filtered[colnum] ) // if has a user filter then add the various kinds
             {
@@ -1961,7 +1975,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                             field_value = getDBOs()->execute(sql);
                         }
 
-                        // if this is a key field add to temp wherer
+                        // if this is a key field add to temp where clause
                         if (field_name.compare(kf, Qt::CaseInsensitive) == 0)
                         {
                             sqlEscape(field_value, m_column_type[colnum], false);

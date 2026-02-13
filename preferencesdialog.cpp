@@ -2,21 +2,26 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include <QCompleter>
-
+#include "pndatabaseobjects.h"
 #include "preferencesdialog.h"
 #include "ui_preferencesdialog.h"
-
-#include "pndatabaseobjects.h"
+#include "pnsettings.h"
 
 PreferencesDialog::PreferencesDialog(QWidget *parent) :
     QDialog(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint ),
     ui(new Ui::PreferencesDialog)
 {
     ui->setupUi(this);
+
+    QString storename = objectName();
+    global_Settings.getWindowState(storename, this);
 }
 
 PreferencesDialog::~PreferencesDialog()
 {
+    QString storename = objectName();
+    global_Settings.setWindowState(storename, this);
+
     delete ui;
 }
 

@@ -5,6 +5,7 @@
 #include "ui_findreplacedialog.h"
 #include "pnplaintextedit.h"
 #include "pntextedit.h"
+#include "pnsettings.h"
 
 #include <QRegularExpression>
 #include <QMessageBox>
@@ -14,10 +15,16 @@ FindReplaceDialog::FindReplaceDialog(QWidget *parent) :
     ui(new Ui::FindReplaceDialog)
 {
     ui->setupUi(this);
+
+    QString storename = objectName();
+    global_Settings.getWindowState(storename, this);
 }
 
 FindReplaceDialog::~FindReplaceDialog()
 {
+    QString storename = objectName();
+    global_Settings.setWindowState(storename, this);
+
     delete ui;
 }
 

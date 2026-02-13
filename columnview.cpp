@@ -27,6 +27,8 @@ void ColumnView::dataRowSelected(const QModelIndex &t_index)
     QString displaycolname = sortmodel->data(t_index).toString();
     QString dbcolname = m_filtered_model->getColumnName(displaycolname);
 
+    m_values_model->renameColumn(0, dbcolname, displaycolname);
+
     // determine column delegate set in the source view
     int col = m_filtered_model->getColumnNumber(dbcolname);
 
