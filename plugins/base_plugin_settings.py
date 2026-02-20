@@ -389,7 +389,7 @@ class OutlookIntegrationSettings(QDialog):
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
         self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
-        print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
 
     def save_settings(self):
 
@@ -719,8 +719,10 @@ class MeetingEmailTypesSettings(QDialog):
     def edittype(self):
         self.edit_row = self.ui.tableWidgetMeetingEmailTypes.currentRow()
 
-        self.ui_template.textEditTemplate.setFontFamily("Arial")
-        self.ui_template.textEditTemplate.setFontSize("11")
+        print('Editing Meeting Email Type')
+
+        # self.ui_template.textEditTemplate.setFontFamily("Arial")
+        # self.ui_template.textEditTemplate.setFontSize("11")
 
         if (self.edit_row > -1):
             mtype = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 0).text()
