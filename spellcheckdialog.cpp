@@ -3,6 +3,7 @@
 
 #include <QCompleter>
 
+#include "pndatabaseobjects.h"
 #include "spellcheckdialog.h"
 #include "ui_spellcheckdialog.h"
 #include "pnsettings.h"
@@ -34,6 +35,9 @@ SpellCheckDialog::SpellCheckDialog(QWidget *parent) :
         this->setWindowTitle("Spelling: " + global_Settings.spellchecker()->defaultDictionaryName());
         m_populating = false;
     }
+
+    QString storename = objectName();
+    global_Settings.getWindowState(storename, this);
 }
 
 void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
@@ -169,6 +173,9 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
 
 SpellCheckDialog::~SpellCheckDialog()
 {
+    QString storename = objectName();
+    global_Settings.setWindowState(storename, this);
+
     delete ui;
 }
 

@@ -44,6 +44,9 @@
         <property name="frameShadow">
          <enum>QFrame::Shadow::Plain</enum>
         </property>
+        <property name="editTriggers">
+         <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+        </property>
         <property name="selectionMode">
          <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
         </property>
@@ -87,6 +90,9 @@
        <widget class="ValuesView" name="tableViewFilterValues">
         <property name="frameShadow">
          <enum>QFrame::Shadow::Plain</enum>
+        </property>
+        <property name="editTriggers">
+         <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
         </property>
         <property name="selectionMode">
          <enum>QAbstractItemView::SelectionMode::MultiSelection</enum>

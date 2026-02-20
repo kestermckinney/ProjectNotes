@@ -33,7 +33,7 @@ void ValuesView::dataRowSelected(const QModelIndex &t_index)
         if (  !(*m_saved_filters)[column].ColumnValues.contains(val.toString()) )
         {
             (*m_saved_filters)[column].ColumnValues.append(val.toString());
-            //qDebug() << val << " was added to the selected items for column " << column;
+            // qDebug() << val << " was added to the selected items for column " << column;
         }
     }
     // if the item is removed make sure it isn't in the list
@@ -44,7 +44,7 @@ void ValuesView::dataRowSelected(const QModelIndex &t_index)
         if (  (*m_saved_filters)[column].ColumnValues.contains(val.toString()) )
         {
             (*m_saved_filters)[column].ColumnValues.removeAll(val.toString());
-            //qDebug() << val << " was removed to the selected items for column " << column;
+            // qDebug() << val << " was removed to the selected items for column " << column;
         }
     }
 }

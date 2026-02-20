@@ -74,6 +74,8 @@ public:
                    const QString& t_lookup_table = QString(), const QString& t_lookup_fk_column_name = QString(), const QString& t_lookup_value_column_name = QString());
     void addColumn(const QString& t_column_name, const QString& t_display_name, DBColumnType t_type, DBColumnSearchable t_searchable, DBColumnRequired t_required,
                                     DBColumnEditable t_editable, DBColumnUnique t_unique, QStringList* t_valuelist);
+    void renameColumn(const int t_column_number, const QString& t_column_name, const QString& t_display_name);
+
     void addRelatedTable(const QString& t_table_name, const QString& t_column_name, const QString& t_fk_column_name, const QString& t_title, const DBRelationExportable t_exportable = DBNotExportable);
     void addRelatedTable(const QString& t_table_name, const QStringList& t_column_names, const QStringList& t_fk_column_names, const QString& t_title, const DBRelationExportable t_exportable = DBNotExportable);
 
@@ -89,6 +91,9 @@ public:
     virtual const QModelIndex copyRecord(QModelIndex t_index);
     virtual const QModelIndex newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr);
     virtual bool deleteRecord(QModelIndex t_index);
+    bool copyAndFilterRow(QModelIndex& t_qmi, PNSqlQueryModel& t_pnmodel);
+    void deleteRelatedRecords(QVariant& t_keyval);
+    void removeCacheRecord(QModelIndex t_index);
 
     int rowCount(const QModelIndex &t_parent) const override;
 

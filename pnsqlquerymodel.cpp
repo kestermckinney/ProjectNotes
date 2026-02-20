@@ -44,14 +44,6 @@ PNSqlQueryModel::~PNSqlQueryModel()
 
 void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
 {
-    Q_UNUSED(t_index)
-
-    // if no tables rely on this record then jump out of this test
-    if (m_related_table.count() == 0)
-    {
-        return;
-    }
-
     QListIterator<PNSqlQueryModel*> it_recordsets(m_dbo->getOpenModels());
     PNSqlQueryModel* recordset = nullptr;
 
@@ -94,7 +86,10 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
                     if (qmi.isValid())
                     {
                         recordset->reloadRecord(qmi);
-                        // qDebug() << "Marking table " << recordset->tablename() << " by key column column row " << qmi.row();
+                    }
+                    else
+                    {
+                        recordset->copyAndFilterRow(t_index, *this);
                     }
                 }
 
@@ -707,6 +702,15 @@ void PNSqlQueryModel::addColumn(const QString& t_column_name, const QString& t_d
     m_column_count++;
 }
 
+void PNSqlQueryModel::renameColumn(const int t_column_number, const QString& t_column_name, const QString& t_display_name)
+{
+    if (t_column_number < m_column_count)
+    {
+        m_column_name[t_column_number] = t_column_name;
+        setHeaderData(t_column_number, Qt::Horizontal, t_display_name);
+    }
+}
+
 int PNSqlQueryModel::rowCount(const QModelIndex &t_parent) const
 {
     if (t_parent.isValid())
@@ -758,31 +762,38 @@ const QModelIndex PNSqlQueryModel::newRecord(const QVariant* t_fk_value1, const 
     return addRecord(qr);
 }
 
+void PNSqlQueryModel::removeCacheRecord(QModelIndex t_index)
+{
+    beginRemoveRows(QModelIndex(), t_index.row(), t_index.row());
+
+    m_cache.remove(t_index.row());
+
+    endRemoveRows();
+
+    QModelIndex qil = createIndex(t_index.row(), 0);
+    QModelIndex qir = createIndex(t_index.row(), columnCount() - 1);
+
+    emit dataChanged(qil, qir);
+}
+
 bool PNSqlQueryModel::deleteRecord(QModelIndex t_index)
 {
     if (!deleteCheck(t_index))
         return false;
 
     QSqlQuery delrow(getDBOs()->getDb());
+    QVariant keyval = m_cache[t_index.row()][0];
     delrow.prepare("delete from " + m_tablename + " where " + m_column_name[0] + " = ? ");
-    delrow.bindValue(0, m_cache[t_index.row()][0]);
+    delrow.bindValue(0, keyval);
 
     DB_LOCK;
     if(delrow.exec())
     {
         DB_UNLOCK;
 
-        beginRemoveRows(QModelIndex(), t_index.row(), t_index.row());
+        removeCacheRecord(t_index);
 
-        m_cache.remove(t_index.row());
-
-        endRemoveRows();
-
-        QModelIndex qil = createIndex(t_index.row(), 0);
-        QModelIndex qir = createIndex(t_index.row(), columnCount() - 1);
-
-        emit dataChanged(qil, qir);
-
+        deleteRelatedRecords(keyval);
         return true;
     }
 
@@ -1223,6 +1234,9 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
     // in the filter tool then add them to the where clause
     if (m_user_filter_active && t_include_user_filter)
     {
+
+        // qDebug() << "m_is_user_filtered count is " << m_is_user_filtered.count();
+
         // iterate through all the fields and apply the user filters if they have them
         // user search strings will search a foreign key value and not the foreign key id
         QHashIterator<int, bool> hashitsrch(m_is_user_filtered);
@@ -1231,6 +1245,8 @@ QString PNSqlQueryModel::constructWhereClause(bool t_include_user_filter)
             hashitsrch.next();
 
             int colnum = hashitsrch.key();
+
+            // qDebug() << " -- key() found was " << colnum << " value() found was " << hashitsrch.value();
 
             if ( m_is_user_filtered[colnum] || m_is_user_range_filtered[colnum] ) // if has a user filter then add the various kinds
             {
@@ -1959,7 +1975,7 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                             field_value = getDBOs()->execute(sql);
                         }
 
-                        // if this is a key field add to temp wherer
+                        // if this is a key field add to temp where clause
                         if (field_name.compare(kf, Qt::CaseInsensitive) == 0)
                         {
                             sqlEscape(field_value, m_column_type[colnum], false);
@@ -2185,3 +2201,88 @@ bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant
     return true;
 }
 
+bool PNSqlQueryModel::copyAndFilterRow(QModelIndex& t_qmi, PNSqlQueryModel& t_pnmodel)
+{
+    QVector<QVariant> newrecord = emptyrecord();
+
+    int c = t_pnmodel.columnCount();
+
+    // qDebug() << "copy from " << t_pnmodel.tablename() << " : " << t_pnmodel.objectName() << " to " << tablename() << " : " << objectName();
+
+    // copy to columns of a simialar name
+    // this function is used assuming it is the same table, that's why it copies the id
+    while (c--)
+    {
+        QString sourcename = t_pnmodel.getColumnName(c);
+        int dc = getColumnNumber(sourcename);
+
+        // qDebug() << "copy from column " << sourcename;
+
+        if (dc >= 0)
+        {
+            QVariant colval = t_pnmodel.data(t_pnmodel.index(t_qmi.row(), c));
+
+            // qDebug() << " - found matching column " << sourcename;
+
+            // if a filter exists for this column and the value doesn't pass don't add the record
+            if (hasFilter(dc))
+            {
+                if (getFilter(dc) != colval)
+                {
+                    // qDebug() << " -- filter value " << colval << " did not match";
+                    return false;
+                }
+            }
+
+            if (hasUserFilters(dc))
+            {
+                QVariantList vallist = getUserFilter(dc);
+                bool matches = false;
+
+                foreach (QVariant v, vallist)
+                {
+                    if (colval.toString().contains(v.toString(), Qt::CaseInsensitive))
+                        matches = true;
+                }
+
+                if (!matches)
+                {
+                    // qDebug() << " -- user filter value did not match";
+
+                    return false;
+                }
+            }
+
+            newrecord[dc] = colval;
+        }
+    }
+
+    addRecord(newrecord);
+
+    return false;
+}
+
+void PNSqlQueryModel::deleteRelatedRecords(QVariant& t_keyval)
+{
+    QListIterator<PNSqlQueryModel*> it_recordsets(m_dbo->getOpenModels());
+    PNSqlQueryModel* recordset = nullptr;
+
+    // look through all recordsets that are open
+    while(it_recordsets.hasNext())
+    {
+        recordset = it_recordsets.next();
+
+        if ( recordset != this)
+        {
+            if ( recordset->tablename().compare(tablename()) == 0 )
+            {
+                QModelIndex qmi = recordset->findIndex(t_keyval, 0);
+                if (qmi.isValid())
+                {
+                    recordset->removeCacheRecord(qmi);
+                    // qDebug() << "Removed corresponding record";
+                }
+            }
+        }
+    }
+}

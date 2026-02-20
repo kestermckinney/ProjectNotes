@@ -118,12 +118,13 @@ void FilterDataDialog::setSourceModelView(PNSqlQueryModel *t_model, PNTableView 
     if (ui->tableViewColumnName->columnWidth(0) <= 0)
         ui->tableViewColumnName->resizeColumnToContents(0);
 
-    m_values_model->refresh();
-
     setupFilters();
 
     ui->tableViewColumnName->selectRow(0);
     ui->tableViewColumnName->dataRowSelected(m_column_proxy_model->index(0,0));
+
+    m_values_model->refresh();
+
 }
 
 void FilterDataDialog::on_lineEditSearchText_textEdited(const QString &t_arg1)
@@ -181,22 +182,25 @@ void FilterDataDialog::on_pushButtonApply_clicked()
         QString ColumnName = it.key();
         int t_column_number = m_filtered_model->getColumnNumber(ColumnName);
 
-        m_filtered_model->clearUserFilter(t_column_number);
-        m_filtered_model->clearUserSearchRange(t_column_number);
-        m_filtered_model->clearUserSearchString(t_column_number);
-
-        // save the general search text
-        if ( !it.value().SearchString.toString().isEmpty() )
-            m_filtered_model->setUserSearchString( t_column_number, it.value().SearchString );
-
-        // set the range based filter
-        if ( !it.value().SearchBeginValue.toString().isEmpty() || !it.value().SearchEndValue.toString().isEmpty() )
-            m_filtered_model->setUserSearchRange(t_column_number,it.value().SearchBeginValue, it.value().SearchEndValue);
-
-        // capture all of the selected values to search for
-        if ( it.value().ColumnValues.size() > 0 )
+        if (t_column_number >= 0)
         {
-            m_filtered_model->setUserFilter(t_column_number, it.value().ColumnValues);
+            m_filtered_model->clearUserFilter(t_column_number);
+            m_filtered_model->clearUserSearchRange(t_column_number);
+            m_filtered_model->clearUserSearchString(t_column_number);
+
+            // save the general search text
+            if ( !it.value().SearchString.toString().isEmpty() )
+                m_filtered_model->setUserSearchString( t_column_number, it.value().SearchString );
+
+            // set the range based filter
+            if ( !it.value().SearchBeginValue.toString().isEmpty() || !it.value().SearchEndValue.toString().isEmpty() )
+                m_filtered_model->setUserSearchRange(t_column_number,it.value().SearchBeginValue, it.value().SearchEndValue);
+
+            // capture all of the selected values to search for
+            if ( it.value().ColumnValues.size() > 0 )
+            {
+                m_filtered_model->setUserFilter(t_column_number, it.value().ColumnValues);
+            }
         }
     }
 
