@@ -389,7 +389,7 @@ class OutlookIntegrationSettings(QDialog):
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
         self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
-        print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
 
     def save_settings(self):
 
@@ -719,6 +719,11 @@ class MeetingEmailTypesSettings(QDialog):
     def edittype(self):
         self.edit_row = self.ui.tableWidgetMeetingEmailTypes.currentRow()
 
+        print('Editing Meeting Email Type')
+
+        # self.ui_template.textEditTemplate.setFontFamily("Arial")
+        # self.ui_template.textEditTemplate.setFontSize("11")
+
         if (self.edit_row > -1):
             mtype = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 0).text()
             nam = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 1).text()
@@ -727,9 +732,7 @@ class MeetingEmailTypesSettings(QDialog):
             mhtml = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 4).text() 
             data = self.ui.tableWidgetMeetingEmailTypes.item(self.edit_row, 5).text() 
 
-            self.ui_template.textEditTemplate.setFontFamily("Arial")
-            self.ui_template.textEditTemplate.setFontSize("11")
-            
+
             self.ui_template.comboBoxType.setCurrentText(mtype)
             self.ui_template.lineEditName.setText(nam)
             self.ui_template.comboBoxInvitees.setCurrentText(matt)
@@ -902,8 +905,11 @@ class SettingsMigrator(QDialog):
         except Exception as e:
             print(f"Error importing settings: {e}")
             QMessageBox.critical(None, "Cannot Parse JSON", "Unable to import settings.")
+            return
 
         self.load_all_plugin_settings()
+
+        projectnotes.force_reload("common") # this should cause most everything to reload
 
         return
 

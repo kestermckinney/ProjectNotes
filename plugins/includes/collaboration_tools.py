@@ -16,6 +16,10 @@ class CollaborationTools:
         super().__init__()
         self.pnc = ProjectNotesCommon()
 
+    def list_has_email(self, email_list, address):
+        addr = address.strip().lower()
+        return any(d.get("emailAddress", {}).get("address", "").strip().lower() == addr for d in email_list)
+
     def list_builder(self, xmlroot, listtype, invitees):
         pm = xmlroot.toElement().attribute("managing_manager_name")
         co = xmlroot.toElement().attribute("managing_company_name")
@@ -66,22 +70,23 @@ class CollaborationTools:
                 # don't email to yourself, exclude the PM
                 if (nm != pm):
                     if (email is not None and email != "" and ((company_filter is None or pco == company_filter) and (company_exclude is None or pco != company_exclude)) or (rs and receives_status)):
-                        if listtype == "email": 
-                            addresses.append(
-                            {
-                                "emailAddress": {
-                                    "address": email
-                                }
-                            })
-                        else:
-                            addresses.append(
-                            {
-                                "emailAddress": {
-                                    "address": email,
-                                    "name": nm
-                                },
-                                "type": "required"
-                            })
+                        if not self.list_has_email(addresses, email):
+                            if listtype == "email": 
+                                addresses.append(
+                                {
+                                    "emailAddress": {
+                                        "address": email
+                                    }
+                                })
+                            else:
+                                addresses.append(
+                                {
+                                    "emailAddress": {
+                                        "address": email,
+                                        "name": nm
+                                    },
+                                    "type": "required"
+                                })
 
 
                 memberrow = memberrow.nextSibling()
@@ -98,22 +103,23 @@ class CollaborationTools:
 
                 if nm != pm:
                     if (email is not None and email != "" and (company_filter is None or pco == company_filter) and (company_exclude is None or pco != company_exclude)):
-                        if listtype == "email": 
-                            addresses.append(
-                            {
-                                "emailAddress": {
-                                    "address": email
-                                }
-                            })
-                        else:
-                            addresses.append(
-                            {
-                                "emailAddress": {
-                                    "address": email,
-                                    "name": nm
-                                },
-                                "type": "required"
-                            })
+                        if not self.list_has_email(addresses, email):
+                            if listtype == "email": 
+                                addresses.append(
+                                {
+                                    "emailAddress": {
+                                        "address": email
+                                    }
+                                })
+                            else:
+                                addresses.append(
+                                {
+                                    "emailAddress": {
+                                        "address": email,
+                                        "name": nm
+                                    },
+                                    "type": "required"
+                                })
 
                 memberrow = memberrow.nextSibling()
 
@@ -132,22 +138,23 @@ class CollaborationTools:
 
                 if nm != pm:
                     if (email is not None and email != "" and (company_filter is None or pco == company_filter) and (company_exclude is None or pco != company_exclude)):
-                        if listtype == "email": 
-                            addresses.append(
-                            {
-                                "emailAddress": {
-                                    "address": email
-                                }
-                            })
-                        else:
-                            addresses.append(
-                            {
-                                "emailAddress": {
-                                    "address": email,
-                                    "name": nm
-                                },
-                                "type": "required"
-                            })
+                        if not self.list_has_email(addresses, email):
+                            if listtype == "email": 
+                                addresses.append(
+                                {
+                                    "emailAddress": {
+                                        "address": email
+                                    }
+                                })
+                            else:
+                                addresses.append(
+                                {
+                                    "emailAddress": {
+                                        "address": email,
+                                        "name": nm
+                                    },
+                                    "type": "required"
+                                })
 
                 memberrow = memberrow.nextSibling()
 

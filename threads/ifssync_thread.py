@@ -15,7 +15,7 @@ from PyQt6.QtCore import QDateTime, QElapsedTimer, QCoreApplication
 # Project Notes Plugin Parameters
 pluginname = "IFS Integration"
 plugindescription = "Imporst IFS Projects, Exports Item Tracker as Tasks.  Uses HTTP Authentication."
-plugintimerevent = 5 # how many minutes between the timer event
+plugintimerevent = 1 # how many minutes between the timer event
 
 pluginmenus = []
 

@@ -179,9 +179,12 @@ def populate_dynamic_menu(json_string):
             dataexport = None
 
             if row_data["Type"] == "Email":
-                pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : row_data["Data Type"], "submenu" : "Send Email", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
+                if row_data["Invitees"] == "Attachment Only":
+                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "projects/project_people/people/project_notes/meeting_attendees/project_locations", "submenu" : "Send Email", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
+                else:
+                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "projects/project_people/people/project_notes/meeting_attendees", "submenu" : "Send Email", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
             else:
-                pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuScheduleMeeting",  "tablefilter" : row_data["Data Type"], "submenu" : "Schedule Meeting", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
+                pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuScheduleMeeting",  "tablefilter" : "projects/project_people/people/project_notes/meeting_attendees/project_locations", "submenu" : "Schedule Meeting", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
 
     if (platform.system() == 'Windows' and not use_graph_api):
         pluginmenus.append({"menutitle" : "Export Contacts to Outlook", "function" : "menuExportContactsToOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
@@ -292,3 +295,17 @@ populate_dynamic_menu(menu_data)
 #TODO: VER 4.1 Make sure the Quick Add for a team member is there with a drop down for company
 #TODO: VER 4.1 try Qt 6.8.... and Python 14
 #TODO: VER 4.1 modules unload and reload does not seem to change the loaded python code in all cases
+#TODO: VER 4.0.1 when you select import contacts menu option, you don't know if it is working
+#TODO: VER 4.0.1 WORKKING IN DEV the console.log isn't staying up to date in the log viewer screen, the log get's too big for the viewer... need to figure out what limits i am hitting
+#      Download and Build Gamma Ray to test
+#TODO: VER 4.0.1 Backkground inserts and updates don't show automatically
+#TODO: VER 4.0.1 New item and delete item button don't always enable 
+#TODO: VER 4.0.1 Quick Add for team members is not showing up.
+#TODO: VER 4.X.X Move the action items into the same place where notes are taken.
+#TODO: VER 4.0.1 when adding a person them going back to teams page you can's select him
+#TODO: VER 4.0.1 when sending notes sometimes it grabs an old version of the notes text.  you have to go out and back in.
+#TODO: VER 4.0.1 when you delete an item in the grid it selects the top row.
+#TODO: VER 4.0.1 when moving an action item to a differnet project it asks you twice
+#TODO: VER 4.X.X we should be able to move a note to a different project... maybe add team members if needed.
+#TODO: VER 4.0.1 python syntax error causes the app to crash
+#TODO: VER 4.0.1 background rows added aren't always showing without manual refresh
