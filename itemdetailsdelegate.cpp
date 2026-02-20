@@ -41,7 +41,7 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
     case 11:
     case 12:
         {
-            // handle the date edit text boxex
+            // handle the date edit text box
             PNDateEditEx* dateEdit = static_cast<PNDateEditEx*>(t_editor);
 
             if (value.isNull())
@@ -392,12 +392,21 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
         {
             if (select.next() && !select.record().value(0).isNull())
             {
+                DB_UNLOCK;
+
                 if ( QMessageBox::question(nullptr, QObject::tr("Associatd Meeting"),
                    "The associated meeting will be removed.  Still reassign the project?\n", QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::No )
                     return false;
             }
+            else
+            {
+                DB_UNLOCK;
+            }
         }
-        DB_UNLOCK;
+        else
+        {
+            DB_UNLOCK;
+        }
     }
 
     return true;

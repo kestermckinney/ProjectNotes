@@ -79,20 +79,21 @@ void PNSqlQueryModel::refreshImpactedRecordsets(QModelIndex t_index)
                         }
                     }
                 }
-                else if( recordset->tablename().compare(tablename()) == 0)  // if it is the same table in a different recordset it still needs updated
-                {
-                    QVariant val = m_cache[t_index.row()].value(0);
-                    QModelIndex qmi = recordset->findIndex(val, 0);
-                    if (qmi.isValid())
-                    {
-                        recordset->reloadRecord(qmi);
-                    }
-                    else
-                    {
-                        recordset->copyAndFilterRow(t_index, *this);
-                    }
-                }
+            }
 
+            // if this is the same table it needs updated too
+            if( recordset->tablename().compare(tablename()) == 0)  // if it is the same table in a different recordset it still needs updated
+            {
+                QVariant val = m_cache[t_index.row()].value(0);
+                QModelIndex qmi = recordset->findIndex(val, 0);
+                if (qmi.isValid())
+                {
+                    recordset->reloadRecord(qmi);
+                }
+                else
+                {
+                    recordset->copyAndFilterRow(t_index, *this);
+                }
             }
         }
     }
