@@ -890,7 +890,7 @@ class GraphAPITools:
             projectfilter = f' filter_field_2="project_number" filter_value_2="{projectnumber}" '
 
         xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table  filter_field_1="location_description" filter_value_1="Project Folder" {projectfilter} name="project_locations" {self.pnc.state_range_attrib(top, skip)} />\n</projectnotes>\n'
-        #TODO: This gets projects that are closed too.  However, it won't write if folder doesn't exist.
+        #This gets projects that are closed too.  However, it won't write if folder doesn't exist.
         xmlresult = projectnotes.get_data(xmldoc)
 
         #print(xmlresult)

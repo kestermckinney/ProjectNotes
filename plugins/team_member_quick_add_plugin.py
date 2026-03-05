@@ -151,7 +151,7 @@ class TeamMemberQuickAdd(QDialog):
         </table>
         <table name="project_people">
             <row>
-                <column lookupvalue="{self.project_number}"></column>
+                <column name="project_id" lookupvalue="{self.project_number}"></column>
                 <column name="people_id" lookupvalue="{self.ui.lineEditName.text()}"></column>
                 <column name="receive_status_report"></column>
                 <column name="role">{self.ui.lineEditRole.text()}</column>
