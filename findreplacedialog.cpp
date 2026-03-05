@@ -215,21 +215,13 @@ void FindReplaceDialog::showReplaceWindow(QLineEdit* t_line_edit)
     // if we have a selection start there
     if (s != -1 && e != -1)
     {
-        // adjust for CR/LF in string on unix/mac platforms
-//        int crlfcount_start = GetCRLFCount(searching, 0, s);
-//        int crlfcount_end = GetCRLFCount(searching, 0, e);
-
-        m_start_current = s;// + crlfcount_start;
-        m_end_current = e;// + crlfcount_end;
+        m_start_current = s;
+        m_end_current = e;
     }
     else
     {
         qsizetype endsearch = t_line_edit->cursorPosition();
-
-        // adjust for CR/LF in string on unix/mac platforms
-//        int crlfcount_end = GetCRLFCount(searching, 0, endsearch);
-
-        m_start_current = m_end_current = endsearch;// + crlfcount_end;
+        m_start_current = m_end_current = endsearch;
     }
 
     show();

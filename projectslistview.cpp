@@ -38,8 +38,8 @@ void ProjectsListView::setModel(QAbstractItemModel *t_model)
         PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(dynamic_cast<PNSortFilterProxyModel*>(t_model)->sourceModel())->getDBOs();
 
         // projects list panel delagets
-        m_unfiltered_people_delegate = new PNComboBoxDelegate(this, dbo->unfilteredpeoplemodel());
-        m_project_clients_delegate = new PNComboBoxDelegate(this, dbo->unfilteredclientsmodel());
+        m_unfiltered_people_delegate = new PNComboBoxDelegate(this, dbo->unfilteredpeoplemodelproxy());
+        m_project_clients_delegate = new PNComboBoxDelegate(this, dbo->unfilteredclientsmodelproxy());
         m_project_date_delegate = new PNDateEditDelegate(this);
         m_projects_report_period_delegate = new ComboBoxDelegate(this, &m_status_report_period);
         m_project_invoicing_period_delegate = new ComboBoxDelegate(this, &m_invoicing_period);

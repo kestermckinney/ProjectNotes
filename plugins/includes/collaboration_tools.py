@@ -2,7 +2,7 @@ import json
 import platform
 
 from PyQt6 import QtCore
-from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QSettings
+from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QSettings, QTime
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QDialog, QFileDialog, QWidget, QTableWidgetItem, QStyledItemDelegate, QComboBox
 
@@ -12,9 +12,10 @@ if (platform.system() == 'Windows'):
 from includes.common import ProjectNotesCommon
 
 class CollaborationTools:
-    def __init__(self):
+    def __init__(self, tapi):
         super().__init__()
         self.pnc = ProjectNotesCommon()
+        self.tapi = tapi
 
     def list_has_email(self, email_list, address):
         addr = address.strip().lower()
@@ -200,7 +201,7 @@ class CollaborationTools:
         use_o365 = self.pnc.get_plugin_setting("SendO365", "Outlook Integration").lower() == "true"
 
         if use_o365 and use_graph_api:
-            token = tapi.authenticate()
+            token = self.tapi.authenticate()
 
             if token is not None:
                 gapi = GraphAPITools()
@@ -273,7 +274,7 @@ class CollaborationTools:
         use_o365 = self.pnc.get_plugin_setting("ScheduleO365", "Outlook Integration").lower() == "true"
 
         if use_o365 and use_graph_api:
-            token = tapi.authenticate()
+            token = self.tapi.authenticate()
 
             if token is not None:
                 gapi = GraphAPITools()

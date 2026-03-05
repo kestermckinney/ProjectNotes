@@ -51,6 +51,7 @@ def event_timer(parameter):
 
 def menuimport_ifs_projects(parameter):
     if ifs.get_has_settings() and ifs.url_is_available():
+        print("Importing IFS projects...")
         ifs.import_ifs_projects("all") 
 
         if ifs.get_sync_tracker_items():

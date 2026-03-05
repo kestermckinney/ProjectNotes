@@ -44,7 +44,7 @@ PNTableView::PNTableView(QWidget *t_parent) : QTableView(t_parent)
 
 
     connect(this, &QTableView::activated, this, &PNTableView::dataRowActivated);
-    connect(this, &QTableView::clicked, this, &PNTableView::dataRowSelected);
+    connect(this, &QTableView::clicked, this, &PNTableView::dataRowSelected);   
 
     newRecord = new QAction(QIcon(":/icons/new-record.png"), tr("New"), this);
     deleteRecord = new QAction(QIcon(":/icons/delete.png"), tr("Delete"), this);
@@ -142,6 +142,7 @@ void PNTableView::setModel(QAbstractItemModel *t_model)
         QString Dir;
 
         QTableView::setModel(t_model);
+
         global_Settings.getTableViewState(objectName(), *this);
         global_Settings.getTableSortColumn(objectName(), Col, Dir);
 
@@ -165,10 +166,11 @@ void PNTableView::setModel(QAbstractItemModel *t_model)
         verticalHeader()->setSortIndicatorShown(false);
 
     }
-    else if ( this->model() ) // when closing or setting model to empty save the columns first on startup don't save a blank view
+    else if ( this->model() && t_model == nullptr ) // when closing or setting model to empty save the columns first on startup don't save a blank view
     {
-        // do this on the close instead global_Settings.setTableViewState(objectName(), *this);
-        QTableView::setModel(t_model);
+        global_Settings.setTableViewState(objectName(), *this);
+
+        QTableView::setModel(t_model);        
     }
 }
 
@@ -216,8 +218,6 @@ bool PNTableView::eventFilter(QObject* t_watched, QEvent *t_event)
         // If we were dragging a section, then pass the event on.
         if (m_isMoving)
         {
-            global_Settings.setTableViewState(objectName(), *this);
-
             m_isMoving = false;
             return false;
         }
@@ -357,10 +357,26 @@ void PNTableView::slotDeleteRecord()
     PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
 
     QModelIndexList qil = this->selectionModel()->selectedRows();
+    int v = verticalScrollBar()->value();
+    int h = horizontalScrollBar()->value();
+
 
     auto qi = qil.begin();
     QModelIndex qq = sortmodel->mapToSource(*qi);
     currentmodel->deleteRecord(qq);
+
+    // reposition the row select
+    if (qi->row() > currentmodel->rowCount(rootIndex()))
+    {
+        setCurrentIndex(currentmodel->index(qi->row() - 1, qi->column()));
+    }
+    else
+    {
+        setCurrentIndex(*qi);
+    }
+
+    verticalScrollBar()->setValue(v);
+    horizontalScrollBar()->setValue(h);
 }
 
 void PNTableView::slotCopyRecord()
@@ -465,4 +481,3 @@ void PNTableView::slotResetColumns()
 {
     resizeColumnsToContents();
 }
-

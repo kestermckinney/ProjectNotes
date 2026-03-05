@@ -38,77 +38,17 @@ void PythonWorker::emitError()
     // Function to retrieve and print Python error information
     if (PyErr_Occurred())
     {
-        // Fetch error information
-        PyObject *ptype = nullptr, *pvalue = nullptr, *ptraceback = nullptr;
-        PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-        PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
+        PyObject* exc = PyErr_GetRaisedException();
 
-        // Convert to string for printing
-        PyObject* ptypeStr = PyObject_Str(ptype);
-        PyObject* pvalueStr = PyObject_Str(pvalue);
-
-        QString errorMsg = QString("Module: %1 ").arg(m_modulename);
-        QLog_Info(CONSOLELOG, errorMsg);
-        qDebug() << errorMsg;
-
-        if (ptypeStr)
+        if (exc)
         {
-            errorMsg = QString("Error Type: %1" ).arg(PyUnicode_AsUTF8(ptypeStr));
-            QLog_Info(CONSOLELOG, errorMsg);
-            qDebug() << errorMsg;
-            Py_DECREF(ptypeStr);
+            PyErr_DisplayException(exc);
+
+            PyErr_SetRaisedException(exc);
         }
-
-        if (pvalueStr)
+        else
         {
-            errorMsg = QString("Error Value: %1 ").arg(PyUnicode_AsUTF8(pvalueStr));
-            QLog_Info(CONSOLELOG, errorMsg);
-            qDebug() << errorMsg;
-            Py_DECREF(pvalueStr);
-        }
-
-        if (ptraceback)
-        {
-            PyObject *traceback_module = PyImport_ImportModule("traceback");
-            if (traceback_module)
-            {
-                // Get format_exception function
-                PyObject *formatExc = PyObject_GetAttrString(traceback_module, "format_tb");
-
-                if (formatExc) // && PyCallable_Check(formatExc))
-                {
-                    // Call format_exception to get the stack trace
-                    PyObject *args = PyTuple_Pack(3, ptype, pvalue ? pvalue : Py_None, ptraceback ? ptraceback : Py_None);
-                    PyObject *traceList = PyObject_CallObject(formatExc, args);
-
-                    if (traceList && PyList_Check(traceList))
-                    {
-                        // Convert the stack trace to a QString
-                        for (Py_ssize_t i = 0; i < PyList_Size(traceList); ++i)
-                        {
-                            PyObject *line = PyList_GetItem(traceList, i);
-                            if (PyUnicode_Check(line))
-                            {
-                                QString errorMsg = QString::fromUtf8(PyUnicode_AsUTF8(line)).trimmed();
-                                QLog_Info(CONSOLELOG, errorMsg);
-                                qDebug() << errorMsg;
-
-                            }
-                        }
-                    }
-
-                    Py_XDECREF(args);
-                    Py_XDECREF(traceList);
-                    Py_XDECREF(formatExc);
-                }
-                Py_XDECREF(traceback_module);
-
-            }
-
-            // Clean up exception objects
-            // Py_XDECREF(ptype);
-            // Py_XDECREF(pvalue);
-            Py_XDECREF(ptraceback);
+            qDebug() << "No raised exception found!";
         }
 
         // Clean up error state

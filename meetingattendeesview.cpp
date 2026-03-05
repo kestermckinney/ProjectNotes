@@ -35,7 +35,7 @@ void MeetingAttendeesView::setModel(QAbstractItemModel *t_model)
         PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(dynamic_cast<PNSortFilterProxyModel*>(t_model)->sourceModel())->getDBOs();
 
         // projects list panel delagets
-        m_unfiltered_people_delegate = new PNComboBoxDelegate(this, dbo->teamsmodel(), 1, 3);
+        m_unfiltered_people_delegate = new PNComboBoxDelegate(this, dbo->teamsmodelproxy(), 1, 3);
 
         setItemDelegateForColumn(2, m_unfiltered_people_delegate);
     }

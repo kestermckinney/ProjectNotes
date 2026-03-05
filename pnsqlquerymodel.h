@@ -109,6 +109,8 @@ public:
     const QModelIndex findIndex(QVariant& t_lookup_value, int t_search_column);
     void setShowBlank(bool t_show = true) { m_show_blank = t_show; }
     bool reloadRecord(const QModelIndex& t_index);
+    bool loadAndFilterRow(const QVariant& t_id);
+
 
     QString constructWhereClause(bool t_include_user_filter = true);
     void setFilter(int t_column_number, const QString& t_filter_value, DBCompareType t_compare = DBCompareType::Equals);
@@ -224,7 +226,6 @@ private:
     bool m_user_filter_active = false;
     bool m_read_only = false;
     bool m_can_export = true;
-    bool m_is_dirty = false; // only set to true when related query models have changed
 
     PNDatabaseObjects* m_dbo;
 

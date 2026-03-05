@@ -34,7 +34,7 @@ void SearchPage::setupModels( Ui::MainWindow *t_ui )
 
     ui->plainTextEditSearchText->installEventFilter(this);
     ui->tableViewSearchResults->setModel(global_DBObjects.searchresultsmodelproxy());
-    ui->tableViewSearchResults->selectRow(0);
+    // ui->tableViewSearchResults->selectRow(0);
     setCurrentModel(global_DBObjects.searchresultsmodelproxy());
     setCurrentView( ui->tableViewSearchResults );
 }

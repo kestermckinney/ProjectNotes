@@ -309,7 +309,7 @@ void MainWindow::setButtonAndMenuStates()
         curview = navigateCurrentPage()->getCurrentView();
     }
 
-    if (curview)
+    if (curview && curview->selectionModel())
     {
         bool issearch = (curview->objectName().compare("tableViewSearchResults") == 0);
         bool sel = curview->selectionModel()->hasSelection();
@@ -684,6 +684,8 @@ void MainWindow::navigateToPage(PNBasePage* t_widget, QVariant t_record_id)
     buildPluginMenu(t_widget);
 
     setButtonAndMenuStates();
+
+    navigateCurrentPage()->loadState();
 }
 
 void MainWindow::navigateBackward()
@@ -724,7 +726,6 @@ void MainWindow::navigateForward()
             navigateCurrentPage()->saveState();
             navigateCurrentPage()->submitRecord();
         }
-
 
         m_navigation_location++;
 
@@ -791,8 +792,14 @@ void MainWindow::CloseDatabase()
 }
 
 void MainWindow::on_actionClose_Database_triggered()
-{ 
-    navigateCurrentPage()->setCurrentView(nullptr);
+{
+    if (navigateCurrentPage())
+    {
+        navigateCurrentPage()->saveState();
+        navigateCurrentPage()->submitRecord();
+        navigateCurrentPage()->setCurrentView(nullptr);
+    }
+
     navigateClearHistory();
 
     global_Settings.setLastDatabase(QString());
@@ -1753,6 +1760,8 @@ void MainWindow::on_actionXML_Import_triggered()
 
 void MainWindow::on_actionXML_Export_triggered()
 {
+    navigateCurrentPage()->submitRecord();  // make sure it is saved before calling an export
+
     PNTableView* curview = navigateCurrentPage()->getCurrentView();
     bool sel = curview->selectionModel()->hasSelection();
 
@@ -1871,6 +1880,12 @@ void MainWindow::onRefreshRequested()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+    if (navigateCurrentPage())
+    {
+        navigateCurrentPage()->saveState();
+        navigateCurrentPage()->submitRecord();
+    }
+
     int loaded_count = m_plugin_manager->loadedCount();
 
     if (loaded_count)

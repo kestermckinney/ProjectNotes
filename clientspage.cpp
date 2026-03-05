@@ -29,12 +29,10 @@ void ClientsPage::openRecord(QVariant& t_record_id)
         ui->tableViewClients->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
         ui->tableViewClients->scrollTo(qi, QAbstractItemView::PositionAtCenter);
     }
-    else
-    {
-        loadState();
-    }
-
-
+    // else
+    // {
+    //     loadState();
+    // }
 }
 
 void ClientsPage::setupModels( Ui::MainWindow *t_ui )
@@ -45,7 +43,6 @@ void ClientsPage::setupModels( Ui::MainWindow *t_ui )
         return; // closing application
 
     ui->tableViewClients->setModel(global_DBObjects.clientsmodelproxy());
-    ui->tableViewClients->selectRow(0);
 
     setCurrentModel(global_DBObjects.clientsmodelproxy());
     setCurrentView( ui->tableViewClients );

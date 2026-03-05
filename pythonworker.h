@@ -152,7 +152,7 @@ public:
     bool isLoaded() { return m_isloaded; }
 private:
     QString m_PluginLocation;
-    PyObject* m_PNPluginModule;
+    PyObject* m_PNPluginModule = nullptr;
 
     // these events should happen from the event loop
     int setPythonVariable(const QString& t_variablename, const QString& t_value);

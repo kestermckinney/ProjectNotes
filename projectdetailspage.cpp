@@ -62,7 +62,7 @@ void ProjectDetailsPage::openRecord(QVariant& t_record_id)
     if (m_mapperProjectDetails != nullptr)
         m_mapperProjectDetails->toFirst();
 
-    loadState();
+    // loadState();
 }
 
 void ProjectDetailsPage::setPageTitle()

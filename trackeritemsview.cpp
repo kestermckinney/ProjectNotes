@@ -44,16 +44,16 @@ void TrackerItemsView::setModel(QAbstractItemModel *t_model)
 
         // projects list panel delegates
         m_action_item_type_delegate = new ComboBoxDelegate(this, &m_item_type);
-        m_identified_by_delegate = new PNComboBoxDelegate(this, dbo->teamsmodel(), 1, 3);
+        m_identified_by_delegate = new PNComboBoxDelegate(this, dbo->teamsmodelproxy(), 1, 3);
         m_date_identified_delegate = new PNDateEditDelegate(this);
-        m_assigned_to_delegate = new PNComboBoxDelegate(this, dbo->teamsmodel(), 1, 3);
+        m_assigned_to_delegate = new PNComboBoxDelegate(this, dbo->teamsmodelproxy(), 1, 3);
         m_priority_delegate = new ComboBoxDelegate(this, &m_item_priority);
         m_status_delegate = new ComboBoxDelegate(this, &m_item_status);
         m_date_due_delegate = new PNDateEditDelegate(this);
         m_date_date_updated_delagate = new PNDateEditDelegate(this);
         m_date_resolved_delegate = new PNDateEditDelegate(this);
-        m_meeting_delegate = new PNComboBoxDelegate(this, dbo->trackeritemsmeetingsmodel(), 2, 0);
-        m_project_delegate = new PNComboBoxDelegate(this, dbo->projectslistmodel());
+        m_meeting_delegate = new PNComboBoxDelegate(this, dbo->trackeritemsmeetingsmodelproxy(), 2, 0);
+        m_project_delegate = new PNComboBoxDelegate(this, dbo->projectslistmodelproxy());
         m_internal_delegate = new PNCheckBoxDelegate(this);
 
         m_item_name_delegate = new PNPlainTextEditDelegate(this);

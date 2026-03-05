@@ -27,7 +27,7 @@ void PeopleListView::setModel(QAbstractItemModel *t_model)
         PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(dynamic_cast<PNSortFilterProxyModel*>(t_model)->sourceModel())->getDBOs();
 
         // setup model lists
-        m_unfiltered_clients_delegate = new PNComboBoxDelegate(this, dbo->unfilteredclientsmodel());
+        m_unfiltered_clients_delegate = new PNComboBoxDelegate(this, dbo->unfilteredclientsmodelproxy());
         m_name_delegate = new PNPlainTextEditDelegate(this);
         m_role_delegate = new PNPlainTextEditDelegate(this);
 
