@@ -395,8 +395,6 @@ def menuGenerateSSRSReport(xmlstr, parameter):
     QtWidgets.QApplication.restoreOverrideCursor()
     QtWidgets.QApplication.processEvents()   
 
-    #TODO: VER 4.0 maybe we don't want to have project notes set the cursor before going into the plugin
-
     gssrsr.show()
 
     return ""
