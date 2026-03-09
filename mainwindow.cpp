@@ -53,7 +53,6 @@ MainWindow::MainWindow(QWidget *t_parent)
     #endif
 
     logmanager->addDestination("console.log", CONSOLELOG, LogLevel::Info, logloc, LogMode::OnlyFile);
-    logmanager->addDestination("projectnotes.log", APPLOG, LogLevel::Info, logloc, LogMode::OnlyFile);
 
     logmanager->resume();
 

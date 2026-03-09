@@ -305,18 +305,7 @@ populate_dynamic_menu(menu_data)
 #TODO: VER 4.1 Make sure the Quick Add for a team member is there with a drop down for company
 #TODO: VER 4.1 try Qt 6.8.... and Python 14
 #TODO: VER 4.1 modules unload and reload does not seem to change the loaded python code in all cases
-#TODO: VER 4.0.1 FIXED it works in the background when you select import contacts menu option, you don't know if it is working
-#TODO: VER 4.0.1 WORKKING IN DEV the console.log isn't staying up to date in the log viewer screen, the log get's too big for the viewer... need to figure out what limits i am hitting
-#      Download and Build Gamma Ray to test
-#TODO: VER 4.0.1 FIXED, i wish it would reset moddel correctly, Backkground inserts and updates don't show automatically
-#TODO: VER 4.0.1 New item and delete item button don't always enable 
-#TODO: VER 4.0.1 Quick Add for team members is not showing up.
 #TODO: VER 4.X.X Move the action items into the same place where notes are taken.
-#TODO: VER 4.0.1 FIXED with a combo box refresh when adding a person them going back to teams page you can's select him, actually it does at them but the combo box won't let you type and search
-#TODO: VER 4.0.1 FIXED when sending notes sometimes it grabs an old version of the notes text.  you have to go out and back in.
-#TODO: VER 4.0.1 FIXED when you delete an item in the grid it selects the top row.
-#TODO: VER 4.0.1 when moving an action item to a differnet project it asks you twice
 #TODO: VER 4.X.X we should be able to move a note to a different project... maybe add team members if needed.
-#TODO: VER 4.0.1 MAYBE FIXED, changed error display handling, python syntax error causes the app to crash
-#TODO: VER 4.0.1 FIXED, background rows added aren't always showing without manual refresh
-#TODO: VER 4.0.1 scroll bar location never get's restored, it seems to save it.
+#TODO: VER 4.0.1 scroll bar location sometimes doesn't get restored if it isn't on the selected tab
+#TODO: VER 4.0.1 if a project is closed, set Active to Closed.

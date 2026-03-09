@@ -128,10 +128,12 @@ void Plugin::onReturnedXml(const QString& t_xml)
             global_DBObjects.importXMLDoc(xmldoc);
             global_DBObjects.updateDisplayData();
         }
+#ifdef QT_DEBUG
         else
         {
-            QLog_Info(APPLOG, QString("Database was already closed.  XML was not processed."));
+            QLog_Debug(DEBUGLOG, QString("Plugin: %1\nDatabase was already closed.  XML was not processed.\nReturned Xml: %2").arg(m_modulepath, t_xml));
         }
+#endif
     }
 }
 

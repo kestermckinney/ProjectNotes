@@ -144,8 +144,6 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                        m_headers[t_index.column()][Qt::EditRole].toString() + QObject::tr(" is a required field."), QMessageBox::Ok);
                 }
 
-                QLog_Info(APPLOG, QString("%1 is a required field.").arg(m_headers[t_index.column()][Qt::EditRole].toString()));
-
                 emit dataChanged(t_index, t_index); // reload correct value
                 return false;
             }
@@ -168,9 +166,6 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                        m_headers[t_index.column()][Qt::EditRole].toString() + QObject::tr(" must be a unique value."), QMessageBox::Ok);
                 }
 
-                QLog_Info(APPLOG, QString("%1 must be a unique value..").arg(m_headers[t_index.column()][Qt::EditRole].toString()));
-
-                // reloadRecord(t_index);
                 emit dataChanged(t_index, t_index); // reload correct value
 
                 return false;
@@ -267,8 +262,6 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
                    insert.lastError().text() + "\n" + insert.lastQuery(), QMessageBox::Ok);
             }
-
-            QLog_Info(APPLOG, QString("Cannot insert record.  %1").arg(insert.lastError().text() + "\n" + insert.lastQuery()));
         }
         else
         {
@@ -302,8 +295,6 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                            QObject::tr("Field was already updated by another process."), QMessageBox::Ok);
                     }
 
-                    QLog_Info(APPLOG, QString("Field was already updated by another process."));
-
                     reloadRecord(t_index);
                 }
                 else
@@ -329,8 +320,6 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                     QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
                        update.lastError().text() + "\n" + update.lastQuery(), QMessageBox::Ok);
                 }
-
-                QLog_Info(APPLOG, QString("Cannot update value.  %1").arg(update.lastError().text() + "\n" + update.lastQuery()));
 
             }
         }
@@ -814,8 +803,6 @@ bool PNSqlQueryModel::deleteRecord(QModelIndex t_index)
         QMessageBox::critical(nullptr, QObject::tr("Cannot delete record"),
            delrow.lastError().text() + "\n" + delrow.lastQuery(), QMessageBox::Ok);
     }
-
-    QLog_Info(APPLOG, QString("Cannot delete record.  %1").arg(delrow.lastError().text() + "\n" + delrow.lastQuery()));
 
     return false;
 }
@@ -2061,8 +2048,6 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                     if (m_gui)
                         QMessageBox::critical(nullptr, QObject::tr("Invalid Field Value"), QString("""%1"" is not a valid field value.").arg(field_value.toString()));
 
-                    QLog_Info(APPLOG, QString("""%1"" is not a valid field value.").arg(field_value.toString()));
-
                     return false;
                 }
 
@@ -2203,9 +2188,6 @@ bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant
                         QMessageBox::warning(nullptr, QObject::tr("Cannot update record"),
                            QString("%1 must be unique.").arg(itk.key()));
                     }
-
-                    QLog_Info(APPLOG, QString("Cannot update record. ""%1""  must be unique.").arg(itk.key()));
-
 
                     return false;
                 }

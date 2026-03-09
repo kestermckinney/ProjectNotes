@@ -92,8 +92,6 @@ bool PNDatabaseObjects::createDatabase(QString& t_databasepath)
             QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
                 m_sqlite_db.lastError().text(), QMessageBox::Cancel);
 
-        QLog_Info(APPLOG, QString("Cannot open database. %1").arg(m_sqlite_db.lastError().text()));
-
         m_database_file.clear(); // set empty if bad file
         return false;
     }
@@ -126,8 +124,6 @@ bool PNDatabaseObjects::openDatabase(const QString& t_databasepath, const QStrin
             QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
                               QString(tr("File %1 does not exist.")).arg(m_database_file), QMessageBox::Cancel);
 
-        QLog_Info(APPLOG, QString(tr("Cannot open database. File %1 does not exist.")).arg(m_database_file));
-
         m_database_file.clear(); // set empty if bad file
         return false;
     }
@@ -137,8 +133,6 @@ bool PNDatabaseObjects::openDatabase(const QString& t_databasepath, const QStrin
         if (m_gui)
             QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
                                   m_sqlite_db.lastError().text(), QMessageBox::Cancel);
-
-        QLog_Info(APPLOG, QString("Cannot open database. %1").arg(m_sqlite_db.lastError().text()));
 
         m_database_file.clear(); // set empty if bad file
         return false;
@@ -480,8 +474,6 @@ void PNDatabaseObjects::backupDatabase(const QString& t_file)
     {
         if (m_gui)
             QMessageBox::critical(nullptr, QObject::tr("Database Backup Failed"), QString("Failed to backup the database.") );
-
-        QLog_Info(APPLOG, QString("Database Backup Failed. Failed to backup the database."));
     }
 
     qry.prepare( "ROLLBACK;");
@@ -499,8 +491,6 @@ bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QSt
     {
         if (m_gui)
             QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
-
-        QLog_Info(APPLOG, QString("Database Access Failed. Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
 
         return false;
     }
@@ -551,8 +541,6 @@ bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QSt
         if (m_gui)
             QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting.  You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()));
 
-        QLog_Info(APPLOG, QString("Database Access Failed.  Database Access Failed. Failed to access a saved setting.  You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()));
-
         return false;
     }
 
@@ -579,8 +567,6 @@ QString PNDatabaseObjects::loadParameter( const QVariant& t_parametername )
         if (m_gui)
             QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
 
-        QLog_Info(APPLOG, QString("Database Access Failed. Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
-
         return QString();
     }
 
@@ -605,8 +591,6 @@ QString PNDatabaseObjects::loadParameter( const QVariant& t_parametername )
     {
         if (m_gui)
             QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
-
-        QLog_Info(APPLOG, QString("Database Access Failed. Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
 
         DB_UNLOCK;
         return QString();

@@ -96,9 +96,6 @@ void PNBasePage::saveState()
     // Write the output to a QString.
     QString xml = doc.toString();
 
-    // QLog_Info(APPLOG, QString("SAVING STATE: %1").arg(xml));
-    // qDebug() << QString("SAVING PAGE STATE: %1").arg(xml);
-
     QString parmname = QString("PageState:%1:%2").arg(objectName(), m_record_id.toString());
 
     global_DBObjects.saveParameter( parmname, xml );
@@ -111,9 +108,6 @@ void PNBasePage::loadState()
     parmname = QString("PageState:%1:%2").arg(objectName(), m_record_id.toString());
 
     QString xml = global_DBObjects.loadParameter(parmname);
-
-    // QLog_Info(APPLOG, QString("LOADING STATE: %1").arg(xml));
-    // qDebug() << QString("LOADING PAGE STATE: %1").arg(xml);
 
     if (xml.isEmpty())
         return;
@@ -154,11 +148,11 @@ void PNBasePage::loadState()
                     qobject_cast<PNTableView*>(widget)->updateGeometry();
                     qobject_cast<PNTableView*>(widget)->update();
 
-                    qDebug() << "Before setValue: value =" << qobject_cast<PNTableView*>(widget)->verticalScrollBar()->value()
-                             << "min =" << qobject_cast<PNTableView*>(widget)->verticalScrollBar()->minimum()
-                             << "max =" << qobject_cast<PNTableView*>(widget)->verticalScrollBar()->maximum()
-                             << "pageStep =" << qobject_cast<PNTableView*>(widget)->verticalScrollBar()->pageStep()
-                             << " set value used was " << vscroll << " on " << widget->objectName();
+                    // qDebug() << "Before setValue: value =" << qobject_cast<PNTableView*>(widget)->verticalScrollBar()->value()
+                    //          << "min =" << qobject_cast<PNTableView*>(widget)->verticalScrollBar()->minimum()
+                    //          << "max =" << qobject_cast<PNTableView*>(widget)->verticalScrollBar()->maximum()
+                    //          << "pageStep =" << qobject_cast<PNTableView*>(widget)->verticalScrollBar()->pageStep()
+                    //          << " set value used was " << vscroll << " on " << widget->objectName();
 
                     qobject_cast<PNTableView*>(widget)->verticalScrollBar()->setValue(vscroll);
                     qobject_cast<PNTableView*>(widget)->horizontalScrollBar()->setValue(hscroll);
@@ -166,10 +160,10 @@ void PNBasePage::loadState()
                     qobject_cast<PNTableView*>(widget)->verticalScrollBar()->update();
                     qobject_cast<PNTableView*>(widget)->horizontalScrollBar()->update();
 
-                    // After setValue(...)
-                    qDebug() << "After setValue: actual value now =" << qobject_cast<PNTableView*>(widget)->verticalScrollBar()->value();
-                    if (vscroll != qobject_cast<PNTableView*>(widget)->verticalScrollBar()->value())
-                        qDebug() << "SET FAILED!!!";
+                    // // After setValue(...)
+                    // qDebug() << "After setValue: actual value now =" << qobject_cast<PNTableView*>(widget)->verticalScrollBar()->value();
+                    // if (vscroll != qobject_cast<PNTableView*>(widget)->verticalScrollBar()->value())
+                    //     qDebug() << "SET FAILED!!!";
                 }
                 else if ( QString("PNPlainTextEdit").compare( widget->metaObject()->className() ) == 0)
                 {

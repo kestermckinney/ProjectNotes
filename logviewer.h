@@ -25,17 +25,20 @@ public slots:
     void loadFile();
     void timerUpdate();
     void onFileChanged(const QString &filePath);
+    void resetFileWatcher(QWidget* t_old, QWidget* t_new);
 
 public:
     LogLoader(const QString& filePath);
     ~LogLoader();
 
 private:
+    void startFileWatcher();
+
     qint64 m_top_position = -1;
     qint64 m_last_position = 0;
     QTimer* m_top_load_timer = nullptr;
     QString m_file_path;
-    QFileSystemWatcher *m_fileWatcher;
+    QFileSystemWatcher *m_fileWatcher = nullptr;
 };
 
 class LogViewer : public QDialog
@@ -47,6 +50,7 @@ private slots:
     void onClearLog();
     void onInsertContent(const QString& filePath, const QString& content);
     void onUpdateContent(const QString& filePath, const QString& content);
+    void resetFileWatcher(QWidget* t_old, QWidget* t_new);
 
 signals:
     void getContents(const QString& filePath);

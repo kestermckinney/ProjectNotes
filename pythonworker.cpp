@@ -79,7 +79,6 @@ void PythonWorker::loadModule(const QString& t_modulepath)
     {
         PyGILState_Release(gstate);
 
-        QLog_Info(APPLOG, QString("'%1' no longer exists. Load cancelled.").arg(m_modulename));
         return;
     }
 
@@ -255,13 +254,11 @@ void PythonWorker::sendMethodXml(const QString& t_method, const QString& t_xml, 
     if (m_isloading)
         if (!m_loadwait.wait(&m_loadingmutex, 10000))
         {
-            QLog_Info(APPLOG, QString("Module took to long to load! SendMethodXML cancelled."));
             return;
         }
 
     if (!m_isloaded)
     {
-        QLog_Info(APPLOG, QString("Module is not loaded! SendMethodXml cancelled."));
         return;
     }
 
@@ -328,13 +325,11 @@ void PythonWorker::sendMethod(const QString& t_method, const QString& t_paramete
     if (m_isloading)
         if (!m_loadwait.wait(&m_loadingmutex, 10000))
         {
-            QLog_Info(APPLOG, QString("Module took to long to load! SendMethod cancelled."));
             return;
         }
 
     if (!m_isloaded)
     {
-        QLog_Info(APPLOG, QString("Module is not loaded! SendMethod cancelled."));
         return;
     }
 

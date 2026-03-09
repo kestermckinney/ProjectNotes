@@ -3,17 +3,34 @@
 #include <QStandardPaths>
 #include <QPushButton>
 #include <QTextBlock>
-
+#include <QWindow>
+#include <QApplication>
 
 LogLoader::LogLoader(const QString& filePath)
 {
     m_file_path = filePath;
+}
 
+// this member needs to be called after the object has been moved to a different thread
+void LogLoader::startFileWatcher()
+{
     // Set up file watcher
     m_fileWatcher = new QFileSystemWatcher(this);
     m_fileWatcher->addPath(m_file_path);
 
     connect(m_fileWatcher, &QFileSystemWatcher::fileChanged, this, &LogLoader::onFileChanged);
+}
+
+// the file watcher is not reliable and needs reset sometimes
+void LogLoader::resetFileWatcher(QWidget* t_old, QWidget* t_new)
+{
+    if (m_fileWatcher)
+    {
+        m_fileWatcher->removePath(m_file_path);
+        m_fileWatcher->addPath(m_file_path);
+
+        qDebug() << "File watcher for " << m_file_path << " was reset.";
+    }
 }
 
 LogLoader::~LogLoader()
@@ -29,16 +46,25 @@ LogLoader::~LogLoader()
         m_top_load_timer = nullptr;
     }
 
-    delete m_fileWatcher;
+    if (m_fileWatcher)
+        delete m_fileWatcher;
 }
 
 void LogLoader::onFileChanged(const QString &filePath)
 {
+
+    // qDebug() << "File change detected on " << filePath;
+
     loadFile();
 }
 
 void LogLoader::loadFile()
 {
+    // this needs to be called here because we don't want the watcher
+    // to be created in a different thread
+    if (m_fileWatcher == nullptr)
+        startFileWatcher();
+
     // just load the bottom at first
     QFile file(m_file_path);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -64,6 +90,8 @@ void LogLoader::loadFile()
                 connect(m_top_load_timer, SIGNAL(timeout()), this, SLOT(timerUpdate()), Qt::DirectConnection);
 
                 m_top_load_timer->start(100);
+
+                // qDebug() << "Starting load timer for " << m_file_path;
             }
         }
         else
@@ -97,6 +125,9 @@ void LogLoader::timerUpdate()
             m_top_load_timer->stop();
             delete m_top_load_timer;
             m_top_load_timer = nullptr;
+
+            // qDebug() << "Stopped the load timer for " << m_file_path;
+
             return;
         }
 
@@ -120,6 +151,8 @@ void LogLoader::timerUpdate()
         }
 
         m_top_position = topofchunck;
+
+        // qDebug() << "Top Position " << m_top_position << " set for " << m_file_path;
 
         file.close();
     }
@@ -163,7 +196,7 @@ LogViewer::LogViewer(QWidget* t_parent) : QDialog(t_parent)
     m_fileWatcher->addPath(m_folderPath);
 
     connect(m_fileWatcher, &QFileSystemWatcher::directoryChanged, this, &LogViewer::onFolderChanged);
-
+    connect((QApplication*)QApplication::instance(), &QApplication::focusChanged, this, &LogViewer::resetFileWatcher); // since the file watcher sometimes quits reset it when the window activation changes
     connect(m_clearlog, &QPushButton::clicked, this, &LogViewer::onClearLog);
     connect(m_close, &QPushButton::clicked, this, &QDialog::close);
 
@@ -195,7 +228,7 @@ LogViewer::~LogViewer()
     global_Settings.setWindowState("LogViewer", this);
 
     disconnect(m_fileWatcher, &QFileSystemWatcher::directoryChanged, this, &LogViewer::onFolderChanged);
-
+    disconnect((QApplication*)QApplication::instance(), &QApplication::focusChanged, this, &LogViewer::resetFileWatcher); // since the file watcher sometimes quits reset it when the window activation changes
     disconnect(m_clearlog, &QPushButton::clicked, this, &LogViewer::onClearLog);
     disconnect(m_close, &QPushButton::clicked, this, &QDialog::close);
 
@@ -315,6 +348,8 @@ void LogViewer::onFolderChanged(const QString &folderPath)
             connect(ll, &LogLoader::contentLoaded, this, &LogViewer::onUpdateContent);
             connect(ll, &LogLoader::topContentLoaded, this, &LogViewer::onInsertContent);
 
+            connect((QApplication*)QApplication::instance(), &QApplication::focusChanged, ll, &LogLoader::resetFileWatcher); // since the file watcher sometimes quits reset it when the window activation changes
+
             tt->start();
             tt->setPriority(QThread::LowPriority);
         }
@@ -343,3 +378,17 @@ void LogViewer::onClearLog()
         }
     }
 }
+
+void LogViewer::resetFileWatcher(QWidget* t_old, QWidget* t_new)
+{
+    QStringList files = m_fileWatcher->files();
+    QStringList dirs  = m_fileWatcher->directories();
+
+    m_fileWatcher->removePaths(files);
+    m_fileWatcher->removePaths(dirs);
+    m_fileWatcher->addPaths(files);
+    m_fileWatcher->addPaths(dirs);
+
+    qDebug() << "Reset ALL file wachers for LogViewer.";
+}
+
