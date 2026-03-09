@@ -183,17 +183,17 @@ class GenerateSSRSReport(QDialog):
 
         self.statusdate = self.ui.m_datePickerRptDate.dateTime()
 
-
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
         projectfolder = pnc.get_projectfolder(xmlroot)
         pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
 
+        print(f"Export Project folder is {projectfolder}")
 
         if (projectfolder is None or projectfolder ==""):
             projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
 
             if projectfolder == "" or projectfolder is None:
-                return("")
+                return
         else:
             projectfolder = projectfolder + f"/{self.export_subfolder}/"
 
