@@ -53,7 +53,7 @@ void PNBasePage::saveState()
             child.setAttribute("Name", widget->objectName());
             if (qobject_cast<PNTableView*>(widget)->selectionModel()->hasSelection())
                 child.setAttribute("SelectedRow", QString("%1").arg(qobject_cast<PNTableView*>(widget)->selectionModel()->selectedRows().at(0).row()));
-            child.setAttribute("VerticalSroll", QString("%1").arg(qobject_cast<PNTableView*>(widget)->verticalScrollBar()->value()));
+            child.setAttribute("VerticalScroll", QString("%1").arg(qobject_cast<PNTableView*>(widget)->verticalScrollBar()->value()));
             child.setAttribute("HorizontalScroll", QString("%1").arg(qobject_cast<PNTableView*>(widget)->horizontalScrollBar()->value()));
 
             root.appendChild(child);
@@ -62,7 +62,7 @@ void PNBasePage::saveState()
         {
             child = doc.createElement(widget->metaObject()->className());
             child.setAttribute("Name", widget->objectName());
-            child.setAttribute("VerticalSroll", QString("%1").arg(qobject_cast<PNPlainTextEdit*>(widget)->verticalScrollBar()->value()));
+            child.setAttribute("VerticalScroll", QString("%1").arg(qobject_cast<PNPlainTextEdit*>(widget)->verticalScrollBar()->value()));
             child.setAttribute("HorizontalScroll", QString("%1").arg(qobject_cast<PNPlainTextEdit*>(widget)->horizontalScrollBar()->value()));
             child.setAttribute("SelectionStart", QString("%1").arg(qobject_cast<PNPlainTextEdit*>(widget)->textCursor().selectionStart()));
             child.setAttribute("SelectionEnd", QString("%1").arg(qobject_cast<PNPlainTextEdit*>(widget)->textCursor().selectionEnd()));
@@ -96,9 +96,6 @@ void PNBasePage::saveState()
     // Write the output to a QString.
     QString xml = doc.toString();
 
-    // QLog_Info(APPLOG, QString("SAVING STATE: %1").arg(xml));
-
-
     QString parmname = QString("PageState:%1:%2").arg(objectName(), m_record_id.toString());
 
     global_DBObjects.saveParameter( parmname, xml );
@@ -111,8 +108,6 @@ void PNBasePage::loadState()
     parmname = QString("PageState:%1:%2").arg(objectName(), m_record_id.toString());
 
     QString xml = global_DBObjects.loadParameter(parmname);
-
-    // QLog_Info(APPLOG, QString("LOADING STATE: %1").arg(xml));
 
     if (xml.isEmpty())
         return;
@@ -127,92 +122,109 @@ void PNBasePage::loadState()
     {
         child = root.firstChild();
 
+        while (!child.isNull())
+        {
+            QWidget* widget = findChild<QWidget*>(child.toElement().attribute("Name"));
+
+            if (widget)
+            {
+                QString classname = widget->metaObject()->className();
+
+                if ( QString("PNTableView").compare( classname ) == 0)
+                {
+                    int selectedrow = child.toElement().attribute("SelectedRow", "-1").toInt();
+                    if (selectedrow > -1)
+                    {
+                        QAbstractItemModel* model = qobject_cast<PNTableView*>(widget)->model();
+
+                        if (model)
+                            qobject_cast<PNTableView*>(widget)->selectionModel()->select(model->index(selectedrow, 0),  QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+                    }
+
+                    int vscroll = child.toElement().attribute("VerticalScroll").toInt();
+                    int hscroll = child.toElement().attribute("HorizontalScroll").toInt();
+
+
+                    qobject_cast<PNTableView*>(widget)->updateGeometry();
+                    qobject_cast<PNTableView*>(widget)->update();
+
+                    // qDebug() << "Before setValue: value =" << qobject_cast<PNTableView*>(widget)->verticalScrollBar()->value()
+                    //          << "min =" << qobject_cast<PNTableView*>(widget)->verticalScrollBar()->minimum()
+                    //          << "max =" << qobject_cast<PNTableView*>(widget)->verticalScrollBar()->maximum()
+                    //          << "pageStep =" << qobject_cast<PNTableView*>(widget)->verticalScrollBar()->pageStep()
+                    //          << " set value used was " << vscroll << " on " << widget->objectName();
+
+                    qobject_cast<PNTableView*>(widget)->verticalScrollBar()->setValue(vscroll);
+                    qobject_cast<PNTableView*>(widget)->horizontalScrollBar()->setValue(hscroll);
+
+                    qobject_cast<PNTableView*>(widget)->verticalScrollBar()->update();
+                    qobject_cast<PNTableView*>(widget)->horizontalScrollBar()->update();
+
+                    // // After setValue(...)
+                    // qDebug() << "After setValue: actual value now =" << qobject_cast<PNTableView*>(widget)->verticalScrollBar()->value();
+                    // if (vscroll != qobject_cast<PNTableView*>(widget)->verticalScrollBar()->value())
+                    //     qDebug() << "SET FAILED!!!";
+                }
+                else if ( QString("PNPlainTextEdit").compare( widget->metaObject()->className() ) == 0)
+                {
+                    int vscroll = child.toElement().attribute("VerticalScroll").toInt();
+                    int hscroll = child.toElement().attribute("HorizontalScroll").toInt();
+
+                    qobject_cast<PNPlainTextEdit*>(widget)->verticalScrollBar()->setValue(vscroll);
+                    qobject_cast<PNPlainTextEdit*>(widget)->horizontalScrollBar()->setValue(hscroll);
+
+                    int selectionstart = child.toElement().attribute("SelectionStart","0").toInt();
+                    int selectionend = child.toElement().attribute("SelectionEnd","0").toInt();
+                    int cursorposition = child.toElement().attribute("CurosrPosition","0").toInt();
+
+                    QTextCursor qt = qobject_cast<PNPlainTextEdit*>(widget)->textCursor();
+
+                    qt.setPosition(cursorposition);
+                    qt.setPosition(selectionstart, QTextCursor::MoveAnchor);
+                    qt.setPosition(selectionend, QTextCursor::KeepAnchor);
+
+                    qobject_cast<PNPlainTextEdit*>(widget)->setTextCursor(qt);
+                }
+                else if ( QString("QTabWidget").compare( widget->metaObject()->className() ) == 0)
+                {
+                    qobject_cast<QTabWidget*>(widget)->setCurrentIndex(child.toElement().attribute("CurrentIndex","0").toInt());
+                }
+                else if ( QString("PNTextEdit").compare( widget->metaObject()->className() ) == 0)
+                {
+                    int vscroll = child.toElement().attribute("VerticalScroll").toInt();
+                    int hscroll = child.toElement().attribute("HorizontalScroll").toInt();
+
+                    qobject_cast<PNTextEdit*>(widget)->verticalScrollBar()->setValue(vscroll);
+                    qobject_cast<PNTextEdit*>(widget)->horizontalScrollBar()->setValue(hscroll);
+
+                    int selectionstart = child.toElement().attribute("SelectionStart","0").toInt();
+                    int selectionend = child.toElement().attribute("SelectionEnd","0").toInt();
+                    int cursorposition = child.toElement().attribute("CurosrPosition","0").toInt();
+
+                    QTextCursor qt = qobject_cast<PNTextEdit*>(widget)->textCursor();
+
+                    qt.setPosition(cursorposition);
+                    qt.setPosition(selectionstart, QTextCursor::MoveAnchor);
+                    qt.setPosition(selectionend, QTextCursor::KeepAnchor);
+
+                    qobject_cast<PNTextEdit*>(widget)->setTextCursor(qt);
+                }
+            }
+
+            child = child.nextSibling();
+        }
+
         QWidget* focus = findChild<QWidget*>(root.toElement().attribute("FocusWidget"));
         if (focus)
             focus->setFocus();
     }
-
-    while (!child.isNull())
-    {
-        QWidget* widget = findChild<QWidget*>(child.toElement().attribute("Name"));
-
-        if (widget)
-        {
-            QString classname = widget->metaObject()->className();
-
-            if ( QString("PNTableView").compare( classname ) == 0)
-            {
-                int selectedrow = child.toElement().attribute("SelectedRow", "-1").toInt();
-                if (selectedrow > -1)
-                {
-                    QAbstractItemModel* model = qobject_cast<PNTableView*>(widget)->model();
-
-                    if (model)
-                        qobject_cast<PNTableView*>(widget)->selectionModel()->select(model->index(selectedrow, 0),  QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
-                }
-
-                int vscroll = child.toElement().attribute("VerticalScroll").toInt();
-                int hscroll = child.toElement().attribute("HorizontalScroll").toInt();
-
-                qobject_cast<PNTableView*>(widget)->verticalScrollBar()->setValue(vscroll);
-                qobject_cast<PNTableView*>(widget)->horizontalScrollBar()->setValue(hscroll);
-            }
-            else if ( QString("PNPlainTextEdit").compare( widget->metaObject()->className() ) == 0)
-            {
-                int vscroll = child.toElement().attribute("VerticalScroll").toInt();
-                int hscroll = child.toElement().attribute("HorizontalScroll").toInt();
-
-                qobject_cast<PNPlainTextEdit*>(widget)->verticalScrollBar()->setValue(vscroll);
-                qobject_cast<PNPlainTextEdit*>(widget)->horizontalScrollBar()->setValue(hscroll);
-
-                int selectionstart = child.toElement().attribute("SelectionStart","0").toInt();
-                int selectionend = child.toElement().attribute("SelectionEnd","0").toInt();
-                int cursorposition = child.toElement().attribute("CurosrPosition","0").toInt();
-
-                QTextCursor qt = qobject_cast<PNPlainTextEdit*>(widget)->textCursor();
-
-                qt.setPosition(cursorposition);
-                qt.setPosition(selectionstart, QTextCursor::MoveAnchor);
-                qt.setPosition(selectionend, QTextCursor::KeepAnchor);
-
-                qobject_cast<PNPlainTextEdit*>(widget)->setTextCursor(qt);
-            }
-            else if ( QString("QTabWidget").compare( widget->metaObject()->className() ) == 0)
-            {
-                qobject_cast<QTabWidget*>(widget)->setCurrentIndex(child.toElement().attribute("CurrentIndex","0").toInt());
-            }
-            else if ( QString("PNTextEdit").compare( widget->metaObject()->className() ) == 0)
-            {
-                int vscroll = child.toElement().attribute("VerticalScroll").toInt();
-                int hscroll = child.toElement().attribute("HorizontalScroll").toInt();
-
-                qobject_cast<PNTextEdit*>(widget)->verticalScrollBar()->setValue(vscroll);
-                qobject_cast<PNTextEdit*>(widget)->horizontalScrollBar()->setValue(hscroll);
-
-                int selectionstart = child.toElement().attribute("SelectionStart","0").toInt();
-                int selectionend = child.toElement().attribute("SelectionEnd","0").toInt();
-                int cursorposition = child.toElement().attribute("CurosrPosition","0").toInt();
-
-                QTextCursor qt = qobject_cast<PNTextEdit*>(widget)->textCursor();
-
-                qt.setPosition(cursorposition);
-                qt.setPosition(selectionstart, QTextCursor::MoveAnchor);
-                qt.setPosition(selectionend, QTextCursor::KeepAnchor);
-
-                qobject_cast<PNTextEdit*>(widget)->setTextCursor(qt);
-            }
-        }
-
-        child = child.nextSibling();
-    }
-
 }
 
 void PNBasePage::openRecord(QVariant& t_record_id)
 {
     m_record_id = t_record_id;
 
-    loadState();
+    // loadState();
 }
 
 void PNBasePage::newRecord()
@@ -234,10 +246,25 @@ void PNBasePage::newRecord()
 void PNBasePage::deleteItem()
 {
     QModelIndexList qi = getCurrentView()->selectionModel()->selectedRows();
+    int v = getCurrentView()->verticalScrollBar()->value();
+    int h = getCurrentView()->horizontalScrollBar()->value();
 
     for (int i = qi.count() - 1; i >= 0; i--)
     {
         dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->deleteRecord(getCurrentModel()->mapToSource(qi[i]));
+
+        // reposition the row select
+        if (qi[i].row() > getCurrentModel()->rowCount(getCurrentView()->rootIndex()))
+        {
+            getCurrentView()->setCurrentIndex(getCurrentModel()->index(qi[i].row() - 1, qi[i].column()));
+        }
+        else
+        {
+            getCurrentView()->setCurrentIndex(qi[i]);
+        }
+
+        getCurrentView()->verticalScrollBar()->setValue(v);
+        getCurrentView()->horizontalScrollBar()->setValue(h);
     }
 }
 
@@ -305,6 +332,8 @@ void PNBasePage::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname,
 
     if (m_page_model)
     {
+        submitRecord(); // make sure the current record is saved
+
         QVariant keyval;
         keyval = m_page_model->data(m_page_model->index(0, 0));
 

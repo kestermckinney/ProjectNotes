@@ -120,7 +120,7 @@ void FilterDataDialog::setSourceModelView(PNSqlQueryModel *t_model, PNTableView 
 
     setupFilters();
 
-    ui->tableViewColumnName->selectRow(0);
+    // ui->tableViewColumnName->selectRow(0);
     ui->tableViewColumnName->dataRowSelected(m_column_proxy_model->index(0,0));
 
     m_values_model->refresh();
@@ -252,7 +252,7 @@ void FilterDataDialog::on_pushButtonReset_clicked()
     setBeginValue(empty);
     setSearchText(empty);
 
-    ui->tableViewColumnName->selectRow(0);
+    // ui->tableViewColumnName->selectRow(0);
     ui->tableViewColumnName->dataRowSelected(m_column_proxy_model->index(0,0));
     m_values_model->refresh();
 }

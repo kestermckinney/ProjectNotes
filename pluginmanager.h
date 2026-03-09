@@ -52,6 +52,7 @@ private slots:
     void onFileChanged(const QString& t_filepath);
     void onFolderChanged(const QString& folderPath);
     void onForceReload(const QString& t_module);
+    void resetFileWatcher(QWidget* t_old, QWidget* t_new);
 
 private:
     void watchFolder(const QString& t_path);

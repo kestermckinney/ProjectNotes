@@ -44,7 +44,7 @@ void ProjectNotesPage::openRecord(QVariant& t_record_id)
     if (m_mapperProjectNotes != nullptr)
         m_mapperProjectNotes->toFirst();
 
-    loadState();
+    // loadState();
 }
 
 void ProjectNotesPage::setPageTitle()

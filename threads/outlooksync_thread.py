@@ -133,6 +133,7 @@ def menuRightClickDownloadEmails(xmlstr, parameter):
     token = tapi.authenticate()
 
     if token is not None:
+        print('Downloading emails from Office 365...')
         o365 = OutlookSync()
         o365.download_project_emails(token, xmlstr)
     else:
@@ -164,6 +165,7 @@ def menuSyncTrackerItems(parameter):
     token = tapi.authenticate()
 
     if token is not None:
+        print("Syncing tracker items with Office 365...")
         o365 = OutlookSync()
         o365.sync_tracker_items(token, parameter)
     else:
@@ -175,6 +177,7 @@ def menuExportContacts(parameter):
     token = tapi.authenticate()
 
     if token is not None:
+        print("Exporting Contacts...")
         o365 = OutlookSync()
         o365.export_contacts(token, parameter)
     else:
@@ -186,6 +189,7 @@ def menuImportContacts(parameter):
     token = tapi.authenticate()
 
     if token is not None:
+        print("Importing contacts...")
         o365 = OutlookSync()
         o365.import_contacts(token, parameter)
     else:

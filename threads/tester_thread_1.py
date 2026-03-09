@@ -30,6 +30,8 @@ plugintimerevent = 1 # how many minutes between the timer event
 
 # Project Notes Plugin Events
 
+roundcount = 1
+
 def event_startup(parameter):
     #print("Test Thread 1: Startup event called...")
 
@@ -42,7 +44,10 @@ def event_shutdown(parameter):
 
 def event_timer(parameter):
 
-    print("Test Thread 1: Timer event called...")
+    global roundcount
+    roundcount += 1
+
+    print(f"Test Thread 1: Timer event called with roundcount of {roundcount}...")
 
     docxml = "<projectnotes>\n"
     docxml += "<table name=\"people\">\n"
@@ -54,6 +59,19 @@ def event_timer(parameter):
     docxml += "  </row>\n"
     docxml += "</table>\n"
     docxml += "</projectnotes>\n"
+
+
+    if (roundcount > 4):
+        docxml = "<projectnotes>\n"
+        docxml += "<table name=\"people\">\n"
+        docxml += "  <row delete=\"true\">" # id=\"99.9\">\n"
+        #docxml += "    <column name=\"people_id\">99.9</column>\n"
+        docxml += "    <column name=\"name\">Able To Test</column>\n"
+        docxml += "    <column name=\"role\">Time Is " + QDateTime.currentDateTime().toString() + "</column>\n"
+        docxml += "    <column name=\"client_id\" lookupvalue=\"Cornerstone Controls, Inc.\"></column>\n"
+        docxml += "  </row>\n"
+        docxml += "</table>\n"
+        docxml += "</projectnotes>\n"
 
     print(docxml)
 

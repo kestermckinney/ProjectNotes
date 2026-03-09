@@ -34,7 +34,7 @@ void TrackerItemCommentsView::setModel(QAbstractItemModel *t_model)
         PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(dynamic_cast<PNSortFilterProxyModel*>(t_model)->sourceModel())->getDBOs();
 
         // projects list panel delagets
-        m_updated_by_delegate = new PNComboBoxDelegate(this, dbo->teamsmodel(), 1, 3);
+        m_updated_by_delegate = new PNComboBoxDelegate(this, dbo->teamsmodelproxy(), 1, 3);
         m_date_updated_delegate = new PNDateEditDelegate(this);
         m_comments_delegate = new PNPlainTextEditDelegate(this);
 

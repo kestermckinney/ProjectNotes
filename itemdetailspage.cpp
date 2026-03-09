@@ -42,7 +42,7 @@ void ItemDetailsPage::openRecord(QVariant& t_record_id)
     if (m_mapperItemDetails != nullptr)
         m_mapperItemDetails->toFirst();
 
-    loadState();
+    // loadState();
 }
 
 void ItemDetailsPage::setPageTitle()

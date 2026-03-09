@@ -268,6 +268,7 @@ def event_timer(parameter):
     return ""
 
 def event_data_rightclick(xmlstr, parameter):
+    print("Looking for project files...")
     ff = FileFinder()
 
     projectnumber = ff.get_projectnumber(xmlstr)
@@ -278,3 +279,4 @@ def event_data_rightclick(xmlstr, parameter):
     return ""
 
 #TODO: VER 4.1 setup the  plugin to do default searching
+#TODO: VER 4.0.1 when meeting types don't have all values make sure it wont crash the script

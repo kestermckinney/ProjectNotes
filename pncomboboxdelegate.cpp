@@ -16,7 +16,7 @@
 using namespace QLogger;
 
 
-PNComboBoxDelegate::PNComboBoxDelegate(QObject *t_parent, PNSqlQueryModel *t_model, int t_displaycolumn, int t_datacolumn)
+PNComboBoxDelegate::PNComboBoxDelegate(QObject *t_parent, PNSortFilterProxyModel *t_model, int t_displaycolumn, int t_datacolumn)
 :QStyledItemDelegate(t_parent)
 {
     m_model = t_model;
@@ -29,6 +29,8 @@ QWidget* PNComboBoxDelegate::createEditor(QWidget *t_parent, const QStyleOptionV
     Q_UNUSED(t_option);
     Q_UNUSED(t_index);
 
+    dynamic_cast<PNSqlQueryModel*>(m_model->sourceModel())->refresh(); // had to refresh because inserted and updated rows wouldn't show in the completer
+
     PNComboBox* editor = new PNComboBox(t_parent);
     editor->setEditable(true);
     editor->setModel(m_model);
@@ -39,6 +41,7 @@ QWidget* PNComboBoxDelegate::createEditor(QWidget *t_parent, const QStyleOptionV
     completer->setCompletionMode(QCompleter::PopupCompletion);
     completer->setCaseSensitivity(Qt::CaseInsensitive);
     completer->setCompletionColumn(m_display_column);
+    completer->setModel(m_model);
     editor->setCompleter(completer);
 
     return editor;
@@ -48,7 +51,7 @@ void PNComboBoxDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_i
 {
     PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
     QVariant lookupvalue = t_index.model()->data(t_index);
-    QString value = m_model->findValue(lookupvalue, m_data_column, m_display_column).toString();
+    QString value = dynamic_cast<PNSqlQueryModel*>(m_model->sourceModel())->findValue(lookupvalue, m_data_column, m_display_column).toString();
 
     comboBox->setCurrentText(value);
 }
@@ -82,7 +85,7 @@ void PNComboBoxDelegate::paint(QPainter *t_painter, const QStyleOptionViewItem &
     QStyleOptionViewItem myOption = t_option;
     QVariant lookupvalue = t_index.model()->data(t_index);
 
-    myOption.text = m_model->findValue(lookupvalue, m_data_column, m_display_column).toString();
+    myOption.text = dynamic_cast<PNSqlQueryModel*>(m_model->sourceModel())->findValue(lookupvalue, m_data_column, m_display_column).toString();
 
     QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, t_painter);
 }

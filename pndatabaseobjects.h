@@ -45,16 +45,19 @@
 #define DB_LOCK db_mutex.lock()
 #define DB_UNLOCK db_mutex.unlock()
 
-struct KeyColumnChange {
+struct KeyColumnChange
+{
+    enum OperationType { Insert, Update, Delete};
+
     QString table;
-    QString column;
     QVariant value;
+    OperationType operation_type;
 
     // Equality operator for duplicate checking
     bool operator==(const KeyColumnChange& other) const {
         return table == other.table &&
-               column == other.column &&
-               value == other.value;
+               value == other.value &&
+                operation_type == other.operation_type;
     }
 };
 
@@ -132,7 +135,7 @@ public:
 
     // keep track of records updated, so you can reload the row in the display
     // Push a new change; skips if exact duplicate already exists
-    void pushRowChange(const QString& t_table, const QString& t_column, const QVariant& t_value);
+    void pushRowChange(const QString& t_table, const QVariant& t_value, const KeyColumnChange::OperationType t_optype = KeyColumnChange::Update);
 
     // Pop the last added change; returns true if successful, false if empty
     bool popRowChange(KeyColumnChange& t_outChange);

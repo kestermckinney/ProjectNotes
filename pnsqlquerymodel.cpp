@@ -129,7 +129,10 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
         // make sure column is edit_table
         // exit if no update t_table defined
         if ((m_column_is_editable[t_index.column()] == DBReadOnly) || m_tablename.isEmpty())
+        {
+            emit dataChanged(t_index, t_index); // reload correct value
             return false;
+        }
 
         if ((m_column_is_required[t_index.column()] == DBRequired) || t_index.column() == 0)
         {
@@ -141,15 +144,17 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                        m_headers[t_index.column()][Qt::EditRole].toString() + QObject::tr(" is a required field."), QMessageBox::Ok);
                 }
 
-                QLog_Info(APPLOG, QString("%1 is a required field.").arg(m_headers[t_index.column()][Qt::EditRole].toString()));
-
+                emit dataChanged(t_index, t_index); // reload correct value
                 return false;
             }
         }
 
         // check to see if you can change it
         if (!columnChangeCheck(t_index))
+        {
+            emit dataChanged(t_index, t_index); // reload correct value
             return false;
+        }
 
         if (m_column_is_unique[t_index.column()] == DBUnique)
         {
@@ -161,9 +166,7 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                        m_headers[t_index.column()][Qt::EditRole].toString() + QObject::tr(" must be a unique value."), QMessageBox::Ok);
                 }
 
-                QLog_Info(APPLOG, QString("%1 must be a unique value..").arg(m_headers[t_index.column()][Qt::EditRole].toString()));
-
-                reloadRecord(t_index);
+                emit dataChanged(t_index, t_index); // reload correct value
 
                 return false;
             }
@@ -171,7 +174,10 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
 
         // make sure we aren't violating any unique key sets
         if (!checkUniqueKeys(t_index, t_value))
+        {
+            emit dataChanged(t_index, t_index); // reload correct value
             return false;
+        }
 
         // new records will not have an id and need inserted
         if ( m_cache[t_index.row()][0].isNull() )
@@ -224,7 +230,8 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                     // don't insert the record until the required fields are filled in
                     // make the record a new record again
                     m_cache[t_index.row()][0] = QVariant();
-                    // qDebug() << "Can't save row column " << i << " is null see -> "  << m_cache[t_index.row()].field(i).value();
+                    emit dataChanged(t_index, t_index); // reload correct value
+
                     return false;
                 }
             }
@@ -255,8 +262,6 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                 QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
                    insert.lastError().text() + "\n" + insert.lastQuery(), QMessageBox::Ok);
             }
-
-            QLog_Info(APPLOG, QString("Cannot insert record.  %1").arg(insert.lastError().text() + "\n" + insert.lastQuery()));
         }
         else
         {
@@ -290,8 +295,6 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                            QObject::tr("Field was already updated by another process."), QMessageBox::Ok);
                     }
 
-                    QLog_Info(APPLOG, QString("Field was already updated by another process."));
-
                     reloadRecord(t_index);
                 }
                 else
@@ -317,8 +320,6 @@ bool PNSqlQueryModel::setData(const QModelIndex &t_index, const QVariant &t_valu
                     QMessageBox::critical(nullptr, QObject::tr("Cannot update value"),
                        update.lastError().text() + "\n" + update.lastQuery(), QMessageBox::Ok);
                 }
-
-                QLog_Info(APPLOG, QString("Cannot update value.  %1").arg(update.lastError().text() + "\n" + update.lastQuery()));
 
             }
         }
@@ -384,8 +385,6 @@ void PNSqlQueryModel::refresh()
     getDBOs()->getDb().commit();
 
     endResetModel();
-
-    m_is_dirty = false;
 }
 
 QVariant PNSqlQueryModel::data(const QModelIndex &t_index, int t_role) const
@@ -748,7 +747,6 @@ const QModelIndex PNSqlQueryModel::addRecord(QVector<QVariant>& t_newrecord)
 
     beginInsertRows(qmi, row, row);
     m_cache.append(t_newrecord);
-
     endInsertRows();
 
     return index(row, 0);
@@ -805,8 +803,6 @@ bool PNSqlQueryModel::deleteRecord(QModelIndex t_index)
         QMessageBox::critical(nullptr, QObject::tr("Cannot delete record"),
            delrow.lastError().text() + "\n" + delrow.lastQuery(), QMessageBox::Ok);
     }
-
-    QLog_Info(APPLOG, QString("Cannot delete record.  %1").arg(delrow.lastError().text() + "\n" + delrow.lastQuery()));
 
     return false;
 }
@@ -1937,7 +1933,6 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
         if (!keyvalue.isNull())
         {
             whereclause = QString(" %1 = '%2'").arg(keyfield, keyvalue);
-            getDBOs()->pushRowChange(tablename(), keyfield, keyvalue);  // track change to update display later
         }
     }
 
@@ -1985,8 +1980,6 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                                 temp_where += " and ";
                             temp_where += QString(" %1 = '%2'").arg(field_name, field_value.toString());
 
-                            getDBOs()->pushRowChange(tablename(), field_name, field_value); // track change to update display later
-
                             found_count++;
                         }
                     }
@@ -2022,7 +2015,6 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
             {
                 keyvalue = field_value.toString();
                 whereclause = QString(" %1 = '%2'").arg(keyfield, keyvalue);
-                getDBOs()->pushRowChange(tablename(), keyfield, keyvalue);  // track change to update display later
             }
 
             // if key column is specified blank or null don't use it
@@ -2056,8 +2048,6 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
                     if (m_gui)
                         QMessageBox::critical(nullptr, QObject::tr("Invalid Field Value"), QString("""%1"" is not a valid field value.").arg(field_value.toString()));
 
-                    QLog_Info(APPLOG, QString("""%1"" is not a valid field value.").arg(field_value.toString()));
-
                     return false;
                 }
 
@@ -2080,17 +2070,24 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
     }
 
     // check to see if record exists
-    QString exists_sql = QString("select count(*) from %1 where %2").arg(m_tablename, whereclause);
-    QString exists_count = getDBOs()->execute(exists_sql);
+    QString exists_sql = QString("select %3 from %1 where %2").arg(m_tablename, whereclause, getColumnName(0));
+    QString id_field = getDBOs()->execute(exists_sql);
     QString sql;
+    KeyColumnChange::OperationType disp_optype;
 
-    if (exists_count.toInt() > 0)
+    if (!id_field.isEmpty())
     {
         // delete or update if exists
         if (isdelete)
+        {
             sql = QString("delete from %1 where %3").arg(m_tablename, whereclause);
+            disp_optype = KeyColumnChange::Delete;
+        }
         else
+        {
             sql = QString("update %1 set %2 where %3").arg(m_tablename, updatevalues, whereclause);
+            disp_optype = KeyColumnChange::Update;
+        }
     }
     else
     {
@@ -2108,10 +2105,11 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
         if (keyvalue.isNull())
             keyvalue = QUuid::createUuid().toString();
 
+        id_field = keyvalue;
+
         insertvalues += QString("'%1'").arg(keyvalue);
 
-        getDBOs()->pushRowChange(tablename(), keycol, keyvalue);  // track change to update display later
-
+        disp_optype = KeyColumnChange::Insert;
 
         sql = QString("insert into %1 (%2) values (%3)").arg(m_tablename, fields, insertvalues);
     }
@@ -2121,6 +2119,8 @@ bool PNSqlQueryModel::setData(QDomElement* t_xml_row, bool t_ignore_key)
 #endif
 
     getDBOs()->execute(sql);
+
+    getDBOs()->pushRowChange(tablename(), id_field, disp_optype);  // track change to update display later
 
     return true;
 }
@@ -2181,15 +2181,13 @@ bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant
 
                 if ( qry.value(0).toInt() > 0)
                 {
+                    DB_UNLOCK;
+
                     if (m_gui)
                     {
                         QMessageBox::warning(nullptr, QObject::tr("Cannot update record"),
                            QString("%1 must be unique.").arg(itk.key()));
                     }
-
-                    QLog_Info(APPLOG, QString("Cannot update record. ""%1""  must be unique.").arg(itk.key()));
-
-                    DB_UNLOCK;
 
                     return false;
                 }
@@ -2198,6 +2196,65 @@ bool PNSqlQueryModel::checkUniqueKeys(const QModelIndex &t_index, const QVariant
             DB_UNLOCK;
         }
     }
+
+    return true;
+}
+
+bool PNSqlQueryModel::loadAndFilterRow(const QVariant& t_id)  // load the record and see if it matches filter
+{
+    QVector<QVariant> newrecord = emptyrecord();
+
+    DB_LOCK;
+    QSqlQuery select(getDBOs()->getDb());
+    select.prepare(BaseSQL() + " where " + m_column_name[0] + " = ? ");
+    select.bindValue(0, t_id);
+
+    if (select.exec())
+    {
+        if (select.next())
+        {
+            for (int i = 0; i < m_column_count; i++)
+                newrecord[i] = select.value(i);
+        }
+    }
+
+    DB_UNLOCK;
+
+    int c = columnCount();
+
+    while (c--)
+    {
+        // if a filter exists for this column and the value doesn't pass don't add the record
+        if (hasFilter(c))
+        {
+            if (getFilter(c) != newrecord[c])
+            {
+                // qDebug() << " -- filter value " << colval << " did not match";
+                return false;
+            }
+        }
+
+        if (hasUserFilters(c))
+        {
+            QVariantList vallist = getUserFilter(c);
+            bool matches = false;
+
+            foreach (QVariant v, vallist)
+            {
+                if (newrecord[c].toString().contains(v.toString(), Qt::CaseInsensitive))
+                    matches = true;
+            }
+
+            if (!matches)
+            {
+                // qDebug() << " -- user filter value did not match";
+
+                return false;
+            }
+        }
+    }
+
+    addRecord(newrecord);
 
     return true;
 }
@@ -2260,7 +2317,7 @@ bool PNSqlQueryModel::copyAndFilterRow(QModelIndex& t_qmi, PNSqlQueryModel& t_pn
 
     addRecord(newrecord);
 
-    return false;
+    return true;
 }
 
 void PNSqlQueryModel::deleteRelatedRecords(QVariant& t_keyval)

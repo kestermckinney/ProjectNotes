@@ -6,6 +6,7 @@
 #include <QCoreApplication>
 #include <QDomDocument>
 #include <frameobject.h>
+#include <QApplication>
 
 #include "QLogger.h"
 #include "QLoggerWriter.h"
@@ -410,6 +411,7 @@ PluginManager::PluginManager(QObject *parent)
     connect(m_fileWatcher, &QFileSystemWatcher::fileChanged, this, &PluginManager::onFileChanged);
     connect(m_fileWatcher, &QFileSystemWatcher::directoryChanged, this, &PluginManager::onFolderChanged);
     connect(this, &PluginManager::pluginForceReload, this, &PluginManager::onForceReload);
+    connect((QApplication*)QApplication::instance(), &QApplication::focusChanged, this, &PluginManager::resetFileWatcher); // since the file watcher sometimes quits reset it when the window activation changes
 
     loadPluginFiles(m_pluginspath, false);
     loadPluginFiles(m_threadspath, true);
@@ -473,6 +475,7 @@ PluginManager::~PluginManager()
     disconnect(m_fileWatcher, &QFileSystemWatcher::fileChanged, this, &PluginManager::onFileChanged);
     disconnect(m_fileWatcher, &QFileSystemWatcher::directoryChanged, this, &PluginManager::onFolderChanged);
     disconnect(this, &PluginManager::pluginForceReload, this, &PluginManager::onForceReload);
+    disconnect((QApplication*)QApplication::instance(), &QApplication::focusChanged, this, &PluginManager::resetFileWatcher); // since the file watcher sometimes quits reset it when the window activation changes
 
     for ( Plugin* p : m_pluginlist)
     {
@@ -628,4 +631,17 @@ int PluginManager::loadedCount()
             loaded_count++;
 
     return(loaded_count);
+}
+
+void PluginManager::resetFileWatcher(QWidget* t_old, QWidget* t_new)
+{
+    QStringList files = m_fileWatcher->files();
+    QStringList dirs  = m_fileWatcher->directories();
+
+    m_fileWatcher->removePaths(files);
+    m_fileWatcher->removePaths(dirs);
+    m_fileWatcher->addPaths(files);
+    m_fileWatcher->addPaths(dirs);
+
+    qDebug() << "Reset ALL file wachers for PluginManager.";
 }

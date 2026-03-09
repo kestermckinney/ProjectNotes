@@ -24,10 +24,10 @@ void PeoplePage::openRecord(QVariant& t_record_id)
         ui->tableViewPeople->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
         ui->tableViewPeople->scrollTo(qi, QAbstractItemView::PositionAtCenter);
     }
-    else
-    {
-        loadState();
-    }
+    // else
+    // {
+    //     loadState();
+    // }
 }
 
 void PeoplePage::setupModels( Ui::MainWindow *t_ui )

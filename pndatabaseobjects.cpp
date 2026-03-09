@@ -92,8 +92,6 @@ bool PNDatabaseObjects::createDatabase(QString& t_databasepath)
             QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
                 m_sqlite_db.lastError().text(), QMessageBox::Cancel);
 
-        QLog_Info(APPLOG, QString("Cannot open database. %1").arg(m_sqlite_db.lastError().text()));
-
         m_database_file.clear(); // set empty if bad file
         return false;
     }
@@ -126,8 +124,6 @@ bool PNDatabaseObjects::openDatabase(const QString& t_databasepath, const QStrin
             QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
                               QString(tr("File %1 does not exist.")).arg(m_database_file), QMessageBox::Cancel);
 
-        QLog_Info(APPLOG, QString(tr("Cannot open database. File %1 does not exist.")).arg(m_database_file));
-
         m_database_file.clear(); // set empty if bad file
         return false;
     }
@@ -137,8 +133,6 @@ bool PNDatabaseObjects::openDatabase(const QString& t_databasepath, const QStrin
         if (m_gui)
             QMessageBox::critical(nullptr, QObject::tr("Cannot open database"),
                                   m_sqlite_db.lastError().text(), QMessageBox::Cancel);
-
-        QLog_Info(APPLOG, QString("Cannot open database. %1").arg(m_sqlite_db.lastError().text()));
 
         m_database_file.clear(); // set empty if bad file
         return false;
@@ -480,8 +474,6 @@ void PNDatabaseObjects::backupDatabase(const QString& t_file)
     {
         if (m_gui)
             QMessageBox::critical(nullptr, QObject::tr("Database Backup Failed"), QString("Failed to backup the database.") );
-
-        QLog_Info(APPLOG, QString("Database Backup Failed. Failed to backup the database."));
     }
 
     qry.prepare( "ROLLBACK;");
@@ -499,8 +491,6 @@ bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QSt
     {
         if (m_gui)
             QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
-
-        QLog_Info(APPLOG, QString("Database Access Failed. Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
 
         return false;
     }
@@ -551,8 +541,6 @@ bool PNDatabaseObjects::saveParameter( const QString& t_parametername, const QSt
         if (m_gui)
             QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting.  You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()));
 
-        QLog_Info(APPLOG, QString("Database Access Failed.  Database Access Failed. Failed to access a saved setting.  You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()));
-
         return false;
     }
 
@@ -579,8 +567,6 @@ QString PNDatabaseObjects::loadParameter( const QVariant& t_parametername )
         if (m_gui)
             QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
 
-        QLog_Info(APPLOG, QString("Database Access Failed. Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
-
         return QString();
     }
 
@@ -605,8 +591,6 @@ QString PNDatabaseObjects::loadParameter( const QVariant& t_parametername )
     {
         if (m_gui)
             QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
-
-        QLog_Info(APPLOG, QString("Database Access Failed. Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
 
         DB_UNLOCK;
         return QString();
@@ -1232,20 +1216,22 @@ void PNDatabaseObjects::addDefaultPMToMeeting(const QString& t_note_id)
     execute(insert);
 
     // make sure displays get updated
-    global_DBObjects.pushRowChange("project_notes", "project_id", t_note_id);
-    global_DBObjects.pushRowChange("project_people", "teammember_id", guid2);
-    global_DBObjects.pushRowChange("meeting_attendees", "attendee_id", guid);
+    global_DBObjects.pushRowChange("project_notes", t_note_id);
+    global_DBObjects.pushRowChange("project_people", guid2);
+    global_DBObjects.pushRowChange("meeting_attendees", guid);
     global_DBObjects.updateDisplayData();
 }
 
 // Push a new change; skips if exact duplicate already exists
-void PNDatabaseObjects::pushRowChange(const QString& t_table, const QString& t_column, const QVariant& t_value)
+void PNDatabaseObjects::pushRowChange(const QString& t_table, const QVariant& t_value, const KeyColumnChange::OperationType t_optype)
 {
-    KeyColumnChange newChange{t_table, t_column, t_value};
+    KeyColumnChange newChange{t_table, t_value, t_optype};
     if (!m_key_column_changes.contains(newChange))
     {
         m_key_column_changes.append(newChange);
     }
+
+    // qDebug() << "Push change to " << t_table << " of id " << t_value << " to change stack.";
 }
 
 // Pop the last added change; returns true if successful, false if empty
@@ -1257,6 +1243,9 @@ bool PNDatabaseObjects::popRowChange(KeyColumnChange& t_outChange)
     }
 
     t_outChange = m_key_column_changes.takeLast();
+
+    // qDebug() << "processing changed to " << t_outChange.table << " of id " << t_outChange.value << " from change stack.";
+
     return true;
 }
 
@@ -1289,17 +1278,27 @@ void PNDatabaseObjects::updateDisplayData()
 
             if (recordset->tablename().compare( keyColChange.table) == 0)
             {
-                int ck_col = recordset->getColumnNumber(keyColChange.column);
-
-                // if related column is being used then search
-                if (ck_col != -1)
+                if (keyColChange.operation_type == KeyColumnChange::Update)
                 {
-                    QModelIndex qmi = recordset->findIndex(keyColChange.value, ck_col);
+                    QModelIndex qmi = recordset->findIndex(keyColChange.value, 0);
                     if (qmi.isValid())
                     {
                         recordset->reloadRecord(qmi);
-                        // qDebug() << "Updating display for table " << recordset->tablename() << " column " << keyColChange.column << " row " << qmi.row() << " with value " << keyColChange.value;
+                        // qDebug() << "Updating display for table " << recordset->tablename() << " row " << qmi.row() << " with value " << keyColChange.value;
                     }
+                }
+                else if (keyColChange.operation_type == KeyColumnChange::Delete)
+                {
+                    QModelIndex qmi = recordset->findIndex(keyColChange.value, 0);
+                    if (qmi.isValid())
+                    {
+                        recordset->removeCacheRecord(qmi);
+                    }
+                }
+                else  // it is an insert
+                {
+                    // load record to a temporary row then filter check it
+                    recordset->loadAndFilterRow(keyColChange.value);
                 }
             }
         }

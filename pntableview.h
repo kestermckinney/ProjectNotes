@@ -80,6 +80,7 @@ private:
 
     FilterDataDialog *m_filterdialog = nullptr;
     int m_key_to_open_field = 0;
+    QItemSelection m_saved_selection;
 };
 
 #endif // PNTABLEVIEW_H

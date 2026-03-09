@@ -59,10 +59,10 @@ pluginmenus = [
 tapi = TokenAPI()
 
 class BasePlugins:
-    def __init__(self):
+    def __init__(self, tapi):
         super().__init__()
         self.pnc = ProjectNotesCommon()
-        self.ct = CollaborationTools()
+        self.ct = CollaborationTools(tapi)
 
     def copy_email_to_clipboard(self, xmlstr):
 
@@ -210,7 +210,7 @@ def menuScheduleMeeting(xmlstr, parameter):
     invitees = nam.get('Invitees')
     subject = nam.get('Subject')
 
-    baseplugin = BasePlugins()
+    baseplugin = BasePlugins(tapi)
     baseplugin.schedule_a_meeting(xmlstr, subject, template, None, invitees)
 
     return ""
@@ -233,35 +233,45 @@ def menuSendEmail(xmlstr, parameter):
     invitees = nam.get('Invitees')
     subject = nam.get('Subject')
 
-    baseplugin = BasePlugins()
+    baseplugin = BasePlugins(tapi)
     baseplugin.send_an_email(xmlstr, subject, template, None, invitees)
 
     return ""
 
 def menuCopyContactEmail(xmlstr, parameter):
-    baseplugin = BasePlugins()
-    return baseplugin.copy_email_to_clipboard(xmlstr)
+    baseplugin = BasePlugins(tapi)
+    baseplugin.copy_email_to_clipboard(xmlstr)
+
+    return ""
 
 def menuCopyTeamEmail(xmlstr, parameter):
-    baseplugin = BasePlugins()
-    return baseplugin.copy_email_to_clipboard(xmlstr)
+    baseplugin = BasePlugins(tapi)
+    baseplugin.copy_email_to_clipboard(xmlstr)
+
+    return ""
 
 def menuCopyAttendeeEmail(xmlstr, parameter):
-    baseplugin = BasePlugins()
+    baseplugin = BasePlugins(tapi)
     return baseplugin.copy_email_to_clipboard(xmlstr)
 
 def menuCopyPath(xmlstr, parameter):
     baseplugin = BasePlugins()
-    return baseplugin.copy_path_to_clipboard(xmlstr)
+    baseplugin.copy_path_to_clipboard(xmlstr)
+
+    return ""
 
 def menuOpenEditor(parameter):
-    baseplugin = BasePlugins()
-    return baseplugin.open_editor()
+    baseplugin = BasePlugins(tapi)
+    baseplugin.open_editor()
+
+    return ""
 
 def menuSendNotes(xmlstr, parameter):
-    baseplugin = BasePlugins()
+    baseplugin = BasePlugins(tapi)
     nf = NoteFormatter(xmlstr)
-    return baseplugin.send_an_email(xmlstr, nf.getSubject(), nf.getHTML(), None, "Full Project Team") #TODO: this probably won't work to use "FuLL Project Team", it may need to be Meeting Attendees a new type
+    baseplugin.send_an_email(xmlstr, nf.getSubject(), nf.getHTML(), None, "Full Project Team") #TODO: this probably won't work to use "FuLL Project Team", it may need to be Meeting Attendees a new type
+
+    return ""
 
 def menuImportContactsFromOutlook(parameter):
     pnot = ProjectNotesOutlookTools()
@@ -295,12 +305,7 @@ populate_dynamic_menu(menu_data)
 #TODO: VER 4.1 Make sure the Quick Add for a team member is there with a drop down for company
 #TODO: VER 4.1 try Qt 6.8.... and Python 14
 #TODO: VER 4.1 modules unload and reload does not seem to change the loaded python code in all cases
-#TODO: VER 4.0.1 WORKKING IN DEV the console.log isn't staying up to date in the log viewer screen, the log get's too big for the viewer... need to figure out what limits i am hitting
-#      Download and Build Gamma Ray to test
-#TODO: VER 4.0.1 New item and delete item button don't always enable 
 #TODO: VER 4.X.X Move the action items into the same place where notes are taken.
-#TODO: VER 4.0.1 when moving an action item to a differnet project it asks you twice
 #TODO: VER 4.X.X we should be able to move a note to a different project... maybe add team members if needed.
-#TODO: VER 4.X.X when you select open on a file, it should show a message when it doesn't exist.
-#TODO: VER 4.0.1 new PCR and other templates should use forward slash paths
-#TODO: VER 4.0.1 remove extra logging the app, it isn't useful, maybe do logs separately for threaded modules or all modules???
+#TODO: VER 4.0.1 scroll bar location sometimes doesn't get restored if it isn't on the selected tab
+#TODO: VER 4.0.1 if a project is closed, set Active to Closed.

@@ -60,19 +60,13 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
 
             if (model)
             {
-                qDebug() << "We have a comboBox model.";
-
                 QVariant list_value = model->findValue(value, 3, 1);
 
                 if (!list_value.isNull())
                 {
-                    qDebug() << "We found a list value.";
-
                     int i = comboBox->findText(list_value.toString(), Qt::MatchFixedString);
                     if (i >= 0)
                     {
-                        qDebug() << "We found the list item.";
-
                         comboBox->setCurrentIndex(i);
                     }
                     else
