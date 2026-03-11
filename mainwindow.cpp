@@ -112,17 +112,17 @@ void MainWindow::addMenuItem(QMenu* menu, const QString& submenu, const QString&
         QAction* nextaction = nullptr;
         int pastseparator = 0;
 
-        for (QAction* action : menu->actions())
+        for (QAction* existing : menu->actions())
         {
-            QString itemtitle = action->text().replace("&","");
+            QString itemtitle = existing->text().replace("&","");
 
             if (pastseparator >= section && itemtitle.compare(menutitle, Qt::CaseInsensitive) > 0)
             {
-                nextaction = action;
+                nextaction = existing;
                 break;
             }
 
-            if (action->isSeparator())
+            if (existing->isSeparator())
                 pastseparator++;
         }
 
@@ -135,17 +135,17 @@ void MainWindow::addMenuItem(QMenu* menu, const QString& submenu, const QString&
 
         int pastseparator = 0;
 
-        for (QAction* action : menu->actions())
+        for (QAction* existing : menu->actions())
         {
-            QString itemtitle = action->text().replace("&","");
+            QString itemtitle = existing->text().replace("&","");
 
-            if (pastseparator >= section && itemtitle.compare(submenu, Qt::CaseInsensitive) == 0 && action->menu() != nullptr)
+            if (pastseparator >= section && itemtitle.compare(submenu, Qt::CaseInsensitive) == 0 && existing->menu() != nullptr)
             {
-                addMenuItem(action->menu(), QString(), menutitle, action, 0);
+                addMenuItem(existing->menu(), QString(), menutitle, action, 0);
                 return;
             }
 
-            if (action->isSeparator())
+            if (existing->isSeparator())
                 pastseparator++;
         }
 
@@ -155,17 +155,17 @@ void MainWindow::addMenuItem(QMenu* menu, const QString& submenu, const QString&
             pastseparator = 0;
             QAction* nextaction = nullptr;
 
-            for (QAction* action : menu->actions())
+            for (QAction* existing : menu->actions())
             {
-                QString itemtitle = action->text().replace("&","");
+                QString itemtitle = existing->text().replace("&","");
 
                 if (pastseparator >= section && itemtitle.compare(submenu, Qt::CaseInsensitive) > 0)
                 {
-                    nextaction = action;
+                    nextaction = existing;
                     break;
                 }
 
-                if (action->isSeparator())
+                if (existing->isSeparator())
                     pastseparator++;
             }
 
@@ -1688,11 +1688,6 @@ void MainWindow::on_actionSearch_triggered()
 }
 
 void MainWindow::on_pushButtonSearch_clicked()
-{
-    global_DBObjects.searchresultsmodel()->PerformSearch(ui->plainTextEditSearchText->toPlainText());
-}
-
-void MainWindow::on_lineEditSearchText_returnPressed()
 {
     global_DBObjects.searchresultsmodel()->PerformSearch(ui->plainTextEditSearchText->toPlainText());
 }

@@ -15,7 +15,7 @@ if (platform.system() == 'Windows'):
 
 top_windows = []
 
-def windowEnumerationHandler(hwnd, tpwindows):
+def window_enumeration_handler(hwnd, tpwindows):
     if (platform.system() == 'Windows'):
         tpwindows.append((hwnd, win32gui.GetWindowText(hwnd))
 )
@@ -176,7 +176,7 @@ class GraphAPITools:
             return
 
         try:
-            win32gui.EnumWindows(handler_window_enumerator, top_windows)
+            win32gui.EnumWindows(window_enumeration_handler, top_windows)
 
             for i in top_windows:
                 if title.lower() in i[1].lower():

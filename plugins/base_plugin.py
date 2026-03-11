@@ -30,12 +30,12 @@ plugindescription = "Base set of plugins. Supported platforms: Windows, Linux, M
 # the function wil only show on the right click if it matches the table specified in dataexport
 # if a dataexport value exist the menu will not appear on the plugin menu
 pluginmenus = [
-    {"menutitle" : "Copy Email to Clipboard", "function" : "menuCopyContactEmail", "tablefilter" : "people", "submenu" : "", "dataexport" : "people"}, 
-    {"menutitle" : "Copy Email to Clipboard", "function" : "menuCopyTeamEmail", "tablefilter" : "project_people", "submenu" : "", "dataexport" : "project_people"},
-    {"menutitle" : "Copy Email to Clipboard", "function" : "menuCopyAttendeeEmail", "tablefilter" : "meeting_attendees", "submenu" : "", "dataexport" : "meeting_attendees"}, 
-    {"menutitle" : "Copy Path to Clipboard", "function" : "menuCopyPath", "tablefilter" : "project_locations", "submenu" : "", "dataexport" : "project_locations"}, 
-    {"menutitle" : "Script Editor", "function" : "menuOpenEditor", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""},
-    {"menutitle" : "Send Meeting Notes", "function" : "menuSendNotes", "tablefilter" : "", "submenu" : "", "dataexport" : "project_notes"},
+    {"menutitle" : "Copy Email to Clipboard", "function" : "menu_copy_contact_email", "tablefilter" : "people", "submenu" : "", "dataexport" : "people"}, 
+    {"menutitle" : "Copy Email to Clipboard", "function" : "menu_copy_team_email", "tablefilter" : "project_people", "submenu" : "", "dataexport" : "project_people"},
+    {"menutitle" : "Copy Email to Clipboard", "function" : "menu_copy_attendee_email", "tablefilter" : "meeting_attendees", "submenu" : "", "dataexport" : "meeting_attendees"}, 
+    {"menutitle" : "Copy Path to Clipboard", "function" : "menu_copy_path", "tablefilter" : "project_locations", "submenu" : "", "dataexport" : "project_locations"}, 
+    {"menutitle" : "Script Editor", "function" : "menu_open_editor", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""},
+    {"menutitle" : "Send Meeting Notes", "function" : "menu_send_notes", "tablefilter" : "", "submenu" : "", "dataexport" : "project_notes"},
 ]
 
 # events must have a data structure and data view specified
@@ -173,26 +173,26 @@ def populate_dynamic_menu(json_string):
 
     if (len(json_menu_data) > 0):
         # Populate the table with data
-        # make sure to filter the xml to the top level.  We doon't want to get the full projeect xml
+        # make sure to filter the xml to the top level.  We don't want to get the full projeect xml
         for row, row_data in enumerate(json_menu_data): 
             tablefilter = None
             dataexport = None
 
             if row_data["Type"] == "Email":
                 if row_data["Invitees"] == "Attachment Only":
-                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "projects/project_people/people/project_notes/meeting_attendees/project_locations", "submenu" : "Send Email", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
+                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menu_send_email",  "tablefilter" : "projects/project_people/people/project_notes/meeting_attendees/project_locations", "submenu" : "Send Email", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
                 else:
-                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuSendEmail",  "tablefilter" : "projects/project_people/people/project_notes/meeting_attendees", "submenu" : "Send Email", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
+                    pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menu_send_email",  "tablefilter" : "projects/project_people/people/project_notes/meeting_attendees", "submenu" : "Send Email", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
             else:
-                pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menuScheduleMeeting",  "tablefilter" : "projects/project_people/people/project_notes/meeting_attendees/project_locations", "submenu" : "Schedule Meeting", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
+                pluginmenus.append({"menutitle" : row_data["Name"], "function" : "menu_schedule_meeting",  "tablefilter" : "projects/project_people/people/project_notes/meeting_attendees/project_locations", "submenu" : "Schedule Meeting", "dataexport" : row_data["Data Type"], "parameter" : row_data["Name"] })
 
     if (platform.system() == 'Windows' and not use_graph_api):
-        pluginmenus.append({"menutitle" : "Export Contacts to Outlook", "function" : "menuExportContactsToOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
-        pluginmenus.append({"menutitle" : "Import Contacts from Outlook", "function" : "menuImportContactsFromOutlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
-        pluginmenus.append({"menutitle" : "Download Emails from Outlook", "function" : "menuDownloadEmailsFromOutlook", "tablefilter" : "projects/project_locations", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : ""})
+        pluginmenus.append({"menutitle" : "Export Contacts to Outlook", "function" : "menu_export_contacts_to_outlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
+        pluginmenus.append({"menutitle" : "Import Contacts from Outlook", "function" : "menu_import_contacts_from_outlook", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : ""})
+        pluginmenus.append({"menutitle" : "Download Emails from Outlook", "function" : "menu_download_emails_from_outlook", "tablefilter" : "projects/project_locations", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : ""})
 
 
-def menuScheduleMeeting(xmlstr, parameter):
+def menu_schedule_meeting(xmlstr, parameter):
     global json_menu_data
 
     # find meeting type
@@ -215,7 +215,7 @@ def menuScheduleMeeting(xmlstr, parameter):
 
     return ""
 
-def menuSendEmail(xmlstr, parameter):
+def menu_send_email(xmlstr, parameter):
     global json_menu_data
 
     # find meeting type
@@ -238,48 +238,48 @@ def menuSendEmail(xmlstr, parameter):
 
     return ""
 
-def menuCopyContactEmail(xmlstr, parameter):
+def menu_copy_contact_email(xmlstr, parameter):
     baseplugin = BasePlugins(tapi)
     baseplugin.copy_email_to_clipboard(xmlstr)
 
     return ""
 
-def menuCopyTeamEmail(xmlstr, parameter):
+def menu_copy_team_email(xmlstr, parameter):
     baseplugin = BasePlugins(tapi)
     baseplugin.copy_email_to_clipboard(xmlstr)
 
     return ""
 
-def menuCopyAttendeeEmail(xmlstr, parameter):
+def menu_copy_attendee_email(xmlstr, parameter):
     baseplugin = BasePlugins(tapi)
     return baseplugin.copy_email_to_clipboard(xmlstr)
 
-def menuCopyPath(xmlstr, parameter):
+def menu_copy_path(xmlstr, parameter):
     baseplugin = BasePlugins()
     baseplugin.copy_path_to_clipboard(xmlstr)
 
     return ""
 
-def menuOpenEditor(parameter):
+def menu_open_editor(parameter):
     baseplugin = BasePlugins(tapi)
     baseplugin.open_editor()
 
     return ""
 
-def menuSendNotes(xmlstr, parameter):
+def menu_send_notes(xmlstr, parameter):
     baseplugin = BasePlugins(tapi)
     nf = NoteFormatter(xmlstr)
-    baseplugin.send_an_email(xmlstr, nf.getSubject(), nf.getHTML(), None, "Full Project Team") #TODO: this probably won't work to use "FuLL Project Team", it may need to be Meeting Attendees a new type
+    baseplugin.send_an_email(xmlstr, nf.get_subject(), nf.get_html(), None, "Full Project Team") #TODO: this probably won't work to use "FuLL Project Team", it may need to be Meeting Attendees a new type
 
     return ""
 
-def menuImportContactsFromOutlook(parameter):
+def menu_import_contacts_from_outlook(parameter):
     pnot = ProjectNotesOutlookTools()
     pnot.import_contacts("")
 
     return ""
 
-def menuExportContactsFromOutlook(parameter):
+def menu_export_contacts_to_outlook(parameter):
     pnot = ProjectNotesOutlookTools()
 
     xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table name="people" />\n</projectnotes>\n'
@@ -289,7 +289,7 @@ def menuExportContactsFromOutlook(parameter):
 
     return ""
 
-def menuDownloadEmailsFromOutlook(xmlstr, parameter):
+def menu_download_emails_from_outlook(xmlstr, parameter):
     pnot = ProjectNotesOutlookTools()
     pnot.download_emails(xmlstr)
 
@@ -297,7 +297,7 @@ def menuDownloadEmailsFromOutlook(xmlstr, parameter):
 
 pnc = ProjectNotesCommon()
 json_menu_data = None
-menu_data = pnc.get_plugin_setting("MeetingEmailTypes", "Meeting And Email Types")
+menu_data = pnc.get_plugin_setting("MeetingEmailTypes", "Meeting and Email Types")
 populate_dynamic_menu(menu_data)
 
 #TODO: VER 4.1 Fix or rework tracker report export
@@ -308,4 +308,3 @@ populate_dynamic_menu(menu_data)
 #TODO: VER 4.X.X Move the action items into the same place where notes are taken.
 #TODO: VER 4.X.X we should be able to move a note to a different project... maybe add team members if needed.
 #TODO: VER 4.0.1 scroll bar location sometimes doesn't get restored if it isn't on the selected tab
-#TODO: VER 4.0.1 if a project is closed, set Active to Closed.

@@ -42,7 +42,7 @@ pluginmenus = []
 if (platform.system() == 'Windows'):
     pnc = ProjectNotesCommon()
 
-    def menuFindEmail(xmlstr, parameter):
+    def menu_find_email(xmlstr, parameter):
 
         window_title = ""
         
@@ -85,8 +85,8 @@ if (platform.system() == 'Windows'):
         return ""
 
 
-    pluginmenus.append({"menutitle" : "Find Project Email", "function" : "menuFindEmail", "tablefilter" : "project_people", "submenu" : "Utilities", "dataexport" : "project_people"})
-    pluginmenus.append({"menutitle" : "Find Project Email", "function" : "menuFindEmail", "tablefilter" : "meeting_attendees", "submenu" : "Utilities", "dataexport" : "meeting_attendees"})
+    pluginmenus.append({"menutitle" : "Find Project Email", "function" : "menu_find_email", "tablefilter" : "project_people", "submenu" : "Utilities", "dataexport" : "project_people"})
+    pluginmenus.append({"menutitle" : "Find Project Email", "function" : "menu_find_email", "tablefilter" : "meeting_attendees", "submenu" : "Utilities", "dataexport" : "meeting_attendees"})
 
 
 # setup test data
@@ -102,6 +102,6 @@ if f.open(QIODevice.OpenModeFlag.ReadOnly):
     xmldoc.setContent(f)
     f.close()
 
-menuFindEmail(xmldoc.toString(), None)
+menu_find_email(xmldoc.toString(), None)
 
 """

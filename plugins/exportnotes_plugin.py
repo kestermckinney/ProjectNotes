@@ -20,8 +20,8 @@ pluginname = "Export Meeting Notes"
 plugindescription = "Generate meeting notes to be exported.  Notes can be exported as HTML or a PDF."
 
 pluginmenus = [
-    {"menutitle" : "Meeting Notes", "function" : "menuExportMeetingNotes", "tablefilter" : "projects/project_notes/meeting_attendees/item_tracker/project_locations", "submenu" : "Export", "dataexport" : "projects"},
-    {"menutitle" : "Export Notes", "function" : "menuSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""}
+    {"menutitle" : "Meeting Notes", "function" : "menu_export_meeting_notes", "tablefilter" : "projects/project_notes/meeting_attendees/item_tracker/project_locations", "submenu" : "Export", "dataexport" : "projects"},
+    {"menutitle" : "Export Notes", "function" : "menu_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""}
 ]
 
 # events must have a data structure and data view specified
@@ -98,7 +98,7 @@ class ExportNotesSettings(QDialog):
         # Call the base class implementation
         super().closeEvent(event)
 
-def generateHeader(project_number, project_name):
+def generate_header(project_number, project_name):
     html = """
     <html xmlns:v="urn:schemas-microsoft-com:vml"
     xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -1012,7 +1012,7 @@ def generateHeader(project_number, project_name):
 
     return html
 
-def generateMeetingHeaderRow(meeting_title, meeting_date, attendee_names, meeting_notes):
+def generate_meeting_header_row(meeting_title, meeting_date, attendee_names, meeting_notes):
     html = f"""
     <tr style='mso-yfti-irow:2;height:15.75pt'>
     <td width=746 nowrap colspan=11 style='width:559.15pt;padding:0in 5.4pt 0in 5.4pt;
@@ -1140,7 +1140,7 @@ def generateMeetingHeaderRow(meeting_title, meeting_date, attendee_names, meetin
 
     return html
 
-def generateActionItemRow(item, assignedto, status, duedate):
+def generate_action_item_row(item, assignedto, status, duedate):
     html = f"""
     <tr style='mso-yfti-irow:10;height:25.5pt'>
     <td width=478 colspan=7 style='width:358.7pt;border:solid gray 1.0pt;
@@ -1183,7 +1183,7 @@ def generateActionItemRow(item, assignedto, status, duedate):
 
     return html
 
-def generateMeetingFooterRow():
+def generate_meeting_footer_row():
     html = """
     <tr style='mso-yfti-irow:11;height:15.0pt'>
       <td width=105 nowrap valign=bottom style='width:79.0pt;padding:0in 5.4pt 0in 5.4pt;
@@ -1211,7 +1211,7 @@ def generateMeetingFooterRow():
 
     return html
 
-def generateFooter(reportdate):
+def generate_footer(reportdate):
     html = f"""
      <tr style='mso-yfti-irow:12;mso-yfti-lastrow:yes;height:15.0pt'>
       <td width=169 nowrap colspan=2 style='width:127.0pt;padding:0in 5.4pt 0in 5.4pt;
@@ -1429,7 +1429,7 @@ class MeetingsExporter(QDialog):
             self.htmlreportname = temporaryfolder + projnum + " Meeting Minutes.html"
             self.pdfreportname = temporaryfolder + projnum + " Meeting Minutes.pdf"
 
-        self.html_content = generateHeader(projnum, projdes)
+        self.html_content = generate_header(projnum, projdes)
 
         progval = progval + 1
         self.progbar.setValue(int(min(progval / progtot * 100, 100)))
@@ -1494,7 +1494,7 @@ class MeetingsExporter(QDialog):
                         #print("processing attendees...")
                         attendeerow = attendeerow.nextSibling()
 
-                self.html_content += generateMeetingHeaderRow(pnc.get_column_value(notesrow, "note_title"), pnc.get_column_value(notesrow, "note_date"), attendeelist, note) 
+                self.html_content += generate_meeting_header_row(pnc.get_column_value(notesrow, "note_title"), pnc.get_column_value(notesrow, "note_date"), attendeelist, note) 
 
                 trackeritems = pnc.find_node(notesrow, "table", "name", "item_tracker")
 
@@ -1506,16 +1506,16 @@ class MeetingsExporter(QDialog):
                         QtWidgets.QApplication.processEvents()
                         trackercount = trackercount + 1
 
-                        self.html_content += generateActionItemRow(pnc.get_column_value(trackerrow, "item_name"), pnc.get_column_value(trackerrow, "assigned_to"), pnc.get_column_value(trackerrow, "status"), pnc.get_column_value(trackerrow, "date_due")) 
+                        self.html_content += generate_action_item_row(pnc.get_column_value(trackerrow, "item_name"), pnc.get_column_value(trackerrow, "assigned_to"), pnc.get_column_value(trackerrow, "status"), pnc.get_column_value(trackerrow, "date_due")) 
 
                         trackerrow = trackerrow.nextSibling()
 
                 
-                self.html_content += generateMeetingFooterRow()
+                self.html_content += generate_meeting_footer_row()
 
                 notesrow = notesrow.nextSibling()
 
-            self.html_content += generateFooter(self.executedate.toString("MM/dd/yyyy"))
+            self.html_content += generate_footer(self.executedate.toString("MM/dd/yyyy"))
 
             progval = progval + 1
             self.progbar.setValue(int(min(progval / progtot * 100, 100)))
@@ -1594,7 +1594,7 @@ class MeetingsExporter(QDialog):
 
 
 # processing main def
-def menuExportMeetingNotes(xmlstr, parameter):
+def menu_export_meeting_notes(xmlstr, parameter):
     mex.set_xml_doc(xmlstr)
 
     QtWidgets.QApplication.restoreOverrideCursor()
@@ -1610,7 +1610,7 @@ def menuExportMeetingNotes(xmlstr, parameter):
 
     return ""
 
-def menuSettings(parameter):
+def menu_settings(parameter):
     ens.show()
     return ""
 
@@ -1636,14 +1636,14 @@ if __name__ == '__main__':
     mex.set_xml_doc(xml_content)
     mex.show()
 
-    # html = generateHeader("P400", "Project Name")
-    # html += generateMeetingHeaderRow("Title", "1/1/2001", "Bob, Sam, Jill", "This is my really long note.") 
-    # html += generateActionItemRow("Item Description", "Bob Smith", "Assigned", "4/3/2005") 
-    # html += generateActionItemRow("Item Description", "Bob Smith", "Assigned", "4/3/2005") 
-    # html += generateMeetingFooterRow()
-    # html += generateFooter("1/1/2010")
+    # html = generate_header("P400", "Project Name")
+    # html += generate_meeting_header_row("Title", "1/1/2001", "Bob, Sam, Jill", "This is my really long note.") 
+    # html += generate_action_item_row("Item Description", "Bob Smith", "Assigned", "4/3/2005") 
+    # html += generate_action_item_row("Item Description", "Bob Smith", "Assigned", "4/3/2005") 
+    # html += generate_meeting_footer_row()
+    # html += generate_footer("1/1/2010")
 
-    # menuExportMeetingNotes("","")
+    # menu_export_meeting_notes("","")
 
     app.exec()
 else:

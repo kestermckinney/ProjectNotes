@@ -385,11 +385,11 @@ else:
     gssrsr = GenerateSSRSReport(pnc.get_main_window())
     ss = SSRSSettings()
 
-def menuSettings(parameter):
+def menu_settings(parameter):
     ss.show()
     return ""
 
-def menuGenerateSSRSReport(xmlstr, parameter):        
+def menu_generate_ssrs_report(xmlstr, parameter):        
     gssrsr.set_xml_doc(xmlstr, parameter)
 
     QtWidgets.QApplication.restoreOverrideCursor()
@@ -401,5 +401,5 @@ def menuGenerateSSRSReport(xmlstr, parameter):
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
-    pluginmenus.append({"menutitle" : "Generate Status Report", "function" : "menuGenerateSSRSReport", "tablefilter" : "projects/item_tracker/item_tracker_updates/project_locations/project_people", "submenu" : "", "dataexport" : "projects", "parameter" : "/ReportServer/Pages/ReportViewer.aspx?%2fProd%2fLead+Engineers%2fProject+Status+Report&ProjectId=[$projects.project_number.1]&StatusDate=[$REPORTDATE]&ReportPeriod=[$projects.status_report_period.1]"})
-    pluginmenus.append({"menutitle" : "SQL Report", "function" : "menuSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
+    pluginmenus.append({"menutitle" : "Generate Status Report", "function" : "menu_generate_ssrs_report", "tablefilter" : "projects/item_tracker/item_tracker_updates/project_locations/project_people", "submenu" : "", "dataexport" : "projects", "parameter" : "/ReportServer/Pages/ReportViewer.aspx?%2fProd%2fLead+Engineers%2fProject+Status+Report&ProjectId=[$projects.project_number.1]&StatusDate=[$REPORTDATE]&ReportPeriod=[$projects.status_report_period.1]"})
+    pluginmenus.append({"menutitle" : "SQL Report", "function" : "menu_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})

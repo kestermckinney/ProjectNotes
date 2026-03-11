@@ -60,7 +60,7 @@ class ProjectNotesWordTools:
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
-    def killwordautomation(self):
+    def kill_word_automation(self):
         wmi_service = win32com.client.GetObject("winmgmts:{impersonationLevel=impersonate}!\\\\.\\root\\cimv2")
         processes = wmi_service.ExecQuery("Select * from Win32_Process Where Name = 'WINWORD.EXE' and CommandLine like '%automation%'")
 

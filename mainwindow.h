@@ -126,7 +126,6 @@ private slots:
     void on_actionFind_triggered();
     void on_actionSearch_triggered();
     void on_pushButtonSearch_clicked();
-    void on_lineEditSearchText_returnPressed();
     void on_actionView_LogView_triggered();
     void on_actionXML_Import_triggered();
     void on_actionXML_Export_triggered();

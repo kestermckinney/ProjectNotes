@@ -44,9 +44,9 @@ pluginmenus = []
 if (platform.system() == 'Windows'):
     pne = ProjectNotesWordTools()
 
-    def menuKillWord(parameter):
-        pne.killwordautomation()
-        return ""  
- 
-    pluginmenus.append({"menutitle" : "Close Stranded Word", "function" : "menuKillWord", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""})
+    def menu_kill_word(parameter):
+        pne.kill_word_automation()
+        return ""
+
+    pluginmenus.append({"menutitle" : "Close Stranded Word", "function" : "menu_kill_word", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : ""})
 

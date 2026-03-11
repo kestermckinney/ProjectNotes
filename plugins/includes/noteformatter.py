@@ -8,15 +8,15 @@ class NoteFormatter:
 		self.pnc = ProjectNotesCommon()
 		self.subject = ""
 		self.note_html = ""
-		self.processXML(xmlstr)
+		self.process_xml(xmlstr)
 
-	def getHTML(self):
+	def get_html(self):
 		return self.note_html
 
-	def getSubject(self):
+	def get_subject(self):
 		return self.subject
 
-	def processXML(self, xmlstr):
+	def process_xml(self, xmlstr):
 		xmldoc = ""
 
 		xmlval = QDomDocument()

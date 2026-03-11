@@ -500,11 +500,11 @@ else:
     gtr = GenerateTrackerReport(pnc.get_main_window())
     trs = TrackerReportSettings()
 
-def menuSettings(parameter):
+def menu_settings(parameter):
     trs.show()
     return ""
 
-def menuGenerateTrackerReport(xmlstr, parameter):        
+def menu_generate_tracker_report(xmlstr, parameter):        
     gtr.set_xml_doc(xmlstr)
 
     QtWidgets.QApplication.restoreOverrideCursor()
@@ -516,8 +516,8 @@ def menuGenerateTrackerReport(xmlstr, parameter):
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
-    pluginmenus.append({"menutitle" : "Generate Tracker Report", "function" : "menuGenerateTrackerReport", "tablefilter" : "projects/item_tracker/item_tracker_updates/project_locations/project_people", "submenu" : "", "dataexport" : "projects"})
-    pluginmenus.append({"menutitle" : "Tracker Report", "function" : "menuSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
+    pluginmenus.append({"menutitle" : "Generate Tracker Report", "function" : "menu_generate_tracker_report", "tablefilter" : "projects/item_tracker/item_tracker_updates/project_locations/project_people", "submenu" : "", "dataexport" : "projects"})
+    pluginmenus.append({"menutitle" : "Tracker Report", "function" : "menu_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
 
 
 #TODO: VER 4.1 Rework templating system to use the same tags as the email and meetings templates.

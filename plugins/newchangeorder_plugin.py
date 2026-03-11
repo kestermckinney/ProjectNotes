@@ -99,7 +99,7 @@ if (platform.system() == 'Windows'):
     
     pnc = ProjectNotesCommon()
 
-    def menuChangeOrder(xmlstr, parameter):
+    def menu_change_order(xmlstr, parameter):
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
@@ -198,14 +198,14 @@ if (platform.system() == 'Windows'):
         #return doc.Content.Find.Execute(searchtext, 0, 0, 0, 0, 0, 1, 1, 0, replacetext, 2, 0, 0, 0, 0, 0, 1, 0, 0, 0)
         return doc.Content.Find.Execute(searchtext, False, False, False, False, False, True, 1, False, replacetext, 2)
 
-    def menuSettings(parameter):
+    def menu_settings(parameter):
         ncs.show()
         return ""
 
     ncs = NewChangeOrderSettings()
 
-    pluginmenus.append({"menutitle" : "Change Order", "function" : "menuChangeOrder", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
-    pluginmenus.append({"menutitle" : "New Change Order", "function" : "menuSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
+    pluginmenus.append({"menutitle" : "Change Order", "function" : "menu_change_order", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
+    pluginmenus.append({"menutitle" : "New Change Order", "function" : "menu_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
 
 
 #setup test data
@@ -220,6 +220,6 @@ if __name__ == '__main__':
     with open("C:\\Users\\pamcki\\OneDrive - Cornerstone Controls\\Documents\\Work In Progress\\XML\\project.xml", 'r', encoding='utf-8') as file:
         xml_content = file.read()
 
-    menuChangeOrder(xml_content, "")
+    menu_change_order(xml_content, "")
 
     app.exec()

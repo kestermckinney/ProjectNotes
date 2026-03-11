@@ -26,7 +26,7 @@ class IFSCommon:
         self.report_server = self.pnc.get_plugin_setting("ReportServer", self.settings_pluginname)
         self.domain_user = self.pnc.get_plugin_setting("DomainUser", self.settings_pluginname)
         self.domain_password = self.pnc.get_plugin_setting("DomainPassword", self.settings_pluginname)
-        self.sync_tracker_items = self.pnc.get_plugin_setting("SyncTrackerItems", self.settings_pluginname)
+        self.sync_tracker_items = self.pnc.get_plugin_setting("SyncTrackerItems", self.settings_pluginname).lower() == "true"
 
     def url_is_available(self):
         try:
@@ -217,9 +217,9 @@ class IFSCommon:
         if (result.status_code != 201):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
 
-            # print("Debug JSON: create_activity_task")
-            # json_result = result.json()
-            # print(json.dumps(json_result, indent=4))
+            print("Debug JSON: create_activity_task")
+            json_result = result.json()
+            print(json.dumps(json_result, indent=4))
 
             return False
 
@@ -296,7 +296,7 @@ class IFSCommon:
 
         return None
 
-    def getprojectsxml(self, rgroups, clientsdict, rd, parameter):
+    def get_projects_xml(self, rgroups, clientsdict, rd, parameter):
 
         saved_state = None
         statename = "ifs_projects_import"
@@ -330,7 +330,7 @@ class IFSCommon:
 
         segment = segment + "$orderby=ProjectId&"
 
-        request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectsHandling.svc/Projects?' + segment + '$filter=(((Objstate%20eq%20IfsApp.ProjectsHandling.ProjectState%27Initialized%27%20or%20Objstate%20eq%20IfsApp.ProjectsHandling.ProjectState%27Started%27%20or%20Objstate%20eq%20IfsApp.ProjectsHandling.ProjectState%27Approved%27))%20and%20Manager%20eq%20%27' + self.ifs_person_id + '%27)&$select=BudgetControlOn,ControlAsBudgeted,ControlOnTotalBudget,ProjUniquePurchase,ProjUniqueSale,State,ProjectId,Objstate,Objgrants,Name,Company,CustomerCategory,CustomerId,FinancialProjectExist,History,DefaultSite,ProjectPngExists,CheckForecast,Description,CompanyName,Manager,AccessOnOff,PlanStart,PlanFinish,ActualStart,ActualFinish,ApprovedDate,CloseDate,CancelDate,FrozenDate,EarnedValueMethod,BaselineRevisionNumber,Cf_Lastinvoiced,luname,keyref&$expand=AccountingProjectRef($select=ProjectGroup,Objgrants,luname,keyref),ManagerRef($select=Name,luname,keyref),CustomerIdRef($select=Name,Objgrants,luname,keyref)'
+        request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectsHandling.svc/Projects?' + segment + '$filter=(Manager%20eq%20%27' + self.ifs_person_id + '%27)&$select=BudgetControlOn,ControlAsBudgeted,ControlOnTotalBudget,ProjUniquePurchase,ProjUniqueSale,State,ProjectId,Objstate,Objgrants,Name,Company,CustomerCategory,CustomerId,FinancialProjectExist,History,DefaultSite,ProjectPngExists,CheckForecast,Description,CompanyName,Manager,AccessOnOff,PlanStart,PlanFinish,ActualStart,ActualFinish,ApprovedDate,CloseDate,CancelDate,FrozenDate,EarnedValueMethod,BaselineRevisionNumber,Cf_Lastinvoiced,luname,keyref&$expand=AccountingProjectRef($select=ProjectGroup,Objgrants,luname,keyref),ManagerRef($select=Name,luname,keyref),CustomerIdRef($select=Name,Objgrants,luname,keyref)'
 
         result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
@@ -363,7 +363,11 @@ class IFSCommon:
                 # only add the company name once to the client list
                 clientsdict[rowval['CustomerIdRef']['Name']] = True
 
-            rd['projectsxmlrows'] +=  "    <column name=\"project_status\">Active</column>\n"
+            if self.pnc.to_xml(rowval['Description']) in ('Initialized', 'Started', 'Approved'):
+                rd['projectsxmlrows'] +=  "    <column name=\"project_status\">Active</column>\n"
+            else:
+                rd['projectsxmlrows'] +=  "    <column name=\"project_status\">Closed</column>\n"
+
 
             metrics = self.get_earned_value_metrics(rowval['ProjectId'])
             costmetrics = self.get_cost_metrics(rowval['ProjectId'])
@@ -417,22 +421,23 @@ class IFSCommon:
 
         for rowval in json_result['value']:
 
-            rd['projectpeoplexmlrows'] += "  <row>\n"
+            if rowval['EmployeeIdRef'] is not None:  # some older projects or templates may not have employee asignments
+                rd['projectpeoplexmlrows'] += "  <row>\n"
 
-            rd['projectpeoplexmlrows'] += "    <column name=\"project_id\" lookupvalue=\"" + self.pnc.to_xml(projectid) + "\"></column>\n"
-            rd['projectpeoplexmlrows'] += "    <column name=\"people_id\" lookupvalue=\"" + self.pnc.to_xml(rowval['EmployeeIdRef']['EmployeeName']) + "\"></column>\n"
-            rd['projectpeoplexmlrows'] += "    <column name=\"role\">" + self.pnc.to_xml(rgroups[rowval['ResourceParentId']]) + "</column>\n"
-            rd['projectpeoplexmlrows'] += "  </row>\n"
+                rd['projectpeoplexmlrows'] += "    <column name=\"project_id\" lookupvalue=\"" + self.pnc.to_xml(projectid) + "\"></column>\n"
+                rd['projectpeoplexmlrows'] += "    <column name=\"people_id\" lookupvalue=\"" + self.pnc.to_xml(rowval['EmployeeIdRef']['EmployeeName']) + "\"></column>\n"
+                rd['projectpeoplexmlrows'] += "    <column name=\"role\">" + self.pnc.to_xml(rgroups[rowval['ResourceParentId']]) + "</column>\n"
+                rd['projectpeoplexmlrows'] += "  </row>\n"
 
-            rd['peoplexmlrows'] += "  <row>\n"
+                rd['peoplexmlrows'] += "  <row>\n"
 
-            rd['peoplexmlrows'] += "    <column name=\"name\">" + self.pnc.to_xml(rowval['EmployeeIdRef']['EmployeeName']) + "</column>\n"
-            rd['peoplexmlrows'] += "    <column name=\"client_id\" lookupvalue=\"" + self.pnc.to_xml(rd['companyname']) + "\"></column>\n"
+                rd['peoplexmlrows'] += "    <column name=\"name\">" + self.pnc.to_xml(rowval['EmployeeIdRef']['EmployeeName']) + "</column>\n"
+                rd['peoplexmlrows'] += "    <column name=\"client_id\" lookupvalue=\"" + self.pnc.to_xml(rd['companyname']) + "\"></column>\n"
 
-            rd['peoplexmlrows'] += "  </row>\n"
+                rd['peoplexmlrows'] += "  </row>\n"
 
-            # only add the company name once to the client list
-            clientsdict[rd['companyname']] = True
+                # only add the company name once to the client list
+                clientsdict[rd['companyname']] = True
 
     def import_ifs_projects(self, parameter):
         timer = QElapsedTimer()
@@ -453,7 +458,7 @@ class IFSCommon:
 
         self.get_resource_groups(rgroups)
 
-        self.getprojectsxml(rgroups, clientsdict, rd, parameter)
+        self.get_projects_xml(rgroups, clientsdict, rd, parameter)
 
         docxml += "<table name=\"clients\">\n"
         for k in clientsdict:

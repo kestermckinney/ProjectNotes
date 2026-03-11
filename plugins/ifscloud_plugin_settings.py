@@ -22,7 +22,7 @@ plugindescription = "This plugin provide settings input for the base install of 
 # the function wil only show on the right click if it matches the table specified in dataexport
 # if a dataexport value exist the menu will not appear on the plugin menu
 pluginmenus = [
-    {"menutitle" : "IFS Cloud Settings", "function" : "menuIFSCloudSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "IFS Cloud Settings", "function" : "menu_ifs_cloud_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
 ]
 
 # File Finder populates the list of files associated with a project
@@ -125,7 +125,7 @@ class IFSCloudSettings(QDialog):
         # Call the base class implementation
         super().closeEvent(event)
 
-def menuIFSCloudSettings(parameter):
+def menu_ifs_cloud_settings(parameter):
     ifc.show()
     return ""
 
@@ -136,5 +136,5 @@ ifc = IFSCloudSettings(pnc.get_main_window())
 if __name__ == '__main__':
     print("Entered __main__")
     app = QApplication(sys.argv)
-    menuIFSCloudSettings("")
+    menu_ifs_cloud_settings("")
     sys.exit(app.exec())

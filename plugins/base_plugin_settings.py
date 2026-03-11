@@ -23,12 +23,12 @@ plugindescription = "This plugin provide settigns input for the base install set
 # the function wil only show on the right click if it matches the table specified in dataexport
 # if a dataexport value exist the menu will not appear on the plugin menu
 pluginmenus = [
-    {"menutitle" : "File Finder", "function" : "menuFileCollectorSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
-    {"menutitle" : "Editor", "function" : "menuEditorSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
-    {"menutitle" : "Outlook Integration", "function" : "menuOutlookIntegrationSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
-    {"menutitle" : "My Shortcuts", "function" : "menuMyShortcutSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
-    {"menutitle" : "Meeting and Email Types", "function" : "menuMeetingEmailTypesSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
-    {"menutitle" : "Settings Migrator", "function" : "menuSettingsMigrator", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "File Finder", "function" : "menu_file_collector_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "Editor", "function" : "menu_editor_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "Outlook Integration", "function" : "menu_outlook_integration_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "My Shortcuts", "function" : "menu_my_shortcut_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "Meeting and Email Types", "function" : "menu_meeting_email_types_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "Settings Migrator", "function" : "menu_settings_migrator", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
 ]
 
 # events must have a data structure and data view specified
@@ -55,7 +55,7 @@ class ComboBoxDelegate(QStyledItemDelegate):
         self.editable = editable
         self.items = []
 
-    def setItems(self, items):
+    def set_items(self, items):
         self.items = items
 
     def createEditor(self, parent, option, index):
@@ -102,17 +102,17 @@ class FileFinderSettings(QDialog):
         self.ui_class = ClassificationEdit(self.ui)
         self.ui_class.buttonBox.accepted.connect(self.update_classification_row)
 
-        self.ui.pushButtonAddLocation.clicked.connect(self.addlocation)
-        self.ui.pushButtonEditLocation.clicked.connect(self.editlocation)
-        self.ui.pushButtonDeleteLocation.clicked.connect(self.deletelocation)
-        self.ui.pushButtonAddClassification.clicked.connect(self.addclassification)
-        self.ui.pushButtonEditClassification.clicked.connect(self.editclassification)
-        self.ui.pushButtonDeleteClassification.clicked.connect(self.deleteclassification)
+        self.ui.pushButtonAddLocation.clicked.connect(self.add_location)
+        self.ui.pushButtonEditLocation.clicked.connect(self.edit_location)
+        self.ui.pushButtonDeleteLocation.clicked.connect(self.delete_location)
+        self.ui.pushButtonAddClassification.clicked.connect(self.add_classification)
+        self.ui.pushButtonEditClassification.clicked.connect(self.edit_classification)
+        self.ui.pushButtonDeleteClassification.clicked.connect(self.delete_classification)
         self.ui.buttonBox.accepted.connect(self.save_settings)
         self.ui.buttonBox.rejected.connect(self.reject_changes)
 
         delegate = ComboBoxDelegate(self.ui, False)
-        delegate.setItems([
+        delegate.set_items([
            "Quote",
            "Functional Design",
            "Estimate",
@@ -190,14 +190,14 @@ class FileFinderSettings(QDialog):
         self.ui.tableClassifications.setItem(self.edit_classification_row, 0, QTableWidgetItem(self.ui_class.comboBoxClassification.currentText()))
         self.ui.tableClassifications.setItem(self.edit_classification_row, 1, QTableWidgetItem(self.ui_class.lineEditPatternMatch.text()))
 
-    def addlocation(self):
+    def add_location(self):
         folder_path = QFileDialog.getExistingDirectory(caption="Select a folder")
         if (folder_path is not None and folder_path != ''):
             row_count = self.ui.tableSearchLocations.rowCount()
             self.ui.tableSearchLocations.setRowCount(row_count + 1)
             self.ui.tableSearchLocations.setItem(row_count, 0, QTableWidgetItem(folder_path))
 
-    def editlocation(self):
+    def edit_location(self):
         row = self.ui.tableSearchLocations.currentRow()
 
         if (row > -1):
@@ -206,12 +206,12 @@ class FileFinderSettings(QDialog):
             if (folder_path is not None and folder_path != ''):
                 self.ui.tableSearchLocations.setItem(row, 0, QTableWidgetItem(folder_path))
 
-    def deletelocation(self):
+    def delete_location(self):
         row = self.ui.tableSearchLocations.currentRow()
         if (row > -1):
             value = self.ui.tableSearchLocations.removeRow(row)
 
-    def addclassification(self):
+    def add_classification(self):
         self.edit_classification_row = self.ui.tableClassifications.rowCount()
         self.ui_class.comboBoxClassification.setCurrentText('')
         self.ui_class.lineEditPatternMatch.setText('')
@@ -219,7 +219,7 @@ class FileFinderSettings(QDialog):
 
         self.ui_class.show()
 
-    def editclassification(self):
+    def edit_classification(self):
         self.edit_classification_row = self.ui.tableClassifications.currentRow()
 
         if (self.edit_classification_row > -1):
@@ -232,7 +232,7 @@ class FileFinderSettings(QDialog):
 
             self.ui_class.show()
 
-    def deleteclassification(self):
+    def delete_classification(self):
         row = self.ui.tableClassifications.currentRow()
         if (row > -1):
             value = self.ui.tableClassifications.removeRow(row)
@@ -288,7 +288,7 @@ class EditorSettings(QDialog):
             )
         self.ui.setModal(True)
 
-        self.ui.pushButtonFilePick.clicked.connect(self.editlocation)
+        self.ui.pushButtonFilePick.clicked.connect(self.edit_location)
         self.ui.buttonBox.accepted.connect(self.save_settings)
         self.ui.buttonBox.rejected.connect(self.reject_changes)
 
@@ -303,7 +303,7 @@ class EditorSettings(QDialog):
         if (x != '' and y != '' and w != '' and h != ''):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
-    def editlocation(self):
+    def edit_location(self):
         value = self.ui.lineEditFullPath.text()
         if sys.platform == "win32":
             pat = "Application (*.exe)"
@@ -436,14 +436,14 @@ class MyShortcutSettings(QDialog):
             )
         self.ui.setModal(True)
  
-        self.ui.pushButtonAddShortcut.clicked.connect(self.addshortcut)
-        self.ui.pushButtonEditShortcut.clicked.connect(self.editshortcut)
-        self.ui.pushButtonDeleteShortcut.clicked.connect(self.deleteshortcut)
+        self.ui.pushButtonAddShortcut.clicked.connect(self.add_shortcut)
+        self.ui.pushButtonEditShortcut.clicked.connect(self.edit_shortcut)
+        self.ui.pushButtonDeleteShortcut.clicked.connect(self.delete_shortcut)
         self.ui.buttonBox.accepted.connect(self.save_settings)
         self.ui.buttonBox.rejected.connect(self.reject_changes)
 
         delegate = ComboBoxDelegate(self.ui, False)
-        delegate.setItems([
+        delegate.set_items([
             "",
             "clients",
             "people",
@@ -513,18 +513,18 @@ class MyShortcutSettings(QDialog):
                     value = row_data.get(header, '')
                     qtable.setItem(row, column, QTableWidgetItem(value))
 
-    def addshortcut(self):
+    def add_shortcut(self):
         row_count = self.ui.tableShortcuts.rowCount()
         self.ui.tableShortcuts.setRowCount(row_count + 1)
         self.ui.tableShortcuts.setItem(row_count, 0, QTableWidgetItem("[New Shortcut]"))
 
-    def editshortcut(self):
+    def edit_shortcut(self):
         row = self.ui.tableShortcuts.currentRow()
         if (row > -1):
             self.ui.tableShortcuts.setCurrentCell(row, 0)
             self.ui.tableShortcuts.edit(self.ui.tableShortcuts.currentIndex())
 
-    def deleteshortcut(self):
+    def delete_shortcut(self):
         row = self.ui.tableShortcuts.currentRow()
         if (row > -1):
             value = self.ui.tableShortcuts.removeRow(row)
@@ -589,19 +589,19 @@ class MeetingEmailTypesSettings(QDialog):
             )
         self.ui.setModal(True)
  
-        self.ui.pushButtonAddType.clicked.connect(self.addtype)
-        self.ui.pushButtonEditType.clicked.connect(self.edittype)
-        self.ui.pushButtonDeleteType.clicked.connect(self.deletetype)
+        self.ui.pushButtonAddType.clicked.connect(self.add_type)
+        self.ui.pushButtonEditType.clicked.connect(self.edit_type)
+        self.ui.pushButtonDeleteType.clicked.connect(self.delete_type)
         self.ui.buttonBox.accepted.connect(self.save_settings)
         self.ui.buttonBox.rejected.connect(self.reject_changes)
 
         type_delegate = ComboBoxDelegate(self.ui, False)
-        type_delegate.setItems([
+        type_delegate.set_items([
             "Email",
             "Meeting"])
 
         delegate = ComboBoxDelegate(self.ui, False)
-        delegate.setItems([
+        delegate.set_items([
             "clients",
             "people",
             "projects",
@@ -614,7 +614,7 @@ class MeetingEmailTypesSettings(QDialog):
             "item_tracker"])
 
         group_delegate = ComboBoxDelegate(self.ui, False)
-        group_delegate.setItems([
+        group_delegate.set_items([
            "Attachment Only",
            "Exclude Client",
            "Full Project Team",
@@ -704,7 +704,7 @@ class MeetingEmailTypesSettings(QDialog):
         self.ui.tableWidgetMeetingEmailTypes.setItem(self.edit_row, 4, QTableWidgetItem(self.ui_template.textEditTemplate.toHtml()))
         self.ui.tableWidgetMeetingEmailTypes.setItem(self.edit_row, 5, QTableWidgetItem(self.ui_template.comboBoxData.currentText()))
 
-    def addtype(self):
+    def add_type(self):
         self.edit_row = self.ui.tableWidgetMeetingEmailTypes.rowCount()
 
         self.ui_template.comboBoxType.setCurrentText("Meeting")
@@ -716,7 +716,7 @@ class MeetingEmailTypesSettings(QDialog):
         self.ui_template.setModal(True)
         self.ui_template.show()
 
-    def edittype(self):
+    def edit_type(self):
         self.edit_row = self.ui.tableWidgetMeetingEmailTypes.currentRow()
 
         print('Editing Meeting Email Type')
@@ -742,7 +742,7 @@ class MeetingEmailTypesSettings(QDialog):
             self.ui_template.setModal(True)
             self.ui_template.show()
 
-    def deletetype(self):
+    def delete_type(self):
         row = self.ui.tableWidgetMeetingEmailTypes.currentRow()
         if (row > -1):
             value = self.ui.tableWidgetMeetingEmailTypes.removeRow(row)
@@ -966,27 +966,27 @@ class SettingsMigrator(QDialog):
         # Call the base class implementation
         super().closeEvent(event)
 
-def menuFileCollectorSettings(parameter):
+def menu_file_collector_settings(parameter):
     ffs.show()
     return ""
 
-def menuEditorSettings(parameter):
+def menu_editor_settings(parameter):
     es.show()
     return ""
 
-def menuOutlookIntegrationSettings(parameter):
+def menu_outlook_integration_settings(parameter):
     ois.show()
     return ""
 
-def menuMyShortcutSettings(parameter):
+def menu_my_shortcut_settings(parameter):
     mss.show()
     return ""
 
-def menuMeetingEmailTypesSettings(parameter):
+def menu_meeting_email_types_settings(parameter):
     mets.show()
     return ""
 
-def menuSettingsMigrator(parameter):
+def menu_settings_migrator(parameter):
     sm.show()
     return ""
 
@@ -1003,7 +1003,7 @@ if __name__ == '__main__':
     print("Entered __main__")
     app = QApplication(sys.argv)
     os.chdir("..")
-    #menuOutlookIntegrationSettings("") 
-    menuMeetingEmailTypesSettings("")
-    #menuFileCollectorSettings("")
+    #menu_outlook_integration_settings("") 
+    menu_meeting_email_types_settings("")
+    #menu_file_collector_settings("")
     sys.exit(app.exec())

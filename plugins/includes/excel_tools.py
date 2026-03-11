@@ -179,7 +179,7 @@ class ProjectNotesExcelTools:
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
-    def cliprowsbytags(self, sheet, starttag, endtag):
+    def clip_rows_by_tags(self, sheet, starttag, endtag):
         try:
             resranges = self.find_cell_tag(sheet, starttag)
             resrangee = self.find_cell_tag(sheet, endtag)
@@ -270,7 +270,7 @@ class ProjectNotesExcelTools:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
 
-    def killexcelautomation(self):
+    def kill_excel_automation(self):
         wmi_service = win32com.client.GetObject("winmgmts:{impersonationLevel=impersonate}!\\\\.\\root\\cimv2")
         processes = wmi_service.ExecQuery("Select * from Win32_Process Where Name = 'EXCEL.EXE' and CommandLine like '%automation%'")
 

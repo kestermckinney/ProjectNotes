@@ -88,9 +88,12 @@
    </item>
    <item>
     <widget class="QComboBox" name="comboBoxClientName">
+     <property name="editable">
+      <bool>true</bool>
+     </property>
      <item>
       <property name="text">
-       <string></string>
+       <string/>
       </property>
      </item>
     </widget>

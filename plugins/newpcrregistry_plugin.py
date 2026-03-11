@@ -99,7 +99,7 @@ if (platform.system() == 'Windows'):
     pnc = ProjectNotesCommon()
 
     # processing main function
-    def menuPCRRegister(xmlstr, parameter):
+    def menu_pcr_register(xmlstr, parameter):
 
         xmlval = QDomDocument()
 
@@ -169,14 +169,14 @@ if (platform.system() == 'Windows'):
 
         return docxml.toString()
 
-    def menuSettings(parameter):
+    def menu_settings(parameter):
         npr.show()
         return ""
 
     npr = NewPCRRegisterSettings()
 
-    pluginmenus.append({"menutitle" : "PCR Register", "function" : "menuPCRRegister", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
-    pluginmenus.append({"menutitle" : "New PCR Register", "function" : "menuSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
+    pluginmenus.append({"menutitle" : "PCR Register", "function" : "menu_pcr_register", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
+    pluginmenus.append({"menutitle" : "New PCR Register", "function" : "menu_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
 
 #setup test data
 if __name__ == '__main__':
