@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "projectnotespage.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 #include "notesactionitemsview.h"
 #include "QLogger.h"
 #include "QLoggerWriter.h"
@@ -22,23 +22,23 @@ ProjectNotesPage::~ProjectNotesPage()
    if (m_mapperProjectNotes != nullptr)
        delete m_mapperProjectNotes;
 
-    if (m_project_notes_delegate)
-        delete m_project_notes_delegate;
+    if (m_projectNotesDelegate)
+        delete m_projectNotesDelegate;
 }
 
-void ProjectNotesPage::openRecord(QVariant& t_record_id)
+void ProjectNotesPage::openRecord(QVariant& recordId)
 {
-    setRecordId(t_record_id);
+    setRecordId(recordId);
 
-    global_DBObjects.projecteditingnotesmodel()->setFilter(0, t_record_id.toString());
+    global_DBObjects.projecteditingnotesmodel()->setFilter(0, recordId.toString());
     global_DBObjects.projecteditingnotesmodel()->refresh();
 
     // only select the records another event will be fired to open the window to show them
-    global_DBObjects.meetingattendeesmodel()->setFilter(1, t_record_id.toString());
+    global_DBObjects.meetingattendeesmodel()->setFilter(1, recordId.toString());
     global_DBObjects.meetingattendeesmodel()->refresh();
 
     // not needed global_DBObjects.notesactionitemsmodel()->setFilter(14, project_id.toString());
-    global_DBObjects.notesactionitemsmodel()->setFilter(13, t_record_id.toString());
+    global_DBObjects.notesactionitemsmodel()->setFilter(13, recordId.toString());
     global_DBObjects.notesactionitemsmodel()->refresh();
 
     if (m_mapperProjectNotes != nullptr)
@@ -61,20 +61,20 @@ void ProjectNotesPage::newRecord()
     QVariant note_id = global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,0));
     QVariant project_id = global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,1));
 
-    int lastrow = dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->rowCount(QModelIndex());
+    int lastrow = dynamic_cast<SqlQueryModel*>(getCurrentModel()->sourceModel())->rowCount(QModelIndex());
 
-    dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord(&note_id, &project_id);
+    dynamic_cast<SqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord(&note_id, &project_id);
 
     getCurrentView()->selectRow(lastrow);
     QModelIndex index = getCurrentView()->model()->index(lastrow, 0);
     getCurrentView()->selectionModel()->select(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
 }
 
-void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
+void ProjectNotesPage::setupModels( Ui::MainWindow *ui )
 {
-    ui = t_ui;
+    this->ui = ui;
 
-    if (t_ui)
+    if (ui)
     {
         connect(ui->tabWidgetNotes, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetNotes_currentChanged(int)));
     }
@@ -92,10 +92,10 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *t_ui )
     if (m_mapperProjectNotes == nullptr)
         m_mapperProjectNotes = new QDataWidgetMapper(this);
 
-    if (m_project_notes_delegate == nullptr)
-        m_project_notes_delegate = new ProjectNotesDelegate(this);
+    if (m_projectNotesDelegate == nullptr)
+        m_projectNotesDelegate = new ProjectNotesDelegate(this);
 
-    m_mapperProjectNotes->setItemDelegate(m_project_notes_delegate);
+    m_mapperProjectNotes->setItemDelegate(m_projectNotesDelegate);
 
     m_mapperProjectNotes->setModel(global_DBObjects.projecteditingnotesmodelproxy());
     setPageModel(global_DBObjects.projecteditingnotesmodel());

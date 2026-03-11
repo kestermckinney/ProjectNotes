@@ -4,12 +4,12 @@
 #ifndef PEOPLEMODEL_H
 #define PEOPLEMODEL_H
 
-#include "pnsqlquerymodel.h"
+#include "sqlquerymodel.h"
 
-class PeopleModel : public PNSqlQueryModel
+class PeopleModel : public SqlQueryModel
 {
 public:
-    PeopleModel(PNDatabaseObjects* t_dbo);
+    PeopleModel(DatabaseObjects* dbo);
 };
 
 #endif // PEOPLEMODEL_H

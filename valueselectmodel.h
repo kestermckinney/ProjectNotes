@@ -4,19 +4,19 @@
 #ifndef VALUESELECTMODEL_H
 #define VALUESELECTMODEL_H
 
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 #include <QObject>
 
-class ValueSelectModel : public PNSqlQueryModel
+class ValueSelectModel : public SqlQueryModel
 {
 public:
-    ValueSelectModel(PNDatabaseObjects* t_dbo);
-    void setValuesColumn(QString t_column);
+    ValueSelectModel(DatabaseObjects* dbo);
+    void setValuesColumn(QString column);
 
-    void setFilteringModel(PNSqlQueryModel* t_model) { m_filtering_model = t_model; };
+    void setFilteringModel(SqlQueryModel* model) { m_filteringModel = model; };
 
 private:
-    PNSqlQueryModel* m_filtering_model;
+    SqlQueryModel* m_filteringModel;
 };
 
 #endif // VALUESELECTMODEL_H

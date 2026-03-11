@@ -4,12 +4,12 @@
 #ifndef PROJECTNOTESPAGE_H
 #define PROJECTNOTESPAGE_H
 
-#include "pnbasepage.h"
+#include "basepage.h"
 #include <QObject>
 #include <QDataWidgetMapper>
 #include "projectnotesdelegate.h"
 
-class ProjectNotesPage : public PNBasePage
+class ProjectNotesPage : public BasePage
 {
     Q_OBJECT
 
@@ -18,8 +18,8 @@ public:
     ~ProjectNotesPage();
 
     void newRecord() override;
-    void setupModels( Ui::MainWindow *t_ui ) override;
-    void openRecord(QVariant& t_record_id) override;
+    void setupModels( Ui::MainWindow *ui ) override;
+    void openRecord(QVariant& recordId) override;
     void setButtonAndMenuStates() override;
     void setPageTitle() override;
     void submitRecord() override {if (m_mapperProjectNotes) m_mapperProjectNotes->submit(); }
@@ -27,7 +27,7 @@ public:
 private:
     Ui::MainWindow *ui = nullptr;
     QDataWidgetMapper* m_mapperProjectNotes = nullptr;
-    ProjectNotesDelegate* m_project_notes_delegate = nullptr;
+    ProjectNotesDelegate* m_projectNotesDelegate = nullptr;
 
 private slots:
     void on_tabWidgetNotes_currentChanged(int index);

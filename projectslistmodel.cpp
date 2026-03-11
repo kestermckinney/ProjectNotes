@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "projectslistmodel.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
 #include <QRegularExpression>
 #include <QApplication>
 
-ProjectsListModel::ProjectsListModel(PNDatabaseObjects* t_dbo) : ProjectsModel(t_dbo)
+ProjectsListModel::ProjectsListModel(DatabaseObjects* dbo) : ProjectsModel(dbo)
 {
     setObjectName("ProjectsListModel");
     setOrderKey(110);

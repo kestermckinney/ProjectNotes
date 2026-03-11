@@ -29,9 +29,9 @@ public:
     enum SpellCheckAction {AbortCheck, IgnoreOnce, IgnoreAll,
                            Change, ChangeAll, AddToDict, ChangeDict, NothingDone};
 
-    void spellCheck(QWidget* t_focus_control);
-    SpellCheckAction checkWord(const QString &t_word);
-    void replaceAll(QTextCursor t_cursor, const QString &t_old_word, const QString &sNew);
+    void spellCheck(QWidget* focusControl);
+    SpellCheckAction checkWord(const QString &word);
+    void replaceAll(QTextCursor cursor, const QString &oldWord, const QString &sNew);
 
 private slots:
     void on_comboBoxDictionaryLanguage_currentIndexChanged(int index);
@@ -57,11 +57,11 @@ private slots:
 private:
     Ui::SpellCheckDialog *ui;
 
-    QString m_unknown_word;
-    QWidget* m_check_widget = nullptr;
+    QString m_unknownWord;
+    QWidget* m_checkWidget = nullptr;
 
-    //QTextEdit* m_check_widget = nullptr;
-    SpellCheckAction m_return_code;
+    //QTextEdit* m_checkWidget = nullptr;
+    SpellCheckAction m_returnCode;
     bool m_populating = true;
 };
 

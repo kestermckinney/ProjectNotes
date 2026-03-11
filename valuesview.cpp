@@ -6,7 +6,7 @@
 using namespace QLogger;
 
 
-ValuesView::ValuesView(QWidget *t_parent) : PNTableView(t_parent)
+ValuesView::ValuesView(QWidget *parent) : TableView(parent)
 {
     setObjectName("tableViewFilterValues");  // this will need set differently for every instance of filterdialog
 
@@ -18,32 +18,32 @@ ValuesView::~ValuesView()
 
 }
 
-void ValuesView::dataRowSelected(const QModelIndex &t_index)
+void ValuesView::dataRowSelected(const QModelIndex &index)
 {
     QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
-    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
+    SqlQueryModel* currentmodel = dynamic_cast<SqlQueryModel*>(sortmodel->sourceModel());
 
     QString column = currentmodel->getColumnName(0);
 
     // if the item is selected add it to the column values
-    if (this->selectionModel()->isRowSelected(t_index.row()) )
+    if (this->selectionModel()->isRowSelected(index.row()) )
     {
-        QVariant val = sortmodel->data(sortmodel->index(t_index.row(), 0));
+        QVariant val = sortmodel->data(sortmodel->index(index.row(), 0));
 
-        if (  !(*m_saved_filters)[column].ColumnValues.contains(val.toString()) )
+        if (  !(*m_savedFilters)[column].ColumnValues.contains(val.toString()) )
         {
-            (*m_saved_filters)[column].ColumnValues.append(val.toString());
+            (*m_savedFilters)[column].ColumnValues.append(val.toString());
             // qDebug() << val << " was added to the selected items for column " << column;
         }
     }
     // if the item is removed make sure it isn't in the list
     else
     {
-        QVariant val = sortmodel->data(sortmodel->index(t_index.row(), 0));
+        QVariant val = sortmodel->data(sortmodel->index(index.row(), 0));
 
-        if (  (*m_saved_filters)[column].ColumnValues.contains(val.toString()) )
+        if (  (*m_savedFilters)[column].ColumnValues.contains(val.toString()) )
         {
-            (*m_saved_filters)[column].ColumnValues.removeAll(val.toString());
+            (*m_savedFilters)[column].ColumnValues.removeAll(val.toString());
             // qDebug() << val << " was removed to the selected items for column " << column;
         }
     }

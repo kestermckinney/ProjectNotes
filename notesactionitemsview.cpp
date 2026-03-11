@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "notesactionitemsview.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
-NotesActionItemsView::NotesActionItemsView(QWidget* t_parent) : PNTableView(t_parent)
+NotesActionItemsView::NotesActionItemsView(QWidget* parent) : TableView(parent)
 {
     setObjectName("tableViewMeetingItems");
     setHasOpen(true);
@@ -12,28 +12,28 @@ NotesActionItemsView::NotesActionItemsView(QWidget* t_parent) : PNTableView(t_pa
 
 NotesActionItemsView::~NotesActionItemsView()
 {
-    if (m_action_item_type_delegate) delete m_action_item_type_delegate;
-    if (m_identified_by_delegate) delete m_identified_by_delegate;
-    if (m_date_identified_delegate) delete m_date_identified_delegate;
-    if (m_assigned_to_delegate) delete m_assigned_to_delegate;
-    if (m_priority_delegate) delete m_priority_delegate;
-    if (m_status_delegate) delete m_status_delegate;
-    if (m_date_due_delegate) delete m_date_due_delegate;
-    if (m_date_date_updated_delagate) delete m_date_date_updated_delagate;
-    if (m_date_resolved_delegate) delete m_date_resolved_delegate;
-    if (m_meeting_delegate) delete m_meeting_delegate;
-    if (m_project_delegate) delete m_project_delegate;
-    if (m_internal_delegate) delete m_internal_delegate;
-    if (m_client_delegate) delete m_client_delegate;
-    if (m_item_name_delegate) delete m_item_name_delegate;
-    if (m_item_description_delegate) delete m_item_description_delegate;
+    if (m_actionItemTypeDelegate) delete m_actionItemTypeDelegate;
+    if (m_identifiedByDelegate) delete m_identifiedByDelegate;
+    if (m_dateIdentifiedDelegate) delete m_dateIdentifiedDelegate;
+    if (m_assignedToDelegate) delete m_assignedToDelegate;
+    if (m_priorityDelegate) delete m_priorityDelegate;
+    if (m_statusDelegate) delete m_statusDelegate;
+    if (m_dateDueDelegate) delete m_dateDueDelegate;
+    if (m_dateDateUpdatedDelagate) delete m_dateDateUpdatedDelagate;
+    if (m_dateResolvedDelegate) delete m_dateResolvedDelegate;
+    if (m_meetingDelegate) delete m_meetingDelegate;
+    if (m_projectDelegate) delete m_projectDelegate;
+    if (m_internalDelegate) delete m_internalDelegate;
+    if (m_clientDelegate) delete m_clientDelegate;
+    if (m_itemNameDelegate) delete m_itemNameDelegate;
+    if (m_itemDescriptionDelegate) delete m_itemDescriptionDelegate;
 }
 
-void NotesActionItemsView::setModel(QAbstractItemModel *t_model)
+void NotesActionItemsView::setModel(QAbstractItemModel *model)
 {
-    if (t_model)
+    if (model)
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
 
         // see setbuttonitems for visible columns
         setColumnHidden(0, true);
@@ -50,7 +50,7 @@ void NotesActionItemsView::setModel(QAbstractItemModel *t_model)
         setColumnHidden(14, true);
         setColumnHidden(18, true);
 
-        PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(dynamic_cast<PNSortFilterProxyModel*>(t_model)->sourceModel())->getDBOs();
+        DatabaseObjects* dbo = qobject_cast<SqlQueryModel*>(dynamic_cast<SortFilterProxyModel*>(model)->sourceModel())->getDBOs();
 
         if (dbo->getShowInternalItems())
         {
@@ -61,54 +61,54 @@ void NotesActionItemsView::setModel(QAbstractItemModel *t_model)
            setColumnHidden(15, true);
 
         // setup model lists
-        m_item_priority.setStringList(PNDatabaseObjects::item_priority);
-        m_item_type.setStringList(PNDatabaseObjects::item_type);
-        m_item_status.setStringList(PNDatabaseObjects::item_status);
+        m_itemPriority.setStringList(DatabaseObjects::item_priority);
+        m_itemType.setStringList(DatabaseObjects::item_type);
+        m_itemStatus.setStringList(DatabaseObjects::item_status);
 
         // projects list panel delagets
-        m_action_item_type_delegate = new ComboBoxDelegate(this, &m_item_type);
-        m_identified_by_delegate = new PNComboBoxDelegate(this, dbo->teamsmodelproxy(), 1, 3);
-        m_date_identified_delegate = new PNDateEditDelegate(this);
-        m_assigned_to_delegate = new PNComboBoxDelegate(this, dbo->teamsmodelproxy(), 1, 3);
-        m_priority_delegate = new ComboBoxDelegate(this, &m_item_priority);
-        m_status_delegate = new ComboBoxDelegate(this, &m_item_status);
-        m_date_due_delegate = new PNDateEditDelegate(this);
-        m_date_date_updated_delagate = new PNDateEditDelegate(this);
-        m_date_resolved_delegate = new PNDateEditDelegate(this);
-        m_meeting_delegate = new PNComboBoxDelegate(this, dbo->actionitemsdetailsmeetingsmodelproxy(), 2, 0);
-        m_project_delegate = new PNComboBoxDelegate(this, dbo->projectslistmodelproxy());
-        m_internal_delegate = new PNCheckBoxDelegate(this);
-        m_client_delegate = new PNComboBoxDelegate(this, dbo->unfilteredclientsmodelproxy());
-        m_item_name_delegate = new PNPlainTextEditDelegate(this);
-        m_item_description_delegate = new PNPlainTextEditDelegate(this);
+        m_actionItemTypeDelegate = new ComboBoxDelegate(this, &m_itemType);
+        m_identifiedByDelegate = new SqlComboBoxDelegate(this, dbo->teamsmodelproxy(), 1, 3);
+        m_dateIdentifiedDelegate = new DateEditDelegate(this);
+        m_assignedToDelegate = new SqlComboBoxDelegate(this, dbo->teamsmodelproxy(), 1, 3);
+        m_priorityDelegate = new ComboBoxDelegate(this, &m_itemPriority);
+        m_statusDelegate = new ComboBoxDelegate(this, &m_itemStatus);
+        m_dateDueDelegate = new DateEditDelegate(this);
+        m_dateDateUpdatedDelagate = new DateEditDelegate(this);
+        m_dateResolvedDelegate = new DateEditDelegate(this);
+        m_meetingDelegate = new SqlComboBoxDelegate(this, dbo->actionitemsdetailsmeetingsmodelproxy(), 2, 0);
+        m_projectDelegate = new SqlComboBoxDelegate(this, dbo->projectslistmodelproxy());
+        m_internalDelegate = new CheckBoxDelegate(this);
+        m_clientDelegate = new SqlComboBoxDelegate(this, dbo->unfilteredclientsmodelproxy());
+        m_itemNameDelegate = new PlainTextEditDelegate(this);
+        m_itemDescriptionDelegate = new PlainTextEditDelegate(this);
 
         // assign delegates to columns
-        setItemDelegateForColumn(2, m_action_item_type_delegate);
-        setItemDelegateForColumn(3, m_item_name_delegate);
-        setItemDelegateForColumn(4, m_identified_by_delegate);
-        setItemDelegateForColumn(5, m_date_identified_delegate);
-        setItemDelegateForColumn(6, m_item_description_delegate);
-        setItemDelegateForColumn(7, m_assigned_to_delegate);
-        setItemDelegateForColumn(8, m_priority_delegate);
-        setItemDelegateForColumn(9, m_status_delegate);
-        setItemDelegateForColumn(10, m_date_due_delegate);
-        setItemDelegateForColumn(11, m_date_date_updated_delagate);
-        setItemDelegateForColumn(12, m_date_resolved_delegate);
-        setItemDelegateForColumn(13, m_meeting_delegate);
-        setItemDelegateForColumn(14, m_project_delegate);
-        setItemDelegateForColumn(15, m_internal_delegate);
-        setItemDelegateForColumn(18, m_client_delegate);
+        setItemDelegateForColumn(2, m_actionItemTypeDelegate);
+        setItemDelegateForColumn(3, m_itemNameDelegate);
+        setItemDelegateForColumn(4, m_identifiedByDelegate);
+        setItemDelegateForColumn(5, m_dateIdentifiedDelegate);
+        setItemDelegateForColumn(6, m_itemDescriptionDelegate);
+        setItemDelegateForColumn(7, m_assignedToDelegate);
+        setItemDelegateForColumn(8, m_priorityDelegate);
+        setItemDelegateForColumn(9, m_statusDelegate);
+        setItemDelegateForColumn(10, m_dateDueDelegate);
+        setItemDelegateForColumn(11, m_dateDateUpdatedDelagate);
+        setItemDelegateForColumn(12, m_dateResolvedDelegate);
+        setItemDelegateForColumn(13, m_meetingDelegate);
+        setItemDelegateForColumn(14, m_projectDelegate);
+        setItemDelegateForColumn(15, m_internalDelegate);
+        setItemDelegateForColumn(18, m_clientDelegate);
     }
     else
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
     }
 }
 
 void NotesActionItemsView::slotNewRecord()
 {
     QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
-    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
+    SqlQueryModel* currentmodel = dynamic_cast<SqlQueryModel*>(sortmodel->sourceModel());
 
     QVariant fk_value1 = dynamic_cast<NotesActionItemsModel*>(currentmodel)->getFilter(14);  // project id
     QVariant fk_value2 = dynamic_cast<NotesActionItemsModel*>(currentmodel)->getFilter(13); // notet id

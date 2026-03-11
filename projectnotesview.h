@@ -4,26 +4,26 @@
 #ifndef PROJECTNOTESVIEW_H
 #define PROJECTNOTESVIEW_H
 
-#include "pntableview.h"
-#include "pndateeditdelegate.h"
-#include "pncheckboxdelegate.h"
-#include "pnplaintexteditdelegate.h"
+#include "tableview.h"
+#include "dateeditdelegate.h"
+#include "checkboxdelegate.h"
+#include "plaintexteditdelegate.h"
 #include <QObject>
 
 
-class ProjectNotesView : public PNTableView
+class ProjectNotesView : public TableView
 {
 public:
-    ProjectNotesView(QWidget* t_parent = nullptr);
+    ProjectNotesView(QWidget* parent = nullptr);
     ~ProjectNotesView();
 
-    void setModel(QAbstractItemModel *t_model) override;
+    void setModel(QAbstractItemModel *model) override;
 
 private:
     // projects list panel delegates
-    PNDateEditDelegate* m_meeting_date_delegate = nullptr;
-    PNCheckBoxDelegate* m_internal_item_delegate = nullptr;
-    PNPlainTextEditDelegate* m_title_delegate = nullptr;
+    DateEditDelegate* m_meetingDateDelegate = nullptr;
+    CheckBoxDelegate* m_internalItemDelegate = nullptr;
+    PlainTextEditDelegate* m_titleDelegate = nullptr;
 
 public slots:
     void slotNewRecord() override;

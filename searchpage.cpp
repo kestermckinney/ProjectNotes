@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "searchpage.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
 #include "ui_mainwindow.h"
 
@@ -22,11 +22,11 @@ void SearchPage::setPageTitle()
     setHistoryText("Search");
 }
 
-void SearchPage::setupModels( Ui::MainWindow *t_ui )
+void SearchPage::setupModels( Ui::MainWindow *ui )
 {
-    ui = t_ui;
+    this->ui = ui;
 
-    if (!t_ui)
+    if (!ui)
     {
         ui->plainTextEditSearchText->removeEventFilter(this);
         return;  // closing application

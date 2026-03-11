@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "clientsmodel.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
 #include <QRegularExpression>
 
-ClientsModel::ClientsModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
+ClientsModel::ClientsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("ClientsModel");
     setOrderKey(10);
@@ -28,10 +28,10 @@ ClientsModel::ClientsModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
     setOrderBy("client_name");
 }
 
-const QModelIndex ClientsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex ClientsModel::newRecord(const QVariant* fkValue1, const QVariant* fkValue2)
 {
-    Q_UNUSED(t_fk_value1);
-    Q_UNUSED(t_fk_value2);
+    Q_UNUSED(fkValue1);
+    Q_UNUSED(fkValue2);
 
     DB_LOCK;
     QSqlQuery select(getDBOs()->getDb());

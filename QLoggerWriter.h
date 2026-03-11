@@ -119,7 +119,7 @@ public:
     * @param line The line of the file name that prints the log.
     * @param message The message to log.
     */
-   void enqueue(const QDateTime &date, const QString &threadId, const QString &module, LogLevel level,
+   void enqueue(const QDateTime &date, LogLevel level,
                 const QString &function, const QString &fileName, int line, const QString &message);
 
    /**

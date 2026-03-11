@@ -5,12 +5,12 @@
 #define TEAMSMODEL_H
 
 
-#include "pnsqlquerymodel.h"
+#include "sqlquerymodel.h"
 
-class TeamsModel : public PNSqlQueryModel
+class TeamsModel : public SqlQueryModel
 {
 public:
-    TeamsModel(PNDatabaseObjects* t_dbo);
+    TeamsModel(DatabaseObjects* dbo);
 };
 
 #endif // TEAMSMODEL_H

@@ -159,7 +159,7 @@ void QLoggerWriter::write(QVector<QString> messages)
    }
 }
 
-void QLoggerWriter::enqueue(const QDateTime &date, const QString &threadId, const QString &module, LogLevel level,
+void QLoggerWriter::enqueue(const QDateTime &date, LogLevel level,
                             const QString &function, const QString &fileName, int line, const QString &message)
 {
    QMutexLocker locker(&mutex);
@@ -182,8 +182,7 @@ void QLoggerWriter::enqueue(const QDateTime &date, const QString &threadId, cons
    QString text;
    if (mMessageOptions.testFlag(LogMessageDisplay::Default))
    {
-       text = QString("[%1][%2][%3]%4 %5")
-                  .arg(levelToText(level), module)
+       text = QString("[%1]%2 %3")
                   .arg(date.toString("yyyy-MM-ddTHH:mm:ss.zzz"))
                   .arg(fileLine, message);
    }
@@ -191,9 +190,6 @@ void QLoggerWriter::enqueue(const QDateTime &date, const QString &threadId, cons
    {
       if (mMessageOptions.testFlag(LogMessageDisplay::LogLevel))
          text.append(QString("[%1]").arg(levelToText(level)));
-
-      if (mMessageOptions.testFlag(LogMessageDisplay::ModuleName))
-         text.append(QString("[%1]").arg(module));
 
       if (mMessageOptions.testFlag(LogMessageDisplay::DateTime))
          text.append(QString("[%1]").arg(date.toString("yyyy-MM-ddTHH:mm:ss.zzz")));

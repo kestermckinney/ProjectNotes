@@ -5,7 +5,7 @@
 
 using namespace QLogger;
 
-ValueSelectModel::ValueSelectModel(PNDatabaseObjects* t_dbo) : PNSqlQueryModel(t_dbo)
+ValueSelectModel::ValueSelectModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
 {
     setObjectName("ValueSelectModel");
 
@@ -19,34 +19,34 @@ ValueSelectModel::ValueSelectModel(PNDatabaseObjects* t_dbo) : PNSqlQueryModel(t
     refresh();
 }
 
-void ValueSelectModel::setValuesColumn(QString t_column)
+void ValueSelectModel::setValuesColumn(QString column)
 {
-    int ccount = m_filtering_model->columnCount();
+    int ccount = m_filteringModel->columnCount();
     int col = 0;
 
     for (col = 0; col < ccount;  col++)
     {
-        QString header = m_filtering_model->headerData(col, Qt::Horizontal).toString();
-        if (header == t_column)
+        QString header = m_filteringModel->headerData(col, Qt::Horizontal).toString();
+        if (header == column)
             break;
     }
 
     if (col >= ccount)
         return; // nothing can be done if the incorrect colum was specified
 
-    QString where = m_filtering_model->constructWhereClause(false);
+    QString where = m_filteringModel->constructWhereClause(false);
 
     if (!where.isEmpty())
         where += " and ";
     else
         where = " where ";
 
-    // QString fieldnm = m_filtering_model->getColumnName(col);
+    // QString fieldnm = m_filteringModel->getColumnName(col);
 
     QString fieldnm = getColumnName(0);
 
-    setType(0, m_filtering_model->getType(col));
-    QString sql = "select distinct " + fieldnm + " from ( " + m_filtering_model->BaseSQL() + where + fieldnm + " is not null )";
+    setType(0, m_filteringModel->getType(col));
+    QString sql = "select distinct " + fieldnm + " from ( " + m_filteringModel->BaseSQL() + where + fieldnm + " is not null )";
 
     setBaseSql(sql);
 

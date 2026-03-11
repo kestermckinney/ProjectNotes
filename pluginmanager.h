@@ -34,35 +34,35 @@ public:
     ~PluginManager();
 
     QList<Plugin*> plugins() const { return m_pluginlist; }
-    void forceReload(const QString& t_module);
+    void forceReload(const QString& module);
     int loadedCount();
 
 signals:
-    void pluginLoaded(const QString& t_path);
-    void pluginUnLoaded(const QString& t_path);
-    void pluginForceReload(const QString& t_module);
+    void pluginLoaded(const QString& path);
+    void pluginUnLoaded(const QString& path);
+    void pluginForceReload(const QString& module);
     void pluginRefreshRequest();
 
 public slots:
     void unloadAll();
 
 private slots:
-    void onLoadComplete(const QString& t_modulepath);
-    void onUnloadComplete(const QString& t_modulepath);
-    void onFileChanged(const QString& t_filepath);
+    void onLoadComplete(const QString& modulepath);
+    void onUnloadComplete(const QString& modulepath);
+    void onFileChanged(const QString& filepath);
     void onFolderChanged(const QString& folderPath);
-    void onForceReload(const QString& t_module);
-    void resetFileWatcher(QWidget* t_old, QWidget* t_new);
+    void onForceReload(const QString& module);
+    void resetFileWatcher(QWidget* oldWidget, QWidget* newWidget);
 
 private:
-    void watchFolder(const QString& t_path);
+    void watchFolder(const QString& path);
     QList<Plugin*> m_pluginlist;
     PyThreadState* m_pythreadstate;
     QFileSystemWatcher *m_fileWatcher;
     QString m_pluginspath;
     QString m_threadspath;
 
-    void loadPluginFiles(const QString& t_path, bool t_isthread);
+    void loadPluginFiles(const QString& path, bool isthread);
 };
 
 #endif // PLUGINMANAGER_H

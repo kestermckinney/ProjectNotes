@@ -3,14 +3,14 @@
 
 #include "ui_mainwindow.h"
 
-#include "pntableview.h"
+#include "tableview.h"
 #include "projectslistmodel.h"
-#include "pndatabaseobjects.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
+#include "databaseobjects.h"
 #include "aboutdialog.h"
-#include "pnplaintextedit.h"
-#include "pntextedit.h"
-#include "pncombobox.h"
+#include "plaintextedit.h"
+#include "textedit.h"
+#include "combobox.h"
 
 #include <QStringListModel>
 #include <QMessageBox>
@@ -37,10 +37,10 @@
 
 using namespace QLogger;
 
-PluginManager* MainWindow::m_plugin_manager = nullptr;
+PluginManager* MainWindow::m_pluginManager = nullptr;
 
-MainWindow::MainWindow(QWidget *t_parent)
-    : QMainWindow(t_parent)
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
@@ -59,13 +59,13 @@ MainWindow::MainWindow(QWidget *t_parent)
     // add special formatting button for html editor
     setupTextActions();
 
-    m_preferences_dialog = new PreferencesDialog(this);
-    m_find_replace_dialog = new FindReplaceDialog(this);
+    m_preferencesDialog = new PreferencesDialog(this);
+    m_findReplaceDialog = new FindReplaceDialog(this);
 
     // view state
-    m_page_history.clear();
-    m_navigation_location = -1;
-    m_forward_back_history.clear();
+    m_pageHistory.clear();
+    m_navigationLocation = -1;
+    m_forwardBackHistory.clear();
 
     global_Settings.getWindowState("MainWindow", this);
 
@@ -92,11 +92,11 @@ MainWindow::MainWindow(QWidget *t_parent)
 
     connect(dynamic_cast<QApplication*>(QApplication::instance()), &QApplication::focusChanged, this, &MainWindow::on_focusChanged);
 
-    m_plugin_manager = new PluginManager(this);
+    m_pluginManager = new PluginManager(this);
 
-    connect(m_plugin_manager, &PluginManager::pluginLoaded, this, &MainWindow::onPluginLoaded);
-    connect(m_plugin_manager, &PluginManager::pluginUnLoaded, this, &MainWindow::onPluginUnLoaded);
-    connect(m_plugin_manager, &PluginManager::pluginRefreshRequest, this, &MainWindow::onRefreshRequested);
+    connect(m_pluginManager, &PluginManager::pluginLoaded, this, &MainWindow::onPluginLoaded);
+    connect(m_pluginManager, &PluginManager::pluginUnLoaded, this, &MainWindow::onPluginUnLoaded);
+    connect(m_pluginManager, &PluginManager::pluginRefreshRequest, this, &MainWindow::onRefreshRequested);
 
     if (!global_Settings.getLastDatabase().toString().isEmpty())
         if (QFile(global_Settings.getLastDatabase().toString()).exists())
@@ -105,18 +105,18 @@ MainWindow::MainWindow(QWidget *t_parent)
     setButtonAndMenuStates();
 }
 
-void MainWindow::addMenuItem(QMenu* t_menu, const QString& t_submenu, const QString& t_menutitle, QAction* t_action, int t_section)
+void MainWindow::addMenuItem(QMenu* menu, const QString& submenu, const QString& menutitle, QAction* action, int section)
 {
-    if (t_submenu.isEmpty())
+    if (submenu.isEmpty())
     {
         QAction* nextaction = nullptr;
         int pastseparator = 0;
 
-        for (QAction* action : t_menu->actions())
+        for (QAction* action : menu->actions())
         {
             QString itemtitle = action->text().replace("&","");
 
-            if (pastseparator >= t_section && itemtitle.compare(t_menutitle, Qt::CaseInsensitive) > 0)
+            if (pastseparator >= section && itemtitle.compare(menutitle, Qt::CaseInsensitive) > 0)
             {
                 nextaction = action;
                 break;
@@ -126,22 +126,22 @@ void MainWindow::addMenuItem(QMenu* t_menu, const QString& t_submenu, const QStr
                 pastseparator++;
         }
 
-        t_menu->insertAction(nextaction, t_action);
+        menu->insertAction(nextaction, action);
     }
     else
     {
         // find the submenu if it exists
-        QMenu* submenu = nullptr;
+        QMenu* subMenuPtr = nullptr;
 
         int pastseparator = 0;
 
-        for (QAction* action : t_menu->actions())
+        for (QAction* action : menu->actions())
         {
             QString itemtitle = action->text().replace("&","");
 
-            if (pastseparator >= t_section && itemtitle.compare(t_submenu, Qt::CaseInsensitive) == 0 && action->menu() != nullptr)
+            if (pastseparator >= section && itemtitle.compare(submenu, Qt::CaseInsensitive) == 0 && action->menu() != nullptr)
             {
-                addMenuItem(action->menu(), QString(), t_menutitle, t_action, 0);
+                addMenuItem(action->menu(), QString(), menutitle, action, 0);
                 return;
             }
 
@@ -150,16 +150,16 @@ void MainWindow::addMenuItem(QMenu* t_menu, const QString& t_submenu, const QStr
         }
 
         // if it didn't exist create it sorted
-        if (!submenu)
+        if (!subMenuPtr)
         {
             pastseparator = 0;
             QAction* nextaction = nullptr;
 
-            for (QAction* action : t_menu->actions())
+            for (QAction* action : menu->actions())
             {
                 QString itemtitle = action->text().replace("&","");
 
-                if (pastseparator >= t_section && itemtitle.compare(t_submenu, Qt::CaseInsensitive) > 0)
+                if (pastseparator >= section && itemtitle.compare(submenu, Qt::CaseInsensitive) > 0)
                 {
                     nextaction = action;
                     break;
@@ -169,15 +169,15 @@ void MainWindow::addMenuItem(QMenu* t_menu, const QString& t_submenu, const QStr
                     pastseparator++;
             }
 
-            submenu = new QMenu(t_submenu);
-            t_menu->insertMenu(nextaction, submenu);
-            addMenuItem(submenu, QString(), t_menutitle, t_action, 0);
+            subMenuPtr = new QMenu(submenu);
+            menu->insertMenu(nextaction, subMenuPtr);
+            addMenuItem(subMenuPtr, QString(), menutitle, action, 0);
         }
     }
 }
 
 
-void MainWindow::buildPluginMenu(PNBasePage* t_current_page)
+void MainWindow::buildPluginMenu(BasePage* currentPage)
 {
     // clear any other plugin items
     QMenu *menu = ui->menuPlugins;
@@ -192,7 +192,7 @@ void MainWindow::buildPluginMenu(PNBasePage* t_current_page)
     menu->addSeparator();
 
     // add globally available plugins
-    for ( Plugin* p : m_plugin_manager->plugins())
+    for ( Plugin* p : m_pluginManager->plugins())
     {
         for ( PluginMenu m : p->pythonplugin().menus())
         {
@@ -206,13 +206,13 @@ void MainWindow::buildPluginMenu(PNBasePage* t_current_page)
     }
 
     // if we have a current page add it's items to the plugin menu
-    if (t_current_page)
-        t_current_page->buildPluginMenu(m_plugin_manager, menu);
+    if (currentPage)
+        currentPage->buildPluginMenu(m_pluginManager, menu);
 }
 
-void MainWindow::slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_parameter)
+void MainWindow::slotPluginMenu(Plugin* plugin, const QString& functionname, const QString& parameter)
 {
-    t_plugin->callMethod(t_functionname, t_parameter);
+    plugin->callMethod(functionname, parameter);
 }
 
 MainWindow::~MainWindow()
@@ -229,9 +229,9 @@ MainWindow::~MainWindow()
     disconnect(ui->textEditNotes, &QTextEdit::currentCharFormatChanged, this, &MainWindow::currentCharFormatChanged);
     disconnect(ui->textEditNotes, &QTextEdit::cursorPositionChanged, this, &MainWindow::cursorPositionChanged);
 
-    disconnect(m_plugin_manager, &PluginManager::pluginLoaded, this, &MainWindow::onPluginLoaded);
-    disconnect(m_plugin_manager, &PluginManager::pluginUnLoaded, this, &MainWindow::onPluginUnLoaded);
-    disconnect(m_plugin_manager, &PluginManager::pluginRefreshRequest, this, &MainWindow::onRefreshRequested);
+    disconnect(m_pluginManager, &PluginManager::pluginLoaded, this, &MainWindow::onPluginLoaded);
+    disconnect(m_pluginManager, &PluginManager::pluginUnLoaded, this, &MainWindow::onPluginUnLoaded);
+    disconnect(m_pluginManager, &PluginManager::pluginRefreshRequest, this, &MainWindow::onRefreshRequested);
 
 
     // need to save the screen layout befor the model is removed from the view
@@ -246,40 +246,40 @@ MainWindow::~MainWindow()
 
     global_Settings.setWindowState("MainWindow", this);
 
-    while (m_page_history.count())
+    while (m_pageHistory.count())
     {
-        HistoryNode* hn = m_page_history.pop();
+        HistoryNode* hn = m_pageHistory.pop();
         delete hn;
     }
 
-    while (m_forward_back_history.count())
+    while (m_forwardBackHistory.count())
     {
-        HistoryNode* hn = m_forward_back_history.pop();
+        HistoryNode* hn = m_forwardBackHistory.pop();
         delete hn;
     }
 
     if (global_DBObjects.isOpen())
         CloseDatabase();
 
-    if (m_wait_for_threads_timer)
+    if (m_waitForThreadsTimer)
     {
-        disconnect(m_wait_for_threads_timer, &QTimer::timeout, this, &MainWindow::onTimerWaitForThreads);
+        disconnect(m_waitForThreadsTimer, &QTimer::timeout, this, &MainWindow::onTimerWaitForThreads);
 
-        delete m_wait_for_threads_timer;
+        delete m_waitForThreadsTimer;
     }
 
-    delete m_preferences_dialog;
-    delete m_find_replace_dialog;
-    delete m_plugin_manager;
+    delete m_preferencesDialog;
+    delete m_findReplaceDialog;
+    delete m_pluginManager;
     delete ui;
 
     ui = nullptr;
 }
 
-void MainWindow::on_focusChanged(QWidget *t_old, QWidget *t_now)
+void MainWindow::on_focusChanged(QWidget *old, QWidget *now)
 {
-    Q_UNUSED(t_old);
-    Q_UNUSED(t_now);
+    Q_UNUSED(old);
+    Q_UNUSED(now);
 
     setButtonAndMenuStates();
 }
@@ -298,7 +298,7 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionSearch->setEnabled(dbopen);
 
 
-    PNTableView* curview = nullptr;
+    TableView* curview = nullptr;
 
     if (navigateCurrentPage())
     {
@@ -349,9 +349,9 @@ void MainWindow::setButtonAndMenuStates()
 
 
     //plugin menu
-    if (m_logview_dialog)
+    if (m_logviewDialog)
     {
-        if (m_logview_dialog->isVisible())
+        if (m_logviewDialog->isVisible())
             ui->actionView_LogView->setChecked(true);
         else
             ui->actionView_LogView->setChecked(false);
@@ -419,7 +419,7 @@ void MainWindow::setButtonAndMenuStates()
         // determind if we can format text
         bool can_format_text =
             (fw != nullptr) &&
-            (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 );
+            (strcmp(fw->metaObject()->className(), "TextEdit") == 0 );
 
         // determine if we can text edit
         bool can_text_edit =
@@ -427,21 +427,21 @@ void MainWindow::setButtonAndMenuStates()
                 can_format_text ||
                 (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 ) ||
                 (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 ) );
+                (strcmp(fw->metaObject()->className(), "ComboBox") == 0 ) ||
+                (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 ) );
 
         // determine if we can find text
         bool can_find_edit =
                 (fw != nullptr) && (
                 can_format_text ||
                 (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 ) );
+                (strcmp(fw->metaObject()->className(), "TextEdit") == 0 ) ||
+                (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 ) );
 
         // can't edit combo boxes not set to editable
-        if ( can_text_edit && (strcmp(fw->metaObject()->className(), "PNComboBox") == 0)  )
+        if ( can_text_edit && (strcmp(fw->metaObject()->className(), "ComboBox") == 0)  )
         {
-            if ( !(dynamic_cast<PNComboBox*>(fw))->isEditable() )
+            if ( !(dynamic_cast<ComboBox*>(fw))->isEditable() )
                 can_text_edit = false;
         }
 
@@ -511,13 +511,13 @@ void MainWindow::setButtonAndMenuStates()
         // clear out page history for a rebuild
         ui->menuHistory->clear();
 
-        int i = m_page_history.count();
+        int i = m_pageHistory.count();
         while(i)
         {
             i--;
-            HistoryNode* hn = m_page_history.at(i);
+            HistoryNode* hn = m_pageHistory.at(i);
             QString title = QString("%1 - %2").arg(hn->m_pagetitle, hn->m_timestamp.toString("MM/dd/yy hh:mm"));
-            QAction* ha = ui->menuHistory->addAction(title, [hn, this](){navigateToPage(hn->m_page, hn->m_record_id);});
+            QAction* ha = ui->menuHistory->addAction(title, [hn, this](){navigateToPage(hn->m_page, hn->m_recordId);});
             ha->setPriority(QAction::LowPriority);
         }
     }
@@ -593,9 +593,9 @@ void MainWindow::on_actionNew_Database_triggered()
 }
 
 
-void MainWindow::openDatabase(QString t_dbfile)
+void MainWindow::openDatabase(QString dbfile)
 {
-    if (!global_DBObjects.openDatabase(t_dbfile, mainConnectionName()))
+    if (!global_DBObjects.openDatabase(dbfile, mainConnectionName()))
         return;
 
     // load and refresh all of the models in order of their dependancy relationships
@@ -613,7 +613,7 @@ void MainWindow::openDatabase(QString t_dbfile)
     global_DBObjects.projectslistmodel()->loadUserFilter(global_DBObjects.projectslistmodel()->objectName());
     global_DBObjects.projectslistmodel()->activateUserFilter(global_DBObjects.projectslistmodel()->objectName());
 
-    global_Settings.setLastDatabase(t_dbfile);
+    global_Settings.setLastDatabase(dbfile);
 
     // assign all of the newly open models
     ui->pageProjectsList->setupModels(ui);
@@ -643,14 +643,14 @@ void MainWindow::openDatabase(QString t_dbfile)
     connect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
 }
 
-void MainWindow::navigateToPage(PNBasePage* t_widget, QVariant t_record_id)
+void MainWindow::navigateToPage(BasePage* widget, QVariant recordId)
 {
     if (navigateCurrentPage())
     {
-        QString a = t_record_id.toString();
+        QString a = recordId.toString();
         QString b = navigateCurrentPage()->getRecordId().toString();
 
-        if ( a.compare(b) == 0 && navigateCurrentPage() == t_widget)
+        if ( a.compare(b) == 0 && navigateCurrentPage() == widget)
             return;
     }
 
@@ -660,27 +660,27 @@ void MainWindow::navigateToPage(PNBasePage* t_widget, QVariant t_record_id)
         navigateCurrentPage()->submitRecord();
     }
 
-    t_widget->openRecord(t_record_id);
+    widget->openRecord(recordId);
 
-    ui->stackedWidget->setCurrentWidget(t_widget);
+    ui->stackedWidget->setCurrentWidget(widget);
 
-    t_widget->setPageTitle();
+    widget->setPageTitle();
 
-    HistoryNode* buttonnode = new HistoryNode(t_widget, t_record_id, t_widget->getHistoryText());
+    HistoryNode* buttonnode = new HistoryNode(widget, recordId, widget->getHistoryText());
 
     // if in the middle of the button history chop off the remaining history
-    while (m_navigation_location < m_forward_back_history.count() - 1)
+    while (m_navigationLocation < m_forwardBackHistory.count() - 1)
     {
-        HistoryNode* hn = m_forward_back_history.pop();
+        HistoryNode* hn = m_forwardBackHistory.pop();
         delete hn;
     }
 
-    m_navigation_location = m_forward_back_history.count();
-    m_forward_back_history.push(buttonnode);
+    m_navigationLocation = m_forwardBackHistory.count();
+    m_forwardBackHistory.push(buttonnode);
 
     buildHistory(buttonnode);
 
-    buildPluginMenu(t_widget);
+    buildPluginMenu(widget);
 
     setButtonAndMenuStates();
 
@@ -689,7 +689,7 @@ void MainWindow::navigateToPage(PNBasePage* t_widget, QVariant t_record_id)
 
 void MainWindow::navigateBackward()
 {
-    if (m_navigation_location > 0)
+    if (m_navigationLocation > 0)
     {
         if (navigateCurrentPage())
         {
@@ -697,20 +697,20 @@ void MainWindow::navigateBackward()
             navigateCurrentPage()->submitRecord();
         }
 
-        m_navigation_location--;
+        m_navigationLocation--;
 
-        HistoryNode* hn = m_forward_back_history.at(m_navigation_location);
+        HistoryNode* hn = m_forwardBackHistory.at(m_navigationLocation);
         buildHistory(hn);
 
-        PNBasePage* current = hn->m_page;
-        QVariant record_id = hn->m_record_id;
+        BasePage* current = hn->m_page;
+        QVariant record_id = hn->m_recordId;
 
         current->openRecord(record_id);
 
         ui->stackedWidget->setCurrentWidget(current);
-        dynamic_cast<PNBasePage*>(current)->setPageTitle();
+        dynamic_cast<BasePage*>(current)->setPageTitle();
 
-        buildPluginMenu(dynamic_cast<PNBasePage*>(current));
+        buildPluginMenu(dynamic_cast<BasePage*>(current));
     }
 
     setButtonAndMenuStates();
@@ -718,7 +718,7 @@ void MainWindow::navigateBackward()
 
 void MainWindow::navigateForward()
 {
-    if (m_navigation_location < (m_forward_back_history.count() - 1) )
+    if (m_navigationLocation < (m_forwardBackHistory.count() - 1) )
     {
         if (navigateCurrentPage())
         {
@@ -726,50 +726,50 @@ void MainWindow::navigateForward()
             navigateCurrentPage()->submitRecord();
         }
 
-        m_navigation_location++;
+        m_navigationLocation++;
 
-        HistoryNode* hn = m_forward_back_history.at(m_navigation_location);
+        HistoryNode* hn = m_forwardBackHistory.at(m_navigationLocation);
         buildHistory(hn);
 
-        PNBasePage* current = hn->m_page;
-        QVariant record_id = hn->m_record_id;
+        BasePage* current = hn->m_page;
+        QVariant record_id = hn->m_recordId;
 
         current->openRecord(record_id);
 
         ui->stackedWidget->setCurrentWidget(current);
-        dynamic_cast<PNBasePage*>(current)->setPageTitle();
+        dynamic_cast<BasePage*>(current)->setPageTitle();
 
-        buildPluginMenu(dynamic_cast<PNBasePage*>(current));
+        buildPluginMenu(dynamic_cast<BasePage*>(current));
     }
 
     setButtonAndMenuStates();
 }
 
-void MainWindow::buildHistory(HistoryNode* t_node)
+void MainWindow::buildHistory(HistoryNode* node)
 {
-    HistoryNode* hn = new HistoryNode(t_node->m_page, t_node->m_record_id, t_node->m_pagetitle);
+    HistoryNode* hn = new HistoryNode(node->m_page, node->m_recordId, node->m_pagetitle);
 
     // remove this page if is in the past
     int nodecount = 0;
-    while (nodecount < m_page_history.count())
+    while (nodecount < m_pageHistory.count())
     {
-        if (m_page_history.at(nodecount)->equals(hn))
+        if (m_pageHistory.at(nodecount)->equals(hn))
         {
-            delete m_page_history.at(nodecount);
-            m_page_history.remove(nodecount);
+            delete m_pageHistory.at(nodecount);
+            m_pageHistory.remove(nodecount);
         }
         else
             nodecount++;
     }
 
     // if past the max delete the node
-    if (m_page_history.count() > MAXHISTORYNODES)
+    if (m_pageHistory.count() > MAXHISTORYNODES)
     {
-        HistoryNode* ohn = m_page_history.pop();
+        HistoryNode* ohn = m_pageHistory.pop();
         delete ohn;
     }
 
-    m_page_history.push(hn);
+    m_pageHistory.push(hn);
 }
 
 void MainWindow::CloseDatabase()
@@ -821,7 +821,7 @@ void MainWindow::on_actionStatus_Bar_triggered()
 
 void MainWindow::on_actionFilter_triggered()
 {
-    PNTableView* curview = navigateCurrentPage()->getCurrentView();
+    TableView* curview = navigateCurrentPage()->getCurrentView();
 
     curview->filterDialog();
 }
@@ -878,29 +878,29 @@ void MainWindow::on_actionDelete_Item_triggered()
         navigateCurrentPage()->deleteItem();
 }
 
-void MainWindow::slotOpen_ProjectDetails_triggered(QVariant t_record_id)
+void MainWindow::slotOpen_ProjectDetails_triggered(QVariant recordId)
 {
-    navigateToPage(ui->pageProjectDetails, t_record_id);
+    navigateToPage(ui->pageProjectDetails, recordId);
 }
 
-void MainWindow::slotOpen_ItemDetails_triggered(QVariant t_record_id)
+void MainWindow::slotOpen_ItemDetails_triggered(QVariant recordId)
 {
-    navigateToPage(ui->pageItemDetails, t_record_id);
+    navigateToPage(ui->pageItemDetails, recordId);
 }
 
-void MainWindow::slotOpen_ProjectNote_triggered(QVariant t_record_id)
+void MainWindow::slotOpen_ProjectNote_triggered(QVariant recordId)
 {
-    navigateToPage(ui->pageProjectNote, t_record_id);
+    navigateToPage(ui->pageProjectNote, recordId);
 }
 
-void MainWindow::slotOpenTeamMember_triggered(QVariant t_record_id)
+void MainWindow::slotOpenTeamMember_triggered(QVariant recordId)
 {
-    navigateToPage(ui->pagePeople, t_record_id);
+    navigateToPage(ui->pagePeople, recordId);
 }
 
-void MainWindow::slotOpenLocation_triggered(QVariant t_record_id)
+void MainWindow::slotOpenLocation_triggered(QVariant recordId)
 {
-    QModelIndex qmi = global_DBObjects.projectlocationsmodel()->findIndex(t_record_id, 0);
+    QModelIndex qmi = global_DBObjects.projectlocationsmodel()->findIndex(recordId, 0);
     QModelIndex qi = global_DBObjects.projectlocationsmodelproxy()->index(global_DBObjects.projectlocationsmodelproxy()->mapFromSource(qmi).row(), 2);  // usa a visible column
 
     QVariant location = ui->tableViewLocations->model()->data(ui->tableViewLocations->model()->index(qi.row(), 4));
@@ -917,7 +917,7 @@ void MainWindow::slotOpenLocation_triggered(QVariant t_record_id)
 }
 
 
-void MainWindow::slotOpen_SearchResults_triggered(QVariant t_record_id)
+void MainWindow::slotOpen_SearchResults_triggered(QVariant recordId)
 {
     // find the selected search result
     QModelIndexList qil = ui->tableViewSearchResults->selectionModel()->selectedIndexes();
@@ -929,7 +929,7 @@ void MainWindow::slotOpen_SearchResults_triggered(QVariant t_record_id)
 
     if (data_type == tr("Client"))
     {
-        navigateToPage(ui->pageClients, t_record_id);
+        navigateToPage(ui->pageClients, recordId);
 
         QModelIndex qmi = global_DBObjects.clientsmodel()->findIndex(record_id, 0);
         QModelIndex qi = global_DBObjects.clientsmodelproxy()->index(global_DBObjects.clientsmodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
@@ -939,7 +939,7 @@ void MainWindow::slotOpen_SearchResults_triggered(QVariant t_record_id)
     }
     else if (data_type == tr("People"))
     {
-        navigateToPage(ui->pagePeople, t_record_id);
+        navigateToPage(ui->pagePeople, recordId);
 
         QModelIndex qmi = global_DBObjects.peoplemodel()->findIndex(record_id, 0);
         QModelIndex qi = global_DBObjects.peoplemodelproxy()->index(global_DBObjects.peoplemodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
@@ -949,14 +949,14 @@ void MainWindow::slotOpen_SearchResults_triggered(QVariant t_record_id)
     }
     else if (data_type == tr("Project"))
     {
-        navigateToPage(ui->pageProjectDetails, t_record_id);
+        navigateToPage(ui->pageProjectDetails, recordId);
 
         ui->tabWidgetProject->setCurrentIndex(0);
     }
     else if (data_type == tr("Project Notes"))
     {
         navigateToPage(ui->pageProjectDetails, fk_id);
-        navigateToPage(ui->pageProjectNote, t_record_id);
+        navigateToPage(ui->pageProjectNote, recordId);
 
         ui->tabWidgetNotes->setCurrentIndex(0);
     }
@@ -1020,13 +1020,13 @@ void MainWindow::slotOpen_SearchResults_triggered(QVariant t_record_id)
         navigateToPage(ui->pageProjectDetails, fk_id);
         ui->tabWidgetProject->setCurrentIndex(2);
 
-        QModelIndex qmi = global_DBObjects.trackeritemsmodel()->findIndex(t_record_id, 0);
+        QModelIndex qmi = global_DBObjects.trackeritemsmodel()->findIndex(recordId, 0);
         QModelIndex qi = global_DBObjects.trackeritemsmodelproxy()->index(global_DBObjects.trackeritemsmodelproxy()->mapFromSource(qmi).row(), 3);  // usa a visible column
 
         ui->tableViewTrackerItems->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
         ui->tableViewTrackerItems->scrollTo(qi, QAbstractItemView::PositionAtCenter);
 
-        navigateToPage(ui->pageItemDetails, t_record_id);
+        navigateToPage(ui->pageItemDetails, recordId);
 
     }
     else if (data_type == tr("Tracker Update") )
@@ -1069,7 +1069,7 @@ void MainWindow::on_actionResolved_Tracker_Action_Items_triggered()
         global_DBObjects.trackeritemsmodel()->clearFilter(9);
     else
     {
-        global_DBObjects.trackeritemsmodel()->setFilter(9, "Resolved", PNSqlQueryModel::NotEqual );
+        global_DBObjects.trackeritemsmodel()->setFilter(9, "Resolved", SqlQueryModel::NotEqual );
     }
 
     global_DBObjects.trackeritemsmodel()->refresh();
@@ -1079,7 +1079,7 @@ void MainWindow::on_actionResolved_Tracker_Action_Items_triggered()
 
 void MainWindow::on_actionPreferences_triggered()
 {
-    m_preferences_dialog->show();
+    m_preferencesDialog->show();
 }
 
 void MainWindow::textItalic()
@@ -1249,47 +1249,47 @@ void MainWindow::setupTextActions()
 
     tb->setAllowedAreas(Qt::TopToolBarArea | Qt::BottomToolBarArea);
 
-    m_combo_box_style = new PNComboBox(tb);
-    tb->addWidget(m_combo_box_style);
-    m_combo_box_style->addItem("Standard");
-    m_combo_box_style->addItem("Bullet List (Disc)");
-    m_combo_box_style->addItem("Bullet List (Circle)");
-    m_combo_box_style->addItem("Bullet List (Square)");
-    m_combo_box_style->addItem("Task List (Unchecked)");
-    m_combo_box_style->addItem("Task List (Checked)");
-    m_combo_box_style->addItem("Ordered List (Decimal)");
-    m_combo_box_style->addItem("Ordered List (Alpha lower)");
-    m_combo_box_style->addItem("Ordered List (Alpha upper)");
-    m_combo_box_style->addItem("Ordered List (Roman lower)");
-    m_combo_box_style->addItem("Ordered List (Roman upper)");
-    m_combo_box_style->addItem("Heading 1");
-    m_combo_box_style->addItem("Heading 2");
-    m_combo_box_style->addItem("Heading 3");
-    m_combo_box_style->addItem("Heading 4");
-    m_combo_box_style->addItem("Heading 5");
-    m_combo_box_style->addItem("Heading 6");
+    m_comboBoxStyle = new ComboBox(tb);
+    tb->addWidget(m_comboBoxStyle);
+    m_comboBoxStyle->addItem("Standard");
+    m_comboBoxStyle->addItem("Bullet List (Disc)");
+    m_comboBoxStyle->addItem("Bullet List (Circle)");
+    m_comboBoxStyle->addItem("Bullet List (Square)");
+    m_comboBoxStyle->addItem("Task List (Unchecked)");
+    m_comboBoxStyle->addItem("Task List (Checked)");
+    m_comboBoxStyle->addItem("Ordered List (Decimal)");
+    m_comboBoxStyle->addItem("Ordered List (Alpha lower)");
+    m_comboBoxStyle->addItem("Ordered List (Alpha upper)");
+    m_comboBoxStyle->addItem("Ordered List (Roman lower)");
+    m_comboBoxStyle->addItem("Ordered List (Roman upper)");
+    m_comboBoxStyle->addItem("Heading 1");
+    m_comboBoxStyle->addItem("Heading 2");
+    m_comboBoxStyle->addItem("Heading 3");
+    m_comboBoxStyle->addItem("Heading 4");
+    m_comboBoxStyle->addItem("Heading 5");
+    m_comboBoxStyle->addItem("Heading 6");
 
-    connect(m_combo_box_style, QOverload<int>::of(&PNComboBox::activated), this, &MainWindow::textStyle);
+    connect(m_comboBoxStyle, QOverload<int>::of(&ComboBox::activated), this, &MainWindow::textStyle);
 
-    m_combo_box_font = new QFontComboBox(tb);
-    m_combo_box_font->setFontFilters(QFontComboBox::AllFonts);
-    m_combo_box_font->setWritingSystem(QFontDatabase::Any);
-    m_combo_box_font->setCurrentFont(QFont("Arial", 11));
-    tb->addWidget(m_combo_box_font);
-    connect(m_combo_box_font, &PNComboBox::textActivated, this, &MainWindow::textFamily);
+    m_comboBoxFont = new QFontComboBox(tb);
+    m_comboBoxFont->setFontFilters(QFontComboBox::AllFonts);
+    m_comboBoxFont->setWritingSystem(QFontDatabase::Any);
+    m_comboBoxFont->setCurrentFont(QFont("Arial", 11));
+    tb->addWidget(m_comboBoxFont);
+    connect(m_comboBoxFont, &ComboBox::textActivated, this, &MainWindow::textFamily);
 
-    m_combo_box_size = new PNComboBox(tb);
-    m_combo_box_size->setObjectName("comboSize");
-    tb->addWidget(m_combo_box_size);
-    m_combo_box_size->setEditable(true);
+    m_comboBoxSize = new ComboBox(tb);
+    m_comboBoxSize->setObjectName("comboSize");
+    tb->addWidget(m_comboBoxSize);
+    m_comboBoxSize->setEditable(true);
 
     const QList<int> standardSizes = QFontDatabase::standardSizes();
     for (int size : standardSizes)
-        m_combo_box_size->addItem(QString::number(size));
-    // m_combo_box_size->setCurrentIndex(standardSizes.indexOf(QApplication::font().pointSize()));
-    m_combo_box_size->setCurrentIndex(m_combo_box_size->findText("11"));
+        m_comboBoxSize->addItem(QString::number(size));
+    // m_comboBoxSize->setCurrentIndex(standardSizes.indexOf(QApplication::font().pointSize()));
+    m_comboBoxSize->setCurrentIndex(m_comboBoxSize->findText("11"));
 
-    connect(m_combo_box_size, &PNComboBox::textActivated, this, &MainWindow::textSize);
+    connect(m_comboBoxSize, &ComboBox::textActivated, this, &MainWindow::textSize);
 }
 
 void MainWindow::textStyle(int styleIndex)
@@ -1458,38 +1458,38 @@ void MainWindow::cursorPositionChanged()
     if (list) {
         switch (list->format().style()) {
         case QTextListFormat::ListDisc:
-            m_combo_box_style->setCurrentIndex(1);
+            m_comboBoxStyle->setCurrentIndex(1);
             break;
         case QTextListFormat::ListCircle:
-            m_combo_box_style->setCurrentIndex(2);
+            m_comboBoxStyle->setCurrentIndex(2);
             break;
         case QTextListFormat::ListSquare:
-            m_combo_box_style->setCurrentIndex(3);
+            m_comboBoxStyle->setCurrentIndex(3);
             break;
         case QTextListFormat::ListDecimal:
-            m_combo_box_style->setCurrentIndex(6);
+            m_comboBoxStyle->setCurrentIndex(6);
             break;
         case QTextListFormat::ListLowerAlpha:
-            m_combo_box_style->setCurrentIndex(7);
+            m_comboBoxStyle->setCurrentIndex(7);
             break;
         case QTextListFormat::ListUpperAlpha:
-            m_combo_box_style->setCurrentIndex(8);
+            m_comboBoxStyle->setCurrentIndex(8);
             break;
         case QTextListFormat::ListLowerRoman:
-            m_combo_box_style->setCurrentIndex(9);
+            m_comboBoxStyle->setCurrentIndex(9);
             break;
         case QTextListFormat::ListUpperRoman:
-            m_combo_box_style->setCurrentIndex(10);
+            m_comboBoxStyle->setCurrentIndex(10);
             break;
         default:
-            m_combo_box_style->setCurrentIndex(-1);
+            m_comboBoxStyle->setCurrentIndex(-1);
             break;
         }
     }
     else
     {
         int headingLevel = ui->textEditNotes->textCursor().blockFormat().headingLevel();
-        m_combo_box_style->setCurrentIndex(headingLevel ? headingLevel + 10 : 0);
+        m_comboBoxStyle->setCurrentIndex(headingLevel ? headingLevel + 10 : 0);
     }
 }
 
@@ -1513,8 +1513,8 @@ void MainWindow::currentCharFormatChanged(const QTextCharFormat &format)
 
 void MainWindow::fontChanged(const QFont &f)
 {
-    m_combo_box_font->setCurrentIndex(m_combo_box_font->findText(QFontInfo(f).family()));
-    m_combo_box_size->setCurrentIndex(m_combo_box_size->findText(QString::number(f.pointSize())));
+    m_comboBoxFont->setCurrentIndex(m_comboBoxFont->findText(QFontInfo(f).family()));
+    m_comboBoxSize->setCurrentIndex(m_comboBoxSize->findText(QString::number(f.pointSize())));
     m_actionTextBold->setChecked(f.bold());
     m_actionTextItalic->setChecked(f.italic());
     m_actionTextUnderline->setChecked(f.underline());
@@ -1525,18 +1525,18 @@ void MainWindow::on_actionUndo_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
-        (dynamic_cast<PNTextEdit*>(fw))->undo();
-    else if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
-        (dynamic_cast<PNPlainTextEdit*>(fw))->undo();
+    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
+        (dynamic_cast<TextEdit*>(fw))->undo();
+    else if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
+        (dynamic_cast<PlainTextEdit*>(fw))->undo();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->undo();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->undo();
-    else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
-        (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->undo();
-    else if (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 )
-        (dynamic_cast<PNComboBox*>(fw))->lineEdit()->undo();
+    else if (strcmp(fw->metaObject()->className(), "DateEditEx") == 0 )
+        (dynamic_cast<DateEditEx*>(fw))->getLineEdit()->undo();
+    else if (strcmp(fw->metaObject()->className(), "ComboBox") == 0 )
+        (dynamic_cast<ComboBox*>(fw))->lineEdit()->undo();
 }
 
 
@@ -1544,18 +1544,18 @@ void MainWindow::on_actionRedo_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
-        (dynamic_cast<PNTextEdit*>(fw))->redo();
-    if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
-        (dynamic_cast<PNPlainTextEdit*>(fw))->redo();
+    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
+        (dynamic_cast<TextEdit*>(fw))->redo();
+    if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
+        (dynamic_cast<PlainTextEdit*>(fw))->redo();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->redo();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->redo();
-    else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
-        (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->redo();
-    else if (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 )
-        (dynamic_cast<PNComboBox*>(fw))->lineEdit()->redo();
+    else if (strcmp(fw->metaObject()->className(), "DateEditEx") == 0 )
+        (dynamic_cast<DateEditEx*>(fw))->getLineEdit()->redo();
+    else if (strcmp(fw->metaObject()->className(), "ComboBox") == 0 )
+        (dynamic_cast<ComboBox*>(fw))->lineEdit()->redo();
 }
 
 
@@ -1563,18 +1563,18 @@ void MainWindow::on_actionCopy_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
-        (dynamic_cast<PNPlainTextEdit*>(fw))->copy();
-    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
-        (dynamic_cast<PNTextEdit*>(fw))->copy();
+    if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
+        (dynamic_cast<PlainTextEdit*>(fw))->copy();
+    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
+        (dynamic_cast<TextEdit*>(fw))->copy();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->copy();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->copy();
-    else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
-        (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->copy();
-    else if (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 )
-        (dynamic_cast<PNComboBox*>(fw))->lineEdit()->copy();
+    else if (strcmp(fw->metaObject()->className(), "DateEditEx") == 0 )
+        (dynamic_cast<DateEditEx*>(fw))->getLineEdit()->copy();
+    else if (strcmp(fw->metaObject()->className(), "ComboBox") == 0 )
+        (dynamic_cast<ComboBox*>(fw))->lineEdit()->copy();
 }
 
 
@@ -1582,18 +1582,18 @@ void MainWindow::on_actionCut_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
-        (dynamic_cast<PNTextEdit*>(fw))->cut();
-    if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
-        (dynamic_cast<PNPlainTextEdit*>(fw))->cut();
+    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
+        (dynamic_cast<TextEdit*>(fw))->cut();
+    if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
+        (dynamic_cast<PlainTextEdit*>(fw))->cut();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->cut();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->cut();
-    else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
-        (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->cut();
-    else if (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 )
-        (dynamic_cast<PNComboBox*>(fw))->lineEdit()->cut();
+    else if (strcmp(fw->metaObject()->className(), "DateEditEx") == 0 )
+        (dynamic_cast<DateEditEx*>(fw))->getLineEdit()->cut();
+    else if (strcmp(fw->metaObject()->className(), "ComboBox") == 0 )
+        (dynamic_cast<ComboBox*>(fw))->lineEdit()->cut();
 }
 
 
@@ -1601,36 +1601,36 @@ void MainWindow::on_actionPaste_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
-        (dynamic_cast<PNTextEdit*>(fw))->paste();
-    if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
+        (dynamic_cast<TextEdit*>(fw))->paste();
+    if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
         (dynamic_cast<QPlainTextEdit*>(fw))->paste();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->paste();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->paste();
-    else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
-        (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->paste();
-    else if (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 )
-        (dynamic_cast<PNComboBox*>(fw))->lineEdit()->paste();
+    else if (strcmp(fw->metaObject()->className(), "DateEditEx") == 0 )
+        (dynamic_cast<DateEditEx*>(fw))->getLineEdit()->paste();
+    else if (strcmp(fw->metaObject()->className(), "ComboBox") == 0 )
+        (dynamic_cast<ComboBox*>(fw))->lineEdit()->paste();
 }
 
 void MainWindow::on_actionDelete_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
-        (dynamic_cast<PNTextEdit*>(fw))->textCursor().insertText("");
-    if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
-        (dynamic_cast<PNPlainTextEdit*>(fw))->textCursor().insertText("");
+    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
+        (dynamic_cast<TextEdit*>(fw))->textCursor().insertText("");
+    if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
+        (dynamic_cast<PlainTextEdit*>(fw))->textCursor().insertText("");
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->backspace();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->backspace();
-    else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
-        (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->copy();
-    else if (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 )
-        (dynamic_cast<PNComboBox*>(fw))->lineEdit()->backspace();
+    else if (strcmp(fw->metaObject()->className(), "DateEditEx") == 0 )
+        (dynamic_cast<DateEditEx*>(fw))->getLineEdit()->copy();
+    else if (strcmp(fw->metaObject()->className(), "ComboBox") == 0 )
+        (dynamic_cast<ComboBox*>(fw))->lineEdit()->backspace();
 
 }
 
@@ -1638,30 +1638,30 @@ void MainWindow::on_actionSelect_All_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
-        (dynamic_cast<PNTextEdit*>(fw))->selectAll();
-    else if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
-        (dynamic_cast<PNPlainTextEdit*>(fw))->selectAll();
+    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
+        (dynamic_cast<TextEdit*>(fw))->selectAll();
+    else if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
+        (dynamic_cast<PlainTextEdit*>(fw))->selectAll();
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->selectAll();
     else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
         (dynamic_cast<QLineEdit*>(fw))->selectAll();
-    else if (strcmp(fw->metaObject()->className(), "PNDateEditEx") == 0 )
-        (dynamic_cast<PNDateEditEx*>(fw))->getLineEdit()->selectAll();
-    else if (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 )
-        (dynamic_cast<PNComboBox*>(fw))->lineEdit()->selectAll();
+    else if (strcmp(fw->metaObject()->className(), "DateEditEx") == 0 )
+        (dynamic_cast<DateEditEx*>(fw))->getLineEdit()->selectAll();
+    else if (strcmp(fw->metaObject()->className(), "ComboBox") == 0 )
+        (dynamic_cast<ComboBox*>(fw))->lineEdit()->selectAll();
 }
 
 void MainWindow::on_actionSpell_Check_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
+    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
     {
         SpellCheckDialog spellcheck_dialog(this);
         spellcheck_dialog.spellCheck(fw);
     }
-    else if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
+    else if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
     {
         SpellCheckDialog spellcheck_dialog(this);
         spellcheck_dialog.spellCheck(fw);
@@ -1672,14 +1672,14 @@ void MainWindow::on_actionFind_triggered()
 {
     QWidget* fw = this->focusWidget();
 
-    if (strcmp(fw->metaObject()->className(), "PNTextEdit") == 0 )
-        m_find_replace_dialog->showReplaceWindow(dynamic_cast<QTextEdit*>(fw));
-    else if (strcmp(fw->metaObject()->className(), "PNPlainTextEdit") == 0 )
-        m_find_replace_dialog->showReplaceWindow(dynamic_cast<QPlainTextEdit*>(fw));
+    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
+        m_findReplaceDialog->showReplaceWindow(dynamic_cast<QTextEdit*>(fw));
+    else if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
+        m_findReplaceDialog->showReplaceWindow(dynamic_cast<QPlainTextEdit*>(fw));
     else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
-        m_find_replace_dialog->showReplaceWindow(dynamic_cast<QLineEdit*>(fw));
-    else if (strcmp(fw->metaObject()->className(), "PNComboBox") == 0 )
-        m_find_replace_dialog->showReplaceWindow(dynamic_cast<PNComboBox*>(fw)->lineEdit());
+        m_findReplaceDialog->showReplaceWindow(dynamic_cast<QLineEdit*>(fw));
+    else if (strcmp(fw->metaObject()->className(), "ComboBox") == 0 )
+        m_findReplaceDialog->showReplaceWindow(dynamic_cast<ComboBox*>(fw)->lineEdit());
 }
 
 void MainWindow::on_actionSearch_triggered()
@@ -1701,18 +1701,18 @@ void MainWindow::on_actionView_LogView_triggered()
 {
     if (ui->actionView_LogView->isChecked())
     {
-        if (m_logview_dialog == nullptr)
-            m_logview_dialog = new LogViewer(this);
+        if (m_logviewDialog == nullptr)
+            m_logviewDialog = new LogViewer(this);
 
-        m_logview_dialog->show();
+        m_logviewDialog->show();
     }
     else
     {
-        if (m_logview_dialog)
+        if (m_logviewDialog)
         {
-            m_logview_dialog->hide();
-            delete m_logview_dialog;
-            m_logview_dialog = nullptr;
+            m_logviewDialog->hide();
+            delete m_logviewDialog;
+            m_logviewDialog = nullptr;
         }
     }
 }
@@ -1761,7 +1761,7 @@ void MainWindow::on_actionXML_Export_triggered()
 {
     navigateCurrentPage()->submitRecord();  // make sure it is saved before calling an export
 
-    PNTableView* curview = navigateCurrentPage()->getCurrentView();
+    TableView* curview = navigateCurrentPage()->getCurrentView();
     bool sel = curview->selectionModel()->hasSelection();
 
     if (curview && sel)
@@ -1821,7 +1821,7 @@ void MainWindow::on_actionIncrease_Font_Size_triggered()
     while (it.hasNext()) {
         awiget = it.next(); // take each widget in the list
 
-        if ( QString(awiget->metaObject()->className()).contains("PNTableView") )
+        if ( QString(awiget->metaObject()->className()).contains("TableView") )
         {
             qobject_cast<QTableView*>(awiget)->resizeColumnsToContents();
             qobject_cast<QTableView*>(awiget)->resizeRowsToContents();
@@ -1845,7 +1845,7 @@ void MainWindow::on_actionDecrease_Font_Size_triggered()
     while (it.hasNext()) {
         awiget = it.next(); // take each widget in the list
 
-        if ( QString(awiget->metaObject()->className()).contains("PNTableView") )
+        if ( QString(awiget->metaObject()->className()).contains("TableView") )
         {
             qobject_cast<QTableView*>(awiget)->resizeColumnsToContents();
             qobject_cast<QTableView*>(awiget)->resizeRowsToContents();
@@ -1855,20 +1855,20 @@ void MainWindow::on_actionDecrease_Font_Size_triggered()
     global_Settings.setStoredInt("DefaultFontSize",  QApplication::font().pointSize());
 }
 
-void MainWindow::onPluginLoaded(const QString& t_pluginpath)
+void MainWindow::onPluginLoaded(const QString& pluginpath)
 {
-    HistoryNode* hn = (m_navigation_location >= 0 ? m_forward_back_history.at(m_navigation_location) : nullptr);
-    PNBasePage* current = hn ? hn->m_page : nullptr;
+    HistoryNode* hn = (m_navigationLocation >= 0 ? m_forwardBackHistory.at(m_navigationLocation) : nullptr);
+    BasePage* current = hn ? hn->m_page : nullptr;
 
-    buildPluginMenu(dynamic_cast<PNBasePage*>(current));
+    buildPluginMenu(dynamic_cast<BasePage*>(current));
 }
 
-void MainWindow::onPluginUnLoaded(const QString& t_pluginpath)
+void MainWindow::onPluginUnLoaded(const QString& pluginpath)
 {
-    HistoryNode* hn = (m_navigation_location >= 0 ? m_forward_back_history.at(m_navigation_location) : nullptr);
-    PNBasePage* current = hn ? hn->m_page : nullptr;
+    HistoryNode* hn = (m_navigationLocation >= 0 ? m_forwardBackHistory.at(m_navigationLocation) : nullptr);
+    BasePage* current = hn ? hn->m_page : nullptr;
 
-    buildPluginMenu(dynamic_cast<PNBasePage*>(current));
+    buildPluginMenu(dynamic_cast<BasePage*>(current));
 }
 
 void MainWindow::onRefreshRequested()
@@ -1885,11 +1885,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
         navigateCurrentPage()->submitRecord();
     }
 
-    int loaded_count = m_plugin_manager->loadedCount();
+    int loaded_count = m_pluginManager->loadedCount();
 
     if (loaded_count)
     {
-        m_plugin_manager->unloadAll();
+        m_pluginManager->unloadAll();
 
         ui->centralwidget->setEnabled(false);
         ui->menubar->setEnabled(false);
@@ -1897,9 +1897,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
         ui->toolBarFormat->setEnabled(false);
         ui->toolBarNavigator->setEnabled(false);
 
-        m_wait_for_threads_timer = new QTimer();
-        connect(m_wait_for_threads_timer, &QTimer::timeout, this, &MainWindow::onTimerWaitForThreads);
-        m_wait_for_threads_timer->start(800);
+        m_waitForThreadsTimer = new QTimer();
+        connect(m_waitForThreadsTimer, &QTimer::timeout, this, &MainWindow::onTimerWaitForThreads);
+        m_waitForThreadsTimer->start(800);
 
         event->ignore();
         return;
@@ -1915,7 +1915,7 @@ void MainWindow::onTimerWaitForThreads()
     const char* fan = "-\\|/";
     fan_index = (fan_index + 1) % 4;
 
-    int loaded_count = m_plugin_manager->loadedCount();
+    int loaded_count = m_pluginManager->loadedCount();
 
     if (loaded_count == 0)
         this->close();  // once all plugins are unloaded we can quit

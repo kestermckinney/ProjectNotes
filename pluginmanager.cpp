@@ -10,7 +10,7 @@
 
 #include "QLogger.h"
 #include "QLoggerWriter.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
 using namespace QLogger;
 
@@ -87,7 +87,7 @@ static PyObject* update_data(PyObject* self, PyObject* args)
 
     xmldoc.setContent(ba);
 
-    PNDatabaseObjects dbo;
+    DatabaseObjects dbo;
     dbo.openDatabase(global_DBObjects.getDatabaseFile(), caller, false);
     int result = dbo.importXMLDoc(xmldoc);
 
@@ -119,9 +119,9 @@ static PyObject* get_data(PyObject* self, PyObject* args)
 
     xmldoc.setContent(ba);
 
-    PNDatabaseObjects dbo;
+    DatabaseObjects dbo;
     dbo.openDatabase(global_DBObjects.getDatabaseFile(), caller, false);
-    QList<PNSqlQueryModel*>* models = dbo.getData(xmldoc);
+    QList<SqlQueryModel*>* models = dbo.getData(xmldoc);
 
     if (!models)
     {
@@ -417,20 +417,20 @@ PluginManager::PluginManager(QObject *parent)
     loadPluginFiles(m_threadspath, true);
 }
 
-void PluginManager::watchFolder(const QString& t_path)
+void PluginManager::watchFolder(const QString& path)
 {
-    m_fileWatcher->addPath(t_path);
+    m_fileWatcher->addPath(path);
 
-    QDirIterator it(t_path, QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    QDirIterator it(path, QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
     while (it.hasNext()) {
         // Add each subdirectory to the watcher
         m_fileWatcher->addPath(it.next());
     }
 }
 
-void PluginManager::loadPluginFiles(const QString& t_path, bool t_isthread)
+void PluginManager::loadPluginFiles(const QString& path, bool isthread)
 {
-    QDirIterator fileit(t_path, {"*.py"}, QDir::Files);
+    QDirIterator fileit(path, {"*.py"}, QDir::Files);
 
     // iterate through PNPlugins folder and load py files
     while (fileit.hasNext())
@@ -456,7 +456,7 @@ void PluginManager::loadPluginFiles(const QString& t_path, bool t_isthread)
 
         if (notfound)
         {
-            Plugin* module = new Plugin(this, t_isthread);
+            Plugin* module = new Plugin(this, isthread);
             m_pluginlist.append(module);
 
             connect(module, &Plugin::moduleLoaded, this, &PluginManager::onLoadComplete);
@@ -502,24 +502,24 @@ void PluginManager::unloadAll()
     }
 }
 
-void PluginManager::onUnloadComplete(const QString &t_modulepath)
+void PluginManager::onUnloadComplete(const QString &modulepath)
 {
-    QLog_Info(CONSOLELOG, QString("Module '%1' unloaded.").arg(t_modulepath));
+    QLog_Info(CONSOLELOG, QString("Module '%1' unloaded.").arg(modulepath));
 
-    QFileInfo file(t_modulepath);
+    QFileInfo file(modulepath);
 
     if (!file.exists())
     {
         // file is gone, close out the thread
         for (auto it = m_pluginlist.begin(); it != m_pluginlist.end();)
         {
-            if ((*it)->modulepath().compare(t_modulepath) == 0)
+            if ((*it)->modulepath().compare(modulepath) == 0)
             {
-                m_fileWatcher->removePath(t_modulepath);
+                m_fileWatcher->removePath(modulepath);
 
                 delete *it;
                 it = m_pluginlist.erase(it);
-                QLog_Info(CONSOLELOG, QString("Module '%1' no longer exists. Thread stopped.").arg(t_modulepath));
+                QLog_Info(CONSOLELOG, QString("Module '%1' no longer exists. Thread stopped.").arg(modulepath));
             }
             else
             {
@@ -528,20 +528,20 @@ void PluginManager::onUnloadComplete(const QString &t_modulepath)
         }
     }
 
-    emit pluginUnLoaded(t_modulepath);
+    emit pluginUnLoaded(modulepath);
 }
 
-void PluginManager::onFileChanged(const QString &t_filepath)
+void PluginManager::onFileChanged(const QString &filepath)
 {
-    if (t_filepath.contains("projectnotes.py", Qt::CaseInsensitive))
+    if (filepath.contains("projectnotes.py", Qt::CaseInsensitive))
     {
-        QLog_Info(CONSOLELOG, QString("Ignoring module file change '%1'.").arg(t_filepath));
+        QLog_Info(CONSOLELOG, QString("Ignoring module file change '%1'.").arg(filepath));
         return;
     }
 
-    QLog_Info(CONSOLELOG, QString("Module file '%1' changed.").arg(t_filepath));
+    QLog_Info(CONSOLELOG, QString("Module file '%1' changed.").arg(filepath));
 
-    QFileInfo file(t_filepath);
+    QFileInfo file(filepath);
 
     for (auto it = m_pluginlist.begin(); it != m_pluginlist.end(); ++it)
     {
@@ -550,28 +550,28 @@ void PluginManager::onFileChanged(const QString &t_filepath)
         QStringList imp = (*it)->pythonplugin().imports();
         for (auto iti = imp.begin(); iti != imp.end(); ++iti)
         {
-            if ( (*iti).compare(t_filepath, Qt::CaseInsensitive) == 0 )
+            if ( (*iti).compare(filepath, Qt::CaseInsensitive) == 0 )
             {
                 related_import = true;
             }
         }
 
-        if (related_import || (*it)->modulepath().compare(t_filepath, Qt::CaseInsensitive) == 0)
+        if (related_import || (*it)->modulepath().compare(filepath, Qt::CaseInsensitive) == 0)
         {
             (*it)->reloadPlugin();
         }
     }
 }
 
-void PluginManager::onForceReload(const QString &t_module)
+void PluginManager::onForceReload(const QString &module)
 {
-    if (t_module.contains("projectnotes.py", Qt::CaseInsensitive))
+    if (module.contains("projectnotes.py", Qt::CaseInsensitive))
     {
-        QLog_Info(CONSOLELOG, QString("Ignoring forced reload file change '%1'.").arg(t_module));
+        QLog_Info(CONSOLELOG, QString("Ignoring forced reload file change '%1'.").arg(module));
         return;
     }
 
-    QString basemodule = QFileInfo(t_module).baseName();
+    QString basemodule = QFileInfo(module).baseName();
 
     for (auto it = m_pluginlist.begin(); it != m_pluginlist.end(); ++it)
     {
@@ -584,7 +584,7 @@ void PluginManager::onForceReload(const QString &t_module)
         }
     }
 
-    QLog_Info(CONSOLELOG, QString("Module '%1' was not found. Module reload failed.").arg(t_module));
+    QLog_Info(CONSOLELOG, QString("Module '%1' was not found. Module reload failed.").arg(module));
 }
 
 void PluginManager::onFolderChanged(const QString &folderPath)
@@ -593,11 +593,11 @@ void PluginManager::onFolderChanged(const QString &folderPath)
     loadPluginFiles(m_threadspath, true);
 }
 
-void PluginManager::onLoadComplete(const QString& t_modulepath)
+void PluginManager::onLoadComplete(const QString& modulepath)
 {
-    QLog_Info(CONSOLELOG, QString("Module file '%1' load complete.").arg(t_modulepath));
+    QLog_Info(CONSOLELOG, QString("Module file '%1' load complete.").arg(modulepath));
 
-    QString basemodule = QFileInfo(t_modulepath).baseName();
+    QString basemodule = QFileInfo(modulepath).baseName();
 
     // add all of the imported modules to the file tracker
     for (auto it = m_pluginlist.begin(); it != m_pluginlist.end(); ++it)
@@ -614,12 +614,12 @@ void PluginManager::onLoadComplete(const QString& t_modulepath)
         }
     }
 
-    emit pluginLoaded(t_modulepath);
+    emit pluginLoaded(modulepath);
 }
 
-void PluginManager::forceReload(const QString& t_module)
+void PluginManager::forceReload(const QString& module)
 {
-    emit pluginForceReload(t_module);
+    emit pluginForceReload(module);
 }
 
 int PluginManager::loadedCount()
@@ -633,7 +633,7 @@ int PluginManager::loadedCount()
     return(loaded_count);
 }
 
-void PluginManager::resetFileWatcher(QWidget* t_old, QWidget* t_new)
+void PluginManager::resetFileWatcher(QWidget* oldWidget, QWidget* newWidget)
 {
     QStringList files = m_fileWatcher->files();
     QStringList dirs  = m_fileWatcher->directories();
@@ -642,6 +642,4 @@ void PluginManager::resetFileWatcher(QWidget* t_old, QWidget* t_new)
     m_fileWatcher->removePaths(dirs);
     m_fileWatcher->addPaths(files);
     m_fileWatcher->addPaths(dirs);
-
-    qDebug() << "Reset ALL file wachers for PluginManager.";
 }

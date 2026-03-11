@@ -4,12 +4,12 @@
 #ifndef ACTIONITEMPROJECTNOTESMODEL_H
 #define ACTIONITEMPROJECTNOTESMODEL_H
 
-#include "pnsqlquerymodel.h"
+#include "sqlquerymodel.h"
 
-class ActionItemProjectNotesModel : public PNSqlQueryModel
+class ActionItemProjectNotesModel : public SqlQueryModel
 {
 public:
-    ActionItemProjectNotesModel(PNDatabaseObjects* t_dbo);
+    ActionItemProjectNotesModel(DatabaseObjects* dbo);
 };
 
 #endif // ACTIONITEMPROJECTNOTESMODEL_H

@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "searchresultsview.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
-SearchResultsView::SearchResultsView(QWidget* t_parent) : PNTableView(t_parent)
+SearchResultsView::SearchResultsView(QWidget* parent) : TableView(parent)
 {
     setObjectName("tableViewSearchResults");
     setHasOpen(true);
@@ -12,14 +12,14 @@ SearchResultsView::SearchResultsView(QWidget* t_parent) : PNTableView(t_parent)
 
 SearchResultsView::~SearchResultsView()
 {
-    if (m_text_edit_delegate) delete m_text_edit_delegate;
+    if (m_textEditDelegate) delete m_textEditDelegate;
 }
 
-void SearchResultsView::setModel(QAbstractItemModel *t_model)
+void SearchResultsView::setModel(QAbstractItemModel *model)
 {
-    if (t_model)
+    if (model)
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
 
         setColumnHidden(0, true);
         setColumnHidden(4, true);
@@ -29,12 +29,12 @@ void SearchResultsView::setModel(QAbstractItemModel *t_model)
         setColumnHidden(14, true);
 
         // search view delagets
-        m_text_edit_delegate = new PNTextEditDelegate(this);
+        m_textEditDelegate = new TextEditDelegate(this);
 
-        setItemDelegateForColumn(3, m_text_edit_delegate);
+        setItemDelegateForColumn(3, m_textEditDelegate);
     }
     else
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
     }
 }

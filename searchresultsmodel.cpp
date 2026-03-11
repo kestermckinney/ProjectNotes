@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "searchresultsmodel.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
-SearchResultsModel::SearchResultsModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
+SearchResultsModel::SearchResultsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("SearchResultsModel");
     setOrderKey(200);
@@ -32,27 +32,27 @@ SearchResultsModel::SearchResultsModel(PNDatabaseObjects* t_dbo): PNSqlQueryMode
     setReadOnly();
 }
 
-void SearchResultsModel::PerformSearch(const QString& t_search_value)
+void SearchResultsModel::PerformSearch(const QString& searchValue)
 {
     clearAllUserSearches();
 
-    if ( t_search_value.isEmpty())
+    if ( searchValue.isEmpty())
     {
         setUserSearchString(0, "FIND NOTHING");
         activateUserFilter(QString());
     }
     else
     {
-        setUserSearchString(3, t_search_value);
+        setUserSearchString(3, searchValue);
         activateUserFilter(QString());
     }
 }
 
-void SearchResultsModel::PerformKeySearch(const QStringList& t_search_fields, const QStringList& t_search_values)
+void SearchResultsModel::PerformKeySearch(const QStringList& searchFields, const QStringList& searchValues)
 {
     clearAllUserSearches();
 
-    if ( t_search_values.isEmpty())
+    if ( searchValues.isEmpty())
     {
         setUserSearchString(0, "FIND NOTHING");
         activateUserFilter(QString());
@@ -60,10 +60,10 @@ void SearchResultsModel::PerformKeySearch(const QStringList& t_search_fields, co
     else
     {
         // if specific search column passed use it, if not a column use the data value
-        for (int c = 0; c < t_search_fields.count(); c++)
+        for (int c = 0; c < searchFields.count(); c++)
         {
-            QString col_name = t_search_fields.at(c);
-            QString col_val = t_search_values.at(c);
+            QString col_name = searchFields.at(c);
+            QString col_val = searchValues.at(c);
 
             int col_num = getColumnNumber(col_name);
 

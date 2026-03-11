@@ -8,8 +8,8 @@
 #include <QDomDocument>
 #include <QWidget>
 /*
-#include "pndatabaseobjects.h"
-#include "pnsqlquerymodel.h"
+#include "databaseobjects.h"
+#include "sqlquerymodel.h"
 #include "projectsmodel.h"
 //#include "projectslistmodel.h"
 #include "clientsmodel.h"
@@ -28,7 +28,7 @@
 #include "trackeritemsmodel.h"
 */
 
-class PNSqlQueryModel;
+class SqlQueryModel;
 class ClientsModel;
 class PeopleModel;
 class ProjectsModel;
@@ -48,24 +48,24 @@ private:
     IXTreeNode* m_ChildNode = nullptr;
     IXTreeNode* m_NextNode = nullptr;
 
-    PNSqlQueryModel* m_DataView = nullptr;
+    SqlQueryModel* m_DataView = nullptr;
 
     QString m_ParentColumn;
     QString m_ChildColumn;
 
 public:
-    IXTreeNode(const QString& nodename, PNSqlQueryModel* dataview );
+    IXTreeNode(const QString& nodename, SqlQueryModel* dataview );
     ~IXTreeNode();
 
-    IXTreeNode* addChild(const QString& name, PNSqlQueryModel* dataview );
-    IXTreeNode* addNext(const QString& name, PNSqlQueryModel* dataview );
+    IXTreeNode* addChild(const QString& name, SqlQueryModel* dataview );
+    IXTreeNode* addNext(const QString& name, SqlQueryModel* dataview );
 
     IXTreeNode* getFirst() { return this; };
     IXTreeNode* getNext() { return m_NextNode; };
     IXTreeNode* getChild() { return m_ChildNode; };
     QString& getViewName() { return m_ViewName; };
-    PNSqlQueryModel* findView(const QString& t_name);
-    PNSqlQueryModel* getDataView() { return m_DataView; };
+    SqlQueryModel* findView(const QString& name);
+    SqlQueryModel* getDataView() { return m_DataView; };
 
     void setForeignKey( const QString& parent, const QString& child) { m_ParentColumn = parent; m_ChildColumn = child; };
     QString& getFKParent() { return m_ParentColumn; };
@@ -83,17 +83,17 @@ public:
 
     IXTreeNode* getNodes() { return m_RelationshipNodes; }
 
-    //QDomNode findNode(QDomNode& t_xmlnode, const QString& t_nodename, const QString& t_attributename, const QString& t_attributevalue);
-    //QString getNodeContent(QDomNode& t_xmlnode, const QString& t_nodename, const QString& t_attributename, const QString& t_attributevalue);
-    //QString getNodeAttribute(QDomNode& t_xmlnode, const QString& t_nodename, const QString& t_attributename, const QString& t_attributevalue, const QString& t_getattribute);
-    //QList<QDomNode> findAllNodes(QDomNode& t_xmlnode, const QString& t_nodename, const QString& t_attributename, const QString& t_attributevalue);
+    //QDomNode findNode(QDomNode& xmlnode, const QString& nodename, const QString& attributename, const QString& attributevalue);
+    //QString getNodeContent(QDomNode& xmlnode, const QString& nodename, const QString& attributename, const QString& attributevalue);
+    //QString getNodeAttribute(QDomNode& xmlnode, const QString& nodename, const QString& attributename, const QString& attributevalue, const QString& getattribute);
+    //QList<QDomNode> findAllNodes(QDomNode& xmlnode, const QString& nodename, const QString& attributename, const QString& attributevalue);
 
     //void nodeToXML( QDomElement& rootxmlnode, IXTreeNode* rootnode, const QString& viewname, const QString& fkfield, const QString& fkvalue );
     //QDomDocument* getXMLDocument(QString& viewname, QString& fkfield, const QVector<QString>& fkvalues );
-    //void importXMLDocument(QWidget* t_parentwindow, QDomNode& t_xmlnode);
+    //void importXMLDocument(QWidget* parentwindow, QDomNode& xmlnode);
     //bool doRecordIdsExist(QDomNode& xmlnode);
 
-    //int getNodeCount(QDomNode& t_xmlnode);
+    //int getNodeCount(QDomNode& xmlnode);
 
     //void setIgnoreRecordIds(bool ignore) { m_IgnoreRecordIds = ignore; };
 
@@ -152,7 +152,7 @@ class LookupItem
 {
 public:
     QDomNode* m_XmlColumn = NULL;
-    PNSqlQueryModel* m_DBView = NULL;
+    SqlQueryModel* m_DBView = NULL;
     QString m_LookupColumn;
     QString m_LookupValue;
 };

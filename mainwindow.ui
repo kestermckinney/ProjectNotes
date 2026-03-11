@@ -230,7 +230,7 @@
                    </widget>
                   </item>
                   <item row="1" column="1">
-                   <widget class="PNDateEditEx" name="dateEditMeetingDate">
+                   <widget class="DateEditEx" name="dateEditMeetingDate">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                       <horstretch>1</horstretch>
@@ -249,7 +249,7 @@
                    </widget>
                   </item>
                   <item row="1" column="0">
-                   <widget class="PNPlainTextEdit" name="plainTextEditMeetingTitle">
+                   <widget class="PlainTextEdit" name="plainTextEditMeetingTitle">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                       <horstretch>4</horstretch>
@@ -294,7 +294,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="PNTextEdit" name="textEditNotes">
+                <widget class="TextEdit" name="textEditNotes">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                    <horstretch>0</horstretch>
@@ -520,7 +520,7 @@
                 </widget>
                </item>
                <item row="1" column="1">
-                <widget class="PNPlainTextEdit" name="plainTextEditProjectName">
+                <widget class="PlainTextEdit" name="plainTextEditProjectName">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                    <horstretch>0</horstretch>
@@ -549,7 +549,7 @@
                 </widget>
                </item>
                <item row="2" column="1">
-                <widget class="PNDateEditEx" name="dateEditLastStatus">
+                <widget class="DateEditEx" name="dateEditLastStatus">
                  <property name="frame">
                   <bool>true</bool>
                  </property>
@@ -569,7 +569,7 @@
                 </widget>
                </item>
                <item row="3" column="1">
-                <widget class="PNDateEditEx" name="dateEditLastInvoiced">
+                <widget class="DateEditEx" name="dateEditLastInvoiced">
                  <property name="autoFillBackground">
                   <bool>false</bool>
                  </property>
@@ -592,7 +592,7 @@
                 </widget>
                </item>
                <item row="4" column="1">
-                <widget class="PNComboBox" name="comboBoxPrimaryContact">
+                <widget class="ComboBox" name="comboBoxPrimaryContact">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                    <horstretch>0</horstretch>
@@ -688,7 +688,7 @@
                 </widget>
                </item>
                <item row="10" column="1">
-                <widget class="PNComboBox" name="comboBoxInvoicingPeriod">
+                <widget class="ComboBox" name="comboBoxInvoicingPeriod">
                  <property name="frame">
                   <bool>false</bool>
                  </property>
@@ -702,7 +702,7 @@
                 </widget>
                </item>
                <item row="11" column="1">
-                <widget class="PNComboBox" name="comboBoxStatusReportPeriod">
+                <widget class="ComboBox" name="comboBoxStatusReportPeriod">
                  <property name="frame">
                   <bool>false</bool>
                  </property>
@@ -716,7 +716,7 @@
                 </widget>
                </item>
                <item row="12" column="1">
-                <widget class="PNComboBox" name="comboBoxClient">
+                <widget class="ComboBox" name="comboBoxClient">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                    <horstretch>0</horstretch>
@@ -742,7 +742,7 @@
                 </widget>
                </item>
                <item row="13" column="1">
-                <widget class="PNComboBox" name="comboBoxProjectStatus">
+                <widget class="ComboBox" name="comboBoxProjectStatus">
                  <property name="frame">
                   <bool>false</bool>
                  </property>
@@ -1105,7 +1105,7 @@
              </widget>
             </item>
             <item>
-             <widget class="PNComboBox" name="comboBoxType">
+             <widget class="ComboBox" name="comboBoxType">
               <property name="editable">
                <bool>false</bool>
               </property>
@@ -1122,7 +1122,7 @@
              </widget>
             </item>
             <item>
-             <widget class="PNPlainTextEdit" name="plainTextEditName">
+             <widget class="PlainTextEdit" name="plainTextEditName">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -1154,7 +1154,7 @@
              </widget>
             </item>
             <item>
-             <widget class="PNComboBox" name="comboBoxProject">
+             <widget class="ComboBox" name="comboBoxProject">
               <property name="editable">
                <bool>true</bool>
               </property>
@@ -1171,7 +1171,7 @@
              </widget>
             </item>
             <item>
-             <widget class="PNComboBox" name="comboBoxMeeting">
+             <widget class="ComboBox" name="comboBoxMeeting">
               <property name="editable">
                <bool>true</bool>
               </property>
@@ -1188,7 +1188,7 @@
              </widget>
             </item>
             <item>
-             <widget class="PNPlainTextEdit" name="plainTextEditDescription"/>
+             <widget class="PlainTextEdit" name="plainTextEditDescription"/>
             </item>
             <item>
              <widget class="QLabel" name="labelAssignedTo">
@@ -1198,7 +1198,7 @@
              </widget>
             </item>
             <item>
-             <widget class="PNComboBox" name="comboBoxAssignedTo">
+             <widget class="ComboBox" name="comboBoxAssignedTo">
               <property name="editable">
                <bool>true</bool>
               </property>
@@ -1215,7 +1215,7 @@
              </widget>
             </item>
             <item>
-             <widget class="PNComboBox" name="comboBoxIdentifiedBy">
+             <widget class="ComboBox" name="comboBoxIdentifiedBy">
               <property name="editable">
                <bool>true</bool>
               </property>
@@ -1243,7 +1243,7 @@
                </widget>
               </item>
               <item row="0" column="1">
-               <widget class="PNDateEditEx" name="dateEditIdentifiedDate">
+               <widget class="DateEditEx" name="dateEditIdentifiedDate">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1266,7 +1266,7 @@
                </widget>
               </item>
               <item row="1" column="1">
-               <widget class="PNComboBox" name="comboBoxPriority">
+               <widget class="ComboBox" name="comboBoxPriority">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1289,7 +1289,7 @@
                </widget>
               </item>
               <item row="2" column="1">
-               <widget class="PNComboBox" name="comboBoxStatus">
+               <widget class="ComboBox" name="comboBoxStatus">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1309,7 +1309,7 @@
                </widget>
               </item>
               <item row="3" column="1">
-               <widget class="PNDateEditEx" name="dateEditDueDate">
+               <widget class="DateEditEx" name="dateEditDueDate">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1335,7 +1335,7 @@
                </widget>
               </item>
               <item row="4" column="1">
-               <widget class="PNDateEditEx" name="dateEditDateResolved">
+               <widget class="DateEditEx" name="dateEditDateResolved">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1361,7 +1361,7 @@
                </widget>
               </item>
               <item row="5" column="1">
-               <widget class="PNDateEditEx" name="dateEditLastUpdated">
+               <widget class="DateEditEx" name="dateEditLastUpdated">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1439,7 +1439,7 @@
            <number>3</number>
           </property>
           <item>
-           <widget class="PNPlainTextEdit" name="plainTextEditSearchText">
+           <widget class="PlainTextEdit" name="plainTextEditSearchText">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -2496,9 +2496,9 @@
    <header>projectteammembersview.h</header>
   </customwidget>
   <customwidget>
-   <class>PNDateEditEx</class>
+   <class>DateEditEx</class>
    <extends>QDateEdit</extends>
-   <header>pndateeditex.h</header>
+   <header>dateeditex.h</header>
   </customwidget>
   <customwidget>
    <class>ProjectLocationsView</class>
@@ -2554,19 +2554,19 @@
    <header>searchresultsview.h</header>
   </customwidget>
   <customwidget>
-   <class>PNPlainTextEdit</class>
+   <class>PlainTextEdit</class>
    <extends>QPlainTextEdit</extends>
-   <header location="global">pnplaintextedit.h</header>
+   <header location="global">plaintextedit.h</header>
   </customwidget>
   <customwidget>
-   <class>PNTextEdit</class>
+   <class>TextEdit</class>
    <extends>QTextEdit</extends>
-   <header location="global">pntextedit.h</header>
+   <header location="global">textedit.h</header>
   </customwidget>
   <customwidget>
-   <class>PNComboBox</class>
+   <class>ComboBox</class>
    <extends>QComboBox</extends>
-   <header location="global">pncombobox.h</header>
+   <header location="global">combobox.h</header>
   </customwidget>
  </customwidgets>
  <resources>

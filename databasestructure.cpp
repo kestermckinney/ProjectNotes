@@ -4,7 +4,7 @@
 #include <version.h>
 #include "databasestructure.h"
 #include "mainwindow.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
 bool DatabaseStructure::CreateDatabase()
 {

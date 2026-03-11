@@ -4,44 +4,44 @@
 #ifndef TRACKERITEMSVIEW_H
 #define TRACKERITEMSVIEW_H
 
-#include "pntableview.h"
-#include "pncomboboxdelegate.h"
-#include "pncheckboxdelegate.h"
-#include "pndateeditdelegate.h"
-#include "pnplaintexteditdelegate.h"
+#include "tableview.h"
+#include "sqlcomboboxdelegate.h"
+#include "checkboxdelegate.h"
+#include "dateeditdelegate.h"
+#include "plaintexteditdelegate.h"
 #include "comboboxdelegate.h"
 #include <QObject>
 #include <QStringListModel>
 
-class TrackerItemsView : public PNTableView
+class TrackerItemsView : public TableView
 {
 public:
-    TrackerItemsView(QWidget* t_parent = nullptr);
+    TrackerItemsView(QWidget* parent = nullptr);
     ~TrackerItemsView();
 
-    void setModel(QAbstractItemModel *t_model) override;
+    void setModel(QAbstractItemModel *model) override;
 
 private:
-    QStringListModel m_item_type;
-    QStringListModel m_item_status;
-    QStringListModel m_item_priority;
+    QStringListModel m_itemType;
+    QStringListModel m_itemStatus;
+    QStringListModel m_itemPriority;
 
     // projects list panel delegates
-    ComboBoxDelegate* m_action_item_type_delegate = nullptr;
-    PNComboBoxDelegate* m_identified_by_delegate = nullptr;
-    ComboBoxDelegate* m_priority_delegate = nullptr;
-    PNDateEditDelegate* m_date_identified_delegate = nullptr;
-    PNComboBoxDelegate* m_assigned_to_delegate = nullptr;
-    ComboBoxDelegate* m_status_delegate = nullptr;
-    PNDateEditDelegate* m_date_due_delegate = nullptr;
-    PNDateEditDelegate* m_date_date_updated_delagate = nullptr;
-    PNDateEditDelegate* m_date_resolved_delegate = nullptr;
-    PNComboBoxDelegate* m_meeting_delegate = nullptr;
-    PNComboBoxDelegate* m_project_delegate = nullptr;
-    PNCheckBoxDelegate* m_internal_delegate = nullptr;
+    ComboBoxDelegate* m_actionItemTypeDelegate = nullptr;
+    SqlComboBoxDelegate* m_identifiedByDelegate = nullptr;
+    ComboBoxDelegate* m_priorityDelegate = nullptr;
+    DateEditDelegate* m_dateIdentifiedDelegate = nullptr;
+    SqlComboBoxDelegate* m_assignedToDelegate = nullptr;
+    ComboBoxDelegate* m_statusDelegate = nullptr;
+    DateEditDelegate* m_dateDueDelegate = nullptr;
+    DateEditDelegate* m_dateDateUpdatedDelagate = nullptr;
+    DateEditDelegate* m_dateResolvedDelegate = nullptr;
+    SqlComboBoxDelegate* m_meetingDelegate = nullptr;
+    SqlComboBoxDelegate* m_projectDelegate = nullptr;
+    CheckBoxDelegate* m_internalDelegate = nullptr;
 
-    PNPlainTextEditDelegate* m_item_name_delegate = nullptr;
-    PNPlainTextEditDelegate* m_description_delegate = nullptr;
+    PlainTextEditDelegate* m_itemNameDelegate = nullptr;
+    PlainTextEditDelegate* m_descriptionDelegate = nullptr;
 
 public slots:
     void slotNewRecord() override;

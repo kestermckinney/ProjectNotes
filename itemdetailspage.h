@@ -4,12 +4,12 @@
 #ifndef ITEMDETAILSPAGE_H
 #define ITEMDETAILSPAGE_H
 
-#include "pnbasepage.h"
+#include "basepage.h"
 #include <QObject>
 #include <QDataWidgetMapper>
 #include "itemdetailsdelegate.h"
 
-class ItemDetailsPage : public PNBasePage
+class ItemDetailsPage : public BasePage
 {
     Q_OBJECT
 
@@ -17,9 +17,9 @@ public:
     ItemDetailsPage();
     ~ItemDetailsPage();
 
-    void openRecord(QVariant& t_record_id) override;
+    void openRecord(QVariant& recordId) override;
     void newRecord() override;
-    void setupModels( Ui::MainWindow *t_ui ) override;
+    void setupModels( Ui::MainWindow *ui ) override;
     void setButtonAndMenuStates() override;
     void setPageTitle() override;
     void submitRecord() override {if (m_mapperItemDetails) m_mapperItemDetails->submit(); }
@@ -29,7 +29,7 @@ private:
 
     QDataWidgetMapper* m_mapperItemDetails = nullptr;
 
-    ItemDetailsDelegate* m_item_details_delegate = nullptr;
+    ItemDetailsDelegate* m_itemDetailsDelegate = nullptr;
 };
 
 #endif // ITEMDETAILSPAGE_H

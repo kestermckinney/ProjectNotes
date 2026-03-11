@@ -4,12 +4,12 @@
 #ifndef ACTIONITEMSDETAILSMEETINGSMODEL_H
 #define ACTIONITEMSDETAILSMEETINGSMODEL_H
 
-#include "pnsqlquerymodel.h"
+#include "sqlquerymodel.h"
 
-class ActionItemsDetailsMeetingsModel : public PNSqlQueryModel
+class ActionItemsDetailsMeetingsModel : public SqlQueryModel
 {
 public:
-    ActionItemsDetailsMeetingsModel(PNDatabaseObjects* t_dbo);
+    ActionItemsDetailsMeetingsModel(DatabaseObjects* dbo);
 };
 
 #endif // ACTIONITEMSDETAILSMEETINGSMODEL_H

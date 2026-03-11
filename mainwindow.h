@@ -3,7 +3,7 @@
 
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
-#include "pncombobox.h"
+#include "combobox.h"
 
 #include <QMainWindow>
 #include <QStringListModel>
@@ -18,9 +18,9 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
-#include "pndatabaseobjects.h"
-#include "pnsettings.h"
-#include "pnbasepage.h"
+#include "databaseobjects.h"
+#include "appsettings.h"
+#include "basepage.h"
 #include "preferencesdialog.h"
 #include "spellcheckdialog.h"
 #include "findreplacedialog.h"
@@ -36,11 +36,11 @@ class HistoryNode
     bool equals(HistoryNode* node) {
         return node->m_page == m_page &&
                (node->m_pagetitle.compare(m_pagetitle) == 0) &&
-               (node->m_record_id.toString().compare(m_record_id.toString()) == 0); }
+               (node->m_recordId.toString().compare(m_recordId.toString()) == 0); }
 
-    HistoryNode(PNBasePage* t_page, QVariant t_record_id, QString t_pagetitle) { m_page = t_page; m_record_id = t_record_id; m_pagetitle = t_pagetitle; stamp(); }
-    PNBasePage* m_page;
-    QVariant m_record_id;
+    HistoryNode(BasePage* page, QVariant recordId, QString pagetitle) { m_page = page; m_recordId = recordId; m_pagetitle = pagetitle; stamp(); }
+    BasePage* m_page;
+    QVariant m_recordId;
     QString m_pagetitle;
     QDateTime m_timestamp;
 };
@@ -50,42 +50,42 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *t_parent = nullptr);
+    MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    void navigateToPage(PNBasePage* t_widget, QVariant t_record_id);
+    void navigateToPage(BasePage* widget, QVariant recordId);
     void navigateForward();
     void navigateBackward();
-    bool navigateAtEnd() { return (m_navigation_location == (m_forward_back_history.count() - 1)); }
-    bool navigateAtStart() { return (m_navigation_location <= 0); }
-    void buildHistory(HistoryNode* t_node);
-    void navigateClearHistory() { m_navigation_location = -1; m_forward_back_history.clear(); }
-    PNBasePage* navigateCurrentPage() { return ((m_forward_back_history.count() - 1) < m_navigation_location || m_navigation_location == -1 ? nullptr : m_forward_back_history.at(m_navigation_location)->m_page ); }
-    static PluginManager* getPluginManager() { return m_plugin_manager; }
+    bool navigateAtEnd() { return (m_navigationLocation == (m_forwardBackHistory.count() - 1)); }
+    bool navigateAtStart() { return (m_navigationLocation <= 0); }
+    void buildHistory(HistoryNode* node);
+    void navigateClearHistory() { m_navigationLocation = -1; m_forwardBackHistory.clear(); }
+    BasePage* navigateCurrentPage() { return ((m_forwardBackHistory.count() - 1) < m_navigationLocation || m_navigationLocation == -1 ? nullptr : m_forwardBackHistory.at(m_navigationLocation)->m_page ); }
+    static PluginManager* getPluginManager() { return m_pluginManager; }
     void CloseDatabase();
-    static void addMenuItem(QMenu* t_menu, const QString& t_submenu, const QString& t_menutitle, QAction* t_action, int t_section);
+    static void addMenuItem(QMenu* menu, const QString& submenu, const QString& menutitle, QAction* action, int section);
 
-    QString mainConnectionName() const { return m_main_connection_name; }
+    QString mainConnectionName() const { return m_mainConnectionName; }
 
-    QFontComboBox* fontComboBox() { return m_combo_box_font; }
-    QComboBox* fontSizeComboBox() { return m_combo_box_size; }
-    QComboBox* fontStyleComboBox() { return m_combo_box_style; }
+    QFontComboBox* fontComboBox() { return m_comboBoxFont; }
+    QComboBox* fontSizeComboBox() { return m_comboBoxSize; }
+    QComboBox* fontStyleComboBox() { return m_comboBoxStyle; }
 
 public slots:
-    void slotOpen_ProjectDetails_triggered(QVariant t_record_id);
-    void slotOpen_ItemDetails_triggered(QVariant t_record_id);
-    void slotOpen_ProjectNote_triggered(QVariant t_record_id);
-    void slotOpen_SearchResults_triggered(QVariant t_record_id);
-    void slotOpenTeamMember_triggered(QVariant t_record_id);
-    void slotOpenLocation_triggered(QVariant t_record_id);
-    void on_focusChanged(QWidget *t_old, QWidget *t_now);
+    void slotOpen_ProjectDetails_triggered(QVariant recordId);
+    void slotOpen_ItemDetails_triggered(QVariant recordId);
+    void slotOpen_ProjectNote_triggered(QVariant recordId);
+    void slotOpen_SearchResults_triggered(QVariant recordId);
+    void slotOpenTeamMember_triggered(QVariant recordId);
+    void slotOpenLocation_triggered(QVariant recordId);
+    void on_focusChanged(QWidget *old, QWidget *now);
 
 protected:
     void closeEvent(QCloseEvent *event) override;
 
 private slots:
     void setButtonAndMenuStates();
-    void openDatabase(QString t_dbfile);
+    void openDatabase(QString dbfile);
     void on_actionExit_triggered();
     void on_actionNew_Database_triggered();
     void on_actionOpen_Database_triggered();
@@ -131,30 +131,30 @@ private slots:
     void on_actionXML_Import_triggered();
     void on_actionXML_Export_triggered();
 
-    void slotPluginMenu(Plugin* t_plugin, const QString& t_functionname, const QString& t_parameter);
+    void slotPluginMenu(Plugin* plugin, const QString& functionname, const QString& parameter);
     void on_actionOpen_Item_triggered();
     void on_actionIncrease_Font_Size_triggered();
     void on_actionDecrease_Font_Size_triggered();
 
-    void onPluginLoaded(const QString& t_pluginpath);
-    void onPluginUnLoaded(const QString& t_pluginpath);
+    void onPluginLoaded(const QString& pluginpath);
+    void onPluginUnLoaded(const QString& pluginpath);
     void onRefreshRequested();
     void onTimerWaitForThreads();
 
 private:
-    void buildPluginMenu(PNBasePage* t_current_page);
+    void buildPluginMenu(BasePage* currentPage);
 
     Ui::MainWindow *ui;
 
-    PreferencesDialog* m_preferences_dialog = nullptr;
-    FindReplaceDialog* m_find_replace_dialog = nullptr;
+    PreferencesDialog* m_preferencesDialog = nullptr;
+    FindReplaceDialog* m_findReplaceDialog = nullptr;
 
-    static PluginManager* m_plugin_manager;
-    LogViewer* m_logview_dialog = nullptr;
+    static PluginManager* m_pluginManager;
+    LogViewer* m_logviewDialog = nullptr;
 
-    QStack<HistoryNode*> m_page_history;
-    QStack<HistoryNode*> m_forward_back_history;
-    int m_navigation_location = -1;
+    QStack<HistoryNode*> m_pageHistory;
+    QStack<HistoryNode*> m_forwardBackHistory;
+    int m_navigationLocation = -1;
 
     const QString rsrcPath = ":/icons";
 
@@ -190,12 +190,12 @@ private:
     QAction *m_actionCopy;
     QAction *m_actionPaste;
 
-    QComboBox* m_combo_box_style;
-    QFontComboBox* m_combo_box_font;
-    QComboBox* m_combo_box_size;
+    QComboBox* m_comboBoxStyle;
+    QFontComboBox* m_comboBoxFont;
+    QComboBox* m_comboBoxSize;
 
-    QString m_main_connection_name = "mainconnection";
-    QTimer* m_wait_for_threads_timer = nullptr;
+    QString m_mainConnectionName = "mainconnection";
+    QTimer* m_waitForThreadsTimer = nullptr;
 };
 
 

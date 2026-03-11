@@ -1,5 +1,5 @@
 #include "logviewer.h"
-#include "pnsettings.h"
+#include "appsettings.h"
 #include <QStandardPaths>
 #include <QPushButton>
 #include <QTextBlock>
@@ -8,7 +8,7 @@
 
 LogLoader::LogLoader(const QString& filePath)
 {
-    m_file_path = filePath;
+    m_filePath = filePath;
 }
 
 // this member needs to be called after the object has been moved to a different thread
@@ -16,20 +16,18 @@ void LogLoader::startFileWatcher()
 {
     // Set up file watcher
     m_fileWatcher = new QFileSystemWatcher(this);
-    m_fileWatcher->addPath(m_file_path);
+    m_fileWatcher->addPath(m_filePath);
 
     connect(m_fileWatcher, &QFileSystemWatcher::fileChanged, this, &LogLoader::onFileChanged);
 }
 
 // the file watcher is not reliable and needs reset sometimes
-void LogLoader::resetFileWatcher(QWidget* t_old, QWidget* t_new)
+void LogLoader::resetFileWatcher(QWidget* oldWidget, QWidget* newWidget)
 {
     if (m_fileWatcher)
     {
-        m_fileWatcher->removePath(m_file_path);
-        m_fileWatcher->addPath(m_file_path);
-
-        qDebug() << "File watcher for " << m_file_path << " was reset.";
+        m_fileWatcher->removePath(m_filePath);
+        m_fileWatcher->addPath(m_filePath);
     }
 }
 
@@ -37,13 +35,13 @@ LogLoader::~LogLoader()
 {
     disconnect(m_fileWatcher, &QFileSystemWatcher::fileChanged, this, &LogLoader::onFileChanged);
 
-    if (m_top_load_timer)
+    if (m_topLoadTimer)
     {
-        disconnect(m_top_load_timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
+        disconnect(m_topLoadTimer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
 
-        m_top_load_timer->stop();
-        delete m_top_load_timer;
-        m_top_load_timer = nullptr;
+        m_topLoadTimer->stop();
+        delete m_topLoadTimer;
+        m_topLoadTimer = nullptr;
     }
 
     if (m_fileWatcher)
@@ -52,9 +50,6 @@ LogLoader::~LogLoader()
 
 void LogLoader::onFileChanged(const QString &filePath)
 {
-
-    // qDebug() << "File change detected on " << filePath;
-
     loadFile();
 }
 
@@ -66,37 +61,35 @@ void LogLoader::loadFile()
         startFileWatcher();
 
     // just load the bottom at first
-    QFile file(m_file_path);
+    QFile file(m_filePath);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         // we need to start with the end of the file
-        if (m_last_position == 0)
+        if (m_lastPosition == 0)
         {
             qint64 topofchunck = qMax(file.size() - 8192, 0);
 
             // on the first call
-            if (m_top_position == -1)
+            if (m_topPosition == -1)
             {
-                m_top_position = topofchunck;
+                m_topPosition = topofchunck;
             }
 
             file.seek(topofchunck);
 
             // if we aren't already loading the top of file start the laod
-            if (topofchunck > 0 && m_top_load_timer == nullptr)
+            if (topofchunck > 0 && m_topLoadTimer == nullptr)
             {
-                m_top_load_timer = new QTimer();
+                m_topLoadTimer = new QTimer();
 
-                connect(m_top_load_timer, SIGNAL(timeout()), this, SLOT(timerUpdate()), Qt::DirectConnection);
+                connect(m_topLoadTimer, SIGNAL(timeout()), this, SLOT(timerUpdate()), Qt::DirectConnection);
 
-                m_top_load_timer->start(100);
-
-                // qDebug() << "Starting load timer for " << m_file_path;
+                m_topLoadTimer->start(100);
             }
         }
         else
         {
-            file.seek(m_last_position);
+            file.seek(m_lastPosition);
         }
 
         QTextStream in(&file);
@@ -106,11 +99,11 @@ void LogLoader::loadFile()
         while (!in.atEnd() && !QThread::currentThread()->isInterruptionRequested())
         {
             content = in.read(8192); // 8KB chunks
-            emit contentLoaded(m_file_path, content);
+            emit contentLoaded(m_filePath, content);
             QThread::msleep(50);
         }
 
-        m_last_position = file.pos();
+        m_lastPosition = file.pos();
 
         file.close();
     }
@@ -119,23 +112,21 @@ void LogLoader::loadFile()
 void LogLoader::timerUpdate()
 {
     // if all done loading stop the timer
-    if (m_top_position == 0)
-        if (m_top_load_timer)
+    if (m_topPosition == 0)
+        if (m_topLoadTimer)
         {
-            m_top_load_timer->stop();
-            delete m_top_load_timer;
-            m_top_load_timer = nullptr;
-
-            // qDebug() << "Stopped the load timer for " << m_file_path;
+            m_topLoadTimer->stop();
+            delete m_topLoadTimer;
+            m_topLoadTimer = nullptr;
 
             return;
         }
 
-    QFile file(m_file_path);
+    QFile file(m_filePath);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         // we need to start with the end of the file
-        qint64 bottomofchunck = m_top_position;
+        qint64 bottomofchunck = m_topPosition;
         qint64 topofchunck = qMax(bottomofchunck - 8192, 0);
         qint64 readsize = bottomofchunck - topofchunck;
 
@@ -147,19 +138,17 @@ void LogLoader::timerUpdate()
         {
             file.seek(topofchunck);
             content = in.read(readsize); // 8KB chunks
-            emit topContentLoaded(m_file_path, content);
+            emit topContentLoaded(m_filePath, content);
         }
 
-        m_top_position = topofchunck;
-
-        // qDebug() << "Top Position " << m_top_position << " set for " << m_file_path;
+        m_topPosition = topofchunck;
 
         file.close();
     }
 }
 
 
-LogViewer::LogViewer(QWidget* t_parent) : QDialog(t_parent)
+LogViewer::LogViewer(QWidget* parent) : QDialog(parent)
 {
     setWindowTitle("Log Viewer");
     setMinimumSize(300, 200);
@@ -205,7 +194,7 @@ LogViewer::LogViewer(QWidget* t_parent) : QDialog(t_parent)
 
 void LogViewer::closeEvent(QCloseEvent *e)
 {
-    for (QThread* t : m_loading_threads)
+    for (QThread* t : m_loadingThreads)
     {
         t->requestInterruption();
     }
@@ -215,7 +204,7 @@ void LogViewer::closeEvent(QCloseEvent *e)
 
 LogViewer::~LogViewer()
 {
-    for (QThread* t : m_loading_threads)
+    for (QThread* t : m_loadingThreads)
     {
         t->quit();
         t->wait(30);
@@ -223,7 +212,7 @@ LogViewer::~LogViewer()
         delete t;
     }
 
-    m_loading_threads.clear();
+    m_loadingThreads.clear();
 
     global_Settings.setWindowState("LogViewer", this);
 
@@ -335,7 +324,7 @@ void LogViewer::onFolderChanged(const QString &folderPath)
 
             m_fileTabs[filePath] = editor;
             QThread* tt =  new QThread();
-            m_loading_threads[filePath] = tt;
+            m_loadingThreads[filePath] = tt;
 
             LogLoader* ll = new LogLoader(filePath);
             ll->moveToThread(tt);
@@ -379,7 +368,7 @@ void LogViewer::onClearLog()
     }
 }
 
-void LogViewer::resetFileWatcher(QWidget* t_old, QWidget* t_new)
+void LogViewer::resetFileWatcher(QWidget* oldWidget, QWidget* newWidget)
 {
     QStringList files = m_fileWatcher->files();
     QStringList dirs  = m_fileWatcher->directories();
@@ -388,7 +377,5 @@ void LogViewer::resetFileWatcher(QWidget* t_old, QWidget* t_new)
     m_fileWatcher->removePaths(dirs);
     m_fileWatcher->addPaths(files);
     m_fileWatcher->addPaths(dirs);
-
-    qDebug() << "Reset ALL file wachers for LogViewer.";
 }
 

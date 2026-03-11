@@ -3,8 +3,8 @@
 
 #include "plugin.h"
 #include "QLogger.h"
-#include "pndatabaseobjects.h"
-#include "pnsettings.h"
+#include "databaseobjects.h"
+#include "appsettings.h"
 
 Plugin::Plugin(QObject *parent, bool isthread)
     : QObject{parent}
@@ -73,26 +73,26 @@ Plugin::~Plugin()
     }
 }
 
-void Plugin::callXmlMethod(const QString& t_method, const QString& t_xml, const QString& t_parameter)
+void Plugin::callXmlMethod(const QString& method, const QString& xml, const QString& parameter)
 {
-    emit sendMethodXml(t_method, t_xml, t_parameter);
+    emit sendMethodXml(method, xml, parameter);
 }
 
-void Plugin::callMethod(const QString& t_method, const QString& t_parameter)
+void Plugin::callMethod(const QString& method, const QString& parameter)
 {
-    emit sendMethod(t_method, t_parameter);
+    emit sendMethod(method, parameter);
 }
 
-bool Plugin::hasMethod(const QString& t_method) const
+bool Plugin::hasMethod(const QString& method) const
 {
-    return m_plugin.hasMember(t_method);
+    return m_plugin.hasMember(method);
 }
 
-void Plugin::setEnabled(const bool t_enabled)
+void Plugin::setEnabled(const bool enabled)
 {
     // TODO: VER 4.1 save the enabled disabled value in settings
 
-    if (t_enabled && !m_enabled)
+    if (enabled && !m_enabled)
     {
         m_enabled = true;
 
@@ -101,7 +101,7 @@ void Plugin::setEnabled(const bool t_enabled)
             emit loadModule(m_modulepath);
         }
     }
-    else if (!t_enabled && m_enabled)
+    else if (!enabled && m_enabled)
     {
         m_enabled = false;
         if (m_loaded)
@@ -111,17 +111,17 @@ void Plugin::setEnabled(const bool t_enabled)
     }
 }
 
-void Plugin::onReturnedXml(const QString& t_xml)
+void Plugin::onReturnedXml(const QString& xml)
 {
 #ifdef QT_DEBUG
-    QLog_Debug(DEBUGLOG, QString("Plugin: %1 Returned Xml: %2").arg(m_modulepath, t_xml));
+    QLog_Debug(DEBUGLOG, QString("Plugin: %1 Returned Xml: %2").arg(m_modulepath, xml));
 #endif
 
-    if (!t_xml.isEmpty())
+    if (!xml.isEmpty())
     {
         QDomDocument xmldoc;
 
-        xmldoc.setContent(t_xml);
+        xmldoc.setContent(xml);
 
         if (!global_DBObjects.getDatabaseFile().isEmpty())
         {
@@ -131,17 +131,17 @@ void Plugin::onReturnedXml(const QString& t_xml)
 #ifdef QT_DEBUG
         else
         {
-            QLog_Debug(DEBUGLOG, QString("Plugin: %1\nDatabase was already closed.  XML was not processed.\nReturned Xml: %2").arg(m_modulepath, t_xml));
+            QLog_Debug(DEBUGLOG, QString("Plugin: %1\nDatabase was already closed.  XML was not processed.\nReturned Xml: %2").arg(m_modulepath, xml));
         }
 #endif
     }
 }
 
-void Plugin::onLoadComplete(const PythonPlugin& t_plugin)
+void Plugin::onLoadComplete(const PythonPlugin& plugin)
 {
-    m_plugin = t_plugin;
+    m_plugin = plugin;
 
-    m_pluginname = t_plugin.name(); // keep the plugin name handy for displays
+    m_pluginname = plugin.name(); // keep the plugin name handy for displays
 
     m_loaded = true;
 
@@ -158,11 +158,11 @@ void Plugin::onUnLoadComplete()
     emit moduleUnloaded(m_modulepath);
 }
 
-void Plugin::loadPlugin(const QString& t_module)
+void Plugin::loadPlugin(const QString& module)
 {
-    m_modulepath = t_module;
+    m_modulepath = module;
 
-    emit loadModule(t_module);
+    emit loadModule(module);
 }
 
 void Plugin::unloadPlugin()

@@ -4,22 +4,22 @@
 #ifndef SEARCHRESULTSVIEW_H
 #define SEARCHRESULTSVIEW_H
 
-#include "pntableview.h"
-#include "pntexteditdelegate.h"
+#include "tableview.h"
+#include "texteditdelegate.h"
 
 #include <QObject>
 
-class SearchResultsView : public PNTableView
+class SearchResultsView : public TableView
 {
 public:
 
-    SearchResultsView(QWidget* t_parent = nullptr);
+    SearchResultsView(QWidget* parent = nullptr);
     ~SearchResultsView();
-    void setModel(QAbstractItemModel *t_model) override;
+    void setModel(QAbstractItemModel *model) override;
 
 private:
     // search view delegates
-    PNTextEditDelegate* m_text_edit_delegate = nullptr;
+    TextEditDelegate* m_textEditDelegate = nullptr;
 };
 
 #endif // SEARCHRESULTSVIEW_H

@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "projectnotesmodel.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 #include "QLogger.h"
 #include "QLoggerWriter.h"
 
 using namespace QLogger;
 
 
-ProjectNotesModel::ProjectNotesModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
+ProjectNotesModel::ProjectNotesModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("ProjectNotesModel");
     setOrderKey(50);
@@ -34,18 +34,18 @@ ProjectNotesModel::ProjectNotesModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(
     setOrderBy("note_date desc");
 }
 
-const QModelIndex ProjectNotesModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex ProjectNotesModel::newRecord(const QVariant* fkValue1, const QVariant* fkValue2)
 {
-    Q_UNUSED(t_fk_value2);
+    Q_UNUSED(fkValue2);
 
-    //qDebug() << "Adding a new note with fk1: " << *t_fk_value1;
+    //qDebug() << "Adding a new note with fk1: " << *fkValue1;
 
     QVector<QVariant> qr = emptyrecord();
 
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
     QVariant notetitle = QString("[Meeting Notes for %1]").arg(QDateTime::currentDateTime().toString("MM/dd/yyyy"));
 
-    qr[1] = *t_fk_value1;
+    qr[1] = *fkValue1;
     qr[2] = notetitle;
     qr[3] = curdate;
     qr[5] = 0;
@@ -53,38 +53,38 @@ const QModelIndex ProjectNotesModel::newRecord(const QVariant* t_fk_value1, cons
     return addRecord(qr);
 }
 
-bool ProjectNotesModel::setData(const QModelIndex &t_index, const QVariant &t_value, int t_role)
+bool ProjectNotesModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    bool wasnew = isNewRecord(t_index);
-    bool result = PNSqlQueryModel::setData(t_index, t_value, t_role);
+    bool wasnew = isNewRecord(index);
+    bool result = SqlQueryModel::setData(index, value, role);
 
     if (wasnew && result)
     {
-        QString note_id = data(index(t_index.row(), 0)).toString();
+        QString note_id = data(this->index(index.row(), 0)).toString();
         getDBOs()->addDefaultPMToMeeting(note_id);
     }
 
     return result;
 }
 
-const QModelIndex ProjectNotesModel::copyRecord(QModelIndex t_index)
+const QModelIndex ProjectNotesModel::copyRecord(QModelIndex index)
 {
     QVector<QVariant> qr = emptyrecord();
     QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
 
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
 
-    qr[1] = data(index(t_index.row(), 1));
-    qr[2] = data(index(t_index.row(), 2));
+    qr[1] = data(this->index(index.row(), 1));
+    qr[2] = data(this->index(index.row(), 2));
     qr[3] = curdate;
     //qr[4, QVariant());
     qr[5] = 0;
 
     QModelIndex qi = addRecord(qr);
-    setData( index(qi.row(), 4), QVariant(), Qt::EditRole);
+    setData( this->index(qi.row(), 4), QVariant(), Qt::EditRole);
 
-    QVariant oldid = data(index(t_index.row(), 0));
-    QVariant newid = data(index(qi.row(), 0));
+    QVariant oldid = data(this->index(index.row(), 0));
+    QVariant newid = data(this->index(qi.row(), 0));
 
     QString insert = "insert into meeting_attendees (attendee_id, note_id, person_id) select m.attendee_id || '-" + unique_stamp + "', '" + newid.toString() + "', m.person_id from meeting_attendees m where m.note_id ='" + oldid.toString() + "'  and m.person_id not in (select e.person_id from meeting_attendees e where e.note_id='" + newid.toString() + "')";
 

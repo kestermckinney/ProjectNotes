@@ -1,5 +1,5 @@
 #include "trackeritemsmodel.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
 #include "QLogger.h"
 #include "QLoggerWriter.h"
@@ -7,7 +7,7 @@
 using namespace QLogger;
 
 
-TrackerItemsModel::TrackerItemsModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
+TrackerItemsModel::TrackerItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("TrackerItemsModel");
     setOrderKey(40);
@@ -28,8 +28,8 @@ TrackerItemsModel::TrackerItemsModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(
     addColumn("assigned_to", tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name");
 
-    addColumn("priority", tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_priority);
-    addColumn("status", tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_status);
+    addColumn("priority", tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &DatabaseObjects::item_priority);
+    addColumn("status", tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &DatabaseObjects::item_status);
     addColumn("date_due", tr("Date Due"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("last_update", tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn("date_resolved", tr("Date Resolved"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
@@ -53,10 +53,10 @@ TrackerItemsModel::TrackerItemsModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(
     setOrderBy("item_number");
 }
 
-QVariant TrackerItemsModel::getNextItemNumber(const QVariant& t_project_id)
+QVariant TrackerItemsModel::getNextItemNumber(const QVariant& projectId)
 {
     // determine the max item_number from the database, then determine the max number from the record cache in case new unsaved records were added
-    QString itemnumber_string = getDBOs()->execute(QString("select max(CAST(item_number as integer)) from item_tracker where project_id = '%1'").arg(t_project_id.toString()));
+    QString itemnumber_string = getDBOs()->execute(QString("select max(CAST(item_number as integer)) from item_tracker where project_id = '%1'").arg(projectId.toString()));
     int itemnumber_int = itemnumber_string.toInt();
 
     for ( int i = 0; i < rowCount(QModelIndex()); i++ )
@@ -71,19 +71,19 @@ QVariant TrackerItemsModel::getNextItemNumber(const QVariant& t_project_id)
     return QVariant(QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0')));
 }
 
-const QModelIndex TrackerItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex TrackerItemsModel::newRecord(const QVariant* fkValue1, const QVariant* fkValue2)
 {
-    Q_UNUSED(t_fk_value2);
+    Q_UNUSED(fkValue2);
 
-    //qDebug() << "Adding new tracker item with fk1: " << t_fk_value1->toString() << " and fk2: " << t_fk_value2;
+    //qDebug() << "Adding new tracker item with fk1: " << fkValue1->toString() << " and fk2: " << fkValue2;
 
     QVector<QVariant> qr = emptyrecord();
-    QVariant next_item_number = getNextItemNumber(*t_fk_value1);
+    QVariant next_item_number = getNextItemNumber(*fkValue1);
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
 
     //qDebug() << "Using project manager id: " << m_dbo->getProjectManager();
 
-    qr[getColumnNumber("project_id")] = *t_fk_value1;
+    qr[getColumnNumber("project_id")] = *fkValue1;
     qr[1] = next_item_number;  // Need to make a counter that looks good for items
     qr[2] = "Tracker";
     qr[4] = getDBOs()->getProjectManager(); // default identified by to the pm
@@ -96,24 +96,24 @@ const QModelIndex TrackerItemsModel::newRecord(const QVariant* t_fk_value1, cons
     return addRecord(qr);
 }
 
-bool TrackerItemsModel::setData(const QModelIndex &t_index, const QVariant &t_value, int t_role)
+bool TrackerItemsModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    if ( PNSqlQueryModel::setData(t_index, t_value, t_role) )
+    if ( SqlQueryModel::setData(index, value, role) )
     {
         QVariant curdate = QDateTime::currentDateTime().toString("MM/dd/yyyy");
 
         // if the issue was changed to resolved them change the resolved date
-        if (t_index.column() == 9 && t_value.toString() == "Resolved")
+        if (index.column() == 9 && value.toString() == "Resolved")
         {
-            QModelIndex qmi_resolved = index(t_index.row(), 12);
-            PNSqlQueryModel::setData(qmi_resolved, curdate, t_role);
+            QModelIndex qmi_resolved = this->index(index.row(), 12);
+            SqlQueryModel::setData(qmi_resolved, curdate, role);
         }
 
         // set the date the record was updated
-        if (t_index.column() != 11)
+        if (index.column() != 11)
         {
-            QModelIndex qmi = index(t_index.row(), 11);
-            PNSqlQueryModel::setData(qmi, curdate, t_role);
+            QModelIndex qmi = this->index(index.row(), 11);
+            SqlQueryModel::setData(qmi, curdate, role);
         }
 
         return true;
@@ -122,13 +122,13 @@ bool TrackerItemsModel::setData(const QModelIndex &t_index, const QVariant &t_va
     return false;
 }
 
-QVariant TrackerItemsModel::data(const QModelIndex &t_index, int t_role) const
+QVariant TrackerItemsModel::data(const QModelIndex &index, int role) const
 {
-    if (t_role == Qt::ForegroundRole)
+    if (role == Qt::ForegroundRole)
     {
-        if (t_index.column() == 8) // priority
+        if (index.column() == 8) // priority
         {
-            QString value = data(t_index).toString();
+            QString value = data(index).toString();
 
             if (value.compare("High") == 0)
             {
@@ -139,9 +139,9 @@ QVariant TrackerItemsModel::data(const QModelIndex &t_index, int t_role) const
                 return QVariant(QCOLOR_YELLOW);
             }
         }
-        else if (t_index.column() == 10) // due date
+        else if (index.column() == 10) // due date
         {
-            QVariant value = data(t_index);
+            QVariant value = data(index);
 
             QDateTime datecol = parseDateTime(value.toString());
 
@@ -158,21 +158,21 @@ QVariant TrackerItemsModel::data(const QModelIndex &t_index, int t_role) const
         }
     }
 
-    return PNSqlQueryModel::data(t_index, t_role);
+    return SqlQueryModel::data(index, role);
 }
 
-const QModelIndex TrackerItemsModel::copyRecord(QModelIndex t_index)
+const QModelIndex TrackerItemsModel::copyRecord(QModelIndex index)
 {
-    QModelIndex qi = PNSqlQueryModel::copyRecord(t_index);
+    QModelIndex qi = SqlQueryModel::copyRecord(index);
 
     if(qi.isValid())
     {
-        QVariant project_id = data(index(t_index.row(), 14));
+        QVariant project_id = data(this->index(index.row(), 14));
         QVariant next_item_number = getNextItemNumber(project_id);
 
         int count = rowCount(QModelIndex()) - 1;
 
-        setCacheData(index(count, 1), next_item_number);
+        setCacheData(this->index(count, 1), next_item_number);
     }
 
     return qi;

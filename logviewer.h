@@ -25,7 +25,7 @@ public slots:
     void loadFile();
     void timerUpdate();
     void onFileChanged(const QString &filePath);
-    void resetFileWatcher(QWidget* t_old, QWidget* t_new);
+    void resetFileWatcher(QWidget* oldWidget, QWidget* newWidget);
 
 public:
     LogLoader(const QString& filePath);
@@ -34,10 +34,10 @@ public:
 private:
     void startFileWatcher();
 
-    qint64 m_top_position = -1;
-    qint64 m_last_position = 0;
-    QTimer* m_top_load_timer = nullptr;
-    QString m_file_path;
+    qint64 m_topPosition = -1;
+    qint64 m_lastPosition = 0;
+    QTimer* m_topLoadTimer = nullptr;
+    QString m_filePath;
     QFileSystemWatcher *m_fileWatcher = nullptr;
 };
 
@@ -50,7 +50,7 @@ private slots:
     void onClearLog();
     void onInsertContent(const QString& filePath, const QString& content);
     void onUpdateContent(const QString& filePath, const QString& content);
-    void resetFileWatcher(QWidget* t_old, QWidget* t_new);
+    void resetFileWatcher(QWidget* oldWidget, QWidget* newWidget);
 
 signals:
     void getContents(const QString& filePath);
@@ -62,13 +62,13 @@ private:
     QPushButton* m_clearlog;
     QPushButton* m_close;
     QMap<QString, QPlainTextEdit*> m_fileTabs;
-    QMap<QString, QThread*> m_loading_threads;
+    QMap<QString, QThread*> m_loadingThreads;
     QFileSystemWatcher *m_fileWatcher;
-    // QThread* m_loader_thread = nullptr;
-    // QThread* m_filler_thread = nullptr;
+    // QThread* m_loaderThread = nullptr;
+    // QThread* m_fillerThread = nullptr;
 
 public:
-    LogViewer(QWidget* t_parent = nullptr);
+    LogViewer(QWidget* parent = nullptr);
     ~LogViewer();
 
     void closeEvent(QCloseEvent *e) override;

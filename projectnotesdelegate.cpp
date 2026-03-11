@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "projectnotesdelegate.h"
-#include "pndatabaseobjects.h"
-#include "pndateeditex.h"
+#include "databaseobjects.h"
+#include "dateeditex.h"
 #include "mainwindow.h"
-#include "pnbasepage.h"
-#include "pncombobox.h"
+#include "basepage.h"
+#include "combobox.h"
 
 #include <QLineEdit>
 #include <QTextEdit>
@@ -18,37 +18,37 @@ ProjectNotesDelegate::ProjectNotesDelegate(QObject *parent) : QStyledItemDelegat
 
 }
 
-void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_index) const
+void ProjectNotesDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
-    QVariant value = t_index.model()->data(t_index);
+    QVariant value = index.model()->data(index);
 
-    switch (t_index.column())
+    switch (index.column())
     {
     case 2: // note title
         {
-        QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
+        QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(editor);
 
         // don't resent buffers if text hasn't changed
         if (value.toString().compare(lineedit->toPlainText()) != 0)
             lineedit->setPlainText(value.toString());
 
-        QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+        QWidget* window = static_cast<QWidget*>(editor)->topLevelWidget();
         if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
             dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 3:
         {
-            PNDateEditEx* dateEdit = static_cast<PNDateEditEx*>(t_editor);
+            DateEditEx* dateEdit = static_cast<DateEditEx*>(editor);
 
             if (value.isNull())
                 dateEdit->setDateTime(QDateTime());
             else
             {
-                QDateTime date_value = PNSqlQueryModel::parseDateTime(value.toString());
+                QDateTime date_value = SqlQueryModel::parseDateTime(value.toString());
                 dateEdit->setDate(date_value.date());
 
-                QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+                QWidget* window = static_cast<QWidget*>(editor)->topLevelWidget();
                 if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
                     dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
             }
@@ -56,7 +56,7 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
         break;
     case 4: // note
         {
-            QTextEdit* textedit = static_cast<QTextEdit*>(t_editor);
+            QTextEdit* textedit = static_cast<QTextEdit*>(editor);
 
             // don't resent buffers if text hasn't changed
             if (value.toString().contains("<html>", Qt::CaseInsensitive))
@@ -74,7 +74,7 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
         break;
     case 5: // note internal
         {
-            QCheckBox* chkbox = static_cast<QCheckBox*>(t_editor);
+            QCheckBox* chkbox = static_cast<QCheckBox*>(editor);
             if (value.toString() == "0")
                 chkbox->setChecked(false);
             else
@@ -84,25 +84,25 @@ void ProjectNotesDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t
     }
 }
 
-void ProjectNotesDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const
+void ProjectNotesDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
     QVariant key_val;
 
-    switch (t_index.column())
+    switch (index.column())
     {
     case 2: // note title
         {
-            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
+            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(editor);
             key_val = lineedit->toPlainText();
 
-            QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+            QWidget* window = static_cast<QWidget*>(editor)->topLevelWidget();
             if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
                 dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
         }
         break;
     case 3: // note date
         {
-            PNDateEditEx* dateEdit = static_cast<PNDateEditEx*>(t_editor);
+            DateEditEx* dateEdit = static_cast<DateEditEx*>(editor);
             if (!dateEdit->isNull())
                 key_val = dateEdit->date().toString("MM/dd/yyyy");
             else
@@ -111,13 +111,13 @@ void ProjectNotesDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t
         break;
     case 4: // note text
         {
-            QTextEdit* textedit = static_cast<QTextEdit*>(t_editor);
+            QTextEdit* textedit = static_cast<QTextEdit*>(editor);
             key_val = textedit->toHtml();
         }
         break;
     case 5: // note internal
         {
-            QCheckBox* chkbox = static_cast<QCheckBox*>(t_editor);
+            QCheckBox* chkbox = static_cast<QCheckBox*>(editor);
             if (chkbox->isChecked())
                 key_val = QString("1");
             else
@@ -126,5 +126,5 @@ void ProjectNotesDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t
         break;
     }
 
-    t_model->setData(t_index, key_val, Qt::EditRole);
+    model->setData(index, key_val, Qt::EditRole);
 }

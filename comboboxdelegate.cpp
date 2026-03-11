@@ -3,23 +3,23 @@
 
 #include "comboboxdelegate.h"
 
-#include "pncombobox.h"
+#include "combobox.h"
 #include <QWidget>
 #include <QModelIndex>
 #include <QApplication>
 #include <QString>
 #include <QPainter>
 
-ComboBoxDelegate::ComboBoxDelegate(QObject *t_parent, QStringListModel *t_model)
-:QStyledItemDelegate(t_parent)
+ComboBoxDelegate::ComboBoxDelegate(QObject *parent, QStringListModel *model)
+:QStyledItemDelegate(parent)
 {
-    m_model = t_model;
+    m_model = model;
 }
 
 
-QWidget *ComboBoxDelegate::createEditor(QWidget *t_parent, const QStyleOptionViewItem &/* t_option */, const QModelIndex &/* t_index */) const
+QWidget *ComboBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &/* option */, const QModelIndex &/* index */) const
 {
-    PNComboBox* editor = new PNComboBox(t_parent);
+    ComboBox* editor = new ComboBox(parent);
     editor->setEditable(false);
     editor->setModel(m_model);
     editor->setModelColumn(0); // column to display
@@ -27,21 +27,21 @@ QWidget *ComboBoxDelegate::createEditor(QWidget *t_parent, const QStyleOptionVie
     return editor;
 }
 
-void ComboBoxDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_index) const
+void ComboBoxDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
-    PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
-    QVariant t_value = t_index.model()->data(t_index);
+    ComboBox *comboBox = static_cast<ComboBox*>(editor);
+    QVariant value = index.model()->data(index);
 
-    comboBox->setCurrentText(t_value.toString());
+    comboBox->setCurrentText(value.toString());
 }
 
-void ComboBoxDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const
+void ComboBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
-    PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
-    t_model->setData(t_index, m_model->data(m_model->index(comboBox->currentIndex(), 0)), Qt::EditRole);
+    ComboBox *comboBox = static_cast<ComboBox*>(editor);
+    model->setData(index, m_model->data(m_model->index(comboBox->currentIndex(), 0)), Qt::EditRole);
 }
 
-void ComboBoxDelegate::updateEditorGeometry(QWidget *t_editor, const QStyleOptionViewItem &t_option, const QModelIndex &/* t_index */) const
+void ComboBoxDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &/* index */) const
 {
-    t_editor->setGeometry(t_option.rect);
+    editor->setGeometry(option.rect);
 }

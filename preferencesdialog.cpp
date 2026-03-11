@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include <QCompleter>
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 #include "preferencesdialog.h"
 #include "ui_preferencesdialog.h"
-#include "pnsettings.h"
+#include "appsettings.h"
 
 PreferencesDialog::PreferencesDialog(QWidget *parent) :
     QDialog(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint ),
@@ -50,14 +50,14 @@ void PreferencesDialog::showEvent(QShowEvent *ev)
         ui->comboBoxProjectManager->setModelColumn(1);
         ui->comboBoxProjectManager->completer()->setCaseSensitivity(Qt::CaseInsensitive);
 
-        PNSqlQueryModel *client_model = static_cast<PNSqlQueryModel*>(ui->comboBoxManagerCompany->model());
+        SqlQueryModel *client_model = static_cast<SqlQueryModel*>(ui->comboBoxManagerCompany->model());
         client_model->refresh();
 
         QVariant client_id = global_DBObjects.getManagingCompany();
         QString client_name = client_model->findValue(client_id, 0, 1).toString();
         ui->comboBoxManagerCompany->setCurrentText(client_name);
 
-        PNSqlQueryModel *people_model = static_cast<PNSqlQueryModel*>(ui->comboBoxProjectManager->model());
+        SqlQueryModel *people_model = static_cast<SqlQueryModel*>(ui->comboBoxProjectManager->model());
         people_model->refresh();
 
         QVariant people_id = global_DBObjects.getProjectManager();
