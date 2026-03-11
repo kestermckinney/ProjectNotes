@@ -4,6 +4,8 @@
 #include "searchresultsmodel.h"
 #include "databaseobjects.h"
 
+#include <QTextDocument>
+
 SearchResultsModel::SearchResultsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("SearchResultsModel");
@@ -30,6 +32,25 @@ SearchResultsModel::SearchResultsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
     addColumn("datakey", tr("Data Key"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
     setReadOnly();
+}
+
+QVariant SearchResultsModel::data(const QModelIndex &index, int role) const
+{
+    QVariant val = SqlQueryModel::data(index, role);
+
+    // datadescription is column 3; strip HTML for display if the content contains markup
+    if (index.column() == 3 && role == Qt::DisplayRole)
+    {
+        QString text = val.toString();
+        if (text.contains('<'))
+        {
+            QTextDocument doc;
+            doc.setHtml(text);
+            return doc.toPlainText().trimmed();
+        }
+    }
+
+    return val;
 }
 
 void SearchResultsModel::PerformSearch(const QString& searchValue)

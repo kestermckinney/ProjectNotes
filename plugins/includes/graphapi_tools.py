@@ -1209,6 +1209,3 @@ class GraphAPITools:
         # print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
 
         return
-
-
-#TODO: VER 4.1 should i export contacts when using o365 integration??? maybe just as a manual export

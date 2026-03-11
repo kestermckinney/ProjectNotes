@@ -18,6 +18,8 @@
 #include <QList>
 #include <QLocale>
 #include <QReadWriteLock>
+#include <QApplication>
+#include <QPalette>
 #include "QLogger.h"
 #include "QLoggerWriter.h"
 
@@ -402,7 +404,7 @@ QVariant SqlQueryModel::data(const QModelIndex &index, int role) const
     {
         if (m_columnIsEditable[index.column()] == DBReadOnly)
         {
-            retval = QVariant(QCOLOR_GRAY);
+            retval = QVariant(QApplication::palette().color(QPalette::Button));
         }
     }
 
@@ -800,7 +802,7 @@ bool SqlQueryModel::deleteRecord(QModelIndex index)
 
     if (m_gui)
     {
-        QMessageBox::critical(nullptr, QObject::tr("Cannot delete record"),
+        QMessageBox::critical(nullptr, QObject::tr("Cannot delete item"),
            delrow.lastError().text() + "\n" + delrow.lastQuery(), QMessageBox::Ok);
     }
 
@@ -937,7 +939,7 @@ bool SqlQueryModel::columnChangeCheck(const QModelIndex &index)
                 {
                     reference_count += relatedcount;
 
-                    message += select.value(0).toString() + " " + m_relationTitle.at(i) + " record(s)\n";
+                    message += select.value(0).toString() + " " + m_relationTitle.at(i) + " items(s)\n";
                 }
             }
 
@@ -949,10 +951,10 @@ bool SqlQueryModel::columnChangeCheck(const QModelIndex &index)
     {
         if (m_gui)
         {
-            message = QObject::tr("The ") + m_displayName + QObject::tr(" record is referenced in the following records:\n\n") + message +
-                     QObject::tr("\nYou cannot change the ") + m_displayName + QObject::tr(" record until the assocated records are changed. Would you like to run a search for all related records?");
+            message = m_displayName + QObject::tr(" is referenced in the following item(s):\n\n") + message +
+                     QObject::tr("\nYou cannot change ") + m_displayName + QObject::tr(" until they are no longer assocated with the following items. Would you like to run a search for all related items?");
 
-            if ( QMessageBox::question(nullptr, QObject::tr("Cannot change record"),
+            if ( QMessageBox::question(nullptr, QObject::tr("Cannot Change Item"),
                message, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
             {
                 if (!project_number_key.isEmpty())
@@ -1047,7 +1049,7 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
             {
                 reference_count += relatedcount;
 
-                message += select.value(0).toString() + " " + m_relationTitle.at(i) + " record(s)\n";
+                message += select.value(0).toString() + " " + m_relationTitle.at(i) + " items(s)\n";
             }
         }
 
@@ -1058,10 +1060,10 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
     {
         if (m_gui)
         {
-            message = QObject::tr("The ") + m_displayName + QObject::tr(" record is referenced in the following records:\n\n") + message +
-                     QObject::tr("\nYou cannot delete the ") + m_displayName + QObject::tr(" record until the assocated records are deleted. Would you like to run a search for all related records?");
+            message = m_displayName + QObject::tr(" is referenced in the following:\n\n") + message +
+                     QObject::tr("\nYou cannot delete the ") + m_displayName + QObject::tr(" until the assocated items no longer reference it. Would you like to run a search for all related items?");
 
-            if ( QMessageBox::question(nullptr, QObject::tr("Cannot delete record"),
+            if ( QMessageBox::question(nullptr, QObject::tr("Cannot delete item"),
                message, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
             {
                 if (!project_number_key.isEmpty())
@@ -1089,8 +1091,8 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
     {
         if (m_gui)
         {
-            if ( QMessageBox::question(nullptr, QObject::tr("Delete record?"),
-                QObject::tr("Are you sure you want to delete this ") + m_displayName + QObject::tr(" record?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
+            if ( QMessageBox::question(nullptr, QObject::tr("Delete item?"),
+                QObject::tr("Are you sure you want to delete ") + m_displayName + QObject::tr("?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
                 return true;
             else
                 return false;

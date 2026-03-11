@@ -7,6 +7,8 @@
 #include "QLogger.h"
 #include "QLoggerWriter.h"
 
+#include <QMessageBox>
+
 using namespace QLogger;
 
 
@@ -84,6 +86,64 @@ const QModelIndex ProjectTeamMembersModel::newRecord(const QVariant* fkValue1, c
 
 bool ProjectTeamMembersModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
+    // prevent changing the person if they are referenced as a meeting attendee for this project
+    // (meeting_attendees has no project_id column, so the base class columnChangeCheck cannot handle it;
+    //  we must check via a subquery through project_notes)
+    if (role == Qt::EditRole && index.column() == 2)
+    {
+        QVariant current_people_id = data(this->index(index.row(), 2));
+        QVariant current_project_id = data(this->index(index.row(), 1));
+
+        if (!current_people_id.isNull() && !current_people_id.toString().isEmpty())
+        {
+            DB_LOCK;
+            QSqlQuery qry(getDBOs()->getDb());
+            qry.prepare(QString("SELECT count(*) FROM meeting_attendees WHERE person_id = '%1' AND note_id IN (SELECT note_id FROM project_notes WHERE project_id = '%2')")
+                        .arg(current_people_id.toString(), current_project_id.toString()));
+            qry.exec();
+
+            int count = 0;
+            if (qry.next())
+                count = qry.value(0).toInt();
+
+            DB_UNLOCK;
+
+            if (count > 0)
+            {
+                // look up the project number for the key search
+                QString project_number_key;
+                DB_LOCK;
+                QSqlQuery projqry(getDBOs()->getDb());
+                projqry.prepare(QString("SELECT project_number FROM projects WHERE project_id = '%1'").arg(current_project_id.toString()));
+                projqry.exec();
+                if (projqry.next())
+                    project_number_key = projqry.value(0).toString();
+                DB_UNLOCK;
+
+                QString message = tr("Team Member is referenced in the following item(s):\n\n") +
+                    QString::number(count) + tr(" Meetings(s)\n\n") +
+                    tr("You cannot change Team Member until they are no longer assocated with the following items. Would you like to run a search for all related items?");
+
+                if ( QMessageBox::question(nullptr, tr("Cannot Change Team member"),
+                     message, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
+                {
+                    QStringList key_columns;
+                    QStringList key_values;
+                    key_columns.append("project_number");
+                    key_values.append(project_number_key);
+                    key_columns.append("datakey");
+                    key_values.append(current_people_id.toString());
+
+                    getDBOs()->searchresultsmodel()->PerformKeySearch(key_columns, key_values);
+                    emit callKeySearch();
+                }
+
+                emit dataChanged(index, index);
+                return false;
+            }
+        }
+    }
+
     // if setting team member and no role is available grab the default
     if (SqlQueryModel::setData(index, value, role))
     {

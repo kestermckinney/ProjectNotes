@@ -376,7 +376,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& projectId, QVariant& ite
 
     if (issuestoresolve)
     {
-        QMessageBox::critical(nullptr, QObject::tr("Cannot Reassign Project"), msg);
+        QMessageBox::critical(nullptr, QObject::tr("Cannot reassign project"), msg);
         return false;
     }
 

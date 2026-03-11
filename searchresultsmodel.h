@@ -12,6 +12,7 @@ public:
     SearchResultsModel(DatabaseObjects* dbo);
     void PerformSearch(const QString& searchValue);
     void PerformKeySearch(const QStringList& searchFields, const QStringList& searchValues);
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 };
 
 #endif // SEARCHRESULTSMODEL_H

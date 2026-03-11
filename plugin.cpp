@@ -90,8 +90,6 @@ bool Plugin::hasMethod(const QString& method) const
 
 void Plugin::setEnabled(const bool enabled)
 {
-    // TODO: VER 4.1 save the enabled disabled value in settings
-
     if (enabled && !m_enabled)
     {
         m_enabled = true;

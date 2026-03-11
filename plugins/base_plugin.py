@@ -269,7 +269,7 @@ def menu_open_editor(parameter):
 def menu_send_notes(xmlstr, parameter):
     baseplugin = BasePlugins(tapi)
     nf = NoteFormatter(xmlstr)
-    baseplugin.send_an_email(xmlstr, nf.get_subject(), nf.get_html(), None, "Full Project Team") #TODO: this probably won't work to use "FuLL Project Team", it may need to be Meeting Attendees a new type
+    baseplugin.send_an_email(xmlstr, nf.get_subject(), nf.get_html(), None, "Full Project Team")
 
     return ""
 
@@ -299,12 +299,3 @@ pnc = ProjectNotesCommon()
 json_menu_data = None
 menu_data = pnc.get_plugin_setting("MeetingEmailTypes", "Meeting and Email Types")
 populate_dynamic_menu(menu_data)
-
-#TODO: VER 4.1 Fix or rework tracker report export
-#TODO: VER 4.1 Fix or change the template fillout features 
-#TODO: VER 4.1 Make sure the Quick Add for a team member is there with a drop down for company
-#TODO: VER 4.1 try Qt 6.8.... and Python 14
-#TODO: VER 4.1 modules unload and reload does not seem to change the loaded python code in all cases
-#TODO: VER 4.X.X Move the action items into the same place where notes are taken.
-#TODO: VER 4.X.X we should be able to move a note to a different project... maybe add team members if needed.
-#TODO: VER 4.0.1 scroll bar location sometimes doesn't get restored if it isn't on the selected tab

@@ -39,7 +39,6 @@
 #define QCOLOR_YELLOW QColor(173, 172, 58)
 #define QCOLOR_RED QColor(153, 33, 23)
 #define QCOLOR_BLUE QColor(0, 15, 128)
-#define QCOLOR_GRAY QColor(235, 235, 235)
 
 // setup a locking macro
 #define DB_LOCK db_mutex.lock()

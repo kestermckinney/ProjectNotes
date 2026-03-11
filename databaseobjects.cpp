@@ -1304,6 +1304,3 @@ void DatabaseObjects::updateDisplayData()
         }
     }
 }
-
-// TODO: VER 4.1 you can remove someone from a team by just reselecting a new person
-
