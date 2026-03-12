@@ -33,7 +33,7 @@ public:
     explicit PluginManager(QObject *parent = nullptr);
     ~PluginManager();
 
-    QList<Plugin*> plugins() const { return m_pluginlist; }
+    const QList<Plugin*>& plugins() const { return m_pluginlist; }
     void forceReload(const QString& module);
     int loadedCount();
 

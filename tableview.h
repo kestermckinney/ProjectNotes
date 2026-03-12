@@ -16,7 +16,7 @@ class NotEditableDelegate : public QItemDelegate
 {
     Q_OBJECT
 public:
-    explicit NotEditableDelegate(QObject *parent = 0)
+    explicit NotEditableDelegate(QObject *parent = nullptr)
         : QItemDelegate(parent)
     {}
 
@@ -24,7 +24,7 @@ protected:
     bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index)
     { Q_UNUSED(model); Q_UNUSED(option); Q_UNUSED(index); Q_UNUSED(event); return false; }
     QWidget* createEditor(QWidget *, const QStyleOptionViewItem &, const QModelIndex &) const
-    { return Q_NULLPTR; }
+    { return nullptr; }
 
 };
 

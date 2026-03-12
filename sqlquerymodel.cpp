@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "databaseobjects.h"
-#include "databaseobjects.h"
 
 #include <QString>
 #include <QSqlQuery>
@@ -58,33 +57,31 @@ void SqlQueryModel::refreshImpactedRecordsets(QModelIndex index)
         // don't check against yourself
         if ( recordset != this)
         {
-            for (int i = 0; i < m_relatedTable.count(); i++)
+            // O(1) hash lookup instead of O(n) linear scan through m_relatedTable
+            auto it = m_relatedTableIndex.constFind(recordset->tablename());
+            if (it != m_relatedTableIndex.constEnd())
             {
-                // if this is a realated table look for related columns
-                if ( recordset->tablename().compare( m_relatedTable[i] ) == 0 )
+                const int i = it.value();
+                // we found a related table; look for the related columns
+                for (const QString& c : m_relatedColumns[i])
                 {
-                    // we found a table to check, look for the related columns
-                    for (QString &c : m_relatedColumns[i])
-                    {
-                        int ck_col = recordset->getColumnNumber(c);
+                    int ck_col = recordset->getColumnNumber(c);
 
-                        // if related column is being used then search
-                        if (ck_col != -1)
+                    // if related column is being used then search
+                    if (ck_col != -1)
+                    {
+                        QVariant val = m_cache[index.row()].value(0);
+                        QModelIndex qmi = recordset->findIndex(val, ck_col);
+                        if (qmi.isValid())
                         {
-                            QVariant val = m_cache[index.row()].value(0);
-                            QModelIndex qmi = recordset->findIndex(val, ck_col);
-                            if (qmi.isValid())
-                            {
-                                recordset->reloadRecord(qmi);
-                                // qDebug() << "Marking table " << recordset->tablename() << " column " << c << " row " << qmi.row();
-                            }
+                            recordset->reloadRecord(qmi);
                         }
                     }
                 }
             }
 
             // if this is the same table it needs updated too
-            if( recordset->tablename().compare(tablename()) == 0)  // if it is the same table in a different recordset it still needs updated
+            if (recordset->tablename() == tablename())  // if it is the same table in a different recordset it still needs updated
             {
                 QVariant val = m_cache[index.row()].value(0);
                 QModelIndex qmi = recordset->findIndex(val, 0);
@@ -125,8 +122,17 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
     if (role == Qt::EditRole)
     {
         // nothing changed, so do nothing
-        if (m_cache[index.row()].value(index.column()) == value)
-            return false;
+        // Compare using escaped (DB-compatible) form to handle type mismatches
+        // (e.g., cached epoch qint64 vs incoming "MM/dd/yyyy" string for DBDate,
+        //  or cached double vs incoming "$1,234.56" string for DBUSD)
+        {
+            QVariant testEscaped = value;
+            sqlEscape(testEscaped, m_columnType[index.column()], true);
+            const QVariant& cached = m_cache[index.row()].value(index.column());
+            if (cached == testEscaped ||
+                (!cached.isNull() && !testEscaped.isNull() && cached.toString() == testEscaped.toString()))
+                return false;
+        }
 
         // make sure column is edit_table
         // exit if no update table defined
@@ -301,7 +307,11 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
                 }
                 else
                 {
-                    m_cache[index.row()][index.column()] = value;
+                    // Store escaped (DB-compatible) value so cache stays consistent
+                    // with DB format. Storing raw 'value' (e.g. "12/15/2023") would
+                    // break reformatValue (toLongLong gives 0) and break subsequent
+                    // WHERE clauses (string vs integer epoch mismatch).
+                    m_cache[index.row()][index.column()] = escapedValue;
 
                     emit dataChanged(index, index);
 
@@ -330,9 +340,14 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
     return false;
 }
 
-void SqlQueryModel::setBaseSql(const QString table)
+void SqlQueryModel::setBaseSql(const QString& table)
 {
     m_baseSql = table;
+
+    // populate the column name lookup hash for fast getColumnNumber() lookups
+    m_columnNameLookup.clear();
+    for (int i = 0; i < m_columnCount; i++)
+        m_columnNameLookup[m_columnName[i]] = i;
 }
 
 void SqlQueryModel::setTableName(const QString &table, const QString &displayName)
@@ -416,7 +431,7 @@ void SqlQueryModel::clear()
     m_cache.clear();
 }
 
-QDateTime SqlQueryModel::parseDateTime(QString entrydate)
+QDateTime SqlQueryModel::parseDateTime(const QString& entrydate)
 {
     QStringList elements = entrydate.split(QRegularExpression("[-/.: ]"), Qt::SkipEmptyParts);
     QString Mon, Day,Year, Hours, Min, Seconds, Mil;
@@ -519,9 +534,7 @@ void SqlQueryModel::sqlEscape(QVariant& columnValue, DBColumnType columnType, bo
             if (columnValue == "false")
                 columnValue = "0";
 
-            columnValue.setValue(columnValue.toString().replace("$",""));
-            columnValue.setValue(columnValue.toString().replace("%",""));
-            columnValue.setValue(columnValue.toString().replace(",",""));
+            stripFormatting(columnValue);
 
             break;
         }
@@ -551,13 +564,13 @@ QVariant SqlQueryModel::headerData(int section, Qt::Orientation orientation, int
         {
             QVariant val = m_headers.value(section).value(role);
 
-            if (role == Qt::DisplayRole && !val.isValid())
+            if (!val.isValid())
                 val = m_headers.value(section).value(Qt::EditRole);
 
             if (val.isValid())
                 return val;
 
-            if (role == Qt::DisplayRole && m_columnCount > section)
+            if (m_columnCount > section)
                 return m_columnName[section];
         }
     }
@@ -579,6 +592,13 @@ bool SqlQueryModel::setHeaderData(int section, Qt::Orientation orientation,
     emit headerDataChanged(orientation, section, section);
 
     return true;
+}
+
+void SqlQueryModel::stripFormatting(QVariant& value) const
+{
+    value.setValue(value.toString().replace("$",""));
+    value.setValue(value.toString().replace("%",""));
+    value.setValue(value.toString().replace(",",""));
 }
 
 void SqlQueryModel::reformatValue(QVariant& columnValue, DBColumnType columnType) const
@@ -624,24 +644,18 @@ void SqlQueryModel::reformatValue(QVariant& columnValue, DBColumnType columnType
         }
         case DBReal:
         {
-            columnValue.setValue(columnValue.toString().replace("$",""));
-            columnValue.setValue(columnValue.toString().replace("%",""));
-            columnValue.setValue(columnValue.toString().replace(",",""));
+            stripFormatting(columnValue);
             break;
         }
         case DBInteger:
         case DBBool:
         {
-            columnValue.setValue(columnValue.toString().replace("$",""));
-            columnValue.setValue(columnValue.toString().replace("%",""));
-            columnValue.setValue(columnValue.toString().replace(",",""));
+            stripFormatting(columnValue);
             break;
         }
         case DBUSD:
         {
-            columnValue.setValue(columnValue.toString().replace("$",""));
-            columnValue.setValue(columnValue.toString().replace("%",""));
-            columnValue.setValue(columnValue.toString().replace(",",""));
+            stripFormatting(columnValue);
 
             QLocale lc;
             columnValue = lc.toCurrencyString(columnValue.toDouble());
@@ -650,9 +664,7 @@ void SqlQueryModel::reformatValue(QVariant& columnValue, DBColumnType columnType
         }
         case DBPercent:
         {
-            columnValue.setValue(columnValue.toString().replace("$",""));
-            columnValue.setValue(columnValue.toString().replace("%",""));
-            columnValue.setValue(columnValue.toString().replace(",",""));
+            stripFormatting(columnValue);
 
             columnValue = QString::asprintf("%.2f%%",columnValue.toDouble());
             break;
@@ -701,6 +713,8 @@ void SqlQueryModel::addColumn(const QString& columnName, const QString& displayN
 
     m_lookupValues[m_columnCount] = nullptr;
 
+    m_columnNameLookup[columnName] = m_columnCount;
+
     m_columnCount++;
 }
 
@@ -708,7 +722,9 @@ void SqlQueryModel::renameColumn(const int columnNumber, const QString& columnNa
 {
     if (columnNumber < m_columnCount)
     {
+        m_columnNameLookup.remove(m_columnName[columnNumber]);
         m_columnName[columnNumber] = columnName;
+        m_columnNameLookup[columnName] = columnNumber;
         setHeaderData(columnNumber, Qt::Horizontal, displayName);
     }
 }
@@ -857,6 +873,7 @@ void SqlQueryModel::addRelatedTable(const QString& tableName, const QString& col
 
 void SqlQueryModel::addRelatedTable(const QString& tableName, const QStringList& columnNames, const QStringList& fkColumnNames, const QString& title, const DBRelationExportable exportable)
 {
+    m_relatedTableIndex[tableName] = m_relatedTable.size();
     m_relatedTable.append(tableName);
     m_relatedColumns.append(columnNames);
     m_relatedFkColumns.append(fkColumnNames);
@@ -1188,42 +1205,55 @@ QString SqlQueryModel::constructWhereClause(bool includeUserFilter)
                 if (!valuelist.isEmpty())
                     valuelist += tr(" AND ");
 
-                QString compare_op;
-
-                switch (m_filterCompareType[hashit.key()])
+                // In: comma-separated filter value becomes  column IN ('v1','v2',...)
+                if (m_filterCompareType[hashit.key()] == DBCompareType::In)
                 {
-                case DBCompareType::GreaterThan:
-                    compare_op = ">";
-                    break;
-                case DBCompareType::LessThan:
-                    compare_op = "<";
-                    break;
-                case DBCompareType::NotEqual:
-                    compare_op = "<>";
-                    break;
-                case DBCompareType::Like:
-                    compare_op = "LIKE";
-                    break;
-                default:
-                    compare_op = "=";
-                }
-
-                sqlEscape(column_value, m_columnType[hashit.key()]);
-
-                if ( m_columnType[hashit.key()] != DBString && m_columnType[hashit.key()] != DBHtml)
-                {
-                    if (m_columnType[hashit.key()] == DBBool && column_value.toString().compare("0") == 0)
-                    {
-                        valuelist += QString(" ( %1 %3 %2").arg(m_columnName[hashit.key()], column_value.toString(), compare_op);
-                        valuelist += QString(" OR %1 IS NULL) ").arg( m_columnName[hashit.key()] );
-                    }
-                    else
-                        valuelist += QString("%1 = %2").arg( m_columnName[hashit.key()], column_value.toString() );
+                    const QStringList parts = column_value.toString().split(',', Qt::SkipEmptyParts);
+                    QStringList quoted;
+                    quoted.reserve(parts.size());
+                    for (const QString& part : parts)
+                        quoted.append(QString("'%1'").arg(part.trimmed().replace("'", "''")));
+                    valuelist += QString("%1 IN (%2)").arg(m_columnName[hashit.key()], quoted.join(','));
                 }
                 else
                 {
+                    QString compare_op;
+
+                    switch (m_filterCompareType[hashit.key()])
+                    {
+                    case DBCompareType::GreaterThan:
+                        compare_op = ">";
+                        break;
+                    case DBCompareType::LessThan:
+                        compare_op = "<";
+                        break;
+                    case DBCompareType::NotEqual:
+                        compare_op = "<>";
+                        break;
+                    case DBCompareType::Like:
+                        compare_op = "LIKE";
+                        break;
+                    default:
+                        compare_op = "=";
+                    }
+
                     sqlEscape(column_value, m_columnType[hashit.key()]);
-                    valuelist += QString("%1 %3 '%2'").arg( m_columnName[hashit.key()], column_value.toString(), compare_op);
+
+                    if ( m_columnType[hashit.key()] != DBString && m_columnType[hashit.key()] != DBHtml)
+                    {
+                        if (m_columnType[hashit.key()] == DBBool && column_value.toString().compare("0") == 0)
+                        {
+                            valuelist += QString(" ( %1 %3 %2").arg(m_columnName[hashit.key()], column_value.toString(), compare_op);
+                            valuelist += QString(" OR %1 IS NULL) ").arg( m_columnName[hashit.key()] );
+                        }
+                        else
+                            valuelist += QString("%1 = %2").arg( m_columnName[hashit.key()], column_value.toString() );
+                    }
+                    else
+                    {
+                        sqlEscape(column_value, m_columnType[hashit.key()]);
+                        valuelist += QString("%1 %3 '%2'").arg( m_columnName[hashit.key()], column_value.toString(), compare_op);
+                    }
                 }
             }
         }
@@ -1490,7 +1520,7 @@ void SqlQueryModel::getUserSearchRange(int columnNumber, QVariant& searchBeginVa
 
 void SqlQueryModel::clearAllUserSearches()
 {
-    QHashIterator<int, bool> hashit(m_columnIsFiltered);
+    QHashIterator<int, bool> hashit(m_isUserFiltered);
 
     while (hashit.hasNext())
     {
@@ -1548,7 +1578,7 @@ bool SqlQueryModel::hasUserFilters() const
     return false;
 }
 
-void SqlQueryModel::activateUserFilter(QString filterName)
+void SqlQueryModel::activateUserFilter(const QString& filterName)
 {
     m_userFilterActive = true;
     refresh();
@@ -1567,7 +1597,7 @@ void SqlQueryModel::activateUserFilter(QString filterName)
     }
 }
 
-void SqlQueryModel::deactivateUserFilter(QString filterName)
+void SqlQueryModel::deactivateUserFilter(const QString& filterName)
 {
     m_userFilterActive = false;
     refresh();
@@ -1586,7 +1616,7 @@ void SqlQueryModel::deactivateUserFilter(QString filterName)
     }
 }
 
-void SqlQueryModel::loadLastUserFilterState(QString filterName)
+void SqlQueryModel::loadLastUserFilterState(const QString& filterName)
 {
     QString filter_name = filterName;
     filter_name.replace(" ", "_", Qt::CaseSensitive);
@@ -1605,7 +1635,7 @@ void SqlQueryModel::loadLastUserFilterState(QString filterName)
         m_userFilterActive = false;
 }
 
-void SqlQueryModel::saveUserFilter( QString filterName)
+void SqlQueryModel::saveUserFilter(const QString& filterName)
 {
     QString filter_name = filterName;
     filter_name.replace(" ", "_", Qt::CaseSensitive);
@@ -1651,7 +1681,7 @@ void SqlQueryModel::saveUserFilter( QString filterName)
     getDBOs()->saveParameter( parmname, xml );
 }
 
-void SqlQueryModel::loadUserFilter( QString filterName)
+void SqlQueryModel::loadUserFilter(const QString& filterName)
 {
     QString filter_name = filterName;
     filter_name.replace(" ", "_", Qt::CaseSensitive);
@@ -1724,12 +1754,11 @@ QString SqlQueryModel::getColumnName( QString& displayName )
     return QString();
 }
 
-int SqlQueryModel::getColumnNumber(const QString &fieldName)
+int SqlQueryModel::getColumnNumber(const QString& fieldName)
 {
-    for (int i = 0; i < m_columnCount; i++)
-        if (m_columnName[i].compare(fieldName) == 0)
-            return i;
-
+    auto it = m_columnNameLookup.find(fieldName);
+    if (it != m_columnNameLookup.end())
+        return it.value();
     return -1;
 }
 
@@ -2138,7 +2167,7 @@ bool SqlQueryModel::checkUniqueKeys(const QModelIndex &index, const QVariant &va
         QString where;
         bool isrelevent = false;
 
-        foreach ( const QString f, itk.value() )
+        for (const QString& f : itk.value())
         {
             if ( f.compare(checkfield) == 0 )
                 isrelevent = true;
@@ -2159,7 +2188,7 @@ bool SqlQueryModel::checkUniqueKeys(const QModelIndex &index, const QVariant &va
             QSqlQuery qry(getDBOs()->getDb());
             qry.prepare(where);
 
-            foreach ( QString f, itk.value() )
+            for (const QString& f : itk.value())
             {
                 if ( f.compare(checkfield) == 0 )
                 {
@@ -2202,6 +2231,47 @@ bool SqlQueryModel::checkUniqueKeys(const QModelIndex &index, const QVariant &va
     return true;
 }
 
+bool SqlQueryModel::matchesFilter(int column, const QVariant& value)
+{
+    if (hasFilter(column))
+    {
+        if (m_filterCompareType[column] == DBCompareType::In)
+        {
+            const QStringList parts = m_filterValue[column].toString().split(',', Qt::SkipEmptyParts);
+            bool found = false;
+            for (const QString& part : parts)
+            {
+                if (value.toString().trimmed().compare(part.trimmed(), Qt::CaseInsensitive) == 0)
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+                return false;
+        }
+        else if (getFilter(column) != value)
+            return false;
+    }
+
+    if (hasUserFilters(column))
+    {
+        QVariantList vallist = getUserFilter(column);
+        bool matches = false;
+
+        for (const QVariant& v : vallist)
+        {
+            if (value.toString().contains(v.toString(), Qt::CaseInsensitive))
+                matches = true;
+        }
+
+        if (!matches)
+            return false;
+    }
+
+    return true;
+}
+
 bool SqlQueryModel::loadAndFilterRow(const QVariant& id)  // load the record and see if it matches filter
 {
     QVector<QVariant> newrecord = emptyrecord();
@@ -2226,34 +2296,8 @@ bool SqlQueryModel::loadAndFilterRow(const QVariant& id)  // load the record and
 
     while (c--)
     {
-        // if a filter exists for this column and the value doesn't pass don't add the record
-        if (hasFilter(c))
-        {
-            if (getFilter(c) != newrecord[c])
-            {
-                // qDebug() << " -- filter value " << colval << " did not match";
-                return false;
-            }
-        }
-
-        if (hasUserFilters(c))
-        {
-            QVariantList vallist = getUserFilter(c);
-            bool matches = false;
-
-            foreach (QVariant v, vallist)
-            {
-                if (newrecord[c].toString().contains(v.toString(), Qt::CaseInsensitive))
-                    matches = true;
-            }
-
-            if (!matches)
-            {
-                // qDebug() << " -- user filter value did not match";
-
-                return false;
-            }
-        }
+        if (!matchesFilter(c, newrecord[c]))
+            return false;
     }
 
     addRecord(newrecord);
@@ -2284,34 +2328,8 @@ bool SqlQueryModel::copyAndFilterRow(QModelIndex& qmi, SqlQueryModel& pnmodel)
 
             // qDebug() << " - found matching column " << sourcename;
 
-            // if a filter exists for this column and the value doesn't pass don't add the record
-            if (hasFilter(dc))
-            {
-                if (getFilter(dc) != colval)
-                {
-                    // qDebug() << " -- filter value " << colval << " did not match";
-                    return false;
-                }
-            }
-
-            if (hasUserFilters(dc))
-            {
-                QVariantList vallist = getUserFilter(dc);
-                bool matches = false;
-
-                foreach (QVariant v, vallist)
-                {
-                    if (colval.toString().contains(v.toString(), Qt::CaseInsensitive))
-                        matches = true;
-                }
-
-                if (!matches)
-                {
-                    // qDebug() << " -- user filter value did not match";
-
-                    return false;
-                }
-            }
+            if (!matchesFilter(dc, colval))
+                return false;
 
             newrecord[dc] = colval;
         }

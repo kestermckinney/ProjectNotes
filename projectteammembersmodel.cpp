@@ -74,7 +74,6 @@ QVariant ProjectTeamMembersModel::data(const QModelIndex &index, int role) const
 
 const QModelIndex ProjectTeamMembersModel::newRecord(const QVariant* fkValue1, const QVariant* fkValue2)
 {
-    Q_UNUSED(fkValue1);
     Q_UNUSED(fkValue2);
 
     QVector<QVariant> qr = emptyrecord();
@@ -96,33 +95,31 @@ bool ProjectTeamMembersModel::setData(const QModelIndex &index, const QVariant &
 
         if (!current_people_id.isNull() && !current_people_id.toString().isEmpty())
         {
+            // Fetch attendance count and project number in a single query
             DB_LOCK;
             QSqlQuery qry(getDBOs()->getDb());
-            qry.prepare(QString("SELECT count(*) FROM meeting_attendees WHERE person_id = '%1' AND note_id IN (SELECT note_id FROM project_notes WHERE project_id = '%2')")
-                        .arg(current_people_id.toString(), current_project_id.toString()));
+            qry.prepare(QString(
+                "SELECT (SELECT count(*) FROM meeting_attendees WHERE person_id = '%1' "
+                "AND note_id IN (SELECT note_id FROM project_notes WHERE project_id = '%2')), "
+                "(SELECT project_number FROM projects WHERE project_id = '%2')")
+                .arg(current_people_id.toString(), current_project_id.toString()));
             qry.exec();
 
             int count = 0;
+            QString project_number_key;
             if (qry.next())
+            {
                 count = qry.value(0).toInt();
-
+                project_number_key = qry.value(1).toString();
+            }
             DB_UNLOCK;
 
             if (count > 0)
             {
-                // look up the project number for the key search
-                QString project_number_key;
-                DB_LOCK;
-                QSqlQuery projqry(getDBOs()->getDb());
-                projqry.prepare(QString("SELECT project_number FROM projects WHERE project_id = '%1'").arg(current_project_id.toString()));
-                projqry.exec();
-                if (projqry.next())
-                    project_number_key = projqry.value(0).toString();
-                DB_UNLOCK;
-
-                QString message = tr("Team Member is referenced in the following item(s):\n\n") +
-                    QString::number(count) + tr(" Meetings(s)\n\n") +
-                    tr("You cannot change Team Member until they are no longer assocated with the following items. Would you like to run a search for all related items?");
+                const QString message = QString("%1%2%3")
+                    .arg(tr("Team Member is referenced in the following item(s):\n\n"),
+                         QString::number(count) + tr(" Meetings(s)\n\n"),
+                         tr("You cannot change Team Member until they are no longer assocated with the following items. Would you like to run a search for all related items?"));
 
                 if ( QMessageBox::question(nullptr, tr("Cannot Change Team member"),
                      message, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )

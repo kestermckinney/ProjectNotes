@@ -60,6 +60,7 @@ private:
     ValueSelectModel* m_valuesModel = nullptr;
     SortFilterProxyModel* m_valuesProxyModel = nullptr;
     SqlQueryModel* m_filteredModel = nullptr;
+    TableView* m_sourceView = nullptr;
 
     int m_selectedColumn = -1;  // nothing selected until construction
 

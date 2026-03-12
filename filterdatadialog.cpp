@@ -88,6 +88,7 @@ QVariant FilterDataDialog::getSearchText()
 void FilterDataDialog::setSourceModelView(SqlQueryModel *model, TableView *view)
 {
     m_filteredModel = model;
+    m_sourceView = view;
 
     // set the names differently for each instance so the table view widths are saved differently for each view filter
     ui->tableViewColumnName->setObjectName("tableViewColumnName_" + view->objectName());
@@ -95,7 +96,7 @@ void FilterDataDialog::setSourceModelView(SqlQueryModel *model, TableView *view)
 
     ui->tableViewColumnName->setSourceView( view );
 
-    m_columnModel->setColumnModel(model);
+    m_columnModel->setColumnModel(model, view);
     m_columnModel->setSavedFilters(&m_savedFilters);
     m_columnModel->setFilteringModel(model);
     m_columnModel->refresh();
@@ -266,7 +267,7 @@ void FilterDataDialog::setupFilters()
     int visiblecolumn = 0;
     for (int i = 0; i < colcount; i++)
     {
-        if ( m_filteredModel->isSearchable(i) )
+        if ( m_filteredModel->isSearchable(i) && (m_sourceView == nullptr || !m_sourceView->isColumnHidden(i)) )
         {
             FilterSaveStructure fs = FilterSaveStructure();
             QString colname = m_filteredModel->getColumnName(i);

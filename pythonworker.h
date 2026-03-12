@@ -7,6 +7,7 @@
 #include <QMutexLocker>
 #include <QWaitCondition>
 #include <QTimer>
+#include <atomic>
 
 #include "QLogger.h"
 #include "QLoggerWriter.h"
@@ -181,8 +182,8 @@ private slots:
 private:
     QMutex m_loadingmutex;
     QWaitCondition m_loadwait;
-    bool m_isloading = false;
-    bool m_isloaded = false;
+    std::atomic<bool> m_isloading{false};
+    std::atomic<bool> m_isloaded{false};
 
     QString m_modulename;
     QString m_modulepath;

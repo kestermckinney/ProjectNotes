@@ -27,6 +27,7 @@
 #include <QDateEdit>
 #include <QLineEdit>
 #include <QWheelEvent>
+#include <memory>
 
 class WIDGETS_EXPORT DateEditEx : public QDateEdit
 {
@@ -69,7 +70,7 @@ private:
     Q_DISABLE_COPY(DateEditEx)
     class Private;
     friend class Private;
-    Private* d;
+    std::unique_ptr<Private> d;
 
 };
 

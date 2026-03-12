@@ -36,7 +36,7 @@ QWidget* SqlComboBoxDelegate::createEditor(QWidget *parent, const QStyleOptionVi
     editor->setModel(m_model);
     editor->setModelColumn(m_displayColumn); // column to display
 
-    QCompleter* completer = new QCompleter(m_model);
+    QCompleter* completer = new QCompleter(m_model, editor);
     completer->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
     completer->setCompletionMode(QCompleter::PopupCompletion);
     completer->setCaseSensitivity(Qt::CaseInsensitive);

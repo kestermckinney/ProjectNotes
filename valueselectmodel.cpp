@@ -41,9 +41,7 @@ void ValueSelectModel::setValuesColumn(QString column)
     else
         where = " where ";
 
-    // QString fieldnm = m_filteringModel->getColumnName(col);
-
-    QString fieldnm = getColumnName(0);
+    QString fieldnm = m_filteringModel->getColumnName(col);
 
     setType(0, m_filteringModel->getType(col));
     QString sql = "select distinct " + fieldnm + " from ( " + m_filteringModel->BaseSQL() + where + fieldnm + " is not null )";

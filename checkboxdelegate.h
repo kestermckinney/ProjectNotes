@@ -25,8 +25,6 @@ public:
 private:
     Qt::ItemFlags flags ( const QModelIndex & index ) const;
 
-    SqlQueryModel* m_model;
-    int m_displayColumn;
 };
 
 #endif // CHECKBOXDELEGATE_H

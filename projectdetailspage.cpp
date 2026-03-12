@@ -41,10 +41,6 @@ void ProjectDetailsPage::openRecord(QVariant& recordId)
     global_DBObjects.trackeritemsmodel()->setFilter(14, recordId.toString());
     global_DBObjects.trackeritemsmodel()->refresh();
 
-    // filter tracker items by project
-    global_DBObjects.trackeritemsmodel()->setFilter(14, recordId.toString());
-    global_DBObjects.trackeritemsmodel()->refresh();
-
     global_DBObjects.trackeritemsmeetingsmodel()->setFilter(1, recordId.toString());
     global_DBObjects.trackeritemsmeetingsmodel()->refresh();
 
@@ -85,8 +81,8 @@ void ProjectDetailsPage::newRecord()
         col++;
 
 
-    QModelIndex sort_index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->index(
-        dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->mapFromSource(index).row(), col);
+    auto* proxy = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model());
+    QModelIndex sort_index = proxy->index(proxy->mapFromSource(index).row(), col);
 
     getCurrentView()->selectionModel()->select(sort_index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     getCurrentView()->scrollTo(sort_index, QAbstractItemView::PositionAtCenter);
@@ -157,16 +153,15 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *ui )
 
 
     ui->tableViewStatusReportItems->setModel(global_DBObjects.statusreportitemsmodelproxy());
-
-    setCurrentModel(global_DBObjects.statusreportitemsmodelproxy());
-    setCurrentView( ui->tableViewStatusReportItems );
-
     ui->tableViewTeam->setModel(global_DBObjects.projectteammembersmodelproxy());
     ui->tableViewTeam->setKeyToOpenField(2);
 
     ui->tableViewTrackerItems->setModel(global_DBObjects.trackeritemsmodelproxy());
     ui->tableViewLocations->setModel(global_DBObjects.projectlocationsmodelproxy());
     ui->tableViewProjectNotes->setModel(global_DBObjects.projectnotesmodelproxy());
+
+    // sync current model/view to whichever tab is currently visible
+    on_tabWidgetProject_currentChanged(ui->tabWidgetProject->currentIndex());
 }
 
 void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)

@@ -31,7 +31,7 @@ class SqlQueryModel : public QAbstractTableModel
 public:
 
     enum DBColumnType {DBBlob, DBReal, DBDate, DBInteger, DBString, DBUSD, DBPercent, DBDateTime, DBBool, DBHtml};
-    enum DBCompareType {Equals, GreaterThan, LessThan, NotEqual, Like};
+    enum DBCompareType {Equals, GreaterThan, LessThan, NotEqual, Like, In};
     enum DBColumnRequired {DBRequired, DBNotRequired};
     enum DBColumnSearchable {DBSearchable, DBNotSearchable};
     enum DBColumnUnique {DBUnique, DBNotUnique};
@@ -59,10 +59,10 @@ public:
     void setTableName(const QString &table, const QString &displayName);
     const QString& tablename() { return m_tablename; }
     const QString& displayname() { return m_displayName; }
-    void setBaseSql(const QString table);
+    void setBaseSql(const QString& table);
     const QString& BaseSQL() { return m_baseSql; }
     void setTop(unsigned long top) {m_top=top; }
-    void setSkip(unsigned long skip) {m_top=skip; }
+    void setSkip(unsigned long skip) {m_skip=skip; }
 
     Qt::ItemFlags flags(const QModelIndex &index) const override;
 
@@ -79,14 +79,14 @@ public:
     void addRelatedTable(const QString& tableName, const QString& columnName, const QString& fkColumnName, const QString& title, const DBRelationExportable exportable = DBNotExportable);
     void addRelatedTable(const QString& tableName, const QStringList& columnNames, const QStringList& fkColumnNames, const QString& title, const DBRelationExportable exportable = DBNotExportable);
 
-    void addUniqueKeys(QStringList uniqueKeys, const QString& name) { m_uniqueKeys[name] = uniqueKeys; }
+    void addUniqueKeys(const QStringList& uniqueKeys, const QString& name) { m_uniqueKeys[name] = uniqueKeys; }
     void associateLookupValues(int columnNumber, QStringList* lookupValues);
     QVariant headerData(int section, Qt::Orientation orientation,
                         int role = Qt::DisplayRole) const override;
     bool setHeaderData(int section, Qt::Orientation orientation, const QVariant &value,
                        int role = Qt::EditRole) override;
 
-    static QDateTime parseDateTime(QString entrydate);
+    static QDateTime parseDateTime(const QString& entrydate);
     virtual const QModelIndex addRecord(QVector<QVariant>& newrecord);
     virtual const QModelIndex copyRecord(QModelIndex index);
     virtual const QModelIndex newRecord(const QVariant* fkValue1 = nullptr, const QVariant* fkValue2 = nullptr);
@@ -134,12 +134,12 @@ public:
     void clearUserSearchRange(int columnNumber);
     bool hasUserFilters(int columnNumber) const;
     bool hasUserFilters() const;
-    void activateUserFilter(QString filterName);
-    void deactivateUserFilter(QString filterName);
-    void loadLastUserFilterState(QString filterName);
+    void activateUserFilter(const QString& filterName);
+    void deactivateUserFilter(const QString& filterName);
+    void loadLastUserFilterState(const QString& filterName);
 
-    void saveUserFilter( QString filterName);
-    void loadUserFilter( QString filterName);
+    void saveUserFilter(const QString& filterName);
+    void loadUserFilter(const QString& filterName);
     bool getUserFilterState() { return m_userFilterActive; }
 
     void setOrderBy(const QString& orderBy) { m_orderBy = orderBy; }
@@ -200,6 +200,8 @@ private:
     QHash<int, QVariant> m_rangeSearchStart;
     QHash<int, QVariant> m_rangeSearchEnd;
 
+    QHash<QString, int> m_columnNameLookup;
+
     // setup unique keys to be used
     QHash<QString, QStringList> m_uniqueKeys;
 
@@ -215,6 +217,7 @@ private:
     QVector<QStringList> m_relatedFkColumns;
     QVector<QString> m_relationTitle;
     QVector<DBRelationExportable> m_relationExportable;
+    QHash<QString, int> m_relatedTableIndex; // maps table name → index in m_relatedTable for O(1) lookup
 
     QVector<QVector<QVariant>> m_cache;
     QVector<QHash<int, QVariant> > m_headers;
@@ -228,6 +231,9 @@ private:
     bool m_canExport = true;
 
     DatabaseObjects* m_dbo;
+
+    void stripFormatting(QVariant& value) const;
+    bool matchesFilter(int column, const QVariant& value);
 
 signals:
     void callKeySearch();

@@ -19,7 +19,7 @@ ColumnModel::ColumnModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
     refresh();
 }
 
-void ColumnModel::setColumnModel(SqlQueryModel *columnmodel)
+void ColumnModel::setColumnModel(SqlQueryModel *columnmodel, QTableView *view)
 {
     QString buildsql;
 
@@ -27,7 +27,7 @@ void ColumnModel::setColumnModel(SqlQueryModel *columnmodel)
 
     for (int i = 0; i < col_count; i++)
     {
-        if (columnmodel->isSearchable(i))
+        if (columnmodel->isSearchable(i) && (view == nullptr || !view->isColumnHidden(i)))
         {
             if (!buildsql.isEmpty())
                 buildsql += "union all ";

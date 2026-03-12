@@ -6,7 +6,7 @@
 
 ProjectLocationsModel::ProjectLocationsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
-    setObjectName("ProjedtLocationsModel");
+    setObjectName("ProjectLocationsModel");
     setOrderKey(35);
 
     setBaseSql("SELECT location_id, project_id, location_type, location_description, full_path, (select p.project_number from projects p where p.project_id=pl.project_id) project_number, (select p.project_name from projects p where p.project_id=pl.project_id) project_name FROM project_locations pl");
@@ -59,23 +59,25 @@ bool ProjectLocationsModel::setData(const QModelIndex &index, const QVariant &va
         QModelIndex qmi_desc = this->index(index.row(), 3);
         QVariant desc_val = data(qmi_desc, role);
 
-        if ( test_val.right(5).contains(".doc", Qt::CaseInsensitive) || test_val.right(5).contains(".dot", Qt::CaseInsensitive) || test_val.right(5).contains(".odt", Qt::CaseInsensitive) || test_val.right(5).contains(".rtf", Qt::CaseInsensitive) )
+        QString suffix = test_val.right(5);
+
+        if ( suffix.contains(".doc", Qt::CaseInsensitive) || suffix.contains(".dot", Qt::CaseInsensitive) || suffix.contains(".odt", Qt::CaseInsensitive) || suffix.contains(".rtf", Qt::CaseInsensitive) )
         {
             file_type = "Word Document";
         }
-        else if ( test_val.right(5).contains(".xls", Qt::CaseInsensitive) || test_val.right(5).contains(".ods", Qt::CaseInsensitive) || test_val.right(5).contains(".xlt", Qt::CaseInsensitive) )
+        else if ( suffix.contains(".xls", Qt::CaseInsensitive) || suffix.contains(".ods", Qt::CaseInsensitive) || suffix.contains(".xlt", Qt::CaseInsensitive) )
         {
             file_type = "Excel Document";
         }
-        else if ( test_val.right(5).contains(".mpp", Qt::CaseInsensitive) || test_val.right(5).contains(".mpt", Qt::CaseInsensitive) )
+        else if ( suffix.contains(".mpp", Qt::CaseInsensitive) || suffix.contains(".mpt", Qt::CaseInsensitive) )
         {
             file_type = "Microsoft Project";
         }
-        else if ( test_val.right(5).contains(".ppt", Qt::CaseInsensitive) || test_val.right(5).contains(".odp", Qt::CaseInsensitive) || test_val.right(5).contains(".pps", Qt::CaseInsensitive) || test_val.right(5).contains(".pot", Qt::CaseInsensitive) )
+        else if ( suffix.contains(".ppt", Qt::CaseInsensitive) || suffix.contains(".odp", Qt::CaseInsensitive) || suffix.contains(".pps", Qt::CaseInsensitive) || suffix.contains(".pot", Qt::CaseInsensitive) )
         {
             file_type = "PowerPoint Document";
         }
-        else if ( test_val.right(5).contains(".pdf", Qt::CaseInsensitive) || test_val.right(5).contains(".odp", Qt::CaseInsensitive) || test_val.right(5).contains(".pps", Qt::CaseInsensitive) || test_val.right(5).contains(".pot", Qt::CaseInsensitive) )
+        else if ( suffix.contains(".pdf", Qt::CaseInsensitive) )
         {
             file_type = "PDF File";
         }
@@ -83,7 +85,7 @@ bool ProjectLocationsModel::setData(const QModelIndex &index, const QVariant &va
         {
             file_type = "Web Link";
         }
-        else if ( !test_val.right(5).contains(".", Qt::CaseInsensitive) )
+        else if ( !suffix.contains(".", Qt::CaseInsensitive) )
         {
             file_type = "File Folder";
         }

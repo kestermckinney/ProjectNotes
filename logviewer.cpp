@@ -207,9 +207,8 @@ LogViewer::~LogViewer()
     for (QThread* t : m_loadingThreads)
     {
         t->quit();
-        t->wait(30);
-
-        delete t;
+        t->wait(5000);
+        // don't delete t - deleteLater handles it
     }
 
     m_loadingThreads.clear();
@@ -354,7 +353,7 @@ void LogViewer::onClearLog()
     {
         QString fileName = m_tabWidget->tabText(currentIndex);
         fileName.remove('&');
-        QString filePath = m_folderPath + "/" + fileName;
+        QString filePath = QString("%1/%2").arg(m_folderPath, fileName);
 
         if (QFile::remove(filePath))
         {

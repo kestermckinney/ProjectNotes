@@ -34,13 +34,14 @@
 #include <QDomAttr>
 #include <QDomNodeList>
 #include <QMutex>
+#include <QMutexLocker>
 
 // common colors
 #define QCOLOR_YELLOW QColor(173, 172, 58)
 #define QCOLOR_RED QColor(153, 33, 23)
 #define QCOLOR_BLUE QColor(0, 15, 128)
 
-// setup a locking macro
+// database mutex locking macros
 #define DB_LOCK db_mutex.lock()
 #define DB_UNLOCK db_mutex.unlock()
 
@@ -66,14 +67,14 @@ class DatabaseObjects : public QObject
 public:
     explicit DatabaseObjects(QObject *parent = nullptr);
     bool openDatabase(const QString& databasepath, const QString& connectionname, bool gui = true);
-    bool createDatabase(QString& databasepath);
+    bool createDatabase(const QString& databasepath);
     void closeDatabase();
     QSqlDatabase& getDb() { return m_sqliteDb; }
 
     QString execute(const QString& sql);
     void addModel(SqlQueryModel* model);
     void removeModel(SqlQueryModel* model);
-    QList<SqlQueryModel*> getOpenModels() {  return m_openRecordsets; }
+    const QList<SqlQueryModel*>& getOpenModels() { return m_openRecordsets; }
     SqlQueryModel* createExportObject(const QString& tableName);
 
     void backupDatabase(const QString& file);
@@ -162,13 +163,11 @@ public:
     bool getShowClosedProjects();
     void setShowInternalItems(bool value);
     bool getShowInternalItems();
-    void setGlobalClientFilter(QString value);
-    QString getGlobalClientFilter();
-    void setGlobalProjectFilter(QString value);
+    void setGlobalProjectFilter(const QString& value);
     QString getGlobalProjectFilter();
-    void setProjectManager(QString value);
+    void setProjectManager(const QString& value);
     QString getProjectManager();
-    void setManagingCompany(QString value);
+    void setManagingCompany(const QString& value);
     QString getManagingCompany();
 
     QDomDocument* createXMLExportDoc(SqlQueryModel* querymodel, const QString& filter = QString());
@@ -186,52 +185,52 @@ private:
     QSqlDatabase m_sqliteDb;
     bool m_gui = true;
 
-    ClientsModel* m_clientsModel;
-    ClientsModel* m_unfilteredclientsModel;
-    PeopleModel* m_peopleModel;
-    PeopleModel* m_companyPeopleModel;
-    PeopleModel* m_unfilteredPeopleModel;
-    ProjectsListModel* m_projectsListModel;
-    ProjectsModel* m_projectInformationModel;
-    TeamsModel* m_teamsModel;
-    StatusReportItemsModel* m_statusReportItemsModel;
-    ProjectTeamMembersModel* m_projectTeamMembersModel;
-    ProjectLocationsModel* m_projectLocationsModel;
-    ProjectNotesModel* m_projectNotesModel;
-    ProjectNotesModel* m_projectEditingNotesModel;
-    ActionItemProjectNotesModel* m_actionItemProjectNotesModel;
-    ActionItemsDetailsMeetingsModel* m_actionItemsDetailsMeetingsModel;
-    ActionItemsDetailsMeetingsModel* m_trackerItemsMeetingsModel;
-    MeetingAttendeesModel* m_meetingAttendeesModel;
-    NotesActionItemsModel* m_notesActionItemsModel;
-    TrackerItemCommentsModel* m_trackerItemCommentsModel;
-    TrackerItemsModel* m_projectActionItemsModel;
-    TrackerItemsModel* m_actionItemDetailsModel;
+    ClientsModel* m_clientsModel = nullptr;
+    ClientsModel* m_unfilteredclientsModel = nullptr;
+    PeopleModel* m_peopleModel = nullptr;
+    PeopleModel* m_companyPeopleModel = nullptr;
+    PeopleModel* m_unfilteredPeopleModel = nullptr;
+    ProjectsListModel* m_projectsListModel = nullptr;
+    ProjectsModel* m_projectInformationModel = nullptr;
+    TeamsModel* m_teamsModel = nullptr;
+    StatusReportItemsModel* m_statusReportItemsModel = nullptr;
+    ProjectTeamMembersModel* m_projectTeamMembersModel = nullptr;
+    ProjectLocationsModel* m_projectLocationsModel = nullptr;
+    ProjectNotesModel* m_projectNotesModel = nullptr;
+    ProjectNotesModel* m_projectEditingNotesModel = nullptr;
+    ActionItemProjectNotesModel* m_actionItemProjectNotesModel = nullptr;
+    ActionItemsDetailsMeetingsModel* m_actionItemsDetailsMeetingsModel = nullptr;
+    ActionItemsDetailsMeetingsModel* m_trackerItemsMeetingsModel = nullptr;
+    MeetingAttendeesModel* m_meetingAttendeesModel = nullptr;
+    NotesActionItemsModel* m_notesActionItemsModel = nullptr;
+    TrackerItemCommentsModel* m_trackerItemCommentsModel = nullptr;
+    TrackerItemsModel* m_projectActionItemsModel = nullptr;
+    TrackerItemsModel* m_actionItemDetailsModel = nullptr;
 
-    SearchResultsModel* m_searchResultsModel;
+    SearchResultsModel* m_searchResultsModel = nullptr;
 
-    SortFilterProxyModel* m_clientsModelProxy;
-    SortFilterProxyModel* m_unfilteredclientsModelProxy;
-    SortFilterProxyModel* m_peopleModelProxy;
-    SortFilterProxyModel* m_companyPeopleModelProxy;
-    SortFilterProxyModel* m_unfilteredPeopleModelProxy;
-    SortFilterProxyModel* m_projectsListModelProxy;
-    SortFilterProxyModel* m_projectInformationModelProxy;
-    SortFilterProxyModel* m_teamsModelProxy;
-    SortFilterProxyModel* m_statusReportItemsModelProxy;
-    SortFilterProxyModel* m_projectTeamMembersModelProxy;
-    SortFilterProxyModel* m_projectLocationsModelProxy;
-    SortFilterProxyModel* m_projectNotesModelProxy;
-    SortFilterProxyModel* m_projectEditingNotesModelProxy;
-    SortFilterProxyModel* m_actionItemProjectNotesModelProxy;
-    SortFilterProxyModel* m_actionItemsDetailsMeetingsModelProxy;
-    SortFilterProxyModel* m_trackerItemsMeetingsModelProxy;
-    SortFilterProxyModel* m_meetingAttendeesModelProxy;
-    SortFilterProxyModel* m_notesActionItemsModelProxy;
-    SortFilterProxyModel* m_trackerItemCommentsModelProxy;
-    SortFilterProxyModel* m_projectActionItemsModelProxy;
-    SortFilterProxyModel* m_actionItemDetailsModelProxy;
-    SortFilterProxyModel* m_searchResultsModelProxy;
+    SortFilterProxyModel* m_clientsModelProxy = nullptr;
+    SortFilterProxyModel* m_unfilteredclientsModelProxy = nullptr;
+    SortFilterProxyModel* m_peopleModelProxy = nullptr;
+    SortFilterProxyModel* m_companyPeopleModelProxy = nullptr;
+    SortFilterProxyModel* m_unfilteredPeopleModelProxy = nullptr;
+    SortFilterProxyModel* m_projectsListModelProxy = nullptr;
+    SortFilterProxyModel* m_projectInformationModelProxy = nullptr;
+    SortFilterProxyModel* m_teamsModelProxy = nullptr;
+    SortFilterProxyModel* m_statusReportItemsModelProxy = nullptr;
+    SortFilterProxyModel* m_projectTeamMembersModelProxy = nullptr;
+    SortFilterProxyModel* m_projectLocationsModelProxy = nullptr;
+    SortFilterProxyModel* m_projectNotesModelProxy = nullptr;
+    SortFilterProxyModel* m_projectEditingNotesModelProxy = nullptr;
+    SortFilterProxyModel* m_actionItemProjectNotesModelProxy = nullptr;
+    SortFilterProxyModel* m_actionItemsDetailsMeetingsModelProxy = nullptr;
+    SortFilterProxyModel* m_trackerItemsMeetingsModelProxy = nullptr;
+    SortFilterProxyModel* m_meetingAttendeesModelProxy = nullptr;
+    SortFilterProxyModel* m_notesActionItemsModelProxy = nullptr;
+    SortFilterProxyModel* m_trackerItemCommentsModelProxy = nullptr;
+    SortFilterProxyModel* m_projectActionItemsModelProxy = nullptr;
+    SortFilterProxyModel* m_actionItemDetailsModelProxy = nullptr;
+    SortFilterProxyModel* m_searchResultsModelProxy = nullptr;
 
     // xml utility functions
     QList<QDomNode> findTableNodes(const QDomNode& xmlelement, const QString& tablename);

@@ -8,12 +8,13 @@
 
 #include "databaseobjects.h"
 #include <QObject>
+#include <QTableView>
 
 class ColumnModel : public SqlQueryModel
 {
 public:
     ColumnModel(DatabaseObjects* dbo);
-    void setColumnModel(SqlQueryModel* columnmodel);
+    void setColumnModel(SqlQueryModel* columnmodel, QTableView* view = nullptr);
     void setSavedFilters(QHash<QString, FilterSaveStructure>* filters) { m_savedFilters = filters; };
     void setFilteringModel(SqlQueryModel* model) { m_filteringModel = model; };
     SqlQueryModel* columnmodel() { return m_columnModel; };

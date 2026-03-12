@@ -153,10 +153,7 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
         }
         else if (index.column() == 15)  // percent consumed
         {
-            QVariant val = data(index);
-            this->sqlEscape(val, getType(15));
-
-            double value = val.toDouble();
+            double value = data(index).toDouble();
 
             if (value >= 95.0)
                 return QVariant(QCOLOR_RED);
@@ -165,10 +162,7 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
         }
         else if (index.column() == 17) // cost variance
         {
-            QVariant val = data(index);
-            this->sqlEscape(val, getType(15));
-
-            double value = val.toDouble();
+            double value = data(index).toDouble();
 
             if (value >= 10.0)
                 return QVariant(QCOLOR_RED);
@@ -177,10 +171,7 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
         }
         else if (index.column() == 18)  // schedule variance
         {
-            QVariant val = data(index);
-            this->sqlEscape(val, getType(15));
-
-            double value = val.toDouble();
+            double value = data(index).toDouble();
 
             if (value >= 10.0)
                 return QVariant(QCOLOR_RED);
@@ -189,10 +180,7 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
         }
         else if (index.column() == 19)  // percent complete
         {
-            QVariant val = data(index);
-            this->sqlEscape(val, getType(15));
-
-            double value = val.toDouble();
+            double value = data(index).toDouble();
 
             if (value >= 95.0)
                 return QVariant(QCOLOR_RED);
@@ -231,27 +219,25 @@ const QModelIndex ProjectsModel::copyRecord(QModelIndex index)
 {
     QVector<QVariant> qr = emptyrecord();
     QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
+    const int row = index.row();
 
-    qr[1] = QString("Copy [%2] of %1").arg(data(this->index(index.row(), 1)).toString(), unique_stamp);
-    qr[2] = QString("Copy [%2] of %1").arg(data(this->index(index.row(), 2)).toString(), unique_stamp);
-    qr[5] = data(this->index(index.row(), 5));
-    qr[6] = data(this->index(index.row(), 6));
-    qr[7] = data(this->index(index.row(), 7));
-    qr[8] = data(this->index(index.row(), 8));
-    qr[9] = data(this->index(index.row(), 9));
-    qr[10] = data(this->index(index.row(), 10));
-    qr[11] = data(this->index(index.row(), 11));
-    qr[12] = data(this->index(index.row(), 12));
-    qr[13] = data(this->index(index.row(), 13));
-    qr[14] = data(this->index(index.row(), 14));
+    qr[1] = QString("Copy [%2] of %1").arg(data(this->index(row, 1)).toString(), unique_stamp);
+    qr[2] = QString("Copy [%2] of %1").arg(data(this->index(row, 2)).toString(), unique_stamp);
+    for (int col = 5; col <= 14; ++col)
+        qr[col] = data(this->index(row, col));
 
     QModelIndex qi = addRecord(qr);
-    setData( this->index(qi.row(), 3), QVariant(), Qt::EditRole); // force a write to the database
+    setData(this->index(qi.row(), 3), QVariant(), Qt::EditRole); // force a write to the database
 
-    QVariant oldid = data(this->index(index.row(), 0));
-    QVariant newid = data(this->index(qi.row(), 0));
+    const QString oldid = data(this->index(row, 0)).toString();
+    const QString newid = data(this->index(qi.row(), 0)).toString();
 
-    QString insert = "insert into project_people (teammember_id, project_id, people_id, role, receive_status_report) select m.teammember_id || '-" + unique_stamp + "', '" + newid.toString() + "', m.people_id, role, receive_status_report from project_people m where m.project_id ='" + oldid.toString() + "'  and m.people_id not in (select e.people_id from project_people e where e.project_id='" + newid.toString() + "')";
+    const QString insert = QString(
+        "INSERT INTO project_people (teammember_id, project_id, people_id, role, receive_status_report) "
+        "SELECT m.teammember_id || '-%1', '%2', m.people_id, role, receive_status_report "
+        "FROM project_people m WHERE m.project_id = '%3' "
+        "AND m.people_id NOT IN (SELECT e.people_id FROM project_people e WHERE e.project_id = '%2')")
+        .arg(unique_stamp, newid, oldid);
 
     getDBOs()->execute(insert);
     getDBOs()->pushRowChange("project_people", newid, KeyColumnChange::Insert);

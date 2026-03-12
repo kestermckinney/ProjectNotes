@@ -45,19 +45,27 @@
 
 class DateEditEx::Private {
 public:
-    Private( DateEditEx* qq ) : q(qq),  /*clearButton(0),*/ null(false), nullable(true) {}
+    Private( DateEditEx* qq ) : q(qq),  /*clearButton(0),*/ null(false), nullable(true), cachedLineEdit(nullptr) {}
 
     DateEditEx* const q;
 
     bool null;
     bool nullable;
+    QLineEdit* cachedLineEdit;
+
+    QLineEdit* lineEdit()
+    {
+        if (!cachedLineEdit)
+            cachedLineEdit = q->findChild<QLineEdit *>("qt_spinbox_lineedit");
+        return cachedLineEdit;
+    }
 
     void setNull(bool n)
     {
         null = n;
         if (null)
         {
-            QLineEdit *edit = q->findChild<QLineEdit *>("qt_spinbox_lineedit");
+            QLineEdit *edit = lineEdit();
             if (!edit->text().isEmpty())
             {
                 edit->clear();
@@ -67,8 +75,7 @@ public:
 
     QLineEdit* getLineEdit()
     {
-        QLineEdit *edit = q->findChild<QLineEdit *>("qt_spinbox_lineedit");
-        return edit;
+        return lineEdit();
     }
 };
 
@@ -82,7 +89,16 @@ DateEditEx::DateEditEx(QWidget *parent) :
 
 DateEditEx::~DateEditEx()
 {
-    delete d;
+}
+
+QSize DateEditEx::sizeHint() const
+{
+    return QDateEdit::sizeHint();
+}
+
+QSize DateEditEx::minimumSizeHint() const
+{
+    return QDateEdit::minimumSizeHint();
 }
 
 /*!
@@ -188,26 +204,6 @@ void DateEditEx::setNullable(bool enable)
     d->nullable = enable;
 
     update();
-}
-
-/*!
-  \reimp
-*/
-QSize DateEditEx::sizeHint() const
-{
-    const QSize sz = QDateEdit::sizeHint();
-
-    return sz;
-}
-
-/*!
-  \reimp
-*/
-QSize DateEditEx::minimumSizeHint() const
-{
-    const QSize sz = QDateEdit::minimumSizeHint();
-
-    return sz;
 }
 
 void DateEditEx::showEvent(QShowEvent *event)

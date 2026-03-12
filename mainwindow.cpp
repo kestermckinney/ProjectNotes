@@ -6,7 +6,6 @@
 #include "tableview.h"
 #include "projectslistmodel.h"
 #include "databaseobjects.h"
-#include "databaseobjects.h"
 #include "aboutdialog.h"
 #include "plaintextedit.h"
 #include "textedit.h"
@@ -30,7 +29,6 @@
 #include <QDesktopServices>
 #include "mainwindow.h"
 #include <QStandardPaths>
-#include <QDir>
 
 #include "QLogger.h"
 #include "QLoggerWriter.h"
@@ -98,9 +96,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_pluginManager, &PluginManager::pluginUnLoaded, this, &MainWindow::onPluginUnLoaded);
     connect(m_pluginManager, &PluginManager::pluginRefreshRequest, this, &MainWindow::onRefreshRequested);
 
-    if (!global_Settings.getLastDatabase().toString().isEmpty())
-        if (QFile(global_Settings.getLastDatabase().toString()).exists())
-            openDatabase(global_Settings.getLastDatabase().toString());
+    QString lastDb = global_Settings.getLastDatabase().toString();
+    if (!lastDb.isEmpty())
+        if (QFile(lastDb).exists())
+            openDatabase(lastDb);
 
     setButtonAndMenuStates();
 }
@@ -187,6 +186,7 @@ void MainWindow::buildPluginMenu(BasePage* currentPage)
     {
         QAction *action = menu->actions().at(i);
         menu->removeAction(action);
+        delete action;
     }
 
     menu->addSeparator();
@@ -415,33 +415,34 @@ void MainWindow::setButtonAndMenuStates()
         ui->tableViewTrackerItems->setColumnHidden(18, true);
 
         QWidget* fw = this->focusWidget();
+        const QLatin1StringView fwClass(fw ? fw->metaObject()->className() : "");
 
         // determind if we can format text
         bool can_format_text =
             (fw != nullptr) &&
-            (strcmp(fw->metaObject()->className(), "TextEdit") == 0 );
+            (fwClass == "TextEdit");
 
         // determine if we can text edit
         bool can_text_edit =
                 (fw != nullptr) && (
                 can_format_text ||
-                (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "ComboBox") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 ) );
+                fwClass == "QLineEdit" ||
+                fwClass == "QExpandingLineEdit" ||
+                fwClass == "ComboBox" ||
+                fwClass == "PlainTextEdit");
 
         // determine if we can find text
         bool can_find_edit =
                 (fw != nullptr) && (
                 can_format_text ||
-                (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "TextEdit") == 0 ) ||
-                (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 ) );
+                fwClass == "QLineEdit" ||
+                fwClass == "TextEdit" ||
+                fwClass == "PlainTextEdit");
 
         // can't edit combo boxes not set to editable
-        if ( can_text_edit && (strcmp(fw->metaObject()->className(), "ComboBox") == 0)  )
+        if (can_text_edit && fwClass == "ComboBox")
         {
-            if ( !(dynamic_cast<ComboBox*>(fw))->isEditable() )
+            if (!(dynamic_cast<ComboBox*>(fw))->isEditable())
                 can_text_edit = false;
         }
 
@@ -505,7 +506,7 @@ void MainWindow::setButtonAndMenuStates()
         ui->menuView->setEnabled(true);
 
         // filter tracker items
-        ui->actionResolved_Tracker_Action_Items->setChecked(global_DBObjects.getShowResolvedTrackerItems());
+        ui->actionResolved_Tracker_Action_Items->setChecked(!global_DBObjects.getShowResolvedTrackerItems());
         ui->actionResolved_Tracker_Action_Items->setEnabled(true);
 
         // clear out page history for a rebuild
@@ -593,7 +594,7 @@ void MainWindow::on_actionNew_Database_triggered()
 }
 
 
-void MainWindow::openDatabase(QString dbfile)
+void MainWindow::openDatabase(const QString& dbfile)
 {
     if (!global_DBObjects.openDatabase(dbfile, mainConnectionName()))
         return;
@@ -708,9 +709,9 @@ void MainWindow::navigateBackward()
         current->openRecord(record_id);
 
         ui->stackedWidget->setCurrentWidget(current);
-        dynamic_cast<BasePage*>(current)->setPageTitle();
+        current->setPageTitle();
 
-        buildPluginMenu(dynamic_cast<BasePage*>(current));
+        buildPluginMenu(current);
     }
 
     setButtonAndMenuStates();
@@ -737,9 +738,9 @@ void MainWindow::navigateForward()
         current->openRecord(record_id);
 
         ui->stackedWidget->setCurrentWidget(current);
-        dynamic_cast<BasePage*>(current)->setPageTitle();
+        current->setPageTitle();
 
-        buildPluginMenu(dynamic_cast<BasePage*>(current));
+        buildPluginMenu(current);
     }
 
     setButtonAndMenuStates();
@@ -1062,15 +1063,13 @@ void MainWindow::on_actionInternal_Items_triggered()
 
 void MainWindow::on_actionResolved_Tracker_Action_Items_triggered()
 {
-    global_DBObjects.setShowResolvedTrackerItems(ui->actionResolved_Tracker_Action_Items->isChecked());
+    global_DBObjects.setShowResolvedTrackerItems(!ui->actionResolved_Tracker_Action_Items->isChecked());
 
-    // filter tracker items by Resolved
+    // filter tracker items by status: checked = show only New and Assigned; unchecked = show all
     if (ui->actionResolved_Tracker_Action_Items->isChecked())
-        global_DBObjects.trackeritemsmodel()->clearFilter(9);
+        global_DBObjects.trackeritemsmodel()->setFilter(9, "New,Assigned", SqlQueryModel::In );
     else
-    {
-        global_DBObjects.trackeritemsmodel()->setFilter(9, "Resolved", SqlQueryModel::NotEqual );
-    }
+        global_DBObjects.trackeritemsmodel()->clearFilter(9);
 
     global_DBObjects.trackeritemsmodel()->refresh();
 
@@ -1524,18 +1523,19 @@ void MainWindow::fontChanged(const QFont &f)
 void MainWindow::on_actionUndo_triggered()
 {
     QWidget* fw = this->focusWidget();
+    const QLatin1StringView cn(fw ? fw->metaObject()->className() : "");
 
-    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
+    if (cn == "TextEdit")
         (dynamic_cast<TextEdit*>(fw))->undo();
-    else if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
+    else if (cn == "PlainTextEdit")
         (dynamic_cast<PlainTextEdit*>(fw))->undo();
-    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+    else if (cn == "QLineEdit")
         (dynamic_cast<QLineEdit*>(fw))->undo();
-    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+    else if (cn == "QExpandingLineEdit")
         (dynamic_cast<QLineEdit*>(fw))->undo();
-    else if (strcmp(fw->metaObject()->className(), "DateEditEx") == 0 )
+    else if (cn == "DateEditEx")
         (dynamic_cast<DateEditEx*>(fw))->getLineEdit()->undo();
-    else if (strcmp(fw->metaObject()->className(), "ComboBox") == 0 )
+    else if (cn == "ComboBox")
         (dynamic_cast<ComboBox*>(fw))->lineEdit()->undo();
 }
 
@@ -1543,18 +1543,19 @@ void MainWindow::on_actionUndo_triggered()
 void MainWindow::on_actionRedo_triggered()
 {
     QWidget* fw = this->focusWidget();
+    const QLatin1StringView cn(fw ? fw->metaObject()->className() : "");
 
-    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
+    if (cn == "TextEdit")
         (dynamic_cast<TextEdit*>(fw))->redo();
-    if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
+    else if (cn == "PlainTextEdit")
         (dynamic_cast<PlainTextEdit*>(fw))->redo();
-    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+    else if (cn == "QLineEdit")
         (dynamic_cast<QLineEdit*>(fw))->redo();
-    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+    else if (cn == "QExpandingLineEdit")
         (dynamic_cast<QLineEdit*>(fw))->redo();
-    else if (strcmp(fw->metaObject()->className(), "DateEditEx") == 0 )
+    else if (cn == "DateEditEx")
         (dynamic_cast<DateEditEx*>(fw))->getLineEdit()->redo();
-    else if (strcmp(fw->metaObject()->className(), "ComboBox") == 0 )
+    else if (cn == "ComboBox")
         (dynamic_cast<ComboBox*>(fw))->lineEdit()->redo();
 }
 
@@ -1562,18 +1563,19 @@ void MainWindow::on_actionRedo_triggered()
 void MainWindow::on_actionCopy_triggered()
 {
     QWidget* fw = this->focusWidget();
+    const QLatin1StringView cn(fw ? fw->metaObject()->className() : "");
 
-    if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
+    if (cn == "PlainTextEdit")
         (dynamic_cast<PlainTextEdit*>(fw))->copy();
-    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
+    else if (cn == "TextEdit")
         (dynamic_cast<TextEdit*>(fw))->copy();
-    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+    else if (cn == "QLineEdit")
         (dynamic_cast<QLineEdit*>(fw))->copy();
-    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+    else if (cn == "QExpandingLineEdit")
         (dynamic_cast<QLineEdit*>(fw))->copy();
-    else if (strcmp(fw->metaObject()->className(), "DateEditEx") == 0 )
+    else if (cn == "DateEditEx")
         (dynamic_cast<DateEditEx*>(fw))->getLineEdit()->copy();
-    else if (strcmp(fw->metaObject()->className(), "ComboBox") == 0 )
+    else if (cn == "ComboBox")
         (dynamic_cast<ComboBox*>(fw))->lineEdit()->copy();
 }
 
@@ -1581,18 +1583,19 @@ void MainWindow::on_actionCopy_triggered()
 void MainWindow::on_actionCut_triggered()
 {
     QWidget* fw = this->focusWidget();
+    const QLatin1StringView cn(fw ? fw->metaObject()->className() : "");
 
-    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
+    if (cn == "TextEdit")
         (dynamic_cast<TextEdit*>(fw))->cut();
-    if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
+    else if (cn == "PlainTextEdit")
         (dynamic_cast<PlainTextEdit*>(fw))->cut();
-    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+    else if (cn == "QLineEdit")
         (dynamic_cast<QLineEdit*>(fw))->cut();
-    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+    else if (cn == "QExpandingLineEdit")
         (dynamic_cast<QLineEdit*>(fw))->cut();
-    else if (strcmp(fw->metaObject()->className(), "DateEditEx") == 0 )
+    else if (cn == "DateEditEx")
         (dynamic_cast<DateEditEx*>(fw))->getLineEdit()->cut();
-    else if (strcmp(fw->metaObject()->className(), "ComboBox") == 0 )
+    else if (cn == "ComboBox")
         (dynamic_cast<ComboBox*>(fw))->lineEdit()->cut();
 }
 
@@ -1600,68 +1603,66 @@ void MainWindow::on_actionCut_triggered()
 void MainWindow::on_actionPaste_triggered()
 {
     QWidget* fw = this->focusWidget();
+    const QLatin1StringView cn(fw ? fw->metaObject()->className() : "");
 
-    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
+    if (cn == "TextEdit")
         (dynamic_cast<TextEdit*>(fw))->paste();
-    if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
+    else if (cn == "PlainTextEdit")
         (dynamic_cast<QPlainTextEdit*>(fw))->paste();
-    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+    else if (cn == "QLineEdit")
         (dynamic_cast<QLineEdit*>(fw))->paste();
-    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+    else if (cn == "QExpandingLineEdit")
         (dynamic_cast<QLineEdit*>(fw))->paste();
-    else if (strcmp(fw->metaObject()->className(), "DateEditEx") == 0 )
+    else if (cn == "DateEditEx")
         (dynamic_cast<DateEditEx*>(fw))->getLineEdit()->paste();
-    else if (strcmp(fw->metaObject()->className(), "ComboBox") == 0 )
+    else if (cn == "ComboBox")
         (dynamic_cast<ComboBox*>(fw))->lineEdit()->paste();
 }
 
 void MainWindow::on_actionDelete_triggered()
 {
     QWidget* fw = this->focusWidget();
+    const QLatin1StringView cn(fw ? fw->metaObject()->className() : "");
 
-    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
+    if (cn == "TextEdit")
         (dynamic_cast<TextEdit*>(fw))->textCursor().insertText("");
-    if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
+    else if (cn == "PlainTextEdit")
         (dynamic_cast<PlainTextEdit*>(fw))->textCursor().insertText("");
-    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+    else if (cn == "QLineEdit")
         (dynamic_cast<QLineEdit*>(fw))->backspace();
-    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+    else if (cn == "QExpandingLineEdit")
         (dynamic_cast<QLineEdit*>(fw))->backspace();
-    else if (strcmp(fw->metaObject()->className(), "DateEditEx") == 0 )
+    else if (cn == "DateEditEx")
         (dynamic_cast<DateEditEx*>(fw))->getLineEdit()->copy();
-    else if (strcmp(fw->metaObject()->className(), "ComboBox") == 0 )
+    else if (cn == "ComboBox")
         (dynamic_cast<ComboBox*>(fw))->lineEdit()->backspace();
-
 }
 
 void MainWindow::on_actionSelect_All_triggered()
 {
     QWidget* fw = this->focusWidget();
+    const QLatin1StringView cn(fw ? fw->metaObject()->className() : "");
 
-    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
+    if (cn == "TextEdit")
         (dynamic_cast<TextEdit*>(fw))->selectAll();
-    else if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
+    else if (cn == "PlainTextEdit")
         (dynamic_cast<PlainTextEdit*>(fw))->selectAll();
-    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+    else if (cn == "QLineEdit")
         (dynamic_cast<QLineEdit*>(fw))->selectAll();
-    else if (strcmp(fw->metaObject()->className(), "QExpandingLineEdit") == 0 )
+    else if (cn == "QExpandingLineEdit")
         (dynamic_cast<QLineEdit*>(fw))->selectAll();
-    else if (strcmp(fw->metaObject()->className(), "DateEditEx") == 0 )
+    else if (cn == "DateEditEx")
         (dynamic_cast<DateEditEx*>(fw))->getLineEdit()->selectAll();
-    else if (strcmp(fw->metaObject()->className(), "ComboBox") == 0 )
+    else if (cn == "ComboBox")
         (dynamic_cast<ComboBox*>(fw))->lineEdit()->selectAll();
 }
 
 void MainWindow::on_actionSpell_Check_triggered()
 {
     QWidget* fw = this->focusWidget();
+    const QLatin1StringView cn(fw ? fw->metaObject()->className() : "");
 
-    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
-    {
-        SpellCheckDialog spellcheck_dialog(this);
-        spellcheck_dialog.spellCheck(fw);
-    }
-    else if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
+    if (cn == "TextEdit" || cn == "PlainTextEdit")
     {
         SpellCheckDialog spellcheck_dialog(this);
         spellcheck_dialog.spellCheck(fw);
@@ -1671,14 +1672,15 @@ void MainWindow::on_actionSpell_Check_triggered()
 void MainWindow::on_actionFind_triggered()
 {
     QWidget* fw = this->focusWidget();
+    const QLatin1StringView cn(fw ? fw->metaObject()->className() : "");
 
-    if (strcmp(fw->metaObject()->className(), "TextEdit") == 0 )
+    if (cn == "TextEdit")
         m_findReplaceDialog->showReplaceWindow(dynamic_cast<QTextEdit*>(fw));
-    else if (strcmp(fw->metaObject()->className(), "PlainTextEdit") == 0 )
+    else if (cn == "PlainTextEdit")
         m_findReplaceDialog->showReplaceWindow(dynamic_cast<QPlainTextEdit*>(fw));
-    else if (strcmp(fw->metaObject()->className(), "QLineEdit") == 0 )
+    else if (cn == "QLineEdit")
         m_findReplaceDialog->showReplaceWindow(dynamic_cast<QLineEdit*>(fw));
-    else if (strcmp(fw->metaObject()->className(), "ComboBox") == 0 )
+    else if (cn == "ComboBox")
         m_findReplaceDialog->showReplaceWindow(dynamic_cast<ComboBox*>(fw)->lineEdit());
 }
 

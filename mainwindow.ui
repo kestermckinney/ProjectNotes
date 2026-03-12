@@ -2242,10 +2242,10 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Resolved Tracker/Action Items</string>
+    <string>New and Assigned Tracker/Action Items</string>
    </property>
    <property name="statusTip">
-    <string>Resolved Tracker/Action Items</string>
+    <string>New and Assigned Tracker/Action Items</string>
    </property>
   </action>
   <action name="actionBold">

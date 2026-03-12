@@ -87,9 +87,9 @@ TableView::~TableView()
     delete m_filterRecords;
     delete m_refreshRecords;
     delete m_resetColumns;
+    delete m_copyRecord;
 
-    if (m_filterdialog)
-        delete m_filterdialog;
+    delete m_filterdialog;
 
     QHeaderView *headerView = horizontalHeader();
     headerView->removeEventFilter(this);
@@ -328,11 +328,11 @@ void TableView::contextMenuEvent(QContextMenuEvent *e)
 
     for ( Plugin* p : MainWindow::getPluginManager()->plugins())
     {
-         for ( PluginMenu m : p->pythonplugin().menus())
+         for ( const PluginMenu& m : p->pythonplugin().menus())
         {
             if (m.dataexport().compare(table, Qt::CaseInsensitive) == 0)
             {
-                QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), this);
+                QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), menu);
                 connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname(), m.dataexport(), m.tablefilter(), m.parameter());});
                 MainWindow::addMenuItem(menu, m.submenu(), m.menutitle(), act, 2);
             }

@@ -26,7 +26,7 @@ void SearchPage::setupModels( Ui::MainWindow *ui )
 {
     this->ui = ui;
 
-    if (!ui)
+    if (ui)
     {
         ui->plainTextEditSearchText->removeEventFilter(this);
         return;  // closing application

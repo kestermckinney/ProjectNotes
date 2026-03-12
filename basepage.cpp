@@ -47,46 +47,51 @@ void BasePage::saveState()
 
     for (QWidget* widget : childwidgets)
     {
-        if ( QString("TableView").compare( widget->metaObject()->className() ) == 0)
+        const QLatin1StringView cn(widget->metaObject()->className());
+
+        if (cn == "TableView")
         {
+            auto* tv = qobject_cast<TableView*>(widget);
             child = doc.createElement(widget->metaObject()->className());
             child.setAttribute("Name", widget->objectName());
-            if (qobject_cast<TableView*>(widget)->selectionModel()->hasSelection())
-                child.setAttribute("SelectedRow", QString("%1").arg(qobject_cast<TableView*>(widget)->selectionModel()->selectedRows().at(0).row()));
-            child.setAttribute("VerticalScroll", QString("%1").arg(qobject_cast<TableView*>(widget)->verticalScrollBar()->value()));
-            child.setAttribute("HorizontalScroll", QString("%1").arg(qobject_cast<TableView*>(widget)->horizontalScrollBar()->value()));
+            if (tv->selectionModel()->hasSelection())
+                child.setAttribute("SelectedRow", QString::number(tv->selectionModel()->selectedRows().at(0).row()));
+            child.setAttribute("VerticalScroll", QString::number(tv->verticalScrollBar()->value()));
+            child.setAttribute("HorizontalScroll", QString::number(tv->horizontalScrollBar()->value()));
 
             root.appendChild(child);
         }
-        else if ( QString("PlainTextEdit").compare( widget->metaObject()->className() ) == 0)
+        else if (cn == "PlainTextEdit")
         {
+            auto* pte = qobject_cast<PlainTextEdit*>(widget);
             child = doc.createElement(widget->metaObject()->className());
             child.setAttribute("Name", widget->objectName());
-            child.setAttribute("VerticalScroll", QString("%1").arg(qobject_cast<PlainTextEdit*>(widget)->verticalScrollBar()->value()));
-            child.setAttribute("HorizontalScroll", QString("%1").arg(qobject_cast<PlainTextEdit*>(widget)->horizontalScrollBar()->value()));
-            child.setAttribute("SelectionStart", QString("%1").arg(qobject_cast<PlainTextEdit*>(widget)->textCursor().selectionStart()));
-            child.setAttribute("SelectionEnd", QString("%1").arg(qobject_cast<PlainTextEdit*>(widget)->textCursor().selectionEnd()));
-            child.setAttribute("CursorPosition", QString("%1").arg(qobject_cast<PlainTextEdit*>(widget)->textCursor().position()));
+            child.setAttribute("VerticalScroll", QString::number(pte->verticalScrollBar()->value()));
+            child.setAttribute("HorizontalScroll", QString::number(pte->horizontalScrollBar()->value()));
+            child.setAttribute("SelectionStart", QString::number(pte->textCursor().selectionStart()));
+            child.setAttribute("SelectionEnd", QString::number(pte->textCursor().selectionEnd()));
+            child.setAttribute("CursorPosition", QString::number(pte->textCursor().position()));
 
             root.appendChild(child);
         }
-        else if ( QString("QTabWidget").compare( widget->metaObject()->className() ) == 0)
+        else if (cn == "QTabWidget")
         {
             child = doc.createElement(widget->metaObject()->className());
             child.setAttribute("Name", widget->objectName());
-            child.setAttribute("CurrentIndex", QString("%1").arg(qobject_cast<QTabWidget*>(widget)->currentIndex()));
+            child.setAttribute("CurrentIndex", QString::number(qobject_cast<QTabWidget*>(widget)->currentIndex()));
 
             root.appendChild(child);
         }
-        else if ( QString("TextEdit").compare( widget->metaObject()->className() ) == 0)
+        else if (cn == "TextEdit")
         {
+            auto* te = qobject_cast<TextEdit*>(widget);
             child = doc.createElement(widget->metaObject()->className());
             child.setAttribute("Name", widget->objectName());
-            child.setAttribute("VerticalScroll", QString("%1").arg(qobject_cast<TextEdit*>(widget)->verticalScrollBar()->value()));
-            child.setAttribute("HorizontalScroll", QString("%1").arg(qobject_cast<TextEdit*>(widget)->horizontalScrollBar()->value()));
-            child.setAttribute("SelectionStart", QString("%1").arg(qobject_cast<TextEdit*>(widget)->textCursor().selectionStart()));
-            child.setAttribute("SelectionEnd", QString("%1").arg(qobject_cast<TextEdit*>(widget)->textCursor().selectionEnd()));
-            child.setAttribute("CursorPosition", QString("%1").arg(qobject_cast<TextEdit*>(widget)->textCursor().position()));
+            child.setAttribute("VerticalScroll", QString::number(te->verticalScrollBar()->value()));
+            child.setAttribute("HorizontalScroll", QString::number(te->horizontalScrollBar()->value()));
+            child.setAttribute("SelectionStart", QString::number(te->textCursor().selectionStart()));
+            child.setAttribute("SelectionEnd", QString::number(te->textCursor().selectionEnd()));
+            child.setAttribute("CursorPosition", QString::number(te->textCursor().position()));
 
             root.appendChild(child);
         }
@@ -128,86 +133,78 @@ void BasePage::loadState()
 
             if (widget)
             {
-                QString classname = widget->metaObject()->className();
+                const QLatin1StringView classname(widget->metaObject()->className());
 
-                if ( QString("TableView").compare( classname ) == 0)
+                if (classname == "TableView")
                 {
+                    auto* tv = qobject_cast<TableView*>(widget);
                     int selectedrow = child.toElement().attribute("SelectedRow", "-1").toInt();
                     if (selectedrow > -1)
                     {
-                        QAbstractItemModel* model = qobject_cast<TableView*>(widget)->model();
+                        QAbstractItemModel* model = tv->model();
 
                         if (model)
-                            qobject_cast<TableView*>(widget)->selectionModel()->select(model->index(selectedrow, 0),  QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+                            tv->selectionModel()->select(model->index(selectedrow, 0),  QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
                     }
 
                     int vscroll = child.toElement().attribute("VerticalScroll").toInt();
                     int hscroll = child.toElement().attribute("HorizontalScroll").toInt();
 
 
-                    qobject_cast<TableView*>(widget)->updateGeometry();
-                    qobject_cast<TableView*>(widget)->update();
+                    tv->updateGeometry();
+                    tv->update();
 
-                    // qDebug() << "Before setValue: value =" << qobject_cast<TableView*>(widget)->verticalScrollBar()->value()
-                    //          << "min =" << qobject_cast<TableView*>(widget)->verticalScrollBar()->minimum()
-                    //          << "max =" << qobject_cast<TableView*>(widget)->verticalScrollBar()->maximum()
-                    //          << "pageStep =" << qobject_cast<TableView*>(widget)->verticalScrollBar()->pageStep()
-                    //          << " set value used was " << vscroll << " on " << widget->objectName();
+                    tv->verticalScrollBar()->setValue(vscroll);
+                    tv->horizontalScrollBar()->setValue(hscroll);
 
-                    qobject_cast<TableView*>(widget)->verticalScrollBar()->setValue(vscroll);
-                    qobject_cast<TableView*>(widget)->horizontalScrollBar()->setValue(hscroll);
-
-                    qobject_cast<TableView*>(widget)->verticalScrollBar()->update();
-                    qobject_cast<TableView*>(widget)->horizontalScrollBar()->update();
-
-                    // // After setValue(...)
-                    // qDebug() << "After setValue: actual value now =" << qobject_cast<TableView*>(widget)->verticalScrollBar()->value();
-                    // if (vscroll != qobject_cast<TableView*>(widget)->verticalScrollBar()->value())
-                    //     qDebug() << "SET FAILED!!!";
+                    tv->verticalScrollBar()->update();
+                    tv->horizontalScrollBar()->update();
                 }
-                else if ( QString("PlainTextEdit").compare( widget->metaObject()->className() ) == 0)
+                else if (classname == "PlainTextEdit")
                 {
+                    auto* pte = qobject_cast<PlainTextEdit*>(widget);
                     int vscroll = child.toElement().attribute("VerticalScroll").toInt();
                     int hscroll = child.toElement().attribute("HorizontalScroll").toInt();
 
-                    qobject_cast<PlainTextEdit*>(widget)->verticalScrollBar()->setValue(vscroll);
-                    qobject_cast<PlainTextEdit*>(widget)->horizontalScrollBar()->setValue(hscroll);
+                    pte->verticalScrollBar()->setValue(vscroll);
+                    pte->horizontalScrollBar()->setValue(hscroll);
 
                     int selectionstart = child.toElement().attribute("SelectionStart","0").toInt();
                     int selectionend = child.toElement().attribute("SelectionEnd","0").toInt();
                     int cursorposition = child.toElement().attribute("CurosrPosition","0").toInt();
 
-                    QTextCursor qt = qobject_cast<PlainTextEdit*>(widget)->textCursor();
+                    QTextCursor qt = pte->textCursor();
 
                     qt.setPosition(cursorposition);
                     qt.setPosition(selectionstart, QTextCursor::MoveAnchor);
                     qt.setPosition(selectionend, QTextCursor::KeepAnchor);
 
-                    qobject_cast<PlainTextEdit*>(widget)->setTextCursor(qt);
+                    pte->setTextCursor(qt);
                 }
-                else if ( QString("QTabWidget").compare( widget->metaObject()->className() ) == 0)
+                else if (classname == "QTabWidget")
                 {
                     qobject_cast<QTabWidget*>(widget)->setCurrentIndex(child.toElement().attribute("CurrentIndex","0").toInt());
                 }
-                else if ( QString("TextEdit").compare( widget->metaObject()->className() ) == 0)
+                else if (classname == "TextEdit")
                 {
+                    auto* te = qobject_cast<TextEdit*>(widget);
                     int vscroll = child.toElement().attribute("VerticalScroll").toInt();
                     int hscroll = child.toElement().attribute("HorizontalScroll").toInt();
 
-                    qobject_cast<TextEdit*>(widget)->verticalScrollBar()->setValue(vscroll);
-                    qobject_cast<TextEdit*>(widget)->horizontalScrollBar()->setValue(hscroll);
+                    te->verticalScrollBar()->setValue(vscroll);
+                    te->horizontalScrollBar()->setValue(hscroll);
 
                     int selectionstart = child.toElement().attribute("SelectionStart","0").toInt();
                     int selectionend = child.toElement().attribute("SelectionEnd","0").toInt();
                     int cursorposition = child.toElement().attribute("CurosrPosition","0").toInt();
 
-                    QTextCursor qt = qobject_cast<TextEdit*>(widget)->textCursor();
+                    QTextCursor qt = te->textCursor();
 
                     qt.setPosition(cursorposition);
                     qt.setPosition(selectionstart, QTextCursor::MoveAnchor);
                     qt.setPosition(selectionend, QTextCursor::KeepAnchor);
 
-                    qobject_cast<TextEdit*>(widget)->setTextCursor(qt);
+                    te->setTextCursor(qt);
                 }
             }
 
@@ -236,8 +233,8 @@ void BasePage::newRecord()
     while (getCurrentView()->isColumnHidden(col))
         col++;
 
-    QModelIndex sort_index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->index(
-        dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->mapFromSource(index).row(), col);
+    auto* proxy = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model());
+    QModelIndex sort_index = proxy->index(proxy->mapFromSource(index).row(), col);
 
     getCurrentView()->selectionModel()->select(sort_index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     getCurrentView()->scrollTo(sort_index, QAbstractItemView::PositionAtCenter);
@@ -283,8 +280,8 @@ void BasePage::copyItem()
     while (getCurrentView()->isColumnHidden(col))
         col++;
 
-    QModelIndex sort_index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->index(
-        dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->mapFromSource(index).row(), col);
+    auto* proxy = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model());
+    QModelIndex sort_index = proxy->index(proxy->mapFromSource(index).row(), col);
 
     getCurrentView()->selectionModel()->select(sort_index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     getCurrentView()->scrollTo(sort_index, QAbstractItemView::PositionAtCenter);
@@ -313,12 +310,12 @@ void BasePage::buildPluginMenu(PluginManager* pm, QMenu* menu)
     // add menus relevant to the current table
     for ( Plugin* p : pm->plugins())
     {
-        for ( PluginMenu m : p->pythonplugin().menus())
+        for ( const PluginMenu& m : p->pythonplugin().menus())
         {
             QString table = m_pageModel->tablename();
             if (m.dataexport().compare(table, Qt::CaseInsensitive) == 0) // only show right-click data menus
             {               
-                QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), this);
+                QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), menu);
                 connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname(), m.tablefilter(), m.parameter());});
                 MainWindow::addMenuItem(menu, m.submenu(), m.menutitle(), act, 2);
             }

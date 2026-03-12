@@ -76,7 +76,7 @@ DatabaseObjects::DatabaseObjects(QObject *parent) : QObject(parent)
     m_databaseFile.clear();
 }
 
-bool DatabaseObjects::createDatabase(QString& databasepath)
+bool DatabaseObjects::createDatabase(const QString& databasepath)
 {
     m_databaseFile = databasepath;
 
@@ -128,6 +128,8 @@ bool DatabaseObjects::openDatabase(const QString& databasepath, const QString& c
         return false;
     }
 
+    m_sqliteDb.setConnectOptions("QSQLITE_ENABLE_SHARED_CACHE;QSQLITE_BUSY_TIMEOUT=400");
+
     if (!m_sqliteDb.open())
     {
         if (m_gui)
@@ -138,9 +140,6 @@ bool DatabaseObjects::openDatabase(const QString& databasepath, const QString& c
         return false;
     }
 
-    m_sqliteDb.setConnectOptions("QSQLITE_ENABLE_SHARED_CACHE");
-    m_sqliteDb.setConnectOptions("QSQLITE_BUSY_TIMEOUT=400");
-
     if (m_gui)
     {
         DatabaseStructure ds;
@@ -148,99 +147,99 @@ bool DatabaseObjects::openDatabase(const QString& databasepath, const QString& c
     }
 
     m_clientsModel = new ClientsModel(this);
-    m_clientsModelProxy = new SortFilterProxyModel();
+    m_clientsModelProxy = new SortFilterProxyModel(this);
     m_clientsModelProxy->setSourceModel(m_clientsModel);
 
     m_unfilteredclientsModel = new ClientsModel(this);
-    m_unfilteredclientsModelProxy = new SortFilterProxyModel();
+    m_unfilteredclientsModelProxy = new SortFilterProxyModel(this);
     m_unfilteredclientsModelProxy->setSourceModel(m_unfilteredclientsModel);
     m_unfilteredclientsModel->setShowBlank();
     m_unfilteredclientsModel->setNoExport();
 
     m_peopleModel = new PeopleModel(this);
-    m_peopleModelProxy = new SortFilterProxyModel();
+    m_peopleModelProxy = new SortFilterProxyModel(this);
     m_peopleModelProxy->setSourceModel(m_peopleModel);
 
     m_companyPeopleModel = new PeopleModel(this);
-    m_companyPeopleModelProxy = new SortFilterProxyModel();
+    m_companyPeopleModelProxy = new SortFilterProxyModel(this);
     m_companyPeopleModelProxy->setSourceModel(m_companyPeopleModel);
 
     m_unfilteredPeopleModel = new PeopleModel(this);
-    m_unfilteredPeopleModelProxy = new SortFilterProxyModel();
+    m_unfilteredPeopleModelProxy = new SortFilterProxyModel(this);
     m_unfilteredPeopleModelProxy->setSourceModel(m_unfilteredPeopleModel);
     m_unfilteredPeopleModel->setShowBlank();
     m_unfilteredPeopleModel->setNoExport();
 
     m_projectInformationModel = new ProjectsModel(this);
-    m_projectInformationModelProxy = new SortFilterProxyModel();
+    m_projectInformationModelProxy = new SortFilterProxyModel(this);
     m_projectInformationModelProxy->setSourceModel(m_projectInformationModel);
 
     m_projectsListModel = new ProjectsListModel(this);
-    m_projectsListModelProxy = new SortFilterProxyModel();
+    m_projectsListModelProxy = new SortFilterProxyModel(this);
     m_projectsListModelProxy->setSourceModel(m_projectsListModel);
 
     m_teamsModel = new TeamsModel(this);
-    m_teamsModelProxy = new SortFilterProxyModel();
+    m_teamsModelProxy = new SortFilterProxyModel(this);
     m_teamsModelProxy->setSourceModel(m_teamsModel);
 
     m_statusReportItemsModel = new StatusReportItemsModel(this);
-    m_statusReportItemsModelProxy = new SortFilterProxyModel();
+    m_statusReportItemsModelProxy = new SortFilterProxyModel(this);
     m_statusReportItemsModelProxy->setSourceModel(m_statusReportItemsModel);
 
     m_projectTeamMembersModel = new ProjectTeamMembersModel(this);
-    m_projectTeamMembersModelProxy = new SortFilterProxyModel();
+    m_projectTeamMembersModelProxy = new SortFilterProxyModel(this);
     m_projectTeamMembersModelProxy->setSourceModel(m_projectTeamMembersModel);
 
     m_projectLocationsModel = new ProjectLocationsModel(this);
-    m_projectLocationsModelProxy = new SortFilterProxyModel();
+    m_projectLocationsModelProxy = new SortFilterProxyModel(this);
     m_projectLocationsModelProxy->setSourceModel(m_projectLocationsModel);
 
     m_projectNotesModel = new ProjectNotesModel(this);
-    m_projectNotesModelProxy = new SortFilterProxyModel();
+    m_projectNotesModelProxy = new SortFilterProxyModel(this);
     m_projectNotesModelProxy->setSourceModel(m_projectNotesModel);
 
     m_projectEditingNotesModel = new ProjectNotesModel(this);
-    m_projectEditingNotesModelProxy = new SortFilterProxyModel();
+    m_projectEditingNotesModelProxy = new SortFilterProxyModel(this);
     m_projectEditingNotesModelProxy->setSourceModel(m_projectEditingNotesModel);
 
     m_actionItemProjectNotesModel = new ActionItemProjectNotesModel(this);
-    m_actionItemProjectNotesModelProxy = new SortFilterProxyModel();
+    m_actionItemProjectNotesModelProxy = new SortFilterProxyModel(this);
     m_actionItemProjectNotesModelProxy->setSourceModel(m_actionItemProjectNotesModel);
 
     m_trackerItemsMeetingsModel = new ActionItemsDetailsMeetingsModel(this);
-    m_trackerItemsMeetingsModelProxy = new SortFilterProxyModel();
+    m_trackerItemsMeetingsModelProxy = new SortFilterProxyModel(this);
     m_trackerItemsMeetingsModelProxy->setSourceModel(m_trackerItemsMeetingsModel);
     m_trackerItemsMeetingsModel->setShowBlank();
     m_trackerItemsMeetingsModel->setNoExport();
 
     m_actionItemsDetailsMeetingsModel = new ActionItemsDetailsMeetingsModel(this);
-    m_actionItemsDetailsMeetingsModelProxy = new SortFilterProxyModel();
+    m_actionItemsDetailsMeetingsModelProxy = new SortFilterProxyModel(this);
     m_actionItemsDetailsMeetingsModelProxy->setSourceModel(m_actionItemsDetailsMeetingsModel);
     m_actionItemsDetailsMeetingsModel->setShowBlank();
     m_actionItemsDetailsMeetingsModel->setNoExport();
 
     m_projectActionItemsModel = new TrackerItemsModel(this);
-    m_projectActionItemsModelProxy = new SortFilterProxyModel();
+    m_projectActionItemsModelProxy = new SortFilterProxyModel(this);
     m_projectActionItemsModelProxy->setSourceModel(m_projectActionItemsModel);
 
     m_actionItemDetailsModel = new TrackerItemsModel(this);
-    m_actionItemDetailsModelProxy = new SortFilterProxyModel();
+    m_actionItemDetailsModelProxy = new SortFilterProxyModel(this);
     m_actionItemDetailsModelProxy->setSourceModel(m_actionItemDetailsModel);
 
     m_meetingAttendeesModel = new MeetingAttendeesModel(this);
-    m_meetingAttendeesModelProxy = new SortFilterProxyModel();
+    m_meetingAttendeesModelProxy = new SortFilterProxyModel(this);
     m_meetingAttendeesModelProxy->setSourceModel(m_meetingAttendeesModel);
 
     m_notesActionItemsModel = new NotesActionItemsModel(this);
-    m_notesActionItemsModelProxy = new SortFilterProxyModel();
+    m_notesActionItemsModelProxy = new SortFilterProxyModel(this);
     m_notesActionItemsModelProxy->setSourceModel(m_notesActionItemsModel);
 
     m_trackerItemCommentsModel = new TrackerItemCommentsModel(this);
-    m_trackerItemCommentsModelProxy = new SortFilterProxyModel();
+    m_trackerItemCommentsModelProxy = new SortFilterProxyModel(this);
     m_trackerItemCommentsModelProxy->setSourceModel(m_trackerItemCommentsModel);
 
     m_searchResultsModel = new SearchResultsModel(this);
-    m_searchResultsModelProxy = new SortFilterProxyModel();
+    m_searchResultsModelProxy = new SortFilterProxyModel(this);
     m_searchResultsModelProxy->setSourceModel(m_searchResultsModel);
 
     return true;
@@ -273,27 +272,27 @@ void DatabaseObjects::removeModel(SqlQueryModel* model)
 
 SqlQueryModel* DatabaseObjects::createExportObject(const QString& tableName)
 {
-    if (tableName.compare("clients", Qt::CaseInsensitive) == 0)
+    const QString lower = tableName.toLower();
+
+    if (lower == QLatin1String("clients"))
         return new ClientsModel(this);
-    else if (tableName.compare("people", Qt::CaseInsensitive) == 0)
+    else if (lower == QLatin1String("people"))
         return new PeopleModel(this);
-    else if (tableName.compare("projects", Qt::CaseInsensitive) == 0)
+    else if (lower == QLatin1String("projects"))
         return new ProjectsModel(this);
-    else if (tableName.compare("status_report_items", Qt::CaseInsensitive) == 0)
+    else if (lower == QLatin1String("status_report_items"))
         return new StatusReportItemsModel(this);
-    else if (tableName.compare("project_people", Qt::CaseInsensitive) == 0)
-        return new ProjectTeamMembersModel(this); // use this one because it hase more related fields for exporting
-    else if (tableName.compare("project_locations", Qt::CaseInsensitive) == 0)
+    else if (lower == QLatin1String("project_people"))
+        return new ProjectTeamMembersModel(this);
+    else if (lower == QLatin1String("project_locations"))
         return new ProjectLocationsModel(this);
-    else if (tableName.compare("project_notes", Qt::CaseInsensitive) == 0)
-        return new ProjectNotesModel(this); // has id and and name of project
-    else if (tableName.compare("item_tracker", Qt::CaseInsensitive) == 0)
+    else if (lower == QLatin1String("project_notes"))
+        return new ProjectNotesModel(this);
+    else if (lower == QLatin1String("item_tracker"))
         return new TrackerItemsModel(this);
-    else if (tableName.compare("meeting_attendees", Qt::CaseInsensitive) == 0)
+    else if (lower == QLatin1String("meeting_attendees"))
         return new MeetingAttendeesModel(this);
-    else if (tableName.compare("item_tracker", Qt::CaseInsensitive) == 0)
-        return new NotesActionItemsModel(this);
-    else if (tableName.compare("item_tracker_updates", Qt::CaseInsensitive) == 0)
+    else if (lower == QLatin1String("item_tracker_updates"))
         return new TrackerItemCommentsModel(this);
     else
         return nullptr;
@@ -303,7 +302,7 @@ QString DatabaseObjects::execute(const QString& sql)
 {
     QString val;
 
-    DB_LOCK;
+    QMutexLocker locker(&db_mutex);
     {
         QSqlQuery query(m_sqliteDb);
 
@@ -351,7 +350,6 @@ QString DatabaseObjects::execute(const QString& sql)
         }
 #endif
     }
-    DB_UNLOCK;
 
     return val;
 }
@@ -362,6 +360,54 @@ void DatabaseObjects::closeDatabase()
     if (m_databaseFile.isEmpty())
         return;
 
+    // delete proxy models BEFORE their source models
+    delete m_clientsModelProxy;
+    delete m_unfilteredclientsModelProxy;
+    delete m_peopleModelProxy;
+    delete m_companyPeopleModelProxy;
+    delete m_unfilteredPeopleModelProxy;
+    delete m_projectInformationModelProxy;
+    delete m_projectsListModelProxy;
+    delete m_teamsModelProxy;
+    delete m_statusReportItemsModelProxy;
+    delete m_projectTeamMembersModelProxy;
+    delete m_projectLocationsModelProxy;
+    delete m_projectNotesModelProxy;
+    delete m_projectEditingNotesModelProxy;
+    delete m_actionItemProjectNotesModelProxy;
+    delete m_actionItemDetailsModelProxy;
+    delete m_actionItemsDetailsMeetingsModelProxy;
+    delete m_trackerItemsMeetingsModelProxy;
+    delete m_projectActionItemsModelProxy;
+    delete m_trackerItemCommentsModelProxy;
+    delete m_meetingAttendeesModelProxy;
+    delete m_notesActionItemsModelProxy;
+    delete m_searchResultsModelProxy;
+
+    m_clientsModelProxy = nullptr;
+    m_unfilteredclientsModelProxy = nullptr;
+    m_peopleModelProxy = nullptr;
+    m_companyPeopleModelProxy = nullptr;
+    m_unfilteredPeopleModelProxy = nullptr;
+    m_projectInformationModelProxy = nullptr;
+    m_projectsListModelProxy = nullptr;
+    m_teamsModelProxy = nullptr;
+    m_statusReportItemsModelProxy = nullptr;
+    m_projectTeamMembersModelProxy = nullptr;
+    m_projectLocationsModelProxy = nullptr;
+    m_projectNotesModelProxy = nullptr;
+    m_projectEditingNotesModelProxy = nullptr;
+    m_actionItemProjectNotesModelProxy = nullptr;
+    m_actionItemDetailsModelProxy = nullptr;
+    m_actionItemsDetailsMeetingsModelProxy = nullptr;
+    m_trackerItemsMeetingsModelProxy = nullptr;
+    m_projectActionItemsModelProxy = nullptr;
+    m_trackerItemCommentsModelProxy = nullptr;
+    m_meetingAttendeesModelProxy = nullptr;
+    m_notesActionItemsModelProxy = nullptr;
+    m_searchResultsModelProxy = nullptr;
+
+    // now delete source models
     delete m_clientsModel;
     delete m_unfilteredclientsModel;
     delete m_peopleModel;
@@ -409,52 +455,6 @@ void DatabaseObjects::closeDatabase()
     m_notesActionItemsModel= nullptr;
 
     m_searchResultsModel = nullptr;
-
-    delete m_clientsModelProxy;
-    delete m_unfilteredclientsModelProxy;
-    delete m_peopleModelProxy;
-    delete m_companyPeopleModelProxy;
-    delete m_unfilteredPeopleModelProxy;
-    delete m_projectInformationModelProxy;
-    delete m_projectsListModelProxy;
-    delete m_teamsModelProxy;
-    delete m_statusReportItemsModelProxy;
-    delete m_projectTeamMembersModelProxy;
-    delete m_projectLocationsModelProxy;
-    delete m_projectNotesModelProxy;
-    delete m_projectEditingNotesModelProxy;
-    delete m_actionItemProjectNotesModelProxy;
-    delete m_actionItemDetailsModelProxy;
-    delete m_actionItemsDetailsMeetingsModelProxy;
-    delete m_trackerItemsMeetingsModelProxy;
-    delete m_projectActionItemsModelProxy;
-    delete m_trackerItemCommentsModelProxy;
-    delete m_meetingAttendeesModelProxy;
-    delete m_notesActionItemsModelProxy;
-    delete m_searchResultsModelProxy;
-
-    m_clientsModelProxy = nullptr;
-    m_unfilteredclientsModelProxy = nullptr;
-    m_peopleModelProxy = nullptr;
-    m_companyPeopleModelProxy = nullptr;
-    m_unfilteredPeopleModelProxy = nullptr;
-    m_projectInformationModelProxy = nullptr;
-    m_projectsListModelProxy = nullptr;
-    m_teamsModelProxy = nullptr;
-    m_statusReportItemsModelProxy = nullptr;
-    m_projectTeamMembersModelProxy = nullptr;
-    m_projectLocationsModelProxy = nullptr;
-    m_projectNotesModelProxy = nullptr;
-    m_projectEditingNotesModelProxy = nullptr;
-    m_actionItemProjectNotesModelProxy = nullptr;
-    m_actionItemDetailsModelProxy = nullptr;
-    m_actionItemsDetailsMeetingsModelProxy = nullptr;
-    m_trackerItemsMeetingsModelProxy = nullptr;
-    m_projectActionItemsModelProxy = nullptr;
-    m_trackerItemCommentsModelProxy = nullptr;
-    m_meetingAttendeesModelProxy = nullptr;
-    m_notesActionItemsModelProxy = nullptr;
-    m_searchResultsModelProxy = nullptr;
 
     m_sqliteDb.close();
 
@@ -599,12 +599,12 @@ QString DatabaseObjects::loadParameter( const QVariant& parametername )
 
 void DatabaseObjects::setShowResolvedTrackerItems(bool value)
 {
-    saveParameter("UserFilter:ShowResolvedTrackerItems", (value ? "1": "0"));
+    saveParameter("ViewFilter:ShowResolvedTrackerItems", (value ? "1": "0"));
 }
 
 bool DatabaseObjects::getShowResolvedTrackerItems()
 {
-    QString value = loadParameter("UserFilter:ShowResolvedTrackerItems");
+    QString value = loadParameter("ViewFilter:ShowResolvedTrackerItems");
     bool ret = (bool)value.toUInt();
     return ret;
 }
@@ -633,17 +633,8 @@ bool DatabaseObjects::getShowInternalItems()
     return ret;
 }
 
-void DatabaseObjects::setGlobalClientFilter(QString value)
-{
-    saveParameter("UserFilter:ClientFilter", value );
-}
 
-QString DatabaseObjects::getGlobalClientFilter()
-{
-    return loadParameter("UserFilter:ClientFilter");
-}
-
-void DatabaseObjects::setGlobalProjectFilter(QString value)
+void DatabaseObjects::setGlobalProjectFilter(const QString& value)
 {
     saveParameter("UserFilter:ProjectFilter", value );
 }
@@ -653,7 +644,7 @@ QString DatabaseObjects::getGlobalProjectFilter()
     return loadParameter("UserFilter:ProjectFilter");
 }
 
-void DatabaseObjects::setProjectManager(QString value)
+void DatabaseObjects::setProjectManager(const QString& value)
 {
     saveParameter("Preferences:ProjectManager", value );
 }
@@ -663,7 +654,7 @@ QString DatabaseObjects::getProjectManager()
     return loadParameter("Preferences:ProjectManager");
 }
 
-void DatabaseObjects::setManagingCompany(QString value)
+void DatabaseObjects::setManagingCompany(const QString& value)
 {
     saveParameter("Preferences:ManagingCompany", value );
 }
@@ -710,43 +701,13 @@ void DatabaseObjects::setGlobalSearches( bool refresh )
         searchresultsmodel()->setFilter(4, "0");
     }
 
-    if (getShowResolvedTrackerItems())
+    if (!getShowResolvedTrackerItems())
+    {
+        trackeritemsmodel()->setFilter(9, "New,Assigned", SqlQueryModel::In);
+    }
+    else
     {
         trackeritemsmodel()->clearFilter(9);
-    }
-    else
-    {
-        trackeritemsmodel()->setFilter(9, "Resolved", SqlQueryModel::NotEqual);
-    }
-
-    if (getGlobalClientFilter().isEmpty())
-    {
-        peoplemodel()->clearUserFilter(5);
-        peoplemodel()->deactivateUserFilter(tr("GlobalClientFilter"));
-        clientsmodel()->clearFilter(0);
-        clientsmodel()->deactivateUserFilter(tr("GlobalClientFilter"));
-        trackeritemsmodel()->clearFilter(18);
-        projectinformationmodel()->clearFilter(13);
-        projectslistmodel()->clearFilter(13);
-        searchresultsmodel()->clearFilter(5);
-    }
-    else
-    {
-        QVariantList managingnclientids;
-        // make sure list of people can show the managing company
-        managingnclientids.append(getManagingCompany());
-        managingnclientids.append(getGlobalClientFilter());
-
-        clientsmodel()->setUserFilter(0, managingnclientids );
-        clientsmodel()->activateUserFilter("GlobalClientFilter");
-
-        peoplemodel()->setUserFilter(5, managingnclientids);
-        peoplemodel()->activateUserFilter(tr("GlobalClientFilter"));
-
-        trackeritemsmodel()->setFilter(18, getGlobalClientFilter());
-        projectinformationmodel()->setFilter(13, getGlobalClientFilter());
-        projectslistmodel()->setFilter(13, getGlobalClientFilter());
-        searchresultsmodel()->setFilter(5, getGlobalClientFilter());
     }
 
     if (getGlobalProjectFilter().isEmpty())

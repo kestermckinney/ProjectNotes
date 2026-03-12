@@ -11,6 +11,7 @@
 #include <QTextCharFormat>
 #include <QTimer>
 #include <QComboBox>
+#include <functional>
 #include <QFontComboBox>
 #include <QFontDatabase>
 
@@ -36,7 +37,7 @@ class HistoryNode
     bool equals(HistoryNode* node) {
         return node->m_page == m_page &&
                (node->m_pagetitle.compare(m_pagetitle) == 0) &&
-               (node->m_recordId.toString().compare(m_recordId.toString()) == 0); }
+               (node->m_recordId == m_recordId); }
 
     HistoryNode(BasePage* page, QVariant recordId, QString pagetitle) { m_page = page; m_recordId = recordId; m_pagetitle = pagetitle; stamp(); }
     BasePage* m_page;
@@ -59,7 +60,7 @@ public:
     bool navigateAtEnd() { return (m_navigationLocation == (m_forwardBackHistory.count() - 1)); }
     bool navigateAtStart() { return (m_navigationLocation <= 0); }
     void buildHistory(HistoryNode* node);
-    void navigateClearHistory() { m_navigationLocation = -1; m_forwardBackHistory.clear(); }
+    void navigateClearHistory() { m_navigationLocation = -1; qDeleteAll(m_forwardBackHistory); m_forwardBackHistory.clear(); }
     BasePage* navigateCurrentPage() { return ((m_forwardBackHistory.count() - 1) < m_navigationLocation || m_navigationLocation == -1 ? nullptr : m_forwardBackHistory.at(m_navigationLocation)->m_page ); }
     static PluginManager* getPluginManager() { return m_pluginManager; }
     void CloseDatabase();
@@ -85,7 +86,7 @@ protected:
 
 private slots:
     void setButtonAndMenuStates();
-    void openDatabase(QString dbfile);
+    void openDatabase(const QString& dbfile);
     void on_actionExit_triggered();
     void on_actionNew_Database_triggered();
     void on_actionOpen_Database_triggered();
@@ -142,6 +143,10 @@ private slots:
 
 private:
     void buildPluginMenu(BasePage* currentPage);
+    void adjustFontSize(int delta);
+    void dispatchEditAction(std::function<void(QTextEdit*)> textEditAction,
+                            std::function<void(QPlainTextEdit*)> plainTextAction,
+                            std::function<void(QLineEdit*)> lineEditAction);
 
     Ui::MainWindow *ui;
 

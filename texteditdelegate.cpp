@@ -8,6 +8,7 @@
 #include <QString>
 #include <QPainter>
 #include <QTextEdit>
+#include <QTextDocument>
 
 TextEditDelegate::TextEditDelegate(QObject *parent)
 :QStyledItemDelegate(parent)
@@ -36,9 +37,9 @@ void TextEditDelegate::setEditorData(QWidget *editor, const QModelIndex &index) 
 
     if (val.isEmpty())
     {
-        dynamic_cast<QTextEdit*>(editor)->setFont(QFont("Arial", 11));
-        dynamic_cast<QTextEdit*>(editor)->setFontFamily("Arial");
-        dynamic_cast<QTextEdit*>(editor)->setFontPointSize(11);
+        text_edit->setFont(QFont("Arial", 11));
+        text_edit->setFontFamily("Arial");
+        text_edit->setFontPointSize(11);
     }
 }
 
@@ -59,10 +60,10 @@ void TextEditDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
 
     QString val = index.model()->data(index, Qt::EditRole).toString();
 
-    QTextEdit* te = new QTextEdit();
-    te->setHtml(val);
+    QTextDocument doc;
+    doc.setHtml(val);
 
-    myOption.text = te->toPlainText();
+    myOption.text = doc.toPlainText();
 
     QVariant bgcolor = index.model()->data(index, Qt::BackgroundRole);
     QVariant fgcolor = index.model()->data(index, Qt::ForegroundRole);
@@ -72,8 +73,6 @@ void TextEditDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
 
     if (bgcolor.isValid())
         myOption.backgroundBrush = QBrush(bgcolor.value<QColor>());
-
-    delete te;
 
     QStyledItemDelegate::paint(painter, myOption, index);
 }

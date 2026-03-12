@@ -45,24 +45,15 @@ Plugin::Plugin(QObject *parent, bool isthread)
 
 Plugin::~Plugin()
 {
-    if (m_thread)
+    if (m_thread && m_thread->isRunning())
     {
-        // give the thead 15 seconds to quit
         m_thread->quit();
-        m_thread->wait(15000);
+        if (!m_thread->wait(15000))
+        {
+            m_thread->terminate();
+            m_thread->wait(1000);
+        }
     }
-
-    // send commands to python worker
-    QObject::disconnect(this, &Plugin::sendMethodXml, m_pythonworker, &PythonWorker::sendMethodXml);
-    QObject::disconnect(this, &Plugin::sendMethod, m_pythonworker, &PythonWorker::sendMethod);
-    QObject::disconnect(this, &Plugin::loadModule, m_pythonworker, &PythonWorker::loadModule);
-    QObject::disconnect(this, &Plugin::unloadModule, m_pythonworker, &PythonWorker::unloadModule);
-    QObject::disconnect(this, &Plugin::reloadModule, m_pythonworker, &PythonWorker::reloadModule);
-
-    // process returned signals
-    QObject::disconnect(m_pythonworker, &PythonWorker::returnXml, this, &Plugin::onReturnedXml );
-    QObject::disconnect(m_pythonworker, &PythonWorker::loadComplete, this, &Plugin::onLoadComplete);
-    QObject::disconnect(m_pythonworker, &PythonWorker::unloadComplete, this, &Plugin::onUnLoadComplete);
 
     delete m_pythonworker;
 
