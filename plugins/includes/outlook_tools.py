@@ -119,23 +119,19 @@ class ProjectNotesOutlookTools:
 
                         while not colnode.isNull():
                             content = colnode.toElement().text()
+                            colname = colnode.attributes().namedItem("name").nodeValue()
 
-                            if colnode.attributes().namedItem("name").nodeValue() == "name":
+                            if colname == "name":
                                 fullname = content
-
-                            if colnode.attributes().namedItem("name").nodeValue() == "email":
+                            elif colname == "email":
                                 workemail = content
-
-                            if colnode.attributes().namedItem("name").nodeValue() == "office_phone":
+                            elif colname == "office_phone":
                                 workphone = content
-
-                            if colnode.attributes().namedItem("name").nodeValue() == "cell_phone":
+                            elif colname == "cell_phone":
                                 cellphone = content
-
-                            if colnode.attributes().namedItem("name").nodeValue() == "client_id":
+                            elif colname == "client_id":
                                 company = colnode.attributes().namedItem("lookupvalue").nodeValue()
-
-                            if colnode.attributes().namedItem("name").nodeValue() == "role":
+                            elif colname == "role":
                                 jobtitle = content
 
                             colnode = colnode.nextSibling()
@@ -192,8 +188,8 @@ class ProjectNotesOutlookTools:
             mapi = outlook.GetNamespace("MAPI")
             contactsfold = mapi.GetDefaultFolder(10) # olFolderContacts
 
-            xmlclients = ""
-            xmldoc = ""
+            xmlclients_parts = []
+            xmldoc_parts = []
 
             #print("count of contacts : " + str(contactsfold.Items.Count))
 
@@ -207,7 +203,7 @@ class ProjectNotesOutlookTools:
             progbar.setWindowTitle("Importing...")
             progbar.setWindowFlags(
                 QtCore.Qt.WindowType.Window |
-                QtCore.Qt.WindowType.WindowCloseButtonHint 
+                QtCore.Qt.WindowType.WindowCloseButtonHint
                 )
             progbar.setMinimumWidth(350)
             progbar.setCancelButton(None)
@@ -226,42 +222,44 @@ class ProjectNotesOutlookTools:
                 if contact is not None:
                     if hasattr(contact, "FullName"):
                         #print("importing ... " + contact.FullName)
-                        xmldoc = xmldoc + "<row>\n"
+                        row_parts = ["<row>\n"]
 
-                        xmldoc = xmldoc + "<column name=\"name\">" + self.pnc.to_xml(contact.FullName.strip()) + "</column>\n"
+                        row_parts.append(f'<column name="name">{self.pnc.to_xml(contact.FullName.strip())}</column>\n')
 
                         if contact.Email1Address is not None:
                             # make sure the email address looks valid
-                            if "@" in contact.Email1Address: 
-                                xmldoc = xmldoc + "<column name=\"email\">" + self.pnc.to_xml(contact.Email1Address.strip()) + "</column>\n"
+                            if "@" in contact.Email1Address:
+                                row_parts.append(f'<column name="email">{self.pnc.to_xml(contact.Email1Address.strip())}</column>\n')
                             else:
                                 print("email address is corrupt for " + contact.FullName)
 
                         if contact.BusinessTelephoneNumber is not None:
-                            xmldoc = xmldoc + "<column name=\"office_phone\">" + self.pnc.to_xml(contact.BusinessTelephoneNumber.strip()) + "</column>\n"
+                            row_parts.append(f'<column name="office_phone">{self.pnc.to_xml(contact.BusinessTelephoneNumber.strip())}</column>\n')
 
                         if contact.MobileTelephoneNumber is not None:
-                            xmldoc = xmldoc + "<column name=\"cell_phone\">" + self.pnc.to_xml(contact.MobileTelephoneNumber.strip()) + "</column>\n"
+                            row_parts.append(f'<column name="cell_phone">{self.pnc.to_xml(contact.MobileTelephoneNumber.strip())}</column>\n')
 
                         if contact.JobTitle is not None:
-                            xmldoc = xmldoc + "<column name=\"role\">" + self.pnc.to_xml(contact.JobTitle.strip()) + "</column>\n"
+                            row_parts.append(f'<column name="role">{self.pnc.to_xml(contact.JobTitle.strip())}</column>\n')
 
                         # add the company name as a sub tablenode
                         if (contact.CompanyName is not None and contact.CompanyName != ''):
-                            xmldoc = xmldoc + "<column name=\"client_id\" number=\"5\" lookupvalue=\"" + self.pnc.to_xml(contact.CompanyName.strip()) + "\"></column>\n"
-                            xmlclients = xmlclients + "<row><column name=\"client_name\">" + self.pnc.to_xml(contact.CompanyName.strip()) + "</column></row>\n"
+                            company_xml = self.pnc.to_xml(contact.CompanyName.strip())
+                            row_parts.append(f'<column name="client_id" number="5" lookupvalue="{company_xml}"></column>\n')
+                            xmlclients_parts.append(f'<row><column name="client_name">{company_xml}</column></row>\n')
 
-                        xmldoc = xmldoc + "</row>\n"
+                        row_parts.append("</row>\n")
+                        xmldoc_parts.append("".join(row_parts))
                 else:
                     print("Corrupt Contact Record Found")
 
             xmldoc = """
             <projectnotes>
             <table name="clients">
-            """ + xmlclients + """
+            """ + "".join(xmlclients_parts) + """
             </table>
             <table name="people">
-            """ + xmldoc + """
+            """ + "".join(xmldoc_parts) + """
             </table>
             </projectnotes>
             """

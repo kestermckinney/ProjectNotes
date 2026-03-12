@@ -17,17 +17,15 @@ class NoteFormatter:
 		return self.subject
 
 	def process_xml(self, xmlstr):
-		xmldoc = ""
-
 		xmlval = QDomDocument()
 		if (xmlval.setContent(xmlstr) == False):
 		    QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
 		    return ""
 
-		xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node    
+		xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
 
 		childnode = xmlroot.firstChild()
-		attendeelist = ""
+		html_parts = []
 
 		while not childnode.isNull():
 
@@ -35,22 +33,25 @@ class NoteFormatter:
 		        rownode = childnode.firstChild()
 
 		        while not rownode.isNull():
-		        	self.note_html = self.note_html + self.get_html_header(self.pnc.get_column_value(rownode, "project_id"), self.pnc.get_column_value(rownode, "project_id_name"), self.pnc.get_column_value(rownode, "note_date"), self.pnc.get_column_value(rownode, "note_title"))
+		        	project_id = self.pnc.get_column_value(rownode, "project_id")
+		        	project_id_name = self.pnc.get_column_value(rownode, "project_id_name")
+		        	note_date = self.pnc.get_column_value(rownode, "note_date")
+		        	note_title = self.pnc.get_column_value(rownode, "note_title")
+
+		        	html_parts.append(self.get_html_header(project_id, project_id_name, note_date, note_title))
 		        	attendeetable = self.pnc.find_node(rownode, "table", "name", "meeting_attendees")
 
+		        	attendee_names = []
 		        	if not attendeetable.isNull():
 		        		attendeerow = attendeetable.firstChild()
 
 		        		while not attendeerow.isNull():
-		        			if attendeelist != "":
-		        				attendeelist = attendeelist + ", "
-
-		        			attendeelist = attendeelist + self.pnc.get_column_value(attendeerow, "name")
+		        			attendee_names.append(self.pnc.get_column_value(attendeerow, "name"))
 		        			attendeerow = attendeerow.nextSibling()
 
-		        	self.note_html = self.note_html + self.get_html_attendee(attendeelist)
-		        	self.note_html = self.note_html + self.get_html_notes(self.pnc.get_column_value(rownode, "note"))
-		        	self.note_html = self.note_html + self.get_html_trackerheader()
+		        	html_parts.append(self.get_html_attendee(", ".join(attendee_names)))
+		        	html_parts.append(self.get_html_notes(self.pnc.get_column_value(rownode, "note")))
+		        	html_parts.append(self.get_html_trackerheader())
 
 		        	trackertable = self.pnc.find_node(rownode, "table", "name", "item_tracker")
 
@@ -58,15 +59,16 @@ class NoteFormatter:
 		        		trackerrow = trackertable.firstChild()
 
 		        		while not trackerrow.isNull():
-		        			self.note_html = self.note_html + self.get_html_trackerrow(self.pnc.get_column_value(trackerrow, "item_name"), self.pnc.get_column_value(trackerrow, "assigned_to"), self.pnc.get_column_value(trackerrow, "status"), self.pnc.get_column_value(trackerrow, "date_due") )
+		        			html_parts.append(self.get_html_trackerrow(self.pnc.get_column_value(trackerrow, "item_name"), self.pnc.get_column_value(trackerrow, "assigned_to"), self.pnc.get_column_value(trackerrow, "status"), self.pnc.get_column_value(trackerrow, "date_due")))
 		        			trackerrow = trackerrow.nextSibling()
 
-		        	self.note_html = self.note_html + self.get_html_footer()
-		        	self.subject = self.pnc.get_column_value(rownode, "project_id") + " " + self.pnc.get_column_value(rownode, "project_id_name") + " - " + self.pnc.get_column_value(rownode, "note_date") + " " + self.pnc.get_column_value(rownode, "note_title") + " Notes"
+		        	html_parts.append(self.get_html_footer())
+		        	self.subject = f"{project_id} {project_id_name} - {note_date} {note_title} Notes"
 
 		        	rownode = rownode.nextSibling()
 		    childnode = childnode.nextSibling()
 
+		self.note_html = "".join(html_parts)
 		return
 
 	def get_html_header(self, projectnumber, projectname, day, title):
