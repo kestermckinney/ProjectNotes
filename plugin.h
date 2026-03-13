@@ -14,8 +14,6 @@ public:
 
     PythonPlugin pythonplugin() const { return m_plugin; }
     bool loaded() const { return m_loaded; }
-    bool enabled() const { return m_enabled; }
-    void setEnabled(const bool enabled);
 
     void loadPlugin(const QString& module);
     void unloadPlugin();

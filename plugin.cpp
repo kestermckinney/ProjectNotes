@@ -79,27 +79,6 @@ bool Plugin::hasMethod(const QString& method) const
     return m_plugin.hasMember(method);
 }
 
-void Plugin::setEnabled(const bool enabled)
-{
-    if (enabled && !m_enabled)
-    {
-        m_enabled = true;
-
-        if (!m_loaded)
-        {
-            emit loadModule(m_modulepath);
-        }
-    }
-    else if (!enabled && m_enabled)
-    {
-        m_enabled = false;
-        if (m_loaded)
-        {
-            emit unloadModule();
-        }
-    }
-}
-
 void Plugin::onReturnedXml(const QString& xml)
 {
 #ifdef QT_DEBUG

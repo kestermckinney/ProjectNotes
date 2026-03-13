@@ -1,8 +1,10 @@
 import subprocess
 import os
+import sys
 
 from includes.common import ProjectNotesCommon
 from includes.collaboration_tools import CollaborationTools
+from includes.graphapi_tools import TokenAPI
 
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtXml import QDomDocument, QDomNode
@@ -41,6 +43,10 @@ pluginmenus = [
 #      meeting_attendees
 #      item_tracker_updates
 #      item_tracker
+
+# keep authentication information in memory
+# allow authentication calls to use main GUI event loop
+tapi = TokenAPI()
 
 # Custom Setting
 class ExportNotesSettings(QDialog):
@@ -98,1152 +104,77 @@ class ExportNotesSettings(QDialog):
         # Call the base class implementation
         super().closeEvent(event)
 
-def generate_header(project_number, project_name):
-    html = """
-    <html xmlns:v="urn:schemas-microsoft-com:vml"
-    xmlns:o="urn:schemas-microsoft-com:office:office"
-    xmlns:w="urn:schemas-microsoft-com:office:word"
-    xmlns:x="urn:schemas-microsoft-com:office:excel"
-    xmlns:m="http://schemas.microsoft.com/office/2004/12/omml"
-    xmlns="http://www.w3.org/TR/REC-html40">
+def _html_escape(s):
+    if s is None:
+        return ""
+    return (str(s)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;"))
 
-    <head>
-    <meta http-equiv=Content-Type content="text/html; charset=windows-1252">
-    <meta name=ProgId content=Word.Document>
-    <meta name=Generator content="Microsoft Word 15">
-    <meta name=Originator content="Microsoft Word 15">
-    <style>
-    <!--
-     /* Font Definitions */
-     @font-face
-        {font-family:"Cambria Math";
-        panose-1:2 4 5 3 5 4 6 3 2 4;
-        mso-font-charset:0;
-        mso-generic-font-family:roman;
-        mso-font-pitch:variable;
-        mso-font-signature:-536869121 1107305727 33554432 0 415 0;}
-    @font-face
-        {font-family:Calibri;
-        panose-1:2 15 5 2 2 2 4 3 2 4;
-        mso-font-charset:0;
-        mso-generic-font-family:swiss;
-        mso-font-pitch:variable;
-        mso-font-signature:-469750017 -1040178053 9 0 511 0;}
-    @font-face
-        {font-family:Aptos;
-        mso-font-charset:0;
-        mso-generic-font-family:swiss;
-        mso-font-pitch:variable;
-        mso-font-signature:536871559 3 0 0 415 0;}
-     /* Style Definitions */
-     p.MsoNormal, li.MsoNormal, div.MsoNormal
-        {mso-style-unhide:no;
-        mso-style-qformat:yes;
-        mso-style-parent:"";
-        margin-top:0in;
-        margin-right:0in;
-        margin-bottom:8.0pt;
-        margin-left:0in;
-        line-height:115%;
-        mso-pagination:widow-orphan;
-        font-size:12.0pt;
-        font-family:"Aptos",sans-serif;
-        mso-ascii-font-family:Aptos;
-        mso-ascii-theme-font:minor-latin;
-        mso-fareast-font-family:Aptos;
-        mso-fareast-theme-font:minor-latin;
-        mso-hansi-font-family:Aptos;
-        mso-hansi-theme-font:minor-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:minor-bidi;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;}
-    h1
-        {mso-style-priority:9;
-        mso-style-unhide:no;
-        mso-style-qformat:yes;
-        mso-style-link:"Heading 1 Char";
-        mso-style-next:Normal;
-        margin-top:.25in;
-        margin-right:0in;
-        margin-bottom:4.0pt;
-        margin-left:0in;
-        line-height:115%;
-        mso-pagination:widow-orphan lines-together;
-        page-break-after:avoid;
-        mso-outline-level:1;
-        font-size:20.0pt;
-        font-family:"Aptos Display",sans-serif;
-        mso-ascii-font-family:"Aptos Display";
-        mso-ascii-theme-font:major-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:"Aptos Display";
-        mso-hansi-theme-font:major-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#0F4761;
-        mso-themecolor:accent1;
-        mso-themeshade:191;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;
-        font-weight:normal;}
-    h2
-        {mso-style-noshow:yes;
-        mso-style-priority:9;
-        mso-style-qformat:yes;
-        mso-style-link:"Heading 2 Char";
-        mso-style-next:Normal;
-        margin-top:8.0pt;
-        margin-right:0in;
-        margin-bottom:4.0pt;
-        margin-left:0in;
-        line-height:115%;
-        mso-pagination:widow-orphan lines-together;
-        page-break-after:avoid;
-        mso-outline-level:2;
-        font-size:16.0pt;
-        font-family:"Aptos Display",sans-serif;
-        mso-ascii-font-family:"Aptos Display";
-        mso-ascii-theme-font:major-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:"Aptos Display";
-        mso-hansi-theme-font:major-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#0F4761;
-        mso-themecolor:accent1;
-        mso-themeshade:191;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;
-        font-weight:normal;}
-    h3
-        {mso-style-noshow:yes;
-        mso-style-priority:9;
-        mso-style-qformat:yes;
-        mso-style-link:"Heading 3 Char";
-        mso-style-next:Normal;
-        margin-top:8.0pt;
-        margin-right:0in;
-        margin-bottom:4.0pt;
-        margin-left:0in;
-        line-height:115%;
-        mso-pagination:widow-orphan lines-together;
-        page-break-after:avoid;
-        mso-outline-level:3;
-        font-size:14.0pt;
-        font-family:"Aptos",sans-serif;
-        mso-ascii-font-family:Aptos;
-        mso-ascii-theme-font:minor-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:Aptos;
-        mso-hansi-theme-font:minor-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#0F4761;
-        mso-themecolor:accent1;
-        mso-themeshade:191;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;
-        font-weight:normal;}
-    h4
-        {mso-style-noshow:yes;
-        mso-style-priority:9;
-        mso-style-qformat:yes;
-        mso-style-link:"Heading 4 Char";
-        mso-style-next:Normal;
-        margin-top:4.0pt;
-        margin-right:0in;
-        margin-bottom:2.0pt;
-        margin-left:0in;
-        line-height:115%;
-        mso-pagination:widow-orphan lines-together;
-        page-break-after:avoid;
-        mso-outline-level:4;
-        font-size:12.0pt;
-        font-family:"Aptos",sans-serif;
-        mso-ascii-font-family:Aptos;
-        mso-ascii-theme-font:minor-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:Aptos;
-        mso-hansi-theme-font:minor-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#0F4761;
-        mso-themecolor:accent1;
-        mso-themeshade:191;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;
-        font-weight:normal;
-        font-style:italic;}
-    h5
-        {mso-style-noshow:yes;
-        mso-style-priority:9;
-        mso-style-qformat:yes;
-        mso-style-link:"Heading 5 Char";
-        mso-style-next:Normal;
-        margin-top:4.0pt;
-        margin-right:0in;
-        margin-bottom:2.0pt;
-        margin-left:0in;
-        line-height:115%;
-        mso-pagination:widow-orphan lines-together;
-        page-break-after:avoid;
-        mso-outline-level:5;
-        font-size:12.0pt;
-        font-family:"Aptos",sans-serif;
-        mso-ascii-font-family:Aptos;
-        mso-ascii-theme-font:minor-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:Aptos;
-        mso-hansi-theme-font:minor-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#0F4761;
-        mso-themecolor:accent1;
-        mso-themeshade:191;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;
-        font-weight:normal;}
-    h6
-        {mso-style-noshow:yes;
-        mso-style-priority:9;
-        mso-style-qformat:yes;
-        mso-style-link:"Heading 6 Char";
-        mso-style-next:Normal;
-        margin-top:2.0pt;
-        margin-right:0in;
-        margin-bottom:0in;
-        margin-left:0in;
-        line-height:115%;
-        mso-pagination:widow-orphan lines-together;
-        page-break-after:avoid;
-        mso-outline-level:6;
-        font-size:12.0pt;
-        font-family:"Aptos",sans-serif;
-        mso-ascii-font-family:Aptos;
-        mso-ascii-theme-font:minor-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:Aptos;
-        mso-hansi-theme-font:minor-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#595959;
-        mso-themecolor:text1;
-        mso-themetint:166;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;
-        font-weight:normal;
-        font-style:italic;}
-    p.MsoHeading7, li.MsoHeading7, div.MsoHeading7
-        {mso-style-noshow:yes;
-        mso-style-priority:9;
-        mso-style-qformat:yes;
-        mso-style-link:"Heading 7 Char";
-        mso-style-next:Normal;
-        margin-top:2.0pt;
-        margin-right:0in;
-        margin-bottom:0in;
-        margin-left:0in;
-        line-height:115%;
-        mso-pagination:widow-orphan lines-together;
-        page-break-after:avoid;
-        mso-outline-level:7;
-        font-size:12.0pt;
-        font-family:"Aptos",sans-serif;
-        mso-ascii-font-family:Aptos;
-        mso-ascii-theme-font:minor-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:Aptos;
-        mso-hansi-theme-font:minor-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#595959;
-        mso-themecolor:text1;
-        mso-themetint:166;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;}
-    p.MsoHeading8, li.MsoHeading8, div.MsoHeading8
-        {mso-style-noshow:yes;
-        mso-style-priority:9;
-        mso-style-qformat:yes;
-        mso-style-link:"Heading 8 Char";
-        mso-style-next:Normal;
-        margin:0in;
-        line-height:115%;
-        mso-pagination:widow-orphan lines-together;
-        page-break-after:avoid;
-        mso-outline-level:8;
-        font-size:12.0pt;
-        font-family:"Aptos",sans-serif;
-        mso-ascii-font-family:Aptos;
-        mso-ascii-theme-font:minor-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:Aptos;
-        mso-hansi-theme-font:minor-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#272727;
-        mso-themecolor:text1;
-        mso-themetint:216;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;
-        font-style:italic;}
-    p.MsoHeading9, li.MsoHeading9, div.MsoHeading9
-        {mso-style-noshow:yes;
-        mso-style-priority:9;
-        mso-style-qformat:yes;
-        mso-style-link:"Heading 9 Char";
-        mso-style-next:Normal;
-        margin:0in;
-        line-height:115%;
-        mso-pagination:widow-orphan lines-together;
-        page-break-after:avoid;
-        mso-outline-level:9;
-        font-size:12.0pt;
-        font-family:"Aptos",sans-serif;
-        mso-ascii-font-family:Aptos;
-        mso-ascii-theme-font:minor-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:Aptos;
-        mso-hansi-theme-font:minor-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#272727;
-        mso-themecolor:text1;
-        mso-themetint:216;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;}
-    p.MsoTitle, li.MsoTitle, div.MsoTitle
-        {mso-style-priority:10;
-        mso-style-unhide:no;
-        mso-style-qformat:yes;
-        mso-style-link:"Title Char";
-        mso-style-next:Normal;
-        margin-top:0in;
-        margin-right:0in;
-        margin-bottom:4.0pt;
-        margin-left:0in;
-        mso-add-space:auto;
-        mso-pagination:widow-orphan;
-        font-size:28.0pt;
-        font-family:"Aptos Display",sans-serif;
-        mso-ascii-font-family:"Aptos Display";
-        mso-ascii-theme-font:major-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:"Aptos Display";
-        mso-hansi-theme-font:major-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        letter-spacing:-.5pt;
-        mso-font-kerning:14.0pt;
-        mso-ligatures:standardcontextual;}
-    p.MsoTitleCxSpFirst, li.MsoTitleCxSpFirst, div.MsoTitleCxSpFirst
-        {mso-style-priority:10;
-        mso-style-unhide:no;
-        mso-style-qformat:yes;
-        mso-style-link:"Title Char";
-        mso-style-next:Normal;
-        mso-style-type:export-only;
-        margin:0in;
-        mso-add-space:auto;
-        mso-pagination:widow-orphan;
-        font-size:28.0pt;
-        font-family:"Aptos Display",sans-serif;
-        mso-ascii-font-family:"Aptos Display";
-        mso-ascii-theme-font:major-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:"Aptos Display";
-        mso-hansi-theme-font:major-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        letter-spacing:-.5pt;
-        mso-font-kerning:14.0pt;
-        mso-ligatures:standardcontextual;}
-    p.MsoTitleCxSpMiddle, li.MsoTitleCxSpMiddle, div.MsoTitleCxSpMiddle
-        {mso-style-priority:10;
-        mso-style-unhide:no;
-        mso-style-qformat:yes;
-        mso-style-link:"Title Char";
-        mso-style-next:Normal;
-        mso-style-type:export-only;
-        margin:0in;
-        mso-add-space:auto;
-        mso-pagination:widow-orphan;
-        font-size:28.0pt;
-        font-family:"Aptos Display",sans-serif;
-        mso-ascii-font-family:"Aptos Display";
-        mso-ascii-theme-font:major-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:"Aptos Display";
-        mso-hansi-theme-font:major-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        letter-spacing:-.5pt;
-        mso-font-kerning:14.0pt;
-        mso-ligatures:standardcontextual;}
-    p.MsoTitleCxSpLast, li.MsoTitleCxSpLast, div.MsoTitleCxSpLast
-        {mso-style-priority:10;
-        mso-style-unhide:no;
-        mso-style-qformat:yes;
-        mso-style-link:"Title Char";
-        mso-style-next:Normal;
-        mso-style-type:export-only;
-        margin-top:0in;
-        margin-right:0in;
-        margin-bottom:4.0pt;
-        margin-left:0in;
-        mso-add-space:auto;
-        mso-pagination:widow-orphan;
-        font-size:28.0pt;
-        font-family:"Aptos Display",sans-serif;
-        mso-ascii-font-family:"Aptos Display";
-        mso-ascii-theme-font:major-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:"Aptos Display";
-        mso-hansi-theme-font:major-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        letter-spacing:-.5pt;
-        mso-font-kerning:14.0pt;
-        mso-ligatures:standardcontextual;}
-    p.MsoSubtitle, li.MsoSubtitle, div.MsoSubtitle
-        {mso-style-priority:11;
-        mso-style-unhide:no;
-        mso-style-qformat:yes;
-        mso-style-link:"Subtitle Char";
-        mso-style-next:Normal;
-        margin-top:0in;
-        margin-right:0in;
-        margin-bottom:8.0pt;
-        margin-left:0in;
-        line-height:115%;
-        mso-pagination:widow-orphan;
-        font-size:14.0pt;
-        font-family:"Aptos",sans-serif;
-        mso-ascii-font-family:Aptos;
-        mso-ascii-theme-font:minor-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:Aptos;
-        mso-hansi-theme-font:minor-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#595959;
-        mso-themecolor:text1;
-        mso-themetint:166;
-        letter-spacing:.75pt;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;}
-    p.MsoListParagraph, li.MsoListParagraph, div.MsoListParagraph
-        {mso-style-priority:34;
-        mso-style-unhide:no;
-        mso-style-qformat:yes;
-        margin-top:0in;
-        margin-right:0in;
-        margin-bottom:8.0pt;
-        margin-left:.5in;
-        mso-add-space:auto;
-        line-height:115%;
-        mso-pagination:widow-orphan;
-        font-size:12.0pt;
-        font-family:"Aptos",sans-serif;
-        mso-ascii-font-family:Aptos;
-        mso-ascii-theme-font:minor-latin;
-        mso-fareast-font-family:Aptos;
-        mso-fareast-theme-font:minor-latin;
-        mso-hansi-font-family:Aptos;
-        mso-hansi-theme-font:minor-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:minor-bidi;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;}
-    p.MsoListParagraphCxSpFirst, li.MsoListParagraphCxSpFirst, div.MsoListParagraphCxSpFirst
-        {mso-style-priority:34;
-        mso-style-unhide:no;
-        mso-style-qformat:yes;
-        mso-style-type:export-only;
-        margin-top:0in;
-        margin-right:0in;
-        margin-bottom:0in;
-        margin-left:.5in;
-        mso-add-space:auto;
-        line-height:115%;
-        mso-pagination:widow-orphan;
-        font-size:12.0pt;
-        font-family:"Aptos",sans-serif;
-        mso-ascii-font-family:Aptos;
-        mso-ascii-theme-font:minor-latin;
-        mso-fareast-font-family:Aptos;
-        mso-fareast-theme-font:minor-latin;
-        mso-hansi-font-family:Aptos;
-        mso-hansi-theme-font:minor-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:minor-bidi;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;}
-    p.MsoListParagraphCxSpMiddle, li.MsoListParagraphCxSpMiddle, div.MsoListParagraphCxSpMiddle
-        {mso-style-priority:34;
-        mso-style-unhide:no;
-        mso-style-qformat:yes;
-        mso-style-type:export-only;
-        margin-top:0in;
-        margin-right:0in;
-        margin-bottom:0in;
-        margin-left:.5in;
-        mso-add-space:auto;
-        line-height:115%;
-        mso-pagination:widow-orphan;
-        font-size:12.0pt;
-        font-family:"Aptos",sans-serif;
-        mso-ascii-font-family:Aptos;
-        mso-ascii-theme-font:minor-latin;
-        mso-fareast-font-family:Aptos;
-        mso-fareast-theme-font:minor-latin;
-        mso-hansi-font-family:Aptos;
-        mso-hansi-theme-font:minor-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:minor-bidi;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;}
-    p.MsoListParagraphCxSpLast, li.MsoListParagraphCxSpLast, div.MsoListParagraphCxSpLast
-        {mso-style-priority:34;
-        mso-style-unhide:no;
-        mso-style-qformat:yes;
-        mso-style-type:export-only;
-        margin-top:0in;
-        margin-right:0in;
-        margin-bottom:8.0pt;
-        margin-left:.5in;
-        mso-add-space:auto;
-        line-height:115%;
-        mso-pagination:widow-orphan;
-        font-size:12.0pt;
-        font-family:"Aptos",sans-serif;
-        mso-ascii-font-family:Aptos;
-        mso-ascii-theme-font:minor-latin;
-        mso-fareast-font-family:Aptos;
-        mso-fareast-theme-font:minor-latin;
-        mso-hansi-font-family:Aptos;
-        mso-hansi-theme-font:minor-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:minor-bidi;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;}
-    p.MsoQuote, li.MsoQuote, div.MsoQuote
-        {mso-style-priority:29;
-        mso-style-unhide:no;
-        mso-style-qformat:yes;
-        mso-style-link:"Quote Char";
-        mso-style-next:Normal;
-        margin-top:8.0pt;
-        margin-right:0in;
-        margin-bottom:8.0pt;
-        margin-left:0in;
-        text-align:center;
-        line-height:115%;
-        mso-pagination:widow-orphan;
-        font-size:12.0pt;
-        font-family:"Aptos",sans-serif;
-        mso-ascii-font-family:Aptos;
-        mso-ascii-theme-font:minor-latin;
-        mso-fareast-font-family:Aptos;
-        mso-fareast-theme-font:minor-latin;
-        mso-hansi-font-family:Aptos;
-        mso-hansi-theme-font:minor-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:minor-bidi;
-        color:#404040;
-        mso-themecolor:text1;
-        mso-themetint:191;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;
-        font-style:italic;}
-    p.MsoIntenseQuote, li.MsoIntenseQuote, div.MsoIntenseQuote
-        {mso-style-priority:30;
-        mso-style-unhide:no;
-        mso-style-qformat:yes;
-        mso-style-link:"Intense Quote Char";
-        mso-style-next:Normal;
-        margin-top:.25in;
-        margin-right:.6in;
-        margin-bottom:.25in;
-        margin-left:.6in;
-        text-align:center;
-        line-height:115%;
-        mso-pagination:widow-orphan;
-        border:none;
-        mso-border-top-alt:solid #0F4761 .5pt;
-        mso-border-top-themecolor:accent1;
-        mso-border-top-themeshade:191;
-        mso-border-bottom-alt:solid #0F4761 .5pt;
-        mso-border-bottom-themecolor:accent1;
-        mso-border-bottom-themeshade:191;
-        padding:0in;
-        mso-padding-alt:10.0pt 0in 10.0pt 0in;
-        font-size:12.0pt;
-        font-family:"Aptos",sans-serif;
-        mso-ascii-font-family:Aptos;
-        mso-ascii-theme-font:minor-latin;
-        mso-fareast-font-family:Aptos;
-        mso-fareast-theme-font:minor-latin;
-        mso-hansi-font-family:Aptos;
-        mso-hansi-theme-font:minor-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:minor-bidi;
-        color:#0F4761;
-        mso-themecolor:accent1;
-        mso-themeshade:191;
-        mso-font-kerning:1.0pt;
-        mso-ligatures:standardcontextual;
-        font-style:italic;}
-    span.MsoIntenseEmphasis
-        {mso-style-priority:21;
-        mso-style-unhide:no;
-        mso-style-qformat:yes;
-        color:#0F4761;
-        mso-themecolor:accent1;
-        mso-themeshade:191;
-        font-style:italic;}
-    span.MsoIntenseReference
-        {mso-style-priority:32;
-        mso-style-unhide:no;
-        mso-style-qformat:yes;
-        font-variant:small-caps;
-        color:#0F4761;
-        mso-themecolor:accent1;
-        mso-themeshade:191;
-        letter-spacing:.25pt;
-        font-weight:bold;}
-    span.Heading1Char
-        {mso-style-name:"Heading 1 Char";
-        mso-style-priority:9;
-        mso-style-unhide:no;
-        mso-style-locked:yes;
-        mso-style-link:"Heading 1";
-        mso-ansi-font-size:20.0pt;
-        mso-bidi-font-size:20.0pt;
-        font-family:"Aptos Display",sans-serif;
-        mso-ascii-font-family:"Aptos Display";
-        mso-ascii-theme-font:major-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:"Aptos Display";
-        mso-hansi-theme-font:major-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#0F4761;
-        mso-themecolor:accent1;
-        mso-themeshade:191;}
-    span.Heading2Char
-        {mso-style-name:"Heading 2 Char";
-        mso-style-noshow:yes;
-        mso-style-priority:9;
-        mso-style-unhide:no;
-        mso-style-locked:yes;
-        mso-style-link:"Heading 2";
-        mso-ansi-font-size:16.0pt;
-        mso-bidi-font-size:16.0pt;
-        font-family:"Aptos Display",sans-serif;
-        mso-ascii-font-family:"Aptos Display";
-        mso-ascii-theme-font:major-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:"Aptos Display";
-        mso-hansi-theme-font:major-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#0F4761;
-        mso-themecolor:accent1;
-        mso-themeshade:191;}
-    span.Heading3Char
-        {mso-style-name:"Heading 3 Char";
-        mso-style-noshow:yes;
-        mso-style-priority:9;
-        mso-style-unhide:no;
-        mso-style-locked:yes;
-        mso-style-link:"Heading 3";
-        mso-ansi-font-size:14.0pt;
-        mso-bidi-font-size:14.0pt;
-        font-family:"Times New Roman",serif;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#0F4761;
-        mso-themecolor:accent1;
-        mso-themeshade:191;}
-    span.Heading4Char
-        {mso-style-name:"Heading 4 Char";
-        mso-style-noshow:yes;
-        mso-style-priority:9;
-        mso-style-unhide:no;
-        mso-style-locked:yes;
-        mso-style-link:"Heading 4";
-        font-family:"Times New Roman",serif;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#0F4761;
-        mso-themecolor:accent1;
-        mso-themeshade:191;
-        font-style:italic;}
-    span.Heading5Char
-        {mso-style-name:"Heading 5 Char";
-        mso-style-noshow:yes;
-        mso-style-priority:9;
-        mso-style-unhide:no;
-        mso-style-locked:yes;
-        mso-style-link:"Heading 5";
-        font-family:"Times New Roman",serif;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#0F4761;
-        mso-themecolor:accent1;
-        mso-themeshade:191;}
-    span.Heading6Char
-        {mso-style-name:"Heading 6 Char";
-        mso-style-noshow:yes;
-        mso-style-priority:9;
-        mso-style-unhide:no;
-        mso-style-locked:yes;
-        mso-style-link:"Heading 6";
-        font-family:"Times New Roman",serif;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#595959;
-        mso-themecolor:text1;
-        mso-themetint:166;
-        font-style:italic;}
-    span.Heading7Char
-        {mso-style-name:"Heading 7 Char";
-        mso-style-noshow:yes;
-        mso-style-priority:9;
-        mso-style-unhide:no;
-        mso-style-locked:yes;
-        mso-style-link:"Heading 7";
-        font-family:"Times New Roman",serif;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#595959;
-        mso-themecolor:text1;
-        mso-themetint:166;}
-    span.Heading8Char
-        {mso-style-name:"Heading 8 Char";
-        mso-style-noshow:yes;
-        mso-style-priority:9;
-        mso-style-unhide:no;
-        mso-style-locked:yes;
-        mso-style-link:"Heading 8";
-        font-family:"Times New Roman",serif;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#272727;
-        mso-themecolor:text1;
-        mso-themetint:216;
-        font-style:italic;}
-    span.Heading9Char
-        {mso-style-name:"Heading 9 Char";
-        mso-style-noshow:yes;
-        mso-style-priority:9;
-        mso-style-unhide:no;
-        mso-style-locked:yes;
-        mso-style-link:"Heading 9";
-        font-family:"Times New Roman",serif;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#272727;
-        mso-themecolor:text1;
-        mso-themetint:216;}
-    span.TitleChar
-        {mso-style-name:"Title Char";
-        mso-style-priority:10;
-        mso-style-unhide:no;
-        mso-style-locked:yes;
-        mso-style-link:Title;
-        mso-ansi-font-size:28.0pt;
-        mso-bidi-font-size:28.0pt;
-        font-family:"Aptos Display",sans-serif;
-        mso-ascii-font-family:"Aptos Display";
-        mso-ascii-theme-font:major-latin;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-hansi-font-family:"Aptos Display";
-        mso-hansi-theme-font:major-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        letter-spacing:-.5pt;
-        mso-font-kerning:14.0pt;}
-    span.SubtitleChar
-        {mso-style-name:"Subtitle Char";
-        mso-style-priority:11;
-        mso-style-unhide:no;
-        mso-style-locked:yes;
-        mso-style-link:Subtitle;
-        mso-ansi-font-size:14.0pt;
-        mso-bidi-font-size:14.0pt;
-        font-family:"Times New Roman",serif;
-        mso-fareast-font-family:"Times New Roman";
-        mso-fareast-theme-font:major-fareast;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:major-bidi;
-        color:#595959;
-        mso-themecolor:text1;
-        mso-themetint:166;
-        letter-spacing:.75pt;}
-    span.QuoteChar
-        {mso-style-name:"Quote Char";
-        mso-style-priority:29;
-        mso-style-unhide:no;
-        mso-style-locked:yes;
-        mso-style-link:Quote;
-        color:#404040;
-        mso-themecolor:text1;
-        mso-themetint:191;
-        font-style:italic;}
-    span.IntenseQuoteChar
-        {mso-style-name:"Intense Quote Char";
-        mso-style-priority:30;
-        mso-style-unhide:no;
-        mso-style-locked:yes;
-        mso-style-link:"Intense Quote";
-        color:#0F4761;
-        mso-themecolor:accent1;
-        mso-themeshade:191;
-        font-style:italic;}
-    .MsoChpDefault
-        {mso-style-type:export-only;
-        mso-default-props:yes;
-        font-family:"Aptos",sans-serif;
-        mso-ascii-font-family:Aptos;
-        mso-ascii-theme-font:minor-latin;
-        mso-fareast-font-family:Aptos;
-        mso-fareast-theme-font:minor-latin;
-        mso-hansi-font-family:Aptos;
-        mso-hansi-theme-font:minor-latin;
-        mso-bidi-font-family:"Times New Roman";
-        mso-bidi-theme-font:minor-bidi;}
-    .MsoPapDefault
-        {mso-style-type:export-only;
-        margin-bottom:8.0pt;
-        line-height:115%;}
-    @page WordSection1
-        {size:8.5in 11.0in;
-        margin:1.0in 1.0in 1.0in 1.0in;
-        mso-header-margin:.5in;
-        mso-footer-margin:.5in;
-        mso-paper-source:0;}
-    div.WordSection1
-        {page:WordSection1;}
-    -->
-    </style>
-    </head>
 
-    <body lang=EN-US style='tab-interval:.5in;word-wrap:break-word'>
+def generate_notes_html(projnum, projdes, meetings_html, reportdate):
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=780">
+<style>
+body {{ font-family: Calibri, Arial, sans-serif; font-size: 10pt; margin: 0; padding: 0.2in; }}
+h1 {{ font-size: 13pt; color: #1F497D; font-weight: bold; margin-bottom: 8px; }}
+.meeting {{ margin-bottom: 16px; }}
+.meeting-title {{ font-size: 11pt; font-weight: bold; color: #1F497D; margin-bottom: 4px; }}
+.meeting-table {{ border-collapse: collapse; width: 100%; }}
+.meeting-table td, .meeting-table th {{ border: 1px solid #808080; padding: 3px 6px; font-size: 10pt; vertical-align: top; }}
+.cell-label {{ background-color: #EEECE1; font-weight: bold; text-align: right; white-space: nowrap; width: 80px; }}
+.cell-value {{ background-color: #DCE6F1; }}
+.cell-header {{ background-color: #EEECE1; font-weight: bold; text-align: center; }}
+.cell-notes {{ background-color: #DCE6F1; }}
+.col-item {{ width: 55%; }}
+.footer {{ font-size: 9pt; color: #555; margin-top: 16px; }}
+</style>
+</head>
+<body>
+<h1>Meeting Notes: {_html_escape(projnum)} {_html_escape(projdes)}</h1>
+{meetings_html}
+<p class="footer">Report Date: {_html_escape(reportdate)}</p>
+</body>
+</html>"""
 
-    <div class=WordSection1>
 
-    <table class=MsoNormalTable border=0 cellspacing=0 cellpadding=0 width=746
-     style='width:559.15pt;border-collapse:collapse;mso-yfti-tbllook:1184;
-     mso-padding-alt:0in 5.4pt 0in 5.4pt'>
-     <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes;height:16.5pt'>
-      <td width=746 nowrap colspan=11 style='width:559.15pt;border:none;border-bottom:
-      solid gray 1.0pt;padding:0in 5.4pt 0in 5.4pt;height:16.5pt'>
-    """
-      
-    html += f"""<p class=MsoNormal style='margin-bottom:0in;line-height:normal'><b><span style='font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman";color:#44546A;mso-font-kerning:0pt;mso-ligatures:none'>Meeting Notes: {project_number} {project_name}"""
-      
-    html += """
-      <o:p></o:p></span></b></p>
-      </td>
-     </tr>
-     <tr style='mso-yfti-irow:1;height:15.0pt'>
-      <td width=105 nowrap valign=bottom style='width:79.0pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=64 nowrap valign=bottom style='width:48.0pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=64 nowrap valign=bottom style='width:48.0pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=64 nowrap valign=bottom style='width:48.0pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=64 nowrap valign=bottom style='width:48.0pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=60 nowrap valign=bottom style='width:45.25pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=57 nowrap valign=bottom style='width:42.45pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=143 nowrap colspan=2 valign=bottom style='width:107.05pt;
-      border:none;mso-border-top-alt:solid gray 1.0pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'>
-      <p class=MsoNormal style='margin-bottom:0in;line-height:normal'><span
-      style='font-size:10.0pt;mso-ascii-font-family:Aptos;mso-fareast-font-family:
-      "Times New Roman";mso-hansi-font-family:Aptos;mso-bidi-font-family:"Times New Roman";
-      color:black;mso-font-kerning:0pt;mso-ligatures:none'>&nbsp;<o:p></o:p></span></p>
-      </td>
-      <td width=50 nowrap valign=bottom style='width:37.8pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=74 nowrap valign=bottom style='width:55.6pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-     </tr>
-    """
+def build_meeting_block(meeting_title, meeting_date, attendee_names, meeting_notes, action_items_html):
+    action_rows = ""
+    if action_items_html:
+        action_rows = f"""<tr><td colspan="4" class="cell-header">Action Items</td></tr>
+<tr>
+<th class="cell-header col-item">Item</th>
+<th class="cell-header">Assigned To</th>
+<th class="cell-header">Status</th>
+<th class="cell-header">Due Date</th>
+</tr>
+{action_items_html}"""
+    return f"""<div class="meeting">
+<div class="meeting-title">{_html_escape(meeting_title)}</div>
+<table class="meeting-table">
+<tr><td class="cell-label">Date:</td><td class="cell-value" colspan="3">{_html_escape(meeting_date)}</td></tr>
+<tr><td class="cell-label">Attendees:</td><td class="cell-value" colspan="3">{_html_escape(attendee_names)}</td></tr>
+<tr><td colspan="4" class="cell-header">Meeting Notes</td></tr>
+<tr><td colspan="4" class="cell-notes">{meeting_notes}</td></tr>
+{action_rows}
+</table>
+</div>
+"""
 
-    return html
 
-def generate_meeting_header_row(meeting_title, meeting_date, attendee_names, meeting_notes):
-    html = f"""
-    <tr style='mso-yfti-irow:2;height:15.75pt'>
-    <td width=746 nowrap colspan=11 style='width:559.15pt;padding:0in 5.4pt 0in 5.4pt;
-    height:15.75pt'>
-    <p class=MsoNormal style='margin-bottom:0in;line-height:normal'><b><span
-    style='font-family:"Calibri",sans-serif;mso-fareast-font-family:"Times New Roman";
-    color:#44546A;mso-font-kerning:0pt;mso-ligatures:none'>{meeting_title}<o:p></o:p></span></b></p>
-    </td>
-    </tr>
-    <tr style='mso-yfti-irow:3;height:15.0pt'>
-    <td width=105 style='width:79.0pt;border:solid gray 1.0pt;mso-border-alt:
-    solid gray .5pt;background:#E7E6E6;padding:0in 5.4pt 0in 5.4pt;height:15.0pt'>
-    <p class=MsoNormal align=right style='margin-bottom:0in;text-align:right;
-    line-height:normal'><b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;
-    mso-fareast-font-family:"Times New Roman";color:black;mso-font-kerning:0pt;
-    mso-ligatures:none'>Date:<o:p></o:p></span></b></p>
-    </td>
-    <td width=640 colspan=10 style='width:480.15pt;border:solid gray 1.0pt;
-    border-left:none;mso-border-top-alt:solid gray .5pt;mso-border-bottom-alt:
-    solid gray .5pt;mso-border-right-alt:solid gray .5pt;background:#D9E1F2;
-    padding:0in 5.4pt 0in 5.4pt;height:15.0pt'>
-    <p class=MsoNormal style='margin-bottom:0in;line-height:normal'><span
-    style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:
-    "Times New Roman";color:black;mso-font-kerning:0pt;mso-ligatures:none'>{meeting_date}<o:p></o:p></span></p>
-    </td>
-    </tr>
-    <tr style='mso-yfti-irow:4;height:15.0pt'>
-    <td width=105 style='width:79.0pt;border:solid gray 1.0pt;border-top:none;
-    mso-border-left-alt:solid gray .5pt;mso-border-bottom-alt:solid gray .5pt;
-    mso-border-right-alt:solid gray .5pt;background:#E7E6E6;padding:0in 5.4pt 0in 5.4pt;
-    height:15.0pt'>
-    <p class=MsoNormal align=right style='margin-bottom:0in;text-align:right;
-    line-height:normal'><b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;
-    mso-fareast-font-family:"Times New Roman";color:black;mso-font-kerning:0pt;
-    mso-ligatures:none'>Attendees:<o:p></o:p></span></b></p>
-    </td>
-    <td width=640 colspan=10 style='width:480.15pt;border-top:none;border-left:
-    none;border-bottom:solid gray 1.0pt;border-right:solid gray 1.0pt;mso-border-top-alt:
-    solid gray .5pt;mso-border-top-alt:solid gray .5pt;mso-border-bottom-alt:
-    solid gray .5pt;mso-border-right-alt:solid gray .5pt;background:#D9E1F2;
-    padding:0in 5.4pt 0in 5.4pt;height:15.0pt'>
-    <p class=MsoNormal style='margin-bottom:0in;line-height:normal'><span
-    style='font-size:11.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:
-    "Times New Roman";color:black;mso-font-kerning:0pt;mso-ligatures:none'>{attendee_names}<o:p></o:p></span></p>
-    </td>
-    </tr>
-    <tr style='mso-yfti-irow:5;height:15.0pt'>
-    <td width=746 colspan=11 style='width:559.15pt;border:solid gray 1.0pt;
-    border-top:none;mso-border-top-alt:solid gray .5pt;mso-border-alt:solid gray .5pt;
-    background:#E7E6E6;padding:0in 5.4pt 0in 5.4pt;height:15.0pt'>
-    <p class=MsoNormal align=center style='margin-bottom:0in;text-align:center;
-    line-height:normal'><b><span style='font-size:11.0pt;font-family:"Calibri",sans-serif;
-    mso-fareast-font-family:"Times New Roman";color:black;mso-font-kerning:0pt;
-    mso-ligatures:none'>Meeting Notes<o:p></o:p></span></b></p>
-    </td>
-    </tr>
-    <tr style='mso-yfti-irow:6;height:15.0pt'>
-    <td width=746 nowrap colspan=11 style='width:559.15pt;border:solid gray 1.0pt;
-    border-top:none;mso-border-top-alt:solid gray .5pt;mso-border-alt:solid gray .5pt;
-    background:#D9E1F2;padding:0in 5.4pt 0in 5.4pt;height:15.0pt'>{pnc.strip_html_body(meeting_notes)}
-    </td>
-    </tr>
-    <tr style='mso-yfti-irow:7;height:15.0pt'>
-    <td width=105 style='width:79.0pt;padding:0in 5.4pt 0in 5.4pt;height:15.0pt'></td>
-    <td width=64 style='width:48.0pt;padding:0in 5.4pt 0in 5.4pt;height:15.0pt'></td>
-    <td width=64 style='width:48.0pt;padding:0in 5.4pt 0in 5.4pt;height:15.0pt'></td>
-    <td width=64 style='width:48.0pt;padding:0in 5.4pt 0in 5.4pt;height:15.0pt'></td>
-    <td width=64 style='width:48.0pt;padding:0in 5.4pt 0in 5.4pt;height:15.0pt'></td>
-    <td width=60 style='width:45.25pt;padding:0in 5.4pt 0in 5.4pt;height:15.0pt'></td>
-    <td width=57 style='width:42.45pt;padding:0in 5.4pt 0in 5.4pt;height:15.0pt'></td>
-    <td width=143 colspan=2 style='width:107.05pt;padding:0in 5.4pt 0in 5.4pt;
-    height:15.0pt'></td>
-    <td width=50 style='width:37.8pt;padding:0in 5.4pt 0in 5.4pt;height:15.0pt'></td>
-    <td width=74 style='width:55.6pt;padding:0in 5.4pt 0in 5.4pt;height:15.0pt'></td>
-    </tr>
-    <tr style='mso-yfti-irow:8;height:15.0pt'>
-    <td width=746 colspan=11 style='width:559.15pt;border:solid gray 1.0pt;
-    mso-border-alt:solid gray .5pt;background:#E7E6E6;padding:0in 5.4pt 0in 5.4pt;
-    height:15.0pt'>
-    <p class=MsoNormal align=center style='margin-bottom:0in;text-align:center;
-    line-height:normal'><b><span style='font-size:10.0pt;font-family:"Calibri",sans-serif;
-    mso-fareast-font-family:"Times New Roman";color:black;mso-font-kerning:0pt;
-    mso-ligatures:none'>Action Items<o:p></o:p></span></b></p>
-    </td>
-    </tr>
-    <tr style='mso-yfti-irow:9;height:25.5pt'>
-    <td width=478 colspan=7 style='width:358.7pt;border:solid gray 1.0pt;
-    border-top:none;mso-border-top-alt:solid gray .5pt;mso-border-alt:solid gray .5pt;
-    background:#E7E6E6;padding:0in 5.4pt 0in 5.4pt;height:25.5pt'>
-    <p class=MsoNormal align=center style='margin-bottom:0in;text-align:center;
-    line-height:normal'><b><span style='font-size:10.0pt;font-family:"Calibri",sans-serif;
-    mso-fareast-font-family:"Times New Roman";color:black;mso-font-kerning:0pt;
-    mso-ligatures:none'>Item<o:p></o:p></span></b></p>
-    </td>
-    <td width=92 style='width:69.25pt;border-top:none;border-left:none;
-    border-bottom:solid gray 1.0pt;border-right:solid gray 1.0pt;mso-border-bottom-alt:
-    solid gray .5pt;mso-border-right-alt:solid gray .5pt;background:#E7E6E6;
-    padding:0in 5.4pt 0in 5.4pt;height:25.5pt'>
-    <p class=MsoNormal align=center style='margin-bottom:0in;text-align:center;
-    line-height:normal'><b><span style='font-size:10.0pt;font-family:"Calibri",sans-serif;
-    mso-fareast-font-family:"Times New Roman";color:black;mso-font-kerning:0pt;
-    mso-ligatures:none'>Assigned To<o:p></o:p></span></b></p>
-    </td>
-    <td width=101 colspan=2 style='width:1.05in;border-top:none;border-left:none;
-    border-bottom:solid gray 1.0pt;border-right:solid gray 1.0pt;mso-border-top-alt:
-    solid gray .5pt;mso-border-top-alt:solid gray .5pt;mso-border-bottom-alt:
-    solid gray .5pt;mso-border-right-alt:solid gray .5pt;background:#E7E6E6;
-    padding:0in 5.4pt 0in 5.4pt;height:25.5pt'>
-    <p class=MsoNormal align=center style='margin-bottom:0in;text-align:center;
-    line-height:normal'><b><span style='font-size:10.0pt;font-family:"Calibri",sans-serif;
-    mso-fareast-font-family:"Times New Roman";color:black;mso-font-kerning:0pt;
-    mso-ligatures:none'>Status<o:p></o:p></span></b></p>
-    </td>
-    <td width=74 style='width:55.6pt;border-top:none;border-left:none;border-bottom:
-    solid gray 1.0pt;border-right:solid gray 1.0pt;mso-border-bottom-alt:solid gray .5pt;
-    mso-border-right-alt:solid gray .5pt;background:#E7E6E6;padding:0in 5.4pt 0in 5.4pt;
-    height:25.5pt'>
-    <p class=MsoNormal align=center style='margin-bottom:0in;text-align:center;
-    line-height:normal'><b><span style='font-size:10.0pt;font-family:"Calibri",sans-serif;
-    mso-fareast-font-family:"Times New Roman";color:black;mso-font-kerning:0pt;
-    mso-ligatures:none'>Due Date<o:p></o:p></span></b></p>
-    </td>
-    </tr>
-    """
+def build_action_item_row(item, assignedto, status, duedate):
+    return (f'<tr>'
+            f'<td class="cell-value">{_html_escape(item)}</td>'
+            f'<td class="cell-value" style="text-align:center">{_html_escape(assignedto)}</td>'
+            f'<td class="cell-value" style="text-align:center">{_html_escape(status)}</td>'
+            f'<td class="cell-value" style="text-align:center">{_html_escape(duedate)}</td>'
+            f'</tr>\n')
 
-    return html
-
-def generate_action_item_row(item, assignedto, status, duedate):
-    html = f"""
-    <tr style='mso-yfti-irow:10;height:25.5pt'>
-    <td width=478 colspan=7 style='width:358.7pt;border:solid gray 1.0pt;
-    border-top:none;mso-border-top-alt:solid gray .5pt;mso-border-alt:solid gray .5pt;
-    background:#D9E1F2;padding:0in 5.4pt 0in 5.4pt;height:25.5pt'>
-    <p class=MsoNormal style='margin-bottom:0in;line-height:normal'><span
-    style='font-size:10.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:
-    "Times New Roman";color:black;mso-font-kerning:0pt;mso-ligatures:none'>{item}<o:p></o:p></span></p>
-    </td>
-    <td width=92 style='width:69.25pt;border-top:none;border-left:none;
-    border-bottom:solid gray 1.0pt;border-right:solid gray 1.0pt;mso-border-bottom-alt:
-    solid gray .5pt;mso-border-right-alt:solid gray .5pt;background:#D9E1F2;
-    padding:0in 5.4pt 0in 5.4pt;height:25.5pt'>
-    <p class=MsoNormal align=center style='margin-bottom:0in;text-align:center;
-    line-height:normal'><span style='font-size:10.0pt;font-family:"Calibri",sans-serif;
-    mso-fareast-font-family:"Times New Roman";color:black;mso-font-kerning:0pt;
-    mso-ligatures:none'>{assignedto}<o:p></o:p></span></p>
-    </td>
-    <td width=101 colspan=2 style='width:1.05in;border-top:none;border-left:none;
-    border-bottom:solid gray 1.0pt;border-right:solid gray 1.0pt;mso-border-top-alt:
-    solid gray .5pt;mso-border-top-alt:solid gray .5pt;mso-border-bottom-alt:
-    solid gray .5pt;mso-border-right-alt:solid gray .5pt;background:#D9E1F2;
-    padding:0in 5.4pt 0in 5.4pt;height:25.5pt'>
-    <p class=MsoNormal align=center style='margin-bottom:0in;text-align:center;
-    line-height:normal'><span style='font-size:10.0pt;font-family:"Calibri",sans-serif;
-    mso-fareast-font-family:"Times New Roman";color:black;mso-font-kerning:0pt;
-    mso-ligatures:none'>{status}<o:p></o:p></span></p>
-    </td>
-    <td width=74 style='width:55.6pt;border-top:none;border-left:none;border-bottom:
-    solid gray 1.0pt;border-right:solid gray 1.0pt;mso-border-bottom-alt:solid gray .5pt;
-    mso-border-right-alt:solid gray .5pt;background:#D9E1F2;padding:0in 5.4pt 0in 5.4pt;
-    height:25.5pt'>
-    <p class=MsoNormal align=center style='margin-bottom:0in;text-align:center;
-    line-height:normal'><span style='font-size:10.0pt;font-family:"Calibri",sans-serif;
-    mso-fareast-font-family:"Times New Roman";color:black;mso-font-kerning:0pt;
-    mso-ligatures:none'>{duedate}<o:p></o:p></span></p>
-    </td>
-    </tr>
-    """
-
-    return html
-
-def generate_meeting_footer_row():
-    html = """
-    <tr style='mso-yfti-irow:11;height:15.0pt'>
-      <td width=105 nowrap valign=bottom style='width:79.0pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=64 nowrap valign=bottom style='width:48.0pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=64 nowrap valign=bottom style='width:48.0pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=64 nowrap valign=bottom style='width:48.0pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=64 nowrap valign=bottom style='width:48.0pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=60 nowrap valign=bottom style='width:45.25pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=57 nowrap valign=bottom style='width:42.45pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=143 nowrap colspan=2 valign=bottom style='width:107.05pt;
-      padding:0in 5.4pt 0in 5.4pt;height:15.0pt'></td>
-      <td width=50 nowrap valign=bottom style='width:37.8pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=74 nowrap valign=bottom style='width:55.6pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-     </tr>
-    """
-
-    return html
-
-def generate_footer(reportdate):
-    html = f"""
-     <tr style='mso-yfti-irow:12;mso-yfti-lastrow:yes;height:15.0pt'>
-      <td width=169 nowrap colspan=2 style='width:127.0pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'>
-      <p class=MsoNormal style='margin-bottom:0in;line-height:normal'><span
-      style='font-size:10.0pt;font-family:"Calibri",sans-serif;mso-fareast-font-family:
-      "Times New Roman";color:black;mso-font-kerning:0pt;mso-ligatures:none'>Report Date: {reportdate}<o:p></o:p></span></p>
-      </td>
-      <td width=64 nowrap valign=bottom style='width:48.0pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=64 nowrap valign=bottom style='width:48.0pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=64 nowrap valign=bottom style='width:48.0pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=60 nowrap valign=bottom style='width:45.25pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=57 nowrap valign=bottom style='width:42.45pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=143 nowrap colspan=2 valign=bottom style='width:107.05pt;
-      padding:0in 5.4pt 0in 5.4pt;height:15.0pt'></td>
-      <td width=50 nowrap valign=bottom style='width:37.8pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-      <td width=74 nowrap valign=bottom style='width:55.6pt;padding:0in 5.4pt 0in 5.4pt;
-      height:15.0pt'></td>
-     </tr>
-    </table>
-    </div>
-    </body>
-    </html>
-    """
-
-    return html
 
 class MeetingsExporter(QDialog):
     def __init__(self, parent: QMainWindow = None):
@@ -1275,12 +206,9 @@ class MeetingsExporter(QDialog):
         self.page_layout.setOrientation(QPageLayout.Orientation.Portrait)
         self.page_layout.setMargins(QMarginsF(20, 20, 20, 20))  # Optional margins
 
-        # Compute printable dimensions (in pixels, assuming 96 DPI)
-        self.page_width_px = self.page_layout.paintRectPixels(96).width()
-        self.page_height_px = self.page_layout.paintRectPixels(96).height()
-
         self.web_view = QWebEngineView(self.ui)
         self.web_view.loadFinished.connect(self.on_load_finished)
+        self.web_view.page().pdfPrintingFinished.connect(self.pdf_printed)
         self.ui.verticalLayout_2.layout().addWidget(self.web_view)
 
     def set_execute_date(self, edate):
@@ -1297,50 +225,10 @@ class MeetingsExporter(QDialog):
 
         print("Html load finished")
 
-        # JavaScript to get content dimensions and apply scale
-        js_code = f"""
-        (function() {{
-            var body = document.body;
-            var contentWidth = body.scrollWidth;
-            var contentHeight = body.scrollHeight;
-            
-            // Compute scale to fit page (min of width/height ratios, min 0.5)
-            var scaleX = {self.page_width_px} / contentWidth;
-            var scaleY = {self.page_height_px} / contentHeight;
-            var scale = Math.max(0.5, Math.min(scaleX, scaleY));
-            
-            // Apply scale transform to body (centers it)
-            body.style.transform = 'scale(' + scale + ')';
-            body.style.transformOrigin = 'top left';
-            body.style.width = Math.ceil(contentWidth * scale) + 'px';
-            body.style.height = Math.ceil(contentHeight * scale) + 'px';
-            
-            // Optional: Adjust viewport meta for better rendering
-            var meta = document.querySelector('meta[name="viewport"]');
-            if (!meta) {{
-                meta = document.createElement('meta');
-                meta.name = 'viewport';
-                meta.content = 'width=device-width, initial-scale=1.0';
-                document.head.appendChild(meta);
-            }}
-            
-            console.log('Scaled to: ' + scale);
-            return scale;
-        }})();
-        """
         
-        # Connect pdfPrintingFinished signal to handle completion
-        self.web_view.page().pdfPrintingFinished.connect(self.pdf_printed)
-
-        # Run JS and then generate PDF
-        self.web_view.page().runJavaScript(js_code, self.generate_pdf_after_scale)
+        self.web_view.page().printToPdf(self.pdfreportname, self.page_layout)
 
         print("Finished generate_pdf call")
-
-    def generate_pdf_after_scale(self, scale):
-        # Generate PDF
-        self.web_view.page().printToPdf(self.pdfreportname, self.page_layout)
-        print("Finished generate_pdf_after_scale")
 
     def set_xml_doc(self, xmlval):
         self.xmlstr = xmlval
@@ -1400,7 +288,7 @@ class MeetingsExporter(QDialog):
         if not pnc.folder_exists(projectfolder):
             msg = f"Folder {projectfolder} does not exist.  Cannot generate the report."
             print(msg)
-            QMessageBox.critical(None, "Folder Does Not Exist")
+            QMessageBox.critical(None, "Folder Does Not Exist", msg)
             return
 
         self.progbar = QProgressDialog(self)
@@ -1411,6 +299,7 @@ class MeetingsExporter(QDialog):
             )
         self.progbar.setMinimumWidth(350)
         self.progbar.setCancelButton(None)
+        self.progbar.setWindowModality(QtCore.Qt.WindowModality.WindowModal)
         self.progbar.show()
 
         progval = 0
@@ -1429,7 +318,7 @@ class MeetingsExporter(QDialog):
             self.htmlreportname = temporaryfolder + projnum + " Meeting Minutes.html"
             self.pdfreportname = temporaryfolder + projnum + " Meeting Minutes.pdf"
 
-        self.html_content = generate_header(projnum, projdes)
+        meetings_html = ""
 
         progval = progval + 1
         self.progbar.setValue(int(min(progval / progtot * 100, 100)))
@@ -1494,8 +383,7 @@ class MeetingsExporter(QDialog):
                         #print("processing attendees...")
                         attendeerow = attendeerow.nextSibling()
 
-                self.html_content += generate_meeting_header_row(pnc.get_column_value(notesrow, "note_title"), pnc.get_column_value(notesrow, "note_date"), attendeelist, note) 
-
+                action_items_html = ""
                 trackeritems = pnc.find_node(notesrow, "table", "name", "item_tracker")
 
                 trackercount = 0
@@ -1506,16 +394,15 @@ class MeetingsExporter(QDialog):
                         QtWidgets.QApplication.processEvents()
                         trackercount = trackercount + 1
 
-                        self.html_content += generate_action_item_row(pnc.get_column_value(trackerrow, "item_name"), pnc.get_column_value(trackerrow, "assigned_to"), pnc.get_column_value(trackerrow, "status"), pnc.get_column_value(trackerrow, "date_due")) 
+                        action_items_html += build_action_item_row(pnc.get_column_value(trackerrow, "item_name"), pnc.get_column_value(trackerrow, "assigned_to"), pnc.get_column_value(trackerrow, "status"), pnc.get_column_value(trackerrow, "date_due"))
 
                         trackerrow = trackerrow.nextSibling()
 
-                
-                self.html_content += generate_meeting_footer_row()
+                meetings_html += build_meeting_block(pnc.get_column_value(notesrow, "note_title"), pnc.get_column_value(notesrow, "note_date"), attendeelist, pnc.strip_html_body(note), action_items_html)
 
                 notesrow = notesrow.nextSibling()
 
-            self.html_content += generate_footer(self.executedate.toString("MM/dd/yyyy"))
+            self.html_content = generate_notes_html(projnum, projdes, meetings_html, self.executedate.toString("MM/dd/yyyy"))
 
             progval = progval + 1
             self.progbar.setValue(int(min(progval / progtot * 100, 100)))
@@ -1553,14 +440,14 @@ class MeetingsExporter(QDialog):
         else:
             print("Failed to generate PDF")
 
-        ct = CollaborationTools()
+        ct = CollaborationTools(tapi)
 
         if self.emailasinlinehtml:
                 ct.send_an_email(self.xmlstr, self.subject, self.html_content, None, "", True)
         elif self.emailashtml:
-                ct.send_an_email(self.xmlstr, self.subject, self.html_content, self.htmlreportname, "", True)
+                ct.send_an_email(self.xmlstr, self.subject, "", self.htmlreportname, "", True)
         elif self.emailaspdf:
-                ct.send_an_email(self.xmlstr, self.subject, self.html_content, self.pdfreportname, "", True)
+                ct.send_an_email(self.xmlstr, self.subject, "", self.pdfreportname, "", True)
 
         QFile.remove(self.project_pdfreportname)
         if not QFile(self.pdfreportname).copy(self.project_pdfreportname):
@@ -1575,23 +462,42 @@ class MeetingsExporter(QDialog):
 
         if self.ui.m_checkBoxDisplayNotes.isChecked():
             try:
-                QDesktopServices.openUrl(QUrl("file:///" + self.project_pdfreportname))
+                print(f"Attempting to open {self.project_pdfreportname}")
+                self.open_pdf(self.project_pdfreportname)
             except:
                 print(f"An error occured trying to open {self.project_pdfreportname}")
                 pass
 
         QFile.remove(self.pdfreportname)
 
-        self.progbar.setValue(100)
+        if not self.progbar is None:
+            self.progbar.setValue(100)
 
-        self.progbar.hide()
-        self.progbar.close()
-        self.progbar = None # must be destroyed
+            self.progbar.hide()
+            self.progbar.close()
+            self.progbar = None # must be destroyed
 
         QtWidgets.QApplication.restoreOverrideCursor()
 
         self.hide()
 
+    def open_pdf(self, path):
+        if sys.platform.startswith("linux"):
+            try:
+                # Most reliable on modern Linux distros
+                subprocess.run(["xdg-open", path], check=True)
+                return True
+            except (FileNotFoundError, subprocess.CalledProcessError):
+                # Fallback if xdg-open is missing/broken
+                try:
+                    subprocess.run(["gio", "open", path], check=True)
+                    return True
+                except:
+                    pass
+
+        # Normal Qt way (good on Windows/macOS, sometimes works on Linux)
+        url = QUrl.fromLocalFile(path)
+        return QDesktopServices.openUrl(url)
 
 # processing main def
 def menu_export_meeting_notes(xmlstr, parameter):

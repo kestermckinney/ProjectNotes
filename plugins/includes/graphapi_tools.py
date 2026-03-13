@@ -203,27 +203,30 @@ class GraphAPITools:
 
     def upload_attachment(self, draft_email_id, file_path):
 
-        file = QFile(file_path)
-        file_content = None
-        if file.open(QIODevice.OpenModeFlag.ReadOnly):
-            file_content = file.readAll().data().decode("utf-8")
-            file.close()
+        try:
+            with open(file_path, "rb") as f:
+                file_content = base64.b64encode(f.read()).decode("ascii")
+        except (IOError, OSError) as e:
+            return f"Failed to read attachment file '{file_path}': {e}"
+
+        file_name = file_path.replace("\\", "/").split("/")[-1]
 
         # File attachment structure
         attachment = {
             "@odata.type": "#microsoft.graph.fileAttachment",
-            "name": file_path.split("/")[-1],  # Extract the file name from the path
+            "name": file_name,
             "contentBytes": file_content,
             "contentType": "application/octet-stream"
         }
 
+        print(f"Uploading attachment '{file_name}' to message {draft_email_id}")
+
         # Upload the attachment to the draft email
         response = requests.post(f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{draft_email_id}/attachments", headers=self.headers, json=attachment)
 
-        #print(f"uploading {file_path} as an attachment")
-
         if response.status_code != 201:
-            return f"Response Code: {response.status_code} Failed to upload attachment: {file_path}.  Server Responded: {response.json()}"
+            print(f"Attachment upload failed: {response.status_code} {response.text}")
+            return f"Response Code: {response.status_code} Failed to upload attachment: {file_name}.  Server Responded: {response.text}"
 
         return None
 
