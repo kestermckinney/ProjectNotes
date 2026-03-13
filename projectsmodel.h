@@ -4,17 +4,17 @@
 #ifndef PROJECTSMODEL_H
 #define PROJECTSMODEL_H
 
-#include "pnsqlquerymodel.h"
+#include "sqlquerymodel.h"
 
-class ProjectsModel : public PNSqlQueryModel
+class ProjectsModel : public SqlQueryModel
 {
 public:
-    ProjectsModel(PNDatabaseObjects* t_dbo);
-    const QModelIndex  newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr) override;
+    ProjectsModel(DatabaseObjects* dbo);
+    const QModelIndex  newRecord(const QVariant* fkValue1 = nullptr, const QVariant* fkValue2 = nullptr) override;
 
-    QVariant data(const QModelIndex &t_index, int t_role = Qt::DisplayRole) const override;
-    bool setData(const QModelIndex &t_index, const QVariant &t_value, int t_role) override;
-    const QModelIndex copyRecord(QModelIndex t_index) override;
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    bool setData(const QModelIndex &index, const QVariant &value, int role) override;
+    const QModelIndex copyRecord(QModelIndex index) override;
 };
 
 #endif // PROJECTSMODEL_H

@@ -4,13 +4,13 @@
 #ifndef CLIENTSMODEL_H
 #define CLIENTSMODEL_H
 
-#include "pnsqlquerymodel.h"
+#include "sqlquerymodel.h"
 
-class ClientsModel : public PNSqlQueryModel
+class ClientsModel : public SqlQueryModel
 {
 public:
-    ClientsModel(PNDatabaseObjects* t_dbo);
-    const QModelIndex newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr) override;
+    ClientsModel(DatabaseObjects* dbo);
+    const QModelIndex newRecord(const QVariant* fkValue1 = nullptr, const QVariant* fkValue2 = nullptr) override;
 };
 
 #endif // CLIENTSMODEL_H

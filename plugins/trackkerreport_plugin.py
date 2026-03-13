@@ -123,6 +123,25 @@ class GenerateTrackerReport(QDialog):
     def set_xml_doc(self, xmlval):
         self.xmlstr = xmlval
 
+    def _is_item_included(self, repitemrow):
+        isinternal = pnc.get_column_value(repitemrow, "internal_item")
+        itemtype = pnc.get_column_value(repitemrow, "item_type")
+        status = pnc.get_column_value(repitemrow, "status")
+
+        includeiteminternal = (isinternal == "1" and self.ui.m_checkBoxInternalRptTracker.isChecked()) or \
+                              (isinternal == "0" or isinternal == "")
+
+        includeitemtype = (itemtype == "Tracker" and self.ui.m_checkBoxItemsTracker.isChecked()) or \
+                          (itemtype == "Action" and self.ui.m_checkBoxActionTracker.isChecked())
+
+        includeitemstatus = (status == "New" and self.ui.m_checkBoxNewTracker.isChecked()) or \
+                            (status == "Assigned" and self.ui.m_checkBoxAssignedTracker.isChecked()) or \
+                            (status == "Defered" and self.ui.m_checkBoxDeferedTracker.isChecked()) or \
+                            (status == "Resolved" and self.ui.m_checkBoxResolvedTracker.isChecked()) or \
+                            (status == "Cancelled" and self.ui.m_checkBoxCancelledTracker.isChecked())
+
+        return includeiteminternal and includeitemtype and includeitemstatus, isinternal, itemtype, status
+
     def generate_tracker(self):
         pne = ProjectNotesExcelTools()
 
@@ -173,7 +192,8 @@ class GenerateTrackerReport(QDialog):
         email = None
         nm = None
         company = None
-        receivers = ""
+        receivers_list = []
+        emaillist_parts = []
 
         projectfolder = pnc.get_projectfolder(xmlroot)
 
@@ -219,15 +239,14 @@ class GenerateTrackerReport(QDialog):
                 company = pnc.get_column_value(memberrow, "client_name")
 
                 if nm != pm:
-                    if (email != None and email != "" and  ( (internalreport and company == co) or not internalreport )):
-                        if receivers != "":
-                            receivers = receivers + ", "
-                            emaillist = emaillist + ";"
-
-                        receivers = receivers + nm
-                        emaillist = emaillist + email
+                    if (email != None and email != "" and ((internalreport and company == co) or not internalreport)):
+                        receivers_list.append(nm)
+                        emaillist_parts.append(email)
 
                 memberrow = memberrow.nextSibling()
+
+        receivers = ", ".join(receivers_list)
+        emaillist = ";".join(emaillist_parts)
 
 
         progval = progval + 1
@@ -267,43 +286,8 @@ class GenerateTrackerReport(QDialog):
             repitemrow = repitem.firstChild()
 
             while not repitemrow.isNull():
-                includeitemtype = False
-                includeitemstatus = False
-                includeiteminternal = False
-                isinternal = pnc.get_column_value(repitemrow, "internal_item")
-                itemtype = pnc.get_column_value(repitemrow, "item_type")
-                status = pnc.get_column_value(repitemrow, "status")
-
-                # determine internal inclusion
-                if isinternal == "1" and self.ui.m_checkBoxInternalRptTracker.isChecked():
-                    includeiteminternal = True
-                elif isinternal == "0" or isinternal == "":
-                    includeiteminternal = True
-
-                # determine item type to include
-                if itemtype == "Tracker" and self.ui.m_checkBoxItemsTracker.isChecked():
-                    includeitemtype = True
-
-                if itemtype == "Action" and self.ui.m_checkBoxActionTracker.isChecked():
-                    includeitemtype = True
-
-                # determine if it is an included status
-                if status == "New" and self.ui.m_checkBoxNewTracker.isChecked():
-                    includeitemstatus = True
-
-                if status == "Assigned" and self.ui.m_checkBoxAssignedTracker.isChecked():
-                    includeitemstatus = True
-
-                if status == "Defered" and self.ui.m_checkBoxDeferedTracker.isChecked():
-                    includeitemstatus = True
-
-                if status == "Resolved" and self.ui.m_checkBoxResolvedTracker.isChecked():
-                    includeitemstatus = True
-
-                if status == "Cancelled" and ui.m_checkBoxCancelledTracker.isChecked():
-                    includeitemstatus = True
-
-                if includeiteminternal and includeitemtype and includeitemstatus:
+                include, _, _, _ = self._is_item_included(repitemrow)
+                if include:
                     itemcount = itemcount + 1
 
                 repitemrow = repitemrow.nextSibling()
@@ -324,43 +308,9 @@ class GenerateTrackerReport(QDialog):
         repitemrow = repitem.firstChild()
 
         while not repitemrow.isNull():
-            includeitemtype = False
-            includeitemstatus = False
-            includeiteminternal = False
-            isinternal = pnc.get_column_value(repitemrow, "internal_item")
-            itemtype = pnc.get_column_value(repitemrow, "item_type")
-            status = pnc.get_column_value(repitemrow, "status")
+            include, isinternal, itemtype, status = self._is_item_included(repitemrow)
 
-            # determine internal inclusion
-            if isinternal == "1" and self.ui.m_checkBoxInternalRptTracker.isChecked():
-                includeiteminternal = True
-            elif isinternal == "0" or isinternal == "":
-                includeiteminternal = True
-
-            # determine item type to include
-            if itemtype == "Tracker" and self.ui.m_checkBoxItemsTracker.isChecked():
-                includeitemtype = True
-
-            if itemtype == "Action" and self.ui.m_checkBoxActionTracker.isChecked():
-                includeitemtype = True
-
-            # determine if it is an included status
-            if status == "New" and self.ui.m_checkBoxNewTracker.isChecked():
-                includeitemstatus = True
-
-            if status == "Assigned" and self.ui.m_checkBoxAssignedTracker.isChecked():
-                includeitemstatus = True
-
-            if status == "Defered" and self.ui.m_checkBoxDeferedTracker.isChecked():
-                includeitemstatus = True
-
-            if status == "Resolved" and self.ui.m_checkBoxResolvedTracker.isChecked():
-                includeitemstatus = True
-
-            if status == "Cancelled" and self.ui.m_checkBoxCancelledTracker.isChecked():
-                includeitemstatus = True
-
-            if includeiteminternal and includeitemtype and includeitemstatus:
+            if include:
                 itemcount = itemcount + 1
 
                 cell = pne.find_cell_tag(sheet, "<ITEMID" + str(itemcount) + ">")
@@ -383,22 +333,17 @@ class GenerateTrackerReport(QDialog):
                     pne.replace_cell_tag(sheet, "<INTERNAL_ITEM" + str(itemcount) + ">", "N")
 
                 # pull together comments in a readable fashion
-                # count expand out excell rows for status report items
-                comment = ""
                 trackerupdates = pnc.find_node(repitemrow, "table", "name", "item_tracker_updates")
 
                 if not trackerupdates.isNull():
+                    comment_parts = []
                     updaterow = trackerupdates.firstChild()
 
                     while not updaterow.isNull():
-                        if comment != "":
-                            comment = comment + "\n"
-
-                        comment = comment + pnc.get_column_value(updaterow, "updated_by") + " - " + pnc.get_column_value(updaterow, "lastupdated_date") + ": "  + pnc.get_column_value(updaterow, "update_note")
-
+                        comment_parts.append(pnc.get_column_value(updaterow, "updated_by") + " - " + pnc.get_column_value(updaterow, "lastupdated_date") + ": " + pnc.get_column_value(updaterow, "update_note"))
                         updaterow = updaterow.nextSibling()
 
-                    pne.set_cell_by_tag(sheet, "<COMMENTS" + str(itemcount) + ">", "'" + comment)
+                    pne.set_cell_by_tag(sheet, "<COMMENTS" + str(itemcount) + ">", "'" + "\n".join(comment_parts))
 
                     # expand the row so comments show
                     if cell:
@@ -500,11 +445,11 @@ else:
     gtr = GenerateTrackerReport(pnc.get_main_window())
     trs = TrackerReportSettings()
 
-def menuSettings(parameter):
+def menu_settings(parameter):
     trs.show()
     return ""
 
-def menuGenerateTrackerReport(xmlstr, parameter):        
+def menu_generate_tracker_report(xmlstr, parameter):        
     gtr.set_xml_doc(xmlstr)
 
     QtWidgets.QApplication.restoreOverrideCursor()
@@ -516,8 +461,8 @@ def menuGenerateTrackerReport(xmlstr, parameter):
 
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
-    pluginmenus.append({"menutitle" : "Generate Tracker Report", "function" : "menuGenerateTrackerReport", "tablefilter" : "projects/item_tracker/item_tracker_updates/project_locations/project_people", "submenu" : "", "dataexport" : "projects"})
-    pluginmenus.append({"menutitle" : "Tracker Report", "function" : "menuSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
+    pluginmenus.append({"menutitle" : "Generate Tracker Report", "function" : "menu_generate_tracker_report", "tablefilter" : "projects/item_tracker/item_tracker_updates/project_locations/project_people", "submenu" : "", "dataexport" : "projects"})
+    pluginmenus.append({"menutitle" : "Tracker Report", "function" : "menu_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
 
 
 #TODO: VER 4.1 Rework templating system to use the same tags as the email and meetings templates.

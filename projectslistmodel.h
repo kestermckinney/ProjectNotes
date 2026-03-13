@@ -9,7 +9,7 @@
 class ProjectsListModel : public ProjectsModel
 {
 public:
-    ProjectsListModel(PNDatabaseObjects* t_dbo);
+    ProjectsListModel(DatabaseObjects* dbo);
 };
 
 #endif // PROJECTSMODEL_H

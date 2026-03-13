@@ -26,10 +26,10 @@ use_graph_api = (pnc.get_plugin_setting("IntegrationType", "Outlook Integration"
 
 if use_graph_api: 
     pluginmenus = [
-        {"menutitle" : "Sync Tracker Items", "function" : "menuSyncTrackerItems", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
-        {"menutitle" : "Download All Emails", "function" : "menuRightClickDownloadEmails", "tablefilter" : "projecs", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : "all"},
-        {"menutitle" : "Import Contacts from Office 365", "function" : "menuImportContacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
-        {"menutitle" : "Export New Contacts to Office 365", "function" : "menuExportContacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
+        {"menutitle" : "Sync Tracker Items", "function" : "menu_sync_tracker_items", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
+        {"menutitle" : "Download All Emails", "function" : "menu_right_click_download_emails", "tablefilter" : "projecs", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : "all"},
+        {"menutitle" : "Import Contacts from Office 365", "function" : "menu_import_contacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
+        {"menutitle" : "Export New Contacts to Office 365", "function" : "menu_export_contacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
     ]
 
 # all events return an xml string that can be processed by ProjectNotes 
@@ -129,7 +129,7 @@ class OutlookSync:
         return        
 
 
-def menuRightClickDownloadEmails(xmlstr, parameter):
+def menu_right_click_download_emails(xmlstr, parameter):
     token = tapi.authenticate()
 
     if token is not None:
@@ -161,7 +161,7 @@ def event_timer(parameter):
 
     return ""
 
-def menuSyncTrackerItems(parameter):
+def menu_sync_tracker_items(parameter):
     token = tapi.authenticate()
 
     if token is not None:
@@ -173,7 +173,7 @@ def menuSyncTrackerItems(parameter):
 
     return ""
 
-def menuExportContacts(parameter):
+def menu_export_contacts(parameter):
     token = tapi.authenticate()
 
     if token is not None:
@@ -185,7 +185,7 @@ def menuExportContacts(parameter):
 
     return ""
 
-def menuImportContacts(parameter):
+def menu_import_contacts(parameter):
     token = tapi.authenticate()
 
     if token is not None:

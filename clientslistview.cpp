@@ -3,32 +3,32 @@
 
 #include "clientslistview.h"
 
-ClientsListView::ClientsListView(QWidget* t_parent) : PNTableView(t_parent)
+ClientsListView::ClientsListView(QWidget* parent) : TableView(parent)
 {
     setObjectName("tableViewClients");
 }
 
 ClientsListView::~ClientsListView()
 {
-    if (m_client_name_delegate) delete m_client_name_delegate;
+    if (m_clientNameDelegate) delete m_clientNameDelegate;
 }
 
-void ClientsListView::setModel(QAbstractItemModel *t_model)
+void ClientsListView::setModel(QAbstractItemModel *model)
 {
-    if (t_model)
+    if (model)
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
 
-        m_client_name_delegate = new PNPlainTextEditDelegate(this);
+        m_clientNameDelegate = new PlainTextEditDelegate(this);
 
         setColumnHidden(0, true);
 
-        setItemDelegateForColumn(1, m_client_name_delegate);
+        setItemDelegateForColumn(1, m_clientNameDelegate);
 
     }
     else
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
     }
 }
 

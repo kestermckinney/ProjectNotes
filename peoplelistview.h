@@ -4,22 +4,22 @@
 #ifndef PEOPLELISTVIEW_H
 #define PEOPLELISTVIEW_H
 
-#include "pntableview.h"
-#include "pncomboboxdelegate.h"
-#include "pnplaintexteditdelegate.h"
+#include "tableview.h"
+#include "sqlcomboboxdelegate.h"
+#include "plaintexteditdelegate.h"
 
-class PeopleListView : public PNTableView
+class PeopleListView : public TableView
 {
 public:
-    PeopleListView(QWidget* t_parent = nullptr);
+    PeopleListView(QWidget* parent = nullptr);
     ~PeopleListView();
 
-    void setModel(QAbstractItemModel *t_model) override;
+    void setModel(QAbstractItemModel *model) override;
 
 private:
-    PNComboBoxDelegate* m_unfiltered_clients_delegate =  nullptr;
-    PNPlainTextEditDelegate* m_name_delegate = nullptr;
-    PNPlainTextEditDelegate* m_role_delegate = nullptr;
+    SqlComboBoxDelegate* m_unfilteredClientsDelegate =  nullptr;
+    PlainTextEditDelegate* m_nameDelegate = nullptr;
+    PlainTextEditDelegate* m_roleDelegate = nullptr;
 };
 
 #endif // PEOPLELISTVIEW_H

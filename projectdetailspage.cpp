@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "projectdetailspage.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 #include <QCompleter>
 
 #include "ui_mainwindow.h"
@@ -17,46 +17,42 @@ ProjectDetailsPage::~ProjectDetailsPage()
     if (m_mapperProjectDetails)
         delete m_mapperProjectDetails;
 
-    if (m_project_details_delegate)
-        delete m_project_details_delegate;
+    if (m_projectDetailsDelegate)
+        delete m_projectDetailsDelegate;
 }
 
-void ProjectDetailsPage::openRecord(QVariant& t_record_id)
+void ProjectDetailsPage::openRecord(QVariant& recordId)
 {
-    setRecordId(t_record_id);
+    setRecordId(recordId);
 
     // filter team members by project
-    global_DBObjects.projectteammembersmodel()->setFilter(1, t_record_id.toString());
+    global_DBObjects.projectteammembersmodel()->setFilter(1, recordId.toString());
     global_DBObjects.projectteammembersmodel()->refresh();
 
     // filter project status items
-    global_DBObjects.statusreportitemsmodel()->setFilter(1, t_record_id.toString());
+    global_DBObjects.statusreportitemsmodel()->setFilter(1, recordId.toString());
     global_DBObjects.statusreportitemsmodel()->refresh();
 
     // filter team members by project for members list
-    global_DBObjects.teamsmodel()->setFilter(2, t_record_id.toString());
+    global_DBObjects.teamsmodel()->setFilter(2, recordId.toString());
     global_DBObjects.teamsmodel()->refresh();
 
     // filter tracker items by project
-    global_DBObjects.trackeritemsmodel()->setFilter(14, t_record_id.toString());
+    global_DBObjects.trackeritemsmodel()->setFilter(14, recordId.toString());
     global_DBObjects.trackeritemsmodel()->refresh();
 
-    // filter tracker items by project
-    global_DBObjects.trackeritemsmodel()->setFilter(14, t_record_id.toString());
-    global_DBObjects.trackeritemsmodel()->refresh();
-
-    global_DBObjects.trackeritemsmeetingsmodel()->setFilter(1, t_record_id.toString());
+    global_DBObjects.trackeritemsmeetingsmodel()->setFilter(1, recordId.toString());
     global_DBObjects.trackeritemsmeetingsmodel()->refresh();
 
-    global_DBObjects.projectlocationsmodel()->setFilter(1, t_record_id.toString());
+    global_DBObjects.projectlocationsmodel()->setFilter(1, recordId.toString());
     global_DBObjects.projectlocationsmodel()->refresh();
 
-    global_DBObjects.projectnotesmodel()->setFilter(1, t_record_id.toString());
+    global_DBObjects.projectnotesmodel()->setFilter(1, recordId.toString());
     global_DBObjects.projectnotesmodel()->refresh();
 
     // only select the records another event will be fired to open the window to show them
     // order is important this needs to be last
-    global_DBObjects.projectinformationmodel()->setFilter(0, t_record_id.toString());
+    global_DBObjects.projectinformationmodel()->setFilter(0, recordId.toString());
     global_DBObjects.projectinformationmodel()->refresh();
 
     if (m_mapperProjectDetails != nullptr)
@@ -76,7 +72,7 @@ void ProjectDetailsPage::newRecord()
 {
     QVariant project_id = global_DBObjects.projectinformationmodelproxy()->data(global_DBObjects.projectinformationmodelproxy()->index(0,0));
 
-    QModelIndex index = dynamic_cast<PNSqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord(&project_id);
+    QModelIndex index = dynamic_cast<SqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord(&project_id);
 
 
     //  check if column is visible
@@ -85,18 +81,18 @@ void ProjectDetailsPage::newRecord()
         col++;
 
 
-    QModelIndex sort_index = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->index(
-        dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model())->mapFromSource(index).row(), col);
+    auto* proxy = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model());
+    QModelIndex sort_index = proxy->index(proxy->mapFromSource(index).row(), col);
 
     getCurrentView()->selectionModel()->select(sort_index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     getCurrentView()->scrollTo(sort_index, QAbstractItemView::PositionAtCenter);
 }
 
-void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
+void ProjectDetailsPage::setupModels( Ui::MainWindow *ui )
 {
-    ui = t_ui;
+    this->ui = ui;
 
-    if (t_ui)
+    if (ui)
     {
         connect(ui->tabWidgetProject, SIGNAL(currentChanged(int)), this, SLOT(on_tabWidgetProject_currentChanged(int)));
     }
@@ -112,10 +108,10 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     if (m_mapperProjectDetails == nullptr)
         m_mapperProjectDetails = new QDataWidgetMapper(this);
 
-    if (m_project_details_delegate == nullptr)
-        m_project_details_delegate = new ProjectDetailsDelegate(this);
+    if (m_projectDetailsDelegate == nullptr)
+        m_projectDetailsDelegate = new ProjectDetailsDelegate(this);
 
-    m_mapperProjectDetails->setItemDelegate(m_project_details_delegate);
+    m_mapperProjectDetails->setItemDelegate(m_projectDetailsDelegate);
 
     m_mapperProjectDetails->setModel(global_DBObjects.projectinformationmodelproxy());
     setPageModel(global_DBObjects.projectinformationmodel());
@@ -137,13 +133,13 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
     m_mapperProjectDetails->addMapping(ui->comboBoxProjectStatus, 14);
 
     ui->comboBoxInvoicingPeriod->clear();
-    ui->comboBoxInvoicingPeriod->addItems(PNDatabaseObjects::invoicing_period);
+    ui->comboBoxInvoicingPeriod->addItems(DatabaseObjects::invoicing_period);
 
     ui->comboBoxStatusReportPeriod->clear();
-    ui->comboBoxStatusReportPeriod->addItems(PNDatabaseObjects::status_report_period);
+    ui->comboBoxStatusReportPeriod->addItems(DatabaseObjects::status_report_period);
 
     ui->comboBoxProjectStatus->clear();
-    ui->comboBoxProjectStatus->addItems(PNDatabaseObjects::project_status);
+    ui->comboBoxProjectStatus->addItems(DatabaseObjects::project_status);
 
     ui->comboBoxPrimaryContact->setModel(global_DBObjects.teamsmodel());
     ui->comboBoxPrimaryContact->setModelColumn(1);
@@ -157,16 +153,15 @@ void ProjectDetailsPage::setupModels( Ui::MainWindow *t_ui )
 
 
     ui->tableViewStatusReportItems->setModel(global_DBObjects.statusreportitemsmodelproxy());
-
-    setCurrentModel(global_DBObjects.statusreportitemsmodelproxy());
-    setCurrentView( ui->tableViewStatusReportItems );
-
     ui->tableViewTeam->setModel(global_DBObjects.projectteammembersmodelproxy());
     ui->tableViewTeam->setKeyToOpenField(2);
 
     ui->tableViewTrackerItems->setModel(global_DBObjects.trackeritemsmodelproxy());
     ui->tableViewLocations->setModel(global_DBObjects.projectlocationsmodelproxy());
     ui->tableViewProjectNotes->setModel(global_DBObjects.projectnotesmodelproxy());
+
+    // sync current model/view to whichever tab is currently visible
+    on_tabWidgetProject_currentChanged(ui->tabWidgetProject->currentIndex());
 }
 
 void ProjectDetailsPage::on_tabWidgetProject_currentChanged(int index)

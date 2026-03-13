@@ -56,22 +56,22 @@ void PythonWorker::emitError()
     }
 }
 
-void PythonWorker::checkForMember(const QString& t_member)
+void PythonWorker::checkForMember(const QString& member)
 {
-    if (PyObject_HasAttrStringWithError(m_PNPluginModule, t_member.toUtf8().constData()) == 1)
-        m_plugin.addMember(t_member);
+    if (PyObject_HasAttrStringWithError(m_PNPluginModule, member.toUtf8().constData()) == 1)
+        m_plugin.addMember(member);
 }
 
-void PythonWorker::loadModule(const QString& t_modulepath)
+void PythonWorker::loadModule(const QString& modulepath)
 {
     QMutexLocker locker(&m_loadingmutex);
     m_isloading = true;
 
     PyGILState_STATE gstate = PyGILState_Ensure();
 
-    m_modulepath = t_modulepath;
+    m_modulepath = modulepath;
 
-    QFileInfo fileinfo(t_modulepath);
+    QFileInfo fileinfo(modulepath);
 
     m_modulename = fileinfo.baseName();
 
@@ -79,16 +79,20 @@ void PythonWorker::loadModule(const QString& t_modulepath)
     {
         PyGILState_Release(gstate);
 
+        m_isloading = false;
+        m_loadwait.wakeAll();
         return;
     }
 
-    m_PluginLocation = QFileInfo(t_modulepath).absoluteFilePath();
+    m_PluginLocation = QFileInfo(modulepath).absoluteFilePath();
 
     m_PNPluginModule = PyImport_ImportModule(m_modulename.toUtf8().constData());
     if (!m_PNPluginModule)
     {
         emitError();
         PyGILState_Release(gstate);
+        m_isloading = false;
+        m_loadwait.wakeAll();
         return;
     }
 
@@ -99,6 +103,8 @@ void PythonWorker::loadModule(const QString& t_modulepath)
     {
         QLog_Info(CONSOLELOG, QString("plugin name for module %1 can not be empty.").arg(m_modulename));
         PyGILState_Release(gstate);
+        m_isloading = false;
+        m_loadwait.wakeAll();
         return;
     }
 
@@ -107,6 +113,8 @@ void PythonWorker::loadModule(const QString& t_modulepath)
     {
         QLog_Info(CONSOLELOG, QString("plugin description for module %1 can not be empty.").arg(m_modulename));
         PyGILState_Release(gstate);
+        m_isloading = false;
+        m_loadwait.wakeAll();
         return;
     }
 
@@ -248,14 +256,19 @@ void PythonWorker::reloadModule()
     loadModule(m_modulepath);
 }
 
-void PythonWorker::sendMethodXml(const QString& t_method, const QString& t_xml, const QString& t_parameter)
+void PythonWorker::sendMethodXml(const QString& method, const QString& xml, const QString& parameter)
 {
     // if loading or unloading wait to try the call
     if (m_isloading)
+    {
+        m_loadingmutex.lock();
         if (!m_loadwait.wait(&m_loadingmutex, 10000))
         {
+            m_loadingmutex.unlock();
             return;
         }
+        m_loadingmutex.unlock();
+    }
 
     if (!m_isloaded)
     {
@@ -267,7 +280,7 @@ void PythonWorker::sendMethodXml(const QString& t_method, const QString& t_xml, 
     char* result;
     QString val;
 
-    PyObject* pymethod = PyObject_GetAttrString(m_PNPluginModule, t_method.toUtf8().constData());
+    PyObject* pymethod = PyObject_GetAttrString(m_PNPluginModule, method.toUtf8().constData());
     if (!pymethod)
     {
         emitError();
@@ -276,7 +289,7 @@ void PythonWorker::sendMethodXml(const QString& t_method, const QString& t_xml, 
         return;
     }
 
-    PyObject* pargs = Py_BuildValue("(ss)", t_xml.toUtf8().data(), t_parameter.toUtf8().data());
+    PyObject* pargs = Py_BuildValue("(ss)", xml.toUtf8().data(), parameter.toUtf8().data());
     if (!pargs)
     {
         emitError();
@@ -319,14 +332,19 @@ void PythonWorker::sendMethodXml(const QString& t_method, const QString& t_xml, 
     emit returnXml(val);
 }
 
-void PythonWorker::sendMethod(const QString& t_method, const QString& t_parameter)
+void PythonWorker::sendMethod(const QString& method, const QString& parameter)
 {
     // if loading or unloading wait to try the call
     if (m_isloading)
+    {
+        m_loadingmutex.lock();
         if (!m_loadwait.wait(&m_loadingmutex, 10000))
         {
+            m_loadingmutex.unlock();
             return;
         }
+        m_loadingmutex.unlock();
+    }
 
     if (!m_isloaded)
     {
@@ -338,7 +356,7 @@ void PythonWorker::sendMethod(const QString& t_method, const QString& t_paramete
     char* result;
     QString val;
 
-    PyObject* pymethod = PyObject_GetAttrString(m_PNPluginModule, t_method.toUtf8().constData());
+    PyObject* pymethod = PyObject_GetAttrString(m_PNPluginModule, method.toUtf8().constData());
     if (!pymethod)
     {
         emitError();
@@ -347,7 +365,7 @@ void PythonWorker::sendMethod(const QString& t_method, const QString& t_paramete
         return;
     }
 
-    PyObject* pargs = Py_BuildValue("(s)", t_parameter.toUtf8().data());
+    PyObject* pargs = Py_BuildValue("(s)", parameter.toUtf8().data());
     if (!pargs)
     {
         emitError();
@@ -381,7 +399,7 @@ void PythonWorker::sendMethod(const QString& t_method, const QString& t_paramete
         return;
     }
 
-    val = QString(result);
+    val = QString::fromUtf8(result);
 
     Py_XDECREF(func);
     Py_XDECREF(pymethod);
@@ -405,14 +423,16 @@ PythonWorker::~PythonWorker()
 
 }
 
-int PythonWorker::setPythonVariable(const QString& t_variablename, const QString& t_value)
+int PythonWorker::setPythonVariable(const QString& variablename, const QString& value)
 {
-    PyObject* objectval = PyUnicode_FromString(t_value.toStdString().c_str());
+    const QByteArray varBytes = variablename.toUtf8();
+    PyObject* objectval = PyUnicode_FromString(value.toUtf8().constData());
 
-    int r = PyObject_SetAttrString(m_PNPluginModule, t_variablename.toStdString().c_str(), objectval);
+    int r = PyObject_SetAttrString(m_PNPluginModule, varBytes.constData(), objectval);
     if (r == -1)
     {
         emitError();
+        Py_XDECREF(objectval);
         return -1;
     }
 
@@ -421,16 +441,17 @@ int PythonWorker::setPythonVariable(const QString& t_variablename, const QString
     return r;
 }
 
-QString PythonWorker::getPythonVariable(const QString& t_variablename)
+QString PythonWorker::getPythonVariable(const QString& variablename)
 {
     QString val;
 
-    if (PyObject_HasAttrStringWithError(m_PNPluginModule, t_variablename.toStdString().c_str()) != 1)
+    const QByteArray varBytes = variablename.toUtf8();
+    if (PyObject_HasAttrStringWithError(m_PNPluginModule, varBytes.constData()) != 1)
     {
         return val;
     }
 
-    PyObject* attr = PyObject_GetAttrString(m_PNPluginModule, t_variablename.toStdString().c_str());
+    PyObject* attr = PyObject_GetAttrString(m_PNPluginModule, varBytes.constData());
     if (!attr)
     {
         emitError();
@@ -452,16 +473,17 @@ QString PythonWorker::getPythonVariable(const QString& t_variablename)
     return val;
 }
 
-QStringList PythonWorker::getPythonStringList(const QString& t_variablename)
+QStringList PythonWorker::getPythonStringList(const QString& variablename)
 {
     QStringList val;
 
-    if (PyObject_HasAttrStringWithError(m_PNPluginModule, t_variablename.toStdString().c_str()) == 1)
+    const QByteArray varBytes = variablename.toUtf8();
+    if (PyObject_HasAttrStringWithError(m_PNPluginModule, varBytes.constData()) != 1)
     {
         return val;
     }
 
-    PyObject* attr = PyObject_GetAttrString(m_PNPluginModule, t_variablename.toStdString().c_str());
+    PyObject* attr = PyObject_GetAttrString(m_PNPluginModule, varBytes.constData());
     if (!attr)
     {
         emitError();
@@ -476,8 +498,9 @@ QStringList PythonWorker::getPythonStringList(const QString& t_variablename)
     }
 
     Py_ssize_t sz = PyList_Size(attr);
+    val.reserve(static_cast<int>(sz));
 
-    for (long i = 0; i < sz; i++)
+    for (Py_ssize_t i = 0; i < sz; i++)
     {
         PyObject* item = PyList_GetItem(attr, i);
         if (!item)
@@ -487,9 +510,7 @@ QStringList PythonWorker::getPythonStringList(const QString& t_variablename)
         }
 
         const char* str = PyUnicode_AsUTF8(item);
-        QString memval = QString::fromUtf8(str);
-
-        val.append(memval);
+        val.append(QString::fromUtf8(str));
     }
 
     Py_XDECREF(attr);

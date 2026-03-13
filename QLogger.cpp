@@ -104,7 +104,7 @@ void QLoggerManager::startWriter(const QString &module, QLoggerWriter *log, LogM
    if (notify)
    {
       const auto threadId = QString("%1").arg((quintptr)QThread::currentThread(), QT_POINTER_SIZE * 2, 16, QChar('0'));
-      log->enqueue(QDateTime::currentDateTime(), threadId, module, LogLevel::Info, "", "", -1, "Adding destination!");
+      log->enqueue(QDateTime::currentDateTime(), LogLevel::Info, "", "", -1, "Adding destination!");
    }
 
    if (mode != LogMode::Disabled)
@@ -155,13 +155,12 @@ void QLoggerManager::writeAndDequeueMessages(const QString &module)
          if (logWriter->getLevel() <= level)
          {
             const auto datetime = vals.at(0).toDateTime();
-            const auto threadId = vals.at(1).toString();
             const auto function = vals.at(3).toString();
             const auto file = vals.at(4).toString();
             const auto line = vals.at(5).toInt();
             const auto message = vals.at(6).toString();
 
-            logWriter->enqueue(datetime, threadId, module, level, function, file, line, message);
+            logWriter->enqueue(datetime, level, function, file, line, message);
          }
       }
 
@@ -183,7 +182,7 @@ void QLoggerManager::enqueueMessage(const QString &module, LogLevel level, const
 
       writeAndDequeueMessages(module);
 
-      logWriter->enqueue(QDateTime::currentDateTime(), threadId, module, level, function, fileName, line, message);
+      logWriter->enqueue(QDateTime::currentDateTime(), level, function, fileName, line, message);
    }
    else if (!logWriter && mNonWriterQueue.count(module) < QUEUE_LIMIT)
    {

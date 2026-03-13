@@ -4,22 +4,22 @@
 #ifndef MEETINGATTENDEESVIEW_H
 #define MEETINGATTENDEESVIEW_H
 
-#include "pntableview.h"
-#include "pncomboboxdelegate.h"
-#include "pncheckboxdelegate.h"
+#include "tableview.h"
+#include "sqlcomboboxdelegate.h"
+#include "checkboxdelegate.h"
 #include <QObject>
 
-class MeetingAttendeesView : public PNTableView
+class MeetingAttendeesView : public TableView
 {
 public:
-    MeetingAttendeesView(QWidget* t_parent = nullptr);
+    MeetingAttendeesView(QWidget* parent = nullptr);
     ~MeetingAttendeesView();
 
-    void setModel(QAbstractItemModel *t_model) override;
+    void setModel(QAbstractItemModel *model) override;
 
 private:
     // projects list panel delegates
-    PNComboBoxDelegate* m_unfiltered_people_delegate = nullptr;
+    SqlComboBoxDelegate* m_unfilteredPeopleDelegate = nullptr;
 
 public slots:
     void slotNewRecord() override;

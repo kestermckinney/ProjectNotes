@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "peoplemodel.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
 #include <QRegularExpression>
 
-PeopleModel::PeopleModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
+PeopleModel::PeopleModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("PeopleModel");
     setOrderKey(17);

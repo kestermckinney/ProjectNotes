@@ -2,41 +2,41 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "peoplelistview.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
-PeopleListView::PeopleListView(QWidget* t_parent) : PNTableView(t_parent)
+PeopleListView::PeopleListView(QWidget* parent) : TableView(parent)
 {
     setObjectName("tableViewPeople");
 }
 
 PeopleListView::~PeopleListView()
 {
-    if (m_unfiltered_clients_delegate) delete m_unfiltered_clients_delegate;
-    if (m_name_delegate) delete m_name_delegate;
-    if (m_role_delegate) delete m_role_delegate;
+    if (m_unfilteredClientsDelegate) delete m_unfilteredClientsDelegate;
+    if (m_nameDelegate) delete m_nameDelegate;
+    if (m_roleDelegate) delete m_roleDelegate;
 }
 
-void PeopleListView::setModel(QAbstractItemModel *t_model)
+void PeopleListView::setModel(QAbstractItemModel *model)
 {
-    if (t_model)
+    if (model)
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
 
         setColumnHidden(0, true);
 
-        PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(dynamic_cast<PNSortFilterProxyModel*>(t_model)->sourceModel())->getDBOs();
+        DatabaseObjects* dbo = qobject_cast<SqlQueryModel*>(dynamic_cast<SortFilterProxyModel*>(model)->sourceModel())->getDBOs();
 
         // setup model lists
-        m_unfiltered_clients_delegate = new PNComboBoxDelegate(this, dbo->unfilteredclientsmodelproxy());
-        m_name_delegate = new PNPlainTextEditDelegate(this);
-        m_role_delegate = new PNPlainTextEditDelegate(this);
+        m_unfilteredClientsDelegate = new SqlComboBoxDelegate(this, dbo->unfilteredclientsmodelproxy());
+        m_nameDelegate = new PlainTextEditDelegate(this);
+        m_roleDelegate = new PlainTextEditDelegate(this);
 
-        setItemDelegateForColumn(5, m_unfiltered_clients_delegate);
-        setItemDelegateForColumn(1, m_name_delegate);
-        setItemDelegateForColumn(6, m_role_delegate);
+        setItemDelegateForColumn(5, m_unfilteredClientsDelegate);
+        setItemDelegateForColumn(1, m_nameDelegate);
+        setItemDelegateForColumn(6, m_roleDelegate);
     }
     else
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
     }
 }

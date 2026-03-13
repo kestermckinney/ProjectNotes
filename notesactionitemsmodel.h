@@ -4,13 +4,13 @@
 #ifndef NOTESACTIONITEMSMODEL_H
 #define NOTESACTIONITEMSMODEL_H
 
-#include "pnsqlquerymodel.h"
+#include "sqlquerymodel.h"
 
-class NotesActionItemsModel : public PNSqlQueryModel
+class NotesActionItemsModel : public SqlQueryModel
 {
 public:
-    NotesActionItemsModel(PNDatabaseObjects* t_dbo);
-    const QModelIndex newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr) override;
+    NotesActionItemsModel(DatabaseObjects* dbo);
+    const QModelIndex newRecord(const QVariant* fkValue1 = nullptr, const QVariant* fkValue2 = nullptr) override;
 };
 
 #endif // NOTESACTIONITEMSMODEL_H

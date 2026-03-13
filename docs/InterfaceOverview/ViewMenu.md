@@ -46,7 +46,7 @@ When sharing a screen during a meeting, a larger font may help readability. The 
 
 ## Reviewing Tracker and Action Items
 
-In most cases only **Tracker/Action** items that aren't resolved will be displayed in the **Tracker** Tab. To view **Tracker/Action** items that have been resolved check **Resolved Item/Tracker Items** from the **View** menu.
+By default, **Tracker/Action** items with a status of **Resolved**, **Deferred**, or **Cancelled** are hidden from the Item Tracker view. You can control which statuses are shown using the **View** menu checkboxes. To view **Tracker/Action** items that have been resolved, deferred, or cancelled, check the corresponding options from the **View** menu.
 
 ## Filtering Data
 

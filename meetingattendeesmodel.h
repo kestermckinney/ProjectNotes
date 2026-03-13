@@ -4,13 +4,13 @@
 #ifndef MEETINGATTENDEESMODEL_H
 #define MEETINGATTENDEESMODEL_H
 
-#include "pnsqlquerymodel.h"
+#include "sqlquerymodel.h"
 
-class MeetingAttendeesModel : public PNSqlQueryModel
+class MeetingAttendeesModel : public SqlQueryModel
 {
 public:
-    MeetingAttendeesModel(PNDatabaseObjects* t_dbo);
-    const QModelIndex newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr) override;
+    MeetingAttendeesModel(DatabaseObjects* dbo);
+    const QModelIndex newRecord(const QVariant* fkValue1 = nullptr, const QVariant* fkValue2 = nullptr) override;
 };
 
 #endif // MEETINGATTENDEESMODEL_H

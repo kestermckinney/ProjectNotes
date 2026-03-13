@@ -2,15 +2,17 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "projectteammembersmodel.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
 #include "QLogger.h"
 #include "QLoggerWriter.h"
 
+#include <QMessageBox>
+
 using namespace QLogger;
 
 
-ProjectTeamMembersModel::ProjectTeamMembersModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
+ProjectTeamMembersModel::ProjectTeamMembersModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("ProjectTeamMembersModel");
     setOrderKey(17);
@@ -55,11 +57,11 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(PNDatabaseObjects* t_dbo): PNSq
     setOrderBy("name");
 }
 
-QVariant ProjectTeamMembersModel::data(const QModelIndex &t_index, int t_role) const
+QVariant ProjectTeamMembersModel::data(const QModelIndex &index, int role) const
 {
-    if (t_role == Qt::TextAlignmentRole)
+    if (role == Qt::TextAlignmentRole)
     {
-        switch (t_index.column())
+        switch (index.column())
         {
         case 4:
             return Qt::AlignCenter;
@@ -67,33 +69,88 @@ QVariant ProjectTeamMembersModel::data(const QModelIndex &t_index, int t_role) c
         }
     }
 
-    return PNSqlQueryModel::data(t_index, t_role);
+    return SqlQueryModel::data(index, role);
 }
 
-const QModelIndex ProjectTeamMembersModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex ProjectTeamMembersModel::newRecord(const QVariant* fkValue1, const QVariant* fkValue2)
 {
-    Q_UNUSED(t_fk_value1);
-    Q_UNUSED(t_fk_value2);
+    Q_UNUSED(fkValue2);
 
     QVector<QVariant> qr = emptyrecord();
 
-    qr[getColumnNumber("project_id")] = *t_fk_value1;
+    qr[getColumnNumber("project_id")] = *fkValue1;
 
     return addRecord(qr);
 }
 
-bool ProjectTeamMembersModel::setData(const QModelIndex &t_index, const QVariant &t_value, int t_role)
+bool ProjectTeamMembersModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    // if setting team member and no role is available grab the default
-    if (PNSqlQueryModel::setData(t_index, t_value, t_role))
+    // prevent changing the person if they are referenced as a meeting attendee for this project
+    // (meeting_attendees has no project_id column, so the base class columnChangeCheck cannot handle it;
+    //  we must check via a subquery through project_notes)
+    if (role == Qt::EditRole && index.column() == 2)
     {
-        if (t_index.column() == 2)
+        QVariant current_people_id = data(this->index(index.row(), 2));
+        QVariant current_project_id = data(this->index(index.row(), 1));
+
+        if (!current_people_id.isNull() && !current_people_id.toString().isEmpty())
         {
-            QModelIndex qi = index(t_index.row(), 5);
+            // Fetch attendance count and project number in a single query
+            DB_LOCK;
+            QSqlQuery qry(getDBOs()->getDb());
+            qry.prepare(QString(
+                "SELECT (SELECT count(*) FROM meeting_attendees WHERE person_id = '%1' "
+                "AND note_id IN (SELECT note_id FROM project_notes WHERE project_id = '%2')), "
+                "(SELECT project_number FROM projects WHERE project_id = '%2')")
+                .arg(current_people_id.toString(), current_project_id.toString()));
+            qry.exec();
+
+            int count = 0;
+            QString project_number_key;
+            if (qry.next())
+            {
+                count = qry.value(0).toInt();
+                project_number_key = qry.value(1).toString();
+            }
+            DB_UNLOCK;
+
+            if (count > 0)
+            {
+                const QString message = QString("%1%2%3")
+                    .arg(tr("Team Member is referenced in the following item(s):\n\n"),
+                         QString::number(count) + tr(" Meetings(s)\n\n"),
+                         tr("You cannot change Team Member until they are no longer assocated with the following items. Would you like to run a search for all related items?"));
+
+                if ( QMessageBox::question(nullptr, tr("Cannot Change Team member"),
+                     message, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
+                {
+                    QStringList key_columns;
+                    QStringList key_values;
+                    key_columns.append("project_number");
+                    key_values.append(project_number_key);
+                    key_columns.append("datakey");
+                    key_values.append(current_people_id.toString());
+
+                    getDBOs()->searchresultsmodel()->PerformKeySearch(key_columns, key_values);
+                    emit callKeySearch();
+                }
+
+                emit dataChanged(index, index);
+                return false;
+            }
+        }
+    }
+
+    // if setting team member and no role is available grab the default
+    if (SqlQueryModel::setData(index, value, role))
+    {
+        if (index.column() == 2)
+        {
+            QModelIndex qi = this->index(index.row(), 5);
 
             if (data(qi).isNull())
             {
-                QModelIndex qi_key = index(t_index.row(), 2);
+                QModelIndex qi_key = this->index(index.row(), 2);
                 DB_LOCK;
 
 
@@ -108,7 +165,7 @@ bool ProjectTeamMembersModel::setData(const QModelIndex &t_index, const QVariant
                 {
 
                     DB_UNLOCK;
-                    setData(qi, qry.record().value(0), t_role);
+                    setData(qi, qry.record().value(0), role);
                 }
                 else
                 {

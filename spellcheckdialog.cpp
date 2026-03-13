@@ -3,12 +3,12 @@
 
 #include <QCompleter>
 
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 #include "spellcheckdialog.h"
 #include "ui_spellcheckdialog.h"
-#include "pnsettings.h"
-#include "pntextedit.h"
-#include "pnplaintextedit.h"
+#include "appsettings.h"
+#include "textedit.h"
+#include "plaintextedit.h"
 #include <QMessageBox>
 #include <QFile>
 #include "QLogger.h"
@@ -17,7 +17,7 @@
 using namespace QLogger;
 
 SpellCheckDialog::SpellCheckDialog(QWidget *parent) :
-    QDialog(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint | Qt::WindowCloseButtonHint),
+    QDialog(parent, Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint),
     ui(new Ui::SpellCheckDialog)
 {
     ui->setupUi(this);
@@ -32,7 +32,7 @@ SpellCheckDialog::SpellCheckDialog(QWidget *parent) :
         ui->comboBoxDictionaryLanguage->addItems(global_Settings.spellchecker()->dictionaryNames());
         ui->comboBoxDictionaryLanguage->setCurrentIndex(global_Settings.spellchecker()->defaultDictionaryIndex());
 
-        this->setWindowTitle("Spelling: " + global_Settings.spellchecker()->defaultDictionaryName());
+        this->setWindowTitle(QString("Spelling: %1").arg(global_Settings.spellchecker()->defaultDictionaryName()));
         m_populating = false;
     }
 
@@ -40,9 +40,9 @@ SpellCheckDialog::SpellCheckDialog(QWidget *parent) :
     global_Settings.getWindowState(storename, this);
 }
 
-void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
+void SpellCheckDialog::spellCheck(QWidget* focusControl)
 {
-    m_check_widget = t_focus_control;
+    m_checkWidget = focusControl;
 
     if (!global_Settings.spellchecker()->hasDictionary())
     {
@@ -53,13 +53,15 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
 
     SpellCheckDialog::SpellCheckAction spellResult = NothingDone;
 
+    const bool isTextEdit = (QLatin1StringView(m_checkWidget->metaObject()->className()) == "TextEdit");
+
     // save the position of the current cursor
     QTextCursor oldCursor;
 
-    if (QString(m_check_widget->metaObject()->className()).compare("PNTextEdit") == 0)
-        oldCursor = dynamic_cast<PNTextEdit*>(m_check_widget)->textCursor();
+    if (isTextEdit)
+        oldCursor = dynamic_cast<TextEdit*>(m_checkWidget)->textCursor();
     else
-        oldCursor = dynamic_cast<PNPlainTextEdit*>(m_check_widget)->textCursor();
+        oldCursor = dynamic_cast<PlainTextEdit*>(m_checkWidget)->textCursor();
 
     // create a new cursor to walk through the text
     QTextCursor cursor(oldCursor);
@@ -112,15 +114,15 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
                     //qDebug() << "reselected to word: " << cursor.selectedText();
                 }
 
-            if (QString(m_check_widget->metaObject()->className()).compare("PNTextEdit") == 0)
+            if (isTextEdit)
             {
-                dynamic_cast<QTextEdit*>(m_check_widget)->setTextCursor(tmpCursor);
-                dynamic_cast<QTextEdit*>(m_check_widget)->ensureCursorVisible();
+                dynamic_cast<QTextEdit*>(m_checkWidget)->setTextCursor(tmpCursor);
+                dynamic_cast<QTextEdit*>(m_checkWidget)->ensureCursorVisible();
             }
             else
             {
-                dynamic_cast<QPlainTextEdit*>(m_check_widget)->setTextCursor(tmpCursor);
-                dynamic_cast<QPlainTextEdit*>(m_check_widget)->ensureCursorVisible();
+                dynamic_cast<QPlainTextEdit*>(m_checkWidget)->setTextCursor(tmpCursor);
+                dynamic_cast<QPlainTextEdit*>(m_checkWidget)->ensureCursorVisible();
             }
 
             QCoreApplication::processEvents();
@@ -139,14 +141,14 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
                 cursor.insertText(ui->lineEditChange->text());
                 break;
             case SpellCheckDialog::ChangeAll:
-                replaceAll(cursor, m_unknown_word, ui->lineEditChange->text());
-                if (QString(m_check_widget->metaObject()->className()).compare("PNTextEdit") == 0)
+                replaceAll(cursor, m_unknownWord, ui->lineEditChange->text());
+                if (isTextEdit)
                 {
-                    dynamic_cast<PNTextEdit*>(m_check_widget)->inlineSpellChecker()->unmarkWord(m_unknown_word);
+                    dynamic_cast<TextEdit*>(m_checkWidget)->inlineSpellChecker()->unmarkWord(m_unknownWord);
                 }
                 else
                 {
-                    dynamic_cast<PNPlainTextEdit*>(m_check_widget)->inlineSpellChecker()->unmarkWord(m_unknown_word);
+                    dynamic_cast<PlainTextEdit*>(m_checkWidget)->inlineSpellChecker()->unmarkWord(m_unknownWord);
                 }
                 break;
 
@@ -159,10 +161,10 @@ void SpellCheckDialog::spellCheck(QWidget* t_focus_control)
         cursor.movePosition(QTextCursor::NextWord, QTextCursor::MoveAnchor, 1);
     }
 
-    if (QString(m_check_widget->metaObject()->className()).compare("PNTextEdit") == 0)
-        dynamic_cast<QTextEdit*>(m_check_widget)->setTextCursor(oldCursor);
+    if (isTextEdit)
+        dynamic_cast<QTextEdit*>(m_checkWidget)->setTextCursor(oldCursor);
     else
-        dynamic_cast<QPlainTextEdit*>(m_check_widget)->setTextCursor(oldCursor);
+        dynamic_cast<QPlainTextEdit*>(m_checkWidget)->setTextCursor(oldCursor);
 
     if (spellResult != SpellCheckDialog::AbortCheck)
         QMessageBox::information(
@@ -179,15 +181,15 @@ SpellCheckDialog::~SpellCheckDialog()
     delete ui;
 }
 
-SpellCheckDialog::SpellCheckAction SpellCheckDialog::checkWord(const QString &t_word)
+SpellCheckDialog::SpellCheckAction SpellCheckDialog::checkWord(const QString &word)
 {
     if (!global_Settings.spellchecker()->hasDictionary()) return AbortCheck;  // no dictionary was setup
 
-    m_unknown_word = t_word;
+    m_unknownWord = word;
 
-    ui->lineEditChange->setText(m_unknown_word);
+    ui->lineEditChange->setText(m_unknownWord);
 
-    QStringList suggestions = global_Settings.spellchecker()->suggest(t_word);
+    QStringList suggestions = global_Settings.spellchecker()->suggest(word);
 
     ui->listWidgetSuggestions->clear();
     ui->listWidgetSuggestions->addItems(suggestions);
@@ -195,10 +197,10 @@ SpellCheckDialog::SpellCheckAction SpellCheckDialog::checkWord(const QString &t_
     if (suggestions.count() > 0)
         ui->listWidgetSuggestions->setCurrentRow(0);
 
-    m_return_code = AbortCheck;
+    m_returnCode = AbortCheck;
     QDialog::exec();
 
-    return m_return_code;
+    return m_returnCode;
 }
 
 void SpellCheckDialog::on_comboBoxDictionaryLanguage_currentIndexChanged(int index)
@@ -206,12 +208,12 @@ void SpellCheckDialog::on_comboBoxDictionaryLanguage_currentIndexChanged(int ind
     if (m_populating) return;
 
     global_Settings.spellchecker()->setDefaultDictionary(index);
-    this->setWindowTitle("Spelling: " + global_Settings.spellchecker()->defaultDictionaryName());
+    this->setWindowTitle(QString("Spelling: %1").arg(global_Settings.spellchecker()->defaultDictionaryName()));
 }
 
 void SpellCheckDialog::on_lineEditChange_returnPressed()
 {
-    m_return_code = Change;
+    m_returnCode = Change;
     accept();
 }
 
@@ -219,18 +221,18 @@ void SpellCheckDialog::on_pushButtonIgnoreOnce_clicked()
 {
     if (!global_Settings.spellchecker()->hasDictionary()) return;  // no dictionary was setup
 
-    if (QString(m_check_widget->metaObject()->className()).compare("PNTextEdit") == 0)
+    if (QLatin1StringView(m_checkWidget->metaObject()->className()) == "TextEdit")
     {
-        QTextCursor qtc = dynamic_cast<PNTextEdit*>(m_check_widget)->textCursor();
-        dynamic_cast<PNTextEdit*>(m_check_widget)->inlineSpellChecker()->unmarkCursor(qtc);
+        QTextCursor qtc = dynamic_cast<TextEdit*>(m_checkWidget)->textCursor();
+        dynamic_cast<TextEdit*>(m_checkWidget)->inlineSpellChecker()->unmarkCursor(qtc);
     }
     else
     {
-        QTextCursor qtc = dynamic_cast<PNPlainTextEdit*>(m_check_widget)->textCursor();
-        dynamic_cast<PNPlainTextEdit*>(m_check_widget)->inlineSpellChecker()->unmarkCursor(qtc);
+        QTextCursor qtc = dynamic_cast<PlainTextEdit*>(m_checkWidget)->textCursor();
+        dynamic_cast<PlainTextEdit*>(m_checkWidget)->inlineSpellChecker()->unmarkCursor(qtc);
     }
 
-    m_return_code = IgnoreOnce;
+    m_returnCode = IgnoreOnce;
     accept();
 }
 
@@ -238,18 +240,18 @@ void SpellCheckDialog::on_pushButtonIgnoreAll_clicked()
 {
     if (!global_Settings.spellchecker()->hasDictionary()) return;  // no dictionary was setup
 
-    global_Settings.spellchecker()->ignoreWord(m_unknown_word);
+    global_Settings.spellchecker()->ignoreWord(m_unknownWord);
 
-    if (QString(m_check_widget->metaObject()->className()).compare("PNTextEdit") == 0)
+    if (QLatin1StringView(m_checkWidget->metaObject()->className()) == "TextEdit")
     {
-        dynamic_cast<PNTextEdit*>(m_check_widget)->inlineSpellChecker()->unmarkWord(m_unknown_word);
+        dynamic_cast<TextEdit*>(m_checkWidget)->inlineSpellChecker()->unmarkWord(m_unknownWord);
     }
     else
     {
-        dynamic_cast<PNPlainTextEdit*>(m_check_widget)->inlineSpellChecker()->unmarkWord(m_unknown_word);
+        dynamic_cast<PlainTextEdit*>(m_checkWidget)->inlineSpellChecker()->unmarkWord(m_unknownWord);
     }
 
-    m_return_code = IgnoreAll;
+    m_returnCode = IgnoreAll;
     accept();
 }
 
@@ -258,75 +260,75 @@ void SpellCheckDialog::on_pushButtonAddToDictionary_clicked()
 {
     if (!global_Settings.spellchecker()->hasDictionary()) return;  // no dictionary was setup
 
-    global_Settings.spellchecker()->ignoreWord(m_unknown_word);
-    global_Settings.spellchecker()->AddToPersonalWordList(m_unknown_word);
+    global_Settings.spellchecker()->ignoreWord(m_unknownWord);
+    global_Settings.spellchecker()->AddToPersonalWordList(m_unknownWord);
 
-    if (QString(m_check_widget->metaObject()->className()).compare("PNTextEdit") == 0)
+    if (QLatin1StringView(m_checkWidget->metaObject()->className()) == "TextEdit")
     {
-        dynamic_cast<PNTextEdit*>(m_check_widget)->inlineSpellChecker()->unmarkWord(m_unknown_word);
+        dynamic_cast<TextEdit*>(m_checkWidget)->inlineSpellChecker()->unmarkWord(m_unknownWord);
     }
     else
     {
-        dynamic_cast<PNPlainTextEdit*>(m_check_widget)->inlineSpellChecker()->unmarkWord(m_unknown_word);
+        dynamic_cast<PlainTextEdit*>(m_checkWidget)->inlineSpellChecker()->unmarkWord(m_unknownWord);
     }
 
-    m_return_code = AddToDict;
+    m_returnCode = AddToDict;
     accept();
 }
 
 
 void SpellCheckDialog::on_pushButtonChange_clicked()
 {
-    if (m_unknown_word == ui->lineEditChange->text() ) // if a new value wasn't typed in used the one selcted
+    if (m_unknownWord == ui->lineEditChange->text() ) // if a new value wasn't typed in used the one selcted
     {
         if ( ui->listWidgetSuggestions->selectedItems().count() > 0 )
             ui->lineEditChange->setText( ui->listWidgetSuggestions->currentItem()->text() );
     }
 
-    m_return_code = Change;
+    m_returnCode = Change;
     accept();
 }
 
-void SpellCheckDialog::replaceAll(QTextCursor t_cursor, const QString&t_old_word, const QString &t_new_word)
+void SpellCheckDialog::replaceAll(QTextCursor cursor, const QString&oldWord, const QString &newWord)
 {
 
-    while (!t_cursor.atEnd())
+    while (!cursor.atEnd())
     {
         QCoreApplication::processEvents();
-        t_cursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor, 1);
-        QString word = t_cursor.selectedText();
+        cursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor, 1);
+        QString word = cursor.selectedText();
 
         // Workaround for better recognition of words
         // punctuation etc. does not belong to words
         while (!word.isEmpty() &&
              !word.at(0).isLetter() &&
-             t_cursor.anchor() < t_cursor.position())
+             cursor.anchor() < cursor.position())
         {
-            int cursorPos = t_cursor.position();
-            t_cursor.setPosition(t_cursor.anchor() + 1, QTextCursor::MoveAnchor);
-            t_cursor.setPosition(cursorPos, QTextCursor::KeepAnchor);
-            word = t_cursor.selectedText();
+            int cursorPos = cursor.position();
+            cursor.setPosition(cursor.anchor() + 1, QTextCursor::MoveAnchor);
+            cursor.setPosition(cursorPos, QTextCursor::KeepAnchor);
+            word = cursor.selectedText();
         }
 
-        if (word == t_old_word)
+        if (word == oldWord)
         {
-            t_cursor.insertText(t_new_word);
+            cursor.insertText(newWord);
             QCoreApplication::processEvents();
         }
 
-        t_cursor.movePosition(QTextCursor::NextWord, QTextCursor::MoveAnchor, 1);
+        cursor.movePosition(QTextCursor::NextWord, QTextCursor::MoveAnchor, 1);
     }
 }
 
 void SpellCheckDialog::on_pushButtonChangeAll_clicked()
 {
-    if (m_unknown_word == ui->lineEditChange->text() ) // if a new value wasn't typed in used the one selcted
+    if (m_unknownWord == ui->lineEditChange->text() ) // if a new value wasn't typed in used the one selcted
     {
         if ( ui->listWidgetSuggestions->selectedItems().count() > 0 )
             ui->lineEditChange->setText( ui->listWidgetSuggestions->currentItem()->text() );
     }
 
-    m_return_code = ChangeAll;
+    m_returnCode = ChangeAll;
     accept();
 }
 

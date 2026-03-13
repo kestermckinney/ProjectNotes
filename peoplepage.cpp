@@ -10,15 +10,15 @@ PeoplePage::PeoplePage()
     setTableName("people");
 }
 
-void PeoplePage::openRecord(QVariant& t_record_id)
+void PeoplePage::openRecord(QVariant& recordId)
 {
-    setRecordId(t_record_id);
+    setRecordId(recordId);
 
-    if (!t_record_id.isNull())
+    if (!recordId.isNull())
     {
         global_DBObjects.peoplemodel()->deactivateUserFilter(global_DBObjects.peoplemodel()->objectName());
 
-        QModelIndex qmi = global_DBObjects.peoplemodel()->findIndex(t_record_id, 0);
+        QModelIndex qmi = global_DBObjects.peoplemodel()->findIndex(recordId, 0);
         QModelIndex qi = global_DBObjects.peoplemodelproxy()->index(global_DBObjects.peoplemodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
 
         ui->tableViewPeople->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
@@ -30,11 +30,11 @@ void PeoplePage::openRecord(QVariant& t_record_id)
     // }
 }
 
-void PeoplePage::setupModels( Ui::MainWindow *t_ui )
+void PeoplePage::setupModels( Ui::MainWindow *ui )
 {
-    ui = t_ui;
+    this->ui = ui;
 
-    if (!t_ui)
+    if (!ui)
         return;  // closing application
 
     ui->tableViewPeople->setModel(global_DBObjects.peoplemodelproxy());
@@ -60,7 +60,7 @@ void PeoplePage::setPageTitle()
     else
     {
         QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(ui->tableViewPeople->model());
-        PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
+        SqlQueryModel* currentmodel = dynamic_cast<SqlQueryModel*>(sortmodel->sourceModel());
 
         QModelIndexList qil = ui->tableViewPeople->selectionModel()->selectedRows();
         auto qi = qil.begin();

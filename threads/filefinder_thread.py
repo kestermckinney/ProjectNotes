@@ -280,3 +280,5 @@ def event_data_rightclick(xmlstr, parameter):
 
 #TODO: VER 4.1 setup the  plugin to do default searching
 #TODO: VER 4.0.1 when meeting types don't have all values make sure it wont crash the script
+
+

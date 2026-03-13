@@ -127,46 +127,32 @@ class ProjectNotesCommon:
 
     def to_xml(self, val):
         if val is None:
-            return ("")
-        else:
-            newval = ""
-
-            val = val.replace("&", "&amp;")
-            val = val.replace(">", "&gt;")
-            val = val.replace("<", "&lt;")
-            val = val.replace("\"", "&quot;")
-            val = val.replace("'", "&apos;")
-
-            for c in val:
-                if (ord(c) < 32 or ord(c) > 122):
-                    newval = newval + f'&#x{ord(c):04X};'
-                elif (ord(c) <= 255):
-                    newval = newval + c
-
-            return(newval)
+            return ""
+        val = val.replace("&", "&amp;")
+        val = val.replace(">", "&gt;")
+        val = val.replace("<", "&lt;")
+        val = val.replace("\"", "&quot;")
+        val = val.replace("'", "&apos;")
+        return ''.join(
+            f'&#x{ord(c):04X};' if (ord(c) < 32 or ord(c) > 122) else c
+            for c in val
+        )
 
     def to_html(self, val):
         if val is None:
-            return ("")
-        else:
-            newval = ""
-
-            val = val.replace("&", "&amp;")
-            val = val.replace(">", "&gt;")
-            val = val.replace("<", "&lt;")
-            val = val.replace("\"", "&quot;")
-            val = val.replace("'", "&apos;")
-            val = val.replace(" ", "&#160;")
-            val = val.replace("\n", "<br>")
-            val = val.replace("\t", "&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;")
-
-            for c in val:
-                if (ord(c) < 32 or ord(c) > 122):
-                    newval = newval + f'&#x{ord(c):04X};'
-                elif (ord(c) <= 255):
-                    newval = newval + c
-
-            return(newval)
+            return ""
+        val = val.replace("&", "&amp;")
+        val = val.replace(">", "&gt;")
+        val = val.replace("<", "&lt;")
+        val = val.replace("\"", "&quot;")
+        val = val.replace("'", "&apos;")
+        val = val.replace(" ", "&#160;")
+        val = val.replace("\n", "<br>")
+        val = val.replace("\t", "&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;")
+        return ''.join(
+            f'&#x{ord(c):04X};' if (ord(c) < 32 or ord(c) > 122) else c
+            for c in val
+        )
 
     def strip_html_body(self, html):
         # Remove everything between <header> and </header>, including the tags

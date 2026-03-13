@@ -24,7 +24,7 @@ plugindescription = "This plugin allows you to quickly add a new team member tha
 # the function wil only show on the right click if it matches the table specified in dataexport
 # if a dataexport value exist the menu will not appear on the plugin menu
 pluginmenus = [
-    {"menutitle" : "Quick Add", "function" : "menuQuickAdd", "tablefilter" : "project_people", "submenu" : "", "dataexport" : "project_people"}
+    {"menutitle" : "Quick Add", "function" : "menu_quick_add", "tablefilter" : "project_people", "submenu" : "", "dataexport" : "project_people"}
 ]
 
 # events must have a data structure and data view specified
@@ -178,7 +178,7 @@ class TeamMemberQuickAdd(QDialog):
         # Call the base class implementation
         super().closeEvent(event)
 
-def menuQuickAdd(xmlstr, parameter):
+def menu_quick_add(xmlstr, parameter):
     tmqa.setup_window(xmlstr)
     tmqa.show()
     return ""
@@ -192,7 +192,7 @@ if __name__ == '__main__':
 
     pnc = ProjectNotesCommon()
     tmqa = TeamMemberQuickAdd(pnc.get_main_window())
-    menuQuickAdd("", "")
+    menu_quick_add("", "")
     sys.exit(app.exec())
 else:
     pnc = ProjectNotesCommon()

@@ -192,9 +192,9 @@ class CollaborationTools:
                     attachments.append(fp)
                     locationrow = locationrow.nextSibling()
 
-            # if a single attchment was specified, add it
-            if not attachment is None:
-                attachments.append(attachment)
+        # always add the explicitly specified attachment if provided
+        if attachment is not None:
+            attachments.append(attachment)
 
         # determine what method to use to send emails
         use_graph_api = (self.pnc.get_plugin_setting("IntegrationType", "Outlook Integration") == "Office 365 Application")

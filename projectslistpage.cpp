@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "projectslistpage.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
 #include "ui_mainwindow.h"
 #include "QLogger.h"
@@ -16,11 +16,11 @@ ProjectsListPage::ProjectsListPage()
 
 }
 
-void ProjectsListPage::setupModels( Ui::MainWindow *t_ui )
+void ProjectsListPage::setupModels( Ui::MainWindow *ui )
 {
-    ui = t_ui;
+    this->ui = ui;
 
-    if (!t_ui)
+    if (!ui)
         return;  // closing application
 
     ui->tableViewProjects->setModel(global_DBObjects.projectslistmodelproxy());

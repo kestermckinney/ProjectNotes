@@ -4,26 +4,26 @@
 #ifndef TRACKERITEMCOMMENTSVIEW_H
 #define TRACKERITEMCOMMENTSVIEW_H
 
-#include "pntableview.h"
+#include "tableview.h"
 
 #include <QObject>
-#include "pndateeditdelegate.h"
-#include "pncomboboxdelegate.h"
-#include "pnplaintexteditdelegate.h"
+#include "dateeditdelegate.h"
+#include "sqlcomboboxdelegate.h"
+#include "plaintexteditdelegate.h"
 
-class TrackerItemCommentsView : public PNTableView
+class TrackerItemCommentsView : public TableView
 {
 public:
-    TrackerItemCommentsView(QWidget* t_parent = nullptr);
+    TrackerItemCommentsView(QWidget* parent = nullptr);
     ~TrackerItemCommentsView();
 
-    void setModel(QAbstractItemModel *t_model) override;
+    void setModel(QAbstractItemModel *model) override;
 
 private:
     // projects list panel delegates
-    PNComboBoxDelegate* m_updated_by_delegate = nullptr;
-    PNDateEditDelegate* m_date_updated_delegate = nullptr;
-    PNPlainTextEditDelegate* m_comments_delegate = nullptr;
+    SqlComboBoxDelegate* m_updatedByDelegate = nullptr;
+    DateEditDelegate* m_dateUpdatedDelegate = nullptr;
+    PlainTextEditDelegate* m_commentsDelegate = nullptr;
 
 public slots:
     void slotNewRecord() override;

@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "projectslistview.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
-ProjectsListView::ProjectsListView(QWidget* t_parent) : PNTableView(t_parent)
+ProjectsListView::ProjectsListView(QWidget* parent) : TableView(parent)
 {
     setObjectName("tableViewProjects");
     setHasOpen(true);
@@ -12,54 +12,54 @@ ProjectsListView::ProjectsListView(QWidget* t_parent) : PNTableView(t_parent)
 
 ProjectsListView::~ProjectsListView()
 {
-    if (m_unfiltered_people_delegate) delete m_unfiltered_people_delegate;
-    if (m_project_clients_delegate) delete m_project_clients_delegate;
-    if (m_project_date_delegate) delete m_project_date_delegate;
-    if (m_projects_report_period_delegate) delete m_projects_report_period_delegate;
-    if (m_project_invoicing_period_delegate) delete m_project_invoicing_period_delegate;
-    if (m_project_status_delegate) delete m_project_status_delegate;
-    if (m_project_name_delegate) delete m_project_name_delegate;
+    if (m_unfilteredPeopleDelegate) delete m_unfilteredPeopleDelegate;
+    if (m_projectClientsDelegate) delete m_projectClientsDelegate;
+    if (m_projectDateDelegate) delete m_projectDateDelegate;
+    if (m_projectsReportPeriodDelegate) delete m_projectsReportPeriodDelegate;
+    if (m_projectInvoicingPeriodDelegate) delete m_projectInvoicingPeriodDelegate;
+    if (m_projectStatusDelegate) delete m_projectStatusDelegate;
+    if (m_projectNameDelegate) delete m_projectNameDelegate;
 }
 
-void ProjectsListView::setModel(QAbstractItemModel *t_model)
+void ProjectsListView::setModel(QAbstractItemModel *model)
 {
-    if (t_model)
+    if (model)
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
 
         setColumnHidden(0, true);
 
         // setup model lists
-        m_project_status.setStringList(PNDatabaseObjects::project_status);
-        m_status_item_status.setStringList(PNDatabaseObjects::status_item_status);
-        m_invoicing_period.setStringList(PNDatabaseObjects::invoicing_period);
-        m_status_report_period.setStringList(PNDatabaseObjects::status_report_period);
+        m_projectStatus.setStringList(DatabaseObjects::project_status);
+        m_statusItemStatus.setStringList(DatabaseObjects::status_item_status);
+        m_invoicingPeriod.setStringList(DatabaseObjects::invoicing_period);
+        m_statusReportPeriod.setStringList(DatabaseObjects::status_report_period);
 
-        PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(dynamic_cast<PNSortFilterProxyModel*>(t_model)->sourceModel())->getDBOs();
+        DatabaseObjects* dbo = qobject_cast<SqlQueryModel*>(dynamic_cast<SortFilterProxyModel*>(model)->sourceModel())->getDBOs();
 
         // projects list panel delagets
-        m_unfiltered_people_delegate = new PNComboBoxDelegate(this, dbo->unfilteredpeoplemodelproxy());
-        m_project_clients_delegate = new PNComboBoxDelegate(this, dbo->unfilteredclientsmodelproxy());
-        m_project_date_delegate = new PNDateEditDelegate(this);
-        m_projects_report_period_delegate = new ComboBoxDelegate(this, &m_status_report_period);
-        m_project_invoicing_period_delegate = new ComboBoxDelegate(this, &m_invoicing_period);
-        m_project_status_delegate = new ComboBoxDelegate(this, &m_project_status);
+        m_unfilteredPeopleDelegate = new SqlComboBoxDelegate(this, dbo->unfilteredpeoplemodelproxy());
+        m_projectClientsDelegate = new SqlComboBoxDelegate(this, dbo->unfilteredclientsmodelproxy());
+        m_projectDateDelegate = new DateEditDelegate(this);
+        m_projectsReportPeriodDelegate = new ComboBoxDelegate(this, &m_statusReportPeriod);
+        m_projectInvoicingPeriodDelegate = new ComboBoxDelegate(this, &m_invoicingPeriod);
+        m_projectStatusDelegate = new ComboBoxDelegate(this, &m_projectStatus);
 
-        m_project_name_delegate = new PNPlainTextEditDelegate(this);
+        m_projectNameDelegate = new PlainTextEditDelegate(this);
 
-        setItemDelegateForColumn(2, m_project_name_delegate);
-        setItemDelegateForColumn(5, m_unfiltered_people_delegate);
-        setItemDelegateForColumn(3, m_project_date_delegate);
-        setItemDelegateForColumn(4, m_project_date_delegate);
-        setItemDelegateForColumn(11, m_project_invoicing_period_delegate);
-        setItemDelegateForColumn(12, m_projects_report_period_delegate);
-        setItemDelegateForColumn(13, m_project_clients_delegate);
-        setItemDelegateForColumn(14, m_project_status_delegate);
+        setItemDelegateForColumn(2, m_projectNameDelegate);
+        setItemDelegateForColumn(5, m_unfilteredPeopleDelegate);
+        setItemDelegateForColumn(3, m_projectDateDelegate);
+        setItemDelegateForColumn(4, m_projectDateDelegate);
+        setItemDelegateForColumn(11, m_projectInvoicingPeriodDelegate);
+        setItemDelegateForColumn(12, m_projectsReportPeriodDelegate);
+        setItemDelegateForColumn(13, m_projectClientsDelegate);
+        setItemDelegateForColumn(14, m_projectStatusDelegate);
 
     }
     else
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
     }
 }
 

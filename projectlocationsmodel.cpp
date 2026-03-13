@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "projectlocationsmodel.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
-ProjectLocationsModel::ProjectLocationsModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
+ProjectLocationsModel::ProjectLocationsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
-    setObjectName("ProjedtLocationsModel");
+    setObjectName("ProjectLocationsModel");
     setOrderKey(35);
 
     setBaseSql("SELECT location_id, project_id, location_type, location_description, full_path, (select p.project_number from projects p where p.project_id=pl.project_id) project_number, (select p.project_name from projects p where p.project_id=pl.project_id) project_name FROM project_locations pl");
@@ -16,7 +16,7 @@ ProjectLocationsModel::ProjectLocationsModel(PNDatabaseObjects* t_dbo): PNSqlQue
     addColumn("location_id", tr("Location ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
     addColumn("project_id", tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
               "projects", "project_id", "project_number");
-    addColumn("location_type", tr("Location Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::file_types);
+    addColumn("location_type", tr("Location Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &DatabaseObjects::file_types);
     addColumn("location_description", tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("full_path", tr("Full Path"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("project_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
@@ -34,48 +34,50 @@ ProjectLocationsModel::ProjectLocationsModel(PNDatabaseObjects* t_dbo): PNSqlQue
 }
 
 
-const QModelIndex ProjectLocationsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex ProjectLocationsModel::newRecord(const QVariant* fkValue1, const QVariant* fkValue2)
 {
-    Q_UNUSED(t_fk_value2);
+    Q_UNUSED(fkValue2);
 
     QVector<QVariant> qr = emptyrecord();
 
     // let system generate id qr[0, QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0')));  // Need to make a counter that looks good for items
-    qr[1] = *t_fk_value1;
+    qr[1] = *fkValue1;
     qr[2] = "Generic File (System Identified)";
 
     return addRecord(qr);
 }
 
-bool ProjectLocationsModel::setData(const QModelIndex &t_index, const QVariant &t_value, int t_role)
+bool ProjectLocationsModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     // if the issue was changed to resolved them change the resolved date
-    if (t_index.column() == 4)
+    if (index.column() == 4)
     {
-        QModelIndex qmi_file_type = index(t_index.row(), 2);
+        QModelIndex qmi_file_type = this->index(index.row(), 2);
         QVariant file_type = "Generic File (System Identified)";
-        QString test_val = t_value.toString();
+        QString test_val = value.toString();
 
-        QModelIndex qmi_desc = index(t_index.row(), 3);
-        QVariant desc_val = data(qmi_desc, t_role);
+        QModelIndex qmi_desc = this->index(index.row(), 3);
+        QVariant desc_val = data(qmi_desc, role);
 
-        if ( test_val.right(5).contains(".doc", Qt::CaseInsensitive) || test_val.right(5).contains(".dot", Qt::CaseInsensitive) || test_val.right(5).contains(".odt", Qt::CaseInsensitive) || test_val.right(5).contains(".rtf", Qt::CaseInsensitive) )
+        QString suffix = test_val.right(5);
+
+        if ( suffix.contains(".doc", Qt::CaseInsensitive) || suffix.contains(".dot", Qt::CaseInsensitive) || suffix.contains(".odt", Qt::CaseInsensitive) || suffix.contains(".rtf", Qt::CaseInsensitive) )
         {
             file_type = "Word Document";
         }
-        else if ( test_val.right(5).contains(".xls", Qt::CaseInsensitive) || test_val.right(5).contains(".ods", Qt::CaseInsensitive) || test_val.right(5).contains(".xlt", Qt::CaseInsensitive) )
+        else if ( suffix.contains(".xls", Qt::CaseInsensitive) || suffix.contains(".ods", Qt::CaseInsensitive) || suffix.contains(".xlt", Qt::CaseInsensitive) )
         {
             file_type = "Excel Document";
         }
-        else if ( test_val.right(5).contains(".mpp", Qt::CaseInsensitive) || test_val.right(5).contains(".mpt", Qt::CaseInsensitive) )
+        else if ( suffix.contains(".mpp", Qt::CaseInsensitive) || suffix.contains(".mpt", Qt::CaseInsensitive) )
         {
             file_type = "Microsoft Project";
         }
-        else if ( test_val.right(5).contains(".ppt", Qt::CaseInsensitive) || test_val.right(5).contains(".odp", Qt::CaseInsensitive) || test_val.right(5).contains(".pps", Qt::CaseInsensitive) || test_val.right(5).contains(".pot", Qt::CaseInsensitive) )
+        else if ( suffix.contains(".ppt", Qt::CaseInsensitive) || suffix.contains(".odp", Qt::CaseInsensitive) || suffix.contains(".pps", Qt::CaseInsensitive) || suffix.contains(".pot", Qt::CaseInsensitive) )
         {
             file_type = "PowerPoint Document";
         }
-        else if ( test_val.right(5).contains(".pdf", Qt::CaseInsensitive) || test_val.right(5).contains(".odp", Qt::CaseInsensitive) || test_val.right(5).contains(".pps", Qt::CaseInsensitive) || test_val.right(5).contains(".pot", Qt::CaseInsensitive) )
+        else if ( suffix.contains(".pdf", Qt::CaseInsensitive) )
         {
             file_type = "PDF File";
         }
@@ -83,28 +85,28 @@ bool ProjectLocationsModel::setData(const QModelIndex &t_index, const QVariant &
         {
             file_type = "Web Link";
         }
-        else if ( !test_val.right(5).contains(".", Qt::CaseInsensitive) )
+        else if ( !suffix.contains(".", Qt::CaseInsensitive) )
         {
             file_type = "File Folder";
         }
 
-        PNSqlQueryModel::setData(qmi_file_type, file_type, t_role);
+        SqlQueryModel::setData(qmi_file_type, file_type, role);
 
         if ( !desc_val.isValid() || desc_val.toString().isEmpty() )
         {
             if ( file_type != "File Folder" && file_type != "Web Link")
             {
                 QFileInfo fi(test_val);
-                PNSqlQueryModel::setData(qmi_desc, fi.completeBaseName(), t_role);
+                SqlQueryModel::setData(qmi_desc, fi.completeBaseName(), role);
             }
             else
             {
-                PNSqlQueryModel::setData(qmi_desc, t_value, t_role);
+                SqlQueryModel::setData(qmi_desc, value, role);
             }
         }
     }
 
 
-    return PNSqlQueryModel::setData(t_index, t_value, t_role);
+    return SqlQueryModel::setData(index, value, role);
 }
 

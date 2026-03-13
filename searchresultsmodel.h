@@ -4,14 +4,15 @@
 #ifndef SEARCHRESULTSMODEL_H
 #define SEARCHRESULTSMODEL_H
 
-#include "pnsqlquerymodel.h"
+#include "sqlquerymodel.h"
 
-class SearchResultsModel : public PNSqlQueryModel
+class SearchResultsModel : public SqlQueryModel
 {
 public:
-    SearchResultsModel(PNDatabaseObjects* t_dbo);
-    void PerformSearch(const QString& t_search_value);
-    void PerformKeySearch(const QStringList& t_search_fields, const QStringList& t_search_values);
+    SearchResultsModel(DatabaseObjects* dbo);
+    void PerformSearch(const QString& searchValue);
+    void PerformKeySearch(const QStringList& searchFields, const QStringList& searchValues);
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 };
 
 #endif // SEARCHRESULTSMODEL_H

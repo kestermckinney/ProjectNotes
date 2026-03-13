@@ -8,7 +8,7 @@
 using namespace QLogger;
 
 
-MeetingAttendeesModel::MeetingAttendeesModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
+MeetingAttendeesModel::MeetingAttendeesModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("MeetingAttendeesModel");
     setOrderKey(40);
@@ -36,13 +36,13 @@ MeetingAttendeesModel::MeetingAttendeesModel(PNDatabaseObjects* t_dbo): PNSqlQue
     setOrderBy("people.name");
 }
 
-const QModelIndex MeetingAttendeesModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex MeetingAttendeesModel::newRecord(const QVariant* fkValue1, const QVariant* fkValue2)
 {
-    Q_UNUSED(t_fk_value2);
+    Q_UNUSED(fkValue2);
 
     QVector<QVariant> qr = emptyrecord();
 
-    qr[1] = *t_fk_value1;
+    qr[1] = *fkValue1;
 
     return addRecord(qr);
 }

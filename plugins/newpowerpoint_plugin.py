@@ -100,7 +100,7 @@ if (platform.system() == 'Windows'):
     pnc = ProjectNotesCommon()
 
     # processing main function
-    def menuPowerPoint(xmlstr, parameter):
+    def menu_power_point(xmlstr, parameter):
 
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
@@ -193,14 +193,14 @@ if (platform.system() == 'Windows'):
 
         return docxml.toString()
 
-    def menuSettings(parameter):
+    def menu_settings(parameter):
         nps.show()
         return ""
 
     nps = NewPowerPointSettings()
 
-    pluginmenus.append({"menutitle" : "PowerPoint", "function" : "menuPowerPoint", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
-    pluginmenus.append({"menutitle" : "New PowerPoint", "function" : "menuSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
+    pluginmenus.append({"menutitle" : "PowerPoint", "function" : "menu_power_point", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
+    pluginmenus.append({"menutitle" : "New PowerPoint", "function" : "menu_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
 
 
 #setup test data
@@ -215,6 +215,6 @@ if __name__ == '__main__':
     with open("C:\\Users\\pamcki\\OneDrive - Cornerstone Controls\\Documents\\Work In Progress\\XML\\project.xml", 'r', encoding='utf-8') as file:
         xml_content = file.read()
 
-    menuPowerPoint(xml_content, "")    
+    menu_power_point(xml_content, "")    
 
     app.exec()

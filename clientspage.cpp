@@ -3,7 +3,7 @@
 
 #include "clientspage.h"
 #include "mainwindow.h"
-#include "pnplaintextedit.h"
+#include "plaintextedit.h"
 #include "ui_mainwindow.h"
 #include "QLogger.h"
 #include "QLoggerWriter.h"
@@ -15,15 +15,15 @@ ClientsPage::ClientsPage()
 
 }
 
-void ClientsPage::openRecord(QVariant& t_record_id)
+void ClientsPage::openRecord(QVariant& recordId)
 {
-    setRecordId(t_record_id);
+    setRecordId(recordId);
 
-    if (!t_record_id.isNull())
+    if (!recordId.isNull())
     {
         global_DBObjects.clientsmodel()->deactivateUserFilter(global_DBObjects.peoplemodel()->objectName());
 
-        QModelIndex qmi = global_DBObjects.clientsmodel()->findIndex(t_record_id, 0);
+        QModelIndex qmi = global_DBObjects.clientsmodel()->findIndex(recordId, 0);
         QModelIndex qi = global_DBObjects.clientsmodelproxy()->index(global_DBObjects.clientsmodelproxy()->mapFromSource(qmi).row(), 1);  // usa a visible column
 
         ui->tableViewClients->selectionModel()->select(qi, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
@@ -35,11 +35,11 @@ void ClientsPage::openRecord(QVariant& t_record_id)
     // }
 }
 
-void ClientsPage::setupModels( Ui::MainWindow *t_ui )
+void ClientsPage::setupModels( Ui::MainWindow *ui )
 {
-    ui = t_ui;
+    this->ui = ui;
 
-    if (!t_ui)
+    if (!ui)
         return; // closing application
 
     ui->tableViewClients->setModel(global_DBObjects.clientsmodelproxy());
@@ -64,7 +64,7 @@ void ClientsPage::setPageTitle()
     else
     {
         QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(ui->tableViewClients->model());
-        PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
+        SqlQueryModel* currentmodel = dynamic_cast<SqlQueryModel*>(sortmodel->sourceModel());
 
         QModelIndexList qil = ui->tableViewClients->selectionModel()->selectedRows();
         auto qi = qil.begin();

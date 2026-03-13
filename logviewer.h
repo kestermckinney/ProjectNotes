@@ -6,7 +6,8 @@
 #include <QFile>
 #include <QPlainTextEdit>
 #include <QDir>
-#include <QFileSystemWatcher>
+#include <QSet>
+#include <QDateTime>
 #include <QTabWidget>
 #include <QVBoxLayout>
 #include <QScrollBar>
@@ -25,20 +26,22 @@ public slots:
     void loadFile();
     void timerUpdate();
     void onFileChanged(const QString &filePath);
-    void resetFileWatcher(QWidget* t_old, QWidget* t_new);
 
 public:
     LogLoader(const QString& filePath);
     ~LogLoader();
 
-private:
-    void startFileWatcher();
+private slots:
+    void onPollTimer();
 
-    qint64 m_top_position = -1;
-    qint64 m_last_position = 0;
-    QTimer* m_top_load_timer = nullptr;
-    QString m_file_path;
-    QFileSystemWatcher *m_fileWatcher = nullptr;
+private:
+    qint64 m_topPosition = -1;
+    qint64 m_lastPosition = 0;
+    QTimer* m_topLoadTimer = nullptr;
+    QTimer* m_pollTimer = nullptr;
+    qint64  m_pollLastSize = -1;
+    QDateTime m_pollLastModified;
+    QString m_filePath;
 };
 
 class LogViewer : public QDialog
@@ -50,7 +53,7 @@ private slots:
     void onClearLog();
     void onInsertContent(const QString& filePath, const QString& content);
     void onUpdateContent(const QString& filePath, const QString& content);
-    void resetFileWatcher(QWidget* t_old, QWidget* t_new);
+    void onPollTimer();
 
 signals:
     void getContents(const QString& filePath);
@@ -62,13 +65,12 @@ private:
     QPushButton* m_clearlog;
     QPushButton* m_close;
     QMap<QString, QPlainTextEdit*> m_fileTabs;
-    QMap<QString, QThread*> m_loading_threads;
-    QFileSystemWatcher *m_fileWatcher;
-    // QThread* m_loader_thread = nullptr;
-    // QThread* m_filler_thread = nullptr;
+    QMap<QString, QThread*> m_loadingThreads;
+    QTimer* m_pollTimer;
+    QSet<QString> m_knownLogFiles;
 
 public:
-    LogViewer(QWidget* t_parent = nullptr);
+    LogViewer(QWidget* parent = nullptr);
     ~LogViewer();
 
     void closeEvent(QCloseEvent *e) override;

@@ -1,7 +1,7 @@
 // Copyright (C) 2022, 2023 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 #include "projectsmodel.h"
 
 #include <QRegularExpression>
@@ -10,7 +10,7 @@
 
 using namespace QLogger;
 
-ProjectsModel::ProjectsModel(PNDatabaseObjects* t_dbo) : PNSqlQueryModel(t_dbo)
+ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
 {
     setObjectName("ProjectsModel");
     setOrderKey(100);
@@ -34,7 +34,7 @@ ProjectsModel::ProjectsModel(PNDatabaseObjects* t_dbo) : PNSqlQueryModel(t_dbo)
     addColumn("status_report_period", tr("Report Period"), DBString, DBSearchable, DBNotRequired, DBEditable);
     addColumn("client_id", tr("Client"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "clients", "client_id", "client_name");
-    addColumn("project_status", tr("Status"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::project_status);
+    addColumn("project_status", tr("Status"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique, &DatabaseObjects::project_status);
     addColumn("pct_consumed", tr("Consumed"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn("eac", tr("EAC"), DBUSD, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn("cv", tr("CV"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
@@ -55,10 +55,10 @@ ProjectsModel::ProjectsModel(PNDatabaseObjects* t_dbo) : PNSqlQueryModel(t_dbo)
     setOrderBy("project_number");
 }
 
-const QModelIndex ProjectsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex ProjectsModel::newRecord(const QVariant* fkValue1, const QVariant* fkValue2)
 {
-    Q_UNUSED(t_fk_value1);
-    Q_UNUSED(t_fk_value2);
+    Q_UNUSED(fkValue1);
+    Q_UNUSED(fkValue2);
 
     QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
 
@@ -72,18 +72,18 @@ const QModelIndex ProjectsModel::newRecord(const QVariant* t_fk_value1, const QV
     return addRecord(qr);
 }
 
-QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
+QVariant ProjectsModel::data(const QModelIndex &index, int role) const
 {
-    if (t_role == Qt::ForegroundRole)
+    if (role == Qt::ForegroundRole)
     {
-        if (t_index.column() == 3) // status date
+        if (index.column() == 3) // status date
         {
-            QVariant t_value = data(t_index);
+            QVariant value = data(index);
 
-            QDateTime datecol = parseDateTime(t_value.toString());
+            QDateTime datecol = parseDateTime(value.toString());
             qint64 dif = datecol.daysTo(QDateTime::currentDateTime());
 
-            QString period = data( this->index(t_index.row(), 12)).toString();
+            QString period = data( this->index(index.row(), 12)).toString();
             if (period == "Weekly")
             {
                 if (dif > 7)
@@ -118,18 +118,18 @@ QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
                 }
             }
         }
-        else if (t_index.column() == 4) // invoice date
+        else if (index.column() == 4) // invoice date
         {
-            QVariant t_value = data(t_index);
+            QVariant value = data(index);
 
-            QDateTime datecol = parseDateTime(t_value.toString());
+            QDateTime datecol = parseDateTime(value.toString());
             QDate nextdate = datecol.date();
             nextdate = nextdate.addMonths(1);
             nextdate.setDate(nextdate.year(), nextdate.month(), 1); // set to the first of the next month
 
             qint64 dif = datecol.daysTo(QDateTime::currentDateTime());
 
-            QString period = data( this->index(t_index.row(), 11)).toString();
+            QString period = data( this->index(index.row(), 11)).toString();
 
             if (period == "Milestone")
             {
@@ -151,107 +151,93 @@ QVariant ProjectsModel::data(const QModelIndex &t_index, int t_role) const
             }
 
         }
-        else if (t_index.column() == 15)  // percent consumed
+        else if (index.column() == 15)  // percent consumed
         {
-            QVariant val = data(t_index);
-            this->sqlEscape(val, getType(15));
+            double value = data(index).toDouble();
 
-            double t_value = val.toDouble();
-
-            if (t_value >= 95.0)
+            if (value >= 95.0)
                 return QVariant(QCOLOR_RED);
-            else if (t_value >= 90.0)
+            else if (value >= 90.0)
                 return QVariant(QCOLOR_YELLOW);
         }
-        else if (t_index.column() == 17) // cost variance
+        else if (index.column() == 17) // cost variance
         {
-            QVariant val = data(t_index);
-            this->sqlEscape(val, getType(15));
+            double value = data(index).toDouble();
 
-            double t_value = val.toDouble();
-
-            if (t_value >= 10.0)
+            if (value >= 10.0)
                 return QVariant(QCOLOR_RED);
-            else if (t_value >= 5.0)
+            else if (value >= 5.0)
                 return QVariant(QCOLOR_YELLOW);
         }
-        else if (t_index.column() == 18)  // schedule variance
+        else if (index.column() == 18)  // schedule variance
         {
-            QVariant val = data(t_index);
-            this->sqlEscape(val, getType(15));
+            double value = data(index).toDouble();
 
-            double t_value = val.toDouble();
-
-            if (t_value >= 10.0)
+            if (value >= 10.0)
                 return QVariant(QCOLOR_RED);
-            else if (t_value >= 5.0)
+            else if (value >= 5.0)
                 return QVariant(QCOLOR_YELLOW);
         }
-        else if (t_index.column() == 19)  // percent complete
+        else if (index.column() == 19)  // percent complete
         {
-            QVariant val = data(t_index);
-            this->sqlEscape(val, getType(15));
+            double value = data(index).toDouble();
 
-            double t_value = val.toDouble();
-
-            if (t_value >= 95.0)
+            if (value >= 95.0)
                 return QVariant(QCOLOR_RED);
-            else if (t_value >= 90.0)
+            else if (value >= 90.0)
                 return QVariant(QCOLOR_YELLOW);
         }
-        else if (t_index.column() == 20)  // CPI
+        else if (index.column() == 20)  // CPI
         {
-            double t_value = data(t_index).toDouble();
+            double value = data(index).toDouble();
 
-            if (t_value <= 0.8)
+            if (value <= 0.8)
                 return QVariant(QCOLOR_RED);
-            else if (t_value < 1.0)
+            else if (value < 1.0)
                 return QVariant(QCOLOR_YELLOW);
         }
     }
 
-    return PNSqlQueryModel::data(t_index, t_role);
+    return SqlQueryModel::data(index, role);
 }
 
-bool ProjectsModel::setData(const QModelIndex &t_index, const QVariant &t_value, int t_role)
+bool ProjectsModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    bool wasnew = isNewRecord(t_index);
-    bool result = PNSqlQueryModel::setData(t_index, t_value, t_role);
+    bool wasnew = isNewRecord(index);
+    bool result = SqlQueryModel::setData(index, value, role);
 
     if (wasnew && result)
     {
-        QString project_id = data(index(t_index.row(), 0)).toString();
+        QString project_id = data(this->index(index.row(), 0)).toString();
         getDBOs()->addDefaultPMToProject(project_id);
     }
 
     return result;
 }
 
-const QModelIndex ProjectsModel::copyRecord(QModelIndex t_index)
+const QModelIndex ProjectsModel::copyRecord(QModelIndex index)
 {
     QVector<QVariant> qr = emptyrecord();
     QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
+    const int row = index.row();
 
-    qr[1] = QString("Copy [%2] of %1").arg(data(index(t_index.row(), 1)).toString(), unique_stamp);
-    qr[2] = QString("Copy [%2] of %1").arg(data(index(t_index.row(), 2)).toString(), unique_stamp);
-    qr[5] = data(index(t_index.row(), 5));
-    qr[6] = data(index(t_index.row(), 6));
-    qr[7] = data(index(t_index.row(), 7));
-    qr[8] = data(index(t_index.row(), 8));
-    qr[9] = data(index(t_index.row(), 9));
-    qr[10] = data(index(t_index.row(), 10));
-    qr[11] = data(index(t_index.row(), 11));
-    qr[12] = data(index(t_index.row(), 12));
-    qr[13] = data(index(t_index.row(), 13));
-    qr[14] = data(index(t_index.row(), 14));
+    qr[1] = QString("Copy [%2] of %1").arg(data(this->index(row, 1)).toString(), unique_stamp);
+    qr[2] = QString("Copy [%2] of %1").arg(data(this->index(row, 2)).toString(), unique_stamp);
+    for (int col = 5; col <= 14; ++col)
+        qr[col] = data(this->index(row, col));
 
     QModelIndex qi = addRecord(qr);
-    setData( index(qi.row(), 3), QVariant(), Qt::EditRole); // force a write to the database
+    setData(this->index(qi.row(), 3), QVariant(), Qt::EditRole); // force a write to the database
 
-    QVariant oldid = data(index(t_index.row(), 0));
-    QVariant newid = data(index(qi.row(), 0));
+    const QString oldid = data(this->index(row, 0)).toString();
+    const QString newid = data(this->index(qi.row(), 0)).toString();
 
-    QString insert = "insert into project_people (teammember_id, project_id, people_id, role, receive_status_report) select m.teammember_id || '-" + unique_stamp + "', '" + newid.toString() + "', m.people_id, role, receive_status_report from project_people m where m.project_id ='" + oldid.toString() + "'  and m.people_id not in (select e.people_id from project_people e where e.project_id='" + newid.toString() + "')";
+    const QString insert = QString(
+        "INSERT INTO project_people (teammember_id, project_id, people_id, role, receive_status_report) "
+        "SELECT m.teammember_id || '-%1', '%2', m.people_id, role, receive_status_report "
+        "FROM project_people m WHERE m.project_id = '%3' "
+        "AND m.people_id NOT IN (SELECT e.people_id FROM project_people e WHERE e.project_id = '%2')")
+        .arg(unique_stamp, newid, oldid);
 
     getDBOs()->execute(insert);
     getDBOs()->pushRowChange("project_people", newid, KeyColumnChange::Insert);

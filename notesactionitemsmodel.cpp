@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "notesactionitemsmodel.h"
-#include "pnsettings.h"
-#include "pndatabaseobjects.h"
+#include "appsettings.h"
+#include "databaseobjects.h"
 
-NotesActionItemsModel::NotesActionItemsModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
+NotesActionItemsModel::NotesActionItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("NotesActionItemsModel");
     setOrderKey(35);
@@ -16,7 +16,7 @@ NotesActionItemsModel::NotesActionItemsModel(PNDatabaseObjects* t_dbo): PNSqlQue
 
     addColumn("item_id", tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
     addColumn("item_number", tr("Item"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
-    addColumn("item_type", tr("Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_type);
+    addColumn("item_type", tr("Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &DatabaseObjects::item_type);
     addColumn("item_name", tr("Item Name"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("identified_by", tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name");
@@ -24,8 +24,8 @@ NotesActionItemsModel::NotesActionItemsModel(PNDatabaseObjects* t_dbo): PNSqlQue
     addColumn("description", tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("assigned_to", tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
               "people", "people_id", "name");
-    addColumn("priority", tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_priority);
-    addColumn("status", tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &PNDatabaseObjects::item_status);
+    addColumn("priority", tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &DatabaseObjects::item_priority);
+    addColumn("status", tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &DatabaseObjects::item_status);
     addColumn("date_due", tr("Date Due"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("last_update", tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn("date_resolved", tr("Date Resolved"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
@@ -48,12 +48,12 @@ NotesActionItemsModel::NotesActionItemsModel(PNDatabaseObjects* t_dbo): PNSqlQue
     setOrderBy("item_number");
 }
 
-const QModelIndex NotesActionItemsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex NotesActionItemsModel::newRecord(const QVariant* fkValue1, const QVariant* fkValue2)
 {
     QVector<QVariant> qr = emptyrecord();
 
     // determine the max item_number from the database, then determine the max number from the record cache in case new unsaved records were added
-    QString itemnumber_string = getDBOs()->execute(QString("select max(CAST(item_number as integer)) from item_tracker where project_id = '%1'").arg(t_fk_value2->toString()));
+    QString itemnumber_string = getDBOs()->execute(QString("select max(CAST(item_number as integer)) from item_tracker where project_id = '%1'").arg(fkValue2->toString()));
     int itemnumber_int = itemnumber_string.toInt();
 
     for ( int i = 0; i < rowCount(QModelIndex()); i++ )
@@ -67,8 +67,8 @@ const QModelIndex NotesActionItemsModel::newRecord(const QVariant* t_fk_value1, 
 
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
 
-    qr[13] = *t_fk_value1; // note id
-    qr[14] = *t_fk_value2; // project id
+    qr[13] = *fkValue1; // note id
+    qr[14] = *fkValue2; // project id
 
     qr[1] = QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0'));  // Need to make a counter that looks good for items
     qr[2] = "Action";

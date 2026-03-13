@@ -2,25 +2,25 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "projectteammembersview.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
-ProjectTeamMembersView::ProjectTeamMembersView(QWidget* t_parent) : PNTableView(t_parent)
+ProjectTeamMembersView::ProjectTeamMembersView(QWidget* parent) : TableView(parent)
 {
     setHasOpen(true);
 }
 
 ProjectTeamMembersView::~ProjectTeamMembersView()
 {
-    if (m_unfiltered_people_delegate) delete m_unfiltered_people_delegate;
-    if (m_receive_status_delegate) delete m_receive_status_delegate;
-    if (m_role_delegate) delete m_role_delegate;
+    if (m_unfilteredPeopleDelegate) delete m_unfilteredPeopleDelegate;
+    if (m_receiveStatusDelegate) delete m_receiveStatusDelegate;
+    if (m_roleDelegate) delete m_roleDelegate;
 }
 
-void ProjectTeamMembersView::setModel(QAbstractItemModel *t_model)
+void ProjectTeamMembersView::setModel(QAbstractItemModel *model)
 {
-    if (t_model)
+    if (model)
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
 
         setColumnHidden(0, true);
         setColumnHidden(1, true);
@@ -31,27 +31,27 @@ void ProjectTeamMembersView::setModel(QAbstractItemModel *t_model)
         setColumnHidden(9, true);
         // setup model lists
 
-        PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(dynamic_cast<PNSortFilterProxyModel*>(t_model)->sourceModel())->getDBOs();
+        DatabaseObjects* dbo = qobject_cast<SqlQueryModel*>(dynamic_cast<SortFilterProxyModel*>(model)->sourceModel())->getDBOs();
 
         // projects list panel delagets
-        m_unfiltered_people_delegate = new PNComboBoxDelegate(this, dbo->unfilteredpeoplemodelproxy());
-        m_receive_status_delegate = new PNCheckBoxDelegate(this);
-        m_role_delegate = new PNPlainTextEditDelegate(this);
+        m_unfilteredPeopleDelegate = new SqlComboBoxDelegate(this, dbo->unfilteredpeoplemodelproxy());
+        m_receiveStatusDelegate = new CheckBoxDelegate(this);
+        m_roleDelegate = new PlainTextEditDelegate(this);
 
-        setItemDelegateForColumn(2, m_unfiltered_people_delegate);
-        setItemDelegateForColumn(5, m_role_delegate);
-        setItemDelegateForColumn(4, m_receive_status_delegate);
+        setItemDelegateForColumn(2, m_unfilteredPeopleDelegate);
+        setItemDelegateForColumn(5, m_roleDelegate);
+        setItemDelegateForColumn(4, m_receiveStatusDelegate);
     }
     else
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
     }
 }
 
 void ProjectTeamMembersView::slotNewRecord()
 {
     QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
-    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
+    SqlQueryModel* currentmodel = dynamic_cast<SqlQueryModel*>(sortmodel->sourceModel());
 
     QVariant fk_value1 = dynamic_cast<ProjectTeamMembersModel*>(currentmodel)->getFilter(1); // get the project id
 

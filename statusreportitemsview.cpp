@@ -1,8 +1,8 @@
 #include "statusreportitemsview.h"
-#include "pndatabaseobjects.h"
-#include "pnplaintexteditdelegate.h"
+#include "databaseobjects.h"
+#include "plaintexteditdelegate.h"
 
-StatusReportItemsView::StatusReportItemsView(QWidget* t_parent) : PNTableView(t_parent)
+StatusReportItemsView::StatusReportItemsView(QWidget* parent) : TableView(parent)
 {
     setObjectName("tableViewStatusReportItems");
 }
@@ -10,39 +10,39 @@ StatusReportItemsView::StatusReportItemsView(QWidget* t_parent) : PNTableView(t_
 
 StatusReportItemsView::~StatusReportItemsView()
 {
-    if (m_status_items_status_delegate) delete m_status_items_status_delegate;
-    if (m_status_item_description) delete m_status_item_description;
+    if (m_statusItemsStatusDelegate) delete m_statusItemsStatusDelegate;
+    if (m_statusItemDescription) delete m_statusItemDescription;
 }
 
-void StatusReportItemsView::setModel(QAbstractItemModel *t_model)
+void StatusReportItemsView::setModel(QAbstractItemModel *model)
 {
-    if (t_model)
+    if (model)
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
 
         setColumnHidden(0, true);
         setColumnHidden(1, true);
 
         // setup model lists
-        m_status_items_status.setStringList(PNDatabaseObjects::status_item_status);
+        m_statusItemsStatus.setStringList(DatabaseObjects::status_item_status);
 
         // projects list panel delagets
-        m_status_items_status_delegate = new ComboBoxDelegate(this, &m_status_items_status);
-        m_status_item_description = new PNPlainTextEditDelegate(this);
+        m_statusItemsStatusDelegate = new ComboBoxDelegate(this, &m_statusItemsStatus);
+        m_statusItemDescription = new PlainTextEditDelegate(this);
 
-        setItemDelegateForColumn(2, m_status_items_status_delegate);
-        setItemDelegateForColumn(3, m_status_item_description);
+        setItemDelegateForColumn(2, m_statusItemsStatusDelegate);
+        setItemDelegateForColumn(3, m_statusItemDescription);
     }
     else
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
     }
 }
 
 void StatusReportItemsView::slotNewRecord()
 {
     QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
-    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
+    SqlQueryModel* currentmodel = dynamic_cast<SqlQueryModel*>(sortmodel->sourceModel());
 
     QVariant fk_value1 = dynamic_cast<StatusReportItemsModel*>(currentmodel)->getFilter(1); // get the project id
 

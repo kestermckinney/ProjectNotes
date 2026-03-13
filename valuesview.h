@@ -5,21 +5,21 @@
 #define VALUESVIEW_H
 
 //#include "filterdatadialog.h"
-#include "pntableview.h"
+#include "tableview.h"
 #include <QObject>
 
-class ValuesView : public PNTableView
+class ValuesView : public TableView
 {
 public:
-    ValuesView(QWidget* t_parent = nullptr);
+    ValuesView(QWidget* parent = nullptr);
     ~ValuesView();
-    void setSavedFilters( QHash<QString, FilterSaveStructure>* t_saved_filters ) {m_saved_filters = t_saved_filters; };
+    void setSavedFilters( QHash<QString, FilterSaveStructure>* savedFilters ) {m_savedFilters = savedFilters; };
 
 private:
-    QHash<QString, FilterSaveStructure>* m_saved_filters;
+    QHash<QString, FilterSaveStructure>* m_savedFilters;
 
 public slots:
-    void dataRowSelected(const QModelIndex &t_index) override;
+    void dataRowSelected(const QModelIndex &index) override;
 };
 
 #endif // VALUESVIEW_H

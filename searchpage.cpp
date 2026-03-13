@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "searchpage.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
 #include "ui_mainwindow.h"
 
@@ -22,15 +22,14 @@ void SearchPage::setPageTitle()
     setHistoryText("Search");
 }
 
-void SearchPage::setupModels( Ui::MainWindow *t_ui )
+void SearchPage::setupModels( Ui::MainWindow *ui )
 {
-    ui = t_ui;
+    this->ui = ui;
 
-    if (!t_ui)
-    {
-        ui->plainTextEditSearchText->removeEventFilter(this);
+    if (!ui)
         return;  // closing application
-    }
+
+    ui->plainTextEditSearchText->removeEventFilter(this);
 
     ui->plainTextEditSearchText->installEventFilter(this);
     ui->tableViewSearchResults->setModel(global_DBObjects.searchresultsmodelproxy());

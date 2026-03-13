@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "projectdetailsdelegate.h"
-#include "pndatabaseobjects.h"
-#include "pndateeditex.h"
-#include "pnbasepage.h"
+#include "databaseobjects.h"
+#include "dateeditex.h"
+#include "basepage.h"
 #include "mainwindow.h"
-#include "pncombobox.h"
+#include "combobox.h"
 
 #include <QLineEdit>
 #include "QLogger.h"
@@ -20,21 +20,21 @@ ProjectDetailsDelegate::ProjectDetailsDelegate(QObject *parent) : QStyledItemDel
 
 }
 
-void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_index) const
+void ProjectDetailsDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
-    QVariant value = t_index.model()->data(t_index);
+    QVariant value = index.model()->data(index);
 
-    switch (t_index.column())
+    switch (index.column())
     {
     case 2:
         {
-            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
+            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(editor);
 
             // don't resent buffers if text hasn't changed
             if (value.toString().compare(lineedit->toPlainText()) != 0)
                 lineedit->setPlainText(value.toString());
 
-            QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+            QWidget* window = static_cast<QWidget*>(editor)->topLevelWidget();
             if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
                 dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
         }
@@ -42,21 +42,21 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
     case 3:
     case 4:
         {
-            PNDateEditEx* dateEdit = static_cast<PNDateEditEx*>(t_editor);
+            DateEditEx* dateEdit = static_cast<DateEditEx*>(editor);
 
             if (value.isNull())
                 dateEdit->setDateTime(QDateTime());
             else
             {
-                QDateTime date_value = PNSqlQueryModel::parseDateTime(value.toString());
+                QDateTime date_value = SqlQueryModel::parseDateTime(value.toString());
                 dateEdit->setDate(date_value.date());
             }
             break;
         }
     case 5: // primary contact
         {
-            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
-            PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
+            ComboBox *comboBox = static_cast<ComboBox*>(editor);
+            SqlQueryModel *model = static_cast<SqlQueryModel*>(comboBox->model());
 
             if (model)
             {
@@ -85,15 +85,15 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
     case 12:
     case 14:
         {
-            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
+            ComboBox *comboBox = static_cast<ComboBox*>(editor);
             comboBox->setCurrentText(value.toString());
         }
         break;
 
     case 13:
         {
-            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
-            PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
+            ComboBox *comboBox = static_cast<ComboBox*>(editor);
+            SqlQueryModel *model = static_cast<SqlQueryModel*>(comboBox->model());
 
             if (model)
             {
@@ -117,24 +117,24 @@ void ProjectDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex 
         break;
     default:
         {
-            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
+            QLineEdit* lineedit = static_cast<QLineEdit*>(editor);
             lineedit->setText(value.toString());
         }
     }
 }
 
-void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const
+void ProjectDetailsDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
     QVariant key_val;
 
-    switch (t_index.column())
+    switch (index.column())
     {
     case 2:
         {
-            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
+            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(editor);
             key_val = lineedit->toPlainText();
 
-            QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+            QWidget* window = static_cast<QWidget*>(editor)->topLevelWidget();
             if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
                 dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
         }
@@ -142,7 +142,7 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
     case 3:
     case 4:
         {
-            PNDateEditEx* dateEdit = static_cast<PNDateEditEx*>(t_editor);
+            DateEditEx* dateEdit = static_cast<DateEditEx*>(editor);
             if (!dateEdit->isNull())
                 key_val = dateEdit->date().toString("MM/dd/yyyy");
             else
@@ -151,7 +151,7 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
         break;
     case 5:  // primary contact
         {
-            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
+            ComboBox *comboBox = static_cast<ComboBox*>(editor);
             int i;
 
             if (!comboBox->currentText().isEmpty() )
@@ -171,13 +171,13 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
     case 12:
     case 14:
         {
-            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
+            ComboBox *comboBox = static_cast<ComboBox*>(editor);
             key_val = comboBox->itemText(comboBox->currentIndex());
         }
         break;
     case 13:
         {
-            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
+            ComboBox *comboBox = static_cast<ComboBox*>(editor);
             int i;
 
             if (!comboBox->currentText().isEmpty() )
@@ -194,10 +194,10 @@ void ProjectDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel 
         break;
     default:
         {
-            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
+            QLineEdit* lineedit = static_cast<QLineEdit*>(editor);
             key_val = lineedit->text();
         }
     }
 
-    t_model->setData(t_index, key_val, Qt::EditRole);
+    model->setData(index, key_val, Qt::EditRole);
 }

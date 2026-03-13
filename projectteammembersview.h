@@ -4,25 +4,25 @@
 #ifndef PROJECTTEAMMEMBERSVIEW_H
 #define PROJECTTEAMMEMBERSVIEW_H
 
-#include "pntableview.h"
-#include "pncomboboxdelegate.h"
-#include "pncheckboxdelegate.h"
-#include "pnplaintexteditdelegate.h"
+#include "tableview.h"
+#include "sqlcomboboxdelegate.h"
+#include "checkboxdelegate.h"
+#include "plaintexteditdelegate.h"
 #include <QObject>
 
-class ProjectTeamMembersView : public PNTableView
+class ProjectTeamMembersView : public TableView
 {
 public:
-    ProjectTeamMembersView(QWidget* t_parent = nullptr);
+    ProjectTeamMembersView(QWidget* parent = nullptr);
     ~ProjectTeamMembersView();
 
-    void setModel(QAbstractItemModel *t_model) override;
+    void setModel(QAbstractItemModel *model) override;
 
 private:
     // projects list panel delegates
-    PNComboBoxDelegate* m_unfiltered_people_delegate = nullptr;
-    PNCheckBoxDelegate* m_receive_status_delegate = nullptr;
-    PNPlainTextEditDelegate* m_role_delegate = nullptr;
+    SqlComboBoxDelegate* m_unfilteredPeopleDelegate = nullptr;
+    CheckBoxDelegate* m_receiveStatusDelegate = nullptr;
+    PlainTextEditDelegate* m_roleDelegate = nullptr;
 
 public slots:
     void slotNewRecord() override;

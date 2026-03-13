@@ -7,6 +7,7 @@
 #include <QMutexLocker>
 #include <QWaitCondition>
 #include <QTimer>
+#include <atomic>
 
 #include "QLogger.h"
 #include "QLoggerWriter.h"
@@ -30,36 +31,36 @@ class PluginMenu
 {
 public:
     PluginMenu() {};
-    PluginMenu& operator=(const PluginMenu& t_pluginmenu)
+    PluginMenu& operator=(const PluginMenu& pluginmenu)
     {
-        if (this != &t_pluginmenu)
+        if (this != &pluginmenu)
         {
-            m_menu_title = t_pluginmenu.menutitle();
-            m_functionname = t_pluginmenu.functionname();;
-            m_tablefilter = t_pluginmenu.tablefilter();
-            m_submenu = t_pluginmenu.submenu();
-            m_dataexport = t_pluginmenu.dataexport();
-            m_parameter = t_pluginmenu.parameter();
+            m_menuTitle = pluginmenu.menutitle();
+            m_functionname = pluginmenu.functionname();;
+            m_tablefilter = pluginmenu.tablefilter();
+            m_submenu = pluginmenu.submenu();
+            m_dataexport = pluginmenu.dataexport();
+            m_parameter = pluginmenu.parameter();
         }
 
         return *this;
     }
 
-    void setMenuTitle(const QString& t_menutitle) {m_menu_title = t_menutitle; }
-    QString menutitle() const { return m_menu_title; }
-    void setFunctionName(const QString& t_functionmame) {m_functionname = t_functionmame;}
+    void setMenuTitle(const QString& menutitle) {m_menuTitle = menutitle; }
+    QString menutitle() const { return m_menuTitle; }
+    void setFunctionName(const QString& functionmame) {m_functionname = functionmame;}
     QString functionname() const { return m_functionname;}
-    void setTableFilter(const QString& t_tablefilter) {m_tablefilter = t_tablefilter;}
+    void setTableFilter(const QString& tablefilter) {m_tablefilter = tablefilter;}
     QString tablefilter() const { return m_tablefilter;}
-    void setSubmenu(const QString& t_submenu) {m_submenu = t_submenu;}
+    void setSubmenu(const QString& submenu) {m_submenu = submenu;}
     QString submenu() const {return m_submenu;}
-    void setDataExport(const QString& t_dataexport) {m_dataexport = t_dataexport;}
+    void setDataExport(const QString& dataexport) {m_dataexport = dataexport;}
     QString dataexport() const {return m_dataexport;}
-    void setParameter(const QString& t_parameter) {m_parameter = t_parameter;}
+    void setParameter(const QString& parameter) {m_parameter = parameter;}
     QString parameter() const {return m_parameter;}
 
 private:
-    QString m_menu_title;
+    QString m_menuTitle;
     QString m_functionname;
     QString m_tablefilter;
     QString m_submenu;
@@ -71,51 +72,51 @@ class PythonPlugin
 {
 public:
     PythonPlugin() { };
-    PythonPlugin& operator=(const PythonPlugin& t_original)
+    PythonPlugin& operator=(const PythonPlugin& original)
     {
-        if (this != &t_original)
+        if (this != &original)
         {
-            m_name = t_original.name();
-            m_description = t_original.description();
-            m_members = t_original.members();
-            m_submenu = t_original.submenu();
-            m_menus = t_original.menus();
-            m_imported_modules = t_original.imports();
+            m_name = original.name();
+            m_description = original.description();
+            m_members = original.members();
+            m_submenu = original.submenu();
+            m_menus = original.menus();
+            m_importedModules = original.imports();
         }
 
         return *this;
     }
 
-    void setName(const QString& t_name) { m_name = t_name; }
+    void setName(const QString& name) { m_name = name; }
     QString name() const { return m_name; }
-    void setDescription(const QString& t_description) { m_description = t_description; }
+    void setDescription(const QString& description) { m_description = description; }
     QString description() const { return m_description; }
-    void addMember(const QString& t_member ) { m_members.append(t_member); }
+    void addMember(const QString& member ) { m_members.append(member); }
     QStringList members() const { return m_members; }
-    bool hasMember(const QString& t_member) const { return m_members.contains(t_member); }
-    void setSubmenu(const QString& t_submenu) { m_submenu = t_submenu; }
+    bool hasMember(const QString& member) const { return m_members.contains(member); }
+    void setSubmenu(const QString& submenu) { m_submenu = submenu; }
     QString submenu() const { return m_submenu; }
-    void setTimerDelay(const int t_timerdelay) { m_timerdelay = t_timerdelay; }
+    void setTimerDelay(const int timerdelay) { m_timerdelay = timerdelay; }
     int timerdelay() { return m_timerdelay; }
     QList<PluginMenu> menus() const { return m_menus; }
-    void addMenu(const QString& t_menutitle, const QString& t_functionname, const QString& t_tablefilter, const QString& t_submenu, const QString& t_dataexport, const QString& t_parameter)
+    void addMenu(const QString& menutitle, const QString& functionname, const QString& tablefilter, const QString& submenu, const QString& dataexport, const QString& parameter)
     {
         PluginMenu m;
 
-        m.setMenuTitle(t_menutitle);
-        m.setFunctionName(t_functionname);
-        m.setTableFilter(t_tablefilter);
-        m.setSubmenu(t_submenu);
-        m.setDataExport(t_dataexport);
-        m.setParameter(t_parameter);
+        m.setMenuTitle(menutitle);
+        m.setFunctionName(functionname);
+        m.setTableFilter(tablefilter);
+        m.setSubmenu(submenu);
+        m.setDataExport(dataexport);
+        m.setParameter(parameter);
 
         m_menus.append(m);
     }
 
-    QStringList imports() const { return m_imported_modules; }
-    void addImport(const QString& t_import)
+    QStringList imports() const { return m_importedModules; }
+    void addImport(const QString& import)
     {
-        m_imported_modules.append(t_import);
+        m_importedModules.append(import);
     }
 
     void clearMenu()
@@ -131,7 +132,7 @@ private:
     QString m_submenu;
 
     QList<PluginMenu> m_menus;
-    QStringList m_imported_modules;
+    QStringList m_importedModules;
 
 };
 
@@ -148,32 +149,32 @@ public:
 
     void emitError();
     QMutex& loadingMutex() { return m_loadingmutex; }
-    void checkForMember(const QString& t_member);
+    void checkForMember(const QString& member);
     bool isLoaded() { return m_isloaded; }
 private:
     QString m_PluginLocation;
     PyObject* m_PNPluginModule = nullptr;
 
     // these events should happen from the event loop
-    int setPythonVariable(const QString& t_variablename, const QString& t_value);
-    QString getPythonVariable(const QString& t_variablename);
-    QStringList getPythonStringList(const QString& t_variablename);
+    int setPythonVariable(const QString& variablename, const QString& value);
+    QString getPythonVariable(const QString& variablename);
+    QStringList getPythonStringList(const QString& variablename);
     void findImportedModules(const QString& pythonFilePath);
 
 signals:
     // signals to caller
-    void returnXml(const QString& t_xml);
-    void loadComplete(const PythonPlugin& t_plugin);
+    void returnXml(const QString& xml);
+    void loadComplete(const PythonPlugin& plugin);
     void unloadComplete();
 
 public slots:
-    void loadModule(const QString& t_modulepath);
+    void loadModule(const QString& modulepath);
     void unloadModule();
     void reloadModule();
     bool isLoading() { return m_isloading; }
 
-    void sendMethodXml(const QString& t_method, const QString& t_xml, const QString& t_parameter);
-    void sendMethod(const QString& t_method, const QString& t_parameter);
+    void sendMethodXml(const QString& method, const QString& xml, const QString& parameter);
+    void sendMethod(const QString& method, const QString& parameter);
 
 private slots:
     void timerUpdate();
@@ -181,8 +182,8 @@ private slots:
 private:
     QMutex m_loadingmutex;
     QWaitCondition m_loadwait;
-    bool m_isloading = false;
-    bool m_isloaded = false;
+    std::atomic<bool> m_isloading{false};
+    std::atomic<bool> m_isloaded{false};
 
     QString m_modulename;
     QString m_modulepath;
@@ -190,7 +191,7 @@ private:
     PythonPlugin m_plugin;
 
     QTimer* m_timer = nullptr;
-    long m_minute_counter = 0;
+    long m_minuteCounter = 0;
 };
 
 #endif // PYTHONWORKER_H

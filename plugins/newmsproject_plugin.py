@@ -99,7 +99,7 @@ if (platform.system() == 'Windows'):
     #
     pnc = ProjectNotesCommon()
 
-    def menuMSProject(xmlstr, parameter):
+    def menu_ms_project(xmlstr, parameter):
 
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
@@ -180,14 +180,14 @@ if (platform.system() == 'Windows'):
 
         return docxml.toString()
 
-    def menuSettings(parameter):
+    def menu_settings(parameter):
         nms.show()
         return ""
 
     nms = NewMSProjectSettings()
 
-    pluginmenus.append({"menutitle" : "MS Project", "function" : "menuMSProject", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
-    pluginmenus.append({"menutitle" : "New MS Project", "function" : "menuSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
+    pluginmenus.append({"menutitle" : "MS Project", "function" : "menu_ms_project", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
+    pluginmenus.append({"menutitle" : "New MS Project", "function" : "menu_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
 
 #setup test data
 if __name__ == '__main__':
@@ -201,6 +201,6 @@ if __name__ == '__main__':
     with open("C:\\Users\\pamcki\\OneDrive - Cornerstone Controls\\Documents\\Work In Progress\\XML\\project.xml", 'r', encoding='utf-8') as file:
         xml_content = file.read()
 
-    menuMSProject(xml_content, "")
+    menu_ms_project(xml_content, "")
 
     app.exec()

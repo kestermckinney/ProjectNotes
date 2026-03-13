@@ -57,7 +57,7 @@ if (platform.system() == 'Windows'):
             if not openfile is None:
                 QDesktopServices.openUrl(QUrl("file:///" + openfile))
 
-    def menuOpenMSProject(xmlstr, parameter):
+    def menu_open_ms_project(xmlstr, parameter):
         openfile = None
         filelist = []
         xmlval = QDomDocument()
@@ -98,7 +98,7 @@ if (platform.system() == 'Windows'):
 
         return ""
 
-    pluginmenus.append({"menutitle" : "Open MS Project", "function" : "menuOpenMSProject", "tablefilter" : "projects/project_locations", "submenu" : "", "dataexport" : "projects"})
+    pluginmenus.append({"menutitle" : "Open MS Project", "function" : "menu_open_ms_project", "tablefilter" : "projects/project_locations", "submenu" : "", "dataexport" : "projects"})
 
     pnc = ProjectNotesCommon()
     sp = SelectProject(pnc.get_main_window())

@@ -4,17 +4,17 @@
 #ifndef PEOPLEPAGE_H
 #define PEOPLEPAGE_H
 
-#include "pnbasepage.h"
+#include "basepage.h"
 
-class PeoplePage : public PNBasePage
+class PeoplePage : public BasePage
 {
 public:
     PeoplePage();
-    void openRecord(QVariant &t_record_id) override;
+    void openRecord(QVariant &recordId) override;
     void setPageTitle() override;
-    void buildPluginMenu(PluginManager* t_pm, QMenu* t_menu) override {};  // don't show a data integrated menu
+    void buildPluginMenu(PluginManager* pm, QMenu* menu) override {};  // don't show a data integrated menu
 
-    virtual void setupModels( Ui::MainWindow *t_ui ) override;
+    virtual void setupModels( Ui::MainWindow *ui ) override;
 public slots:
     void setButtonAndMenuStates() override;
 

@@ -4,7 +4,7 @@
 #include "projectnotesview.h"
 #include "projectnotesmodel.h"
 
-ProjectNotesView::ProjectNotesView(QWidget* t_parent) : PNTableView(t_parent)
+ProjectNotesView::ProjectNotesView(QWidget* parent) : TableView(parent)
 {
     setObjectName("tableViewProjectNotes");
     setHasOpen(true);
@@ -12,16 +12,16 @@ ProjectNotesView::ProjectNotesView(QWidget* t_parent) : PNTableView(t_parent)
 
 ProjectNotesView::~ProjectNotesView()
 {
-    if (m_meeting_date_delegate) delete m_meeting_date_delegate;
-    if (m_internal_item_delegate) delete m_internal_item_delegate;
-    if (m_title_delegate) delete m_title_delegate;
+    if (m_meetingDateDelegate) delete m_meetingDateDelegate;
+    if (m_internalItemDelegate) delete m_internalItemDelegate;
+    if (m_titleDelegate) delete m_titleDelegate;
 }
 
-void ProjectNotesView::setModel(QAbstractItemModel *t_model)
+void ProjectNotesView::setModel(QAbstractItemModel *model)
 {
-    if (t_model)
+    if (model)
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
 
         setColumnHidden(0, true);
         setColumnHidden(1, true);
@@ -32,25 +32,25 @@ void ProjectNotesView::setModel(QAbstractItemModel *t_model)
         // see setbuttonitems for visible columns
 
         // projects list panel delagets
-        m_meeting_date_delegate = new PNDateEditDelegate(this);
-        m_internal_item_delegate = new PNCheckBoxDelegate(this);
-        m_title_delegate = new PNPlainTextEditDelegate(this);
+        m_meetingDateDelegate = new DateEditDelegate(this);
+        m_internalItemDelegate = new CheckBoxDelegate(this);
+        m_titleDelegate = new PlainTextEditDelegate(this);
 
         // assign delegates to columns
-        setItemDelegateForColumn(2, m_title_delegate);
-        setItemDelegateForColumn(3, m_meeting_date_delegate);
-        setItemDelegateForColumn(5, m_internal_item_delegate);
+        setItemDelegateForColumn(2, m_titleDelegate);
+        setItemDelegateForColumn(3, m_meetingDateDelegate);
+        setItemDelegateForColumn(5, m_internalItemDelegate);
     }
     else
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
     }
 }
 
 void ProjectNotesView::slotNewRecord()
 {
     QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
-    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
+    SqlQueryModel* currentmodel = dynamic_cast<SqlQueryModel*>(sortmodel->sourceModel());
 
     QVariant fk_value1 = dynamic_cast<ProjectNotesModel*>(currentmodel)->getFilter(1); // get the project id
 

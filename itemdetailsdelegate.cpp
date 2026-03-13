@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "itemdetailsdelegate.h"
-#include "pndatabaseobjects.h"
-#include "pndateeditex.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
+#include "dateeditex.h"
+#include "databaseobjects.h"
 #include "mainwindow.h"
-#include "pnbasepage.h"
-#include "pncombobox.h"
+#include "basepage.h"
+#include "combobox.h"
 
 #include <QLineEdit>
 #include <QCheckBox>
@@ -20,18 +20,18 @@ ItemDetailsDelegate::ItemDetailsDelegate(QObject *parent) : QStyledItemDelegate(
 
 }
 
-void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_index) const
+void ItemDetailsDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
-    QVariant value = t_index.model()->data(t_index);
+    QVariant value = index.model()->data(index);
 
-    switch (t_index.column())
+    switch (index.column())
     {
     case 1:
         {
-            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
+            QLineEdit* lineedit = static_cast<QLineEdit*>(editor);
             lineedit->setText(value.toString());
 
-            QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+            QWidget* window = static_cast<QWidget*>(editor)->topLevelWidget();
             if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
                 dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
         }
@@ -42,21 +42,21 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
     case 12:
         {
             // handle the date edit text box
-            PNDateEditEx* dateEdit = static_cast<PNDateEditEx*>(t_editor);
+            DateEditEx* dateEdit = static_cast<DateEditEx*>(editor);
 
             if (value.isNull())
                 dateEdit->setDateTime(QDateTime());
             else
             {
-                QDateTime date_value = PNSqlQueryModel::parseDateTime(value.toString());
+                QDateTime date_value = SqlQueryModel::parseDateTime(value.toString());
                 dateEdit->setDate(date_value.date());
             }
             break;
         }
     case 13: // meeting
         {
-            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
-            PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
+            ComboBox *comboBox = static_cast<ComboBox*>(editor);
+            SqlQueryModel *model = static_cast<SqlQueryModel*>(comboBox->model());
 
             if (model)
             {
@@ -80,8 +80,8 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
         break;
     case 14: // project number
         {
-            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
-            PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
+            ComboBox *comboBox = static_cast<ComboBox*>(editor);
+            SqlQueryModel *model = static_cast<SqlQueryModel*>(comboBox->model());
 
             if (model)
             {
@@ -107,15 +107,15 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
     case 8:
     case 9:
         {
-            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
+            ComboBox *comboBox = static_cast<ComboBox*>(editor);
             comboBox->setCurrentText(value.toString());
         }
         break;
     case 4:
     case 7:
         {
-            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
-            PNSqlQueryModel *model = static_cast<PNSqlQueryModel*>(comboBox->model());
+            ComboBox *comboBox = static_cast<ComboBox*>(editor);
+            SqlQueryModel *model = static_cast<SqlQueryModel*>(comboBox->model());
 
             if (model)
             {
@@ -139,7 +139,7 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
         break;
     case 15:
         {
-            QCheckBox *checkbox = static_cast<QCheckBox*>(t_editor);
+            QCheckBox *checkbox = static_cast<QCheckBox*>(editor);
 
             if (value == "1")
                 checkbox->setCheckState(Qt::Checked);
@@ -150,7 +150,7 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
     case 3:
     case 6:
         {
-            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
+            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(editor);
 
             // don't resent buffers if text hasn't changed
             if (value.toString().compare(lineedit->toPlainText()) != 0)
@@ -159,24 +159,24 @@ void ItemDetailsDelegate::setEditorData(QWidget *t_editor, const QModelIndex &t_
         break;
     default:
         {
-            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
+            QLineEdit* lineedit = static_cast<QLineEdit*>(editor);
             lineedit->setText(value.toString());
         }
     }
 }
 
-void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_model, const QModelIndex &t_index) const
+void ItemDetailsDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
     QVariant key_val;
 
-    switch (t_index.column())
+    switch (index.column())
     {
     case 1:
         {
-            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
+            QLineEdit* lineedit = static_cast<QLineEdit*>(editor);
             key_val = lineedit->text();
 
-            QWidget* window = static_cast<QWidget*>(t_editor)->topLevelWidget();
+            QWidget* window = static_cast<QWidget*>(editor)->topLevelWidget();
             if (dynamic_cast<MainWindow*>(window)->navigateCurrentPage())
                 dynamic_cast<MainWindow*>(window)->navigateCurrentPage()->setPageTitle();
         }
@@ -187,7 +187,7 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
     case 12:
         {
             // handle date fields
-            PNDateEditEx* dateEdit = static_cast<PNDateEditEx*>(t_editor);
+            DateEditEx* dateEdit = static_cast<DateEditEx*>(editor);
             if (!dateEdit->isNull())
                 key_val = dateEdit->date().toString("MM/dd/yyyy");
             else
@@ -196,7 +196,7 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
         break;
     case 13: // meeting
         {
-            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
+            ComboBox *comboBox = static_cast<ComboBox*>(editor);
             int i;
 
             if (!comboBox->currentText().isEmpty() )
@@ -213,13 +213,13 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
         break;
     case 14: // project number
         {
-            QModelIndex i_qi = t_model->index(t_index.row(), 0);
-            QModelIndex p_qi = t_model->index(t_index.row(), 14);
+            QModelIndex i_qi = model->index(index.row(), 0);
+            QModelIndex p_qi = model->index(index.row(), 14);
 
-            QVariant item_id = t_model->data(i_qi);
-            QVariant project_id = t_model->data(p_qi);
+            QVariant item_id = model->data(i_qi);
+            QVariant project_id = model->data(p_qi);
 
-            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
+            ComboBox *comboBox = static_cast<ComboBox*>(editor);
             int i;
 
             if (!comboBox->currentText().isEmpty() )
@@ -238,20 +238,20 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
             {
                 if ( !verifyProjectNumber(key_val, item_id))
                 {
-                    setEditorData(t_editor, t_index); // set the value back
+                    setEditorData(editor, index); // set the value back
                     return;
                 }
 
-                PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(dynamic_cast<PNSortFilterProxyModel*>(t_model)->sourceModel())->getDBOs();
+                DatabaseObjects* dbo = qobject_cast<SqlQueryModel*>(dynamic_cast<SortFilterProxyModel*>(model)->sourceModel())->getDBOs();
 
                 // reset the filters for all of the drop downs
                 dbo->actionitemsdetailsmeetingsmodel()->setFilter(1, key_val.toString());
                 dbo->actionitemsdetailsmeetingsmodel()->refresh();
 
-                QModelIndex n_qi = t_model->index(t_index.row(), 13);
+                QModelIndex n_qi = model->index(index.row(), 13);
                 QVariant nothing;
 
-                t_model->setData(n_qi, nothing); // set the meeting to blank since it won't be in the new project
+                model->setData(n_qi, nothing); // set the meeting to blank since it won't be in the new project
             }
         }
         break;
@@ -259,14 +259,14 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
     case 8:
     case 9:
         {
-            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
+            ComboBox *comboBox = static_cast<ComboBox*>(editor);
             key_val = comboBox->itemText(comboBox->currentIndex());
         }
         break;
     case 4:
     case 7:
         {
-            PNComboBox *comboBox = static_cast<PNComboBox*>(t_editor);
+            ComboBox *comboBox = static_cast<ComboBox*>(editor);
             int i;
 
             if (!comboBox->currentText().isEmpty() )
@@ -283,7 +283,7 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
         break;
     case 15:
         {
-            QCheckBox *checkbox = static_cast<QCheckBox*>(t_editor);
+            QCheckBox *checkbox = static_cast<QCheckBox*>(editor);
 
             if ( checkbox->isChecked() )
                 key_val = "1";
@@ -294,23 +294,23 @@ void ItemDetailsDelegate::setModelData(QWidget *t_editor, QAbstractItemModel *t_
     case 3:
     case 6:
         {
-            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(t_editor);
+            QPlainTextEdit* lineedit = static_cast<QPlainTextEdit*>(editor);
             key_val = lineedit->toPlainText();
         }
         break;
     default:
         {
-            QLineEdit* lineedit = static_cast<QLineEdit*>(t_editor);
+            QLineEdit* lineedit = static_cast<QLineEdit*>(editor);
             key_val = lineedit->text();
         }
         break;
     }
 
-    t_model->setData(t_index, key_val, Qt::EditRole);
+    model->setData(index, key_val, Qt::EditRole);
 }
 
 
-bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& t_item_id) const
+bool ItemDetailsDelegate::verifyProjectNumber(QVariant& projectId, QVariant& itemId) const
 {
     QString msg;
     int issuestoresolve = 0;
@@ -322,8 +322,8 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
         DB_LOCK;
         QSqlQuery select(db);
         select.prepare("select identified_by, (select name from people p where p.people_id=identified_by) people_id_name from item_tracker where item_id = ? and identified_by not in (select people_id from project_people where project_id = ?)");
-        select.bindValue(0, t_item_id);
-        select.bindValue(1, t_project_id);
+        select.bindValue(0, itemId);
+        select.bindValue(1, projectId);
 
         if (select.exec())
         {
@@ -341,8 +341,8 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
         DB_LOCK;
         QSqlQuery select(db);
         select.prepare("select assigned_to, (select name from people p where p.people_id=assigned_to) people_id_name from item_tracker where item_id = ? and assigned_to not in (select people_id from project_people where project_id = ?)");
-        select.bindValue(0, t_item_id);
-        select.bindValue(1, t_project_id);
+        select.bindValue(0, itemId);
+        select.bindValue(1, projectId);
 
         if (select.exec())
         {
@@ -360,8 +360,8 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
         DB_LOCK;
         QSqlQuery select(db);
         select.prepare("select updated_by, (select name from people p where p.people_id=updated_by) people_id_name from item_tracker_updates where item_id = ? and updated_by not in (select people_id from project_people where project_id = ? )");
-        select.bindValue(0, t_item_id);
-        select.bindValue(1, t_project_id);
+        select.bindValue(0, itemId);
+        select.bindValue(1, projectId);
 
         if (select.exec())
         {
@@ -376,7 +376,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
 
     if (issuestoresolve)
     {
-        QMessageBox::critical(nullptr, QObject::tr("Cannot Reassign Project"), msg);
+        QMessageBox::critical(nullptr, QObject::tr("Cannot reassign project"), msg);
         return false;
     }
 
@@ -386,7 +386,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& t_project_id, QVariant& 
         DB_LOCK;
         QSqlQuery select(db);
         select.prepare("select note_id from item_tracker where item_id = ?");
-        select.bindValue(0, t_item_id);
+        select.bindValue(0, itemId);
 
         if (select.exec())
         {

@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "meetingattendeesview.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
-MeetingAttendeesView::MeetingAttendeesView(QWidget* t_parent) : PNTableView(t_parent)
+MeetingAttendeesView::MeetingAttendeesView(QWidget* parent) : TableView(parent)
 {
     setHasOpen(true);
     setKeyToOpenField(2);
@@ -12,14 +12,14 @@ MeetingAttendeesView::MeetingAttendeesView(QWidget* t_parent) : PNTableView(t_pa
 
 MeetingAttendeesView::~MeetingAttendeesView()
 {
-    if (m_unfiltered_people_delegate) delete m_unfiltered_people_delegate;
+    if (m_unfilteredPeopleDelegate) delete m_unfilteredPeopleDelegate;
 }
 
-void MeetingAttendeesView::setModel(QAbstractItemModel *t_model)
+void MeetingAttendeesView::setModel(QAbstractItemModel *model)
 {
-    if (t_model)
+    if (model)
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
 
         setColumnHidden(0, true);
         setColumnHidden(1, true);
@@ -32,23 +32,23 @@ void MeetingAttendeesView::setModel(QAbstractItemModel *t_model)
 
         // setup model lists
 
-        PNDatabaseObjects* dbo = qobject_cast<PNSqlQueryModel*>(dynamic_cast<PNSortFilterProxyModel*>(t_model)->sourceModel())->getDBOs();
+        DatabaseObjects* dbo = qobject_cast<SqlQueryModel*>(dynamic_cast<SortFilterProxyModel*>(model)->sourceModel())->getDBOs();
 
         // projects list panel delagets
-        m_unfiltered_people_delegate = new PNComboBoxDelegate(this, dbo->teamsmodelproxy(), 1, 3);
+        m_unfilteredPeopleDelegate = new SqlComboBoxDelegate(this, dbo->teamsmodelproxy(), 1, 3);
 
-        setItemDelegateForColumn(2, m_unfiltered_people_delegate);
+        setItemDelegateForColumn(2, m_unfilteredPeopleDelegate);
     }
     else
     {
-        PNTableView::setModel(t_model);
+        TableView::setModel(model);
     }
 }
 
 void MeetingAttendeesView::slotNewRecord()
 {
     QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
-    PNSqlQueryModel* currentmodel = dynamic_cast<PNSqlQueryModel*>(sortmodel->sourceModel());
+    SqlQueryModel* currentmodel = dynamic_cast<SqlQueryModel*>(sortmodel->sourceModel());
 
     QVariant fk_value1 = dynamic_cast<MeetingAttendeesModel*>(currentmodel)->getFilter(1); // get the project id
 

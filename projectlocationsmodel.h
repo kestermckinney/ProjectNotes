@@ -4,14 +4,14 @@
 #ifndef PROJECTLOCATIONSMODEL_H
 #define PROJECTLOCATIONSMODEL_H
 
-#include "pnsqlquerymodel.h"
+#include "sqlquerymodel.h"
 
-class ProjectLocationsModel : public PNSqlQueryModel
+class ProjectLocationsModel : public SqlQueryModel
 {
 public:
-    ProjectLocationsModel(PNDatabaseObjects* t_dbo);
-    const QModelIndex newRecord(const QVariant* t_fk_value1 = nullptr, const QVariant* t_fk_value2 = nullptr) override;
-    bool setData(const QModelIndex &t_index, const QVariant &t_value, int t_role) override;
+    ProjectLocationsModel(DatabaseObjects* dbo);
+    const QModelIndex newRecord(const QVariant* fkValue1 = nullptr, const QVariant* fkValue2 = nullptr) override;
+    bool setData(const QModelIndex &index, const QVariant &value, int role) override;
 };
 
 #endif // PROJECTLOCATIONSMODEL_H

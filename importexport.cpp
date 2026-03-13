@@ -1,10 +1,10 @@
 #include "importexport.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 
-IXTreeNode::IXTreeNode( const QString& t_nodename, PNSqlQueryModel* t_dataview )
+IXTreeNode::IXTreeNode( const QString& nodename, SqlQueryModel* dataview )
 {
-    m_ViewName = t_nodename;
-    m_DataView = t_dataview;
+    m_ViewName = nodename;
+    m_DataView = dataview;
 
     m_NextNode = nullptr;
     m_ChildNode = nullptr;
@@ -19,30 +19,30 @@ IXTreeNode::~IXTreeNode()
         delete m_ChildNode;
 }
 
-IXTreeNode* IXTreeNode::addChild(const QString& t_name, PNSqlQueryModel* t_dataview )
+IXTreeNode* IXTreeNode::addChild(const QString& name, SqlQueryModel* dataview )
 {
-    m_ChildNode = new IXTreeNode( t_name, t_dataview  );
+    m_ChildNode = new IXTreeNode( name, dataview  );
 
     return m_ChildNode;
 }
 
-IXTreeNode* IXTreeNode::addNext(const QString& t_name, PNSqlQueryModel* t_dataview )
+IXTreeNode* IXTreeNode::addNext(const QString& name, SqlQueryModel* dataview )
 {
-    m_NextNode = new IXTreeNode( t_name, t_dataview );
+    m_NextNode = new IXTreeNode( name, dataview );
 
     return m_NextNode;
 }
 
-PNSqlQueryModel* IXTreeNode::findView(const QString& t_name)
+SqlQueryModel* IXTreeNode::findView(const QString& name)
 {
     IXTreeNode* currentnode = getFirst();
 
     while (currentnode)
     {
-        if (currentnode->getViewName() == t_name)
+        if (currentnode->getViewName() == name)
             return currentnode->getDataView();
 
-        PNSqlQueryModel* childnode = currentnode->findView(t_name);
+        SqlQueryModel* childnode = currentnode->findView(name);
         if (childnode)
             return childnode;
 
@@ -97,71 +97,71 @@ IXTree::IXTree()
 
     // setup all the possible export/import structures
     // start tree at client level
-    m_RelationshipNodes = new IXTreeNode( QString("clients"), (PNSqlQueryModel*)ix_clients );
-        level2 = m_RelationshipNodes->addChild(QString("clients/people"), (PNSqlQueryModel*)ix_clients_people);
+    m_RelationshipNodes = new IXTreeNode( QString("clients"), (SqlQueryModel*)ix_clients );
+        level2 = m_RelationshipNodes->addChild(QString("clients/people"), (SqlQueryModel*)ix_clients_people);
         level2->setForeignKey(QString("client_id"), QString("client_id"));
 
     // start tree a people level
-    level1 = m_RelationshipNodes->addNext( QString("people"), (PNSqlQueryModel*)ix_people );
+    level1 = m_RelationshipNodes->addNext( QString("people"), (SqlQueryModel*)ix_people );
 
     // start tree at the project level
-    level1 = level1->addNext(QString("projects"), (PNSqlQueryModel*)ix_projects);
-        level2 = level1->addChild(QString("projects/item_tracker"), (PNSqlQueryModel*)ix_projects_itemtracker);
+    level1 = level1->addNext(QString("projects"), (SqlQueryModel*)ix_projects);
+        level2 = level1->addChild(QString("projects/item_tracker"), (SqlQueryModel*)ix_projects_itemtracker);
         level2->setForeignKey(QString("project_id"), QString("project_id"));
 
-            level3 = level2->addChild(QString("projects/item_tracker/item_tracker_updates"), (PNSqlQueryModel*)ix_projects_itemtracker_itemtrackerupdates);
+            level3 = level2->addChild(QString("projects/item_tracker/item_tracker_updates"), (SqlQueryModel*)ix_projects_itemtracker_itemtrackerupdates);
             level3->setForeignKey(QString("item_id"), QString("item_id"));
 
-        level2 = level2->addNext(QString("ix_project_notes"), (PNSqlQueryModel*)ix_projects_projectnotes);
+        level2 = level2->addNext(QString("ix_project_notes"), (SqlQueryModel*)ix_projects_projectnotes);
         level2->setForeignKey(QString("project_id"), QString("project_id"));
 
-            level3 = level2->addChild(QString("ix_meeting_attendees"), (PNSqlQueryModel*)ix_meetingattendees);
+            level3 = level2->addChild(QString("ix_meeting_attendees"), (SqlQueryModel*)ix_meetingattendees);
             level3->setForeignKey(QString("note_id"), QString("note_id"));
 
-            level3 = level3->addNext(QString("ix_item_tracker"), (PNSqlQueryModel*)ix_itemtracker);
+            level3 = level3->addNext(QString("ix_item_tracker"), (SqlQueryModel*)ix_itemtracker);
             level3->setForeignKey(QString("note_id"), QString("note_id"));
 
-                level4 = level3->addChild(QString("ix_item_tracker_updates"), (PNSqlQueryModel*)ix_itemtrackerupdates);
+                level4 = level3->addChild(QString("ix_item_tracker_updates"), (SqlQueryModel*)ix_itemtrackerupdates);
                 level4->setForeignKey(QString("item_id"), QString("item_id"));
 
-        level2 = level2->addNext(QString("ix_project_locations"), (PNSqlQueryModel*)ix_projectlocations);
+        level2 = level2->addNext(QString("ix_project_locations"), (SqlQueryModel*)ix_projectlocations);
         level2->setForeignKey(QString("project_id"), QString("project_id"));
 
-        level2 = level2->addNext(QString("ix_project_people"), (PNSqlQueryModel*)ix_project_people);
+        level2 = level2->addNext(QString("ix_project_people"), (SqlQueryModel*)ix_project_people);
         level2->setForeignKey(QString("project_id"), QString("project_id"));
 
-        level2 = level2->addNext(QString("ix_status_report_items"), (PNSqlQueryModel*)ix_statusreportitems);
+        level2 = level2->addNext(QString("ix_status_report_items"), (SqlQueryModel*)ix_statusreportitems);
         level2->setForeignKey(QString("project_id"), QString("project_id"));
 
     // start tree at the item tracker level
-    level1 = level1->addNext(QString("ix_item_tracker"), (PNSqlQueryModel*)ix_itemtracker);
+    level1 = level1->addNext(QString("ix_item_tracker"), (SqlQueryModel*)ix_itemtracker);
 
-        level2 = level1->addChild(QString("ix_item_tracker_updates"), (PNSqlQueryModel*)ix_itemtrackerupdates);
+        level2 = level1->addChild(QString("ix_item_tracker_updates"), (SqlQueryModel*)ix_itemtrackerupdates);
         level2->setForeignKey(QString("item_id"), QString("item_id"));
 
     // start tree at the project notes level
-    level1 = level1->addNext(QString("ix_project_notes"), (PNSqlQueryModel*)ix_projectnotes);
+    level1 = level1->addNext(QString("ix_project_notes"), (SqlQueryModel*)ix_projectnotes);
 
-        level2 = level1->addChild(QString("ix_meeting_attendees"), (PNSqlQueryModel*)ix_meetingattendees);
+        level2 = level1->addChild(QString("ix_meeting_attendees"), (SqlQueryModel*)ix_meetingattendees);
         level2->setForeignKey(QString("note_id"), QString("note_id"));
 
-        level2 = level2->addNext(QString("ix_item_tracker"), (PNSqlQueryModel*)ix_itemtracker);
+        level2 = level2->addNext(QString("ix_item_tracker"), (SqlQueryModel*)ix_itemtracker);
         level2->setForeignKey(QString("note_id"), QString("note_id"));
 
-            level3 = level2->addChild(QString("ix_item_tracker_updates"), (PNSqlQueryModel*)ix_itemtrackerupdates);
+            level3 = level2->addChild(QString("ix_item_tracker_updates"), (SqlQueryModel*)ix_itemtrackerupdates);
             level3->setForeignKey(QString("item_id"), QString("item_id"));
 
     // start tree at the meeting attendees level
-    level1 = level1->addNext(QString("ix_meeting_attendees"), (PNSqlQueryModel*)ix_meetingattendees);
+    level1 = level1->addNext(QString("ix_meeting_attendees"), (SqlQueryModel*)ix_meetingattendees);
 
     // start tree at project project locations
-    level1 = level1->addNext(QString("ix_project_locations"), (PNSqlQueryModel*)ix_projectlocations);
+    level1 = level1->addNext(QString("ix_project_locations"), (SqlQueryModel*)ix_projectlocations);
 
     // start tree at project level
-    level1 = level1->addNext(QString("ix_project_people"), (PNSqlQueryModel*)ix_project_people);
+    level1 = level1->addNext(QString("ix_project_people"), (SqlQueryModel*)ix_project_people);
 
     // start tree at status report level
-    level1 = level1->addNext(QString("ix_status_report_items"), (PNSqlQueryModel*)ix_statusreportitems);
+    level1 = level1->addNext(QString("ix_status_report_items"), (SqlQueryModel*)ix_statusreportitems);
 }
 
 IXTree::~IXTree()

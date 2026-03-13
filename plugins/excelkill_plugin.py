@@ -49,7 +49,7 @@ if (platform.system() == 'Windows'):
     pne = ProjectNotesExcelTools()
 
     def event_menuclick(parameter):
-        pne.killexcelautomation()
+        pne.kill_excel_automation()
         return ""
 
 # call when testing outside of Project Notes

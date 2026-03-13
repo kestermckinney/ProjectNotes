@@ -1,5 +1,5 @@
 #include "trackeritemcommentsmodel.h"
-#include "pndatabaseobjects.h"
+#include "databaseobjects.h"
 #include <QDateTime>
 #include "QLogger.h"
 #include "QLoggerWriter.h"
@@ -7,7 +7,7 @@
 using namespace QLogger;
 
 
-TrackerItemCommentsModel::TrackerItemCommentsModel(PNDatabaseObjects* t_dbo): PNSqlQueryModel(t_dbo)
+TrackerItemCommentsModel::TrackerItemCommentsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("TrackerItemCommentsModel");
     setOrderKey(35);
@@ -32,15 +32,15 @@ TrackerItemCommentsModel::TrackerItemCommentsModel(PNDatabaseObjects* t_dbo): PN
     setOrderBy("lastupdated_date");
 }
 
-const QModelIndex TrackerItemCommentsModel::newRecord(const QVariant* t_fk_value1, const QVariant* t_fk_value2)
+const QModelIndex TrackerItemCommentsModel::newRecord(const QVariant* fkValue1, const QVariant* fkValue2)
 {
-    Q_UNUSED(t_fk_value2);
+    Q_UNUSED(fkValue2);
 
     QVector<QVariant> qr = emptyrecord();
 
     QVariant curdate = QDateTime::currentSecsSinceEpoch();
 
-    qr[1] = *t_fk_value1;
+    qr[1] = *fkValue1;
     qr[2] = curdate; // default to today
     qr[4] = getDBOs()->getProjectManager(); // default updated by to the pm
 
@@ -48,22 +48,22 @@ const QModelIndex TrackerItemCommentsModel::newRecord(const QVariant* t_fk_value
 }
 
 
-bool TrackerItemCommentsModel::setData(const QModelIndex &t_index, const QVariant &t_value, int t_role)
+bool TrackerItemCommentsModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     QVariant curdate = QDateTime::currentDateTime().toString("MM/dd/yyyy");
-    QVariant oldvalue = data(t_index, t_role);
+    QVariant oldvalue = data(index, role);
 
-    //qDebug() << " for column " << t_index.column() << " got value " << t_value;
+    //qDebug() << " for column " << index.column() << " got value " << value;
 
-    if(PNSqlQueryModel::setData(t_index, t_value, t_role))
+    if(SqlQueryModel::setData(index, value, role))
     {
         // set the date the record was updated
-        if (t_index.column() != 2)
+        if (index.column() != 2)
         {
-            if (oldvalue != t_value) // don't change the update date if nothing changed
+            if (oldvalue != value) // don't change the update date if nothing changed
             {
-                QModelIndex qmi = index(t_index.row(), 2);
-                PNSqlQueryModel::setData(qmi, curdate, t_role);
+                QModelIndex qmi = this->index(index.row(), 2);
+                SqlQueryModel::setData(qmi, curdate, role);
 
                 //qDebug() << "setting auto date " << curdate;
             }

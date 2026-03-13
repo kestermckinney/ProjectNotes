@@ -21,11 +21,11 @@ public:
     explicit FindReplaceDialog(QWidget *parent = nullptr);
     ~FindReplaceDialog();
 
-    qsizetype getCRLFCount(QString& t_searchstring, qsizetype t_start, qsizetype t_end);
-    bool doFind(bool t_quiet = false);
-    void showReplaceWindow(QLineEdit* t_line_edit);
-    void showReplaceWindow(QTextEdit* t_text_edit);
-    void showReplaceWindow(QPlainTextEdit* t_plain_text_edit);
+    qsizetype getCRLFCount(QString& searchstring, qsizetype start, qsizetype end);
+    bool doFind(bool quiet = false);
+    void showReplaceWindow(QLineEdit* lineEdit);
+    void showReplaceWindow(QTextEdit* textEdit);
+    void showReplaceWindow(QPlainTextEdit* plainTextEdit);
 
 private slots:
     void on_lineEditFind_returnPressed();
@@ -42,10 +42,10 @@ private:
     Ui::FindReplaceDialog *ui;
 
     // currently checking work
-    qsizetype m_start_current = 0;
-    qsizetype m_end_current = 0;
+    qsizetype m_startCurrent = 0;
+    qsizetype m_endCurrent = 0;
 
-    QWidget* m_find_widget = nullptr;
+    QWidget* m_findWidget = nullptr;
 };
 
 #endif // FINDREPLACEDIALOG_H

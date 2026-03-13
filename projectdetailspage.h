@@ -4,14 +4,14 @@
 #ifndef PROJECTDETAILSPAGE_H
 #define PROJECTDETAILSPAGE_H
 
-#include "pnbasepage.h"
+#include "basepage.h"
 #include <QObject>
 #include <QDataWidgetMapper>
 #include "projectdetailsdelegate.h"
 
 #include <QList>
 
-class ProjectDetailsPage : public PNBasePage
+class ProjectDetailsPage : public BasePage
 {
     Q_OBJECT
 
@@ -20,8 +20,8 @@ public:
     ~ProjectDetailsPage();
 
     void newRecord() override;
-    void setupModels( Ui::MainWindow *t_ui ) override;
-    void openRecord(QVariant& t_record_id) override;
+    void setupModels( Ui::MainWindow *ui ) override;
+    void openRecord(QVariant& recordId) override;
     void setButtonAndMenuStates() override;
     void setPageTitle() override;
     void submitRecord() override {if (m_mapperProjectDetails) m_mapperProjectDetails->submit(); }
@@ -31,7 +31,7 @@ private:
 
     QDataWidgetMapper* m_mapperProjectDetails = nullptr;
 
-    ProjectDetailsDelegate* m_project_details_delegate = nullptr;
+    ProjectDetailsDelegate* m_projectDetailsDelegate = nullptr;
 
 private slots:
     void on_tabWidgetProject_currentChanged(int index);

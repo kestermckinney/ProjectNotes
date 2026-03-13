@@ -4,18 +4,18 @@
 #ifndef CLIENTSLISTVIEW_H
 #define CLIENTSLISTVIEW_H
 
-#include "pntableview.h"
-#include "pnplaintexteditdelegate.h"
+#include "tableview.h"
+#include "plaintexteditdelegate.h"
 
-class ClientsListView : public PNTableView
+class ClientsListView : public TableView
 {
 public:
-    ClientsListView(QWidget* t_parent = nullptr);
+    ClientsListView(QWidget* parent = nullptr);
     ~ClientsListView();
-    void setModel(QAbstractItemModel *t_model) override;
+    void setModel(QAbstractItemModel *model) override;
 
 private:
-    PNPlainTextEditDelegate* m_client_name_delegate;
+    PlainTextEditDelegate* m_clientNameDelegate;
 };
 
 #endif // CLIENTSLISTVIEW_H

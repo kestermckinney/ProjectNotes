@@ -100,7 +100,7 @@ if (platform.system() == 'Windows'):
     pne = ProjectNotesExcelTools()
 
     # processing main function
-    def menuRiskRegistry(xmlstr, parameter):
+    def menu_risk_registry(xmlstr, parameter):
         
         xmlval = QDomDocument()
 
@@ -180,14 +180,14 @@ if (platform.system() == 'Windows'):
 
         return docxml.toString()
 
-    def menuSettings(parameter):
+    def menu_settings(parameter):
         trs.show()
         return ""
 
     trs = NewRiskRegisterSettings()
 
-    pluginmenus.append({"menutitle" : "Risk Register", "function" : "menuRiskRegistry", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
-    pluginmenus.append({"menutitle" : "New Risk Resgister", "function" : "menuSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
+    pluginmenus.append({"menutitle" : "Risk Register", "function" : "menu_risk_registry", "tablefilter" : "", "submenu" : "Templates", "dataexport" : "projects"})
+    pluginmenus.append({"menutitle" : "New Risk Resgister", "function" : "menu_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""})
 
 #setup test data
 if __name__ == '__main__':
@@ -201,6 +201,6 @@ if __name__ == '__main__':
     with open("C:\\Users\\pamcki\\OneDrive - Cornerstone Controls\\Documents\\Work In Progress\\XML\\project.xml", 'r', encoding='utf-8') as file:
         xml_content = file.read()
 
-    menuRiskRegistry(xml_content, "")    
+    menu_risk_registry(xml_content, "")    
 
     app.exec()

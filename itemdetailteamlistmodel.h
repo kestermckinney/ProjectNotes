@@ -4,12 +4,12 @@
 #ifndef ITEMDETAILTEAMLISTMODEL_H
 #define ITEMDETAILTEAMLISTMODEL_H
 
-#include "pnsqlquerymodel.h"
+#include "sqlquerymodel.h"
 
-class ItemDetailTeamListModel : public PNSqlQueryModel
+class ItemDetailTeamListModel : public SqlQueryModel
 {
 public:
-    ItemDetailTeamListModel(PNDatabaseObjects* t_dbo);
+    ItemDetailTeamListModel(DatabaseObjects* dbo);
 };
 
 #endif // ITEMDETAILTEAMLISTMODEL_H

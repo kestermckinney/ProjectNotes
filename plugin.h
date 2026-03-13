@@ -14,34 +14,32 @@ public:
 
     PythonPlugin pythonplugin() const { return m_plugin; }
     bool loaded() const { return m_loaded; }
-    bool enabled() const { return m_enabled; }
-    void setEnabled(const bool t_enabled);
 
-    void loadPlugin(const QString& t_module);
+    void loadPlugin(const QString& module);
     void unloadPlugin();
     void reloadPlugin();
 
-    void callXmlMethod(const QString& t_method, const QString& t_xml, const QString& t_parameter);
-    void callMethod(const QString& t_method, const QString& t_parameter);
-    bool hasMethod(const QString& t_method) const;
+    void callXmlMethod(const QString& method, const QString& xml, const QString& parameter);
+    void callMethod(const QString& method, const QString& parameter);
+    bool hasMethod(const QString& method) const;
 
     QString modulepath() const { return m_modulepath; }
     QString pluginname() const { return m_pluginname; }
 
 signals:
-    void loadModule(const QString& t_module);
+    void loadModule(const QString& module);
     void unloadModule();
     void reloadModule();
 
-    void sendMethodXml(const QString& t_method, const QString& t_xml, const QString& t_parameter);
-    void sendMethod(const QString& t_method, const QString& t_parameter);
+    void sendMethodXml(const QString& method, const QString& xml, const QString& parameter);
+    void sendMethod(const QString& method, const QString& parameter);
 
-    void moduleUnloaded(const QString& t_modulepath);
-    void moduleLoaded(const QString& t_modulepath);
+    void moduleUnloaded(const QString& modulepath);
+    void moduleLoaded(const QString& modulepath);
 
 private slots:
-    void onReturnedXml(const QString& t_xml);
-    void onLoadComplete(const PythonPlugin& t_plugin); // return all needed values
+    void onReturnedXml(const QString& xml);
+    void onLoadComplete(const PythonPlugin& plugin); // return all needed values
     void onUnLoadComplete();
 
 private:
