@@ -2,7 +2,7 @@
 
 ## Managing Your List Of People
 
-Project Notes keeps a list of people that can be associated with projects. Use the Outlook Import and Export plugin to keep your list of people in sync with Outlook. The [Importing and Exporting Contacts](<../StandardPlugins/ImportingandExportingOutlookCont.md>) topic describes how to use the plugin. Project Notes may have a customization that imports and exports names from other enterprise applications such as an accounting system or customer relationship manager. Plugins installed should have their own help manual. To avoid duplicate records Project Notes uses the name as a unique identifier when importing. It is important to name people in Outlook the same as they are in the other enterprise systems that are synchronized.
+Project Notes keeps a list of people that can be associated with projects. You can use the Outlook contact sync utilities to keep your list of people in sync with Outlook. See [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) for details. Project Notes may have a customization that imports and exports names from other enterprise applications such as an accounting system or customer relationship manager. To avoid duplicate records Project Notes uses the name as a unique identifier when importing. It is important to name people in Outlook the same as they are in the other enterprise systems that are synchronized.
 
 ## The People List Page Layout
 

@@ -26,10 +26,9 @@ You will need to setup yourself to manage all of the projects. First you need to
 7. From the **File** menu, choose **Preferences**.
 8. Select yourself as the **Project Manager**.
 9. Select ***"Your Company Name"*** as the **Client**.
-10. From the **Plugins**, menu choose **Plugin Settings..**.
-11. Choose the **Global Settings** plugin.
-12. Type *the base folder location where all your projects are kept* for the **ProjectsFolder**.
-13. Click **Apply**.
+10. From the **Plugins** menu, choose **Settings > Export Notes** and set the sub-folder where meeting note exports will be saved.
+11. From the **Plugins** menu, choose **Settings > Export Tracker Items** and set the sub-folder where tracker item exports will be saved.
+12. From the **Plugins** menu, choose **Settings > File Finder** and add the root folder where your project files are stored so the File Collector can find them automatically.
 
 ## Populating Your Database
 
@@ -37,7 +36,7 @@ Project Notes is capable of connecting information from various systems. In orde
 
 There are three methods to import clients and people.
 
-* **Importing From Outlook** - A Python plugin is included with Project Notes for[ Importing and Exporting Outlook Contacts](<../StandardPlugins/ImportingandExportingOutlookCont.md>). (The plugin does not support Outlook Express.)
+* **Importing From Outlook** - Project Notes includes Outlook contact sync utilities. See [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) for details. (Outlook COM sync requires Windows; Office 365 sync works on all platforms.)
 * **Importing From XML** - All database items can be imported from a [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) file. File import is accessible from the [File Menu](<../InterfaceOverview/FileMenu.md>).
 * **Entering Manually** - Client information can be entered using the [Client List Page](<../InterfaceOverview/ClientListPage.md>), and contacts can be entered using the [People List Page](<../InterfaceOverview/PeopleListPage.md>).
 
@@ -47,7 +46,7 @@ Once your clients and people are setup, you will need to tell Project Notes whic
 
 ## Plugin Settings
 
-Project notes helps you find and generate artifacts related to your project. In order to do this you need to configure the plugins. The [Global Settings](<../StandardPlugins/GlobalSettings.md>) plugin sets up the project location and any other specific information related to your implementation of Project Notes. Custom plugins can overwrite the [Global Settings](<../StandardPlugins/GlobalSettings.md>) Python plugin. For more information, plugin providers should add a help item to the help menu.
+Project Notes helps you find and generate artifacts related to your project. In order to do this you need to configure the plugins. Each plugin has its own settings accessible under **Plugins > Settings**. For example, the **Export Meeting Notes** and **Export Tracker Items** plugins each have a sub-folder setting that controls where generated reports are saved. See [Plugin Settings](<../StandardPlugins/PluginSettings.md>) for a full list of available settings.
 
 ## Populating Your Project Data And Plugins
 
