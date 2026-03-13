@@ -15,13 +15,34 @@ AppSettings::AppSettings()
     m_pluginConfig->setFallbacksEnabled(false);
 }
 
+AppSettings global_Settings;
+
 AppSettings::~AppSettings()
 {
+    // shutdown() should have been called while QApplication was alive.
+    // These deletes are safe no-ops if shutdown() already ran.
     delete m_appConfig;
+    m_appConfig = nullptr;
     delete m_pluginConfig;
+    m_pluginConfig = nullptr;
 
     if (m_spellchecker)
         delete m_spellchecker;
+}
+
+void AppSettings::shutdown()
+{
+    // Called from main() while QApplication is still alive so QSettings::sync() works.
+    if (m_appConfig) {
+        m_appConfig->sync();
+        delete m_appConfig;
+        m_appConfig = nullptr;
+    }
+    if (m_pluginConfig) {
+        m_pluginConfig->sync();
+        delete m_pluginConfig;
+        m_pluginConfig = nullptr;
+    }
 }
 
 SpellChecker* AppSettings::spellchecker()

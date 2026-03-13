@@ -4,6 +4,7 @@
 #include "mainwindow.h"
 #include "runguard.h"
 #include "plugin.h"
+#include "appsettings.h"
 
 #include <QApplication>
 #include <QStyleFactory>
@@ -23,38 +24,44 @@ int main(int argc, char *argv[])
     qRegisterMetaType<PythonPlugin>();
     qRegisterMetaType<PluginMenu>();
 
-    RunGuard guard( "62d60669-bb94-4a94-88bb-b964890a71f4" );
-    if ( !guard.tryToRun() )
+    int ret = 0;
     {
-        QMessageBox::critical(nullptr, "Only One Instance", QString("Only one instance of Project Notes can be running at a time."));
-        return 0;
-    }
+        RunGuard guard( "62d60669-bb94-4a94-88bb-b964890a71f4" );
+        if ( !guard.tryToRun() )
+        {
+            QMessageBox::critical(nullptr, "Only One Instance", QString("Only one instance of Project Notes can be running at a time."));
+            return 0;
+        }
 
 #ifdef Q_OS_WIN
-    QString processPath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/bin/QtWebEngineProcess.exe";   // adjust if you moved it
-    QString resourcePath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/resources";   // adjust if you moved it
-    QString localesPath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/translations/qtwebengine_locales";   // adjust if you moved it
+        QString processPath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/bin/QtWebEngineProcess.exe";   // adjust if you moved it
+        QString resourcePath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/resources";   // adjust if you moved it
+        QString localesPath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/translations/qtwebengine_locales";   // adjust if you moved it
 
-    qDebug() << "Looking for file " << processPath;
+        qDebug() << "Looking for file " << processPath;
 
-    if (QFileInfo::exists(processPath))
-    {
-        QLog_Info(CONSOLELOG,QString("Setting application copy of QtWebEngineProcess.exe to be the default."));
-        qputenv("QTWEBENGINEPROCESS_PATH", processPath.toUtf8());
-        qputenv("QTWEBENGINE_RESOURCES_PATH", resourcePath.toUtf8());
-        qputenv("QTWEBENGINE_LOCALES_PATH", localesPath.toUtf8());
+        if (QFileInfo::exists(processPath))
+        {
+            QLog_Info(CONSOLELOG,QString("Setting application copy of QtWebEngineProcess.exe to be the default."));
+            qputenv("QTWEBENGINEPROCESS_PATH", processPath.toUtf8());
+            qputenv("QTWEBENGINE_RESOURCES_PATH", resourcePath.toUtf8());
+            qputenv("QTWEBENGINE_LOCALES_PATH", localesPath.toUtf8());
 
-        // try to get more debugging information
-        qputenv("QT_LOGGING_RULES", "qt.webenginecontext.debug=true");
-        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--enable-logging=stderr --v=1");
+            // try to get more debugging information
+            qputenv("QT_LOGGING_RULES", "qt.webenginecontext.debug=true");
+            qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--enable-logging=stderr --v=1");
 
-    }
+        }
 #endif
 
-    MainWindow w;
+        MainWindow w;
 
-    a.setWindowIcon(QIcon(":/icons/logo.png")); // "AppIcon.icns"
-    w.show();
+        a.setWindowIcon(QIcon(":/icons/logo.png")); // "AppIcon.icns"
+        w.show();
 
-    return a.exec();
+        ret = a.exec();
+    } // w and guard destruct here — all view state saved before shutdown()
+
+    global_Settings.shutdown();
+    return ret;
 }

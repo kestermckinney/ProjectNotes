@@ -15,6 +15,7 @@ class AppSettings
 public:
     AppSettings();
     ~AppSettings();
+    void shutdown();
 
     QVariant getPluginSetting(const QString& pluginName, const QString& parameterName);
     void setPluginSetting(const QString& pluginName, const QString& parameterName, const QString& parameterValue);
@@ -70,6 +71,6 @@ private:
     SpellChecker* m_spellchecker = nullptr;
 };
 
-static AppSettings global_Settings;
+extern AppSettings global_Settings;
 
 #endif // APPSETTINGS_H
