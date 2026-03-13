@@ -25,7 +25,7 @@ The columns listed below are all displayed when you are viewing internal items. 
 | Status | The status of the item. Values are listed below: | **Status** | **Description** |
 | :--- | :--- |
 | **Assigned:** | The item has been assigned to an individual. It is assumed work is being done to resolve the item. |
-| **Differed:** | This item will not be completed during this project. |
+| **Deferred:** | This item will not be completed during this project. |
 | **New:** | The item was recently entered, but no one has been assigned to resolve it. This is the default value. |
 | **Resolved:** | The item was completed successfully. If **Resolved Tracer/Action Items** is not checked in the **View** menu, these items do not show. |
 | **Canceled:** | The item was not needed. |
