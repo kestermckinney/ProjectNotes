@@ -26,11 +26,10 @@ void SearchPage::setupModels( Ui::MainWindow *ui )
 {
     this->ui = ui;
 
-    if (ui)
-    {
-        ui->plainTextEditSearchText->removeEventFilter(this);
+    if (!ui)
         return;  // closing application
-    }
+
+    ui->plainTextEditSearchText->removeEventFilter(this);
 
     ui->plainTextEditSearchText->installEventFilter(this);
     ui->tableViewSearchResults->setModel(global_DBObjects.searchresultsmodelproxy());

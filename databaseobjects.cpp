@@ -722,7 +722,7 @@ void DatabaseObjects::setGlobalSearches( bool refresh )
 
         QString projectnumber = execute(QString("select project_number from projects where project_id = '%1'").arg(getGlobalProjectFilter()));
 
-        searchresultsmodel()->setFilter(5, projectnumber);
+        searchresultsmodel()->setFilter(7, projectnumber);
     }
 
 

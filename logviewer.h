@@ -6,7 +6,8 @@
 #include <QFile>
 #include <QPlainTextEdit>
 #include <QDir>
-#include <QFileSystemWatcher>
+#include <QSet>
+#include <QDateTime>
 #include <QTabWidget>
 #include <QVBoxLayout>
 #include <QScrollBar>
@@ -25,20 +26,22 @@ public slots:
     void loadFile();
     void timerUpdate();
     void onFileChanged(const QString &filePath);
-    void resetFileWatcher(QWidget* oldWidget, QWidget* newWidget);
 
 public:
     LogLoader(const QString& filePath);
     ~LogLoader();
 
-private:
-    void startFileWatcher();
+private slots:
+    void onPollTimer();
 
+private:
     qint64 m_topPosition = -1;
     qint64 m_lastPosition = 0;
     QTimer* m_topLoadTimer = nullptr;
+    QTimer* m_pollTimer = nullptr;
+    qint64  m_pollLastSize = -1;
+    QDateTime m_pollLastModified;
     QString m_filePath;
-    QFileSystemWatcher *m_fileWatcher = nullptr;
 };
 
 class LogViewer : public QDialog
@@ -50,7 +53,7 @@ private slots:
     void onClearLog();
     void onInsertContent(const QString& filePath, const QString& content);
     void onUpdateContent(const QString& filePath, const QString& content);
-    void resetFileWatcher(QWidget* oldWidget, QWidget* newWidget);
+    void onPollTimer();
 
 signals:
     void getContents(const QString& filePath);
@@ -63,9 +66,8 @@ private:
     QPushButton* m_close;
     QMap<QString, QPlainTextEdit*> m_fileTabs;
     QMap<QString, QThread*> m_loadingThreads;
-    QFileSystemWatcher *m_fileWatcher;
-    // QThread* m_loaderThread = nullptr;
-    // QThread* m_fillerThread = nullptr;
+    QTimer* m_pollTimer;
+    QSet<QString> m_knownLogFiles;
 
 public:
     LogViewer(QWidget* parent = nullptr);

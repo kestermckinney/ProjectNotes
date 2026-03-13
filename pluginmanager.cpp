@@ -393,30 +393,26 @@ PluginManager::PluginManager(QObject *parent)
 
     m_pythreadstate = PyEval_SaveThread();
 
-    // Set up file watcher
-    m_fileWatcher = new QFileSystemWatcher(this);
-    watchFolder(m_pluginspath);
-    watchFolder(m_threadspath);
+    // Seed directory snapshot so first poll doesn't fire for already-loaded files
+    auto seedDir = [this](const QString& path) {
+        QDir dir(path);
+        for (const QString& name : dir.entryList({"*.py"}, QDir::Files))
+            m_watchedDirFiles.insert(dir.absoluteFilePath(name));
+    };
+    seedDir(m_pluginspath);
+    seedDir(m_threadspath);
 
-    connect(m_fileWatcher, &QFileSystemWatcher::fileChanged, this, &PluginManager::onFileChanged);
-    connect(m_fileWatcher, &QFileSystemWatcher::directoryChanged, this, &PluginManager::onFolderChanged);
+    m_pollTimer = new QTimer(this);
+    m_pollTimer->setInterval(1500);
+    connect(m_pollTimer, &QTimer::timeout, this, &PluginManager::onPollTimer);
+    m_pollTimer->start();
+
     connect(this, &PluginManager::pluginForceReload, this, &PluginManager::onForceReload);
-    connect((QApplication*)QApplication::instance(), &QApplication::focusChanged, this, &PluginManager::resetFileWatcher); // since the file watcher sometimes quits reset it when the window activation changes
 
     loadPluginFiles(m_pluginspath, false);
     loadPluginFiles(m_threadspath, true);
 }
 
-void PluginManager::watchFolder(const QString& path)
-{
-    m_fileWatcher->addPath(path);
-
-    QDirIterator it(path, QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
-    while (it.hasNext()) {
-        // Add each subdirectory to the watcher
-        m_fileWatcher->addPath(it.next());
-    }
-}
 
 void PluginManager::loadPluginFiles(const QString& path, bool isthread)
 {
@@ -449,7 +445,7 @@ void PluginManager::loadPluginFiles(const QString& path, bool isthread)
             connect(module, &Plugin::moduleLoaded, this, &PluginManager::onLoadComplete);
             connect(module, &Plugin::moduleUnloaded, this, &PluginManager::onUnloadComplete);
 
-            m_fileWatcher->addPath(filePath);  // track the main module here, if it fails to load due to an error you can change the file and it will retry
+            m_watchedDirFiles.insert(filePath);  // track so directory poll doesn't re-trigger on error-reloads
 
             module->loadPlugin(filePath);
         }
@@ -459,10 +455,7 @@ void PluginManager::loadPluginFiles(const QString& path, bool isthread)
 // close Plugin engine
 PluginManager::~PluginManager()
 {
-    disconnect(m_fileWatcher, &QFileSystemWatcher::fileChanged, this, &PluginManager::onFileChanged);
-    disconnect(m_fileWatcher, &QFileSystemWatcher::directoryChanged, this, &PluginManager::onFolderChanged);
     disconnect(this, &PluginManager::pluginForceReload, this, &PluginManager::onForceReload);
-    disconnect((QApplication*)QApplication::instance(), &QApplication::focusChanged, this, &PluginManager::resetFileWatcher); // since the file watcher sometimes quits reset it when the window activation changes
 
     for ( Plugin* p : m_pluginlist)
     {
@@ -502,7 +495,7 @@ void PluginManager::onUnloadComplete(const QString &modulepath)
         {
             if ((*it)->modulepath().compare(modulepath) == 0)
             {
-                m_fileWatcher->removePath(modulepath);
+                m_watchedFiles.remove(modulepath);
 
                 delete *it;
                 it = m_pluginlist.erase(it);
@@ -592,8 +585,11 @@ void PluginManager::onLoadComplete(const QString& modulepath)
     {
         if (QFileInfo(p->modulepath()).baseName().compare(basemodule, Qt::CaseInsensitive) == 0)
         {
-            for (const QString& importPath : p->pythonplugin().imports())
-                m_fileWatcher->addPath(importPath);
+            m_watchedFiles.insert(modulepath, QFileInfo(modulepath).lastModified());
+            for (const QString& importPath : p->pythonplugin().imports()) {
+                if (!m_watchedFiles.contains(importPath))
+                    m_watchedFiles.insert(importPath, QFileInfo(importPath).lastModified());
+            }
         }
     }
 
@@ -616,13 +612,34 @@ int PluginManager::loadedCount()
     return(loaded_count);
 }
 
-void PluginManager::resetFileWatcher(QWidget* oldWidget, QWidget* newWidget)
+void PluginManager::onPollTimer()
 {
-    QStringList files = m_fileWatcher->files();
-    QStringList dirs  = m_fileWatcher->directories();
+    // Part 1: Detect new .py files in plugins/ and threads/ directories
+    bool folderChanged = false;
+    auto checkDir = [this, &folderChanged](const QString& path) {
+        QDir dir(path);
+        for (const QString& name : dir.entryList({"*.py"}, QDir::Files)) {
+            const QString fullPath = dir.absoluteFilePath(name);
+            if (!m_watchedDirFiles.contains(fullPath)) {
+                m_watchedDirFiles.insert(fullPath);
+                folderChanged = true;
+            }
+        }
+    };
+    checkDir(m_pluginspath);
+    checkDir(m_threadspath);
+    if (folderChanged)
+        onFolderChanged(QString());  // onFolderChanged ignores its argument
 
-    m_fileWatcher->removePaths(files);
-    m_fileWatcher->removePaths(dirs);
-    m_fileWatcher->addPaths(files);
-    m_fileWatcher->addPaths(dirs);
+    // Part 2: Detect changes to watched plugin files and their imports
+    for (auto it = m_watchedFiles.begin(); it != m_watchedFiles.end(); ++it) {
+        QFileInfo fi(it.key());
+        if (!fi.exists())
+            continue;  // file mid-deletion; wait for recreation
+        const QDateTime newMod = fi.lastModified();
+        if (newMod != it.value()) {
+            it.value() = newMod;
+            onFileChanged(it.key());
+        }
+    }
 }
