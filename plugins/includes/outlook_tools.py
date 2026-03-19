@@ -129,7 +129,7 @@ class ProjectNotesOutlookTools:
                                 workphone = content
                             elif colname == "cell_phone":
                                 cellphone = content
-                            elif colname == "client_id":
+                            elif colname == "id":
                                 company = colnode.attributes().namedItem("lookupvalue").nodeValue()
                             elif colname == "role":
                                 jobtitle = content
@@ -245,7 +245,7 @@ class ProjectNotesOutlookTools:
                         # add the company name as a sub tablenode
                         if (contact.CompanyName is not None and contact.CompanyName != ''):
                             company_xml = self.pnc.to_xml(contact.CompanyName.strip())
-                            row_parts.append(f'<column name="client_id" number="5" lookupvalue="{company_xml}"></column>\n')
+                            row_parts.append(f'<column name="id" number="5" lookupvalue="{company_xml}"></column>\n')
                             xmlclients_parts.append(f'<row><column name="client_name">{company_xml}</column></row>\n')
 
                         row_parts.append("</row>\n")

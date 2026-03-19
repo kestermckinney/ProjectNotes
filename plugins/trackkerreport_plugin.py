@@ -175,7 +175,7 @@ class GenerateTrackerReport(QDialog):
         pm = xmlroot.toElement().attribute("managing_manager_name")
         co = xmlroot.toElement().attribute("managing_company_name")
 
-        check_tag = pnc.find_node_by2(xmlroot, "table", "name", "item_tracker", "filter_field_1", "project_id")
+        check_tag = pnc.find_node_by2(xmlroot, "table", "name", "item_tracker", "filter_field_1", "id")
         check_row = None
         if check_tag:
             check_row = check_tag.firstChild()
@@ -279,7 +279,7 @@ class GenerateTrackerReport(QDialog):
         progbar.setLabelText("Gathering status items...")
 
         # count expand out excel rows for status report items
-        repitem = pnc.find_node_by2(xmlroot, "table", "name", "item_tracker", "filter_field_1", "project_id")
+        repitem = pnc.find_node_by2(xmlroot, "table", "name", "item_tracker", "filter_field_1", "id")
         itemcount = 0
 
         if repitem:

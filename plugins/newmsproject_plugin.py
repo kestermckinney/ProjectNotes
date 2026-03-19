@@ -173,7 +173,7 @@ if (platform.system() == 'Windows'):
         row = pnc.xml_row(docxml)
         table.appendChild(row)
 
-        row.appendChild(pnc.xml_col(docxml, "project_id",None, projnum))
+        row.appendChild(pnc.xml_col(docxml, "id",None, projnum))
         row.appendChild(pnc.xml_col(docxml, "location_type", "Microsoft Project", None))
         row.appendChild(pnc.xml_col(docxml, "location_description", "Project Schedule : " + basename + ".mpp", None))
         row.appendChild(pnc.xml_col(docxml, "full_path", projectfile, None))

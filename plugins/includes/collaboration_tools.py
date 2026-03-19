@@ -34,7 +34,7 @@ class CollaborationTools:
         projects = self.pnc.find_node(xmlroot, "table", "name", "projects")
         if not projects.isNull():
             project = projects.firstChild()
-            cli = self.pnc.get_column_value(project, "client_id")
+            cli = self.pnc.get_column_value(project, "id")
 
 
         if invitees == "Internal Project Team":
@@ -131,9 +131,9 @@ class CollaborationTools:
             while not memberrow.isNull():
                 nm = self.pnc.get_column_value(memberrow, "name")
                 email = self.pnc.get_column_value(memberrow, "email")
-                pco = self.pnc.get_column_value(memberrow, "client_id")
+                pco = self.pnc.get_column_value(memberrow, "id")
 
-                colnode = self.pnc.find_node(memberrow, "column", "name", "client_id")
+                colnode = self.pnc.find_node(memberrow, "column", "name", "id")
                 if not colnode.isNull() and colnode.attributes().namedItem("lookupvalue").nodeValue() is not None and colnode.attributes().namedItem("lookupvalue").nodeValue() != '':
                     pco = colnode.attributes().namedItem("lookupvalue").nodeValue()
 
