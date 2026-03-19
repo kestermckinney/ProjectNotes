@@ -8,48 +8,52 @@ nav:
   - 'Home': index.md
   - 'Introduction':
     - 'Getting Started': Introduction/GettingStarted.md
-    - 'System Requirments': Introduction/SystemRequirements.md
+    - 'System Requirements': Introduction/SystemRequirements.md
   - 'Interface Overview':
     - 'File Menu': InterfaceOverview/FileMenu.md
     - 'Edit Menu': InterfaceOverview/EditMenu.md
     - 'Plugins Menu': InterfaceOverview/PluginsMenu.md
     - 'View Menu': InterfaceOverview/ViewMenu.md
     - 'History Menu': InterfaceOverview/HistoryMenu.md
-    - 'Project List Page': InterfaceOverview/ProjectListPage.md
-    - 'People List Page': InterfaceOverview/PeopleListPage.md
-    - 'Client List Page': InterfaceOverview/ClientListPage.md
-    - 'Project Page': InterfaceOverview/ProjectPage.md
-    - 'Notes Page': InterfaceOverview/NotesPage.md
-    - 'Item Tacker Page': InterfaceOverview/ItemTrackerPage.md
-    - 'Action Item Detail Page': InterfaceOverview/ActionItemDetailPage.md
     - 'Toolbar': InterfaceOverview/Toolbar.md
     - 'Preferences': InterfaceOverview/Preferences.md
-    - 'Presenting to Clients': InterfaceOverview/PresentingToClients.md
-    - 'Filter Tool': InterfaceOverview/FilterTool.md
+    - 'Project List Page': InterfaceOverview/ProjectListPage.md
+    - 'Project Page': InterfaceOverview/ProjectPage.md
+    - 'Notes Page': InterfaceOverview/NotesPage.md
+    - 'Item Tracker Page': InterfaceOverview/ItemTrackerPage.md
+    - 'Action Item Detail Page': InterfaceOverview/ActionItemDetailPage.md
+    - 'People List Page': InterfaceOverview/PeopleListPage.md
+    - 'Client List Page': InterfaceOverview/ClientListPage.md
     - 'Search Page': InterfaceOverview/SearchPage.md
+    - 'Filter Tool': InterfaceOverview/FilterTool.md
     - 'Sorting and Sizing Columns': InterfaceOverview/SortingandSizingColumns.md
     - 'Earned Value Terms': InterfaceOverview/EarnedValueTerms.md
+    - 'Presenting to Clients': InterfaceOverview/PresentingToClients.md
   - 'Plugins Overview':
     - 'Adding Functionality': PluginsOverview/AddingFunctionality.md
     - 'Project Notes XML': PluginsOverview/ProjectNotesXML.md
   - 'Standard Plugins':
     - 'Plugin Settings': StandardPlugins/PluginSettings.md
-    - 'File Collector' : StandardPlugins/FileCollector.md
-    - 'Importing and Exporting Outlook Contacts': StandardPlugins/ImportingandExportingOutlookCont.md
-    - 'Global Settings': StandardPlugins/GlobalSettings.md
+    - 'Outlook Integration': StandardPlugins/OutlookIntegration.md
+    - 'File Collector': StandardPlugins/FileCollector.md
+    - 'My Shortcuts': StandardPlugins/MyShortcuts.md
+    - 'Team Member Quick Add': StandardPlugins/TeamMemberQuickAdd.md
+    - 'Export Meeting Notes': StandardPlugins/ExportMeetingNotes.md
     - 'Meeting Notes Archive': StandardPlugins/MeetingNotesArchive.md
-    - 'Project Email Archive': StandardPlugins/ProjectEmailArchive.md
+    - 'Export Tracker Items': StandardPlugins/ExportTrackerItems.md
     - 'Tracker Report Generation': StandardPlugins/TrackerReportGeneration.md
-    - 'PowerPoint Templates': StandardPlugins/PowerPointTemplates.md
-    - 'Editor': StandardPlugins/Editor.md
-    - 'Schedule a Customer Kickoff Meeting (Windows Only)': StandardPlugins/ScheduleaCustomerKickoffMeeting.md
-    - 'Schedule a Customer Lessons Learned Meeting (Windows Only)': StandardPlugins/ScheduleaCustomerLessonsLearned.md
-    - 'Schedule a Customer Status Meeting (Windows Only)': StandardPlugins/ScheduleaCustomerStatusMeeting.md
-    - 'Schedule an Internal Kickoff Meeting (Windows Only)': StandardPlugins/ScheduleanInternalKickoffMeeting.md
-    - 'Schedule an Internal Lessons Learned Meeting (Windows Only)': StandardPlugins/ScheduleanInternalLessonsLearned.md
-    - 'Schedule an Internal Status Meeting (Windows Only)': StandardPlugins/ScheduleanInternalStatusMeeting.md
+    - 'New Document Templates': StandardPlugins/NewDocumentTemplates.md
     - 'Send Meeting Notes': StandardPlugins/SendMeetingNotes.md
     - 'Send Project Emails': StandardPlugins/SendProjectEmails.md
+    - 'Project Email Archive': StandardPlugins/ProjectEmailArchive.md
+    - 'Schedule an Internal Status Meeting': StandardPlugins/ScheduleanInternalStatusMeeting.md
+    - 'Schedule a Customer Status Meeting': StandardPlugins/ScheduleaCustomerStatusMeeting.md
+    - 'Schedule an Internal Kickoff Meeting': StandardPlugins/ScheduleanInternalKickoffMeeting.md
+    - 'Schedule a Customer Kickoff Meeting': StandardPlugins/ScheduleaCustomerKickoffMeeting.md
+    - 'Schedule an Internal Lessons Learned Meeting': StandardPlugins/ScheduleanInternalLessonsLearned.md
+    - 'Schedule a Customer Lessons Learned Meeting': StandardPlugins/ScheduleaCustomerLessonsLearned.md
+    - 'IFS Cloud Integration': StandardPlugins/IFSCloud.md
+    - 'Editor': StandardPlugins/Editor.md
 
 markdown_extensions:
   - tables
