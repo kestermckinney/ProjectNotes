@@ -1,0 +1,1253 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"p",
+				"project_pdfreportname"
+			],
+			[
+				"Initia",
+				"initialized"
+			],
+			[
+				"ifs_u",
+				"ifs_url"
+			],
+			[
+				"avail",
+				"available"
+			],
+			[
+				"report",
+				"report_server"
+			],
+			[
+				"sub",
+				"subprocess"
+			],
+			[
+				"meet",
+				"meeting_type"
+			],
+			[
+				"schedul",
+				"schedule_a_meeting"
+			],
+			[
+				"My",
+				"MyMeetingTypes"
+			],
+			[
+				"mee",
+				"meeting_type"
+			],
+			[
+				"meeting",
+				"meeting_type"
+			],
+			[
+				"In",
+				"Individual"
+			],
+			[
+				"getH",
+				"getHTML"
+			],
+			[
+				"comboBox",
+				"comboBoxInvitees"
+			],
+			[
+				"project_n",
+				"project_number"
+			],
+			[
+				"project_",
+				"project_number"
+			],
+			[
+				"proje",
+				"project_name"
+			],
+			[
+				"project",
+				"project_people"
+			],
+			[
+				"m_",
+				"m_plugin_manager"
+			],
+			[
+				"menu",
+				"menutitle"
+			],
+			[
+				"data",
+				"dataexport"
+			],
+			[
+				"men",
+				"menutitle"
+			],
+			[
+				"m_menu",
+				"m_menu_title"
+			],
+			[
+				"m_men",
+				"m_menu_title"
+			],
+			[
+				"t_me",
+				"t_menutitle"
+			],
+			[
+				"settin",
+				"settingname"
+			],
+			[
+				"event",
+				"event_menuclick"
+			],
+			[
+				"to",
+				"token_cache_file"
+			],
+			[
+				"r",
+				"readAll"
+			],
+			[
+				"saved",
+				"saved_state_file"
+			],
+			[
+				"ev",
+				"event_menuclick"
+			],
+			[
+				"Q",
+				"qmake"
+			],
+			[
+				"I",
+				"Introduction"
+			],
+			[
+				"Py",
+				"PyQt5"
+			],
+			[
+				"dateEd",
+				"dateEditLastUpdated"
+			],
+			[
+				"set",
+				"setNullable"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "docs/Introduction/GettingStarted.md",
+			"redo_stack":
+			[
+				[
+					15,
+					1,
+					"cut",
+					null,
+					"AgAAAPICAAAAAAAA5AMAAAAAAAAAAAAAVwMAAAAAAACSAwAAAAAAAAAAAAA",
+					"BwAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA8gIAAAAAAADyAgAAAAAAAAAAAAAAAPC/"
+				]
+			],
+			"settings":
+			{
+				"buffer_size": 4153,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/paulmckinney/Desktop/neonpass.txt",
+			"settings":
+			{
+				"buffer_size": 486,
+				"encoding": "UTF-8",
+				"line_ending": "Unix",
+				"name": "OT3QDkNl_TwA-Hmi2t4ihl7UX9xbFbnHIFHHZNN_lhA"
+			},
+			"undo_stack":
+			[
+				[
+					4,
+					1,
+					"",
+					null,
+					"AQAAAAAAAAAAAAAAKwAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					5,
+					1,
+					"insert",
+					{
+						"characters": "\n"
+					},
+					"AQAAACsAAAAAAAAALAAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAArAAAAAAAAACsAAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					7,
+					1,
+					"",
+					null,
+					"AQAAACwAAAAAAAAAbAAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAsAAAAAAAAACwAAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					8,
+					1,
+					"insert",
+					{
+						"characters": "\n"
+					},
+					"AQAAAGwAAAAAAAAAbQAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABsAAAAAAAAAGwAAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					11,
+					1,
+					"insert",
+					{
+						"characters": "\n"
+					},
+					"AQAAAG0AAAAAAAAAbgAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABtAAAAAAAAAG0AAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					13,
+					1,
+					"",
+					null,
+					"AQAAAG4AAAAAAAAArQEAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABuAAAAAAAAAG4AAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					21,
+					1,
+					"insert",
+					{
+						"characters": "\n\npassw"
+					},
+					"BwAAAK0BAAAAAAAArgEAAAAAAAAAAAAArgEAAAAAAACvAQAAAAAAAAAAAACvAQAAAAAAALABAAAAAAAAAAAAALABAAAAAAAAsQEAAAAAAAAAAAAAsQEAAAAAAACyAQAAAAAAAAAAAACyAQAAAAAAALMBAAAAAAAAAAAAALMBAAAAAAAAtAEAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAACtAQAAAAAAAK0BAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					22,
+					1,
+					"insert",
+					{
+						"characters": "ord"
+					},
+					"AwAAALQBAAAAAAAAtQEAAAAAAAAAAAAAtQEAAAAAAAC2AQAAAAAAAAAAAAC2AQAAAAAAALcBAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAC0AQAAAAAAALQBAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					23,
+					1,
+					"insert",
+					{
+						"characters": " NewBo"
+					},
+					"BgAAALcBAAAAAAAAuAEAAAAAAAAAAAAAuAEAAAAAAAC5AQAAAAAAAAAAAAC5AQAAAAAAALoBAAAAAAAAAAAAALoBAAAAAAAAuwEAAAAAAAAAAAAAuwEAAAAAAAC8AQAAAAAAAAAAAAC8AQAAAAAAAL0BAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAC3AQAAAAAAALcBAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					24,
+					1,
+					"insert",
+					{
+						"characters": "ob$3"
+					},
+					"BAAAAL0BAAAAAAAAvgEAAAAAAAAAAAAAvgEAAAAAAAC/AQAAAAAAAAAAAAC/AQAAAAAAAMABAAAAAAAAAAAAAMABAAAAAAAAwQEAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAC9AQAAAAAAAL0BAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					25,
+					1,
+					"insert",
+					{
+						"characters": "3"
+					},
+					"AQAAAMEBAAAAAAAAwgEAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADBAQAAAAAAAMEBAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					27,
+					1,
+					"insert",
+					{
+						"characters": "\n"
+					},
+					"AQAAAK8BAAAAAAAAsAEAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAACvAQAAAAAAAK8BAAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					29,
+					1,
+					"insert",
+					{
+						"characters": "paulmckinney"
+					},
+					"DAAAAK8BAAAAAAAAsAEAAAAAAAAAAAAAsAEAAAAAAACxAQAAAAAAAAAAAACxAQAAAAAAALIBAAAAAAAAAAAAALIBAAAAAAAAswEAAAAAAAAAAAAAswEAAAAAAAC0AQAAAAAAAAAAAAC0AQAAAAAAALUBAAAAAAAAAAAAALUBAAAAAAAAtgEAAAAAAAAAAAAAtgEAAAAAAAC3AQAAAAAAAAAAAAC3AQAAAAAAALgBAAAAAAAAAAAAALgBAAAAAAAAuQEAAAAAAAAAAAAAuQEAAAAAAAC6AQAAAAAAAAAAAAC6AQAAAAAAALsBAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAACvAQAAAAAAAK8BAAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					39,
+					1,
+					"insert",
+					{
+						"characters": "\nne"
+					},
+					"AwAAAM8BAAAAAAAA0AEAAAAAAAAAAAAA0AEAAAAAAADRAQAAAAAAAAAAAADRAQAAAAAAANIBAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADPAQAAAAAAAM8BAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					40,
+					1,
+					"insert",
+					{
+						"characters": "ondb_ow"
+					},
+					"BwAAANIBAAAAAAAA0wEAAAAAAAAAAAAA0wEAAAAAAADUAQAAAAAAAAAAAADUAQAAAAAAANUBAAAAAAAAAAAAANUBAAAAAAAA1gEAAAAAAAAAAAAA1gEAAAAAAADXAQAAAAAAAAAAAADXAQAAAAAAANgBAAAAAAAAAAAAANgBAAAAAAAA2QEAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADSAQAAAAAAANIBAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					41,
+					1,
+					"insert",
+					{
+						"characters": "ner"
+					},
+					"AwAAANkBAAAAAAAA2gEAAAAAAAAAAAAA2gEAAAAAAADbAQAAAAAAAAAAAADbAQAAAAAAANwBAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADZAQAAAAAAANkBAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					42,
+					1,
+					"insert",
+					{
+						"characters": "  "
+					},
+					"AgAAANwBAAAAAAAA3QEAAAAAAAAAAAAA3QEAAAAAAADeAQAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADcAQAAAAAAANwBAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					43,
+					1,
+					"paste",
+					null,
+					"AQAAAN4BAAAAAAAAGQIAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADeAQAAAAAAAN4BAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					46,
+					1,
+					"insert",
+					{
+						"characters": "\npa"
+					},
+					"BAAAAN4BAAAAAAAA3gEAAAAAAAA7AAAAZXAtbHVja3ktdmlvbGV0LWFtdDE3a3RpLXBvb2xlci5jLTUudXMtZWFzdC0xLmF3cy5uZW9uLnRlY2jeAQAAAAAAAN8BAAAAAAAAAAAAAN8BAAAAAAAA4AEAAAAAAAAAAAAA4AEAAAAAAADhAQAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAZAgAAAAAAAN4BAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					47,
+					1,
+					"insert",
+					{
+						"characters": "ssword"
+					},
+					"BgAAAOEBAAAAAAAA4gEAAAAAAAAAAAAA4gEAAAAAAADjAQAAAAAAAAAAAADjAQAAAAAAAOQBAAAAAAAAAAAAAOQBAAAAAAAA5QEAAAAAAAAAAAAA5QEAAAAAAADmAQAAAAAAAAAAAADmAQAAAAAAAOcBAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADhAQAAAAAAAOEBAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					48,
+					1,
+					"insert",
+					{
+						"characters": " JakeBoogers"
+					},
+					"DAAAAOcBAAAAAAAA6AEAAAAAAAAAAAAA6AEAAAAAAADpAQAAAAAAAAAAAADpAQAAAAAAAOoBAAAAAAAAAAAAAOoBAAAAAAAA6wEAAAAAAAAAAAAA6wEAAAAAAADsAQAAAAAAAAAAAADsAQAAAAAAAO0BAAAAAAAAAAAAAO0BAAAAAAAA7gEAAAAAAAAAAAAA7gEAAAAAAADvAQAAAAAAAAAAAADvAQAAAAAAAPABAAAAAAAAAAAAAPABAAAAAAAA8QEAAAAAAAAAAAAA8QEAAAAAAADyAQAAAAAAAAAAAADyAQAAAAAAAPMBAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADnAQAAAAAAAOcBAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					49,
+					1,
+					"insert",
+					{
+						"characters": "@33"
+					},
+					"AwAAAPMBAAAAAAAA9AEAAAAAAAAAAAAA9AEAAAAAAAD1AQAAAAAAAAAAAAD1AQAAAAAAAPYBAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADzAQAAAAAAAPMBAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					50,
+					1,
+					"insert",
+					{
+						"characters": "\n"
+					},
+					"AQAAAPYBAAAAAAAA9wEAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAD2AQAAAAAAAPYBAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					55,
+					1,
+					"right_delete",
+					null,
+					"AQAAAAAAAAAAAAAAAAAAAAAAAAArAAAAT1QzUURrTmxfVHdBLUhtaTJ0NGlobDdVWDl4YkZibkhJRkhIWk5OX2xoQQ",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAArAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					56,
+					1,
+					"insert",
+					{
+						"characters": "authenticator"
+					},
+					"DQAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAQAAAAAAAAACAAAAAAAAAAAAAAACAAAAAAAAAAMAAAAAAAAAAAAAAAMAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAFAAAAAAAAAAAAAAAFAAAAAAAAAAYAAAAAAAAAAAAAAAYAAAAAAAAABwAAAAAAAAAAAAAABwAAAAAAAAAIAAAAAAAAAAAAAAAIAAAAAAAAAAkAAAAAAAAAAAAAAAkAAAAAAAAACgAAAAAAAAAAAAAACgAAAAAAAAALAAAAAAAAAAAAAAALAAAAAAAAAAwAAAAAAAAAAAAAAAwAAAAAAAAADQAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					57,
+					1,
+					"insert",
+					{
+						"characters": " pass:"
+					},
+					"BgAAAA0AAAAAAAAADgAAAAAAAAAAAAAADgAAAAAAAAAPAAAAAAAAAAAAAAAPAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAEQAAAAAAAAAAAAAAEQAAAAAAAAASAAAAAAAAAAAAAAASAAAAAAAAABMAAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAANAAAAAAAAAA0AAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					58,
+					1,
+					"insert",
+					{
+						"characters": " "
+					},
+					"AQAAABMAAAAAAAAAFAAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAATAAAAAAAAABMAAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					60,
+					1,
+					"",
+					null,
+					"AQAAABQAAAAAAAAAPwAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAUAAAAAAAAABQAAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					61,
+					1,
+					"insert",
+					{
+						"characters": "\n"
+					},
+					"AQAAAD8AAAAAAAAAQAAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAA/AAAAAAAAAD8AAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					64,
+					1,
+					"right_delete",
+					null,
+					"AQAAAEEAAAAAAAAAQQAAAAAAAABAAAAAektDcEFqTXF6SzFadE5CUjdmdVc2V2hGbklkamN2a1BvUmJvSUc0VVV1UlM3ZTVVa05mN1pyQnBKQkdMeUkxVw",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABBAAAAAAAAAIEAAAAAAAAA////////738"
+				],
+				[
+					65,
+					1,
+					"insert",
+					{
+						"characters": "jwt"
+					},
+					"AwAAAEEAAAAAAAAAQgAAAAAAAAAAAAAAQgAAAAAAAABDAAAAAAAAAAAAAABDAAAAAAAAAEQAAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABBAAAAAAAAAEEAAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					66,
+					1,
+					"insert",
+					{
+						"characters": " secret:"
+					},
+					"CAAAAEQAAAAAAAAARQAAAAAAAAAAAAAARQAAAAAAAABGAAAAAAAAAAAAAABGAAAAAAAAAEcAAAAAAAAAAAAAAEcAAAAAAAAASAAAAAAAAAAAAAAASAAAAAAAAABJAAAAAAAAAAAAAABJAAAAAAAAAEoAAAAAAAAAAAAAAEoAAAAAAAAASwAAAAAAAAAAAAAASwAAAAAAAABMAAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABEAAAAAAAAAEQAAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					67,
+					1,
+					"insert",
+					{
+						"characters": " "
+					},
+					"AQAAAEwAAAAAAAAATQAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABMAAAAAAAAAEwAAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					69,
+					1,
+					"",
+					null,
+					"AQAAAE0AAAAAAAAAeAAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABNAAAAAAAAAE0AAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					70,
+					1,
+					"insert",
+					{
+						"characters": "\n"
+					},
+					"AQAAAHgAAAAAAAAAeQAAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAB4AAAAAAAAAHgAAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					75,
+					1,
+					"right_delete",
+					null,
+					"AQAAAHoAAAAAAAAAegAAAAAAAABAAQAACmRiLXVyaSA9ICJwb3N0Z3JlczovL2F1dGhlbnRpY2F0b3I6T1QzUURrTmxfVHdBLUhtaTJ0NGlobDdVWDl4YkZibkhJRkhIWk5OX2xoQUBlcC1sdWNreS12aW9sZXQtYW10MTdrdGktcG9vbGVyLmMtNS51cy1lYXN0LTEuYXdzLm5lb24udGVjaDo1NDMyL3NxbGl0ZXN5bmNwcm8iCmRiLXNjaGVtYSA9ICJwdWJsaWMiCmRiLWFub24tcm9sZSA9ICJhbm9uIgpqd3Qtc2VjcmV0ID0gInpLQ3BBak1xeksxWnROQlI3ZnVXNldoRm5JZGpjdmtQb1Jib0lHNFVVdVJTN2U1VWtOZjdackJwSkJHTHlJMVciCnNlcnZlci1ob3N0ID0gIioiCnNlcnZlci1wb3J0ID0gMzAwMAo",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAC6AQAAAAAAAHoAAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					77,
+					1,
+					"",
+					null,
+					"AQAAAHoAAAAAAAAAuQEAAAAAAAAAAAAA",
+					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAB6AAAAAAAAAHoAAAAAAAAAAAAAAAAA8L8"
+				],
+				[
+					11,
+					1,
+					"right_delete",
+					null,
+					"AQAAABQAAAAAAAAAFAAAAAAAAAArAAAAQlotSHhnS2xFNXJ3YWNQdW5CcmJvYmNaM1FLbmdmZzZvdHBTV1AzOGxhaw",
+					"AQAAAAAAAAABAAAAFAAAAAAAAAA/AAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					13,
+					1,
+					"",
+					null,
+					"AQAAABQAAAAAAAAAPwAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAFAAAAAAAAAAUAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					18,
+					1,
+					"right_delete",
+					null,
+					"AQAAAE0AAAAAAAAATQAAAAAAAAArAAAAQlotSHhnS2xFNXJ3YWNQdW5CcmJvYmNaM1FLbmdmZzZvdHBTV1AzOGxhaw",
+					"AQAAAAAAAAABAAAATQAAAAAAAAB4AAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					20,
+					1,
+					"",
+					null,
+					"AQAAAE0AAAAAAAAAjQAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAATQAAAAAAAABNAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					23,
+					1,
+					"right_delete",
+					null,
+					"AQAAAI8AAAAAAAAAjwAAAAAAAAA+AQAAZGItdXJpID0gInBvc3RncmVzOi8vYXV0aGVudGljYXRvcjpCWi1IeGdLbEU1cndhY1B1bkJyYm9iY1ozUUtuZ2ZnNm90cFNXUDM4bGFrQGVwLWx1Y2t5LXZpb2xldC1hbXQxN2t0aS1wb29sZXIuYy01LnVzLWVhc3QtMS5hd3MubmVvbi50ZWNoOjU0MzIvc3FsaXRlc3luY3BybyIKZGItc2NoZW1hID0gInB1YmxpYyIKZGItYW5vbi1yb2xlID0gImFub24iCmp3dC1zZWNyZXQgPSAiSVM1T29GbTItd2JRMXQtTE5yUEZoT3piRF8tWG1NR1hQcVVZR1RidWt5cXZzV3BEdUlJODlsc2xCaFhhN1VVRyIKc2VydmVyLWhvc3QgPSAiKiIKc2VydmVyLXBvcnQgPSAzMDAw",
+					"AQAAAAAAAAABAAAAzQEAAAAAAACPAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					25,
+					1,
+					"",
+					null,
+					"AQAAAI8AAAAAAAAAmwEAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAjwAAAAAAAACPAAAAAAAAAAAAAAAAAPC/"
+				]
+			]
+		},
+		{
+			"file": "/home/paulmckinney/Documents/SqliteSyncPro/createsuer_superbase.py",
+			"settings":
+			{
+				"buffer_size": 738,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/paulmckinney/Documents/SqliteSyncPro/auth_superbase.py",
+			"settings":
+			{
+				"buffer_size": 1187,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			},
+			"undo_stack":
+			[
+				[
+					35,
+					1,
+					"insert",
+					{
+						"characters": "paul.mckinney@"
+					},
+					"DgAAADIBAAAAAAAAMwEAAAAAAAAeAAAAb205ODc2NTQzMjFfcHJpdmF0ZUBpY2xvdWQuY29tMwEAAAAAAAA0AQAAAAAAAAAAAAA0AQAAAAAAADUBAAAAAAAAAAAAADUBAAAAAAAANgEAAAAAAAAAAAAANgEAAAAAAAA3AQAAAAAAAAAAAAA3AQAAAAAAADgBAAAAAAAAAAAAADgBAAAAAAAAOQEAAAAAAAAAAAAAOQEAAAAAAAA6AQAAAAAAAAAAAAA6AQAAAAAAADsBAAAAAAAAAAAAADsBAAAAAAAAPAEAAAAAAAAAAAAAPAEAAAAAAAA9AQAAAAAAAAAAAAA9AQAAAAAAAD4BAAAAAAAAAAAAAD4BAAAAAAAAPwEAAAAAAAAAAAAAPwEAAAAAAABAAQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAMgEAAAAAAABQAQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					36,
+					1,
+					"insert",
+					{
+						"characters": "gmail.com"
+					},
+					"CQAAAEABAAAAAAAAQQEAAAAAAAAAAAAAQQEAAAAAAABCAQAAAAAAAAAAAABCAQAAAAAAAEMBAAAAAAAAAAAAAEMBAAAAAAAARAEAAAAAAAAAAAAARAEAAAAAAABFAQAAAAAAAAAAAABFAQAAAAAAAEYBAAAAAAAAAAAAAEYBAAAAAAAARwEAAAAAAAAAAAAARwEAAAAAAABIAQAAAAAAAAAAAABIAQAAAAAAAEkBAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAQAEAAAAAAABAAQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					41,
+					1,
+					"right_delete",
+					null,
+					"AQAAAFcBAAAAAAAAVwEAAAAAAAAOAAAASmFrZUJvb2dlcnNAMzM",
+					"AQAAAAAAAAABAAAAVwEAAAAAAABlAQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					42,
+					1,
+					"insert",
+					{
+						"characters": "tes"
+					},
+					"AwAAAFcBAAAAAAAAWAEAAAAAAAAAAAAAWAEAAAAAAABZAQAAAAAAAAAAAABZAQAAAAAAAFoBAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAVwEAAAAAAABXAQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					43,
+					1,
+					"insert",
+					{
+						"characters": "user1"
+					},
+					"BQAAAFoBAAAAAAAAWwEAAAAAAAAAAAAAWwEAAAAAAABcAQAAAAAAAAAAAABcAQAAAAAAAF0BAAAAAAAAAAAAAF0BAAAAAAAAXgEAAAAAAAAAAAAAXgEAAAAAAABfAQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAWgEAAAAAAABaAQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					46,
+					1,
+					"insert",
+					{
+						"characters": "t"
+					},
+					"AQAAAFoBAAAAAAAAWwEAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAWgEAAAAAAABaAQAAAAAAAAAAAAAAAPC/"
+				]
+			]
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"pack",
+				"Package Control: Install Package"
+			],
+			[
+				"claud",
+				"Claudette: Ask Question"
+			],
+			[
+				"i",
+				"Package Control: Install Package"
+			],
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
+				"ack",
+				"Package Control: Install Package"
+			],
+			[
+				"insta",
+				"Package Control: Install Package"
+			],
+			[
+				"di",
+				"Package Control: Discover Packages"
+			],
+			[
+				"instal",
+				"Package Control: Install Package"
+			],
+			[
+				"split",
+				"File: Split View"
+			],
+			[
+				"proj",
+				"Project: Edit Project"
+			],
+			[
+				"dis",
+				"Package Control: Discover Packages"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"disc",
+				"Package Control: Discover Packages"
+			],
+			[
+				"markdown",
+				"MarkdownLivePreview: Open Preview"
+			],
+			[
+				"markdownp",
+				"MarkdownLivePreview: Open Preview"
+			],
+			[
+				"install package",
+				"Package Control: Install Package"
+			],
+			[
+				"markdow",
+				"Set Syntax: Markdown"
+			]
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/home/paulmckinney/Documents/ProjectNotes",
+		"/home/paulmckinney/Documents/ProjectNotes/docs",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/Introduction",
+		"/home/paulmckinney/Documents/CornerstonePlugins"
+	],
+	"file_history":
+	[
+		"/home/paulmckinney/test_superbase.py",
+		"/home/paulmckinney/createsuer_superbase.py",
+		"/home/paulmckinney/deleteuser_superbase.py",
+		"/home/paulmckinney/resetpasword_superbase.py",
+		"/home/paulmckinney/Documents/SqliteSyncPro/examples/invoice/postgres_schema.sql",
+		"/home/paulmckinney/MEGA/.ptmpB455CB/SqliteSyncPro/CMakeLists.txt",
+		"/home/paulmckinney/MEGA/.ptmpD6D42F/SqliteSyncPro/CMakeLists.txt",
+		"/home/paulmckinney/Documents/SqliteSyncPro/CLAUDE.md",
+		"/home/paulmckinney/.local/share/ProjectNotes/logs/console.log",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/exportnotes_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/exporttrackeritems_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes/windows/setup/setupscript.nsi",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/forms/dialogTrackerRptOptions.ui",
+		"/home/paulmckinney/.local/share/ProjectNotes/logs/debugging.log",
+		"/home/paulmckinney/Documents/ProjectNotes/threads/outlooksync_thread.py",
+		"/home/paulmckinney/Documents/ProjectNotes/threads/filefinder_thread.py",
+		"/home/paulmckinney/Documents/ProjectNotes/threads/ifssync_thread.py",
+		"/home/paulmckinney/Documents/ProjectNotes/sqlquerymodel.cpp",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/graphapi_tools.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/base_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes/databaseobjects.cpp",
+		"/home/paulmckinney/Documents/ProjectNotes/plugin.cpp",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/forms/dialogIFSCloud.ui",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/ifs_tools.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/ifscloud_plugin_settings.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/common.py",
+		"/home/paulmckinney/Documents/ProjectNotes/threads/tester_thread_1.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/ifs_ssrs_generate_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/base_plugin_settings.py",
+		"/home/paulmckinney/Desktop/textxmlexport.xml",
+		"/home/paulmckinney/Documents/ProjectNotes/pncomboboxdelegate.cpp",
+		"/home/paulmckinney/Documents/ProjectNotes/comboboxdelegate.cpp",
+		"/home/paulmckinney/Documents/download/uploadtest.txt",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/wordkill_plugin.py",
+		"/home/paulmckinney/.config/ProjectNotes4Beta/PluginSettings.conf",
+		"/home/paulmckinney/.config/ProjectNotes/PluginSettings.conf",
+		"/home/paulmckinney/MEGA/allsettings.json",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/excel_tools.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/outlook_tools.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/word_tools.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/mymeetingtypes_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/schedulecustomerkickoffinvite_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/scheduleinternalkickoffinvite_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/schedulecustomerlessonslearnedinvite_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/dialogMeetingTypes.ui",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/noteformatter.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/archivenotes_plugin.py",
+		"/home/paulmckinney/.local/state/ProjectNotesstaterc",
+		"/home/paulmckinney/.local/share/ProjectNotes/logs/projectnotes.log",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/scheduleinternalstatusinvite_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/PluginsOverview/AddingFunctionality.md",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/tester_plugin.py",
+		"/home/paulmckinney/Documents/client.xml",
+		"/home/paulmckinney/Documents/client2.xml",
+		"/home/paulmckinney/.local/share/ProjectNotes/logs/plugins.log",
+		"/home/paulmckinney/.config/sublime-merge/Packages/User/Preferences.sublime-settings",
+		"/home/paulmckinney/Documents/ProjectNotes/version.h.in",
+		"/home/paulmckinney/Documents/ProjectNotes/mainwindow.h",
+		"/home/paulmckinney/Documents/ProjectNotes/version.h",
+		"/home/paulmckinney/Documents/ProjectNotes/aboutdialog.h",
+		"/home/paulmckinney/Documents/ProjectNotes/.gitignore",
+		"/home/paulmckinney/.config/sublime-text/Packages/User/projectnotes.sublime-build",
+		"/home/paulmckinney/Documents/ProjectNotes/mainwindow.cpp",
+		"/home/paulmckinney/Documents/ProjectNotes/logviewer.cpp",
+		"/home/paulmckinney/Documents/ProjectNotes/pnbasepage.h",
+		"/home/paulmckinney/Documents/ProjectNotes/pnbasepage.cpp",
+		"/home/paulmckinney/Documents/ProjectNotes/plugin.h",
+		"/home/paulmckinney/Documents/ProjectNotes/pythonworker.cpp",
+		"/home/paulmckinney/Documents/ProjectNotes/pythonworker.h",
+		"/home/paulmckinney/Documents/ProjectNotes/mainwindow.ui",
+		"/home/paulmckinney/Documents/ProjectNotes/projectnotes.sublime-project",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/InterfaceOverview/PluginsMenu.md",
+		"/home/paulmckinney/Documents/ProjectNotes/CMakeLists.txt",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/pluginmanager.h",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/mainwindow.h",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/pluginmanager.cpp",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/main.cpp",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/mainwindow.cpp",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/logviewer.h",
+		"/home/paulmckinney/Documents/ProjectNotes/widgets_export.h",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/plugins/tester_plugin.py",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/plugins/tester_plugin2.py",
+		"/home/paulmckinney/Documents/ProjectNotes/ProjectNotes.pro",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/CMakeLists.txt",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/outlooksync_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/graphapitools.py",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/threads/tester_thread_1.py",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/build/Custom_Desktop_Qt_6_8_1-Debug/logs/console.log",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/build/Custom_Desktop_Qt_6_8_1-Debug/logs/plugins.log",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/build/Custom_Desktop_Qt_6_8_1-Debug/cmake_install.cmake",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/build/Custom_Desktop_Qt_6_8_1-Debug/build.ninja",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/build/Desktop_Qt_6_8_1-Debug/logs/console.log",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/build/Desktop_Qt_6_8_1-Debug/logs/plugins.log",
+		"/home/paulmckinney/Documents/ThreadedPythonApp/build/Desktop_Qt_6_7_2-Debug/plugins/tester_plugin2.py",
+		"/etc/ssh/sshd_config",
+		"/etc/ssh/ssh_config",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/copy_email_member_plugin.py",
+		"/home/paulmckinney/Documents/CornerstonePlugins/plugins/cci_connectdrives_plugin.py",
+		"/home/paulmckinney/Documents/CornerstonePlugins/plugins/cci_ifs_projects_import_plugin.py",
+		"/home/paulmckinney/Documents/CornerstonePlugins/plugins/cci_ifs_projects_statusreport_plugin.py",
+		"/home/paulmckinney/Documents/CornerstonePlugins/plugins/ifs_cloud_projects_statusreport_plugin.py",
+		"/etc/sysctl.conf",
+		"/home/paulmckinney/Documents/contact.xml",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/Release-Notes.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/How-To-Contribute.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/index.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/PluginsOverview/ProjectNotesXML.md",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/schedulecustomerstatusinvite_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/sendprojectemailtoattendee_plugin.py",
+		"/home/paulmckinney/Documents/DriveSyncTester/.gitignore",
+		"/home/paulmckinney/.zshrc",
+		"/home/paulmckinney/.wezterm.lua",
+		"/home/paulmckinney/.config/starship.toml",
+		"/home/paulmckinney/.config/fish/config.fish",
+		"/home/paulmckinney/Downloads/reaper_linux_x86_64/readme-linux.txt",
+		"/etc/security/limits.conf",
+		"/home/paulmckinney/.config/sublime-text/Packages/User/qt_project.sublime-build",
+		"/home/paulmckinney/Documents/uploadtest.txt",
+		"/home/paulmckinney/Documents/ProjectNotes/pntableview.cpp",
+		"/home/paulmckinney/Documents/ProjectNotes/Makefile",
+		"/home/paulmckinney/Documents/ProjectNotes/README.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/InterfaceOverview/ViewMenu.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/InterfaceOverview/Toolbar.md",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/InterfaceOverview/EarnedValueTerms.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/Schedule an Internal Kickoff Meeting Plugin.md",
+		"/home/paulmckinney/Documents/CornerstonePlugins/README.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/Home.md",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/Action Item Detail Page.md"
+	],
+	"find":
+	{
+		"height": 28.0
+	},
+	"find_in_files":
+	{
+		"height": 109.0,
+		"where_history":
+		[
+			""
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"connectg",
+			"connect",
+			".critical",
+			"dialogex",
+			"progbar",
+			"span",
+			"col-in",
+			"exportno",
+			"</td>'",
+			"f'",
+			"}",
+			"{",
+			"<style",
+			"web_view",
+			"tapi",
+			"cannot change",
+			".arg(",
+			"globalclientfilter",
+			"userfilter",
+			"TODO",
+			"T",
+			"authentic",
+			"TODO",
+			"create_act",
+			"SyncTrackerItems",
+			"sync_tracker",
+			"export_ifs_tracker",
+			"export_ifs_project",
+			"create_activi",
+			"MeetingEmailTypes",
+			"populate_dynamic",
+			"send_an",
+			"pncomboboxdelegate:",
+			"pncombobox",
+			"comboboxdelegate",
+			"todo",
+			"save_",
+			"getprojects",
+			".show",
+			"import win32com",
+			"import wind32com",
+			"win32",
+			"start",
+			"replace_v",
+			".get(",
+			"menu_ar",
+			"pnc",
+			"schedule",
+			"sendproj",
+			"schedul",
+			"schedule",
+			"ui_typ",
+			"ui_template",
+			"closee",
+			"attachment",
+			"platform",
+			"win32com"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"</td>\"",
+			"f\"",
+			"}}",
+			"{{",
+			"<style>\n<meta charset=\"utf-8\">\n    <!--\n     /* Font Definitions */\n     @font-face\n        {font-family:\"Cambria Math\";\n        panose-1:2 4 5 3 5 4 6 3 2 4;\n        mso-font-charset:0;\n        mso-generic-font-family:roman;\n        mso-font-pitch:variable;\n        mso-font-signature:-536869121 1107305727 33554432 0 415 0;}\n    @font-face\n        {font-family:Calibri;\n        panose-1:2 15 5 2 2 2 4 3 2 4;\n        mso-font-charset:0;\n        mso-generic-font-family:swiss;\n        mso-font-pitch:variable;\n        mso-font-signature:-469750017 -1040178053 9 0 511 0;}\n    @font-face\n        {font-family:Aptos;\n        mso-font-charset:0;\n        mso-generic-font-family:swiss;\n        mso-font-pitch:variable;\n        mso-font-signature:536871559 3 0 0 415 0;}\n     /* Style Definitions */\n     p.MsoNormal, li.MsoNormal, div.MsoNormal\n        {mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-parent:\"\";\n        margin-top:0in;\n        margin-right:0in;\n        margin-bottom:8.0pt;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:Aptos;\n        mso-fareast-theme-font:minor-latin;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:minor-bidi;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;}\n    h1\n        {mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 1 Char\";\n        mso-style-next:Normal;\n        margin-top:.25in;\n        margin-right:0in;\n        margin-bottom:4.0pt;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:1;\n        font-size:20.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-weight:normal;}\n    h2\n        {mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 2 Char\";\n        mso-style-next:Normal;\n        margin-top:8.0pt;\n        margin-right:0in;\n        margin-bottom:4.0pt;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:2;\n        font-size:16.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-weight:normal;}\n    h3\n        {mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 3 Char\";\n        mso-style-next:Normal;\n        margin-top:8.0pt;\n        margin-right:0in;\n        margin-bottom:4.0pt;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:3;\n        font-size:14.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-weight:normal;}\n    h4\n        {mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 4 Char\";\n        mso-style-next:Normal;\n        margin-top:4.0pt;\n        margin-right:0in;\n        margin-bottom:2.0pt;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:4;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-weight:normal;\n        font-style:italic;}\n    h5\n        {mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 5 Char\";\n        mso-style-next:Normal;\n        margin-top:4.0pt;\n        margin-right:0in;\n        margin-bottom:2.0pt;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:5;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-weight:normal;}\n    h6\n        {mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 6 Char\";\n        mso-style-next:Normal;\n        margin-top:2.0pt;\n        margin-right:0in;\n        margin-bottom:0in;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:6;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#595959;\n        mso-themecolor:text1;\n        mso-themetint:166;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-weight:normal;\n        font-style:italic;}\n    p.MsoHeading7, li.MsoHeading7, div.MsoHeading7\n        {mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 7 Char\";\n        mso-style-next:Normal;\n        margin-top:2.0pt;\n        margin-right:0in;\n        margin-bottom:0in;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:7;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#595959;\n        mso-themecolor:text1;\n        mso-themetint:166;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoHeading8, li.MsoHeading8, div.MsoHeading8\n        {mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 8 Char\";\n        mso-style-next:Normal;\n        margin:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:8;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#272727;\n        mso-themecolor:text1;\n        mso-themetint:216;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-style:italic;}\n    p.MsoHeading9, li.MsoHeading9, div.MsoHeading9\n        {mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 9 Char\";\n        mso-style-next:Normal;\n        margin:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:9;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#272727;\n        mso-themecolor:text1;\n        mso-themetint:216;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoTitle, li.MsoTitle, div.MsoTitle\n        {mso-style-priority:10;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-link:\"Title Char\";\n        mso-style-next:Normal;\n        margin-top:0in;\n        margin-right:0in;\n        margin-bottom:4.0pt;\n        margin-left:0in;\n        mso-add-space:auto;\n        mso-pagination:widow-orphan;\n        font-size:28.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        letter-spacing:-.5pt;\n        mso-font-kerning:14.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoTitleCxSpFirst, li.MsoTitleCxSpFirst, div.MsoTitleCxSpFirst\n        {mso-style-priority:10;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-link:\"Title Char\";\n        mso-style-next:Normal;\n        mso-style-type:export-only;\n        margin:0in;\n        mso-add-space:auto;\n        mso-pagination:widow-orphan;\n        font-size:28.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        letter-spacing:-.5pt;\n        mso-font-kerning:14.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoTitleCxSpMiddle, li.MsoTitleCxSpMiddle, div.MsoTitleCxSpMiddle\n        {mso-style-priority:10;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-link:\"Title Char\";\n        mso-style-next:Normal;\n        mso-style-type:export-only;\n        margin:0in;\n        mso-add-space:auto;\n        mso-pagination:widow-orphan;\n        font-size:28.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        letter-spacing:-.5pt;\n        mso-font-kerning:14.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoTitleCxSpLast, li.MsoTitleCxSpLast, div.MsoTitleCxSpLast\n        {mso-style-priority:10;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-link:\"Title Char\";\n        mso-style-next:Normal;\n        mso-style-type:export-only;\n        margin-top:0in;\n        margin-right:0in;\n        margin-bottom:4.0pt;\n        margin-left:0in;\n        mso-add-space:auto;\n        mso-pagination:widow-orphan;\n        font-size:28.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        letter-spacing:-.5pt;\n        mso-font-kerning:14.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoSubtitle, li.MsoSubtitle, div.MsoSubtitle\n        {mso-style-priority:11;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-link:\"Subtitle Char\";\n        mso-style-next:Normal;\n        margin-top:0in;\n        margin-right:0in;\n        margin-bottom:8.0pt;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan;\n        font-size:14.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#595959;\n        mso-themecolor:text1;\n        mso-themetint:166;\n        letter-spacing:.75pt;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoListParagraph, li.MsoListParagraph, div.MsoListParagraph\n        {mso-style-priority:34;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        margin-top:0in;\n        margin-right:0in;\n        margin-bottom:8.0pt;\n        margin-left:.5in;\n        mso-add-space:auto;\n        line-height:115%;\n        mso-pagination:widow-orphan;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:Aptos;\n        mso-fareast-theme-font:minor-latin;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:minor-bidi;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoListParagraphCxSpFirst, li.MsoListParagraphCxSpFirst, div.MsoListParagraphCxSpFirst\n        {mso-style-priority:34;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-type:export-only;\n        margin-top:0in;\n        margin-right:0in;\n        margin-bottom:0in;\n        margin-left:.5in;\n        mso-add-space:auto;\n        line-height:115%;\n        mso-pagination:widow-orphan;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:Aptos;\n        mso-fareast-theme-font:minor-latin;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:minor-bidi;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoListParagraphCxSpMiddle, li.MsoListParagraphCxSpMiddle, div.MsoListParagraphCxSpMiddle\n        {mso-style-priority:34;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-type:export-only;\n        margin-top:0in;\n        margin-right:0in;\n        margin-bottom:0in;\n        margin-left:.5in;\n        mso-add-space:auto;\n        line-height:115%;\n        mso-pagination:widow-orphan;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:Aptos;\n        mso-fareast-theme-font:minor-latin;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:minor-bidi;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoListParagraphCxSpLast, li.MsoListParagraphCxSpLast, div.MsoListParagraphCxSpLast\n        {mso-style-priority:34;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-type:export-only;\n        margin-top:0in;\n        margin-right:0in;\n        margin-bottom:8.0pt;\n        margin-left:.5in;\n        mso-add-space:auto;\n        line-height:115%;\n        mso-pagination:widow-orphan;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:Aptos;\n        mso-fareast-theme-font:minor-latin;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:minor-bidi;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoQuote, li.MsoQuote, div.MsoQuote\n        {mso-style-priority:29;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-link:\"Quote Char\";\n        mso-style-next:Normal;\n        margin-top:8.0pt;\n        margin-right:0in;\n        margin-bottom:8.0pt;\n        margin-left:0in;\n        text-align:center;\n        line-height:115%;\n        mso-pagination:widow-orphan;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:Aptos;\n        mso-fareast-theme-font:minor-latin;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:minor-bidi;\n        color:#404040;\n        mso-themecolor:text1;\n        mso-themetint:191;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-style:italic;}\n    p.MsoIntenseQuote, li.MsoIntenseQuote, div.MsoIntenseQuote\n        {mso-style-priority:30;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-link:\"Intense Quote Char\";\n        mso-style-next:Normal;\n        margin-top:.25in;\n        margin-right:.6in;\n        margin-bottom:.25in;\n        margin-left:.6in;\n        text-align:center;\n        line-height:115%;\n        mso-pagination:widow-orphan;\n        border:none;\n        mso-border-top-alt:solid #0F4761 .5pt;\n        mso-border-top-themecolor:accent1;\n        mso-border-top-themeshade:191;\n        mso-border-bottom-alt:solid #0F4761 .5pt;\n        mso-border-bottom-themecolor:accent1;\n        mso-border-bottom-themeshade:191;\n        padding:0in;\n        mso-padding-alt:10.0pt 0in 10.0pt 0in;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:Aptos;\n        mso-fareast-theme-font:minor-latin;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:minor-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-style:italic;}\n    span.MsoIntenseEmphasis\n        {mso-style-priority:21;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        font-style:italic;}\n    span.MsoIntenseReference\n        {mso-style-priority:32;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        font-variant:small-caps;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        letter-spacing:.25pt;\n        font-weight:bold;}\n    span.Heading1Char\n        {mso-style-name:\"Heading 1 Char\";\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 1\";\n        mso-ansi-font-size:20.0pt;\n        mso-bidi-font-size:20.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;}\n    span.Heading2Char\n        {mso-style-name:\"Heading 2 Char\";\n        mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 2\";\n        mso-ansi-font-size:16.0pt;\n        mso-bidi-font-size:16.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;}\n    span.Heading3Char\n        {mso-style-name:\"Heading 3 Char\";\n        mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 3\";\n        mso-ansi-font-size:14.0pt;\n        mso-bidi-font-size:14.0pt;\n        font-family:\"Times New Roman\",serif;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;}\n    span.Heading4Char\n        {mso-style-name:\"Heading 4 Char\";\n        mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 4\";\n        font-family:\"Times New Roman\",serif;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        font-style:italic;}\n    span.Heading5Char\n        {mso-style-name:\"Heading 5 Char\";\n        mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 5\";\n        font-family:\"Times New Roman\",serif;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;}\n    span.Heading6Char\n        {mso-style-name:\"Heading 6 Char\";\n        mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 6\";\n        font-family:\"Times New Roman\",serif;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#595959;\n        mso-themecolor:text1;\n        mso-themetint:166;\n        font-style:italic;}\n    span.Heading7Char\n        {mso-style-name:\"Heading 7 Char\";\n        mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 7\";\n        font-family:\"Times New Roman\",serif;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#595959;\n        mso-themecolor:text1;\n        mso-themetint:166;}\n    span.Heading8Char\n        {mso-style-name:\"Heading 8 Char\";\n        mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 8\";\n        font-family:\"Times New Roman\",serif;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#272727;\n        mso-themecolor:text1;\n        mso-themetint:216;\n        font-style:italic;}\n    span.Heading9Char\n        {mso-style-name:\"Heading 9 Char\";\n        mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 9\";\n        font-family:\"Times New Roman\",serif;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#272727;\n        mso-themecolor:text1;\n        mso-themetint:216;}\n    span.TitleChar\n        {mso-style-name:\"Title Char\";\n        mso-style-priority:10;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:Title;\n        mso-ansi-font-size:28.0pt;\n        mso-bidi-font-size:28.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        letter-spacing:-.5pt;\n        mso-font-kerning:14.0pt;}\n    span.SubtitleChar\n        {mso-style-name:\"Subtitle Char\";\n        mso-style-priority:11;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:Subtitle;\n        mso-ansi-font-size:14.0pt;\n        mso-bidi-font-size:14.0pt;\n        font-family:\"Times New Roman\",serif;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#595959;\n        mso-themecolor:text1;\n        mso-themetint:166;\n        letter-spacing:.75pt;}\n    span.QuoteChar\n        {mso-style-name:\"Quote Char\";\n        mso-style-priority:29;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:Quote;\n        color:#404040;\n        mso-themecolor:text1;\n        mso-themetint:191;\n        font-style:italic;}\n    span.IntenseQuoteChar\n        {mso-style-name:\"Intense Quote Char\";\n        mso-style-priority:30;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Intense Quote\";\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        font-style:italic;}\n    .MsoChpDefault\n        {mso-style-type:export-only;\n        mso-default-props:yes;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:Aptos;\n        mso-fareast-theme-font:minor-latin;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:minor-bidi;}\n    .MsoPapDefault\n        {mso-style-type:export-only;\n        margin-bottom:8.0pt;\n        line-height:115%;}\n    @page WordSection1\n        {size:8.5in 11.0in;\n        margin:1.0in 1.0in 1.0in 1.0in;\n        mso-header-margin:.5in;\n        mso-footer-margin:.5in;\n        mso-paper-source:0;}\n    div.WordSection1\n        {page:WordSection1;}\n    -->\n    </style>\n</head>\n",
+			""
+		],
+		"reverse": false,
+		"scrollbar_highlights": true,
+		"show_context": true,
+		"use_buffer2": true,
+		"use_gitignore": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "docs/Introduction/GettingStarted.md",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4153,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1177,
+								1177
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 58.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"stack_multiselect": false,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "/home/paulmckinney/Desktop/neonpass.txt",
+					"selected": true,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 486,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								411,
+								411
+							]
+						],
+						"settings":
+						{
+							"auto_name": "OT3QDkNl_TwA-Hmi2t4ihl7UX9xbFbnHIFHHZNN_lhA",
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"stack_multiselect": false,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "/home/paulmckinney/Documents/SqliteSyncPro/createsuer_superbase.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 738,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								95,
+								314
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 937.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"stack_multiselect": false,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "/home/paulmckinney/Documents/SqliteSyncPro/auth_superbase.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1187,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								142,
+								142
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"stack_multiselect": false,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 28.0
+	},
+	"input":
+	{
+		"height": 43.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.SublimeLinter":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"output.exec":
+	{
+		"height": 132.0,
+		"history":
+		[
+		]
+	},
+	"output.find_results":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"pinned_build_system": "Packages/Python 3/Python3.sublime-build",
+	"project": "projectnotes.sublime-project",
+	"replace":
+	{
+		"height": 52.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"mainw",
+				"ProjectNotes/mainwindow.cpp"
+			],
+			[
+				"main",
+				"ProjectNotes/mainwindow.h"
+			],
+			[
+				"Peop",
+				"docs/PeopleListPage.md"
+			],
+			[
+				"itemtr",
+				"docs/ItemTrackerPage.md"
+			],
+			[
+				"import",
+				"docs/ImportingandExportingOutlookCont.md"
+			],
+			[
+				"ind",
+				"docs/index.md"
+			],
+			[
+				"mk",
+				"mkdocs.yml"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": false,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 295.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

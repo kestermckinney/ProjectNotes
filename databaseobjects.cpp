@@ -519,7 +519,7 @@ bool DatabaseObjects::saveParameter( const QString& parametername, const QString
         else
         {
             QSqlQuery insert(m_sqliteDb);
-            insert.prepare("insert into application_settings (parameter_id, parameter_name, parameter_value) values (?, ?, ?);");
+            insert.prepare("insert into application_settings (id, parameter_name, parameter_value) values (?, ?, ?);");
             insert.bindValue(0, QUuid::createUuid().toString());
             insert.bindValue(1, parametername);
             insert.bindValue(2, parametervalue);
@@ -720,7 +720,7 @@ void DatabaseObjects::setGlobalSearches( bool refresh )
     {
         projectslistmodel()->setFilter(0, getGlobalProjectFilter());
 
-        QString projectnumber = execute(QString("select project_number from projects where project_id = '%1'").arg(getGlobalProjectFilter()));
+        QString projectnumber = execute(QString("select project_number from projects where id = '%1'").arg(getGlobalProjectFilter()));
 
         searchresultsmodel()->setFilter(7, projectnumber);
     }
@@ -755,8 +755,8 @@ QDomDocument* DatabaseObjects::createXMLExportDoc(QList<SqlQueryModel*>* querymo
     root.setAttribute("filepath", getDatabaseFile());
     root.setAttribute("export_date", QDateTime::currentDateTime().toString("MM/dd/yyyy h:m:s ap"));
 
-    QString companyname = execute(QString("select client_name from clients where client_id='%1'").arg(getManagingCompany()));
-    QString managername = execute(QString("select name from people where people_id='%1'").arg(getProjectManager()));
+    QString companyname = execute(QString("select client_name from clients where id='%1'").arg(getManagingCompany()));
+    QString managername = execute(QString("select name from people where id='%1'").arg(getProjectManager()));
 
     root.setAttribute("project_manager_id", getProjectManager());
     root.setAttribute("managing_company_id", getManagingCompany());
@@ -785,8 +785,8 @@ QDomDocument* DatabaseObjects::createXMLExportDoc(SqlQueryModel* querymodel, con
     root.setAttribute("filepath", getDatabaseFile());
     root.setAttribute("export_date", QDateTime::currentDateTime().toString("MM/dd/yyyy h:m:s ap"));
 
-    QString companyname = execute(QString("select client_name from clients where client_id='%1'").arg(getManagingCompany()));
-    QString managername = execute(QString("select name from people where people_id='%1'").arg(getProjectManager()));
+    QString companyname = execute(QString("select client_name from clients where id='%1'").arg(getManagingCompany()));
+    QString managername = execute(QString("select name from people where id='%1'").arg(getProjectManager()));
 
     root.setAttribute("project_manager_id", getProjectManager());
     root.setAttribute("managing_company_id", getManagingCompany());
@@ -1156,7 +1156,7 @@ void DatabaseObjects::addDefaultPMToProject(const QString& projectId)
     QString pm = getProjectManager();
     QString guid = QUuid::createUuid().toString();
 
-    QString insert = QString("insert into project_people (teammember_id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' )").arg(projectId).arg(pm).arg(guid);
+    QString insert = QString("insert into project_people (id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' )").arg(projectId).arg(pm).arg(guid);
 
     execute(insert);
 }
@@ -1167,12 +1167,12 @@ void DatabaseObjects::addDefaultPMToMeeting(const QString& noteId)
     QString guid = QUuid::createUuid().toString();
     QString guid2 = QUuid::createUuid().toString();
 
-    QString project_id = execute(QString("select project_id from project_notes where note_id='%1'").arg(noteId));
-    QString insertpm = QString("insert into project_people (teammember_id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' )").arg(project_id).arg(pm).arg(guid2);
+    QString project_id = execute(QString("select project_id from project_notes where id='%1'").arg(noteId));
+    QString insertpm = QString("insert into project_people (id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' )").arg(project_id).arg(pm).arg(guid2);
 
     execute(insertpm);
 
-    QString insert = QString("insert into meeting_attendees (attendee_id, person_id, note_id) select '%3', '%2', '%1' where not exists (select 1 from meeting_attendees where note_id = '%1' and person_id = '%2' )").arg(noteId).arg(pm).arg(guid);
+    QString insert = QString("insert into meeting_attendees (id, person_id, note_id) select '%3', '%2', '%1' where not exists (select 1 from meeting_attendees where note_id = '%1' and person_id = '%2' )").arg(noteId).arg(pm).arg(guid);
 
     execute(insert);
 

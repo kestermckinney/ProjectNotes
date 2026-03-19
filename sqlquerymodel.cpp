@@ -923,7 +923,7 @@ bool SqlQueryModel::columnChangeCheck(const QModelIndex &index)
             {
                 DB_LOCK;
                 QSqlQuery projsql(getDBOs()->getDb());
-                projsql.prepare(QString("select project_number from projects where project_id ='%1'").arg(col_val.toString()));
+                projsql.prepare(QString("select project_number from projects where id ='%1'").arg(col_val.toString()));
 
                 projsql.exec();
 
@@ -1035,7 +1035,7 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
             {
                 DB_LOCK;
                 QSqlQuery projsql(getDBOs()->getDb());
-                projsql.prepare(QString("select project_number from projects where project_id ='%1'").arg(col_val.toString()));
+                projsql.prepare(QString("select project_number from projects where id ='%1'").arg(col_val.toString()));
 
                 projsql.exec();
 
@@ -1154,7 +1154,7 @@ bool SqlQueryModel::reloadRecord(const QModelIndex& index)
 {
     DB_LOCK;
     QSqlQuery select(getDBOs()->getDb());
-    select.prepare(BaseSQL() + " where " + m_columnName[0] + " = ? ");
+    select.prepare("SELECT * FROM (" + BaseSQL() + ") _t WHERE _t." + m_columnName[0] + " = ?");
     select.bindValue(0, m_cache[index.row()][0]);
 
     if (select.exec())
@@ -2278,7 +2278,7 @@ bool SqlQueryModel::loadAndFilterRow(const QVariant& id)  // load the record and
 
     DB_LOCK;
     QSqlQuery select(getDBOs()->getDb());
-    select.prepare(BaseSQL() + " where " + m_columnName[0] + " = ? ");
+    select.prepare("SELECT * FROM (" + BaseSQL() + ") _t WHERE _t." + m_columnName[0] + " = ?");
     select.bindValue(0, id);
 
     if (select.exec())

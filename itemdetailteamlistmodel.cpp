@@ -5,16 +5,16 @@
 
 ItemDetailTeamListModel::ItemDetailTeamListModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
-    setBaseSql("SELECT teammember_id, b.name, project_id, a.people_id FROM project_people a join people b on a.people_id=b.people_id ");
+    setBaseSql("SELECT id, b.name, project_id, a.people_id FROM project_people a join people b on a.people_id=b.id ");
 
     setTableName("people", "Team Members");
 
-    addColumn("teammember_id", tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("id", tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
     addColumn("name", tr("Name"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique);
     addColumn("project_id", tr("Project ID"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique,
-              "projects", "project_id", "project_number");
+              "projects", "id", "project_number");
     addColumn("people_id", tr("People ID"), DBString, DBSearchable, DBRequired, DBReadOnly, DBNotUnique,
-               "people", "people_id", "name");
+               "people", "id", "name");
 
     setOrderBy("name");
 }

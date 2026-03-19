@@ -8,7 +8,26 @@ void db_UpgradeStep_v5_0_0()
 {
     // Rename column 0 (primary key) to id on every table
     global_DBObjects.execute(R"(ALTER TABLE application_settings RENAME COLUMN parameter_id TO id;)");
-    global_DBObjects.execute(R"(ALTER TABLE application_version RENAME COLUMN current_version TO id;)");
+
+    // For application_version, rebuild the table with id (GUID) as PK and keep current_version for version string
+    global_DBObjects.execute(R"(
+        CREATE TABLE application_version_new(
+            id              TEXT PRIMARY KEY UNIQUE NOT NULL,
+            current_version TEXT
+        );
+    )");
+
+    // Copy data from old table, generating UUIDs for the id column
+    global_DBObjects.execute(R"(
+        INSERT INTO application_version_new (id, current_version)
+        SELECT lower(hex(randomblob(16))), current_version
+        FROM application_version;
+    )");
+
+    // Drop old table and rename new one
+    global_DBObjects.execute(R"(DROP TABLE application_version;)");
+    global_DBObjects.execute(R"(ALTER TABLE application_version_new RENAME TO application_version;)");
+
     global_DBObjects.execute(R"(ALTER TABLE clients RENAME COLUMN client_id TO id;)");
     global_DBObjects.execute(R"(ALTER TABLE item_tracker RENAME COLUMN item_id TO id;)");
     global_DBObjects.execute(R"(ALTER TABLE item_tracker_updates RENAME COLUMN tracker_updated_id TO id;)");

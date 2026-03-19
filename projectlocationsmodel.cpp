@@ -9,13 +9,13 @@ ProjectLocationsModel::ProjectLocationsModel(DatabaseObjects* dbo): SqlQueryMode
     setObjectName("ProjectLocationsModel");
     setOrderKey(35);
 
-    setBaseSql("SELECT location_id, project_id, location_type, location_description, full_path, (select p.project_number from projects p where p.project_id=pl.project_id) project_number, (select p.project_name from projects p where p.project_id=pl.project_id) project_name FROM project_locations pl");
+    setBaseSql("SELECT id, project_id, location_type, location_description, full_path, (select p.project_number from projects p where p.id=pl.project_id) project_number, (select p.project_name from projects p where p.id=pl.project_id) project_name FROM project_locations pl");
 
     setTableName("project_locations", "Project Locations");
 
-    addColumn("location_id", tr("Location ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("id", tr("Location ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
     addColumn("project_id", tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
-              "projects", "project_id", "project_number");
+              "projects", "id", "project_number");
     addColumn("location_type", tr("Location Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &DatabaseObjects::file_types);
     addColumn("location_description", tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("full_path", tr("Full Path"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
@@ -30,7 +30,7 @@ ProjectLocationsModel::ProjectLocationsModel(DatabaseObjects* dbo): SqlQueryMode
 
     addUniqueKeys(key2, "Description");
 
-    setOrderBy("location_id");
+    setOrderBy("id");
 }
 
 

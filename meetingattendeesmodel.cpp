@@ -13,15 +13,15 @@ MeetingAttendeesModel::MeetingAttendeesModel(DatabaseObjects* dbo): SqlQueryMode
     setObjectName("MeetingAttendeesModel");
     setOrderKey(40);
 
-    setBaseSql("SELECT m.attendee_id, m.note_id, m.person_id, name, (select p.project_name from projects p where p.project_id=(select n.project_id from project_notes n where n.note_id=m.note_id)) project_id_name, email, client_name, (select n.project_id from project_notes n where n.note_id=m.note_id) project_id, (select p.project_number from projects p where p.project_id=(select n.project_id from project_notes n where n.note_id=m.note_id)) project_number FROM meeting_attendees m join people on people.people_id=m.person_id left join clients on clients.client_id=people.client_id");
+    setBaseSql("SELECT m.id, m.note_id, m.person_id, name, (select p.project_name from projects p where p.id=(select n.project_id from project_notes n where n.id=m.note_id)) project_id_name, email, client_name, (select n.project_id from project_notes n where n.id=m.note_id) project_id, (select p.project_number from projects p where p.id=(select n.project_id from project_notes n where n.id=m.note_id)) project_number FROM meeting_attendees m join people on people.id=m.person_id left join clients on clients.id=people.client_id");
 
     setTableName("meeting_attendees", "Attendees");
 
-    addColumn("attendee_id", tr("Attendee ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBUnique);
+    addColumn("id", tr("Attendee ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBUnique);
     addColumn("note_id", tr("Note ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
-              "project_notes", "note_id", "(strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title)");
+              "project_notes", "id", "(strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title)");
     addColumn("person_id", tr("Attendee"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
-              "people", "people_id", "name");
+              "people", "id", "name");
     addColumn("name", tr("Attendee Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("project_id_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("email", tr("Email"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);

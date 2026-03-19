@@ -26,11 +26,12 @@ void db_CreateNewDatabase()
     // Application version table
     global_DBObjects.execute(R"(
         CREATE TABLE application_version(
-            id          TEXT PRIMARY KEY
+            id              TEXT PRIMARY KEY
             UNIQUE
             NOT NULL,
-            updateddate INTEGER,
-            syncdate    INTEGER
+            current_version TEXT,
+            updateddate     INTEGER,
+            syncdate        INTEGER
         );
     )");
 

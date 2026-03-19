@@ -10,29 +10,29 @@ NotesActionItemsModel::NotesActionItemsModel(DatabaseObjects* dbo): SqlQueryMode
     setObjectName("NotesActionItemsModel");
     setOrderKey(35);
 
-    setBaseSql("SELECT item_id, item_number, item_type, item_name, identified_by, date_identified, description, assigned_to, priority, status, date_due, last_update, date_resolved, note_id, project_id, internal_item FROM item_tracker");
+    setBaseSql("SELECT id, item_number, item_type, item_name, identified_by, date_identified, description, assigned_to, priority, status, date_due, last_update, date_resolved, note_id, project_id, internal_item FROM item_tracker");
 
     setTableName("item_tracker", "Notes Action Items");
 
-    addColumn("item_id", tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
+    addColumn("id", tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
     addColumn("item_number", tr("Item"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn("item_type", tr("Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &DatabaseObjects::item_type);
     addColumn("item_name", tr("Item Name"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("identified_by", tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
-              "people", "people_id", "name");
+              "people", "id", "name");
     addColumn("date_identified", tr("Date Identified"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("description", tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("assigned_to", tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
-              "people", "people_id", "name");
+              "people", "id", "name");
     addColumn("priority", tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &DatabaseObjects::item_priority);
     addColumn("status", tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &DatabaseObjects::item_status);
     addColumn("date_due", tr("Date Due"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("last_update", tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn("date_resolved", tr("Date Resolved"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("note_id", tr("Note"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
-              "project_notes", "note_id", "(strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title)");
+              "project_notes", "id", "(strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title)");
     addColumn("project_id", tr("Project ID"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
-              "projects", "project_id", "project_number");
+              "projects", "id", "project_number");
     addColumn("internal_item", tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
     QStringList key1 = {"project_id", "item_number"};
@@ -43,7 +43,7 @@ NotesActionItemsModel::NotesActionItemsModel(DatabaseObjects* dbo): SqlQueryMode
 
     addUniqueKeys(key2, "Item Name");
 
-    addRelatedTable("item_tracker_updates", "item_id", "item_id", "Tracker Updates", DBExportable);
+    addRelatedTable("item_tracker_updates", "item_id", "id", "Tracker Updates", DBExportable);
 
     setOrderBy("item_number");
 }

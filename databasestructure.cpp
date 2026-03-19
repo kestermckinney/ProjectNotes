@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include <version.h>
+#include <QUuid>
 #include "databasestructure.h"
 #include "databaseobjects.h"
 #include "databasecreate.h"
@@ -18,19 +19,21 @@ bool DatabaseStructure::CreateDatabase()
     // Create all views as final step
     db_CreateAllViews();
 
-    // Insert current version
-    global_DBObjects.execute(QString("INSERT INTO application_version (id) VALUES('%1.%2.%3');")
-        .arg(APP_VERSION_MAJOR).arg(APP_VERSION_MINOR).arg(APP_VERSION_PATCH));
+    // Insert version with a GUID id
+    QString versionGuid = QUuid::createUuid().toString();
+    QString versionString = QString("%1.%2.%3")
+        .arg(APP_VERSION_MAJOR).arg(APP_VERSION_MINOR).arg(APP_VERSION_PATCH);
+
+    global_DBObjects.execute(QString("INSERT INTO application_version (id, current_version) VALUES('%1', '%2');")
+        .arg(versionGuid, versionString));
 
     return true;
 }
 
 bool DatabaseStructure::UpgradeDatabase()
 {
-    // Try the v5+ column name first; fall back to the pre-v5 name for older databases
-    QString currentversion = global_DBObjects.execute("select id from application_version");
-    if (currentversion.isEmpty())
-        currentversion = global_DBObjects.execute("select current_version from application_version");
+    // Read current version from application_version table
+    QString currentversion = global_DBObjects.execute("select current_version from application_version");
 
     if (currentversion.isEmpty())
         return false;
@@ -57,9 +60,9 @@ bool DatabaseStructure::UpgradeDatabase()
     // Recreate all views as final step (always uses current column names)
     db_CreateAllViews();
 
-    // Update version to target
-    global_DBObjects.execute(QString("update application_version set id = '%1' where id = '%2';")
-        .arg(targetversion, currentversion));
+    // Update version to target (only update current_version, never modify id)
+    global_DBObjects.execute(QString("update application_version set current_version = '%1';")
+        .arg(targetversion));
 
     return true;
 }

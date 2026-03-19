@@ -963,7 +963,7 @@ void MainWindow::slotOpen_SearchResults_triggered(QVariant recordId)
     }
     else if (data_type == tr("Meeting Attendees"))
     {
-        QVariant project_id = global_DBObjects.execute(QString("select project_id from project_notes where note_id = '%1'").arg(fk_id.toString()));
+        QVariant project_id = global_DBObjects.execute(QString("select project_id from project_notes where id = '%1'").arg(fk_id.toString()));
 
         navigateToPage(ui->pageProjectDetails, project_id);
         ui->tabWidgetProject->setCurrentIndex(4);

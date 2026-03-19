@@ -18,13 +18,13 @@ ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
     setBaseSql("select * from projects_view");
     setTableName("projects", "Project");
 
-    addColumn("project_id", tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
+    addColumn("id", tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
     addColumn("project_number", tr("Number"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
     addColumn("project_name", tr("Project Name"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
     addColumn("last_status_date", tr("Status Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
     addColumn("last_invoice_date", tr("Invoice Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
     addColumn("primary_contact", tr("Primary Contact"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
-              "people", "people_id", "name");
+              "people", "id", "name");
     addColumn("budget", tr("Budget"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
     addColumn("actual", tr("Actual"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
     addColumn("bcwp", tr("BCWP"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
@@ -33,7 +33,7 @@ ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
     addColumn("invoicing_period", tr("Invoice Period"), DBString, DBSearchable, DBNotRequired, DBEditable);
     addColumn("status_report_period", tr("Report Period"), DBString, DBSearchable, DBNotRequired, DBEditable);
     addColumn("client_id", tr("Client"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
-              "clients", "client_id", "client_name");
+              "clients", "id", "client_name");
     addColumn("project_status", tr("Status"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique, &DatabaseObjects::project_status);
     addColumn("pct_consumed", tr("Consumed"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn("eac", tr("EAC"), DBUSD, DBSearchable, DBNotRequired, DBReadOnly);
@@ -42,11 +42,11 @@ ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
     addColumn("pct_complete", tr("Completed"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn("cpi", tr("CPI"), DBReal, DBSearchable, DBNotRequired, DBReadOnly);
 
-    addRelatedTable("project_notes", "project_id", "project_id", "Meeting", DBExportable);
-    addRelatedTable("item_tracker", "project_id", "project_id", "Action/Tracker Item", DBExportable);
-    addRelatedTable("project_locations", "project_id", "project_id", "Project Location", DBExportable);
-    addRelatedTable("project_people", "project_id", "project_id", "Project People", DBExportable);
-    addRelatedTable("status_report_items", "project_id", "project_id", "Status Report Item", DBExportable);
+    addRelatedTable("project_notes", "project_id", "id", "Meeting", DBExportable);
+    addRelatedTable("item_tracker", "project_id", "id", "Action/Tracker Item", DBExportable);
+    addRelatedTable("project_locations", "project_id", "id", "Project Location", DBExportable);
+    addRelatedTable("project_people", "project_id", "id", "Project People", DBExportable);
+    addRelatedTable("status_report_items", "project_id", "id", "Status Report Item", DBExportable);
 
     QStringList key1 = {"project_number"};
 
@@ -233,8 +233,8 @@ const QModelIndex ProjectsModel::copyRecord(QModelIndex index)
     const QString newid = data(this->index(qi.row(), 0)).toString();
 
     const QString insert = QString(
-        "INSERT INTO project_people (teammember_id, project_id, people_id, role, receive_status_report) "
-        "SELECT m.teammember_id || '-%1', '%2', m.people_id, role, receive_status_report "
+        "INSERT INTO project_people (id, project_id, people_id, role, receive_status_report) "
+        "SELECT m.id || '-%1', '%2', m.people_id, role, receive_status_report "
         "FROM project_people m WHERE m.project_id = '%3' "
         "AND m.people_id NOT IN (SELECT e.people_id FROM project_people e WHERE e.project_id = '%2')")
         .arg(unique_stamp, newid, oldid);
