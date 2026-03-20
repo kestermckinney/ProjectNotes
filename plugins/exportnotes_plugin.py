@@ -537,7 +537,7 @@ if __name__ == '__main__':
     ens = ExportNotesSettings()
 
     xml_content = ""
-    with open("C:\\Users\\pamcki\\OneDrive - Cornerstone Controls\\Documents\\Work In Progress\\XML\\project.xml", 'r', encoding='utf-8') as file:
+    with open("/home/paulmckinney/Desktop/project.xml", 'r', encoding='utf-8') as file:
         xml_content = file.read()
     mex.set_xml_doc(xml_content)
     mex.show()

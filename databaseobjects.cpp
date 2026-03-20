@@ -1218,18 +1218,6 @@ bool DatabaseObjects::popRowChange(KeyColumnChange& outChange)
     return true;
 }
 
-// Bonus: merge changes from another store (skipping duplicates)
-void DatabaseObjects::addColumnChanges(const DatabaseObjects& source)
-{
-    for (const KeyColumnChange& ch : source.m_keyColumnChanges)
-    {
-        if (!m_keyColumnChanges.contains(ch))
-        {
-            m_keyColumnChanges.append(ch);
-        }
-    }
-}
-
 void DatabaseObjects::updateDisplayData()
 {
     KeyColumnChange keyColChange;

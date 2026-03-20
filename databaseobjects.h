@@ -139,7 +139,6 @@ public:
 
     // Pop the last added change; returns true if successful, false if empty
     bool popRowChange(KeyColumnChange& outChange);
-    void addColumnChanges(const DatabaseObjects& source);
     void updateDisplayData();
 
 
