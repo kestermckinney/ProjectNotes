@@ -65,3 +65,6 @@ int main(int argc, char *argv[])
     global_Settings.shutdown();
     return ret;
 }
+
+//TODO: copying a meeting was not working, the copied meeting just disapeared.
+//TODO: send email in python modules is sending email to the sender.

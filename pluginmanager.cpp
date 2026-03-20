@@ -350,6 +350,7 @@ PluginManager::PluginManager(QObject *parent)
     PyImport_AppendInittab("projectnotes", PyInit_embeddedconsole);
 
     //Py_Initialize();
+
     Py_InitializeFromConfig(&config);
     PyConfig_Clear(&config);
 
