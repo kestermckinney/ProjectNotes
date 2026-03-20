@@ -786,11 +786,8 @@ void SqlQueryModel::removeCacheRecord(QModelIndex index)
     m_cache.remove(index.row());
 
     endRemoveRows();
-
-    QModelIndex qil = createIndex(index.row(), 0);
-    QModelIndex qir = createIndex(index.row(), columnCount() - 1);
-
-    emit dataChanged(qil, qir);
+    // beginRemoveRows/endRemoveRows is sufficient to notify views of the removal.
+    // Emitting dataChanged for a row that no longer exists is incorrect and removed.
 }
 
 bool SqlQueryModel::deleteRecord(QModelIndex index)
@@ -1170,7 +1167,10 @@ bool SqlQueryModel::reloadRecord(const QModelIndex& index)
 
             DB_UNLOCK;
 
-            emit dataChanged(index.model()->index(index.row(), 0), index.model()->index(index.row(), select.record().count()));
+            // Use createIndex() with m_columnCount - 1 so the range is within
+            // valid bounds. index.model()->index() was off-by-one (count vs last index)
+            // which caused Qt views to silently discard the repaint request.
+            emit dataChanged(createIndex(index.row(), 0), createIndex(index.row(), m_columnCount - 1));
 
             return true;
         }
