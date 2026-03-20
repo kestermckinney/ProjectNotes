@@ -1801,7 +1801,6 @@ QDomElement SqlQueryModel::toQDomElement( QDomDocument* xmlDocument, const QStri
     for ( const auto& row : m_cache )
     {
         QDomElement xmlrow = xmlDocument->createElement("row");
-        xmlrow.setAttribute("id", row[0].toString());
 
         // build the column xml
         for ( int i = 0; i < row.count(); i++ )
