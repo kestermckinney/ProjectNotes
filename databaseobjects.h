@@ -241,6 +241,9 @@ private:
     QList<KeyColumnChange> m_keyColumnChanges;
 
 signals:
+    // Emitted by non-GUI instances when a row is changed, so the GUI thread
+    // can forward changes to global_DBObjects via a QueuedConnection
+    void rowChanged(const QString& table, const QVariant& value, int optype);
 
 };
 

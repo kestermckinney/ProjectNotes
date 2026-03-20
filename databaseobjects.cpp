@@ -1186,6 +1186,14 @@ void DatabaseObjects::addDefaultPMToMeeting(const QString& noteId)
 // Push a new change; skips if exact duplicate already exists
 void DatabaseObjects::pushRowChange(const QString& table, const QVariant& value, const KeyColumnChange::OperationType optype)
 {
+    if (!m_gui)
+    {
+        // Non-GUI instance (e.g. plugin thread): emit signal so a QueuedConnection
+        // can forward the change to global_DBObjects on the GUI thread.
+        emit rowChanged(table, value, static_cast<int>(optype));
+        return;
+    }
+
     KeyColumnChange newChange{table, value, optype};
     if (!m_keyColumnChanges.contains(newChange))
     {
