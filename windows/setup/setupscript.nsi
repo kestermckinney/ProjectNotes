@@ -101,7 +101,7 @@ Section "MainSection" SEC01
   File "..\..\plugins\base_plugin_settings.py"
   File "..\..\plugins\excelkill_plugin.py"
   File "..\..\plugins\exportnotes_plugin.py"
-  File "..\..\plugins\exporttrakeritems_plugin.py"
+  File "..\..\plugins\exporttrackeritems_plugin.py"
   File "..\..\plugins\findprojectemailperson_plugin.py"
   File "..\..\plugins\ifscloud_plugin_settings.py"
   File "..\..\plugins\ifs_ssrs_generate_plugin.py"
