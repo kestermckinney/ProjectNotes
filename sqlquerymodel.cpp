@@ -382,7 +382,8 @@ void SqlQueryModel::refresh()
     sql_query = QSqlQuery( getDBOs()->getDb() );
     sql_query.setForwardOnly(true);
     sql_query.prepare(fullsql);
-    sql_query.exec();
+    if (!sql_query.exec())
+        qWarning() << objectName() << "SQL QUERY FAILED:" << sql_query.lastError().text() << "\nSQL:" << fullsql;
 
     // add a blank row for drop downs
     if (m_showBlank)
@@ -400,6 +401,7 @@ void SqlQueryModel::refresh()
         m_cache.append(record);
     }
     getDBOs()->getDb().commit();
+
 
     endResetModel();
 }
@@ -797,7 +799,7 @@ bool SqlQueryModel::deleteRecord(QModelIndex index)
 
     QSqlQuery delrow(getDBOs()->getDb());
     QVariant keyval = m_cache[index.row()][0];
-    delrow.prepare("delete from " + m_tablename + " where " + m_columnName[0] + " = ? ");
+    delrow.prepare("UPDATE " + m_tablename + " SET deleted = 1 WHERE " + m_columnName[0] + " = ?");
     delrow.bindValue(0, keyval);
 
     DB_LOCK;
@@ -1445,6 +1447,15 @@ QString SqlQueryModel::constructWhereClause(bool includeUserFilter)
                 }
             }
         }
+    }
+
+    // Always filter out soft-deleted rows (unless the view handles it internally)
+    if (!m_deletedFilterInView) {
+        QString deletedFilter = QString("(%1.deleted IS NULL OR %1.deleted = 0)").arg(m_tablename);
+        if (!valuelist.isEmpty())
+            valuelist = deletedFilter + " AND " + valuelist;
+        else
+            valuelist = deletedFilter;
     }
 
     if (!valuelist.isEmpty())
@@ -2107,10 +2118,10 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
 
     if (!id_field.isEmpty())
     {
-        // delete or update if exists
+        // soft-delete or update if exists
         if (isdelete)
         {
-            sql = QString("delete from %1 where %3").arg(m_tablename, whereclause);
+            sql = QString("UPDATE %1 SET deleted = 1 WHERE %2").arg(m_tablename, whereclause);
             disp_optype = KeyColumnChange::Delete;
         }
         else

@@ -13,6 +13,7 @@ TrackerItemsModel::TrackerItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
     setOrderKey(40);
 
     setBaseSql("select * from item_tracker_view");
+    setDeletedFilterInView(true);  // view filters deleted rows internally
 
     setTableName("item_tracker", "Project Action Items");
 

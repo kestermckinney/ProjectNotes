@@ -15,7 +15,8 @@ void db_CreateNewDatabase()
             parameter_name  TEXT,
             parameter_value TEXT,
             updateddate     INTEGER,
-            syncdate        INTEGER
+            syncdate        INTEGER,
+            deleted         INTEGER DEFAULT 0
         );
     )");
 
@@ -31,7 +32,8 @@ void db_CreateNewDatabase()
             NOT NULL,
             current_version TEXT,
             updateddate     INTEGER,
-            syncdate        INTEGER
+            syncdate        INTEGER,
+            deleted         INTEGER DEFAULT 0
         );
     )");
 
@@ -44,7 +46,8 @@ void db_CreateNewDatabase()
             client_name TEXT UNIQUE
                              NOT NULL,
             updateddate INTEGER,
-            syncdate    INTEGER
+            syncdate    INTEGER,
+            deleted     INTEGER DEFAULT 0
         );
     )");
 
@@ -75,6 +78,7 @@ void db_CreateNewDatabase()
             internal_item   INTEGER,
             updateddate     INTEGER,
             syncdate        INTEGER,
+            deleted         INTEGER DEFAULT 0,
             UNIQUE("project_id","item_number"),
             UNIQUE("project_id","item_name")
         );
@@ -107,7 +111,8 @@ void db_CreateNewDatabase()
             update_note        TEXT,
             updated_by         TEXT,
             updateddate        INTEGER,
-            syncdate           INTEGER
+            syncdate           INTEGER,
+            deleted            INTEGER DEFAULT 0
         );
     )");
 
@@ -125,6 +130,7 @@ void db_CreateNewDatabase()
             person_id   TEXT,
             updateddate INTEGER,
             syncdate    INTEGER,
+            deleted     INTEGER DEFAULT 0,
             UNIQUE("note_id","person_id")
         );
     )");
@@ -147,6 +153,7 @@ void db_CreateNewDatabase()
             role         TEXT,
             updateddate  INTEGER,
             syncdate     INTEGER,
+            deleted      INTEGER DEFAULT 0,
             UNIQUE (
                 name ASC
             )
@@ -169,6 +176,7 @@ void db_CreateNewDatabase()
             full_path            TEXT,
             updateddate          INTEGER,
             syncdate             INTEGER,
+            deleted              INTEGER DEFAULT 0,
             UNIQUE("project_id","id"),
             UNIQUE("project_id","location_description")
         );
@@ -190,7 +198,8 @@ void db_CreateNewDatabase()
             note          TEXT,
             internal_item INTEGER,
             updateddate   INTEGER,
-            syncdate      INTEGER
+            syncdate      INTEGER,
+            deleted       INTEGER DEFAULT 0
         );
     )");
 
@@ -214,6 +223,7 @@ void db_CreateNewDatabase()
             receive_status_report INTEGER,
             updateddate           INTEGER,
             syncdate              INTEGER,
+            deleted               INTEGER DEFAULT 0,
             UNIQUE("project_id","people_id")
         );
     )");
@@ -240,7 +250,8 @@ void db_CreateNewDatabase()
             risk_strategy         TEXT,
             risk_response_actions TEXT,
             updateddate           INTEGER,
-            syncdate              INTEGER
+            syncdate              INTEGER,
+            deleted               INTEGER DEFAULT 0
         );
     )");
 
@@ -267,6 +278,7 @@ void db_CreateNewDatabase()
             project_status       TEXT,
             updateddate          INTEGER,
             syncdate             INTEGER,
+            deleted              INTEGER DEFAULT 0,
             UNIQUE (
                 project_number ASC
             )
@@ -288,6 +300,7 @@ void db_CreateNewDatabase()
             task_description TEXT NOT NULL,
             updateddate      INTEGER,
             syncdate         INTEGER,
+            deleted          INTEGER DEFAULT 0,
             UNIQUE("task_description","project_id")
         );
     )");
@@ -296,9 +309,12 @@ void db_CreateNewDatabase()
         CREATE INDEX stat_project on status_report_items (project_id);
     )");
 
-    // Triggers — set updateddate timestamp whenever a record is updated, and reset syncdate to NULL
+    // Triggers — on data changes: stamp updateddate and clear syncdate so the row is queued for sync.
+    // WHEN NEW.syncdate IS OLD.syncdate: skip if the UPDATE is only writing syncdate itself
+    // (i.e. SqliteSyncPro marking the row as synced), so syncdate is not immediately reset to NULL.
     global_DBObjects.execute(R"(
         CREATE TRIGGER trg_application_settings_updated AFTER UPDATE ON application_settings
+        WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE application_settings SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
@@ -307,6 +323,7 @@ void db_CreateNewDatabase()
 
     global_DBObjects.execute(R"(
         CREATE TRIGGER trg_application_version_updated AFTER UPDATE ON application_version
+        WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE application_version SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
@@ -315,6 +332,7 @@ void db_CreateNewDatabase()
 
     global_DBObjects.execute(R"(
         CREATE TRIGGER trg_clients_updated AFTER UPDATE ON clients
+        WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE clients SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
@@ -323,6 +341,7 @@ void db_CreateNewDatabase()
 
     global_DBObjects.execute(R"(
         CREATE TRIGGER trg_item_tracker_updated AFTER UPDATE ON item_tracker
+        WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE item_tracker SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
@@ -331,6 +350,7 @@ void db_CreateNewDatabase()
 
     global_DBObjects.execute(R"(
         CREATE TRIGGER trg_item_tracker_updates_updated AFTER UPDATE ON item_tracker_updates
+        WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE item_tracker_updates SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
@@ -339,6 +359,7 @@ void db_CreateNewDatabase()
 
     global_DBObjects.execute(R"(
         CREATE TRIGGER trg_meeting_attendees_updated AFTER UPDATE ON meeting_attendees
+        WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE meeting_attendees SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
@@ -347,6 +368,7 @@ void db_CreateNewDatabase()
 
     global_DBObjects.execute(R"(
         CREATE TRIGGER trg_people_updated AFTER UPDATE ON people
+        WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE people SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
@@ -355,6 +377,7 @@ void db_CreateNewDatabase()
 
     global_DBObjects.execute(R"(
         CREATE TRIGGER trg_project_locations_updated AFTER UPDATE ON project_locations
+        WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE project_locations SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
@@ -363,6 +386,7 @@ void db_CreateNewDatabase()
 
     global_DBObjects.execute(R"(
         CREATE TRIGGER trg_project_notes_updated AFTER UPDATE ON project_notes
+        WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE project_notes SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
@@ -371,6 +395,7 @@ void db_CreateNewDatabase()
 
     global_DBObjects.execute(R"(
         CREATE TRIGGER trg_project_people_updated AFTER UPDATE ON project_people
+        WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE project_people SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
@@ -379,6 +404,7 @@ void db_CreateNewDatabase()
 
     global_DBObjects.execute(R"(
         CREATE TRIGGER trg_project_risks_updated AFTER UPDATE ON project_risks
+        WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE project_risks SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
@@ -387,6 +413,7 @@ void db_CreateNewDatabase()
 
     global_DBObjects.execute(R"(
         CREATE TRIGGER trg_projects_updated AFTER UPDATE ON projects
+        WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE projects SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
@@ -395,6 +422,7 @@ void db_CreateNewDatabase()
 
     global_DBObjects.execute(R"(
         CREATE TRIGGER trg_status_report_items_updated AFTER UPDATE ON status_report_items
+        WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE status_report_items SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;

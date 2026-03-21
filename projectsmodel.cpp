@@ -16,6 +16,8 @@ ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
     setOrderKey(100);
 
     setBaseSql("select * from projects_view");
+    setDeletedFilterInView(true);  // view filters deleted rows internally
+
     setTableName("projects", "Project");
 
     addColumn("id", tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);

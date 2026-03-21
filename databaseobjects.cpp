@@ -68,7 +68,7 @@ QStringList DatabaseObjects::file_types = {
 };
 
 DatabaseObjects global_DBObjects(nullptr);
-QMutex db_mutex;
+QReadWriteLock db_rwlock;
 
 
 DatabaseObjects::DatabaseObjects(QObject *parent) : QObject(parent)
@@ -302,7 +302,7 @@ QString DatabaseObjects::execute(const QString& sql)
 {
     QString val;
 
-    QMutexLocker locker(&db_mutex);
+    QWriteLocker locker(&db_rwlock);
     {
         QSqlQuery query(m_sqliteDb);
 
@@ -1242,6 +1242,13 @@ void DatabaseObjects::updateDisplayData()
                     {
                         recordset->reloadRecord(qmi);
                         // qDebug() << "Updating display for table " << recordset->tablename() << " row " << qmi.row() << " with value " << keyColChange.value;
+                    }
+                    else
+                    {
+                        // Row not in model yet — may be a new record pulled from sync.
+                        // Attempt to load it; loadAndFilterRow is a no-op if it doesn't
+                        // pass the model's current filter.
+                        recordset->loadAndFilterRow(keyColChange.value);
                     }
                 }
                 else if (keyColChange.operation_type == KeyColumnChange::Delete)

@@ -33,17 +33,16 @@
 #include <QStringListModel>
 #include <QDomAttr>
 #include <QDomNodeList>
-#include <QMutex>
-#include <QMutexLocker>
+#include <QReadWriteLock>
 
 // common colors
 #define QCOLOR_YELLOW QColor(173, 172, 58)
 #define QCOLOR_RED QColor(153, 33, 23)
 #define QCOLOR_BLUE QColor(0, 15, 128)
 
-// database mutex locking macros
-#define DB_LOCK db_mutex.lock()
-#define DB_UNLOCK db_mutex.unlock()
+// database lock macros (write-exclusive; coordinates with SqliteSyncPro's QReadWriteLock)
+#define DB_LOCK db_rwlock.lockForWrite()
+#define DB_UNLOCK db_rwlock.unlock()
 
 struct KeyColumnChange
 {
@@ -247,6 +246,6 @@ signals:
 };
 
 extern DatabaseObjects global_DBObjects;
-extern QMutex db_mutex;
+extern QReadWriteLock db_rwlock;
 
 #endif // DATABASEOBJECTS_H

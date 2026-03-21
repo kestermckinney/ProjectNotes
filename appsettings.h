@@ -25,6 +25,21 @@ public:
     QVariant getLastDatabase();
     void setLastDatabase(const QString& lastDatabase);
 
+    bool getSyncEnabled();
+    void setSyncEnabled(bool enabled);
+    int getSyncHostType();
+    void setSyncHostType(int type);
+    QString getSyncPostgrestUrl();
+    void setSyncPostgrestUrl(const QString& url);
+    QString getSyncEmail();
+    void setSyncEmail(const QString& email);
+    QString getSyncPassword();
+    void setSyncPassword(const QString& password);
+    QString getSyncSupabaseKey();
+    void setSyncSupabaseKey(const QString& key);
+    QString getSyncEncryptionPhrase();
+    void setSyncEncryptionPhrase(const QString& phrase);
+
     QVariant getWindowStateData(const QString& stateDataName);
     void setWindowStateData(const QString& stateDataName, const QVariant& data);
 

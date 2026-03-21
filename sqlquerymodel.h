@@ -168,6 +168,12 @@ public:
     void setOrderKey(int key) { m_orderKey = key; }
     int getOrderKey() { return m_orderKey; }
 
+    /** Call this in the constructor of models that query views which already
+     *  filter deleted rows internally (e.g. item_tracker_view, projects_view,
+     *  database_search).  Suppresses the automatic deleted-filter that
+     *  constructWhereClause() would otherwise add. */
+    void setDeletedFilterInView(bool v) { m_deletedFilterInView = v; }
+
     static QString removeInvalidXmlCharacters(const QString &input);
     QDomElement toQDomElement( QDomDocument* xmlDocument, const QString& filter = QString());
 
@@ -176,6 +182,7 @@ private:
     QString m_displayName;
     QString m_baseSql;
     bool m_gui; // gui based recordset
+    bool m_deletedFilterInView = false; // true when the base SQL queries a view that already filters deleted rows
     int m_orderKey = 0; // the order key is used to identify record heirarchy - base data is first
     int m_columnCount = 0;
 

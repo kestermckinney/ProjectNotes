@@ -18,6 +18,8 @@
 #include <QSqlQuery>
 #include <QSqlTableModel>
 #include <QDir>
+#include <QEventLoop>
+#include <QFile>
 #include <QFileDialog>
 #include <QTextEdit>
 #include <QTextList>
@@ -28,6 +30,7 @@
 #include <QActionGroup>
 #include <QDesktopServices>
 #include "mainwindow.h"
+#include "opendatabasedialog.h"
 #include <QStandardPaths>
 
 #include "QLogger.h"
@@ -96,10 +99,15 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_pluginManager, &PluginManager::pluginUnLoaded, this, &MainWindow::onPluginUnLoaded);
     connect(m_pluginManager, &PluginManager::pluginRefreshRequest, this, &MainWindow::onRefreshRequested);
 
-    QString lastDb = global_Settings.getLastDatabase().toString();
-    if (!lastDb.isEmpty())
-        if (QFile(lastDb).exists())
-            openDatabase(lastDb);
+    // Always open the database from the standard app data location, creating if needed
+    const QString dbfile = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+                           + "/ProjectNotes.db";
+
+    if (!QFile::exists(dbfile)) {
+        global_DBObjects.createDatabase(dbfile);
+    }
+
+    openDatabase(dbfile);
 
     setButtonAndMenuStates();
 }
@@ -327,8 +335,6 @@ void MainWindow::setButtonAndMenuStates()
 
     ui->actionXML_Import->setEnabled(dbopen);
 
-    ui->actionBackup_Database->setEnabled(dbopen);
-
     ui->actionInternal_Items->setEnabled(dbopen);
     ui->actionAll_Tracker_Action_Items->setEnabled(dbopen);
 
@@ -447,7 +453,6 @@ void MainWindow::setButtonAndMenuStates()
         }
 
         // file menu items
-        ui->actionClose_Database->setEnabled(true);
         ui->actionSearch->setEnabled(true);
         ui->actionXML_Import->setEnabled(true);
         ui->actionPreferences->setEnabled(true);
@@ -525,7 +530,6 @@ void MainWindow::setButtonAndMenuStates()
     else
     {
         // file menu items
-        ui->actionClose_Database->setEnabled(false);
         ui->actionSearch->setEnabled(false);
         ui->actionXML_Import->setEnabled(false);
         ui->actionPreferences->setEnabled(false);
@@ -574,30 +578,73 @@ void MainWindow::on_actionExit_triggered()
 
 void MainWindow::on_actionOpen_Database_triggered()
 {
-    QString dbfile = QFileDialog::getOpenFileName(this, tr("Open Project Notes file"), QString(), tr("Project Notes (*.db)"));
+    OpenDatabaseDialog dlg(this);
 
-    if (!dbfile.isEmpty())
-    {
-        openDatabase(dbfile);
-    }
+    // Pre-populate from saved settings
+    dlg.setSyncEnabled(global_Settings.getSyncEnabled());
+    dlg.setSyncHostType(global_Settings.getSyncHostType());
+    dlg.setPostgrestUrl(global_Settings.getSyncPostgrestUrl());
+    dlg.setEmail(global_Settings.getSyncEmail());
+    dlg.setPassword(global_Settings.getSyncPassword());
+    dlg.setEncryptionPhrase(global_Settings.getSyncEncryptionPhrase());
+    dlg.setSupabaseKey(global_Settings.getSyncSupabaseKey());
+
+    if (dlg.exec() != QDialog::Accepted)
+        return;
+
+    // Database path is always fixed to the app data location
+    const QString dbfile = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+                           + "/ProjectNotes.db";
+
+    // Persist sync settings immediately (before openDatabase so it can read them)
+    global_Settings.setSyncEnabled(dlg.syncEnabled());
+    global_Settings.setSyncHostType(dlg.syncHostType());
+    global_Settings.setSyncPostgrestUrl(dlg.postgrestUrl());
+    global_Settings.setSyncEmail(dlg.email());
+    global_Settings.setSyncPassword(dlg.password());
+    global_Settings.setSyncEncryptionPhrase(dlg.encryptionPhrase());
+    global_Settings.setSyncSupabaseKey(dlg.supabaseKey());
+
+    // Create new database if the file does not yet exist
+    if (!QFile::exists(dbfile))
+        global_DBObjects.createDatabase(dbfile);
+
+    openDatabase(dbfile);
 }
 
-void MainWindow::on_actionNew_Database_triggered()
-{
-    QString dbfile = QFileDialog::getSaveFileName(this, tr("Create Project Notes file"), QString(), tr("Project Notes (*.db)"));
-
-    if (!dbfile.isEmpty())
-    {
-        if (global_DBObjects.createDatabase(dbfile)) // open the database if created successfully
-            openDatabase(dbfile);
-    }
-}
 
 
 void MainWindow::openDatabase(const QString& dbfile)
 {
     if (!global_DBObjects.openDatabase(dbfile, mainConnectionName()))
         return;
+
+    // Start sync if enabled
+    if (global_Settings.getSyncEnabled()) {
+        if (!m_syncApi)
+            m_syncApi = new SqliteSyncPro(this);
+
+        m_syncApi->setDatabasePath(dbfile);
+        m_syncApi->setSyncHostType(global_Settings.getSyncHostType());
+        m_syncApi->setPostgrestUrl(global_Settings.getSyncPostgrestUrl());
+        m_syncApi->setEmail(global_Settings.getSyncEmail());
+        m_syncApi->setPassword(global_Settings.getSyncPassword());
+        m_syncApi->setEncryptionPhrase(global_Settings.getSyncEncryptionPhrase());
+        m_syncApi->setSupabaseKey(global_Settings.getSyncSupabaseKey());
+
+        m_syncApi->setDatabaseLock(&db_rwlock);
+
+        if (m_syncApi->initialize()) {
+            connect(m_syncApi, &SqliteSyncPro::rowChanged,
+                    this, &MainWindow::onSyncRowChanged,
+                    Qt::QueuedConnection);
+            connect(m_syncApi, &SqliteSyncPro::syncCompleted,
+                    this, [](){ global_DBObjects.updateDisplayData(); },
+                    Qt::QueuedConnection);
+        } else {
+            qWarning() << "SqliteSyncPro initialize failed:" << m_syncApi->lastError();
+        }
+    }
 
     // load and refresh all of the models in order of their dependancy relationships
     global_DBObjects.unfilteredpeoplemodel()->refresh();
@@ -613,8 +660,6 @@ void MainWindow::openDatabase(const QString& dbfile)
 
     global_DBObjects.projectslistmodel()->loadUserFilter(global_DBObjects.projectslistmodel()->objectName());
     global_DBObjects.projectslistmodel()->activateUserFilter(global_DBObjects.projectslistmodel()->objectName());
-
-    global_Settings.setLastDatabase(dbfile);
 
     // assign all of the newly open models
     ui->pageProjectsList->setupModels(ui);
@@ -775,6 +820,22 @@ void MainWindow::buildHistory(HistoryNode* node)
 
 void MainWindow::CloseDatabase()
 {
+    // Shut down background sync before closing the database.
+    // shutdown() is async; wait for syncStopped so the worker thread has released
+    // the database connection before we call closeDatabase().
+    if (m_syncApi) {
+        // Block row-changed propagation; we don't care about incoming sync updates anymore
+        disconnect(m_syncApi, &SqliteSyncPro::rowChanged, this, &MainWindow::onSyncRowChanged);
+
+        QEventLoop loop;
+        connect(m_syncApi, &SqliteSyncPro::syncStopped, &loop, &QEventLoop::quit);
+        m_syncApi->shutdown();
+        loop.exec();   // returns once the worker thread has exited cleanly
+
+        m_syncApi->deleteLater();
+        m_syncApi = nullptr;
+    }
+
     // disconnect the search request event
     disconnect(global_DBObjects.peoplemodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     disconnect(global_DBObjects.clientsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
@@ -791,23 +852,6 @@ void MainWindow::CloseDatabase()
     global_DBObjects.closeDatabase();
 }
 
-void MainWindow::on_actionClose_Database_triggered()
-{
-    if (navigateCurrentPage())
-    {
-        navigateCurrentPage()->saveState();
-        navigateCurrentPage()->submitRecord();
-        navigateCurrentPage()->setCurrentView(nullptr);
-    }
-
-    navigateClearHistory();
-
-    global_Settings.setLastDatabase(QString());
-
-    CloseDatabase();  
-
-    setButtonAndMenuStates();
-}
 
 void MainWindow::on_actionClosed_Projects_triggered()
 {
@@ -1767,24 +1811,6 @@ void MainWindow::on_actionXML_Export_triggered()
     }
 }
 
-void MainWindow::on_actionBackup_Database_triggered()
-{
-    // choose the file
-    QString dbfile = QFileDialog::getSaveFileName(this, tr("Backup to file"), QString(), tr("Project Notes (*.db)"));
-
-    QApplication::setOverrideCursor(Qt::WaitCursor);
-    QApplication::processEvents();
-
-    if (!dbfile.isEmpty())
-    {
-        global_DBObjects.backupDatabase(dbfile);
-    }
-
-    QApplication::restoreOverrideCursor();
-    QApplication::processEvents();
-}
-
-
 void MainWindow::on_actionAbout_triggered()
 {
     AboutDialog dlg;
@@ -1918,4 +1944,9 @@ void MainWindow::onTimerWaitForThreads()
         this->close();  // once all plugins are unloaded we can quit
 
     ui->statusbar->showMessage(QString("Waiting for plugins to finish... %1  %2 plugins are still active.").arg(fan[fan_index]).arg(loaded_count));
+}
+
+void MainWindow::onSyncRowChanged(const QString& tableName, const QString& id)
+{
+    global_DBObjects.pushRowChange(tableName, id, KeyColumnChange::Update);
 }

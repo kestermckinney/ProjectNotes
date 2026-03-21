@@ -27,6 +27,7 @@ QT_END_NAMESPACE
 #include "findreplacedialog.h"
 #include "logviewer.h"
 #include "pluginmanager.h"
+#include "sqlitesyncpro.h"
 
 #define MAXHISTORYNODES 20
 
@@ -88,9 +89,7 @@ private slots:
     void setButtonAndMenuStates();
     void openDatabase(const QString& dbfile);
     void on_actionExit_triggered();
-    void on_actionNew_Database_triggered();
     void on_actionOpen_Database_triggered();
-    void on_actionClose_Database_triggered();
     void on_actionClosed_Projects_triggered();
     void on_actionStatus_Bar_triggered();
     void on_actionFilter_triggered();
@@ -105,7 +104,6 @@ private slots:
     void on_actionInternal_Items_triggered();
     void on_actionPreferences_triggered();
     void on_actionResolved_Tracker_Action_Items_triggered();
-    void on_actionBackup_Database_triggered();
     void on_actionAbout_triggered();
     void on_actionHelp_triggered();
     void on_actionWhat_s_New_triggered();
@@ -140,6 +138,7 @@ private slots:
     void onPluginUnLoaded(const QString& pluginpath);
     void onRefreshRequested();
     void onTimerWaitForThreads();
+    void onSyncRowChanged(const QString& tableName, const QString& id);
 
 private:
     void buildPluginMenu(BasePage* currentPage);
@@ -200,6 +199,8 @@ private:
 
     QString m_mainConnectionName = "mainconnection";
     QTimer* m_waitForThreadsTimer = nullptr;
+
+    SqliteSyncPro* m_syncApi = nullptr;
 };
 
 

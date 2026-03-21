@@ -152,518 +152,172 @@
 	"buffers":
 	[
 		{
-			"file": "docs/Introduction/GettingStarted.md",
-			"redo_stack":
-			[
-				[
-					15,
-					1,
-					"cut",
-					null,
-					"AgAAAPICAAAAAAAA5AMAAAAAAAAAAAAAVwMAAAAAAACSAwAAAAAAAAAAAAA",
-					"BwAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA8gIAAAAAAADyAgAAAAAAAAAAAAAAAPC/"
-				]
-			],
+			"file": "/home/paulmckinney/.local/share/ProjectNotes/logs/console.log",
 			"settings":
 			{
-				"buffer_size": 4153,
+				"buffer_size": 620771,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "/home/paulmckinney/Desktop/neonpass.txt",
+			"file": "/home/paulmckinney/.local/share/ProjectNotes/logs/debugging.log",
 			"settings":
 			{
-				"buffer_size": 486,
+				"buffer_size": 2601216,
 				"encoding": "UTF-8",
-				"line_ending": "Unix",
-				"name": "OT3QDkNl_TwA-Hmi2t4ihl7UX9xbFbnHIFHHZNN_lhA"
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/paulmckinney/Documents/SqliteSyncPro/.gitignore",
+			"settings":
+			{
+				"buffer_size": 92,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
 			},
 			"undo_stack":
 			[
 				[
+					3,
+					1,
+					"insert",
+					{
+						"characters": ".gi"
+					},
+					"AwAAAEYAAAAAAAAARwAAAAAAAAAAAAAARwAAAAAAAABIAAAAAAAAAAAAAABIAAAAAAAAAEkAAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAARgAAAAAAAABGAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
 					4,
 					1,
-					"",
-					null,
-					"AQAAAAAAAAAAAAAAKwAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8"
+					"insert",
+					{
+						"characters": "tignore"
+					},
+					"BwAAAEkAAAAAAAAASgAAAAAAAAAAAAAASgAAAAAAAABLAAAAAAAAAAAAAABLAAAAAAAAAEwAAAAAAAAAAAAAAEwAAAAAAAAATQAAAAAAAAAAAAAATQAAAAAAAABOAAAAAAAAAAAAAABOAAAAAAAAAE8AAAAAAAAAAAAAAE8AAAAAAAAAUAAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAASQAAAAAAAABJAAAAAAAAAAAAAAAAAPC/"
 				],
 				[
 					5,
 					1,
 					"insert",
 					{
-						"characters": "\n"
+						"characters": "\n."
 					},
-					"AQAAACsAAAAAAAAALAAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAArAAAAAAAAACsAAAAAAAAAAAAAAAAA8L8"
+					"AgAAAFAAAAAAAAAAUQAAAAAAAAAAAAAAUQAAAAAAAABSAAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAUAAAAAAAAABQAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					6,
+					1,
+					"insert",
+					{
+						"characters": "qtcreator"
+					},
+					"CQAAAFIAAAAAAAAAUwAAAAAAAAAAAAAAUwAAAAAAAABUAAAAAAAAAAAAAABUAAAAAAAAAFUAAAAAAAAAAAAAAFUAAAAAAAAAVgAAAAAAAAAAAAAAVgAAAAAAAABXAAAAAAAAAAAAAABXAAAAAAAAAFgAAAAAAAAAAAAAAFgAAAAAAAAAWQAAAAAAAAAAAAAAWQAAAAAAAABaAAAAAAAAAAAAAABaAAAAAAAAAFsAAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAUgAAAAAAAABSAAAAAAAAAAAAAAAAAPC/"
 				],
 				[
 					7,
 					1,
-					"",
-					null,
-					"AQAAACwAAAAAAAAAbAAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAsAAAAAAAAACwAAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					8,
-					1,
 					"insert",
 					{
 						"characters": "\n"
 					},
-					"AQAAAGwAAAAAAAAAbQAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABsAAAAAAAAAGwAAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					11,
-					1,
-					"insert",
-					{
-						"characters": "\n"
-					},
-					"AQAAAG0AAAAAAAAAbgAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABtAAAAAAAAAG0AAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					13,
-					1,
-					"",
-					null,
-					"AQAAAG4AAAAAAAAArQEAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABuAAAAAAAAAG4AAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					21,
-					1,
-					"insert",
-					{
-						"characters": "\n\npassw"
-					},
-					"BwAAAK0BAAAAAAAArgEAAAAAAAAAAAAArgEAAAAAAACvAQAAAAAAAAAAAACvAQAAAAAAALABAAAAAAAAAAAAALABAAAAAAAAsQEAAAAAAAAAAAAAsQEAAAAAAACyAQAAAAAAAAAAAACyAQAAAAAAALMBAAAAAAAAAAAAALMBAAAAAAAAtAEAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAACtAQAAAAAAAK0BAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					22,
-					1,
-					"insert",
-					{
-						"characters": "ord"
-					},
-					"AwAAALQBAAAAAAAAtQEAAAAAAAAAAAAAtQEAAAAAAAC2AQAAAAAAAAAAAAC2AQAAAAAAALcBAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAC0AQAAAAAAALQBAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					23,
-					1,
-					"insert",
-					{
-						"characters": " NewBo"
-					},
-					"BgAAALcBAAAAAAAAuAEAAAAAAAAAAAAAuAEAAAAAAAC5AQAAAAAAAAAAAAC5AQAAAAAAALoBAAAAAAAAAAAAALoBAAAAAAAAuwEAAAAAAAAAAAAAuwEAAAAAAAC8AQAAAAAAAAAAAAC8AQAAAAAAAL0BAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAC3AQAAAAAAALcBAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					24,
-					1,
-					"insert",
-					{
-						"characters": "ob$3"
-					},
-					"BAAAAL0BAAAAAAAAvgEAAAAAAAAAAAAAvgEAAAAAAAC/AQAAAAAAAAAAAAC/AQAAAAAAAMABAAAAAAAAAAAAAMABAAAAAAAAwQEAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAC9AQAAAAAAAL0BAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					25,
-					1,
-					"insert",
-					{
-						"characters": "3"
-					},
-					"AQAAAMEBAAAAAAAAwgEAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADBAQAAAAAAAMEBAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					27,
-					1,
-					"insert",
-					{
-						"characters": "\n"
-					},
-					"AQAAAK8BAAAAAAAAsAEAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAACvAQAAAAAAAK8BAAAAAAAAAAAAAAAAAAA"
-				],
-				[
-					29,
-					1,
-					"insert",
-					{
-						"characters": "paulmckinney"
-					},
-					"DAAAAK8BAAAAAAAAsAEAAAAAAAAAAAAAsAEAAAAAAACxAQAAAAAAAAAAAACxAQAAAAAAALIBAAAAAAAAAAAAALIBAAAAAAAAswEAAAAAAAAAAAAAswEAAAAAAAC0AQAAAAAAAAAAAAC0AQAAAAAAALUBAAAAAAAAAAAAALUBAAAAAAAAtgEAAAAAAAAAAAAAtgEAAAAAAAC3AQAAAAAAAAAAAAC3AQAAAAAAALgBAAAAAAAAAAAAALgBAAAAAAAAuQEAAAAAAAAAAAAAuQEAAAAAAAC6AQAAAAAAAAAAAAC6AQAAAAAAALsBAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAACvAQAAAAAAAK8BAAAAAAAAAAAAAAAAAAA"
-				],
-				[
-					39,
-					1,
-					"insert",
-					{
-						"characters": "\nne"
-					},
-					"AwAAAM8BAAAAAAAA0AEAAAAAAAAAAAAA0AEAAAAAAADRAQAAAAAAAAAAAADRAQAAAAAAANIBAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADPAQAAAAAAAM8BAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					40,
-					1,
-					"insert",
-					{
-						"characters": "ondb_ow"
-					},
-					"BwAAANIBAAAAAAAA0wEAAAAAAAAAAAAA0wEAAAAAAADUAQAAAAAAAAAAAADUAQAAAAAAANUBAAAAAAAAAAAAANUBAAAAAAAA1gEAAAAAAAAAAAAA1gEAAAAAAADXAQAAAAAAAAAAAADXAQAAAAAAANgBAAAAAAAAAAAAANgBAAAAAAAA2QEAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADSAQAAAAAAANIBAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					41,
-					1,
-					"insert",
-					{
-						"characters": "ner"
-					},
-					"AwAAANkBAAAAAAAA2gEAAAAAAAAAAAAA2gEAAAAAAADbAQAAAAAAAAAAAADbAQAAAAAAANwBAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADZAQAAAAAAANkBAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					42,
-					1,
-					"insert",
-					{
-						"characters": "  "
-					},
-					"AgAAANwBAAAAAAAA3QEAAAAAAAAAAAAA3QEAAAAAAADeAQAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADcAQAAAAAAANwBAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					43,
-					1,
-					"paste",
-					null,
-					"AQAAAN4BAAAAAAAAGQIAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADeAQAAAAAAAN4BAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					46,
-					1,
-					"insert",
-					{
-						"characters": "\npa"
-					},
-					"BAAAAN4BAAAAAAAA3gEAAAAAAAA7AAAAZXAtbHVja3ktdmlvbGV0LWFtdDE3a3RpLXBvb2xlci5jLTUudXMtZWFzdC0xLmF3cy5uZW9uLnRlY2jeAQAAAAAAAN8BAAAAAAAAAAAAAN8BAAAAAAAA4AEAAAAAAAAAAAAA4AEAAAAAAADhAQAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAZAgAAAAAAAN4BAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					47,
-					1,
-					"insert",
-					{
-						"characters": "ssword"
-					},
-					"BgAAAOEBAAAAAAAA4gEAAAAAAAAAAAAA4gEAAAAAAADjAQAAAAAAAAAAAADjAQAAAAAAAOQBAAAAAAAAAAAAAOQBAAAAAAAA5QEAAAAAAAAAAAAA5QEAAAAAAADmAQAAAAAAAAAAAADmAQAAAAAAAOcBAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADhAQAAAAAAAOEBAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					48,
-					1,
-					"insert",
-					{
-						"characters": " JakeBoogers"
-					},
-					"DAAAAOcBAAAAAAAA6AEAAAAAAAAAAAAA6AEAAAAAAADpAQAAAAAAAAAAAADpAQAAAAAAAOoBAAAAAAAAAAAAAOoBAAAAAAAA6wEAAAAAAAAAAAAA6wEAAAAAAADsAQAAAAAAAAAAAADsAQAAAAAAAO0BAAAAAAAAAAAAAO0BAAAAAAAA7gEAAAAAAAAAAAAA7gEAAAAAAADvAQAAAAAAAAAAAADvAQAAAAAAAPABAAAAAAAAAAAAAPABAAAAAAAA8QEAAAAAAAAAAAAA8QEAAAAAAADyAQAAAAAAAAAAAADyAQAAAAAAAPMBAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADnAQAAAAAAAOcBAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					49,
-					1,
-					"insert",
-					{
-						"characters": "@33"
-					},
-					"AwAAAPMBAAAAAAAA9AEAAAAAAAAAAAAA9AEAAAAAAAD1AQAAAAAAAAAAAAD1AQAAAAAAAPYBAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAADzAQAAAAAAAPMBAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					50,
-					1,
-					"insert",
-					{
-						"characters": "\n"
-					},
-					"AQAAAPYBAAAAAAAA9wEAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAD2AQAAAAAAAPYBAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					55,
-					1,
-					"right_delete",
-					null,
-					"AQAAAAAAAAAAAAAAAAAAAAAAAAArAAAAT1QzUURrTmxfVHdBLUhtaTJ0NGlobDdVWDl4YkZibkhJRkhIWk5OX2xoQQ",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAArAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					56,
-					1,
-					"insert",
-					{
-						"characters": "authenticator"
-					},
-					"DQAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAQAAAAAAAAACAAAAAAAAAAAAAAACAAAAAAAAAAMAAAAAAAAAAAAAAAMAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAFAAAAAAAAAAAAAAAFAAAAAAAAAAYAAAAAAAAAAAAAAAYAAAAAAAAABwAAAAAAAAAAAAAABwAAAAAAAAAIAAAAAAAAAAAAAAAIAAAAAAAAAAkAAAAAAAAAAAAAAAkAAAAAAAAACgAAAAAAAAAAAAAACgAAAAAAAAALAAAAAAAAAAAAAAALAAAAAAAAAAwAAAAAAAAAAAAAAAwAAAAAAAAADQAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					57,
-					1,
-					"insert",
-					{
-						"characters": " pass:"
-					},
-					"BgAAAA0AAAAAAAAADgAAAAAAAAAAAAAADgAAAAAAAAAPAAAAAAAAAAAAAAAPAAAAAAAAABAAAAAAAAAAAAAAABAAAAAAAAAAEQAAAAAAAAAAAAAAEQAAAAAAAAASAAAAAAAAAAAAAAASAAAAAAAAABMAAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAANAAAAAAAAAA0AAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					58,
-					1,
-					"insert",
-					{
-						"characters": " "
-					},
-					"AQAAABMAAAAAAAAAFAAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAATAAAAAAAAABMAAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					60,
-					1,
-					"",
-					null,
-					"AQAAABQAAAAAAAAAPwAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAUAAAAAAAAABQAAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					61,
-					1,
-					"insert",
-					{
-						"characters": "\n"
-					},
-					"AQAAAD8AAAAAAAAAQAAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAA/AAAAAAAAAD8AAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					64,
-					1,
-					"right_delete",
-					null,
-					"AQAAAEEAAAAAAAAAQQAAAAAAAABAAAAAektDcEFqTXF6SzFadE5CUjdmdVc2V2hGbklkamN2a1BvUmJvSUc0VVV1UlM3ZTVVa05mN1pyQnBKQkdMeUkxVw",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABBAAAAAAAAAIEAAAAAAAAA////////738"
-				],
-				[
-					65,
-					1,
-					"insert",
-					{
-						"characters": "jwt"
-					},
-					"AwAAAEEAAAAAAAAAQgAAAAAAAAAAAAAAQgAAAAAAAABDAAAAAAAAAAAAAABDAAAAAAAAAEQAAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABBAAAAAAAAAEEAAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					66,
-					1,
-					"insert",
-					{
-						"characters": " secret:"
-					},
-					"CAAAAEQAAAAAAAAARQAAAAAAAAAAAAAARQAAAAAAAABGAAAAAAAAAAAAAABGAAAAAAAAAEcAAAAAAAAAAAAAAEcAAAAAAAAASAAAAAAAAAAAAAAASAAAAAAAAABJAAAAAAAAAAAAAABJAAAAAAAAAEoAAAAAAAAAAAAAAEoAAAAAAAAASwAAAAAAAAAAAAAASwAAAAAAAABMAAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABEAAAAAAAAAEQAAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					67,
-					1,
-					"insert",
-					{
-						"characters": " "
-					},
-					"AQAAAEwAAAAAAAAATQAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABMAAAAAAAAAEwAAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					69,
-					1,
-					"",
-					null,
-					"AQAAAE0AAAAAAAAAeAAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAABNAAAAAAAAAE0AAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					70,
-					1,
-					"insert",
-					{
-						"characters": "\n"
-					},
-					"AQAAAHgAAAAAAAAAeQAAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAB4AAAAAAAAAHgAAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					75,
-					1,
-					"right_delete",
-					null,
-					"AQAAAHoAAAAAAAAAegAAAAAAAABAAQAACmRiLXVyaSA9ICJwb3N0Z3JlczovL2F1dGhlbnRpY2F0b3I6T1QzUURrTmxfVHdBLUhtaTJ0NGlobDdVWDl4YkZibkhJRkhIWk5OX2xoQUBlcC1sdWNreS12aW9sZXQtYW10MTdrdGktcG9vbGVyLmMtNS51cy1lYXN0LTEuYXdzLm5lb24udGVjaDo1NDMyL3NxbGl0ZXN5bmNwcm8iCmRiLXNjaGVtYSA9ICJwdWJsaWMiCmRiLWFub24tcm9sZSA9ICJhbm9uIgpqd3Qtc2VjcmV0ID0gInpLQ3BBak1xeksxWnROQlI3ZnVXNldoRm5JZGpjdmtQb1Jib0lHNFVVdVJTN2U1VWtOZjdackJwSkJHTHlJMVciCnNlcnZlci1ob3N0ID0gIioiCnNlcnZlci1wb3J0ID0gMzAwMAo",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAC6AQAAAAAAAHoAAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					77,
-					1,
-					"",
-					null,
-					"AQAAAHoAAAAAAAAAuQEAAAAAAAAAAAAA",
-					"AgAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAB6AAAAAAAAAHoAAAAAAAAAAAAAAAAA8L8"
-				],
-				[
-					11,
-					1,
-					"right_delete",
-					null,
-					"AQAAABQAAAAAAAAAFAAAAAAAAAArAAAAQlotSHhnS2xFNXJ3YWNQdW5CcmJvYmNaM1FLbmdmZzZvdHBTV1AzOGxhaw",
-					"AQAAAAAAAAABAAAAFAAAAAAAAAA/AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					13,
-					1,
-					"",
-					null,
-					"AQAAABQAAAAAAAAAPwAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAFAAAAAAAAAAUAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					18,
-					1,
-					"right_delete",
-					null,
-					"AQAAAE0AAAAAAAAATQAAAAAAAAArAAAAQlotSHhnS2xFNXJ3YWNQdW5CcmJvYmNaM1FLbmdmZzZvdHBTV1AzOGxhaw",
-					"AQAAAAAAAAABAAAATQAAAAAAAAB4AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					20,
-					1,
-					"",
-					null,
-					"AQAAAE0AAAAAAAAAjQAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAATQAAAAAAAABNAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					23,
-					1,
-					"right_delete",
-					null,
-					"AQAAAI8AAAAAAAAAjwAAAAAAAAA+AQAAZGItdXJpID0gInBvc3RncmVzOi8vYXV0aGVudGljYXRvcjpCWi1IeGdLbEU1cndhY1B1bkJyYm9iY1ozUUtuZ2ZnNm90cFNXUDM4bGFrQGVwLWx1Y2t5LXZpb2xldC1hbXQxN2t0aS1wb29sZXIuYy01LnVzLWVhc3QtMS5hd3MubmVvbi50ZWNoOjU0MzIvc3FsaXRlc3luY3BybyIKZGItc2NoZW1hID0gInB1YmxpYyIKZGItYW5vbi1yb2xlID0gImFub24iCmp3dC1zZWNyZXQgPSAiSVM1T29GbTItd2JRMXQtTE5yUEZoT3piRF8tWG1NR1hQcVVZR1RidWt5cXZzV3BEdUlJODlsc2xCaFhhN1VVRyIKc2VydmVyLWhvc3QgPSAiKiIKc2VydmVyLXBvcnQgPSAzMDAw",
-					"AQAAAAAAAAABAAAAzQEAAAAAAACPAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					25,
-					1,
-					"",
-					null,
-					"AQAAAI8AAAAAAAAAmwEAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAjwAAAAAAAACPAAAAAAAAAAAAAAAAAPC/"
+					"AQAAAFsAAAAAAAAAXAAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAWwAAAAAAAABbAAAAAAAAAAAAAAAAAPC/"
 				]
 			]
 		},
 		{
-			"file": "/home/paulmckinney/Documents/SqliteSyncPro/createsuer_superbase.py",
+			"file": "plugins/exportnotes_plugin.py",
 			"settings":
 			{
-				"buffer_size": 738,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/home/paulmckinney/Documents/SqliteSyncPro/auth_superbase.py",
-			"settings":
-			{
-				"buffer_size": 1187,
+				"buffer_size": 21966,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			},
 			"undo_stack":
 			[
 				[
-					35,
-					1,
-					"insert",
-					{
-						"characters": "paul.mckinney@"
-					},
-					"DgAAADIBAAAAAAAAMwEAAAAAAAAeAAAAb205ODc2NTQzMjFfcHJpdmF0ZUBpY2xvdWQuY29tMwEAAAAAAAA0AQAAAAAAAAAAAAA0AQAAAAAAADUBAAAAAAAAAAAAADUBAAAAAAAANgEAAAAAAAAAAAAANgEAAAAAAAA3AQAAAAAAAAAAAAA3AQAAAAAAADgBAAAAAAAAAAAAADgBAAAAAAAAOQEAAAAAAAAAAAAAOQEAAAAAAAA6AQAAAAAAAAAAAAA6AQAAAAAAADsBAAAAAAAAAAAAADsBAAAAAAAAPAEAAAAAAAAAAAAAPAEAAAAAAAA9AQAAAAAAAAAAAAA9AQAAAAAAAD4BAAAAAAAAAAAAAD4BAAAAAAAAPwEAAAAAAAAAAAAAPwEAAAAAAABAAQAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAMgEAAAAAAABQAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					36,
-					1,
-					"insert",
-					{
-						"characters": "gmail.com"
-					},
-					"CQAAAEABAAAAAAAAQQEAAAAAAAAAAAAAQQEAAAAAAABCAQAAAAAAAAAAAABCAQAAAAAAAEMBAAAAAAAAAAAAAEMBAAAAAAAARAEAAAAAAAAAAAAARAEAAAAAAABFAQAAAAAAAAAAAABFAQAAAAAAAEYBAAAAAAAAAAAAAEYBAAAAAAAARwEAAAAAAAAAAAAARwEAAAAAAABIAQAAAAAAAAAAAABIAQAAAAAAAEkBAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAQAEAAAAAAABAAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					41,
+					21,
 					1,
 					"right_delete",
 					null,
-					"AQAAAFcBAAAAAAAAVwEAAAAAAAAOAAAASmFrZUJvb2dlcnNAMzM",
-					"AQAAAAAAAAABAAAAVwEAAAAAAABlAQAAAAAAAAAAAAAAAPC/"
+					"AQAAAMRSAAAAAAAAxFIAAAAAAABWAAAAQzpcXFVzZXJzXFxwYW1ja2lcXE9uZURyaXZlIC0gQ29ybmVyc3RvbmUgQ29udHJvbHNcXERvY3VtZW50c1xcV29yayBJbiBQcm9ncmVzc1xcWE1MXFw",
+					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAGlMAAAAAAADEUgAAAAAAAAAAAAAAAPC/"
 				],
 				[
-					42,
+					22,
 					1,
 					"insert",
 					{
-						"characters": "tes"
+						"characters": "/hoem"
 					},
-					"AwAAAFcBAAAAAAAAWAEAAAAAAAAAAAAAWAEAAAAAAABZAQAAAAAAAAAAAABZAQAAAAAAAFoBAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAVwEAAAAAAABXAQAAAAAAAAAAAAAAAPC/"
+					"BQAAAMRSAAAAAAAAxVIAAAAAAAAAAAAAxVIAAAAAAADGUgAAAAAAAAAAAADGUgAAAAAAAMdSAAAAAAAAAAAAAMdSAAAAAAAAyFIAAAAAAAAAAAAAyFIAAAAAAADJUgAAAAAAAAAAAAA",
+					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAxFIAAAAAAADEUgAAAAAAAAAAAAAAAPC/"
 				],
 				[
-					43,
+					23,
+					4,
+					"left_delete",
+					null,
+					"BAAAAMhSAAAAAAAAyFIAAAAAAAABAAAAbcdSAAAAAAAAx1IAAAAAAAABAAAAZcZSAAAAAAAAxlIAAAAAAAABAAAAb8VSAAAAAAAAxVIAAAAAAAABAAAAaA",
+					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAyVIAAAAAAADJUgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					24,
 					1,
 					"insert",
 					{
-						"characters": "user1"
+						"characters": "home/paulmckin"
 					},
-					"BQAAAFoBAAAAAAAAWwEAAAAAAAAAAAAAWwEAAAAAAABcAQAAAAAAAAAAAABcAQAAAAAAAF0BAAAAAAAAAAAAAF0BAAAAAAAAXgEAAAAAAAAAAAAAXgEAAAAAAABfAQAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAWgEAAAAAAABaAQAAAAAAAAAAAAAAAPC/"
+					"DgAAAMVSAAAAAAAAxlIAAAAAAAAAAAAAxlIAAAAAAADHUgAAAAAAAAAAAADHUgAAAAAAAMhSAAAAAAAAAAAAAMhSAAAAAAAAyVIAAAAAAAAAAAAAyVIAAAAAAADKUgAAAAAAAAAAAADKUgAAAAAAAMtSAAAAAAAAAAAAAMtSAAAAAAAAzFIAAAAAAAAAAAAAzFIAAAAAAADNUgAAAAAAAAAAAADNUgAAAAAAAM5SAAAAAAAAAAAAAM5SAAAAAAAAz1IAAAAAAAAAAAAAz1IAAAAAAADQUgAAAAAAAAAAAADQUgAAAAAAANFSAAAAAAAAAAAAANFSAAAAAAAA0lIAAAAAAAAAAAAA0lIAAAAAAADTUgAAAAAAAAAAAAA",
+					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAxVIAAAAAAADFUgAAAAAAAAAAAAAAAPC/"
 				],
 				[
-					46,
+					25,
 					1,
 					"insert",
 					{
-						"characters": "t"
+						"characters": "ney/Desktop"
 					},
-					"AQAAAFoBAAAAAAAAWwEAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAWgEAAAAAAABaAQAAAAAAAAAAAAAAAPC/"
+					"CwAAANNSAAAAAAAA1FIAAAAAAAAAAAAA1FIAAAAAAADVUgAAAAAAAAAAAADVUgAAAAAAANZSAAAAAAAAAAAAANZSAAAAAAAA11IAAAAAAAAAAAAA11IAAAAAAADYUgAAAAAAAAAAAADYUgAAAAAAANlSAAAAAAAAAAAAANlSAAAAAAAA2lIAAAAAAAAAAAAA2lIAAAAAAADbUgAAAAAAAAAAAADbUgAAAAAAANxSAAAAAAAAAAAAANxSAAAAAAAA3VIAAAAAAAAAAAAA3VIAAAAAAADeUgAAAAAAAAAAAAA",
+					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA01IAAAAAAADTUgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					26,
+					1,
+					"insert",
+					{
+						"characters": "/"
+					},
+					"AQAAAN5SAAAAAAAA31IAAAAAAAAAAAAA",
+					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA3lIAAAAAAADeUgAAAAAAAAAAAAAAAPC/"
 				]
 			]
 		}
 	],
-	"build_system": "",
+	"build_system": "Packages/Python/Python.sublime-build",
 	"build_system_choices":
 	[
+		[
+			[
+				[
+					"Packages/Python/Python.sublime-build",
+					""
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					"Syntax Check"
+				]
+			],
+			[
+				"Packages/Python/Python.sublime-build",
+				""
+			]
+		]
 	],
 	"build_varint": "",
 	"command_palette":
@@ -761,13 +415,24 @@
 	},
 	"expanded_folders":
 	[
-		"/home/paulmckinney/Documents/ProjectNotes",
-		"/home/paulmckinney/Documents/ProjectNotes/docs",
-		"/home/paulmckinney/Documents/ProjectNotes/docs/Introduction",
-		"/home/paulmckinney/Documents/CornerstonePlugins"
+		"/home/paulmckinney/Documents/ProjectNotes.wiki"
 	],
 	"file_history":
 	[
+		"/home/paulmckinney/Desktop/project.xml",
+		"/home/paulmckinney/Documents/ProjectNotes/CLAUDE.md",
+		"/home/paulmckinney/Documents/ProjectNotes/.claude/settings.local.json",
+		"/home/paulmckinney/Desktop/project",
+		"/home/paulmckinney/Documents/ProjectNotes.wiki/Release-Notes.md",
+		"/home/paulmckinney/Documents/ProjectNotes/projectnotes.sublime-project",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/ifs_tools.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/common.py",
+		"/home/paulmckinney/Documents/ProjectNotes/plugins/base_plugin.py",
+		"/home/paulmckinney/Documents/ProjectNotes/databasestructure.cpp",
+		"/home/paulmckinney/Documents/ProjectNotes/docs/Introduction/GettingStarted.md",
+		"/home/paulmckinney/Desktop/neonpass.txt",
+		"/home/paulmckinney/Documents/SqliteSyncPro/auth_superbase.py",
+		"/home/paulmckinney/Documents/SqliteSyncPro/createsuer_superbase.py",
 		"/home/paulmckinney/test_superbase.py",
 		"/home/paulmckinney/createsuer_superbase.py",
 		"/home/paulmckinney/deleteuser_superbase.py",
@@ -787,13 +452,10 @@
 		"/home/paulmckinney/Documents/ProjectNotes/threads/ifssync_thread.py",
 		"/home/paulmckinney/Documents/ProjectNotes/sqlquerymodel.cpp",
 		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/graphapi_tools.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/base_plugin.py",
 		"/home/paulmckinney/Documents/ProjectNotes/databaseobjects.cpp",
 		"/home/paulmckinney/Documents/ProjectNotes/plugin.cpp",
 		"/home/paulmckinney/Documents/ProjectNotes/plugins/forms/dialogIFSCloud.ui",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/ifs_tools.py",
 		"/home/paulmckinney/Documents/ProjectNotes/plugins/ifscloud_plugin_settings.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/common.py",
 		"/home/paulmckinney/Documents/ProjectNotes/threads/tester_thread_1.py",
 		"/home/paulmckinney/Documents/ProjectNotes/plugins/ifs_ssrs_generate_plugin.py",
 		"/home/paulmckinney/Documents/ProjectNotes/plugins/base_plugin_settings.py",
@@ -838,7 +500,6 @@
 		"/home/paulmckinney/Documents/ProjectNotes/pythonworker.cpp",
 		"/home/paulmckinney/Documents/ProjectNotes/pythonworker.h",
 		"/home/paulmckinney/Documents/ProjectNotes/mainwindow.ui",
-		"/home/paulmckinney/Documents/ProjectNotes/projectnotes.sublime-project",
 		"/home/paulmckinney/Documents/ProjectNotes/docs/InterfaceOverview/PluginsMenu.md",
 		"/home/paulmckinney/Documents/ProjectNotes/CMakeLists.txt",
 		"/home/paulmckinney/Documents/ThreadedPythonApp/pluginmanager.h",
@@ -871,7 +532,6 @@
 		"/home/paulmckinney/Documents/CornerstonePlugins/plugins/ifs_cloud_projects_statusreport_plugin.py",
 		"/etc/sysctl.conf",
 		"/home/paulmckinney/Documents/contact.xml",
-		"/home/paulmckinney/Documents/ProjectNotes.wiki/Release-Notes.md",
 		"/home/paulmckinney/Documents/ProjectNotes.wiki/How-To-Contribute.md",
 		"/home/paulmckinney/Documents/ProjectNotes/docs/index.md",
 		"/home/paulmckinney/Documents/ProjectNotes/docs/PluginsOverview/ProjectNotesXML.md",
@@ -886,16 +546,7 @@
 		"/etc/security/limits.conf",
 		"/home/paulmckinney/.config/sublime-text/Packages/User/qt_project.sublime-build",
 		"/home/paulmckinney/Documents/uploadtest.txt",
-		"/home/paulmckinney/Documents/ProjectNotes/pntableview.cpp",
-		"/home/paulmckinney/Documents/ProjectNotes/Makefile",
-		"/home/paulmckinney/Documents/ProjectNotes/README.md",
-		"/home/paulmckinney/Documents/ProjectNotes/docs/InterfaceOverview/ViewMenu.md",
-		"/home/paulmckinney/Documents/ProjectNotes/docs/InterfaceOverview/Toolbar.md",
-		"/home/paulmckinney/Documents/ProjectNotes/docs/InterfaceOverview/EarnedValueTerms.md",
-		"/home/paulmckinney/Documents/ProjectNotes.wiki/Schedule an Internal Kickoff Meeting Plugin.md",
-		"/home/paulmckinney/Documents/CornerstonePlugins/README.md",
-		"/home/paulmckinney/Documents/ProjectNotes.wiki/Home.md",
-		"/home/paulmckinney/Documents/ProjectNotes.wiki/Action Item Detail Page.md"
+		"/home/paulmckinney/Documents/ProjectNotes/pntableview.cpp"
 	],
 	"find":
 	{
@@ -906,6 +557,7 @@
 		"height": 109.0,
 		"where_history":
 		[
+			"*.py",
 			""
 		]
 	},
@@ -914,6 +566,19 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"Error",
+			"error",
+			"delete",
+			"del",
+			"projectid",
+			"project_id",
+			"projects",
+			"project_id",
+			")\n",
+			"application_version",
+			"error",
+			"error:",
+			"select id from application version",
 			"connectg",
 			"connect",
 			".critical",
@@ -1000,27 +665,30 @@
 			[
 				{
 					"buffer": 0,
-					"file": "docs/Introduction/GettingStarted.md",
+					"file": "/home/paulmckinney/.local/share/ProjectNotes/logs/console.log",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 4153,
+						"buffer_size": 620771,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1177,
-								1177
+								0,
+								0
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
+							"spell_check": true,
+							"syntax": "Packages/Text/Plain text.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 58.0,
+						"translation.y": 17178.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 3,
@@ -1029,26 +697,56 @@
 				},
 				{
 					"buffer": 1,
-					"file": "/home/paulmckinney/Desktop/neonpass.txt",
-					"selected": true,
+					"file": "/home/paulmckinney/.local/share/ProjectNotes/logs/debugging.log",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 486,
+						"buffer_size": 2601216,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								411,
-								411
+								0,
+								0
 							]
 						],
 						"settings":
 						{
-							"auto_name": "OT3QDkNl_TwA-Hmi2t4ihl7UX9xbFbnHIFHHZNN_lhA",
-							"syntax": "Packages/Text/Plain text.tmLanguage"
+							"syntax": "Packages/Text/Plain text.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 3590.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"stack_multiselect": false,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "/home/paulmckinney/Documents/SqliteSyncPro/.gitignore",
+					"selected": true,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 92,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								92,
+								92
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Git Formats/Git Ignore.sublime-syntax"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -1059,51 +757,20 @@
 					"type": "text"
 				},
 				{
-					"buffer": 2,
-					"file": "/home/paulmckinney/Documents/SqliteSyncPro/createsuer_superbase.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 738,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								95,
-								314
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 937.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"stack_multiselect": false,
-					"type": "text"
-				},
-				{
 					"buffer": 3,
-					"file": "/home/paulmckinney/Documents/SqliteSyncPro/auth_superbase.py",
+					"file": "plugins/exportnotes_plugin.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1187,
+						"buffer_size": 21966,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								142,
-								142
+								21294,
+								21294
 							]
 						],
 						"settings":
@@ -1113,10 +780,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 9959.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 2,
 					"stack_multiselect": false,
 					"type": "text"
 				}
@@ -1163,7 +830,7 @@
 	},
 	"output.exec":
 	{
-		"height": 132.0,
+		"height": 216.0,
 		"history":
 		[
 		]
@@ -1175,7 +842,7 @@
 		[
 		]
 	},
-	"pinned_build_system": "Packages/Python 3/Python3.sublime-build",
+	"pinned_build_system": "Packages/Python/Python.sublime-build",
 	"project": "projectnotes.sublime-project",
 	"replace":
 	{

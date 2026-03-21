@@ -1513,14 +1513,11 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
-    <addaction name="actionNew_Database"/>
     <addaction name="actionOpen_Database"/>
-    <addaction name="actionClose_Database"/>
     <addaction name="actionSearch"/>
     <addaction name="separator"/>
     <addaction name="actionXML_Export"/>
     <addaction name="actionXML_Import"/>
-    <addaction name="actionBackup_Database"/>
     <addaction name="actionPreferences"/>
     <addaction name="actionExit"/>
    </widget>
@@ -1692,37 +1689,15 @@
     <bool>false</bool>
    </attribute>
   </widget>
-  <action name="actionNew_Database">
-   <property name="text">
-    <string>&amp;New Database...</string>
-   </property>
-   <property name="toolTip">
-    <string>Create a new project database</string>
-   </property>
-   <property name="statusTip">
-    <string>Create a new project database</string>
-   </property>
-  </action>
   <action name="actionOpen_Database">
    <property name="text">
-    <string>&amp;Open Database...</string>
+    <string>&amp;Cloud Sync Settings...</string>
    </property>
    <property name="toolTip">
-    <string>Open the database</string>
+    <string>Configure cloud sync settings</string>
    </property>
    <property name="statusTip">
-    <string>Open the database</string>
-   </property>
-  </action>
-  <action name="actionClose_Database">
-   <property name="text">
-    <string>&amp;Close Database</string>
-   </property>
-   <property name="toolTip">
-    <string>Close the current database</string>
-   </property>
-   <property name="statusTip">
-    <string>Close the current database</string>
+    <string>Configure cloud sync settings</string>
    </property>
   </action>
   <action name="actionSearch">
@@ -1769,20 +1744,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+I</string>
-   </property>
-  </action>
-  <action name="actionBackup_Database">
-   <property name="text">
-    <string>&amp;Backup Database...</string>
-   </property>
-   <property name="toolTip">
-    <string>Make a backup copy of the current database</string>
-   </property>
-   <property name="statusTip">
-    <string>Make a backup copy of the current database</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+B</string>
    </property>
   </action>
   <action name="actionPreferences">
