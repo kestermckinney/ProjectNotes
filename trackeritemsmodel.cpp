@@ -162,19 +162,13 @@ QVariant TrackerItemsModel::data(const QModelIndex &index, int role) const
     return SqlQueryModel::data(index, role);
 }
 
+void TrackerItemsModel::prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex)
+{
+    QVariant project_id = data(this->index(sourceIndex.row(), 14));
+    newrecord[1] = getNextItemNumber(project_id);
+}
+
 const QModelIndex TrackerItemsModel::copyRecord(QModelIndex index)
 {
-    QModelIndex qi = SqlQueryModel::copyRecord(index);
-
-    if(qi.isValid())
-    {
-        QVariant project_id = data(this->index(index.row(), 14));
-        QVariant next_item_number = getNextItemNumber(project_id);
-
-        int count = rowCount(QModelIndex()) - 1;
-
-        setCacheData(this->index(count, 1), next_item_number);
-    }
-
-    return qi;
+    return SqlQueryModel::copyRecord(index);
 }

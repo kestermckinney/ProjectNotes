@@ -3,6 +3,7 @@
 
 #include "sortfilterproxymodel.h"
 #include "databaseobjects.h"
+#include <QSqlQuery>
 
 SortFilterProxyModel::SortFilterProxyModel(QObject *parent): QSortFilterProxyModel(parent)
 {
@@ -38,27 +39,47 @@ bool SortFilterProxyModel::lessThan(const QModelIndex &sourceLeft, const QModelI
     SqlQueryModel *sourcemodel_left = (SqlQueryModel*) sourceLeft.model();
     SqlQueryModel *sourcemodel_right = (SqlQueryModel*) sourceRight.model();
 
-    // get base values
-    QVariant value_left;
-    QVariant value_right;
-
     SqlQueryModel::DBColumnType type_left = sourcemodel_left->getType(sourceLeft.column());
-    SqlQueryModel::DBColumnType type_right = sourcemodel_right->getType(sourceRight.column());
 
-    // if it wasn't a lookup value then use the data out of the model
-    if (!value_left.isValid())
-        value_left = sourcemodel_left->data(sourceLeft);
-    else
-        type_left = SqlQueryModel::DBString;
+    // For lookup columns, resolve the display value and compare as strings (case-insensitive).
+    const QString lookupTable = sourcemodel_left->getLookupTable(sourceLeft.column());
+    if (!lookupTable.isEmpty())
+    {
+        const QString fkCol  = sourcemodel_left->getLookupFkColumnName(sourceLeft.column());
+        const QString valCol = sourcemodel_left->getLookupValueColumnName(sourceLeft.column());
 
-    if (!value_right.isValid())
-        value_right = sourcemodel_right->data(sourceRight);
-    else
-        type_right = SqlQueryModel::DBString;
+        auto resolveLookup = [&](SqlQueryModel *mdl, const QModelIndex &idx) -> QString {
+            const QString fkVal = mdl->data(idx).toString();
+            if (fkVal.isEmpty())
+                return QString();
+            // Use a cache to avoid repeated DB queries during sort.
+            const QString cacheKey = lookupTable + '\x1F' + fkCol + '\x1F' + valCol + '\x1F' + fkVal;
+            auto it = m_sortLookupCache.constFind(cacheKey);
+            if (it != m_sortLookupCache.constEnd())
+                return it.value();
+            // Query the display value directly — avoids the write-lock in execute().
+            const QString sql = QString("SELECT %1 FROM %2 WHERE %3 = '%4'")
+                                    .arg(valCol, lookupTable, fkCol, fkVal);
+            QSqlQuery query(mdl->getDBOs()->getDb());
+            QString displayVal;
+            if (query.exec(sql) && query.next())
+                displayVal = query.value(0).toString();
+            m_sortLookupCache[cacheKey] = displayVal;
+            return displayVal;
+        };
+
+        const QString left_display  = resolveLookup(sourcemodel_left,  sourceLeft);
+        const QString right_display = resolveLookup(sourcemodel_right, sourceRight);
+        return QString::compare(left_display, right_display, Qt::CaseInsensitive) < 0;
+    }
+
+    // get raw values
+    QVariant value_left  = sourcemodel_left->data(sourceLeft);
+    QVariant value_right = sourcemodel_right->data(sourceRight);
 
     // convert to sort_table items
     sourcemodel_left->sqlEscape(value_left, type_left);
-    sourcemodel_right->sqlEscape(value_right, type_right);
+    sourcemodel_right->sqlEscape(value_right, type_left);
 
     // compare items
     if (type_left == SqlQueryModel::DBInteger ||
@@ -71,5 +92,5 @@ bool SortFilterProxyModel::lessThan(const QModelIndex &sourceLeft, const QModelI
              type_left == SqlQueryModel::DBDateTime)
         return value_left.toDouble() < value_right.toDouble();
     else
-        return value_left.toString() < value_right.toString();
+        return QString::compare(value_left.toString(), value_right.toString(), Qt::CaseInsensitive) < 0;
 }

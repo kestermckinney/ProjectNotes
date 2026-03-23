@@ -10,7 +10,6 @@
 ProjectsListModel::ProjectsListModel(DatabaseObjects* dbo) : ProjectsModel(dbo)
 {
     setObjectName("ProjectsListModel");
-    setOrderKey(110);
     setTableName("projects", "Projects");
 
     setEditable(5, DBReadOnly); // cannot edit the the primary contact when viewing all projects

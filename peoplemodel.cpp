@@ -9,8 +9,8 @@
 PeopleModel::PeopleModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("PeopleModel");
-    setOrderKey(17);
 
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
     setBaseSql("SELECT id, name, email, office_phone, cell_phone, client_id, role FROM people");
 
     setTableName("people", "People");

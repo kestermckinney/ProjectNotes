@@ -89,6 +89,8 @@ public:
     static QDateTime parseDateTime(const QString& entrydate);
     virtual const QModelIndex addRecord(QVector<QVariant>& newrecord);
     virtual const QModelIndex copyRecord(QModelIndex index);
+    bool insertCacheRow(int row);
+    virtual void prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex) { Q_UNUSED(newrecord); Q_UNUSED(sourceIndex); }
     virtual const QModelIndex newRecord(const QVariant* fkValue1 = nullptr, const QVariant* fkValue2 = nullptr);
     virtual bool deleteRecord(QModelIndex index);
     bool copyAndFilterRow(QModelIndex& qmi, SqlQueryModel& pnmodel);
@@ -158,6 +160,9 @@ public:
     QString getColumnName( int column ) { return m_columnName[column]; }
     QString getColumnName( QString& displayName );
     int getColumnNumber(const QString& fieldName );
+    QString getLookupTable(int column) { return m_lookupTable[column]; }
+    QString getLookupFkColumnName(int column) { return m_lookupFkColumnName[column]; }
+    QString getLookupValueColumnName(int column) { return m_lookupValueColumnName[column]; }
 
     bool isReadOnly() { return m_readOnly; }
     bool isUniqueColumn(int column) { return (m_columnIsUnique[column] == DBUnique); }
@@ -173,6 +178,7 @@ public:
      *  database_search).  Suppresses the automatic deleted-filter that
      *  constructWhereClause() would otherwise add. */
     void setDeletedFilterInView(bool v) { m_deletedFilterInView = v; }
+    bool getDeletedFilterInView() { return m_deletedFilterInView; }
 
     static QString removeInvalidXmlCharacters(const QString &input);
     QDomElement toQDomElement( QDomDocument* xmlDocument, const QString& filter = QString());

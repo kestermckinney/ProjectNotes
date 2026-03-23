@@ -757,7 +757,76 @@ const QModelIndex SqlQueryModel::copyRecord(QModelIndex index)
         }
     }
 
-    return(addRecord(newrecord));
+    prepareCopiedRecord(newrecord, index);
+
+    QModelIndex newIndex = addRecord(newrecord);
+    insertCacheRow(newIndex.row());
+    return newIndex;
+}
+
+bool SqlQueryModel::insertCacheRow(int row)
+{
+    if (row < 0 || row >= m_cache.size())
+        return false;
+
+    // assign a new UUID key
+    m_cache[row][0] = QUuid::createUuid().toString();
+
+    QString fields;
+    QString values;
+
+    for (int i = 0; i < m_columnCount; i++)
+    {
+        if ((m_columnIsEditable[i] == DBEditable) || i == 0)
+        {
+            if (!fields.isEmpty()) fields += ", ";
+            if (!values.isEmpty()) values += ", ";
+            fields += m_columnName[i];
+            values += " ? ";
+        }
+    }
+
+    QSqlQuery insert(getDBOs()->getDb());
+    insert.prepare("insert into " + m_tablename + " ( " + fields + " ) values ( " + values + " )");
+
+    int bindcount = 0;
+    for (int i = 0; i < m_columnCount; i++)
+    {
+        if ((m_columnIsEditable[i] == DBEditable) || i == 0)
+        {
+            insert.bindValue(bindcount, m_cache[row][i]);
+            bindcount++;
+        }
+    }
+
+    DB_LOCK;
+    getDBOs()->getDb().transaction();
+    if (insert.exec())
+    {
+        getDBOs()->getDb().commit();
+        DB_UNLOCK;
+
+        QModelIndex qil = createIndex(row, 0);
+        QModelIndex qir = createIndex(row, columnCount() - 1);
+        emit dataChanged(qil, qir);
+
+        if (m_gui)
+            refreshImpactedRecordsets(qil);
+
+        return true;
+    }
+    getDBOs()->getDb().rollback();
+    DB_UNLOCK;
+
+    if (m_gui)
+    {
+        QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
+           insert.lastError().text() + "\n" + insert.lastQuery(), QMessageBox::Ok);
+    }
+
+    // revert the key so it stays as a new record
+    m_cache[row][0] = QVariant();
+    return false;
 }
 
 const QModelIndex SqlQueryModel::addRecord(QVector<QVariant>& newrecord)

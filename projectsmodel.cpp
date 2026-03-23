@@ -13,8 +13,8 @@ using namespace QLogger;
 ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
 {
     setObjectName("ProjectsModel");
-    setOrderKey(100);
 
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
     setBaseSql("select * from projects_view");
     setDeletedFilterInView(true);  // view filters deleted rows internally
 

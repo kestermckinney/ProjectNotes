@@ -1,22 +1,22 @@
 // Copyright (C) 2024 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
-#ifndef OPENDATABASEDIALOG_H
-#define OPENDATABASEDIALOG_H
+#ifndef CLOUDSYNCSETTINGSDIALOG_H
+#define CLOUDSYNCSETTINGSDIALOG_H
 
 #include <QDialog>
 
 namespace Ui {
-class OpenDatabaseDialog;
+class CloudSyncSettingsDialog;
 }
 
-class OpenDatabaseDialog : public QDialog
+class CloudSyncSettingsDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit OpenDatabaseDialog(QWidget *parent = nullptr);
-    ~OpenDatabaseDialog() override;
+    explicit CloudSyncSettingsDialog(QWidget *parent = nullptr);
+    ~CloudSyncSettingsDialog() override;
 
     bool syncEnabled() const;
     void setSyncEnabled(bool enabled);
@@ -46,7 +46,7 @@ private slots:
 private:
     void updateSupabaseKeyVisibility(int hostTypeIndex);
 
-    Ui::OpenDatabaseDialog *ui;
+    Ui::CloudSyncSettingsDialog *ui;
 };
 
-#endif // OPENDATABASEDIALOG_H
+#endif // CLOUDSYNCSETTINGSDIALOG_H

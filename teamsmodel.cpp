@@ -3,9 +3,9 @@
 TeamsModel::TeamsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("TeamsModel");
-    setOrderKey(15);
 
-    setBaseSql("SELECT id, b.name, project_id, a.people_id, b.client_id FROM project_people a join people b on a.people_id=b.id ");
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
+    setBaseSql("SELECT project_people.id, people.name, project_id, project_people.people_id, people.client_id FROM project_people join people on project_people.people_id=people.id ");
 
     setTableName("project_people", "Project People");
 

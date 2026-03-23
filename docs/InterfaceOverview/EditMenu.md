@@ -67,7 +67,7 @@ The basic copy, cut, paste, delete commands of the operating system are availabl
 1. Choose **Select All** from the **Edit** menu.
 
 **Record Editing**
-Each page is design to only have one list view visible at a time. The toolbar and the **Edit** menu contain record editing commands that are enabled whenever an editable list view is visible.
+Each page is design to only have one list view visible at a time. The toolbar and the **Edit** menu contain record editing commands that are enabled whenever an editable list view is visible.  When a record is copied, ProjectNotes will make sure now unique values are duplicated.  For example tracker items will get a new Item Number.  Copied meetings will not copy notes, but will copy the title and attendees to make creating a new meeting quicker.
 
 **To insert a record:**
 1. From the **Edit** menu choose **New** **Item**.

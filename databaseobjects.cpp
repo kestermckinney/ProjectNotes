@@ -247,22 +247,7 @@ bool DatabaseObjects::openDatabase(const QString& databasepath, const QString& c
 
 void DatabaseObjects::addModel(SqlQueryModel* model)
 {
-    QList<SqlQueryModel*>::iterator it_recordsets = m_openRecordsets.begin();
-
-    while(it_recordsets != m_openRecordsets.end())
-    {
-
-        if (model->getOrderKey() < (*it_recordsets)->getOrderKey())
-        {
-            m_openRecordsets.insert(it_recordsets, model);
-
-            return;
-        }
-
-        it_recordsets++;
-    }
-
-    m_openRecordsets.append(model); // add to the list of open recordsets
+    m_openRecordsets.append(model);
 }
 
 void DatabaseObjects::removeModel(SqlQueryModel* model)
@@ -309,19 +294,19 @@ QString DatabaseObjects::execute(const QString& sql)
         if (m_sqliteDb.transaction())
         {
             query.prepare(sql);
-            query.exec();
-
+            if (!query.exec())
+            {
 #ifdef QT_DEBUG
-            QLog_Debug(DEBUGLOG, QString("Execute: %1").arg(sql));
+            QString msg = objectName() + " - SQL QUERY FAILED: " + query.lastError().text() + "\nSQL: " + sql;
+            qWarning() << msg;
+            QLog_Debug(DEBUGLOG, msg);
 #endif
+            }
 
             QSqlError e = query.lastError();
             if (e.isValid())
             {
                 m_sqliteDb.rollback();
-#ifdef QT_DEBUG
-                QLog_Debug(DEBUGLOG, QString("Exec Error: %1").arg(e.text()));
-#endif
             }
             else
             {
@@ -333,13 +318,13 @@ QString DatabaseObjects::execute(const QString& sql)
             {
                 val = query.value(0).toString();
 #ifdef QT_DEBUG
-                QLog_Debug(DEBUGLOG, QString("Result: %1").arg(query.value(0).toString()));
+                QLog_Debug(DEBUGLOG, QString("Result: %1 for query: %2").arg(query.value(0).toString(),sql));
 #endif
             }
 #ifdef QT_DEBUG
             else
             {
-                QLog_Debug(DEBUGLOG, QString("Result No Record"));
+                QLog_Debug(DEBUGLOG, QString("Result No Record for query: %1").arg(sql));
             }
 #endif
         }

@@ -81,7 +81,7 @@ The events listed in the table below can be extended in Python plugins. In each 
 
 The tables defined below are options for the data to be passed to the [Python](<http://www.python.org>) script event function. When defining an event, it is important that the table corresponds with the item associated with the right-click. The XML structures are complex. An export will help you understand the structures betters.
 
-All elements have an "id" attribute. On an import this attribute is used as a unique identifier and can cause existing data to be overridden. To insert new data, do not used the id identifier or other unique identifiers such as a name or project number when returning or importing XML.
+Each exported `<row>` contains the record's primary key as its first `<column>` element. On import, you can optionally add an `id` attribute directly on the `<row>` element to target a specific existing record for update or delete — this overrides unique-key matching. To insert new data, omit both the `id` attribute and any primary key column value so Project Notes generates a new identifier.
 
 
 | **Data View** | **Description** |
@@ -107,7 +107,8 @@ The example below show an XML export of a person. Notice child tables contain th
 <xml version="1.0" encoding="UTF-8">
 <projectnotes filepath="C:\Users\joe\Sample.db" export_date="12/11/2020 01:01 PM" filter_field="people_id" project_manager_id="59709810500028597" managing_company_id="1597098105000493" managing_company_name="Sample Company, Inc." managing_manager_name="Jacob Smith" filter_values="{ba96fb89-6c2d-46db-864c-5be6292b10ef}">
 <table name="ix_people" filter_field_1="people_id" filter_value_1="{ba96fb89-6c2d-46db-864c-5be6292b10ef}">
-<row id="15970981060009492" delete=true>
+<row delete=true>
+<column name="people_id">{ba96fb89-6c2d-46db-864c-5be6292b10ef}</column>
 <column name="name">Aaron Brown</column>
 <column name="email">Aaron.Brown@somecompany.com</column>
 <column name="office_phone">(555) 555-2459</column>

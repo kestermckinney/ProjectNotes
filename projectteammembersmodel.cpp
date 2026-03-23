@@ -15,9 +15,9 @@ using namespace QLogger;
 ProjectTeamMembersModel::ProjectTeamMembersModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("ProjectTeamMembersModel");
-    setOrderKey(17);
 
-    setBaseSql("SELECT id, project_id, pp.people_id, name, receive_status_report, pp.role, email, (select pr2.project_number from projects pr2 where pr2.id=pp.project_id) project_number, (select pr.project_name from projects pr where pr.id=pp.project_id) project_name, (select client_name from clients c where c.id=p.client_id) client_name FROM project_people pp left join people p on p.id=pp.people_id");
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
+    setBaseSql("SELECT project_people.id, project_id, project_people.people_id, name, receive_status_report, project_people.role, email, (select pr2.project_number from projects pr2 where pr2.id=project_people.project_id) project_number, (select pr.project_name from projects pr where pr.id=project_people.project_id) project_name, (select client_name from clients c where c.id=p.client_id) client_name FROM project_people left join people p on p.id=project_people.people_id");
 
     setTableName("project_people", "Project People");
 

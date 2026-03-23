@@ -10,9 +10,9 @@ using namespace QLogger;
 TrackerItemCommentsModel::TrackerItemCommentsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("TrackerItemCommentsModel");
-    setOrderKey(35);
 
-    setBaseSql("SELECT id, item_id, lastupdated_date, update_note, updated_by, (select i.item_name from item_tracker i where i.id=u.item_id) item_name, (select i.item_number from item_tracker i where i.id=u.item_id) item_number, (select i.description from item_tracker i where i.id=u.item_id) description, (select p.project_name from projects p where p.id=(select i.project_id from item_tracker i where i.id=u.item_id)) project_name, (select p.project_number from projects p where p.id=(select i.project_id from item_tracker i where i.id=u.item_id)) project_number FROM item_tracker_updates u");
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
+    setBaseSql("SELECT id, item_id, lastupdated_date, update_note, updated_by, (select i.item_name from item_tracker i where i.id=item_tracker_updates.item_id) item_name, (select i.item_number from item_tracker i where i.id=item_tracker_updates.item_id) item_number, (select i.description from item_tracker i where i.id=item_tracker_updates.item_id) description, (select p.project_name from projects p where p.id=(select i.project_id from item_tracker i where i.id=item_tracker_updates.item_id)) project_name, (select p.project_number from projects p where p.id=(select i.project_id from item_tracker i where i.id=item_tracker_updates.item_id)) project_number FROM item_tracker_updates");
 
     setTableName("item_tracker_updates", "Tracker Comments");
 
@@ -28,6 +28,8 @@ TrackerItemCommentsModel::TrackerItemCommentsModel(DatabaseObjects* dbo): SqlQue
     addColumn("description", tr("Item Description"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("project_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("project_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+
+    setDeletedFilterInView(true);
 
     setOrderBy("lastupdated_date");
 }

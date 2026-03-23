@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>OpenDatabaseDialog</class>
- <widget class="QDialog" name="OpenDatabaseDialog">
+ <class>CloudSyncSettingsDialog</class>
+ <widget class="QDialog" name="CloudSyncSettingsDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -23,15 +23,15 @@
    </item>
    <item>
     <widget class="QGroupBox" name="groupBoxSync">
-     <property name="title">
-      <string>Sync Settings</string>
-     </property>
      <property name="enabled">
       <bool>false</bool>
      </property>
+     <property name="title">
+      <string>Sync Settings</string>
+     </property>
      <layout class="QFormLayout" name="formLayout">
       <property name="fieldGrowthPolicy">
-       <enum>QFormLayout::ExpandingFieldsGrow</enum>
+       <enum>QFormLayout::FieldGrowthPolicy::ExpandingFieldsGrow</enum>
       </property>
       <item row="0" column="0">
        <widget class="QLabel" name="labelSyncHostType">
@@ -92,7 +92,7 @@
       <item row="3" column="1">
        <widget class="QLineEdit" name="lineEditPassword">
         <property name="echoMode">
-         <enum>QLineEdit::Password</enum>
+         <enum>QLineEdit::EchoMode::Password</enum>
         </property>
        </widget>
       </item>
@@ -106,7 +106,7 @@
       <item row="4" column="1">
        <widget class="QLineEdit" name="lineEditEncryptionPhrase">
         <property name="echoMode">
-         <enum>QLineEdit::Password</enum>
+         <enum>QLineEdit::EchoMode::Normal</enum>
         </property>
         <property name="placeholderText">
          <string>(optional — leave blank to disable encryption)</string>
@@ -123,7 +123,7 @@
       <item row="5" column="1">
        <widget class="QLineEdit" name="lineEditSupabaseKey">
         <property name="echoMode">
-         <enum>QLineEdit::Password</enum>
+         <enum>QLineEdit::EchoMode::Normal</enum>
         </property>
         <property name="placeholderText">
          <string>eyJ… (anon / public key from Supabase Dashboard)</string>
@@ -136,10 +136,10 @@
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set>
      </property>
     </widget>
    </item>
@@ -150,21 +150,33 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>OpenDatabaseDialog</receiver>
+   <receiver>CloudSyncSettingsDialog</receiver>
    <slot>accept()</slot>
    <hints>
-    <hint type="sourcelabel"><x>248</x><y>300</y></hint>
-    <hint type="destinationlabel"><x>157</x><y>320</y></hint>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>300</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>320</y>
+    </hint>
    </hints>
   </connection>
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>OpenDatabaseDialog</receiver>
+   <receiver>CloudSyncSettingsDialog</receiver>
    <slot>reject()</slot>
    <hints>
-    <hint type="sourcelabel"><x>316</x><y>300</y></hint>
-    <hint type="destinationlabel"><x>286</x><y>320</y></hint>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>300</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>320</y>
+    </hint>
    </hints>
   </connection>
  </connections>

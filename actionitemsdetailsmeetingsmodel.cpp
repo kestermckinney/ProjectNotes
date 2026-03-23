@@ -6,8 +6,8 @@
 ActionItemsDetailsMeetingsModel::ActionItemsDetailsMeetingsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("ActionItemsDetailsMeetingsModel");
-    setOrderKey(35);
 
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
     setBaseSql("SELECT id, project_id, (strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title) as meeting, internal_item FROM project_notes");
 
     setTableName("project_notes", "Notes");

@@ -8,8 +8,8 @@
 NotesActionItemsModel::NotesActionItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("NotesActionItemsModel");
-    setOrderKey(35);
 
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
     setBaseSql("SELECT id, item_number, item_type, item_name, identified_by, date_identified, description, assigned_to, priority, status, date_due, last_update, date_resolved, note_id, project_id, internal_item FROM item_tracker");
 
     setTableName("item_tracker", "Notes Action Items");

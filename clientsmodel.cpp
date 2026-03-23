@@ -9,8 +9,8 @@
 ClientsModel::ClientsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("ClientsModel");
-    setOrderKey(10);
 
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
     setBaseSql("SELECT id, client_name FROM clients");
 
     setTableName("clients", "Clients");

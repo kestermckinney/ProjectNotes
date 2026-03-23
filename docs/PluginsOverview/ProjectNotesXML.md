@@ -8,7 +8,8 @@ Nearly all information found in Project Notes can be exported or imported using 
 <?xml version="1.0" encoding="UTF-8"?>
 <projectnotes filepath="C:UsersMyAccountOneDriveProject NotesMyDatabase.db" export_date="09/22/2020 12:38 PM" filter_field="project_id" project_manager_id="159709810500028597" managing_company_id="{ba96fb89-6c2d-46db-864c-5be6292b1045}" managing_company_name="My Company, Inc." managing_manager_name="My Name" filter_values="{ba96fb89-6c2d-46db-864c-5be6292b10ef}">
  <table name="ix_projects" filter_field_1="project_id" filter_value_1="159709812400019208">
-  <row id="{ba96fb89-6c2d-46db-864c-5be6292b10e4}" delete=true>
+  <row delete=true>
+   <column name="project_id">{ba96fb89-6c2d-46db-864c-5be6292b10e4}</column>
    <column name="project_number">P4000</column>
    <column name="project_name">IT New Server Install</column>
    <column name="last_status_date">09/02/2020</column>
@@ -25,7 +26,8 @@ Nearly all information found in Project Notes can be exported or imported using 
    <column name="project_status">Active</column>
    <table name="ix_status_report_items" filter_field="project_id" filter_value="159709812400019208"/>
    <table name="ix_project_people" filter_field="project_id" filter_value="{ba96fb89-6c2d-46db-864c-5be6292b10ef}">
-    <row id="{ba96fb89-6c2d-46db-884c-5be6292b10eo}">
+    <row>
+     <column name="project_people_id">{ba96fb89-6c2d-46db-884c-5be6292b10eo}</column>
      <column name="project_id" lookupvalue="P4000">{ba96fb89-6c2d-46db-864c-5be6292b10ef}</column>
      <column name="project_id_name" lookupvalue="IT New Server Install">159709812400019208</column>
      <column name="people_id" lookupvalue="Mike Smith">{7e6df350-ab03-4653-99f1-7abb09bbefa3}</column>
@@ -35,7 +37,8 @@ Nearly all information found in Project Notes can be exported or imported using 
      <column name="email">Mike.Smith@mycompany.com</column>
      <column name="client_name">My Company, Inc.</column>
     </row>
-    <row id="159907543300015593">
+    <row>
+     <column name="project_people_id">159907543300015593</column>
      <column name="project_id" lookupvalue="J2627">{7e6df350-ab03-4653-99f1-7abb09bbefa3}</column>
      <column name="project_id_name" lookupvalue="IT New Server Install">159709812400019208</column>
      <column name="people_id" lookupvalue="Jim Smith">{92ce1e4e-a908-4f6c-8348-c85beb459942}</column>
@@ -47,7 +50,8 @@ Nearly all information found in Project Notes can be exported or imported using 
     </row>
    </table>
    <table name="ix_project_locations" filter_field="project_id" filter_value="{7e6df350-ab03-4653-99f1-7abb09bbefa3}">
-    <row id="{7e6df350-ab03-4653-99f1-7abb09bbefa3}">
+    <row>
+     <column name="project_location_id">{7e6df350-ab03-4653-99f1-7abb09bbefa3}</column>
      <column name="project_id" lookupvalue="P4000">{56601f6b-30d9-4fc0-a7e1-d367d30a4e52}</column>
      <column name="location_type">PDF File</column>
      <column name="location_description">Quote : Project Quote.pdf</column>
@@ -77,7 +81,7 @@ The XML document follows a parent child heiarchy that corresponds to the record 
 | managing\_company\_name | Attribute | The name of the Project Manager specified in the Preferences | No |
 | managing\_manager\_name | Attribute | The name of the Managing Company specified in the Preferences | No |
 | &lt;row\> | Document Node | The database row exported or imported | Yes |
-| id | Attribute | The record id of the record, typically not included on an import. Project Notes generates a globally unique identifier for each record. If specified, the import process will update a specific record. It is important to realize exporting and id from one database into another will cause errors. The receiving database may have similar data with completely different ids. ids are intended to be globally unique when the record is crearted. | No |
+| id | Attribute | Only used on **import** to target a specific existing record for update or delete. When specified, Project Notes uses the id to locate the record by its primary key. Not present in exports — the record ID is exported as the first `<column>` element instead. It is important to realize using an id from one database in another can cause errors since ids are globally unique per-database. | No |
 | &lt;column\> | Document Node | The column node to be imported. The value may be the column value, or the lookupvalue may be provided to specify the import lookup the corresponding record id. Typically corresponding record ids are not given as values. | Yes |
 | name | Attribute | The name of the column to be imported | Yes |
 | lookupvalue | Attribute | In many cases a record relates to another record. For example People and Clients, are related by their record id. To relate records on import, this value should contain the corresponding name. For example: The project\_id field should have this value set to the project\_number. The client\_id field should have this value set to the client name. The people\_id should have this field set to the people name. | Yes |

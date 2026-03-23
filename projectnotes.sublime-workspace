@@ -4,132 +4,136 @@
 		"selected_items":
 		[
 			[
-				"p",
-				"project_pdfreportname"
+				"base",
+				"basefolder"
 			],
 			[
-				"Initia",
-				"initialized"
+				"inp",
+				"input_file"
 			],
 			[
-				"ifs_u",
-				"ifs_url"
+				"input",
+				"input_file"
 			],
 			[
-				"avail",
-				"available"
+				"out",
+				"output_file"
 			],
 			[
-				"report",
-				"report_server"
-			],
-			[
-				"sub",
-				"subprocess"
-			],
-			[
-				"meet",
-				"meeting_type"
-			],
-			[
-				"schedul",
-				"schedule_a_meeting"
-			],
-			[
-				"My",
-				"MyMeetingTypes"
-			],
-			[
-				"mee",
-				"meeting_type"
-			],
-			[
-				"meeting",
-				"meeting_type"
-			],
-			[
-				"In",
-				"Individual"
-			],
-			[
-				"getH",
-				"getHTML"
-			],
-			[
-				"comboBox",
-				"comboBoxInvitees"
-			],
-			[
-				"project_n",
-				"project_number"
-			],
-			[
-				"project_",
-				"project_number"
-			],
-			[
-				"proje",
-				"project_name"
+				"sele",
+				"selected_groups"
 			],
 			[
 				"project",
-				"project_people"
+				"project_locations"
 			],
 			[
-				"m_",
-				"m_plugin_manager"
+				"company_",
+				"company_exclude"
+			],
+			[
+				"list",
+				"list_builder"
+			],
+			[
+				"proje",
+				"projects"
+			],
+			[
+				"exl",
+				"excluded_client"
+			],
+			[
+				"open",
+				"open_editor"
+			],
+			[
+				"cop",
+				"copy_email_to_clipboard"
+			],
+			[
+				"__",
+				"__name__"
+			],
+			[
+				"state",
+				"state_name"
+			],
+			[
+				"respon",
+				"msg_response"
+			],
+			[
+				"msg_",
+				"msg_file"
+			],
+			[
+				"des",
+				"destination_folder"
+			],
+			[
+				"projec",
+				"projectnumber"
+			],
+			[
+				"projectn",
+				"projectnumber"
+			],
+			[
+				"filter",
+				"filter_field_1"
+			],
+			[
+				"msg",
+				"msg_file"
+			],
+			[
+				"d",
+				"download_project_emails"
+			],
+			[
+				"contact",
+				"contact_details"
 			],
 			[
 				"menu",
-				"menutitle"
+				"menuSyncContacts"
 			],
 			[
-				"data",
-				"dataexport"
+				"ta",
+				"task_data"
 			],
 			[
-				"men",
-				"menutitle"
+				"itemn",
+				"itemname"
 			],
 			[
-				"m_menu",
-				"m_menu_title"
+				"imp",
+				"importance"
 			],
 			[
-				"m_men",
-				"m_menu_title"
+				"item",
+				"itemdescription"
 			],
 			[
-				"t_me",
-				"t_menutitle"
+				"syn",
+				"sync_todo_without_due"
 			],
 			[
-				"settin",
-				"settingname"
+				"sy",
+				"sync_todo_with_due"
+			],
+			[
+				"pa",
+				"parameter"
 			],
 			[
 				"event",
-				"event_menuclick"
+				"QEventLoop"
 			],
 			[
-				"to",
-				"token_cache_file"
-			],
-			[
-				"r",
-				"readAll"
-			],
-			[
-				"saved",
-				"saved_state_file"
-			],
-			[
-				"ev",
-				"event_menuclick"
-			],
-			[
-				"Q",
-				"qmake"
+				"sav",
+				"saved_state"
 			],
 			[
 				"I",
@@ -152,156 +156,698 @@
 	"buffers":
 	[
 		{
-			"file": "/home/paulmckinney/.local/share/ProjectNotes/logs/console.log",
+			"file": "docs/Introduction/GettingStarted.md",
 			"settings":
 			{
-				"buffer_size": 620771,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/home/paulmckinney/.local/share/ProjectNotes/logs/debugging.log",
-			"settings":
-			{
-				"buffer_size": 2601216,
+				"buffer_size": 3842,
 				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/home/paulmckinney/Documents/SqliteSyncPro/.gitignore",
-			"settings":
-			{
-				"buffer_size": 92,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
+				"line_ending": "Windows"
 			},
 			"undo_stack":
 			[
 				[
-					3,
-					1,
-					"insert",
-					{
-						"characters": ".gi"
-					},
-					"AwAAAEYAAAAAAAAARwAAAAAAAAAAAAAARwAAAAAAAABIAAAAAAAAAAAAAABIAAAAAAAAAEkAAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAARgAAAAAAAABGAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					4,
-					1,
-					"insert",
-					{
-						"characters": "tignore"
-					},
-					"BwAAAEkAAAAAAAAASgAAAAAAAAAAAAAASgAAAAAAAABLAAAAAAAAAAAAAABLAAAAAAAAAEwAAAAAAAAAAAAAAEwAAAAAAAAATQAAAAAAAAAAAAAATQAAAAAAAABOAAAAAAAAAAAAAABOAAAAAAAAAE8AAAAAAAAAAAAAAE8AAAAAAAAAUAAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAASQAAAAAAAABJAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					5,
-					1,
-					"insert",
-					{
-						"characters": "\n."
-					},
-					"AgAAAFAAAAAAAAAAUQAAAAAAAAAAAAAAUQAAAAAAAABSAAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAUAAAAAAAAABQAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
 					6,
-					1,
-					"insert",
-					{
-						"characters": "qtcreator"
-					},
-					"CQAAAFIAAAAAAAAAUwAAAAAAAAAAAAAAUwAAAAAAAABUAAAAAAAAAAAAAABUAAAAAAAAAFUAAAAAAAAAAAAAAFUAAAAAAAAAVgAAAAAAAAAAAAAAVgAAAAAAAABXAAAAAAAAAAAAAABXAAAAAAAAAFgAAAAAAAAAAAAAAFgAAAAAAAAAWQAAAAAAAAAAAAAAWQAAAAAAAABaAAAAAAAAAAAAAABaAAAAAAAAAFsAAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAUgAAAAAAAABSAAAAAAAAAAAAAAAAAPC/"
+					18,
+					"right_delete",
+					null,
+					"EgAAAKAAAAAAAAAAoAAAAAAAAAABAAAAc6AAAAAAAAAAoAAAAAAAAAABAAAAdKAAAAAAAAAAoAAAAAAAAAABAAAAYaAAAAAAAAAAoAAAAAAAAAABAAAAbqAAAAAAAAAAoAAAAAAAAAABAAAAZKAAAAAAAAAAoAAAAAAAAAABAAAAYaAAAAAAAAAAoAAAAAAAAAABAAAAcqAAAAAAAAAAoAAAAAAAAAABAAAAZKAAAAAAAAAAoAAAAAAAAAABAAAAIKAAAAAAAAAAoAAAAAAAAAABAAAAYaAAAAAAAAAAoAAAAAAAAAABAAAAcKAAAAAAAAAAoAAAAAAAAAABAAAAcKAAAAAAAAAAoAAAAAAAAAABAAAAbKAAAAAAAAAAoAAAAAAAAAABAAAAaaAAAAAAAAAAoAAAAAAAAAABAAAAY6AAAAAAAAAAoAAAAAAAAAABAAAAYaAAAAAAAAAAoAAAAAAAAAABAAAAdKAAAAAAAAAAoAAAAAAAAAABAAAAaQ",
+					"AQAAAAAAAAABAAAAoAAAAAAAAACgAAAAAAAAAAAAAAAAAPC/"
 				],
 				[
 					7,
+					14,
+					"right_delete",
+					null,
+					"DgAAAKAAAAAAAAAAoAAAAAAAAAABAAAAb6AAAAAAAAAAoAAAAAAAAAABAAAAbqAAAAAAAAAAoAAAAAAAAAABAAAAIKAAAAAAAAAAoAAAAAAAAAABAAAAZKAAAAAAAAAAoAAAAAAAAAABAAAAYaAAAAAAAAAAoAAAAAAAAAABAAAAdKAAAAAAAAAAoAAAAAAAAAABAAAAYaAAAAAAAAAAoAAAAAAAAAABAAAAIKAAAAAAAAAAoAAAAAAAAAABAAAAZqAAAAAAAAAAoAAAAAAAAAABAAAAb6AAAAAAAAAAoAAAAAAAAAABAAAAbKAAAAAAAAAAoAAAAAAAAAABAAAAZKAAAAAAAAAAoAAAAAAAAAABAAAAZaAAAAAAAAAAoAAAAAAAAAABAAAAcg",
+					"AQAAAAAAAAABAAAAoAAAAAAAAACgAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					8,
 					1,
 					"insert",
 					{
-						"characters": "\n"
+						"characters": "profile"
 					},
-					"AQAAAFsAAAAAAAAAXAAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAWwAAAAAAAABbAAAAAAAAAAAAAAAAAPC/"
+					"BwAAAKAAAAAAAAAAoQAAAAAAAAAAAAAAoQAAAAAAAACiAAAAAAAAAAAAAACiAAAAAAAAAKMAAAAAAAAAAAAAAKMAAAAAAAAApAAAAAAAAAAAAAAApAAAAAAAAAClAAAAAAAAAAAAAAClAAAAAAAAAKYAAAAAAAAAAAAAAKYAAAAAAAAApwAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAoAAAAAAAAACgAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					12,
+					3,
+					"right_delete",
+					null,
+					"AwAAAFMAAAAAAAAAUwAAAAAAAAABAAAAaVMAAAAAAAAAUwAAAAAAAAABAAAAdFMAAAAAAAAAUwAAAAAAAAABAAAAcw",
+					"AQAAAAAAAAABAAAAUwAAAAAAAABTAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					13,
+					1,
+					"insert",
+					{
+						"characters": "a"
+					},
+					"AQAAAFMAAAAAAAAAVAAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAUwAAAAAAAABTAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					14,
+					1,
+					"insert",
+					{
+						"characters": " local"
+					},
+					"BgAAAFQAAAAAAAAAVQAAAAAAAAAAAAAAVQAAAAAAAABWAAAAAAAAAAAAAABWAAAAAAAAAFcAAAAAAAAAAAAAAFcAAAAAAAAAWAAAAAAAAAAAAAAAWAAAAAAAAABZAAAAAAAAAAAAAABZAAAAAAAAAFoAAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAVAAAAAAAAABUAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					18,
+					12,
+					"right_delete",
+					null,
+					"DAAAAKsAAAAAAAAAqwAAAAAAAAABAAAAIKsAAAAAAAAAqwAAAAAAAAADAAAA4oCUqwAAAAAAAACrAAAAAAAAAAEAAAAgqwAAAAAAAACrAAAAAAAAAAEAAABuqwAAAAAAAACrAAAAAAAAAAEAAABvqwAAAAAAAACrAAAAAAAAAAEAAAAgqwAAAAAAAACrAAAAAAAAAAEAAABtqwAAAAAAAACrAAAAAAAAAAEAAABhqwAAAAAAAACrAAAAAAAAAAEAAABuqwAAAAAAAACrAAAAAAAAAAEAAAB1qwAAAAAAAACrAAAAAAAAAAEAAABhqwAAAAAAAACrAAAAAAAAAAEAAABs",
+					"AQAAAAAAAAABAAAAqwAAAAAAAACrAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					19,
+					9,
+					"right_delete",
+					null,
+					"CQAAAKsAAAAAAAAAqwAAAAAAAAABAAAAIKsAAAAAAAAAqwAAAAAAAAABAAAAc6sAAAAAAAAAqwAAAAAAAAABAAAAZasAAAAAAAAAqwAAAAAAAAABAAAAdKsAAAAAAAAAqwAAAAAAAAABAAAAdasAAAAAAAAAqwAAAAAAAAABAAAAcKsAAAAAAAAAqwAAAAAAAAABAAAAIKsAAAAAAAAAqwAAAAAAAAABAAAAaasAAAAAAAAAqwAAAAAAAAABAAAAcw",
+					"AQAAAAAAAAABAAAAqwAAAAAAAACrAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					20,
+					7,
+					"right_delete",
+					null,
+					"BwAAAKsAAAAAAAAAqwAAAAAAAAABAAAAIKsAAAAAAAAAqwAAAAAAAAABAAAAcqsAAAAAAAAAqwAAAAAAAAABAAAAZasAAAAAAAAAqwAAAAAAAAABAAAAcasAAAAAAAAAqwAAAAAAAAABAAAAdasAAAAAAAAAqwAAAAAAAAABAAAAaasAAAAAAAAAqwAAAAAAAAABAAAAcg",
+					"AQAAAAAAAAABAAAAqwAAAAAAAACrAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					23,
+					1,
+					"right_delete",
+					null,
+					"AQAAAKsAAAAAAAAAqwAAAAAAAABdAAAAZWQuIFRvIGJhY2sgdXAgeW91ciBkYXRhYmFzZSwgY29weSB0aGF0IGZpbGUgdG8gYSBzYWZlIGxvY2F0aW9uIHdoaWxlIFByb2plY3QgTm90ZXMgaXMgY2xvc2Vk",
+					"AQAAAAAAAAABAAAAqwAAAAAAAAAIAQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					33,
+					1,
+					"insert",
+					{
+						"characters": "sucha"
+					},
+					"BQAAAN8AAAAAAAAA4AAAAAAAAAAAAAAA4AAAAAAAAADhAAAAAAAAAAAAAADhAAAAAAAAAOIAAAAAAAAAAAAAAOIAAAAAAAAA4wAAAAAAAAAAAAAA4wAAAAAAAADkAAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAA3wAAAAAAAADfAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					34,
+					1,
+					"insert",
+					{
+						"characters": " "
+					},
+					"AQAAAOQAAAAAAAAA5QAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAA5AAAAAAAAADkAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					51,
+					3,
+					"right_delete",
+					null,
+					"AwAAAJsAAAAAAAAAmwAAAAAAAAAGAAAAc3lzdGVtmwAAAAAAAACbAAAAAAAAAAEAAAAnmwAAAAAAAACbAAAAAAAAAAEAAABz",
+					"AQAAAAAAAAABAAAAmwAAAAAAAAChAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					52,
+					1,
+					"insert",
+					{
+						"characters": "user"
+					},
+					"BAAAAJsAAAAAAAAAnAAAAAAAAAAAAAAAnAAAAAAAAACdAAAAAAAAAAAAAACdAAAAAAAAAJ4AAAAAAAAAAAAAAJ4AAAAAAAAAnwAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAmwAAAAAAAACbAAAAAAAAAAAAAAAAAPC/"
 				]
 			]
 		},
 		{
-			"file": "plugins/exportnotes_plugin.py",
+			"file": "docs/Introduction/SystemRequirements.md",
 			"settings":
 			{
-				"buffer_size": 21966,
+				"buffer_size": 213,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"contents": "# File Menu\n\n## Cloud Sync Settings\n\nProject Notes stores its database you user profile. The database is created automatically on first launch.\n\nIf you want to sync your data with a cloud host, use **Cloud Sync Settings** to configure the connection.\n\n**To configure cloud sync:**\n\n1. From the Project Notes **File** menu choose **Cloud Sync Settings...**\n2. Check **Sync data with cloud host** to enable syncing.\n3. Choose a **Sync Host Type**:\n   - **Self-Hosted PostgREST** — a PostgREST server you run yourself\n   - **Supabase** — a hosted Supabase project\n4. Enter the **Server URL**, **Username (Email)**, and **Password** for your host.\n5. Optionally enter an **Encryption Phrase** to encrypt data at rest on the server. Leave blank to disable encryption.\n6. If using Supabase, also enter the **Supabase Anon Key** from your Supabase Dashboard.\n7. Click **OK**.\n\nYour settings are saved immediately. If Project Notes cannot connect using the information provided, a warning dialog will appear. You can correct the settings by returning to **File > Cloud Sync Settings...**.\n\n### Searching The Database\n\nProject Notes provides a powerful search tool that searches the entire database. Project Notes can quickly search for any text, and provide quick navigation to found items by double clicking the results. When Show Internal items is selected from the View menu, internal data will show in the search results.\n\n**To search the database:**\n\n1. If the Search Panel is not showing, from the Project Notes **File** menu choose **Search** or click the Search icon on the toolbar.\n2. Next to the magnifying glass icon type in the text to search for.\n3. Press the **Return** key.\n\n**To open the record found in the search result:**\n\n1. Double click the item in the Search Panel.\n\n### Importing and Exporting Information\n\n#### Exporting data\nProject Notes can export data to an XML file. You can select individual items or entire tables of information to export. To learn more about the XML format go to [Project Notes XML](../PluginsOverview/ProjectNotesXML.md).\n\n**To export all projects, people, clients, or tracker items to XML:**\n\n1. From the Project Notes **File** menu choose **XML Export...**\n2. Choose the information type option you want to export.\n3. Click **Export**.\n4. Select the location to save the file.\n5. Type in the file name without the extension.\n6. Click **Save**.\n\n**To export an individual item:**\n\n1. Right-click on the item, and choose **XML Export...**\n2. Click **Export**.\n3. Select the location to save the file.\n4. Type in the file name without the extension.\n5. Click **Save**.\n\n#### Importing data\n\nProject Notes can import a properly constructed XML file.  To learn more about the XML format go to [Project Notes XML](../PluginsOverview/ProjectNotesXML.md).\n\n**To import information:**\n\n1. From the Project Notes **File** menu choose **XML Import...**\n2. Type in the full file name and path or click the three dots to Select the the import file and click **Open**.\n3. Click **Import**.\n\n#### Exiting Project Notes\n\nYou can exit Project Notes by clicking the close button on the window frame, or choosing **Exit** from the File menu.\n",
+			"file": "docs/InterfaceOverview/FileMenu.md",
+			"file_size": 3272,
+			"file_write_time": 134186860417897037,
+			"settings":
+			{
+				"buffer_size": 3167,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			},
 			"undo_stack":
 			[
+				[
+					13,
+					1,
+					"insert",
+					{
+						"characters": "you"
+					},
+					"AwAAAEcAAAAAAAAASAAAAAAAAAA2AAAAaW4gdGhlIHN0YW5kYXJkIGFwcGxpY2F0aW9uIGRhdGEgZm9sZGVyIG9uIHlvdXIgc3lzdGVtSAAAAAAAAABJAAAAAAAAAAAAAABJAAAAAAAAAEoAAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAARwAAAAAAAAB9AAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					14,
+					1,
+					"insert",
+					{
+						"characters": " user"
+					},
+					"BQAAAEoAAAAAAAAASwAAAAAAAAAAAAAASwAAAAAAAABMAAAAAAAAAAAAAABMAAAAAAAAAE0AAAAAAAAAAAAAAE0AAAAAAAAATgAAAAAAAAAAAAAATgAAAAAAAABPAAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAASgAAAAAAAABKAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					15,
+					1,
+					"insert",
+					{
+						"characters": " prfile"
+					},
+					"BwAAAE8AAAAAAAAAUAAAAAAAAAAAAAAAUAAAAAAAAABRAAAAAAAAAAAAAABRAAAAAAAAAFIAAAAAAAAAAAAAAFIAAAAAAAAAUwAAAAAAAAAAAAAAUwAAAAAAAABUAAAAAAAAAAAAAABUAAAAAAAAAFUAAAAAAAAAAAAAAFUAAAAAAAAAVgAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAATwAAAAAAAABPAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					16,
+					5,
+					"left_delete",
+					null,
+					"BQAAAFUAAAAAAAAAVQAAAAAAAAABAAAAZVQAAAAAAAAAVAAAAAAAAAABAAAAbFMAAAAAAAAAUwAAAAAAAAABAAAAaVIAAAAAAAAAUgAAAAAAAAABAAAAZlEAAAAAAAAAUQAAAAAAAAABAAAAcg",
+					"AQAAAAAAAAABAAAAVgAAAAAAAABWAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					17,
+					1,
+					"insert",
+					{
+						"characters": "rofile"
+					},
+					"BgAAAFEAAAAAAAAAUgAAAAAAAAAAAAAAUgAAAAAAAABTAAAAAAAAAAAAAABTAAAAAAAAAFQAAAAAAAAAAAAAAFQAAAAAAAAAVQAAAAAAAAAAAAAAVQAAAAAAAABWAAAAAAAAAAAAAABWAAAAAAAAAFcAAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAUQAAAAAAAABRAAAAAAAAAAAAAAAAAPC/"
+				],
 				[
 					21,
 					1,
 					"right_delete",
 					null,
-					"AQAAAMRSAAAAAAAAxFIAAAAAAABWAAAAQzpcXFVzZXJzXFxwYW1ja2lcXE9uZURyaXZlIC0gQ29ybmVyc3RvbmUgQ29udHJvbHNcXERvY3VtZW50c1xcV29yayBJbiBQcm9ncmVzc1xcWE1MXFw",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAGlMAAAAAAADEUgAAAAAAAAAAAAAAAPC/"
+					"AQAAAI4AAAAAAAAAjgAAAAAAAAAdAAAAIOKAlCBubyBtYW51YWwgc2V0dXAgcmVxdWlyZWQ",
+					"AQAAAAAAAAABAAAAqQAAAAAAAACOAAAAAAAAAAAAAAAAAPC/"
 				],
 				[
-					22,
+					30,
+					1,
+					"right_delete",
+					null,
+					"AQAAACIFAAAAAAAAIgUAAAAAAACIAAAAVGhlIHNlYXJjaCBob25vcnMgYWxsIFtHbG9iYWwgRmlsdGVyc10oUHJlc2VudGluZ1RvQ2xpZW50cy5tZCksIHNvIHlvdSBjYW4gc2VhcmNoIHdoaWxlIHNoYXJpbmcgeW91ciBzY3JlZW4gaW4gYSBtZWV0aW5nIHdpdGggYSBjdXN0b21lcg",
+					"AQAAAAAAAAABAAAAIgUAAAAAAACqBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					31,
 					1,
 					"insert",
 					{
-						"characters": "/hoem"
+						"characters": "E"
 					},
-					"BQAAAMRSAAAAAAAAxVIAAAAAAAAAAAAAxVIAAAAAAADGUgAAAAAAAAAAAADGUgAAAAAAAMdSAAAAAAAAAAAAAMdSAAAAAAAAyFIAAAAAAAAAAAAAyFIAAAAAAADJUgAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAxFIAAAAAAADEUgAAAAAAAAAAAAAAAPC/"
+					"AQAAACIFAAAAAAAAIwUAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAIgUAAAAAAAAiBQAAAAAAAAAAAAAAAPC/"
 				],
 				[
-					23,
-					4,
+					32,
+					1,
 					"left_delete",
 					null,
-					"BAAAAMhSAAAAAAAAyFIAAAAAAAABAAAAbcdSAAAAAAAAx1IAAAAAAAABAAAAZcZSAAAAAAAAxlIAAAAAAAABAAAAb8VSAAAAAAAAxVIAAAAAAAABAAAAaA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAyVIAAAAAAADJUgAAAAAAAAAAAAAAAPC/"
+					"AQAAACIFAAAAAAAAIgUAAAAAAAABAAAARQ",
+					"AQAAAAAAAAABAAAAIwUAAAAAAAAjBQAAAAAAAAAAAAAAAPC/"
 				],
 				[
-					24,
+					33,
 					1,
 					"insert",
 					{
-						"characters": "home/paulmckin"
+						"characters": "When"
 					},
-					"DgAAAMVSAAAAAAAAxlIAAAAAAAAAAAAAxlIAAAAAAADHUgAAAAAAAAAAAADHUgAAAAAAAMhSAAAAAAAAAAAAAMhSAAAAAAAAyVIAAAAAAAAAAAAAyVIAAAAAAADKUgAAAAAAAAAAAADKUgAAAAAAAMtSAAAAAAAAAAAAAMtSAAAAAAAAzFIAAAAAAAAAAAAAzFIAAAAAAADNUgAAAAAAAAAAAADNUgAAAAAAAM5SAAAAAAAAAAAAAM5SAAAAAAAAz1IAAAAAAAAAAAAAz1IAAAAAAADQUgAAAAAAAAAAAADQUgAAAAAAANFSAAAAAAAAAAAAANFSAAAAAAAA0lIAAAAAAAAAAAAA0lIAAAAAAADTUgAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAAxVIAAAAAAADFUgAAAAAAAAAAAAAAAPC/"
+					"BAAAACIFAAAAAAAAIwUAAAAAAAAAAAAAIwUAAAAAAAAkBQAAAAAAAAAAAAAkBQAAAAAAACUFAAAAAAAAAAAAACUFAAAAAAAAJgUAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAIgUAAAAAAAAiBQAAAAAAAAAAAAAAAPC/"
 				],
 				[
-					25,
+					34,
 					1,
 					"insert",
 					{
-						"characters": "ney/Desktop"
+						"characters": " show"
 					},
-					"CwAAANNSAAAAAAAA1FIAAAAAAAAAAAAA1FIAAAAAAADVUgAAAAAAAAAAAADVUgAAAAAAANZSAAAAAAAAAAAAANZSAAAAAAAA11IAAAAAAAAAAAAA11IAAAAAAADYUgAAAAAAAAAAAADYUgAAAAAAANlSAAAAAAAAAAAAANlSAAAAAAAA2lIAAAAAAAAAAAAA2lIAAAAAAADbUgAAAAAAAAAAAADbUgAAAAAAANxSAAAAAAAAAAAAANxSAAAAAAAA3VIAAAAAAAAAAAAA3VIAAAAAAADeUgAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA01IAAAAAAADTUgAAAAAAAAAAAAAAAPC/"
+					"BQAAACYFAAAAAAAAJwUAAAAAAAAAAAAAJwUAAAAAAAAoBQAAAAAAAAAAAAAoBQAAAAAAACkFAAAAAAAAAAAAACkFAAAAAAAAKgUAAAAAAAAAAAAAKgUAAAAAAAArBQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAJgUAAAAAAAAmBQAAAAAAAAAAAAAAAPC/"
 				],
 				[
-					26,
+					35,
 					1,
 					"insert",
 					{
-						"characters": "/"
+						"characters": " "
 					},
-					"AQAAAN5SAAAAAAAA31IAAAAAAAAAAAAA",
-					"BAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8L8AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwvwAAAAABAAAA3lIAAAAAAADeUgAAAAAAAAAAAAAAAPC/"
+					"AQAAACsFAAAAAAAALAUAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAKwUAAAAAAAArBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					36,
+					5,
+					"left_delete",
+					null,
+					"BQAAACsFAAAAAAAAKwUAAAAAAAABAAAAICoFAAAAAAAAKgUAAAAAAAABAAAAdykFAAAAAAAAKQUAAAAAAAABAAAAbygFAAAAAAAAKAUAAAAAAAABAAAAaCcFAAAAAAAAJwUAAAAAAAABAAAAcw",
+					"AQAAAAAAAAABAAAALAUAAAAAAAAsBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					37,
+					1,
+					"insert",
+					{
+						"characters": "Show"
+					},
+					"BAAAACcFAAAAAAAAKAUAAAAAAAAAAAAAKAUAAAAAAAApBQAAAAAAAAAAAAApBQAAAAAAACoFAAAAAAAAAAAAACoFAAAAAAAAKwUAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAJwUAAAAAAAAnBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					38,
+					1,
+					"insert",
+					{
+						"characters": " Internal"
+					},
+					"CQAAACsFAAAAAAAALAUAAAAAAAAAAAAALAUAAAAAAAAtBQAAAAAAAAAAAAAtBQAAAAAAAC4FAAAAAAAAAAAAAC4FAAAAAAAALwUAAAAAAAAAAAAALwUAAAAAAAAwBQAAAAAAAAAAAAAwBQAAAAAAADEFAAAAAAAAAAAAADEFAAAAAAAAMgUAAAAAAAAAAAAAMgUAAAAAAAAzBQAAAAAAAAAAAAAzBQAAAAAAADQFAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAKwUAAAAAAAArBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					39,
+					1,
+					"insert",
+					{
+						"characters": " items"
+					},
+					"BgAAADQFAAAAAAAANQUAAAAAAAAAAAAANQUAAAAAAAA2BQAAAAAAAAAAAAA2BQAAAAAAADcFAAAAAAAAAAAAADcFAAAAAAAAOAUAAAAAAAAAAAAAOAUAAAAAAAA5BQAAAAAAAAAAAAA5BQAAAAAAADoFAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAANAUAAAAAAAA0BQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					40,
+					1,
+					"insert",
+					{
+						"characters": " is"
+					},
+					"AwAAADoFAAAAAAAAOwUAAAAAAAAAAAAAOwUAAAAAAAA8BQAAAAAAAAAAAAA8BQAAAAAAAD0FAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAOgUAAAAAAAA6BQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					41,
+					1,
+					"insert",
+					{
+						"characters": " selcted"
+					},
+					"CAAAAD0FAAAAAAAAPgUAAAAAAAAAAAAAPgUAAAAAAAA/BQAAAAAAAAAAAAA/BQAAAAAAAEAFAAAAAAAAAAAAAEAFAAAAAAAAQQUAAAAAAAAAAAAAQQUAAAAAAABCBQAAAAAAAAAAAABCBQAAAAAAAEMFAAAAAAAAAAAAAEMFAAAAAAAARAUAAAAAAAAAAAAARAUAAAAAAABFBQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAPQUAAAAAAAA9BQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					42,
+					1,
+					"insert",
+					{
+						"characters": " "
+					},
+					"AQAAAEUFAAAAAAAARgUAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAARQUAAAAAAABFBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					43,
+					6,
+					"left_delete",
+					null,
+					"BgAAAEUFAAAAAAAARQUAAAAAAAABAAAAIEQFAAAAAAAARAUAAAAAAAABAAAAZEMFAAAAAAAAQwUAAAAAAAABAAAAZUIFAAAAAAAAQgUAAAAAAAABAAAAdEEFAAAAAAAAQQUAAAAAAAABAAAAY0AFAAAAAAAAQAUAAAAAAAABAAAAbA",
+					"AQAAAAAAAAABAAAARgUAAAAAAABGBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					44,
+					1,
+					"insert",
+					{
+						"characters": "lected"
+					},
+					"BgAAAEAFAAAAAAAAQQUAAAAAAAAAAAAAQQUAAAAAAABCBQAAAAAAAAAAAABCBQAAAAAAAEMFAAAAAAAAAAAAAEMFAAAAAAAARAUAAAAAAAAAAAAARAUAAAAAAABFBQAAAAAAAAAAAABFBQAAAAAAAEYFAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAQAUAAAAAAABABQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					45,
+					1,
+					"insert",
+					{
+						"characters": " from"
+					},
+					"BQAAAEYFAAAAAAAARwUAAAAAAAAAAAAARwUAAAAAAABIBQAAAAAAAAAAAABIBQAAAAAAAEkFAAAAAAAAAAAAAEkFAAAAAAAASgUAAAAAAAAAAAAASgUAAAAAAABLBQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAARgUAAAAAAABGBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					46,
+					1,
+					"insert",
+					{
+						"characters": " teh"
+					},
+					"BAAAAEsFAAAAAAAATAUAAAAAAAAAAAAATAUAAAAAAABNBQAAAAAAAAAAAABNBQAAAAAAAE4FAAAAAAAAAAAAAE4FAAAAAAAATwUAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAASwUAAAAAAABLBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					47,
+					1,
+					"insert",
+					{
+						"characters": " "
+					},
+					"AQAAAE8FAAAAAAAAUAUAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAATwUAAAAAAABPBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					48,
+					3,
+					"left_delete",
+					null,
+					"AwAAAE8FAAAAAAAATwUAAAAAAAABAAAAIE4FAAAAAAAATgUAAAAAAAABAAAAaE0FAAAAAAAATQUAAAAAAAABAAAAZQ",
+					"AQAAAAAAAAABAAAAUAUAAAAAAABQBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					49,
+					1,
+					"insert",
+					{
+						"characters": "he"
+					},
+					"AgAAAE0FAAAAAAAATgUAAAAAAAAAAAAATgUAAAAAAABPBQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAATQUAAAAAAABNBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					50,
+					1,
+					"insert",
+					{
+						"characters": " View"
+					},
+					"BQAAAE8FAAAAAAAAUAUAAAAAAAAAAAAAUAUAAAAAAABRBQAAAAAAAAAAAABRBQAAAAAAAFIFAAAAAAAAAAAAAFIFAAAAAAAAUwUAAAAAAAAAAAAAUwUAAAAAAABUBQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAATwUAAAAAAABPBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					51,
+					1,
+					"insert",
+					{
+						"characters": " ment"
+					},
+					"BQAAAFQFAAAAAAAAVQUAAAAAAAAAAAAAVQUAAAAAAABWBQAAAAAAAAAAAABWBQAAAAAAAFcFAAAAAAAAAAAAAFcFAAAAAAAAWAUAAAAAAAAAAAAAWAUAAAAAAABZBQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAVAUAAAAAAABUBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					52,
+					1,
+					"left_delete",
+					null,
+					"AQAAAFgFAAAAAAAAWAUAAAAAAAABAAAAdA",
+					"AQAAAAAAAAABAAAAWQUAAAAAAABZBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					53,
+					1,
+					"insert",
+					{
+						"characters": "u"
+					},
+					"AQAAAFgFAAAAAAAAWQUAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAWAUAAAAAAABYBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					54,
+					1,
+					"insert",
+					{
+						"characters": ","
+					},
+					"AQAAAFkFAAAAAAAAWgUAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAWQUAAAAAAABZBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					55,
+					1,
+					"insert",
+					{
+						"characters": " int"
+					},
+					"BAAAAFoFAAAAAAAAWwUAAAAAAAAAAAAAWwUAAAAAAABcBQAAAAAAAAAAAABcBQAAAAAAAF0FAAAAAAAAAAAAAF0FAAAAAAAAXgUAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAWgUAAAAAAABaBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					56,
+					1,
+					"insert",
+					{
+						"characters": "ernal"
+					},
+					"BQAAAF4FAAAAAAAAXwUAAAAAAAAAAAAAXwUAAAAAAABgBQAAAAAAAAAAAABgBQAAAAAAAGEFAAAAAAAAAAAAAGEFAAAAAAAAYgUAAAAAAAAAAAAAYgUAAAAAAABjBQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAXgUAAAAAAABeBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					57,
+					1,
+					"insert",
+					{
+						"characters": " "
+					},
+					"AQAAAGMFAAAAAAAAZAUAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAYwUAAAAAAABjBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					58,
+					1,
+					"insert",
+					{
+						"characters": "data"
+					},
+					"BAAAAGQFAAAAAAAAZQUAAAAAAAAAAAAAZQUAAAAAAABmBQAAAAAAAAAAAABmBQAAAAAAAGcFAAAAAAAAAAAAAGcFAAAAAAAAaAUAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAZAUAAAAAAABkBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					59,
+					1,
+					"insert",
+					{
+						"characters": " will"
+					},
+					"BQAAAGgFAAAAAAAAaQUAAAAAAAAAAAAAaQUAAAAAAABqBQAAAAAAAAAAAABqBQAAAAAAAGsFAAAAAAAAAAAAAGsFAAAAAAAAbAUAAAAAAAAAAAAAbAUAAAAAAABtBQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAaAUAAAAAAABoBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					60,
+					1,
+					"insert",
+					{
+						"characters": " show"
+					},
+					"BQAAAG0FAAAAAAAAbgUAAAAAAAAAAAAAbgUAAAAAAABvBQAAAAAAAAAAAABvBQAAAAAAAHAFAAAAAAAAAAAAAHAFAAAAAAAAcQUAAAAAAAAAAAAAcQUAAAAAAAByBQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAbQUAAAAAAABtBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					61,
+					1,
+					"insert",
+					{
+						"characters": " in"
+					},
+					"AwAAAHIFAAAAAAAAcwUAAAAAAAAAAAAAcwUAAAAAAAB0BQAAAAAAAAAAAAB0BQAAAAAAAHUFAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAcgUAAAAAAAByBQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					62,
+					1,
+					"insert",
+					{
+						"characters": " teh"
+					},
+					"BAAAAHUFAAAAAAAAdgUAAAAAAAAAAAAAdgUAAAAAAAB3BQAAAAAAAAAAAAB3BQAAAAAAAHgFAAAAAAAAAAAAAHgFAAAAAAAAeQUAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAdQUAAAAAAAB1BQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					63,
+					1,
+					"left_delete",
+					null,
+					"AQAAAHgFAAAAAAAAeAUAAAAAAAABAAAAaA",
+					"AQAAAAAAAAABAAAAeQUAAAAAAAB5BQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					64,
+					1,
+					"insert",
+					{
+						"characters": "h"
+					},
+					"AQAAAHgFAAAAAAAAeQUAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAeAUAAAAAAAB4BQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					65,
+					2,
+					"left_delete",
+					null,
+					"AgAAAHgFAAAAAAAAeAUAAAAAAAABAAAAaHcFAAAAAAAAdwUAAAAAAAABAAAAZQ",
+					"AQAAAAAAAAABAAAAeQUAAAAAAAB5BQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					66,
+					1,
+					"insert",
+					{
+						"characters": "he"
+					},
+					"AgAAAHcFAAAAAAAAeAUAAAAAAAAAAAAAeAUAAAAAAAB5BQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAdwUAAAAAAAB3BQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					67,
+					1,
+					"insert",
+					{
+						"characters": " searh"
+					},
+					"BgAAAHkFAAAAAAAAegUAAAAAAAAAAAAAegUAAAAAAAB7BQAAAAAAAAAAAAB7BQAAAAAAAHwFAAAAAAAAAAAAAHwFAAAAAAAAfQUAAAAAAAAAAAAAfQUAAAAAAAB+BQAAAAAAAAAAAAB+BQAAAAAAAH8FAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAeQUAAAAAAAB5BQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					68,
+					1,
+					"insert",
+					{
+						"characters": " "
+					},
+					"AQAAAH8FAAAAAAAAgAUAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAfwUAAAAAAAB/BQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					69,
+					2,
+					"left_delete",
+					null,
+					"AgAAAH8FAAAAAAAAfwUAAAAAAAABAAAAIH4FAAAAAAAAfgUAAAAAAAABAAAAaA",
+					"AQAAAAAAAAABAAAAgAUAAAAAAACABQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					70,
+					1,
+					"insert",
+					{
+						"characters": "ch"
+					},
+					"AgAAAH4FAAAAAAAAfwUAAAAAAAAAAAAAfwUAAAAAAACABQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAfgUAAAAAAAB+BQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					71,
+					1,
+					"insert",
+					{
+						"characters": " results."
+					},
+					"CQAAAIAFAAAAAAAAgQUAAAAAAAAAAAAAgQUAAAAAAACCBQAAAAAAAAAAAACCBQAAAAAAAIMFAAAAAAAAAAAAAIMFAAAAAAAAhAUAAAAAAAAAAAAAhAUAAAAAAACFBQAAAAAAAAAAAACFBQAAAAAAAIYFAAAAAAAAAAAAAIYFAAAAAAAAhwUAAAAAAAAAAAAAhwUAAAAAAACIBQAAAAAAAAAAAACIBQAAAAAAAIkFAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAgAUAAAAAAACABQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					72,
+					1,
+					"left_delete",
+					null,
+					"AQAAAIgFAAAAAAAAiAUAAAAAAAABAAAALg",
+					"AQAAAAAAAAABAAAAiQUAAAAAAACJBQAAAAAAAAAAAAAAAPC/"
 				]
 			]
 		}
 	],
-	"build_system": "Packages/Python/Python.sublime-build",
+	"build_system": "Packages/Makefile/Make.sublime-build",
 	"build_system_choices":
 	[
+		[
+			[
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				]
+			],
+			[
+				"Packages/Makefile/Make.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/NSIS/NSIS.sublime-build",
+					""
+				],
+				[
+					"Packages/NSIS/NSIS.sublime-build",
+					"strict"
+				]
+			],
+			[
+				"Packages/NSIS/NSIS.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					""
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					"Syntax Check"
+				]
+			],
+			[
+				"Packages/Python/Python.sublime-build",
+				""
+			]
+		],
 		[
 			[
 				[
@@ -327,15 +873,7 @@
 		"selected_items":
 		[
 			[
-				"pack",
-				"Package Control: Install Package"
-			],
-			[
-				"claud",
-				"Claudette: Ask Question"
-			],
-			[
-				"i",
+				"install",
 				"Package Control: Install Package"
 			],
 			[
@@ -343,40 +881,24 @@
 				"Package Control: Install Package"
 			],
 			[
-				"ack",
-				"Package Control: Install Package"
-			],
-			[
-				"insta",
-				"Package Control: Install Package"
-			],
-			[
-				"di",
-				"Package Control: Discover Packages"
-			],
-			[
-				"instal",
-				"Package Control: Install Package"
+				"plug",
+				"Package Control: List Unmanaged Packages"
 			],
 			[
 				"split",
 				"File: Split View"
 			],
 			[
-				"proj",
-				"Project: Edit Project"
-			],
-			[
-				"dis",
-				"Package Control: Discover Packages"
-			],
-			[
-				"install",
+				"instal",
 				"Package Control: Install Package"
 			],
 			[
-				"disc",
-				"Package Control: Discover Packages"
+				"insta",
+				"Indentation: Convert to Spaces"
+			],
+			[
+				"pack",
+				"Package Control: Add Channel"
 			],
 			[
 				"markdown",
@@ -415,149 +937,157 @@
 	},
 	"expanded_folders":
 	[
-		"/home/paulmckinney/Documents/ProjectNotes.wiki"
+		"/C/Users/paulmckinney/Documents/ProjectNotes",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/database",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/InterfaceOverview",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/Introduction",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/windows",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/windows/setup"
 	],
 	"file_history":
 	[
-		"/home/paulmckinney/Desktop/project.xml",
-		"/home/paulmckinney/Documents/ProjectNotes/CLAUDE.md",
-		"/home/paulmckinney/Documents/ProjectNotes/.claude/settings.local.json",
-		"/home/paulmckinney/Desktop/project",
-		"/home/paulmckinney/Documents/ProjectNotes.wiki/Release-Notes.md",
-		"/home/paulmckinney/Documents/ProjectNotes/projectnotes.sublime-project",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/ifs_tools.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/common.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/base_plugin.py",
-		"/home/paulmckinney/Documents/ProjectNotes/databasestructure.cpp",
-		"/home/paulmckinney/Documents/ProjectNotes/docs/Introduction/GettingStarted.md",
-		"/home/paulmckinney/Desktop/neonpass.txt",
-		"/home/paulmckinney/Documents/SqliteSyncPro/auth_superbase.py",
-		"/home/paulmckinney/Documents/SqliteSyncPro/createsuer_superbase.py",
-		"/home/paulmckinney/test_superbase.py",
-		"/home/paulmckinney/createsuer_superbase.py",
-		"/home/paulmckinney/deleteuser_superbase.py",
-		"/home/paulmckinney/resetpasword_superbase.py",
-		"/home/paulmckinney/Documents/SqliteSyncPro/examples/invoice/postgres_schema.sql",
-		"/home/paulmckinney/MEGA/.ptmpB455CB/SqliteSyncPro/CMakeLists.txt",
-		"/home/paulmckinney/MEGA/.ptmpD6D42F/SqliteSyncPro/CMakeLists.txt",
-		"/home/paulmckinney/Documents/SqliteSyncPro/CLAUDE.md",
-		"/home/paulmckinney/.local/share/ProjectNotes/logs/console.log",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/exportnotes_plugin.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/exporttrackeritems_plugin.py",
-		"/home/paulmckinney/Documents/ProjectNotes/windows/setup/setupscript.nsi",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/forms/dialogTrackerRptOptions.ui",
-		"/home/paulmckinney/.local/share/ProjectNotes/logs/debugging.log",
-		"/home/paulmckinney/Documents/ProjectNotes/threads/outlooksync_thread.py",
-		"/home/paulmckinney/Documents/ProjectNotes/threads/filefinder_thread.py",
-		"/home/paulmckinney/Documents/ProjectNotes/threads/ifssync_thread.py",
-		"/home/paulmckinney/Documents/ProjectNotes/sqlquerymodel.cpp",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/graphapi_tools.py",
-		"/home/paulmckinney/Documents/ProjectNotes/databaseobjects.cpp",
-		"/home/paulmckinney/Documents/ProjectNotes/plugin.cpp",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/forms/dialogIFSCloud.ui",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/ifscloud_plugin_settings.py",
-		"/home/paulmckinney/Documents/ProjectNotes/threads/tester_thread_1.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/ifs_ssrs_generate_plugin.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/base_plugin_settings.py",
-		"/home/paulmckinney/Desktop/textxmlexport.xml",
-		"/home/paulmckinney/Documents/ProjectNotes/pncomboboxdelegate.cpp",
-		"/home/paulmckinney/Documents/ProjectNotes/comboboxdelegate.cpp",
-		"/home/paulmckinney/Documents/download/uploadtest.txt",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/wordkill_plugin.py",
-		"/home/paulmckinney/.config/ProjectNotes4Beta/PluginSettings.conf",
-		"/home/paulmckinney/.config/ProjectNotes/PluginSettings.conf",
-		"/home/paulmckinney/MEGA/allsettings.json",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/excel_tools.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/outlook_tools.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/word_tools.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/mymeetingtypes_plugin.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/schedulecustomerkickoffinvite_plugin.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/scheduleinternalkickoffinvite_plugin.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/schedulecustomerlessonslearnedinvite_plugin.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/dialogMeetingTypes.ui",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/noteformatter.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/archivenotes_plugin.py",
-		"/home/paulmckinney/.local/state/ProjectNotesstaterc",
-		"/home/paulmckinney/.local/share/ProjectNotes/logs/projectnotes.log",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/scheduleinternalstatusinvite_plugin.py",
-		"/home/paulmckinney/Documents/ProjectNotes/docs/PluginsOverview/AddingFunctionality.md",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/tester_plugin.py",
-		"/home/paulmckinney/Documents/client.xml",
-		"/home/paulmckinney/Documents/client2.xml",
-		"/home/paulmckinney/.local/share/ProjectNotes/logs/plugins.log",
-		"/home/paulmckinney/.config/sublime-merge/Packages/User/Preferences.sublime-settings",
-		"/home/paulmckinney/Documents/ProjectNotes/version.h.in",
-		"/home/paulmckinney/Documents/ProjectNotes/mainwindow.h",
-		"/home/paulmckinney/Documents/ProjectNotes/version.h",
-		"/home/paulmckinney/Documents/ProjectNotes/aboutdialog.h",
-		"/home/paulmckinney/Documents/ProjectNotes/.gitignore",
-		"/home/paulmckinney/.config/sublime-text/Packages/User/projectnotes.sublime-build",
-		"/home/paulmckinney/Documents/ProjectNotes/mainwindow.cpp",
-		"/home/paulmckinney/Documents/ProjectNotes/logviewer.cpp",
-		"/home/paulmckinney/Documents/ProjectNotes/pnbasepage.h",
-		"/home/paulmckinney/Documents/ProjectNotes/pnbasepage.cpp",
-		"/home/paulmckinney/Documents/ProjectNotes/plugin.h",
-		"/home/paulmckinney/Documents/ProjectNotes/pythonworker.cpp",
-		"/home/paulmckinney/Documents/ProjectNotes/pythonworker.h",
-		"/home/paulmckinney/Documents/ProjectNotes/mainwindow.ui",
-		"/home/paulmckinney/Documents/ProjectNotes/docs/InterfaceOverview/PluginsMenu.md",
-		"/home/paulmckinney/Documents/ProjectNotes/CMakeLists.txt",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/pluginmanager.h",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/mainwindow.h",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/pluginmanager.cpp",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/main.cpp",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/mainwindow.cpp",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/logviewer.h",
-		"/home/paulmckinney/Documents/ProjectNotes/widgets_export.h",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/plugins/tester_plugin.py",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/plugins/tester_plugin2.py",
-		"/home/paulmckinney/Documents/ProjectNotes/ProjectNotes.pro",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/CMakeLists.txt",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/outlooksync_plugin.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/includes/graphapitools.py",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/threads/tester_thread_1.py",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/build/Custom_Desktop_Qt_6_8_1-Debug/logs/console.log",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/build/Custom_Desktop_Qt_6_8_1-Debug/logs/plugins.log",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/build/Custom_Desktop_Qt_6_8_1-Debug/cmake_install.cmake",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/build/Custom_Desktop_Qt_6_8_1-Debug/build.ninja",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/build/Desktop_Qt_6_8_1-Debug/logs/console.log",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/build/Desktop_Qt_6_8_1-Debug/logs/plugins.log",
-		"/home/paulmckinney/Documents/ThreadedPythonApp/build/Desktop_Qt_6_7_2-Debug/plugins/tester_plugin2.py",
-		"/etc/ssh/sshd_config",
-		"/etc/ssh/ssh_config",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/copy_email_member_plugin.py",
-		"/home/paulmckinney/Documents/CornerstonePlugins/plugins/cci_connectdrives_plugin.py",
-		"/home/paulmckinney/Documents/CornerstonePlugins/plugins/cci_ifs_projects_import_plugin.py",
-		"/home/paulmckinney/Documents/CornerstonePlugins/plugins/cci_ifs_projects_statusreport_plugin.py",
-		"/home/paulmckinney/Documents/CornerstonePlugins/plugins/ifs_cloud_projects_statusreport_plugin.py",
-		"/etc/sysctl.conf",
-		"/home/paulmckinney/Documents/contact.xml",
-		"/home/paulmckinney/Documents/ProjectNotes.wiki/How-To-Contribute.md",
-		"/home/paulmckinney/Documents/ProjectNotes/docs/index.md",
-		"/home/paulmckinney/Documents/ProjectNotes/docs/PluginsOverview/ProjectNotesXML.md",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/schedulecustomerstatusinvite_plugin.py",
-		"/home/paulmckinney/Documents/ProjectNotes/plugins/sendprojectemailtoattendee_plugin.py",
-		"/home/paulmckinney/Documents/DriveSyncTester/.gitignore",
-		"/home/paulmckinney/.zshrc",
-		"/home/paulmckinney/.wezterm.lua",
-		"/home/paulmckinney/.config/starship.toml",
-		"/home/paulmckinney/.config/fish/config.fish",
-		"/home/paulmckinney/Downloads/reaper_linux_x86_64/readme-linux.txt",
-		"/etc/security/limits.conf",
-		"/home/paulmckinney/.config/sublime-text/Packages/User/qt_project.sublime-build",
-		"/home/paulmckinney/Documents/uploadtest.txt",
-		"/home/paulmckinney/Documents/ProjectNotes/pntableview.cpp"
+		"/C/Users/paulmckinney/Desktop/tracker.xml",
+		"/C/Users/paulmckinney/AppData/Roaming/ProjectNotes/logs/debugging.log",
+		"/C/Users/paulmckinney/AppData/Roaming/ProjectNotes/logs/console.log",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/vcpkg.json",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/windows/setup/setupscript.nsi",
+		"/C/Users/paulmckinney/Documents/SqliteSyncPro/vcpkg.json",
+		"/C/Users/paulmckinney/Documents/SqliteSyncPro/.gitignore",
+		"/C/Users/paulmckinney/Documents/SqliteSyncPro/admin/CMakeLists.txt",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/includes/graphapi_tools.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/includes/collaboration_tools.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/threads/tester_thread_1.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/base_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/threads/filefinder_thread.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugin.cpp",
+		"/Z/Desktop/test.xml",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/threads/outlooksync_thread.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/threads/ifssync_thread.py",
+		"/C/Users/paulmckinney/Documents/CornerstonePlugins/windows/setup/setupscript.nsi",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/includes/common.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/base_plugin_settings.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/searchpage.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/projectslistpage.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/projectnotespage.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/projectdetailspage.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/pnsettings.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/pluginmanager.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/peoplepage.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/mainwindow.ui",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/main.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/aboutdialog.cpp",
+		"/C/Users/paulmckinney/Desktop/testlmf.xml",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/includes/ifs_tools.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/exportnotes_plugin.py",
+		"/C/Users/paulmckinney/Desktop/people.xml",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/projectnotes.py",
+		"/C/Users/paulmckinney/Desktop/project.xml",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/tester_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/forms/dialogStatusRptOptions.ui",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/windows/setup/install_files.nsh",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/windows/setup/build_file_list.vbs",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/appicon.rc",
+		"/C/Users/paulmckinney/AppData/Roaming/ProjectNotes/logs/projectnotes.log",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/forms/dialogExportNotesOptions.ui",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/forms/dialogDuplicateFilesFound.ui",
+		"/C/Users/paulmckinney/Desktop/ToBeta.reg",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/excelkill_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/StandardPlugins/PluginSettings.md",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/StandardPlugins/Editor.md",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/mkdocs.yml",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/StandardPlugins/FileCollector.md",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/PluginsOverview/ProjectNotesXML.md",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/PluginsOverview/AddingFunctionality.md",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/newmsproject_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/findprojectemailperson_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/newchangeorder_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/forms/dialogFileFinder.ui",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/open_msproject_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/wordkill_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/trackkerreport_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/sendmeetingnotes_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/newriskregister_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/newpowerpoint_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/newpcrregistry_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/globalsettings_plugin.py",
+		"/C/Users/paulmckinney/Desktop/location.xml",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/sendprojectemailtoteam_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/copy_email_member_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/contactexport_plugin.py",
+		"/C/Users/paulmckinney/Desktop/everything.json",
+		"/C/Users/paulmckinney/Desktop/custome_editor.json",
+		"/C/Users/paulmckinney/Documents/CornerstonePlugins/plugins/ifs_cloud_project_excelreport_plugin.py",
+		"/C/Users/paulmckinney/Documents/CornerstonePlugins/plugins/ifs_cloud_project_statusreport_plugin.py",
+		"/C/Users/paulmckinney/Documents/CornerstonePlugins/plugins/ifs_cloud_sendstatusreport_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/archivenotes_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/includes/dialogMeetingTypes.ui",
+		"/C/Users/paulmckinney/Desktop/attendee.xml",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/sendprojectemailtoattendee_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/sendprojectemailtoperson_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/includes/noteformatter.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/includes/outlook_tools.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/copy_email_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/myshortcuts_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/editor_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/copy_filepath_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/contactimport_plugin.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/includes/word_tools.py",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/includes/graphapitools.py",
+		"/C/Users/paulmckinney/AppData/Roaming/Sublime Merge/Packages/User/Preferences.sublime-settings",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/projectnotes.sublime-project",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/.gitignore",
+		"/C/Users/paulmckinney/AppData/Roaming/Sublime Merge/Local/Session.sublime_session",
+		"/C/Users/Paul McKinney/AppData/Roaming/ProjectNotes/logs/console.log",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/threads/outlooksync_thread.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/outlooksync_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/editor_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/newchangeorder_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/newmsproject_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/newpcrregistry_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/newpowerpoint_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/newriskregister_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/open_msproject_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/schedulecustomerkickoffinvite_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/schedulecustomerlessonslearnedinvite_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/schedulecustomerstatusinvite_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/scheduleinternalkickoffinvite_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/scheduleinternallessonslearnedinvite_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/scheduleinternalstatusinvite_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/sendmeetingnotes_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/sendprojectemailtoattendee_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/sendprojectemailtoperson_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/sendprojectemailtoteam_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/tester_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/trackkerreport_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/wordkill_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/includes/graphapitools.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/threads/tester_thread_1.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/findprojectemailperson_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/globalsettings_plugin.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/threads/filefinder_thread.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/base_plugin_settings.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/includes/word_tools.py",
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/includes/common.py",
+		"/C/Users/Paul McKinney/Documents/CornerstonePlugins/plugins/cci_connectdrives_plugin.py",
+		"/C/Users/Paul McKinney/Documents/CornerstonePlugins/plugins/cci_ifs_projects_import_plugin.py",
+		"/C/Users/Paul McKinney/Documents/CornerstonePlugins/plugins/cci_newchangeorder_plugin.py",
+		"/C/Users/Paul McKinney/Documents/CornerstonePlugins/plugins/cci_newpcrregistry_plugin.py",
+		"/C/Users/Paul McKinney/Documents/CornerstonePlugins/plugins/cci_newriskregister_plugin.py",
+		"/C/Users/Paul McKinney/Documents/CornerstonePlugins/plugins/cci_scheduleoneononeattendee_plugin.py"
 	],
 	"find":
 	{
-		"height": 28.0
+		"height": 38.0
 	},
 	"find_in_files":
 	{
-		"height": 109.0,
+		"height": 122.0,
 		"where_history":
 		[
-			"*.py",
+			"<project filters>",
+			"C:\\Users\\Paul McKinney\\Documents\\",
+			"C:\\Users\\Paul McKinney\\Documents\\ProjectNotes\\docs,<project filters>",
 			""
 		]
 	},
@@ -566,76 +1096,134 @@
 		"case_sensitive": false,
 		"find_history":
 		[
-			"Error",
-			"error",
-			"delete",
-			"del",
-			"projectid",
-			"project_id",
-			"projects",
-			"project_id",
-			")\n",
-			"application_version",
-			"error",
-			"error:",
-			"select id from application version",
-			"connectg",
-			"connect",
-			".critical",
-			"dialogex",
-			"progbar",
-			"span",
-			"col-in",
-			"exportno",
-			"</td>'",
-			"f'",
-			"}",
-			"{",
-			"<style",
-			"web_view",
+			"exporttr",
+			"exporttrak",
+			"TODO",
+			"project_peop",
+			"insert",
+			"send_an_",
+			"send_an_em",
+			"sendnote",
+			"collabor",
+			"baseplug",
+			"token",
 			"tapi",
-			"cannot change",
-			".arg(",
-			"globalclientfilter",
-			"userfilter",
+			"token",
+			"tapi",
+			"Data Type",
+			"Beta",
 			"TODO",
-			"T",
-			"authentic",
-			"TODO",
-			"create_act",
-			"SyncTrackerItems",
-			"sync_tracker",
-			"export_ifs_tracker",
-			"export_ifs_project",
-			"create_activi",
-			"MeetingEmailTypes",
-			"populate_dynamic",
-			"send_an",
-			"pncomboboxdelegate:",
-			"pncombobox",
-			"comboboxdelegate",
-			"todo",
-			"save_",
-			"getprojects",
-			".show",
-			"import win32com",
-			"import wind32com",
-			"win32",
-			"start",
-			"replace_v",
-			".get(",
-			"menu_ar",
+			"update_data",
+			"msvc",
+			"qt",
+			"qtWeb",
+			"projectfold",
+			"Project",
+			"execute",
+			"6_8_1",
+			"print(",
+			"process",
+			"qt6weben",
+			"q6weben",
+			"qtweben",
+			"qweben",
+			"sqlite3",
+			"msv",
+			"thread",
+			"\\ProjectNotes\\",
+			"settingsmigrat",
+			"ProjectNotes",
+			"app = ",
+			"hun",
+			"huns",
+			"hun",
+			"hunsp",
+			"C",
+			"Paul McKinney",
+			"Release\\release",
+			"Desktop_Qt_6_7_2_MSVC2019_64bit-Release",
+			"QSettings",
+			"QSetting",
+			"ProjectNotes",
+			"Project Notes",
+			".ui",
+			"uic",
+			"[^\\x00-\\x7F]",
+			"win32com",
+			"QIODevice",
+			"os.",
+			"re",
+			"subpr",
 			"pnc",
-			"schedule",
-			"sendproj",
-			"schedul",
-			"schedule",
-			"ui_typ",
-			"ui_template",
-			"closee",
-			"attachment",
+			"pne",
+			"print(",
+			"get_projectfolder",
+			"Project Folder",
+			"695",
+			"exportmee",
+			"pnc",
+			"Types.ui",
+			"tableWidgetMeetingTypes",
+			"loadUi(\"plugins/includes",
+			"load",
+			"uic",
+			"adding meeting",
+			"..adding meet",
+			"attach",
+			"meeting_template",
+			"Content",
+			"content",
+			"get_us",
+			"get_user",
+			"replace",
+			"meeting_title",
+			"subject",
+			"projectnotes",
+			"int(",
+			"pco",
+			"find_node",
+			"{e21cdb75-6790-4323-a36b-65ecc01bb073}",
+			"send_an_mail",
+			"pnc.",
+			"get_html",
+			"html_note",
+			"html_no",
+			".html_note",
+			"subject",
+			"htmlbody",
+			" pnc.",
+			"pne",
 			"platform",
-			"win32com"
+			"QDesktopServices",
+			"reload",
+			"oulook_tools",
+			"using module",
+			"using modu",
+			"import",
+			"bring_win",
+			"top",
+			"print(",
+			"saved_st",
+			".write(",
+			"pnc.",
+			"pnc ",
+			"pnc =",
+			"Document",
+			"scrape_project_number",
+			"getProjectNumber",
+			"_cont",
+			"sync_",
+			"_contac",
+			"synccon",
+			"sync",
+			"_cont",
+			"sync_",
+			"SyncContacts",
+			"SyncC",
+			"sync_con",
+			"exists",
+			"todo",
+			"normal"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -643,12 +1231,25 @@
 		"regex": false,
 		"replace_history":
 		[
-			"</td>\"",
-			"f\"",
-			"}}",
-			"{{",
-			"<style>\n<meta charset=\"utf-8\">\n    <!--\n     /* Font Definitions */\n     @font-face\n        {font-family:\"Cambria Math\";\n        panose-1:2 4 5 3 5 4 6 3 2 4;\n        mso-font-charset:0;\n        mso-generic-font-family:roman;\n        mso-font-pitch:variable;\n        mso-font-signature:-536869121 1107305727 33554432 0 415 0;}\n    @font-face\n        {font-family:Calibri;\n        panose-1:2 15 5 2 2 2 4 3 2 4;\n        mso-font-charset:0;\n        mso-generic-font-family:swiss;\n        mso-font-pitch:variable;\n        mso-font-signature:-469750017 -1040178053 9 0 511 0;}\n    @font-face\n        {font-family:Aptos;\n        mso-font-charset:0;\n        mso-generic-font-family:swiss;\n        mso-font-pitch:variable;\n        mso-font-signature:536871559 3 0 0 415 0;}\n     /* Style Definitions */\n     p.MsoNormal, li.MsoNormal, div.MsoNormal\n        {mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-parent:\"\";\n        margin-top:0in;\n        margin-right:0in;\n        margin-bottom:8.0pt;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:Aptos;\n        mso-fareast-theme-font:minor-latin;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:minor-bidi;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;}\n    h1\n        {mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 1 Char\";\n        mso-style-next:Normal;\n        margin-top:.25in;\n        margin-right:0in;\n        margin-bottom:4.0pt;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:1;\n        font-size:20.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-weight:normal;}\n    h2\n        {mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 2 Char\";\n        mso-style-next:Normal;\n        margin-top:8.0pt;\n        margin-right:0in;\n        margin-bottom:4.0pt;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:2;\n        font-size:16.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-weight:normal;}\n    h3\n        {mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 3 Char\";\n        mso-style-next:Normal;\n        margin-top:8.0pt;\n        margin-right:0in;\n        margin-bottom:4.0pt;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:3;\n        font-size:14.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-weight:normal;}\n    h4\n        {mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 4 Char\";\n        mso-style-next:Normal;\n        margin-top:4.0pt;\n        margin-right:0in;\n        margin-bottom:2.0pt;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:4;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-weight:normal;\n        font-style:italic;}\n    h5\n        {mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 5 Char\";\n        mso-style-next:Normal;\n        margin-top:4.0pt;\n        margin-right:0in;\n        margin-bottom:2.0pt;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:5;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-weight:normal;}\n    h6\n        {mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 6 Char\";\n        mso-style-next:Normal;\n        margin-top:2.0pt;\n        margin-right:0in;\n        margin-bottom:0in;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:6;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#595959;\n        mso-themecolor:text1;\n        mso-themetint:166;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-weight:normal;\n        font-style:italic;}\n    p.MsoHeading7, li.MsoHeading7, div.MsoHeading7\n        {mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 7 Char\";\n        mso-style-next:Normal;\n        margin-top:2.0pt;\n        margin-right:0in;\n        margin-bottom:0in;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:7;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#595959;\n        mso-themecolor:text1;\n        mso-themetint:166;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoHeading8, li.MsoHeading8, div.MsoHeading8\n        {mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 8 Char\";\n        mso-style-next:Normal;\n        margin:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:8;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#272727;\n        mso-themecolor:text1;\n        mso-themetint:216;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-style:italic;}\n    p.MsoHeading9, li.MsoHeading9, div.MsoHeading9\n        {mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-qformat:yes;\n        mso-style-link:\"Heading 9 Char\";\n        mso-style-next:Normal;\n        margin:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan lines-together;\n        page-break-after:avoid;\n        mso-outline-level:9;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#272727;\n        mso-themecolor:text1;\n        mso-themetint:216;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoTitle, li.MsoTitle, div.MsoTitle\n        {mso-style-priority:10;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-link:\"Title Char\";\n        mso-style-next:Normal;\n        margin-top:0in;\n        margin-right:0in;\n        margin-bottom:4.0pt;\n        margin-left:0in;\n        mso-add-space:auto;\n        mso-pagination:widow-orphan;\n        font-size:28.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        letter-spacing:-.5pt;\n        mso-font-kerning:14.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoTitleCxSpFirst, li.MsoTitleCxSpFirst, div.MsoTitleCxSpFirst\n        {mso-style-priority:10;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-link:\"Title Char\";\n        mso-style-next:Normal;\n        mso-style-type:export-only;\n        margin:0in;\n        mso-add-space:auto;\n        mso-pagination:widow-orphan;\n        font-size:28.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        letter-spacing:-.5pt;\n        mso-font-kerning:14.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoTitleCxSpMiddle, li.MsoTitleCxSpMiddle, div.MsoTitleCxSpMiddle\n        {mso-style-priority:10;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-link:\"Title Char\";\n        mso-style-next:Normal;\n        mso-style-type:export-only;\n        margin:0in;\n        mso-add-space:auto;\n        mso-pagination:widow-orphan;\n        font-size:28.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        letter-spacing:-.5pt;\n        mso-font-kerning:14.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoTitleCxSpLast, li.MsoTitleCxSpLast, div.MsoTitleCxSpLast\n        {mso-style-priority:10;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-link:\"Title Char\";\n        mso-style-next:Normal;\n        mso-style-type:export-only;\n        margin-top:0in;\n        margin-right:0in;\n        margin-bottom:4.0pt;\n        margin-left:0in;\n        mso-add-space:auto;\n        mso-pagination:widow-orphan;\n        font-size:28.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        letter-spacing:-.5pt;\n        mso-font-kerning:14.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoSubtitle, li.MsoSubtitle, div.MsoSubtitle\n        {mso-style-priority:11;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-link:\"Subtitle Char\";\n        mso-style-next:Normal;\n        margin-top:0in;\n        margin-right:0in;\n        margin-bottom:8.0pt;\n        margin-left:0in;\n        line-height:115%;\n        mso-pagination:widow-orphan;\n        font-size:14.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#595959;\n        mso-themecolor:text1;\n        mso-themetint:166;\n        letter-spacing:.75pt;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoListParagraph, li.MsoListParagraph, div.MsoListParagraph\n        {mso-style-priority:34;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        margin-top:0in;\n        margin-right:0in;\n        margin-bottom:8.0pt;\n        margin-left:.5in;\n        mso-add-space:auto;\n        line-height:115%;\n        mso-pagination:widow-orphan;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:Aptos;\n        mso-fareast-theme-font:minor-latin;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:minor-bidi;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoListParagraphCxSpFirst, li.MsoListParagraphCxSpFirst, div.MsoListParagraphCxSpFirst\n        {mso-style-priority:34;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-type:export-only;\n        margin-top:0in;\n        margin-right:0in;\n        margin-bottom:0in;\n        margin-left:.5in;\n        mso-add-space:auto;\n        line-height:115%;\n        mso-pagination:widow-orphan;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:Aptos;\n        mso-fareast-theme-font:minor-latin;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:minor-bidi;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoListParagraphCxSpMiddle, li.MsoListParagraphCxSpMiddle, div.MsoListParagraphCxSpMiddle\n        {mso-style-priority:34;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-type:export-only;\n        margin-top:0in;\n        margin-right:0in;\n        margin-bottom:0in;\n        margin-left:.5in;\n        mso-add-space:auto;\n        line-height:115%;\n        mso-pagination:widow-orphan;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:Aptos;\n        mso-fareast-theme-font:minor-latin;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:minor-bidi;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoListParagraphCxSpLast, li.MsoListParagraphCxSpLast, div.MsoListParagraphCxSpLast\n        {mso-style-priority:34;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-type:export-only;\n        margin-top:0in;\n        margin-right:0in;\n        margin-bottom:8.0pt;\n        margin-left:.5in;\n        mso-add-space:auto;\n        line-height:115%;\n        mso-pagination:widow-orphan;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:Aptos;\n        mso-fareast-theme-font:minor-latin;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:minor-bidi;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;}\n    p.MsoQuote, li.MsoQuote, div.MsoQuote\n        {mso-style-priority:29;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-link:\"Quote Char\";\n        mso-style-next:Normal;\n        margin-top:8.0pt;\n        margin-right:0in;\n        margin-bottom:8.0pt;\n        margin-left:0in;\n        text-align:center;\n        line-height:115%;\n        mso-pagination:widow-orphan;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:Aptos;\n        mso-fareast-theme-font:minor-latin;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:minor-bidi;\n        color:#404040;\n        mso-themecolor:text1;\n        mso-themetint:191;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-style:italic;}\n    p.MsoIntenseQuote, li.MsoIntenseQuote, div.MsoIntenseQuote\n        {mso-style-priority:30;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        mso-style-link:\"Intense Quote Char\";\n        mso-style-next:Normal;\n        margin-top:.25in;\n        margin-right:.6in;\n        margin-bottom:.25in;\n        margin-left:.6in;\n        text-align:center;\n        line-height:115%;\n        mso-pagination:widow-orphan;\n        border:none;\n        mso-border-top-alt:solid #0F4761 .5pt;\n        mso-border-top-themecolor:accent1;\n        mso-border-top-themeshade:191;\n        mso-border-bottom-alt:solid #0F4761 .5pt;\n        mso-border-bottom-themecolor:accent1;\n        mso-border-bottom-themeshade:191;\n        padding:0in;\n        mso-padding-alt:10.0pt 0in 10.0pt 0in;\n        font-size:12.0pt;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:Aptos;\n        mso-fareast-theme-font:minor-latin;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:minor-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        mso-font-kerning:1.0pt;\n        mso-ligatures:standardcontextual;\n        font-style:italic;}\n    span.MsoIntenseEmphasis\n        {mso-style-priority:21;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        font-style:italic;}\n    span.MsoIntenseReference\n        {mso-style-priority:32;\n        mso-style-unhide:no;\n        mso-style-qformat:yes;\n        font-variant:small-caps;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        letter-spacing:.25pt;\n        font-weight:bold;}\n    span.Heading1Char\n        {mso-style-name:\"Heading 1 Char\";\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 1\";\n        mso-ansi-font-size:20.0pt;\n        mso-bidi-font-size:20.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;}\n    span.Heading2Char\n        {mso-style-name:\"Heading 2 Char\";\n        mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 2\";\n        mso-ansi-font-size:16.0pt;\n        mso-bidi-font-size:16.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;}\n    span.Heading3Char\n        {mso-style-name:\"Heading 3 Char\";\n        mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 3\";\n        mso-ansi-font-size:14.0pt;\n        mso-bidi-font-size:14.0pt;\n        font-family:\"Times New Roman\",serif;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;}\n    span.Heading4Char\n        {mso-style-name:\"Heading 4 Char\";\n        mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 4\";\n        font-family:\"Times New Roman\",serif;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        font-style:italic;}\n    span.Heading5Char\n        {mso-style-name:\"Heading 5 Char\";\n        mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 5\";\n        font-family:\"Times New Roman\",serif;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;}\n    span.Heading6Char\n        {mso-style-name:\"Heading 6 Char\";\n        mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 6\";\n        font-family:\"Times New Roman\",serif;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#595959;\n        mso-themecolor:text1;\n        mso-themetint:166;\n        font-style:italic;}\n    span.Heading7Char\n        {mso-style-name:\"Heading 7 Char\";\n        mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 7\";\n        font-family:\"Times New Roman\",serif;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#595959;\n        mso-themecolor:text1;\n        mso-themetint:166;}\n    span.Heading8Char\n        {mso-style-name:\"Heading 8 Char\";\n        mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 8\";\n        font-family:\"Times New Roman\",serif;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#272727;\n        mso-themecolor:text1;\n        mso-themetint:216;\n        font-style:italic;}\n    span.Heading9Char\n        {mso-style-name:\"Heading 9 Char\";\n        mso-style-noshow:yes;\n        mso-style-priority:9;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Heading 9\";\n        font-family:\"Times New Roman\",serif;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#272727;\n        mso-themecolor:text1;\n        mso-themetint:216;}\n    span.TitleChar\n        {mso-style-name:\"Title Char\";\n        mso-style-priority:10;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:Title;\n        mso-ansi-font-size:28.0pt;\n        mso-bidi-font-size:28.0pt;\n        font-family:\"Aptos Display\",sans-serif;\n        mso-ascii-font-family:\"Aptos Display\";\n        mso-ascii-theme-font:major-latin;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-hansi-font-family:\"Aptos Display\";\n        mso-hansi-theme-font:major-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        letter-spacing:-.5pt;\n        mso-font-kerning:14.0pt;}\n    span.SubtitleChar\n        {mso-style-name:\"Subtitle Char\";\n        mso-style-priority:11;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:Subtitle;\n        mso-ansi-font-size:14.0pt;\n        mso-bidi-font-size:14.0pt;\n        font-family:\"Times New Roman\",serif;\n        mso-fareast-font-family:\"Times New Roman\";\n        mso-fareast-theme-font:major-fareast;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:major-bidi;\n        color:#595959;\n        mso-themecolor:text1;\n        mso-themetint:166;\n        letter-spacing:.75pt;}\n    span.QuoteChar\n        {mso-style-name:\"Quote Char\";\n        mso-style-priority:29;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:Quote;\n        color:#404040;\n        mso-themecolor:text1;\n        mso-themetint:191;\n        font-style:italic;}\n    span.IntenseQuoteChar\n        {mso-style-name:\"Intense Quote Char\";\n        mso-style-priority:30;\n        mso-style-unhide:no;\n        mso-style-locked:yes;\n        mso-style-link:\"Intense Quote\";\n        color:#0F4761;\n        mso-themecolor:accent1;\n        mso-themeshade:191;\n        font-style:italic;}\n    .MsoChpDefault\n        {mso-style-type:export-only;\n        mso-default-props:yes;\n        font-family:\"Aptos\",sans-serif;\n        mso-ascii-font-family:Aptos;\n        mso-ascii-theme-font:minor-latin;\n        mso-fareast-font-family:Aptos;\n        mso-fareast-theme-font:minor-latin;\n        mso-hansi-font-family:Aptos;\n        mso-hansi-theme-font:minor-latin;\n        mso-bidi-font-family:\"Times New Roman\";\n        mso-bidi-theme-font:minor-bidi;}\n    .MsoPapDefault\n        {mso-style-type:export-only;\n        margin-bottom:8.0pt;\n        line-height:115%;}\n    @page WordSection1\n        {size:8.5in 11.0in;\n        margin:1.0in 1.0in 1.0in 1.0in;\n        mso-header-margin:.5in;\n        mso-footer-margin:.5in;\n        mso-paper-source:0;}\n    div.WordSection1\n        {page:WordSection1;}\n    -->\n    </style>\n</head>\n",
-			""
+			"6_10_0",
+			"\\ProjectNotes4Beta\\",
+			"paulmckinney",
+			"Release",
+			"Desktop_Qt_6_8_1_MSVC2022_64bit-Release",
+			"tableWidgetMeetingEmailTypes",
+			"loadUi(\"plugins/forms",
+			".note_html",
+			"self.html_note",
+			"sel.html_note",
+			" self.pnc.",
+			"ExportContacts",
+			"paulmckinney/",
+			"",
+			"from PyQt6 import QtGui, QtCore, QtWidgets, uic",
+			"",
+			"img/",
+			"",
+			"&lt;"
 		],
 		"reverse": false,
 		"scrollbar_highlights": true,
@@ -665,61 +1266,27 @@
 			[
 				{
 					"buffer": 0,
-					"file": "/home/paulmckinney/.local/share/ProjectNotes/logs/console.log",
+					"file": "docs/Introduction/GettingStarted.md",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 620771,
+						"buffer_size": 3842,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								159,
+								159
 							]
 						],
 						"settings":
 						{
-							"spell_check": true,
-							"syntax": "Packages/Text/Plain text.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
 						},
 						"translation.x": 0.0,
-						"translation.y": 17178.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 3,
-					"stack_multiselect": false,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "/home/paulmckinney/.local/share/ProjectNotes/logs/debugging.log",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 2601216,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Text/Plain text.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 3590.0,
+						"translation.y": 25.2,
 						"zoom_level": 1.0
 					},
 					"stack_index": 1,
@@ -727,63 +1294,63 @@
 					"type": "text"
 				},
 				{
-					"buffer": 2,
-					"file": "/home/paulmckinney/Documents/SqliteSyncPro/.gitignore",
-					"selected": true,
+					"buffer": 1,
+					"file": "docs/Introduction/SystemRequirements.md",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 92,
+						"buffer_size": 213,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								92,
-								92
+								0,
+								0
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Git Formats/Git Ignore.sublime-syntax"
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 2,
 					"stack_multiselect": false,
 					"type": "text"
 				},
 				{
-					"buffer": 3,
-					"file": "plugins/exportnotes_plugin.py",
+					"buffer": 2,
+					"file": "docs/InterfaceOverview/FileMenu.md",
+					"selected": true,
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 21966,
+						"buffer_size": 3167,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								21294,
-								21294
+								2388,
+								2388
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax",
+							"tab_size": 3,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 9959.0,
+						"translation.y": 397.6,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 0,
 					"stack_multiselect": false,
 					"type": "text"
 				}
@@ -792,7 +1359,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 28.0
+		"height": 22.0
 	},
 	"input":
 	{
@@ -823,14 +1390,11 @@
 	"menu_visible": true,
 	"output.SublimeLinter":
 	{
-		"height": 0.0,
-		"history":
-		[
-		]
+		"height": 0.0
 	},
 	"output.exec":
 	{
-		"height": 216.0,
+		"height": 91.0,
 		"history":
 		[
 		]
@@ -842,11 +1406,15 @@
 		[
 		]
 	},
-	"pinned_build_system": "Packages/Python/Python.sublime-build",
+	"output.markdown":
+	{
+		"height": 120.0
+	},
+	"pinned_build_system": "",
 	"project": "projectnotes.sublime-project",
 	"replace":
 	{
-		"height": 52.0
+		"height": 40.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -856,12 +1424,16 @@
 		"selected_items":
 		[
 			[
-				"mainw",
-				"ProjectNotes/mainwindow.cpp"
+				"comm",
+				"ProjectNotes\\plugins\\includes\\common.py"
 			],
 			[
-				"main",
-				"ProjectNotes/mainwindow.h"
+				"outl",
+				"ProjectNotes\\plugins\\includes\\outlook_tools.py"
+			],
+			[
+				"base",
+				"ProjectNotes\\plugins\\base_plugin_settings.py"
 			],
 			[
 				"Peop",
@@ -888,12 +1460,12 @@
 	},
 	"select_project":
 	{
-		"height": 500.0,
+		"height": 0.0,
 		"last_filter": "",
 		"selected_items":
 		[
 		],
-		"width": 380.0
+		"width": 0.0
 	},
 	"select_symbol":
 	{
@@ -912,7 +1484,7 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 295.0,
+	"side_bar_width": 292.0,
 	"status_bar_visible": true,
 	"template_settings":
 	{

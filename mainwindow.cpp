@@ -30,7 +30,7 @@
 #include <QActionGroup>
 #include <QDesktopServices>
 #include "mainwindow.h"
-#include "opendatabasedialog.h"
+#include "cloudsyncsettingsdialog.h"
 #include <QStandardPaths>
 
 #include "QLogger.h"
@@ -578,7 +578,7 @@ void MainWindow::on_actionExit_triggered()
 
 void MainWindow::on_actionOpen_Database_triggered()
 {
-    OpenDatabaseDialog dlg(this);
+    CloudSyncSettingsDialog dlg(this);
 
     // Pre-populate from saved settings
     dlg.setSyncEnabled(global_Settings.getSyncEnabled());
@@ -639,10 +639,21 @@ void MainWindow::openDatabase(const QString& dbfile)
                     this, &MainWindow::onSyncRowChanged,
                     Qt::QueuedConnection);
             connect(m_syncApi, &SqliteSyncPro::syncCompleted,
-                    this, [](){ global_DBObjects.updateDisplayData(); },
+                    this, [this](const SyncResult &result){
+                        global_DBObjects.updateDisplayData();
+                        if (result.totalDecryptionFailures() > 0) {
+                            QMessageBox::warning(this, tr("Cloud Sync"),
+                                tr("One or more records could not be decrypted during sync. "
+                                   "Your encryption phrase may be incorrect.\n\n"
+                                   "Please verify the phrase via File > Cloud Sync Settings."));
+                        }
+                    },
                     Qt::QueuedConnection);
         } else {
             qWarning() << "SqliteSyncPro initialize failed:" << m_syncApi->lastError();
+            QMessageBox::warning(this, tr("Cloud Sync"),
+                tr("Connection settings are invalid — unable to connect to the sync host.\n\n"
+                   "Your settings have been saved. You can update them via File > Cloud Sync Settings."));
         }
     }
 

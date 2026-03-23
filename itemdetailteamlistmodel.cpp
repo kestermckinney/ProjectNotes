@@ -5,7 +5,8 @@
 
 ItemDetailTeamListModel::ItemDetailTeamListModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
-    setBaseSql("SELECT id, b.name, project_id, a.people_id FROM project_people a join people b on a.people_id=b.id ");
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
+    setBaseSql("SELECT project_people.id, people.name, project_people.project_id, people.people_id FROM project_people join people on project_people.people_id=people.id ");
 
     setTableName("people", "Team Members");
 

@@ -148,12 +148,10 @@ void TableView::setModel(QAbstractItemModel *model)
 
         if (Col >= 0)
         {
-            if (Dir == "A")
-                horizontalHeader()->setSortIndicator(Col, Qt::AscendingOrder);
-            else
-                horizontalHeader()->setSortIndicator(Col, Qt::DescendingOrder);
-
+            Qt::SortOrder order = (Dir == "A") ? Qt::AscendingOrder : Qt::DescendingOrder;
+            horizontalHeader()->setSortIndicator(Col, order);
             horizontalHeader()->setSortIndicatorShown(true);
+            sortByColumn(Col, order);
         }
         else
         {
@@ -231,20 +229,26 @@ bool TableView::eventFilter(QObject* watched, QEvent *event)
         if (indexAtCursor == -1)
             return false; // Do nothing, we clicked outside the headers
         else if (header->sortIndicatorSection() != indexAtCursor)
-        {   
+        {
             header->setSortIndicator(indexAtCursor, Qt::AscendingOrder);
             header->setSortIndicatorShown(true);
+            sortByColumn(indexAtCursor, Qt::AscendingOrder);
             global_Settings.setTableSortColumn(objectName(), indexAtCursor, "A");
         }
         else if (header->sortIndicatorOrder() == Qt::AscendingOrder)
         {
             header->setSortIndicator(indexAtCursor, Qt::DescendingOrder);
+            sortByColumn(indexAtCursor, Qt::DescendingOrder);
             global_Settings.setTableSortColumn(objectName(), indexAtCursor, "D");
         }
         else
         {
+            // Cycle back to unsorted — Qt ignores sortByColumn(-1), so call
+            // model()->sort(-1) directly to clear the proxy model's sort order.
             header->setSortIndicator(-1, Qt::AscendingOrder);
             header->setSortIndicatorShown(false);
+            if (model())
+                model()->sort(-1, Qt::AscendingOrder);
             global_Settings.setTableSortColumn(objectName(), -1, "");
         }
 

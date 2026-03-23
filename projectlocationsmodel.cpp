@@ -7,9 +7,9 @@
 ProjectLocationsModel::ProjectLocationsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("ProjectLocationsModel");
-    setOrderKey(35);
 
-    setBaseSql("SELECT id, project_id, location_type, location_description, full_path, (select p.project_number from projects p where p.id=pl.project_id) project_number, (select p.project_name from projects p where p.id=pl.project_id) project_name FROM project_locations pl");
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
+    setBaseSql("SELECT project_locations.id, project_id, location_type, location_description, full_path, (select p.project_number from projects p where p.id=project_locations.project_id) project_number, (select p.project_name from projects p where p.id=project_locations.project_id) project_name FROM project_locations ");
 
     setTableName("project_locations", "Project Locations");
 
@@ -30,7 +30,7 @@ ProjectLocationsModel::ProjectLocationsModel(DatabaseObjects* dbo): SqlQueryMode
 
     addUniqueKeys(key2, "Description");
 
-    setOrderBy("id");
+    setOrderBy("project_id");
 }
 
 

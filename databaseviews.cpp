@@ -15,7 +15,7 @@ void db_CreateAllViews()
 {
     // database_search view - comprehensive union of all searchable content
     // Each branch filters out soft-deleted rows from its primary table.
-    QString search_view = R"(
+    QString search_view_a = R"(
         CREATE VIEW database_search AS
         select 'Client' as datatype, 'Client Name' as dataname, client_name as datadescription, id as dataid, '0' as internal_item, id as client_id, 'Active' as project_status, '' as project_number, '' as project_name, '' as item_number, '' as item_name, '' as note_date, '' as note_title, '' as fk_id, id as datakey from clients WHERE (clients.deleted IS NULL OR clients.deleted = 0)
         -- list all the people data
@@ -82,6 +82,9 @@ void db_CreateAllViews()
         -- list all item tracker
         union all
         select 'Item Tracker' as datatype, 'Item Number' as dataname, item_number as datadescription, item_tracker.id as dataid, item_tracker.internal_item, projects.client_id, project_status, project_number, project_name, item_number, item_name, strftime('%m/%d/%Y', datetime(project_notes.note_date, 'unixepoch')) as note_date, note_title, projects.id as fk_id, '' as datakey from item_tracker left join projects on item_tracker.project_id=projects.id left join project_notes on project_notes.id=item_tracker.note_id WHERE (item_tracker.deleted IS NULL OR item_tracker.deleted = 0)
+        )";
+
+    QString search_view_b = R"(
         union all
         select 'Item Tracker' as datatype, 'Item Type' as dataname, item_type as datadescription, item_tracker.id as dataid, item_tracker.internal_item, projects.client_id, project_status, project_number, project_name, item_number, item_name, strftime('%m/%d/%Y', datetime(project_notes.note_date, 'unixepoch')) as note_date, note_title, projects.id as fk_id, '' as datakey from item_tracker left join projects on item_tracker.project_id=projects.id left join project_notes on project_notes.id=item_tracker.note_id WHERE (item_tracker.deleted IS NULL OR item_tracker.deleted = 0)
         union all
@@ -110,7 +113,7 @@ void db_CreateAllViews()
         select 'Tracker Update' as datatype, 'Comments' as dataname, item_tracker_updates.update_note as datadescription, item_tracker_updates.id as dataid, item_tracker.internal_item, projects.client_id, project_status, project_number, project_name, item_number, item_name, strftime('%m/%d/%Y', datetime(lastupdated_date, 'unixepoch')) as note_date, note_title, item_tracker.project_id as fk_id, item_tracker.id as datakey from item_tracker left join projects on item_tracker.project_id=projects.id left join project_notes on project_notes.id=item_tracker.note_id left join item_tracker_updates on item_tracker.id=item_tracker_updates.item_id WHERE (item_tracker_updates.deleted IS NULL OR item_tracker_updates.deleted = 0)
         )";
 
-    global_DBObjects.execute(search_view);
+    global_DBObjects.execute(search_view_a + search_view_b);
 
     // item_tracker_view — filters soft-deleted rows
     global_DBObjects.execute(R"(

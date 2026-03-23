@@ -12,9 +12,9 @@ using namespace QLogger;
 ProjectNotesModel::ProjectNotesModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("ProjectNotesModel");
-    setOrderKey(50);
 
-    setBaseSql("SELECT id, project_id, note_title, note_date, note, internal_item, (select project_name from projects p where p.id=n.project_id) project_id_name, (select project_number from projects p where p.id=n.project_id) project_id_number FROM project_notes n");
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
+    setBaseSql("SELECT project_notes.id, project_id, note_title, note_date, note, internal_item, (select project_name from projects p where p.id=project_notes.project_id) project_id_name, (select project_number from projects p where p.id=project_notes.project_id) project_id_number FROM project_notes ");
 
     setTableName("project_notes", "Project Notes");
 

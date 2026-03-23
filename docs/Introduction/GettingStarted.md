@@ -1,15 +1,10 @@
 # Getting Started
 
-## Creating Your Main Database
+## Your Database
 
-Start Project Notes and do the following items:
+Project Notes automatically creates and opens a local database when it first launches. The database is stored in your user profile.
 
-**To create a new database:**
-
-1. From the Project Notes **File** menu choose **New Database...** You can place your new database anywhere. Keeping your database file in a local file location is ideal, so you can access your project information on the go. Using a location such as iCloud or One drive will keep you database backed up to a remote location. The database is locked while Project Notes is open, so it will not sync using these services until you close the program.
-2. Select the location to store your database file.
-3. Type the name of your database without a file extension.
-4. Click **Save**.
+If you want to sync your data with a cloud host (sucha Supabase or a self-hosted PostgREST server), configure the connection from **File > Cloud Sync Settings...**. See [File Menu](../InterfaceOverview/FileMenu.md) for details.
 
 ## Setting Yourself as the Project Manager
 
