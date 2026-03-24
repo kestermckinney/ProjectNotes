@@ -321,7 +321,7 @@ bool ItemDetailsDelegate::verifyProjectNumber(QVariant& projectId, QVariant& ite
     {
         DB_LOCK;
         QSqlQuery select(db);
-        select.prepare("select identified_by, (select name from people p where p.id=identified_by) people_id_name from item_tracker where id = ? and identified_by not in (select people_id from project_people where project_id = ?)");
+        select.prepare("select identified_by, (select name from people p where p.id=identified_by) people_id_name from item_tracker where id = ? and deleted = 0and identified_by not in (select people_id from project_people where project_id = ? and deleted = 0)");
         select.bindValue(0, itemId);
         select.bindValue(1, projectId);
 

@@ -875,6 +875,7 @@ bool SqlQueryModel::deleteRecord(QModelIndex index)
     {
         DB_UNLOCK;
 
+
         removeCacheRecord(index);
 
         deleteRelatedRecords(keyval);
@@ -1123,7 +1124,7 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
         select.prepare("select count(*) from " + m_relatedTable.at(i) + " where " + where_clause + " AND deleted = 0");
         select.exec();
 
-        //qDebug() << "DELETE CHECK: " << "select count(*) from " + m_relatedTable.at(i) + " where " + where_clause;
+        qDebug() << "DELETE CHECK: " << "select count(*) from " + m_relatedTable.at(i) + " where " + where_clause;
 
         if (select.next())
         {
@@ -2442,3 +2443,7 @@ void SqlQueryModel::deleteRelatedRecords(QVariant& keyval)
         }
     }
 }
+
+//TODO: after loosing connection, the sync says host requires authentication
+//TODO: test delete propogates to other clients
+//TODO: if project is closed and you try to search from a delete you won't see it in the results

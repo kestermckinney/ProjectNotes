@@ -238,8 +238,8 @@ const QModelIndex ProjectsModel::copyRecord(QModelIndex index)
 
         // Copy project_people records with new GUIDs
         QSqlQuery query(getDBOs()->getDb());
-        query.prepare("SELECT people_id, role, receive_status_report FROM project_people WHERE project_id = ? "
-                      "AND people_id NOT IN (SELECT people_id FROM project_people WHERE project_id = ?)");
+        query.prepare("SELECT people_id, role, receive_status_report FROM project_people WHERE project_id = ? and deleted = 0"
+                      "AND people_id NOT IN (SELECT people_id FROM project_people WHERE project_id = ? and deleted = 0)");
         query.addBindValue(oldid);
         query.addBindValue(newid);
 

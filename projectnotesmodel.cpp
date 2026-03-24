@@ -71,7 +71,7 @@ const QModelIndex ProjectNotesModel::copyRecord(QModelIndex index)
 {
     QVector<QVariant> qr = emptyrecord();
     QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
-
+    //TODO: fix this to use GUID like other copy
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
 
     qr[1] = data(this->index(index.row(), 1));
@@ -86,7 +86,7 @@ const QModelIndex ProjectNotesModel::copyRecord(QModelIndex index)
     QVariant oldid = data(this->index(index.row(), 0));
     QVariant newid = data(this->index(qi.row(), 0));
 
-    QString insert = "insert into meeting_attendees (id, note_id, person_id) select m.id || '-" + unique_stamp + "', '" + newid.toString() + "', m.person_id from meeting_attendees m where m.note_id ='" + oldid.toString() + "'  and m.person_id not in (select e.person_id from meeting_attendees e where e.note_id='" + newid.toString() + "')";
+    QString insert = "insert into meeting_attendees (id, note_id, person_id) select m.id || '-" + unique_stamp + "', '" + newid.toString() + "', m.person_id from meeting_attendees m where m.note_id ='" + oldid.toString() + "' and deleted = 0 and m.person_id not in (select e.person_id from meeting_attendees e where e.note_id='" + newid.toString() + "' and deleted = 0)";
 
     getDBOs()->execute(insert);
     getDBOs()->pushRowChange("meeting_attendees", newid, KeyColumnChange::Insert);

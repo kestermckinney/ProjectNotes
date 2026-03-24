@@ -35,7 +35,7 @@ const QModelIndex ClientsModel::newRecord(const QVariant* fkValue1, const QVaria
 
     DB_LOCK;
     QSqlQuery select(getDBOs()->getDb());
-    select.prepare("select max(client_name) from clients where client_name like '[%'");
+    select.prepare("select max(client_name) from clients where client_name like '[%' and deleted = 0");
     QString maxnum;
 
     select.exec();

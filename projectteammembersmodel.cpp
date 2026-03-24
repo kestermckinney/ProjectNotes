@@ -100,8 +100,8 @@ bool ProjectTeamMembersModel::setData(const QModelIndex &index, const QVariant &
             DB_LOCK;
             QSqlQuery qry(getDBOs()->getDb());
             qry.prepare(QString(
-                "SELECT (SELECT count(*) FROM meeting_attendees WHERE person_id = '%1' "
-                "AND note_id IN (SELECT id FROM project_notes WHERE project_id = '%2')), "
+                "SELECT (SELECT count(*) FROM meeting_attendees WHERE person_id = '%1' and deleted = 0"
+                "AND note_id IN (SELECT id FROM project_notes WHERE project_id = '%2' and deleted = 0)), "
                 "(SELECT project_number FROM projects WHERE id = '%2')")
                 .arg(current_people_id.toString(), current_project_id.toString()));
             qry.exec();

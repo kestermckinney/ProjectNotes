@@ -472,7 +472,7 @@ bool DatabaseObjects::saveParameter( const QString& parametername, const QString
 {
     DB_LOCK;
     QSqlQuery select(m_sqliteDb);
-    if(!select.prepare("select parameter_value from application_settings where parameter_name = ?;"))
+    if(!select.prepare("select parameter_value from application_settings where parameter_name = ? and deleted = 0;"))
     {
         if (m_gui)
             QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
@@ -547,7 +547,7 @@ SqlQueryModel* DatabaseObjects::findOpenTable(const QString& tablename)
 QString DatabaseObjects::loadParameter( const QVariant& parametername )
 {
     QSqlQuery select(m_sqliteDb);
-    if (!select.prepare("select parameter_value from application_settings where parameter_name = ?"))
+    if (!select.prepare("select parameter_value from application_settings where parameter_name = ? and deleted = 0"))
     {
         if (m_gui)
             QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
@@ -1141,7 +1141,7 @@ void DatabaseObjects::addDefaultPMToProject(const QString& projectId)
     QString pm = getProjectManager();
     QString guid = QUuid::createUuid().toString();
 
-    QString insert = QString("insert into project_people (id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' )").arg(projectId).arg(pm).arg(guid);
+    QString insert = QString("insert into project_people (id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' and deleted = 0 )").arg(projectId).arg(pm).arg(guid);
 
     execute(insert);
 }
@@ -1153,11 +1153,11 @@ void DatabaseObjects::addDefaultPMToMeeting(const QString& noteId)
     QString guid2 = QUuid::createUuid().toString();
 
     QString project_id = execute(QString("select project_id from project_notes where id='%1'").arg(noteId));
-    QString insertpm = QString("insert into project_people (id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' )").arg(project_id).arg(pm).arg(guid2);
+    QString insertpm = QString("insert into project_people (id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' and deleted = 0 )").arg(project_id).arg(pm).arg(guid2);
 
     execute(insertpm);
 
-    QString insert = QString("insert into meeting_attendees (id, person_id, note_id) select '%3', '%2', '%1' where not exists (select 1 from meeting_attendees where note_id = '%1' and person_id = '%2' )").arg(noteId).arg(pm).arg(guid);
+    QString insert = QString("insert into meeting_attendees (id, person_id, note_id) select '%3', '%2', '%1' where not exists (select 1 from meeting_attendees where note_id = '%1' and person_id = '%2' and deleted = 0 )").arg(noteId).arg(pm).arg(guid);
 
     execute(insert);
 

@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"task",
+				"task_category"
+			],
+			[
 				"base",
 				"basefolder"
 			],
@@ -156,628 +160,15 @@
 	"buffers":
 	[
 		{
-			"file": "docs/Introduction/GettingStarted.md",
+			"file": "/C/Users/paulmckinney/AppData/Roaming/ProjectNotes/logs/debugging.log",
 			"settings":
 			{
-				"buffer_size": 3842,
+				"buffer_size": 44326995,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			},
 			"undo_stack":
 			[
-				[
-					6,
-					18,
-					"right_delete",
-					null,
-					"EgAAAKAAAAAAAAAAoAAAAAAAAAABAAAAc6AAAAAAAAAAoAAAAAAAAAABAAAAdKAAAAAAAAAAoAAAAAAAAAABAAAAYaAAAAAAAAAAoAAAAAAAAAABAAAAbqAAAAAAAAAAoAAAAAAAAAABAAAAZKAAAAAAAAAAoAAAAAAAAAABAAAAYaAAAAAAAAAAoAAAAAAAAAABAAAAcqAAAAAAAAAAoAAAAAAAAAABAAAAZKAAAAAAAAAAoAAAAAAAAAABAAAAIKAAAAAAAAAAoAAAAAAAAAABAAAAYaAAAAAAAAAAoAAAAAAAAAABAAAAcKAAAAAAAAAAoAAAAAAAAAABAAAAcKAAAAAAAAAAoAAAAAAAAAABAAAAbKAAAAAAAAAAoAAAAAAAAAABAAAAaaAAAAAAAAAAoAAAAAAAAAABAAAAY6AAAAAAAAAAoAAAAAAAAAABAAAAYaAAAAAAAAAAoAAAAAAAAAABAAAAdKAAAAAAAAAAoAAAAAAAAAABAAAAaQ",
-					"AQAAAAAAAAABAAAAoAAAAAAAAACgAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					7,
-					14,
-					"right_delete",
-					null,
-					"DgAAAKAAAAAAAAAAoAAAAAAAAAABAAAAb6AAAAAAAAAAoAAAAAAAAAABAAAAbqAAAAAAAAAAoAAAAAAAAAABAAAAIKAAAAAAAAAAoAAAAAAAAAABAAAAZKAAAAAAAAAAoAAAAAAAAAABAAAAYaAAAAAAAAAAoAAAAAAAAAABAAAAdKAAAAAAAAAAoAAAAAAAAAABAAAAYaAAAAAAAAAAoAAAAAAAAAABAAAAIKAAAAAAAAAAoAAAAAAAAAABAAAAZqAAAAAAAAAAoAAAAAAAAAABAAAAb6AAAAAAAAAAoAAAAAAAAAABAAAAbKAAAAAAAAAAoAAAAAAAAAABAAAAZKAAAAAAAAAAoAAAAAAAAAABAAAAZaAAAAAAAAAAoAAAAAAAAAABAAAAcg",
-					"AQAAAAAAAAABAAAAoAAAAAAAAACgAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					8,
-					1,
-					"insert",
-					{
-						"characters": "profile"
-					},
-					"BwAAAKAAAAAAAAAAoQAAAAAAAAAAAAAAoQAAAAAAAACiAAAAAAAAAAAAAACiAAAAAAAAAKMAAAAAAAAAAAAAAKMAAAAAAAAApAAAAAAAAAAAAAAApAAAAAAAAAClAAAAAAAAAAAAAAClAAAAAAAAAKYAAAAAAAAAAAAAAKYAAAAAAAAApwAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAoAAAAAAAAACgAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					12,
-					3,
-					"right_delete",
-					null,
-					"AwAAAFMAAAAAAAAAUwAAAAAAAAABAAAAaVMAAAAAAAAAUwAAAAAAAAABAAAAdFMAAAAAAAAAUwAAAAAAAAABAAAAcw",
-					"AQAAAAAAAAABAAAAUwAAAAAAAABTAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					13,
-					1,
-					"insert",
-					{
-						"characters": "a"
-					},
-					"AQAAAFMAAAAAAAAAVAAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAUwAAAAAAAABTAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					14,
-					1,
-					"insert",
-					{
-						"characters": " local"
-					},
-					"BgAAAFQAAAAAAAAAVQAAAAAAAAAAAAAAVQAAAAAAAABWAAAAAAAAAAAAAABWAAAAAAAAAFcAAAAAAAAAAAAAAFcAAAAAAAAAWAAAAAAAAAAAAAAAWAAAAAAAAABZAAAAAAAAAAAAAABZAAAAAAAAAFoAAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAVAAAAAAAAABUAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					18,
-					12,
-					"right_delete",
-					null,
-					"DAAAAKsAAAAAAAAAqwAAAAAAAAABAAAAIKsAAAAAAAAAqwAAAAAAAAADAAAA4oCUqwAAAAAAAACrAAAAAAAAAAEAAAAgqwAAAAAAAACrAAAAAAAAAAEAAABuqwAAAAAAAACrAAAAAAAAAAEAAABvqwAAAAAAAACrAAAAAAAAAAEAAAAgqwAAAAAAAACrAAAAAAAAAAEAAABtqwAAAAAAAACrAAAAAAAAAAEAAABhqwAAAAAAAACrAAAAAAAAAAEAAABuqwAAAAAAAACrAAAAAAAAAAEAAAB1qwAAAAAAAACrAAAAAAAAAAEAAABhqwAAAAAAAACrAAAAAAAAAAEAAABs",
-					"AQAAAAAAAAABAAAAqwAAAAAAAACrAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					19,
-					9,
-					"right_delete",
-					null,
-					"CQAAAKsAAAAAAAAAqwAAAAAAAAABAAAAIKsAAAAAAAAAqwAAAAAAAAABAAAAc6sAAAAAAAAAqwAAAAAAAAABAAAAZasAAAAAAAAAqwAAAAAAAAABAAAAdKsAAAAAAAAAqwAAAAAAAAABAAAAdasAAAAAAAAAqwAAAAAAAAABAAAAcKsAAAAAAAAAqwAAAAAAAAABAAAAIKsAAAAAAAAAqwAAAAAAAAABAAAAaasAAAAAAAAAqwAAAAAAAAABAAAAcw",
-					"AQAAAAAAAAABAAAAqwAAAAAAAACrAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					20,
-					7,
-					"right_delete",
-					null,
-					"BwAAAKsAAAAAAAAAqwAAAAAAAAABAAAAIKsAAAAAAAAAqwAAAAAAAAABAAAAcqsAAAAAAAAAqwAAAAAAAAABAAAAZasAAAAAAAAAqwAAAAAAAAABAAAAcasAAAAAAAAAqwAAAAAAAAABAAAAdasAAAAAAAAAqwAAAAAAAAABAAAAaasAAAAAAAAAqwAAAAAAAAABAAAAcg",
-					"AQAAAAAAAAABAAAAqwAAAAAAAACrAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					23,
-					1,
-					"right_delete",
-					null,
-					"AQAAAKsAAAAAAAAAqwAAAAAAAABdAAAAZWQuIFRvIGJhY2sgdXAgeW91ciBkYXRhYmFzZSwgY29weSB0aGF0IGZpbGUgdG8gYSBzYWZlIGxvY2F0aW9uIHdoaWxlIFByb2plY3QgTm90ZXMgaXMgY2xvc2Vk",
-					"AQAAAAAAAAABAAAAqwAAAAAAAAAIAQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					33,
-					1,
-					"insert",
-					{
-						"characters": "sucha"
-					},
-					"BQAAAN8AAAAAAAAA4AAAAAAAAAAAAAAA4AAAAAAAAADhAAAAAAAAAAAAAADhAAAAAAAAAOIAAAAAAAAAAAAAAOIAAAAAAAAA4wAAAAAAAAAAAAAA4wAAAAAAAADkAAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAA3wAAAAAAAADfAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					34,
-					1,
-					"insert",
-					{
-						"characters": " "
-					},
-					"AQAAAOQAAAAAAAAA5QAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAA5AAAAAAAAADkAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					51,
-					3,
-					"right_delete",
-					null,
-					"AwAAAJsAAAAAAAAAmwAAAAAAAAAGAAAAc3lzdGVtmwAAAAAAAACbAAAAAAAAAAEAAAAnmwAAAAAAAACbAAAAAAAAAAEAAABz",
-					"AQAAAAAAAAABAAAAmwAAAAAAAAChAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					52,
-					1,
-					"insert",
-					{
-						"characters": "user"
-					},
-					"BAAAAJsAAAAAAAAAnAAAAAAAAAAAAAAAnAAAAAAAAACdAAAAAAAAAAAAAACdAAAAAAAAAJ4AAAAAAAAAAAAAAJ4AAAAAAAAAnwAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAmwAAAAAAAACbAAAAAAAAAAAAAAAAAPC/"
-				]
-			]
-		},
-		{
-			"file": "docs/Introduction/SystemRequirements.md",
-			"settings":
-			{
-				"buffer_size": 213,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"contents": "# File Menu\n\n## Cloud Sync Settings\n\nProject Notes stores its database you user profile. The database is created automatically on first launch.\n\nIf you want to sync your data with a cloud host, use **Cloud Sync Settings** to configure the connection.\n\n**To configure cloud sync:**\n\n1. From the Project Notes **File** menu choose **Cloud Sync Settings...**\n2. Check **Sync data with cloud host** to enable syncing.\n3. Choose a **Sync Host Type**:\n   - **Self-Hosted PostgREST** — a PostgREST server you run yourself\n   - **Supabase** — a hosted Supabase project\n4. Enter the **Server URL**, **Username (Email)**, and **Password** for your host.\n5. Optionally enter an **Encryption Phrase** to encrypt data at rest on the server. Leave blank to disable encryption.\n6. If using Supabase, also enter the **Supabase Anon Key** from your Supabase Dashboard.\n7. Click **OK**.\n\nYour settings are saved immediately. If Project Notes cannot connect using the information provided, a warning dialog will appear. You can correct the settings by returning to **File > Cloud Sync Settings...**.\n\n### Searching The Database\n\nProject Notes provides a powerful search tool that searches the entire database. Project Notes can quickly search for any text, and provide quick navigation to found items by double clicking the results. When Show Internal items is selected from the View menu, internal data will show in the search results.\n\n**To search the database:**\n\n1. If the Search Panel is not showing, from the Project Notes **File** menu choose **Search** or click the Search icon on the toolbar.\n2. Next to the magnifying glass icon type in the text to search for.\n3. Press the **Return** key.\n\n**To open the record found in the search result:**\n\n1. Double click the item in the Search Panel.\n\n### Importing and Exporting Information\n\n#### Exporting data\nProject Notes can export data to an XML file. You can select individual items or entire tables of information to export. To learn more about the XML format go to [Project Notes XML](../PluginsOverview/ProjectNotesXML.md).\n\n**To export all projects, people, clients, or tracker items to XML:**\n\n1. From the Project Notes **File** menu choose **XML Export...**\n2. Choose the information type option you want to export.\n3. Click **Export**.\n4. Select the location to save the file.\n5. Type in the file name without the extension.\n6. Click **Save**.\n\n**To export an individual item:**\n\n1. Right-click on the item, and choose **XML Export...**\n2. Click **Export**.\n3. Select the location to save the file.\n4. Type in the file name without the extension.\n5. Click **Save**.\n\n#### Importing data\n\nProject Notes can import a properly constructed XML file.  To learn more about the XML format go to [Project Notes XML](../PluginsOverview/ProjectNotesXML.md).\n\n**To import information:**\n\n1. From the Project Notes **File** menu choose **XML Import...**\n2. Type in the full file name and path or click the three dots to Select the the import file and click **Open**.\n3. Click **Import**.\n\n#### Exiting Project Notes\n\nYou can exit Project Notes by clicking the close button on the window frame, or choosing **Exit** from the File menu.\n",
-			"file": "docs/InterfaceOverview/FileMenu.md",
-			"file_size": 3272,
-			"file_write_time": 134186860417897037,
-			"settings":
-			{
-				"buffer_size": 3167,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			},
-			"undo_stack":
-			[
-				[
-					13,
-					1,
-					"insert",
-					{
-						"characters": "you"
-					},
-					"AwAAAEcAAAAAAAAASAAAAAAAAAA2AAAAaW4gdGhlIHN0YW5kYXJkIGFwcGxpY2F0aW9uIGRhdGEgZm9sZGVyIG9uIHlvdXIgc3lzdGVtSAAAAAAAAABJAAAAAAAAAAAAAABJAAAAAAAAAEoAAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAARwAAAAAAAAB9AAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					14,
-					1,
-					"insert",
-					{
-						"characters": " user"
-					},
-					"BQAAAEoAAAAAAAAASwAAAAAAAAAAAAAASwAAAAAAAABMAAAAAAAAAAAAAABMAAAAAAAAAE0AAAAAAAAAAAAAAE0AAAAAAAAATgAAAAAAAAAAAAAATgAAAAAAAABPAAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAASgAAAAAAAABKAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					15,
-					1,
-					"insert",
-					{
-						"characters": " prfile"
-					},
-					"BwAAAE8AAAAAAAAAUAAAAAAAAAAAAAAAUAAAAAAAAABRAAAAAAAAAAAAAABRAAAAAAAAAFIAAAAAAAAAAAAAAFIAAAAAAAAAUwAAAAAAAAAAAAAAUwAAAAAAAABUAAAAAAAAAAAAAABUAAAAAAAAAFUAAAAAAAAAAAAAAFUAAAAAAAAAVgAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAATwAAAAAAAABPAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					16,
-					5,
-					"left_delete",
-					null,
-					"BQAAAFUAAAAAAAAAVQAAAAAAAAABAAAAZVQAAAAAAAAAVAAAAAAAAAABAAAAbFMAAAAAAAAAUwAAAAAAAAABAAAAaVIAAAAAAAAAUgAAAAAAAAABAAAAZlEAAAAAAAAAUQAAAAAAAAABAAAAcg",
-					"AQAAAAAAAAABAAAAVgAAAAAAAABWAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					17,
-					1,
-					"insert",
-					{
-						"characters": "rofile"
-					},
-					"BgAAAFEAAAAAAAAAUgAAAAAAAAAAAAAAUgAAAAAAAABTAAAAAAAAAAAAAABTAAAAAAAAAFQAAAAAAAAAAAAAAFQAAAAAAAAAVQAAAAAAAAAAAAAAVQAAAAAAAABWAAAAAAAAAAAAAABWAAAAAAAAAFcAAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAUQAAAAAAAABRAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					21,
-					1,
-					"right_delete",
-					null,
-					"AQAAAI4AAAAAAAAAjgAAAAAAAAAdAAAAIOKAlCBubyBtYW51YWwgc2V0dXAgcmVxdWlyZWQ",
-					"AQAAAAAAAAABAAAAqQAAAAAAAACOAAAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					30,
-					1,
-					"right_delete",
-					null,
-					"AQAAACIFAAAAAAAAIgUAAAAAAACIAAAAVGhlIHNlYXJjaCBob25vcnMgYWxsIFtHbG9iYWwgRmlsdGVyc10oUHJlc2VudGluZ1RvQ2xpZW50cy5tZCksIHNvIHlvdSBjYW4gc2VhcmNoIHdoaWxlIHNoYXJpbmcgeW91ciBzY3JlZW4gaW4gYSBtZWV0aW5nIHdpdGggYSBjdXN0b21lcg",
-					"AQAAAAAAAAABAAAAIgUAAAAAAACqBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					31,
-					1,
-					"insert",
-					{
-						"characters": "E"
-					},
-					"AQAAACIFAAAAAAAAIwUAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAIgUAAAAAAAAiBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					32,
-					1,
-					"left_delete",
-					null,
-					"AQAAACIFAAAAAAAAIgUAAAAAAAABAAAARQ",
-					"AQAAAAAAAAABAAAAIwUAAAAAAAAjBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					33,
-					1,
-					"insert",
-					{
-						"characters": "When"
-					},
-					"BAAAACIFAAAAAAAAIwUAAAAAAAAAAAAAIwUAAAAAAAAkBQAAAAAAAAAAAAAkBQAAAAAAACUFAAAAAAAAAAAAACUFAAAAAAAAJgUAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAIgUAAAAAAAAiBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					34,
-					1,
-					"insert",
-					{
-						"characters": " show"
-					},
-					"BQAAACYFAAAAAAAAJwUAAAAAAAAAAAAAJwUAAAAAAAAoBQAAAAAAAAAAAAAoBQAAAAAAACkFAAAAAAAAAAAAACkFAAAAAAAAKgUAAAAAAAAAAAAAKgUAAAAAAAArBQAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAJgUAAAAAAAAmBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					35,
-					1,
-					"insert",
-					{
-						"characters": " "
-					},
-					"AQAAACsFAAAAAAAALAUAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAKwUAAAAAAAArBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					36,
-					5,
-					"left_delete",
-					null,
-					"BQAAACsFAAAAAAAAKwUAAAAAAAABAAAAICoFAAAAAAAAKgUAAAAAAAABAAAAdykFAAAAAAAAKQUAAAAAAAABAAAAbygFAAAAAAAAKAUAAAAAAAABAAAAaCcFAAAAAAAAJwUAAAAAAAABAAAAcw",
-					"AQAAAAAAAAABAAAALAUAAAAAAAAsBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					37,
-					1,
-					"insert",
-					{
-						"characters": "Show"
-					},
-					"BAAAACcFAAAAAAAAKAUAAAAAAAAAAAAAKAUAAAAAAAApBQAAAAAAAAAAAAApBQAAAAAAACoFAAAAAAAAAAAAACoFAAAAAAAAKwUAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAJwUAAAAAAAAnBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					38,
-					1,
-					"insert",
-					{
-						"characters": " Internal"
-					},
-					"CQAAACsFAAAAAAAALAUAAAAAAAAAAAAALAUAAAAAAAAtBQAAAAAAAAAAAAAtBQAAAAAAAC4FAAAAAAAAAAAAAC4FAAAAAAAALwUAAAAAAAAAAAAALwUAAAAAAAAwBQAAAAAAAAAAAAAwBQAAAAAAADEFAAAAAAAAAAAAADEFAAAAAAAAMgUAAAAAAAAAAAAAMgUAAAAAAAAzBQAAAAAAAAAAAAAzBQAAAAAAADQFAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAKwUAAAAAAAArBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					39,
-					1,
-					"insert",
-					{
-						"characters": " items"
-					},
-					"BgAAADQFAAAAAAAANQUAAAAAAAAAAAAANQUAAAAAAAA2BQAAAAAAAAAAAAA2BQAAAAAAADcFAAAAAAAAAAAAADcFAAAAAAAAOAUAAAAAAAAAAAAAOAUAAAAAAAA5BQAAAAAAAAAAAAA5BQAAAAAAADoFAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAANAUAAAAAAAA0BQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					40,
-					1,
-					"insert",
-					{
-						"characters": " is"
-					},
-					"AwAAADoFAAAAAAAAOwUAAAAAAAAAAAAAOwUAAAAAAAA8BQAAAAAAAAAAAAA8BQAAAAAAAD0FAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAOgUAAAAAAAA6BQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					41,
-					1,
-					"insert",
-					{
-						"characters": " selcted"
-					},
-					"CAAAAD0FAAAAAAAAPgUAAAAAAAAAAAAAPgUAAAAAAAA/BQAAAAAAAAAAAAA/BQAAAAAAAEAFAAAAAAAAAAAAAEAFAAAAAAAAQQUAAAAAAAAAAAAAQQUAAAAAAABCBQAAAAAAAAAAAABCBQAAAAAAAEMFAAAAAAAAAAAAAEMFAAAAAAAARAUAAAAAAAAAAAAARAUAAAAAAABFBQAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAPQUAAAAAAAA9BQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					42,
-					1,
-					"insert",
-					{
-						"characters": " "
-					},
-					"AQAAAEUFAAAAAAAARgUAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAARQUAAAAAAABFBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					43,
-					6,
-					"left_delete",
-					null,
-					"BgAAAEUFAAAAAAAARQUAAAAAAAABAAAAIEQFAAAAAAAARAUAAAAAAAABAAAAZEMFAAAAAAAAQwUAAAAAAAABAAAAZUIFAAAAAAAAQgUAAAAAAAABAAAAdEEFAAAAAAAAQQUAAAAAAAABAAAAY0AFAAAAAAAAQAUAAAAAAAABAAAAbA",
-					"AQAAAAAAAAABAAAARgUAAAAAAABGBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					44,
-					1,
-					"insert",
-					{
-						"characters": "lected"
-					},
-					"BgAAAEAFAAAAAAAAQQUAAAAAAAAAAAAAQQUAAAAAAABCBQAAAAAAAAAAAABCBQAAAAAAAEMFAAAAAAAAAAAAAEMFAAAAAAAARAUAAAAAAAAAAAAARAUAAAAAAABFBQAAAAAAAAAAAABFBQAAAAAAAEYFAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAQAUAAAAAAABABQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					45,
-					1,
-					"insert",
-					{
-						"characters": " from"
-					},
-					"BQAAAEYFAAAAAAAARwUAAAAAAAAAAAAARwUAAAAAAABIBQAAAAAAAAAAAABIBQAAAAAAAEkFAAAAAAAAAAAAAEkFAAAAAAAASgUAAAAAAAAAAAAASgUAAAAAAABLBQAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAARgUAAAAAAABGBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					46,
-					1,
-					"insert",
-					{
-						"characters": " teh"
-					},
-					"BAAAAEsFAAAAAAAATAUAAAAAAAAAAAAATAUAAAAAAABNBQAAAAAAAAAAAABNBQAAAAAAAE4FAAAAAAAAAAAAAE4FAAAAAAAATwUAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAASwUAAAAAAABLBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					47,
-					1,
-					"insert",
-					{
-						"characters": " "
-					},
-					"AQAAAE8FAAAAAAAAUAUAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAATwUAAAAAAABPBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					48,
-					3,
-					"left_delete",
-					null,
-					"AwAAAE8FAAAAAAAATwUAAAAAAAABAAAAIE4FAAAAAAAATgUAAAAAAAABAAAAaE0FAAAAAAAATQUAAAAAAAABAAAAZQ",
-					"AQAAAAAAAAABAAAAUAUAAAAAAABQBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					49,
-					1,
-					"insert",
-					{
-						"characters": "he"
-					},
-					"AgAAAE0FAAAAAAAATgUAAAAAAAAAAAAATgUAAAAAAABPBQAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAATQUAAAAAAABNBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					50,
-					1,
-					"insert",
-					{
-						"characters": " View"
-					},
-					"BQAAAE8FAAAAAAAAUAUAAAAAAAAAAAAAUAUAAAAAAABRBQAAAAAAAAAAAABRBQAAAAAAAFIFAAAAAAAAAAAAAFIFAAAAAAAAUwUAAAAAAAAAAAAAUwUAAAAAAABUBQAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAATwUAAAAAAABPBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					51,
-					1,
-					"insert",
-					{
-						"characters": " ment"
-					},
-					"BQAAAFQFAAAAAAAAVQUAAAAAAAAAAAAAVQUAAAAAAABWBQAAAAAAAAAAAABWBQAAAAAAAFcFAAAAAAAAAAAAAFcFAAAAAAAAWAUAAAAAAAAAAAAAWAUAAAAAAABZBQAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAVAUAAAAAAABUBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					52,
-					1,
-					"left_delete",
-					null,
-					"AQAAAFgFAAAAAAAAWAUAAAAAAAABAAAAdA",
-					"AQAAAAAAAAABAAAAWQUAAAAAAABZBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					53,
-					1,
-					"insert",
-					{
-						"characters": "u"
-					},
-					"AQAAAFgFAAAAAAAAWQUAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAWAUAAAAAAABYBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					54,
-					1,
-					"insert",
-					{
-						"characters": ","
-					},
-					"AQAAAFkFAAAAAAAAWgUAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAWQUAAAAAAABZBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					55,
-					1,
-					"insert",
-					{
-						"characters": " int"
-					},
-					"BAAAAFoFAAAAAAAAWwUAAAAAAAAAAAAAWwUAAAAAAABcBQAAAAAAAAAAAABcBQAAAAAAAF0FAAAAAAAAAAAAAF0FAAAAAAAAXgUAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAWgUAAAAAAABaBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					56,
-					1,
-					"insert",
-					{
-						"characters": "ernal"
-					},
-					"BQAAAF4FAAAAAAAAXwUAAAAAAAAAAAAAXwUAAAAAAABgBQAAAAAAAAAAAABgBQAAAAAAAGEFAAAAAAAAAAAAAGEFAAAAAAAAYgUAAAAAAAAAAAAAYgUAAAAAAABjBQAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAXgUAAAAAAABeBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					57,
-					1,
-					"insert",
-					{
-						"characters": " "
-					},
-					"AQAAAGMFAAAAAAAAZAUAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAYwUAAAAAAABjBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					58,
-					1,
-					"insert",
-					{
-						"characters": "data"
-					},
-					"BAAAAGQFAAAAAAAAZQUAAAAAAAAAAAAAZQUAAAAAAABmBQAAAAAAAAAAAABmBQAAAAAAAGcFAAAAAAAAAAAAAGcFAAAAAAAAaAUAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAZAUAAAAAAABkBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					59,
-					1,
-					"insert",
-					{
-						"characters": " will"
-					},
-					"BQAAAGgFAAAAAAAAaQUAAAAAAAAAAAAAaQUAAAAAAABqBQAAAAAAAAAAAABqBQAAAAAAAGsFAAAAAAAAAAAAAGsFAAAAAAAAbAUAAAAAAAAAAAAAbAUAAAAAAABtBQAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAaAUAAAAAAABoBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					60,
-					1,
-					"insert",
-					{
-						"characters": " show"
-					},
-					"BQAAAG0FAAAAAAAAbgUAAAAAAAAAAAAAbgUAAAAAAABvBQAAAAAAAAAAAABvBQAAAAAAAHAFAAAAAAAAAAAAAHAFAAAAAAAAcQUAAAAAAAAAAAAAcQUAAAAAAAByBQAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAbQUAAAAAAABtBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					61,
-					1,
-					"insert",
-					{
-						"characters": " in"
-					},
-					"AwAAAHIFAAAAAAAAcwUAAAAAAAAAAAAAcwUAAAAAAAB0BQAAAAAAAAAAAAB0BQAAAAAAAHUFAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAcgUAAAAAAAByBQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					62,
-					1,
-					"insert",
-					{
-						"characters": " teh"
-					},
-					"BAAAAHUFAAAAAAAAdgUAAAAAAAAAAAAAdgUAAAAAAAB3BQAAAAAAAAAAAAB3BQAAAAAAAHgFAAAAAAAAAAAAAHgFAAAAAAAAeQUAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAdQUAAAAAAAB1BQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					63,
-					1,
-					"left_delete",
-					null,
-					"AQAAAHgFAAAAAAAAeAUAAAAAAAABAAAAaA",
-					"AQAAAAAAAAABAAAAeQUAAAAAAAB5BQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					64,
-					1,
-					"insert",
-					{
-						"characters": "h"
-					},
-					"AQAAAHgFAAAAAAAAeQUAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAeAUAAAAAAAB4BQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					65,
-					2,
-					"left_delete",
-					null,
-					"AgAAAHgFAAAAAAAAeAUAAAAAAAABAAAAaHcFAAAAAAAAdwUAAAAAAAABAAAAZQ",
-					"AQAAAAAAAAABAAAAeQUAAAAAAAB5BQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					66,
-					1,
-					"insert",
-					{
-						"characters": "he"
-					},
-					"AgAAAHcFAAAAAAAAeAUAAAAAAAAAAAAAeAUAAAAAAAB5BQAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAdwUAAAAAAAB3BQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					67,
-					1,
-					"insert",
-					{
-						"characters": " searh"
-					},
-					"BgAAAHkFAAAAAAAAegUAAAAAAAAAAAAAegUAAAAAAAB7BQAAAAAAAAAAAAB7BQAAAAAAAHwFAAAAAAAAAAAAAHwFAAAAAAAAfQUAAAAAAAAAAAAAfQUAAAAAAAB+BQAAAAAAAAAAAAB+BQAAAAAAAH8FAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAeQUAAAAAAAB5BQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					68,
-					1,
-					"insert",
-					{
-						"characters": " "
-					},
-					"AQAAAH8FAAAAAAAAgAUAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAfwUAAAAAAAB/BQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					69,
-					2,
-					"left_delete",
-					null,
-					"AgAAAH8FAAAAAAAAfwUAAAAAAAABAAAAIH4FAAAAAAAAfgUAAAAAAAABAAAAaA",
-					"AQAAAAAAAAABAAAAgAUAAAAAAACABQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					70,
-					1,
-					"insert",
-					{
-						"characters": "ch"
-					},
-					"AgAAAH4FAAAAAAAAfwUAAAAAAAAAAAAAfwUAAAAAAACABQAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAfgUAAAAAAAB+BQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					71,
-					1,
-					"insert",
-					{
-						"characters": " results."
-					},
-					"CQAAAIAFAAAAAAAAgQUAAAAAAAAAAAAAgQUAAAAAAACCBQAAAAAAAAAAAACCBQAAAAAAAIMFAAAAAAAAAAAAAIMFAAAAAAAAhAUAAAAAAAAAAAAAhAUAAAAAAACFBQAAAAAAAAAAAACFBQAAAAAAAIYFAAAAAAAAAAAAAIYFAAAAAAAAhwUAAAAAAAAAAAAAhwUAAAAAAACIBQAAAAAAAAAAAACIBQAAAAAAAIkFAAAAAAAAAAAAAA",
-					"AQAAAAAAAAABAAAAgAUAAAAAAACABQAAAAAAAAAAAAAAAPC/"
-				],
-				[
-					72,
-					1,
-					"left_delete",
-					null,
-					"AQAAAIgFAAAAAAAAiAUAAAAAAAABAAAALg",
-					"AQAAAAAAAAABAAAAiQUAAAAAAACJBQAAAAAAAAAAAAAAAPC/"
-				]
 			]
 		}
 	],
@@ -942,11 +333,44 @@
 		"/C/Users/paulmckinney/Documents/ProjectNotes/docs",
 		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/InterfaceOverview",
 		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/Introduction",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/PluginsOverview",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/StandardPlugins",
 		"/C/Users/paulmckinney/Documents/ProjectNotes/windows",
-		"/C/Users/paulmckinney/Documents/ProjectNotes/windows/setup"
+		"/C/Users/paulmckinney/Documents/ProjectNotes/windows/setup",
+		"/C/Users/paulmckinney/Documents/ProjectNotes.wiki"
 	],
 	"file_history":
 	[
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/StandardPlugins/PluginSettings.md",
+		"/C/Users/paulmckinney/Documents/ProjectNotes.wiki/Release-Notes.md",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/Introduction/GettingStarted.md",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/Introduction/SystemRequirements.md",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/InterfaceOverview/FileMenu.md",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/InterfaceOverview/EditMenu.md",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/InterfaceOverview/PluginsMenu.md",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/InterfaceOverview/Preferences.md",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/statusreportitemsmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/sqlquerymodel.h",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/databaseobjects.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/valueselectmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/trackeritemsmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/trackeritemcommentsmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/teamsmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/searchresultsmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/projectteammembersmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/projectsmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/projectnotesmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/projectlocationsmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/peoplemodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/notesactionitemsmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/itemdetailteamlistmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/columnmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/clientsmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/meetingattendeesmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/actionitemsdetailsmeetingsmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/actionitemprojectnotesmodel.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/importexport.cpp",
+		"/C/Users/paulmckinney/Documents/ProjectNotes/sqlquerymodel.cpp",
 		"/C/Users/paulmckinney/Desktop/tracker.xml",
 		"/C/Users/paulmckinney/AppData/Roaming/ProjectNotes/logs/debugging.log",
 		"/C/Users/paulmckinney/AppData/Roaming/ProjectNotes/logs/console.log",
@@ -993,7 +417,6 @@
 		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/forms/dialogDuplicateFilesFound.ui",
 		"/C/Users/paulmckinney/Desktop/ToBeta.reg",
 		"/C/Users/paulmckinney/Documents/ProjectNotes/plugins/excelkill_plugin.py",
-		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/StandardPlugins/PluginSettings.md",
 		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/StandardPlugins/Editor.md",
 		"/C/Users/paulmckinney/Documents/ProjectNotes/mkdocs.yml",
 		"/C/Users/paulmckinney/Documents/ProjectNotes/docs/StandardPlugins/FileCollector.md",
@@ -1045,40 +468,11 @@
 		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/newchangeorder_plugin.py",
 		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/newmsproject_plugin.py",
 		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/newpcrregistry_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/newpowerpoint_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/newriskregister_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/open_msproject_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/schedulecustomerkickoffinvite_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/schedulecustomerlessonslearnedinvite_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/schedulecustomerstatusinvite_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/scheduleinternalkickoffinvite_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/scheduleinternallessonslearnedinvite_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/scheduleinternalstatusinvite_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/sendmeetingnotes_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/sendprojectemailtoattendee_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/sendprojectemailtoperson_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/sendprojectemailtoteam_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/tester_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/trackkerreport_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/wordkill_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/includes/graphapitools.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/threads/tester_thread_1.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/findprojectemailperson_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/globalsettings_plugin.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/threads/filefinder_thread.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/base_plugin_settings.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/includes/word_tools.py",
-		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/includes/common.py",
-		"/C/Users/Paul McKinney/Documents/CornerstonePlugins/plugins/cci_connectdrives_plugin.py",
-		"/C/Users/Paul McKinney/Documents/CornerstonePlugins/plugins/cci_ifs_projects_import_plugin.py",
-		"/C/Users/Paul McKinney/Documents/CornerstonePlugins/plugins/cci_newchangeorder_plugin.py",
-		"/C/Users/Paul McKinney/Documents/CornerstonePlugins/plugins/cci_newpcrregistry_plugin.py",
-		"/C/Users/Paul McKinney/Documents/CornerstonePlugins/plugins/cci_newriskregister_plugin.py",
-		"/C/Users/Paul McKinney/Documents/CornerstonePlugins/plugins/cci_scheduleoneononeattendee_plugin.py"
+		"/C/Users/Paul McKinney/Documents/ProjectNotes/plugins/newpowerpoint_plugin.py"
 	],
 	"find":
 	{
-		"height": 38.0
+		"height": 22.0
 	},
 	"find_in_files":
 	{
@@ -1096,6 +490,19 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"getOrderKey",
+			"m_orderKey",
+			"setOrderKey",
+			"u.",
+			"setBaseSql",
+			"m.",
+			"meeting_at",
+			"pp.",
+			"people pp",
+			"setOrderBy(\"",
+			"from project_location",
+			"sql query failed",
+			"from project_notes",
 			"exporttr",
 			"exporttrak",
 			"TODO",
@@ -1210,20 +617,7 @@
 			"pnc =",
 			"Document",
 			"scrape_project_number",
-			"getProjectNumber",
-			"_cont",
-			"sync_",
-			"_contac",
-			"synccon",
-			"sync",
-			"_cont",
-			"sync_",
-			"SyncContacts",
-			"SyncC",
-			"sync_con",
-			"exists",
-			"todo",
-			"normal"
+			"getProjectNumber"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -1231,6 +625,9 @@
 		"regex": false,
 		"replace_history":
 		[
+			"item_tracker_updates.",
+			"meeting_attendees.",
+			"project_people.",
 			"6_10_0",
 			"\\ProjectNotes4Beta\\",
 			"paulmckinney",
@@ -1266,88 +663,28 @@
 			[
 				{
 					"buffer": 0,
-					"file": "docs/Introduction/GettingStarted.md",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 3842,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								159,
-								159
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 25.2,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"stack_multiselect": false,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "docs/Introduction/SystemRequirements.md",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 213,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"stack_multiselect": false,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "docs/InterfaceOverview/FileMenu.md",
+					"file": "/C/Users/paulmckinney/AppData/Roaming/ProjectNotes/logs/debugging.log",
 					"selected": true,
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3167,
+						"buffer_size": 44326995,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2388,
-								2388
+								518,
+								518
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Markdown/Markdown.sublime-syntax",
-							"tab_size": 3,
-							"translate_tabs_to_spaces": true
+							"syntax": "Packages/Text/Plain text.tmLanguage"
 						},
 						"translation.x": 0.0,
-						"translation.y": 397.6,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -1414,7 +751,7 @@
 	"project": "projectnotes.sublime-project",
 	"replace":
 	{
-		"height": 40.0
+		"height": 68.0
 	},
 	"save_all_on_build": true,
 	"select_file":
