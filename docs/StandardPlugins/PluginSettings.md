@@ -1,16 +1,263 @@
-# Plugin Settings
+# Standard Plugins and Plugin Settings
+
+## Built-In Standard Plugins
+
+Project Notes comes with a comprehensive set of standard plugins installed and enabled out of the box. These plugins provide powerful functionality for common project management tasks, including:
+
+- **Meeting and Email Integration** — Schedule meetings, send emails, and archive communications
+- **Document Management** — Export meeting notes and tracker items to PDF, create new documents from templates
+- **File Organization** — Automatically collect and organize project files
+- **Report Generation** — Generate tracker item reports and status reports
+- **Enterprise Integration** — Connect to Outlook, Office 365, and IFS Cloud ERP
+- **Customization** — Define custom shortcuts and configure plugin behavior
+
+All standard plugins are **highly configurable**. You can customize their behavior through settings dialogs accessible from the **Plugins > Settings** menu. This allows you to tailor Project Notes to your organization's specific workflows without modifying code.
+
+### Standard Plugins Overview
+
+The standard plugins are organized into several categories:
+
+**Communication Plugins:**
+- Send Meeting Notes — Email meeting notes to attendees
+- Send Project Emails — Send emails about projects to team members
+- Outlook Integration — Integrate with Outlook and Office 365 for scheduling and email
+- Schedule Meeting Plugins — Schedule customer and internal kick-off, status, and lessons learned meetings
+
+**Export and Report Plugins:**
+- Export Meeting Notes — Export meeting notes to PDF
+- Export Tracker Items — Export tracker items and action items to PDF
+- Tracker Report Generation — Generate customizable tracker/action item reports
+- Meeting Notes Archive — Archive meeting notes to a designated folder
+- Project Email Archive — Archive project-related emails
+
+**File and Document Plugins:**
+- File Collector — Automatically monitor and organize project-related files
+- New Document Templates — Create new documents from templates (MS Project, PowerPoint, Change Orders, etc.)
+- Team Member Quick Add — Quickly add team members to projects
+
+**Utility Plugins:**
+- Editor — Configure external script editors
+- My Shortcuts — Define custom menu shortcuts
+- IFS Cloud — Integrate with IFS Cloud ERP system
+
+### Important Note: IFS-Related Plugins
+
+**The IFS Cloud plugin is tailored to a customized version of IFS ERP and may not work with all IFS installations.**
+
+The IFS Cloud plugin was developed for a specific IFS implementation with custom modifications. If you use IFS Cloud ERP in your organization:
+
+1. **Verify compatibility** — Before enabling the IFS Cloud plugin, confirm that your IFS instance has the required customizations
+2. **Contact your IFS administrator** — They can verify whether your installation matches the expected schema and customizations
+3. **Test before relying on it** — Enable the plugin in a test environment first to confirm it works with your ERP system
+4. **Alternative integration** — If your IFS instance does not match the expected customization, you may need to develop a custom plugin tailored to your specific ERP schema
+
+The IFS Cloud settings and documentation are available at [IFS Cloud Integration](<IFSCloud.md>), which includes more details about compatibility and setup.
 
 ## Managing and Storing Settings
 
-Each plugin will typically have settings the user will want to change. Plugins provided with Project Notes store settings in the personal operating system profile: in the registry on Windows, and in a configuration file on macOS and Linux.
+Each plugin typically has settings that you can configure to match your organization's needs. Plugins provided with Project Notes store settings in your operating system's user profile:
+- **Windows** — Registry (under `HKEY_CURRENT_USER\Software\Anthropic\ProjectNotes`)
+- **macOS and Linux** — Configuration files in your home directory
 
-The **Base Plugins Settings** script (`base_plugin_settings.py`) contains all of the code to handle the user interface for modifying settings of the base plugins included with Project Notes. Qt Designer forms for these settings are located in the `plugins/forms/` folder.
+Settings persist across application restarts, so you only need to configure them once.
+
+The **Base Plugins Settings** script (`base_plugin_settings.py`) contains the user interface code for managing settings of the standard plugins included with Project Notes. Qt Designer forms for these settings are located in the `plugins/forms/` folder.
 
 Plugins conventionally add menu items to the **Plugins** menu under a **Settings** sub-menu to provide access to their configuration.
 
-## Standard Plugin Settings
+## Variable Replacement in Plugins
 
-The following settings dialogs are available under **Plugins > Settings**:
+Several standard plugins support **variable replacement** — the ability to automatically substitute placeholder values in text, URLs, or file names with actual project data at runtime. This allows you to create flexible, reusable configurations that adapt to different projects without manual editing.
+
+### How Variable Replacement Works
+
+Variable replacement bridges Project Notes data with plugin configurations:
+
+1. **Configuration time** — You define a template with placeholder variables (e.g., a URL with `{project_number}`)
+2. **Runtime** — When the plugin runs, it extracts the relevant data as XML from the current project context
+3. **Substitution** — The plugin replaces placeholders with actual values from the XML
+4. **Execution** — The plugin uses the completed, project-specific value
+
+### Relationship to XML
+
+Project Notes internally represents all data as XML. When you invoke a plugin, the application exports the relevant data (project, person, meeting, etc.) as XML and passes it to the plugin. The plugin uses this XML to:
+
+- Extract field values for variable substitution
+- Determine which variables are available in the current context
+- Replace placeholders with the extracted values
+
+For example, when you right-click a project and invoke a plugin, the project's complete data (including number, name, dates, team members) is exported as XML. The plugin can access any field from that XML using the field's column name as a variable.
+
+### Variable Syntax
+
+Variables use the syntax `[$tablename.columnname.rownumber]` where:
+
+- `[` and `]` — Square brackets containing the variable path
+- `$` — Dollar sign prefix denoting a variable
+- `tablename` — The XML table/element name
+- `columnname` — The column/field name within that table
+- `rownumber` — The row index (starting at 1 for the first/current record)
+
+The variable name must follow the XML tree path from the exported data. For example:
+
+- `[$projects.project_number.1]` — The first project's project number
+- `[$projects.project_name.1]` — The first project's name
+- `[$people.email.1]` — The first person's email address
+- `[$people.name.1]` — The first person's name
+
+### Understanding XML Tree Paths
+
+When you invoke a plugin by right-clicking a record, Project Notes exports that record's data as XML. The XML has a hierarchical structure with parent and child elements. Variables reference specific fields by following this XML tree.
+
+**Example XML structure for a project:**
+
+```xml
+<projects>
+  <row>
+    <column name="project_id">P-001</column>
+    <column name="project_name">Website Redesign</column>
+    <column name="project_status">Active</column>
+    <column name="primary_contact">John Smith</column>
+  </row>
+</projects>
+```
+
+To access these values, you would use:
+- `[$projects.project_id.1]` → "P-001"
+- `[$projects.project_name.1]` → "Website Redesign"
+- `[$projects.project_status.1]` → "Active"
+
+### Available Variables by Context
+
+The available variables depend on the XML structure of the record you right-clicked. For a complete list of available fields and their XML paths for each data type, see the [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) documentation.
+
+Common patterns include:
+
+**When right-clicking a Project:**
+- `[$projects.project_number.1]` — Project number
+- `[$projects.project_name.1]` — Project name
+- `[$projects.project_status.1]` — Project status
+
+**When right-clicking a Person:**
+- `[$people.name.1]` — Person's name
+- `[$people.email.1]` — Person's email address
+- `[$people.office_phone.1]` — Office phone number
+
+**When right-clicking a Meeting/Note:**
+- `[$project_notes.note_title.1]` — Meeting note title
+- Related project data accessible via the XML tree path
+
+### Examples of Variable Replacement
+
+#### Example 1: My Shortcuts with Project Variables
+
+A shortcut URL configured with variables:
+
+```
+https://our-company.com/projects/[$projects.project_number.1]
+```
+
+When you click this shortcut while viewing Project P-001:
+- The XML exports the project data including project_number as "P-001"
+- The placeholder `[$projects.project_number.1]` is replaced with "P-001"
+- The final URL opened is: `https://our-company.com/projects/P-001`
+
+Another example with multiple variables:
+
+```
+https://outlook.office365.com/mail/?folderid=Inbox&searchText=[$projects.project_number.1] [$projects.project_name.1]
+```
+
+When clicked for Project "P-002 Website Redesign":
+- Final URL: `https://outlook.office365.com/mail/?folderid=Inbox&searchText=P-002 Website Redesign`
+- This searches Outlook for emails mentioning the project
+
+#### Example 2: Template Documents with Placeholders
+
+When you create a new document from a template, the plugin searches the document for placeholder tags and replaces them with project values.
+
+Template placeholders are typically formatted as:
+
+```
+<PROJECTNUMBER>
+<PROJECTNAME>
+<DATE>
+```
+
+A Word document might contain:
+
+```
+Project: <PROJECTNUMBER> - <PROJECTNAME>
+Created: <DATE>
+```
+
+After running the "New Change Order" plugin for Project P-003:
+
+```
+Project: P-003 - ERP Implementation
+Created: 03/23/2026
+```
+
+#### Example 3: Email and Recipient Configuration
+
+When exporting meeting notes and sending via email, the plugin uses project data to populate the subject line:
+
+Template:
+```
+Meeting Minutes - {project_number} {project_name} - {reporting_date}
+```
+
+For Project P-001 (Sample Project) on 03/23/2026:
+```
+Subject: Meeting Minutes - P-001 Sample Project - 03/23/2026
+```
+
+
+### Common Plugin Settings Examples
+
+#### Outlook Integration Settings
+
+| Setting | Example Value | Purpose |
+| :--- | :--- | :--- |
+| **Integration Type** | Office 365 Application | Use Graph API instead of Outlook COM |
+| **Client ID** | a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6 | Azure AD app ID for OAuth |
+| **Tenant ID** | f1e2d3c4-b5a6-4978-c9d0-e1f2a3b4c5d6 | Azure AD tenant for your organization |
+
+#### File Collector Settings
+
+| Setting | Example Value | Purpose |
+| :--- | :--- | :--- |
+| **Search Location 1** | \\company\projects | Root folder to scan for project files |
+| **Search Location 2** | C:\Users\{username}\Documents | User's local documents folder |
+| **Classification: PDF** | Contract (.pdf) | Files ending in .pdf are marked as "Contract" type |
+| **Classification: Mpp** | Project Plan (.mpp) | Files ending in .mpp are marked as "Project Plan" type |
+
+#### Export Meeting Notes Settings
+
+| Setting | Example Value | Purpose |
+| :--- | :--- | :--- |
+| **Sub-folder** | Meeting Minutes | Save exports to `[Project Folder]/Meeting Minutes/` |
+
+#### New Document Templates Settings
+
+| Setting | Example Value | Purpose |
+| :--- | :--- | :--- |
+| **New Change Order** | Change Orders | Save to `[Project Folder]/Change Orders/` |
+| **New MS Project** | Planning | Save to `[Project Folder]/Planning/` |
+| **New Risk Register** | Risk Management | Save to `[Project Folder]/Risk Management/` |
+
+#### My Shortcuts Examples
+
+| Menu | Submenu | Data Type | URL |
+| :--- | :--- | :--- | :--- |
+| Open in Jira | Project Tools | projects | https://jira.company.com/projects/[$projects.project_number.1] |
+| Email Contact | Utilities | people | mailto:[$people.email.1]?subject=Project Questions |
+| View in SharePoint | Resources | projects | https://company.sharepoint.com/sites/[$projects.project_number.1] |
+| Chat with Team | Communication | projects | https://teams.microsoft.com/l/channel/19%3a[$projects.project_number.1] |
+
+The variable `[$projects.project_number.1]` in the URL is replaced with the actual project number from the right-clicked project. The XML path notation ensures the plugin accesses the correct field from the exported XML data.
+
+## Standard Plugin Settings
 
 | Settings Entry | Plugin | Description |
 | :--- | :--- | :--- |
@@ -29,6 +276,3 @@ The following settings dialogs are available under **Plugins > Settings**:
 | **New PowerPoint** | New PowerPoint | Configure the sub-folder for new PowerPoint presentations. |
 | **New Risk Register** | New Risk Register | Configure the sub-folder for new Risk Register files. |
 
-## Enabling and Disabling Plugins
-
-See [Plugins Menu](<../InterfaceOverview/PluginsMenu.md>) for information on enabling and disabling individual plugins.

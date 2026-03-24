@@ -1,33 +1,354 @@
 # Adding Functionality to Project Notes
 
-Project Notes includes a number of standard Python plugins. These plugins can be copied and modified in order to suit the needs of your organization. It is recommended that you build your own installation that includes your custom plugins as well as additional instructions.
+Project Notes is designed to be extended with custom functionality using Python plugins. The application includes a number of standard plugins that can be copied and modified for your organization's needs. It is recommended that you build your own installation that includes custom plugins tailored to your workflow.
 
-Functionality can be extended using the [Python](<http://www.python.org>) scripting language to process input XML from Project Notes and return XML. Extensions are generally accessed from right-click menus and the Plugins menu. Some extensions can be added to startup and shutdown as well as regularly occurring timers. Project Notes is distributed with the Python run time. The [Qt](<http://qt.io>) framework is distributed is included as well. Project Notes is written based upon the Qt framework in order to make it a cross platform application. In order to take advantage of the Qt framework in plugins the [PyQt6](<http://https://www.riverbankcomputing.com/software/pyqt/>) module for Python is also distributed with Project Notes.
+## Plugin Basics
 
-For documentation on the Qt framework see [https://doc.qt.io/qt-6/index.html.](<https://doc.qt.io/qt-6/index.html>)
+Functionality is extended using the [Python](<http://www.python.org>) scripting language to process input XML from Project Notes and return XML. Extensions are accessed from right-click menus, the Plugins menu, and can be triggered on startup, shutdown, or at regular intervals using timers.
 
-For examples on how to use PyQt6 see [https://build-system.fman.io/pyqt6-tutorial](<https://build-system.fman.io/pyqt6-tutorial>)
+Project Notes includes the Python runtime, the [Qt](<http://qt.io>) framework, and the [PyQt6](<https://www.riverbankcomputing.com/software/pyqt/>) module for Python. This allows plugins to access the full Qt framework for building user interfaces and leveraging cross-platform capabilities.
 
-### Muiltithreading
+**For Qt framework documentation:** [https://doc.qt.io/qt-6/index.html](<https://doc.qt.io/qt-6/index.html>)
 
-There are two fundamental types of plugins main thread and background threads. The main thread plugins reside in the "plugins" folder and can display user interface elements.  Background threads reside in the threads folder and should not display user interface items. The Qt framework does not support messaging UI elements in background threads.  Both plugin types are based upon Python scripting, however each require different elements to be present within the script.
+**For PyQt6 tutorials:** [https://build-system.fman.io/pyqt6-tutorial](<https://build-system.fman.io/pyqt6-tutorial>)
 
-### Python Script File Locations
+## Plugin Architecture
 
-When Project Notes starts it looks into the "plugins" and "threads" folder and executes all files ending in ".py". Events are customized when their corresponding functions are defined in a Python plugin.
+### Two Types of Plugins: Main Thread vs Background Threads
 
-### Python Script File Structures
+Project Notes supports two fundamentally different types of plugins:
 
-Python script files follow a general format. This helps to quickly find code when modifying or debugging the script. In most cases, an existing script can be copied to create a new plugin.
+**Main Thread Plugins (plugins folder)**
+- Reside in the `plugins` folder
+- Execute on the Qt main thread
+- Can display user interface elements (dialogs, windows, message boxes)
+- Have access to Qt GUI classes via PyQt6
+- Used for interactive tools, settings dialogs, and user-facing features
 
-### Plugin Naming
-The global variables pluginname and plugindescription are the plugin name and description are used to identify plugins internally.  The plugin name is used to name the configuration group. The configuration group in the Windows registy or Linux and MacOS configuation files is where a plugins settings are stored.  Below is an example of how these variables are defined in Python.
+**Background Thread Plugins (threads folder)**
+- Reside in the `threads` folder
+- Execute in a separate worker thread
+- Cannot display any user interface elements
+- Must not interact with Qt GUI classes from the background thread
+- Used for long-running tasks, timers, and automated processes
+- Can write results back to the database using the `projectnotes` module
+
+### Why GUI Elements Cannot Be in Background Threads
+
+The Qt framework is not thread-safe for GUI operations. All GUI element creation and manipulation must happen on the main Qt thread. If you attempt to create GUI elements (dialogs, buttons, windows) from a background thread, the application will crash or exhibit unpredictable behavior.
+
+If a background thread plugin needs to display information or get user input, it should:
+1. Prepare the data needed
+2. Write the results to the database using `projectnotes.update_data()`
+3. Let the user interact with the main thread UI to view or modify the results
+
+### Plugin File Locations
+
+When Project Notes starts, it automatically:
+1. Scans the `plugins` folder for `.py` files and executes them
+2. Scans the `threads` folder for `.py` files and executes them
+3. Looks for event handler functions in each plugin (if defined)
+4. Registers menu items defined in `pluginmenus` variables
+
+Any changes made to `.py` files in these folders are automatically detected, and the plugin is reloaded. You do not need to restart Project Notes to test plugin changes.
+
+### Auto-Reload on File Changes
+
+Project Notes monitors the `plugins` and `threads` folders for changes. When you save a modified `.py` file:
+1. The old plugin is unloaded (the `event_shutdown` function is called if defined)
+2. The new version of the plugin is loaded
+3. The `event_startup` function is called if defined
+4. Menu items are re-registered with the new definitions
+
+This allows rapid development and testing. You can edit a plugin, save it, and immediately test the changes in the UI without restarting the application.
+
+**Important:** If your plugin has syntax errors, the reload will fail and an error message will appear. Fix the syntax error, save the file again, and the plugin will reload when the syntax is correct.
+
+## Required Plugin Structure and Global Variables
+
+Every plugin must define certain global variables that Project Notes uses to identify the plugin, configure its behavior, and register its menu items. These variables are read when the plugin is loaded.
+
+### Essential Global Variables
+
+Every plugin must include these variables:
 
 ```python
-# Project Notes Plugin Parameters
-pluginname = "Base Plugins Settings" # name used in the menu
-plugindescription = "This plugin provide settigns input for the base install set of plugins. Supported platforms: Windows, Linux, MacOS"
+# Plugin identification (REQUIRED)
+pluginname = "My Plugin Name"
+plugindescription = "Brief description of what this plugin does. Supported platforms: Windows, Linux, MacOS"
+pluginmenus = []  # List of menu items (can be empty)
 ```
+
+**pluginname** — A unique name used to identify the plugin throughout Project Notes. This name is used as the configuration group in QSettings (see Settings Storage section below). It appears in the Plugins menu and in log output. Choose a descriptive name that won't conflict with other plugins.
+
+**plugindescription** — A brief description of the plugin's purpose and which platforms it supports. This should clearly explain what the plugin does and any platform-specific behavior.
+
+**pluginmenus** — A Python list of dictionaries that define menu items for the plugin (see Plugin Menu Customization section below). This can be an empty list if the plugin only uses events and doesn't add menu items.
+
+### Optional Global Variables
+
+For timer-based plugins in the `threads` folder:
+
+```python
+plugintimerevent = 1  # Timer interval in minutes (default: 1)
+```
+
+**plugintimerevent** — Specifies how frequently the `event_timer` function is called, in minutes. If not defined, the default is 1 minute. This is only relevant for plugins in the `threads` folder.
+
+### Settings Storage with QSettings
+
+Plugin settings are persisted to disk using Qt's QSettings mechanism. On Windows, settings are stored in the registry under `HKEY_CURRENT_USER\Software\Anthropic\ProjectNotes\<pluginname>`. On Linux and macOS, they are stored in configuration files in the user's home directory.
+
+Settings are key-value pairs that survive application restarts. The typical workflow is:
+
+1. Load settings when the plugin starts or when a settings dialog is opened
+2. Allow the user to modify settings via a dialog
+3. Save settings back to QSettings
+4. Use the settings to control plugin behavior
+
+### Storing Settings in Your Plugin
+
+Use the `ProjectNotesCommon` class to interact with settings:
+
+```python
+from includes.common import ProjectNotesCommon
+
+class MyPlugin:
+    def __init__(self):
+        self.pnc = ProjectNotesCommon()
+        self.pluginname = "My Plugin Name"
+
+        # Load a setting (returns empty string if not found)
+        self.my_setting = self.pnc.get_plugin_setting("SettingName", self.pluginname)
+
+        # Save a setting
+        self.pnc.set_plugin_setting("SettingName", "value", self.pluginname)
+```
+
+**get_plugin_setting(key, pluginname)** — Retrieves a setting value from QSettings. Returns an empty string if the key doesn't exist.
+
+**set_plugin_setting(key, value, pluginname)** — Stores a setting value in QSettings.
+
+### Best Practice: Providing a Settings Dialog
+
+The standard practice is to create a settings dialog that allows users to configure your plugin. This dialog should be accessible from the **Plugins > Settings > [Your Plugin Name]** menu item.
+
+A typical settings dialog:
+
+1. Loads current settings from QSettings when the dialog opens
+2. Displays controls (text fields, dropdowns, checkboxes) for each setting
+3. When the user clicks OK/Save, writes the settings back to QSettings
+4. Updates the running plugin behavior with the new settings
+
+Example menu definition:
+
+```python
+pluginmenus = [
+    {
+        "menutitle": "My Plugin Settings",
+        "function": "show_settings_dialog",
+        "tablefilter": "",
+        "submenu": "Settings",
+        "dataexport": "",
+        "parameter": ""
+    }
+]
+
+def show_settings_dialog(parameter=None):
+    dialog = MyPluginSettingsDialog()
+    dialog.exec()  # Shows the dialog and waits for user action
+```
+
+The settings dialog (using PyQt6) might look like:
+
+```python
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton
+
+class MyPluginSettingsDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.pnc = ProjectNotesCommon()
+        self.pluginname = "My Plugin Name"
+        self.init_ui()
+        self.load_settings()
+
+    def init_ui(self):
+        layout = QVBoxLayout()
+
+        layout.addWidget(QLabel("Setting 1:"))
+        self.setting1_input = QLineEdit()
+        layout.addWidget(self.setting1_input)
+
+        save_button = QPushButton("Save")
+        save_button.clicked.connect(self.save_settings)
+        layout.addWidget(save_button)
+
+        self.setLayout(layout)
+        self.setWindowTitle("My Plugin Settings")
+
+    def load_settings(self):
+        """Load settings from QSettings and populate the dialog"""
+        setting1 = self.pnc.get_plugin_setting("Setting1", self.pluginname)
+        self.setting1_input.setText(setting1)
+
+    def save_settings(self):
+        """Save settings from the dialog to QSettings"""
+        self.pnc.set_plugin_setting("Setting1", self.setting1_input.text(), self.pluginname)
+        self.accept()  # Close the dialog
+```
+
+This pattern makes your plugin configurable and user-friendly, with settings that persist across application restarts.
+
+## Embedded Python Functions
+
+Project Notes exposes the following functions to plugins through the `projectnotes` module:
+
+### projectnotes.update_data(xml_string)
+
+Inserts, updates, or deletes records in the database by processing XML. This is the primary way plugins modify the database.
+
+**Parameters:**
+- `xml_string` — An XML string containing the data to import (see XML format examples below)
+
+**Returns:** Nothing (but may trigger UI updates in Project Notes)
+
+**How it works:**
+1. Records are matched by their `id` attribute if present
+2. If no `id` is present, records are matched by unique columns (like `name` or `project_number`)
+3. Matching records are updated with the new values
+4. Non-matching records are inserted as new records
+5. Records with `delete="true"` are deleted from the database
+
+**Example:**
+
+```python
+import projectnotes
+
+# Update or insert a person
+contact_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes>
+<table name="people">
+    <row id="{3a5adf23-3af4-40c6-bb3c-3ed5baaec0a5}">
+        <column name="people_id">{3a5adf23-3af4-40c6-bb3c-3ed5baaec0a5}</column>
+        <column name="name">John Smith</column>
+        <column name="email">john@company.com</column>
+    </row>
+</table>
+</projectnotes>"""
+
+projectnotes.update_data(contact_xml)
+```
+
+### projectnotes.get_data(xml_string)
+
+Retrieves records from the database as XML. Used to fetch data for processing.
+
+**Parameters:**
+- `xml_string` — An XML string specifying which tables and filters to retrieve (see examples below)
+
+**Returns:** An XML string containing the matching records
+
+**How it works:**
+1. Specify which tables to query using `<table name="...">` elements
+2. Filter results using `filter_field_#` and `filter_value_#` attributes
+3. Use `LIKE` syntax for partial matches (e.g., `name LIKE "A%"` finds names starting with A)
+4. Use `skip` and `top` for pagination
+5. The returned XML includes all related child records
+
+**Example:**
+
+```python
+import projectnotes
+
+# Fetch all people whose names start with "A"
+query_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes>
+<table name="people" filter_field_1="name" filter_value_1="A%"/>
+</projectnotes>"""
+
+result_xml = projectnotes.get_data(query_xml)
+print(result_xml)
+
+# Fetch specific clients with pagination
+query_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes>
+<table name="clients" filter_field_1="name" filter_value_1="%" skip="5" top="10"/>
+</projectnotes>"""
+
+result_xml = projectnotes.get_data(query_xml)
+```
+
+## Understanding the Delete Attribute: Dangers and Best Practices
+
+The `delete="true"` attribute in XML allows plugins to delete records from the database. However, using this feature requires careful consideration of database foreign key relationships.
+
+### The Danger of Using Delete Without Care
+
+Every record in the database may have related records in other tables. For example:
+
+- **A Person** may have related records in `meeting_attendees` table (meetings they attended)
+- **A Project** may have related records in `project_notes`, `item_tracker`, `meeting_attendees`, `project_locations`, `project_people`, etc.
+- **A Meeting Note** may have related `item_tracker` (action items) and `meeting_attendees` records
+
+**If you delete a parent record without deleting its related child records, you create orphaned records with broken foreign key relationships.** This can cause:
+
+- UI errors when trying to display the orphaned records
+- Export errors when the orphaned records cannot find their parent
+- Data integrity issues and inconsistent state
+
+### Safe Deletion Practice
+
+When deleting a record, you must either:
+
+1. **Delete all related child records first** — Include all related records in your delete XML
+2. **Use the Filter Tool to remove relationships first** — Update child records to remove the relationship before deleting the parent
+
+**Example of safe deletion:**
+
+```python
+import projectnotes
+
+# SAFE: Delete a person AND all their related meeting attendee records
+delete_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes>
+<table name="meeting_attendees">
+    <row delete="true">
+        <column name="people_id">{person-id}</column>
+    </row>
+</table>
+<table name="people">
+    <row delete="true" id="{person-id}">
+        <column name="people_id">{person-id}</column>
+    </row>
+</table>
+</projectnotes>"""
+
+projectnotes.update_data(delete_xml)
+```
+
+**Example of unsafe deletion:**
+
+```python
+# UNSAFE: Deleting a person without deleting their meeting attendee records
+# This leaves orphaned records in meeting_attendees pointing to a non-existent person!
+delete_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<projectnotes>
+<table name="people">
+    <row delete="true" id="{person-id}">
+        <column name="people_id">{person-id}</column>
+    </row>
+</table>
+</projectnotes>"""
+
+projectnotes.update_data(delete_xml)  # DANGEROUS - orphans created!
+```
+
+### Best Practice Recommendation
+
+Unless you have a specific reason to delete records, consider:
+- **Marking records as inactive or archived** instead of deleting them
+- **Creating a data cleanup script** that safely handles deletions with proper foreign key checks
+- **Testing deletions thoroughly** with sample data before deploying to production
 
 ### Plugin Menu Customization
 

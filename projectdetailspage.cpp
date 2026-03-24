@@ -213,4 +213,8 @@ void ProjectDetailsPage::setButtonAndMenuStates()
     ui->labelBCWS->setVisible(show_internal);
     ui->labelBudget->setVisible(show_internal);
     ui->labelActual->setVisible(show_internal);
+
+    ui->tableViewProjectNotes->setColumnHidden(5, !show_internal);
+    if (show_internal)
+        ui->tableViewProjectNotes->resizeColumnToContents(5);
 }

@@ -62,6 +62,7 @@ public:
     bool navigateAtStart() { return (m_navigationLocation <= 0); }
     void buildHistory(HistoryNode* node);
     void navigateClearHistory() { m_navigationLocation = -1; qDeleteAll(m_forwardBackHistory); m_forwardBackHistory.clear(); }
+    void cleanNavigationHistory(const QVariant& recordId);
     BasePage* navigateCurrentPage() { return ((m_forwardBackHistory.count() - 1) < m_navigationLocation || m_navigationLocation == -1 ? nullptr : m_forwardBackHistory.at(m_navigationLocation)->m_page ); }
     static PluginManager* getPluginManager() { return m_pluginManager; }
     void CloseDatabase();

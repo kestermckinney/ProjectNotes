@@ -96,3 +96,7 @@ When you run the export, a dialog appears with the following options:
 1. From the **Plugins** menu, choose **Settings > Export Tracker Items**.
 2. Enter the sub-folder name relative to the project folder where reports should be saved.
 3. Click **OK**.
+
+## Related Documentation
+
+- [Tracker Report Generation](<TrackerReportGeneration.md>) — Complete guide to tracker item report options, including Windows Excel-based reporting

@@ -42,6 +42,7 @@ public:
     virtual void buildPluginMenu(PluginManager* pm, QMenu* menu);
     void setRecordId(QVariant recordId) { m_recordId = recordId; }
     QVariant getRecordId() { return m_recordId; }
+    QVariantList getSelectedRecordIds();
 
 public slots:
     void slotPluginMenu(Plugin* plugin, const QString& functionname, const QString& tablefilter, const QString& parameter);

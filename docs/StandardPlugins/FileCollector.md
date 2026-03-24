@@ -39,3 +39,7 @@ Classification rules determine how files are categorized when added to the Artif
 - The File Collector only adds files; it does not remove or modify existing Artifact entries.
 - Files are added with the **Project Folder** artifact type when a matching project folder is found.
 - The plugin runs only while Project Notes is open.
+
+## Related Documentation
+
+- [Standard Plugins Overview](<PluginSettings.md>) — Complete list of all standard plugins and their configuration options

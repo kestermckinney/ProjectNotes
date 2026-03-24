@@ -11,6 +11,7 @@
 #include "databaseupgrade_v1_2_0.h"
 #include "databaseupgrade_v5_0_0.h"
 #include "databaseupgrade_v5_0_1.h"
+#include "databaseupgrade_v5_0_3.h"
 
 bool DatabaseStructure::CreateDatabase()
 {
@@ -60,6 +61,9 @@ bool DatabaseStructure::UpgradeDatabase()
 
     if (currentversion == "5.0.0" || currentversion == "4.1.0" || currentversion == "1.2.0" || currentversion == "1.0.0")
         db_UpgradeStep_v5_0_1();
+
+    if (currentversion == "5.0.2" || currentversion == "5.0.1" || currentversion == "5.0.0" || currentversion == "4.1.0" || currentversion == "1.2.0" || currentversion == "1.0.0")
+        db_UpgradeStep_v5_0_3();
 
     // Recreate all views as final step (always uses current column names)
     db_CreateAllViews();

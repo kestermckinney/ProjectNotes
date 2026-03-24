@@ -911,7 +911,7 @@ bool SqlQueryModel::isUniqueValue(const QVariant &newValue, const QModelIndex &i
         keyvalue = m_cache[index.row()][0].toString();
 
     QSqlQuery select(getDBOs()->getDb());
-    select.prepare("select count(*) from " + m_tablename + " where " + keycolumnname + " <> ? and " + columnname + " = ?");
+    select.prepare("select count(*) from " + m_tablename + " where " + keycolumnname + " <> ? and " + columnname + " = ? AND deleted = 0");
     select.bindValue(0, keyvalue);
     select.bindValue(1, newValue);
 
@@ -2258,7 +2258,7 @@ bool SqlQueryModel::checkUniqueKeys(const QModelIndex &index, const QVariant &va
         // if the field we are checking is relevent check it
         if (isrelevent)
         {
-            where = QString("select count(*) from %1 where ").arg(tablename()) + where;
+            where = QString("select count(*) from %1 where ").arg(tablename()) + where + " AND deleted = 0";
 
             //qDebug() << "Verifying Unique:  " << where;
 

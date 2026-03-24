@@ -853,6 +853,56 @@ void MainWindow::buildHistory(HistoryNode* node)
     m_pageHistory.push(hn);
 }
 
+void MainWindow::cleanNavigationHistory(const QVariant& recordId)
+{
+    // Remove from page history menu stack
+    int i = 0;
+    while (i < m_pageHistory.count())
+    {
+        if (m_pageHistory.at(i)->m_recordId == recordId)
+        {
+            delete m_pageHistory.at(i);
+            m_pageHistory.remove(i);
+        }
+        else
+            i++;
+    }
+
+    // Remove from back/forward stack, adjusting m_navigationLocation for
+    // any removed entries that were before the current position
+    i = 0;
+    while (i < m_forwardBackHistory.count())
+    {
+        if (m_forwardBackHistory.at(i)->m_recordId == recordId)
+        {
+            delete m_forwardBackHistory.at(i);
+            m_forwardBackHistory.remove(i);
+            if (i <= m_navigationLocation)
+                m_navigationLocation--;
+        }
+        else
+            i++;
+    }
+
+    // Clamp navigationLocation to valid range
+    if (m_navigationLocation >= m_forwardBackHistory.count())
+        m_navigationLocation = m_forwardBackHistory.count() - 1;
+
+    // Rebuild the history menu and update button states
+    ui->menuHistory->clear();
+    int hi = m_pageHistory.count();
+    while (hi)
+    {
+        hi--;
+        HistoryNode* hn = m_pageHistory.at(hi);
+        QString title = QString("%1 - %2").arg(hn->m_pagetitle, hn->m_timestamp.toString("MM/dd/yy hh:mm"));
+        QAction* ha = ui->menuHistory->addAction(title, [hn, this](){ navigateToPage(hn->m_page, hn->m_recordId); });
+        ha->setPriority(QAction::LowPriority);
+    }
+
+    setButtonAndMenuStates();
+}
+
 void MainWindow::CloseDatabase()
 {
     // Shut down background sync before closing the database.
@@ -955,7 +1005,12 @@ void MainWindow::on_actionCopy_Item_triggered()
 void MainWindow::on_actionDelete_Item_triggered()
 {
     if ( navigateCurrentPage() )
+    {
+        QVariantList deletedIds = navigateCurrentPage()->getSelectedRecordIds();
         navigateCurrentPage()->deleteItem();
+        for (const QVariant& id : deletedIds)
+            cleanNavigationHistory(id);
+    }
 }
 
 void MainWindow::slotOpen_ProjectDetails_triggered(QVariant recordId)

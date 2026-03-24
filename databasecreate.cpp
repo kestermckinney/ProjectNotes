@@ -24,16 +24,14 @@ void db_CreateNewDatabase()
         CREATE INDEX app_set_name on application_settings (parameter_name);
     )");
 
-    // Application version table
+    // Application version table — no syncdate/deleted so SqliteSyncPro does not sync it
     global_DBObjects.execute(R"(
         CREATE TABLE application_version(
             id              TEXT PRIMARY KEY
             UNIQUE
             NOT NULL,
             current_version TEXT,
-            updateddate     INTEGER,
-            syncdate        INTEGER,
-            deleted         INTEGER DEFAULT 0
+            updateddate     INTEGER
         );
     )");
 
@@ -43,8 +41,7 @@ void db_CreateNewDatabase()
             id          TEXT PRIMARY KEY
                              UNIQUE
                              NOT NULL,
-            client_name TEXT UNIQUE
-                             NOT NULL,
+            client_name TEXT NOT NULL,
             updateddate INTEGER,
             syncdate    INTEGER,
             deleted     INTEGER DEFAULT 0
@@ -53,6 +50,10 @@ void db_CreateNewDatabase()
 
     global_DBObjects.execute(R"(
         CREATE INDEX client_name on clients (client_name);
+    )");
+
+    global_DBObjects.execute(R"(
+        CREATE UNIQUE INDEX idx_clients_client_name ON clients (client_name) WHERE deleted = 0;
     )");
 
     // Item tracker table
@@ -78,9 +79,7 @@ void db_CreateNewDatabase()
             internal_item   INTEGER,
             updateddate     INTEGER,
             syncdate        INTEGER,
-            deleted         INTEGER DEFAULT 0,
-            UNIQUE("project_id","item_number"),
-            UNIQUE("project_id","item_name")
+            deleted         INTEGER DEFAULT 0
         );
     )");
 
@@ -98,6 +97,14 @@ void db_CreateNewDatabase()
 
     global_DBObjects.execute(R"(
         CREATE INDEX traker_internal on item_tracker (internal_item);
+    )");
+
+    global_DBObjects.execute(R"(
+        CREATE UNIQUE INDEX idx_item_tracker_proj_num ON item_tracker (project_id, item_number) WHERE deleted = 0;
+    )");
+
+    global_DBObjects.execute(R"(
+        CREATE UNIQUE INDEX idx_item_tracker_proj_name ON item_tracker (project_id, item_name) WHERE deleted = 0;
     )");
 
     // Item tracker updates table
@@ -130,13 +137,16 @@ void db_CreateNewDatabase()
             person_id   TEXT,
             updateddate INTEGER,
             syncdate    INTEGER,
-            deleted     INTEGER DEFAULT 0,
-            UNIQUE("note_id","person_id")
+            deleted     INTEGER DEFAULT 0
         );
     )");
 
     global_DBObjects.execute(R"(
         CREATE INDEX meeting_attend_note on meeting_attendees (note_id);
+    )");
+
+    global_DBObjects.execute(R"(
+        CREATE UNIQUE INDEX idx_meeting_attendees_note_person ON meeting_attendees (note_id, person_id) WHERE deleted = 0;
     )");
 
     // People table
@@ -153,15 +163,16 @@ void db_CreateNewDatabase()
             role         TEXT,
             updateddate  INTEGER,
             syncdate     INTEGER,
-            deleted      INTEGER DEFAULT 0,
-            UNIQUE (
-                name ASC
-            )
+            deleted      INTEGER DEFAULT 0
         );
     )");
 
     global_DBObjects.execute(R"(
         CREATE INDEX person_name on people (name);
+    )");
+
+    global_DBObjects.execute(R"(
+        CREATE UNIQUE INDEX idx_people_name ON people (name) WHERE deleted = 0;
     )");
 
     // Project locations table
@@ -176,14 +187,16 @@ void db_CreateNewDatabase()
             full_path            TEXT,
             updateddate          INTEGER,
             syncdate             INTEGER,
-            deleted              INTEGER DEFAULT 0,
-            UNIQUE("project_id","id"),
-            UNIQUE("project_id","location_description")
+            deleted              INTEGER DEFAULT 0
         );
     )");
 
     global_DBObjects.execute(R"(
         CREATE INDEX location_project on project_locations (project_id);
+    )");
+
+    global_DBObjects.execute(R"(
+        CREATE UNIQUE INDEX idx_project_locations_proj_desc ON project_locations (project_id, location_description) WHERE deleted = 0;
     )");
 
     // Project notes table
@@ -223,13 +236,16 @@ void db_CreateNewDatabase()
             receive_status_report INTEGER,
             updateddate           INTEGER,
             syncdate              INTEGER,
-            deleted               INTEGER DEFAULT 0,
-            UNIQUE("project_id","people_id")
+            deleted               INTEGER DEFAULT 0
         );
     )");
 
     global_DBObjects.execute(R"(
         CREATE INDEX proj_people_project on project_people (project_id);
+    )");
+
+    global_DBObjects.execute(R"(
+        CREATE UNIQUE INDEX idx_project_people_proj_person ON project_people (project_id, people_id) WHERE deleted = 0;
     )");
 
     // Project risks table
@@ -262,8 +278,7 @@ void db_CreateNewDatabase()
                                          UNIQUE
                                          NOT NULL,
             project_number       TEXT,
-            project_name         TEXT    NOT NULL
-                                         UNIQUE,
+            project_name         TEXT    NOT NULL,
             last_status_date     INTEGER,
             last_invoice_date    INTEGER,
             primary_contact      TEXT,
@@ -278,15 +293,20 @@ void db_CreateNewDatabase()
             project_status       TEXT,
             updateddate          INTEGER,
             syncdate             INTEGER,
-            deleted              INTEGER DEFAULT 0,
-            UNIQUE (
-                project_number ASC
-            )
+            deleted              INTEGER DEFAULT 0
         );
     )");
 
     global_DBObjects.execute(R"(
         CREATE INDEX proj_status on projects (project_status);
+    )");
+
+    global_DBObjects.execute(R"(
+        CREATE UNIQUE INDEX idx_projects_name ON projects (project_name) WHERE deleted = 0;
+    )");
+
+    global_DBObjects.execute(R"(
+        CREATE UNIQUE INDEX idx_projects_number ON projects (project_number) WHERE deleted = 0;
     )");
 
     // Status report items table
@@ -300,13 +320,16 @@ void db_CreateNewDatabase()
             task_description TEXT NOT NULL,
             updateddate      INTEGER,
             syncdate         INTEGER,
-            deleted          INTEGER DEFAULT 0,
-            UNIQUE("task_description","project_id")
+            deleted          INTEGER DEFAULT 0
         );
     )");
 
     global_DBObjects.execute(R"(
         CREATE INDEX stat_project on status_report_items (project_id);
+    )");
+
+    global_DBObjects.execute(R"(
+        CREATE UNIQUE INDEX idx_status_report_items_desc_proj ON status_report_items (task_description, project_id) WHERE deleted = 0;
     )");
 
     // Triggers — on data changes: stamp updateddate and clear syncdate so the row is queued for sync.
@@ -317,15 +340,6 @@ void db_CreateNewDatabase()
         WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE application_settings SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
-            WHERE id = NEW.id;
-        END;
-    )");
-
-    global_DBObjects.execute(R"(
-        CREATE TRIGGER trg_application_version_updated AFTER UPDATE ON application_version
-        WHEN NEW.syncdate IS OLD.syncdate
-        BEGIN
-            UPDATE application_version SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
         END;
     )");

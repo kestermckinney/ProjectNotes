@@ -240,6 +240,26 @@ void BasePage::newRecord()
     getCurrentView()->scrollTo(sort_index, QAbstractItemView::PositionAtCenter);
 }
 
+QVariantList BasePage::getSelectedRecordIds()
+{
+    QVariantList ids;
+    if (!getCurrentView() || !getCurrentModel())
+        return ids;
+
+    SqlQueryModel* sourceModel = dynamic_cast<SqlQueryModel*>(getCurrentModel()->sourceModel());
+    if (!sourceModel)
+        return ids;
+
+    for (const QModelIndex& proxyIdx : getCurrentView()->selectionModel()->selectedRows())
+    {
+        QModelIndex sourceIdx = getCurrentModel()->mapToSource(proxyIdx);
+        QVariant id = sourceModel->data(sourceModel->index(sourceIdx.row(), 0));
+        if (!id.isNull())
+            ids.append(id);
+    }
+    return ids;
+}
+
 void BasePage::deleteItem()
 {
     QModelIndexList qi = getCurrentView()->selectionModel()->selectedRows();

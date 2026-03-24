@@ -55,14 +55,16 @@ void PreferencesDialog::showEvent(QShowEvent *ev)
 
         QVariant client_id = global_DBObjects.getManagingCompany();
         QString client_name = client_model->findValue(client_id, 0, 1).toString();
-        ui->comboBoxManagerCompany->setCurrentText(client_name);
+        int client_idx = ui->comboBoxManagerCompany->findText(client_name);
+        ui->comboBoxManagerCompany->setCurrentIndex(client_idx >= 0 ? client_idx : 0);
 
         SqlQueryModel *people_model = static_cast<SqlQueryModel*>(ui->comboBoxProjectManager->model());
         people_model->refresh();
 
         QVariant people_id = global_DBObjects.getProjectManager();
         QString people_name = people_model->findValue(people_id, 0, 1).toString();
-        ui->comboBoxProjectManager->setCurrentText(people_name);
+        int people_idx = ui->comboBoxProjectManager->findText(people_name);
+        ui->comboBoxProjectManager->setCurrentIndex(people_idx >= 0 ? people_idx : 0);
     }
 
     QDialog::showEvent(ev);
