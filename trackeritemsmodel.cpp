@@ -165,10 +165,6 @@ QVariant TrackerItemsModel::data(const QModelIndex &index, int role) const
 void TrackerItemsModel::prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex)
 {
     QVariant project_id = data(this->index(sourceIndex.row(), 14));
+    newrecord[3] = QString("Copy of %1").arg(newrecord[3].toString());
     newrecord[1] = getNextItemNumber(project_id);
-}
-
-const QModelIndex TrackerItemsModel::copyRecord(QModelIndex index)
-{
-    return SqlQueryModel::copyRecord(index);
 }

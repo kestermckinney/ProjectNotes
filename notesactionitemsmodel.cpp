@@ -82,3 +82,28 @@ const QModelIndex NotesActionItemsModel::newRecord(const QVariant* fkValue1, con
     return addRecord(qr);
 }
 
+void NotesActionItemsModel::prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex)
+{
+    QVariant project_id = data(this->index(sourceIndex.row(), 14));
+    newrecord[3] = QString("Copy of %1").arg(newrecord[3].toString());
+    newrecord[1] = getNextItemNumber(project_id);
+}
+
+QVariant NotesActionItemsModel::getNextItemNumber(const QVariant& projectId)
+{
+    // determine the max item_number from the database, then determine the max number from the record cache in case new unsaved records were added
+    QString itemnumber_string = getDBOs()->execute(QString("select max(CAST(item_number as integer)) from item_tracker where project_id = '%1'").arg(projectId.toString()));
+    int itemnumber_int = itemnumber_string.toInt();
+
+    for ( int i = 0; i < rowCount(QModelIndex()); i++ )
+    {
+        int testnumber = data(this->index(i, 1)).toInt();
+        if (testnumber > itemnumber_int)
+            itemnumber_int = testnumber;
+    }
+
+    itemnumber_int++;  // set one above the max
+
+    return QVariant(QString("%1").arg(itemnumber_int, 4, 10, QLatin1Char('0')));
+}
+

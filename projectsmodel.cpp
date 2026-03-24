@@ -5,6 +5,7 @@
 #include "projectsmodel.h"
 
 #include <QRegularExpression>
+#include <QUuid>
 #include "QLogger.h"
 #include "QLoggerWriter.h"
 
@@ -217,33 +218,53 @@ bool ProjectsModel::setData(const QModelIndex &index, const QVariant &value, int
     return result;
 }
 
+void ProjectsModel::prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex)
+{
+    // Copy columns 5-14; let base class handle making columns 1-2 unique
+    for (int col = 5; col <= 14; ++col)
+        newrecord[col] = data(this->index(sourceIndex.row(), col));
+}
+
 const QModelIndex ProjectsModel::copyRecord(QModelIndex index)
 {
-    QVector<QVariant> qr = emptyrecord();
-    QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
     const int row = index.row();
-
-    qr[1] = QString("Copy [%2] of %1").arg(data(this->index(row, 1)).toString(), unique_stamp);
-    qr[2] = QString("Copy [%2] of %1").arg(data(this->index(row, 2)).toString(), unique_stamp);
-    for (int col = 5; col <= 14; ++col)
-        qr[col] = data(this->index(row, col));
-
-    QModelIndex qi = addRecord(qr);
-    setData(this->index(qi.row(), 3), QVariant(), Qt::EditRole); // force a write to the database
-
     const QString oldid = data(this->index(row, 0)).toString();
-    const QString newid = data(this->index(qi.row(), 0)).toString();
 
-    const QString insert = QString(
-        "INSERT INTO project_people (id, project_id, people_id, role, receive_status_report) "
-        "SELECT m.id || '-%1', '%2', m.people_id, role, receive_status_report "
-        "FROM project_people m WHERE m.project_id = '%3' "
-        "AND m.people_id NOT IN (SELECT e.people_id FROM project_people e WHERE e.project_id = '%2')")
-        .arg(unique_stamp, newid, oldid);
+    QModelIndex qi = SqlQueryModel::copyRecord(index);
 
-    getDBOs()->execute(insert);
-    getDBOs()->pushRowChange("project_people", newid, KeyColumnChange::Insert);
-    getDBOs()->updateDisplayData();
+    if (qi.isValid())
+    {
+        const QString newid = data(this->index(qi.row(), 0)).toString();
+
+        // Copy project_people records with new GUIDs
+        QSqlQuery query(getDBOs()->getDb());
+        query.prepare("SELECT people_id, role, receive_status_report FROM project_people WHERE project_id = ? "
+                      "AND people_id NOT IN (SELECT people_id FROM project_people WHERE project_id = ?)");
+        query.addBindValue(oldid);
+        query.addBindValue(newid);
+
+        if (query.exec())
+        {
+            QSqlQuery insert(getDBOs()->getDb());
+            insert.prepare("INSERT INTO project_people (id, project_id, people_id, role, receive_status_report) VALUES (?, ?, ?, ?, ?)");
+
+            while (query.next())
+            {
+                QString pid = QUuid::createUuid().toString();
+
+                insert.addBindValue(pid);
+                insert.addBindValue(newid);
+                insert.addBindValue(query.value(0));
+                insert.addBindValue(query.value(1));
+                insert.addBindValue(query.value(2));
+                insert.exec();
+
+                getDBOs()->pushRowChange("project_people", pid, KeyColumnChange::Insert);
+            }
+        }
+
+        getDBOs()->updateDisplayData();
+    }
 
     return qi;
 }

@@ -315,7 +315,13 @@ void TableView::contextMenuEvent(QContextMenuEvent *e)
         if (!is_new_record)
         {
             menu->addAction(m_deleteRecord);
-            menu->addAction(m_copyRecord);
+
+            // Don't allow copying team members or meeting attendees
+            QString modelName = currentmodel->objectName();
+            if (modelName != "ProjectTeamMembersModel" && modelName != "MeetingAttendeesModel")
+            {
+                menu->addAction(m_copyRecord);
+            }
         }
 
         if (!is_new_record) menu->addAction(m_exportRecord);

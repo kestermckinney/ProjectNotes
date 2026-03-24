@@ -343,7 +343,21 @@ void MainWindow::setButtonAndMenuStates()
 
     ui->actionOpen_Item->setEnabled(hascurview);
     ui->actionNew_Item->setEnabled(hascurview);
-    ui->actionCopy_Item->setEnabled(hascurview);
+
+    // Don't allow copying team members or meeting attendees
+    bool canCopy = hascurview;
+    if (curview && canCopy)
+    {
+        QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(curview->model());
+        if (sortmodel)
+        {
+            SqlQueryModel* sourcemodel = dynamic_cast<SqlQueryModel*>(sortmodel->sourceModel());
+            if (sourcemodel && (sourcemodel->objectName() == "ProjectTeamMembersModel" || sourcemodel->objectName() == "MeetingAttendeesModel"))
+                canCopy = false;
+        }
+    }
+    ui->actionCopy_Item->setEnabled(canCopy);
+
     ui->actionDelete_Item->setEnabled(hascurview);
     ui->actionEdit_Items->setEnabled(hascurview);
 
@@ -489,7 +503,17 @@ void MainWindow::setButtonAndMenuStates()
             {
                 ui->actionDelete_Item->setEnabled(hascurview);
                 ui->actionOpen_Item->setEnabled(hascurview);
-                ui->actionCopy_Item->setEnabled(hascurview);
+
+                // Don't allow copying team members or meeting attendees
+                bool canCopy = hascurview;
+                QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(curview->model());
+                if (sortmodel)
+                {
+                    SqlQueryModel* sourcemodel = dynamic_cast<SqlQueryModel*>(sortmodel->sourceModel());
+                    if (sourcemodel && (sourcemodel->objectName() == "ProjectTeamMembersModel" || sourcemodel->objectName() == "MeetingAttendeesModel"))
+                        canCopy = false;
+                }
+                ui->actionCopy_Item->setEnabled(canCopy);
             }
             else
             {

@@ -110,3 +110,9 @@ bool ProjectLocationsModel::setData(const QModelIndex &index, const QVariant &va
     return SqlQueryModel::setData(index, value, role);
 }
 
+void ProjectLocationsModel::prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex)
+{
+    // Description already exists for this project, prepend "Copy of "
+    newrecord[3] = QString("Copy of %1").arg(newrecord[3].toString());
+}
+

@@ -11,6 +11,8 @@ class NotesActionItemsModel : public SqlQueryModel
 public:
     NotesActionItemsModel(DatabaseObjects* dbo);
     const QModelIndex newRecord(const QVariant* fkValue1 = nullptr, const QVariant* fkValue2 = nullptr) override;
+    void prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex) override;
+    QVariant getNextItemNumber(const QVariant& projectId);
 };
 
 #endif // NOTESACTIONITEMSMODEL_H

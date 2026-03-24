@@ -15,6 +15,7 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role) override;
     const QModelIndex copyRecord(QModelIndex index) override;
+    void prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex) override;
 };
 
 #endif // PROJECTSMODEL_H

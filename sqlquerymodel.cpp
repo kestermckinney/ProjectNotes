@@ -742,14 +742,13 @@ int SqlQueryModel::rowCount(const QModelIndex &parent) const
 const QModelIndex SqlQueryModel::copyRecord(QModelIndex index)
 {
     QVector<QVariant> newrecord = emptyrecord();
-    QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
 
     // don't copy key record so it is identified as a new record
     for (int i = 1; i < m_columnCount; i++)
     {
         if (m_columnIsUnique[i] == DBUnique)
         {
-            newrecord[i] = QString(" Copy [%2] of %1").arg(m_cache[index.row()][i].toString(), unique_stamp);
+            newrecord[i] = QString("Copy of %1").arg(m_cache[index.row()][i].toString());
         }
         else
         {
@@ -1121,7 +1120,7 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
         DB_LOCK;
 
         QSqlQuery select(getDBOs()->getDb());
-        select.prepare("select count(*) from " + m_relatedTable.at(i) + " where " + where_clause);
+        select.prepare("select count(*) from " + m_relatedTable.at(i) + " where " + where_clause + " AND deleted = 0");
         select.exec();
 
         //qDebug() << "DELETE CHECK: " << "select count(*) from " + m_relatedTable.at(i) + " where " + where_clause;

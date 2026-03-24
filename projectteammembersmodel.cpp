@@ -93,7 +93,8 @@ bool ProjectTeamMembersModel::setData(const QModelIndex &index, const QVariant &
         QVariant current_people_id = data(this->index(index.row(), 2));
         QVariant current_project_id = data(this->index(index.row(), 1));
 
-        if (!current_people_id.isNull() && !current_people_id.toString().isEmpty())
+        // if is not empty and value is going to change make sure the old person can be removed
+        if (!current_people_id.isNull() && !current_people_id.toString().isEmpty() && value != data(index))
         {
             // Fetch attendance count and project number in a single query
             DB_LOCK;
