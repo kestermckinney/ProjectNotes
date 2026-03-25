@@ -710,6 +710,11 @@ void MainWindow::openDatabase(const QString& dbfile)
 
     setButtonAndMenuStates();
 
+    // update button/menu states whenever a table row is clicked
+    const auto tableviews = findChildren<TableView*>();
+    for (TableView* tv : tableviews)
+        connect(tv, &TableView::rowSelectionChanged, this, &MainWindow::setButtonAndMenuStates);
+
     // connect the search request event
     connect(global_DBObjects.peoplemodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.clientsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
@@ -722,6 +727,12 @@ void MainWindow::openDatabase(const QString& dbfile)
     connect(global_DBObjects.notesactionitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+
+    // keep the Show Closed Projects menu checkbox in sync when the setting is changed programmatically
+    connect(&global_DBObjects, &DatabaseObjects::showClosedProjectsChanged,
+            this, [this](bool showClosed) {
+                ui->actionClosed_Projects->setChecked(showClosed);
+            });
 }
 
 void MainWindow::navigateToPage(BasePage* widget, QVariant recordId)
@@ -920,6 +931,11 @@ void MainWindow::CloseDatabase()
         m_syncApi->deleteLater();
         m_syncApi = nullptr;
     }
+
+    // disconnect table row selection state updates
+    const auto tableviews = findChildren<TableView*>();
+    for (TableView* tv : tableviews)
+        disconnect(tv, &TableView::rowSelectionChanged, this, &MainWindow::setButtonAndMenuStates);
 
     // disconnect the search request event
     disconnect(global_DBObjects.peoplemodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));

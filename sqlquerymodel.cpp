@@ -1058,6 +1058,8 @@ bool SqlQueryModel::columnChangeCheck(const QModelIndex &index)
                 getDBOs()->searchresultsmodel()->PerformKeySearch( key_columns, key_values );
 
                 emit callKeySearch();
+
+                promptShowClosedProjects(key_columns, key_values, reference_count);
             }
         }
 
@@ -1124,7 +1126,7 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
         select.prepare("select count(*) from " + m_relatedTable.at(i) + " where " + where_clause + " AND deleted = 0");
         select.exec();
 
-        qDebug() << "DELETE CHECK: " << "select count(*) from " + m_relatedTable.at(i) + " where " + where_clause;
+        //qDebug() << "DELETE CHECK: " << "select count(*) from " + m_relatedTable.at(i) + " where " + where_clause;
 
         if (select.next())
         {
@@ -1167,6 +1169,8 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
                 getDBOs()->searchresultsmodel()->PerformKeySearch( key_columns, key_values );
 
                 emit callKeySearch();
+
+                promptShowClosedProjects(key_columns, key_values, reference_count);
             }
         }
 
@@ -1184,6 +1188,24 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
         }
         else
             return true;
+    }
+}
+
+void SqlQueryModel::promptShowClosedProjects(const QStringList &keyColumns, const QStringList &keyValues, int expectedCount)
+{
+    if (!getDBOs()->getShowClosedProjects() &&
+        getDBOs()->searchresultsmodel()->rowCount(QModelIndex()) < expectedCount)
+    {
+        if (QMessageBox::question(nullptr,
+                QObject::tr("Records Not Shown"),
+                QObject::tr("Some related records are not visible because they belong to closed projects.\n\n"
+                            "Would you like to show closed projects?"),
+                QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
+        {
+            getDBOs()->setShowClosedProjects(true);
+            getDBOs()->setGlobalSearches(false);  // update model filters without a full refresh
+            getDBOs()->searchresultsmodel()->PerformKeySearch(keyColumns, keyValues);
+        }
     }
 }
 
@@ -1222,7 +1244,9 @@ bool SqlQueryModel::reloadRecord(const QModelIndex& index)
 {
     DB_LOCK;
     QSqlQuery select(getDBOs()->getDb());
-    select.prepare("SELECT * FROM (" + BaseSQL() + ") _t WHERE _t." + m_columnName[0] + " = ?");
+    // Include base filters (e.g. deleted filter) so that a record soft-deleted via sync
+    // is not found here — letting the caller remove it from the cache.
+    select.prepare("SELECT * FROM (" + BaseSQL() + constructWhereClause(false) + ") _t WHERE _t." + m_columnName[0] + " = ?");
     select.bindValue(0, m_cache[index.row()][0]);
 
     if (select.exec())
@@ -2444,6 +2468,4 @@ void SqlQueryModel::deleteRelatedRecords(QVariant& keyval)
     }
 }
 
-//TODO: after loosing connection, the sync says host requires authentication
-//TODO: test delete propogates to other clients
 //TODO: if project is closed and you try to search from a delete you won't see it in the results

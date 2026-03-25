@@ -6,6 +6,9 @@
 #include "QLogger.h"
 #include "QLoggerWriter.h"
 
+#include <QSqlQuery>
+#include <QUuid>
+
 using namespace QLogger;
 
 
@@ -70,26 +73,51 @@ bool ProjectNotesModel::setData(const QModelIndex &index, const QVariant &value,
 const QModelIndex ProjectNotesModel::copyRecord(QModelIndex index)
 {
     QVector<QVariant> qr = emptyrecord();
-    QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
-    //TODO: fix this to use GUID like other copy
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
 
     qr[1] = data(this->index(index.row(), 1));
     qr[2] = data(this->index(index.row(), 2));
     qr[3] = curdate;
-    //qr[4, QVariant());
     qr[5] = 0;
 
+    // addRecord stages the row in the cache; insertCacheRow assigns a GUID and
+    // INSERTs it into the database (with its own DB_LOCK).  Using insertCacheRow
+    // directly also avoids triggering addDefaultPMToMeeting via setData, which
+    // must not run during a copy because the attendees are copied explicitly below.
     QModelIndex qi = addRecord(qr);
-    setData( this->index(qi.row(), 4), QVariant(), Qt::EditRole);
+    insertCacheRow(qi.row());
 
     QVariant oldid = data(this->index(index.row(), 0));
     QVariant newid = data(this->index(qi.row(), 0));
 
-    QString insert = "insert into meeting_attendees (id, note_id, person_id) select m.id || '-" + unique_stamp + "', '" + newid.toString() + "', m.person_id from meeting_attendees m where m.note_id ='" + oldid.toString() + "' and deleted = 0 and m.person_id not in (select e.person_id from meeting_attendees e where e.note_id='" + newid.toString() + "' and deleted = 0)";
+    // Copy meeting_attendees with new GUIDs for each row
+    DB_LOCK;
+    QSqlQuery select(getDBOs()->getDb());
+    select.prepare("SELECT person_id FROM meeting_attendees "
+                   "WHERE note_id = ? AND deleted = 0 "
+                   "AND person_id NOT IN (SELECT person_id FROM meeting_attendees WHERE note_id = ? AND deleted = 0)");
+    select.addBindValue(oldid);
+    select.addBindValue(newid);
 
-    getDBOs()->execute(insert);
-    getDBOs()->pushRowChange("meeting_attendees", newid, KeyColumnChange::Insert);
+    if (select.exec())
+    {
+        QSqlQuery insert(getDBOs()->getDb());
+        insert.prepare("INSERT INTO meeting_attendees (id, note_id, person_id) VALUES (?, ?, ?)");
+
+        while (select.next())
+        {
+            QString aid = QUuid::createUuid().toString();
+
+            insert.addBindValue(aid);
+            insert.addBindValue(newid);
+            insert.addBindValue(select.value(0));
+            insert.exec();
+
+            getDBOs()->pushRowChange("meeting_attendees", aid, KeyColumnChange::Insert);
+        }
+    }
+    DB_UNLOCK;
+
     getDBOs()->updateDisplayData();
 
     return qi;

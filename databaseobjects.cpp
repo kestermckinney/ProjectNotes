@@ -597,6 +597,7 @@ bool DatabaseObjects::getShowResolvedTrackerItems()
 void DatabaseObjects::setShowClosedProjects(bool value)
 {
     saveParameter("UserFilter:ShowClosedProjects", (value ? "1": "0"));
+    emit showClosedProjectsChanged(value);
 }
 
 bool DatabaseObjects::getShowClosedProjects()
@@ -1225,8 +1226,13 @@ void DatabaseObjects::updateDisplayData()
                     QModelIndex qmi = recordset->findIndex(keyColChange.value, 0);
                     if (qmi.isValid())
                     {
-                        recordset->reloadRecord(qmi);
                         // qDebug() << "Updating display for table " << recordset->tablename() << " row " << qmi.row() << " with value " << keyColChange.value;
+                        if (!recordset->reloadRecord(qmi))
+                        {
+                            // Record no longer passes base filters (e.g. was soft-deleted
+                            // via sync on another device) — remove it from the view.
+                            recordset->removeCacheRecord(qmi);
+                        }
                     }
                     else
                     {

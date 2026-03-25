@@ -248,6 +248,11 @@ private:
     void stripFormatting(QVariant& value) const;
     bool matchesFilter(int column, const QVariant& value);
 
+protected:
+    // After a key search, if fewer results are visible than expected (due to the closed
+    // project filter), prompt the user to enable Show Closed Projects and re-run the search.
+    void promptShowClosedProjects(const QStringList &keyColumns, const QStringList &keyValues, int expectedCount);
+
 signals:
     void callKeySearch();
 };

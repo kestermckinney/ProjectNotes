@@ -237,8 +237,9 @@ const QModelIndex ProjectsModel::copyRecord(QModelIndex index)
         const QString newid = data(this->index(qi.row(), 0)).toString();
 
         // Copy project_people records with new GUIDs
+        DB_LOCK;
         QSqlQuery query(getDBOs()->getDb());
-        query.prepare("SELECT people_id, role, receive_status_report FROM project_people WHERE project_id = ? and deleted = 0"
+        query.prepare("SELECT people_id, role, receive_status_report FROM project_people WHERE project_id = ? and deleted = 0 "
                       "AND people_id NOT IN (SELECT people_id FROM project_people WHERE project_id = ? and deleted = 0)");
         query.addBindValue(oldid);
         query.addBindValue(newid);
@@ -262,6 +263,7 @@ const QModelIndex ProjectsModel::copyRecord(QModelIndex index)
                 getDBOs()->pushRowChange("project_people", pid, KeyColumnChange::Insert);
             }
         }
+        DB_UNLOCK;
 
         getDBOs()->updateDisplayData();
     }

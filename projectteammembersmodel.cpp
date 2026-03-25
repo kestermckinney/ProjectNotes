@@ -134,6 +134,8 @@ bool ProjectTeamMembersModel::setData(const QModelIndex &index, const QVariant &
 
                     getDBOs()->searchresultsmodel()->PerformKeySearch(key_columns, key_values);
                     emit callKeySearch();
+
+                    promptShowClosedProjects(key_columns, key_values, count);
                 }
 
                 emit dataChanged(index, index);
