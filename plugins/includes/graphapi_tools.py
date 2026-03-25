@@ -690,7 +690,9 @@ class GraphAPITools:
             val = data.get('conversationId')
             eml += f'Thread-Index: {val}\n' if val else ''
 
-            eml += f'Date: {QDateTime.currentDateTime().toString("ddd, dd MMM yyyy HH:mm:ss +0000")}\n'
+            sdt = QDateTime.fromString(data.get('sentDateTime'), Qt.DateFormat.ISODate)
+
+            eml += f'Date: {sdt.toString("ddd, dd MMM yyyy HH:mm:ss +0000")}\n'
 
             if has_attach:
                 eml += 'X-MS-Has-Attach: yes\n'
@@ -888,6 +890,7 @@ class GraphAPITools:
             pxmlroot = pxmlval.documentElement()
 
             projectnumber = self.pnc.scrape_project_number(pxmlroot)
+            #print(f"XML: {xmlstr}")
             print(f"Downloading all emails for project {projectnumber}")
 
             projectfilter = f' filter_field_2="project_number" filter_value_2="{projectnumber}" '

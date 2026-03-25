@@ -43,7 +43,8 @@ def event_shutdown(parameter):
     return ""
 
 def event_timer(parameter):
-
+    return "" # disable when not testing
+    
     global roundcount
     roundcount += 1
 

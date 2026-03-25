@@ -301,7 +301,7 @@ class IFSCommon:
         saved_state = None
         statename = "ifs_projects_import"
         skip = 0
-        top = 5
+        top = 8
 
         projectcount = 0
 
@@ -363,7 +363,7 @@ class IFSCommon:
                 # only add the company name once to the client list
                 clientsdict[rowval['CustomerIdRef']['Name']] = True
 
-            if self.pnc.to_xml(rowval['Description']) in ('Initialized', 'Started', 'Approved'):
+            if self.pnc.to_xml(rowval['Objstate']) in ('Initialized', 'Started', 'Approved'):
                 rd['projectsxmlrows'] +=  "    <column name=\"project_status\">Active</column>\n"
             else:
                 rd['projectsxmlrows'] +=  "    <column name=\"project_status\">Closed</column>\n"
@@ -576,7 +576,7 @@ class IFSCommon:
         saved_state = None
         statename = "ifs_tracker_export"
         skip = 0
-        top = 5
+        top = 30
 
         projectcount = 0
 

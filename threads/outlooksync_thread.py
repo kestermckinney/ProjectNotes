@@ -27,7 +27,7 @@ use_graph_api = (pnc.get_plugin_setting("IntegrationType", "Outlook Integration"
 if use_graph_api: 
     pluginmenus = [
         {"menutitle" : "Sync Tracker Items", "function" : "menu_sync_tracker_items", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
-        {"menutitle" : "Download All Emails", "function" : "menu_right_click_download_emails", "tablefilter" : "projecs", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : "all"},
+        {"menutitle" : "Download All Emails", "function" : "menu_right_click_download_emails", "tablefilter" : "projects", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : "all"},
         {"menutitle" : "Import Contacts from Office 365", "function" : "menu_import_contacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
         {"menutitle" : "Export New Contacts to Office 365", "function" : "menu_export_contacts", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
     ]
