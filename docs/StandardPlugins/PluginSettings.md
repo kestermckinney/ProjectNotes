@@ -31,7 +31,7 @@ The standard plugins are organized into several categories:
 - Project Email Archive — Archive project-related emails
 
 **File and Document Plugins:**
-- File Collector — Automatically monitor and organize project-related files
+- File Finder — Automatically monitor and organize project-related files
 - New Document Templates — Create new documents from templates (MS Project, PowerPoint, Change Orders, etc.)
 - Team Member Quick Add — Quickly add team members to projects
 
@@ -56,7 +56,7 @@ The IFS Cloud settings and documentation are available at [IFS Cloud Integration
 ## Managing and Storing Settings
 
 Each plugin typically has settings that you can configure to match your organization's needs. Plugins provided with Project Notes store settings in your operating system's user profile:
-- **Windows** — Registry (under `HKEY_CURRENT_USER\Software\Anthropic\ProjectNotes`)
+- **Windows** — Registry (under `HKEY_CURRENT_USER\Anthropic\ProjectNotes`)
 - **macOS and Linux** — Configuration files in your home directory
 
 Settings persist across application restarts, so you only need to configure them once.
@@ -73,7 +73,7 @@ Several standard plugins support **variable replacement** — the ability to aut
 
 Variable replacement bridges Project Notes data with plugin configurations:
 
-1. **Configuration time** — You define a template with placeholder variables (e.g., a URL with `{project_number}`)
+1. **Configuration time** — You define a template with placeholder variables (e.g., a URL with `[$projects.project_number.1]`)
 2. **Runtime** — When the plugin runs, it extracts the relevant data as XML from the current project context
 3. **Substitution** — The plugin replaces placeholders with actual values from the XML
 4. **Execution** — The plugin uses the completed, project-specific value
@@ -114,7 +114,7 @@ When you invoke a plugin by right-clicking a record, Project Notes exports that 
 ```xml
 <projects>
   <row>
-    <column name="project_id">P-001</column>
+    <column name="project_number">P-001</column>
     <column name="project_name">Website Redesign</column>
     <column name="project_status">Active</column>
     <column name="primary_contact">John Smith</column>
@@ -123,13 +123,13 @@ When you invoke a plugin by right-clicking a record, Project Notes exports that 
 ```
 
 To access these values, you would use:
-- `[$projects.project_id.1]` → "P-001"
+- `[$projects.project_number.1]` → "P-001"
 - `[$projects.project_name.1]` → "Website Redesign"
 - `[$projects.project_status.1]` → "Active"
 
 ### Available Variables by Context
 
-The available variables depend on the XML structure of the record you right-clicked. For a complete list of available fields and their XML paths for each data type, see the [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) documentation.
+The available variables depend on the XML structure of the record you right-clicked. For a complete list of available fields and their XML paths for each [data type](<../PluginsOverview/DataTypes.md>), see the [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) documentation.
 
 Common patterns include:
 
@@ -204,7 +204,7 @@ When exporting meeting notes and sending via email, the plugin uses project data
 
 Template:
 ```
-Meeting Minutes - {project_number} {project_name} - {reporting_date}
+Meeting Minutes - [$project_notes.project_number.1] [$project_notes.project_name.1] - [$project_notes.note_date]
 ```
 
 For Project P-001 (Sample Project) on 03/23/2026:
@@ -223,7 +223,7 @@ Subject: Meeting Minutes - P-001 Sample Project - 03/23/2026
 | **Client ID** | a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6 | Azure AD app ID for OAuth |
 | **Tenant ID** | f1e2d3c4-b5a6-4978-c9d0-e1f2a3b4c5d6 | Azure AD tenant for your organization |
 
-#### File Collector Settings
+#### File Finder Settings
 
 | Setting | Example Value | Purpose |
 | :--- | :--- | :--- |
@@ -248,12 +248,14 @@ Subject: Meeting Minutes - P-001 Sample Project - 03/23/2026
 
 #### My Shortcuts Examples
 
-| Menu | Submenu | Data Type | URL |
+| Menu | Submenu | [Data Type](<../PluginsOverview/DataTypes.md>) | URL |
 | :--- | :--- | :--- | :--- |
 | Open in Jira | Project Tools | projects | https://jira.company.com/projects/[$projects.project_number.1] |
 | Email Contact | Utilities | people | mailto:[$people.email.1]?subject=Project Questions |
 | View in SharePoint | Resources | projects | https://company.sharepoint.com/sites/[$projects.project_number.1] |
 | Chat with Team | Communication | projects | https://teams.microsoft.com/l/channel/19%3a[$projects.project_number.1] |
+
+For a complete list of available data types and how they relate to application views and right-click menus, see [Data Types](<../PluginsOverview/DataTypes.md>).
 
 The variable `[$projects.project_number.1]` in the URL is replaced with the actual project number from the right-clicked project. The XML path notation ensures the plugin accesses the correct field from the exported XML data.
 
@@ -261,7 +263,7 @@ The variable `[$projects.project_number.1]` in the URL is replaced with the actu
 
 | Settings Entry | Plugin | Description |
 | :--- | :--- | :--- |
-| **File Finder** | Base Plugins Settings | Configure folders to scan and file classification rules for the File Collector background process. |
+| **File Finder** | Base Plugins Settings | Configure folders to scan and file classification rules for the File Finder background process. |
 | **Editor** | Base Plugins Settings | Set the path to the Python script editor used by the Script Editor utility. |
 | **Outlook Integration** | Base Plugins Settings | Configure Office 365 Graph API credentials or Outlook COM options. See [Outlook Integration](<OutlookIntegration.md>). |
 | **My Shortcuts** | Base Plugins Settings | Configure custom URL shortcuts that appear in the Plugins or right-click menus. See [My Shortcuts](<MyShortcuts.md>). |

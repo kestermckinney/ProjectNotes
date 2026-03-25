@@ -2467,5 +2467,3 @@ void SqlQueryModel::deleteRelatedRecords(QVariant& keyval)
         }
     }
 }
-
-//TODO: if project is closed and you try to search from a delete you won't see it in the results

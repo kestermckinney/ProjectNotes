@@ -77,7 +77,20 @@ Section "MainSection" SEC01
   CreateShortCut  "$DESKTOP\Project Notes.lnk" "$INSTDIR\ProjectNotes.exe"
 
   ; Project Notes Needed Libraries
-  File "..\..\..\hunspell\msvc\x64\Release_dll\libhunspell.dll"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\hunspell-1.7-0.dll"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\libcrypto-3-x64.dll"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\legacy.dll"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\libssl-3-x64.dll"
+
+  File "..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\charset-1.dll"
+  File "..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\iconv-2.dll"
+  File "..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\libecpg.dll"
+  File "..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\libecpg_compat.dll"
+  File "..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\libpgtypes.dll"
+  File "..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\libpq.dll"
+  File "..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\lz.dll"
+  File "..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\zlib1.dll"
+
 
   ; Core Qt libraries
   File "C:\Qt\6.10.0\msvc2022_64\bin\Qt6Core.dll"
@@ -288,7 +301,22 @@ Section Uninstall
   RMDIR "$INSTDIR\threads"
 
   Delete "$INSTDIR\ProjectNotes.exe"
-  Delete "$INSTDIR\libhunspell.dll"
+  
+  Delete "$INSTDIR\hunspell-1.7-0.dll"
+  Delete "$INSTDIR\libcrypto-3-x64.dll"
+  Delete "$INSTDIR\legacy.dll"
+  Delete "$INSTDIR\libssl-3-x64.dll"
+
+  Delete "$INSTDIR\charset-1.dll"
+  Delete "$INSTDIR\iconv-2.dll"
+  Delete "$INSTDIR\libecpg.dll"
+  Delete "$INSTDIR\libecpg_compat.dll"
+  Delete "$INSTDIR\libpgtypes.dll"
+  Delete "$INSTDIR\libpq.dll"
+  Delete "$INSTDIR\lz.dll"
+  Delete "$INSTDIR\zlib1.dll"
+
+
 
   ; Core Qt libraries
   Delete "$INSTDIR\Qt6Core.dll"

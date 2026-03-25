@@ -23,7 +23,7 @@ You will need to setup yourself to manage all of the projects. First you need to
 9. Select ***"Your Company Name"*** as the **Client**.
 10. From the **Plugins** menu, choose **Settings > Export Notes** and set the sub-folder where meeting note exports will be saved.
 11. From the **Plugins** menu, choose **Settings > Export Tracker Items** and set the sub-folder where tracker item exports will be saved.
-12. From the **Plugins** menu, choose **Settings > File Finder** and add the root folder where your project files are stored so the File Collector can find them automatically.
+12. From the **Plugins** menu, choose **Settings > File Finder** and add the root folder where your project files are stored so the File Finder can find them automatically.
 
 ## Populating Your Database
 

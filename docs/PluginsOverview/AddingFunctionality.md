@@ -97,7 +97,7 @@ plugintimerevent = 1  # Timer interval in minutes (default: 1)
 
 ### Settings Storage with QSettings
 
-Plugin settings are persisted to disk using Qt's QSettings mechanism. On Windows, settings are stored in the registry under `HKEY_CURRENT_USER\Software\Anthropic\ProjectNotes\<pluginname>`. On Linux and macOS, they are stored in configuration files in the user's home directory.
+Plugin settings are persisted to disk using Qt's QSettings mechanism. On Windows, settings are stored in the registry under `HKEY_CURRENT_USER\Software\ProjectNotes\<pluginname>`. On Linux and macOS, they are stored in configuration files in the user's home directory.
 
 Settings are key-value pairs that survive application restarts. The typical workflow is:
 
@@ -313,12 +313,12 @@ delete_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <projectnotes>
 <table name="meeting_attendees">
     <row delete="true">
-        <column name="people_id">{person-id}</column>
+        <column name="people_id">{1cb7b1e8-4393-4fec-a761-498f6bae60e9}</column>
     </row>
 </table>
 <table name="people">
-    <row delete="true" id="{person-id}">
-        <column name="people_id">{person-id}</column>
+    <row delete="true" id="{1cb7b1e8-4393-4fec-a761-498f6bae60e9}">
+        <column name="people_id">{1cb7b1e8-4393-4fec-a761-498f6bae60e9}</column>
     </row>
 </table>
 </projectnotes>"""
@@ -334,8 +334,8 @@ projectnotes.update_data(delete_xml)
 delete_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <projectnotes>
 <table name="people">
-    <row delete="true" id="{person-id}">
-        <column name="people_id">{person-id}</column>
+    <row delete="true" id="{1cb7b1e8-4393-4fec-a761-498f6bae60e9}">
+        <column name="people_id">{1cb7b1e8-4393-4fec-a761-498f6bae60e9}</column>
     </row>
 </table>
 </projectnotes>"""
@@ -356,7 +356,7 @@ Project Notes plugin architecture provide the ability to add new menu items to t
 
 ```python
 pluginmenus = [
-    {"menutitle" : "File Collector", "function" : "menuFileCollectorSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "File Finder", "function" : "menuFileFinder", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "Editor", "function" : "menuEditorSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "Outlook Integration", "function" : "menuOutlookIntegrationSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "My Shortcuts", "function" : "menuMyShortcutSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
@@ -375,10 +375,10 @@ The example below demonstrates how a plugin menu can be generated dynamically at
 | **Key** | **Description** |
 | :--- | :--- |
 | menutitle | The text that will show in the right-click or **Plugins** menu. |
-| function | The python function that will be called when the menu is triggered. For functions called from the **Plugins** menu, only one parameter is provided.  For functions called from a right-click on a data type, the first parameter is an XML string, and the second is a string parameter. |
+| function | The python function that will be called when the menu is triggered. For functions called from the **Plugins** menu, only one parameter is provided.  For functions called from a right-click on a [data type](<DataTypes.md>), the first parameter is an XML string, and the second is a string parameter. |
 | tablefilter | The table filter is used to filter the xml sent to the menu event.  If the value is empty the entire data tree will be exported.  Applying the table filter reduces the cost of generating the xml.  For example when exporting a project record all data associated with the project will be exported if a filter is not applied.  If a filter of "projects/project_notes" were used only the project record and assocated notes records would be included. |
 | submenu | If a submenu value is specified the menutitle will appear under the submenu text. |
-| dataexport | The record type the menu applies to.  If this value is empty, the **Plugins** menu is used. |
+| dataexport | The record type (data type) the menu applies to. If this value is empty, the **Plugins** menu is used. See [Data Types](<DataTypes.md>) for a complete list of available types and how they relate to application views and right-click menus. |
 
 <br>
 

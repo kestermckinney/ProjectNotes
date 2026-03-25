@@ -4,7 +4,7 @@
 #ifndef SPELLCHECKDIALOG_H
 #define SPELLCHECKDIALOG_H
 
-#include "hunspell/hunspell.hxx"
+#include <hunspell/hunspell.hxx>
 
 #include <QDialog>
 #include <QListWidgetItem>

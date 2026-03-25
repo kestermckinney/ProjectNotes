@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ProjectNotes VERSION 5.0.3 LANGUAGES CXX)
+project(ProjectNotes VERSION 5.0.0 LANGUAGES CXX)
 
 # Optionally, set version components explicitly
 set(APP_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
@@ -36,22 +36,11 @@ set(Python3_LIBRARY_DIRS ${Python3_LIBRARY_DIRS_RELEASE})
 
 
 # Find the Hunspell library
-#find_package(Hunspell REQUIRED)
-if (WIN32)
-    # this isn't the best way to do this, but for now until i figure out a better way
-    set(Hunspell_INCLUDE_DIRS "C:/Users/paulmckinney/Documents/hunspell/src")
+find_path(Hunspell_INCLUDE_DIRS NAMES hunspell/hunspell.hxx)
+find_library(HUNSPELL_LIBRARIES NAMES hunspell hunspell-1.7)
 
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        set(HUNSPELL_LIBRARIES "C:/Users/paulmckinney/Documents/hunspell/msvc/x64/Debug_dll/libhunspell.lib")
-        set(HUNSPELL_DLL "C:/Users/paulmckinney/Documents/hunspell/msvc/x64/Debug_dll/libhunspell.dll")
-    elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-        set(HUNSPELL_LIBRARIES "C:/Users/paulmckinney/Documents/hunspell/msvc/x64/Release_dll/libhunspell.lib")
-        set(HUNSPELL_DLL "C:/Users/paulmckinney/Documents/hunspell/msvc/x64/Release_dll/libhunspell.dll")
-    endif()
-else()
-    set(Hunspell_INCLUDE_DIRS /usr/include/hunspell)
-    set(HUNSPELL_LIBRARIES hunspell-1.7)
-endif()
+message(STATUS "Hunspell includes: ${Hunspell_INCLUDE_DIRS}")
+message(STATUS "Hunspell library: ${HUNSPELL_LIBRARIES}")
 
 include_directories(${Hunspell_INCLUDE_DIRS})
 
@@ -88,7 +77,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         ${APP_ICON_RESOURCE_WINDOWS}
-        actionitemprojectnotesmodel.cpp actionitemsdetailsmeetingsmodel.h actionitemsdetailsmeetingsmodel.cpp actionitemprojectnotesmodel.h clientslistview.cpp clientslistview.h clientsmodel.cpp clientsmodel.h clientspage.cpp clientspage.h columnview.cpp columnview.h comboboxdelegate.cpp comboboxdelegate.h databasestructure.cpp databasestructure.h databasecreate.cpp databasecreate.h databaseviews.cpp databaseviews.h databaseupgrade_v1_0_0.cpp databaseupgrade_v1_0_0.h databaseupgrade_v1_2_0.cpp databaseupgrade_v1_2_0.h databaseupgrade_v5_0_0.cpp databaseupgrade_v5_0_0.h databaseupgrade_v5_0_1.cpp databaseupgrade_v5_0_1.h databaseupgrade_v5_0_3.cpp databaseupgrade_v5_0_3.h filterdatadialog.cpp filterdatadialog.h filterdatadialog.ui filtersavestructure.h importexport.cpp importexport.h itemdetailsdelegate.cpp itemdetailsdelegate.h itemdetailspage.cpp itemdetailspage.h itemdetailteamlistmodel.cpp itemdetailteamlistmodel.h meetingattendeesmodel.cpp meetingattendeesmodel.h meetingattendeesview.cpp meetingattendeesview.h notesactionitemsmodel.cpp notesactionitemsmodel.h notesactionitemsview.cpp notesactionitemsview.h peoplelistview.cpp peoplelistview.h peoplemodel.cpp peoplemodel.h peoplepage.cpp peoplepage.h basepage.cpp basepage.h checkboxdelegate.cpp checkboxdelegate.h columnmodel.cpp columnmodel.h combobox.cpp combobox.h sqlcomboboxdelegate.cpp sqlcomboboxdelegate.h databaseobjects.cpp databaseobjects.h dateeditdelegate.cpp dateeditdelegate.h dateeditex.cpp dateeditex.h inlinespellchecker.cpp inlinespellchecker.h lineeditfilebutton.cpp lineeditfilebutton.h lineeditfilebuttondelegate.cpp lineeditfilebuttondelegate.h plaintexteditdelegate.h plaintextedit.h plaintexteditdelegate.cpp plaintextedit.cpp
+        actionitemprojectnotesmodel.cpp actionitemsdetailsmeetingsmodel.h actionitemsdetailsmeetingsmodel.cpp actionitemprojectnotesmodel.h clientslistview.cpp clientslistview.h clientsmodel.cpp clientsmodel.h clientspage.cpp clientspage.h columnview.cpp columnview.h comboboxdelegate.cpp comboboxdelegate.h databasestructure.cpp databasestructure.h databasecreate.cpp databasecreate.h databaseviews.cpp databaseviews.h databaseupgrade_v1_0_0.cpp databaseupgrade_v1_0_0.h databaseupgrade_v1_2_0.cpp databaseupgrade_v1_2_0.h databaseupgrade_v5_0_0.cpp databaseupgrade_v5_0_0.h     filterdatadialog.cpp filterdatadialog.h filterdatadialog.ui filtersavestructure.h importexport.cpp importexport.h itemdetailsdelegate.cpp itemdetailsdelegate.h itemdetailspage.cpp itemdetailspage.h itemdetailteamlistmodel.cpp itemdetailteamlistmodel.h meetingattendeesmodel.cpp meetingattendeesmodel.h meetingattendeesview.cpp meetingattendeesview.h notesactionitemsmodel.cpp notesactionitemsmodel.h notesactionitemsview.cpp notesactionitemsview.h peoplelistview.cpp peoplelistview.h peoplemodel.cpp peoplemodel.h peoplepage.cpp peoplepage.h basepage.cpp basepage.h checkboxdelegate.cpp checkboxdelegate.h columnmodel.cpp columnmodel.h combobox.cpp combobox.h sqlcomboboxdelegate.cpp sqlcomboboxdelegate.h databaseobjects.cpp databaseobjects.h dateeditdelegate.cpp dateeditdelegate.h dateeditex.cpp dateeditex.h inlinespellchecker.cpp inlinespellchecker.h lineeditfilebutton.cpp lineeditfilebutton.h lineeditfilebuttondelegate.cpp lineeditfilebuttondelegate.h plaintexteditdelegate.h plaintextedit.h plaintexteditdelegate.cpp plaintextedit.cpp
         appsettings.cpp appsettings.h sortfilterproxymodel.cpp sortfilterproxymodel.h spellchecker.cpp spellchecker.h sqlquerymodel.cpp sqlquerymodel.h tableview.cpp tableview.h textedit.cpp textedit.h texteditdelegate.cpp texteditdelegate.h projectdetailsdelegate.cpp projectdetailsdelegate.h projectdetailspage.cpp projectdetailspage.h projectlocationsmodel.cpp projectlocationsmodel.h projectlocationsview.cpp projectlocationsview.h projectnotesdelegate.cpp projectnotesdelegate.h projectnotesmodel.cpp projectnotesmodel.h projectnotespage.cpp projectnotespage.h projectnotesview.cpp projectnotesview.h projectsmodel.h projectsmodel.cpp projectslistview.h projectslistview.cpp projectslistpage.h projectslistpage.cpp projectslistmodel.h projectslistmodel.cpp projectteammembersmodel.cpp projectteammembersmodel.h projectteammembersview.cpp projectteammembersview.h runguard.cpp runguard.h searchpage.cpp searchpage.h searchresultsmodel.cpp searchresultsmodel.h searchresultsview.cpp searchresultsview.h statusreportitemsmodel.cpp statusreportitemsmodel.h statusreportitemsview.cpp statusreportitemsview.h teamsmodel.cpp teamsmodel.h trackeritemcommentsmodel.cpp trackeritemcommentsmodel.h trackeritemcommentsview.cpp trackeritemcommentsview.h trackeritemsmodel.cpp trackeritemsmodel.h trackeritemsview.cpp trackeritemsview.h valueselectmodel.cpp valuesview.h valuesview.cpp valueselectmodel.h
         combobox.cpp combobox.h
         spellcheckdialog.cpp spellcheckdialog.h spellcheckdialog.ui
@@ -185,13 +174,13 @@ add_custom_command(TARGET ProjectNotes POST_BUILD
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dictionary/*
 )
 
-if(WIN32)
-    add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy ${HUNSPELL_DLL} ${CMAKE_CURRENT_BINARY_DIR}/libhunspell.dll
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying Hunspell"
-        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*
-    )
-endif()
+# if(WIN32)
+#     add_custom_command(TARGET ProjectNotes POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy ${HUNSPELL_DLL} ${CMAKE_CURRENT_BINARY_DIR}/libhunspell.dll
+#         COMMAND ${CMAKE_COMMAND} -E echo "Copying Hunspell"
+#         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*
+#     )
+# endif()
 
 # if(WIN32)
 #     set(APP_ICON_RESOURCE resources/app_icon.rc)

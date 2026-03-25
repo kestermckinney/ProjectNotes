@@ -2,6 +2,9 @@
 "dependencies": [
     {
       "name": "openssl"
+    },
+    {
+      "name": "hunspell"
     }
   ]
 } 
