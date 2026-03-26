@@ -339,7 +339,7 @@ class ProjectNotesCommon:
                 projectnumber = contents
 
         if projectnumber == "" or projectnumber is None:
-            col = self.find_node(xmldoc, "column", "name", "project_id")
+            col = self.find_node(xmldoc, "column", "name", "id")
             if not col.isNull():
                 lookupvalue = col.attributes().namedItem("lookupvalue").nodeValue()
                 contents = col.toElement().text()

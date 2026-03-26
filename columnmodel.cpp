@@ -8,6 +8,7 @@
 ColumnModel::ColumnModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
 {
     setObjectName("ColumnModel");
+    setDeletedFilterInView(true);
 
     setBaseSql("select '' Column");
 

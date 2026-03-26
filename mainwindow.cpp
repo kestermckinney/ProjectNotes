@@ -18,6 +18,8 @@
 #include <QSqlQuery>
 #include <QSqlTableModel>
 #include <QDir>
+#include <QEventLoop>
+#include <QFile>
 #include <QFileDialog>
 #include <QTextEdit>
 #include <QTextList>
@@ -28,6 +30,7 @@
 #include <QActionGroup>
 #include <QDesktopServices>
 #include "mainwindow.h"
+#include "cloudsyncsettingsdialog.h"
 #include <QStandardPaths>
 
 #include "QLogger.h"
@@ -96,10 +99,15 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_pluginManager, &PluginManager::pluginUnLoaded, this, &MainWindow::onPluginUnLoaded);
     connect(m_pluginManager, &PluginManager::pluginRefreshRequest, this, &MainWindow::onRefreshRequested);
 
-    QString lastDb = global_Settings.getLastDatabase().toString();
-    if (!lastDb.isEmpty())
-        if (QFile(lastDb).exists())
-            openDatabase(lastDb);
+    // Always open the database from the standard app data location, creating if needed
+    const QString dbfile = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+                           + "/ProjectNotes.db";
+
+    if (!QFile::exists(dbfile)) {
+        global_DBObjects.createDatabase(dbfile);
+    }
+
+    openDatabase(dbfile);
 
     setButtonAndMenuStates();
 }
@@ -327,8 +335,6 @@ void MainWindow::setButtonAndMenuStates()
 
     ui->actionXML_Import->setEnabled(dbopen);
 
-    ui->actionBackup_Database->setEnabled(dbopen);
-
     ui->actionInternal_Items->setEnabled(dbopen);
     ui->actionAll_Tracker_Action_Items->setEnabled(dbopen);
 
@@ -337,7 +343,21 @@ void MainWindow::setButtonAndMenuStates()
 
     ui->actionOpen_Item->setEnabled(hascurview);
     ui->actionNew_Item->setEnabled(hascurview);
-    ui->actionCopy_Item->setEnabled(hascurview);
+
+    // Don't allow copying team members or meeting attendees
+    bool canCopy = hascurview;
+    if (curview && canCopy)
+    {
+        QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(curview->model());
+        if (sortmodel)
+        {
+            SqlQueryModel* sourcemodel = dynamic_cast<SqlQueryModel*>(sortmodel->sourceModel());
+            if (sourcemodel && (sourcemodel->objectName() == "ProjectTeamMembersModel" || sourcemodel->objectName() == "MeetingAttendeesModel"))
+                canCopy = false;
+        }
+    }
+    ui->actionCopy_Item->setEnabled(canCopy);
+
     ui->actionDelete_Item->setEnabled(hascurview);
     ui->actionEdit_Items->setEnabled(hascurview);
 
@@ -447,7 +467,6 @@ void MainWindow::setButtonAndMenuStates()
         }
 
         // file menu items
-        ui->actionClose_Database->setEnabled(true);
         ui->actionSearch->setEnabled(true);
         ui->actionXML_Import->setEnabled(true);
         ui->actionPreferences->setEnabled(true);
@@ -484,7 +503,17 @@ void MainWindow::setButtonAndMenuStates()
             {
                 ui->actionDelete_Item->setEnabled(hascurview);
                 ui->actionOpen_Item->setEnabled(hascurview);
-                ui->actionCopy_Item->setEnabled(hascurview);
+
+                // Don't allow copying team members or meeting attendees
+                bool canCopy = hascurview;
+                QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(curview->model());
+                if (sortmodel)
+                {
+                    SqlQueryModel* sourcemodel = dynamic_cast<SqlQueryModel*>(sortmodel->sourceModel());
+                    if (sourcemodel && (sourcemodel->objectName() == "ProjectTeamMembersModel" || sourcemodel->objectName() == "MeetingAttendeesModel"))
+                        canCopy = false;
+                }
+                ui->actionCopy_Item->setEnabled(canCopy);
             }
             else
             {
@@ -525,7 +554,6 @@ void MainWindow::setButtonAndMenuStates()
     else
     {
         // file menu items
-        ui->actionClose_Database->setEnabled(false);
         ui->actionSearch->setEnabled(false);
         ui->actionXML_Import->setEnabled(false);
         ui->actionPreferences->setEnabled(false);
@@ -574,30 +602,84 @@ void MainWindow::on_actionExit_triggered()
 
 void MainWindow::on_actionOpen_Database_triggered()
 {
-    QString dbfile = QFileDialog::getOpenFileName(this, tr("Open Project Notes file"), QString(), tr("Project Notes (*.db)"));
+    CloudSyncSettingsDialog dlg(this);
 
-    if (!dbfile.isEmpty())
-    {
-        openDatabase(dbfile);
-    }
+    // Pre-populate from saved settings
+    dlg.setSyncEnabled(global_Settings.getSyncEnabled());
+    dlg.setSyncHostType(global_Settings.getSyncHostType());
+    dlg.setPostgrestUrl(global_Settings.getSyncPostgrestUrl());
+    dlg.setEmail(global_Settings.getSyncEmail());
+    dlg.setPassword(global_Settings.getSyncPassword());
+    dlg.setEncryptionPhrase(global_Settings.getSyncEncryptionPhrase());
+    dlg.setSupabaseKey(global_Settings.getSyncSupabaseKey());
+
+    if (dlg.exec() != QDialog::Accepted)
+        return;
+
+    // Database path is always fixed to the app data location
+    const QString dbfile = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+                           + "/ProjectNotes.db";
+
+    // Persist sync settings immediately (before openDatabase so it can read them)
+    global_Settings.setSyncEnabled(dlg.syncEnabled());
+    global_Settings.setSyncHostType(dlg.syncHostType());
+    global_Settings.setSyncPostgrestUrl(dlg.postgrestUrl());
+    global_Settings.setSyncEmail(dlg.email());
+    global_Settings.setSyncPassword(dlg.password());
+    global_Settings.setSyncEncryptionPhrase(dlg.encryptionPhrase());
+    global_Settings.setSyncSupabaseKey(dlg.supabaseKey());
+
+    // Create new database if the file does not yet exist
+    if (!QFile::exists(dbfile))
+        global_DBObjects.createDatabase(dbfile);
+
+    openDatabase(dbfile);
 }
 
-void MainWindow::on_actionNew_Database_triggered()
-{
-    QString dbfile = QFileDialog::getSaveFileName(this, tr("Create Project Notes file"), QString(), tr("Project Notes (*.db)"));
-
-    if (!dbfile.isEmpty())
-    {
-        if (global_DBObjects.createDatabase(dbfile)) // open the database if created successfully
-            openDatabase(dbfile);
-    }
-}
 
 
 void MainWindow::openDatabase(const QString& dbfile)
 {
     if (!global_DBObjects.openDatabase(dbfile, mainConnectionName()))
         return;
+
+    // Start sync if enabled
+    if (global_Settings.getSyncEnabled()) {
+        if (!m_syncApi)
+            m_syncApi = new SqliteSyncPro(this);
+
+        m_syncApi->setDatabasePath(dbfile);
+        m_syncApi->setSyncHostType(global_Settings.getSyncHostType());
+        m_syncApi->setPostgrestUrl(global_Settings.getSyncPostgrestUrl());
+        m_syncApi->setEmail(global_Settings.getSyncEmail());
+        m_syncApi->setPassword(global_Settings.getSyncPassword());
+        m_syncApi->setEncryptionPhrase(global_Settings.getSyncEncryptionPhrase());
+        m_syncApi->setSupabaseKey(global_Settings.getSyncSupabaseKey());
+
+        m_syncApi->setDatabaseLock(&db_rwlock);
+
+        if (m_syncApi->initialize()) {
+            connect(m_syncApi, &SqliteSyncPro::rowChanged,
+                    this, &MainWindow::onSyncRowChanged,
+                    Qt::QueuedConnection);
+            connect(m_syncApi, &SqliteSyncPro::syncCompleted,
+                    this, [this](const SyncResult &result){
+                        global_DBObjects.updateDisplayData();
+                        if (result.totalDecryptionFailures() > 0) {
+                            QMessageBox::warning(this, tr("Cloud Sync"),
+                                tr("One or more records could not be decrypted during sync. "
+                                   "Your encryption phrase may be incorrect.\n\n"
+                                   "Please verify the phrase via File > Cloud Sync Settings."));
+                        }
+                    },
+                    Qt::QueuedConnection);
+        } else {
+            qWarning() << "SqliteSyncPro initialize failed:" << m_syncApi->lastError();
+            QMessageBox::warning(this, tr("Cloud Sync"),
+                tr("Connection settings are invalid — unable to connect to the sync host.\n\n"
+                   "Your settings have been saved. You can update them via File > Cloud Sync Settings."));
+        }
+    }
 
     // load and refresh all of the models in order of their dependancy relationships
     global_DBObjects.unfilteredpeoplemodel()->refresh();
@@ -614,8 +696,6 @@ void MainWindow::openDatabase(const QString& dbfile)
     global_DBObjects.projectslistmodel()->loadUserFilter(global_DBObjects.projectslistmodel()->objectName());
     global_DBObjects.projectslistmodel()->activateUserFilter(global_DBObjects.projectslistmodel()->objectName());
 
-    global_Settings.setLastDatabase(dbfile);
-
     // assign all of the newly open models
     ui->pageProjectsList->setupModels(ui);
     ui->pageClients->setupModels(ui);
@@ -630,6 +710,11 @@ void MainWindow::openDatabase(const QString& dbfile)
 
     setButtonAndMenuStates();
 
+    // update button/menu states whenever a table row is clicked
+    const auto tableviews = findChildren<TableView*>();
+    for (TableView* tv : tableviews)
+        connect(tv, &TableView::rowSelectionChanged, this, &MainWindow::setButtonAndMenuStates);
+
     // connect the search request event
     connect(global_DBObjects.peoplemodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.clientsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
@@ -642,6 +727,12 @@ void MainWindow::openDatabase(const QString& dbfile)
     connect(global_DBObjects.notesactionitemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.trackeritemsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     connect(global_DBObjects.trackeritemscommentsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
+
+    // keep the Show Closed Projects menu checkbox in sync when the setting is changed programmatically
+    connect(&global_DBObjects, &DatabaseObjects::showClosedProjectsChanged,
+            this, [this](bool showClosed) {
+                ui->actionClosed_Projects->setChecked(showClosed);
+            });
 }
 
 void MainWindow::navigateToPage(BasePage* widget, QVariant recordId)
@@ -773,8 +864,79 @@ void MainWindow::buildHistory(HistoryNode* node)
     m_pageHistory.push(hn);
 }
 
+void MainWindow::cleanNavigationHistory(const QVariant& recordId)
+{
+    // Remove from page history menu stack
+    int i = 0;
+    while (i < m_pageHistory.count())
+    {
+        if (m_pageHistory.at(i)->m_recordId == recordId)
+        {
+            delete m_pageHistory.at(i);
+            m_pageHistory.remove(i);
+        }
+        else
+            i++;
+    }
+
+    // Remove from back/forward stack, adjusting m_navigationLocation for
+    // any removed entries that were before the current position
+    i = 0;
+    while (i < m_forwardBackHistory.count())
+    {
+        if (m_forwardBackHistory.at(i)->m_recordId == recordId)
+        {
+            delete m_forwardBackHistory.at(i);
+            m_forwardBackHistory.remove(i);
+            if (i <= m_navigationLocation)
+                m_navigationLocation--;
+        }
+        else
+            i++;
+    }
+
+    // Clamp navigationLocation to valid range
+    if (m_navigationLocation >= m_forwardBackHistory.count())
+        m_navigationLocation = m_forwardBackHistory.count() - 1;
+
+    // Rebuild the history menu and update button states
+    ui->menuHistory->clear();
+    int hi = m_pageHistory.count();
+    while (hi)
+    {
+        hi--;
+        HistoryNode* hn = m_pageHistory.at(hi);
+        QString title = QString("%1 - %2").arg(hn->m_pagetitle, hn->m_timestamp.toString("MM/dd/yy hh:mm"));
+        QAction* ha = ui->menuHistory->addAction(title, [hn, this](){ navigateToPage(hn->m_page, hn->m_recordId); });
+        ha->setPriority(QAction::LowPriority);
+    }
+
+    setButtonAndMenuStates();
+}
+
 void MainWindow::CloseDatabase()
 {
+    // Shut down background sync before closing the database.
+    // shutdown() is async; wait for syncStopped so the worker thread has released
+    // the database connection before we call closeDatabase().
+    if (m_syncApi) {
+        // Block row-changed propagation; we don't care about incoming sync updates anymore
+        disconnect(m_syncApi, &SqliteSyncPro::rowChanged, this, &MainWindow::onSyncRowChanged);
+
+        QEventLoop loop;
+        connect(m_syncApi, &SqliteSyncPro::syncStopped, &loop, &QEventLoop::quit);
+        m_syncApi->shutdown();
+        loop.exec();   // returns once the worker thread has exited cleanly
+
+        m_syncApi->deleteLater();
+        m_syncApi = nullptr;
+    }
+
+    // disconnect table row selection state updates
+    const auto tableviews = findChildren<TableView*>();
+    for (TableView* tv : tableviews)
+        disconnect(tv, &TableView::rowSelectionChanged, this, &MainWindow::setButtonAndMenuStates);
+
     // disconnect the search request event
     disconnect(global_DBObjects.peoplemodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
     disconnect(global_DBObjects.clientsmodel(), SIGNAL(callKeySearch()), this, SLOT(on_actionSearch_triggered()));
@@ -791,23 +953,6 @@ void MainWindow::CloseDatabase()
     global_DBObjects.closeDatabase();
 }
 
-void MainWindow::on_actionClose_Database_triggered()
-{
-    if (navigateCurrentPage())
-    {
-        navigateCurrentPage()->saveState();
-        navigateCurrentPage()->submitRecord();
-        navigateCurrentPage()->setCurrentView(nullptr);
-    }
-
-    navigateClearHistory();
-
-    global_Settings.setLastDatabase(QString());
-
-    CloseDatabase();  
-
-    setButtonAndMenuStates();
-}
 
 void MainWindow::on_actionClosed_Projects_triggered()
 {
@@ -876,7 +1021,12 @@ void MainWindow::on_actionCopy_Item_triggered()
 void MainWindow::on_actionDelete_Item_triggered()
 {
     if ( navigateCurrentPage() )
+    {
+        QVariantList deletedIds = navigateCurrentPage()->getSelectedRecordIds();
         navigateCurrentPage()->deleteItem();
+        for (const QVariant& id : deletedIds)
+            cleanNavigationHistory(id);
+    }
 }
 
 void MainWindow::slotOpen_ProjectDetails_triggered(QVariant recordId)
@@ -963,7 +1113,7 @@ void MainWindow::slotOpen_SearchResults_triggered(QVariant recordId)
     }
     else if (data_type == tr("Meeting Attendees"))
     {
-        QVariant project_id = global_DBObjects.execute(QString("select project_id from project_notes where note_id = '%1'").arg(fk_id.toString()));
+        QVariant project_id = global_DBObjects.execute(QString("select project_id from project_notes where id = '%1'").arg(fk_id.toString()));
 
         navigateToPage(ui->pageProjectDetails, project_id);
         ui->tabWidgetProject->setCurrentIndex(4);
@@ -1767,24 +1917,6 @@ void MainWindow::on_actionXML_Export_triggered()
     }
 }
 
-void MainWindow::on_actionBackup_Database_triggered()
-{
-    // choose the file
-    QString dbfile = QFileDialog::getSaveFileName(this, tr("Backup to file"), QString(), tr("Project Notes (*.db)"));
-
-    QApplication::setOverrideCursor(Qt::WaitCursor);
-    QApplication::processEvents();
-
-    if (!dbfile.isEmpty())
-    {
-        global_DBObjects.backupDatabase(dbfile);
-    }
-
-    QApplication::restoreOverrideCursor();
-    QApplication::processEvents();
-}
-
-
 void MainWindow::on_actionAbout_triggered()
 {
     AboutDialog dlg;
@@ -1918,4 +2050,9 @@ void MainWindow::onTimerWaitForThreads()
         this->close();  // once all plugins are unloaded we can quit
 
     ui->statusbar->showMessage(QString("Waiting for plugins to finish... %1  %2 plugins are still active.").arg(fan[fan_index]).arg(loaded_count));
+}
+
+void MainWindow::onSyncRowChanged(const QString& tableName, const QString& id)
+{
+    global_DBObjects.pushRowChange(tableName, id, KeyColumnChange::Update);
 }

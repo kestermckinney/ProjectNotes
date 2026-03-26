@@ -27,6 +27,7 @@ QT_END_NAMESPACE
 #include "findreplacedialog.h"
 #include "logviewer.h"
 #include "pluginmanager.h"
+#include "sqlitesyncpro.h"
 
 #define MAXHISTORYNODES 20
 
@@ -61,6 +62,7 @@ public:
     bool navigateAtStart() { return (m_navigationLocation <= 0); }
     void buildHistory(HistoryNode* node);
     void navigateClearHistory() { m_navigationLocation = -1; qDeleteAll(m_forwardBackHistory); m_forwardBackHistory.clear(); }
+    void cleanNavigationHistory(const QVariant& recordId);
     BasePage* navigateCurrentPage() { return ((m_forwardBackHistory.count() - 1) < m_navigationLocation || m_navigationLocation == -1 ? nullptr : m_forwardBackHistory.at(m_navigationLocation)->m_page ); }
     static PluginManager* getPluginManager() { return m_pluginManager; }
     void CloseDatabase();
@@ -88,9 +90,7 @@ private slots:
     void setButtonAndMenuStates();
     void openDatabase(const QString& dbfile);
     void on_actionExit_triggered();
-    void on_actionNew_Database_triggered();
     void on_actionOpen_Database_triggered();
-    void on_actionClose_Database_triggered();
     void on_actionClosed_Projects_triggered();
     void on_actionStatus_Bar_triggered();
     void on_actionFilter_triggered();
@@ -105,7 +105,6 @@ private slots:
     void on_actionInternal_Items_triggered();
     void on_actionPreferences_triggered();
     void on_actionResolved_Tracker_Action_Items_triggered();
-    void on_actionBackup_Database_triggered();
     void on_actionAbout_triggered();
     void on_actionHelp_triggered();
     void on_actionWhat_s_New_triggered();
@@ -140,6 +139,7 @@ private slots:
     void onPluginUnLoaded(const QString& pluginpath);
     void onRefreshRequested();
     void onTimerWaitForThreads();
+    void onSyncRowChanged(const QString& tableName, const QString& id);
 
 private:
     void buildPluginMenu(BasePage* currentPage);
@@ -200,6 +200,8 @@ private:
 
     QString m_mainConnectionName = "mainconnection";
     QTimer* m_waitForThreadsTimer = nullptr;
+
+    SqliteSyncPro* m_syncApi = nullptr;
 };
 
 

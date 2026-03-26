@@ -9,27 +9,27 @@
 PeopleModel::PeopleModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("PeopleModel");
-    setOrderKey(17);
 
-    setBaseSql("SELECT people_id, name, email, office_phone, cell_phone, client_id, role FROM people");
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
+    setBaseSql("SELECT id, name, email, office_phone, cell_phone, client_id, role FROM people");
 
     setTableName("people", "People");
 
-    addColumn("people_id", tr("People ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("id", tr("People ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
     addColumn("name", tr("Name"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
     addColumn("email", tr("Email"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("office_phone", tr("Office Phone"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("cell_phone", tr("Cell Phone"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("client_id", tr("Client"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
-            "clients", "client_id", "client_name");
+            "clients", "id", "client_name");
     addColumn("role", tr("Role"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
-    addRelatedTable("item_tracker", "assigned_to", "people_id", "Assigned Item");
-    addRelatedTable("item_tracker", "identified_by", "people_id", "Identified By Item");
-    addRelatedTable("item_tracker_updates", "updated_by", "people_id", "Item Updated By");
-    addRelatedTable("meeting_attendees", "person_id", "people_id", "Meeting Attendee");
-    addRelatedTable("project_people", "people_id", "people_id", "Project Team");
-    addRelatedTable("projects", "primary_contact", "people_id", "Project Primary Contact");
+    addRelatedTable("item_tracker", "assigned_to", "id", "Assigned Item");
+    addRelatedTable("item_tracker", "identified_by", "id", "Identified By Item");
+    addRelatedTable("item_tracker_updates", "updated_by", "id", "Item Updated By");
+    addRelatedTable("meeting_attendees", "person_id", "id", "Meeting Attendee");
+    addRelatedTable("project_people", "people_id", "id", "Project Team");
+    addRelatedTable("projects", "primary_contact", "id", "Project Primary Contact");
 
     QStringList key1 = {"name"};
 

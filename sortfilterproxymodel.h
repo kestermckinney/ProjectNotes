@@ -5,6 +5,7 @@
 #define SORTFILTERPROXYMODEL_H
 
 #include <QSortFilterProxyModel>
+#include <QHash>
 #include <QObject>
 
 class SortFilterProxyModel : public QSortFilterProxyModel
@@ -17,6 +18,11 @@ public:
                         int tRole) const override;
 
     bool lessThan(const QModelIndex &sourceLeft, const QModelIndex &sourceRight) const override;
+
+private:
+    // Cache for lookup display values — avoids repeated DB queries during sort.
+    // Key: "table\x1Ffkcol\x1Fvalcol\x1FfkValue", Value: display string.
+    mutable QHash<QString, QString> m_sortLookupCache;
 };
 
 #endif // SORTFILTERPROXYMODEL_H

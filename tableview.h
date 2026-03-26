@@ -45,8 +45,14 @@ public:
     void setHasOpen(bool hasOpen) { m_hasOpen = hasOpen; }
     void setKeyToOpenField(int keyToOpenField) { m_keyToOpenField = keyToOpenField; }
 
+protected:
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void leaveEvent(QEvent *event) override;
+    void paintEvent(QPaintEvent *event) override;
+
 signals:
     void signalOpenRecordWindow(QVariant record_id);
+    void rowSelectionChanged();
 
 public slots:
     virtual void dataRowSelected(const QModelIndex &index);
@@ -66,6 +72,7 @@ private:
 
     QPoint m_pressPos;
     bool m_isMoving = false;
+    int m_hoverRow = -1;
 
     QAction *m_newRecord;
     QAction *m_deleteRecord;

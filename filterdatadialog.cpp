@@ -105,6 +105,7 @@ void FilterDataDialog::setSourceModelView(SqlQueryModel *model, TableView *view)
 
     m_valuesModel->setFilteringModel(model);
     m_valuesModel->setValuesColumn(m_columnModel->data(qi).toString());
+    m_valuesModel->setDeletedFilterInView(model->getDeletedFilterInView());
     m_valuesModel->refresh();
 
     ui->tableViewColumnName->setColumnValuesModel(m_valuesModel);
@@ -117,7 +118,10 @@ void FilterDataDialog::setSourceModelView(SqlQueryModel *model, TableView *view)
 
     // sometimes the column width get zeroed out
     if (ui->tableViewColumnName->columnWidth(0) <= 0)
+    {
+        ui->tableViewColumnName->showColumn(0);
         ui->tableViewColumnName->resizeColumnToContents(0);
+    }
 
     setupFilters();
 
@@ -125,6 +129,12 @@ void FilterDataDialog::setSourceModelView(SqlQueryModel *model, TableView *view)
     ui->tableViewColumnName->dataRowSelected(m_columnProxyModel->index(0,0));
 
     m_valuesModel->refresh();
+
+    if (ui->tableViewFilterValues->columnWidth(0) <= 0)
+    {
+        ui->tableViewFilterValues->showColumn(0);
+        ui->tableViewFilterValues->resizeColumnToContents(0);
+    }
 
 }
 

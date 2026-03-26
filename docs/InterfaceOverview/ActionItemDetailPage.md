@@ -4,7 +4,7 @@ The **Action Item Detail Page** provides the ability to add comments about work 
 
 ## Comments
 
-Comments can be multiple lines. When you add a new comment it defaults the **Updated** date to the current date. **Updated By** defaults to the **Project Manger** specified in [Preferences](Preferences.md). **Comments** are intended to be a quick note.
+Comments can be multiple lines. When you add a new comment it defaults the **Updated** date to the current date. **Updated By** defaults to the **Project Manger** specified in [Preferences](<Preferences.md>). **Comments** are intended to be a quick note.
 
 **To add a comment:**
 

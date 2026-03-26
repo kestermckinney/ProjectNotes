@@ -89,9 +89,16 @@ static PyObject* update_data(PyObject* self, PyObject* args)
 
     DatabaseObjects dbo;
     dbo.openDatabase(global_DBObjects.getDatabaseFile(), caller, false);
-    int result = dbo.importXMLDoc(xmldoc);
 
-    global_DBObjects.addColumnChanges(dbo);
+    // Forward row changes from this non-GUI thread instance to global_DBObjects
+    // on the GUI thread. QueuedConnection ensures they arrive before the
+    // pluginRefreshRequest signal triggers updateDisplayData().
+    QObject::connect(&dbo, &DatabaseObjects::rowChanged,
+                     &global_DBObjects, [](const QString& table, const QVariant& value, int optype) {
+                         global_DBObjects.pushRowChange(table, value, static_cast<KeyColumnChange::OperationType>(optype));
+                     }, Qt::QueuedConnection);
+
+    int result = dbo.importXMLDoc(xmldoc);
 
     dbo.closeDatabase();
 
@@ -350,6 +357,7 @@ PluginManager::PluginManager(QObject *parent)
     PyImport_AppendInittab("projectnotes", PyInit_embeddedconsole);
 
     //Py_Initialize();
+
     Py_InitializeFromConfig(&config);
     PyConfig_Clear(&config);
 

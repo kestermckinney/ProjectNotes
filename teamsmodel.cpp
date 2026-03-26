@@ -3,27 +3,27 @@
 TeamsModel::TeamsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("TeamsModel");
-    setOrderKey(15);
 
-    setBaseSql("SELECT teammember_id, b.name, project_id, a.people_id, b.client_id FROM project_people a join people b on a.people_id=b.people_id ");
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
+    setBaseSql("SELECT project_people.id, people.name, project_id, project_people.people_id, people.client_id FROM project_people join people on project_people.people_id=people.id ");
 
     setTableName("project_people", "Project People");
 
-    addColumn("teammember_id", tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
+    addColumn("id", tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
     addColumn("name", tr("Name"), DBString, DBSearchable, DBRequired);
     addColumn("project_id", tr("Project ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
-              "projects", "project_id", "project_number");
+              "projects", "id", "project_number");
     addColumn("people_id", tr("People ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
-              "people", "people_id", "name");
+              "people", "id", "name");
     addColumn("client_id", tr("Client ID"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
-              "clients", "client_id", "client_name");
+              "clients", "id", "client_name");
 
     QStringList key1 = {"project_id", "people_id"};
 
     addUniqueKeys(key1, "Name");
 
     QStringList rel_col4 = { "project_id", "people_id" };
-    QStringList rel_fk4 = { "project_id", "primary_contact" };
+    QStringList rel_fk4 = { "id", "primary_contact" };
     addRelatedTable("projects", rel_fk4, rel_col4, "Primary Contact");
 
     QStringList rel_col1 = { "project_id", "people_id" };

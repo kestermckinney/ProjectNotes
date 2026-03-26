@@ -5,7 +5,7 @@ RequestExecutionLevel user
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "Project Notes"
-!define PRODUCT_VERSION "4.0.0"
+!define PRODUCT_VERSION "5.0.0"
 !define PRODUCT_PUBLISHER "Paul McKinney"
 !define PRODUCT_WEB_SITE "https://github.com/kestermckinney/ProjectNotes"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\ProjectNotes.exe"
@@ -70,14 +70,28 @@ Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
 
+  File "..\..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\admin\SQLSyncAdmin.exe"
   File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\ProjectNotes.exe"
 
   CreateDirectory "$SMPROGRAMS\Project Notes"
   CreateShortCut  "$SMPROGRAMS\Project Notes\Project Note.lnk" "$INSTDIR\ProjectNotes.exe"
+  CreateShortCut  "$SMPROGRAMS\Project Notes\SQL Sync Admin.lnk" "$INSTDIR\SQLSyncAdmin.exe"
   CreateShortCut  "$DESKTOP\Project Notes.lnk" "$INSTDIR\ProjectNotes.exe"
 
   ; Project Notes Needed Libraries
-  File "..\..\..\hunspell\msvc\x64\Release_dll\libhunspell.dll"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\hunspell-1.7-0.dll"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\libcrypto-3-x64.dll"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\legacy.dll"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\libssl-3-x64.dll"
+
+  File "..\..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\charset-1.dll"
+  File "..\..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\iconv-2.dll"
+  File "..\..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\libecpg.dll"
+  File "..\..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\libecpg_compat.dll"
+  File "..\..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\libpgtypes.dll"
+  File "..\..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\libpq.dll"
+  File "..\..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\lz4.dll"
+  File "..\..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\zlib1.dll"
 
   ; Core Qt libraries
   File "C:\Qt\6.10.0\msvc2022_64\bin\Qt6Core.dll"
@@ -85,6 +99,7 @@ Section "MainSection" SEC01
   File "C:\Qt\6.10.0\msvc2022_64\bin\Qt6Sql.dll"
   File "C:\Qt\6.10.0\msvc2022_64\bin\Qt6Widgets.dll"
   File "C:\Qt\6.10.0\msvc2022_64\bin\Qt6Xml.dll"
+  File "C:\Qt\6.10.0\msvc2022_64\bin\Qt6Network.dll"
 
   ; C Runtime
   File "C:\Windows\System32\msvcp_win.dll"
@@ -131,7 +146,7 @@ Section "MainSection" SEC01
   File "..\..\plugins\forms\dialogEditor.ui"
   File "..\..\plugins\forms\dialogExportLocation.ui"
   File "..\..\plugins\forms\dialogExportNotesOptions.ui"
-  File "..\..\plugins\forms\dialogTrackerOptions.ui"
+  File "..\..\plugins\forms\dialogExportTrackerOptions.ui"
   File "..\..\plugins\forms\dialogFileFinder.ui"
   File "..\..\plugins\forms\dialogIFSCloud.ui"
   File "..\..\plugins\forms\dialogMeetingEmailTemplate.ui"
@@ -288,7 +303,21 @@ Section Uninstall
   RMDIR "$INSTDIR\threads"
 
   Delete "$INSTDIR\ProjectNotes.exe"
-  Delete "$INSTDIR\libhunspell.dll"
+  Delete "$INSTDIR\SQLSyncAdmin.exe"
+  
+  Delete "$INSTDIR\hunspell-1.7-0.dll"
+  Delete "$INSTDIR\libcrypto-3-x64.dll"
+  Delete "$INSTDIR\legacy.dll"
+  Delete "$INSTDIR\libssl-3-x64.dll"
+
+  Delete "$INSTDIR\charset-1.dll"
+  Delete "$INSTDIR\iconv-2.dll"
+  Delete "$INSTDIR\libecpg.dll"
+  Delete "$INSTDIR\libecpg_compat.dll"
+  Delete "$INSTDIR\libpgtypes.dll"
+  Delete "$INSTDIR\libpq.dll"
+  Delete "$INSTDIR\lz.dll"
+  Delete "$INSTDIR\zlib1.dll"
 
   ; Core Qt libraries
   Delete "$INSTDIR\Qt6Core.dll"
@@ -296,6 +325,7 @@ Section Uninstall
   Delete "$INSTDIR\Qt6Sql.dll"
   Delete "$INSTDIR\Qt6Widgets.dll"
   Delete "$INSTDIR\Qt6Xml.dll"
+  Delete "$INSTDIR\Qt6Network.dll"  
   Delete "$INSTDIR\qt.conf"
 
   ; C Runtime
@@ -308,6 +338,7 @@ Section Uninstall
   Delete "$SMPROGRAMS\Project Notes\Website.lnk"
   Delete "$DESKTOP\Project Notes.lnk"
   Delete "$SMPROGRAMS\Project Notes\Project Notes.lnk"
+  Delete "$SMPROGRAMS\Project Notes\SQL Sync Admin.lnk"
 
   RMDir "$SMPROGRAMS\Project Notes"
   RMDir "$INSTDIR"

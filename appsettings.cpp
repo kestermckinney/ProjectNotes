@@ -97,6 +97,76 @@ void AppSettings::setLastDatabase(const QString& lastDatabase)
     m_appConfig->setValue("LastDatabaseUsed", lastDatabase);
 }
 
+bool AppSettings::getSyncEnabled()
+{
+    return m_appConfig->value("Sync/Enabled", false).toBool();
+}
+
+void AppSettings::setSyncEnabled(bool enabled)
+{
+    m_appConfig->setValue("Sync/Enabled", enabled);
+}
+
+int AppSettings::getSyncHostType()
+{
+    return m_appConfig->value("Sync/HostType", 0).toInt();
+}
+
+void AppSettings::setSyncHostType(int type)
+{
+    m_appConfig->setValue("Sync/HostType", type);
+}
+
+QString AppSettings::getSyncPostgrestUrl()
+{
+    return m_appConfig->value("Sync/PostgrestUrl").toString();
+}
+
+void AppSettings::setSyncPostgrestUrl(const QString& url)
+{
+    m_appConfig->setValue("Sync/PostgrestUrl", url);
+}
+
+QString AppSettings::getSyncEmail()
+{
+    return m_appConfig->value("Sync/Email").toString();
+}
+
+void AppSettings::setSyncEmail(const QString& email)
+{
+    m_appConfig->setValue("Sync/Email", email);
+}
+
+QString AppSettings::getSyncPassword()
+{
+    return m_appConfig->value("Sync/Password").toString();
+}
+
+void AppSettings::setSyncPassword(const QString& password)
+{
+    m_appConfig->setValue("Sync/Password", password);
+}
+
+QString AppSettings::getSyncSupabaseKey()
+{
+    return m_appConfig->value("Sync/SupabaseKey").toString();
+}
+
+void AppSettings::setSyncSupabaseKey(const QString& key)
+{
+    m_appConfig->setValue("Sync/SupabaseKey", key);
+}
+
+QString AppSettings::getSyncEncryptionPhrase()
+{
+    return m_appConfig->value("Sync/EncryptionPhrase").toString();
+}
+
+void AppSettings::setSyncEncryptionPhrase(const QString& phrase)
+{
+    m_appConfig->setValue("Sync/EncryptionPhrase", phrase);
+}
+
 QVariant AppSettings::getWindowStateData(const QString& stateDataName)
 {
     return m_appConfig->value(stateDataName);

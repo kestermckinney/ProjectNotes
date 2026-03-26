@@ -9,9 +9,10 @@
 SearchResultsModel::SearchResultsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("SearchResultsModel");
-    setOrderKey(200);
 
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
     setBaseSql("SELECT dataid, datatype, dataname, datadescription, internal_item, client_id, project_status, project_number, project_name, item_number, item_name, note_date, note_title, fk_id, datakey FROM database_search");
+    setDeletedFilterInView(true);  // view filters deleted rows internally
 
     setTableName("database_search", "Search Results");
 
@@ -56,6 +57,8 @@ QVariant SearchResultsModel::data(const QModelIndex &index, int role) const
 void SearchResultsModel::PerformSearch(const QString& searchValue)
 {
     clearAllUserSearches();
+    clearFilter(7);   // clear any previous key search on project_number
+    clearFilter(14);  // clear any previous key search on datakey
 
     if ( searchValue.isEmpty())
     {
@@ -72,6 +75,8 @@ void SearchResultsModel::PerformSearch(const QString& searchValue)
 void SearchResultsModel::PerformKeySearch(const QStringList& searchFields, const QStringList& searchValues)
 {
     clearAllUserSearches();
+    clearFilter(7);   // clear any previous key search on project_number
+    clearFilter(14);  // clear any previous key search on datakey
 
     if ( searchValues.isEmpty())
     {
@@ -80,7 +85,7 @@ void SearchResultsModel::PerformKeySearch(const QStringList& searchFields, const
     }
     else
     {
-        // if specific search column passed use it, if not a column use the data value
+        // use exact matching for key/ID fields (not LIKE substring search)
         for (int c = 0; c < searchFields.count(); c++)
         {
             QString col_name = searchFields.at(c);
@@ -89,9 +94,9 @@ void SearchResultsModel::PerformKeySearch(const QStringList& searchFields, const
             int col_num = getColumnNumber(col_name);
 
             if (col_num == -1)
-                setUserSearchString(14, col_val);
+                setFilter(14, col_val, DBCompareType::Equals);
             else
-                setUserSearchString(col_num, col_val);
+                setFilter(col_num, col_val, DBCompareType::Equals);
         }
 
         activateUserFilter(QString());

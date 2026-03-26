@@ -303,7 +303,7 @@ class GraphAPITools:
                 #     xmldoc += f'<column name="office_phone"></column>\n'
 
                 xmldoc += f'<column name="cell_phone">{self.pnc.to_xml(contact.get("mobilePhone", ""))}</column>\n'
-                xmldoc += f'<column name="client_id" lookupvalue="{self.pnc.to_xml(contact.get("companyName", ""))}"></column>\n'
+                xmldoc += f'<column name="id" lookupvalue="{self.pnc.to_xml(contact.get("companyName", ""))}"></column>\n'
                 xmldoc += f'<column name="role">{self.pnc.to_xml(contact.get("jobTitle", ""))}</column>\n'
                 xmldoc += '</row>\n'
 
@@ -417,7 +417,7 @@ class GraphAPITools:
                         if colnode.attributes().namedItem("name").nodeValue() == "cell_phone":
                             cellphone = content
 
-                        if colnode.attributes().namedItem("name").nodeValue() == "client_id":
+                        if colnode.attributes().namedItem("name").nodeValue() == "id":
                             company = colnode.attributes().namedItem("lookupvalue").nodeValue()
 
                         if colnode.attributes().namedItem("name").nodeValue() == "role":
@@ -1075,7 +1075,7 @@ class GraphAPITools:
 
                         content = colnode.toElement().text()
 
-                        if colnode.attributes().namedItem("name").nodeValue() == "project_id":
+                        if colnode.attributes().namedItem("name").nodeValue() == "id":
                             projectnumber = colnode.attributes().namedItem("lookupvalue").nodeValue().strip()
 
                         if colnode.attributes().namedItem("name").nodeValue() == "project_id_name":

@@ -13,20 +13,21 @@ TrackerItemsModel::TrackerItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
     setOrderKey(40);
 
     setBaseSql("select * from item_tracker_view");
+    setDeletedFilterInView(true);  // view filters deleted rows internally
 
     setTableName("item_tracker", "Project Action Items");
 
-    addColumn("item_id", tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("id", tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
     addColumn("item_number", tr("Item"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn("item_type", tr("Type"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn("item_name", tr("Item Name"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("identified_by", tr("Identified By"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
-              "people", "people_id", "name");
+              "people", "id", "name");
 
     addColumn("date_identified", tr("Date Identified"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("description", tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("assigned_to", tr("Assigned To"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
-              "people", "people_id", "name");
+              "people", "id", "name");
 
     addColumn("priority", tr("Priority"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &DatabaseObjects::item_priority);
     addColumn("status", tr("Status"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &DatabaseObjects::item_status);
@@ -35,9 +36,9 @@ TrackerItemsModel::TrackerItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
     addColumn("date_resolved", tr("Date Resolved"), DBDate, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
 
     addColumn("note_id", tr("Meeting"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
-               "project_notes", "note_id", "(strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title)");
+               "project_notes", "id", "(strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title)");
     addColumn("project_id", tr("Project"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
-              "projects", "project_id", "project_number");
+              "projects", "id", "project_number");
     addColumn("internal_item", tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("comments", tr("Comments"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("projet_status", tr("Project Status"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
@@ -48,7 +49,7 @@ TrackerItemsModel::TrackerItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 
     addUniqueKeys(key1, "Item");
 
-    addRelatedTable("item_tracker_updates", "item_id", "item_id", "Tracker Updates", DBExportable);
+    addRelatedTable("item_tracker_updates", "item_id", "id", "Tracker Updates", DBExportable);
 
     setOrderBy("item_number");
 }
@@ -56,7 +57,7 @@ TrackerItemsModel::TrackerItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 QVariant TrackerItemsModel::getNextItemNumber(const QVariant& projectId)
 {
     // determine the max item_number from the database, then determine the max number from the record cache in case new unsaved records were added
-    QString itemnumber_string = getDBOs()->execute(QString("select max(CAST(item_number as integer)) from item_tracker where project_id = '%1'").arg(projectId.toString()));
+    QString itemnumber_string = getDBOs()->execute(QString("select max(CAST(item_number as integer)) from item_tracker where project_id = '%1' and deleted = 0").arg(projectId.toString()));
     int itemnumber_int = itemnumber_string.toInt();
 
     for ( int i = 0; i < rowCount(QModelIndex()); i++ )
@@ -161,19 +162,9 @@ QVariant TrackerItemsModel::data(const QModelIndex &index, int role) const
     return SqlQueryModel::data(index, role);
 }
 
-const QModelIndex TrackerItemsModel::copyRecord(QModelIndex index)
+void TrackerItemsModel::prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex)
 {
-    QModelIndex qi = SqlQueryModel::copyRecord(index);
-
-    if(qi.isValid())
-    {
-        QVariant project_id = data(this->index(index.row(), 14));
-        QVariant next_item_number = getNextItemNumber(project_id);
-
-        int count = rowCount(QModelIndex()) - 1;
-
-        setCacheData(this->index(count, 1), next_item_number);
-    }
-
-    return qi;
+    QVariant project_id = data(this->index(sourceIndex.row(), 14));
+    newrecord[3] = QString("Copy of %1").arg(newrecord[3].toString());
+    newrecord[1] = getNextItemNumber(project_id);
 }

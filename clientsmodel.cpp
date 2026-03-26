@@ -9,17 +9,17 @@
 ClientsModel::ClientsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("ClientsModel");
-    setOrderKey(10);
 
-    setBaseSql("SELECT client_id, client_name FROM clients");
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
+    setBaseSql("SELECT id, client_name FROM clients");
 
     setTableName("clients", "Clients");
 
-    addColumn("client_id", tr("Client ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("id", tr("Client ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
     addColumn("client_name", tr("Client Name"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
 
-    addRelatedTable("people", "client_id", "client_id", "People");
-    addRelatedTable("projects", "client_id", "client_id", "Projects");
+    addRelatedTable("people", "client_id", "id", "People");
+    addRelatedTable("projects", "client_id", "id", "Projects");
 
     QStringList key1 = {"client_name"};
 
@@ -35,7 +35,7 @@ const QModelIndex ClientsModel::newRecord(const QVariant* fkValue1, const QVaria
 
     DB_LOCK;
     QSqlQuery select(getDBOs()->getDb());
-    select.prepare("select max(client_name) from clients where client_name like '[%'");
+    select.prepare("select max(client_name) from clients where client_name like '[%' and deleted = 0");
     QString maxnum;
 
     select.exec();

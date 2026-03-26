@@ -31,11 +31,12 @@ nav:
     - 'Presenting to Clients': InterfaceOverview/PresentingToClients.md
   - 'Plugins Overview':
     - 'Adding Functionality': PluginsOverview/AddingFunctionality.md
+    - 'Data Types': PluginsOverview/DataTypes.md
     - 'Project Notes XML': PluginsOverview/ProjectNotesXML.md
   - 'Standard Plugins':
     - 'Plugin Settings': StandardPlugins/PluginSettings.md
     - 'Outlook Integration': StandardPlugins/OutlookIntegration.md
-    - 'File Collector': StandardPlugins/FileCollector.md
+    - 'File Finder': StandardPlugins/FileFinder.md
     - 'My Shortcuts': StandardPlugins/MyShortcuts.md
     - 'Team Member Quick Add': StandardPlugins/TeamMemberQuickAdd.md
     - 'Export Meeting Notes': StandardPlugins/ExportMeetingNotes.md

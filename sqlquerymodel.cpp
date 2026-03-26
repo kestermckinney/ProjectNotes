@@ -382,7 +382,8 @@ void SqlQueryModel::refresh()
     sql_query = QSqlQuery( getDBOs()->getDb() );
     sql_query.setForwardOnly(true);
     sql_query.prepare(fullsql);
-    sql_query.exec();
+    if (!sql_query.exec())
+        qWarning() << objectName() << "SQL QUERY FAILED:" << sql_query.lastError().text() << "\nSQL:" << fullsql;
 
     // add a blank row for drop downs
     if (m_showBlank)
@@ -400,6 +401,7 @@ void SqlQueryModel::refresh()
         m_cache.append(record);
     }
     getDBOs()->getDb().commit();
+
 
     endResetModel();
 }
@@ -740,14 +742,13 @@ int SqlQueryModel::rowCount(const QModelIndex &parent) const
 const QModelIndex SqlQueryModel::copyRecord(QModelIndex index)
 {
     QVector<QVariant> newrecord = emptyrecord();
-    QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
 
     // don't copy key record so it is identified as a new record
     for (int i = 1; i < m_columnCount; i++)
     {
         if (m_columnIsUnique[i] == DBUnique)
         {
-            newrecord[i] = QString(" Copy [%2] of %1").arg(m_cache[index.row()][i].toString(), unique_stamp);
+            newrecord[i] = QString("Copy of %1").arg(m_cache[index.row()][i].toString());
         }
         else
         {
@@ -755,7 +756,76 @@ const QModelIndex SqlQueryModel::copyRecord(QModelIndex index)
         }
     }
 
-    return(addRecord(newrecord));
+    prepareCopiedRecord(newrecord, index);
+
+    QModelIndex newIndex = addRecord(newrecord);
+    insertCacheRow(newIndex.row());
+    return newIndex;
+}
+
+bool SqlQueryModel::insertCacheRow(int row)
+{
+    if (row < 0 || row >= m_cache.size())
+        return false;
+
+    // assign a new UUID key
+    m_cache[row][0] = QUuid::createUuid().toString();
+
+    QString fields;
+    QString values;
+
+    for (int i = 0; i < m_columnCount; i++)
+    {
+        if ((m_columnIsEditable[i] == DBEditable) || i == 0)
+        {
+            if (!fields.isEmpty()) fields += ", ";
+            if (!values.isEmpty()) values += ", ";
+            fields += m_columnName[i];
+            values += " ? ";
+        }
+    }
+
+    QSqlQuery insert(getDBOs()->getDb());
+    insert.prepare("insert into " + m_tablename + " ( " + fields + " ) values ( " + values + " )");
+
+    int bindcount = 0;
+    for (int i = 0; i < m_columnCount; i++)
+    {
+        if ((m_columnIsEditable[i] == DBEditable) || i == 0)
+        {
+            insert.bindValue(bindcount, m_cache[row][i]);
+            bindcount++;
+        }
+    }
+
+    DB_LOCK;
+    getDBOs()->getDb().transaction();
+    if (insert.exec())
+    {
+        getDBOs()->getDb().commit();
+        DB_UNLOCK;
+
+        QModelIndex qil = createIndex(row, 0);
+        QModelIndex qir = createIndex(row, columnCount() - 1);
+        emit dataChanged(qil, qir);
+
+        if (m_gui)
+            refreshImpactedRecordsets(qil);
+
+        return true;
+    }
+    getDBOs()->getDb().rollback();
+    DB_UNLOCK;
+
+    if (m_gui)
+    {
+        QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
+           insert.lastError().text() + "\n" + insert.lastQuery(), QMessageBox::Ok);
+    }
+
+    // revert the key so it stays as a new record
+    m_cache[row][0] = QVariant();
+    return false;
 }
 
 const QModelIndex SqlQueryModel::addRecord(QVector<QVariant>& newrecord)
@@ -786,11 +856,8 @@ void SqlQueryModel::removeCacheRecord(QModelIndex index)
     m_cache.remove(index.row());
 
     endRemoveRows();
-
-    QModelIndex qil = createIndex(index.row(), 0);
-    QModelIndex qir = createIndex(index.row(), columnCount() - 1);
-
-    emit dataChanged(qil, qir);
+    // beginRemoveRows/endRemoveRows is sufficient to notify views of the removal.
+    // Emitting dataChanged for a row that no longer exists is incorrect and removed.
 }
 
 bool SqlQueryModel::deleteRecord(QModelIndex index)
@@ -800,13 +867,14 @@ bool SqlQueryModel::deleteRecord(QModelIndex index)
 
     QSqlQuery delrow(getDBOs()->getDb());
     QVariant keyval = m_cache[index.row()][0];
-    delrow.prepare("delete from " + m_tablename + " where " + m_columnName[0] + " = ? ");
+    delrow.prepare("UPDATE " + m_tablename + " SET deleted = 1 WHERE " + m_columnName[0] + " = ?");
     delrow.bindValue(0, keyval);
 
     DB_LOCK;
     if(delrow.exec())
     {
         DB_UNLOCK;
+
 
         removeCacheRecord(index);
 
@@ -844,7 +912,7 @@ bool SqlQueryModel::isUniqueValue(const QVariant &newValue, const QModelIndex &i
         keyvalue = m_cache[index.row()][0].toString();
 
     QSqlQuery select(getDBOs()->getDb());
-    select.prepare("select count(*) from " + m_tablename + " where " + keycolumnname + " <> ? and " + columnname + " = ?");
+    select.prepare("select count(*) from " + m_tablename + " where " + keycolumnname + " <> ? and " + columnname + " = ? AND deleted = 0");
     select.bindValue(0, keyvalue);
     select.bindValue(1, newValue);
 
@@ -923,7 +991,7 @@ bool SqlQueryModel::columnChangeCheck(const QModelIndex &index)
             {
                 DB_LOCK;
                 QSqlQuery projsql(getDBOs()->getDb());
-                projsql.prepare(QString("select project_number from projects where project_id ='%1'").arg(col_val.toString()));
+                projsql.prepare(QString("select project_number from projects where id ='%1'").arg(col_val.toString()));
 
                 projsql.exec();
 
@@ -990,6 +1058,8 @@ bool SqlQueryModel::columnChangeCheck(const QModelIndex &index)
                 getDBOs()->searchresultsmodel()->PerformKeySearch( key_columns, key_values );
 
                 emit callKeySearch();
+
+                promptShowClosedProjects(key_columns, key_values, reference_count);
             }
         }
 
@@ -1035,7 +1105,7 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
             {
                 DB_LOCK;
                 QSqlQuery projsql(getDBOs()->getDb());
-                projsql.prepare(QString("select project_number from projects where project_id ='%1'").arg(col_val.toString()));
+                projsql.prepare(QString("select project_number from projects where id ='%1'").arg(col_val.toString()));
 
                 projsql.exec();
 
@@ -1053,7 +1123,7 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
         DB_LOCK;
 
         QSqlQuery select(getDBOs()->getDb());
-        select.prepare("select count(*) from " + m_relatedTable.at(i) + " where " + where_clause);
+        select.prepare("select count(*) from " + m_relatedTable.at(i) + " where " + where_clause + " AND deleted = 0");
         select.exec();
 
         //qDebug() << "DELETE CHECK: " << "select count(*) from " + m_relatedTable.at(i) + " where " + where_clause;
@@ -1099,6 +1169,8 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
                 getDBOs()->searchresultsmodel()->PerformKeySearch( key_columns, key_values );
 
                 emit callKeySearch();
+
+                promptShowClosedProjects(key_columns, key_values, reference_count);
             }
         }
 
@@ -1116,6 +1188,24 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
         }
         else
             return true;
+    }
+}
+
+void SqlQueryModel::promptShowClosedProjects(const QStringList &keyColumns, const QStringList &keyValues, int expectedCount)
+{
+    if (!getDBOs()->getShowClosedProjects() &&
+        getDBOs()->searchresultsmodel()->rowCount(QModelIndex()) < expectedCount)
+    {
+        if (QMessageBox::question(nullptr,
+                QObject::tr("Records Not Shown"),
+                QObject::tr("Some related records are not visible because they belong to closed projects.\n\n"
+                            "Would you like to show closed projects?"),
+                QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
+        {
+            getDBOs()->setShowClosedProjects(true);
+            getDBOs()->setGlobalSearches(false);  // update model filters without a full refresh
+            getDBOs()->searchresultsmodel()->PerformKeySearch(keyColumns, keyValues);
+        }
     }
 }
 
@@ -1154,7 +1244,9 @@ bool SqlQueryModel::reloadRecord(const QModelIndex& index)
 {
     DB_LOCK;
     QSqlQuery select(getDBOs()->getDb());
-    select.prepare(BaseSQL() + " where " + m_columnName[0] + " = ? ");
+    // Include base filters (e.g. deleted filter) so that a record soft-deleted via sync
+    // is not found here — letting the caller remove it from the cache.
+    select.prepare("SELECT * FROM (" + BaseSQL() + constructWhereClause(false) + ") _t WHERE _t." + m_columnName[0] + " = ?");
     select.bindValue(0, m_cache[index.row()][0]);
 
     if (select.exec())
@@ -1170,7 +1262,10 @@ bool SqlQueryModel::reloadRecord(const QModelIndex& index)
 
             DB_UNLOCK;
 
-            emit dataChanged(index.model()->index(index.row(), 0), index.model()->index(index.row(), select.record().count()));
+            // Use createIndex() with m_columnCount - 1 so the range is within
+            // valid bounds. index.model()->index() was off-by-one (count vs last index)
+            // which caused Qt views to silently discard the repaint request.
+            emit dataChanged(createIndex(index.row(), 0), createIndex(index.row(), m_columnCount - 1));
 
             return true;
         }
@@ -1445,6 +1540,15 @@ QString SqlQueryModel::constructWhereClause(bool includeUserFilter)
                 }
             }
         }
+    }
+
+    // Always filter out soft-deleted rows (unless the view handles it internally)
+    if (!m_deletedFilterInView) {
+        QString deletedFilter = QString("(%1.deleted IS NULL OR %1.deleted = 0)").arg(m_tablename);
+        if (!valuelist.isEmpty())
+            valuelist = deletedFilter + " AND " + valuelist;
+        else
+            valuelist = deletedFilter;
     }
 
     if (!valuelist.isEmpty())
@@ -1801,7 +1905,6 @@ QDomElement SqlQueryModel::toQDomElement( QDomDocument* xmlDocument, const QStri
     for ( const auto& row : m_cache )
     {
         QDomElement xmlrow = xmlDocument->createElement("row");
-        xmlrow.setAttribute("id", row[0].toString());
 
         // build the column xml
         for ( int i = 0; i < row.count(); i++ )
@@ -2108,10 +2211,10 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
 
     if (!id_field.isEmpty())
     {
-        // delete or update if exists
+        // soft-delete or update if exists
         if (isdelete)
         {
-            sql = QString("delete from %1 where %3").arg(m_tablename, whereclause);
+            sql = QString("UPDATE %1 SET deleted = 1 WHERE %2").arg(m_tablename, whereclause);
             disp_optype = KeyColumnChange::Delete;
         }
         else
@@ -2180,7 +2283,7 @@ bool SqlQueryModel::checkUniqueKeys(const QModelIndex &index, const QVariant &va
         // if the field we are checking is relevent check it
         if (isrelevent)
         {
-            where = QString("select count(*) from %1 where ").arg(tablename()) + where;
+            where = QString("select count(*) from %1 where ").arg(tablename()) + where + " AND deleted = 0";
 
             //qDebug() << "Verifying Unique:  " << where;
 
@@ -2278,7 +2381,7 @@ bool SqlQueryModel::loadAndFilterRow(const QVariant& id)  // load the record and
 
     DB_LOCK;
     QSqlQuery select(getDBOs()->getDb());
-    select.prepare(BaseSQL() + " where " + m_columnName[0] + " = ? ");
+    select.prepare("SELECT * FROM (" + BaseSQL() + ") _t WHERE _t." + m_columnName[0] + " = ?");
     select.bindValue(0, id);
 
     if (select.exec())

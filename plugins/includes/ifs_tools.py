@@ -153,7 +153,7 @@ class IFSCommon:
                         if showitem:
                             xml = xml + '<row earlystart="' + j['EarlyStart'] +'" EarlyFinish="' + j['EarlyFinish'] + '" startrange="' + str(startrange) + '" finishrange="' + str(finishrange) + '" objstate="' + status + '">\n'
 
-                            xml = xml + '<column name="project_id" lookupvalue="' + project_num + '"></column>\n'
+                            xml = xml + '<column name="id" lookupvalue="' + project_num + '"></column>\n'
 
                             progress = str(round(float(0 if j['EstimatedProgress'] is None else j['EstimatedProgress']) * 100.0, 0)) + '%'
 
@@ -491,7 +491,7 @@ class IFSCommon:
     def export_ifs_project_tracker_items(self, project_id, project_number):
         #print(f"Gathering tracker items for {project_number}...")
 
-        xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table filter_field_1="project_id" filter_value_1="{project_id}" name="item_tracker" />\n</projectnotes>\n'
+        xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table filter_field_1="id" filter_value_1="{project_id}" name="item_tracker" />\n</projectnotes>\n'
         xmlresult = projectnotes.get_data(xmldoc)
 
         #print(f"Tracker search returned: {xmlresult}")
@@ -604,7 +604,7 @@ class IFSCommon:
 
             while not projectrow.isNull():
                 project_number = self.pnc.get_column_value(projectrow, "project_number")
-                project_id = self.pnc.get_column_value(projectrow, "project_id")
+                project_id = self.pnc.get_column_value(projectrow, "id")
                 
                 projectcount += 1
 

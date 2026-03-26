@@ -15,6 +15,7 @@
 #include <QFileDialog>
 #include <QTextStream>
 #include <QMargins>
+#include <QPainter>
 
 #include "QLogger.h"
 #include "QLoggerWriter.h"
@@ -38,6 +39,8 @@ TableView::TableView(QWidget *parent) : QTableView(parent)
 
     setSelectionMode(QAbstractItemView::SingleSelection);
     setSelectionBehavior(QAbstractItemView::SelectRows);
+
+    viewport()->setMouseTracking(true);
 
     rowView->setSelectionMode(QAbstractItemView::SingleSelection);
     rowView->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -148,12 +151,10 @@ void TableView::setModel(QAbstractItemModel *model)
 
         if (Col >= 0)
         {
-            if (Dir == "A")
-                horizontalHeader()->setSortIndicator(Col, Qt::AscendingOrder);
-            else
-                horizontalHeader()->setSortIndicator(Col, Qt::DescendingOrder);
-
+            Qt::SortOrder order = (Dir == "A") ? Qt::AscendingOrder : Qt::DescendingOrder;
+            horizontalHeader()->setSortIndicator(Col, order);
             horizontalHeader()->setSortIndicatorShown(true);
+            sortByColumn(Col, order);
         }
         else
         {
@@ -231,20 +232,26 @@ bool TableView::eventFilter(QObject* watched, QEvent *event)
         if (indexAtCursor == -1)
             return false; // Do nothing, we clicked outside the headers
         else if (header->sortIndicatorSection() != indexAtCursor)
-        {   
+        {
             header->setSortIndicator(indexAtCursor, Qt::AscendingOrder);
             header->setSortIndicatorShown(true);
+            sortByColumn(indexAtCursor, Qt::AscendingOrder);
             global_Settings.setTableSortColumn(objectName(), indexAtCursor, "A");
         }
         else if (header->sortIndicatorOrder() == Qt::AscendingOrder)
         {
             header->setSortIndicator(indexAtCursor, Qt::DescendingOrder);
+            sortByColumn(indexAtCursor, Qt::DescendingOrder);
             global_Settings.setTableSortColumn(objectName(), indexAtCursor, "D");
         }
         else
         {
+            // Cycle back to unsorted — Qt ignores sortByColumn(-1), so call
+            // model()->sort(-1) directly to clear the proxy model's sort order.
             header->setSortIndicator(-1, Qt::AscendingOrder);
             header->setSortIndicatorShown(false);
+            if (model())
+                model()->sort(-1, Qt::AscendingOrder);
             global_Settings.setTableSortColumn(objectName(), -1, "");
         }
 
@@ -259,11 +266,69 @@ bool TableView::eventFilter(QObject* watched, QEvent *event)
 void TableView::dataRowSelected(const QModelIndex &index)
 {
     Q_UNUSED(index);
+    emit rowSelectionChanged();
 }
 
 void TableView::dataRowActivated(const QModelIndex &index)
 {
     Q_UNUSED(index);
+}
+
+void TableView::mouseMoveEvent(QMouseEvent *event)
+{
+    QTableView::mouseMoveEvent(event);
+
+    int row = indexAt(event->pos()).row();
+    if (row != m_hoverRow)
+    {
+        // Repaint the previously hovered row to erase the highlight
+        if (m_hoverRow >= 0)
+        {
+            int y = rowViewportPosition(m_hoverRow);
+            int h = rowHeight(m_hoverRow);
+            viewport()->update(0, y, viewport()->width(), h);
+        }
+
+        m_hoverRow = row;
+
+        // Repaint the newly hovered row to draw the highlight
+        if (m_hoverRow >= 0)
+        {
+            int y = rowViewportPosition(m_hoverRow);
+            int h = rowHeight(m_hoverRow);
+            viewport()->update(0, y, viewport()->width(), h);
+        }
+    }
+}
+
+void TableView::leaveEvent(QEvent *event)
+{
+    QTableView::leaveEvent(event);
+
+    if (m_hoverRow >= 0)
+    {
+        int y = rowViewportPosition(m_hoverRow);
+        int h = rowHeight(m_hoverRow);
+        m_hoverRow = -1;
+        viewport()->update(0, y, viewport()->width(), h);
+    }
+}
+
+void TableView::paintEvent(QPaintEvent *event)
+{
+    QTableView::paintEvent(event);
+
+    if (m_hoverRow >= 0 && model() && m_hoverRow < model()->rowCount())
+    {
+        int y = rowViewportPosition(m_hoverRow);
+        int h = rowHeight(m_hoverRow);
+        QRect rowRect(0, y, viewport()->width(), h);
+
+        QPainter painter(viewport());
+        QColor hoverColor = palette().color(QPalette::Highlight);
+        hoverColor.setAlpha(40);
+        painter.fillRect(rowRect, hoverColor);
+    }
 }
 
 void TableView::sortMenu(QMenu* menu)
@@ -311,7 +376,13 @@ void TableView::contextMenuEvent(QContextMenuEvent *e)
         if (!is_new_record)
         {
             menu->addAction(m_deleteRecord);
-            menu->addAction(m_copyRecord);
+
+            // Don't allow copying team members or meeting attendees
+            QString modelName = currentmodel->objectName();
+            if (modelName != "ProjectTeamMembersModel" && modelName != "MeetingAttendeesModel")
+            {
+                menu->addAction(m_copyRecord);
+            }
         }
 
         if (!is_new_record) menu->addAction(m_exportRecord);

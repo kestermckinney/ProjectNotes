@@ -33,7 +33,7 @@ class NoteFormatter:
 		        rownode = childnode.firstChild()
 
 		        while not rownode.isNull():
-		        	project_id = self.pnc.get_column_value(rownode, "project_id")
+		        	project_id = self.pnc.get_column_value(rownode, "id")
 		        	project_id_name = self.pnc.get_column_value(rownode, "project_id_name")
 		        	note_date = self.pnc.get_column_value(rownode, "note_date")
 		        	note_title = self.pnc.get_column_value(rownode, "note_title")

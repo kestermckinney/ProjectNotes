@@ -10,24 +10,26 @@ using namespace QLogger;
 TrackerItemCommentsModel::TrackerItemCommentsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("TrackerItemCommentsModel");
-    setOrderKey(35);
 
-    setBaseSql("SELECT tracker_updated_id, item_id, lastupdated_date, update_note, updated_by, (select i.item_name from item_tracker i where i.item_id=u.item_id) item_name, (select i.item_number from item_tracker i where i.item_id=u.item_id) item_number, (select i.description from item_tracker i where i.item_id=u.item_id) description, (select p.project_name from projects p where p.project_id=(select i.project_id from item_tracker i where i.item_id=u.item_id)) project_name, (select p.project_number from projects p where p.project_id=(select i.project_id from item_tracker i where i.item_id=u.item_id)) project_number FROM item_tracker_updates u");
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
+    setBaseSql("SELECT id, item_id, lastupdated_date, update_note, updated_by, (select i.item_name from item_tracker i where i.id=item_tracker_updates.item_id) item_name, (select i.item_number from item_tracker i where i.id=item_tracker_updates.item_id) item_number, (select i.description from item_tracker i where i.id=item_tracker_updates.item_id) description, (select p.project_name from projects p where p.id=(select i.project_id from item_tracker i where i.id=item_tracker_updates.item_id)) project_name, (select p.project_number from projects p where p.id=(select i.project_id from item_tracker i where i.id=item_tracker_updates.item_id)) project_number FROM item_tracker_updates");
 
     setTableName("item_tracker_updates", "Tracker Comments");
 
-    addColumn("tracker_updated_id", tr("Item Updated ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("id", tr("Item Updated ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
     addColumn("item_id", tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
-              "item_tracker", "item_id", "item_number");
+              "item_tracker", "id", "item_number");
     addColumn("lastupdated_date", tr("Updated"), DBDate, DBSearchable, DBRequired, DBEditable, DBNotUnique);
     addColumn("update_note", tr("Comments"), DBString, DBSearchable, DBNotRequired);
     addColumn("updated_by", tr("Updated By"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique,
-              "people", "people_id", "name"); // itemdetailteamlist, tr("name"), tr("people_id"), true );
+              "people", "id", "name"); // itemdetailteamlist, tr("name"), tr("people_id"), true );
     addColumn("item_name", tr("Item Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("item_number", tr("Item Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("description", tr("Item Description"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("project_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("project_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+
+    setDeletedFilterInView(true);
 
     setOrderBy("lastupdated_date");
 }

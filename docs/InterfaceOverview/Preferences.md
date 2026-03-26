@@ -1,12 +1,79 @@
 # Preferences
 
-## Setting Yourself Up As The Project Manager
+The Project Notes Preferences dialog allows you to configure application-wide settings that affect how Project Notes operates and communicates with team members and clients.
 
-Project Notes excludes specific groups when constructing communications. Some communications are intended for internal use while others are for internal and customer. By specifying the Project Manager and the Managing Company, Project Notes can identify the correct recipients.
+## Accessing Preferences
 
-**To specify the Project Manager and Managing Company:**
+**To open the Preferences dialog:**
 
-1. From the **File** Menu in **Project Notes**, select **Preferences...**
-2. Select the **Project Manager** from the drop down.
-3. Select the **Managing Company** from the drop down.
-4. Click the **OK** button to save the settings.
+1. From the **File** menu, choose **Preferences...** (or press **Preferences** button if available)
+2. The Preferences dialog will open with all available settings
+
+## Project Manager
+
+The **Project Manager** setting identifies you as the primary project manager for your organization. This setting is used to:
+
+- **Exclude you from communications** — When sending emails or generating reports, Project Notes may exclude the project manager from recipient lists to avoid sending information to yourself
+- **Track meeting attendance** — Some meeting scheduling features use this setting to determine if you should be included in meeting invitations
+- **Filter report recipients** — Ensures that internal communications don't accidentally include the wrong people
+
+**To set the Project Manager:**
+
+1. Open the **Preferences** dialog from the **File** menu
+2. Click the **Project Manager** dropdown
+3. Select your name from the list of people in your database
+4. Click **OK**
+
+**Note:** The project manager list is populated from the **People** data in your database. If you don't see your name in the list, add yourself as a person first (see [People List Page](PeopleListPage.md)).
+
+## Managing Company
+
+The **Managing Company** setting specifies your organization or company. This setting is used to:
+
+- **Identify internal communications** — Project Notes distinguishes between internal-only communications and communications that include clients
+- **Exclude your company from client communications** — When generating client-facing documents, your company information may be filtered differently than client information
+- **Organize team members** — Helps Project Notes understand the structure of your organization vs. client organizations
+
+**To set the Managing Company:**
+
+1. Open the **Preferences** dialog from the **File** menu
+2. Click the **Managing Company** dropdown
+3. Select your company name from the list of clients in your database
+4. Click **OK**
+
+**Note:** The managing company list is populated from the **Clients** data in your database. If you don't see your company in the list, add it as a client first (see [Client List Page](ClientListPage.md)).
+
+## How Preferences Are Used
+
+### In Communications
+
+When you use plugins to send emails or schedule meetings, Project Notes uses your preferences to:
+
+- **Determine recipients** — The project manager is often excluded from internal emails to avoid duplicating communication
+- **Filter content** — Internal items and notes marked as "Internal" may be excluded from client-facing communications based on your preferences
+- **Personalize messages** — Your project manager setting may be used to automatically populate your name in email signatures or meeting invitations
+
+### In Reports
+
+When generating reports (such as meeting minutes or tracker item reports), Project Notes:
+
+- **Filters recipients** — Excludes the project manager from the "Send to" list by default
+- **Marks internal items** — Uses the managing company setting to identify which notes and items are internal vs. client-facing
+
+### In Filtering
+
+When you use the [Filter Tool](FilterTool.md) or [View Menu](ViewMenu.md) filtering options:
+
+- **Client filtering** — You can filter data by the managing company to see only your organization's data
+- **Internal item visibility** — The "Show Internal Items" option works in conjunction with your project manager setting to determine what should be hidden when presenting to clients
+
+## Saving Preferences
+
+Any changes you make in the Preferences dialog are saved immediately when you click **OK**. These settings are stored in your operating system's user profile and persist across application restarts.
+
+## Related Documentation
+
+- [File Menu](FileMenu.md) — Access Preferences from the File menu
+- [People List Page](PeopleListPage.md) — Manage people in your database
+- [Client List Page](ClientListPage.md) — Manage clients/companies in your database
+- [Presenting to Clients](PresentingToClients.md) — How to use preferences when presenting to clients

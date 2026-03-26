@@ -5,6 +5,7 @@
 Standard text editing features are available in most text boxes and editable lists cells. Currently, spell checking does not work in list cells on MacOS. Project Notes is specifically design to store and manage non-formatted text. Any formatted text pasted into a field will be stored as non-formatted text.
 
 **To find text in a text box:**
+
 1. Click the cursor starting location in the text box.
 2. From the **Edit** menu Choose **Find...**.
 3. Type the search text in the **Find:** text box.
@@ -14,6 +15,7 @@ Standard text editing features are available in most text boxes and editable lis
 7. Click **Find Next** to search from the current cursor location.
 
 **To replace text in a text box:**
+
 1. Click the cursor starting location in the text box.
 2. From the **Edit** menu choose **Find...**
 3. Type the search text in the **Find:** text box.
@@ -27,6 +29,7 @@ Standard text editing features are available in most text boxes and editable lis
 Project Notes uses a built in spell checking solution. The solution allows you to add words to your own custom dictionary.
 
 **To check spelling in a text box:**
+
 1. Click the cursor starting location in the text box.
 2. Choose **Check Spelling...** from the **Edit** menu.
 3. To ignore a not in dictionary word once, click **Ignore Once**.
@@ -41,39 +44,49 @@ Project Notes uses a built in spell checking solution. The solution allows you t
 The basic copy, cut, paste, delete commands of the operating system are available.
 
 **To undo recently typed text:**
+
 1. Choose **Undo** from the **Edit** menu.
 
 **To redo recently undone text:**
+
 1. Choose **Undo** from the **Edit** menu.
 
 
 **To copy text:**
+
 1. Select the text in the text box.
 2. Choose **Copy** from the **Edit** menu.
 
 **To paste text:**
+
 1. Click the cursor starting location in the text box or select the text to replace.
 2. Choose **Paste** from the **Edit** menu.
 
 **To delete text:**
+
 1. Select the text in the text box.
 2. Choose **Delete** from the **Edit** menu.
 
 **To cut text:**
+
 1. Select the text in the text box.
-1. Choose **Cut** from the **Edit** menu.
+2. Choose **Cut** from the **Edit** menu.
 
 **To select all text in a text box:**
+
 1. Choose **Select All** from the **Edit** menu.
 
 **Record Editing**
-Each page is design to only have one list view visible at a time. The toolbar and the **Edit** menu contain record editing commands that are enabled whenever an editable list view is visible.
+Each page is design to only have one list view visible at a time. The toolbar and the **Edit** menu contain record editing commands that are enabled whenever an editable list view is visible.  When a record is copied, ProjectNotes will make sure now unique values are duplicated.  For example tracker items will get a new Item Number.  Copied meetings will not copy notes, but will copy the title and attendees to make creating a new meeting quicker.
 
 **To insert a record:**
+
 1. From the **Edit** menu choose **New** **Item**.
 
 **To delete a record:**
+
 1. From the **Edit** menu choose **Delete** **Item**.
 
 **To copy a record:**
+
 1. From the **Edit** menu choose **Copy** **Item**.

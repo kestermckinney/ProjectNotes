@@ -33,7 +33,10 @@ void ColumnView::dataRowSelected(const QModelIndex &index)
     int col = m_filteredModel->getColumnNumber(dbcolname);
 
     if (m_valuesView->columnWidth(0) <= 0)
+    {
+        m_valuesView->showColumn(0);
         m_valuesView->resizeColumnToContents(0);
+    }
 
     if ( col < 0 )  // if for some reason no column is selected bail out
         return;

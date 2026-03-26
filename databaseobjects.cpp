@@ -68,7 +68,7 @@ QStringList DatabaseObjects::file_types = {
 };
 
 DatabaseObjects global_DBObjects(nullptr);
-QMutex db_mutex;
+QReadWriteLock db_rwlock;
 
 
 DatabaseObjects::DatabaseObjects(QObject *parent) : QObject(parent)
@@ -247,22 +247,7 @@ bool DatabaseObjects::openDatabase(const QString& databasepath, const QString& c
 
 void DatabaseObjects::addModel(SqlQueryModel* model)
 {
-    QList<SqlQueryModel*>::iterator it_recordsets = m_openRecordsets.begin();
-
-    while(it_recordsets != m_openRecordsets.end())
-    {
-
-        if (model->getOrderKey() < (*it_recordsets)->getOrderKey())
-        {
-            m_openRecordsets.insert(it_recordsets, model);
-
-            return;
-        }
-
-        it_recordsets++;
-    }
-
-    m_openRecordsets.append(model); // add to the list of open recordsets
+    m_openRecordsets.append(model);
 }
 
 void DatabaseObjects::removeModel(SqlQueryModel* model)
@@ -302,26 +287,26 @@ QString DatabaseObjects::execute(const QString& sql)
 {
     QString val;
 
-    QMutexLocker locker(&db_mutex);
+    QWriteLocker locker(&db_rwlock);
     {
         QSqlQuery query(m_sqliteDb);
 
         if (m_sqliteDb.transaction())
         {
             query.prepare(sql);
-            query.exec();
-
+            if (!query.exec())
+            {
 #ifdef QT_DEBUG
-            QLog_Debug(DEBUGLOG, QString("Execute: %1").arg(sql));
+            QString msg = objectName() + " - SQL QUERY FAILED: " + query.lastError().text() + "\nSQL: " + sql;
+            qWarning() << msg;
+            QLog_Debug(DEBUGLOG, msg);
 #endif
+            }
 
             QSqlError e = query.lastError();
             if (e.isValid())
             {
                 m_sqliteDb.rollback();
-#ifdef QT_DEBUG
-                QLog_Debug(DEBUGLOG, QString("Exec Error: %1").arg(e.text()));
-#endif
             }
             else
             {
@@ -333,13 +318,13 @@ QString DatabaseObjects::execute(const QString& sql)
             {
                 val = query.value(0).toString();
 #ifdef QT_DEBUG
-                QLog_Debug(DEBUGLOG, QString("Result: %1").arg(query.value(0).toString()));
+                QLog_Debug(DEBUGLOG, QString("Result: %1 for query: %2").arg(query.value(0).toString(),sql));
 #endif
             }
 #ifdef QT_DEBUG
             else
             {
-                QLog_Debug(DEBUGLOG, QString("Result No Record"));
+                QLog_Debug(DEBUGLOG, QString("Result No Record for query: %1").arg(sql));
             }
 #endif
         }
@@ -487,7 +472,7 @@ bool DatabaseObjects::saveParameter( const QString& parametername, const QString
 {
     DB_LOCK;
     QSqlQuery select(m_sqliteDb);
-    if(!select.prepare("select parameter_value from application_settings where parameter_name = ?;"))
+    if(!select.prepare("select parameter_value from application_settings where parameter_name = ? and deleted = 0;"))
     {
         if (m_gui)
             QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
@@ -519,7 +504,7 @@ bool DatabaseObjects::saveParameter( const QString& parametername, const QString
         else
         {
             QSqlQuery insert(m_sqliteDb);
-            insert.prepare("insert into application_settings (parameter_id, parameter_name, parameter_value) values (?, ?, ?);");
+            insert.prepare("insert into application_settings (id, parameter_name, parameter_value) values (?, ?, ?);");
             insert.bindValue(0, QUuid::createUuid().toString());
             insert.bindValue(1, parametername);
             insert.bindValue(2, parametervalue);
@@ -562,7 +547,7 @@ SqlQueryModel* DatabaseObjects::findOpenTable(const QString& tablename)
 QString DatabaseObjects::loadParameter( const QVariant& parametername )
 {
     QSqlQuery select(m_sqliteDb);
-    if (!select.prepare("select parameter_value from application_settings where parameter_name = ?"))
+    if (!select.prepare("select parameter_value from application_settings where parameter_name = ? and deleted = 0"))
     {
         if (m_gui)
             QMessageBox::critical(nullptr, QObject::tr("Database Access Failed"), QString("Failed to access a saved setting. You may need to restart Project Notes.\n\nError:\n%1").arg(select.lastError().text()) );
@@ -612,6 +597,7 @@ bool DatabaseObjects::getShowResolvedTrackerItems()
 void DatabaseObjects::setShowClosedProjects(bool value)
 {
     saveParameter("UserFilter:ShowClosedProjects", (value ? "1": "0"));
+    emit showClosedProjectsChanged(value);
 }
 
 bool DatabaseObjects::getShowClosedProjects()
@@ -720,7 +706,7 @@ void DatabaseObjects::setGlobalSearches( bool refresh )
     {
         projectslistmodel()->setFilter(0, getGlobalProjectFilter());
 
-        QString projectnumber = execute(QString("select project_number from projects where project_id = '%1'").arg(getGlobalProjectFilter()));
+        QString projectnumber = execute(QString("select project_number from projects where id = '%1'").arg(getGlobalProjectFilter()));
 
         searchresultsmodel()->setFilter(7, projectnumber);
     }
@@ -755,8 +741,8 @@ QDomDocument* DatabaseObjects::createXMLExportDoc(QList<SqlQueryModel*>* querymo
     root.setAttribute("filepath", getDatabaseFile());
     root.setAttribute("export_date", QDateTime::currentDateTime().toString("MM/dd/yyyy h:m:s ap"));
 
-    QString companyname = execute(QString("select client_name from clients where client_id='%1'").arg(getManagingCompany()));
-    QString managername = execute(QString("select name from people where people_id='%1'").arg(getProjectManager()));
+    QString companyname = execute(QString("select client_name from clients where id='%1'").arg(getManagingCompany()));
+    QString managername = execute(QString("select name from people where id='%1'").arg(getProjectManager()));
 
     root.setAttribute("project_manager_id", getProjectManager());
     root.setAttribute("managing_company_id", getManagingCompany());
@@ -785,8 +771,8 @@ QDomDocument* DatabaseObjects::createXMLExportDoc(SqlQueryModel* querymodel, con
     root.setAttribute("filepath", getDatabaseFile());
     root.setAttribute("export_date", QDateTime::currentDateTime().toString("MM/dd/yyyy h:m:s ap"));
 
-    QString companyname = execute(QString("select client_name from clients where client_id='%1'").arg(getManagingCompany()));
-    QString managername = execute(QString("select name from people where people_id='%1'").arg(getProjectManager()));
+    QString companyname = execute(QString("select client_name from clients where id='%1'").arg(getManagingCompany()));
+    QString managername = execute(QString("select name from people where id='%1'").arg(getProjectManager()));
 
     root.setAttribute("project_manager_id", getProjectManager());
     root.setAttribute("managing_company_id", getManagingCompany());
@@ -1156,7 +1142,7 @@ void DatabaseObjects::addDefaultPMToProject(const QString& projectId)
     QString pm = getProjectManager();
     QString guid = QUuid::createUuid().toString();
 
-    QString insert = QString("insert into project_people (teammember_id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' )").arg(projectId).arg(pm).arg(guid);
+    QString insert = QString("insert into project_people (id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' and deleted = 0 )").arg(projectId).arg(pm).arg(guid);
 
     execute(insert);
 }
@@ -1167,12 +1153,12 @@ void DatabaseObjects::addDefaultPMToMeeting(const QString& noteId)
     QString guid = QUuid::createUuid().toString();
     QString guid2 = QUuid::createUuid().toString();
 
-    QString project_id = execute(QString("select project_id from project_notes where note_id='%1'").arg(noteId));
-    QString insertpm = QString("insert into project_people (teammember_id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' )").arg(project_id).arg(pm).arg(guid2);
+    QString project_id = execute(QString("select project_id from project_notes where id='%1'").arg(noteId));
+    QString insertpm = QString("insert into project_people (id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' and deleted = 0 )").arg(project_id).arg(pm).arg(guid2);
 
     execute(insertpm);
 
-    QString insert = QString("insert into meeting_attendees (attendee_id, person_id, note_id) select '%3', '%2', '%1' where not exists (select 1 from meeting_attendees where note_id = '%1' and person_id = '%2' )").arg(noteId).arg(pm).arg(guid);
+    QString insert = QString("insert into meeting_attendees (id, person_id, note_id) select '%3', '%2', '%1' where not exists (select 1 from meeting_attendees where note_id = '%1' and person_id = '%2' and deleted = 0 )").arg(noteId).arg(pm).arg(guid);
 
     execute(insert);
 
@@ -1186,6 +1172,14 @@ void DatabaseObjects::addDefaultPMToMeeting(const QString& noteId)
 // Push a new change; skips if exact duplicate already exists
 void DatabaseObjects::pushRowChange(const QString& table, const QVariant& value, const KeyColumnChange::OperationType optype)
 {
+    if (!m_gui)
+    {
+        // Non-GUI instance (e.g. plugin thread): emit signal so a QueuedConnection
+        // can forward the change to global_DBObjects on the GUI thread.
+        emit rowChanged(table, value, static_cast<int>(optype));
+        return;
+    }
+
     KeyColumnChange newChange{table, value, optype};
     if (!m_keyColumnChanges.contains(newChange))
     {
@@ -1210,18 +1204,6 @@ bool DatabaseObjects::popRowChange(KeyColumnChange& outChange)
     return true;
 }
 
-// Bonus: merge changes from another store (skipping duplicates)
-void DatabaseObjects::addColumnChanges(const DatabaseObjects& source)
-{
-    for (const KeyColumnChange& ch : source.m_keyColumnChanges)
-    {
-        if (!m_keyColumnChanges.contains(ch))
-        {
-            m_keyColumnChanges.append(ch);
-        }
-    }
-}
-
 void DatabaseObjects::updateDisplayData()
 {
     KeyColumnChange keyColChange;
@@ -1244,8 +1226,20 @@ void DatabaseObjects::updateDisplayData()
                     QModelIndex qmi = recordset->findIndex(keyColChange.value, 0);
                     if (qmi.isValid())
                     {
-                        recordset->reloadRecord(qmi);
                         // qDebug() << "Updating display for table " << recordset->tablename() << " row " << qmi.row() << " with value " << keyColChange.value;
+                        if (!recordset->reloadRecord(qmi))
+                        {
+                            // Record no longer passes base filters (e.g. was soft-deleted
+                            // via sync on another device) — remove it from the view.
+                            recordset->removeCacheRecord(qmi);
+                        }
+                    }
+                    else
+                    {
+                        // Row not in model yet — may be a new record pulled from sync.
+                        // Attempt to load it; loadAndFilterRow is a no-op if it doesn't
+                        // pass the model's current filter.
+                        recordset->loadAndFilterRow(keyColChange.value);
                     }
                 }
                 else if (keyColChange.operation_type == KeyColumnChange::Delete)

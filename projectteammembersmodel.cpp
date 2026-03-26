@@ -15,17 +15,17 @@ using namespace QLogger;
 ProjectTeamMembersModel::ProjectTeamMembersModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("ProjectTeamMembersModel");
-    setOrderKey(17);
 
-    setBaseSql("SELECT teammember_id, project_id, pp.people_id, name, receive_status_report, pp.role, email, (select pr2.project_number from projects pr2 where pr2.project_id=pp.project_id) project_number, (select pr.project_name from projects pr where pr.project_id=pp.project_id) project_name, (select client_name from clients c where c.client_id=p.client_id) client_name FROM project_people pp left join people p on p.people_id=pp.people_id");
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
+    setBaseSql("SELECT project_people.id, project_id, project_people.people_id, name, receive_status_report, project_people.role, email, (select pr2.project_number from projects pr2 where pr2.id=project_people.project_id) project_number, (select pr.project_name from projects pr where pr.id=project_people.project_id) project_name, (select client_name from clients c where c.id=p.client_id) client_name FROM project_people left join people p on p.id=project_people.people_id");
 
     setTableName("project_people", "Project People");
 
-    addColumn("teammember_id", tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("id", tr("Team Member ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
     addColumn("project_id", tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
-            "projects", "project_id", "project_number");
+            "projects", "id", "project_number");
     addColumn("people_id", tr("Name"), DBString, DBNotSearchable, DBNotRequired, DBEditable, DBNotUnique,
-            "people", "people_id", "name");
+            "people", "id", "name");
     addColumn("name", tr("Name"), DBString, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn("receive_status_report", tr("Receive Status"), DBBool, DBSearchable, DBNotRequired, DBEditable);
     addColumn("role", tr("Role"), DBString, DBSearchable, DBNotRequired, DBEditable);
@@ -39,7 +39,7 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(DatabaseObjects* dbo): SqlQuery
     addUniqueKeys(key1, "Name");
 
     QStringList rel_col4 = { "project_id", "people_id" };
-    QStringList rel_fk4 = { "project_id", "primary_contact" };
+    QStringList rel_fk4 = { "id", "primary_contact" };
     addRelatedTable("projects", rel_fk4, rel_col4, "Primary Contact");
 
     QStringList rel_col1 = { "project_id", "people_id" };
@@ -93,15 +93,16 @@ bool ProjectTeamMembersModel::setData(const QModelIndex &index, const QVariant &
         QVariant current_people_id = data(this->index(index.row(), 2));
         QVariant current_project_id = data(this->index(index.row(), 1));
 
-        if (!current_people_id.isNull() && !current_people_id.toString().isEmpty())
+        // if is not empty and value is going to change make sure the old person can be removed
+        if (!current_people_id.isNull() && !current_people_id.toString().isEmpty() && value != data(index))
         {
             // Fetch attendance count and project number in a single query
             DB_LOCK;
             QSqlQuery qry(getDBOs()->getDb());
             qry.prepare(QString(
-                "SELECT (SELECT count(*) FROM meeting_attendees WHERE person_id = '%1' "
-                "AND note_id IN (SELECT note_id FROM project_notes WHERE project_id = '%2')), "
-                "(SELECT project_number FROM projects WHERE project_id = '%2')")
+                "SELECT (SELECT count(*) FROM meeting_attendees WHERE person_id = '%1' and deleted = 0"
+                "AND note_id IN (SELECT id FROM project_notes WHERE project_id = '%2' and deleted = 0)), "
+                "(SELECT project_number FROM projects WHERE id = '%2')")
                 .arg(current_people_id.toString(), current_project_id.toString()));
             qry.exec();
 
@@ -133,6 +134,8 @@ bool ProjectTeamMembersModel::setData(const QModelIndex &index, const QVariant &
 
                     getDBOs()->searchresultsmodel()->PerformKeySearch(key_columns, key_values);
                     emit callKeySearch();
+
+                    promptShowClosedProjects(key_columns, key_values, count);
                 }
 
                 emit dataChanged(index, index);
@@ -156,7 +159,7 @@ bool ProjectTeamMembersModel::setData(const QModelIndex &index, const QVariant &
 
                 // get the default
                 QSqlQuery qry(getDBOs()->getDb());
-                qry.prepare(QString("select role from people where people_id='%1'").arg( data(qi_key).toString()));
+                qry.prepare(QString("select role from people where id='%1'").arg( data(qi_key).toString()));
                 //qDebug() << QString("select role from people where people_id='%1'").arg( data(qi_key).toString() );
 
                 qry.exec();

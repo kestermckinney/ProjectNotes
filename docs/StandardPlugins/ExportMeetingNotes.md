@@ -68,3 +68,7 @@ When you run the export, a dialog appears with the following options:
 1. From the **Plugins** menu, choose **Settings > Export Notes**.
 2. Enter the sub-folder name relative to the project folder where reports should be saved.
 3. Click **OK**.
+
+## Related Documentation
+
+- [Meeting Notes Archive](<MeetingNotesArchive.md>) — Automatically archive meeting notes to a designated folder

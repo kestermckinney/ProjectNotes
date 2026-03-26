@@ -6,13 +6,13 @@
 ActionItemsDetailsMeetingsModel::ActionItemsDetailsMeetingsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("ActionItemsDetailsMeetingsModel");
-    setOrderKey(35);
 
-    setBaseSql("SELECT note_id, project_id, (strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title) as meeting, internal_item FROM project_notes");
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
+    setBaseSql("SELECT id, project_id, (strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) || ' ' || note_title) as meeting, internal_item FROM project_notes");
 
     setTableName("project_notes", "Notes");
 
-    addColumn("note_id", tr("Note ID"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("id", tr("Note ID"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("project_id", tr("Project ID"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("meeting", tr("Meeting"), DBString, DBNotSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("internal_item", tr("Internal Item"), DBBool, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);

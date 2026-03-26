@@ -8,7 +8,7 @@ Email recipients are automatically populated based on the item you right-clicked
 
 ## Configuring Email Types
 
-Send Email menu items are configured in **Plugins > Settings > Meeting and Email Types**. Each email type defines a name, subject template, body template, recipient group, and the data context it appears on (projects, project_people, meeting_attendees, etc.). This allows you to create customized email templates for different situations.
+Send Email menu items are configured in **Plugins > Settings > Meeting and Email Types**. Each email type defines a name, subject template, body template, recipient group, and the [data type](<../PluginsOverview/DataTypes.md>) it appears on (projects, project_people, meeting_attendees, etc.). This allows you to create customized email templates for different situations.
 
 ## Sending an Email
 

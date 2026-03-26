@@ -5,6 +5,7 @@
 #include "projectsmodel.h"
 
 #include <QRegularExpression>
+#include <QUuid>
 #include "QLogger.h"
 #include "QLoggerWriter.h"
 
@@ -13,18 +14,20 @@ using namespace QLogger;
 ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
 {
     setObjectName("ProjectsModel");
-    setOrderKey(100);
 
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
     setBaseSql("select * from projects_view");
+    setDeletedFilterInView(true);  // view filters deleted rows internally
+
     setTableName("projects", "Project");
 
-    addColumn("project_id", tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
+    addColumn("id", tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly);
     addColumn("project_number", tr("Number"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
     addColumn("project_name", tr("Project Name"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
     addColumn("last_status_date", tr("Status Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
     addColumn("last_invoice_date", tr("Invoice Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
     addColumn("primary_contact", tr("Primary Contact"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
-              "people", "people_id", "name");
+              "people", "id", "name");
     addColumn("budget", tr("Budget"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
     addColumn("actual", tr("Actual"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
     addColumn("bcwp", tr("BCWP"), DBUSD, DBSearchable, DBNotRequired, DBEditable);
@@ -33,7 +36,7 @@ ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
     addColumn("invoicing_period", tr("Invoice Period"), DBString, DBSearchable, DBNotRequired, DBEditable);
     addColumn("status_report_period", tr("Report Period"), DBString, DBSearchable, DBNotRequired, DBEditable);
     addColumn("client_id", tr("Client"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
-              "clients", "client_id", "client_name");
+              "clients", "id", "client_name");
     addColumn("project_status", tr("Status"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique, &DatabaseObjects::project_status);
     addColumn("pct_consumed", tr("Consumed"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn("eac", tr("EAC"), DBUSD, DBSearchable, DBNotRequired, DBReadOnly);
@@ -42,11 +45,11 @@ ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
     addColumn("pct_complete", tr("Completed"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn("cpi", tr("CPI"), DBReal, DBSearchable, DBNotRequired, DBReadOnly);
 
-    addRelatedTable("project_notes", "project_id", "project_id", "Meeting", DBExportable);
-    addRelatedTable("item_tracker", "project_id", "project_id", "Action/Tracker Item", DBExportable);
-    addRelatedTable("project_locations", "project_id", "project_id", "Project Location", DBExportable);
-    addRelatedTable("project_people", "project_id", "project_id", "Project People", DBExportable);
-    addRelatedTable("status_report_items", "project_id", "project_id", "Status Report Item", DBExportable);
+    addRelatedTable("project_notes", "project_id", "id", "Meeting", DBExportable);
+    addRelatedTable("item_tracker", "project_id", "id", "Action/Tracker Item", DBExportable);
+    addRelatedTable("project_locations", "project_id", "id", "Project Location", DBExportable);
+    addRelatedTable("project_people", "project_id", "id", "Project People", DBExportable);
+    addRelatedTable("status_report_items", "project_id", "id", "Status Report Item", DBExportable);
 
     QStringList key1 = {"project_number"};
 
@@ -215,33 +218,55 @@ bool ProjectsModel::setData(const QModelIndex &index, const QVariant &value, int
     return result;
 }
 
+void ProjectsModel::prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex)
+{
+    // Copy columns 5-14; let base class handle making columns 1-2 unique
+    for (int col = 5; col <= 14; ++col)
+        newrecord[col] = data(this->index(sourceIndex.row(), col));
+}
+
 const QModelIndex ProjectsModel::copyRecord(QModelIndex index)
 {
-    QVector<QVariant> qr = emptyrecord();
-    QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
     const int row = index.row();
-
-    qr[1] = QString("Copy [%2] of %1").arg(data(this->index(row, 1)).toString(), unique_stamp);
-    qr[2] = QString("Copy [%2] of %1").arg(data(this->index(row, 2)).toString(), unique_stamp);
-    for (int col = 5; col <= 14; ++col)
-        qr[col] = data(this->index(row, col));
-
-    QModelIndex qi = addRecord(qr);
-    setData(this->index(qi.row(), 3), QVariant(), Qt::EditRole); // force a write to the database
-
     const QString oldid = data(this->index(row, 0)).toString();
-    const QString newid = data(this->index(qi.row(), 0)).toString();
 
-    const QString insert = QString(
-        "INSERT INTO project_people (teammember_id, project_id, people_id, role, receive_status_report) "
-        "SELECT m.teammember_id || '-%1', '%2', m.people_id, role, receive_status_report "
-        "FROM project_people m WHERE m.project_id = '%3' "
-        "AND m.people_id NOT IN (SELECT e.people_id FROM project_people e WHERE e.project_id = '%2')")
-        .arg(unique_stamp, newid, oldid);
+    QModelIndex qi = SqlQueryModel::copyRecord(index);
 
-    getDBOs()->execute(insert);
-    getDBOs()->pushRowChange("project_people", newid, KeyColumnChange::Insert);
-    getDBOs()->updateDisplayData();
+    if (qi.isValid())
+    {
+        const QString newid = data(this->index(qi.row(), 0)).toString();
+
+        // Copy project_people records with new GUIDs
+        DB_LOCK;
+        QSqlQuery query(getDBOs()->getDb());
+        query.prepare("SELECT people_id, role, receive_status_report FROM project_people WHERE project_id = ? and deleted = 0 "
+                      "AND people_id NOT IN (SELECT people_id FROM project_people WHERE project_id = ? and deleted = 0)");
+        query.addBindValue(oldid);
+        query.addBindValue(newid);
+
+        if (query.exec())
+        {
+            QSqlQuery insert(getDBOs()->getDb());
+            insert.prepare("INSERT INTO project_people (id, project_id, people_id, role, receive_status_report) VALUES (?, ?, ?, ?, ?)");
+
+            while (query.next())
+            {
+                QString pid = QUuid::createUuid().toString();
+
+                insert.addBindValue(pid);
+                insert.addBindValue(newid);
+                insert.addBindValue(query.value(0));
+                insert.addBindValue(query.value(1));
+                insert.addBindValue(query.value(2));
+                insert.exec();
+
+                getDBOs()->pushRowChange("project_people", pid, KeyColumnChange::Insert);
+            }
+        }
+        DB_UNLOCK;
+
+        getDBOs()->updateDisplayData();
+    }
 
     return qi;
 }

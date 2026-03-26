@@ -115,7 +115,7 @@ if (platform.system() == 'Windows'):
         projtab = pnc.find_node(xmlroot, "table", "name", "projects")
         projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
         projnam = pnc.get_column_value(projtab.firstChild(), "project_name")
-        clientnam = pnc.get_column_value(projtab.firstChild(), "client_id")
+        clientnam = pnc.get_column_value(projtab.firstChild(), "id")
 
         ok = False
 
@@ -186,7 +186,7 @@ if (platform.system() == 'Windows'):
         row = pnc.xml_row(docxml)
         table.appendChild(row)
 
-        row.appendChild(pnc.xml_col(docxml, "project_id",None, projnum))
+        row.appendChild(pnc.xml_col(docxml, "id",None, projnum))
         row.appendChild(pnc.xml_col(docxml, "location_type", "Word Document", None))
         row.appendChild(pnc.xml_col(docxml, "location_description", "Change Request : " + basename, None))
         row.appendChild(pnc.xml_col(docxml, "full_path", projectfile, None))

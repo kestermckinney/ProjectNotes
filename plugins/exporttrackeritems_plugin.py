@@ -316,7 +316,7 @@ class TrackerItemsExporter(QDialog):
 
         xmlroot = xmldoc.elementsByTagName("projectnotes").at(0)
 
-        repitem = pnc.find_node_by2(xmlroot, "table", "name", "item_tracker", "filter_field_1", "project_id")
+        repitem = pnc.find_node_by2(xmlroot, "table", "name", "item_tracker", "filter_field_1", "id")
         if not repitem or repitem.isNull() or repitem.firstChild().isNull():
             QtWidgets.QApplication.restoreOverrideCursor()
             QMessageBox.warning(None, "No Records", "No tracker or action items are available.", QMessageBox.StandardButton.Ok)

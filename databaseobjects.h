@@ -33,17 +33,16 @@
 #include <QStringListModel>
 #include <QDomAttr>
 #include <QDomNodeList>
-#include <QMutex>
-#include <QMutexLocker>
+#include <QReadWriteLock>
 
 // common colors
 #define QCOLOR_YELLOW QColor(173, 172, 58)
 #define QCOLOR_RED QColor(153, 33, 23)
 #define QCOLOR_BLUE QColor(0, 15, 128)
 
-// database mutex locking macros
-#define DB_LOCK db_mutex.lock()
-#define DB_UNLOCK db_mutex.unlock()
+// database lock macros (write-exclusive; coordinates with SqliteSyncPro's QReadWriteLock)
+#define DB_LOCK db_rwlock.lockForWrite()
+#define DB_UNLOCK db_rwlock.unlock()
 
 struct KeyColumnChange
 {
@@ -139,7 +138,6 @@ public:
 
     // Pop the last added change; returns true if successful, false if empty
     bool popRowChange(KeyColumnChange& outChange);
-    void addColumnChanges(const DatabaseObjects& source);
     void updateDisplayData();
 
 
@@ -241,10 +239,16 @@ private:
     QList<KeyColumnChange> m_keyColumnChanges;
 
 signals:
+    // Emitted by non-GUI instances when a row is changed, so the GUI thread
+    // can forward changes to global_DBObjects via a QueuedConnection
+    void rowChanged(const QString& table, const QVariant& value, int optype);
+    // Emitted when the Show Closed Projects setting changes programmatically
+    // so that MainWindow can keep the menu checkbox in sync
+    void showClosedProjectsChanged(bool showClosed);
 
 };
 
 extern DatabaseObjects global_DBObjects;
-extern QMutex db_mutex;
+extern QReadWriteLock db_rwlock;
 
 #endif // DATABASEOBJECTS_H

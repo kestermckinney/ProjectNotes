@@ -89,6 +89,8 @@ public:
     static QDateTime parseDateTime(const QString& entrydate);
     virtual const QModelIndex addRecord(QVector<QVariant>& newrecord);
     virtual const QModelIndex copyRecord(QModelIndex index);
+    bool insertCacheRow(int row);
+    virtual void prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex) { Q_UNUSED(newrecord); Q_UNUSED(sourceIndex); }
     virtual const QModelIndex newRecord(const QVariant* fkValue1 = nullptr, const QVariant* fkValue2 = nullptr);
     virtual bool deleteRecord(QModelIndex index);
     bool copyAndFilterRow(QModelIndex& qmi, SqlQueryModel& pnmodel);
@@ -158,6 +160,9 @@ public:
     QString getColumnName( int column ) { return m_columnName[column]; }
     QString getColumnName( QString& displayName );
     int getColumnNumber(const QString& fieldName );
+    QString getLookupTable(int column) { return m_lookupTable[column]; }
+    QString getLookupFkColumnName(int column) { return m_lookupFkColumnName[column]; }
+    QString getLookupValueColumnName(int column) { return m_lookupValueColumnName[column]; }
 
     bool isReadOnly() { return m_readOnly; }
     bool isUniqueColumn(int column) { return (m_columnIsUnique[column] == DBUnique); }
@@ -168,6 +173,13 @@ public:
     void setOrderKey(int key) { m_orderKey = key; }
     int getOrderKey() { return m_orderKey; }
 
+    /** Call this in the constructor of models that query views which already
+     *  filter deleted rows internally (e.g. item_tracker_view, projects_view,
+     *  database_search).  Suppresses the automatic deleted-filter that
+     *  constructWhereClause() would otherwise add. */
+    void setDeletedFilterInView(bool v) { m_deletedFilterInView = v; }
+    bool getDeletedFilterInView() { return m_deletedFilterInView; }
+
     static QString removeInvalidXmlCharacters(const QString &input);
     QDomElement toQDomElement( QDomDocument* xmlDocument, const QString& filter = QString());
 
@@ -176,6 +188,7 @@ private:
     QString m_displayName;
     QString m_baseSql;
     bool m_gui; // gui based recordset
+    bool m_deletedFilterInView = false; // true when the base SQL queries a view that already filters deleted rows
     int m_orderKey = 0; // the order key is used to identify record heirarchy - base data is first
     int m_columnCount = 0;
 
@@ -234,6 +247,11 @@ private:
 
     void stripFormatting(QVariant& value) const;
     bool matchesFilter(int column, const QVariant& value);
+
+protected:
+    // After a key search, if fewer results are visible than expected (due to the closed
+    // project filter), prompt the user to enable Show Closed Projects and re-run the search.
+    void promptShowClosedProjects(const QStringList &keyColumns, const QStringList &keyValues, int expectedCount);
 
 signals:
     void callKeySearch();

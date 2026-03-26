@@ -4,15 +4,15 @@
 StatusReportItemsModel::StatusReportItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
 {
     setObjectName("StatusReportItemsModel");
-    setOrderKey(40);
 
-    setBaseSql("SELECT status_item_id, project_id, task_category, task_description FROM status_report_items");
+    // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
+    setBaseSql("SELECT id, project_id, task_category, task_description FROM status_report_items");
 
     setTableName("status_report_items", "Status Report Items");
 
-    addColumn("status_item_id", tr("Status Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
+    addColumn("id", tr("Status Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
     addColumn("project_id", tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
-              "projects", "project_id", "project_number");
+              "projects", "id", "project_number");
     addColumn("task_category",  tr("Category"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &DatabaseObjects::status_item_status);
     addColumn("task_description", tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable);
 
@@ -20,7 +20,7 @@ StatusReportItemsModel::StatusReportItemsModel(DatabaseObjects* dbo): SqlQueryMo
 
     addUniqueKeys(key1, "Description");
 
-    setOrderBy("status_item_id");
+    setOrderBy("project_id");
 }
 
 const QModelIndex StatusReportItemsModel::newRecord(const QVariant* fkValue1, const QVariant* fkValue2)
