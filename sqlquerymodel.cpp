@@ -2204,7 +2204,7 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
     }
 
     // check to see if record exists
-    QString exists_sql = QString("select %3 from %1 where %2").arg(m_tablename, whereclause, getColumnName(0));
+    QString exists_sql = QString("select %3 from %1 where %2 AND deleted = 0").arg(m_tablename, whereclause, getColumnName(0));
     QString id_field = getDBOs()->execute(exists_sql);
     QString sql;
     KeyColumnChange::OperationType disp_optype;
