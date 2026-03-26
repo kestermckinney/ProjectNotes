@@ -174,17 +174,3 @@ add_custom_command(TARGET ProjectNotes POST_BUILD
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dictionary/*
 )
 
-# if(WIN32)
-#     add_custom_command(TARGET ProjectNotes POST_BUILD
-#         COMMAND ${CMAKE_COMMAND} -E copy ${HUNSPELL_DLL} ${CMAKE_CURRENT_BINARY_DIR}/libhunspell.dll
-#         COMMAND ${CMAKE_COMMAND} -E echo "Copying Hunspell"
-#         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*
-#     )
-# endif()
-
-# if(WIN32)
-#     set(APP_ICON_RESOURCE resources/app_icon.rc)
-#     configure_file(${APP_ICON_RESOURCE} ${CMAKE_CURRENT_BINARY_DIR}/app_icon.rc COPYONLY)
-#     set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/app_icon.rc PROPERTIES LANGUAGE RC)
-#     target_sources(MyApp PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/app_icon.rc)
-# endif()
