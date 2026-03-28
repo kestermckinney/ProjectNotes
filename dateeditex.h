@@ -47,18 +47,18 @@ public:
     bool isNull() const;
     void setNullable(bool enable);
 
-    QSize sizeHint() const;
-    QSize minimumSizeHint() const;
+    QSize sizeHint() const override;
+    QSize minimumSizeHint() const override;
     QLineEdit* getLineEdit() const;
 
 protected:
-    /*! \reimp */ void showEvent(QShowEvent *event);
-    /*! \reimp */ void resizeEvent(QResizeEvent *event);
-    /*! \reimp */ void paintEvent(QPaintEvent *event);
-    /*! \reimp */ void keyPressEvent(QKeyEvent *event);
-    /*! \reimp */ void mousePressEvent(QMouseEvent *event);
-    /*! \reimp */ bool focusNextPrevChild(bool next);
-    /*! \reimp */ QValidator::State validate(QString &input, int &pos) const;
+    /*! \reimp */ void showEvent(QShowEvent *event) override;
+    /*! \reimp */ void resizeEvent(QResizeEvent *event) override;
+    /*! \reimp */ void paintEvent(QPaintEvent *event) override;
+    /*! \reimp */ void keyPressEvent(QKeyEvent *event) override;
+    /*! \reimp */ void mousePressEvent(QMouseEvent *event) override;
+    /*! \reimp */ bool focusNextPrevChild(bool next) override;
+    /*! \reimp */ QValidator::State validate(QString &input, int &pos) const override;
     /*! \reimp */ void wheelEvent(QWheelEvent *event) override;
 
 public Q_SLOTS:

@@ -304,6 +304,7 @@ void MainWindow::setButtonAndMenuStates()
     ui->stackedWidget->setVisible(dbopen);
 
     ui->actionSearch->setEnabled(dbopen);
+    ui->actionSync_All->setEnabled(m_syncApi && m_syncApi->isInitialized());
 
 
     TableView* curview = nullptr;
@@ -598,6 +599,13 @@ void MainWindow::setButtonAndMenuStates()
 void MainWindow::on_actionExit_triggered()
 {
     close();
+}
+
+void MainWindow::on_actionSync_All_triggered()
+{
+    ui->statusbar->showMessage(tr("Re-syncing all records..."));
+    if (m_syncApi)
+        m_syncApi->syncAll();
 }
 
 void MainWindow::on_actionOpen_Database_triggered()

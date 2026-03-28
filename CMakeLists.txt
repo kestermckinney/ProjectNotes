@@ -28,7 +28,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(ENV{QT_LOGGING_RULES} "qt.*.debug=true")
 endif()
 
-find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+set(Python3_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/3.13" CACHE PATH "Python 3.13 root (python.org install)")
+find_package(Python3 3.13 REQUIRED COMPONENTS Interpreter Development)
 
 # Ensure we use the release libraries even in debug mode
 set(Python3_LIBRARIES ${Python3_LIBRARY_RELEASE})
@@ -67,9 +68,7 @@ if(WIN32)
     set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/appicon.rc")
 elseif(APPLE)
     set(MACOSX_BUNDLE_ICON_FILE AppIcon.icns)
-    target_sources(ProjectNotes PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/AppIcon.icns")
-    set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/AppIcon.icns" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-    set_target_properties(ProjectNotes PROPERTIES MACOSX_BUNDLE TRUE)
+    set(APP_ICON_MACOS "${CMAKE_CURRENT_SOURCE_DIR}/AppIcon.icns")
 endif()
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -77,6 +76,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         ${APP_ICON_RESOURCE_WINDOWS}
+        ${APP_ICON_MACOS}
         actionitemprojectnotesmodel.cpp actionitemsdetailsmeetingsmodel.h actionitemsdetailsmeetingsmodel.cpp actionitemprojectnotesmodel.h clientslistview.cpp clientslistview.h clientsmodel.cpp clientsmodel.h clientspage.cpp clientspage.h columnview.cpp columnview.h comboboxdelegate.cpp comboboxdelegate.h databasestructure.cpp databasestructure.h databasecreate.cpp databasecreate.h databaseviews.cpp databaseviews.h databaseupgrade_v1_0_0.cpp databaseupgrade_v1_0_0.h databaseupgrade_v1_2_0.cpp databaseupgrade_v1_2_0.h databaseupgrade_v5_0_0.cpp databaseupgrade_v5_0_0.h     filterdatadialog.cpp filterdatadialog.h filterdatadialog.ui filtersavestructure.h importexport.cpp importexport.h itemdetailsdelegate.cpp itemdetailsdelegate.h itemdetailspage.cpp itemdetailspage.h itemdetailteamlistmodel.cpp itemdetailteamlistmodel.h meetingattendeesmodel.cpp meetingattendeesmodel.h meetingattendeesview.cpp meetingattendeesview.h notesactionitemsmodel.cpp notesactionitemsmodel.h notesactionitemsview.cpp notesactionitemsview.h peoplelistview.cpp peoplelistview.h peoplemodel.cpp peoplemodel.h peoplepage.cpp peoplepage.h basepage.cpp basepage.h checkboxdelegate.cpp checkboxdelegate.h columnmodel.cpp columnmodel.h combobox.cpp combobox.h sqlcomboboxdelegate.cpp sqlcomboboxdelegate.h databaseobjects.cpp databaseobjects.h dateeditdelegate.cpp dateeditdelegate.h dateeditex.cpp dateeditex.h inlinespellchecker.cpp inlinespellchecker.h lineeditfilebutton.cpp lineeditfilebutton.h lineeditfilebuttondelegate.cpp lineeditfilebuttondelegate.h plaintexteditdelegate.h plaintextedit.h plaintexteditdelegate.cpp plaintextedit.cpp
         appsettings.cpp appsettings.h sortfilterproxymodel.cpp sortfilterproxymodel.h spellchecker.cpp spellchecker.h sqlquerymodel.cpp sqlquerymodel.h tableview.cpp tableview.h textedit.cpp textedit.h texteditdelegate.cpp texteditdelegate.h projectdetailsdelegate.cpp projectdetailsdelegate.h projectdetailspage.cpp projectdetailspage.h projectlocationsmodel.cpp projectlocationsmodel.h projectlocationsview.cpp projectlocationsview.h projectnotesdelegate.cpp projectnotesdelegate.h projectnotesmodel.cpp projectnotesmodel.h projectnotespage.cpp projectnotespage.h projectnotesview.cpp projectnotesview.h projectsmodel.h projectsmodel.cpp projectslistview.h projectslistview.cpp projectslistpage.h projectslistpage.cpp projectslistmodel.h projectslistmodel.cpp projectteammembersmodel.cpp projectteammembersmodel.h projectteammembersview.cpp projectteammembersview.h runguard.cpp runguard.h searchpage.cpp searchpage.h searchresultsmodel.cpp searchresultsmodel.h searchresultsview.cpp searchresultsview.h statusreportitemsmodel.cpp statusreportitemsmodel.h statusreportitemsview.cpp statusreportitemsview.h teamsmodel.cpp teamsmodel.h trackeritemcommentsmodel.cpp trackeritemcommentsmodel.h trackeritemcommentsview.cpp trackeritemcommentsview.h trackeritemsmodel.cpp trackeritemsmodel.h trackeritemsview.cpp trackeritemsview.h valueselectmodel.cpp valuesview.h valuesview.cpp valueselectmodel.h
         combobox.cpp combobox.h
@@ -107,6 +107,9 @@ else()
     endif()
 endif()
 
+if(APPLE)
+    set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/AppIcon.icns" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+endif()
 
 # see what libraries we are really using for python
 message(STATUS "Python3 executable: ${Python3_EXECUTABLE}")
