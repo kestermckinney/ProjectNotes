@@ -96,8 +96,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_syncProgressBar = new QProgressBar(this);
     m_syncProgressBar->setRange(0, 100);
     m_syncProgressBar->setFixedWidth(200);
-    m_syncProgressBar->setTextVisible(true);
-    m_syncProgressBar->setFormat(tr("Sync: %p%"));
+    m_syncProgressBar->setTextVisible(false);
     m_syncProgressBar->hide();
     ui->statusbar->addPermanentWidget(m_syncProgressBar);
 
@@ -690,7 +689,7 @@ void MainWindow::openDatabase(const QString& dbfile)
                                    "Your encryption phrase may be incorrect.\n\n"
                                    "Please verify the phrase via File > Cloud Sync Settings."));
                         }
-                        m_syncApi->checkSyncStatus();
+                        m_syncApi->checkSyncStatus(result);
                     },
                     Qt::QueuedConnection);
             connect(m_syncApi, &SqliteSyncPro::syncStatusUpdated,
