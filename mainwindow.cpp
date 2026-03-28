@@ -93,6 +93,14 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(dynamic_cast<QApplication*>(QApplication::instance()), &QApplication::focusChanged, this, &MainWindow::on_focusChanged);
 
+    m_syncProgressBar = new QProgressBar(this);
+    m_syncProgressBar->setRange(0, 100);
+    m_syncProgressBar->setFixedWidth(200);
+    m_syncProgressBar->setTextVisible(true);
+    m_syncProgressBar->setFormat(tr("Sync: %p%"));
+    m_syncProgressBar->hide();
+    ui->statusbar->addPermanentWidget(m_syncProgressBar);
+
     m_pluginManager = new PluginManager(this);
 
     connect(m_pluginManager, &PluginManager::pluginLoaded, this, &MainWindow::onPluginLoaded);
@@ -305,6 +313,9 @@ void MainWindow::setButtonAndMenuStates()
 
     ui->actionSearch->setEnabled(dbopen);
     ui->actionSync_All->setEnabled(m_syncApi && m_syncApi->isInitialized());
+
+    if (m_syncProgressBar && (!m_syncApi || !m_syncApi->isInitialized()))
+        m_syncProgressBar->hide();
 
 
     TableView* curview = nullptr;
@@ -679,7 +690,11 @@ void MainWindow::openDatabase(const QString& dbfile)
                                    "Your encryption phrase may be incorrect.\n\n"
                                    "Please verify the phrase via File > Cloud Sync Settings."));
                         }
+                        m_syncApi->checkSyncStatus();
                     },
+                    Qt::QueuedConnection);
+            connect(m_syncApi, &SqliteSyncPro::syncStatusUpdated,
+                    this, &MainWindow::onSyncStatusUpdated,
                     Qt::QueuedConnection);
         } else {
             qWarning() << "SqliteSyncPro initialize failed:" << m_syncApi->lastError();
@@ -2063,4 +2078,18 @@ void MainWindow::onTimerWaitForThreads()
 void MainWindow::onSyncRowChanged(const QString& tableName, const QString& id)
 {
     global_DBObjects.pushRowChange(tableName, id, KeyColumnChange::Update);
+}
+
+void MainWindow::onSyncStatusUpdated(int percentComplete)
+{
+    if (!m_syncProgressBar)
+        return;
+
+    if (!m_syncApi || !m_syncApi->isInitialized()) {
+        m_syncProgressBar->hide();
+        return;
+    }
+
+    m_syncProgressBar->setValue(percentComplete);
+    m_syncProgressBar->setVisible(percentComplete < 100);
 }

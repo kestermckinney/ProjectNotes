@@ -15,7 +15,6 @@
 #include <QFileDialog>
 #include <QTextStream>
 #include <QMargins>
-#include <QPainter>
 
 #include "QLogger.h"
 #include "QLoggerWriter.h"
@@ -39,8 +38,6 @@ TableView::TableView(QWidget *parent) : QTableView(parent)
 
     setSelectionMode(QAbstractItemView::SingleSelection);
     setSelectionBehavior(QAbstractItemView::SelectRows);
-
-    viewport()->setMouseTracking(true);
 
     rowView->setSelectionMode(QAbstractItemView::SingleSelection);
     rowView->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -277,58 +274,16 @@ void TableView::dataRowActivated(const QModelIndex &index)
 void TableView::mouseMoveEvent(QMouseEvent *event)
 {
     QTableView::mouseMoveEvent(event);
-
-    int row = indexAt(event->pos()).row();
-    if (row != m_hoverRow)
-    {
-        // Repaint the previously hovered row to erase the highlight
-        if (m_hoverRow >= 0)
-        {
-            int y = rowViewportPosition(m_hoverRow);
-            int h = rowHeight(m_hoverRow);
-            viewport()->update(0, y, viewport()->width(), h);
-        }
-
-        m_hoverRow = row;
-
-        // Repaint the newly hovered row to draw the highlight
-        if (m_hoverRow >= 0)
-        {
-            int y = rowViewportPosition(m_hoverRow);
-            int h = rowHeight(m_hoverRow);
-            viewport()->update(0, y, viewport()->width(), h);
-        }
-    }
 }
 
 void TableView::leaveEvent(QEvent *event)
 {
     QTableView::leaveEvent(event);
-
-    if (m_hoverRow >= 0)
-    {
-        int y = rowViewportPosition(m_hoverRow);
-        int h = rowHeight(m_hoverRow);
-        m_hoverRow = -1;
-        viewport()->update(0, y, viewport()->width(), h);
-    }
 }
 
 void TableView::paintEvent(QPaintEvent *event)
 {
     QTableView::paintEvent(event);
-
-    if (m_hoverRow >= 0 && model() && m_hoverRow < model()->rowCount())
-    {
-        int y = rowViewportPosition(m_hoverRow);
-        int h = rowHeight(m_hoverRow);
-        QRect rowRect(0, y, viewport()->width(), h);
-
-        QPainter painter(viewport());
-        QColor hoverColor = palette().color(QPalette::Highlight);
-        hoverColor.setAlpha(40);
-        painter.fillRect(rowRect, hoverColor);
-    }
 }
 
 void TableView::sortMenu(QMenu* menu)

@@ -14,6 +14,7 @@
 #include <functional>
 #include <QFontComboBox>
 #include <QFontDatabase>
+#include <QProgressBar>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -141,6 +142,7 @@ private slots:
     void onRefreshRequested();
     void onTimerWaitForThreads();
     void onSyncRowChanged(const QString& tableName, const QString& id);
+    void onSyncStatusUpdated(int percentComplete);
 
 private:
     void buildPluginMenu(BasePage* currentPage);
@@ -203,6 +205,7 @@ private:
     QTimer* m_waitForThreadsTimer = nullptr;
 
     SqliteSyncPro* m_syncApi = nullptr;
+    QProgressBar* m_syncProgressBar = nullptr;
 };
 
 

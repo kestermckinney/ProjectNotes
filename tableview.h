@@ -72,7 +72,6 @@ private:
 
     QPoint m_pressPos;
     bool m_isMoving = false;
-    int m_hoverRow = -1;
 
     QAction *m_newRecord;
     QAction *m_deleteRecord;
