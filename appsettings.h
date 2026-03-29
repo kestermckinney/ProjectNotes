@@ -7,6 +7,7 @@
 #include <QSettings>
 #include <QMainWindow>
 #include <QTableView>
+#include <QCoreApplication>
 
 #include "spellchecker.h"
 
@@ -87,5 +88,16 @@ private:
 };
 
 extern AppSettings global_Settings;
+
+// Returns the directory containing app resources (dictionary, plugins, threads).
+// On macOS the binary lives in .app/Contents/MacOS; resources are in .app/Contents/Resources.
+inline QString appResourcesPath()
+{
+#ifdef Q_OS_MAC
+    return QCoreApplication::applicationDirPath() + "/../Resources";
+#else
+    return QCoreApplication::applicationDirPath();
+#endif
+}
 
 #endif // APPSETTINGS_H

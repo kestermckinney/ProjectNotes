@@ -20,6 +20,7 @@
 #include <QDir>
 #include <QEventLoop>
 #include <QFile>
+#include <QFileInfo>
 #include <QFileDialog>
 #include <QTextEdit>
 #include <QTextList>
@@ -106,11 +107,17 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_pluginManager, &PluginManager::pluginUnLoaded, this, &MainWindow::onPluginUnLoaded);
     connect(m_pluginManager, &PluginManager::pluginRefreshRequest, this, &MainWindow::onRefreshRequested);
 
+    // Non-threaded plugins fire pluginLoaded synchronously during new PluginManager(this),
+    // before the connections above are established, so onPluginLoaded is never called for them.
+    // Build the plugin menu now so their menu items appear regardless of database state.
+    buildPluginMenu(nullptr);
+
     // Always open the database from the standard app data location, creating if needed
     const QString dbfile = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
                            + "/ProjectNotes.db";
 
     if (!QFile::exists(dbfile)) {
+        QDir().mkpath(QFileInfo(dbfile).absolutePath());
         global_DBObjects.createDatabase(dbfile);
     }
 
@@ -184,7 +191,12 @@ void MainWindow::addMenuItem(QMenu* menu, const QString& submenu, const QString&
             }
 
             subMenuPtr = new QMenu(submenu);
-            menu->insertMenu(nextaction, subMenuPtr);
+            QAction* subMenuAction = menu->insertMenu(nextaction, subMenuPtr);
+            // On macOS, Qt auto-assigns PreferencesRole to actions whose text matches
+            // "Settings" or "Preferences", moving them to the Application menu.
+            // Override this so plugin submenus stay in the Plugins menu.
+            if (subMenuAction)
+                subMenuAction->setMenuRole(QAction::NoRole);
             addMenuItem(subMenuPtr, QString(), menutitle, action, 0);
         }
     }
@@ -2079,7 +2091,7 @@ void MainWindow::onSyncRowChanged(const QString& tableName, const QString& id)
     global_DBObjects.pushRowChange(tableName, id, KeyColumnChange::Update);
 }
 
-void MainWindow::onSyncStatusUpdated(int percentComplete)
+void MainWindow::onSyncStatusUpdated(int percentComplete, qint64 pendingPush, qint64 pendingPull)
 {
     if (!m_syncProgressBar)
         return;
@@ -2090,5 +2102,16 @@ void MainWindow::onSyncStatusUpdated(int percentComplete)
     }
 
     m_syncProgressBar->setValue(percentComplete);
-    m_syncProgressBar->setVisible(percentComplete < 100);
+
+    if (percentComplete < 100) {
+        m_syncProgressBar->setToolTip(
+            tr("%1% Database Synced, pulling %2 and pushing %3 records")
+                .arg(percentComplete)
+                .arg(pendingPull)
+                .arg(pendingPush));
+        m_syncProgressBar->show();
+    } else {
+        m_syncProgressBar->hide();
+    }
 }
+

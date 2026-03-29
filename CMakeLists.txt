@@ -153,28 +153,57 @@ if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(ProjectNotes)
 endif()
 
-add_custom_command(TARGET ProjectNotes POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/plugins ${CMAKE_CURRENT_BINARY_DIR}/plugins
-    COMMENT "Creating symbolic link to plugins folder"
-    # COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/plugins
-    # COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/plugins ${CMAKE_CURRENT_BINARY_DIR}/plugins
-    # COMMAND ${CMAKE_COMMAND} -E echo "Copying plugins"
-    # DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/plugins/*
-)
+if(APPLE)
+    # On macOS, place plugins/threads symlinks and the dictionary copy inside the bundle Resources.
+    # $<TARGET_FILE_DIR:...> resolves to .app/Contents/MacOS; step up one level to get Contents/Resources.
+    set(BUNDLE_RESOURCES "$<TARGET_FILE_DIR:ProjectNotes>/../Resources")
 
-add_custom_command(TARGET ProjectNotes POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/threads ${CMAKE_CURRENT_BINARY_DIR}/threads
-    COMMENT "Creating symbolic link to threads folder"
-    # COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/threads
-    # COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/threads ${CMAKE_CURRENT_BINARY_DIR}/threads
-    # COMMAND ${CMAKE_COMMAND} -E echo "Copying threads"
-    # DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/threads/*
-)
+    add_custom_command(TARGET ProjectNotes POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${BUNDLE_RESOURCES}"
+        COMMAND ${CMAKE_COMMAND} -E remove "${BUNDLE_RESOURCES}/plugins"
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+            "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
+            "${BUNDLE_RESOURCES}/plugins"
+        COMMENT "Creating symbolic link to plugins folder in bundle Resources"
+    )
 
-add_custom_command(TARGET ProjectNotes POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/dictionary
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/dictionary ${CMAKE_CURRENT_BINARY_DIR}/dictionary
-    COMMAND ${CMAKE_COMMAND} -E echo "Copying dictionary"
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dictionary/*
-)
+    add_custom_command(TARGET ProjectNotes POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${BUNDLE_RESOURCES}"
+        COMMAND ${CMAKE_COMMAND} -E remove "${BUNDLE_RESOURCES}/threads"
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+            "${CMAKE_CURRENT_SOURCE_DIR}/threads"
+            "${BUNDLE_RESOURCES}/threads"
+        COMMENT "Creating symbolic link to threads folder in bundle Resources"
+    )
+
+    add_custom_command(TARGET ProjectNotes POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/dictionary"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
+            "${BUNDLE_RESOURCES}/dictionary"
+        COMMENT "Copying dictionary to bundle Resources"
+    )
+else()
+    add_custom_command(TARGET ProjectNotes POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+            "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
+            "${CMAKE_CURRENT_BINARY_DIR}/plugins"
+        COMMENT "Creating symbolic link to plugins folder"
+    )
+
+    add_custom_command(TARGET ProjectNotes POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+            "${CMAKE_CURRENT_SOURCE_DIR}/threads"
+            "${CMAKE_CURRENT_BINARY_DIR}/threads"
+        COMMENT "Creating symbolic link to threads folder"
+    )
+
+    add_custom_command(TARGET ProjectNotes POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/dictionary"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
+            "${CMAKE_CURRENT_BINARY_DIR}/dictionary"
+        COMMENT "Copying dictionary"
+    )
+endif()
 

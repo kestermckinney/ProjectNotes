@@ -328,8 +328,8 @@ PluginManager::PluginManager(QObject *parent)
     : QObject{parent}
 {
 
-    m_pluginspath = QCoreApplication::applicationDirPath() + "/plugins/";
-    m_threadspath = QCoreApplication::applicationDirPath() + "/threads/";
+    m_pluginspath = appResourcesPath() + "/plugins/";
+    m_threadspath = appResourcesPath() + "/threads/";
 
     QString pythonpath =  QCoreApplication::applicationDirPath();
 
@@ -383,7 +383,9 @@ PluginManager::PluginManager(QObject *parent)
     QString pathSetup;
     pathSetup.reserve(512);
     pathSetup =  "import sys\n"
+                 "import os\n"
                  "import inspect\n";
+    pathSetup += QString("os.chdir(\"%1\")\n").arg(appResourcesPath());
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(m_pluginspath);
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(m_threadspath);
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/python313.zip");
@@ -392,7 +394,6 @@ PluginManager::PluginManager(QObject *parent)
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/site-packages/win32/lib");
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/site-packages/Pythonwin");
 #ifdef Q_OS_WIN
-    pathSetup += "import os\n";
     pathSetup += QString("os.add_dll_directory(\"%1\")\n").arg(pythonpath + "/site-packages/PyQt6/Qt6/bin");
 #endif
     PyRun_SimpleString(pathSetup.toUtf8().constData());
