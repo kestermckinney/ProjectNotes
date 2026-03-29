@@ -6,11 +6,13 @@
 
 #include <QFileInfo>
 #include <QUrl>
+#include <QMimeData>
 
 ProjectLocationsView::ProjectLocationsView(QWidget* parent) : TableView(parent)
 {
     setObjectName("tableViewProjectLocations");
     setHasOpen(true);
+    setAcceptDrops(true);
 }
 
 ProjectLocationsView::~ProjectLocationsView()
@@ -60,4 +62,58 @@ void ProjectLocationsView::slotNewRecord()
     QVariant fk_value1 = dynamic_cast<ProjectLocationsModel*>(currentmodel)->getFilter(1); // get the project id
 
     dynamic_cast<ProjectLocationsModel*>(currentmodel)->newRecord(&fk_value1);
+}
+
+void ProjectLocationsView::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (event->mimeData()->hasUrls())
+        event->acceptProposedAction();
+    else
+        event->ignore();
+}
+
+void ProjectLocationsView::dragMoveEvent(QDragMoveEvent *event)
+{
+    if (event->mimeData()->hasUrls())
+        event->acceptProposedAction();
+    else
+        event->ignore();
+}
+
+void ProjectLocationsView::dropEvent(QDropEvent *event)
+{
+    if (!event->mimeData()->hasUrls())
+    {
+        event->ignore();
+        return;
+    }
+
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    if (!sortmodel) { event->ignore(); return; }
+
+    ProjectLocationsModel* currentmodel = dynamic_cast<ProjectLocationsModel*>(sortmodel->sourceModel());
+    if (!currentmodel) { event->ignore(); return; }
+
+    QVariant fk_value1 = currentmodel->getFilter(1); // project_id
+
+    for (const QUrl& url : event->mimeData()->urls())
+    {
+        QString path;
+        if (url.isLocalFile())
+            path = url.toLocalFile().replace('\\', '/');
+        else
+            path = url.toString();
+
+        if (path.isEmpty())
+            continue;
+
+        QModelIndex newIndex = currentmodel->newRecord(&fk_value1);
+        if (newIndex.isValid())
+        {
+            QModelIndex pathIndex = currentmodel->index(newIndex.row(), 4);
+            currentmodel->setData(pathIndex, path, Qt::EditRole);
+        }
+    }
+
+    event->acceptProposedAction();
 }

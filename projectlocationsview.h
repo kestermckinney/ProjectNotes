@@ -10,6 +10,9 @@
 #include "comboboxdelegate.h"
 #include <QObject>
 #include <QStringListModel>
+#include <QDragEnterEvent>
+#include <QDragMoveEvent>
+#include <QDropEvent>
 
 class ProjectLocationsView : public TableView
 {
@@ -26,6 +29,11 @@ private:
     ComboBoxDelegate* m_fileTypeDelegate = nullptr;
     LineEditFileButtonDelegate* m_fileButtonDelegate = nullptr;
     PlainTextEditDelegate* m_descriptionDelegate = nullptr;
+
+protected:
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dragMoveEvent(QDragMoveEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
 
 public slots:
     void slotNewRecord() override;

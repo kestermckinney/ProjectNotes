@@ -3,10 +3,13 @@
 
 #include "projectteammembersview.h"
 #include "databaseobjects.h"
+#include "vcardparser.h"
 
 ProjectTeamMembersView::ProjectTeamMembersView(QWidget* parent) : TableView(parent)
 {
     setHasOpen(true);
+    setAcceptDrops(true);
+    viewport()->setAcceptDrops(true);
 }
 
 ProjectTeamMembersView::~ProjectTeamMembersView()
@@ -56,4 +59,70 @@ void ProjectTeamMembersView::slotNewRecord()
     QVariant fk_value1 = dynamic_cast<ProjectTeamMembersModel*>(currentmodel)->getFilter(1); // get the project id
 
     dynamic_cast<ProjectTeamMembersModel*>(currentmodel)->newRecord(&fk_value1);
+}
+
+void ProjectTeamMembersView::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (mimeDataHasVCard(event->mimeData()))
+        event->acceptProposedAction();
+    else
+        event->ignore();
+}
+
+void ProjectTeamMembersView::dragMoveEvent(QDragMoveEvent *event)
+{
+    if (mimeDataHasVCard(event->mimeData()))
+        event->acceptProposedAction();
+    else
+        event->ignore();
+}
+
+void ProjectTeamMembersView::dropEvent(QDropEvent *event)
+{
+    QString vcardText = extractVCardText(event->mimeData());
+    if (vcardText.isEmpty()) { event->ignore(); return; }
+
+    QList<VCardContact> contacts = parseVCards(vcardText);
+    if (contacts.isEmpty()) { event->ignore(); return; }
+
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    if (!sortmodel) { event->ignore(); return; }
+
+    ProjectTeamMembersModel* currentmodel = dynamic_cast<ProjectTeamMembersModel*>(sortmodel->sourceModel());
+    if (!currentmodel) { event->ignore(); return; }
+
+    DatabaseObjects* dbo = currentmodel->getDBOs();
+    QVariant projectId = currentmodel->getFilter(1);
+    if (projectId.isNull() || projectId.toString().isEmpty()) { event->ignore(); return; }
+
+    for (const VCardContact& contact : contacts)
+    {
+        QString clientId = findOrCreateClient(dbo, contact.company);
+        QString personId = findOrCreatePerson(dbo, contact, clientId);
+
+        if (personId.isEmpty())
+            continue;
+
+        // Check if person is already on this project
+        QString escapedProject = projectId.toString();
+        escapedProject.replace("'", "''");
+        QString escapedPerson = personId;
+        escapedPerson.replace("'", "''");
+
+        QString existing = dbo->execute(
+            QString("SELECT id FROM project_people WHERE project_id = '%1' AND people_id = '%2' AND deleted = 0")
+            .arg(escapedProject, escapedPerson));
+
+        if (!existing.isEmpty())
+            continue;
+
+        QVector<QVariant> qr = currentmodel->emptyrecord();
+        qr[1] = projectId;
+        qr[2] = personId;
+        QModelIndex newIdx = currentmodel->addRecord(qr);
+        if (newIdx.isValid())
+            currentmodel->insertCacheRow(newIdx.row());
+    }
+
+    event->acceptProposedAction();
 }

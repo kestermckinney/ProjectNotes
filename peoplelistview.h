@@ -7,6 +7,9 @@
 #include "tableview.h"
 #include "sqlcomboboxdelegate.h"
 #include "plaintexteditdelegate.h"
+#include <QDragEnterEvent>
+#include <QDragMoveEvent>
+#include <QDropEvent>
 
 class PeopleListView : public TableView
 {
@@ -15,6 +18,11 @@ public:
     ~PeopleListView();
 
     void setModel(QAbstractItemModel *model) override;
+
+protected:
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dragMoveEvent(QDragMoveEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
 
 private:
     SqlComboBoxDelegate* m_unfilteredClientsDelegate =  nullptr;

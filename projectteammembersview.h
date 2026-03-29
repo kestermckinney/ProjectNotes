@@ -8,6 +8,9 @@
 #include "sqlcomboboxdelegate.h"
 #include "checkboxdelegate.h"
 #include "plaintexteditdelegate.h"
+#include <QDragEnterEvent>
+#include <QDragMoveEvent>
+#include <QDropEvent>
 #include <QObject>
 
 class ProjectTeamMembersView : public TableView
@@ -17,6 +20,11 @@ public:
     ~ProjectTeamMembersView();
 
     void setModel(QAbstractItemModel *model) override;
+
+protected:
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dragMoveEvent(QDragMoveEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
 
 private:
     // projects list panel delegates

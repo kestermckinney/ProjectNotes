@@ -3,10 +3,13 @@
 
 #include "peoplelistview.h"
 #include "databaseobjects.h"
+#include "vcardparser.h"
 
 PeopleListView::PeopleListView(QWidget* parent) : TableView(parent)
 {
     setObjectName("tableViewPeople");
+    setAcceptDrops(true);
+    viewport()->setAcceptDrops(true);
 }
 
 PeopleListView::~PeopleListView()
@@ -39,4 +42,45 @@ void PeopleListView::setModel(QAbstractItemModel *model)
     {
         TableView::setModel(model);
     }
+}
+
+void PeopleListView::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (mimeDataHasVCard(event->mimeData()))
+        event->acceptProposedAction();
+    else
+        event->ignore();
+}
+
+void PeopleListView::dragMoveEvent(QDragMoveEvent *event)
+{
+    if (mimeDataHasVCard(event->mimeData()))
+        event->acceptProposedAction();
+    else
+        event->ignore();
+}
+
+void PeopleListView::dropEvent(QDropEvent *event)
+{
+    QString vcardText = extractVCardText(event->mimeData());
+    if (vcardText.isEmpty()) { event->ignore(); return; }
+
+    QList<VCardContact> contacts = parseVCards(vcardText);
+    if (contacts.isEmpty()) { event->ignore(); return; }
+
+    QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
+    if (!sortmodel) { event->ignore(); return; }
+
+    SqlQueryModel* currentmodel = dynamic_cast<SqlQueryModel*>(sortmodel->sourceModel());
+    if (!currentmodel) { event->ignore(); return; }
+
+    DatabaseObjects* dbo = currentmodel->getDBOs();
+
+    for (const VCardContact& contact : contacts)
+    {
+        QString clientId = findOrCreateClient(dbo, contact.company);
+        findOrCreatePerson(dbo, contact, clientId);
+    }
+
+    event->acceptProposedAction();
 }

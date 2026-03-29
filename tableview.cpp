@@ -286,6 +286,26 @@ void TableView::paintEvent(QPaintEvent *event)
     QTableView::paintEvent(event);
 }
 
+void TableView::initViewItemOption(QStyleOptionViewItem *option) const
+{
+    QTableView::initViewItemOption(option);
+    option->state &= ~QStyle::State_MouseOver;
+}
+
+bool TableView::viewportEvent(QEvent *event)
+{
+    // Suppress hover events so QAbstractItemView never sets its internal
+    // hover index — this prevents the Windows native style from highlighting
+    // cells on mouse-over regardless of initViewItemOption.
+    if (event->type() == QEvent::HoverMove ||
+        event->type() == QEvent::HoverEnter ||
+        event->type() == QEvent::HoverLeave)
+    {
+        return QAbstractScrollArea::viewportEvent(event);
+    }
+    return QTableView::viewportEvent(event);
+}
+
 void TableView::sortMenu(QMenu* menu)
 {
     // Extract actions from the menu
