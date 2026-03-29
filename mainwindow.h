@@ -142,7 +142,7 @@ private slots:
     void onRefreshRequested();
     void onTimerWaitForThreads();
     void onSyncRowChanged(const QString& tableName, const QString& id);
-    void onSyncStatusUpdated(int percentComplete);
+    void onSyncStatusUpdated(int percentComplete, qint64 pendingPush, qint64 pendingPull);
 
 private:
     void buildPluginMenu(BasePage* currentPage);

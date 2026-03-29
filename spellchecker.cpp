@@ -10,7 +10,7 @@
 
 SpellChecker::SpellChecker()
 {
-    QSettings spell_settings(QCoreApplication::applicationDirPath() + "/dictionary/index.ini", QSettings::IniFormat);
+    QSettings spell_settings(appResourcesPath() + "/dictionary/index.ini", QSettings::IniFormat);
 
     QStringList dictionaries = spell_settings.childGroups();
 
@@ -37,8 +37,8 @@ SpellChecker::SpellChecker()
 
     if (m_dicFiles.count() > 0 && m_affFiles.count() > 0)
     {
-        QString dict = QString(QCoreApplication::applicationDirPath() + "/dictionary/" + m_dicFiles[m_defaultDictionary]);
-        QString aff = QString(QCoreApplication::applicationDirPath() + "/dictionary/" + m_affFiles[m_defaultDictionary]);
+        QString dict = QString(appResourcesPath() + "/dictionary/" + m_dicFiles[m_defaultDictionary]);
+        QString aff = QString(appResourcesPath() + "/dictionary/" + m_affFiles[m_defaultDictionary]);
 
         QByteArray dictFilePathBA = dict.toLocal8Bit();
         QByteArray affixFilePathBA = aff.toLocal8Bit();
@@ -117,8 +117,8 @@ bool SpellChecker::setDefaultDictionary(int index)
 
     m_defaultDictionary = index;
 
-    QByteArray dictFilePathBA = QString(QCoreApplication::applicationDirPath() + "/dictionary/" + m_dicFiles[m_defaultDictionary]).toLocal8Bit();
-    QByteArray affixFilePathBA = QString(QCoreApplication::applicationDirPath() + "/dictionary/" + m_affFiles[m_defaultDictionary]).toLocal8Bit();
+    QByteArray dictFilePathBA = QString(appResourcesPath() + "/dictionary/" + m_dicFiles[m_defaultDictionary]).toLocal8Bit();
+    QByteArray affixFilePathBA = QString(appResourcesPath() + "/dictionary/" + m_affFiles[m_defaultDictionary]).toLocal8Bit();
 
     m_hunspell = new Hunspell(affixFilePathBA.constData(), dictFilePathBA.constData());
 
