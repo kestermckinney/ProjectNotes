@@ -38,7 +38,9 @@ int main(int argc, char *argv[])
         QString resourcePath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/resources";   // adjust if you moved it
         QString localesPath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/translations/qtwebengine_locales";   // adjust if you moved it
 
+#ifdef QT_DEBUG
         qDebug() << "Looking for file " << processPath;
+#endif
 
         if (QFileInfo::exists(processPath))
         {

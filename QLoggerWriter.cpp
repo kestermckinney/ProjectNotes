@@ -130,7 +130,9 @@ void QLoggerWriter::write(QVector<QString> messages)
    if (mMode == LogMode::OnlyConsole)
    {
       for (const auto &message : messages)
+#ifdef QT_DEBUG
          qInfo() << message;
+#endif
 
       return;
    }
