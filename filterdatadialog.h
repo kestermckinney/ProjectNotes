@@ -36,6 +36,10 @@ public:
     QVariant getStartValue();
     QVariant getSearchText();
 
+protected:
+    void showEvent(QShowEvent *event) override;
+    void hideEvent(QHideEvent *event) override;
+
 private slots:
     void on_lineEditSearchText_textEdited(const QString &arg1);
 

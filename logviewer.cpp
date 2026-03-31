@@ -178,8 +178,6 @@ LogViewer::LogViewer(QWidget* parent) : QDialog(parent)
 
     setLayout(mainLayout);
 
-    global_Settings.getWindowState("LogViewer", this);
-
     connect(m_clearlog, &QPushButton::clicked, this, &LogViewer::onClearLog);
     connect(m_close, &QPushButton::clicked, this, &QDialog::close);
 
@@ -194,6 +192,12 @@ LogViewer::LogViewer(QWidget* parent) : QDialog(parent)
     m_pollTimer->start();
 }
 
+void LogViewer::showEvent(QShowEvent *event)
+{
+    global_Settings.getWindowState(objectName(), this);
+    QDialog::showEvent(event);
+}
+
 void LogViewer::closeEvent(QCloseEvent *e)
 {
     for (QThread* t : m_loadingThreads)
@@ -202,6 +206,12 @@ void LogViewer::closeEvent(QCloseEvent *e)
     }
 
     QDialog::closeEvent(e);
+}
+
+void LogViewer::hideEvent(QHideEvent *event)
+{
+    global_Settings.setWindowState(objectName(), this);
+    QDialog::hideEvent(event);
 }
 
 LogViewer::~LogViewer()
@@ -214,8 +224,6 @@ LogViewer::~LogViewer()
     }
 
     m_loadingThreads.clear();
-
-    global_Settings.setWindowState("LogViewer", this);
 
     disconnect(m_clearlog, &QPushButton::clicked, this, &LogViewer::onClearLog);
     disconnect(m_close, &QPushButton::clicked, this, &QDialog::close);

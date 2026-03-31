@@ -19,7 +19,7 @@ Each data type corresponds to one or more views (pages/tables) in the Project No
 | `people` | People List Page | People rows in the People List; People context menus | Contact and team member information |
 | `clients` | Client List Page | Client rows in the Client List | Client company information and contact details |
 | `project_people` | Project Page (Team tab) | Team member rows within a project | Association between people and projects (roles, responsibilities) |
-| `project_locations` | Project Page (Artifacts tab) | File/folder entries in the Artifacts list | Project files, folders, and document locations |
+| `project_locations` | Project Page (Files & Folders tab) | File/folder entries in the Files & Folders list | Project files, folders, and document locations |
 | `project_notes` | Notes Page, Project Page (Notes tab) | Note entries in the Notes section | Meeting minutes, status notes, and project documentation |
 | `meeting_attendees` | Notes Page (Action Items tab for meetings) | Meeting attendee records | Attendees and participants for specific meetings |
 | `item_tracker` | Item Tracker Page | Tracker item rows in the table | Issues, risks, and action items (primary records) |
@@ -56,7 +56,7 @@ Each data type corresponds to one or more views (pages/tables) in the Project No
   - Team members assigned to the project
   - Right-click menus configured for `project_people` appear here
 
-- **Tab: Artifacts** → `project_locations` data type
+- **Tab: Files & Folders** → `project_locations` data type
   - Files and folders associated with the project (found by File Finder or manually added)
   - Right-click menus configured for `project_locations` appear here
 
@@ -161,7 +161,7 @@ The [Meeting and Email Types](<../StandardPlugins/PluginSettings.md>) plugin ass
 
 ### File Finder Plugin
 
-The [File Finder](<../StandardPlugins/FileFinder.md>) plugin classifies files and adds them with the `project_locations` data type, making them appear in the **Artifacts** tab.
+The [File Finder](<../StandardPlugins/FileFinder.md>) plugin classifies files and adds them with the `project_locations` data type, making them appear in the **Files & Folders** tab.
 
 ## Summary
 

@@ -27,6 +27,10 @@ public:
     void showReplaceWindow(QTextEdit* textEdit);
     void showReplaceWindow(QPlainTextEdit* plainTextEdit);
 
+protected:
+    void showEvent(QShowEvent *event) override;
+    void hideEvent(QHideEvent *event) override;
+
 private slots:
     void on_lineEditFind_returnPressed();
 

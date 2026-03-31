@@ -85,7 +85,9 @@ public slots:
     void on_focusChanged(QWidget *old, QWidget *now);
 
 protected:
+    void showEvent(QShowEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
+    void hideEvent(QHideEvent *event) override;
 
 private slots:
     void setButtonAndMenuStates();

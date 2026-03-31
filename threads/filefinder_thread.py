@@ -50,7 +50,7 @@ class  FileFinder:
         self.project_patterns = []
 
 
-    # using the specified filters match file types and include them in teh Artifacts list
+    # using the specified filters match file types and include them in the Files & Folders list
     def filter_match_files(self, project_xml, parent_folder, basefolder):
         xmldoc = ""
 

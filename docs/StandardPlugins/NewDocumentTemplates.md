@@ -40,7 +40,7 @@ Each template plugin has its own settings entry under **Plugins > Settings** whe
 
 ## Open MS Project (Windows Only)
 
-The **Open MS Project** plugin (Windows only) scans the project artifacts for `.mpp` files and opens the selected file in Microsoft Project. If multiple `.mpp` files are associated with the project, a selection dialog appears.
+The **Open MS Project** plugin (Windows only) scans the project Files & Folders for `.mpp` files and opens the selected file in Microsoft Project. If multiple `.mpp` files are associated with the project, a selection dialog appears.
 
 **To open an MS Project file:**
 
