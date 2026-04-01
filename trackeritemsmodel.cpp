@@ -15,28 +15,31 @@ TrackerItemsModel::TrackerItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
     // setBaseSql("select * from item_tracker_view");
     // setDeletedFilterInView(true);  // view filters deleted rows internally
     setBaseSql(R"(
-    SELECT
-        id,
-        item_number,
-        item_type,
-        item_name,
-        identified_by,
-        date_identified,
-        description,
-        assigned_to,
-        priority,
-        status,
-        date_due,
-        last_update,
-        date_resolved,
-        note_id,
-        project_id,
-        internal_item,
-        (select GROUP_CONCAT(update_note, ',') from item_tracker_updates where item_tracker.id=item_tracker_updates.item_id ) comments,
-        (select project_status from projects p where p.id=item_tracker.project_id) project_status,
-        (select id from projects c where c.id=project_id) client_id,
-        (select project_name from projects p where p.id=item_tracker.project_id) project_id_name
-    FROM item_tracker
+    SELECT * FROM (
+        SELECT
+            id,
+            item_number,
+            item_type,
+            item_name,
+            identified_by,
+            date_identified,
+            description,
+            assigned_to,
+            priority,
+            status,
+            date_due,
+            last_update,
+            date_resolved,
+            note_id,
+            project_id,
+            internal_item,
+            (select GROUP_CONCAT(update_note, ',') from item_tracker_updates where item_tracker.id=item_tracker_updates.item_id ) comments,
+            (select project_status from projects p where p.id=item_tracker.project_id) project_status,
+            (select id from projects c where c.id=project_id) client_id,
+            (select project_name from projects p where p.id=item_tracker.project_id) project_id_name,
+            deleted
+        FROM item_tracker
+    ) item_tracker
     )");
     setTableName("item_tracker", "Project Action Items");
 

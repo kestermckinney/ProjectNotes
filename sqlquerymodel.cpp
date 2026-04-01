@@ -397,7 +397,7 @@ void SqlQueryModel::refresh()
     {
         QVector<QVariant> record(m_columnCount);
 
-        for (int i = 0; i < sql_query.record().count(); i++)
+        for (int i = 0; i < m_columnCount && i < sql_query.record().count(); i++)
             record[i] = sql_query.value(i);
 
         m_cache.append(record);
