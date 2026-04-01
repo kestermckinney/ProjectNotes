@@ -30,7 +30,7 @@ class SqlQueryModel : public QAbstractTableModel
 
 public:
 
-    enum DBColumnType {DBBlob, DBReal, DBDate, DBInteger, DBString, DBUSD, DBPercent, DBDateTime, DBBool, DBHtml};
+    enum DBColumnType {DBBlob, DBReal, DBDate, DBInteger, DBString, DBUSD, DBPercent, DBDateTime, DBBool, DBHtml, DBPhoneNumber};
     enum DBCompareType {Equals, GreaterThan, LessThan, NotEqual, Like, In};
     enum DBColumnRequired {DBRequired, DBNotRequired};
     enum DBColumnSearchable {DBSearchable, DBNotSearchable};
