@@ -717,7 +717,9 @@ void MainWindow::openDatabase(const QString& dbfile)
                     this, &MainWindow::onSyncStatusUpdated,
                     Qt::QueuedConnection);
         } else {
+#ifdef QT_DEBUG
             qWarning() << "SqliteSyncPro initialize failed:" << m_syncApi->lastError();
+#endif
             QMessageBox::warning(this, tr("Cloud Sync"),
                 tr("Connection settings are invalid — unable to connect to the sync host.\n\n"
                    "Your settings have been saved. You can update them via File > Cloud Sync Settings."));

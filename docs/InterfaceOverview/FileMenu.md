@@ -20,6 +20,26 @@ If you want to sync your data with a cloud host, use **Cloud Sync Settings** to 
 
 Your settings are saved immediately. If Project Notes cannot connect using the information provided, a warning dialog will appear. You can correct the settings by returning to **File > Cloud Sync Settings...**.
 
+## Sync All
+
+**Sync All** immediately synchronizes all project data with the configured cloud host. This is useful when you want to push or pull the latest changes without waiting for an automatic sync cycle.  In some rare isntances records may not get pushed to the server, or pulled.  This option resets all sync flags and starts over.  It can take some time for the full database to sync.  The syncronization progress bar at the bottom right of the status window will show the overall sync progress.
+
+**To sync all data:**
+
+1. From the Project Notes **File** menu choose **Sync All**.
+
+Project Notes will connect to the cloud host and synchronize all records. If the connection fails or no cloud host is configured, a warning dialog will appear. You can configure cloud sync settings under **File > Cloud Sync Settings...**.
+
+## Sync Status Bar
+
+When cloud sync is active, a progress bar appears in the bottom-right corner of the status bar. It shows how much of the database has been synchronized with the cloud host.
+
+- **While syncing** — the bar fills from left to right as records are pushed and pulled. Hovering over the bar shows a tooltip with the exact percentage complete and the number of records pending push and pull.
+- **When complete** — the bar disappears automatically once the database is fully synchronized (100%).
+- **When sync is disabled or not configured** — the bar is hidden.
+
+If the bar remains visible for an extended period, it may indicate a slow connection or a large number of pending records. You can use **File > Sync All** to reset all sync flags and start over if records appear to be stuck.
+
 ## Searching The Database
 
 Project Notes provides a powerful search tool that searches the entire database. Project Notes can quickly search for any text, and provide quick navigation to found items by double clicking the results. When Show Internal items is selected from the View menu, internal data will show in the search results.

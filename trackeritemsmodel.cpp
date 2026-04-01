@@ -12,9 +12,32 @@ TrackerItemsModel::TrackerItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
     setObjectName("TrackerItemsModel");
     setOrderKey(40);
 
-    setBaseSql("select * from item_tracker_view");
-    setDeletedFilterInView(true);  // view filters deleted rows internally
-
+    // setBaseSql("select * from item_tracker_view");
+    // setDeletedFilterInView(true);  // view filters deleted rows internally
+    setBaseSql(R"(
+    SELECT
+        id,
+        item_number,
+        item_type,
+        item_name,
+        identified_by,
+        date_identified,
+        description,
+        assigned_to,
+        priority,
+        status,
+        date_due,
+        last_update,
+        date_resolved,
+        note_id,
+        project_id,
+        internal_item,
+        (select GROUP_CONCAT(update_note, ',') from item_tracker_updates where item_tracker.id=item_tracker_updates.item_id ) comments,
+        (select project_status from projects p where p.id=item_tracker.project_id) project_status,
+        (select id from projects c where c.id=project_id) client_id,
+        (select project_name from projects p where p.id=item_tracker.project_id) project_id_name
+    FROM item_tracker
+    )");
     setTableName("item_tracker", "Project Action Items");
 
     addColumn("id", tr("Item ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
@@ -102,6 +125,14 @@ bool TrackerItemsModel::setData(const QModelIndex &index, const QVariant &value,
     if ( SqlQueryModel::setData(index, value, role) )
     {
         QVariant curdate = QDateTime::currentDateTime().toString("MM/dd/yyyy");
+
+        // if assigned_to is set and status is New, advance status to Assigned
+        if (index.column() == 7 && !value.toString().isEmpty())
+        {
+            QModelIndex qmi_status = this->index(index.row(), 9);
+            if (data(qmi_status).toString() == "New")
+                SqlQueryModel::setData(qmi_status, "Assigned", role);
+        }
 
         // if the issue was changed to resolved them change the resolved date
         if (index.column() == 9 && value.toString() == "Resolved")

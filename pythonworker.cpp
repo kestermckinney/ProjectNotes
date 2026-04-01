@@ -48,7 +48,9 @@ void PythonWorker::emitError()
         }
         else
         {
+#ifdef QT_DEBUG
             qDebug() << "No raised exception found!";
+#endif
         }
 
         // Clean up error state
