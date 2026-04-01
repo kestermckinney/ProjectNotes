@@ -15,7 +15,7 @@ from PyQt6.QtGui import QDesktopServices
 
 # Project Notes Plugin Parameters
 pluginname = "Open MS Project"
-plugindescription = "Open the Microsoft Project file found in Artifacts."
+plugindescription = "Open the Microsoft Project file found in Files & Folders."
 
 pluginmenus = []
 
@@ -94,7 +94,7 @@ if (platform.system() == 'Windows'):
         elif len(filelist) == 1:
                 QDesktopServices.openUrl(QUrl("file:///" + filelist[0]))
         else:
-            QMessageBox.critical(None, "No MS Project File Found", "No MS Project files were found.  Check files are listed in Artifacts and they are accessible.")            
+            QMessageBox.critical(None, "No MS Project File Found", "No MS Project files were found.  Check files are listed in Files & Folders and they are accessible.")            
 
         return ""
 

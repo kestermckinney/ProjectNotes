@@ -69,8 +69,6 @@ MainWindow::MainWindow(QWidget *parent)
     m_navigationLocation = -1;
     m_forwardBackHistory.clear();
 
-    global_Settings.getWindowState("MainWindow", this);
-
     int sz = global_Settings.getStoredInt("DefaultFontSize");
 
     if (sz == -1)
@@ -270,8 +268,9 @@ MainWindow::~MainWindow()
     ui->tableViewTeam->setModel(nullptr);
     ui->tableViewTrackerItems->setModel(nullptr);
     ui->tableViewAtendees->setModel(nullptr);
-
-    global_Settings.setWindowState("MainWindow", this);
+    ui->tableViewProjectNotes->setModel(nullptr);
+    ui->tableViewLocations->setModel(nullptr);
+    ui->tableViewComments->setModel(nullptr);
 
     while (m_pageHistory.count())
     {
@@ -2071,6 +2070,18 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
 
     event->accept();
+}
+
+void MainWindow::showEvent(QShowEvent *event)
+{
+    global_Settings.getWindowState(objectName(), this);
+    QMainWindow::showEvent(event);
+}
+
+void MainWindow::hideEvent(QHideEvent *event)
+{
+    global_Settings.setWindowState(objectName(), this);
+    QMainWindow::hideEvent(event);
 }
 
 static int fan_index = 0;

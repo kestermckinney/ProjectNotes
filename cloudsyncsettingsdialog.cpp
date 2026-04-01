@@ -3,6 +3,7 @@
 
 #include "cloudsyncsettingsdialog.h"
 #include "ui_cloudsyncsettingsdialog.h"
+#include "appsettings.h"
 
 CloudSyncSettingsDialog::CloudSyncSettingsDialog(QWidget *parent)
     : QDialog(parent)
@@ -104,4 +105,16 @@ void CloudSyncSettingsDialog::updateSupabaseKeyVisibility(int hostTypeIndex)
     const bool isSupabase = (hostTypeIndex == 1);
     ui->labelSupabaseKey->setVisible(isSupabase);
     ui->lineEditSupabaseKey->setVisible(isSupabase);
+}
+
+void CloudSyncSettingsDialog::showEvent(QShowEvent *event)
+{
+    global_Settings.getWindowState(objectName(), this);
+    QDialog::showEvent(event);
+}
+
+void CloudSyncSettingsDialog::hideEvent(QHideEvent *event)
+{
+    global_Settings.setWindowState(objectName(), this);
+    QDialog::hideEvent(event);
 }

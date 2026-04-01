@@ -41,7 +41,7 @@ Once your clients and people are setup, you will need to tell Project Notes whic
 
 ## Plugin Settings
 
-Project Notes helps you find and generate artifacts related to your project. In order to do this you need to configure the plugins. Each plugin has its own settings accessible under **Plugins > Settings**. For example, the **Export Meeting Notes** and **Export Tracker Items** plugins each have a sub-folder setting that controls where generated reports are saved. See [Plugin Settings](<../StandardPlugins/PluginSettings.md>) for a full list of available settings.
+Project Notes helps you find and generate files and folders related to your project. In order to do this you need to configure the plugins. Each plugin has its own settings accessible under **Plugins > Settings**. For example, the **Export Meeting Notes** and **Export Tracker Items** plugins each have a sub-folder setting that controls where generated reports are saved. See [Plugin Settings](<../StandardPlugins/PluginSettings.md>) for a full list of available settings.
 
 ## Populating Your Project Data And Plugins
 

@@ -12,16 +12,10 @@ PreferencesDialog::PreferencesDialog(QWidget *parent) :
     ui(new Ui::PreferencesDialog)
 {
     ui->setupUi(this);
-
-    QString storename = objectName();
-    global_Settings.getWindowState(storename, this);
 }
 
 PreferencesDialog::~PreferencesDialog()
 {
-    QString storename = objectName();
-    global_Settings.setWindowState(storename, this);
-
     delete ui;
 }
 
@@ -41,6 +35,7 @@ void PreferencesDialog::on_buttonBox_accepted()
 
 void PreferencesDialog::showEvent(QShowEvent *ev)
 {
+    global_Settings.getWindowState(objectName(), this);
     if (global_DBObjects.isOpen())
     {
         ui->comboBoxManagerCompany->setModel(global_DBObjects.unfilteredclientsmodel());
@@ -68,4 +63,10 @@ void PreferencesDialog::showEvent(QShowEvent *ev)
     }
 
     QDialog::showEvent(ev);
+}
+
+void PreferencesDialog::hideEvent(QHideEvent *event)
+{
+    global_Settings.setWindowState(objectName(), this);
+    QDialog::hideEvent(event);
 }

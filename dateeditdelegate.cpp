@@ -12,6 +12,7 @@
 #include <QApplication>
 #include <QString>
 #include <QPainter>
+#include <QKeyEvent>
 
 DateEditDelegate::DateEditDelegate(QObject *parent)
 :QStyledItemDelegate(parent)
@@ -29,7 +30,36 @@ QWidget *DateEditDelegate::createEditor(QWidget *parent, const QStyleOptionViewI
     editor->setCalendarPopup(true);
     editor->setNullable(true);
 
+    editor->installEventFilter(const_cast<DateEditDelegate*>(this));
+    if (QLineEdit* le = editor->getLineEdit())
+        le->installEventFilter(const_cast<DateEditDelegate*>(this));
+
     return editor;
+}
+
+bool DateEditDelegate::eventFilter(QObject *object, QEvent *event)
+{
+    if (event->type() == QEvent::KeyPress)
+    {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
+        if (keyEvent->key() == Qt::Key_Tab || keyEvent->key() == Qt::Key_Backtab)
+        {
+            // object may be the internal QLineEdit child — walk up to find the DateEditEx
+            DateEditEx *editor = qobject_cast<DateEditEx*>(object);
+            if (!editor)
+                editor = qobject_cast<DateEditEx*>(static_cast<QWidget*>(object)->parent());
+
+            if (editor)
+            {
+                emit commitData(editor);
+                emit closeEditor(editor, keyEvent->key() == Qt::Key_Tab
+                                         ? QAbstractItemDelegate::EditNextItem
+                                         : QAbstractItemDelegate::EditPreviousItem);
+                return true;
+            }
+        }
+    }
+    return QStyledItemDelegate::eventFilter(object, event);
 }
 
 void DateEditDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
@@ -39,6 +69,12 @@ void DateEditDelegate::setEditorData(QWidget *editor, const QModelIndex &index) 
     QDateTime datevalue = SqlQueryModel::parseDateTime(value);
 
     dateedit->setDate(datevalue.date());
+
+    QLineEdit *le = dateedit->getLineEdit();
+    if (le)
+        le->setFocus(Qt::TabFocusReason);
+    else
+        dateedit->setFocus(Qt::TabFocusReason);
 }
 
 void DateEditDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const

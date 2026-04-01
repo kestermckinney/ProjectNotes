@@ -1,6 +1,6 @@
 # File Finder
 
-The **File Finder** runs as a background process. Every minute, the plugin scans all configured folders and looks for files related to your projects, automatically adding them to the **Artifacts** tab on the Project Page. This keeps your project file list up to date without manual maintenance.
+The **File Finder** runs as a background process. Every minute, the plugin scans all configured folders and looks for files related to your projects, automatically adding them to the **Files & Folders** tab on the Project Page. This keeps your project file list up to date without manual maintenance.
 
 ## How It Works
 
@@ -56,7 +56,7 @@ If you store projects in multiple locations, you can add multiple search locatio
 
 ### File Classifications
 
-Classification rules determine how files are categorized when added to the Artifacts list. Each rule uses **pattern matching** (regular expressions) to identify files by name and automatically assign them a file type and description.
+Classification rules determine how files are categorized when added to the Files & Folders list. Each rule uses **pattern matching** (regular expressions) to identify files by name and automatically assign them a file type and description.
 
 #### Understanding Pattern Matching
 
@@ -139,8 +139,8 @@ Matches:
 
 ## Notes
 
-- The File Finder only adds files; it does not remove or modify existing Artifact entries.
-- Files are added with the **Project Folder** artifact type when a matching project folder is found.
+- The File Finder only adds files; it does not remove or modify existing Files & Folders entries.
+- Files are added with the **Project Folder** file type when a matching project folder is found.
 - The plugin runs only while Project Notes is open.
 - Pattern matching uses regular expressions; refer to standard regex syntax for complex patterns.
 

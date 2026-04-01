@@ -21,6 +21,7 @@ class SpellCheckDialog : public QDialog
 {
     Q_OBJECT
 protected:
+    void hideEvent(QHideEvent *event) override;
 
 public:
     explicit SpellCheckDialog(QWidget *parent = nullptr);

@@ -15,15 +15,10 @@ FindReplaceDialog::FindReplaceDialog(QWidget *parent) :
     ui(new Ui::FindReplaceDialog)
 {
     ui->setupUi(this);
-
-    QString storename = objectName();
-    global_Settings.getWindowState(storename, this);
 }
 
 FindReplaceDialog::~FindReplaceDialog()
 {
-    QString storename = objectName();
-    global_Settings.setWindowState(storename, this);
 
     delete ui;
 }
@@ -349,5 +344,17 @@ void FindReplaceDialog::on_pushButtonReplaceAll_clicked()
 void FindReplaceDialog::on_pushButtonCancel_clicked()
 {
     hide();
+}
+
+void FindReplaceDialog::showEvent(QShowEvent *event)
+{
+    global_Settings.getWindowState(objectName(), this);
+    QDialog::showEvent(event);
+}
+
+void FindReplaceDialog::hideEvent(QHideEvent *event)
+{
+    global_Settings.setWindowState(objectName(), this);
+    QDialog::hideEvent(event);
 }
 

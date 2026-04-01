@@ -9,6 +9,7 @@
 #include <QApplication>
 #include <QString>
 #include <QPainter>
+#include <QKeyEvent>
 
 ComboBoxDelegate::ComboBoxDelegate(QObject *parent, QStringListModel *model)
 :QStyledItemDelegate(parent)
@@ -24,7 +25,33 @@ QWidget *ComboBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewI
     editor->setModel(m_model);
     editor->setModelColumn(0); // column to display
 
+    editor->installEventFilter(const_cast<ComboBoxDelegate*>(this));
+
     return editor;
+}
+
+bool ComboBoxDelegate::eventFilter(QObject *object, QEvent *event)
+{
+    if (event->type() == QEvent::KeyPress)
+    {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
+        if (keyEvent->key() == Qt::Key_Tab || keyEvent->key() == Qt::Key_Backtab)
+        {
+            ComboBox *editor = qobject_cast<ComboBox*>(object);
+            if (!editor)
+                editor = qobject_cast<ComboBox*>(static_cast<QWidget*>(object)->parent());
+
+            if (editor)
+            {
+                emit commitData(editor);
+                emit closeEditor(editor, keyEvent->key() == Qt::Key_Tab
+                                         ? QAbstractItemDelegate::EditNextItem
+                                         : QAbstractItemDelegate::EditPreviousItem);
+                return true;
+            }
+        }
+    }
+    return QStyledItemDelegate::eventFilter(object, event);
 }
 
 void ComboBoxDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
@@ -33,6 +60,7 @@ void ComboBoxDelegate::setEditorData(QWidget *editor, const QModelIndex &index) 
     QVariant value = index.model()->data(index);
 
     comboBox->setCurrentText(value.toString());
+    comboBox->setFocus(Qt::TabFocusReason);
 }
 
 void ComboBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const

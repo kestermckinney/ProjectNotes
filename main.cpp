@@ -59,6 +59,7 @@ int main(int argc, char *argv[])
         MainWindow w;
 
         a.setWindowIcon(QIcon(":/icons/logo.png")); // "AppIcon.icns"
+
         w.show();
 
         ret = a.exec();

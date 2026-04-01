@@ -18,8 +18,8 @@ PeopleModel::PeopleModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
     addColumn("id", tr("People ID"), DBString, DBNotSearchable, DBRequired, DBReadOnly, DBUnique);
     addColumn("name", tr("Name"), DBString, DBSearchable, DBRequired, DBEditable, DBUnique);
     addColumn("email", tr("Email"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn("office_phone", tr("Office Phone"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
-    addColumn("cell_phone", tr("Cell Phone"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("office_phone", tr("Office Phone"), DBPhoneNumber, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
+    addColumn("cell_phone", tr("Cell Phone"), DBPhoneNumber, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("client_id", tr("Client"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique,
             "clients", "id", "client_name");
     addColumn("role", tr("Role"), DBString, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);

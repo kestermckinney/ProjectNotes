@@ -39,6 +39,10 @@ public:
     QString supabaseKey() const;
     void setSupabaseKey(const QString& key);
 
+protected:
+    void showEvent(QShowEvent *event) override;
+    void hideEvent(QHideEvent *event) override;
+
 private slots:
     void on_checkBoxSyncEnabled_toggled(bool checked);
     void on_comboBoxSyncHostType_currentIndexChanged(int index);
