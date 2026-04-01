@@ -106,12 +106,15 @@ public:
     TrackerItemCommentsModel* trackeritemscommentsmodel() { return m_trackerItemCommentsModel; }
     TrackerItemsModel* trackeritemsmodel() { return m_projectActionItemsModel; }
     TrackerItemsModel* actionitemsdetailsmodel() { return m_actionItemDetailsModel; }
+    TrackerItemsModel* allitemsmodel() { return m_allItemsModel; }
 
     SortFilterProxyModel* clientsmodelproxy() { return m_clientsModelProxy; }
     SortFilterProxyModel* unfilteredclientsmodelproxy() { return m_unfilteredclientsModelProxy; }
     SortFilterProxyModel* peoplemodelproxy() { return m_peopleModelProxy; }
     SortFilterProxyModel* companypeoplemodelproxy() { return m_companyPeopleModelProxy; }
     SortFilterProxyModel* unfilteredpeoplemodelproxy() { return m_unfilteredPeopleModelProxy; }
+    ProjectsListModel* unfilteredprojectslistmodel() { return m_unfilteredProjectsListModel; }
+    SortFilterProxyModel* unfilteredprojectslistmodelproxy() { return m_unfilteredProjectsListModelProxy; }
     SortFilterProxyModel* projectinformationmodelproxy() { return m_projectInformationModelProxy; }
     SortFilterProxyModel* projectslistmodelproxy() { return m_projectsListModelProxy; }
     SortFilterProxyModel* teamsmodelproxy() { return m_teamsModelProxy; }
@@ -128,6 +131,7 @@ public:
     SortFilterProxyModel* trackeritemscommentsmodelproxy() { return m_trackerItemCommentsModelProxy; }
     SortFilterProxyModel* trackeritemsmodelproxy() { return m_projectActionItemsModelProxy; }
     SortFilterProxyModel* actionitemsdetailsmodelproxy() { return m_actionItemDetailsModelProxy; }
+    SortFilterProxyModel* allitemsmodelproxy() { return m_allItemsModelProxy; }
 
     SearchResultsModel* searchresultsmodel() { return m_searchResultsModel; }
     SortFilterProxyModel* searchresultsmodelproxy() { return m_searchResultsModelProxy; }
@@ -189,6 +193,7 @@ private:
     PeopleModel* m_companyPeopleModel = nullptr;
     PeopleModel* m_unfilteredPeopleModel = nullptr;
     ProjectsListModel* m_projectsListModel = nullptr;
+    ProjectsListModel* m_unfilteredProjectsListModel = nullptr;
     ProjectsModel* m_projectInformationModel = nullptr;
     TeamsModel* m_teamsModel = nullptr;
     StatusReportItemsModel* m_statusReportItemsModel = nullptr;
@@ -204,6 +209,7 @@ private:
     TrackerItemCommentsModel* m_trackerItemCommentsModel = nullptr;
     TrackerItemsModel* m_projectActionItemsModel = nullptr;
     TrackerItemsModel* m_actionItemDetailsModel = nullptr;
+    TrackerItemsModel* m_allItemsModel = nullptr;
 
     SearchResultsModel* m_searchResultsModel = nullptr;
 
@@ -213,6 +219,7 @@ private:
     SortFilterProxyModel* m_companyPeopleModelProxy = nullptr;
     SortFilterProxyModel* m_unfilteredPeopleModelProxy = nullptr;
     SortFilterProxyModel* m_projectsListModelProxy = nullptr;
+    SortFilterProxyModel* m_unfilteredProjectsListModelProxy = nullptr;
     SortFilterProxyModel* m_projectInformationModelProxy = nullptr;
     SortFilterProxyModel* m_teamsModelProxy = nullptr;
     SortFilterProxyModel* m_statusReportItemsModelProxy = nullptr;
@@ -228,6 +235,7 @@ private:
     SortFilterProxyModel* m_trackerItemCommentsModelProxy = nullptr;
     SortFilterProxyModel* m_projectActionItemsModelProxy = nullptr;
     SortFilterProxyModel* m_actionItemDetailsModelProxy = nullptr;
+    SortFilterProxyModel* m_allItemsModelProxy = nullptr;
     SortFilterProxyModel* m_searchResultsModelProxy = nullptr;
 
     // xml utility functions

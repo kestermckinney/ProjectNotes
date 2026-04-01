@@ -4,6 +4,7 @@
 #include "ui_mainwindow.h"
 
 #include "tableview.h"
+#include "allitemspage.h"
 #include "projectslistmodel.h"
 #include "databaseobjects.h"
 #include "aboutdialog.h"
@@ -80,6 +81,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ProjectDetails_triggered(QVariant)));
     connect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ItemDetails_triggered(QVariant)));
+    connect(ui->tableViewAllItems, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ItemDetails_triggered(QVariant)));
     connect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ItemDetails_triggered(QVariant)));
     connect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ProjectNote_triggered(QVariant)));
     connect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_SearchResults_triggered(QVariant)));
@@ -267,6 +269,7 @@ MainWindow::~MainWindow()
     ui->tableViewStatusReportItems->setModel(nullptr);
     ui->tableViewTeam->setModel(nullptr);
     ui->tableViewTrackerItems->setModel(nullptr);
+    ui->tableViewAllItems->setModel(nullptr);
     ui->tableViewAtendees->setModel(nullptr);
     ui->tableViewProjectNotes->setModel(nullptr);
     ui->tableViewLocations->setModel(nullptr);
@@ -388,6 +391,7 @@ void MainWindow::setButtonAndMenuStates()
 
     ui->actionClients->setEnabled(dbopen);
     ui->actionPeople->setEnabled(dbopen);
+    ui->actionMasterItemList->setEnabled(dbopen);
 
 
     //plugin menu
@@ -410,6 +414,8 @@ void MainWindow::setButtonAndMenuStates()
         {
             ui->tableViewTrackerItems->setColumnHidden(15, false);
             ui->tableViewTrackerItems->resizeColumnToContents(15);
+            ui->tableViewAllItems->setColumnHidden(15, false);
+            ui->tableViewAllItems->resizeColumnToContents(15);
 
             ui->tableViewProjects->setColumnHidden(6, false);
             ui->tableViewProjects->setColumnHidden(7, false);
@@ -436,6 +442,7 @@ void MainWindow::setButtonAndMenuStates()
         else
         {
             ui->tableViewTrackerItems->setColumnHidden(15, true);
+            ui->tableViewAllItems->setColumnHidden(15, true);
 
             ui->tableViewProjects->setColumnHidden(6, true);
             ui->tableViewProjects->setColumnHidden(7, true);
@@ -455,6 +462,9 @@ void MainWindow::setButtonAndMenuStates()
         ui->tableViewTrackerItems->setColumnHidden(14, true);
         ui->tableViewTrackerItems->setColumnHidden(17, true);
         ui->tableViewTrackerItems->setColumnHidden(18, true);
+
+        ui->tableViewAllItems->setColumnHidden(0, true);
+        ui->tableViewAllItems->setColumnHidden(18, true);
 
         QWidget* fw = this->focusWidget();
         const QLatin1StringView fwClass(fw ? fw->metaObject()->className() : "");
@@ -717,8 +727,11 @@ void MainWindow::openDatabase(const QString& dbfile)
     // load and refresh all of the models in order of their dependancy relationships
     global_DBObjects.unfilteredpeoplemodel()->refresh();
     global_DBObjects.unfilteredclientsmodel()->refresh();
+    global_DBObjects.unfilteredprojectslistmodel()->refresh();
 
     global_DBObjects.setGlobalSearches(false);
+
+    global_DBObjects.allitemsmodel()->refresh();
 
     global_DBObjects.clientsmodel()->loadUserFilter(global_DBObjects.clientsmodel()->objectName());
     global_DBObjects.clientsmodel()->activateUserFilter(global_DBObjects.clientsmodel()->objectName());
@@ -737,6 +750,7 @@ void MainWindow::openDatabase(const QString& dbfile)
     ui->pageItemDetails->setupModels(ui);
     ui->pageProjectNote->setupModels(ui);
     ui->pageSearch->setupModels(ui);
+    ui->pageMasterItemList->setupModels(ui);
 
     navigateClearHistory();
     navigateToPage(ui->pageProjectsList, QVariant());
@@ -1250,11 +1264,18 @@ void MainWindow::on_actionResolved_Tracker_Action_Items_triggered()
 
     // filter tracker items by status: checked = show only New and Assigned; unchecked = show all
     if (ui->actionResolved_Tracker_Action_Items->isChecked())
-        global_DBObjects.trackeritemsmodel()->setFilter(9, "New,Assigned", SqlQueryModel::In );
+    {
+        global_DBObjects.trackeritemsmodel()->setFilter(9, "New,Assigned", SqlQueryModel::In);
+        global_DBObjects.allitemsmodel()->setFilter(9, "New,Assigned", SqlQueryModel::In);
+    }
     else
+    {
         global_DBObjects.trackeritemsmodel()->clearFilter(9);
+        global_DBObjects.allitemsmodel()->clearFilter(9);
+    }
 
     global_DBObjects.trackeritemsmodel()->refresh();
+    global_DBObjects.allitemsmodel()->refresh();
 
     setButtonAndMenuStates();
 }
@@ -1870,6 +1891,11 @@ void MainWindow::on_actionFind_triggered()
 void MainWindow::on_actionSearch_triggered()
 {
     navigateToPage(ui->pageSearch, QVariant());
+}
+
+void MainWindow::on_actionMasterItemList_triggered()
+{
+    navigateToPage(ui->pageMasterItemList, QVariant());
 }
 
 void MainWindow::on_pushButtonSearch_clicked()

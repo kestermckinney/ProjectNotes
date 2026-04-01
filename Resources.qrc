@@ -30,5 +30,6 @@
         <file>icons/deletetext.png</file>
         <file>icons/selectall.png</file>
         <file>icons/folder.png</file>
+        <file>icons/masteritems.png</file>
     </qresource>
 </RCC>

@@ -13,6 +13,8 @@ class DateEditDelegate : public QStyledItemDelegate
 public:
     explicit DateEditDelegate(QObject *parent);
 
+    void setReadOnly(bool readOnly) { m_readOnly = readOnly; }
+
     QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
     void setEditorData(QWidget *editor, const QModelIndex &index) const override;
     void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override;
@@ -21,7 +23,7 @@ public:
     bool eventFilter(QObject *object, QEvent *event) override;
 
 private:
-
+    bool m_readOnly = false;
 };
 
 #endif // DATEEDITDELEGATE_H
