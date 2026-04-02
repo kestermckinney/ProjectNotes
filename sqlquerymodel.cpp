@@ -2127,6 +2127,15 @@ bool SqlQueryModel::setFilter(QDomNode& xmlfilter)
     return true;
 }
 
+// importXMLNode - table-level import entry point.
+//
+// Called by importXMLDoc (databaseobjects.cpp) once per table section in the XML.
+// domnode is the <table name="people"> (or similar) element. The function iterates
+// every <row> child and delegates to setData(QDomElement*, bool) for the
+// INSERT / UPDATE / soft-delete decision on each row.
+//
+// Returns false immediately on the first row that setData rejects (e.g. an invalid
+// field value), so the caller can abort the whole import.
 bool SqlQueryModel::importXMLNode(const QDomNode& domnode)  // this should be table level
 {
     QDomElement node = domnode.firstChildElement("row");
@@ -2142,6 +2151,32 @@ bool SqlQueryModel::importXMLNode(const QDomNode& domnode)  // this should be ta
     return true;
 }
 
+// setData (XML import overload) - core INSERT / UPDATE / soft-delete logic for a single row.
+//
+// Called by importXMLNode for each <row> element in the XML.  The ignoreKey parameter
+// is always false in normal import use; it was historically used to force an INSERT
+// by skipping the existence check, but that path has been removed.
+//
+// XML row format example:
+//   <row>
+//     <column name="id">{uuid}</column>
+//     <column name="name">Jane Smith</column>
+//     <column name="client_id" lookupvalue="Acme Corp"></column>
+//   </row>
+//
+// A <row delete="true"> attribute triggers a soft-delete instead of an update.
+// Foreign-key columns carry a human-readable lookupvalue attribute instead of a raw
+// UUID so that records can be matched correctly even when ids differ between databases.
+//
+// The function works in four phases:
+//   1. Unique-key WHERE clause  — build a SQL condition that can identify the record
+//      by its business key (e.g. name = 'Jane Smith') without needing the UUID.
+//   2. Column loop              — build the field/value lists for INSERT and UPDATE,
+//      and capture the record id if it appears in the XML.
+//   3. Existence check          — decide whether this row is new (INSERT) or already
+//      exists (UPDATE / soft-delete), handling soft-deleted rows carefully.
+//   4. SQL execution            — run the chosen INSERT / UPDATE / DELETE statement
+//      and notify the display layer of the change.
 bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
 {
     if (xmlRow->tagName() != "row")
@@ -2150,89 +2185,111 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
         return false;
     }
 
+    // A <row delete="true"> means the source system wants this record soft-deleted.
     bool isdelete = (xmlRow->attribute("delete").compare("true", Qt::CaseInsensitive) == 0);
 
-    QString whereclause;
-    QString fields;
-    QString updatevalues;
-    QString insertvalues;
-    QString keyfield = getColumnName(0);
-    QString keyvalue;
+    // SQL fragment accumulators built up during the column loop below.
+    QString whereclause;   // WHERE clause used to locate an existing record
+    QString fields;        // comma-separated column names for INSERT
+    QString updatevalues;  // comma-separated "col = val" pairs for UPDATE SET
+    QString insertvalues;  // comma-separated values for INSERT VALUES
+    QString keyfield = getColumnName(0);  // the primary-key column name (always column 0)
+    QString keyvalue;      // the primary-key value from the XML, if present
 
-    // determine if identifier should be used
-    if (!ignoreKey)
+    // -----------------------------------------------------------------------
+    // Phase 1: Build a WHERE clause from the model's registered unique keys.
+    //
+    // m_uniqueKeys holds one or more sets of columns whose combined values
+    // uniquely identify a row (analogous to a UNIQUE index).  We try to match
+    // every column in a key set against the XML; if all columns are present we
+    // use that set as the WHERE condition.  This lets us match records even
+    // when the UUID differs between the exporting and importing database.
+    //
+    // Columns that are foreign keys carry a lookupvalue attribute (the human-
+    // readable display value).  We resolve that to the local FK UUID with a
+    // SELECT before using it in the WHERE clause.
+    // -----------------------------------------------------------------------
+    for (const QStringList& uk : m_uniqueKeys)
     {
-        keyvalue = xmlRow->attribute("id");
+        int found_count = 0;
+        QString temp_where;
 
-        if (!keyvalue.isNull())
+        // For each column that makes up this unique key, scan the XML for a
+        // matching <column name="..."> element.
+        for (const QString& kf : uk)
         {
-            whereclause = QString(" %1 = '%2'").arg(keyfield, keyvalue);
-        }
-    }
-
-    // if using keys don't check for unique values
-    if (keyvalue.isNull())
-    {
-        // Loop through unique keys to find one that can be used to identify a record without the record id
-        for (const QStringList& uk : m_uniqueKeys)
-        {
-            // loop key fields assumming they are there
-            int found_count = 0;
-            QString temp_where;
-
-            for (const QString& kf : uk)
+            QDomNode element = xmlRow->firstChild();
+            while (!element.isNull())
             {
-                // CHECK XML FOR COLUMNS
-                QDomNode element = xmlRow->firstChild();
-                while (!element.isNull())
+                if (element.toElement().tagName().compare("column") == 0)
                 {
-                    if (element.toElement().tagName().compare("column") == 0)
+                    QString field_name = element.toElement().attribute("name");
+                    QVariant field_value = element.toElement().text();
+                    QString lookup_value = element.toElement().attribute("lookupvalue");
+
+                    int colnum = getColumnNumber(field_name);
+
+                    // If this column is a FK with a lookupvalue, resolve the
+                    // display string to the local UUID via a SELECT on the
+                    // referenced table.
+                    if (!lookup_value.isNull() && !m_lookupTable[colnum].isEmpty())
                     {
-                        QString field_name = element.toElement().attribute("name");
-                        QVariant field_value = element.toElement().text();
-                        QString lookup_value = element.toElement().attribute("lookupvalue");
-
-                        int colnum = getColumnNumber(field_name);
-
-                        // if column has a lookup value, look up the key value
-                        if (!lookup_value.isNull() && !m_lookupTable[colnum].isEmpty())
-                        {
-                            QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookupFkColumnName[colnum], m_lookupTable[colnum], m_lookupValueColumnName[colnum], lookup_value);
+                        QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookupFkColumnName[colnum], m_lookupTable[colnum], m_lookupValueColumnName[colnum], lookup_value);
 #ifdef QT_DEBUG
-                            QLog_Debug(DEBUGLOG, QString("EXEC LOOKUP EXISTING: %1").arg(sql));
+                        QLog_Debug(DEBUGLOG, QString("EXEC LOOKUP EXISTING: %1").arg(sql));
 #endif
 
-                            field_value = getDBOs()->execute(sql);
-                        }
-
-                        // if this is a key field add to temp where clause
-                        if (field_name.compare(kf, Qt::CaseInsensitive) == 0)
-                        {
-                            sqlEscape(field_value, m_columnType[colnum], false);
-
-                            if (!temp_where.isEmpty())
-                                temp_where += " and ";
-                            temp_where += QString(" %1 = '%2'").arg(field_name, field_value.toString());
-
-                            found_count++;
-                        }
+                        field_value = getDBOs()->execute(sql);
                     }
 
-                    element = element.nextSibling();
+                    // Accumulate this column into temp_where if it is one of
+                    // the unique-key fields we are currently building.
+                    if (field_name.compare(kf, Qt::CaseInsensitive) == 0)
+                    {
+                        sqlEscape(field_value, m_columnType[colnum], false);
+
+                        if (!temp_where.isEmpty())
+                            temp_where += " and ";
+                        temp_where += QString(" %1 = '%2'").arg(field_name, field_value.toString());
+
+                        found_count++;
+                    }
                 }
 
-                // IF KEY IS USABLE ADD TO WHERE CLAUSE
-                if (found_count == uk.count())
-                {
-                    if (!whereclause.isEmpty())
-                        whereclause += " and ";
-                    whereclause += temp_where;
-                }
+                element = element.nextSibling();
+            }
 
+            // Only append temp_where to the final WHERE clause when every
+            // column in this unique-key set was found in the XML.
+            if (found_count == uk.count())
+            {
+                if (!whereclause.isEmpty())
+                    whereclause += " and ";
+                whereclause += temp_where;
             }
         }
     }
 
+    // Save the unique-key WHERE clause before the column loop below potentially
+    // replaces whereclause with an id-based condition.  We need it later to
+    // detect whether a conflicting active record exists when the id points to
+    // a soft-deleted row (see Phase 3).
+    QString uniqueKeyWhereclause = whereclause;
+
+    // -----------------------------------------------------------------------
+    // Phase 2: Column loop — build INSERT / UPDATE value lists.
+    //
+    // Walk every <column> child of the <row> element.
+    //   - If the column is the primary key (colnum == 0) and has a non-empty
+    //     value, capture it in keyvalue and override whereclause with an
+    //     id-based condition.  This gives a more precise lookup than the
+    //     unique-key clause when both are available.
+    //   - For all other editable columns, resolve FK lookupvalues, validate
+    //     against any allowed-value lists, apply sqlEscape, and append to
+    //     the fields / updatevalues / insertvalues accumulators.
+    //   - Skip any required (non-key) column whose value is empty — running
+    //     the INSERT would fail a NOT NULL constraint anyway.
+    // -----------------------------------------------------------------------
     QDomNode element = xmlRow->firstChild();
     while (!element.isNull())
     {
@@ -2244,15 +2301,18 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
 
             int colnum = getColumnNumber(field_name);
 
-            // if the keyval was included set it
-            if (colnum == 0)
+            // When the XML carries the record id, switch to an id-based WHERE
+            // clause for the existence check so we target the exact row.
+            // An empty id element means the exporting side did not know the id;
+            // in that case we keep the unique-key WHERE clause intact.
+            if (colnum == 0 && !field_value.toString().isEmpty())
             {
                 keyvalue = field_value.toString();
                 whereclause = QString(" %1 = '%2'").arg(keyfield, keyvalue);
             }
 
-            // if key column is specified blank or null don't use it
-            // don't use if it isn't an editable column
+            // Skip the primary-key column when its value is blank (nothing to
+            // insert/update), and skip any column the model marks as non-editable.
             if ( !(colnum == 0 && (field_value.isNull() || field_value.toString().isEmpty())) &&
                  isEditable(colnum) )
             {
@@ -2261,7 +2321,7 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
 
                 fields += field_name;
 
-                // if column has a lookup value, look up the key value
+                // Resolve FK lookupvalue to the local UUID for the value lists.
                 if (!lookup_value.isNull() && !m_lookupTable[colnum].isEmpty())
                 {
                     QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookupFkColumnName[colnum], m_lookupTable[colnum], m_lookupValueColumnName[colnum], lookup_value);
@@ -2272,11 +2332,11 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
                 if (!insertvalues.isEmpty())
                     insertvalues += ",";
 
-
                 if (!updatevalues.isEmpty())
                     updatevalues += ",";
 
-                // if list of values doesn't contain this value the record need rejected
+                // Reject the entire row if the value is not in the column's
+                // allowed-values list (e.g. a status enum column).
                 if (m_lookupValues[colnum] && !m_lookupValues[colnum]->contains(field_value.toString(), Qt::CaseSensitive))
                 {
                     if (m_gui)
@@ -2285,7 +2345,19 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
                     return false;
                 }
 
+                // Convert the value to its SQL-safe form (quotes special chars,
+                // converts empty strings to NULL for non-text columns, etc.).
                 sqlEscape(field_value, m_columnType[colnum], false);
+
+                // If a required non-key column resolved to NULL, skip this row
+                // silently rather than letting the INSERT fail a NOT NULL constraint.
+                if (field_value.isNull() && m_columnIsRequired[colnum] == DBRequired && colnum != 0)
+                {
+#ifdef QT_DEBUG
+                    QLog_Debug(DEBUGLOG, QString("Import skipped row in %1: required field '%2' is empty.").arg(m_tablename, field_name));
+#endif
+                    return true;
+                }
 
                 if (field_value.isNull())
                 {
@@ -2303,42 +2375,93 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
         element = element.nextSibling();
     }
 
-    // check to see if record exists (include soft-deleted rows so we don't attempt to INSERT
-    // a duplicate that violates a UNIQUE constraint on a deleted record)
-    QString exists_sql = QString("select %3 from %1 where %2").arg(m_tablename, whereclause, getColumnName(0));
+
+
+    // -----------------------------------------------------------------------
+    // Phase 3: Already deleted check- Do Nothing
+    //
+    // If we have the key value, check to see if the record is a deleted one.
+    // If the record was deleted then we do nothing.  We don't want to add a
+    // record back in that we have already deleted.
+
+    QString was_deleted_sql = QString("select %2 from %1 where %2 = '%3' AND deleted = 1").arg(m_tablename, getColumnName(0), keyvalue);
+    QString deleted_id_field = getDBOs()->execute(was_deleted_sql);
+
+    if (!deleted_id_field.isEmpty())
+    {
+#ifdef QT_DEBUG
+        QLog_Debug(DEBUGLOG, QString("Import skipped row in %1: row with %2 = '%3' is was already deleted.").arg(m_tablename, getColumnName(0), keyvalue));
+#endif
+        return true;
+    }
+
+    // -----------------------------------------------------------------------
+    // Phase 4: If we have the key value and it exist we update by the key only
+
+    if (!keyvalue.isNull() && !keyvalue.isEmpty())
+    {
+        whereclause = QString("%1 = '%2'").arg(keyfield, keyvalue);
+    }
+
+
+    // -----------------------------------------------------------------------
+    // Phase 5: Eecide INSERT vs UPDATE / soft-delete
+    //
+    // We need to handle four cases correctly:
+    //
+    //   a) Active record found by whereclause (deleted = 0)
+    //        → UPDATE or soft-delete that record.
+    //
+    //   b) No record found at all
+    //        → INSERT a new row.  Generate a UUID if the XML did not supply one.
+    // -----------------------------------------------------------------------
+
+    QString exists_sql = QString("select %3 from %1 where %2 AND deleted = 0").arg(m_tablename, whereclause, keyfield);
     QString id_field = getDBOs()->execute(exists_sql);
+
+
+
     QString sql;
     KeyColumnChange::OperationType disp_optype;
 
     if (!id_field.isEmpty())
     {
-        // soft-delete or update if exists
+        // -----------------------------------------------------------------------
+        // Phase 4a: Record exists — UPDATE or soft-delete.
+        //
+        // Use the specific record id in the WHERE clause (not the broader
+        // unique-key clause) so exactly one row is affected.
+        // -----------------------------------------------------------------------
+        QString id_whereclause = QString("%1 = '%2'").arg(keyfield, id_field);
+
         if (isdelete)
         {
-            sql = QString("UPDATE %1 SET deleted = 1 WHERE %2").arg(m_tablename, whereclause);
+            sql = QString("UPDATE %1 SET deleted = 1 WHERE %2").arg(m_tablename, id_whereclause);
             disp_optype = KeyColumnChange::Delete;
         }
         else
         {
-            // include deleted = 0 so a previously soft-deleted record is restored on import
-            sql = QString("update %1 set %2, deleted = 0 where %3").arg(m_tablename, updatevalues, whereclause);
+            sql = QString("update %1 set %2, deleted = 0 where %3").arg(m_tablename, updatevalues, id_whereclause);
             disp_optype = KeyColumnChange::Update;
         }
     }
     else
     {
-        // insert if it doesn't exist
-        // needs an ID since one won't exist
+        // -----------------------------------------------------------------------
+        // Phase 4b: Record does not exist — INSERT.
+        //
+        // Append the primary-key column to the field list.  If the XML supplied
+        // a UUID use it; otherwise generate a new one so the row has a stable id.
+        // -----------------------------------------------------------------------
         if (!fields.isEmpty())
             fields += ",";
 
-        QString keycol = getColumnName(0); // get the key field name
-        fields += keycol;
+        fields += keyfield;
 
         if (!insertvalues.isEmpty())
             insertvalues += ",";
 
-        if (keyvalue.isNull())
+        if (keyvalue.isNull() || keyvalue.isEmpty())
             keyvalue = QUuid::createUuid().toString();
 
         id_field = keyvalue;
@@ -2356,7 +2479,8 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
 
     getDBOs()->execute(sql);
 
-    getDBOs()->pushRowChange(tablename(), id_field, disp_optype);  // track change to update display later
+    // Notify the display layer so the relevant table views refresh the changed row.
+    getDBOs()->pushRowChange(tablename(), id_field, disp_optype);
 
     return true;
 }

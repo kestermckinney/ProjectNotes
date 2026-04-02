@@ -135,6 +135,13 @@ void Plugin::loadPlugin(const QString& module)
 
 void Plugin::unloadPlugin()
 {
+    // Signal the worker thread to stop early. Python code in long-running timer
+    // events checks QThread.currentThread().isInterruptionRequested() in their
+    // inner loops and returns immediately when this flag is set, so the queued
+    // unloadModule() slot is processed as soon as the current event_timer returns.
+    if (m_thread)
+        m_thread->requestInterruption();
+
     emit unloadModule();
 }
 

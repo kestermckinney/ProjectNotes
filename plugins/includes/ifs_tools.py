@@ -437,12 +437,14 @@ class IFSCommon:
                 rd['peoplexmlrows'] += "  <row>\n"
 
                 rd['peoplexmlrows'] += "    <column name=\"name\">" + self.pnc.to_xml(rowval['EmployeeIdRef']['EmployeeName']) + "</column>\n"
-                rd['peoplexmlrows'] += "    <column name=\"client_id\" lookupvalue=\"" + self.pnc.to_xml(rd['companyname']) + "\"></column>\n"
+                if rd['companyname']:
+                    rd['peoplexmlrows'] += "    <column name=\"client_id\" lookupvalue=\"" + self.pnc.to_xml(rd['companyname']) + "\"></column>\n"
 
                 rd['peoplexmlrows'] += "  </row>\n"
 
                 # only add the company name once to the client list
-                clientsdict[rd['companyname']] = True
+                if rd['companyname']:
+                    clientsdict[rd['companyname']] = True
 
     def import_ifs_projects(self, parameter):
         timer = QElapsedTimer()
@@ -540,6 +542,11 @@ class IFSCommon:
                 itemrow = trackeritems.firstChild()
 
                 while not itemrow.isNull():
+                    # === CHECK FOR SHUTDOWN REQUEST ===
+                    if QThread.currentThread().isInterruptionRequested():
+                        print("Shutdown requested - ifs_tools.py exiting gracefully")
+                        return
+
                     isinternal = self.pnc.get_column_value(itemrow, "internal_item")
                     itemstatus = self.pnc.get_column_value(itemrow, "status")
                     itemtype = self.pnc.get_column_value(itemrow, "item_type")

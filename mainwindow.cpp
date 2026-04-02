@@ -101,6 +101,23 @@ MainWindow::MainWindow(QWidget *parent)
     m_syncProgressBar->hide();
     ui->statusbar->addPermanentWidget(m_syncProgressBar);
 
+    m_syncNetworkErrorLabel = new QLabel(this);
+    m_syncNetworkErrorLabel->setPixmap(
+        style()->standardIcon(QStyle::SP_MessageBoxCritical).pixmap(16, 16));
+    m_syncNetworkErrorLabel->setToolTip(tr("Unable to connect to sync host"));
+    m_syncNetworkErrorLabel->hide();
+    ui->statusbar->addPermanentWidget(m_syncNetworkErrorLabel);
+
+    // Monitor OS-level network reachability so the disconnect icon appears
+    // immediately when the network goes down — without waiting for the next
+    // sync cycle to run and fail.
+    if (QNetworkInformation::loadDefaultBackend() && QNetworkInformation::instance()) {
+        connect(QNetworkInformation::instance(),
+                &QNetworkInformation::reachabilityChanged,
+                this, &MainWindow::onNetworkReachabilityChanged,
+                Qt::QueuedConnection);
+    }
+
     m_pluginManager = new PluginManager(this);
 
     connect(m_pluginManager, &PluginManager::pluginLoaded, this, &MainWindow::onPluginLoaded);
@@ -703,6 +720,7 @@ void MainWindow::openDatabase(const QString& dbfile)
                     Qt::QueuedConnection);
             connect(m_syncApi, &SqliteSyncPro::syncCompleted,
                     this, [this](const SyncResult &result){
+                        m_syncNetworkError = result.hasNetworkError();
                         global_DBObjects.updateDisplayData();
                         if (result.totalDecryptionFailures() > 0) {
                             QMessageBox::warning(this, tr("Cloud Sync"),
@@ -2122,7 +2140,13 @@ void MainWindow::onTimerWaitForThreads()
     if (loaded_count == 0)
         this->close();  // once all plugins are unloaded we can quit
 
+    QStringList activeNames;
+    for (const Plugin* p : m_pluginManager->plugins())
+        if (p->loaded())
+            activeNames.append(p->pluginname());
+
     ui->statusbar->showMessage(QString("Waiting for plugins to finish... %1  %2 plugins are still active.").arg(fan[fan_index]).arg(loaded_count));
+    ui->statusbar->setToolTip(activeNames.join(QStringLiteral("\n")));
 }
 
 void MainWindow::onSyncRowChanged(const QString& tableName, const QString& id)
@@ -2137,9 +2161,17 @@ void MainWindow::onSyncStatusUpdated(int percentComplete, qint64 pendingPush, qi
 
     if (!m_syncApi || !m_syncApi->isInitialized()) {
         m_syncProgressBar->hide();
+        m_syncNetworkErrorLabel->hide();
         return;
     }
 
+    if (m_syncNetworkError) {
+        m_syncProgressBar->hide();
+        m_syncNetworkErrorLabel->show();
+        return;
+    }
+
+    m_syncNetworkErrorLabel->hide();
     m_syncProgressBar->setValue(percentComplete);
 
     if (percentComplete < 100) {
@@ -2151,6 +2183,33 @@ void MainWindow::onSyncStatusUpdated(int percentComplete, qint64 pendingPush, qi
         m_syncProgressBar->show();
     } else {
         m_syncProgressBar->hide();
+    }
+}
+
+void MainWindow::onNetworkReachabilityChanged(QNetworkInformation::Reachability reachability)
+{
+    bool networkDown = (reachability == QNetworkInformation::Reachability::Disconnected);
+
+    if (networkDown == m_syncNetworkError)
+        return; // state hasn't changed — nothing to do
+
+    m_syncNetworkError = networkDown;
+
+    if (!m_syncProgressBar || !m_syncNetworkErrorLabel)
+        return;
+
+    if (networkDown) {
+        // Show the icon immediately — don't wait for the next sync cycle to fail.
+        if (m_syncApi && m_syncApi->isInitialized()) {
+            m_syncProgressBar->hide();
+            m_syncNetworkErrorLabel->show();
+        }
+    } else {
+        // Network is back: hide the icon and kick the worker out of its backoff
+        // sleep so the next sync cycle starts right away.
+        m_syncNetworkErrorLabel->hide();
+        if (m_syncApi && m_syncApi->isInitialized())
+            m_syncApi->retryNow();
     }
 }
 

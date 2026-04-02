@@ -50,6 +50,7 @@ void AllItemsView::setModel(QAbstractItemModel *model)
         // unfilteredprojectslistmodelproxy: col 0 = id, col 1 = project_number
         delete m_allProjectDelegate;
         m_allProjectDelegate = new SqlComboBoxDelegate(this, dbo->unfilteredprojectslistmodelproxy(), 1, 0);
+        m_allProjectDelegate->setReadOnly(true);
         setItemDelegateForColumn(14, m_allProjectDelegate);
 
         // Hide the meeting column — not meaningful across all projects

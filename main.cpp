@@ -60,8 +60,9 @@ int main(int argc, char *argv[])
 
         MainWindow w;
 
+#ifndef Q_OS_APPLE
         a.setWindowIcon(QIcon(":/icons/logo.png")); // "AppIcon.icns"
-
+#endif
         w.show();
 
         ret = a.exec();
