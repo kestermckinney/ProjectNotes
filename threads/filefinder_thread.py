@@ -55,20 +55,20 @@ class  FileFinder:
         xmldoc = ""
 
         projectnumber = self.pnc.get_column_value(project_xml, "project_number")
-        re_pattern = re.compile(r"(?:[^a-zA-Z0-9]|^)" + re.escape(projectnumber) + r"(?:[^a-zA-Z0-9]|^)", re.IGNORECASE)
+        re_pattern = re.compile(r"(?:[^a-zA-Z0-9]|^)" + re.escape(projectnumber) + r"(?:[^a-zA-Z0-9]|$)", re.IGNORECASE)
 
         if QDir(parent_folder).exists():
 
             it = QDirIterator(parent_folder, QDir.Filter.Files | QDir.Filter.Dirs | QDir.Filter.NoDotAndDotDot, QDirIterator.IteratorFlag.FollowSymlinks)
 
-            #print(f"working on project {projectnumber} in {parent_folder}")
+            # print(f"working on project {projectnumber} in {parent_folder}")
 
             while it.hasNext():
                 it.next()
 
                 file_path = it.filePath()
 
-                #print(f"iterrator found {file_path} basefolder is {basefolder} looking for project {projectnumber}")
+                # print(f"iterrator found {file_path} basefolder is {basefolder} looking for project {projectnumber}")
 
                 if basefolder:
                     # determine if this is the base project folddr
@@ -82,15 +82,13 @@ class  FileFinder:
 
                         xmldoc += self.filter_match_files(project_xml, file_path, False)
 
-                        #print(f"identified project folder {file_path}")
+                        # print(f"identified project folder {file_path}")
                 else:
                     if it.fileInfo().isDir():
-                        #print(f"traversing folder {file_path}")
+                        # print(f"traversing folder {file_path}")
                         xmldoc += self.filter_match_files(project_xml, file_path, False)
 
-                    #print(f"found {Len(data)} classifications")
-
-                    for value in self.project_patterns: 
+                    for value in self.project_patterns:
                         # test if we have a pattern match for  the file   
                         cla = value["Classification"]
                         pat = value["Pattern"]
@@ -124,7 +122,7 @@ class  FileFinder:
                             xmldoc += f"<column name=\"full_path\" number=\"4\">{self.pnc.to_xml(file_path)}</column>\n"
                             xmldoc += "</row>\n"
 
-                            #print(f"found file {projectnumber} {file_path}")
+                            # print(f"found file {projectnumber} {file_path}")
 
         return xmldoc
 
@@ -133,7 +131,7 @@ class  FileFinder:
         xmldoc = ""
 
         projectnumber = self.pnc.get_column_value(project_xml, "project_number")
-        #print(f"Looking for artifacts for project {projectnumber}")
+        # print(f"Looking for files for project {projectnumber}")
 
         self.project_patterns = []
         for row, row_data in enumerate(self.classifications_list): 
@@ -145,7 +143,7 @@ class  FileFinder:
 
             self.project_patterns.append(di)
 
-            #print(f"Building pattern matches for classifcation {row_data["Classification"]} using {pat}")
+            # print(f"Building pattern matches for classifcation {row_data["Classification"]} using {pat}")
             
 
         # look through base folders and identify folders that are associated with specific project numbers
@@ -154,7 +152,7 @@ class  FileFinder:
         for row, row_data in enumerate(data): 
             folder = row_data["Location"]
 
-            #print(f"starting search in folder {folder}")
+            # print(f"starting search in folder {folder}")
 
             xmldoc += self.filter_match_files(project_xml, folder, True)
 

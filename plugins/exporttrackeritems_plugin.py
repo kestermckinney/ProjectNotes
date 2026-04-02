@@ -49,9 +49,9 @@ class ExportTrackerItemsSettings(QDialog):
         h = pnc.get_plugin_setting("H", self.settings_pluginname)
 
         self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
-        self.ui.lineEditExportSubFolder.setText(self.export_subfolder)
+        self.ui.lineEditExportSubFolder.setText(self.export_subfolder or "")
 
-        if x != '' and y != '' and w != '' and h != '':
+        if x is not None and y is not None and w is not None and h is not None:
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
     def save_window_state(self):
@@ -502,6 +502,12 @@ class TrackerItemsExporter(QDialog):
         return QDesktopServices.openUrl(url)
 
 
+def setup_default_export_tracker_items_settings():
+    pnc_tmp = ProjectNotesCommon()
+    settings_pluginname = "Export Tracker Items"
+    if pnc_tmp.get_plugin_setting("ExportSubFolder", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("ExportSubFolder", settings_pluginname, "Project Management/Issues List")
+
 # Module-level instances (kept alive to prevent Qt from closing the app)
 pnc = None
 eti = None
@@ -524,6 +530,7 @@ if __name__ == '__main__':
 
     app.exec()
 else:
+    setup_default_export_tracker_items_settings()
     pnc = ProjectNotesCommon()
     eti = TrackerItemsExporter(pnc.get_main_window())
     etis = ExportTrackerItemsSettings()

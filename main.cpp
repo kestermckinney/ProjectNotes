@@ -16,6 +16,8 @@ int main(int argc, char *argv[])
     QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/plugins");
     QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/plugins/bin");
 
+    QCoreApplication::setOrganizationDomain("projectnotes.com");
+
     // Set the attribute before creating QApplication this was needed for QWebView would work
     QCoreApplication::setAttribute(Qt::ApplicationAttribute::AA_ShareOpenGLContexts);
 

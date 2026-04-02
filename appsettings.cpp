@@ -15,8 +15,6 @@ AppSettings::AppSettings()
     m_appConfig = new QSettings("ProjectNotes", "AppSettings");
     m_appConfig->setFallbacksEnabled(false);
 
-    m_pluginConfig = new QSettings("ProjectNotes", "PluginSettings");
-    m_pluginConfig->setFallbacksEnabled(false);
 }
 
 AppSettings global_Settings;
@@ -27,9 +25,6 @@ AppSettings::~AppSettings()
     // These deletes are safe no-ops if shutdown() already ran.
     delete m_appConfig;
     m_appConfig = nullptr;
-    delete m_pluginConfig;
-    m_pluginConfig = nullptr;
-
     if (m_spellchecker)
         delete m_spellchecker;
 }
@@ -42,11 +37,6 @@ void AppSettings::shutdown()
         delete m_appConfig;
         m_appConfig = nullptr;
     }
-    if (m_pluginConfig) {
-        m_pluginConfig->sync();
-        delete m_pluginConfig;
-        m_pluginConfig = nullptr;
-    }
 }
 
 SpellChecker* AppSettings::spellchecker()
@@ -55,50 +45,6 @@ SpellChecker* AppSettings::spellchecker()
         m_spellchecker = new SpellChecker();
 
     return m_spellchecker;
-}
-
-QVariant AppSettings::getPluginSetting(const QString& pluginName, const QString& parameterName)
-{
-    QString path = pluginName + "/" + parameterName;
-
-    return m_pluginConfig->value(path);
-}
-
-void AppSettings::setPluginSetting(const QString& pluginName, const QString& parameterName, const QString& parameterValue)
-{
-    QString path = pluginName + "/" + parameterName;
-
-    m_pluginConfig->setValue(path, parameterValue);
-}
-
-bool AppSettings::getPluginEnabled(const QString& pluginName)
-{
-    QString path = pluginName + "/PluginEnabled";
-
-    QVariant val = m_pluginConfig->value(path);
-
-    // default to all plugins being enabled when first loaded
-    if (val.isNull()) val = "1";
-
-    return val.toBool();
-}
-
-void AppSettings::setPluginEnabled(const QString& pluginName, bool enabled)
-{
-    QString path = pluginName + "/PluginEnabled";
-    QVariant value =enabled;
-
-    m_pluginConfig->setValue(path, value);
-}
-
-QVariant AppSettings::getLastDatabase()
-{
-    return m_appConfig->value("LastDatabaseUsed");
-}
-
-void AppSettings::setLastDatabase(const QString& lastDatabase)
-{
-    m_appConfig->setValue("LastDatabaseUsed", lastDatabase);
 }
 
 bool AppSettings::getSyncEnabled()

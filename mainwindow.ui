@@ -440,7 +440,7 @@
            </sizepolicy>
           </property>
           <property name="currentIndex">
-           <number>2</number>
+           <number>3</number>
           </property>
           <property name="elideMode">
            <enum>Qt::TextElideMode::ElideNone</enum>
@@ -842,7 +842,7 @@
           </widget>
           <widget class="QWidget" name="tabFilesAndFolders">
            <attribute name="title">
-            <string>Files &amp; Folders</string>
+            <string>Files &amp;&amp; Folders</string>
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_5">
             <property name="spacing">
@@ -1556,7 +1556,7 @@
      <x>0</x>
      <y>0</y>
      <width>932</width>
-     <height>19</height>
+     <height>30</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

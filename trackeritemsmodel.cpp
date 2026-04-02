@@ -36,7 +36,8 @@ TrackerItemsModel::TrackerItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
             (select GROUP_CONCAT(update_note, ',') from item_tracker_updates where item_tracker.id=item_tracker_updates.item_id ) comments,
             (select project_status from projects p where p.id=item_tracker.project_id) project_status,
             (select id from projects c where c.id=project_id) client_id,
-            (select project_name from projects p where p.id=item_tracker.project_id) project_id_name,
+            (select project_name from projects p where p.id=item_tracker.project_id) project_name,
+            (select project_number from projects p where p.id=item_tracker.project_id) project_number,
             deleted
         FROM item_tracker
     ) item_tracker
@@ -69,7 +70,8 @@ TrackerItemsModel::TrackerItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
     addColumn("comments", tr("Comments"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("project_status", tr("Project Status"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("client_id", tr("Client"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn("project_id_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("project_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("project_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
     QStringList key1 = {"project_id", "item_number"};
 

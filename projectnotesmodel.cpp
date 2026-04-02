@@ -17,7 +17,7 @@ ProjectNotesModel::ProjectNotesModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
     setObjectName("ProjectNotesModel");
 
     // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
-    setBaseSql("SELECT project_notes.id, project_id, note_title, note_date, note, internal_item, (select project_name from projects p where p.id=project_notes.project_id) project_id_name, (select project_number from projects p where p.id=project_notes.project_id) project_id_number FROM project_notes ");
+    setBaseSql("SELECT project_notes.id, project_id, note_title, note_date, note, internal_item, (select project_name from projects p where p.id=project_notes.project_id) project_name, (select project_number from projects p where p.id=project_notes.project_id) project__number FROM project_notes ");
 
     setTableName("project_notes", "Project Notes");
 
@@ -28,8 +28,8 @@ ProjectNotesModel::ProjectNotesModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
     addColumn("note_date", tr("Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
     addColumn("note", tr("Note"), DBHtml, DBSearchable, DBNotRequired, DBEditable);
     addColumn("internal_item", tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable);
-    addColumn("project_id_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
-    addColumn("project_id_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
+    addColumn("project_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
+    addColumn("project_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
 
     addRelatedTable("item_tracker", "note_id", "id", "Action Item", DBExportable);
     addRelatedTable("meeting_attendees", "note_id", "id", "Meeting Attendee", DBExportable);

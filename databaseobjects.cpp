@@ -128,7 +128,7 @@ bool DatabaseObjects::openDatabase(const QString& databasepath, const QString& c
         return false;
     }
 
-    m_sqliteDb.setConnectOptions("QSQLITE_ENABLE_SHARED_CACHE;QSQLITE_BUSY_TIMEOUT=400");
+    m_sqliteDb.setConnectOptions("QSQLITE_BUSY_TIMEOUT=5000");
 
     if (!m_sqliteDb.open())
     {

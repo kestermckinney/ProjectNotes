@@ -60,9 +60,9 @@ class TrackerReportSettings(QDialog):
         h = pnc.get_plugin_setting("H", self.settings_pluginname)
 
         self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
-        self.ui.lineEditExportSubFolder.setText(self.export_subfolder)
+        self.ui.lineEditExportSubFolder.setText(self.export_subfolder or "")
 
-        if (x != '' and y != '' and w != '' and h != ''):
+        if (x is not None and y is not None and w is not None and h is not None):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
     def save_window_state(self):
@@ -417,6 +417,12 @@ class GenerateTrackerReport(QDialog):
 
         self.ui.hide()
 
+def setup_default_tracker_report_settings():
+    pnc_tmp = ProjectNotesCommon()
+    settings_pluginname = "Tracker Report"
+    if pnc_tmp.get_plugin_setting("ExportSubFolder", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("ExportSubFolder", settings_pluginname, "Project Management/Issues List")
+
 # keep the instance of windows open to avoid sending the main app a close message
 pnc = None
 gtr = None
@@ -441,6 +447,7 @@ if __name__ == '__main__':
 
     app.exec()
 else:
+    setup_default_tracker_report_settings()
     pnc = ProjectNotesCommon()
     gtr = GenerateTrackerReport(pnc.get_main_window())
     trs = TrackerReportSettings()

@@ -143,14 +143,14 @@ class FileFinderSettings(QDialog):
         mc1 = self.pnc.get_plugin_setting("mc1", self.settings_pluginname)
         mc2 = self.pnc.get_plugin_setting("mc2", self.settings_pluginname)
 
-        if (lc1 != '' and mc1 != '' and mc2 != ''):
+        if (lc1 is not None and mc1 is not None and mc2 is not None):
             self.ui.tableSearchLocations.setColumnWidth(0, int(lc1))
             self.ui.tableClassifications.setColumnWidth(0, int(mc1))
             self.ui.tableClassifications.setColumnWidth(1, int(mc2))
 
             #print(f"loading file finder columns {lc1}, {mc1}, {mc2}")
 
-        if (x != '' and y != '' and w != '' and h != ''):
+        if (x is not None and y is not None and w is not None and h is not None):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
     def copy_table_to_json(self, qtable):
@@ -309,9 +309,9 @@ class EditorSettings(QDialog):
         h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
 
         self.editor_path = self.pnc.get_plugin_setting("EditorPath", self.settings_pluginname)
-        self.ui.lineEditFullPath.setText(self.editor_path)
+        self.ui.lineEditFullPath.setText(self.editor_path or "")
 
-        if (x != '' and y != '' and w != '' and h != ''):
+        if (x is not None and y is not None and w is not None and h is not None):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
     def edit_location(self):
@@ -377,20 +377,20 @@ class OutlookIntegrationSettings(QDialog):
         w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
         h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
 
-        self.ui.comboBoxIntegrationType.setCurrentText(self.pnc.get_plugin_setting("IntegrationType", self.settings_pluginname))
-        self.ui.lineEditApplicationID.setText(self.pnc.get_plugin_setting("ApplicationID", self.settings_pluginname))
-        self.ui.lineEditTenantID.setText(self.pnc.get_plugin_setting("TenantID", self.settings_pluginname))
-        self.ui.checkBoxImportContacts.setChecked(self.pnc.get_plugin_setting("ImportContacts", self.settings_pluginname).lower() == "true")
-        self.ui.checkBoxExportContacts.setChecked(self.pnc.get_plugin_setting("ExportContacts", self.settings_pluginname).lower() == "true")
-        self.ui.checkBoxSyncToDoWithDue.setChecked(self.pnc.get_plugin_setting("SyncToDoWithDue", self.settings_pluginname).lower() == "true")
-        self.ui.checkBoxSyncToDoWithoutDue.setChecked(self.pnc.get_plugin_setting("SyncToDoDoWithoutDue", self.settings_pluginname).lower() == "true")
-        self.ui.checkBoxBackupEmails.setChecked(self.pnc.get_plugin_setting("BackupEmails", self.settings_pluginname).lower() == "true")
-        self.ui.lineEditBackupInboxFolder.setText(self.pnc.get_plugin_setting("BackupInBoxFolder", self.settings_pluginname))
-        self.ui.lineEditBackupSentFolder.setText(self.pnc.get_plugin_setting("BackupSentFolder", self.settings_pluginname))
-        self.ui.checkBoxSendO365.setChecked(self.pnc.get_plugin_setting("SendO365", self.settings_pluginname).lower() == "true")
-        self.ui.checkBoxScheduleO365.setChecked(self.pnc.get_plugin_setting("ScheduleO365", self.settings_pluginname).lower() == "true")
+        self.ui.comboBoxIntegrationType.setCurrentText(self.pnc.get_plugin_setting("IntegrationType", self.settings_pluginname) or "")
+        self.ui.lineEditApplicationID.setText(self.pnc.get_plugin_setting("ApplicationID", self.settings_pluginname) or "")
+        self.ui.lineEditTenantID.setText(self.pnc.get_plugin_setting("TenantID", self.settings_pluginname) or "")
+        self.ui.checkBoxImportContacts.setChecked((self.pnc.get_plugin_setting("ImportContacts", self.settings_pluginname) or "").lower() == "true")
+        self.ui.checkBoxExportContacts.setChecked((self.pnc.get_plugin_setting("ExportContacts", self.settings_pluginname) or "").lower() == "true")
+        self.ui.checkBoxSyncToDoWithDue.setChecked((self.pnc.get_plugin_setting("SyncToDoWithDue", self.settings_pluginname) or "").lower() == "true")
+        self.ui.checkBoxSyncToDoWithoutDue.setChecked((self.pnc.get_plugin_setting("SyncToDoDoWithoutDue", self.settings_pluginname) or "").lower() == "true")
+        self.ui.checkBoxBackupEmails.setChecked((self.pnc.get_plugin_setting("BackupEmails", self.settings_pluginname) or "").lower() == "true")
+        self.ui.lineEditBackupInboxFolder.setText(self.pnc.get_plugin_setting("BackupInBoxFolder", self.settings_pluginname) or "")
+        self.ui.lineEditBackupSentFolder.setText(self.pnc.get_plugin_setting("BackupSentFolder", self.settings_pluginname) or "")
+        self.ui.checkBoxSendO365.setChecked((self.pnc.get_plugin_setting("SendO365", self.settings_pluginname) or "").lower() == "true")
+        self.ui.checkBoxScheduleO365.setChecked((self.pnc.get_plugin_setting("ScheduleO365", self.settings_pluginname) or "").lower() == "true")
 
-        if (x != '' and y != '' and w != '' and h != ''):
+        if (x is not None and y is not None and w is not None and h is not None):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
     def save_window_state(self):
@@ -483,13 +483,13 @@ class MyShortcutSettings(QDialog):
         c3 = self.pnc.get_plugin_setting("c3", self.settings_pluginname)
         c4 = self.pnc.get_plugin_setting("c4", self.settings_pluginname)
 
-        if (c1 != '' and c2 != '' and c3 != ''and c4 != ''):
+        if (c1 is not None and c2 is not None and c3 is not None and c4 is not None):
             self.ui.tableShortcuts.setColumnWidth(0, int(c1))
             self.ui.tableShortcuts.setColumnWidth(1, int(c2))
             self.ui.tableShortcuts.setColumnWidth(2, int(c3))
             self.ui.tableShortcuts.setColumnWidth(3, int(c4))
 
-        if (x != '' and y != '' and w != '' and h != ''):
+        if (x is not None and y is not None and w is not None and h is not None):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
     def copy_table_to_json(self, qtable):
@@ -657,7 +657,7 @@ class MeetingEmailTypesSettings(QDialog):
 
         geometry = self.pnc.get_plugin_setting("types_geometry", self.settings_pluginname)
 
-        if (c1 != '' and c2 != '' and c3 != '' and c4 != '' and c5 != '' and c6 != ''):
+        if (c1 is not None and c2 is not None and c3 is not None and c4 is not None and c5 is not None and c6 is not None):
             #print(f"loading column sizes {c1},{c2},{c3},{c4},{c5},{c6}")
 
             self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(0, int(c1))
@@ -667,7 +667,7 @@ class MeetingEmailTypesSettings(QDialog):
             self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(4, int(c5))
             self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(5, int(c6))
 
-        if (x != '' and y != '' and w != '' and h != ''):
+        if (x is not None and y is not None and w is not None and h is not None):
             #print(f"loading dimensions {int(x)},{int(y)},{int(w)},{int(h)}")
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
@@ -828,20 +828,22 @@ class SettingsMigrator(QDialog):
         w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
         h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
 
-        if (x != '' and y != '' and w != '' and h != ''):
+        if (x is not None and y is not None and w is not None and h is not None):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
     def load_all_plugin_settings(self):
         self.listWidgetPlugins.clear()
 
         settings = QSettings("ProjectNotes","PluginSettings")
-        
-        # Get all keys in the group
-        keys = settings.childGroups()
-        
-        # Add keys to the QListWidget
-        for key in keys:
-            self.listWidgetPlugins.addItem(key)
+
+        # Add only groups that contain actual plugin settings keys,
+        # filtering out macOS NSUserDefaults system-injected groups (e.g. "com")
+        for key in settings.childGroups():
+            settings.beginGroup(key)
+            has_keys = len(settings.childKeys()) > 0
+            settings.endGroup()
+            if has_keys:
+                self.listWidgetPlugins.addItem(key)
         
 
     def export_settings(self):
@@ -927,7 +929,8 @@ class SettingsMigrator(QDialog):
 
         self.load_all_plugin_settings()
 
-        projectnotes.force_reload("common") # this should cause most everything to reload
+        projectnotes.force_reload("myshortcuts_plugin")
+        projectnotes.force_reload("base_plugin")
 
         return
 
@@ -1012,13 +1015,13 @@ def setup_default_file_finder_settings():
     pnc_tmp = ProjectNotesCommon()
     settings_pluginname = "File Finder"
 
-    if pnc_tmp.get_plugin_setting("SearchLocations", settings_pluginname) == "":
+    if pnc_tmp.get_plugin_setting("SearchLocations", settings_pluginname) is None:
         default_locations = json.dumps([
             {"Location": os.path.join(os.path.expanduser("~"), "Documents", "Projects").replace("\\", "/")}
         ], indent=4)
         pnc_tmp.set_plugin_setting("SearchLocations", settings_pluginname, default_locations)
 
-    if pnc_tmp.get_plugin_setting("Classifications", settings_pluginname) == "":
+    if pnc_tmp.get_plugin_setting("Classifications", settings_pluginname) is None:
         default_classifications = json.dumps([
             {"Classification": "Project Schedule", "Pattern Match": ".*Project Management/Schedule.*\\.mpp$"},
             {"Classification": "Quote",            "Pattern Match": ".*Project Management/Quotes.*\\.pdf$"},
@@ -1044,7 +1047,7 @@ def setup_default_editor_settings():
     pnc_tmp = ProjectNotesCommon()
     settings_pluginname = "Custom Editor"
 
-    if pnc_tmp.get_plugin_setting("EditorPath", settings_pluginname) == "":
+    if pnc_tmp.get_plugin_setting("EditorPath", settings_pluginname) is None:
         if platform.system() == "Windows":
             default_editor = "C:/Windows/System32/notepad.exe"
         elif platform.system() == "Darwin":
@@ -1060,14 +1063,41 @@ def setup_default_meeting_email_types_settings():
     pnc_tmp = ProjectNotesCommon()
     settings_pluginname = "Meeting and Email Types"
 
-    if pnc_tmp.get_plugin_setting("MeetingEmailTypes", settings_pluginname) == "":
+    if pnc_tmp.get_plugin_setting("MeetingEmailTypes", settings_pluginname) is None:
         defaults = json.loads(_MEETING_EMAIL_TYPES_DEFAULTS)
         pnc_tmp.set_plugin_setting("MeetingEmailTypes", settings_pluginname,
                                    defaults["Meeting and Email Types"]["MeetingEmailTypes"])
 
+def setup_default_outlook_settings():
+    pnc_tmp = ProjectNotesCommon()
+    settings_pluginname = "Outlook Integration"
+
+    if pnc_tmp.get_plugin_setting("IntegrationType", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("IntegrationType", settings_pluginname, "Outlook Automation")
+
+    if pnc_tmp.get_plugin_setting("ImportContacts", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("ImportContacts", settings_pluginname, "true")
+    if pnc_tmp.get_plugin_setting("ExportContacts", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("ExportContacts", settings_pluginname, "false")
+    if pnc_tmp.get_plugin_setting("SyncToDoWithDue", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("SyncToDoWithDue", settings_pluginname, "false")
+    if pnc_tmp.get_plugin_setting("SyncToDoDoWithoutDue", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("SyncToDoDoWithoutDue", settings_pluginname, "false")
+    if pnc_tmp.get_plugin_setting("BackupEmails", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("BackupEmails", settings_pluginname, "true")
+    if pnc_tmp.get_plugin_setting("BackupInBoxFolder", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("BackupInBoxFolder", settings_pluginname, "Project Management/Correspondence/Received Email")
+    if pnc_tmp.get_plugin_setting("BackupSentFolder", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("BackupSentFolder", settings_pluginname, "Project Management/Correspondence/Sent Items")
+    if pnc_tmp.get_plugin_setting("SendO365", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("SendO365", settings_pluginname, "false")
+    if pnc_tmp.get_plugin_setting("ScheduleO365", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("ScheduleO365", settings_pluginname, "false")
+
 setup_default_file_finder_settings()
 setup_default_editor_settings()
 setup_default_meeting_email_types_settings()
+setup_default_outlook_settings()
 
 pnc = ProjectNotesCommon()
 mets = MeetingEmailTypesSettings(pnc.get_main_window())

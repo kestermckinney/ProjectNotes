@@ -169,7 +169,7 @@ def populate_dynamic_menu(json_string):
         return
 
     json_menu_data = json.loads(json_string)
-    use_graph_api = (pnc.get_plugin_setting("IntegrationType", "Outlook Integration") == "Office 365 Application")
+    use_graph_api = ((pnc.get_plugin_setting("IntegrationType", "Outlook Integration") or "") == "Office 365 Application")
 
     if (len(json_menu_data) > 0):
         # Populate the table with data

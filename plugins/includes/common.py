@@ -5,7 +5,7 @@ import platform
 import subprocess
 
 from PyQt6 import QtCore
-from PyQt6.QtCore import QFile, QLockFile, QFileInfo, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QSettings
+from PyQt6.QtCore import QFile, QLockFile, QFileInfo, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QSettings, QCoreApplication
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtWidgets import QApplication, QMainWindow
 
@@ -13,7 +13,15 @@ import re
 
 class ProjectNotesCommon:
     def __init__(self):
-        self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)
+        QCoreApplication.setOrganizationDomain("projectnotes.com")
+
+        self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation)
+
+        dir_obj = QDir(self.temporary_folder)
+        if not dir_obj.exists():
+            if not dir_obj.mkpath("."):
+                print("Failed to create cache folder:", self.temporary_folder)
+
         self.saved_state_file = self.temporary_folder + '/projectnotes_saved_state.json'
         self.lock_file = self.saved_state_file + '.lock'
         self.lock = QLockFile(self.lock_file)
@@ -277,12 +285,13 @@ class ProjectNotesCommon:
     def get_plugin_setting(self, settingname, pluginname = None):
         cfg = QSettings("ProjectNotes","PluginSettings")
         cfg.setFallbacksEnabled(False)
-        value = ""
+
+        value = None
 
         if pluginname is None:
-            value = cfg.value("Global Settings/" + settingname, "")
+            value = cfg.value("Global Settings/" + settingname, None)
         else:
-            value = cfg.value(pluginname + "/" + settingname, "")
+            value = cfg.value(pluginname + "/" + settingname, None)
 
         return value
 
@@ -311,7 +320,7 @@ class ProjectNotesCommon:
                 projectname = contents
 
         if projectname == "" or projectname is None:
-            col = self.find_node(xmldoc, "column", "name", "project_id_name")
+            col = self.find_node(xmldoc, "column", "name", "project_name")
             if not col.isNull():
                 lookupvalue = col.attributes().namedItem("lookupvalue").nodeValue()
                 contents = col.toElement().text()

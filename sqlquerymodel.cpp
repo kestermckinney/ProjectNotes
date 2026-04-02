@@ -378,6 +378,7 @@ void SqlQueryModel::refresh()
 
     fullsql = QString("%1 %2 %3 %4 %5").arg( BaseSQL(), constructWhereClause(), orderby, top, skip);
 
+    DB_LOCK;
     getDBOs()->getDb().transaction();
     sql_query = QSqlQuery( getDBOs()->getDb() );
     sql_query.setForwardOnly(true);
@@ -403,7 +404,7 @@ void SqlQueryModel::refresh()
         m_cache.append(record);
     }
     getDBOs()->getDb().commit();
-
+    DB_UNLOCK;
 
     endResetModel();
 }
@@ -2302,8 +2303,9 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
         element = element.nextSibling();
     }
 
-    // check to see if record exists
-    QString exists_sql = QString("select %3 from %1 where %2 AND deleted = 0").arg(m_tablename, whereclause, getColumnName(0));
+    // check to see if record exists (include soft-deleted rows so we don't attempt to INSERT
+    // a duplicate that violates a UNIQUE constraint on a deleted record)
+    QString exists_sql = QString("select %3 from %1 where %2").arg(m_tablename, whereclause, getColumnName(0));
     QString id_field = getDBOs()->execute(exists_sql);
     QString sql;
     KeyColumnChange::OperationType disp_optype;
@@ -2318,7 +2320,8 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
         }
         else
         {
-            sql = QString("update %1 set %2 where %3").arg(m_tablename, updatevalues, whereclause);
+            // include deleted = 0 so a previously soft-deleted record is restored on import
+            sql = QString("update %1 set %2, deleted = 0 where %3").arg(m_tablename, updatevalues, whereclause);
             disp_optype = KeyColumnChange::Update;
         }
     }

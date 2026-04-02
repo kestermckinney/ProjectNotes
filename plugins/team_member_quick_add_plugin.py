@@ -70,7 +70,7 @@ class TeamMemberQuickAdd(QDialog):
         w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
         h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
 
-        if (x != '' and y != '' and w != '' and h != ''):
+        if (x is not None and y is not None and w is not None and h is not None):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
     def setup_window(self, xmlstr):

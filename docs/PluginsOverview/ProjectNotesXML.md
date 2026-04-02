@@ -24,12 +24,12 @@ Nearly all information found in Project Notes can be exported or imported using 
    <column name="status_report_period">None</column>
    <column name="client_id" lookupvalue="Special Law Firm">{ba96fb89-6c2d-46db-864c-5be6292b10gg}</column>
    <column name="project_status">Active</column>
-   <table name="ix_status_report_items" filter_field="project_id" filter_value="159709812400019208"/>
-   <table name="ix_project_people" filter_field="project_id" filter_value="{ba96fb89-6c2d-46db-864c-5be6292b10ef}">
+   <table name="status_report_items" filter_field="project_id" filter_value="159709812400019208"/>
+   <table name="project_people" filter_field="project_id" filter_value="{ba96fb89-6c2d-46db-864c-5be6292b10ef}">
     <row>
      <column name="project_people_id">{ba96fb89-6c2d-46db-884c-5be6292b10eo}</column>
      <column name="project_id" lookupvalue="P4000">{ba96fb89-6c2d-46db-864c-5be6292b10ef}</column>
-     <column name="project_id_name" lookupvalue="IT New Server Install">159709812400019208</column>
+     <column name="project_name" lookupvalue="IT New Server Install">159709812400019208</column>
      <column name="people_id" lookupvalue="Mike Smith">{7e6df350-ab03-4653-99f1-7abb09bbefa3}</column>
      <column name="role"></column>
      <column name="receive_status_report"></column>
@@ -40,7 +40,7 @@ Nearly all information found in Project Notes can be exported or imported using 
     <row>
      <column name="project_people_id">159907543300015593</column>
      <column name="project_id" lookupvalue="J2627">{7e6df350-ab03-4653-99f1-7abb09bbefa3}</column>
-     <column name="project_id_name" lookupvalue="IT New Server Install">159709812400019208</column>
+     <column name="project_name" lookupvalue="IT New Server Install">159709812400019208</column>
      <column name="people_id" lookupvalue="Jim Smith">{92ce1e4e-a908-4f6c-8348-c85beb459942}</column>
      <column name="role">Lead Support</column>
      <column name="receive_status_report">1</column>
@@ -56,7 +56,7 @@ Nearly all information found in Project Notes can be exported or imported using 
      <column name="location_type">PDF File</column>
      <column name="location_description">Quote : Project Quote.pdf</column>
      <column name="full_path">P:ProjectFolderP4000_IT New Server InstallQuotesQT9876908.pdf</column>
-     <column name="project_id_name" lookupvalue="IT New Server Install">{3d9f88d9-810b-4e6c-827b-9afeef0dd48f}</column>
+     <column name="project_name" lookupvalue="IT New Server Install">{3d9f88d9-810b-4e6c-827b-9afeef0dd48f}</column>
     </row>
    </table>
    <table name="ix_project_notes" filter_field="project_id" filter_value="{3d9f88d9-810b-4e6c-827b-9afeef0dd48f}"/>

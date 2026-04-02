@@ -146,7 +146,8 @@ void db_UpgradeStep_v1_2_0()
             (select GROUP_CONCAT(update_note, ',') from item_tracker_updates where item_tracker.item_id=item_tracker_updates.item_id ) comments,
             (select project_status from projects p where p.project_id=item_tracker.project_id) project_status,
             (select c.client_id from projects c where c.project_id=project_id) client_id,
-            (select project_name from projects p where p.project_id=item_tracker.project_id) project_id_name
+            (select project_name from projects p where p.project_id=item_tracker.project_id) project_name,
+            (select project_number from projects p where p.project_id=item_tracker.project_id) project_number
             FROM item_tracker;
         )");
 

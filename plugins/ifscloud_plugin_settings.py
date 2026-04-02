@@ -44,35 +44,35 @@ class IFSCloudSettings(QDialog):
         self.ui.buttonBox.rejected.connect(self.reject_changes)
 
         self.user_name = self.pnc.get_plugin_setting("UserName", self.settings_pluginname)
-        self.ui.lineEditUserName.setText(self.user_name)
+        self.ui.lineEditUserName.setText(self.user_name or "")
 
         self.password = self.pnc.get_plugin_setting("Password", self.settings_pluginname)
-        self.ui.lineEditPassword.setText(self.password)
+        self.ui.lineEditPassword.setText(self.password or "")
 
         self.url = self.pnc.get_plugin_setting("URL", self.settings_pluginname)
-        self.ui.lineEditURL.setText(self.url)
+        self.ui.lineEditURL.setText(self.url or "")
 
         self.person_id = self.pnc.get_plugin_setting("PersonId", self.settings_pluginname)
-        self.ui.lineEditPersonId.setText(self.person_id)
+        self.ui.lineEditPersonId.setText(self.person_id or "")
 
         self.domain_user = self.pnc.get_plugin_setting("DomainUser", self.settings_pluginname)
-        self.ui.lineEditDomainUser.setText(self.domain_user)
+        self.ui.lineEditDomainUser.setText(self.domain_user or "")
 
         self.domain_password = self.pnc.get_plugin_setting("DomainPassword", self.settings_pluginname)
-        self.ui.lineEditDomainPassword.setText(self.domain_password)
+        self.ui.lineEditDomainPassword.setText(self.domain_password or "")
 
         self.report_server = self.pnc.get_plugin_setting("ReportServer", self.settings_pluginname)
-        self.ui.lineEditReportServer.setText(self.report_server)
+        self.ui.lineEditReportServer.setText(self.report_server or "")
 
         self.sync_tracker_items = self.pnc.get_plugin_setting("SyncTrackerItems", self.settings_pluginname)
-        self.ui.m_checkBoxSyncTrackerItems.setChecked(self.sync_tracker_items.lower() == "true")
+        self.ui.m_checkBoxSyncTrackerItems.setChecked((self.sync_tracker_items or "").lower() == "true")
 
         x = self.pnc.get_plugin_setting("X", self.settings_pluginname)
         y = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
         w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
         h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
 
-        if (x != '' and y != '' and w != '' and h != ''):
+        if (x is not None and y is not None and w is not None and h is not None):
             # print(f"loading dimensions {int(x)},{int(y)},{int(w)},{int(h)}")
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
@@ -125,10 +125,20 @@ class IFSCloudSettings(QDialog):
         # Call the base class implementation
         super().closeEvent(event)
 
+def setup_default_ifs_cloud_settings():
+    pnc_tmp = ProjectNotesCommon()
+    settings_pluginname = "IFS Cloud"
+
+    if pnc_tmp.get_plugin_setting("URL", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("URL", settings_pluginname, "https://ifs.cornerstonecontrols.com")
+    if pnc_tmp.get_plugin_setting("ReportServer", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("ReportServer", settings_pluginname, "indvifsbi05")
+
 def menu_ifs_cloud_settings(parameter):
     ifc.show()
     return ""
 
+setup_default_ifs_cloud_settings()
 pnc = ProjectNotesCommon()
 ifc = IFSCloudSettings(pnc.get_main_window())
 
