@@ -82,6 +82,24 @@ const QModelIndex NotesActionItemsModel::newRecord(const QVariant* fkValue1, con
     return addRecord(qr);
 }
 
+bool NotesActionItemsModel::setData(const QModelIndex &index, const QVariant &value, int role)
+{
+    if ( SqlQueryModel::setData(index, value, role) )
+    {
+        // if assigned_to is set and status is New, advance status to Assigned
+        if (index.column() == 7 && !value.toString().isEmpty())
+        {
+            QModelIndex qmi_status = this->index(index.row(), 9);
+            if (data(qmi_status).toString() == "New")
+                SqlQueryModel::setData(qmi_status, "Assigned", role);
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 void NotesActionItemsModel::prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex)
 {
     QVariant project_id = data(this->index(sourceIndex.row(), 14));

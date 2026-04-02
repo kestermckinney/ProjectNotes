@@ -5,6 +5,10 @@
 #include "mainwindow.h"
 
 #include <QStatusBar>
+#include "QLogger.h"
+#include "QLoggerWriter.h"
+
+using namespace QLogger;
 
 AppSettings::AppSettings()
 {
@@ -179,13 +183,30 @@ void AppSettings::setWindowStateData(const QString& stateDataName, const QVarian
 
 void AppSettings::setWindowState(const QString& windowName, QWidget* window)
 {
-    setWindowX(windowName, window->geometry().left());
-    setWindowY(windowName, window->geometry().top());
-    if (window->geometry().height() > 0) setWindowHeight(windowName, window->geometry().height());
-    if (window->geometry().width() > 0) setWindowWidth(windowName, window->geometry().width());
-    setWindowMaximized(windowName, window->isMaximized());
+    int x = window->geometry().left();
+    int y = window->geometry().top();
+    int w = window->geometry().width();
+    int h = window->geometry().height();
+    bool maximized = window->isMaximized();
+
+#ifdef QT_DEBUG
+    qDebug() << QString("setWindowState: %1 x=%2 y=%3 w=%4 h=%5 maximized=%6 settingsFile=%7")
+        .arg(windowName).arg(x).arg(y).arg(w).arg(h).arg(maximized)
+        .arg(m_appConfig->fileName());
+#endif
+
+    setWindowX(windowName, x);
+    setWindowY(windowName, y);
+    if (h > 0) setWindowHeight(windowName, h);
+    if (w > 0) setWindowWidth(windowName, w);
+    setWindowMaximized(windowName, maximized);
     if (window->objectName() == "MainWindow")
         setWindowStatusBar(windowName, ((MainWindow*)window)->statusBar()->isVisibleTo(window));
+
+    m_appConfig->sync();
+#ifdef QT_DEBUG
+    qDebug() << QString("setWindowState: sync complete, status=%1").arg(m_appConfig->status());
+#endif
 }
 
 bool AppSettings::getWindowState(const QString& windowName, QWidget* window)
@@ -195,15 +216,22 @@ bool AppSettings::getWindowState(const QString& windowName, QWidget* window)
     int w = getWindowWidth(windowName);
     int h = getWindowHeight(windowName);
 
-    if ( x == -1 || y == -1 || w == -1 || h == -1)
-         return false;
+#ifdef QT_DEBUG
+    qDebug() << QString("getWindowState: %1 x=%2 y=%3 w=%4 h=%5 settingsFile=%6")
+        .arg(windowName).arg(x).arg(y).arg(w).arg(h)
+        .arg(m_appConfig->fileName());
+#endif
 
-    window->setGeometry(
-                  getWindowX(windowName),
-                  getWindowY(windowName),
-                  getWindowWidth(windowName),
-                  getWindowHeight(windowName)
-                );
+    if ( x == -1 || y == -1 || w == -1 || h == -1)
+    {
+#ifdef QT_DEBUG
+        qDebug() << QString("getWindowState: %1 no saved state found, using defaults").arg(windowName);
+#endif
+        return false;
+    }
+
+    window->resize(w, h);
+    window->move(x, y);
 
     if (window->objectName() == "MainWindow")
         ((MainWindow*)window)->statusBar()->setVisible(getWindowStatusBar(windowName));
@@ -224,11 +252,15 @@ void AppSettings::setTableViewState(const QString& viewName, const QTableView& v
     for (int i = 0; i < c; i++)
     {
         w = view.columnWidth(i);
-
         savestring += QString("%1,").arg(w);
     }
 
     m_appConfig->setValue(viewName + "Columns", savestring);
+
+#ifdef QT_DEBUG
+    qDebug() << QString("setTableViewState: %1 columns=%2 settingsFile=%3")
+        .arg(viewName).arg(savestring).arg(m_appConfig->fileName());
+#endif
 }
 
 void AppSettings::setTableSortColumn(const QString& viewName, const int column, const QString direction)
@@ -261,6 +293,11 @@ bool AppSettings::getTableViewState(const QString& viewName, QTableView& view)
     QVariant loadstring;
 
     loadstring = m_appConfig->value(viewName + "Columns");
+
+#ifdef QT_DEBUG
+    qDebug() << QString("getTableViewState: %1 raw=%2 settingsFile=%3")
+        .arg(viewName).arg(loadstring.toString()).arg(m_appConfig->fileName());
+#endif
 
     QStringList lst = loadstring.toString().split(",");
 

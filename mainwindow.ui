@@ -840,9 +840,9 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tabArtifacts">
+          <widget class="QWidget" name="tabFilesAndFolders">
            <attribute name="title">
-            <string>Artifacts</string>
+            <string>Files &amp; Folders</string>
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_5">
             <property name="spacing">

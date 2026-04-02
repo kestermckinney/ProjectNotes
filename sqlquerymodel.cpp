@@ -383,7 +383,9 @@ void SqlQueryModel::refresh()
     sql_query.setForwardOnly(true);
     sql_query.prepare(fullsql);
     if (!sql_query.exec())
+#ifdef QT_DEBUG
         qWarning() << objectName() << "SQL QUERY FAILED:" << sql_query.lastError().text() << "\nSQL:" << fullsql;
+#endif
 
     // add a blank row for drop downs
     if (m_showBlank)
@@ -547,6 +549,52 @@ void SqlQueryModel::sqlEscape(QVariant& columnValue, DBColumnType columnType, bo
                 columnValue.setValue(columnValue.toString().replace("'","''"));
             break;
         }
+        case DBPhoneNumber:
+        {
+            QString raw = columnValue.toString();
+
+            // if the value contains any letters, store as entered (supports extensions, word-based numbers)
+            bool hasLetters = false;
+            for (const QChar& c : raw)
+            {
+                if (c.isLetter())
+                {
+                    hasLetters = true;
+                    break;
+                }
+            }
+
+            if (hasLetters)
+            {
+                if (!noQuote)
+                    columnValue.setValue(raw.replace("'","''"));
+                else
+                    columnValue.setValue(raw);
+                break;
+            }
+
+            // strip formatting characters, keep digits and leading +
+            QString normalized;
+            QString trimmed = raw.trimmed();
+            int start = 0;
+            if (!trimmed.isEmpty() && trimmed[0] == '+')
+            {
+                normalized = "+";
+                start = 1;
+            }
+
+            for (int i = start; i < trimmed.length(); i++)
+            {
+                if (trimmed[i].isDigit())
+                    normalized += trimmed[i];
+            }
+
+            if (!noQuote)
+                normalized.replace("'","''");
+
+            columnValue.setValue(normalized);
+            break;
+        }
         default:
         {
             break;
@@ -669,6 +717,53 @@ void SqlQueryModel::reformatValue(QVariant& columnValue, DBColumnType columnType
             stripFormatting(columnValue);
 
             columnValue = QString::asprintf("%.2f%%",columnValue.toDouble());
+            break;
+        }
+        case DBPhoneNumber:
+        {
+            QString stored = columnValue.toString();
+
+            // if value contains letters (word-based numbers, extensions like "x123"), display as-is
+            bool hasLetters = false;
+            for (const QChar& c : stored)
+            {
+                if (c.isLetter())
+                {
+                    hasLetters = true;
+                    break;
+                }
+            }
+            if (hasLetters)
+                break;
+
+            bool international = stored.startsWith('+');
+            QString digits = international ? stored.mid(1) : stored;
+
+            if (digits.length() == 10)
+            {
+                // (XXX) XXX-XXXX
+                columnValue = QString("(%1) %2-%3")
+                    .arg(digits.mid(0, 3))
+                    .arg(digits.mid(3, 3))
+                    .arg(digits.mid(6, 4));
+            }
+            else if (digits.length() == 11 && digits[0] == '1')
+            {
+                // +1 (XXX) XXX-XXXX
+                columnValue = QString("+1 (%1) %2-%3")
+                    .arg(digits.mid(1, 3))
+                    .arg(digits.mid(4, 3))
+                    .arg(digits.mid(7, 4));
+            }
+            else if (international && digits.length() > 7)
+            {
+                // Generic international: +CC XXXXXXXXX
+                int ccLen = (digits.length() <= 9) ? 1 : (digits.length() <= 11) ? 2 : 3;
+                columnValue = QString("+%1 %2")
+                    .arg(digits.mid(0, ccLen))
+                    .arg(digits.mid(ccLen));
+            }
+            // else leave as-is (unrecognized format)
             break;
         }
         default:
@@ -1300,6 +1395,10 @@ QString SqlQueryModel::constructWhereClause(bool includeUserFilter)
                 if (!valuelist.isEmpty())
                     valuelist += tr(" AND ");
 
+                // Qualify the column name with the table name to avoid ambiguity in JOIN queries
+                // (e.g. ProjectTeamMembersModel joins project_people and people, both have "id")
+                QString qualifiedCol = m_tablename + "." + m_columnName[hashit.key()];
+
                 // In: comma-separated filter value becomes  column IN ('v1','v2',...)
                 if (m_filterCompareType[hashit.key()] == DBCompareType::In)
                 {
@@ -1308,7 +1407,7 @@ QString SqlQueryModel::constructWhereClause(bool includeUserFilter)
                     quoted.reserve(parts.size());
                     for (const QString& part : parts)
                         quoted.append(QString("'%1'").arg(part.trimmed().replace("'", "''")));
-                    valuelist += QString("%1 IN (%2)").arg(m_columnName[hashit.key()], quoted.join(','));
+                    valuelist += QString("%1 IN (%2)").arg(qualifiedCol, quoted.join(','));
                 }
                 else
                 {
@@ -1338,16 +1437,16 @@ QString SqlQueryModel::constructWhereClause(bool includeUserFilter)
                     {
                         if (m_columnType[hashit.key()] == DBBool && column_value.toString().compare("0") == 0)
                         {
-                            valuelist += QString(" ( %1 %3 %2").arg(m_columnName[hashit.key()], column_value.toString(), compare_op);
-                            valuelist += QString(" OR %1 IS NULL) ").arg( m_columnName[hashit.key()] );
+                            valuelist += QString(" ( %1 %3 %2").arg(qualifiedCol, column_value.toString(), compare_op);
+                            valuelist += QString(" OR %1 IS NULL) ").arg(qualifiedCol);
                         }
                         else
-                            valuelist += QString("%1 = %2").arg( m_columnName[hashit.key()], column_value.toString() );
+                            valuelist += QString("%1 = %2").arg(qualifiedCol, column_value.toString());
                     }
                     else
                     {
                         sqlEscape(column_value, m_columnType[hashit.key()]);
-                        valuelist += QString("%1 %3 '%2'").arg( m_columnName[hashit.key()], column_value.toString(), compare_op);
+                        valuelist += QString("%1 %3 '%2'").arg(qualifiedCol, column_value.toString(), compare_op);
                     }
                 }
             }

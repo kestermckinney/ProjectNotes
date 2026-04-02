@@ -16,8 +16,34 @@ ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
     setObjectName("ProjectsModel");
 
     // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
-    setBaseSql("select * from projects_view");
-    setDeletedFilterInView(true);  // view filters deleted rows internally
+    //setBaseSql("select * from projects_view");
+    //setDeletedFilterInView(true);  // view filters deleted rows internally
+
+    setBaseSql(R"(SELECT
+        id,
+        project_number,
+        project_name,
+        last_status_date,
+        last_invoice_date,
+        primary_contact,
+        budget,
+        actual,
+        bcwp,
+        bcws,
+        bac,
+        invoicing_period,
+        status_report_period,
+        client_id,
+        project_status,
+        (case when budget > 0 then round((actual / budget) * 100.0, 2) else NULL end) pct_consumed,
+        (case when actual > 0 and bcws > 0 then round(actual + (bac - bcwp) / (bcwp/actual*bcwp/bcws), 2) else NULL end) eac,
+        (case when bcwp > 0 then round((actual -  bcwp) / bcwp * 100.0, 2) else NULL end) cv,
+        (case when bcws > 0 then round((bcwp -  bcws) / bcws * 100.0, 2) else NULL end) sv,
+        (case when bac > 0 then round(bcwp / bac * 100.0, 2) else NULL end) pct_complete,
+        (case when actual > 0 then round(bcwp / actual, 2) else NULL end) cpi
+        FROM projects
+        )");
+
 
     setTableName("projects", "Project");
 

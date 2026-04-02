@@ -10,6 +10,8 @@
 #include <QApplication>
 #include <QString>
 #include <QPainter>
+#include <QKeyEvent>
+#include <QLineEdit>
 #include "QLogger.h"
 #include "QLoggerWriter.h"
 
@@ -44,7 +46,35 @@ QWidget* SqlComboBoxDelegate::createEditor(QWidget *parent, const QStyleOptionVi
     completer->setModel(m_model);
     editor->setCompleter(completer);
 
+    editor->installEventFilter(const_cast<SqlComboBoxDelegate*>(this));
+    if (QLineEdit* le = editor->lineEdit())
+        le->installEventFilter(const_cast<SqlComboBoxDelegate*>(this));
+
     return editor;
+}
+
+bool SqlComboBoxDelegate::eventFilter(QObject *object, QEvent *event)
+{
+    if (event->type() == QEvent::KeyPress)
+    {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
+        if (keyEvent->key() == Qt::Key_Tab || keyEvent->key() == Qt::Key_Backtab)
+        {
+            ComboBox *editor = qobject_cast<ComboBox*>(object);
+            if (!editor)
+                editor = qobject_cast<ComboBox*>(static_cast<QWidget*>(object)->parent());
+
+            if (editor)
+            {
+                emit commitData(editor);
+                emit closeEditor(editor, keyEvent->key() == Qt::Key_Tab
+                                         ? QAbstractItemDelegate::EditNextItem
+                                         : QAbstractItemDelegate::EditPreviousItem);
+                return true;
+            }
+        }
+    }
+    return QStyledItemDelegate::eventFilter(object, event);
 }
 
 void SqlComboBoxDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
@@ -54,6 +84,12 @@ void SqlComboBoxDelegate::setEditorData(QWidget *editor, const QModelIndex &inde
     QString value = dynamic_cast<SqlQueryModel*>(m_model->sourceModel())->findValue(lookupvalue, m_dataColumn, m_displayColumn).toString();
 
     comboBox->setCurrentText(value);
+
+    QLineEdit *le = comboBox->lineEdit();
+    if (le)
+        le->setFocus(Qt::TabFocusReason);
+    else
+        comboBox->setFocus(Qt::TabFocusReason);
 }
 
 void SqlComboBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const

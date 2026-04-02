@@ -73,7 +73,9 @@ public:
     LogViewer(QWidget* parent = nullptr);
     ~LogViewer();
 
+    void showEvent(QShowEvent *event) override;
     void closeEvent(QCloseEvent *e) override;
+    void hideEvent(QHideEvent *event) override;
 
     static QString getLogFileLocation();
 };

@@ -13,6 +13,7 @@ public:
     const QModelIndex newRecord(const QVariant* fkValue1 = nullptr, const QVariant* fkValue2 = nullptr) override;
     void prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex) override;
     QVariant getNextItemNumber(const QVariant& projectId);
+    bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
 };
 
 #endif // NOTESACTIONITEMSMODEL_H

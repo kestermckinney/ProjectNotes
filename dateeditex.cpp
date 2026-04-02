@@ -27,6 +27,8 @@
 #include <QStyleOptionSpinBox>
 #include <QKeyEvent>
 #include <QCalendarWidget>
+#include <QBoxLayout>
+#include <QDate>
 
 /*!
   \class DateEditEx dateeditex.h
@@ -85,6 +87,20 @@ public:
 DateEditEx::DateEditEx(QWidget *parent) :
     QDateEdit(parent), d(new Private(this))
 {
+    setCalendarPopup(true);
+
+    QCalendarWidget* cal = calendarWidget();
+
+    QPushButton* todayButton = new QPushButton(tr("Today"), cal);
+
+    QBoxLayout* calLayout = qobject_cast<QBoxLayout*>(cal->layout());
+    if (calLayout)
+        calLayout->addWidget(todayButton);
+
+    connect(todayButton, &QPushButton::clicked, this, [this]() {
+        setDate(QDate::currentDate());
+        calendarWidget()->parentWidget()->hide();
+    });
 }
 
 DateEditEx::~DateEditEx()

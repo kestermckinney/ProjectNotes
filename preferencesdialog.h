@@ -19,7 +19,8 @@ public:
     ~PreferencesDialog();
 
 protected:
-      void showEvent(QShowEvent *ev);
+    void showEvent(QShowEvent *ev) override;
+    void hideEvent(QHideEvent *event) override;
 
 private slots:
     void on_buttonBox_accepted();

@@ -159,7 +159,8 @@ class FileFinderSettings(QDialog):
             row_data = {}
             for column in range(qtable.columnCount()):
                 header = qtable.horizontalHeaderItem(column).text()
-                value = qtable.item(row, column).text()
+                item = qtable.item(row, column)
+                value = item.text() if item is not None else ''
                 row_data[header] = value
             data.append(row_data)
 
@@ -497,7 +498,8 @@ class MyShortcutSettings(QDialog):
             row_data = {}
             for column in range(qtable.columnCount()):
                 header = qtable.horizontalHeaderItem(column).text()
-                value = qtable.item(row, column).text()
+                item = qtable.item(row, column)
+                value = item.text() if item is not None else ''
                 row_data[header] = value
             data.append(row_data)
 
@@ -678,7 +680,8 @@ class MeetingEmailTypesSettings(QDialog):
             row_data = {}
             for column in range(qtable.columnCount()):
                 header = qtable.horizontalHeaderItem(column).text()
-                value = qtable.item(row, column).text()
+                item = qtable.item(row, column)
+                value = item.text() if item is not None else ''
                 row_data[header] = value
             data.append(row_data)
 

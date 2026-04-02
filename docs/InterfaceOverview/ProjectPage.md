@@ -87,39 +87,39 @@ Team members are setup under the **Team** tab of the Project Page. Team members 
 2. Type in or select the new value.
 3. Click out of the cell or press **Enter**.
 
-## Project Artifacts
+## Files & Folders
 
-Links to project documents and web locations are setup under the **Artifacts** tab. Keeping all of your commonly access file locations and documents in **Artifacts** can save you a lot of time compared to navigating file folders. The **Artifacts** section keeps links to all of your file and web locations. It is important to make sure locations of your file don't change in order to used the **Artifacts** section reliably. You can create a custom plugin to search your standard project folder structure and populate the **Artifacts** section or you can populate the area manually. >
+Links to project documents and web locations are setup under the **Files & Folders** tab. Keeping all of your commonly access file locations and documents in **Files & Folders** can save you a lot of time compared to navigating file folders. The **Files & Folders** section keeps links to all of your file and web locations. It is important to make sure locations of your file don't change in order to used the **Files & Folders** section reliably. You can create a custom plugin to search your standard project folder structure and populate the **Files & Folders** section or you can populate the area manually. >
 
 | **Column** | **Description** |
 | :--- | :--- |
 | Type | The type of file location determines how Project Notes handles the Location column. Using the incorrect Type can cause the Location column value to get corrupted. Custom Python scripts can use the Type files for specific operations. The types available are File Folder, Web Link, Microsoft Project, Word Document, Excel Document, PDF File, and Generic File (System Identified) |
-| Description | An open description file. In some cases a Python script can look for specific values. Once example is "Project Folder". Python scripts use this location to automatically generate project artifacts. |
+| Description | An open description file. In some cases a Python script can look for specific values. Once example is "Project Folder". Python scripts use this location to automatically generate project files and folders. |
 | Location | The location referred to by the Type column. The field must be formatted correctly according to its type. For example, "C:\\MyFolder" would not work property for a Web Link, and "http://www.google.com" would not work correctly as a File Folder type. |
 
 <br>
-**To add an artifact:**
+**To add a file or folder:**
 
 1. Select **New Item**, from the **Edit** menu..
 2. Select the **File** from the three dot button. Note: The three dot button will only allow you to select a file. For selecting folders or web address you will need to type them.
 3. Type the **Description**, if the preferred description doesn't auto fill.
 4. Type the **Type**, if the preferred description doesn't auto fill.
 
-**To remove an artifact:**
+**To remove a file or folder:**
 
-1. Click a cell in the artifacts row to select it.
+1. Click a cell in the Files & Folders row to select it.
 2. Select **Delete Item**, From the **Edit** menu.
 3. Click **Yes** to confirm the deletion.
 
-**To edit an artifact:**
+**To edit a file or folder:**
 
 1. Double-click the cell to activate the editor.
 2. Type in or select the new value.
 3. Click out of the cell or press **Enter**.
 
-**To open an artifact:**
+**To open a file or folder:**
 
-1. Click a cell in the artifacts row to select it.
+1. Click a cell in the Files & Folders row to select it.
 2. Select **Open Item**, From the **Edit** menu.
 
 ## Project Notes

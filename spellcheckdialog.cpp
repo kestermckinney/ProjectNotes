@@ -35,9 +35,6 @@ SpellCheckDialog::SpellCheckDialog(QWidget *parent) :
         this->setWindowTitle(QString("Spelling: %1").arg(global_Settings.spellchecker()->defaultDictionaryName()));
         m_populating = false;
     }
-
-    QString storename = objectName();
-    global_Settings.getWindowState(storename, this);
 }
 
 void SpellCheckDialog::spellCheck(QWidget* focusControl)
@@ -175,9 +172,6 @@ void SpellCheckDialog::spellCheck(QWidget* focusControl)
 
 SpellCheckDialog::~SpellCheckDialog()
 {
-    QString storename = objectName();
-    global_Settings.setWindowState(storename, this);
-
     delete ui;
 }
 
@@ -352,5 +346,11 @@ void SpellCheckDialog::on_listWidgetSuggestions_itemDoubleClicked(QListWidgetIte
 
     if (ui->listWidgetSuggestions->selectedItems().count() > 0)
         on_pushButtonChange_clicked();
+}
+
+void SpellCheckDialog::hideEvent(QHideEvent *event)
+{
+    global_Settings.setWindowState(objectName(), this);
+    QDialog::hideEvent(event);
 }
 
