@@ -12,7 +12,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../plug
 
 from includes.common import ProjectNotesCommon
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import QDateTime, QElapsedTimer, QDir, QDirIterator, QFileInfo
+from PyQt6.QtCore import QDateTime, QElapsedTimer, QDir, QDirIterator, QFileInfo, QThread
 
 # Project Notes Plugin Parameters
 pluginname = "File Finder Thread" # name used in the menu
@@ -64,6 +64,11 @@ class  FileFinder:
             #print(f"working on project {projectnumber} in {parent_folder}")
 
             while it.hasNext():
+                # === CHECK FOR SHUTDOWN REQUEST ===
+                if QThread.currentThread().isInterruptionRequested():
+                    print("Shutdown requested - filefinder_thread.py exiting gracefully")
+                    break
+
                 it.next()
 
                 file_path = it.filePath()
@@ -213,6 +218,10 @@ class  FileFinder:
         nodecount = 0
 
         while not childnode.isNull():
+            # === CHECK FOR SHUTDOWN REQUEST ===
+            if QThread.currentThread().isInterruptionRequested():
+                print("Shutdown requested - filefinder_thread.py exiting gracefully")
+                break
 
             #print(f"found tag {childnode.toElement().tagName()}")
 
@@ -222,6 +231,11 @@ class  FileFinder:
                 #print(f"found tag {rownode.toElement().tagName()}") 
 
                 while not rownode.isNull():
+                    # === CHECK FOR SHUTDOWN REQUEST ===
+                    if QThread.currentThread().isInterruptionRequested():
+                        print("Shutdown requested - filefinder_thread.py exiting gracefully")
+                        break
+
                     nodecount += 1
 
                     #print(f"processing node {nodecount}")

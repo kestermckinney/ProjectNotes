@@ -145,6 +145,8 @@ class GenerateTrackerReport(QDialog):
     def generate_tracker(self):
         pne = ProjectNotesExcelTools()
 
+        print(f"TRACKER XML: {self.xmlstr}")
+
         xmlval = QDomDocument()
         if (xmlval.setContent(self.xmlstr) == False):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
@@ -175,7 +177,7 @@ class GenerateTrackerReport(QDialog):
         pm = xmlroot.toElement().attribute("managing_manager_name")
         co = xmlroot.toElement().attribute("managing_company_name")
 
-        check_tag = pnc.find_node_by2(xmlroot, "table", "name", "item_tracker", "filter_field_1", "id")
+        check_tag = pnc.find_node_by2(xmlroot, "table", "name", "item_tracker", "filter_field_1", "project_id")
         check_row = None
         if check_tag:
             check_row = check_tag.firstChild()

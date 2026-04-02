@@ -1,7 +1,6 @@
 import os
 import sys
 import inspect
-import threading
 
 # make sure includes folder can be found
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../plugins')))
