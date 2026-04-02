@@ -22,7 +22,7 @@ def window_enumeration_handler(hwnd, tpwindows):
         
 from includes.common import ProjectNotesCommon
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import Qt, QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QTextStream, QStringConverter
+from PyQt6.QtCore import Qt, QFile, QIODevice, QDateTime, QUrl, QElapsedTimer, QStandardPaths, QDir, QJsonDocument, QTextStream, QStringConverter, QThread
 from PyQt6.QtGui import QDesktopServices
 
 class TokenAPI:
@@ -290,6 +290,11 @@ class GraphAPITools:
         if response.status_code == 200:
             contacts = response.json().get('value', [])
             for contact in contacts:
+                # === CHECK FOR SHUTDOWN REQUEST ===
+                if QThread.currentThread().isInterruptionRequested():
+                    print("Shutdown requested - graphapi_tools.py exiting gracefully")
+                    break
+
                 contactcount = contactcount + 1
                 xmldoc += '<row>\n'
                 xmldoc += f'<column name="name">{self.pnc.to_xml(contact.get("displayName", ""))}</column>\n'
@@ -391,10 +396,20 @@ class GraphAPITools:
         contactcount = 0
 
         while not childnode.isNull():
+            # === CHECK FOR SHUTDOWN REQUEST ===
+            if QThread.currentThread().isInterruptionRequested():
+                print("Shutdown requested - graphapi_tools.py exiting gracefully")
+                break
+
             if childnode.attributes().namedItem("name").nodeValue() == "people":
                 rownode = childnode.firstChild()
 
                 while not rownode.isNull():
+                    # === CHECK FOR SHUTDOWN REQUEST ===
+                    if QThread.currentThread().isInterruptionRequested():
+                        print("Shutdown requested - graphapi_tools.py exiting gracefully")
+                        break
+
                     contactcount = contactcount + 1
 
                     colnode = rownode.firstChild()
@@ -581,6 +596,11 @@ class GraphAPITools:
             emails = response.json()["value"]
 
             for email in emails:
+                # === CHECK FOR SHUTDOWN REQUEST ===
+                if QThread.currentThread().isInterruptionRequested():
+                    print("Shutdown requested - graphapi_tools.py exiting gracefully")
+                    break
+
                 emailcount += 1 # don't download past the end
 
                 # Construct MSG download URL
@@ -919,6 +939,11 @@ class GraphAPITools:
         locationcount = 0
 
         while not childnode.isNull():
+            # === CHECK FOR SHUTDOWN REQUEST ===
+            if QThread.currentThread().isInterruptionRequested():
+                print("Shutdown requested - graphapi_tools.py exiting gracefully")
+                break
+
             if childnode.attributes().namedItem("name").nodeValue() == "project_locations":
 
                 rownode = childnode.firstChild()
@@ -1032,7 +1057,7 @@ class GraphAPITools:
             list_id = next((lst["id"] for lst in lists if lst["displayName"] == "Tasks"), None)
         else:
             print("Failed to retrieve todo lists.")
-            print(response.text)
+            # print(response.text)
             return
 
         # get all of the to-do items
@@ -1045,7 +1070,7 @@ class GraphAPITools:
             todos = response.json().get("value", [])
         else:
             print("Failed to retrieve todo lists sync tracker items to tasks.")
-            print(response.text)
+            # print(response.text)
             return
 
         xmlroot = xmlval.documentElement()
@@ -1059,6 +1084,11 @@ class GraphAPITools:
         rowcount = 0
 
         while not childnode.isNull():
+            # === CHECK FOR SHUTDOWN REQUEST ===
+            if QThread.currentThread().isInterruptionRequested():
+                print("Shutdown requested - graphapi_tools.py exiting gracefully")
+                break
+
             if childnode.attributes().namedItem("name").nodeValue() == "item_tracker":
                 rownode = childnode.firstChild()
 
@@ -1207,7 +1237,7 @@ class GraphAPITools:
 
                         if delete_response.status_code != 204:
                             print("Failed to delete todo item sync tracker items to tasks.")
-                            print(response.text)
+                            # print(response.text)
 
                     rownode = rownode.nextSibling()
 

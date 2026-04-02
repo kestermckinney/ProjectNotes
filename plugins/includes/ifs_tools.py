@@ -1,7 +1,7 @@
 from includes.common import ProjectNotesCommon
 from PyQt6 import QtCore
 from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QDir, QFileInfo, QElapsedTimer
+from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QDir, QFileInfo, QElapsedTimer, QThread
 from urllib3.exceptions import InsecureRequestWarning 
 
 import requests
@@ -210,16 +210,16 @@ class IFSCommon:
 
         request_url = self.ifs_url + "/main/ifsapplications/projection/v1/create_activity_task.svc/TaskSet"
 
-        print(f"Creating Activity in IFS, makeing url request: {request_url}")
+        # print(f"Creating Activity in IFS, makeing url request: {request_url}")
 
         result = requests.post(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), json=docdata, headers={"Content-Type": "application/json"})
         
         if (result.status_code != 201):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
 
-            print("Debug JSON: create_activity_task")
-            json_result = result.json()
-            print(json.dumps(json_result, indent=4))
+            # print("Debug JSON: create_activity_task")
+            # json_result = result.json()
+            # print(json.dumps(json_result, indent=4))
 
             return False
 
@@ -346,6 +346,11 @@ class IFSCommon:
         #print(json.dumps(json_result, indent=4))
 
         for rowval in json_result['value']:
+
+            # === CHECK FOR SHUTDOWN REQUEST ===
+            if QThread.currentThread().isInterruptionRequested():
+                print("Shutdown requested - ifs_tools.py exiting gracefully")
+                break
 
             projectcount = projectcount + 1
 
@@ -483,6 +488,11 @@ class IFSCommon:
 
         docxml += "</projectnotes>\n"
 
+        # === CHECK FOR SHUTDOWN REQUEST ===
+        if QThread.currentThread().isInterruptionRequested():
+            print("Shutdown requested - ifs_tools.py exiting gracefully")
+            return
+
         projectnotes.update_data(docxml)
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
@@ -509,14 +519,24 @@ class IFSCommon:
         itemtype = ""
 
         if not trackeritems is None:
-            itemrow = trackeritems.firstChild()
 
+            # === CHECK FOR SHUTDOWN REQUEST ===
+            if QThread.currentThread().isInterruptionRequested():
+                print("Shutdown requested - ifs_tools.py exiting gracefully")
+                return
+
+            itemrow = trackeritems.firstChild()
 
             # find the ISSUES Activity
             jsact = self.get_open_activities(project_number)
             issuesseq = self.get_issues_activity(jsact)
 
             if not issuesseq is None:           
+                # === CHECK FOR SHUTDOWN REQUEST ===
+                if QThread.currentThread().isInterruptionRequested():
+                    print("Shutdown requested - ifs_tools.py exiting gracefully")
+                    return
+
                 itemrow = trackeritems.firstChild()
 
                 while not itemrow.isNull():
@@ -600,9 +620,19 @@ class IFSCommon:
         projects = self.pnc.find_node(xmlroot, "table", "name", "projects")
 
         if not projects is None:
+            # === CHECK FOR SHUTDOWN REQUEST ===
+            if QThread.currentThread().isInterruptionRequested():
+                print("Shutdown requested - ifs_tools.py exiting gracefully")
+                return
+
             projectrow = projects.firstChild()
 
             while not projectrow.isNull():
+                # === CHECK FOR SHUTDOWN REQUEST ===
+                if QThread.currentThread().isInterruptionRequested():
+                    print("Shutdown requested - ifs_tools.py exiting gracefully")
+                    break
+
                 project_number = self.pnc.get_column_value(projectrow, "project_number")
                 project_id = self.pnc.get_column_value(projectrow, "id")
                 
