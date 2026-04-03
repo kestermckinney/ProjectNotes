@@ -4,6 +4,8 @@
 
 Project Notes automatically creates and opens a local database when it first launches. The database is stored in your user profile.
 
+If you are developing or testing plugins and need a separate environment that does not touch your production data, see [Developer Profile](<DeveloperProfile.md>).
+
 If you want to sync your data with a cloud host (sucha Supabase or a self-hosted PostgREST server), configure the connection from **File > Cloud Sync Settings...**. See [File Menu](../InterfaceOverview/FileMenu.md) for details.
 
 ## Setting Yourself as the Project Manager

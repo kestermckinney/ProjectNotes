@@ -33,6 +33,7 @@
 #include <QDesktopServices>
 #include "mainwindow.h"
 #include "cloudsyncsettingsdialog.h"
+#include "appsettings.h"
 #include <QStandardPaths>
 
 #include "QLogger.h"
@@ -130,9 +131,14 @@ MainWindow::MainWindow(QWidget *parent)
     // Build the plugin menu now so their menu items appear regardless of database state.
     buildPluginMenu(nullptr);
 
-    // Always open the database from the standard app data location, creating if needed
+    // Always open the database from the standard app data location, creating if needed.
+    // When running under a developer profile, use a profile-specific database file so
+    // development data does not overwrite the production database.
+    const QString dbname = AppSettings::developerProfile().isEmpty()
+                           ? "ProjectNotes.db"
+                           : "ProjectNotes" + AppSettings::developerProfile() + ".db";
     const QString dbfile = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
-                           + "/ProjectNotes.db";
+                           + "/" + dbname;
 
     if (!QFile::exists(dbfile)) {
         QDir().mkpath(QFileInfo(dbfile).absolutePath());
@@ -673,9 +679,12 @@ void MainWindow::on_actionOpen_Database_triggered()
     if (dlg.exec() != QDialog::Accepted)
         return;
 
-    // Database path is always fixed to the app data location
+    // Database path is always fixed to the app data location (profile-aware)
+    const QString dbname = AppSettings::developerProfile().isEmpty()
+                           ? "ProjectNotes.db"
+                           : "ProjectNotes" + AppSettings::developerProfile() + ".db";
     const QString dbfile = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
-                           + "/ProjectNotes.db";
+                           + "/" + dbname;
 
     // Persist sync settings immediately (before openDatabase so it can read them)
     global_Settings.setSyncEnabled(dlg.syncEnabled());
@@ -1929,7 +1938,12 @@ void MainWindow::on_actionView_LogView_triggered()
     if (ui->actionView_LogView->isChecked())
     {
         if (m_logviewDialog == nullptr)
+        {
             m_logviewDialog = new LogViewer(this);
+            connect(m_logviewDialog, &LogViewer::closed, this, [this]() {
+                ui->actionView_LogView->setChecked(false);
+            });
+        }
 
         m_logviewDialog->show();
     }

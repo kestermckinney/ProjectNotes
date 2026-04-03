@@ -55,6 +55,16 @@ By default, closed projects are hidden from the Projects list. If you want to re
 
 1. From the **View** menu, uncheck **Closed Projects**. Closed projects will be removed from the view.
 
+## Showing the Master Item List Page
+
+The Master Item List Page shows every tracker item and action item across all projects in a single view.
+
+**To navigate to the Master Item List Page:**
+
+1. From the **View** menu, select **Master Item List**.
+
+See [Master Item List Page](<MasterItemListPage.md>) for full details.
+
 ## Showing the Clients Page
 
 The Clients Page displays a list of all clients in the currently open database. You can add new clients, edit existing client information, or delete clients from this page.
