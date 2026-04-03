@@ -15,6 +15,8 @@ class SqlComboBoxDelegate : public QStyledItemDelegate
 public:
     explicit SqlComboBoxDelegate(QObject *parent, SortFilterProxyModel *model, int displaycolumn = 1, int datacolumn = 0);
 
+    void setReadOnly(bool readOnly) { m_readOnly = readOnly; }
+
     QWidget* createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
     void setEditorData(QWidget *editor, const QModelIndex &index) const override;
     void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override;
@@ -26,6 +28,7 @@ private:
     SortFilterProxyModel* m_model;
     int m_displayColumn;
     int m_dataColumn;
+    bool m_readOnly = false;
 };
 
 #endif // SQLCOMBOBOXDELEGATE_H

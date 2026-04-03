@@ -41,6 +41,7 @@ void LogLoader::onPollTimer()
     if (!fi.exists()) return;
     const qint64 newSize = fi.size();
     const QDateTime newMod = fi.lastModified();
+
     if (newSize != m_pollLastSize || newMod != m_pollLastModified) {
         m_pollLastSize     = newSize;
         m_pollLastModified = newMod;
@@ -61,7 +62,7 @@ void LogLoader::loadFile()
 
     // just load the bottom at first
     QFile file(m_filePath);
-    if (file.open(QIODevice::ReadOnly | QIODevice::Text))
+    if (file.open(QIODevice::ReadOnly))
     {
         // we need to start with the end of the file
         if (m_lastPosition == 0)
@@ -88,18 +89,22 @@ void LogLoader::loadFile()
         }
         else
         {
+            // Guard against file rotation/truncation (e.g. log file renamed at max size) start akk iver
+            if (m_lastPosition > file.size())
+                m_lastPosition = 0;
+
             file.seek(m_lastPosition);
         }
 
-        QTextStream in(&file);
-        QString content;
-
         // Read in chunks to keep UI responsive
-        while (!in.atEnd() && !QThread::currentThread()->isInterruptionRequested())
+        while (!file.atEnd() && !QThread::currentThread()->isInterruptionRequested())
         {
-            content = in.read(8192); // 8KB chunks
-            emit contentLoaded(m_filePath, content);
-            QThread::msleep(50);
+            QByteArray chunk = file.read(8192);
+            if (!chunk.isEmpty())
+            {
+                emit contentLoaded(m_filePath, QString::fromUtf8(chunk));
+                QThread::msleep(50);
+            }
         }
 
         m_lastPosition = file.pos();
@@ -122,22 +127,20 @@ void LogLoader::timerUpdate()
         }
 
     QFile file(m_filePath);
-    if (file.open(QIODevice::ReadOnly | QIODevice::Text))
+    if (file.open(QIODevice::ReadOnly))
     {
         // we need to start with the end of the file
         qint64 bottomofchunck = m_topPosition;
-        qint64 topofchunck = qMax(bottomofchunck - 8192, 0);
+        qint64 topofchunck = qMax(bottomofchunck - 8192, (qint64)0);
         qint64 readsize = bottomofchunck - topofchunck;
-
-        QTextStream in(&file);
-        QString content;
 
         // Read in chunks to keep UI responsive
         if (readsize > 0 && !QThread::currentThread()->isInterruptionRequested())
         {
             file.seek(topofchunck);
-            content = in.read(readsize); // 8KB chunks
-            emit topContentLoaded(m_filePath, content);
+            QByteArray chunk = file.read(readsize);
+            if (!chunk.isEmpty())
+                emit topContentLoaded(m_filePath, QString::fromUtf8(chunk));
         }
 
         m_topPosition = topofchunck;
@@ -211,6 +214,7 @@ void LogViewer::closeEvent(QCloseEvent *e)
 void LogViewer::hideEvent(QHideEvent *event)
 {
     global_Settings.setWindowState(objectName(), this);
+    emit closed();
     QDialog::hideEvent(event);
 }
 

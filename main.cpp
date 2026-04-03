@@ -7,6 +7,7 @@
 #include "appsettings.h"
 
 #include <QApplication>
+#include <QCommandLineParser>
 #include <QStyleFactory>
 #include <QSharedMemory>
 
@@ -16,10 +17,29 @@ int main(int argc, char *argv[])
     QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/plugins");
     QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/plugins/bin");
 
+    QCoreApplication::setOrganizationDomain("projectnotes.com");
+
     // Set the attribute before creating QApplication this was needed for QWebView would work
     QCoreApplication::setAttribute(Qt::ApplicationAttribute::AA_ShareOpenGLContexts);
 
     QApplication a(argc, argv);
+
+    QCommandLineParser parser;
+    parser.setApplicationDescription("Project Notes");
+    parser.addHelpOption();
+    QCommandLineOption devProfileOption(
+        "developer-profile",
+        "Use a separate settings profile for development.",
+        "PROFILENAME");
+    parser.addOption(devProfileOption);
+    parser.process(a);
+
+    if (parser.isSet(devProfileOption))
+    {
+        AppSettings::setDeveloperProfile(parser.value(devProfileOption));
+        QCoreApplication::setOrganizationDomain(parser.value(devProfileOption) + ".projectnotes.com");
+        global_Settings.applyDeveloperProfile();
+    }
 
     qRegisterMetaType<PythonPlugin>();
     qRegisterMetaType<PluginMenu>();
@@ -58,8 +78,9 @@ int main(int argc, char *argv[])
 
         MainWindow w;
 
+#ifndef Q_OS_APPLE
         a.setWindowIcon(QIcon(":/icons/logo.png")); // "AppIcon.icns"
-
+#endif
         w.show();
 
         ret = a.exec();

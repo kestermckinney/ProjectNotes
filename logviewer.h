@@ -56,6 +56,7 @@ private slots:
     void onPollTimer();
 
 signals:
+    void closed();
     void getContents(const QString& filePath);
     void fillTopContents(const QString& filePath);
 

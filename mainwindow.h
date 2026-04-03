@@ -15,6 +15,8 @@
 #include <QFontComboBox>
 #include <QFontDatabase>
 #include <QProgressBar>
+#include <QLabel>
+#include <QNetworkInformation>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -128,6 +130,7 @@ private slots:
 
     void on_actionFind_triggered();
     void on_actionSearch_triggered();
+    void on_actionMasterItemList_triggered();
     void on_pushButtonSearch_clicked();
     void on_actionView_LogView_triggered();
     void on_actionXML_Import_triggered();
@@ -145,6 +148,7 @@ private slots:
     void onTimerWaitForThreads();
     void onSyncRowChanged(const QString& tableName, const QString& id);
     void onSyncStatusUpdated(int percentComplete, qint64 pendingPush, qint64 pendingPull);
+    void onNetworkReachabilityChanged(QNetworkInformation::Reachability reachability);
 
 private:
     void buildPluginMenu(BasePage* currentPage);
@@ -208,6 +212,8 @@ private:
 
     SqliteSyncPro* m_syncApi = nullptr;
     QProgressBar* m_syncProgressBar = nullptr;
+    QLabel*       m_syncNetworkErrorLabel = nullptr;
+    bool          m_syncNetworkError = false;
 };
 
 

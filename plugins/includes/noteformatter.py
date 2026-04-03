@@ -33,12 +33,12 @@ class NoteFormatter:
 		        rownode = childnode.firstChild()
 
 		        while not rownode.isNull():
-		        	project_id = self.pnc.get_column_value(rownode, "id")
-		        	project_id_name = self.pnc.get_column_value(rownode, "project_id_name")
+		        	project_id = self.pnc.get_column_value(rownode, "project_number")
+		        	project_name = self.pnc.get_column_value(rownode, "project_name")
 		        	note_date = self.pnc.get_column_value(rownode, "note_date")
 		        	note_title = self.pnc.get_column_value(rownode, "note_title")
 
-		        	html_parts.append(self.get_html_header(project_id, project_id_name, note_date, note_title))
+		        	html_parts.append(self.get_html_header(project_id, project_name, note_date, note_title))
 		        	attendeetable = self.pnc.find_node(rownode, "table", "name", "meeting_attendees")
 
 		        	attendee_names = []
@@ -63,7 +63,7 @@ class NoteFormatter:
 		        			trackerrow = trackerrow.nextSibling()
 
 		        	html_parts.append(self.get_html_footer())
-		        	self.subject = f"{project_id} {project_id_name} - {note_date} {note_title} Notes"
+		        	self.subject = f"{project_id} {project_name} - {note_date} {note_title} Notes"
 
 		        	rownode = rownode.nextSibling()
 		    childnode = childnode.nextSibling()

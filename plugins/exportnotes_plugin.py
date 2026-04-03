@@ -71,9 +71,9 @@ class ExportNotesSettings(QDialog):
         h = pnc.get_plugin_setting("H", self.settings_pluginname)
 
         self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
-        self.ui.lineEditExportSubFolder.setText(self.export_subfolder)
+        self.ui.lineEditExportSubFolder.setText(self.export_subfolder or "")
 
-        if (x != '' and y != '' and w != '' and h != ''):
+        if (x is not None and y is not None and w is not None and h is not None):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
     def save_window_state(self):
@@ -520,6 +520,12 @@ def menu_settings(parameter):
     ens.show()
     return ""
 
+def setup_default_export_notes_settings():
+    pnc_tmp = ProjectNotesCommon()
+    settings_pluginname = "Export Meeting Notes"
+    if pnc_tmp.get_plugin_setting("ExportSubFolder", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("ExportSubFolder", settings_pluginname, "Project Management/Meeting Minutes")
+
 # keep the instance of windows open to avoid sending the main app a close message
 pnc = None
 mex = None
@@ -553,6 +559,7 @@ if __name__ == '__main__':
 
     app.exec()
 else:
+    setup_default_export_notes_settings()
     pnc = ProjectNotesCommon()
     mex = MeetingsExporter(pnc.get_main_window())
     ens = ExportNotesSettings()

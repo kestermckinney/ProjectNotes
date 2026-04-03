@@ -55,7 +55,6 @@ void db_UpgradeStep_v5_0_0()
     global_DBObjects.execute(R"(ALTER TABLE application_settings ADD COLUMN updateddate INTEGER;)");
     global_DBObjects.execute(R"(ALTER TABLE application_settings ADD COLUMN syncdate INTEGER;)");
     global_DBObjects.execute(R"(ALTER TABLE application_version ADD COLUMN updateddate INTEGER;)");
-    global_DBObjects.execute(R"(ALTER TABLE application_version ADD COLUMN syncdate INTEGER;)");
     global_DBObjects.execute(R"(ALTER TABLE clients ADD COLUMN updateddate INTEGER;)");
     global_DBObjects.execute(R"(ALTER TABLE clients ADD COLUMN syncdate INTEGER;)");
     global_DBObjects.execute(R"(ALTER TABLE item_tracker ADD COLUMN updateddate INTEGER;)");
@@ -81,7 +80,6 @@ void db_UpgradeStep_v5_0_0()
 
     // Add deleted column to every table
     global_DBObjects.execute(R"(ALTER TABLE application_settings ADD COLUMN deleted INTEGER DEFAULT 0;)");
-    global_DBObjects.execute(R"(ALTER TABLE application_version ADD COLUMN deleted INTEGER DEFAULT 0;)");
     global_DBObjects.execute(R"(ALTER TABLE clients ADD COLUMN deleted INTEGER DEFAULT 0;)");
     global_DBObjects.execute(R"(ALTER TABLE item_tracker ADD COLUMN deleted INTEGER DEFAULT 0;)");
     global_DBObjects.execute(R"(ALTER TABLE item_tracker_updates ADD COLUMN deleted INTEGER DEFAULT 0;)");
@@ -102,15 +100,6 @@ void db_UpgradeStep_v5_0_0()
         WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE application_settings SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
-            WHERE id = NEW.id;
-        END;
-    )");
-
-    global_DBObjects.execute(R"(
-        CREATE TRIGGER trg_application_version_updated AFTER UPDATE ON application_version
-        WHEN NEW.syncdate IS OLD.syncdate
-        BEGIN
-            UPDATE application_version SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
         END;
     )");
@@ -221,7 +210,6 @@ void db_UpgradeStep_v5_0_0()
 
     const QStringList triggers = {
         "trg_application_settings_updated",
-        "trg_application_version_updated",
         "trg_clients_updated",
         "trg_item_tracker_updated",
         "trg_item_tracker_updates_updated",
@@ -243,15 +231,6 @@ void db_UpgradeStep_v5_0_0()
         WHEN NEW.syncdate IS OLD.syncdate
         BEGIN
             UPDATE application_settings SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
-            WHERE id = NEW.id;
-        END;
-    )");
-
-    global_DBObjects.execute(R"(
-        CREATE TRIGGER trg_application_version_updated AFTER UPDATE ON application_version
-        WHEN NEW.syncdate IS OLD.syncdate
-        BEGIN
-            UPDATE application_version SET updateddate = CAST(strftime('%s', 'now') AS INTEGER), syncdate = NULL
             WHERE id = NEW.id;
         END;
     )");

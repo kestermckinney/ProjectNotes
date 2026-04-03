@@ -128,7 +128,7 @@ bool DatabaseObjects::openDatabase(const QString& databasepath, const QString& c
         return false;
     }
 
-    m_sqliteDb.setConnectOptions("QSQLITE_ENABLE_SHARED_CACHE;QSQLITE_BUSY_TIMEOUT=400");
+    m_sqliteDb.setConnectOptions("QSQLITE_BUSY_TIMEOUT=5000");
 
     if (!m_sqliteDb.open())
     {
@@ -178,6 +178,12 @@ bool DatabaseObjects::openDatabase(const QString& databasepath, const QString& c
     m_projectsListModelProxy = new SortFilterProxyModel(this);
     m_projectsListModelProxy->setSourceModel(m_projectsListModel);
 
+    m_unfilteredProjectsListModel = new ProjectsListModel(this);
+    m_unfilteredProjectsListModelProxy = new SortFilterProxyModel(this);
+    m_unfilteredProjectsListModelProxy->setSourceModel(m_unfilteredProjectsListModel);
+    m_unfilteredProjectsListModel->setShowBlank();
+    m_unfilteredProjectsListModel->setNoExport();
+
     m_teamsModel = new TeamsModel(this);
     m_teamsModelProxy = new SortFilterProxyModel(this);
     m_teamsModelProxy->setSourceModel(m_teamsModel);
@@ -221,6 +227,10 @@ bool DatabaseObjects::openDatabase(const QString& databasepath, const QString& c
     m_projectActionItemsModel = new TrackerItemsModel(this);
     m_projectActionItemsModelProxy = new SortFilterProxyModel(this);
     m_projectActionItemsModelProxy->setSourceModel(m_projectActionItemsModel);
+
+    m_allItemsModel = new TrackerItemsModel(this);
+    m_allItemsModelProxy = new SortFilterProxyModel(this);
+    m_allItemsModelProxy->setSourceModel(m_allItemsModel);
 
     m_actionItemDetailsModel = new TrackerItemsModel(this);
     m_actionItemDetailsModelProxy = new SortFilterProxyModel(this);
@@ -296,11 +306,9 @@ QString DatabaseObjects::execute(const QString& sql)
             query.prepare(sql);
             if (!query.exec())
             {
-#ifdef QT_DEBUG
-            QString msg = objectName() + " - SQL QUERY FAILED: " + query.lastError().text() + "\nSQL: " + sql;
-            qWarning() << msg;
-            QLog_Debug(DEBUGLOG, msg);
-#endif
+                QString msg = objectName() + " - SQL QUERY FAILED: " + query.lastError().text() + "\nSQL: " + sql;
+                qWarning() << msg;
+                QLog_Error(ERRORLOG, msg);
             }
 
             QSqlError e = query.lastError();
@@ -328,12 +336,10 @@ QString DatabaseObjects::execute(const QString& sql)
             }
 #endif
         }
-#ifdef QT_DEBUG
         else
         {
-            QLog_Debug(DEBUGLOG, QString("Was not able lock for a transaction."));
+            QLog_Error(ERRORLOG, QString("Was not able lock for a transaction."));
         }
-#endif
     }
 
     return val;
@@ -353,6 +359,7 @@ void DatabaseObjects::closeDatabase()
     delete m_unfilteredPeopleModelProxy;
     delete m_projectInformationModelProxy;
     delete m_projectsListModelProxy;
+    delete m_unfilteredProjectsListModelProxy;
     delete m_teamsModelProxy;
     delete m_statusReportItemsModelProxy;
     delete m_projectTeamMembersModelProxy;
@@ -364,6 +371,7 @@ void DatabaseObjects::closeDatabase()
     delete m_actionItemsDetailsMeetingsModelProxy;
     delete m_trackerItemsMeetingsModelProxy;
     delete m_projectActionItemsModelProxy;
+    delete m_allItemsModelProxy;
     delete m_trackerItemCommentsModelProxy;
     delete m_meetingAttendeesModelProxy;
     delete m_notesActionItemsModelProxy;
@@ -376,6 +384,7 @@ void DatabaseObjects::closeDatabase()
     m_unfilteredPeopleModelProxy = nullptr;
     m_projectInformationModelProxy = nullptr;
     m_projectsListModelProxy = nullptr;
+    m_unfilteredProjectsListModelProxy = nullptr;
     m_teamsModelProxy = nullptr;
     m_statusReportItemsModelProxy = nullptr;
     m_projectTeamMembersModelProxy = nullptr;
@@ -387,6 +396,7 @@ void DatabaseObjects::closeDatabase()
     m_actionItemsDetailsMeetingsModelProxy = nullptr;
     m_trackerItemsMeetingsModelProxy = nullptr;
     m_projectActionItemsModelProxy = nullptr;
+    m_allItemsModelProxy = nullptr;
     m_trackerItemCommentsModelProxy = nullptr;
     m_meetingAttendeesModelProxy = nullptr;
     m_notesActionItemsModelProxy = nullptr;
@@ -400,6 +410,7 @@ void DatabaseObjects::closeDatabase()
     delete m_unfilteredPeopleModel;
     delete m_projectInformationModel;
     delete m_projectsListModel;
+    delete m_unfilteredProjectsListModel;
     delete m_teamsModel;
     delete m_statusReportItemsModel;
     delete m_projectTeamMembersModel;
@@ -411,6 +422,7 @@ void DatabaseObjects::closeDatabase()
     delete m_actionItemsDetailsMeetingsModel;
     delete m_trackerItemsMeetingsModel;
     delete m_projectActionItemsModel;
+    delete m_allItemsModel;
     delete m_trackerItemCommentsModel;
     delete m_meetingAttendeesModel;
     delete m_notesActionItemsModel;
@@ -424,6 +436,7 @@ void DatabaseObjects::closeDatabase()
     m_unfilteredPeopleModel= nullptr;
     m_projectInformationModel= nullptr;
     m_projectsListModel= nullptr;
+    m_unfilteredProjectsListModel = nullptr;
     m_teamsModel= nullptr;
     m_statusReportItemsModel= nullptr;
     m_projectTeamMembersModel= nullptr;
@@ -435,6 +448,7 @@ void DatabaseObjects::closeDatabase()
     m_actionItemsDetailsMeetingsModel= nullptr;
     m_trackerItemsMeetingsModel = nullptr;
     m_projectActionItemsModel= nullptr;
+    m_allItemsModel = nullptr;
     m_trackerItemCommentsModel = nullptr;
     m_meetingAttendeesModel= nullptr;
     m_notesActionItemsModel= nullptr;
@@ -658,12 +672,14 @@ void DatabaseObjects::setGlobalSearches( bool refresh )
         projectinformationmodel()->clearFilter(14);
         projectslistmodel()->clearFilter(14);
         searchresultsmodel()->clearFilter(6);
+        allitemsmodel()->clearFilter(17);
     }
     else
     {
         projectinformationmodel()->setFilter(14, tr("Active"));
         projectslistmodel()->setFilter(14, tr("Active"));
         searchresultsmodel()->setFilter(6, tr("Active"));
+        allitemsmodel()->setFilter(17, tr("Active"));
     }
 
     if (getShowInternalItems())
@@ -673,6 +689,7 @@ void DatabaseObjects::setGlobalSearches( bool refresh )
         notesactionitemsmodel()->clearFilter(15);
         actionitemprojectnotesmodel()->clearFilter(3);
         trackeritemsmodel()->clearFilter(15);
+        allitemsmodel()->clearFilter(15);
         actionitemsdetailsmodel()->clearFilter(15);
         searchresultsmodel()->clearFilter(4);
     }
@@ -683,6 +700,7 @@ void DatabaseObjects::setGlobalSearches( bool refresh )
         notesactionitemsmodel()->setFilter(15, "0");
         actionitemprojectnotesmodel()->setFilter(3, "0");
         trackeritemsmodel()->setFilter(15, "0");
+        allitemsmodel()->setFilter(15, "0");
         actionitemsdetailsmodel()->setFilter(15, "0");
         searchresultsmodel()->setFilter(4, "0");
     }
@@ -690,10 +708,12 @@ void DatabaseObjects::setGlobalSearches( bool refresh )
     if (!getShowResolvedTrackerItems())
     {
         trackeritemsmodel()->setFilter(9, "New,Assigned", SqlQueryModel::In);
+        allitemsmodel()->setFilter(9, "New,Assigned", SqlQueryModel::In);
     }
     else
     {
         trackeritemsmodel()->clearFilter(9);
+        allitemsmodel()->clearFilter(9);
     }
 
     if (getGlobalProjectFilter().isEmpty())
@@ -723,8 +743,10 @@ void DatabaseObjects::setGlobalSearches( bool refresh )
         actionitemsdetailsmodel()->refresh();
 
         trackeritemsmodel()->refresh();
+        allitemsmodel()->refresh();
         projectinformationmodel()->refresh();
         projectslistmodel()->refresh();
+        unfilteredprojectslistmodel()->refresh();
         searchresultsmodel()->refresh();
     }
 }

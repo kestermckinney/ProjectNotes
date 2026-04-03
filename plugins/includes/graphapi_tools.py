@@ -35,7 +35,13 @@ class TokenAPI:
         self.application_id = self.pnc.get_plugin_setting("ApplicationID", self.settings_pluginname)
         self.tenant_id = self.pnc.get_plugin_setting("TenantID", self.settings_pluginname)
 
-        self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.TempLocation)
+        self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation)
+        # print(f"storing to {self.temporary_folder}")
+        dir_obj = QDir(self.temporary_folder)
+        if not dir_obj.exists():
+            if not dir_obj.mkpath("."):
+                print("Failed to create temp directory:", self.temporary_folder)
+
         self.token_cache_file = self.temporary_folder + '/token_cache.json'
         self.scopes = ["Mail.Send", "Mail.ReadWrite", "Contacts.Read", "Contacts.ReadWrite","Calendars.ReadWrite", "Tasks.ReadWrite", "MailboxSettings.Read"]
         self.token_expires = None
@@ -1111,7 +1117,7 @@ class GraphAPITools:
                         if colnode.attributes().namedItem("name").nodeValue() == "id":
                             projectnumber = colnode.attributes().namedItem("lookupvalue").nodeValue().strip()
 
-                        if colnode.attributes().namedItem("name").nodeValue() == "project_id_name":
+                        if colnode.attributes().namedItem("name").nodeValue() == "project_name":
                             projectname = content.strip()
 
                         if colnode.attributes().namedItem("name").nodeValue() == "item_number":

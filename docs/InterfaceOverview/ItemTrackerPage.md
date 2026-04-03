@@ -73,3 +73,7 @@ A new project item will default to a **Tracker Item** for the selected project. 
 ### Editing Items
 
 Items that are not in a light gray font may be edited by selecting from drop down values, typing in dates, Item Name, or Description. For more advanced editing options see [Action Item Detail Page](<ActionItemDetailPage.md>).
+
+### Viewing Items Across All Projects
+
+To see items from every project in a single list, use the [Master Item List Page](<MasterItemListPage.md>), accessible from the **View** menu.

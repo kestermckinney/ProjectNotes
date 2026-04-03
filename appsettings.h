@@ -18,13 +18,11 @@ public:
     ~AppSettings();
     void shutdown();
 
-    QVariant getPluginSetting(const QString& pluginName, const QString& parameterName);
-    void setPluginSetting(const QString& pluginName, const QString& parameterName, const QString& parameterValue);
-    bool getPluginEnabled(const QString& pluginName);
-    void setPluginEnabled(const QString& pluginName, bool enabled);
+    void applyDeveloperProfile();
 
-    QVariant getLastDatabase();
-    void setLastDatabase(const QString& lastDatabase);
+    static void setDeveloperProfile(const QString& profile);
+    static QString developerProfile();
+    static QString settingsOrganization();
 
     bool getSyncEnabled();
     void setSyncEnabled(bool enabled);
@@ -82,9 +80,10 @@ private:
 
 private:
     QSettings* m_appConfig = nullptr;
-    QSettings* m_pluginConfig = nullptr;
 
     SpellChecker* m_spellchecker = nullptr;
+
+    static QString s_developerProfile;
 };
 
 extern AppSettings global_Settings;

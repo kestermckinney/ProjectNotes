@@ -61,9 +61,9 @@ class NewPCRRegisterSettings(QDialog):
         h = pnc.get_plugin_setting("H", self.settings_pluginname)
 
         self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
-        self.ui.lineEditExportSubFolder.setText(self.export_subfolder)
+        self.ui.lineEditExportSubFolder.setText(self.export_subfolder or "")
 
-        if (x != '' and y != '' and w != '' and h != ''):
+        if (x is not None and y is not None and w is not None and h is not None):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
     def save_window_state(self):
@@ -94,8 +94,15 @@ class NewPCRRegisterSettings(QDialog):
         # Call the base class implementation
         super().closeEvent(event)
 
+def setup_default_new_pcr_register_settings():
+    pnc_tmp = ProjectNotesCommon()
+    settings_pluginname = "New PCR Register"
+    if pnc_tmp.get_plugin_setting("ExportSubFolder", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("ExportSubFolder", settings_pluginname, "Project Management/PCR's")
+
 # this plugin is only supported on windows
 if (platform.system() == 'Windows'):
+    setup_default_new_pcr_register_settings()
     pnc = ProjectNotesCommon()
 
     # processing main function

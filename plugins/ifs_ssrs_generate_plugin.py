@@ -65,9 +65,9 @@ class SSRSSettings(QDialog):
         h = pnc.get_plugin_setting("H", self.settings_pluginname)
 
         self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
-        self.ui.lineEditExportSubFolder.setText(self.export_subfolder)
+        self.ui.lineEditExportSubFolder.setText(self.export_subfolder or "")
 
-        if (x != '' and y != '' and w != '' and h != ''):
+        if (x is not None and y is not None and w is not None and h is not None):
             self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
 
     def save_window_state(self):
@@ -162,9 +162,9 @@ class GenerateSSRSReport(QDialog):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return
 
-        self.report_server = pnc.get_plugin_setting("ReportServer", "IFS Cloud")
-        self.domain_user = pnc.get_plugin_setting("DomainUser", "IFS Cloud")
-        self.domain_password = pnc.get_plugin_setting("DomainPassword", "IFS Cloud")
+        self.report_server = pnc.get_plugin_setting("ReportServer", "IFS Cloud") or ""
+        self.domain_user = pnc.get_plugin_setting("DomainUser", "IFS Cloud") or ""
+        self.domain_password = pnc.get_plugin_setting("DomainPassword", "IFS Cloud") or ""
 
         self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
 
@@ -361,6 +361,12 @@ class GenerateSSRSReport(QDialog):
 
         return
 
+def setup_default_ssrs_settings():
+    pnc_tmp = ProjectNotesCommon()
+    settings_pluginname = "SSRS Generate"
+    if pnc_tmp.get_plugin_setting("ExportSubFolder", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("ExportSubFolder", settings_pluginname, "Project Management/Status Reports")
+
 # keep the instance of windows open to avoid sending the main app a close message
 pnc = None
 gssrsr = None
@@ -385,6 +391,7 @@ if __name__ == '__main__':
 
     app.exec()
 else:
+    setup_default_ssrs_settings()
     pnc = ProjectNotesCommon()
     gssrsr = GenerateSSRSReport(pnc.get_main_window())
     ss = SSRSSettings()

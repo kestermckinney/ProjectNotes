@@ -7,7 +7,7 @@
 
 namespace
 {
-/**
+/*QString
  * @brief Converts the given level in a QString.
  * @param level The log level in LogLevel format.
  * @return The string with the name of the log level.

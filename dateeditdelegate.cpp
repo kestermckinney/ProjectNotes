@@ -23,6 +23,9 @@ DateEditDelegate::DateEditDelegate(QObject *parent)
 
 QWidget *DateEditDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &/* option */, const QModelIndex &/* index */) const
 {
+    if (m_readOnly)
+        return nullptr;
+
     DateEditEx* editor = new DateEditEx(parent);
 
     editor->setDisplayFormat("MM/dd/yyyy");

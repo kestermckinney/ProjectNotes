@@ -26,7 +26,8 @@ class IFSCommon:
         self.report_server = self.pnc.get_plugin_setting("ReportServer", self.settings_pluginname)
         self.domain_user = self.pnc.get_plugin_setting("DomainUser", self.settings_pluginname)
         self.domain_password = self.pnc.get_plugin_setting("DomainPassword", self.settings_pluginname)
-        self.sync_tracker_items = self.pnc.get_plugin_setting("SyncTrackerItems", self.settings_pluginname).lower() == "true"
+        sync_val = self.pnc.get_plugin_setting("SyncTrackerItems", self.settings_pluginname)
+        self.sync_tracker_items = sync_val is not None and sync_val.lower() == "true"
 
     def url_is_available(self):
         try:
@@ -421,7 +422,7 @@ class IFSCommon:
 
         json_result = result.json()
 
-        # print("Debug JSON:")
+        # print("IFS Team Members Debug JSON:")
         # print(json.dumps(json_result, indent=4))
 
         for rowval in json_result['value']:
@@ -437,12 +438,14 @@ class IFSCommon:
                 rd['peoplexmlrows'] += "  <row>\n"
 
                 rd['peoplexmlrows'] += "    <column name=\"name\">" + self.pnc.to_xml(rowval['EmployeeIdRef']['EmployeeName']) + "</column>\n"
-                rd['peoplexmlrows'] += "    <column name=\"client_id\" lookupvalue=\"" + self.pnc.to_xml(rd['companyname']) + "\"></column>\n"
+                if rd['companyname']:
+                    rd['peoplexmlrows'] += "    <column name=\"client_id\" lookupvalue=\"" + self.pnc.to_xml(rd['companyname']) + "\"></column>\n"
 
                 rd['peoplexmlrows'] += "  </row>\n"
 
                 # only add the company name once to the client list
-                clientsdict[rd['companyname']] = True
+                if rd['companyname']:
+                    clientsdict[rd['companyname']] = True
 
     def import_ifs_projects(self, parameter):
         timer = QElapsedTimer()
@@ -540,6 +543,11 @@ class IFSCommon:
                 itemrow = trackeritems.firstChild()
 
                 while not itemrow.isNull():
+                    # === CHECK FOR SHUTDOWN REQUEST ===
+                    if QThread.currentThread().isInterruptionRequested():
+                        print("Shutdown requested - ifs_tools.py exiting gracefully")
+                        return
+
                     isinternal = self.pnc.get_column_value(itemrow, "internal_item")
                     itemstatus = self.pnc.get_column_value(itemrow, "status")
                     itemtype = self.pnc.get_column_value(itemrow, "item_type")

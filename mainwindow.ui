@@ -440,7 +440,7 @@
            </sizepolicy>
           </property>
           <property name="currentIndex">
-           <number>2</number>
+           <number>3</number>
           </property>
           <property name="elideMode">
            <enum>Qt::TextElideMode::ElideNone</enum>
@@ -842,7 +842,7 @@
           </widget>
           <widget class="QWidget" name="tabFilesAndFolders">
            <attribute name="title">
-            <string>Files &amp; Folders</string>
+            <string>Files &amp;&amp; Folders</string>
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_5">
             <property name="spacing">
@@ -1502,6 +1502,50 @@
         </item>
        </layout>
       </widget>
+      <widget class="AllItemsPage" name="pageMasterItemList">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayoutAllItems">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="AllItemsView" name="tableViewAllItems">
+          <property name="frameShape">
+           <enum>QFrame::Shape::NoFrame</enum>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+          </property>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="verticalHeaderHighlightSections">
+           <bool>false</bool>
+          </attribute>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -1512,7 +1556,7 @@
      <x>0</x>
      <y>0</y>
      <width>932</width>
-     <height>19</height>
+     <height>30</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -1569,6 +1613,7 @@
     <addaction name="actionProjects"/>
     <addaction name="actionPeople"/>
     <addaction name="actionClients"/>
+    <addaction name="actionMasterItemList"/>
     <addaction name="separator"/>
     <addaction name="actionBack"/>
     <addaction name="actionForward"/>
@@ -1648,6 +1693,7 @@
    <addaction name="actionProjects"/>
    <addaction name="actionPeople"/>
    <addaction name="actionClients"/>
+   <addaction name="actionMasterItemList"/>
    <addaction name="actionFilter"/>
    <addaction name="actionSearch"/>
    <addaction name="actionPreferences"/>
@@ -2228,6 +2274,21 @@
     <string>New and Assigned Tracker/Action Items</string>
    </property>
   </action>
+  <action name="actionMasterItemList">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/masteritems.png</normaloff>:/icons/masteritems.png</iconset>
+   </property>
+   <property name="text">
+    <string>Master Item List</string>
+   </property>
+   <property name="statusTip">
+    <string>Master Item List</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+M</string>
+   </property>
+  </action>
   <action name="actionBold">
    <property name="checkable">
     <bool>true</bool>
@@ -2547,6 +2608,17 @@
    <class>ComboBox</class>
    <extends>QComboBox</extends>
    <header location="global">combobox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>AllItemsPage</class>
+   <extends>QWidget</extends>
+   <header>allitemspage.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>AllItemsView</class>
+   <extends>QTableView</extends>
+   <header>allitemsview.h</header>
   </customwidget>
  </customwidgets>
  <resources>

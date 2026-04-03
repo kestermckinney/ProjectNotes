@@ -10,13 +10,39 @@
 
 using namespace QLogger;
 
+QString AppSettings::s_developerProfile;
+
+void AppSettings::setDeveloperProfile(const QString& profile)
+{
+    s_developerProfile = profile;
+}
+
+QString AppSettings::developerProfile()
+{
+    return s_developerProfile;
+}
+
+QString AppSettings::settingsOrganization()
+{
+    if (s_developerProfile.isEmpty())
+        return QStringLiteral("ProjectNotes");
+    return QStringLiteral("ProjectNotes") + s_developerProfile;
+}
+
 AppSettings::AppSettings()
 {
-    m_appConfig = new QSettings("ProjectNotes", "AppSettings");
+    m_appConfig = new QSettings(settingsOrganization(), "AppSettings");
     m_appConfig->setFallbacksEnabled(false);
+}
 
-    m_pluginConfig = new QSettings("ProjectNotes", "PluginSettings");
-    m_pluginConfig->setFallbacksEnabled(false);
+void AppSettings::applyDeveloperProfile()
+{
+    if (!s_developerProfile.isEmpty())
+    {
+        delete m_appConfig;
+        m_appConfig = new QSettings(settingsOrganization(), "AppSettings");
+        m_appConfig->setFallbacksEnabled(false);
+    }
 }
 
 AppSettings global_Settings;
@@ -27,9 +53,6 @@ AppSettings::~AppSettings()
     // These deletes are safe no-ops if shutdown() already ran.
     delete m_appConfig;
     m_appConfig = nullptr;
-    delete m_pluginConfig;
-    m_pluginConfig = nullptr;
-
     if (m_spellchecker)
         delete m_spellchecker;
 }
@@ -42,11 +65,6 @@ void AppSettings::shutdown()
         delete m_appConfig;
         m_appConfig = nullptr;
     }
-    if (m_pluginConfig) {
-        m_pluginConfig->sync();
-        delete m_pluginConfig;
-        m_pluginConfig = nullptr;
-    }
 }
 
 SpellChecker* AppSettings::spellchecker()
@@ -55,50 +73,6 @@ SpellChecker* AppSettings::spellchecker()
         m_spellchecker = new SpellChecker();
 
     return m_spellchecker;
-}
-
-QVariant AppSettings::getPluginSetting(const QString& pluginName, const QString& parameterName)
-{
-    QString path = pluginName + "/" + parameterName;
-
-    return m_pluginConfig->value(path);
-}
-
-void AppSettings::setPluginSetting(const QString& pluginName, const QString& parameterName, const QString& parameterValue)
-{
-    QString path = pluginName + "/" + parameterName;
-
-    m_pluginConfig->setValue(path, parameterValue);
-}
-
-bool AppSettings::getPluginEnabled(const QString& pluginName)
-{
-    QString path = pluginName + "/PluginEnabled";
-
-    QVariant val = m_pluginConfig->value(path);
-
-    // default to all plugins being enabled when first loaded
-    if (val.isNull()) val = "1";
-
-    return val.toBool();
-}
-
-void AppSettings::setPluginEnabled(const QString& pluginName, bool enabled)
-{
-    QString path = pluginName + "/PluginEnabled";
-    QVariant value =enabled;
-
-    m_pluginConfig->setValue(path, value);
-}
-
-QVariant AppSettings::getLastDatabase()
-{
-    return m_appConfig->value("LastDatabaseUsed");
-}
-
-void AppSettings::setLastDatabase(const QString& lastDatabase)
-{
-    m_appConfig->setValue("LastDatabaseUsed", lastDatabase);
 }
 
 bool AppSettings::getSyncEnabled()
@@ -189,12 +163,6 @@ void AppSettings::setWindowState(const QString& windowName, QWidget* window)
     int h = window->geometry().height();
     bool maximized = window->isMaximized();
 
-#ifdef QT_DEBUG
-    qDebug() << QString("setWindowState: %1 x=%2 y=%3 w=%4 h=%5 maximized=%6 settingsFile=%7")
-        .arg(windowName).arg(x).arg(y).arg(w).arg(h).arg(maximized)
-        .arg(m_appConfig->fileName());
-#endif
-
     setWindowX(windowName, x);
     setWindowY(windowName, y);
     if (h > 0) setWindowHeight(windowName, h);
@@ -204,9 +172,6 @@ void AppSettings::setWindowState(const QString& windowName, QWidget* window)
         setWindowStatusBar(windowName, ((MainWindow*)window)->statusBar()->isVisibleTo(window));
 
     m_appConfig->sync();
-#ifdef QT_DEBUG
-    qDebug() << QString("setWindowState: sync complete, status=%1").arg(m_appConfig->status());
-#endif
 }
 
 bool AppSettings::getWindowState(const QString& windowName, QWidget* window)
@@ -216,17 +181,8 @@ bool AppSettings::getWindowState(const QString& windowName, QWidget* window)
     int w = getWindowWidth(windowName);
     int h = getWindowHeight(windowName);
 
-#ifdef QT_DEBUG
-    qDebug() << QString("getWindowState: %1 x=%2 y=%3 w=%4 h=%5 settingsFile=%6")
-        .arg(windowName).arg(x).arg(y).arg(w).arg(h)
-        .arg(m_appConfig->fileName());
-#endif
-
     if ( x == -1 || y == -1 || w == -1 || h == -1)
     {
-#ifdef QT_DEBUG
-        qDebug() << QString("getWindowState: %1 no saved state found, using defaults").arg(windowName);
-#endif
         return false;
     }
 
@@ -256,11 +212,6 @@ void AppSettings::setTableViewState(const QString& viewName, const QTableView& v
     }
 
     m_appConfig->setValue(viewName + "Columns", savestring);
-
-#ifdef QT_DEBUG
-    qDebug() << QString("setTableViewState: %1 columns=%2 settingsFile=%3")
-        .arg(viewName).arg(savestring).arg(m_appConfig->fileName());
-#endif
 }
 
 void AppSettings::setTableSortColumn(const QString& viewName, const int column, const QString direction)
@@ -293,11 +244,6 @@ bool AppSettings::getTableViewState(const QString& viewName, QTableView& view)
     QVariant loadstring;
 
     loadstring = m_appConfig->value(viewName + "Columns");
-
-#ifdef QT_DEBUG
-    qDebug() << QString("getTableViewState: %1 raw=%2 settingsFile=%3")
-        .arg(viewName).arg(loadstring.toString()).arg(m_appConfig->fileName());
-#endif
 
     QStringList lst = loadstring.toString().split(",");
 

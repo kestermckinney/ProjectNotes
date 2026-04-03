@@ -4,6 +4,7 @@
 #include "ui_mainwindow.h"
 
 #include "tableview.h"
+#include "allitemspage.h"
 #include "projectslistmodel.h"
 #include "databaseobjects.h"
 #include "aboutdialog.h"
@@ -32,6 +33,7 @@
 #include <QDesktopServices>
 #include "mainwindow.h"
 #include "cloudsyncsettingsdialog.h"
+#include "appsettings.h"
 #include <QStandardPaths>
 
 #include "QLogger.h"
@@ -54,6 +56,7 @@ MainWindow::MainWindow(QWidget *parent)
         logmanager->addDestination("debugging.log", DEBUGLOG, LogLevel::Debug, logloc, LogMode::OnlyFile);
     #endif
 
+    logmanager->addDestination("error.log", ERRORLOG, LogLevel::Error, logloc, LogMode::OnlyFile);
     logmanager->addDestination("console.log", CONSOLELOG, LogLevel::Info, logloc, LogMode::OnlyFile);
 
     logmanager->resume();
@@ -80,6 +83,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ProjectDetails_triggered(QVariant)));
     connect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ItemDetails_triggered(QVariant)));
+    connect(ui->tableViewAllItems, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ItemDetails_triggered(QVariant)));
     connect(ui->tableViewActionItems, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ItemDetails_triggered(QVariant)));
     connect(ui->tableViewProjectNotes, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ProjectNote_triggered(QVariant)));
     connect(ui->tableViewSearchResults, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_SearchResults_triggered(QVariant)));
@@ -99,6 +103,23 @@ MainWindow::MainWindow(QWidget *parent)
     m_syncProgressBar->hide();
     ui->statusbar->addPermanentWidget(m_syncProgressBar);
 
+    m_syncNetworkErrorLabel = new QLabel(this);
+    m_syncNetworkErrorLabel->setPixmap(
+        style()->standardIcon(QStyle::SP_MessageBoxCritical).pixmap(16, 16));
+    m_syncNetworkErrorLabel->setToolTip(tr("Unable to connect to sync host"));
+    m_syncNetworkErrorLabel->hide();
+    ui->statusbar->addPermanentWidget(m_syncNetworkErrorLabel);
+
+    // Monitor OS-level network reachability so the disconnect icon appears
+    // immediately when the network goes down — without waiting for the next
+    // sync cycle to run and fail.
+    if (QNetworkInformation::loadDefaultBackend() && QNetworkInformation::instance()) {
+        connect(QNetworkInformation::instance(),
+                &QNetworkInformation::reachabilityChanged,
+                this, &MainWindow::onNetworkReachabilityChanged,
+                Qt::QueuedConnection);
+    }
+
     m_pluginManager = new PluginManager(this);
 
     connect(m_pluginManager, &PluginManager::pluginLoaded, this, &MainWindow::onPluginLoaded);
@@ -110,9 +131,14 @@ MainWindow::MainWindow(QWidget *parent)
     // Build the plugin menu now so their menu items appear regardless of database state.
     buildPluginMenu(nullptr);
 
-    // Always open the database from the standard app data location, creating if needed
+    // Always open the database from the standard app data location, creating if needed.
+    // When running under a developer profile, use a profile-specific database file so
+    // development data does not overwrite the production database.
+    const QString dbname = AppSettings::developerProfile().isEmpty()
+                           ? "ProjectNotes.db"
+                           : "ProjectNotes" + AppSettings::developerProfile() + ".db";
     const QString dbfile = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
-                           + "/ProjectNotes.db";
+                           + "/" + dbname;
 
     if (!QFile::exists(dbfile)) {
         QDir().mkpath(QFileInfo(dbfile).absolutePath());
@@ -267,6 +293,7 @@ MainWindow::~MainWindow()
     ui->tableViewStatusReportItems->setModel(nullptr);
     ui->tableViewTeam->setModel(nullptr);
     ui->tableViewTrackerItems->setModel(nullptr);
+    ui->tableViewAllItems->setModel(nullptr);
     ui->tableViewAtendees->setModel(nullptr);
     ui->tableViewProjectNotes->setModel(nullptr);
     ui->tableViewLocations->setModel(nullptr);
@@ -388,6 +415,7 @@ void MainWindow::setButtonAndMenuStates()
 
     ui->actionClients->setEnabled(dbopen);
     ui->actionPeople->setEnabled(dbopen);
+    ui->actionMasterItemList->setEnabled(dbopen);
 
 
     //plugin menu
@@ -410,6 +438,8 @@ void MainWindow::setButtonAndMenuStates()
         {
             ui->tableViewTrackerItems->setColumnHidden(15, false);
             ui->tableViewTrackerItems->resizeColumnToContents(15);
+            ui->tableViewAllItems->setColumnHidden(15, false);
+            ui->tableViewAllItems->resizeColumnToContents(15);
 
             ui->tableViewProjects->setColumnHidden(6, false);
             ui->tableViewProjects->setColumnHidden(7, false);
@@ -436,6 +466,7 @@ void MainWindow::setButtonAndMenuStates()
         else
         {
             ui->tableViewTrackerItems->setColumnHidden(15, true);
+            ui->tableViewAllItems->setColumnHidden(15, true);
 
             ui->tableViewProjects->setColumnHidden(6, true);
             ui->tableViewProjects->setColumnHidden(7, true);
@@ -455,6 +486,9 @@ void MainWindow::setButtonAndMenuStates()
         ui->tableViewTrackerItems->setColumnHidden(14, true);
         ui->tableViewTrackerItems->setColumnHidden(17, true);
         ui->tableViewTrackerItems->setColumnHidden(18, true);
+
+        ui->tableViewAllItems->setColumnHidden(0, true);
+        ui->tableViewAllItems->setColumnHidden(18, true);
 
         QWidget* fw = this->focusWidget();
         const QLatin1StringView fwClass(fw ? fw->metaObject()->className() : "");
@@ -645,9 +679,12 @@ void MainWindow::on_actionOpen_Database_triggered()
     if (dlg.exec() != QDialog::Accepted)
         return;
 
-    // Database path is always fixed to the app data location
+    // Database path is always fixed to the app data location (profile-aware)
+    const QString dbname = AppSettings::developerProfile().isEmpty()
+                           ? "ProjectNotes.db"
+                           : "ProjectNotes" + AppSettings::developerProfile() + ".db";
     const QString dbfile = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
-                           + "/ProjectNotes.db";
+                           + "/" + dbname;
 
     // Persist sync settings immediately (before openDatabase so it can read them)
     global_Settings.setSyncEnabled(dlg.syncEnabled());
@@ -693,6 +730,7 @@ void MainWindow::openDatabase(const QString& dbfile)
                     Qt::QueuedConnection);
             connect(m_syncApi, &SqliteSyncPro::syncCompleted,
                     this, [this](const SyncResult &result){
+                        m_syncNetworkError = result.hasNetworkError();
                         global_DBObjects.updateDisplayData();
                         if (result.totalDecryptionFailures() > 0) {
                             QMessageBox::warning(this, tr("Cloud Sync"),
@@ -719,8 +757,11 @@ void MainWindow::openDatabase(const QString& dbfile)
     // load and refresh all of the models in order of their dependancy relationships
     global_DBObjects.unfilteredpeoplemodel()->refresh();
     global_DBObjects.unfilteredclientsmodel()->refresh();
+    global_DBObjects.unfilteredprojectslistmodel()->refresh();
 
     global_DBObjects.setGlobalSearches(false);
+
+    global_DBObjects.allitemsmodel()->refresh();
 
     global_DBObjects.clientsmodel()->loadUserFilter(global_DBObjects.clientsmodel()->objectName());
     global_DBObjects.clientsmodel()->activateUserFilter(global_DBObjects.clientsmodel()->objectName());
@@ -739,6 +780,7 @@ void MainWindow::openDatabase(const QString& dbfile)
     ui->pageItemDetails->setupModels(ui);
     ui->pageProjectNote->setupModels(ui);
     ui->pageSearch->setupModels(ui);
+    ui->pageMasterItemList->setupModels(ui);
 
     navigateClearHistory();
     navigateToPage(ui->pageProjectsList, QVariant());
@@ -1252,11 +1294,18 @@ void MainWindow::on_actionResolved_Tracker_Action_Items_triggered()
 
     // filter tracker items by status: checked = show only New and Assigned; unchecked = show all
     if (ui->actionResolved_Tracker_Action_Items->isChecked())
-        global_DBObjects.trackeritemsmodel()->setFilter(9, "New,Assigned", SqlQueryModel::In );
+    {
+        global_DBObjects.trackeritemsmodel()->setFilter(9, "New,Assigned", SqlQueryModel::In);
+        global_DBObjects.allitemsmodel()->setFilter(9, "New,Assigned", SqlQueryModel::In);
+    }
     else
+    {
         global_DBObjects.trackeritemsmodel()->clearFilter(9);
+        global_DBObjects.allitemsmodel()->clearFilter(9);
+    }
 
     global_DBObjects.trackeritemsmodel()->refresh();
+    global_DBObjects.allitemsmodel()->refresh();
 
     setButtonAndMenuStates();
 }
@@ -1874,6 +1923,11 @@ void MainWindow::on_actionSearch_triggered()
     navigateToPage(ui->pageSearch, QVariant());
 }
 
+void MainWindow::on_actionMasterItemList_triggered()
+{
+    navigateToPage(ui->pageMasterItemList, QVariant());
+}
+
 void MainWindow::on_pushButtonSearch_clicked()
 {
     global_DBObjects.searchresultsmodel()->PerformSearch(ui->plainTextEditSearchText->toPlainText());
@@ -1884,7 +1938,12 @@ void MainWindow::on_actionView_LogView_triggered()
     if (ui->actionView_LogView->isChecked())
     {
         if (m_logviewDialog == nullptr)
+        {
             m_logviewDialog = new LogViewer(this);
+            connect(m_logviewDialog, &LogViewer::closed, this, [this]() {
+                ui->actionView_LogView->setChecked(false);
+            });
+        }
 
         m_logviewDialog->show();
     }
@@ -2096,7 +2155,13 @@ void MainWindow::onTimerWaitForThreads()
     if (loaded_count == 0)
         this->close();  // once all plugins are unloaded we can quit
 
+    QStringList activeNames;
+    for (const Plugin* p : m_pluginManager->plugins())
+        if (p->loaded())
+            activeNames.append(p->pluginname());
+
     ui->statusbar->showMessage(QString("Waiting for plugins to finish... %1  %2 plugins are still active.").arg(fan[fan_index]).arg(loaded_count));
+    ui->statusbar->setToolTip(activeNames.join(QStringLiteral("\n")));
 }
 
 void MainWindow::onSyncRowChanged(const QString& tableName, const QString& id)
@@ -2111,9 +2176,17 @@ void MainWindow::onSyncStatusUpdated(int percentComplete, qint64 pendingPush, qi
 
     if (!m_syncApi || !m_syncApi->isInitialized()) {
         m_syncProgressBar->hide();
+        m_syncNetworkErrorLabel->hide();
         return;
     }
 
+    if (m_syncNetworkError) {
+        m_syncProgressBar->hide();
+        m_syncNetworkErrorLabel->show();
+        return;
+    }
+
+    m_syncNetworkErrorLabel->hide();
     m_syncProgressBar->setValue(percentComplete);
 
     if (percentComplete < 100) {
@@ -2125,6 +2198,33 @@ void MainWindow::onSyncStatusUpdated(int percentComplete, qint64 pendingPush, qi
         m_syncProgressBar->show();
     } else {
         m_syncProgressBar->hide();
+    }
+}
+
+void MainWindow::onNetworkReachabilityChanged(QNetworkInformation::Reachability reachability)
+{
+    bool networkDown = (reachability == QNetworkInformation::Reachability::Disconnected);
+
+    if (networkDown == m_syncNetworkError)
+        return; // state hasn't changed — nothing to do
+
+    m_syncNetworkError = networkDown;
+
+    if (!m_syncProgressBar || !m_syncNetworkErrorLabel)
+        return;
+
+    if (networkDown) {
+        // Show the icon immediately — don't wait for the next sync cycle to fail.
+        if (m_syncApi && m_syncApi->isInitialized()) {
+            m_syncProgressBar->hide();
+            m_syncNetworkErrorLabel->show();
+        }
+    } else {
+        // Network is back: hide the icon and kick the worker out of its backoff
+        // sleep so the next sync cycle starts right away.
+        m_syncNetworkErrorLabel->hide();
+        if (m_syncApi && m_syncApi->isInitialized())
+            m_syncApi->retryNow();
     }
 }
 

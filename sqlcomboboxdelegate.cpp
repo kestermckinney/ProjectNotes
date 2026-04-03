@@ -31,6 +31,9 @@ QWidget* SqlComboBoxDelegate::createEditor(QWidget *parent, const QStyleOptionVi
     Q_UNUSED(option);
     Q_UNUSED(index);
 
+    if (m_readOnly)
+        return nullptr;
+
     dynamic_cast<SqlQueryModel*>(m_model->sourceModel())->refresh(); // had to refresh because inserted and updated rows wouldn't show in the completer
 
     ComboBox* editor = new ComboBox(parent);
