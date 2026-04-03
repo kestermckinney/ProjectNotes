@@ -8,7 +8,7 @@ import projectnotes
 from includes.common import ProjectNotesCommon
 from includes.word_tools import ProjectNotesWordTools
 from includes.collaboration_tools import CollaborationTools
-
+from includes.graphapi_tools import TokenAPI
 from PyQt6 import QtSql, QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtSql import QSqlDatabase
 from PyQt6.QtXml import QDomDocument, QDomNode
@@ -39,6 +39,9 @@ pluginmenus = []
 #      meeting_attendees
 #      item_tracker_updates
 #      item_tracker
+
+tapi = TokenAPI()
+
 # Custom Setting
 class SSRSSettings(QDialog):
     def __init__(self, parent: QMainWindow = None):
@@ -187,8 +190,6 @@ class GenerateSSRSReport(QDialog):
         projectfolder = pnc.get_projectfolder(xmlroot)
         pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
 
-        print(f"Export Project folder is {projectfolder}")
-
         if (projectfolder is None or projectfolder ==""):
             projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
 
@@ -311,21 +312,24 @@ class GenerateSSRSReport(QDialog):
 
         # should we email?
         if noemail == False:
-            ct = CollaborationTools()
+            try:
+                ct = CollaborationTools(tapi)
 
-            subject = projnum + " " + projdes + " Status Report " + self.statusdate.toString("MM/dd/yyyy")
+                subject = projnum + " " + projdes + " Status Report " + self.statusdate.toString("MM/dd/yyyy")
 
-            if emailashtml:
-                pnwt = ProjectNotesWordTools()
-                temphtmlfile = pnc.get_temporary_folder() + "/" + self.statusdate.toString("yyyyMMdd") + projnum + "statusreport.html"
-                dochtml = pnwt.get_html_version_of_word_doc(basereportdocx, temphtmlfile)
+                if emailashtml:
+                    pnwt = ProjectNotesWordTools()
+                    temphtmlfile = pnc.get_temporary_folder() + "/" + self.statusdate.toString("yyyyMMdd") + projnum + "statusreport.html"
+                    dochtml = pnwt.get_html_version_of_word_doc(basereportdocx, temphtmlfile)
 
-                if dochtml:
-                    ct.send_an_email(self.xmlstr, subject, dochtml, None, "Receives Status", True)                
-            elif emailasword:
-                ct.send_an_email(self.xmlstr, subject, "", [basereportdocx], "Receives Status", False)
-            elif emailaspdf:
-                ct.send_an_email(self.xmlstr, subject, "", [basereportpdf], "Receives Status", False)
+                    if dochtml:
+                        ct.send_an_email(self.xmlstr, subject, dochtml, None, "Receives Status", True)                
+                elif emailasword:
+                    ct.send_an_email(self.xmlstr, subject, "", [basereportdocx], "Receives Status", False)
+                elif emailaspdf:
+                    ct.send_an_email(self.xmlstr, subject, "", [basereportpdf], "Receives Status", False)
+            except Exception as e:
+                print(f"Error sending email: {e}")
 
         if keepword == False:
             QFile.remove(basereportdocx)
