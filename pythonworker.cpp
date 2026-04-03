@@ -35,27 +35,69 @@ PythonWorker::PythonWorker(QObject *parent)
 
 void PythonWorker::emitError()
 {
-    // Function to retrieve and print Python error information
-    if (PyErr_Occurred())
+    if (!PyErr_Occurred())
+        return;
+
+    PyObject *ptype = nullptr, *pvalue = nullptr, *ptraceback = nullptr;
+    PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+    PyErr_NormalizeException(&ptype, &pvalue, &ptraceback);
+
+    QString errorMessage;
+
+    // Use the traceback module to format the full exception including file and line number
+    PyObject* tracebackModule = PyImport_ImportModule("traceback");
+    if (tracebackModule)
     {
-        PyObject* exc = PyErr_GetRaisedException();
-
-        if (exc)
+        PyObject* formatFunc = PyObject_GetAttrString(tracebackModule, "format_exception");
+        if (formatFunc)
         {
-            PyErr_DisplayException(exc);
-
-            PyErr_SetRaisedException(exc);
+            PyObject* args = PyTuple_Pack(3,
+                ptype     ? ptype     : Py_None,
+                pvalue    ? pvalue    : Py_None,
+                ptraceback ? ptraceback : Py_None);
+            if (args)
+            {
+                PyObject* lines = PyObject_CallObject(formatFunc, args);
+                if (lines && PyList_Check(lines))
+                {
+                    Py_ssize_t len = PyList_Size(lines);
+                    for (Py_ssize_t i = 0; i < len; i++)
+                    {
+                        PyObject* item = PyList_GetItem(lines, i);
+                        const char* str = PyUnicode_AsUTF8(item);
+                        if (str)
+                            errorMessage += QString::fromUtf8(str);
+                    }
+                }
+                Py_XDECREF(lines);
+                Py_XDECREF(args);
+            }
+            Py_XDECREF(formatFunc);
         }
-        else
-        {
-#ifdef QT_DEBUG
-            qDebug() << "No raised exception found!";
-#endif
-        }
-
-        // Clean up error state
-        PyErr_Clear();
+        Py_XDECREF(tracebackModule);
     }
+
+    // Fall back to just the exception value string if traceback formatting failed
+    if (errorMessage.isEmpty() && pvalue)
+    {
+        PyObject* str = PyObject_Str(pvalue);
+        if (str)
+        {
+            const char* cstr = PyUnicode_AsUTF8(str);
+            if (cstr)
+                errorMessage = QString::fromUtf8(cstr);
+            Py_XDECREF(str);
+        }
+    }
+
+    if (!errorMessage.isEmpty())
+        QLog_Error(ERRORLOG, QString("Python error in plugin %1:\n%2").arg(m_modulename, errorMessage));
+
+    Py_XDECREF(ptype);
+    Py_XDECREF(pvalue);
+    Py_XDECREF(ptraceback);
+
+    PyErr_Clear();
 }
 
 void PythonWorker::checkForMember(const QString& member)
