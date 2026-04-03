@@ -7,6 +7,7 @@
 #include "appsettings.h"
 
 #include <QApplication>
+#include <QCommandLineParser>
 #include <QStyleFactory>
 #include <QSharedMemory>
 
@@ -22,6 +23,23 @@ int main(int argc, char *argv[])
     QCoreApplication::setAttribute(Qt::ApplicationAttribute::AA_ShareOpenGLContexts);
 
     QApplication a(argc, argv);
+
+    QCommandLineParser parser;
+    parser.setApplicationDescription("Project Notes");
+    parser.addHelpOption();
+    QCommandLineOption devProfileOption(
+        "developer-profile",
+        "Use a separate settings profile for development.",
+        "PROFILENAME");
+    parser.addOption(devProfileOption);
+    parser.process(a);
+
+    if (parser.isSet(devProfileOption))
+    {
+        AppSettings::setDeveloperProfile(parser.value(devProfileOption));
+        QCoreApplication::setOrganizationDomain(parser.value(devProfileOption) + ".projectnotes.com");
+        global_Settings.applyDeveloperProfile();
+    }
 
     qRegisterMetaType<PythonPlugin>();
     qRegisterMetaType<PluginMenu>();

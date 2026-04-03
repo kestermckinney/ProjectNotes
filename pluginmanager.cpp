@@ -361,7 +361,13 @@ PluginManager::PluginManager(QObject *parent)
     Py_InitializeFromConfig(&config);
     PyConfig_Clear(&config);
 
-    PyImport_ImportModule("projectnotes");
+    PyObject* pnModule = PyImport_ImportModule("projectnotes");
+
+    // Expose the developer profile name to Python plugins
+    QString devProfile = AppSettings::developerProfile();
+    PyObject* pyProfile = PyUnicode_FromString(devProfile.toUtf8().constData());
+    PyObject_SetAttrString(pnModule, "developer_profile", pyProfile);
+    Py_DECREF(pyProfile);
 
     stdout_write_type outwrite = [this] (std::string s)
     {
@@ -388,13 +394,17 @@ PluginManager::PluginManager(QObject *parent)
     pathSetup += QString("os.chdir(\"%1\")\n").arg(appResourcesPath());
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(m_pluginspath);
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(m_threadspath);
-    pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/python313.zip");
+#ifdef Q_OS_WIN
+    pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/python314.zip");
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/site-packages");
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/site-packages/win32");
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/site-packages/win32/lib");
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/site-packages/Pythonwin");
-#ifdef Q_OS_WIN
     pathSetup += QString("os.add_dll_directory(\"%1\")\n").arg(pythonpath + "/site-packages/PyQt6/Qt6/bin");
+#else
+    // Ensure system site-packages are available (needed for PyQt6 etc.)
+    pathSetup += "import site\n"
+                 "site.main()\n";
 #endif
     PyRun_SimpleString(pathSetup.toUtf8().constData());
 

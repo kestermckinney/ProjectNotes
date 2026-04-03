@@ -18,6 +18,12 @@ public:
     ~AppSettings();
     void shutdown();
 
+    void applyDeveloperProfile();
+
+    static void setDeveloperProfile(const QString& profile);
+    static QString developerProfile();
+    static QString settingsOrganization();
+
     bool getSyncEnabled();
     void setSyncEnabled(bool enabled);
     int getSyncHostType();
@@ -76,6 +82,8 @@ private:
     QSettings* m_appConfig = nullptr;
 
     SpellChecker* m_spellchecker = nullptr;
+
+    static QString s_developerProfile;
 };
 
 extern AppSettings global_Settings;

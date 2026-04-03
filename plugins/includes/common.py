@@ -11,9 +11,23 @@ from PyQt6.QtWidgets import QApplication, QMainWindow
 
 import re
 
+def _developer_profile():
+    import projectnotes
+    return getattr(projectnotes, 'developer_profile', '')
+
+def _settings_organization():
+    profile = _developer_profile()
+    if profile:
+        return "ProjectNotes" + profile
+    return "ProjectNotes"
+
 class ProjectNotesCommon:
     def __init__(self):
-        QCoreApplication.setOrganizationDomain("projectnotes.com")
+        profile = _developer_profile()
+        if profile:
+            QCoreApplication.setOrganizationDomain(profile + ".projectnotes.com")
+        else:
+            QCoreApplication.setOrganizationDomain("projectnotes.com")
 
         self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation)
 
@@ -283,7 +297,7 @@ class ProjectNotesCommon:
 
 
     def get_plugin_setting(self, settingname, pluginname = None):
-        cfg = QSettings("ProjectNotes","PluginSettings")
+        cfg = QSettings(_settings_organization(),"PluginSettings")
         cfg.setFallbacksEnabled(False)
 
         value = None
@@ -296,7 +310,7 @@ class ProjectNotesCommon:
         return value
 
     def set_plugin_setting(self, settingname, pluginname = None, value = ""):
-        cfg = QSettings("ProjectNotes","PluginSettings")
+        cfg = QSettings(_settings_organization(),"PluginSettings")
         cfg.setFallbacksEnabled(False)
 
         if pluginname is None:

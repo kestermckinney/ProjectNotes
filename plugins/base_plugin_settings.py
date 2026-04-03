@@ -6,7 +6,7 @@ import time
 import json
 import projectnotes
 
-from includes.common import ProjectNotesCommon
+from includes.common import ProjectNotesCommon, _settings_organization
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtCore import Qt, QRect, QSettings
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QDialog, QFileDialog, QWidget, QTableWidgetItem, QStyledItemDelegate, QComboBox
@@ -834,7 +834,7 @@ class SettingsMigrator(QDialog):
     def load_all_plugin_settings(self):
         self.listWidgetPlugins.clear()
 
-        settings = QSettings("ProjectNotes","PluginSettings")
+        settings = QSettings(_settings_organization(),"PluginSettings")
 
         # Add only groups that contain actual plugin settings keys,
         # filtering out macOS NSUserDefaults system-injected groups (e.g. "com")
@@ -867,7 +867,7 @@ class SettingsMigrator(QDialog):
         settings_dict = {}
         
         # Get all top-level groups
-        settings = QSettings("ProjectNotes","PluginSettings")
+        settings = QSettings(_settings_organization(),"PluginSettings")
         
         # Iterate through each group
         for group in selected_groups:
@@ -890,7 +890,7 @@ class SettingsMigrator(QDialog):
 
     def import_settings(self):
         # Initialize QSettings (replace with your organization and application name)
-        settings = QSettings("ProjectNotes","PluginSettings")
+        settings = QSettings(_settings_organization(),"PluginSettings")
         
         # Open file dialog to select JSON file
         file_dialog = QFileDialog(self)
@@ -953,7 +953,7 @@ class SettingsMigrator(QDialog):
             return  # No groups selected
         
         # Initialize QSettings
-        settings = QSettings("ProjectNotes","PluginSettings")
+        settings = QSettings(_settings_organization(),"PluginSettings")
         
         # Remove each selected group
         try:

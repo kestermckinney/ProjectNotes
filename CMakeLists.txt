@@ -28,8 +28,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(ENV{QT_LOGGING_RULES} "qt.*.debug=true")
 endif()
 
-set(Python3_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/3.13" CACHE PATH "Python 3.13 root (python.org install)")
-find_package(Python3 3.13 REQUIRED COMPONENTS Interpreter Development)
+if(APPLE)
+    set(Python3_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/3.14" CACHE PATH "Python 3.14 root (python.org install)")
+endif()
+find_package(Python3 3.14 REQUIRED COMPONENTS Interpreter Development)
 
 # Ensure we use the release libraries even in debug mode
 set(Python3_LIBRARIES ${Python3_LIBRARY_RELEASE})

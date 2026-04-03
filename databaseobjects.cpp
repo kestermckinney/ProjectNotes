@@ -306,11 +306,9 @@ QString DatabaseObjects::execute(const QString& sql)
             query.prepare(sql);
             if (!query.exec())
             {
-#ifdef QT_DEBUG
-            QString msg = objectName() + " - SQL QUERY FAILED: " + query.lastError().text() + "\nSQL: " + sql;
-            qWarning() << msg;
-            QLog_Debug(DEBUGLOG, msg);
-#endif
+                QString msg = objectName() + " - SQL QUERY FAILED: " + query.lastError().text() + "\nSQL: " + sql;
+                qWarning() << msg;
+                QLog_Error(ERRORLOG, msg);
             }
 
             QSqlError e = query.lastError();
@@ -338,12 +336,10 @@ QString DatabaseObjects::execute(const QString& sql)
             }
 #endif
         }
-#ifdef QT_DEBUG
         else
         {
-            QLog_Debug(DEBUGLOG, QString("Was not able lock for a transaction."));
+            QLog_Error(ERRORLOG, QString("Was not able lock for a transaction."));
         }
-#endif
     }
 
     return val;

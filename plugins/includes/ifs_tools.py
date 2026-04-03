@@ -26,7 +26,8 @@ class IFSCommon:
         self.report_server = self.pnc.get_plugin_setting("ReportServer", self.settings_pluginname)
         self.domain_user = self.pnc.get_plugin_setting("DomainUser", self.settings_pluginname)
         self.domain_password = self.pnc.get_plugin_setting("DomainPassword", self.settings_pluginname)
-        self.sync_tracker_items = self.pnc.get_plugin_setting("SyncTrackerItems", self.settings_pluginname).lower() == "true"
+        sync_val = self.pnc.get_plugin_setting("SyncTrackerItems", self.settings_pluginname)
+        self.sync_tracker_items = sync_val is not None and sync_val.lower() == "true"
 
     def url_is_available(self):
         try:

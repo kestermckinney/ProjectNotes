@@ -30,6 +30,7 @@
 
 extern const QString DEBUGLOG;
 extern const QString CONSOLELOG;
+extern const QString ERRORLOG;
 
 namespace QLogger
 {

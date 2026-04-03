@@ -55,6 +55,7 @@ MainWindow::MainWindow(QWidget *parent)
         logmanager->addDestination("debugging.log", DEBUGLOG, LogLevel::Debug, logloc, LogMode::OnlyFile);
     #endif
 
+    logmanager->addDestination("error.log", ERRORLOG, LogLevel::Error, logloc, LogMode::OnlyFile);
     logmanager->addDestination("console.log", CONSOLELOG, LogLevel::Info, logloc, LogMode::OnlyFile);
 
     logmanager->resume();

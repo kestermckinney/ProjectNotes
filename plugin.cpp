@@ -19,12 +19,10 @@ Plugin::Plugin(QObject *parent, bool isthread)
 #endif
         m_pythonworker->moveToThread(m_thread);
 
-#ifdef QT_DEBUG
         if (m_thread != m_pythonworker->thread())
         {
-            QLog_Debug(DEBUGLOG, "FAILED TO MOVE THREAD TO NEW PYTHONWORKER.");
+            QLog_Error(ERRORLOG, "FAILED TO MOVE THREAD TO NEW PYTHONWORKER.");
         }
-#endif
     }
 
     // send commands to python worker
@@ -96,12 +94,10 @@ void Plugin::onReturnedXml(const QString& xml)
             global_DBObjects.importXMLDoc(xmldoc);
             global_DBObjects.updateDisplayData();
         }
-#ifdef QT_DEBUG
         else
         {
-            QLog_Debug(DEBUGLOG, QString("Plugin: %1\nDatabase was already closed.  XML was not processed.\nReturned Xml: %2").arg(m_modulepath, xml));
+            QLog_Error(ERRORLOG, QString("Plugin: %1\nDatabase was already closed.  XML was not processed.\nReturned Xml: %2").arg(m_modulepath, xml));
         }
-#endif
     }
 }
 

@@ -384,9 +384,7 @@ void SqlQueryModel::refresh()
     sql_query.setForwardOnly(true);
     sql_query.prepare(fullsql);
     if (!sql_query.exec())
-#ifdef QT_DEBUG
-        qWarning() << objectName() << "SQL QUERY FAILED:" << sql_query.lastError().text() << "\nSQL:" << fullsql;
-#endif
+        QLog_Error(ERRORLOG,QString("%1 SQL QUERY FAILED: %2\nSQL: %3").arg(objectName(), sql_query.lastError().text(), fullsql));
 
     // add a blank row for drop downs
     if (m_showBlank)
@@ -2353,9 +2351,7 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
                 // silently rather than letting the INSERT fail a NOT NULL constraint.
                 if (field_value.isNull() && m_columnIsRequired[colnum] == DBRequired && colnum != 0)
                 {
-#ifdef QT_DEBUG
-                    QLog_Debug(DEBUGLOG, QString("Import skipped row in %1: required field '%2' is empty.").arg(m_tablename, field_name));
-#endif
+                    QLog_Error(ERRORLOG, QString("Import skipped row in %1: required field '%2' is empty.").arg(m_tablename, field_name));
                     return true;
                 }
 

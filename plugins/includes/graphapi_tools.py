@@ -36,7 +36,7 @@ class TokenAPI:
         self.tenant_id = self.pnc.get_plugin_setting("TenantID", self.settings_pluginname)
 
         self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation)
-        print(f"storing to {self.temporary_folder}")
+        # print(f"storing to {self.temporary_folder}")
         dir_obj = QDir(self.temporary_folder)
         if not dir_obj.exists():
             if not dir_obj.mkpath("."):

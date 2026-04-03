@@ -10,11 +10,39 @@
 
 using namespace QLogger;
 
+QString AppSettings::s_developerProfile;
+
+void AppSettings::setDeveloperProfile(const QString& profile)
+{
+    s_developerProfile = profile;
+}
+
+QString AppSettings::developerProfile()
+{
+    return s_developerProfile;
+}
+
+QString AppSettings::settingsOrganization()
+{
+    if (s_developerProfile.isEmpty())
+        return QStringLiteral("ProjectNotes");
+    return QStringLiteral("ProjectNotes") + s_developerProfile;
+}
+
 AppSettings::AppSettings()
 {
-    m_appConfig = new QSettings("ProjectNotes", "AppSettings");
+    m_appConfig = new QSettings(settingsOrganization(), "AppSettings");
     m_appConfig->setFallbacksEnabled(false);
+}
 
+void AppSettings::applyDeveloperProfile()
+{
+    if (!s_developerProfile.isEmpty())
+    {
+        delete m_appConfig;
+        m_appConfig = new QSettings(settingsOrganization(), "AppSettings");
+        m_appConfig->setFallbacksEnabled(false);
+    }
 }
 
 AppSettings global_Settings;
