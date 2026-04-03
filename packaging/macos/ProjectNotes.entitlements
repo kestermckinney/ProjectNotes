@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Required for Python's bytecode compiler and JIT path -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+
+    <!-- Required to load Python C-extension modules (.so) that are signed
+         by Python.org (or unsigned), not by this app's Developer ID -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+
+    <!-- Allows DYLD_* environment variables; some Python extension build
+         tools set these at import time -->
+    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+    <true/>
+
+    <!-- Network access for cloud sync and IFS/Outlook plugin features -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+
+    <!-- Read/write access to user-selected files (open/save dialogs) -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+
+    <!-- Access to the user's Documents folder (default database location) -->
+    <key>com.apple.security.files.downloads.read-write</key>
+    <true/>
+</dict>
+</plist>

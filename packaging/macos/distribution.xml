@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+
+    <title>ProjectNotes 5.0</title>
+    <organization>com.kestermckinney</organization>
+
+    <!-- Install to the user's home Applications folder by default;
+         allow installing to /Applications if admin credentials are provided -->
+    <domains enable_localSystem="true" enable_userDomain="true"/>
+    <options customize="allow" require-scripts="false" rootVolumeOnly="false"/>
+
+    <!-- Minimum macOS version (must match CMAKE_OSX_DEPLOYMENT_TARGET) -->
+    <volume-check>
+        <allowed-os-versions>
+            <os-version min="13.0"/>
+        </allowed-os-versions>
+    </volume-check>
+
+    <!-- Installer UI resources (files placed in packaging/macos/resources/) -->
+    <background file="background.png" alignment="bottomleft" scaling="proportional"/>
+    <welcome file="welcome.html" mime-type="text/html"/>
+    <license file="license.txt" mime-type="text/plain"/>
+
+    <!-- ── Package declarations ── -->
+    <pkg-ref id="com.kestermckinney.projectnotes"/>
+    <pkg-ref id="com.sqlitesyncpro.sqladmin"/>
+
+    <!-- ── Install choices ── -->
+    <choices-outline>
+        <line choice="com.kestermckinney.projectnotes"/>
+        <line choice="com.sqlitesyncpro.sqladmin"/>
+    </choices-outline>
+
+    <!-- ProjectNotes is required (not optional) -->
+    <choice id="com.kestermckinney.projectnotes"
+            visible="false"
+            enabled="false"
+            selected="true"
+            title="ProjectNotes"
+            description="Project management application — tracks notes, meetings, risks, issues, action items, contacts, and clients.">
+        <pkg-ref id="com.kestermckinney.projectnotes"/>
+    </choice>
+
+    <!-- SQLSync Administrator is optional but selected by default -->
+    <choice id="com.sqlitesyncpro.sqladmin"
+            visible="true"
+            enabled="true"
+            selected="true"
+            title="SQLSync Administrator"
+            description="Database synchronization administration tool for configuring the ProjectNotes cloud sync back-end.">
+        <pkg-ref id="com.sqlitesyncpro.sqladmin"/>
+    </choice>
+
+    <!-- ── pkg-ref payloads (resolved relative to the distribution file) ── -->
+    <pkg-ref id="com.kestermckinney.projectnotes"
+             version="5.0.0"
+             onConclusion="none">ProjectNotes.pkg</pkg-ref>
+
+    <pkg-ref id="com.sqlitesyncpro.sqladmin"
+             version="0.1.0"
+             onConclusion="none">SQLSyncAdmin.pkg</pkg-ref>
+
+</installer-gui-script>
