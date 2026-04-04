@@ -364,9 +364,9 @@ class IFSCommon:
             rd['projectsxmlrows'] +=  "    <column name=\"project_name\">" + self.pnc.to_xml(rowval['Description']) + "</column>\n"
             rd['projectsxmlrows'] +=  "    <column name=\"last_invoice_date\">" + self.pnc.to_xml(rowval['Cf_Lastinvoiced']) + "</column>\n"
 
-            if rowval['CustomerIdRef'] is not None:
+            if rowval['CustomerIdRef'] is not None and rowval['CustomerIdRef']['Name']:
                 rd['projectsxmlrows'] +=  "    <column name=\"client_id\" lookupvalue=\"" + self.pnc.to_xml(rowval['CustomerIdRef']['Name']) + "\"></column>\n"
-                
+
                 # only add the company name once to the client list
                 clientsdict[rowval['CustomerIdRef']['Name']] = True
 
