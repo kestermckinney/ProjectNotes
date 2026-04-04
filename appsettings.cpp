@@ -1,10 +1,11 @@
-// Copyright (C) 2022, 2023 Paul McKinney
+// Copyright (C) 2022, 2023, 2024, 2025, 2026 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "appsettings.h"
 #include "mainwindow.h"
 
 #include <QStatusBar>
+#include <QStandardPaths>
 #include "QLogger.h"
 #include "QLoggerWriter.h"
 
@@ -27,6 +28,14 @@ QString AppSettings::settingsOrganization()
     if (s_developerProfile.isEmpty())
         return QStringLiteral("ProjectNotes");
     return QStringLiteral("ProjectNotes") + s_developerProfile;
+}
+
+QString AppSettings::dataLocation()
+{
+    QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if (!s_developerProfile.isEmpty())
+        base += "/" + s_developerProfile;
+    return base;
 }
 
 AppSettings::AppSettings()

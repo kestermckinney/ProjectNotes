@@ -1,3 +1,4 @@
+// Copyright (C) 2025, 2026 Paul McKinney
 #include "pythonworker.h"
 #include <QFileInfo>
 #include <QCoreApplication>

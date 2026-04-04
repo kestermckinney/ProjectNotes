@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.16)
 
 project(ProjectNotes VERSION 5.0.0 LANGUAGES CXX)
 
+if(APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum macOS deployment version")
+endif()
+
 # Optionally, set version components explicitly
 set(APP_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(APP_VERSION_MINOR ${PROJECT_VERSION_MINOR})
@@ -141,16 +145,16 @@ target_link_libraries(ProjectNotes PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${Pyth
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.
-if(${QT_VERSION} VERSION_LESS 6.1.0)
-  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.ProjectNotes)
-endif()
 set_target_properties(ProjectNotes PROPERTIES
-    ${BUNDLE_ID_OPTION}
+    MACOSX_BUNDLE_GUI_IDENTIFIER "com.kestermckinney.projectnotes"
+    MACOSX_BUNDLE_BUNDLE_NAME "Project Notes"
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )
+
+set_target_properties(ProjectNotes PROPERTIES OUTPUT_NAME "Project Notes")
 
 include(GNUInstallDirs)
 install(TARGETS ProjectNotes
@@ -164,34 +168,81 @@ if(QT_VERSION_MAJOR EQUAL 6)
 endif()
 
 if(APPLE)
-    # On macOS, place plugins/threads symlinks and the dictionary copy inside the bundle Resources.
-    # $<TARGET_FILE_DIR:...> resolves to .app/Contents/MacOS; step up one level to get Contents/Resources.
-    set(BUNDLE_RESOURCES "$<TARGET_FILE_DIR:ProjectNotes>/../Resources")
+    # ── Fast plugin-only sync target ───────────────────────────────────────────
+    # Build just this target (instead of the full ProjectNotes target) when only
+    # .py files changed.  In Qt Creator: right-click project → Build → sync_plugins,
+    # or add a custom Build Step with "Make arguments: sync_plugins".
+    # Uses rsync --checksum so only content-changed files are actually copied.
+    add_custom_target(sync_plugins
+        COMMAND rsync -rv --checksum
+            "${CMAKE_CURRENT_SOURCE_DIR}/plugins/"
+            "$<TARGET_BUNDLE_DIR:ProjectNotes>/Contents/Resources/plugins/"
+        COMMAND rsync -rv --checksum
+            "${CMAKE_CURRENT_SOURCE_DIR}/threads/"
+            "$<TARGET_BUNDLE_DIR:ProjectNotes>/Contents/Resources/threads/"
+        COMMENT "Syncing Python plugins to app bundle (changed files only)"
+        VERBATIM
+    )
 
+    # $<TARGET_FILE_DIR:ProjectNotes> resolves to .app/Contents/MacOS at build time.
+    set(BUNDLE_RESOURCES   "$<TARGET_FILE_DIR:ProjectNotes>/../Resources")
+    set(BUNDLE_FRAMEWORKS  "$<TARGET_FILE_DIR:ProjectNotes>/../Frameworks")
+
+    # Compute the Python.framework root from the version-specific root dir.
+    # Python3_ROOT_DIR = /Library/Frameworks/Python.framework/Versions/X.Y
+    get_filename_component(_python_framework_root "${Python3_ROOT_DIR}/../.." REALPATH)
+
+    # Locate macdeployqt next to qmake.
+    get_target_property(_qmake_loc Qt${QT_VERSION_MAJOR}::qmake IMPORTED_LOCATION)
+    get_filename_component(_qt_bin "${_qmake_loc}" DIRECTORY)
+
+    # ── 1. Copy plugins (real files — symlinks are rejected by notarization) ──
     add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${BUNDLE_RESOURCES}"
-        COMMAND ${CMAKE_COMMAND} -E remove "${BUNDLE_RESOURCES}/plugins"
-        COMMAND ${CMAKE_COMMAND} -E create_symlink
+        COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/plugins"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
             "${BUNDLE_RESOURCES}/plugins"
-        COMMENT "Creating symbolic link to plugins folder in bundle Resources"
+        COMMENT "Copying plugins into bundle Resources"
     )
 
+    # ── 2. Copy threads ────────────────────────────────────────────────────────
     add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${BUNDLE_RESOURCES}"
-        COMMAND ${CMAKE_COMMAND} -E remove "${BUNDLE_RESOURCES}/threads"
-        COMMAND ${CMAKE_COMMAND} -E create_symlink
+        COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/threads"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/threads"
             "${BUNDLE_RESOURCES}/threads"
-        COMMENT "Creating symbolic link to threads folder in bundle Resources"
+        COMMENT "Copying threads into bundle Resources"
     )
 
+    # ── 3. Copy dictionary ─────────────────────────────────────────────────────
     add_custom_command(TARGET ProjectNotes POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/dictionary"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
             "${BUNDLE_RESOURCES}/dictionary"
-        COMMENT "Copying dictionary to bundle Resources"
+        COMMENT "Copying dictionary into bundle Resources"
+    )
+
+    # ── 4. Deploy Qt frameworks into the bundle ────────────────────────────────
+    add_custom_command(TARGET ProjectNotes POST_BUILD
+        COMMAND "${_qt_bin}/macdeployqt"
+            "$<TARGET_BUNDLE_DIR:ProjectNotes>"
+            -always-overwrite
+        COMMENT "Deploying Qt into app bundle (macdeployqt)"
+        VERBATIM
+    )
+
+    # ── 5. Bundle Python.framework ─────────────────────────────────────────────
+    add_custom_command(TARGET ProjectNotes POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${BUNDLE_FRAMEWORKS}"
+        COMMAND ${CMAKE_COMMAND}
+            "-DPYTHON_FRAMEWORK_SRC=${_python_framework_root}"
+            "-DFRAMEWORKS=${BUNDLE_FRAMEWORKS}"
+            "-DEXECUTABLE=$<TARGET_FILE:ProjectNotes>"
+            "-DPYTHON_VERSION=${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/packaging/macos/BundlePythonFramework.cmake"
+        COMMENT "Bundling Python.framework into Contents/Frameworks"
+        VERBATIM
     )
 else()
     add_custom_command(TARGET ProjectNotes POST_BUILD

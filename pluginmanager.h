@@ -1,3 +1,4 @@
+// Copyright (C) 2025, 2026 Paul McKinney
 #ifndef PLUGINMANAGER_H
 #define PLUGINMANAGER_H
 

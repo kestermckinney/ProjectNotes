@@ -1,3 +1,4 @@
+// Copyright (C) 2025, 2026 Paul McKinney
 #ifndef PYTHONWORKER_H
 #define PYTHONWORKER_H
 

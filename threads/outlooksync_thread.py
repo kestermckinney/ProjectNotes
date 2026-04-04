@@ -1,3 +1,4 @@
+# Copyright (C) 2025, 2026 Paul McKinney
 import os
 import sys
 import inspect
@@ -7,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../plug
 
 from includes.common import ProjectNotesCommon
 from includes.graphapi_tools import GraphAPITools, TokenAPI
-from PyQt6.QtCore import QDateTime, QElapsedTimer, QCoreApplication
+from PyQt6.QtCore import QDateTime, QElapsedTimer, QCoreApplication, QThread
 
 
 # Project Notes Plugin Parameters
@@ -61,8 +62,14 @@ class OutlookSync:
         gapi.set_token(token)
 
         gapi.sync_tracker_to_tasks(None)
+        if QThread.currentThread().isInterruptionRequested():
+            return
         gapi.import_batch_of_contacts(None)
+        if QThread.currentThread().isInterruptionRequested():
+            return
         gapi.export_batch_of_contacts(None)
+        if QThread.currentThread().isInterruptionRequested():
+            return
         gapi.download_batch_of_emails(None)
 
         execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
@@ -143,9 +150,12 @@ def menu_right_click_download_emails(xmlstr, parameter):
 def event_timer(parameter):
     global stopevent
 
+    if QThread.currentThread().isInterruptionRequested():
+        return ""
+
     if not use_graph_api:
         return ""
-    
+
     if stopevent:
         return ""
 

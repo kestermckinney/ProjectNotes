@@ -1,3 +1,4 @@
+# Copyright (C) 2021, 2022, 2023, 2024, 2025, 2026 Paul McKinney
 import os
 import sys
 import json
@@ -30,6 +31,8 @@ class ProjectNotesCommon:
             QCoreApplication.setOrganizationDomain("projectnotes.com")
 
         self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation)
+        if profile:
+            self.temporary_folder = self.temporary_folder + '/' + profile
 
         dir_obj = QDir(self.temporary_folder)
         if not dir_obj.exists():
@@ -288,10 +291,12 @@ class ProjectNotesCommon:
         return(projectfolder)
 
     def exec_program(self, fullpath):
-        #os.startfile( fullpath ) # i think this will work on Linux
-        
         if platform.system() == 'Windows':
             subprocess.Popen([fullpath], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        elif platform.system() == 'Darwin':
+            # On macOS, .app bundles are directories — they must be launched via
+            # the 'open' command rather than executed directly.
+            subprocess.Popen(['open', fullpath])
         else:
             subprocess.Popen([fullpath])
 

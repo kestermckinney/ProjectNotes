@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ProjectNotes is a Qt/C++ desktop application (v4.0.1) for project management — tracking notes, meeting minutes, risks, issues, action items, contacts, and clients. It embeds a Python plugin system for extensibility and integrates with tools like Outlook, IFS ERP, and MS Office.
+ProjectNotes is a Qt/C++ desktop application (v5.0.0) for project management — tracking notes, meeting minutes, risks, issues, action items, contacts, and clients. It embeds a Python plugin system for extensibility and integrates with tools like Outlook, IFS ERP, and MS Office.
 
 ## Build Commands
 
@@ -15,7 +15,8 @@ cmake --build .
 ```
 
 - Requires CMake 3.16+, Qt6 (Qt5 fallback supported), Python 3 dev libraries, Hunspell 1.7
-- Qt modules used: Widgets, Core, SQL, XML, WebEngine
+- Qt modules used: Widgets, Core, SQL, XML, Network
+- Also requires `SqliteSyncPro` checked out as a sibling directory (`../SqliteSyncPro/src`) — it's linked as `SqliteSyncProLib`
 - No automated test framework exists in this project
 - No linting configuration
 
@@ -39,8 +40,8 @@ All pages inherit from `PNBasePage`. Key pages:
 
 ### Data Layer
 
-- `pndatabaseobjects.h/cpp` — ORM-like wrappers for database interaction
-- `databasestructure.cpp` (71KB) — Full schema definition and incremental upgrade logic via `UpgradeDatabase()`
+- `databaseobjects.h/cpp` — ORM-like wrappers for database interaction
+- `databasestructure.cpp` — Full schema definition and incremental upgrade logic via `UpgradeDatabase()`; versioned upgrade logic is split into `databaseupgrade_v*.cpp` files
 - `PNSqlQueryModel` → `PNSortFilterProxyModel` → `PNTableView` pipeline for all tabular data
 - SQLite database at `database/ProjectNotes.db`; schema version tracked in `application_version` table
 

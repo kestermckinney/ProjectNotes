@@ -1,3 +1,4 @@
+// Copyright (C) 2026 Paul McKinney
 #include "inlinespellchecker.h"
 #include "appsettings.h"
 

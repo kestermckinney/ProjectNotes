@@ -1,3 +1,4 @@
+// Copyright (C) 2025, 2026 Paul McKinney
 #include "logviewer.h"
 #include "appsettings.h"
 #include <QStandardPaths>
@@ -235,7 +236,7 @@ LogViewer::~LogViewer()
 
 QString LogViewer::getLogFileLocation()
 {
-    QString logFilePath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/logs";
+    QString logFilePath = AppSettings::dataLocation() + "/logs";
 
     QDir dir(logFilePath);
 

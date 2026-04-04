@@ -1,3 +1,4 @@
+# Copyright (C) 2025, 2026 Paul McKinney
 import os
 import sys
 import inspect
@@ -9,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../plug
 
 #from includes.common import ProjectNotesCommon
 from includes.ifs_tools import IFSCommon
-from PyQt6.QtCore import QDateTime, QElapsedTimer, QCoreApplication
+from PyQt6.QtCore import QDateTime, QElapsedTimer, QCoreApplication, QThread
 
 
 # Project Notes Plugin Parameters
@@ -41,11 +42,15 @@ if ifs.get_has_settings():
 #
 
 def event_timer(parameter):
+    if QThread.currentThread().isInterruptionRequested():
+        return ""
+
     if ifs.get_has_settings() and ifs.url_is_available():
         ifs.import_ifs_projects("")
 
         if ifs.get_sync_tracker_items():
-            ifs.export_ifs_tracker_items("")
+            if not QThread.currentThread().isInterruptionRequested():
+                ifs.export_ifs_tracker_items("")
 
     return ""
 
