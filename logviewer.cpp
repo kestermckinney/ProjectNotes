@@ -236,7 +236,7 @@ LogViewer::~LogViewer()
 
 QString LogViewer::getLogFileLocation()
 {
-    QString logFilePath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/logs";
+    QString logFilePath = AppSettings::dataLocation() + "/logs";
 
     QDir dir(logFilePath);
 

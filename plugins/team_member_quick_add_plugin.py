@@ -133,13 +133,22 @@ class TeamMemberQuickAdd(QDialog):
 
     def add_contact(self):
 
+        cn = self.ui.comboBoxClientName.currentText()
+
+        cxml = ''
+
+        if cn is not None and cn != '':
+            cxml = f"""
+            <table name="clients">
+                    <row>
+                        <column name="client_name">{cn}</column>
+                    </row>
+            </table>
+            """            
+
         xmlstr = f"""<?xml version="1.0" encoding="UTF-8"?>
         <projectnotes>
-        <table name="clients">
-                <row>
-                    <column name="client_name">{self.ui.comboBoxClientName.currentText()}</column>
-                </row>
-        </table>
+        {cxml}
         <table name="people">
                 <row>
                     <column name="name">{self.ui.lineEditName.text()}</column>

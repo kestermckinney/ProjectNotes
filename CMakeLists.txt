@@ -165,6 +165,22 @@ if(QT_VERSION_MAJOR EQUAL 6)
 endif()
 
 if(APPLE)
+    # ── Fast plugin-only sync target ───────────────────────────────────────────
+    # Build just this target (instead of the full ProjectNotes target) when only
+    # .py files changed.  In Qt Creator: right-click project → Build → sync_plugins,
+    # or add a custom Build Step with "Make arguments: sync_plugins".
+    # Uses rsync --checksum so only content-changed files are actually copied.
+    add_custom_target(sync_plugins
+        COMMAND rsync -rv --checksum
+            "${CMAKE_CURRENT_SOURCE_DIR}/plugins/"
+            "$<TARGET_BUNDLE_DIR:ProjectNotes>/Contents/Resources/plugins/"
+        COMMAND rsync -rv --checksum
+            "${CMAKE_CURRENT_SOURCE_DIR}/threads/"
+            "$<TARGET_BUNDLE_DIR:ProjectNotes>/Contents/Resources/threads/"
+        COMMENT "Syncing Python plugins to app bundle (changed files only)"
+        VERBATIM
+    )
+
     # $<TARGET_FILE_DIR:ProjectNotes> resolves to .app/Contents/MacOS at build time.
     set(BUNDLE_RESOURCES   "$<TARGET_FILE_DIR:ProjectNotes>/../Resources")
     set(BUNDLE_FRAMEWORKS  "$<TARGET_FILE_DIR:ProjectNotes>/../Frameworks")

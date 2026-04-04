@@ -36,13 +36,7 @@ class TokenAPI:
         self.application_id = self.pnc.get_plugin_setting("ApplicationID", self.settings_pluginname)
         self.tenant_id = self.pnc.get_plugin_setting("TenantID", self.settings_pluginname)
 
-        self.temporary_folder = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation)
-        # print(f"storing to {self.temporary_folder}")
-        dir_obj = QDir(self.temporary_folder)
-        if not dir_obj.exists():
-            if not dir_obj.mkpath("."):
-                print("Failed to create temp directory:", self.temporary_folder)
-
+        self.temporary_folder = self.pnc.get_temporary_folder()
         self.token_cache_file = self.temporary_folder + '/token_cache.json'
         self.scopes = ["Mail.Send", "Mail.ReadWrite", "Contacts.Read", "Contacts.ReadWrite","Calendars.ReadWrite", "Tasks.ReadWrite", "MailboxSettings.Read"]
         self.token_expires = None
@@ -322,7 +316,10 @@ class GraphAPITools:
                 xmldoc += f'<column name="role">{self.pnc.to_xml(contact.get("jobTitle", ""))}</column>\n'
                 xmldoc += '</row>\n'
 
-                xmlclients = xmlclients + f'<row><column name="client_name">{self.pnc.to_xml(contact.get("companyName", ""))}</column></row>\n'
+                cn = self.pnc.to_xml(contact.get("companyName", ""))
+
+                if cn is not None and cn != '':
+                    xmlclients = xmlclients + f'<row><column name="client_name">{cn}</column></row>\n'
 
             if (xmldoc != ""):
                 xmldoc = '<table name="people">\n' + xmldoc + '</table>\n'

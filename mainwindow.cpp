@@ -34,7 +34,6 @@
 #include "mainwindow.h"
 #include "cloudsyncsettingsdialog.h"
 #include "appsettings.h"
-#include <QStandardPaths>
 
 #include "QLogger.h"
 #include "QLoggerWriter.h"
@@ -132,13 +131,9 @@ MainWindow::MainWindow(QWidget *parent)
     buildPluginMenu(nullptr);
 
     // Always open the database from the standard app data location, creating if needed.
-    // When running under a developer profile, use a profile-specific database file so
-    // development data does not overwrite the production database.
-    const QString dbname = AppSettings::developerProfile().isEmpty()
-                           ? "ProjectNotes.db"
-                           : "ProjectNotes" + AppSettings::developerProfile() + ".db";
-    const QString dbfile = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
-                           + "/" + dbname;
+    // When running under a developer profile, files go in a profile-named subfolder so
+    // development data (database + logs) is fully isolated from production.
+    const QString dbfile = AppSettings::dataLocation() + "/ProjectNotes.db";
 
     if (!QFile::exists(dbfile)) {
         QDir().mkpath(QFileInfo(dbfile).absolutePath());
@@ -680,11 +675,7 @@ void MainWindow::on_actionOpen_Database_triggered()
         return;
 
     // Database path is always fixed to the app data location (profile-aware)
-    const QString dbname = AppSettings::developerProfile().isEmpty()
-                           ? "ProjectNotes.db"
-                           : "ProjectNotes" + AppSettings::developerProfile() + ".db";
-    const QString dbfile = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
-                           + "/" + dbname;
+    const QString dbfile = AppSettings::dataLocation() + "/ProjectNotes.db";
 
     // Persist sync settings immediately (before openDatabase so it can read them)
     global_Settings.setSyncEnabled(dlg.syncEnabled());

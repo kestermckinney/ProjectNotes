@@ -83,16 +83,26 @@ Build the project in Release first, or set PN_BUILD_DIR / SA_BUILD_DIR."
 }
 
 # Deep-sign an app bundle with hardened runtime.
-# All nested dylibs/frameworks must be signed before the outer bundle.
+# All nested dylibs/frameworks/extensions must be signed before the outer bundle.
 sign_bundle() {
     local bundle="$1"
     local entitlements="${2:-}"
 
     log "Signing: ${bundle}"
 
-    # Sign nested frameworks and dylibs first (depth-first)
+    # Sign Python C-extension modules (.so) — notarization requires all
+    # executable code to be signed; .so files are skipped by codesign --deep
     find "${bundle}/Contents/Frameworks" \
-         -name "*.dylib" -o -name "*.framework" 2>/dev/null | \
+         -name "*.so" 2>/dev/null | \
+    sort -r | while read -r item; do
+        codesign --force --verify --verbose \
+            --sign "${SIGN_IDENTITY}" \
+            "${item}" 2>&1 | grep -v "replacing existing signature" || true
+    done
+
+    # Sign nested frameworks and dylibs (depth-first, with Hardened Runtime)
+    find "${bundle}/Contents/Frameworks" \
+         \( -name "*.dylib" -o -name "*.framework" \) 2>/dev/null | \
     sort -r | while read -r item; do
         codesign --force --verify --verbose \
             --sign "${SIGN_IDENTITY}" \
@@ -126,19 +136,31 @@ require_app "${SA_APP}"
 # ── Step 2: Prepare staging area ──────────────────────────────────────────────
 
 log "Preparing staging area..."
-rm -rf "${STAGING_DIR}" "${OUTPUT_DIR}"
+# Clear immutable flags then delete. Fall back to find -delete if rm -rf
+# is blocked by memory-mapped files (e.g. Python.framework dylibs in use).
+for _dir in "${STAGING_DIR}" "${OUTPUT_DIR}"; do
+    if [[ -d "${_dir}" ]]; then
+        chflags -R nouchg "${_dir}" 2>/dev/null || true
+        chmod -R u+w  "${_dir}" 2>/dev/null || true
+        rm -rf "${_dir}" 2>/dev/null || \
+            find "${_dir}" -depth -exec rm -rf {} + 2>/dev/null || true
+        [[ -d "${_dir}" ]] && die "Could not remove ${_dir} — close any apps using it and retry."
+    fi
+done
 mkdir -p \
-    "${STAGING_DIR}/projectnotes/Applications" \
-    "${STAGING_DIR}/sqladmin/Applications" \
+    "${STAGING_DIR}/projectnotes" \
+    "${STAGING_DIR}/sqladmin" \
     "${OUTPUT_DIR}"
 
-# Copy app bundles into staging
+# Copy app bundles into staging roots.  Use ditto (not cp -R) so that bundle
+# structure, resource forks, and extended attributes are preserved correctly
+# without creating spurious ._* AppleDouble files that break code signing.
 log "Copying app bundles..."
-cp -R "${PN_APP}" "${STAGING_DIR}/projectnotes/Applications/"
-cp -R "${SA_APP}" "${STAGING_DIR}/sqladmin/Applications/"
+ditto "${PN_APP}" "${STAGING_DIR}/projectnotes/ProjectNotes.app"
+ditto "${SA_APP}" "${STAGING_DIR}/sqladmin/SQLSyncAdmin.app"
 
-PN_STAGED="${STAGING_DIR}/projectnotes/Applications/ProjectNotes.app"
-SA_STAGED="${STAGING_DIR}/sqladmin/Applications/SQLSyncAdmin.app"
+PN_STAGED="${STAGING_DIR}/projectnotes/ProjectNotes.app"
+SA_STAGED="${STAGING_DIR}/sqladmin/SQLSyncAdmin.app"
 
 # ── Step 3: Code signing ──────────────────────────────────────────────────────
 
@@ -156,17 +178,19 @@ log "=== Building Component Packages ==="
 
 pkgbuild \
     --root "${STAGING_DIR}/projectnotes" \
+    --component-plist "${SCRIPT_DIR}/ProjectNotes-component.plist" \
     --identifier "com.kestermckinney.projectnotes" \
     --version "${PN_VERSION}" \
-    --install-location "/" \
+    --install-location "/Applications" \
     "${OUTPUT_DIR}/ProjectNotes.pkg"
 log "Built: ProjectNotes.pkg"
 
 pkgbuild \
     --root "${STAGING_DIR}/sqladmin" \
+    --component-plist "${SCRIPT_DIR}/SQLSyncAdmin-component.plist" \
     --identifier "com.sqlitesyncpro.sqladmin" \
     --version "${SA_VERSION}" \
-    --install-location "/" \
+    --install-location "/Applications" \
     "${OUTPUT_DIR}/SQLSyncAdmin.pkg"
 log "Built: SQLSyncAdmin.pkg"
 
@@ -185,7 +209,7 @@ productbuild \
     --distribution "${SCRIPT_DIR}/distribution.xml" \
     --package-path "${OUTPUT_DIR}" \
     --resources "${RESOURCES_DIR}" \
-    "${INSTALLER_SIGN_ARGS[@]}" \
+    ${INSTALLER_SIGN_ARGS[@]+"${INSTALLER_SIGN_ARGS[@]}"} \
     "${DIST_PKG}"
 
 log "Built: ${DIST_PKG}"

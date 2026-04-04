@@ -27,5 +27,12 @@
     <!-- Access to the user's Documents folder (default database location) -->
     <key>com.apple.security.files.downloads.read-write</key>
     <true/>
+
+    <!-- Note: com.apple.security.app-sandbox is intentionally NOT set.
+         This app embeds Python with third-party C extensions (PyQt6, MSAL, etc.)
+         signed by PyPI — incompatible with App Sandbox.
+         Distribution is via Developer ID + notarization (direct download), not
+         the Mac App Store. The three cs.* entitlements above are permitted for
+         Developer ID distribution and are required for Python embedding. -->
 </dict>
 </plist>

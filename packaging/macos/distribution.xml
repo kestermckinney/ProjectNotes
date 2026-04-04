@@ -4,10 +4,9 @@
     <title>ProjectNotes 5.0</title>
     <organization>com.kestermckinney</organization>
 
-    <!-- Install to the user's home Applications folder by default;
-         allow installing to /Applications if admin credentials are provided -->
-    <domains enable_localSystem="true" enable_userDomain="true"/>
-    <options customize="allow" require-scripts="false" rootVolumeOnly="false"/>
+    <!-- Always install to /Applications on the system volume. -->
+    <domains enable_localSystem="true" enable_userDomain="false"/>
+    <options customize="allow" require-scripts="false" rootVolumeOnly="true"/>
 
     <!-- Minimum macOS version (must match CMAKE_OSX_DEPLOYMENT_TARGET) -->
     <volume-check>
@@ -19,7 +18,7 @@
     <!-- Installer UI resources (files placed in packaging/macos/resources/) -->
     <background file="background.png" alignment="bottomleft" scaling="proportional"/>
     <welcome file="welcome.html" mime-type="text/html"/>
-    <license file="license.txt" mime-type="text/plain"/>
+    <license file="license.rtf" mime-type="text/rtf"/>
 
     <!-- ── Package declarations ── -->
     <pkg-ref id="com.kestermckinney.projectnotes"/>
@@ -37,7 +36,7 @@
             enabled="false"
             selected="true"
             title="ProjectNotes"
-            description="Project management application — tracks notes, meetings, risks, issues, action items, contacts, and clients.">
+            description="Project management application — tracks notes, meetings, issues, action items, contacts, and clients.">
         <pkg-ref id="com.kestermckinney.projectnotes"/>
     </choice>
 

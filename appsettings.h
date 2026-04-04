@@ -23,6 +23,7 @@ public:
     static void setDeveloperProfile(const QString& profile);
     static QString developerProfile();
     static QString settingsOrganization();
+    static QString dataLocation();
 
     bool getSyncEnabled();
     void setSyncEnabled(bool enabled);
