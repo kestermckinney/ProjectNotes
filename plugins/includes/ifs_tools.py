@@ -32,9 +32,9 @@ class IFSCommon:
 
     def url_is_available(self):
         try:
-            response = requests.head(self.ifs_url)
+            response = requests.head(self.ifs_url, timeout=5)
             return response.status_code < 400
-        except requests.ConnectionError:
+        except (requests.ConnectionError, requests.Timeout):
             return False
 
     def get_has_settings(self):
@@ -67,7 +67,7 @@ class IFSCommon:
     def get_earned_value_metrics(self, projectid):
             request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectMonitoringHandling.svc/Projects(ProjectId=%27' + projectid + '%27)/ProjectAnalysisArray?$apply=aggregate(Bcws%20with%20sum%20as%20Bcws_aggr_,Bcwp%20with%20sum%20as%20Bcwp_aggr_,Acwp%20with%20sum%20as%20Acwp_aggr_,Bac%20with%20sum%20as%20Bac_aggr_,Etc%20with%20sum%20as%20Etc_aggr_,Eac%20with%20sum%20as%20Eac_aggr_,Vac%20with%20sum%20as%20Vac_aggr_,Cv%20with%20sum%20as%20Cv_aggr_,Sv%20with%20sum%20as%20Sv_aggr_)'
 
-            result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
+            result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), timeout=15, headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
             if (result.status_code != 200):
                 print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -80,7 +80,7 @@ class IFSCommon:
     def get_cost_metrics(self, projectid):
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectMonitoringHandling.svc/Projects(ProjectId=%27' + projectid + '%27)/ProjectCostArray?$apply=aggregate(Estimated%20with%20sum%20as%20Estimated_aggr_,Planned%20with%20sum%20as%20Planned_aggr_,Baseline%20with%20sum%20as%20Baseline_aggr_,EarnedValue%20with%20sum%20as%20EarnedValue_aggr_,ScheduledWork%20with%20sum%20as%20ScheduledWork_aggr_,PlannedCommitted%20with%20sum%20as%20PlannedCommitted_aggr_,Committed%20with%20sum%20as%20Committed_aggr_,Used%20with%20sum%20as%20Used_aggr_,Actual%20with%20sum%20as%20Actual_aggr_)'
 
-        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
+        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), timeout=15, headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
         if (result.status_code != 200):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -93,7 +93,7 @@ class IFSCommon:
     def get_open_activities(self, projectid):
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ActivityListHandling.svc/Activities?$filter=((((Objstate%20eq%20IfsApp.ActivityListHandling.ActivityState%27Planned%27%20or%20Objstate%20eq%20IfsApp.ActivityListHandling.ActivityState%27Released%27))%20and%20(ProjectId%20eq%20%27' + projectid + '%27)))&$orderby=ShortName,ActivityNo&$select=ProjectId,Description,EarlyStartDate,EarlyFinishDate,Manager,Company,CCusPoSeq,ActivitySeq,Objstate,Objgrants,ProgressCost,ProgressHours,ActivityNo,ProgressTemplate,SubProjectId,AccessOn,EarlyStart,ActualStart,EarlyFinish,ActualFinish,TotalWorkDays,ShortName,ProgressMethod,ExcludeResourceProgress,ManualProgressLevel,ManualProgressCost,ManualProgressHours,EstimatedProgress,ProgressTemplateStep,PlannedCostDriver,Note,LateStart,LateFinish,luname,keyref&$expand=ProjectRef($select=Name,Objgrants,luname,keyref),SubProjectRef($select=Description,Objgrants,luname,keyref)'
 
-        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
+        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), timeout=15, headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
         if (result.status_code != 200):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -106,7 +106,7 @@ class IFSCommon:
     def get_activity_tasks(self, activityseq):
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectScopeAndScheduleHandling.svc/Activities(ActivitySeq=' + str(activityseq) + ')/ActivityTasks?$orderby=TaskId&$select=TaskId,Name,Info,Completed,Objgrants,CompletedDate,luname,keyref'
 
-        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
+        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), timeout=15, headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
         if (result.status_code != 200):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -115,7 +115,7 @@ class IFSCommon:
         json_result = result.json()
 
         return(json_result)
-        
+
     def get_status_items(self, project_num, json_data, dayspan):
         xml = '<table name="status_report_items">\n'
 
@@ -214,7 +214,7 @@ class IFSCommon:
 
         # print(f"Creating Activity in IFS, makeing url request: {request_url}")
 
-        result = requests.post(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), json=docdata, headers={"Content-Type": "application/json"})
+        result = requests.post(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), json=docdata, timeout=15, headers={"Content-Type": "application/json"})
         
         if (result.status_code != 201):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -258,7 +258,7 @@ class IFSCommon:
 
         #print(f"Updating Activity in IFS, makeing url request: {request_url}")
 
-        result = requests.patch(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), json=docdata, headers={"Content-Type": "application/json"})
+        result = requests.patch(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), json=docdata, timeout=15, headers={"Content-Type": "application/json"})
         
         if (result.status_code != 200):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -281,7 +281,7 @@ class IFSCommon:
 
         #print(f"Deleting Activity in IFS, makeing url request: {request_url}")
 
-        result = requests.delete(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), json=docdata, headers={"Content-Type": "application/json", "If-Match": "*"})
+        result = requests.delete(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), json=docdata, timeout=15, headers={"Content-Type": "application/json", "If-Match": "*"})
         
         if (result.status_code != 204):
             #print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -334,7 +334,7 @@ class IFSCommon:
 
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectsHandling.svc/Projects?' + segment + '$filter=(Manager%20eq%20%27' + self.ifs_person_id + '%27)&$select=BudgetControlOn,ControlAsBudgeted,ControlOnTotalBudget,ProjUniquePurchase,ProjUniqueSale,State,ProjectId,Objstate,Objgrants,Name,Company,CustomerCategory,CustomerId,FinancialProjectExist,History,DefaultSite,ProjectPngExists,CheckForecast,Description,CompanyName,Manager,AccessOnOff,PlanStart,PlanFinish,ActualStart,ActualFinish,ApprovedDate,CloseDate,CancelDate,FrozenDate,EarnedValueMethod,BaselineRevisionNumber,Cf_Lastinvoiced,luname,keyref&$expand=AccountingProjectRef($select=ProjectGroup,Objgrants,luname,keyref),ManagerRef($select=Name,luname,keyref),CustomerIdRef($select=Name,Objgrants,luname,keyref)'
 
-        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
+        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), timeout=15, headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
         #print(f"Query for projects is : {request_url}")
 
@@ -395,7 +395,7 @@ class IFSCommon:
     def get_resource_groups(self, rgroups):
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ResourceGroupsHandling.svc/ResourceSet?$select=ResourceId,Description'
 
-        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Content-Type" : "application/json"})
+        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), timeout=15, headers = {"Content-Type" : "application/json"})
 
         if (result.status_code != 200):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -415,7 +415,7 @@ class IFSCommon:
     def get_team_members_xml(self, rgroups, clientsdict, projectid, rd):
         request_url = self.ifs_url + "/main/ifsapplications/projection/v1/ProjectResourceAllocationsHandling.svc/ProjResourceAllocations?$filter=(ProjectId%20eq%20%27" + projectid + "%27)&$expand=EmployeeIdRef($select=EmployeeName)" 
         
-        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password),headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
+        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), timeout=15, headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
 
         if (result.status_code != 200):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
