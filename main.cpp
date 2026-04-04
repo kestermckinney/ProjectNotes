@@ -1,4 +1,4 @@
-// Copyright (C) 2022, 2023 Paul McKinney
+// Copyright (C) 2022, 2023, 2024, 2025, 2026 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "mainwindow.h"
@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/plugins");
     QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/plugins/bin");
 
-    QCoreApplication::setOrganizationDomain("projectnotes.com");
+    QCoreApplication::setOrganizationDomain("kestermckinney.com");
 
     // Set the attribute before creating QApplication this was needed for QWebView would work
     QCoreApplication::setAttribute(Qt::ApplicationAttribute::AA_ShareOpenGLContexts);
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     if (parser.isSet(devProfileOption))
     {
         AppSettings::setDeveloperProfile(parser.value(devProfileOption));
-        QCoreApplication::setOrganizationDomain(parser.value(devProfileOption) + ".projectnotes.com");
+        QCoreApplication::setOrganizationDomain(parser.value(devProfileOption) + ".kestermckinney.com");
         global_Settings.applyDeveloperProfile();
     }
 

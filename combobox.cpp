@@ -1,3 +1,4 @@
+// Copyright (C) 2026 Paul McKinney
 #include "combobox.h"
 #include <QWheelEvent>
 

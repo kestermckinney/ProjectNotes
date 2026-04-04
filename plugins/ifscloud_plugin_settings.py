@@ -1,3 +1,4 @@
+# Copyright (C) 2025, 2026 Paul McKinney
 import os
 import sys
 import platform

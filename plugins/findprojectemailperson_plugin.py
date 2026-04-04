@@ -1,3 +1,4 @@
+# Copyright (C) 2023, 2024, 2025, 2026 Paul McKinney
 import sys
 import platform
 

@@ -1,3 +1,4 @@
+# Copyright (C) 2025, 2026 Paul McKinney
 from includes.common import ProjectNotesCommon
 from PyQt6.QtXml import QDomDocument, QDomNode
 

@@ -1,3 +1,4 @@
+// Copyright (C) 2025, 2026 Paul McKinney
 #include "logviewer.h"
 #include "appsettings.h"
 #include <QStandardPaths>

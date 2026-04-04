@@ -1,3 +1,4 @@
+// Copyright (C) 2026 Paul McKinney
 #ifndef SPELLCHECKER_H
 #define SPELLCHECKER_H
 

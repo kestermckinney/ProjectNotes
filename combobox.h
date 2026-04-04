@@ -1,3 +1,4 @@
+// Copyright (C) 2026 Paul McKinney
 #ifndef COMBOBOX_H
 #define COMBOBOX_H
 

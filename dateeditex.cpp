@@ -1,3 +1,4 @@
+// Copyright (C) 2026 Paul McKinney
 /**************************************************************************
 **
 ** Copyright (c) 2013 Qualiant Software GmbH

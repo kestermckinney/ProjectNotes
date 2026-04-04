@@ -1,3 +1,4 @@
+# Copyright (C) 2026 Paul McKinney
 # BundlePythonFramework.cmake
 # Copies Python.framework into the app bundle's Frameworks/ directory and fixes
 # install names so the embedded interpreter is fully self-contained.

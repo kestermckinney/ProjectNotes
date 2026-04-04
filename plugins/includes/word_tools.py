@@ -1,3 +1,4 @@
+# Copyright (C) 2024, 2025, 2026 Paul McKinney
 import platform
 
 if (platform.system() == 'Windows'):

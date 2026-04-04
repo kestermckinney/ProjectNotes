@@ -1,3 +1,4 @@
+// Copyright (C) 2022, 2023, 2024, 2025, 2026 Paul McKinney
 #include "statusreportitemsview.h"
 #include "databaseobjects.h"
 #include "plaintexteditdelegate.h"

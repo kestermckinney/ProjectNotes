@@ -1,3 +1,4 @@
+# Copyright (C) 2025, 2026 Paul McKinney
 import subprocess
 import os
 import sys

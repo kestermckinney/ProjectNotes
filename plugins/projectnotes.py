@@ -1,3 +1,4 @@
+# Copyright (C) 2025, 2026 Paul McKinney
 
 # Use code below for testing
 if __name__ == '__main__':

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Copyright (C) 2026 Paul McKinney
 # build_installer.sh
 # Builds a signed, notarized macOS installer (.pkg wrapped in .dmg) containing
 # ProjectNotes.app and SQLSyncAdmin.app.
@@ -30,10 +31,10 @@ set -euo pipefail
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
-SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Your Name (TEAMID)}"
-INSTALLER_IDENTITY="${INSTALLER_IDENTITY:-Developer ID Installer: Your Name (TEAMID)}"
+SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Paul McKinney (TEAMID)}"
+INSTALLER_IDENTITY="${INSTALLER_IDENTITY:-Developer ID Installer: Paul McKinney (TEAMID)}"
 TEAM_ID="${TEAM_ID:-TEAMID}"
-APPLE_ID="${APPLE_ID:-your@email.com}"
+APPLE_ID="${APPLE_ID:-paul.mckinney@me.com}"
 NOTARIZE_KEYCHAIN_PROFILE="${NOTARIZE_KEYCHAIN_PROFILE:-ProjectNotes-Notarize}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
