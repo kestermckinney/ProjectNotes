@@ -229,7 +229,7 @@ class GraphAPITools:
         print(f"Uploading attachment '{file_name}' to message {draft_email_id}")
 
         # Upload the attachment to the draft email
-        response = requests.post(f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{draft_email_id}/attachments", headers=self.headers, json=attachment)
+        response = requests.post(f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{draft_email_id}/attachments", headers=self.headers, json=attachment, timeout=15)
 
         if response.status_code != 201:
             print(f"Attachment upload failed: {response.status_code} {response.text}")
@@ -281,7 +281,10 @@ class GraphAPITools:
 
         contacts_endpoint = contacts_endpoint + "$orderby=displayName"
         
-        response = requests.get(contacts_endpoint, headers=self.headers)
+        if QThread.currentThread().isInterruptionRequested():
+            return
+
+        response = requests.get(contacts_endpoint, headers=self.headers, timeout=15)
 
         xmldoc = ""
         xmlclients = ""
@@ -357,7 +360,11 @@ class GraphAPITools:
         # Endpoint to get the list of contacts
         contacts = None
         contacts_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/contacts?$top=2000"
-        response = requests.get(contacts_endpoint, headers=self.headers)
+
+        if QThread.currentThread().isInterruptionRequested():
+            return
+
+        response = requests.get(contacts_endpoint, headers=self.headers, timeout=15)
 
         if response.status_code == 200:
             contacts = response.json().get('value', [])
@@ -464,7 +471,7 @@ class GraphAPITools:
                         contacts_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/contacts"
 
                         # Make a POST request to create a new contact
-                        response = requests.post(contacts_endpoint, headers=self.headers, json=contact_details)
+                        response = requests.post(contacts_endpoint, headers=self.headers, json=contact_details, timeout=15)
                         #print(f"adding: {contact_details}")
 
                         if response.status_code != 201:
@@ -516,7 +523,7 @@ class GraphAPITools:
         }
 
         # Make a POST request to create the draft event
-        response = requests.post(events_endpoint, headers=self.headers, json=event_details)
+        response = requests.post(events_endpoint, headers=self.headers, json=event_details, timeout=15)
 
         msg = None
         if response.status_code != 201:
@@ -541,7 +548,7 @@ class GraphAPITools:
             }
 
         # Send email via Graph API
-        response = requests.post(graph_api_endpoint, headers=self.headers, json=email_data)
+        response = requests.post(graph_api_endpoint, headers=self.headers, json=email_data, timeout=15)
 
         if response.status_code == 201:
             for attachment in attachments:
@@ -558,7 +565,7 @@ class GraphAPITools:
         graph_api_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/mailboxSettings"  
             
         # Send email via Graph API
-        response = requests.get(graph_api_endpoint, headers=self.headers)
+        response = requests.get(graph_api_endpoint, headers=self.headers, timeout=15)
 
         # Check response status code
         if response.status_code == 200:
@@ -587,7 +594,10 @@ class GraphAPITools:
         graph_api_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/mailFolders/{box}/messages?$filter=contains(subject,'{projectnumber}')&$select=id&$top={top}&$skip={skip}" 
         
         # get email list via Graph API
-        response = requests.get(graph_api_endpoint, headers=self.headers)
+        if QThread.currentThread().isInterruptionRequested():
+            return
+
+        response = requests.get(graph_api_endpoint, headers=self.headers, timeout=15)
 
         # Check response status code
         if response.status_code == 200:
@@ -606,7 +616,7 @@ class GraphAPITools:
 
                 # Construct MSG download URL
                 msg_url = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{email['id']}"
-                msg_response = requests.get(msg_url, headers=self.headers)
+                msg_response = requests.get(msg_url, headers=self.headers, timeout=15)
 
                 if msg_response.status_code == 200:
                     # print(f'parsing response text from {msg_url}')
@@ -644,7 +654,7 @@ class GraphAPITools:
     def download_email(self, graph_token, message_id, email_file):
         # Set API endpoint and headers
         graph_api_endpoint = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{message_id}?$expand=attachments"
-        response = requests.get(graph_api_endpoint, headers=self.headers)
+        response = requests.get(graph_api_endpoint, headers=self.headers, timeout=15)
 
         # Check if successful
         if response.status_code == 200:
@@ -966,7 +976,8 @@ class GraphAPITools:
                             QDir().mkpath(receivedfolder)
 
                         self.download_project_emails(projectnumber, "inbox", top_emails, receivedfolder)
-                        self.download_project_emails(projectnumber, "sentitems", top_emails, sentfolder)
+                        if not QThread.currentThread().isInterruptionRequested():
+                            self.download_project_emails(projectnumber, "sentitems", top_emails, sentfolder)
 
                     rownode = rownode.nextSibling()
 
@@ -1047,8 +1058,11 @@ class GraphAPITools:
             return
 
         # find the to-do list
+        if QThread.currentThread().isInterruptionRequested():
+            return
+
         url = "https://graph.microsoft.com/v1.0/me/todo/lists"
-        response = requests.get(url, headers=self.headers)
+        response = requests.get(url, headers=self.headers, timeout=15)
 
         lists = None
         list_id = None
@@ -1064,7 +1078,7 @@ class GraphAPITools:
         # get all of the to-do items
         url = f"https://graph.microsoft.com/v1.0/me/todo/lists/{list_id}/tasks?$top=10000"
 
-        response = requests.get(url, headers=self.headers)
+        response = requests.get(url, headers=self.headers, timeout=15)
         todos = None
 
         if response.status_code == 200:
@@ -1217,7 +1231,7 @@ class GraphAPITools:
 
                         response = None
                         if task_id is None:
-                            response = requests.post(url, headers=self.headers, json=task_data)
+                            response = requests.post(url, headers=self.headers, json=task_data, timeout=15)
 
                             if response.status_code != 201:
                                 print(f"\nFailed to add task '{prefix} {projectname} {itemname}': {response.status_code}\n\n {response.text}\n\n")
@@ -1226,7 +1240,7 @@ class GraphAPITools:
                             # print(task_data)
                             # print(old_item)
 
-                            response = requests.patch(url, headers=self.headers, json=task_data)
+                            response = requests.patch(url, headers=self.headers, json=task_data, timeout=15)
 
                             if response.status_code != 200:
                                 print(f"\nFailed to update task '{prefix} {projectname} {itemname}': {response.status_code}\n\n {response.text}\n\n")
@@ -1234,7 +1248,7 @@ class GraphAPITools:
 
                     elif task_id is not None:
                         delete_url = f"https://graph.microsoft.com/v1.0/me/todo/lists/{list_id}/tasks/{task_id}"
-                        delete_response = requests.delete(delete_url, headers=self.headers)
+                        delete_response = requests.delete(delete_url, headers=self.headers, timeout=15)
 
                         if delete_response.status_code != 204:
                             print("Failed to delete todo item sync tracker items to tasks.")
