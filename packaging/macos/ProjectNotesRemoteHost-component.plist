@@ -12,7 +12,7 @@
         <key>BundleOverwriteAction</key>
         <string>upgrade</string>
         <key>RootRelativeBundlePath</key>
-        <string>SQLSyncAdmin.app</string>
+        <string>Project Notes Remote Host.app</string>
     </dict>
 </array>
 </plist>

@@ -9,10 +9,11 @@ When `--developer-profile PROFILENAME` is specified, Project Notes changes three
 | Resource | Production | Developer profile |
 |---|---|---|
 | Application settings | `ProjectNotes` organization key | `ProjectNotesPROFILENAME` organization key |
-| Database file | `ProjectNotes.db` | `ProjectNotesPROFILENAME.db` |
+| Database file | `<AppData>/ProjectNotes.db` | `<AppData>/PROFILENAME/ProjectNotes.db` |
+| Log files | `<AppData>/logs/` | `<AppData>/PROFILENAME/logs/` |
 | Organization domain | `projectnotes.com` | `PROFILENAME.projectnotes.com` |
 
-Both the settings and the database are stored in your platform's standard app-data location, but under different names, so the two instances never interfere with each other.
+Both the settings and the database are stored in your platform's standard app-data location. The developer profile places its database and logs in a named subfolder, so the two instances never interfere with each other.
 
 ## Usage
 
@@ -29,7 +30,7 @@ Replace `dev` with any short alphanumeric name. The same name must be used each 
 ## Typical Workflow
 
 1. Launch with `--developer-profile dev` (or whatever name you chose).
-2. A fresh, empty database (`ProjectNotesDev.db`) is created on first run.
+2. A fresh, empty database is created in the `dev/` subfolder of the app-data directory on first run.
 3. Populate it with test data — imports, plugin runs, XML files, etc. — without touching the production database.
 4. When you are done, simply close the window. All test data stays in the profile-specific files.
 

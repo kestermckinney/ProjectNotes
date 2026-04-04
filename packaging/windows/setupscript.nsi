@@ -8,7 +8,7 @@ RequestExecutionLevel user
 !define PRODUCT_VERSION "5.0.0"
 !define PRODUCT_PUBLISHER "Paul McKinney"
 !define PRODUCT_WEB_SITE "https://github.com/kestermckinney/ProjectNotes"
-!define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\ProjectNotes.exe"
+!define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\Project Notes.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
@@ -46,7 +46,7 @@ RequestExecutionLevel user
 ; Instfiles page
 !insertmacro MUI_PAGE_INSTFILES
 ; Finish page
-!define MUI_FINISHPAGE_RUN "$INSTDIR\ProjectNotes.exe"
+!define MUI_FINISHPAGE_RUN "$INSTDIR\Project Notes.exe"
 !insertmacro MUI_PAGE_FINISH
 
 ; Uninstaller pages
@@ -70,13 +70,13 @@ Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
 
-  File "..\..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\admin\SQLSyncAdmin.exe"
-  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\ProjectNotes.exe"
+  File "..\..\..\SqliteSyncPro\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\admin\Project Notes Remote Host.exe"
+  File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\Project Notes.exe"
 
   CreateDirectory "$SMPROGRAMS\Project Notes"
-  CreateShortCut  "$SMPROGRAMS\Project Notes\Project Note.lnk" "$INSTDIR\ProjectNotes.exe"
-  CreateShortCut  "$SMPROGRAMS\Project Notes\SQL Sync Admin.lnk" "$INSTDIR\SQLSyncAdmin.exe"
-  CreateShortCut  "$DESKTOP\Project Notes.lnk" "$INSTDIR\ProjectNotes.exe"
+  CreateShortCut  "$SMPROGRAMS\Project Notes\Project Notes.lnk" "$INSTDIR\Project Notes.exe"
+  CreateShortCut  "$SMPROGRAMS\Project Notes\Project Notes Remote Host.lnk" "$INSTDIR\Project Notes Remote Host.exe"
+  CreateShortCut  "$DESKTOP\Project Notes.lnk" "$INSTDIR\Project Notes.exe"
 
   ; Project Notes Needed Libraries
   File "..\..\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\vcpkg_installed\x64-windows\bin\hunspell-1.7-0.dll"
@@ -189,11 +189,11 @@ SectionEnd
 
 Section -Post
   WriteUninstaller "$INSTDIR\uninst.exe"
-  WriteRegStr HKLM "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\ProjectNotes.exe"
+  WriteRegStr HKLM "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\Project Notes.exe"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName" "$(^Name)"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString" "$\"$INSTDIR\uninst.exe$\""
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\ProjectNotes.exe"
+  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\Project Notes.exe"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
@@ -302,8 +302,8 @@ Section Uninstall
   RMDir "$INSTDIR\threads\__pycache__"
   RMDIR "$INSTDIR\threads"
 
-  Delete "$INSTDIR\ProjectNotes.exe"
-  Delete "$INSTDIR\SQLSyncAdmin.exe"
+  Delete "$INSTDIR\Project Notes.exe"
+  Delete "$INSTDIR\Project Notes Remote Host.exe"
   
   Delete "$INSTDIR\hunspell-1.7-0.dll"
   Delete "$INSTDIR\libcrypto-3-x64.dll"
@@ -338,7 +338,7 @@ Section Uninstall
   Delete "$SMPROGRAMS\Project Notes\Website.lnk"
   Delete "$DESKTOP\Project Notes.lnk"
   Delete "$SMPROGRAMS\Project Notes\Project Notes.lnk"
-  Delete "$SMPROGRAMS\Project Notes\SQL Sync Admin.lnk"
+  Delete "$SMPROGRAMS\Project Notes\Project Notes Remote Host.lnk"
 
   RMDir "$SMPROGRAMS\Project Notes"
   RMDir "$INSTDIR"

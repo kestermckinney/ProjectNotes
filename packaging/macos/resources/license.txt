@@ -1,8 +1,5 @@
 ProjectNotes
-Copyright (c) 2024 Paul McKinney. All rights reserved.
-
-TODO: Replace this placeholder with your actual license text before
-distributing the installer.
+Copyright (c) 2020-2026 Paul McKinney. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:

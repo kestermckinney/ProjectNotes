@@ -147,11 +147,14 @@ target_link_libraries(ProjectNotes PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${Pyth
 # explicit, fixed bundle identifier manually though.
 set_target_properties(ProjectNotes PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER "com.kestermckinney.projectnotes"
+    MACOSX_BUNDLE_BUNDLE_NAME "Project Notes"
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )
+
+set_target_properties(ProjectNotes PROPERTIES OUTPUT_NAME "Project Notes")
 
 include(GNUInstallDirs)
 install(TARGETS ProjectNotes

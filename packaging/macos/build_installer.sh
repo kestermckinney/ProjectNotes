@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Paul McKinney
 # build_installer.sh
 # Builds a signed, notarized macOS installer (.pkg wrapped in .dmg) containing
-# ProjectNotes.app and SQLSyncAdmin.app.
+# ProjectNotes.app and ProjectNotesRemoteHost.app.
 #
 # Usage:
 #   ./build_installer.sh [options]
@@ -21,7 +21,7 @@
 #   NOTARIZE_KEYCHAIN_PROFILE Keychain profile name created with:
 #                              xcrun notarytool store-credentials <profile>
 #   PN_BUILD_DIR             Path to the CMake Release build dir for ProjectNotes
-#   SA_BUILD_DIR             Path to the CMake Release build dir for SQLSyncAdmin
+#   SA_BUILD_DIR             Path to the CMake Release build dir for ProjectNotesRemoteHost
 #
 # Prerequisites:
 #   - Xcode Command Line Tools (codesign, pkgbuild, productbuild, hdiutil, xcrun)
@@ -45,8 +45,8 @@ SQLADMIN_ROOT="$(cd "${PROJECT_ROOT}/../SqliteSyncPro" && pwd)"
 PN_BUILD_DIR="${PN_BUILD_DIR:-${PROJECT_ROOT}/build/Qt_6_10_2_for_macOS-Release}"
 SA_BUILD_DIR="${SA_BUILD_DIR:-${SQLADMIN_ROOT}/build/Qt_6_10_2_for_macOS-Release/admin}"
 
-PN_APP="${PN_BUILD_DIR}/ProjectNotes.app"
-SA_APP="${SA_BUILD_DIR}/SQLSyncAdmin.app"
+PN_APP="${PN_BUILD_DIR}/Project Notes.app"
+SA_APP="${SA_BUILD_DIR}/Project Notes Remote Host.app"
 
 PN_VERSION="5.0.0"
 SA_VERSION="0.1.0"
@@ -126,9 +126,9 @@ sign_bundle() {
 
 # ── Step 1: Validate inputs ────────────────────────────────────────────────────
 
-log "=== ProjectNotes macOS Installer Build ==="
-log "ProjectNotes: ${PN_APP}"
-log "SQLSyncAdmin: ${SA_APP}"
+log "=== Project Notes macOS Installer Build ==="
+log "Project Notes: ${PN_APP}"
+log "ProjectNotesRemoteHost: ${SA_APP}"
 
 require_app "${PN_APP}"
 require_app "${SA_APP}"
@@ -156,11 +156,11 @@ mkdir -p \
 # structure, resource forks, and extended attributes are preserved correctly
 # without creating spurious ._* AppleDouble files that break code signing.
 log "Copying app bundles..."
-ditto "${PN_APP}" "${STAGING_DIR}/projectnotes/ProjectNotes.app"
-ditto "${SA_APP}" "${STAGING_DIR}/sqladmin/SQLSyncAdmin.app"
+ditto "${PN_APP}" "${STAGING_DIR}/projectnotes/Project Notes.app"
+ditto "${SA_APP}" "${STAGING_DIR}/sqladmin/Project Notes Remote Host.app"
 
-PN_STAGED="${STAGING_DIR}/projectnotes/ProjectNotes.app"
-SA_STAGED="${STAGING_DIR}/sqladmin/SQLSyncAdmin.app"
+PN_STAGED="${STAGING_DIR}/projectnotes/Project Notes.app"
+SA_STAGED="${STAGING_DIR}/sqladmin/Project Notes Remote Host.app"
 
 # ── Step 3: Code signing ──────────────────────────────────────────────────────
 
@@ -187,12 +187,12 @@ log "Built: ProjectNotes.pkg"
 
 pkgbuild \
     --root "${STAGING_DIR}/sqladmin" \
-    --component-plist "${SCRIPT_DIR}/SQLSyncAdmin-component.plist" \
+    --component-plist "${SCRIPT_DIR}/ProjectNotesRemoteHost-component.plist" \
     --identifier "com.sqlitesyncpro.sqladmin" \
     --version "${SA_VERSION}" \
     --install-location "/Applications" \
-    "${OUTPUT_DIR}/SQLSyncAdmin.pkg"
-log "Built: SQLSyncAdmin.pkg"
+    "${OUTPUT_DIR}/ProjectNotesRemoteHost.pkg"
+log "Built: ProjectNotesRemoteHost.pkg"
 
 # ── Step 5: Build distribution package ────────────────────────────────────────
 
