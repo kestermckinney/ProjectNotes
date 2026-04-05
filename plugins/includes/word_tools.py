@@ -39,7 +39,7 @@ class ProjectNotesWordTools:
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to open {cleanpath} in Word.'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
@@ -57,7 +57,7 @@ class ProjectNotesWordTools:
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to close a document and quit Word. Be sure to kill any stranded instanced of Word.'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
@@ -75,9 +75,9 @@ class ProjectNotesWordTools:
                 print("WMI Terminate call failed.")
 
         if (closecount > 0):
-            QMessageBox.information(None, "Terminated Stranded Word Programs", "Sucessfully terminated stranded Micorosoft Word programs running in the background.", QMessageBox.StandardButton.Ok)
+            QMessageBox.information(QApplication.activeWindow(),"Terminated Stranded Word Programs", "Sucessfully terminated stranded Micorosoft Word programs running in the background.", QMessageBox.StandardButton.Ok)
         else:   
-            QMessageBox.information(None, "No Stranded Word Program Found", "Was not able to terminate stranded Micorosoft Word programs running in the background.", QMessageBox.StandardButton.Ok)     
+            QMessageBox.information(QApplication.activeWindow(),"No Stranded Word Program Found", "Was not able to terminate stranded Micorosoft Word programs running in the background.", QMessageBox.StandardButton.Ok)     
 
         wmi_service = None
         wmi = None
@@ -116,7 +116,7 @@ class ProjectNotesWordTools:
                 # If it’s a COM error, the details are in e.args
                 msg = f'Error: {e} Attempting to get the html version of {cleandocpath}'
                 print(msg)
-                QMessageBox.critical(None, "Python Exception", msg)
+                QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
                 if hasattr(e, 'args') and e.args:
                     print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 

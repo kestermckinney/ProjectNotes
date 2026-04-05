@@ -69,7 +69,7 @@ class BasePlugins:
 
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
+            QMessageBox.critical(QApplication.activeWindow(), "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
@@ -123,7 +123,7 @@ class BasePlugins:
     def copy_path_to_clipboard(self, xmlstr):
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
+            QMessageBox.critical(QApplication.activeWindow(), "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
@@ -150,7 +150,7 @@ class BasePlugins:
         if (EditorFullPath is None or EditorFullPath == ""):
             msg = "You will need to specify an editor in the Open Editor plugin settings."
             print(msg)
-            QMessageBox.critical(None, "Editor Not Specified", msg)
+            QMessageBox.critical(QApplication.activeWindow(), "Editor Not Specified", msg)
         else:
             self.pnc.exec_program( EditorFullPath )
         return ""
@@ -204,7 +204,7 @@ def menu_schedule_meeting(xmlstr, parameter):
             nam = d
 
     if nam is None or len(nam) == 0:
-        QMessageBox.critical(None, "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.")
+        QMessageBox.critical(QApplication.activeWindow(), "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.")
         return ""
 
     template = nam.get('Template')
@@ -227,7 +227,7 @@ def menu_send_email(xmlstr, parameter):
             nam = d
 
     if nam is None or len(nam) == 0:
-        QMessageBox.critical(None, "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.")
+        QMessageBox.critical(QApplication.activeWindow(), "Meeting Type Error", "Unable schedule a meeting.  The meeting type is not configured correctly.")
         return ""
 
     template = nam.get('Template')

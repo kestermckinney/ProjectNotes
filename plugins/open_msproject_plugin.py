@@ -68,7 +68,7 @@ if platform.system() == 'Windows':
 
     def menu_open_ms_project(xmlstr, parameter):
         if not _msproject_available:
-            QMessageBox.critical(None, "MS Project Not Available",
+            QMessageBox.critical(QApplication.activeWindow(), "MS Project Not Available",
                 "Microsoft Project does not appear to be installed on this computer.\n\n"
                 "MS Project is required to use this feature.")
             return ""
@@ -78,7 +78,7 @@ if platform.system() == 'Windows':
         xmlval = QDomDocument()
 
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
+            QMessageBox.critical(QApplication.activeWindow(), "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
@@ -109,7 +109,7 @@ if platform.system() == 'Windows':
         elif len(filelist) == 1:
                 QDesktopServices.openUrl(QUrl("file:///" + filelist[0]))
         else:
-            QMessageBox.critical(None, "No MS Project File Found", "No MS Project files were found.  Check files are listed in Files & Folders and they are accessible.")
+            QMessageBox.critical(QApplication.activeWindow(), "No MS Project File Found", "No MS Project files were found.  Check files are listed in Files & Folders and they are accessible.")
 
         return ""
 

@@ -171,7 +171,7 @@ class CollaborationTools:
         project_name = None
         
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to draft an email.")
+            QMessageBox.critical(QApplication.activeWindow(),"Cannot Parse XML", "Unable to parse XML sent to draft an email.")
             return ""
             
         xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
@@ -211,7 +211,7 @@ class CollaborationTools:
                 msg = gapi.draft_an_email(addresses, email_subject, email_body_filled_in, attachments)
                 if msg is not None:
                     print(msg)
-                    QMessageBox.critical(None, "Cannot Send Email", msg)
+                    QMessageBox.critical(QApplication.activeWindow(),"Cannot Send Email", msg)
                     return ""
 
                 return ""
@@ -219,7 +219,7 @@ class CollaborationTools:
             else:
                 msg = "No token was returned.  Office 365 sync failed.  Make sure Outlook Integrations are configured correctly."
                 print(msg)
-                QMessageBox.critical(None, "Cannot Send Email", msg)
+                QMessageBox.critical(QApplication.activeWindow(),"Cannot Send Email", msg)
                 return ""
 
         elif platform.system() == 'Windows':
@@ -228,14 +228,14 @@ class CollaborationTools:
             msg = pnot.send_email(addresses, email_subject, email_body_filled_in, attachments)
             if msg is not None:
                 print(msg)
-                QMessageBox.critical(None, "Cannot Send Email", msg)
+                QMessageBox.critical(QApplication.activeWindow(),"Cannot Send Email", msg)
                 return ""
 
             return ""
         else:
             msg = "Sending email using Outlook is not supported on this operating system."
             print(msg)
-            QMessageBox.critical(None, "Not Supported", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Not Supported", msg)
 
         return ""
 
@@ -246,7 +246,7 @@ class CollaborationTools:
         attachments = []
         
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to draft an email.")
+            QMessageBox.critical(QApplication.activeWindow(),"Cannot Parse XML", "Unable to parse XML sent to draft an email.")
             return ""
             
         xmlroot = xmlval.documentElement()
@@ -288,7 +288,7 @@ class CollaborationTools:
                 msg = gapi.draft_a_meeting(addresses, meeting_subject, meeting_template_filled_in, starttime, endtime)
                 if msg is not None:
                     print(msg)
-                    QMessageBox.critical(None, "Cannot Draft a Meeting", msg)
+                    QMessageBox.critical(QApplication.activeWindow(),"Cannot Draft a Meeting", msg)
                     return ""
 
                 return ""
@@ -296,7 +296,7 @@ class CollaborationTools:
             else:
                 msg = "No token was returned.  Office 365 sync failed.  Make sure Outlook Integrations are configured correctly."
                 print(msg)
-                QMessageBox.critical(None, "Cannot Draft a Meeting", msg)
+                QMessageBox.critical(QApplication.activeWindow(),"Cannot Draft a Meeting", msg)
                 return ""
 
         elif platform.system() == 'Windows':
@@ -305,12 +305,12 @@ class CollaborationTools:
             msg = pnot.schedule_meeting(addresses, meeting_subject, meeting_template_filled_in)
             if msg is not None:
                 print(msg)
-                QMessageBox.critical(None, "Cannot Send Email", msg)
+                QMessageBox.critical(QApplication.activeWindow(),"Cannot Send Email", msg)
                 return ""
         else:
             msg = "Sending email using Outlook is not supported on this operating system."
             print(msg)
-            QMessageBox.critical(None, "Not Supported")
+            QMessageBox.critical(QApplication.activeWindow(),"Not Supported")
 
         return ""
 

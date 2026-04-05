@@ -68,7 +68,7 @@ def event_data_rightclick(xmlstr, parameter):
     xmlval = QDomDocument()
 
     if (xmlval.setContent(xmlstr) == False):
-        QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
+        QMessageBox.critical(QApplication.activeWindow(), "Cannot Parse XML", "Unable to parse XML sent to plugin.")
         return ""
 
     xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        

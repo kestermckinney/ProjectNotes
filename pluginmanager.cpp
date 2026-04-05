@@ -331,6 +331,8 @@ PluginManager::PluginManager(QObject *parent)
 
     m_pluginspath = appResourcesPath() + "/plugins/";
     m_threadspath = appResourcesPath() + "/threads/";
+    m_userPluginspath = QDir::homePath() + "/Project Notes/plugins/";
+    m_userThreadspath = QDir::homePath() + "/Project Notes/threads/";
 
     QString pythonpath =  QCoreApplication::applicationDirPath();
 
@@ -400,6 +402,8 @@ PluginManager::PluginManager(QObject *parent)
     pathSetup += QString("os.chdir(\"%1\")\n").arg(appResourcesPath());
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(m_pluginspath);
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(m_threadspath);
+    pathSetup += QString("sys.path.append(\"%1\")\n").arg(m_userPluginspath);
+    pathSetup += QString("sys.path.append(\"%1\")\n").arg(m_userThreadspath);
 #ifdef Q_OS_WIN
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/python313.zip");
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/site-packages");
@@ -432,6 +436,8 @@ PluginManager::PluginManager(QObject *parent)
     };
     seedDir(m_pluginspath);
     seedDir(m_threadspath);
+    seedDir(m_userPluginspath);
+    seedDir(m_userThreadspath);
 
     m_pollTimer = new QTimer(this);
     m_pollTimer->setInterval(1500);
@@ -442,6 +448,8 @@ PluginManager::PluginManager(QObject *parent)
 
     loadPluginFiles(m_pluginspath, false);
     loadPluginFiles(m_threadspath, true);
+    loadPluginFiles(m_userPluginspath, false);
+    loadPluginFiles(m_userThreadspath, true);
 }
 
 
@@ -603,6 +611,8 @@ void PluginManager::onFolderChanged(const QString &folderPath)
 {
     loadPluginFiles(m_pluginspath, false);
     loadPluginFiles(m_threadspath, true);
+    loadPluginFiles(m_userPluginspath, false);
+    loadPluginFiles(m_userThreadspath, true);
 }
 
 void PluginManager::onLoadComplete(const QString& modulepath)
@@ -659,6 +669,8 @@ void PluginManager::onPollTimer()
     };
     checkDir(m_pluginspath);
     checkDir(m_threadspath);
+    checkDir(m_userPluginspath);
+    checkDir(m_userThreadspath);
     if (folderChanged)
         onFolderChanged(QString());  // onFolderChanged ignores its argument
 

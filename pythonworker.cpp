@@ -1,5 +1,6 @@
 // Copyright (C) 2025, 2026 Paul McKinney
 #include "pythonworker.h"
+#include "appsettings.h"
 #include <QFileInfo>
 #include <QCoreApplication>
 #include <QStringList>
@@ -130,6 +131,23 @@ void PythonWorker::loadModule(const QString& modulepath)
     }
 
     m_PluginLocation = QFileInfo(modulepath).absoluteFilePath();
+
+    // Ensure the sibling plugins/ directory is on sys.path before importing.
+    // This mirrors: sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../plugins')))
+    // For plugins/: resolves to the same plugins/ dir (no-op if already present).
+    // For threads/: resolves to the sibling plugins/ dir, giving access to includes/.
+    {
+        QString moduleDir = QFileInfo(modulepath).absolutePath().replace('\\', '/');
+        QString siblingPlugins = QDir::cleanPath(moduleDir + "/../plugins").replace('\\', '/');
+        QString pathInject = QString(
+            "import sys as __pn_sys, os as __pn_os\n"
+            "__pn_sp = __pn_os.path.abspath(\"%1\")\n"
+            "if __pn_sp not in __pn_sys.path:\n"
+            "    __pn_sys.path.append(__pn_sp)\n"
+            "del __pn_sys, __pn_os, __pn_sp\n"
+        ).arg(siblingPlugins);
+        PyRun_SimpleString(pathInject.toUtf8().constData());
+    }
 
     m_PNPluginModule = PyImport_ImportModule(m_modulename.toUtf8().constData());
     if (!m_PNPluginModule)
@@ -578,6 +596,22 @@ void PythonWorker::findImportedModules(const QString& pythonFilePath)
     // Get the application directory for .ui files
     QDir appDir(QCoreApplication::applicationDirPath());
 
+    // Build search directories: script's own dir first, then the plugins dir.
+    // Build search dirs covering all locations on sys.path that contain includes/:
+    //   1. The script's own directory (handles co-located includes)
+    //   2. The user plugins dir (~/Project Notes/plugins/) if different from scriptDir
+    //   3. The install plugins dir — thread files and user-dir files resolve
+    //      includes.* via this path since plugins/ is always on sys.path
+    QList<QDir> searchDirs;
+    searchDirs.append(scriptDir);
+    QDir userPluginsDir(QDir::homePath() + "/Project Notes/plugins/");
+    if (userPluginsDir.absolutePath() != scriptDir.absolutePath())
+        searchDirs.append(userPluginsDir);
+    QDir pluginsDir(appResourcesPath() + "/plugins/");
+    if (pluginsDir.absolutePath() != scriptDir.absolutePath() &&
+        pluginsDir.absolutePath() != userPluginsDir.absolutePath())
+        searchDirs.append(pluginsDir);
+
     QTextStream in(&file);
     // Regular expression to match import statements
     QRegularExpression importRegex(R"(^\s*(?:import|from)\s+([\w.]+)(?:\s+import\s+[\w, ]+)?\s*$)");
@@ -605,19 +639,23 @@ void PythonWorker::findImportedModules(const QString& pythonFilePath)
             QStringList moduleParts = moduleName.split('.');
             QString modulePath = moduleParts.join('/');
 
-            // Check for both .py and .pyc files, and directory modules (__init__.py)
-            QStringList possiblePaths = {
-                scriptDir.absoluteFilePath(modulePath + ".py"),
-                scriptDir.absoluteFilePath(modulePath + ".pyc"),
-                scriptDir.absoluteFilePath(modulePath + "/__init__.py")
-            };
-
-            // Add valid paths to the result
-            for (const QString& path : possiblePaths)
+            // Check each search directory for .py, .pyc, or package __init__.py
+            for (const QDir& searchDir : searchDirs)
             {
-                if (QFile::exists(path))
+                QStringList possiblePaths = {
+                    searchDir.absoluteFilePath(modulePath + ".py"),
+                    searchDir.absoluteFilePath(modulePath + ".pyc"),
+                    searchDir.absoluteFilePath(modulePath + "/__init__.py")
+                };
+
+                for (const QString& path : possiblePaths)
                 {
-                    m_plugin.addImport(QDir::cleanPath(path));
+                    if (QFile::exists(path))
+                    {
+                        QString cleanedPath = QDir::cleanPath(path);
+                        if (!m_plugin.imports().contains(cleanedPath))
+                            m_plugin.addImport(cleanedPath);
+                    }
                 }
             }
         }

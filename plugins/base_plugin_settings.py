@@ -913,9 +913,9 @@ class SettingsMigrator(QDialog):
                 settings_dict = json.load(f)
         except Exception as e:
             print(f"Error reading JSON file: {e}")
-            QMessageBox.critical(None, "Cannot Parse JSON", "Unable to import settings.")
+            QMessageBox.critical(self, "Cannot Parse JSON", "Unable to import settings.")
             return
-        
+
         # Import settings into QSettings
         try:
             for group, keys in settings_dict.items():
@@ -925,7 +925,7 @@ class SettingsMigrator(QDialog):
                 settings.endGroup()
         except Exception as e:
             print(f"Error importing settings: {e}")
-            QMessageBox.critical(None, "Cannot Parse JSON", "Unable to import settings.")
+            QMessageBox.critical(self, "Cannot Parse JSON", "Unable to import settings.")
             return
 
         self.load_all_plugin_settings()
@@ -962,7 +962,7 @@ class SettingsMigrator(QDialog):
                 settings.remove(group)
         except Exception as e:
             print(f"Error deleting settings group: {e}")
-            QMessageBox.critical(None, "Cannot Delete Settings", "An error occured while removing settings settings.")
+            QMessageBox.critical(self, "Cannot Delete Settings", "An error occured while removing settings settings.")
 
         self.load_all_plugin_settings()
         

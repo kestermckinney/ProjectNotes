@@ -13,7 +13,7 @@ from urllib3.exceptions import InsecureRequestWarning
 import projectnotes
 
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
-
+ 
 class IFSCommon:
     def __init__(self):
         self.settings_pluginname = "IFS Cloud"

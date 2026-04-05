@@ -141,7 +141,7 @@ class GenerateSSRSReport(QDialog):
         if (result.status_code != 200):
             msg = f"File Download Failed {result.reason}: {result.text}"
             print(msg)
-            QMessageBox.critical(None, "Download Failed", msg)
+            QMessageBox.critical(self, "Download Failed", msg)
             return False
 
         QFile.remove(savelocation) 

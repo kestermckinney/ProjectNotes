@@ -47,7 +47,7 @@ class ProjectNotesExcelTools:
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to Open: "{cleanpath}"'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
@@ -73,7 +73,7 @@ class ProjectNotesExcelTools:
             # If it’s a COM error, the details are in e.args
             msg =f'Error: {e} Attempting to bring window {title} to the foreground.'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
@@ -97,7 +97,7 @@ class ProjectNotesExcelTools:
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to replace cell tag {oldtagname} with {newtagname}.'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
@@ -115,7 +115,7 @@ class ProjectNotesExcelTools:
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to find cell tag {oldtagname}.'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
@@ -146,7 +146,7 @@ class ProjectNotesExcelTools:
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to find cell tag {tagname}.'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
@@ -176,7 +176,7 @@ class ProjectNotesExcelTools:
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to import contacts into Outlook.'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
@@ -193,7 +193,7 @@ class ProjectNotesExcelTools:
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to find cell tags {starttag} and {endtag}.'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
@@ -211,7 +211,7 @@ class ProjectNotesExcelTools:
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to Save: {cleanpath}'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
@@ -250,7 +250,7 @@ class ProjectNotesExcelTools:
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to email Excel file content.'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
@@ -266,7 +266,7 @@ class ProjectNotesExcelTools:
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to close an Excel document and quit.  Be sure to kill any stranded instances of Excel.'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
@@ -285,9 +285,9 @@ class ProjectNotesExcelTools:
                 print("WMI Terminate call failed.")
 
         if (closecount > 0):
-            QMessageBox.information(None, "Terminated Stranded Excel Programs", "Sucessfully terminated stranded Micorosoft Excel programs running in the background.", QMessageBox.StandardButton.Ok)
+            QMessageBox.information(QApplication.activeWindow(),"Terminated Stranded Excel Programs", "Sucessfully terminated stranded Micorosoft Excel programs running in the background.", QMessageBox.StandardButton.Ok)
         else:   
-            QMessageBox.information(None, "No Stranded Excel Program Found", "Was not able to terminate stranded Micorosoft Excel programs running in the background.", QMessageBox.StandardButton.Ok)     
+            QMessageBox.information(QApplication.activeWindow(),"No Stranded Excel Program Found", "Was not able to terminate stranded Micorosoft Excel programs running in the background.", QMessageBox.StandardButton.Ok)     
 
         wmi_service = None
         wmi = None

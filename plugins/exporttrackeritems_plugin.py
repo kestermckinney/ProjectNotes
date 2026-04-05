@@ -450,7 +450,7 @@ class TrackerItemsExporter(QDialog):
         if self.project_pdfreportname:
             QFile.remove(self.project_pdfreportname)
             if not QFile(self.pdfreportname).copy(self.project_pdfreportname):
-                QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.pdfreportname + " to " + self.project_pdfreportname)
+                QMessageBox.critical(self, "Unable to copy generated export", "Could not copy " + self.pdfreportname + " to " + self.project_pdfreportname)
 
         if self.ui.m_checkBoxDisplayTracker.isChecked():
             display_path = self.project_pdfreportname if self.project_pdfreportname else self.pdfreportname
@@ -466,7 +466,7 @@ class TrackerItemsExporter(QDialog):
         elif self.project_htmlreportname:
             QFile.remove(self.project_htmlreportname)
             if not QFile(self.htmlreportname).copy(self.project_htmlreportname):
-                QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.htmlreportname + " to " + self.project_htmlreportname)
+                QMessageBox.critical(self, "Unable to copy generated export", "Could not copy " + self.htmlreportname + " to " + self.project_htmlreportname)
 
         if not self.progbar is None:
             self.progbar.setValue(100)

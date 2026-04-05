@@ -67,6 +67,8 @@ private:
     QSet<QString> m_watchedDirFiles;           // .py paths currently known in plugins/ + threads/
     QString m_pluginspath;
     QString m_threadspath;
+    QString m_userPluginspath;
+    QString m_userThreadspath;
 
     void loadPluginFiles(const QString& path, bool isthread);
 };

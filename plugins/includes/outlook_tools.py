@@ -58,7 +58,7 @@ class ProjectNotesOutlookTools:
     def export_contacts(self, xmlstr):
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
+            QMessageBox.critical(QApplication.activeWindow(),"Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
         QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.CursorShape.WaitCursor))
@@ -165,7 +165,7 @@ class ProjectNotesOutlookTools:
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to export contacts from Outlook.'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
@@ -181,7 +181,7 @@ class ProjectNotesOutlookTools:
     def import_contacts(self, xmlstr):
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
+            QMessageBox.critical(QApplication.activeWindow(),"Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
         try:
@@ -274,7 +274,7 @@ class ProjectNotesOutlookTools:
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to import contacts into Outlook.'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
@@ -302,12 +302,12 @@ class ProjectNotesOutlookTools:
 
         xmlval = QDomDocument()
         if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
+            QMessageBox.critical(QApplication.activeWindow(),"Cannot Parse XML", "Unable to parse XML sent to plugin.")
             QtWidgets.QApplication.restoreOverrideCursor()
             QtWidgets.QApplication.processEvents()  
             return ""
 
-        answer = QMessageBox.question(None,
+        answer = QMessageBox.question(QApplication.activeWindow(),
             "WARNING: Long Process",
             "WARNING: This process can take some time.  Are you sure you want to continue?",
             QMessageBox.StandardButton.Yes,
@@ -413,7 +413,7 @@ class ProjectNotesOutlookTools:
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to export email from Outlook.'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
@@ -461,7 +461,7 @@ class ProjectNotesOutlookTools:
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to schedule meeting {subject} in Outlook.'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
@@ -497,7 +497,7 @@ class ProjectNotesOutlookTools:
             # If it’s a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to send email {subject} in Outlook.'
             print(msg)
-            QMessageBox.critical(None, "Python Exception", msg)
+            QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
 
