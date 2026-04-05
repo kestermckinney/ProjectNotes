@@ -15,7 +15,6 @@ int main(int argc, char *argv[])
 {
     QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/bin");
     QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/plugins");
-    QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/plugins/bin");
 
     QCoreApplication::setOrganizationDomain("kestermckinney.com");
 
@@ -53,18 +52,24 @@ int main(int argc, char *argv[])
             return 0;
         }
 
-#ifdef Q_OS_WIN
-        QString processPath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/bin/QtWebEngineProcess.exe";   // adjust if you moved it
-        QString resourcePath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/resources";   // adjust if you moved it
-        QString localesPath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/translations/qtwebengine_locales";   // adjust if you moved it
+#if defined(Q_OS_WIN)
+        QString processPath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/bin/QtWebEngineProcess.exe";
+        QString resourcePath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/resources";
+        QString localesPath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/translations/qtwebengine_locales";
+#elif defined(Q_OS_MACOS)
+        QString processPath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/lib/QtWebEngineCore.framework/Versions/A/Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess";
+        QString resourcePath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/lib/QtWebEngineCore.framework/Versions/A/Resources";
+        QString localesPath = QCoreApplication::applicationDirPath() + "/site-packages/PyQt6/Qt6/translations/qtwebengine_locales";
+#endif
 
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
 #ifdef QT_DEBUG
         qDebug() << "Looking for file " << processPath;
 #endif
 
         if (QFileInfo::exists(processPath))
         {
-            QLog_Info(CONSOLELOG,QString("Setting application copy of QtWebEngineProcess.exe to be the default."));
+            QLog_Info(CONSOLELOG, QString("Setting application copy of QtWebEngineProcess to be the default."));
             qputenv("QTWEBENGINEPROCESS_PATH", processPath.toUtf8());
             qputenv("QTWEBENGINE_RESOURCES_PATH", resourcePath.toUtf8());
             qputenv("QTWEBENGINE_LOCALES_PATH", localesPath.toUtf8());
@@ -72,7 +77,6 @@ int main(int argc, char *argv[])
             // try to get more debugging information
             qputenv("QT_LOGGING_RULES", "qt.webenginecontext.debug=true");
             qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--enable-logging=stderr --v=1");
-
         }
 #endif
 

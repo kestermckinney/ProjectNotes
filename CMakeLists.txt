@@ -268,3 +268,110 @@ else()
     )
 endif()
 
+# ── Windows installer staging target ──────────────────────────────────────────
+if(WIN32)
+    # Paths to the Python environment — override on the cmake command line if needed
+    set(PYTHON_EMBED_DIR
+        "C:/Users/paulmckinney/Documents/python-3.13.2-embed-amd64"
+        CACHE PATH "Python embeddable distribution directory")
+    set(PYTHON_PACKAGES_DIR
+        "C:/Program Files/Python313/Lib/site-packages"
+        CACHE PATH "Full Python site-packages directory to bundle")
+    set(SQLITESYNCPRO_BUILD_DIR
+        "${CMAKE_CURRENT_SOURCE_DIR}/../SqliteSyncPro/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
+        CACHE PATH "SqliteSyncPro release build directory")
+
+    # Locate windeployqt from the Qt installation used to build
+    get_target_property(_qmake_loc Qt${QT_VERSION_MAJOR}::qmake IMPORTED_LOCATION)
+    get_filename_component(_qt_bin "${_qmake_loc}" DIRECTORY)
+
+    set(DEPLOY_DIR  "${CMAKE_BINARY_DIR}/deploy")
+    set(NSIS_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/windows")
+
+    add_custom_target(deploy
+        COMMENT "Staging Windows deployment to ${DEPLOY_DIR}"
+
+        # 1. Clean slate
+        COMMAND ${CMAKE_COMMAND} -E remove_directory "${DEPLOY_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory   "${DEPLOY_DIR}"
+
+        # 2. Application executables
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "$<TARGET_FILE:ProjectNotes>"
+            "${DEPLOY_DIR}/Project Notes.exe"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${SQLITESYNCPRO_BUILD_DIR}/admin/Project Notes Remote Host.exe"
+            "${DEPLOY_DIR}/Project Notes Remote Host.exe"
+
+        # 3. Qt DLLs and plugins via windeployqt
+        COMMAND "${_qt_bin}/windeployqt.exe"
+            --release --no-translations
+            --dir "${DEPLOY_DIR}"
+            "${DEPLOY_DIR}/Project Notes.exe"
+
+        # 4. ProjectNotes vcpkg runtime DLLs
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows/bin/hunspell-1.7-0.dll"
+            "${DEPLOY_DIR}/hunspell-1.7-0.dll"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows/bin/libcrypto-3-x64.dll"
+            "${DEPLOY_DIR}/libcrypto-3-x64.dll"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows/bin/legacy.dll"
+            "${DEPLOY_DIR}/legacy.dll"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows/bin/libssl-3-x64.dll"
+            "${DEPLOY_DIR}/libssl-3-x64.dll"
+
+        # 5. SqliteSyncPro vcpkg runtime DLLs
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${SQLITESYNCPRO_BUILD_DIR}/vcpkg_installed/x64-windows/bin/charset-1.dll"
+            "${DEPLOY_DIR}/charset-1.dll"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${SQLITESYNCPRO_BUILD_DIR}/vcpkg_installed/x64-windows/bin/iconv-2.dll"
+            "${DEPLOY_DIR}/iconv-2.dll"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${SQLITESYNCPRO_BUILD_DIR}/vcpkg_installed/x64-windows/bin/libecpg.dll"
+            "${DEPLOY_DIR}/libecpg.dll"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${SQLITESYNCPRO_BUILD_DIR}/vcpkg_installed/x64-windows/bin/libecpg_compat.dll"
+            "${DEPLOY_DIR}/libecpg_compat.dll"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${SQLITESYNCPRO_BUILD_DIR}/vcpkg_installed/x64-windows/bin/libpgtypes.dll"
+            "${DEPLOY_DIR}/libpgtypes.dll"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${SQLITESYNCPRO_BUILD_DIR}/vcpkg_installed/x64-windows/bin/libpq.dll"
+            "${DEPLOY_DIR}/libpq.dll"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${SQLITESYNCPRO_BUILD_DIR}/vcpkg_installed/x64-windows/bin/lz4.dll"
+            "${DEPLOY_DIR}/lz4.dll"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${SQLITESYNCPRO_BUILD_DIR}/vcpkg_installed/x64-windows/bin/zlib1.dll"
+            "${DEPLOY_DIR}/zlib1.dll"
+
+        # 6. Python embeddable distribution (python313.dll, .zip, .pyd files, etc.)
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${PYTHON_EMBED_DIR}"
+            "${DEPLOY_DIR}"
+
+        # 7. Filter and copy site-packages; generate install_files.nsh + remove_files.nsh
+        COMMAND "${Python3_EXECUTABLE}"
+            "${NSIS_DIR}/collect_packages.py"
+            "--source" "${PYTHON_PACKAGES_DIR}"
+            "--dest"   "${DEPLOY_DIR}/site-packages"
+            "--nsis-install"   "${NSIS_DIR}/install_files.nsh"
+            "--nsis-uninstall" "${NSIS_DIR}/remove_files.nsh"
+
+        # 8. Application content
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/plugins"    "${DEPLOY_DIR}/plugins"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/threads"    "${DEPLOY_DIR}/threads"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/dictionary" "${DEPLOY_DIR}/dictionary"
+
+        DEPENDS ProjectNotes
+        VERBATIM
+    )
+endif()
+

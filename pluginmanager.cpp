@@ -347,7 +347,12 @@ PluginManager::PluginManager(QObject *parent)
         return;
     }
 
-    if (QFile("python.exe").exists())
+#if defined(Q_OS_WIN)
+    QString embeddedPython = "python.exe";
+#else
+    QString embeddedPython = "python3";
+#endif
+    if (QFile(embeddedPython).exists())
     {
         QLog_Info(CONSOLELOG,QString("Setting application Python instance to isolated."));
         PyConfig_SetBytesString(&config, &config.home, "python");   // relative or absolute
@@ -396,14 +401,20 @@ PluginManager::PluginManager(QObject *parent)
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(m_pluginspath);
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(m_threadspath);
 #ifdef Q_OS_WIN
-    pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/python314.zip");
+    pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/python313.zip");
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/site-packages");
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/site-packages/win32");
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/site-packages/win32/lib");
     pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/site-packages/Pythonwin");
     pathSetup += QString("os.add_dll_directory(\"%1\")\n").arg(pythonpath + "/site-packages/PyQt6/Qt6/bin");
+    pathSetup += QString("os.add_dll_directory(\"%1\")\n").arg(pythonpath + "/site-packages/pywin32_system32");
+#elif defined(Q_OS_MACOS)
+    pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/python313.zip");
+    pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/site-packages");
 #else
-    // Ensure system site-packages are available (needed for PyQt6 etc.)
+    // Linux — system Python 3.14
+    pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/python314.zip");
+    pathSetup += QString("sys.path.append(\"%1\")\n").arg(pythonpath + "/site-packages");
     pathSetup += "import site\n"
                  "site.main()\n";
 #endif
