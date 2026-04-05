@@ -144,13 +144,26 @@ class GenerateTrackerReport(QDialog):
         return includeiteminternal and includeitemtype and includeitemstatus, isinternal, itemtype, status
 
     def generate_tracker(self):
+        if platform.system() != 'Windows':
+            QMessageBox.critical(self.ui, "Not Supported", "This report requires Microsoft Windows and Microsoft Excel.")
+            return
+
+        try:
+            import winreg
+            winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, "Excel.Application")
+        except (FileNotFoundError, OSError):
+            QMessageBox.critical(self.ui, "Excel Not Available",
+                "Microsoft Excel does not appear to be installed on this computer.\n\n"
+                "Excel is required to generate the tracker report.")
+            return
+
         pne = ProjectNotesExcelTools()
 
         print(f"TRACKER XML: {self.xmlstr}")
 
         xmlval = QDomDocument()
         if (xmlval.setContent(self.xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
+            QMessageBox.critical(self.ui, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return
             
         emaillist = ""
@@ -184,7 +197,7 @@ class GenerateTrackerReport(QDialog):
             check_row = check_tag.firstChild()
 
         if not check_row or not check_tag:
-            QMessageBox.warning(None, "No Records", "No tracker or action items are available.", QMessageBox.StandardButton.Ok)
+            QMessageBox.warning(self.ui, "No Records", "No tracker or action items are available.", QMessageBox.StandardButton.Ok)
             self.ui.hide()
             return
 
@@ -200,20 +213,11 @@ class GenerateTrackerReport(QDialog):
 
         projectfolder = pnc.get_projectfolder(xmlroot)
 
-        if (projectfolder is None or projectfolder ==""):
-            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
-
-            if projectfolder == "" or projectfolder is None:
-                self.ui.hide()
-                return
-        else:
-            projectfolder = projectfolder + f"/{self.export_subfolder}/"
-
-        if not pnc.folder_exists(projectfolder):
-            msg = f'Folder "{projectfolder}" does not exist.  Cannot generate the report.'
-            print(msg)
-            QMessageBox.critical(None, "Folder Does Not Exist", msg)
-            return
+        if projectfolder:
+            projectfolder = f"{projectfolder}/{self.export_subfolder}/"
+            if not pnc.folder_exists(projectfolder):
+                print(f"Project folder '{projectfolder}' does not exist; output will not be copied there.")
+                projectfolder = ""
 
         progbar = QProgressDialog(self.ui)
         progbar.setWindowTitle("Generating Report...")
@@ -256,21 +260,18 @@ class GenerateTrackerReport(QDialog):
         progbar.setValue(int(min(progval / progtot * 100, 100)))
         progbar.setLabelText("Copying files...")
 
-        excelreportname = ""
-        pdfreportname = ""
-
-        if self.ui.m_checkBoxInternalRptTracker.isChecked():
-            excelreportname = projectfolder + projnum + " Tracker Report Internal.xlsx"
-            pdfreportname = projectfolder + projnum + " Tracker Report Internal.pdf"
-        else:
-            excelreportname = projectfolder + projnum + " Tracker Report.xlsx"
-            pdfreportname = projectfolder + projnum + " Tracker Report.pdf"
+        temporaryfolder = pnc.get_temporary_folder() + "/"
+        suffix = " Internal" if self.ui.m_checkBoxInternalRptTracker.isChecked() else ""
+        excelreportname = f"{temporaryfolder}{projnum} Tracker Report{suffix}.xlsx"
+        pdfreportname = f"{temporaryfolder}{projnum} Tracker Report{suffix}.pdf"
+        project_excelreportname = f"{projectfolder}{projnum} Tracker Report{suffix}.xlsx" if projectfolder else ""
+        project_pdfreportname = f"{projectfolder}{projnum} Tracker Report{suffix}.pdf" if projectfolder else ""
 
         templatefile ="plugins/templates/Tracker Items Template.xlsx"
         QFile.remove(excelreportname)
         if not QFile.copy(templatefile, excelreportname):
             print("Unable to copy template. Could not copy " + templatefile + " to " + excelreportname)
-            QMessageBox.critical(None, "Unable to copy template", "Could not copy " + templatefile + " to " + excelreportname)
+            QMessageBox.critical(self.ui, "Unable to copy template", "Could not copy " + templatefile + " to " + excelreportname)
             progbar.close()
             return
 
@@ -282,7 +283,7 @@ class GenerateTrackerReport(QDialog):
         progbar.setLabelText("Gathering status items...")
 
         # count expand out excel rows for status report items
-        repitem = pnc.find_node_by2(xmlroot, "table", "name", "item_tracker", "filter_field_1", "id")
+        repitem = pnc.find_node(xmlroot, "table", "name", "item_tracker")
         itemcount = 0
 
         if repitem:
@@ -388,12 +389,22 @@ class GenerateTrackerReport(QDialog):
 
 
         # generate PDFs
+        QFile.remove(pdfreportname)
         pne.save_excel_as_pdf(handle, sheet, pdfreportname)
 
         ## testing why does window close
         # progbar.close()
         # self.ui.hide()
         # return
+
+        # Copy files to project folder if defined
+        if project_pdfreportname:
+            QFile.remove(project_pdfreportname)
+            QFile.copy(pdfreportname, project_pdfreportname)
+
+        if keepexcel and project_excelreportname:
+            QFile.remove(project_excelreportname)
+            QFile.copy(excelreportname, project_excelreportname)
 
         # should we email?
         if noemail == False:
@@ -410,13 +421,11 @@ class GenerateTrackerReport(QDialog):
 
         progbar.setValue(100)
 
+        display_path = project_pdfreportname if project_pdfreportname else pdfreportname
         if self.ui.m_checkBoxDisplayTracker.isChecked():
-            QDesktopServices.openUrl(QUrl("file:///" + pdfreportname))
+            QDesktopServices.openUrl(QUrl("file:///" + display_path))
 
         progbar = None # must be destroyed
-
-        if keepexcel == False:
-            QFile.remove(excelreportname)
 
         self.ui.hide()
 

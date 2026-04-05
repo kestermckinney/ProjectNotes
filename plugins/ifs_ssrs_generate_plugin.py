@@ -152,15 +152,15 @@ class GenerateSSRSReport(QDialog):
 
     def url_is_available(self, url):
         try:
-            response = requests.head(url)
+            response = requests.head(url, timeout=5)
             return response.status_code > 0
-        except requests.ConnectionError:
+        except (requests.ConnectionError, requests.Timeout):
             return False
 
     def generate_report(self):
         xmlval = QDomDocument()
         if (xmlval.setContent(self.xmlstr) == False):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
+            QMessageBox.critical(self, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return
 
         self.report_server = pnc.get_plugin_setting("ReportServer", "IFS Cloud") or ""
@@ -169,10 +169,17 @@ class GenerateSSRSReport(QDialog):
 
         self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
 
+        if not self.report_server:
+            QMessageBox.critical(self, "Report Server Not Configured",
+                "No report server has been configured.\n\n"
+                "Please configure the report server address in Settings > SQL Report.")
+            self.hide()
+            return
+
         if not self.url_is_available(f"http://{self.report_server}/reports/browse/"):
             msg = f'The report server "{self.report_server}" is not available.  Cannot download the report.'
             print(msg)
-            QMessageBox.critical(None, "Server Not Available", msg)
+            QMessageBox.critical(self, "Server Not Available", msg)
             self.hide()
             return
 
@@ -191,19 +198,11 @@ class GenerateSSRSReport(QDialog):
         projectfolder = pnc.get_projectfolder(xmlroot)
         pm = xmlroot.attributes().namedItem("managing_manager_name").nodeValue()
 
-        if (projectfolder is None or projectfolder ==""):
-            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
-
-            if projectfolder == "" or projectfolder is None:
-                return
-        else:
-            projectfolder = projectfolder + f"/{self.export_subfolder}/"
-
-        if not pnc.folder_exists(projectfolder):
-            msg = f'Folder "{projectfolder}" does not exist.  Cannot download the report.'
-            print(msg)
-            QMessageBox.critical(None, "Folder Does Not Exist", msg)
-            return
+        if projectfolder:
+            projectfolder = f"{projectfolder}/{self.export_subfolder}/"
+            if not pnc.folder_exists(projectfolder):
+                print(f"Project folder '{projectfolder}' does not exist; output will not be copied there.")
+                projectfolder = ""
 
         progbar = QProgressDialog(self.ui)
         progbar.setWindowTitle("Generating Report...")
@@ -258,8 +257,11 @@ class GenerateSSRSReport(QDialog):
             progbar.setLabelText("Copying files...")
             QtWidgets.QApplication.processEvents()   
 
-        basereportpdf = projectfolder + self.statusdate.toString("yyyyMMdd ") + projnum + " Status Report.pdf"
-        basereportdocx = projectfolder + self.statusdate.toString("yyyyMMdd ") + projnum + " Status Report.docx"
+        temporaryfolder = pnc.get_temporary_folder() + "/"
+        basereportpdf = temporaryfolder + self.statusdate.toString("yyyyMMdd ") + projnum + " Status Report.pdf"
+        basereportdocx = temporaryfolder + self.statusdate.toString("yyyyMMdd ") + projnum + " Status Report.docx"
+        project_basereportpdf = (projectfolder + self.statusdate.toString("yyyyMMdd ") + projnum + " Status Report.pdf") if projectfolder else ""
+        project_basereportdocx = (projectfolder + self.statusdate.toString("yyyyMMdd ") + projnum + " Status Report.docx") if projectfolder else ""
 
         QFile.remove(basereportpdf)
         QFile.remove(basereportdocx)
@@ -332,11 +334,18 @@ class GenerateSSRSReport(QDialog):
             except Exception as e:
                 print(f"Error sending email: {e}")
 
-        if keepword == False:
-            QFile.remove(basereportdocx)
+        # Copy files to project folder if defined
+        if project_basereportpdf:
+            QFile.remove(project_basereportpdf)
+            QFile.copy(basereportpdf, project_basereportpdf)
 
+        if keepword and project_basereportdocx:
+            QFile.remove(project_basereportdocx)
+            QFile.copy(basereportdocx, project_basereportdocx)
+
+        display_path = project_basereportpdf if project_basereportpdf else basereportpdf
         if self.ui.m_checkBoxDisplay.isChecked():
-            QDesktopServices.openUrl(QUrl("file:///" + basereportpdf))
+            QDesktopServices.openUrl(QUrl("file:///" + display_path))
 
         progbar.setValue(100)
         progbar.setLabelText("Finalizing files...")

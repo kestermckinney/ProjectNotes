@@ -275,22 +275,11 @@ class MeetingsExporter(QDialog):
         stat = None
         receivers = ""
 
-        if (projectfolder is None or projectfolder ==""):
-            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
-
-            if projectfolder == "" or projectfolder is None:
-                return ""
-        else:
-            # this specific folder path may need to be configurable
-            projectfolder = projectfolder + f"/{self.export_subfolder}/"
-
-        projectfolder += "/"
-
-        if not pnc.folder_exists(projectfolder):
-            msg = f"Folder {projectfolder} does not exist.  Cannot generate the report."
-            print(msg)
-            QMessageBox.critical(None, "Folder Does Not Exist", msg)
-            return
+        if projectfolder:
+            projectfolder = f"{projectfolder}/{self.export_subfolder}/"
+            if not pnc.folder_exists(projectfolder):
+                print(f"Project folder '{projectfolder}' does not exist; output will not be copied there.")
+                projectfolder = ""
 
         self.progbar = QProgressDialog(self)
         self.progbar.setWindowTitle("Exporting...")
@@ -413,6 +402,9 @@ class MeetingsExporter(QDialog):
             if self.noemail == False :
                 self.subject = projnum + " " + projdes + " - " + self.executedate.toString("MM/dd/yyyy")
 
+            QFile.remove(self.htmlreportname)
+            QFile.remove(self.pdfreportname)
+
             file = QFile(self.htmlreportname)
             if file.open(QFile.OpenModeFlag.WriteOnly):
                 stream = QTextStream(file)
@@ -422,13 +414,14 @@ class MeetingsExporter(QDialog):
             else:
                 print(f"Error attempting to write {self.htmlreportname}")
 
-            # establish final file names and locations
-            if self.internalreport:
-                self.project_htmlreportname = projectfolder + projnum + " Meeting Minutes Internal.html"
-                self.project_pdfreportname = projectfolder + projnum + " Meeting Minutes Internal.pdf"
-            else:
-                self.project_htmlreportname = projectfolder + projnum + " Meeting Minutes.html"
-                self.project_pdfreportname = projectfolder + projnum + " Meeting Minutes.pdf"
+            # establish final file names and locations (only when project folder is defined)
+            if projectfolder:
+                if self.internalreport:
+                    self.project_htmlreportname = projectfolder + projnum + " Meeting Minutes Internal.html"
+                    self.project_pdfreportname = projectfolder + projnum + " Meeting Minutes Internal.pdf"
+                else:
+                    self.project_htmlreportname = projectfolder + projnum + " Meeting Minutes.html"
+                    self.project_pdfreportname = projectfolder + projnum + " Meeting Minutes.pdf"
 
         print(f"ready to generate pdf from {self.htmlreportname}")
         # call pdf generator
@@ -450,26 +443,26 @@ class MeetingsExporter(QDialog):
         elif self.emailaspdf:
                 ct.send_an_email(self.xmlstr, self.subject, "", self.pdfreportname, "", True)
 
-        QFile.remove(self.project_pdfreportname)
-        if not QFile(self.pdfreportname).copy(self.project_pdfreportname):
-            QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.pdfreportname + " to " + self.project_pdfreportname)
+        if self.project_pdfreportname:
+            QFile.remove(self.project_pdfreportname)
+            if not QFile(self.pdfreportname).copy(self.project_pdfreportname):
+                QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.pdfreportname + " to " + self.project_pdfreportname)
 
         if self.keephtml == False:
-            QFile.remove(self.htmlreportname)
-        else:
+            pass
+        elif self.project_htmlreportname:
             QFile.remove(self.project_htmlreportname)
             if not QFile(self.htmlreportname).copy(self.project_htmlreportname):
                 QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.htmlreportname + " to " + self.project_htmlreportname)
 
         if self.ui.m_checkBoxDisplayNotes.isChecked():
+            display_path = self.project_pdfreportname if self.project_pdfreportname else self.pdfreportname
             try:
-                print(f"Attempting to open {self.project_pdfreportname}")
-                self.open_pdf(self.project_pdfreportname)
+                print(f"Attempting to open {display_path}")
+                self.open_pdf(display_path)
             except:
-                print(f"An error occured trying to open {self.project_pdfreportname}")
+                print(f"An error occurred trying to open {display_path}")
                 pass
-
-        QFile.remove(self.pdfreportname)
 
         if not self.progbar is None:
             self.progbar.setValue(100)

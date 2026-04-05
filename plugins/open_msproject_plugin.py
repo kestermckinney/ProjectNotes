@@ -39,7 +39,15 @@ pluginmenus = []
 #      item_tracker
 
 # this plugin is only supported on windows
-if (platform.system() == 'Windows'):
+if platform.system() == 'Windows':
+    import winreg
+
+    _msproject_available = False
+    try:
+        winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, "MSProject.Application")
+        _msproject_available = True
+    except (FileNotFoundError, OSError):
+        pass
 
     class SelectProject(QDialog):
         def __init__(self, parent: QMainWindow = None):
@@ -59,6 +67,12 @@ if (platform.system() == 'Windows'):
                 QDesktopServices.openUrl(QUrl("file:///" + openfile))
 
     def menu_open_ms_project(xmlstr, parameter):
+        if not _msproject_available:
+            QMessageBox.critical(None, "MS Project Not Available",
+                "Microsoft Project does not appear to be installed on this computer.\n\n"
+                "MS Project is required to use this feature.")
+            return ""
+
         openfile = None
         filelist = []
         xmlval = QDomDocument()
@@ -67,7 +81,7 @@ if (platform.system() == 'Windows'):
             QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return ""
 
-        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node        
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
 
         if xmlroot:
             projlocation = pnc.find_node(xmlroot, "table", "name", "project_locations")
@@ -95,14 +109,15 @@ if (platform.system() == 'Windows'):
         elif len(filelist) == 1:
                 QDesktopServices.openUrl(QUrl("file:///" + filelist[0]))
         else:
-            QMessageBox.critical(None, "No MS Project File Found", "No MS Project files were found.  Check files are listed in Files & Folders and they are accessible.")            
+            QMessageBox.critical(None, "No MS Project File Found", "No MS Project files were found.  Check files are listed in Files & Folders and they are accessible.")
 
         return ""
 
-    pluginmenus.append({"menutitle" : "Open MS Project", "function" : "menu_open_ms_project", "tablefilter" : "projects/project_locations", "submenu" : "", "dataexport" : "projects"})
-
     pnc = ProjectNotesCommon()
-    sp = SelectProject(pnc.get_main_window())
+
+    if _msproject_available:
+        pluginmenus.append({"menutitle" : "Open MS Project", "function" : "menu_open_ms_project", "tablefilter" : "projects/project_locations", "submenu" : "", "dataexport" : "projects"})
+        sp = SelectProject(pnc.get_main_window())
 
 # setup test data
 """

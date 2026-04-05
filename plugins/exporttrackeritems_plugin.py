@@ -302,7 +302,7 @@ class TrackerItemsExporter(QDialog):
     def export_tracker(self):
         xmldoc = QDomDocument()
         if not xmldoc.setContent(self.xmlstr):
-            QMessageBox.critical(None, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
+            QMessageBox.critical(self, "Cannot Parse XML", "Unable to parse XML sent to plugin.")
             return
 
         self.internalreport = self.ui.m_checkBoxInternalRptTracker.isChecked()
@@ -317,10 +317,10 @@ class TrackerItemsExporter(QDialog):
 
         xmlroot = xmldoc.elementsByTagName("projectnotes").at(0)
 
-        repitem = pnc.find_node_by2(xmlroot, "table", "name", "item_tracker", "filter_field_1", "id")
+        repitem = pnc.find_node(xmlroot, "table", "name", "item_tracker")
         if not repitem or repitem.isNull() or repitem.firstChild().isNull():
             QtWidgets.QApplication.restoreOverrideCursor()
-            QMessageBox.warning(None, "No Records", "No tracker or action items are available.", QMessageBox.StandardButton.Ok)
+            QMessageBox.warning(self, "No Records", "No tracker or action items are available.", QMessageBox.StandardButton.Ok)
             self.hide()
             return
 
@@ -331,23 +331,11 @@ class TrackerItemsExporter(QDialog):
         self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
         projectfolder = pnc.get_projectfolder(xmlroot)
 
-        if not projectfolder:
-            projectfolder = QFileDialog.getExistingDirectory(None, "Select an output folder", QDir.home().path())
-            if not projectfolder:
-                QtWidgets.QApplication.restoreOverrideCursor()
-                self.hide()
-                return
-        else:
+        if projectfolder:
             projectfolder = f"{projectfolder}/{self.export_subfolder}/"
-
-        projectfolder += "/"
-
-        if not pnc.folder_exists(projectfolder):
-            msg = f'Folder "{projectfolder}" does not exist.  Cannot generate the report.'
-            print(msg)
-            QtWidgets.QApplication.restoreOverrideCursor()
-            QMessageBox.critical(None, "Folder Does Not Exist", msg)
-            return
+            if not pnc.folder_exists(projectfolder):
+                print(f"Project folder '{projectfolder}' does not exist; output will not be copied there.")
+                projectfolder = ""
 
         self.progbar = QProgressDialog(self)
         self.progbar.setWindowTitle("Exporting Tracker Items...")
@@ -365,8 +353,8 @@ class TrackerItemsExporter(QDialog):
         suffix = " Internal" if self.internalreport else ""
         self.htmlreportname = f"{temporaryfolder}{projnum} Tracker Items{suffix}.html"
         self.pdfreportname = f"{temporaryfolder}{projnum} Tracker Items{suffix}.pdf"
-        self.project_pdfreportname = f"{projectfolder}{projnum} Tracker Items{suffix}.pdf"
-        self.project_htmlreportname = f"{projectfolder}{projnum} Tracker Items{suffix}.html"
+        self.project_pdfreportname = f"{projectfolder}{projnum} Tracker Items{suffix}.pdf" if projectfolder else ""
+        self.project_htmlreportname = f"{projectfolder}{projnum} Tracker Items{suffix}.html" if projectfolder else ""
 
         executedate = QDate.currentDate()
         self.subject = f"{projnum} {projdes} - {executedate.toString('MM/dd/yyyy')}"
@@ -424,6 +412,9 @@ class TrackerItemsExporter(QDialog):
             projnum, projdes, "".join(rows_parts), executedate.toString("MM/dd/yyyy"), self.internalreport
         )
 
+        QFile.remove(self.htmlreportname)
+        QFile.remove(self.pdfreportname)
+
         file = QFile(self.htmlreportname)
         if file.open(QFile.OpenModeFlag.WriteOnly):
             stream = QTextStream(file)
@@ -455,28 +446,27 @@ class TrackerItemsExporter(QDialog):
         elif self.emailaspdf:
             ct.send_an_email(self.xmlstr, self.subject, "", self.pdfreportname, "", True)
 
-        # Copy PDF to project folder
-        QFile.remove(self.project_pdfreportname)
-        if not QFile(self.pdfreportname).copy(self.project_pdfreportname):
-            QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.pdfreportname + " to " + self.project_pdfreportname)
+        # Copy PDF to project folder if defined
+        if self.project_pdfreportname:
+            QFile.remove(self.project_pdfreportname)
+            if not QFile(self.pdfreportname).copy(self.project_pdfreportname):
+                QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.pdfreportname + " to " + self.project_pdfreportname)
 
         if self.ui.m_checkBoxDisplayTracker.isChecked():
+            display_path = self.project_pdfreportname if self.project_pdfreportname else self.pdfreportname
             try:
-                print(f"Attempting to open {self.project_pdfreportname}")
-                self.open_pdf(self.project_pdfreportname)
+                print(f"Attempting to open {display_path}")
+                self.open_pdf(display_path)
             except:
-                print(f"An error occured trying to open {self.project_pdfreportname}")
+                print(f"An error occurred trying to open {display_path}")
                 pass
 
-        QFile.remove(self.pdfreportname)
-
         if not self.keephtml:
-            QFile.remove(self.htmlreportname)
-        else:
+            pass
+        elif self.project_htmlreportname:
             QFile.remove(self.project_htmlreportname)
             if not QFile(self.htmlreportname).copy(self.project_htmlreportname):
                 QMessageBox.critical(None, "Unable to copy generated export", "Could not copy " + self.htmlreportname + " to " + self.project_htmlreportname)
-            QFile.remove(self.htmlreportname)
 
         if not self.progbar is None:
             self.progbar.setValue(100)
