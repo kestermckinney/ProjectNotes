@@ -67,9 +67,11 @@ When you use the [Filter Tool](FilterTool.md) or [View Menu](ViewMenu.md) filter
 - **Client filtering** — You can filter data by the managing company to see only your organization's data
 - **Internal item visibility** — The "Show Internal Items" option works in conjunction with your project manager setting to determine what should be hidden when presenting to clients
 
-## Saving Preferences
+## Where Preferences Are Saved
 
-Any changes you make in the Preferences dialog are saved immediately when you click **OK**. These settings are stored in your operating system's user profile and persist across application restarts.
+The **Project Manager** and **Managing Company** settings are saved in the `application_settings` table inside the Project Notes database (`ProjectNotes.db`). This means they travel with the database — if you share a database or copy it to another machine, your preferences move with it. They are also included in cloud sync when synchronization is enabled.
+
+See [Plugin Settings — Where Settings Are Stored](<../StandardPlugins/PluginSettings.md>) for a complete breakdown of what is stored in the database versus your local OS profile across all features and plugins.
 
 ## Related Documentation
 

@@ -85,7 +85,7 @@ The People Page displays a list of all people in the currently open database. Th
 
 You can increase or decrease the font size throughout the entire application. This is particularly useful when sharing your screen during a meeting — a larger font makes the content easier for all participants to read.
 
-Font size changes affect all text in the application: menus, toolbars, forms, tables, and text editors. The last font size you set is saved when Project Notes is closed and restored the next time you open the application.
+Font size changes affect all text in the application: menus, toolbars, forms, tables, and text editors. The last font size you set is saved to your **local OS profile** and restored the next time you open the application.
 
 **To increase the font size:**
 
@@ -111,6 +111,12 @@ You can control which item statuses are shown using the **View** menu checkboxes
 **To show only active items:**
 
 1. From the **View** menu, uncheck **Resolved Tracker/Action Items** to hide resolved, deferred, and cancelled items.
+
+## View State Storage
+
+The checkboxes in the View menu (**Closed Projects**, **Internal Items**, **Resolved Tracker/Action Items**) are saved in the **Project Notes database**, not the local OS profile. This means they are shared with anyone who opens the same database and are included in cloud sync. Your font size and column layouts are saved locally to your OS profile and are not shared.
+
+See [Plugin Settings — Where Settings Are Stored](<../StandardPlugins/PluginSettings.md>) for a complete breakdown of what is stored locally versus in the database.
 
 ## Filtering Data
 

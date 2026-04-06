@@ -39,6 +39,7 @@ The standard plugins are organized into several categories:
 - Editor — Configure external script editors
 - My Shortcuts — Define custom menu shortcuts
 - IFS Cloud — Integrate with IFS Cloud ERP system
+- Find Project Email — Search Outlook for project emails by team member (Windows only)
 
 ### Important Note: IFS-Related Plugins
 
@@ -55,11 +56,50 @@ The IFS Cloud settings and documentation are available at [IFS Cloud Integration
 
 ## Managing and Storing Settings
 
-Each plugin typically has settings that you can configure to match your organization's needs. Plugins provided with Project Notes store settings in your operating system's user profile:
-- **Windows** — Registry (under `HKEY_CURRENT_USER\Anthropic\ProjectNotes`)
-- **macOS and Linux** — Configuration files in your home directory
+Settings in Project Notes are stored in two places depending on what they control.
 
-Settings persist across application restarts, so you only need to configure them once.
+### Settings Stored in the Local OS Profile
+
+Plugin settings, UI state, and connection credentials are stored in your **operating system's user profile** using Qt's QSettings mechanism. These settings are local to the machine and user account — they do not sync with other users or machines.
+
+**What is stored locally:**
+
+| Category | Examples |
+| :--- | :--- |
+| Plugin configuration | Export sub-folders, IFS credentials, Outlook/Office 365 credentials, File Finder search locations and classifications, My Shortcuts definitions, meeting/email templates |
+| Cloud sync connection | Sync enabled flag, server URL, email, password, encryption phrase, Supabase key |
+| Window positions and sizes | Position and size of every dialog and the main window |
+| Table column widths and order | Column layout for every list view |
+| Table sort column and direction | Last sort applied to each list view |
+| Application font size | The global font size set via the View menu |
+| Spell check dictionary | Selected dictionary and personal word list |
+
+**Storage location by platform:**
+
+| Platform | Location |
+| :--- | :--- |
+| **Windows** | Registry under `HKEY_CURRENT_USER\Software\ProjectNotes\ProjectNotes` |
+| **macOS** | `~/Library/Preferences/com.projectnotes.projectnotes.plist` |
+| **Linux** | `~/.config/ProjectNotes/ProjectNotes.ini` |
+
+When using the `--developer-profile` option, the profile name is appended to the organization key so each profile has its own isolated settings.
+
+### Settings Stored in the Database
+
+Application preferences and view state that should be consistent for anyone using the same database are stored in the `application_settings` table inside `ProjectNotes.db`. Because they live in the database, they are included in cloud sync and move with the database when it is copied or shared.
+
+**What is stored in the database:**
+
+| Setting | Key in database |
+| :--- | :--- |
+| Project Manager (Preferences) | `Preferences:ProjectManager` |
+| Managing Company (Preferences) | `Preferences:ManagingCompany` |
+| Show Resolved Tracker/Action Items (View menu) | `ViewFilter:ShowResolvedTrackerItems` |
+| Show Closed Projects (View menu) | `UserFilter:ShowClosedProjects` |
+| Show Internal Items (View menu) | `UserFilter:ShowInternalItems` |
+| Active project filter (Filter Tool) | `UserFilter:ProjectFilter` |
+
+These settings persist across application restarts, so you only need to configure them once per database.
 
 The **Base Plugins Settings** script (`base_plugin_settings.py`) contains the user interface code for managing settings of the standard plugins included with Project Notes. Qt Designer forms for these settings are located in the `plugins/forms/` folder.
 

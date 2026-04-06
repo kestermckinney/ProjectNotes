@@ -2,9 +2,9 @@
 
 ## Cloud Sync Settings
 
-Project Notes stores its database you user profile. The database is created automatically on first launch.
+Project Notes stores its database your user profile. The database is created automatically on first launch.
 
-If you want to sync your data with a cloud host, use **Cloud Sync Settings** to configure the connection.
+If you want to sync your data with a cloud host, use **Cloud Sync Settings** to configure the connection.  Syncing your databsae allows you to access your Project Notes data from multiple install locations.
 
 **To configure cloud sync:**
 
@@ -57,7 +57,7 @@ Project Notes provides a powerful search tool that searches the entire database.
 ## Importing and Exporting Information
 
 ### Exporting data
-Project Notes can export data to an XML file. You can select individual items or entire tables of information to export. To learn more about the XML format go to [Project Notes XML](../PluginsOverview/ProjectNotesXML.md).
+Project Notes can export data to an XML file. You can select individual items or entire tables of information to export. To learn more about the XML format go to [Project Notes XML](../PluginsOverview/ProjectNotesXML.md).  If you are building your own plugin, exporting data to review the XML is the best way to understand how to exchange data with Project Notes.
 
 **To export all projects, people, clients, or tracker items to XML:**
 

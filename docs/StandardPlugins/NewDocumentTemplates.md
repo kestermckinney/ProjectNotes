@@ -4,13 +4,30 @@ Project Notes includes several plugins that copy pre-configured Microsoft Office
 
 ## Available Template Plugins
 
-| Plugin | Template File | Output Location Sub-folder |
+| Plugin | Template File | Default Output Sub-folder |
 | :--- | :--- | :--- |
-| **New Change Order** | Change Order template | Configurable |
-| **New MS Project** | MS Project (.mpp) template | Configurable |
-| **PCR Register** | PowerPoint Change Request register template | Configurable |
-| **New PowerPoint** | PowerPoint presentation template | Configurable |
-| **New Risk Register** | Excel Risk Register template | Configurable |
+| **New Change Order** | `plugins/templates/PCR Template.docx` (Word) | `Project Management/PCR's` |
+| **New MS Project** | User-selected `.mpp` from `plugins/templates/` | `Project Management/Schedule` |
+| **PCR Register** | `plugins/templates/PCR Registry Template.xlsx` (Excel) | `Project Management/PCR's` |
+| **New PowerPoint** | User-selected `.pptx` from `plugins/templates/` | `Project Management/Meeting Minutes` |
+| **New Risk Register** | `plugins/templates/Risk Register Template.xlsx` (Excel) | `Project Management/Risk Management` |
+
+## Default Project Folder Structure
+
+All template and export plugins look for a **Files & Folders** entry on the project with the description **"Project Folder"** to determine the project's root folder on disk. From that root, each plugin writes output to a configurable sub-folder. The defaults assume the following structure:
+
+```
+[Project Folder]/
+└── Project Management/
+    ├── Meeting Minutes/      ← New PowerPoint
+    ├── Schedule/             ← New MS Project
+    ├── PCR's/                ← New Change Order, PCR Register
+    ├── Risk Management/      ← New Risk Register
+    ├── Issues List/          ← Export Tracker Items, Generate Tracker Report
+    └── Status Reports/       ← SSRS Report Capture (IFS)
+```
+
+If no **"Project Folder"** entry is configured for a project, the plugin will prompt you to choose a folder when it runs.
 
 ## How Template Plugins Work
 
@@ -30,7 +47,7 @@ Common placeholder tags used in templates:
 
 ## Configuring Template Settings
 
-Each template plugin has its own settings entry under **Plugins > Settings** where you can configure the sub-folder within the project folder where the generated file will be placed.
+Each template plugin has its own settings entry under **Plugins > Settings** where you can configure the sub-folder within the project folder where the generated file will be placed. The default sub-folder for each plugin is shown in the table above.
 
 **To configure a template plugin:**
 

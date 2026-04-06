@@ -27,3 +27,12 @@ To navigate to the People List Page, select **People** from the **View** menu. T
 1. Double-click the cell to activate the editor.
 2. Type in or select the new value.
 3. Click out of the cell or press **Enter**.
+
+**To add people by dragging contacts:**
+
+You can drag one or more contacts from your system contacts application (Contacts on macOS, Outlook on Windows) and drop them directly onto the People list. Project Notes will:
+
+1. Create any new client company records needed (using the contact's company name).
+2. Create or update each person's record using the contact's name, email, phone, and company. If a person with the same name already exists, they are not duplicated.
+
+This is useful for quickly importing a group of contacts without entering each one manually.

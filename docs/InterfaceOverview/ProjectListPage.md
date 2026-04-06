@@ -13,7 +13,7 @@ The Project List Page provides a list of projects. You can move quickly between 
 2. From the **Edit** menu, select **Delete Item**.
 3. Click **Yes** to delete the project. If related items are found, Yes will search the database for related project information. You can not delete a project if it contains related information.
 
-You can quickly make a copy of a project. A copy will copy all team members in the current project into a new project. Unique values such as project number and project name will have "Copy \[#############\]" prefixed to the value where number is a unique time stamp value.
+You can quickly make a copy of a project. A copy will copy all team members in the current project into a new project. Unique values such as project number and project name will have "Copy of" prefixed to the value.
 
 **To copy a project:**
 
@@ -26,7 +26,7 @@ You can quickly make a copy of a project. A copy will copy all team members in t
 
 ## Viewing Your Entire Project Portfolio
 
-The Project List Page also provides in depth earned value metrics based on the cost information entered in the [Project Information Page](<ProjectPage.md>). The portfolio information provides reminders for invoicing and status reports. The [Earned Value Terms](<EarnedValueTerms.md>) section explains the earned value calculations. Columns are explained below. Financial numbers will only show if **Internal Items** has been selected in the **View** menu.
+The Project List Page also provides in depth earned value metrics based on the cost information entered in the [Project Information Page](<ProjectPage.md>). The portfolio information provides reminders for invoicing and status reports. The [Earned Value Terms](<EarnedValueTerms.md>) section explains the earned value calculations. Columns are explained below. Financial numbers will only show if **Internal Items** has been selected in the **View** menu.  In most cases you will want to use a plugin the pulls your earned value numbers into Project Notes.  Integrating with Microsoft Project would be an example of this.
 
 | **Column** | **Description** |
 | :--- | :---- |

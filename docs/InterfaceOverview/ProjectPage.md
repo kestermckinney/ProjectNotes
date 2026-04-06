@@ -75,6 +75,16 @@ Team members are setup under the **Team** tab of the Project Page. Team members 
 3. Type the new text in the **Role** column, if the preferred role doesn't auto fill.
 4. Check the **Receive Status** if the team member will receive a status report.
 
+**To add team members by dragging contacts:**
+
+You can drag one or more contacts from your system contacts application (Contacts on macOS, Outlook on Windows) and drop them directly onto the **Team** list. Project Notes will:
+
+1. Create any new client company records needed (using the contact's company name).
+2. Create any new people records needed (using the contact's name, email, phone, and company).
+3. Add each person to the project team. People already on the team are skipped automatically.
+
+This is the fastest way to add multiple team members at once, especially when their contact details already exist in your contacts application.
+
 **To remove a team member:**
 
 1. Click a cell in the team member row to select it.
@@ -104,6 +114,10 @@ Links to project documents and web locations are setup under the **Files & Folde
 2. Select the **File** from the three dot button. Note: The three dot button will only allow you to select a file. For selecting folders or web address you will need to type them.
 3. Type the **Description**, if the preferred description doesn't auto fill.
 4. Type the **Type**, if the preferred description doesn't auto fill.
+
+**To add files or folders by dragging:**
+
+You can drag one or more files or folders from Finder (macOS) or File Explorer (Windows) and drop them directly onto the **Files & Folders** list. A new row is created automatically for each dropped item with its full path pre-filled in the **Location** column. You can then set the **Description** and **Type** for each new entry. Web links can also be dragged from a browser's address bar or a bookmark and dropped onto the list in the same way.
 
 **To remove a file or folder:**
 

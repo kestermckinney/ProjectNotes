@@ -18,6 +18,7 @@ The toolbar provides a quick way for you to access some of the more common funct
 | ![Image](<../img/icon-projects-list.png>) | Navigate to the [Projects List Page](<ProjectListPage.md>). |
 | ![Image](<../img/icon-people-list.png>) | Navigate to the [People List Page](<../InterfaceOverview/PeopleListPage.md>). |
 | ![Image](<../img/icon-client-list.png>) | Navigate to the [Client List Page](<../InterfaceOverview/ClientListPage.md>). |
+| ![Image](<../img/icon-master-item-list.png>) | Navigate to the [Master Item List Page](<MasterItemListPage.md>). |
 | ![Image](<../img/icon-filter-tool.png>) | View the [Filter Tool](<FilterTool.md>). |
 | ![Image](<../img/icon-search.png>) | Navigate to the [Search Page](<SearchPage.md>). |
 | ![Image](<../img/icon-preferences.png>) | View the [Preferences](<../InterfaceOverview/Preferences.md>) window. |

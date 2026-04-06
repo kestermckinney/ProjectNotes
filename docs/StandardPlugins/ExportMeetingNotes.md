@@ -4,7 +4,7 @@ The **Export Meeting Notes** plugin generates a formatted PDF and optionally an 
 
 ## Report File Names and Locations
 
-The plugin looks for a **File/Folder Location** with a description of ***"Project Folder"*** to determine where to save the generated reports. See [Project Information Page](<../InterfaceOverview/ProjectPage.md>) for information on **File/Folder Locations**. You can configure a sub-folder name where reports are saved by going to **Plugins > Settings > Export Notes**.
+The plugin looks for a **File/Folder Location** with a description of ***"Project Folder"*** to determine where to save the generated reports. See [Project Information Page](<../InterfaceOverview/ProjectPage.md>) for information on **File/Folder Locations**. You can configure a sub-folder name where reports are saved by going to **Plugins > Settings > Export Notes**. The default sub-folder is `Project Management/Meeting Minutes`.
 
 If a project folder is not configured, a folder selection dialog will appear when you run the export.
 

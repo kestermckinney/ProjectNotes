@@ -44,17 +44,30 @@ If a background thread plugin needs to display information or get user input, it
 
 ### Plugin File Locations
 
-When Project Notes starts, it automatically:
-1. Scans the `plugins` folder for `.py` files and executes them
-2. Scans the `threads` folder for `.py` files and executes them
-3. Looks for event handler functions in each plugin (if defined)
-4. Registers menu items defined in `pluginmenus` variables
+Project Notes loads plugins from two locations:
 
-Any changes made to `.py` files in these folders are automatically detected, and the plugin is reloaded. You do not need to restart Project Notes to test plugin changes.
+**Application plugins** — installed with the application and updated when the application is updated:
+- `<app resources>/plugins/` — main-thread plugins
+- `<app resources>/threads/` — background thread plugins
+
+**User plugins** — personal plugins stored in your home folder, unaffected by application updates:
+- `~/Project Notes/plugins/` — main-thread plugins
+- `~/Project Notes/threads/` — background thread plugins
+
+Both directories are created automatically on first launch if they do not already exist.
+
+When Project Notes starts, it automatically:
+1. Scans all four plugin directories for `.py` files and executes them
+2. Looks for event handler functions in each plugin (if defined)
+3. Registers menu items defined in `pluginmenus` variables
+
+The user plugin folders (`~/Project Notes/plugins/` and `~/Project Notes/threads/`) are the recommended place to store custom or organization-specific plugins. Plugins placed here are not overwritten when Project Notes is updated, making them ideal for plugins that you write yourself or plugins that contain sensitive configuration such as API keys or server addresses.
+
+Both the application plugins folder and the user plugins folder are added to Python's `sys.path`, so plugins in either location can import shared modules from `includes/`.
 
 ### Auto-Reload on File Changes
 
-Project Notes monitors the `plugins` and `threads` folders for changes. When you save a modified `.py` file:
+Project Notes monitors all plugin folders for changes. When you save a modified `.py` file in any watched folder:
 1. The old plugin is unloaded (the `event_shutdown` function is called if defined)
 2. The new version of the plugin is loaded
 3. The `event_startup` function is called if defined
