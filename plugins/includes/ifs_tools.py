@@ -3,17 +3,264 @@ from includes.common import ProjectNotesCommon
 from PyQt6 import QtCore
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QDir, QFileInfo, QElapsedTimer, QThread
-from urllib3.exceptions import InsecureRequestWarning 
+from urllib3.exceptions import InsecureRequestWarning
 
+import os
+import base64
+import time
 import requests
 import inspect
 import json
-from urllib3.exceptions import InsecureRequestWarning 
+import threading
+import webbrowser
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from urllib.parse import urlparse
+from requests_oauthlib import OAuth2Session
+from urllib3.exceptions import InsecureRequestWarning
+
+# Allow OAuth2 over plain HTTP for the localhost callback server.
+# requests_oauthlib enforces HTTPS by default; this override is safe
+# because only the local redirect uses HTTP — the token exchange itself
+# still goes to the Keycloak HTTPS endpoint.
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"  # Keycloak expands scopes server-side; allow the mismatch
 
 import projectnotes
 
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
- 
+
+
+class _SSOCallbackHandler(BaseHTTPRequestHandler):
+    """Local HTTP handler that captures the OAuth2 redirect from Keycloak."""
+
+    def do_GET(self):
+        parsed = urlparse(self.path)
+
+        if parsed.path != "/callback":
+            self.send_response(204)
+            self.end_headers()
+            return
+
+        self.server.auth_response_path = self.path
+
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        self.wfile.write(b"""
+            <html><body>
+            <h1>Login Successful!</h1>
+            <p>You can close this window and return to the app.</p>
+            </body></html>
+        """)
+
+        self.server.auth_code_event.set()
+
+    def log_message(self, format, *args):
+        return  # Suppress log spam
+
+
+class SSOAuthAPI:
+    """Handles Keycloak SSO authentication for IFS Cloud REST calls.
+
+    Mirrors the structure of TokenAPI in graphapi_tools.py but uses the
+    OAuth2 browser-redirect flow demonstrated in sso_example.py.
+    """
+
+    CLIENT_ID = "CCI_public"
+    REDIRECT_URI = "http://localhost:8080/callback"
+    SCOPE = ["openid"]  # CCI_public only exposes the openid scope
+
+    def __init__(self):
+        super().__init__()
+
+        self.pnc = ProjectNotesCommon()
+        self.settings_pluginname = "IFS Cloud"
+
+        self.ifs_url = self.pnc.get_plugin_setting("URL", self.settings_pluginname) or ""
+
+        self.auth_url = None
+        self.token_url = None
+
+        self.temporary_folder = self.pnc.get_temporary_folder()
+        self.token_cache_file = self.temporary_folder + "/ifs_sso_token_cache.json"
+
+        self.token_response = None
+        self.access_token = None
+        self.current_user = None
+
+    def _discover_endpoints(self):
+        """Discover the Keycloak auth and token URLs from the IFS base URL.
+
+        Makes an unauthenticated request to the IFS API. The 401 response
+        includes a WWW-Authenticate header whose realm value points at the
+        Keycloak realm. That realm URL is then used to fetch the OpenID
+        Connect discovery document, which contains the exact endpoint URLs.
+        """
+        probe_url = self.ifs_url.rstrip("/") + "/main/ifsapplications/projection/v1/"
+        try:
+            response = requests.get(probe_url, verify=False, timeout=(5, 10), allow_redirects=False)
+        except Exception as e:
+            print(f"Function '{inspect.currentframe().f_code.co_name}': Could not reach IFS URL: {e}")
+            return False
+
+        www_auth = response.headers.get("WWW-Authenticate", "")
+
+        # The header looks like: Bearer realm="https://host/auth/realms/cciprod"
+        import re
+        match = re.search(r'realm="([^"]+)"', www_auth)
+        if not match:
+            print(f"Function '{inspect.currentframe().f_code.co_name}': No realm found in WWW-Authenticate header: {www_auth}")
+            return False
+
+        realm_url = match.group(1)
+
+        # Fetch the OpenID Connect discovery document
+        discovery_url = realm_url.rstrip("/") + "/.well-known/openid-configuration"
+        try:
+            discovery = requests.get(discovery_url, verify=False, timeout=(5, 10))
+            discovery.raise_for_status()
+            config = discovery.json()
+        except Exception as e:
+            print(f"Function '{inspect.currentframe().f_code.co_name}': Could not fetch discovery document from {discovery_url}: {e}")
+            return False
+
+        self.auth_url = config.get("authorization_endpoint")
+        self.token_url = config.get("token_endpoint")
+
+        if not self.auth_url or not self.token_url:
+            print(f"Function '{inspect.currentframe().f_code.co_name}': Discovery document missing authorization_endpoint or token_endpoint.")
+            return False
+
+        return True
+
+    def _load_cached_token(self):
+        """Return the cached token dict if it exists and has not expired, otherwise None."""
+        file = QFile(self.token_cache_file)
+        if not file.exists() or file.size() == 0:
+            return None
+        if not file.open(QIODevice.OpenModeFlag.ReadOnly):
+            print(f"Function '{inspect.currentframe().f_code.co_name}': Could not open {self.token_cache_file}.")
+            return None
+        try:
+            token = json.loads(file.readAll().data().decode("utf-8"))
+        except Exception:
+            return None
+        finally:
+            file.close()
+        # expires_at is a Unix timestamp written by requests_oauthlib
+        if token.get("expires_at", 0) > time.time():
+            return token
+        return None
+
+    def _save_token(self, token):
+        """Persist the token dict to disk for reuse across process restarts."""
+        file = QFile(self.token_cache_file)
+        if file.open(QIODevice.OpenModeFlag.WriteOnly):
+            file.write(json.dumps(token).encode("utf-8"))
+            file.close()
+        else:
+            print(f"Function '{inspect.currentframe().f_code.co_name}': Failed to open {self.token_cache_file} for writing.")
+
+    def _lookup_current_user(self):
+        """Populate self.current_user by matching the JWT email against Reference_FndUser."""
+        jwt_payload = self.access_token.split(".")[1]
+        jwt_payload += "=" * (4 - len(jwt_payload) % 4)
+        jwt_claims = json.loads(base64.urlsafe_b64decode(jwt_payload))
+        current_email = jwt_claims.get("preferred_username", "")
+
+        fnduser_url = self.ifs_url.rstrip("/") + f"/main/ifsapplications/projection/v1/PrUserHandling.svc/Reference_FndUser?$filter=WebUser eq '{current_email}'&$select=Identity,WebUser"
+        try:
+            result = requests.get(fnduser_url, verify=False, timeout=(5, 30),
+                                  headers={"Authorization": f"Bearer {self.access_token}", "Content-Type": "application/json"})
+            if result.status_code == 200:
+                users = result.json().get("value", [])
+                self.current_user = users[0].get("Identity") if users else None
+            else:
+                print(f"Function '{inspect.currentframe().f_code.co_name}': Reference_FndUser lookup failed {result.status_code}: {result.text}")
+                self.current_user = None
+        except Exception as e:
+            print(f"Function '{inspect.currentframe().f_code.co_name}': Reference_FndUser lookup error: {e}")
+            self.current_user = None
+
+    def authenticate(self):
+        """Return a valid Bearer access token, triggering a browser login if needed."""
+
+        if not self.ifs_url:
+            return None
+
+        # Discover the Keycloak endpoints on first use
+        if not self.auth_url or not self.token_url:
+            if not self._discover_endpoints():
+                return None
+
+        # Return the in-process cached token if still valid
+        if self.access_token is not None:
+            cached = self._load_cached_token()
+            if cached:
+                return self.access_token
+
+        # Try the on-disk token cache before opening the browser
+        cached = self._load_cached_token()
+        if cached:
+            self.access_token = cached["access_token"]
+            self._lookup_current_user()
+            return self.access_token
+
+        # No valid cached token — do the full browser flow
+        callback_server = HTTPServer(("localhost", 8080), _SSOCallbackHandler)
+        callback_server.auth_code_event = threading.Event()
+        callback_server.auth_response_path = None
+
+        server_thread = threading.Thread(target=callback_server.serve_forever, daemon=True)
+        server_thread.start()
+
+        try:
+            oauth = OAuth2Session(
+                client_id=self.CLIENT_ID,
+                redirect_uri=self.REDIRECT_URI,
+                scope=self.SCOPE,
+            )
+
+            authorization_url, _ = oauth.authorization_url(
+                self.auth_url,
+                access_type="offline",
+                prompt="consent",
+            )
+
+            webbrowser.open(authorization_url)
+
+            received = callback_server.auth_code_event.wait(timeout=120)
+
+            if not received or callback_server.auth_response_path is None:
+                print(f"Function '{inspect.currentframe().f_code.co_name}': SSO login timed out or was cancelled.")
+                return None
+
+            full_url = f"http://localhost:8080{callback_server.auth_response_path}"
+
+            self.token_response = oauth.fetch_token(
+                self.token_url,
+                authorization_response=full_url,
+                client_secret=False,
+            )
+
+        except Exception as e:
+            print(f"Function '{inspect.currentframe().f_code.co_name}': Error during SSO authentication: {e}")
+            return None
+
+        finally:
+            callback_server.shutdown()
+
+        if "access_token" not in self.token_response:
+            print(f"Function '{inspect.currentframe().f_code.co_name}': No access_token in SSO response.")
+            return None
+
+        self.access_token = self.token_response["access_token"]
+        self._save_token(self.token_response)
+        self._lookup_current_user()
+
+        return self.access_token
+
+
 class IFSCommon:
     def __init__(self):
         self.settings_pluginname = "IFS Cloud"

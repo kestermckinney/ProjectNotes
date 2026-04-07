@@ -44,12 +44,6 @@ class IFSCloudSettings(QDialog):
         self.ui.buttonBox.accepted.connect(self.save_settings)
         self.ui.buttonBox.rejected.connect(self.reject_changes)
 
-        self.user_name = self.pnc.get_plugin_setting("UserName", self.settings_pluginname)
-        self.ui.lineEditUserName.setText(self.user_name or "")
-
-        self.password = self.pnc.get_plugin_setting("Password", self.settings_pluginname)
-        self.ui.lineEditPassword.setText(self.password or "")
-
         self.url = self.pnc.get_plugin_setting("URL", self.settings_pluginname)
         self.ui.lineEditURL.setText(self.url or "")
 
@@ -87,12 +81,6 @@ class IFSCloudSettings(QDialog):
         # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
 
     def save_settings(self):
-
-        self.user_name = self.ui.lineEditUserName.text()
-        self.pnc.set_plugin_setting("UserName", self.settings_pluginname, self.user_name)
-
-        self.password = self.ui.lineEditPassword.text()
-        self.pnc.set_plugin_setting("Password", self.settings_pluginname, self.password)
 
         self.url = self.ui.lineEditURL.text()
         self.pnc.set_plugin_setting("URL", self.settings_pluginname, self.url)
