@@ -134,8 +134,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Filter site-packages and generate NSIS include files."
     )
-    parser.add_argument("--source",          required=True,
-                        help="Python site-packages source directory")
+    parser.add_argument("--source",          required=True, action="append",
+                        help="Python site-packages source directory (may be repeated)")
     parser.add_argument("--dest",            required=True,
                         help="Destination inside the deploy staging directory")
     parser.add_argument("--nsis-install",    required=True,
@@ -144,22 +144,28 @@ def main() -> int:
                         help="Output path for remove_files.nsh")
     args = parser.parse_args()
 
-    src  = os.path.abspath(args.source)
-    dst  = os.path.abspath(args.dest)
+    sources = [os.path.abspath(s) for s in args.source]
+    dst     = os.path.abspath(args.dest)
 
-    if not os.path.isdir(src):
-        print(f"ERROR: source directory not found: {src}", file=sys.stderr)
-        return 1
-
-    print(f"Copying filtered packages")
-    print(f"  from : {src}")
-    print(f"  to   : {dst}")
+    for src in sources:
+        if not os.path.isdir(src):
+            print(f"ERROR: source directory not found: {src}", file=sys.stderr)
+            return 1
 
     if os.path.exists(dst):
         shutil.rmtree(dst)
 
-    files_copied, dirs_skipped = copy_filtered(src, dst)
-    print(f"  done : {files_copied} files copied, {dirs_skipped} directories skipped")
+    total_files, total_skipped = 0, 0
+    for src in sources:
+        print(f"Copying filtered packages")
+        print(f"  from : {src}")
+        print(f"  to   : {dst}")
+        fc, ds = copy_filtered(src, dst)
+        total_files   += fc
+        total_skipped += ds
+        print(f"  done : {fc} files copied, {ds} directories skipped")
+
+    files_copied, dirs_skipped = total_files, total_skipped
 
     print("Generating NSIS include files")
     generate_nsis(dst, args.nsis_install, args.nsis_uninstall)

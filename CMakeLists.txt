@@ -277,6 +277,9 @@ if(WIN32)
     set(PYTHON_PACKAGES_DIR
         "C:/Program Files/Python313/Lib/site-packages"
         CACHE PATH "Full Python site-packages directory to bundle")
+    set(PYTHON_USER_PACKAGES_DIR
+        "C:/Users/paulmckinney/AppData/Roaming/Python/Python313/site-packages"
+        CACHE PATH "User-level Python site-packages to bundle (supplements PYTHON_PACKAGES_DIR)")
     set(SQLITESYNCPRO_BUILD_DIR
         "${CMAKE_CURRENT_SOURCE_DIR}/../SqliteSyncPro/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
         CACHE PATH "SqliteSyncPro release build directory")
@@ -358,6 +361,7 @@ if(WIN32)
         COMMAND "${Python3_EXECUTABLE}"
             "${NSIS_DIR}/collect_packages.py"
             "--source" "${PYTHON_PACKAGES_DIR}"
+            "--source" "${PYTHON_USER_PACKAGES_DIR}"
             "--dest"   "${DEPLOY_DIR}/site-packages"
             "--nsis-install"   "${NSIS_DIR}/install_files.nsh"
             "--nsis-uninstall" "${NSIS_DIR}/remove_files.nsh"

@@ -395,9 +395,6 @@ class IFSCommon:
         if self.ifs_url is None or self.ifs_url == '':
             return False
 
-        if self.report_server is None or self.report_server == '':
-            return False
-
         return True
 
     def get_sync_tracker_items(self):

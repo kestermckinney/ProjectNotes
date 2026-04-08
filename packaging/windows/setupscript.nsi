@@ -7,7 +7,7 @@ RequestExecutionLevel user
 
 ; ── Product defines ───────────────────────────────────────────────────────────
 !define PRODUCT_NAME      "Project Notes"
-!define PRODUCT_VERSION   "5.0.0"
+!define PRODUCT_VERSION   "5.0.1"
 !define PRODUCT_PUBLISHER "Paul McKinney"
 !define PRODUCT_WEB_SITE  "https://github.com/kestermckinney/ProjectNotes"
 !define PRODUCT_DIR_REGKEY  "Software\Microsoft\Windows\CurrentVersion\App Paths\Project Notes.exe"
@@ -41,8 +41,18 @@ RequestExecutionLevel user
 
 ; ── MUI settings ──────────────────────────────────────────────────────────────
 !define MUI_ABORTWARNING
-!define MUI_ICON    "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
-!define MUI_UNICON  "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
+!define MUI_ICON   "installer_icon.ico"
+!define MUI_UNICON "installer_icon.ico"
+
+; Sidebar bitmap shown on Welcome and Finish pages (164x314 px)
+!define MUI_WELCOMEFINISHPAGE_BITMAP          "installer_sidebar.bmp"
+!define MUI_UNWELCOMEFINISHPAGE_BITMAP        "installer_sidebar.bmp"
+
+; Header bitmap shown on all other pages (150x57 px)
+!define MUI_HEADERIMAGE
+!define MUI_HEADERIMAGE_RIGHT
+!define MUI_HEADERIMAGE_BITMAP                "installer_header.bmp"
+!define MUI_HEADERIMAGE_UNBITMAP              "installer_header.bmp"
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MULTIUSER_PAGE_INSTALLMODE
@@ -58,7 +68,7 @@ RequestExecutionLevel user
 
 ; ── Installer metadata ────────────────────────────────────────────────────────
 Name    "${PRODUCT_NAME} ${PRODUCT_VERSION}"
-OutFile "ProjectNotes-${PRODUCT_VERSION}-Setup64.exe"
+OutFile "ProjectNotes-${PRODUCT_VERSION}-Windows-x64-Setup.exe"
 InstallDir          "$PROGRAMFILES64\Project Notes"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails   show
