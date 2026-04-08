@@ -123,7 +123,7 @@ if (platform.system() == 'Windows'):
         projtab = pnc.find_node(xmlroot, "table", "name", "projects")
         projnum = pnc.get_column_value(projtab.firstChild(), "project_number")
         projnam = pnc.get_column_value(projtab.firstChild(), "project_name")
-        clientnam = pnc.get_column_value(projtab.firstChild(), "id")
+        clientnam = pnc.get_column_value(projtab.firstChild(), "client_name")
 
         ok = False
 

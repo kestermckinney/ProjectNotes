@@ -91,31 +91,64 @@ class SSOAuthAPI:
     def _discover_endpoints(self):
         """Discover the Keycloak auth and token URLs from the IFS base URL.
 
-        Makes an unauthenticated request to the IFS API. The 401 response
-        includes a WWW-Authenticate header whose realm value points at the
-        Keycloak realm. That realm URL is then used to fetch the OpenID
-        Connect discovery document, which contains the exact endpoint URLs.
+        Makes an unauthenticated request to the IFS API. The server either
+        returns a 401 with a WWW-Authenticate header pointing at the Keycloak
+        realm, or redirects to the Keycloak login page (whose URL contains the
+        realm path). Either way the OpenID Connect discovery document is then
+        fetched to get the exact auth/token endpoint URLs.
         """
+        import re
+
         probe_url = self.ifs_url.rstrip("/") + "/main/ifsapplications/projection/v1/"
         try:
+            # allow_redirects=False so we can inspect the first response;
+            # some IFS deployments return a redirect rather than a bare 401.
             response = requests.get(probe_url, verify=False, timeout=(5, 10), allow_redirects=False)
         except Exception as e:
             print(f"Function '{inspect.currentframe().f_code.co_name}': Could not reach IFS URL: {e}")
             return False
 
-        www_auth = response.headers.get("WWW-Authenticate", "")
+        print(f"Function '{inspect.currentframe().f_code.co_name}': probe status={response.status_code}")
 
-        # The header looks like: Bearer realm="https://host/auth/realms/cciprod"
-        import re
-        match = re.search(r'realm="([^"]+)"', www_auth)
-        if not match:
-            print(f"Function '{inspect.currentframe().f_code.co_name}': No realm found in WWW-Authenticate header: {www_auth}")
+        realm_url = None
+
+        if response.status_code == 401:
+            # Standard case: 401 with WWW-Authenticate: Bearer realm="<url or name>"
+            www_auth = response.headers.get("WWW-Authenticate", "")
+            print(f"Function '{inspect.currentframe().f_code.co_name}': WWW-Authenticate={www_auth}")
+            match = re.search(r'realm="([^"]+)"', www_auth)
+            if match:
+                realm_value = match.group(1)
+                if realm_value.startswith("http"):
+                    # Full URL realm — use directly
+                    realm_url = realm_value
+                elif "@" in realm_value:
+                    # Format: "client_id@host/auth/realms/name/" — take the part after @
+                    realm_url = "https://" + realm_value.split("@", 1)[1]
+                else:
+                    # Short realm name — construct the standard Keycloak path
+                    realm_url = self.ifs_url.rstrip("/") + "/auth/realms/" + realm_value
+
+        elif response.status_code in (301, 302, 307, 308):
+            # Redirect case: Location header points at the Keycloak login page
+            # whose path contains /auth/realms/<name>/
+            location = response.headers.get("Location", "")
+            print(f"Function '{inspect.currentframe().f_code.co_name}': redirect Location={location}")
+            match = re.search(r'(/auth/realms/[^/?#]+)', location)
+            if match:
+                parsed = urlparse(location)
+                realm_url = f"{parsed.scheme}://{parsed.netloc}{match.group(1)}"
+
+        if not realm_url:
+            print(f"Function '{inspect.currentframe().f_code.co_name}': Could not determine Keycloak realm URL. "
+                  f"status={response.status_code}, "
+                  f"WWW-Authenticate={response.headers.get('WWW-Authenticate', 'none')}, "
+                  f"Location={response.headers.get('Location', 'none')}")
             return False
-
-        realm_url = match.group(1)
 
         # Fetch the OpenID Connect discovery document
         discovery_url = realm_url.rstrip("/") + "/.well-known/openid-configuration"
+        print(f"Function '{inspect.currentframe().f_code.co_name}': fetching discovery URL: {discovery_url}")
         try:
             discovery = requests.get(discovery_url, verify=False, timeout=(5, 10))
             discovery.raise_for_status()
@@ -131,6 +164,8 @@ class SSOAuthAPI:
             print(f"Function '{inspect.currentframe().f_code.co_name}': Discovery document missing authorization_endpoint or token_endpoint.")
             return False
 
+        print(f"Function '{inspect.currentframe().f_code.co_name}': auth_url={self.auth_url}")
+        print(f"Function '{inspect.currentframe().f_code.co_name}': token_url={self.token_url}")
         return True
 
     def _load_cached_token(self):
@@ -161,6 +196,60 @@ class SSOAuthAPI:
         else:
             print(f"Function '{inspect.currentframe().f_code.co_name}': Failed to open {self.token_cache_file} for writing.")
 
+    def _try_refresh_token(self):
+        """Use the stored refresh_token to obtain a new access token without a browser.
+
+        Returns the new access token string on success, or None if the refresh
+        token is absent, expired, or the Keycloak request fails.
+        """
+        # Read the raw cache file without checking access-token expiry.
+        file = QFile(self.token_cache_file)
+        if not file.exists() or file.size() == 0:
+            return None
+        if not file.open(QIODevice.OpenModeFlag.ReadOnly):
+            return None
+        try:
+            token = json.loads(file.readAll().data().decode("utf-8"))
+        except Exception:
+            return None
+        finally:
+            file.close()
+
+        refresh_token = token.get("refresh_token")
+        if not refresh_token:
+            return None
+
+        try:
+            response = requests.post(
+                self.token_url,
+                data={
+                    "grant_type": "refresh_token",
+                    "refresh_token": refresh_token,
+                    "client_id": self.CLIENT_ID,
+                },
+                verify=False,
+                timeout=(5, 30),
+            )
+            if response.status_code != 200:
+                print(f"Function '{inspect.currentframe().f_code.co_name}': Token refresh failed {response.status_code}: {response.text}")
+                return None
+
+            new_token = response.json()
+            # Compute expires_at the same way requests_oauthlib does so that
+            # _load_cached_token() can validate it on the next run.
+            if "expires_in" in new_token and "expires_at" not in new_token:
+                new_token["expires_at"] = time.time() + new_token["expires_in"] - 10
+
+            self.token_response = new_token
+            self.access_token = new_token["access_token"]
+            self._save_token(new_token)
+            self._lookup_current_user()
+            return self.access_token
+
+        except Exception as e:
+            print(f"Function '{inspect.currentframe().f_code.co_name}': Token refresh error: {e}")
+            return None
+
     def _lookup_current_user(self):
         """Populate self.current_user by matching the JWT email against Reference_FndUser."""
         jwt_payload = self.access_token.split(".")[1]
@@ -168,7 +257,7 @@ class SSOAuthAPI:
         jwt_claims = json.loads(base64.urlsafe_b64decode(jwt_payload))
         current_email = jwt_claims.get("preferred_username", "")
 
-        fnduser_url = self.ifs_url.rstrip("/") + f"/main/ifsapplications/projection/v1/PrUserHandling.svc/Reference_FndUser?$filter=WebUser eq '{current_email}'&$select=Identity,WebUser"
+        fnduser_url = self.ifs_url.rstrip("/") + f"/main/ifsapplications/projection/v1/PrUserHandling.svc/Reference_FndUser?$filter=WebUser eq '{current_email.upper()}'&$select=Identity,WebUser"
         try:
             result = requests.get(fnduser_url, verify=False, timeout=(5, 30),
                                   headers={"Authorization": f"Bearer {self.access_token}", "Content-Type": "application/json"})
@@ -206,7 +295,12 @@ class SSOAuthAPI:
             self._lookup_current_user()
             return self.access_token
 
-        # No valid cached token — do the full browser flow
+        # Access token expired — try the refresh token before opening the browser
+        token = self._try_refresh_token()
+        if token:
+            return token
+
+        # No valid cached token and refresh failed — do the full browser flow
         callback_server = HTTPServer(("localhost", 8080), _SSOCallbackHandler)
         callback_server.auth_code_event = threading.Event()
         callback_server.auth_response_path = None
@@ -267,15 +361,28 @@ class IFSCommon:
 
         self.pnc = ProjectNotesCommon()
 
-        self.ifs_username = self.pnc.get_plugin_setting("UserName", self.settings_pluginname)
         self.ifs_url = self.pnc.get_plugin_setting("URL", self.settings_pluginname)
-        self.ifs_password = self.pnc.get_plugin_setting("Password", self.settings_pluginname)
-        self.ifs_person_id = self.pnc.get_plugin_setting("PersonId", self.settings_pluginname)
+        self.ifs_person_id = None
         self.report_server = self.pnc.get_plugin_setting("ReportServer", self.settings_pluginname)
         self.domain_user = self.pnc.get_plugin_setting("DomainUser", self.settings_pluginname)
         self.domain_password = self.pnc.get_plugin_setting("DomainPassword", self.settings_pluginname)
         sync_val = self.pnc.get_plugin_setting("SyncTrackerItems", self.settings_pluginname)
         self.sync_tracker_items = sync_val is not None and sync_val.lower() == "true"
+
+        self.sso_auth = SSOAuthAPI()
+
+    def _get_token(self):
+        """Authenticate via SSO and return a valid Bearer token, or None on failure.
+
+        Also syncs self.ifs_person_id from the authenticated user identity.
+        """
+        token = self.sso_auth.authenticate()
+        if token:
+            if self.sso_auth.current_user:
+                self.ifs_person_id = self.sso_auth.current_user
+            else:
+                print(f"Function '_get_token': authenticated but current_user is None — Reference_FndUser lookup may have failed.")
+        return token
 
     def url_is_available(self):
         try:
@@ -285,25 +392,10 @@ class IFSCommon:
             return False
 
     def get_has_settings(self):
-        if self.ifs_username is None or self.ifs_username == '':
-            return False
-
         if self.ifs_url is None or self.ifs_url == '':
             return False
 
-        if self.ifs_password is None or self.ifs_password == '':
-            return False
-
-        if self.ifs_person_id is None or self.ifs_person_id == '':
-            return False
-
         if self.report_server is None or self.report_server == '':
-            return False
-
-        if self.domain_user is None or self.domain_user == '':
-            return False
-
-        if self.domain_password is None or self.domain_password == '':
             return False
 
         return True
@@ -312,9 +404,13 @@ class IFSCommon:
         return self.sync_tracker_items
 
     def get_earned_value_metrics(self, projectid):
+            token = self._get_token()
+            if not token:
+                return ""
+
             request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectMonitoringHandling.svc/Projects(ProjectId=%27' + projectid + '%27)/ProjectAnalysisArray?$apply=aggregate(Bcws%20with%20sum%20as%20Bcws_aggr_,Bcwp%20with%20sum%20as%20Bcwp_aggr_,Acwp%20with%20sum%20as%20Acwp_aggr_,Bac%20with%20sum%20as%20Bac_aggr_,Etc%20with%20sum%20as%20Etc_aggr_,Eac%20with%20sum%20as%20Eac_aggr_,Vac%20with%20sum%20as%20Vac_aggr_,Cv%20with%20sum%20as%20Cv_aggr_,Sv%20with%20sum%20as%20Sv_aggr_)'
 
-            result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), timeout=(5, 60), headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
+            result = requests.get(request_url, verify=False, timeout=(10, 120), headers={"Authorization": f"Bearer {token}", "Prefer": "odata.maxpagesize=500,odata.track-changes"})
 
             if (result.status_code != 200):
                 print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -325,9 +421,13 @@ class IFSCommon:
             return(json_result['value'][0])
 
     def get_cost_metrics(self, projectid):
+        token = self._get_token()
+        if not token:
+            return ""
+
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectMonitoringHandling.svc/Projects(ProjectId=%27' + projectid + '%27)/ProjectCostArray?$apply=aggregate(Estimated%20with%20sum%20as%20Estimated_aggr_,Planned%20with%20sum%20as%20Planned_aggr_,Baseline%20with%20sum%20as%20Baseline_aggr_,EarnedValue%20with%20sum%20as%20EarnedValue_aggr_,ScheduledWork%20with%20sum%20as%20ScheduledWork_aggr_,PlannedCommitted%20with%20sum%20as%20PlannedCommitted_aggr_,Committed%20with%20sum%20as%20Committed_aggr_,Used%20with%20sum%20as%20Used_aggr_,Actual%20with%20sum%20as%20Actual_aggr_)'
 
-        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), timeout=(5, 60), headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
+        result = requests.get(request_url, verify=False, timeout=(10, 120), headers={"Authorization": f"Bearer {token}", "Prefer": "odata.maxpagesize=500,odata.track-changes"})
 
         if (result.status_code != 200):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -338,9 +438,13 @@ class IFSCommon:
         return(json_result['value'][0])
 
     def get_open_activities(self, projectid):
+        token = self._get_token()
+        if not token:
+            return ""
+
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ActivityListHandling.svc/Activities?$filter=((((Objstate%20eq%20IfsApp.ActivityListHandling.ActivityState%27Planned%27%20or%20Objstate%20eq%20IfsApp.ActivityListHandling.ActivityState%27Released%27))%20and%20(ProjectId%20eq%20%27' + projectid + '%27)))&$orderby=ShortName,ActivityNo&$select=ProjectId,Description,EarlyStartDate,EarlyFinishDate,Manager,Company,CCusPoSeq,ActivitySeq,Objstate,Objgrants,ProgressCost,ProgressHours,ActivityNo,ProgressTemplate,SubProjectId,AccessOn,EarlyStart,ActualStart,EarlyFinish,ActualFinish,TotalWorkDays,ShortName,ProgressMethod,ExcludeResourceProgress,ManualProgressLevel,ManualProgressCost,ManualProgressHours,EstimatedProgress,ProgressTemplateStep,PlannedCostDriver,Note,LateStart,LateFinish,luname,keyref&$expand=ProjectRef($select=Name,Objgrants,luname,keyref),SubProjectRef($select=Description,Objgrants,luname,keyref)'
 
-        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), timeout=(5, 60), headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
+        result = requests.get(request_url, verify=False, timeout=(10, 120), headers={"Authorization": f"Bearer {token}", "Prefer": "odata.maxpagesize=500,odata.track-changes"})
 
         if (result.status_code != 200):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -351,9 +455,13 @@ class IFSCommon:
         return(json_result)
 
     def get_activity_tasks(self, activityseq):
+        token = self._get_token()
+        if not token:
+            return ""
+
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectScopeAndScheduleHandling.svc/Activities(ActivitySeq=' + str(activityseq) + ')/ActivityTasks?$orderby=TaskId&$select=TaskId,Name,Info,Completed,Objgrants,CompletedDate,luname,keyref'
 
-        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), timeout=(5, 60), headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
+        result = requests.get(request_url, verify=False, timeout=(10, 120), headers={"Authorization": f"Bearer {token}", "Prefer": "odata.maxpagesize=500,odata.track-changes"})
 
         if (result.status_code != 200):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -461,7 +569,11 @@ class IFSCommon:
 
         # print(f"Creating Activity in IFS, makeing url request: {request_url}")
 
-        result = requests.post(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), json=docdata, timeout=(5, 60), headers={"Content-Type": "application/json"})
+        token = self._get_token()
+        if not token:
+            return False
+
+        result = requests.post(request_url, verify=False, json=docdata, timeout=(10, 120), headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
         
         if (result.status_code != 201):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -505,7 +617,11 @@ class IFSCommon:
 
         #print(f"Updating Activity in IFS, makeing url request: {request_url}")
 
-        result = requests.patch(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), json=docdata, timeout=(5, 60), headers={"Content-Type": "application/json"})
+        token = self._get_token()
+        if not token:
+            return False
+
+        result = requests.patch(request_url, verify=False, json=docdata, timeout=(10, 120), headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
         
         if (result.status_code != 200):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -528,7 +644,11 @@ class IFSCommon:
 
         #print(f"Deleting Activity in IFS, makeing url request: {request_url}")
 
-        result = requests.delete(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), json=docdata, timeout=(5, 60), headers={"Content-Type": "application/json", "If-Match": "*"})
+        token = self._get_token()
+        if not token:
+            return False
+
+        result = requests.delete(request_url, verify=False, json=docdata, timeout=(10, 120), headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json", "If-Match": "*"})
         
         if (result.status_code != 204):
             #print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -546,6 +666,14 @@ class IFSCommon:
         return None
 
     def get_projects_xml(self, rgroups, clientsdict, rd, parameter):
+
+        token = self._get_token()
+        if not token:
+            return
+
+        if not self.ifs_person_id:
+            print(f"Function 'get_projects_xml': ifs_person_id is not set — user lookup failed after authentication.")
+            return
 
         saved_state = None
         statename = "ifs_projects_import"
@@ -581,7 +709,7 @@ class IFSCommon:
 
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectsHandling.svc/Projects?' + segment + '$filter=(Manager%20eq%20%27' + self.ifs_person_id + '%27)&$select=BudgetControlOn,ControlAsBudgeted,ControlOnTotalBudget,ProjUniquePurchase,ProjUniqueSale,State,ProjectId,Objstate,Objgrants,Name,Company,CustomerCategory,CustomerId,FinancialProjectExist,History,DefaultSite,ProjectPngExists,CheckForecast,Description,CompanyName,Manager,AccessOnOff,PlanStart,PlanFinish,ActualStart,ActualFinish,ApprovedDate,CloseDate,CancelDate,FrozenDate,EarnedValueMethod,BaselineRevisionNumber,Cf_Lastinvoiced,luname,keyref&$expand=AccountingProjectRef($select=ProjectGroup,Objgrants,luname,keyref),ManagerRef($select=Name,luname,keyref),CustomerIdRef($select=Name,Objgrants,luname,keyref)'
 
-        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), timeout=(5, 60), headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
+        result = requests.get(request_url, verify=False, timeout=(10, 120), headers={"Authorization": f"Bearer {token}", "Prefer": "odata.maxpagesize=500,odata.track-changes"})
 
         #print(f"Query for projects is : {request_url}")
 
@@ -640,9 +768,13 @@ class IFSCommon:
 
             
     def get_resource_groups(self, rgroups):
+        token = self._get_token()
+        if not token:
+            return ""
+
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ResourceGroupsHandling.svc/ResourceSet?$select=ResourceId,Description'
 
-        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), timeout=(5, 60), headers = {"Content-Type" : "application/json"})
+        result = requests.get(request_url, verify=False, timeout=(10, 120), headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
 
         if (result.status_code != 200):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -660,9 +792,13 @@ class IFSCommon:
 
 
     def get_team_members_xml(self, rgroups, clientsdict, projectid, rd):
-        request_url = self.ifs_url + "/main/ifsapplications/projection/v1/ProjectResourceAllocationsHandling.svc/ProjResourceAllocations?$filter=(ProjectId%20eq%20%27" + projectid + "%27)&$expand=EmployeeIdRef($select=EmployeeName)" 
-        
-        result = requests.get(request_url, verify=False, auth=(self.ifs_username, self.ifs_password), timeout=(5, 60), headers = {"Prefer": "odata.maxpagesize=500","Prefer": "odata.track-changes"})
+        token = self._get_token()
+        if not token:
+            return ""
+
+        request_url = self.ifs_url + "/main/ifsapplications/projection/v1/ProjectResourceAllocationsHandling.svc/ProjResourceAllocations?$filter=(ProjectId%20eq%20%27" + projectid + "%27)&$expand=EmployeeIdRef($select=EmployeeName)"
+
+        result = requests.get(request_url, verify=False, timeout=(10, 120), headers={"Authorization": f"Bearer {token}", "Prefer": "odata.maxpagesize=500,odata.track-changes"})
 
         if (result.status_code != 200):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
@@ -836,11 +972,11 @@ class IFSCommon:
                     desc = self.pnc.get_column_value(itemrow, "description")
                     status = self.pnc.get_column_value(itemrow, "status")
 
-                    if (isinternal != "1" and itemtype == "Tracker" and (itemstatus == "Assigned" or itemstatus == "New")):
-                        if not self.update_activity_task(issuesseq, project_number, ifsitemid, self.pnc.get_column_value(itemrow, "item_name"), desc, assignedto, dateupdated, duedate, dateresolved, identifiedby, priority, status):
-                            self.create_activity_task(issuesseq, project_number, ifsitemid, self.pnc.get_column_value(itemrow, "item_name"), desc, assignedto, dateupdated, duedate, dateresolved, identifiedby, priority, status)
-                    else:
-                        self.delete_activity_task(issuesseq, project_number, ifsitemid)    
+                    #if (isinternal != "1" and itemtype == "Tracker" and (itemstatus == "Assigned" or itemstatus == "New")):
+                    if not self.update_activity_task(issuesseq, project_number, ifsitemid, self.pnc.get_column_value(itemrow, "item_name"), desc, assignedto, dateupdated, duedate, dateresolved, identifiedby, priority, status):
+                        self.create_activity_task(issuesseq, project_number, ifsitemid, self.pnc.get_column_value(itemrow, "item_name"), desc, assignedto, dateupdated, duedate, dateresolved, identifiedby, priority, status)
+                    #else:
+                    #    self.delete_activity_task(issuesseq, project_number, ifsitemid)    
                     
                     itemcount = itemcount + 1
 

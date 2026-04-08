@@ -385,11 +385,13 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionProjects->setEnabled(dbopen);
     ui->actionClosed_Projects->setEnabled(dbopen);
 
+    bool pageAllowsNewDelete = !navigateCurrentPage() || navigateCurrentPage()->allowNewDelete();
+
     ui->actionOpen_Item->setEnabled(hascurview);
-    ui->actionNew_Item->setEnabled(hascurview);
+    ui->actionNew_Item->setEnabled(hascurview && pageAllowsNewDelete);
 
     // Don't allow copying team members or meeting attendees
-    bool canCopy = hascurview;
+    bool canCopy = hascurview && pageAllowsNewDelete;
     if (curview && canCopy)
     {
         QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(curview->model());
@@ -402,7 +404,7 @@ void MainWindow::setButtonAndMenuStates()
     }
     ui->actionCopy_Item->setEnabled(canCopy);
 
-    ui->actionDelete_Item->setEnabled(hascurview);
+    ui->actionDelete_Item->setEnabled(hascurview && pageAllowsNewDelete);
     ui->actionEdit_Items->setEnabled(hascurview);
 
     ui->actionBack->setEnabled(!navigateAtStart());
@@ -552,11 +554,11 @@ void MainWindow::setButtonAndMenuStates()
 
             if (curview && curview->selectionModel()->hasSelection())
             {
-                ui->actionDelete_Item->setEnabled(hascurview);
+                ui->actionDelete_Item->setEnabled(hascurview && pageAllowsNewDelete);
                 ui->actionOpen_Item->setEnabled(hascurview);
 
                 // Don't allow copying team members or meeting attendees
-                bool canCopy = hascurview;
+                bool canCopy = hascurview && pageAllowsNewDelete;
                 QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(curview->model());
                 if (sortmodel)
                 {
@@ -573,7 +575,7 @@ void MainWindow::setButtonAndMenuStates()
                 ui->actionCopy_Item->setEnabled(false);
             }
 
-            ui->actionNew_Item->setEnabled(hascurview);
+            ui->actionNew_Item->setEnabled(hascurview && pageAllowsNewDelete);
         }
 
         // format menu items

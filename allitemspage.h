@@ -14,6 +14,7 @@ public:
     void setupModels(Ui::MainWindow *ui) override;
     void setPageTitle() override;
     void setButtonAndMenuStates() override;
+    bool allowNewDelete() const override { return false; }
     void buildPluginMenu(PluginManager* pm, QMenu* menu) override {};
 
 private:

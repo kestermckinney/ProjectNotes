@@ -10,6 +10,7 @@
 #include <QApplication>
 #include <QEvent>
 #include <QHeaderView>
+#include <QKeyEvent>
 #include <QMenu>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -387,6 +388,57 @@ void TableView::contextMenuEvent(QContextMenuEvent *e)
 
     menu->exec(e->globalPos());
     delete menu;
+}
+
+void TableView::keyPressEvent(QKeyEvent *event)
+{
+    if ((event->key() == Qt::Key_Tab || event->key() == Qt::Key_Backtab) && model())
+    {
+        QModelIndex current = currentIndex();
+        if (current.isValid())
+        {
+            bool forward = (event->key() == Qt::Key_Tab);
+            QHeaderView* hdr = horizontalHeader();
+            int visualCount = hdr->count();
+            int rowCount = model()->rowCount();
+            int searchVisual = hdr->visualIndex(current.column());
+            int searchRow = current.row();
+
+            // Walk cells in visual column order, wrapping rows, until we find
+            // one that is visible and has Qt::ItemIsEditable set.
+            for (int steps = 0; steps < visualCount * rowCount; ++steps)
+            {
+                if (forward)
+                {
+                    if (++searchVisual >= visualCount) { searchVisual = 0; ++searchRow; }
+                    if (searchRow >= rowCount) searchRow = 0;
+                }
+                else
+                {
+                    if (--searchVisual < 0) { searchVisual = visualCount - 1; --searchRow; }
+                    if (searchRow < 0) searchRow = rowCount - 1;
+                }
+
+                int logicalCol = hdr->logicalIndex(searchVisual);
+                if (isColumnHidden(logicalCol))
+                    continue;
+
+                QModelIndex candidate = model()->index(searchRow, logicalCol);
+                if (model()->flags(candidate) & Qt::ItemIsEditable)
+                {
+                    setCurrentIndex(candidate);
+                    scrollTo(candidate);
+                    edit(candidate);
+                    event->accept();
+                    return;
+                }
+            }
+        }
+        event->accept();
+        return;
+    }
+
+    QTableView::keyPressEvent(event);
 }
 
 void TableView::slotNewRecord()

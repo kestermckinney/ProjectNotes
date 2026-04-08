@@ -93,11 +93,24 @@ void DateEditDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionV
 
 void DateEditDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
+    QStyleOptionViewItem myOption = option;
+
+    QVariant bgcolor = index.model()->data(index, Qt::BackgroundRole);
+    if (!bgcolor.isValid() && m_readOnly)
+        bgcolor = QApplication::palette().color(QPalette::Button);
+
     painter->save();
 
-    painter->fillRect(option.rect, option.palette.base().color());
+    QColor fillColor = bgcolor.isValid() ? bgcolor.value<QColor>() : option.palette.base().color();
+    painter->fillRect(option.rect, fillColor);
 
-    QStyledItemDelegate::paint(painter, option, index);
+    if (bgcolor.isValid())
+    {
+        myOption.palette.setColor(QPalette::Base, bgcolor.value<QColor>());
+        myOption.palette.setColor(QPalette::AlternateBase, bgcolor.value<QColor>());
+    }
+
+    QStyledItemDelegate::paint(painter, myOption, index);
 
     painter->restore();
 }

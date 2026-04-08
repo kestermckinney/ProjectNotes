@@ -51,6 +51,7 @@ protected:
     void paintEvent(QPaintEvent *event) override;
     void initViewItemOption(QStyleOptionViewItem *option) const override;
     bool viewportEvent(QEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
 
 signals:
     void signalOpenRecordWindow(QVariant record_id);

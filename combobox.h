@@ -15,6 +15,11 @@ public:
 
 protected:
     /*! \reimp */ void wheelEvent(QWheelEvent *event) override;
+    /*! \reimp */ void childEvent(QChildEvent *event) override;
+    /*! \reimp */ void showEvent(QShowEvent *event) override;
+
+private:
+    void updateBackground();
 };
 
 #endif // COMBOBOX_H

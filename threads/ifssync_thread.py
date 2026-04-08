@@ -1,8 +1,6 @@
 # Copyright (C) 2025, 2026 Paul McKinney
 import os
 import sys
-import inspect
-import threading
 import projectnotes
 
 # make sure includes folder can be found
@@ -42,25 +40,30 @@ if ifs.get_has_settings():
 #
 
 def event_timer(parameter):
+    if not ifs.get_has_settings() or not ifs.url_is_available():
+        return ""
+
     if QThread.currentThread().isInterruptionRequested():
         return ""
 
-    if ifs.get_has_settings() and ifs.url_is_available():
-        ifs.import_ifs_projects("")
+    ifs.import_ifs_projects("")
 
-        if ifs.get_sync_tracker_items():
-            if not QThread.currentThread().isInterruptionRequested():
-                ifs.export_ifs_tracker_items("")
+    if ifs.get_sync_tracker_items():
+        if not QThread.currentThread().isInterruptionRequested():
+            ifs.export_ifs_tracker_items("")
 
     return ""
 
 def menuimport_ifs_projects(parameter):
-    if ifs.get_has_settings() and ifs.url_is_available():
-        print("Importing IFS projects...")
-        ifs.import_ifs_projects("all") 
+    if not ifs.get_has_settings() or not ifs.url_is_available():
+        print("IFS sync failed.  Make sure IFS Integrations are configured correctly.")
+        return ""
 
-        if ifs.get_sync_tracker_items():
-            ifs.export_ifs_tracker_items("all")
+    print("Importing IFS projects...")
+    ifs.import_ifs_projects("all")
+
+    if ifs.get_sync_tracker_items():
+        ifs.export_ifs_tracker_items("all")
 
     return ""
 

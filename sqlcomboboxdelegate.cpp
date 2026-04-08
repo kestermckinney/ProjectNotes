@@ -40,6 +40,7 @@ QWidget* SqlComboBoxDelegate::createEditor(QWidget *parent, const QStyleOptionVi
     editor->setEditable(true);
     editor->setModel(m_model);
     editor->setModelColumn(m_displayColumn); // column to display
+    editor->setAutoFillBackground(false);
 
     QCompleter* completer = new QCompleter(m_model, editor);
     completer->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
@@ -125,6 +126,18 @@ void SqlComboBoxDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
     QVariant lookupvalue = index.model()->data(index);
 
     myOption.text = dynamic_cast<SqlQueryModel*>(m_model->sourceModel())->findValue(lookupvalue, m_dataColumn, m_displayColumn).toString();
+    myOption.backgroundBrush = Qt::NoBrush;
+
+    QVariant bgcolor = index.model()->data(index, Qt::BackgroundRole);
+
+    // if the model view has been set not editable show a differnet background
+    if (m_readOnly || !index.flags().testFlags(Qt::ItemIsEditable))
+         bgcolor = QApplication::palette().color(QPalette::Button);
+
+
+    if (bgcolor.canConvert<QBrush>()) {
+        painter->fillRect(myOption.rect, qvariant_cast<QBrush>(bgcolor));
+    }
 
     QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, painter);
 }

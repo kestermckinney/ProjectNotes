@@ -37,6 +37,7 @@ public:
     void setCurrentModel( SortFilterProxyModel* currentModel ) { m_currentModel = currentModel; }
     void setCurrentView( TableView* currentView ) { m_currentView = currentView; }
     virtual void setButtonAndMenuStates();
+    virtual bool allowNewDelete() const { return true; }
     const QString getTableName() { return m_tableName; }
     void setTableName(const QString& tableName) { m_tableName = tableName; }
     virtual void buildPluginMenu(PluginManager* pm, QMenu* menu);

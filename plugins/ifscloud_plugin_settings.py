@@ -47,9 +47,6 @@ class IFSCloudSettings(QDialog):
         self.url = self.pnc.get_plugin_setting("URL", self.settings_pluginname)
         self.ui.lineEditURL.setText(self.url or "")
 
-        self.person_id = self.pnc.get_plugin_setting("PersonId", self.settings_pluginname)
-        self.ui.lineEditPersonId.setText(self.person_id or "")
-
         self.domain_user = self.pnc.get_plugin_setting("DomainUser", self.settings_pluginname)
         self.ui.lineEditDomainUser.setText(self.domain_user or "")
 
@@ -84,9 +81,6 @@ class IFSCloudSettings(QDialog):
 
         self.url = self.ui.lineEditURL.text()
         self.pnc.set_plugin_setting("URL", self.settings_pluginname, self.url)
-
-        self.person_id = self.ui.lineEditPersonId.text()
-        self.pnc.set_plugin_setting("PersonId", self.settings_pluginname, self.person_id)
 
         self.domain_user = self.ui.lineEditDomainUser.text()
         self.pnc.set_plugin_setting("DomainUser", self.settings_pluginname, self.domain_user)

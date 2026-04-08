@@ -56,12 +56,19 @@ void AllItemsView::setModel(QAbstractItemModel *model)
         // Hide the meeting column — not meaningful across all projects
         setColumnHidden(13, true);
 
+        // Hide project_status and the duplicate read-only project_number columns
+        setColumnHidden(17, true);
+        setColumnHidden(20, true);
+
+        // Show project_name (hidden by base class TrackerItemsView)
+        setColumnHidden(19, false);
+
         // Move the project column (logical 14) to the first visual position,
-        // then project_status (logical 17) immediately after it
+        // then project_name (logical 19) immediately after it
         int fromVisual = horizontalHeader()->visualIndex(14);
         horizontalHeader()->moveSection(fromVisual, 0);
 
-        fromVisual = horizontalHeader()->visualIndex(17);
+        fromVisual = horizontalHeader()->visualIndex(19);
         horizontalHeader()->moveSection(fromVisual, 1);
     }
 }
