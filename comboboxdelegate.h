@@ -15,14 +15,18 @@ public:
 public:
     ComboBoxDelegate(QObject *parent, QStringListModel *model);
 
+    void setReadOnly(bool readOnly) { m_readOnly = readOnly; }
+
     QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
     void setEditorData(QWidget *editor, const QModelIndex &index) const override;
     void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override;
     void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
     bool eventFilter(QObject *object, QEvent *event) override;
 
 private:
     QStringListModel* m_model;
+    bool m_readOnly = false;
 };
 
 #endif // COMBOBOXDELEGATE_H

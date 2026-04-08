@@ -103,7 +103,7 @@ class SSOAuthAPI:
         try:
             # allow_redirects=False so we can inspect the first response;
             # some IFS deployments return a redirect rather than a bare 401.
-            response = requests.get(probe_url, verify=False, timeout=(5, 10), allow_redirects=False)
+            response = requests.get(probe_url, verify=False, timeout=(10, 30), allow_redirects=False)
         except Exception as e:
             print(f"Function '{inspect.currentframe().f_code.co_name}': Could not reach IFS URL: {e}")
             return False
@@ -150,7 +150,7 @@ class SSOAuthAPI:
         discovery_url = realm_url.rstrip("/") + "/.well-known/openid-configuration"
         print(f"Function '{inspect.currentframe().f_code.co_name}': fetching discovery URL: {discovery_url}")
         try:
-            discovery = requests.get(discovery_url, verify=False, timeout=(5, 10))
+            discovery = requests.get(discovery_url, verify=False, timeout=(10, 30))
             discovery.raise_for_status()
             config = discovery.json()
         except Exception as e:
@@ -228,7 +228,7 @@ class SSOAuthAPI:
                     "client_id": self.CLIENT_ID,
                 },
                 verify=False,
-                timeout=(5, 30),
+                timeout=(10, 60),
             )
             if response.status_code != 200:
                 print(f"Function '{inspect.currentframe().f_code.co_name}': Token refresh failed {response.status_code}: {response.text}")
@@ -259,7 +259,7 @@ class SSOAuthAPI:
 
         fnduser_url = self.ifs_url.rstrip("/") + f"/main/ifsapplications/projection/v1/PrUserHandling.svc/Reference_FndUser?$filter=WebUser eq '{current_email.upper()}'&$select=Identity,WebUser"
         try:
-            result = requests.get(fnduser_url, verify=False, timeout=(5, 30),
+            result = requests.get(fnduser_url, verify=False, timeout=(10, 60),
                                   headers={"Authorization": f"Bearer {self.access_token}", "Content-Type": "application/json"})
             if result.status_code == 200:
                 users = result.json().get("value", [])
@@ -386,7 +386,7 @@ class IFSCommon:
 
     def url_is_available(self):
         try:
-            response = requests.head(self.ifs_url, timeout=5)
+            response = requests.head(self.ifs_url, timeout=10)
             return response.status_code < 400
         except (requests.ConnectionError, requests.Timeout):
             return False

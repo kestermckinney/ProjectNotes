@@ -18,12 +18,19 @@ ComboBoxDelegate::ComboBoxDelegate(QObject *parent, QStringListModel *model)
 }
 
 
-QWidget *ComboBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &/* option */, const QModelIndex &/* index */) const
+QWidget *ComboBoxDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
+    Q_UNUSED(option);
+    Q_UNUSED(index);
+
+    if (m_readOnly)
+        return nullptr;
+
     ComboBox* editor = new ComboBox(parent);
     editor->setEditable(false);
     editor->setModel(m_model);
     editor->setModelColumn(0); // column to display
+    editor->setAutoFillBackground(true);
 
     editor->installEventFilter(const_cast<ComboBoxDelegate*>(this));
 
@@ -72,4 +79,32 @@ void ComboBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, 
 void ComboBoxDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &/* index */) const
 {
     editor->setGeometry(option.rect);
+}
+
+
+void ComboBoxDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    QStyleOptionViewItem myOption = option;
+    QVariant lookupvalue = index.model()->data(index);
+
+    myOption.text = lookupvalue.toString();
+    myOption.backgroundBrush = Qt::NoBrush;
+
+    QVariant bgcolor = index.model()->data(index, Qt::BackgroundRole);
+
+    // if the model view has been set not editable show a differnet background
+    if (m_readOnly || !index.flags().testFlags(Qt::ItemIsEditable))
+    {
+        QColor base = QApplication::palette().color(QPalette::Base);
+        bgcolor = base.lightness() > 128
+            ? base.darker(115)
+            : QApplication::palette().color(QPalette::Button);
+    }
+
+
+    if (bgcolor.canConvert<QBrush>()) {
+        painter->fillRect(myOption.rect, qvariant_cast<QBrush>(bgcolor));
+    }
+
+    QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &myOption, painter);
 }

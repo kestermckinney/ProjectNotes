@@ -132,7 +132,12 @@ void SqlComboBoxDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
 
     // if the model view has been set not editable show a differnet background
     if (m_readOnly || !index.flags().testFlags(Qt::ItemIsEditable))
-         bgcolor = QApplication::palette().color(QPalette::Button);
+    {
+        QColor base = QApplication::palette().color(QPalette::Base);
+        bgcolor = base.lightness() > 128
+            ? base.darker(115)
+            : QApplication::palette().color(QPalette::Button);
+    }
 
 
     if (bgcolor.canConvert<QBrush>()) {

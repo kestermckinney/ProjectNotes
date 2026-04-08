@@ -97,7 +97,12 @@ void DateEditDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
 
     QVariant bgcolor = index.model()->data(index, Qt::BackgroundRole);
     if (!bgcolor.isValid() && m_readOnly)
-        bgcolor = QApplication::palette().color(QPalette::Button);
+    {
+        QColor base = QApplication::palette().color(QPalette::Base);
+        bgcolor = base.lightness() > 128
+            ? base.darker(115)
+            : QApplication::palette().color(QPalette::Button);
+    }
 
     painter->save();
 

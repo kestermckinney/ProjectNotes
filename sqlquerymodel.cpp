@@ -422,7 +422,10 @@ QVariant SqlQueryModel::data(const QModelIndex &index, int role) const
     {
         if (m_columnIsEditable[index.column()] == DBReadOnly)
         {
-            retval = QVariant(QApplication::palette().color(QPalette::Button));
+            QColor base = QApplication::palette().color(QPalette::Base);
+            retval = QVariant(base.lightness() > 128
+                ? base.darker(115)
+                : QApplication::palette().color(QPalette::Button));
         }
     }
 
