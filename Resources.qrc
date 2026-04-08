@@ -31,5 +31,25 @@
         <file>icons/selectall.png</file>
         <file>icons/folder.png</file>
         <file>icons/masteritems.png</file>
+        <file>icons/exit.png</file>
+        <file>icons/find.png</file>
+        <file>icons/spellcheck.png</file>
+        <file>icons/logs.png</file>
+        <file>icons/internal.png</file>
+        <file>icons/all-items.png</file>
+        <file>icons/statusbar.png</file>
+        <file>icons/closed-projects.png</file>
+        <file>icons/help.png</file>
+        <file>icons/whats-new.png</file>
+        <file>icons/about.png</file>
+        <file>icons/edit.png</file>
+        <file>icons/font-increase.png</file>
+        <file>icons/font-decrease.png</file>
+        <file>icons/cloud-sync.png</file>
+        <file>icons/export.png</file>
+        <file>icons/import.png</file>
+        <file>icons/sync.png</file>
+        <file>icons/assigned-items.png</file>
+        <file>icons/plugins.png</file>
     </qresource>
 </RCC>

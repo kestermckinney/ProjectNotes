@@ -1744,6 +1744,10 @@
    </attribute>
   </widget>
   <action name="actionOpen_Database">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/cloud-sync.png</normaloff>:/icons/cloud-sync.png</iconset>
+   </property>
    <property name="text">
     <string>&amp;Cloud Sync Settings...</string>
    </property>
@@ -1773,6 +1777,10 @@
    </property>
   </action>
   <action name="actionXML_Export">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/export.png</normaloff>:/icons/export.png</iconset>
+   </property>
    <property name="text">
     <string>XML &amp;Export...</string>
    </property>
@@ -1787,6 +1795,10 @@
    </property>
   </action>
   <action name="actionXML_Import">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/import.png</normaloff>:/icons/import.png</iconset>
+   </property>
    <property name="text">
     <string>X&amp;ML Import...</string>
    </property>
@@ -1819,6 +1831,10 @@
    </property>
   </action>
   <action name="actionSync_All">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/sync.png</normaloff>:/icons/sync.png</iconset>
+   </property>
    <property name="text">
     <string>Sync All...</string>
    </property>
@@ -1830,6 +1846,10 @@
    </property>
   </action>
   <action name="actionExit">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/exit.png</normaloff>:/icons/exit.png</iconset>
+   </property>
    <property name="text">
     <string>E&amp;xit</string>
    </property>
@@ -1844,6 +1864,10 @@
    </property>
   </action>
   <action name="actionFind">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/find.png</normaloff>:/icons/find.png</iconset>
+   </property>
    <property name="text">
     <string>Find...</string>
    </property>
@@ -1858,6 +1882,10 @@
    </property>
   </action>
   <action name="actionSpell_Check">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/spellcheck.png</normaloff>:/icons/spellcheck.png</iconset>
+   </property>
    <property name="text">
     <string>Check Spelling...</string>
    </property>
@@ -1998,6 +2026,10 @@
    </property>
   </action>
   <action name="actionView_LogView">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/logs.png</normaloff>:/icons/logs.png</iconset>
+   </property>
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -2015,6 +2047,10 @@
    </property>
   </action>
   <action name="actionInternal_Items">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/internal.png</normaloff>:/icons/internal.png</iconset>
+   </property>
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -2032,6 +2068,10 @@
    </property>
   </action>
   <action name="actionAll_Tracker_Action_Items">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/all-items.png</normaloff>:/icons/all-items.png</iconset>
+   </property>
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -2049,6 +2089,10 @@
    </property>
   </action>
   <action name="actionStatus_Bar">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/statusbar.png</normaloff>:/icons/statusbar.png</iconset>
+   </property>
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -2081,6 +2125,10 @@
    </property>
   </action>
   <action name="actionClosed_Projects">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/closed-projects.png</normaloff>:/icons/closed-projects.png</iconset>
+   </property>
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -2098,6 +2146,10 @@
    </property>
   </action>
   <action name="actionHelp">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/help.png</normaloff>:/icons/help.png</iconset>
+   </property>
    <property name="text">
     <string>Help</string>
    </property>
@@ -2112,6 +2164,10 @@
    </property>
   </action>
   <action name="actionWhat_s_New">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/whats-new.png</normaloff>:/icons/whats-new.png</iconset>
+   </property>
    <property name="text">
     <string>What's New</string>
    </property>
@@ -2123,6 +2179,10 @@
    </property>
   </action>
   <action name="actionCustom_Plugins">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/plugins.png</normaloff>:/icons/plugins.png</iconset>
+   </property>
    <property name="text">
     <string>Custom Plugins</string>
    </property>
@@ -2134,6 +2194,10 @@
    </property>
   </action>
   <action name="actionAbout">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/about.png</normaloff>:/icons/about.png</iconset>
+   </property>
    <property name="text">
     <string>About...</string>
    </property>
@@ -2190,6 +2254,10 @@
    </property>
   </action>
   <action name="actionEdit_Items">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/edit.png</normaloff>:/icons/edit.png</iconset>
+   </property>
    <property name="text">
     <string>Edit Item</string>
    </property>
@@ -2264,6 +2332,10 @@
    </property>
   </action>
   <action name="actionResolved_Tracker_Action_Items">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/assigned-items.png</normaloff>:/icons/assigned-items.png</iconset>
+   </property>
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -2454,6 +2526,10 @@
    </property>
   </action>
   <action name="actionIncrease_Font_Size">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/font-increase.png</normaloff>:/icons/font-increase.png</iconset>
+   </property>
    <property name="text">
     <string>Increase Font Size</string>
    </property>
@@ -2462,6 +2538,10 @@
    </property>
   </action>
   <action name="actionDecrease_Font_Size">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/font-decrease.png</normaloff>:/icons/font-decrease.png</iconset>
+   </property>
    <property name="text">
     <string>Decrease Font Size</string>
    </property>
@@ -2470,6 +2550,10 @@
    </property>
   </action>
   <action name="actionForward_2">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/forward.png</normaloff>:/icons/forward.png</iconset>
+   </property>
    <property name="text">
     <string>&amp;Forward</string>
    </property>
@@ -2478,6 +2562,10 @@
    </property>
   </action>
   <action name="action_Back">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/back.png</normaloff>:/icons/back.png</iconset>
+   </property>
    <property name="text">
     <string>&amp;Back</string>
    </property>
