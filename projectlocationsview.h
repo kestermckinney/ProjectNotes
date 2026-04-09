@@ -31,11 +31,13 @@ private:
     PlainTextEditDelegate* m_descriptionDelegate = nullptr;
 
 protected:
+    void showEvent(QShowEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dragMoveEvent(QDragMoveEvent *event) override;
     void dropEvent(QDropEvent *event) override;
 
 public slots:
+    void reset() override;
     void slotNewRecord() override;
 };
 

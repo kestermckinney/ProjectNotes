@@ -120,6 +120,12 @@ void Plugin::onUnLoadComplete()
 #endif
     m_loaded = false;
 
+    // Quit the thread event loop now that the Python module is done.
+    // This means ~Plugin()'s wait() returns immediately rather than
+    // blocking the process in the background after the window closes.
+    if (m_thread)
+        m_thread->quit();
+
     emit moduleUnloaded(m_modulepath);
 }
 

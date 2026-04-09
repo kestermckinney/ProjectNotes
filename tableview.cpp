@@ -304,6 +304,20 @@ bool TableView::viewportEvent(QEvent *event)
     {
         return QAbstractScrollArea::viewportEvent(event);
     }
+
+    // Bypass QAbstractItemView's drag handling, which rejects external drops
+    // (vCards, URLs) because our models don't set Qt::ItemIsDropEnabled.
+    // Going straight to QAbstractScrollArea::viewportEvent routes the event
+    // to QFrame::event → QWidget::event → our virtual dragEnterEvent /
+    // dragMoveEvent / dropEvent overrides in the subclass.
+    if (event->type() == QEvent::DragEnter ||
+        event->type() == QEvent::DragMove  ||
+        event->type() == QEvent::DragLeave ||
+        event->type() == QEvent::Drop)
+    {
+        return QAbstractScrollArea::viewportEvent(event);
+    }
+
     return QTableView::viewportEvent(event);
 }
 

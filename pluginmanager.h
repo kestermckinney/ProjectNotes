@@ -41,6 +41,7 @@ public:
     const QList<Plugin*>& plugins() const { return m_pluginlist; }
     void forceReload(const QString& module);
     int loadedCount();
+    void stopPollTimer() { if (m_pollTimer) m_pollTimer->stop(); }
 
 signals:
     void pluginLoaded(const QString& path);

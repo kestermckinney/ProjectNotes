@@ -9,6 +9,7 @@ using namespace QLogger;
 ValueSelectModel::ValueSelectModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
 {
     setObjectName("ValueSelectModel");
+    setDeletedFilterInView(true);
 
     setBaseSql("select '' Vals");
 

@@ -2146,7 +2146,12 @@ void MainWindow::onTimerWaitForThreads()
     int loaded_count = m_pluginManager->loadedCount();
 
     if (loaded_count == 0)
+    {
+        // Stop both timers before closing so neither fires again during teardown.
+        m_waitForThreadsTimer->stop();
+        m_pluginManager->stopPollTimer();
         this->close();  // once all plugins are unloaded we can quit
+    }
 
     QStringList activeNames;
     for (const Plugin* p : m_pluginManager->plugins())

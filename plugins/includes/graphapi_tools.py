@@ -83,21 +83,14 @@ class TokenAPI:
             token_cache=cache
         )
 
-        # Initiating the device code flow
-        flow = app.initiate_device_flow(scopes=self.scopes)
-
-        if "user_code" not in flow:
-            print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
-            return(None)
-
         self.token_response = None
         result = None
 
         accounts = app.get_accounts()
-        
+
         if accounts:
             self.token_response = app.acquire_token_silent(self.scopes, account=accounts[0])
- 
+
         if not self.token_response:
             # Poll for the access token (after user completes the login)
             self.token_response = app.acquire_token_interactive(self.scopes)
