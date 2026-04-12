@@ -165,8 +165,6 @@ public:
     bool getShowClosedProjects();
     void setShowInternalItems(bool value);
     bool getShowInternalItems();
-    void setGlobalProjectFilter(const QString& value);
-    QString getGlobalProjectFilter();
     void setProjectManager(const QString& value);
     QString getProjectManager();
     void setManagingCompany(const QString& value);

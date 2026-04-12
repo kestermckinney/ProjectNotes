@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- ── Identity ───────────────────────────────────────────────────────── -->
+    <key>CFBundleName</key>
+    <string>Project Notes</string>
+    <key>CFBundleDisplayName</key>
+    <string>Project Notes</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.kestermckinney.projectnotesmobile</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundleShortVersionString</key>
+    <string>5.0.0</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+
+    <!-- ── Deployment ─────────────────────────────────────────────────────── -->
+    <key>MinimumOSVersion</key>
+    <string>16.0</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UIDeviceFamily</key>
+    <array>
+        <integer>1</integer><!-- iPhone -->
+        <integer>2</integer><!-- iPad -->
+    </array>
+
+    <!-- ── Orientation ────────────────────────────────────────────────────── -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+
+    <!-- ── App Store ──────────────────────────────────────────────────────── -->
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+
+    <!-- ── App icon (asset catalog) ────────────────────────────────────────── -->
+    <!-- Top-level CFBundleIconName is the modern iOS 11+ key — it tells the OS
+         to look up the icon in the compiled Assets.car from the asset catalog. -->
+    <key>CFBundleIconName</key>
+    <string>AppIcon</string>
+    <!-- The nested CFBundleIcons structure mirrors what actool generates as a
+         partial plist.  CMake uses this Info.plist verbatim and does NOT merge
+         actool's partial plist, so we include the keys manually for redundancy
+         and backward compatibility. -->
+    <key>CFBundleIcons</key>
+    <dict>
+        <key>CFBundlePrimaryIcon</key>
+        <dict>
+            <key>CFBundleIconName</key>
+            <string>AppIcon</string>
+            <key>CFBundleIconFiles</key>
+            <array>
+                <string>AppIcon60x60</string>
+            </array>
+        </dict>
+    </dict>
+    <key>CFBundleIcons~ipad</key>
+    <dict>
+        <key>CFBundlePrimaryIcon</key>
+        <dict>
+            <key>CFBundleIconName</key>
+            <string>AppIcon</string>
+            <key>CFBundleIconFiles</key>
+            <array>
+                <string>AppIcon60x60</string>
+                <string>AppIcon76x76</string>
+            </array>
+        </dict>
+    </dict>
+
+    <!-- ── Network (sync) ─────────────────────────────────────────────────── -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <!-- Allow HTTPS to any sync endpoint.
+             Tighten to specific domains before App Store submission. -->
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+        <key>NSAllowsArbitraryLoadsInWebContent</key>
+        <false/>
+    </dict>
+
+    <!-- ── Privacy usage descriptions (required by App Review) ───────────── -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Project Notes may attach photos to project records.</string>
+
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+
+    <key>UIMainStoryboardFile</key>
+    <string></string>
+</dict>
+</plist>

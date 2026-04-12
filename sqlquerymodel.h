@@ -47,6 +47,7 @@ public:
 
     bool setData(const QModelIndex &index, const QVariant &value, int role) override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    QHash<int, QByteArray> roleNames() const override;
 
     void setCacheData(const QModelIndex &index, const QVariant &value) { m_cache[index.row()][index.column()] = value; }
 
