@@ -165,9 +165,22 @@ static int currentPointSize(QQuickTextDocument* doc, int selStart)
     return (ps > 0) ? qRound(ps) : 12;
 }
 
+// Expand a zero-length selection to the full current paragraph so that
+// increaseFontSize / decreaseFontSize actually modify existing text rather
+// than only updating the cursor's insert format.
+static void expandToParagraph(QTextDocument* tdoc, int& selStart, int& selEnd)
+{
+    if (selStart != selEnd) return;
+    QTextBlock block = tdoc->findBlock(selStart);
+    selStart = block.position();
+    int blockEnd = block.position() + block.length() - 1;
+    selEnd = (blockEnd > selStart) ? blockEnd : selStart;
+}
+
 void TextFormatter::increaseFontSize(QQuickTextDocument* doc, int selStart, int selEnd)
 {
     if (!doc) return;
+    expandToParagraph(doc->textDocument(), selStart, selEnd);
     int newSize = currentPointSize(doc, selStart) + 2;
     QTextCursor cursor = cursorForRange(doc, selStart, selEnd);
     QTextCharFormat fmt;
@@ -178,6 +191,7 @@ void TextFormatter::increaseFontSize(QQuickTextDocument* doc, int selStart, int 
 void TextFormatter::decreaseFontSize(QQuickTextDocument* doc, int selStart, int selEnd)
 {
     if (!doc) return;
+    expandToParagraph(doc->textDocument(), selStart, selEnd);
     int newSize = qMax(6, currentPointSize(doc, selStart) - 2);
     QTextCursor cursor = cursorForRange(doc, selStart, selEnd);
     QTextCharFormat fmt;
@@ -191,9 +205,9 @@ void TextFormatter::applyHeading(QQuickTextDocument* doc, int selStart, int selE
 {
     if (!doc) return;
 
-    // Point sizes for H1–H4 and body (level 0)
-    static const int sizes[] = { 12, 24, 20, 16, 14 };  // [0]=body, [1]=H1, [2]=H2, [3]=H3, [4]=H4
-    int clampedLevel = qBound(0, level, 4);
+    // Point sizes for H1–H6 and body (level 0)
+    static const int sizes[] = { 12, 24, 20, 16, 14, 13, 12 };  // [0]=body, [1]=H1 … [6]=H6
+    int clampedLevel = qBound(0, level, 6);
     int pointSize    = sizes[clampedLevel];
     bool bold        = (clampedLevel > 0);
 
@@ -220,6 +234,76 @@ void TextFormatter::applyHeading(QQuickTextDocument* doc, int selStart, int selE
         bc.mergeCharFormat(charFmt);
 
         block = block.next();
+    }
+
+    cursor.endEditBlock();
+}
+
+// ── Unified paragraph/list style (matches desktop combo) ─────────────────────
+// Index mapping:
+//  0=Standard  1=Disc  2=Circle  3=Square
+//  4=Decimal   5=AlphaLower  6=AlphaUpper  7=RomanLower  8=RomanUpper
+//  9..14=Heading 1..6
+
+void TextFormatter::applyStyle(QQuickTextDocument* doc, int selStart, int selEnd, int styleIndex)
+{
+    if (!doc) return;
+
+    // Heading styles delegate to applyHeading
+    if (styleIndex >= 9) {
+        applyHeading(doc, selStart, selEnd, styleIndex - 8);  // 9→H1, 10→H2, …, 14→H6
+        return;
+    }
+
+    QTextDocument* tdoc = doc->textDocument();
+    QTextCursor cursor(tdoc);
+    cursor.setPosition(selStart);
+    if (selEnd > selStart)
+        cursor.setPosition(selEnd, QTextCursor::KeepAnchor);
+
+    cursor.beginEditBlock();
+
+    QTextBlock block = tdoc->findBlock(selStart);
+    int endBlockNum  = tdoc->findBlock(selEnd > selStart ? selEnd - 1 : selStart).blockNumber();
+
+    if (styleIndex == 0) {
+        // Standard: remove list formatting and reset to body character style
+        while (block.isValid() && block.blockNumber() <= endBlockNum) {
+            QTextCursor bc(tdoc);
+            bc.setPosition(block.position());
+
+            // Remove from any list
+            if (block.textList())
+                block.textList()->remove(block);
+
+            // Reset block format (clears indent)
+            QTextBlockFormat bfmt;
+            bc.setBlockFormat(bfmt);
+
+            // Reset char format to body (12pt, normal)
+            bc.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+            QTextCharFormat cfmt;
+            cfmt.setFontPointSize(12);
+            cfmt.setFontWeight(QFont::Normal);
+            bc.mergeCharFormat(cfmt);
+
+            block = block.next();
+        }
+    } else {
+        // List styles
+        static const QTextListFormat::Style listStyles[] = {
+            QTextListFormat::ListDisc,        // 1
+            QTextListFormat::ListCircle,      // 2
+            QTextListFormat::ListSquare,      // 3
+            QTextListFormat::ListDecimal,     // 4
+            QTextListFormat::ListLowerAlpha,  // 5
+            QTextListFormat::ListUpperAlpha,  // 6
+            QTextListFormat::ListLowerRoman,  // 7
+            QTextListFormat::ListUpperRoman,  // 8
+        };
+        QTextListFormat listFmt;
+        listFmt.setStyle(listStyles[styleIndex - 1]);
+        cursor.createList(listFmt);
     }
 
     cursor.endEditBlock();

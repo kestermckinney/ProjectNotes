@@ -11,18 +11,25 @@ Page {
     title: qsTr("Note")
 
     property int    noteRow:         -1
+    property string noteId:          ""
+    property string projectId:       ""
     property string initialTitle:    ""
     property string initialDate:     ""
     property string initialNote:     ""
     property bool   initialInternal: false
     property bool   _skipSave:       false
 
+    Component.onCompleted: {
+        if (root.noteId !== "")
+            AppController.setNoteFilter(root.noteId, root.projectId)
+    }
+
     function _saveNow() {
         AppController.saveProjectNote(root.noteRow, titleField.text, dateField.text,
                                       noteEdit.text, internalSwitch.checked)
     }
 
-    StackView.onRemoved: {
+    StackView.onDeactivating: {
         if (!root._skipSave)
             root._saveNow()
     }
@@ -48,14 +55,35 @@ Page {
 
                 Item { implicitWidth: 4 }
                 ComboBox {
+                    id: styleCombo
                     focusPolicy: Qt.NoFocus
-                    implicitWidth: 110
-                    model: [qsTr("Body"), qsTr("H1"), qsTr("H2"), qsTr("H3"), qsTr("H4")]
+                    implicitWidth: 140
+                    popup.width: 220
+                    popup.x: 0
+                    model: [
+                        qsTr("Standard"),
+                        qsTr("Bullet (Disc)"),
+                        qsTr("Bullet (Circle)"),
+                        qsTr("Bullet (Square)"),
+                        qsTr("Ordered (1 2 3)"),
+                        qsTr("Ordered (a b c)"),
+                        qsTr("Ordered (A B C)"),
+                        qsTr("Ordered (i ii iii)"),
+                        qsTr("Ordered (I II III)"),
+                        qsTr("Heading 1"),
+                        qsTr("Heading 2"),
+                        qsTr("Heading 3"),
+                        qsTr("Heading 4"),
+                        qsTr("Heading 5"),
+                        qsTr("Heading 6")
+                    ]
+                    currentIndex: 0
                     onActivated: function(idx) {
-                        TextFormatter.applyHeading(noteEdit.textDocument,
-                                                   noteEdit.selectionStart,
-                                                   noteEdit.selectionEnd, idx)
+                        TextFormatter.applyStyle(noteEdit.textDocument,
+                                                 noteEdit.selectionStart,
+                                                 noteEdit.selectionEnd, idx)
                         noteEdit.forceActiveFocus()
+                        currentIndex = 0   // reset so re-selecting same style always fires
                     }
                 }
                 ToolButton { text: qsTr("B");  font.bold: true;      font.pixelSize: 16; focusPolicy: Qt.NoFocus
@@ -64,8 +92,6 @@ Page {
                     onClicked: { TextFormatter.toggleItalic(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus() } }
                 ToolButton { text: qsTr("U");  font.underline: true; font.pixelSize: 16; focusPolicy: Qt.NoFocus
                     onClicked: { TextFormatter.toggleUnderline(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus() } }
-                ToolButton { text: qsTr("•–"); font.pixelSize: 16;   focusPolicy: Qt.NoFocus
-                    onClicked: { TextFormatter.toggleBulletList(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus() } }
                 ToolButton { text: qsTr("A+"); font.pixelSize: 14;   focusPolicy: Qt.NoFocus
                     onClicked: { TextFormatter.increaseFontSize(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus() } }
                 ToolButton { text: qsTr("A−"); font.pixelSize: 12;   focusPolicy: Qt.NoFocus
@@ -83,6 +109,8 @@ Page {
                         var d = AppController.getProjectNoteData(newRow)
                         root.StackView.view.replace(Qt.resolvedUrl("ProjectNoteDetailPage.qml"), {
                             noteRow:         newRow,
+                            noteId:          (d.id            || "").toString(),
+                            projectId:       root.projectId,
                             initialTitle:    (d.note_title    || "").toString(),
                             initialDate:     (d.note_date     || "").toString(),
                             initialNote:     (d.note          || "").toString(),
@@ -122,18 +150,14 @@ Page {
                 Rectangle { width: 1; height: 24; color: palette.mid; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
 
                 // Alignment: 0=left 1=center 2=right 3=justify
-                ToolButton { focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
-                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 0); noteEdit.forceActiveFocus() }
-                    AlignLinesIcon { alignType: 0; anchors.centerIn: parent } }
-                ToolButton { focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
-                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 1); noteEdit.forceActiveFocus() }
-                    AlignLinesIcon { alignType: 1; anchors.centerIn: parent } }
-                ToolButton { focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
-                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 2); noteEdit.forceActiveFocus() }
-                    AlignLinesIcon { alignType: 2; anchors.centerIn: parent } }
-                ToolButton { focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
-                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 3); noteEdit.forceActiveFocus() }
-                    AlignLinesIcon { alignType: 3; anchors.centerIn: parent } }
+                ToolButton { icon.name: "text.alignleft";   focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
+                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 0); noteEdit.forceActiveFocus() } }
+                ToolButton { icon.name: "text.aligncenter"; focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
+                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 1); noteEdit.forceActiveFocus() } }
+                ToolButton { icon.name: "text.alignright";  focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
+                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 2); noteEdit.forceActiveFocus() } }
+                ToolButton { icon.name: "text.justify";     focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
+                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 3); noteEdit.forceActiveFocus() } }
 
                 // Separator
                 Rectangle { width: 1; height: 24; color: palette.mid; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
@@ -155,6 +179,39 @@ Page {
                 }
 
                 Item { Layout.fillWidth: true }
+            }
+        }
+    }
+
+    // ── Footer: Attendees + Action Items ─────────────────────────────────────
+    footer: ToolBar {
+        RowLayout {
+            anchors.centerIn: parent
+            spacing: 32
+
+            ToolButton {
+                icon.name: "person.2"
+                text: qsTr("Attendees")
+                display: AbstractButton.TextUnderIcon
+                onClicked: {
+                    root._saveNow()
+                    root.StackView.view.push(Qt.resolvedUrl("MeetingAttendeesPage.qml"), {
+                        noteId: root.noteId
+                    })
+                }
+            }
+
+            ToolButton {
+                icon.name: "checklist"
+                text: qsTr("Action Items")
+                display: AbstractButton.TextUnderIcon
+                onClicked: {
+                    root._saveNow()
+                    root.StackView.view.push(Qt.resolvedUrl("NoteActionItemsPage.qml"), {
+                        noteId:    root.noteId,
+                        projectId: root.projectId
+                    })
+                }
             }
         }
     }
@@ -240,27 +297,6 @@ Page {
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/\n/g, "<br/>")
-    }
-
-    // ── Alignment icon: 4 horizontal lines whose widths/offsets match text alignment ──
-    component AlignLinesIcon: Item {
-        property int alignType: 0  // 0=left, 1=center, 2=right, 3=justify
-        implicitWidth: 20
-        implicitHeight: 14
-
-        // For justify all lines are full width; otherwise vary for visual distinction
-        readonly property var lw: alignType === 3 ? [18, 18, 18, 18] : [18, 11, 15, 8]
-
-        function xFor(w) {
-            if (alignType === 0 || alignType === 3) return 0
-            if (alignType === 1) return (18 - w) / 2
-            return 18 - w  // right
-        }
-
-        Rectangle { y: 0;  x: xFor(lw[0]); width: lw[0]; height: 2; radius: 1; color: palette.buttonText }
-        Rectangle { y: 4;  x: xFor(lw[1]); width: lw[1]; height: 2; radius: 1; color: palette.buttonText }
-        Rectangle { y: 8;  x: xFor(lw[2]); width: lw[2]; height: 2; radius: 1; color: palette.buttonText }
-        Rectangle { y: 12; x: xFor(lw[3]); width: lw[3]; height: 2; radius: 1; color: palette.buttonText }
     }
 
     component SectionHeader: Label {

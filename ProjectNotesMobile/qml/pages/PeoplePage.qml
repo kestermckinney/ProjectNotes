@@ -21,7 +21,7 @@ Page {
                 id: searchField
                 Layout.fillWidth: true
                 placeholderText: qsTr("Search people…")
-                onTextChanged: AppController.setPeopleFilter(text)
+                onTextChanged: AppController.setQuickSearch(AppController.peopleModel, text)
                 inputMethodHints: Qt.ImhNoPredictiveText
             }
 

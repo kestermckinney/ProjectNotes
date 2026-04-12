@@ -215,13 +215,6 @@ void AppController::setSyncProgress(qreal progress, bool hasError)
 
 // ── Filter helpers ───────────────────────────────────────────────────────────
 
-void AppController::applyFilterToProjectsList(bool showClosed)
-{
-    global_DBObjects.setShowClosedProjects(showClosed);
-    global_DBObjects.setGlobalSearches(true);
-    emit viewOptionsChanged();
-}
-
 void AppController::setPeopleFilter(const QString& filter)
 {
     if (filter.isEmpty())
@@ -443,6 +436,37 @@ QString AppController::peopleIdAtRow(int row) const
     if (row < 0 || row >= model->rowCount())
         return {};
     return model->data(model->index(row, 0)).toString();
+}
+
+QString AppController::peopleNameForId(const QString& personId) const
+{
+    if (personId.isEmpty()) return {};
+    QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
+    for (int row = 0; row < model->rowCount(); ++row) {
+        if (model->data(model->index(row, 0)).toString() == personId)
+            return model->data(model->index(row, 1)).toString();  // col 1 = name
+    }
+    return {};
+}
+
+// teamMemberRowForPersonId — search col 2 (people_id) in projectTeamMembersModelProxy
+int AppController::teamMemberRowForPersonId(const QString& personId) const
+{
+    if (personId.isEmpty()) return -1;
+    QAbstractItemModel* model = global_DBObjects.projectteammembersmodelproxy();
+    for (int row = 0; row < model->rowCount(); ++row) {
+        if (model->data(model->index(row, 2)).toString() == personId)
+            return row;
+    }
+    return -1;
+}
+
+// teamMemberPersonIdAtRow — return col 2 (people_id) from projectTeamMembersModelProxy
+QString AppController::teamMemberPersonIdAtRow(int row) const
+{
+    QAbstractItemModel* model = global_DBObjects.projectteammembersmodelproxy();
+    if (row < 0 || row >= model->rowCount()) return {};
+    return model->data(model->index(row, 2)).toString();
 }
 
 // ── Add / Delete / Copy helpers ───────────────────────────────────────────────
@@ -711,6 +735,256 @@ void AppController::setProjectManagerByRow(int row)
     global_DBObjects.setProjectManager(model->data(model->index(row, 0)).toString());
 }
 
+// ── Tracker item detail (single-record model) ─────────────────────────────────
+
+void AppController::openTrackerItem(const QString& itemId)
+{
+    // Filter the detail model to the specific item (col 0 = id)
+    global_DBObjects.actionitemsdetailsmodel()->setFilter(0, itemId);
+    global_DBObjects.actionitemsdetailsmodel()->refresh();
+
+    // Filter comments to the same item (col 1 = item_id)
+    global_DBObjects.trackeritemscommentsmodel()->setFilter(1, itemId);
+    global_DBObjects.trackeritemscommentsmodel()->refresh();
+}
+
+int AppController::addTrackerItem(const QString& projectId)
+{
+    QVariant fk(projectId);
+    QModelIndex srcIdx = global_DBObjects.actionitemsdetailsmodel()->newRecord(&fk);
+    if (!srcIdx.isValid()) return -1;
+
+    // Force-insert immediately so the item gets a stable UUID; this is required
+    // so we can call openTrackerItem(itemId) straight after addTrackerItem().
+    global_DBObjects.actionitemsdetailsmodel()->insertCacheRow(srcIdx.row());
+
+    // Read the assigned id and switch the detail model's filter to this new item,
+    // so row 0 of trackerItemDetailModel points to the freshly-created record.
+    QString newId = global_DBObjects.actionitemsdetailsmodel()
+                        ->data(global_DBObjects.actionitemsdetailsmodel()->index(srcIdx.row(), 0))
+                        .toString();
+    if (!newId.isEmpty())
+        openTrackerItem(newId);
+
+    return 0;  // after openTrackerItem the new record is always at proxy row 0
+}
+
+bool AppController::deleteTrackerItemDetail(int row)
+{
+    return deleteProxyRow(global_DBObjects.actionitemsdetailsmodelproxy(),
+                          global_DBObjects.actionitemsdetailsmodel(), row);
+}
+
+int AppController::copyTrackerItemDetail(int row)
+{
+    int newRow = copyProxyRow(global_DBObjects.actionitemsdetailsmodelproxy(),
+                              global_DBObjects.actionitemsdetailsmodel(), row);
+    if (newRow < 0) return -1;
+
+    // Switch detail filter to the copy so row 0 is the new record.
+    QAbstractItemModel* proxy = global_DBObjects.actionitemsdetailsmodelproxy();
+    QString newId = proxy->data(proxy->index(newRow, 0)).toString();
+    if (!newId.isEmpty())
+        openTrackerItem(newId);
+
+    return 0;  // detail model filtered to copy → always row 0
+}
+
+QVariantMap AppController::getTrackerItemDetailData(int row) const
+{
+    return proxyRowToMap(global_DBObjects.actionitemsdetailsmodelproxy(), row);
+}
+
+bool AppController::saveTrackerItemDetail(int row,
+                                           const QString& itemType,
+                                           const QString& itemName,
+                                           const QString& description,
+                                           const QString& identifiedBy,
+                                           const QString& assignedTo,
+                                           const QString& priority,
+                                           const QString& status,
+                                           const QString& dateIdentified,
+                                           const QString& dateDue,
+                                           bool           internalItem)
+{
+    QAbstractItemModel* model = global_DBObjects.actionitemsdetailsmodelproxy();
+    if (row < 0 || row >= model->rowCount()) return false;
+    bool ok = true;
+    ok &= model->setData(model->index(row,  2), itemType);
+    ok &= model->setData(model->index(row,  3), itemName);
+    ok &= model->setData(model->index(row,  4), identifiedBy);
+    ok &= model->setData(model->index(row,  5), dateIdentified);
+    ok &= model->setData(model->index(row,  6), description);
+    ok &= model->setData(model->index(row,  7), assignedTo);
+    ok &= model->setData(model->index(row,  8), priority);
+    ok &= model->setData(model->index(row,  9), status);
+    ok &= model->setData(model->index(row, 10), dateDue);
+    ok &= model->setData(model->index(row, 15), internalItem ? "1" : "0");
+    return ok;
+}
+
+QString AppController::trackerItemIdAtRow(int row) const
+{
+    QAbstractItemModel* model = global_DBObjects.actionitemsdetailsmodelproxy();
+    if (row < 0 || row >= model->rowCount()) return {};
+    return model->data(model->index(row, 0)).toString();
+}
+
+// ── Tracker item comments ─────────────────────────────────────────────────────
+
+int AppController::addComment(const QString& itemId)
+{
+    QVariant fk(itemId);
+    return proxyRowFromSource(global_DBObjects.trackeritemscommentsmodelproxy(),
+                              global_DBObjects.trackeritemscommentsmodel()->newRecord(&fk));
+}
+
+bool AppController::deleteComment(int row)
+{
+    return deleteProxyRow(global_DBObjects.trackeritemscommentsmodelproxy(),
+                          global_DBObjects.trackeritemscommentsmodel(), row);
+}
+
+int AppController::copyComment(int row)
+{
+    return copyProxyRow(global_DBObjects.trackeritemscommentsmodelproxy(),
+                        global_DBObjects.trackeritemscommentsmodel(), row);
+}
+
+QVariantMap AppController::getCommentData(int row) const
+{
+    return proxyRowToMap(global_DBObjects.trackeritemscommentsmodelproxy(), row);
+}
+
+bool AppController::saveComment(int row, const QString& date,
+                                 const QString& note, const QString& updatedBy)
+{
+    QAbstractItemModel* model = global_DBObjects.trackeritemscommentsmodelproxy();
+    if (row < 0 || row >= model->rowCount()) return false;
+    bool ok = true;
+    ok &= model->setData(model->index(row, 2), date);
+    ok &= model->setData(model->index(row, 3), note);
+    ok &= model->setData(model->index(row, 4), updatedBy);
+    return ok;
+}
+
+// ── Meeting attendees ─────────────────────────────────────────────────────────
+
+void AppController::setNoteFilter(const QString& noteId, const QString& projectId)
+{
+    // Attendees: note_id is col 1
+    global_DBObjects.meetingattendeesmodel()->setFilter(1, noteId);
+    global_DBObjects.meetingattendeesmodel()->refresh();
+
+    // Note action items: note_id is col 13
+    global_DBObjects.notesactionitemsmodel()->setFilter(13, noteId);
+    global_DBObjects.notesactionitemsmodel()->refresh();
+
+    Q_UNUSED(projectId)  // reserved for future use if needed
+}
+
+int AppController::addAttendee(const QString& noteId)
+{
+    QVariant fk(noteId);
+    return proxyRowFromSource(global_DBObjects.meetingattendeesmodelproxy(),
+                              global_DBObjects.meetingattendeesmodel()->newRecord(&fk));
+}
+
+bool AppController::deleteAttendee(int row)
+{
+    return deleteProxyRow(global_DBObjects.meetingattendeesmodelproxy(),
+                          global_DBObjects.meetingattendeesmodel(), row);
+}
+
+QVariantMap AppController::getAttendeeData(int row) const
+{
+    return proxyRowToMap(global_DBObjects.meetingattendeesmodelproxy(), row);
+}
+
+bool AppController::saveAttendee(int row, const QString& personId)
+{
+    QAbstractItemModel* model = global_DBObjects.meetingattendeesmodelproxy();
+    if (row < 0 || row >= model->rowCount()) return false;
+    return model->setData(model->index(row, 2), personId);
+}
+
+// ── Note action items ─────────────────────────────────────────────────────────
+
+int AppController::addNoteActionItem(const QString& noteId, const QString& projectId)
+{
+    QVariant fk1(noteId);
+    QVariant fk2(projectId);
+    QModelIndex srcIdx = global_DBObjects.notesactionitemsmodel()->newRecord(&fk1, &fk2);
+    if (!srcIdx.isValid()) return -1;
+    // Force-insert so the item has a stable UUID for openTrackerItem()
+    global_DBObjects.notesactionitemsmodel()->insertCacheRow(srcIdx.row());
+
+    // Switch detail model to new item so row 0 is immediately readable.
+    QString newId = global_DBObjects.notesactionitemsmodel()
+                        ->data(global_DBObjects.notesactionitemsmodel()->index(srcIdx.row(), 0))
+                        .toString();
+    if (!newId.isEmpty())
+        openTrackerItem(newId);
+
+    return 0;  // detail model filtered to new item → always row 0
+}
+
+bool AppController::deleteNoteActionItem(int row)
+{
+    return deleteProxyRow(global_DBObjects.notesactionitemsmodelproxy(),
+                          global_DBObjects.notesactionitemsmodel(), row);
+}
+
+QString AppController::noteActionItemIdAtRow(int row) const
+{
+    QAbstractItemModel* model = global_DBObjects.notesactionitemsmodelproxy();
+    if (row < 0 || row >= model->rowCount()) return {};
+    return model->data(model->index(row, 0)).toString();
+}
+
+// ── Model refresh helpers ─────────────────────────────────────────────────────
+
+void AppController::refreshTeamMembers()
+{
+    global_DBObjects.projectteammembersmodel()->refresh();
+}
+
+void AppController::refreshMeetingAttendees()
+{
+    global_DBObjects.meetingattendeesmodel()->refresh();
+}
+
+void AppController::refreshTrackerComments()
+{
+    global_DBObjects.trackeritemscommentsmodel()->refresh();
+}
+
+void AppController::refreshTrackerItems()
+{
+    global_DBObjects.trackeritemsmodel()->refresh();
+}
+
+void AppController::refreshAllItems()
+{
+    global_DBObjects.allitemsmodel()->refresh();
+}
+
+void AppController::refreshProjectNotes()
+{
+    global_DBObjects.projectnotesmodel()->refresh();
+}
+
+void AppController::refreshNoteActionItems()
+{
+    global_DBObjects.notesactionitemsmodel()->refresh();
+}
+
+void AppController::setQuickSearch(QAbstractItemModel* model, const QString& text)
+{
+    if (auto* proxy = dynamic_cast<SortFilterProxyModel*>(model))
+        proxy->setQuickSearch(text);
+}
+
 // ── Model accessors ──────────────────────────────────────────────────────────
 
 QAbstractItemModel* AppController::projectsListModel() const
@@ -771,4 +1045,19 @@ QAbstractItemModel* AppController::projectTeamMembersModel() const
 QAbstractItemModel* AppController::projectLocationsModel() const
 {
     return global_DBObjects.projectlocationsmodelproxy();
+}
+
+QAbstractItemModel* AppController::trackerItemCommentsModel() const
+{
+    return global_DBObjects.trackeritemscommentsmodelproxy();
+}
+
+QAbstractItemModel* AppController::notesActionItemsModel() const
+{
+    return global_DBObjects.notesactionitemsmodelproxy();
+}
+
+QAbstractItemModel* AppController::trackerItemDetailModel() const
+{
+    return global_DBObjects.actionitemsdetailsmodelproxy();
 }

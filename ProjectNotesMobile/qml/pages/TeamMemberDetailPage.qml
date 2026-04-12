@@ -22,7 +22,7 @@ Page {
         AppController.saveTeamMember(root.memberRow, peopleId, roleField.text, statusSwitch.checked)
     }
 
-    StackView.onRemoved: {
+    StackView.onDeactivating: {
         if (!root._skipSave)
             root._saveNow()
     }

@@ -108,6 +108,12 @@ qt_add_qml_module(ProjectNotesMobile
         qml/pages/ProjectLocationDetailPage.qml
         qml/pages/ProjectNotesPage.qml
         qml/pages/ProjectNoteDetailPage.qml
+        qml/pages/TrackerItemDetailPage.qml
+        qml/pages/TrackerItemCommentsPage.qml
+        qml/pages/TrackerItemCommentDetailPage.qml
+        qml/pages/MeetingAttendeesPage.qml
+        qml/pages/MeetingAttendeeDetailPage.qml
+        qml/pages/NoteActionItemsPage.qml
         qml/pages/DatePickerPopup.qml
         qml/pages/FontPickerPopup.qml
 )

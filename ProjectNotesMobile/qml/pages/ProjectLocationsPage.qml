@@ -13,7 +13,7 @@ import ProjectNotesMobile
 
 Page {
     id: root
-    title: qsTr("Files && Folders")
+    title: qsTr("Files & Folders")
 
     property string projectId:    ""
     property string projectTitle: ""
@@ -22,7 +22,13 @@ Page {
         RowLayout {
             anchors { left: parent.left; right: parent.right; margins: 8 }
             height: parent.height
-            Item { Layout.fillWidth: true }
+            TextField {
+                id: searchField
+                Layout.fillWidth: true
+                placeholderText: qsTr("Search files…")
+                onTextChanged: AppController.setQuickSearch(AppController.projectLocationsModel, text)
+                inputMethodHints: Qt.ImhNoPredictiveText
+            }
             ToolButton {
                 icon.name: "plus"
                 onClicked: {

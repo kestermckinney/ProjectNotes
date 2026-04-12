@@ -21,6 +21,8 @@ Page {
 
     property StackView stackView: null
 
+    StackView.onActivated: AppController.refreshAllItems()
+
     // ── Status colour helper ──────────────────────────────────────────────────
     function statusColor(status) {
         switch (status) {
@@ -46,7 +48,7 @@ Page {
                 id: searchField
                 Layout.fillWidth: true
                 placeholderText: qsTr("Search items…")
-                onTextChanged: AppController.setAllItemsFilter(text)
+                onTextChanged: AppController.setQuickSearch(AppController.allItemsModel, text)
                 inputMethodHints: Qt.ImhNoPredictiveText
             }
         }
@@ -117,7 +119,23 @@ Page {
             }
 
             onClicked: {
-                // TODO: push item detail page
+                var itemId = model.id || ""
+                if (!itemId) return
+                AppController.openTrackerItem(itemId)
+                root.stackView.push(Qt.resolvedUrl("TrackerItemDetailPage.qml"), {
+                    itemRow:              0,
+                    itemId:               itemId,
+                    initialType:          model.item_type         || "",
+                    initialName:          model.item_name         || "",
+                    initialDescription:   model.description       || "",
+                    initialIdentifiedBy:  model.identified_by     || "",
+                    initialAssignedTo:    model.assigned_to       || "",
+                    initialPriority:      model.priority          || "",
+                    initialStatus:        model.status            || "",
+                    initialDateIdentified:model.date_identified    || "",
+                    initialDateDue:       model.date_due          || "",
+                    initialInternal:      (model.internal_item    || "0") !== "0"
+                })
             }
         }
 

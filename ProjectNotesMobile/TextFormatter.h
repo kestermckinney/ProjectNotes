@@ -35,12 +35,19 @@ public:
     // Toggle a bullet list on the paragraph(s) that overlap the selection.
     Q_INVOKABLE void toggleBulletList(QQuickTextDocument* doc, int selStart, int selEnd);
 
-    // Increase / decrease font size by 2pt on the selected range (or cursor position).
+    // Increase / decrease font size by 2pt on the selected range (or current paragraph).
     Q_INVOKABLE void increaseFontSize(QQuickTextDocument* doc, int selStart, int selEnd);
     Q_INVOKABLE void decreaseFontSize(QQuickTextDocument* doc, int selStart, int selEnd);
 
-    // Apply a heading level (1–4) or paragraph (0) style to the paragraph(s) in the selection.
+    // Apply a heading level (1–6) or paragraph (0) style to the paragraph(s) in the selection.
     Q_INVOKABLE void applyHeading(QQuickTextDocument* doc, int selStart, int selEnd, int level);
+
+    // Apply a paragraph/list style by index matching the desktop combo:
+    //   0=Standard, 1=Bullet(Disc), 2=Bullet(Circle), 3=Bullet(Square),
+    //   4=Ordered(Decimal), 5=Ordered(Alpha lower), 6=Ordered(Alpha upper),
+    //   7=Ordered(Roman lower), 8=Ordered(Roman upper),
+    //   9..14=Heading 1..6
+    Q_INVOKABLE void applyStyle(QQuickTextDocument* doc, int selStart, int selEnd, int styleIndex);
 
     // Increase / decrease the block indent level of all paragraphs in the selection.
     Q_INVOKABLE void indentText(QQuickTextDocument* doc, int selStart, int selEnd);

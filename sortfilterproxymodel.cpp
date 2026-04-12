@@ -11,20 +11,29 @@ SortFilterProxyModel::SortFilterProxyModel(QObject *parent): QSortFilterProxyMod
 }
 
 bool SortFilterProxyModel::filterAcceptsRow(int source_row,
-                                  const QModelIndex &source_t_parent) const{
-    Q_UNUSED(source_row);
-    Q_UNUSED(source_t_parent);
-
-    /*
-    QModelIndex indG = sourceModel()->index(source_row,
-                                               1, source_t_parent);
-    QModelIndex indD = sourceModel()->index(source_row,
-                                               2, source_t_parent);
-    if(sourceModel()->data(indG).toDouble() < m_minGravity ||
-            sourceModel()->data(indD).toDouble() < m_minDensity)
+                                  const QModelIndex &source_t_parent) const
+{
+    // Quick search: show row if any column value contains the search text.
+    // Column 0 is always the record UUID — skip it to avoid UUID false-positives.
+    if (!m_quickSearch.isEmpty()) {
+        QAbstractItemModel* src = sourceModel();
+        const int colCount = src->columnCount();
+        for (int col = 1; col < colCount; ++col) {
+            const QModelIndex idx = src->index(source_row, col, source_t_parent);
+            if (src->data(idx).toString().contains(m_quickSearch, Qt::CaseInsensitive))
+                return true;
+        }
         return false;
-        */
+    }
     return true;
+}
+
+void SortFilterProxyModel::setQuickSearch(const QString& text)
+{
+    if (m_quickSearch == text)
+        return;
+    m_quickSearch = text;
+    invalidateRowsFilter();
 }
 
 QVariant SortFilterProxyModel::headerData(int section, Qt::Orientation orientation,

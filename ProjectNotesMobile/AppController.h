@@ -39,6 +39,9 @@ class AppController : public QObject
     Q_PROPERTY(QAbstractItemModel* allItemsModel           READ allItemsModel           NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* projectNotesModel       READ projectNotesModel       NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* meetingAttendeesModel   READ meetingAttendeesModel   NOTIFY databaseReady)
+    Q_PROPERTY(QAbstractItemModel* trackerItemCommentsModel READ trackerItemCommentsModel NOTIFY databaseReady)
+    Q_PROPERTY(QAbstractItemModel* notesActionItemsModel   READ notesActionItemsModel   NOTIFY databaseReady)
+    Q_PROPERTY(QAbstractItemModel* trackerItemDetailModel  READ trackerItemDetailModel  NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* searchResultsModel      READ searchResultsModel      NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* statusReportItemsModel  READ statusReportItemsModel  NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* projectTeamMembersModel READ projectTeamMembersModel NOTIFY databaseReady)
@@ -73,7 +76,6 @@ public:
     Q_INVOKABLE void startSync();
     Q_INVOKABLE void stopSync();
     Q_INVOKABLE void syncAll();
-    Q_INVOKABLE void applyFilterToProjectsList(bool showClosed);
     Q_INVOKABLE void setPeopleFilter(const QString& filter);
     Q_INVOKABLE void setClientsFilter(const QString& filter);
     Q_INVOKABLE void setAllItemsFilter(const QString& filter);
@@ -105,6 +107,9 @@ public:
     Q_INVOKABLE QString clientIdAtRow(int row) const;
     Q_INVOKABLE int     peopleRowForId(const QString& peopleId) const;
     Q_INVOKABLE QString peopleIdAtRow(int row) const;
+    Q_INVOKABLE QString peopleNameForId(const QString& personId) const;
+    Q_INVOKABLE int     teamMemberRowForPersonId(const QString& personId) const;
+    Q_INVOKABLE QString teamMemberPersonIdAtRow(int row) const;
 
     // ── Add / Delete / Copy (returns new proxy row, or -1 on failure) ────────
     Q_INVOKABLE int          addProject();
@@ -148,6 +153,63 @@ public:
     Q_INVOKABLE QStringList statusReportPeriodOptions() const { return DatabaseObjects::status_report_period; }
     Q_INVOKABLE QStringList statusItemCategoryOptions() const { return DatabaseObjects::status_item_status; }
     Q_INVOKABLE QStringList fileTypeOptions()           const { return DatabaseObjects::file_types; }
+    Q_INVOKABLE QStringList trackerItemTypeOptions()    const { return DatabaseObjects::item_type; }
+    Q_INVOKABLE QStringList trackerItemPriorityOptions() const { return DatabaseObjects::item_priority; }
+    Q_INVOKABLE QStringList trackerItemStatusOptions()  const { return DatabaseObjects::item_status; }
+
+    // ── Tracker item filter + CRUD ────────────────────────────────────────────
+    Q_INVOKABLE void        openTrackerItem(const QString& itemId);
+    Q_INVOKABLE int         addTrackerItem(const QString& projectId);
+    Q_INVOKABLE bool        deleteTrackerItemDetail(int row);
+    Q_INVOKABLE int         copyTrackerItemDetail(int row);
+    Q_INVOKABLE QVariantMap getTrackerItemDetailData(int row) const;
+    Q_INVOKABLE bool        saveTrackerItemDetail(int row,
+                                const QString& itemType,
+                                const QString& itemName,
+                                const QString& description,
+                                const QString& identifiedBy,
+                                const QString& assignedTo,
+                                const QString& priority,
+                                const QString& status,
+                                const QString& dateIdentified,
+                                const QString& dateDue,
+                                bool           internalItem);
+    Q_INVOKABLE QString     trackerItemIdAtRow(int row) const;
+
+    // ── Tracker item comments CRUD ────────────────────────────────────────────
+    Q_INVOKABLE int         addComment(const QString& itemId);
+    Q_INVOKABLE bool        deleteComment(int row);
+    Q_INVOKABLE int         copyComment(int row);
+    Q_INVOKABLE QVariantMap getCommentData(int row) const;
+    Q_INVOKABLE bool        saveComment(int row, const QString& date,
+                                        const QString& note, const QString& updatedBy);
+
+    // ── Meeting attendees CRUD ────────────────────────────────────────────────
+    Q_INVOKABLE void        setNoteFilter(const QString& noteId, const QString& projectId);
+    Q_INVOKABLE int         addAttendee(const QString& noteId);
+    Q_INVOKABLE bool        deleteAttendee(int row);
+    Q_INVOKABLE QVariantMap getAttendeeData(int row) const;
+    Q_INVOKABLE bool        saveAttendee(int row, const QString& personId);
+
+    // ── Note action items CRUD ────────────────────────────────────────────────
+    Q_INVOKABLE int         addNoteActionItem(const QString& noteId, const QString& projectId);
+    Q_INVOKABLE bool        deleteNoteActionItem(int row);
+    Q_INVOKABLE QString     noteActionItemIdAtRow(int row) const;
+
+    // ── Model refresh helpers (call from StackView.onActivated in list pages) ─
+    Q_INVOKABLE void        refreshTeamMembers();
+    Q_INVOKABLE void        refreshMeetingAttendees();
+    Q_INVOKABLE void        refreshTrackerComments();
+    Q_INVOKABLE void        refreshTrackerItems();
+    Q_INVOKABLE void        refreshAllItems();
+    Q_INVOKABLE void        refreshProjectNotes();
+    Q_INVOKABLE void        refreshNoteActionItems();
+
+    // ── Quick search ─────────────────────────────────────────────────────────
+    // Sets a client-side text filter on any proxy model.  Any row where at
+    // least one column value contains |text| (case-insensitive) is shown;
+    // all others are hidden.  Pass an empty string to clear.
+    Q_INVOKABLE void        setQuickSearch(QAbstractItemModel* model, const QString& text);
 
     // ── Model accessors ──────────────────────────────────────────────────────
     QAbstractItemModel* projectsListModel()       const;
@@ -159,9 +221,12 @@ public:
     QAbstractItemModel* projectNotesModel()       const;
     QAbstractItemModel* meetingAttendeesModel()   const;
     QAbstractItemModel* searchResultsModel()      const;
-    QAbstractItemModel* statusReportItemsModel()  const;
-    QAbstractItemModel* projectTeamMembersModel() const;
-    QAbstractItemModel* projectLocationsModel()   const;
+    QAbstractItemModel* statusReportItemsModel()      const;
+    QAbstractItemModel* projectTeamMembersModel()     const;
+    QAbstractItemModel* projectLocationsModel()       const;
+    QAbstractItemModel* trackerItemCommentsModel()    const;
+    QAbstractItemModel* notesActionItemsModel()       const;
+    QAbstractItemModel* trackerItemDetailModel()      const;
 
     // ── Sync settings accessors ──────────────────────────────────────────────
     bool    syncEnabled()          const { return global_MobileSettings.getSyncEnabled(); }

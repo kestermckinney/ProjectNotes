@@ -21,7 +21,13 @@ Page {
         RowLayout {
             anchors { left: parent.left; right: parent.right; margins: 8 }
             height: parent.height
-            Item { Layout.fillWidth: true }
+            TextField {
+                id: searchField
+                Layout.fillWidth: true
+                placeholderText: qsTr("Search status items…")
+                onTextChanged: AppController.setQuickSearch(AppController.statusReportItemsModel, text)
+                inputMethodHints: Qt.ImhNoPredictiveText
+            }
             ToolButton {
                 icon.name: "plus"
                 onClicked: {

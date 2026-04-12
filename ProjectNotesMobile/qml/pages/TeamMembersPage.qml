@@ -18,11 +18,19 @@ Page {
     property string projectId:    ""
     property string projectTitle: ""
 
+    StackView.onActivated: AppController.refreshTeamMembers()
+
     header: ToolBar {
         RowLayout {
             anchors { left: parent.left; right: parent.right; margins: 8 }
             height: parent.height
-            Item { Layout.fillWidth: true }
+            TextField {
+                id: searchField
+                Layout.fillWidth: true
+                placeholderText: qsTr("Search team…")
+                onTextChanged: AppController.setQuickSearch(AppController.projectTeamMembersModel, text)
+                inputMethodHints: Qt.ImhNoPredictiveText
+            }
             ToolButton {
                 icon.name: "plus"
                 onClicked: {

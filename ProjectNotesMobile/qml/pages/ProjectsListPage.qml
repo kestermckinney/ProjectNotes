@@ -27,16 +27,8 @@ Page {
                 id: searchField
                 Layout.fillWidth: true
                 placeholderText: qsTr("Search projects…")
-                // onTextChanged: AppController.setGlobalProjectFilter(text)
+                onTextChanged: AppController.setQuickSearch(AppController.projectsListModel, text)
                 inputMethodHints: Qt.ImhNoPredictiveText
-            }
-
-            ToolButton {
-                id: closedToggle
-                checkable: true
-                checked: true   // start showing all projects (matches onDatabaseReady default)
-                text: checked ? qsTr("All") : qsTr("Open")
-                onCheckedChanged: AppController.applyFilterToProjectsList(checked)
             }
 
             ToolButton {

@@ -29,8 +29,6 @@ Rectangle {
     RowLayout {
         anchors { fill: parent; leftMargin: 16; rightMargin: 8 }
         spacing: 0
-        // Prevent MouseArea being blocked by child items
-        enabled: false
 
         Label {
             id: dateLabel

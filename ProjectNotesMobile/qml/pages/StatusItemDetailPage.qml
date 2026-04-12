@@ -21,7 +21,7 @@ Page {
         AppController.saveStatusItem(root.itemRow, cat, descField.text)
     }
 
-    StackView.onRemoved: {
+    StackView.onDeactivating: {
         if (!root._skipSave)
             root._saveNow()
     }
@@ -83,12 +83,13 @@ Page {
 
             SectionHeader { text: qsTr("Description") }
             FieldRow {
-                implicitHeight: Math.max(88, descField.implicitHeight + 16)
+                Layout.preferredHeight: Math.max(100, descField.contentHeight + 24)
                 TextArea {
                     id: descField
                     anchors { left: parent.left; right: parent.right; top: parent.top; bottom: parent.bottom; margins: 8 }
                     text: root.initialDescription
                     wrapMode: TextArea.Wrap
+                    color: palette.text
                     background: Item {}
                 }
             }

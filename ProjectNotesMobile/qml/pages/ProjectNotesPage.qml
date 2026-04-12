@@ -18,19 +18,30 @@ Page {
     property string projectId:    ""
     property string projectTitle: ""
 
+    StackView.onActivated: AppController.refreshProjectNotes()
+
     header: ToolBar {
         RowLayout {
             anchors { left: parent.left; right: parent.right; margins: 8 }
             height: parent.height
-            Item { Layout.fillWidth: true }
+            TextField {
+                id: searchField
+                Layout.fillWidth: true
+                placeholderText: qsTr("Search notes…")
+                onTextChanged: AppController.setQuickSearch(AppController.projectNotesModel, text)
+                inputMethodHints: Qt.ImhNoPredictiveText
+            }
             ToolButton {
                 icon.name: "plus"
                 onClicked: {
                     var newRow = AppController.addProjectNote(root.projectId)
                     if (newRow < 0) return
                     var d = AppController.getProjectNoteData(newRow)
+                    var newId = (d.id || "").toString()
                     root.StackView.view.push(Qt.resolvedUrl("ProjectNoteDetailPage.qml"), {
                         noteRow:         newRow,
+                        noteId:          newId,
+                        projectId:       root.projectId,
                         initialTitle:    (d.note_title    || "").toString(),
                         initialDate:     (d.note_date     || "").toString(),
                         initialNote:     (d.note          || "").toString(),
@@ -81,6 +92,8 @@ Page {
             onClicked: {
                 root.StackView.view.push(Qt.resolvedUrl("ProjectNoteDetailPage.qml"), {
                     noteRow:          index,
+                    noteId:           model.id            || "",
+                    projectId:        root.projectId,
                     initialTitle:     model.note_title    || "",
                     initialDate:      model.note_date     || "",
                     initialNote:      model.note          || "",

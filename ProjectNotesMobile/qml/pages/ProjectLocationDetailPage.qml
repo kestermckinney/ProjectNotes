@@ -22,7 +22,7 @@ Page {
         AppController.saveProjectLocation(root.locationRow, locType, descField.text, pathField.text)
     }
 
-    StackView.onRemoved: {
+    StackView.onDeactivating: {
         if (!root._skipSave)
             root._saveNow()
     }
@@ -58,6 +58,21 @@ Page {
                     AppController.deleteProjectLocation(root.locationRow)
                     root.StackView.view.pop()
                 }
+            }
+        }
+    }
+
+    // ── Footer: open web link ─────────────────────────────────────────────────
+    footer: ToolBar {
+        visible: pathField.text.startsWith("http://") || pathField.text.startsWith("https://")
+                 || typeCombo.currentIndex >= 0 && typeCombo.model[typeCombo.currentIndex] === "Web Link"
+        RowLayout {
+            anchors.centerIn: parent
+            ToolButton {
+                icon.name: "safari"
+                text: qsTr("Open in Browser")
+                display: AbstractButton.TextUnderIcon
+                onClicked: Qt.openUrlExternally(pathField.text)
             }
         }
     }

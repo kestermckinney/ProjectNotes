@@ -48,7 +48,7 @@ Page {
             AppController.setProjectFilter(projectId)
     }
 
-    StackView.onRemoved: {
+    StackView.onDeactivating: {
         if (!root._skipSave)
             root._saveNow()
     }

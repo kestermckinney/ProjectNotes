@@ -18,7 +18,7 @@ Page {
         AppController.saveClient(root.clientRow, clientNameField.text)
     }
 
-    StackView.onRemoved: {
+    StackView.onDeactivating: {
         if (!root._skipSave)
             root._saveNow()
     }
