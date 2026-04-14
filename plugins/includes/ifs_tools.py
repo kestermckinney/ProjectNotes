@@ -8,6 +8,7 @@ from urllib3.exceptions import InsecureRequestWarning
 import os
 import base64
 import time
+from datetime import datetime
 import requests
 import inspect
 import json
@@ -15,6 +16,7 @@ import threading
 import webbrowser
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
+from PyQt6.QtCore import QThread as _QThread
 from requests_oauthlib import OAuth2Session
 from urllib3.exceptions import InsecureRequestWarning
 
@@ -53,10 +55,58 @@ class _SSOCallbackHandler(BaseHTTPRequestHandler):
             </body></html>
         """)
 
-        self.server.auth_code_event.set()
+        self.server.auth_done.set()
 
     def log_message(self, format, *args):
         return  # Suppress log spam
+
+
+class _SSOCallbackThread(_QThread):
+    """QThread that runs a one-shot local HTTP server to capture the OAuth2 redirect.
+
+    Uses handle_request() in a loop so the thread can exit cleanly via
+    requestInterruption() — no blocking shutdown() call needed.
+    """
+
+    def __init__(self, port=8080):
+        super().__init__()
+        self.auth_path = None
+        self._done = threading.Event()
+        self._port = port
+
+    def run(self):
+        try:
+            server = HTTPServer(("localhost", self._port), _SSOCallbackHandler)
+        except OSError as e:
+            print(f"[SSO] Could not start callback server on port {self._port}: {e}")
+            self._done.set()
+            return
+
+        server.timeout = 1.0          # handle_request returns after 1 s if no connection
+        server.auth_done = self._done
+        server.auth_response_path = None
+
+        while not self.isInterruptionRequested() and not self._done.is_set():
+            server.handle_request()
+
+        if server.auth_response_path:
+            self.auth_path = server.auth_response_path
+
+        server.server_close()
+
+    def wait_for_auth(self, timeout_seconds=120):
+        """Wait up to timeout_seconds for the OAuth redirect.
+
+        Returns True if the redirect was received.  Returns False on timeout
+        or when the owning QThread receives a shutdown interruption request.
+        """
+        deadline = time.time() + timeout_seconds
+        while time.time() < deadline:
+            if _QThread.currentThread().isInterruptionRequested():
+                return False
+            if self._done.wait(timeout=1.0):
+                return True
+        return False
 
 
 class SSOAuthAPI:
@@ -301,11 +351,7 @@ class SSOAuthAPI:
             return token
 
         # No valid cached token and refresh failed — do the full browser flow
-        callback_server = HTTPServer(("localhost", 8080), _SSOCallbackHandler)
-        callback_server.auth_code_event = threading.Event()
-        callback_server.auth_response_path = None
-
-        server_thread = threading.Thread(target=callback_server.serve_forever, daemon=True)
+        server_thread = _SSOCallbackThread()
         server_thread.start()
 
         try:
@@ -323,13 +369,11 @@ class SSOAuthAPI:
 
             webbrowser.open(authorization_url)
 
-            received = callback_server.auth_code_event.wait(timeout=120)
-
-            if not received or callback_server.auth_response_path is None:
+            if not server_thread.wait_for_auth(timeout_seconds=120):
                 print(f"Function '{inspect.currentframe().f_code.co_name}': SSO login timed out or was cancelled.")
                 return None
 
-            full_url = f"http://localhost:8080{callback_server.auth_response_path}"
+            full_url = f"http://localhost:8080{server_thread.auth_path}"
 
             self.token_response = oauth.fetch_token(
                 self.token_url,
@@ -342,7 +386,8 @@ class SSOAuthAPI:
             return None
 
         finally:
-            callback_server.shutdown()
+            server_thread.requestInterruption()
+            server_thread.wait(3000)  # clean Qt-native join, max 3 s
 
         if "access_token" not in self.token_response:
             print(f"Function '{inspect.currentframe().f_code.co_name}': No access_token in SSO response.")
@@ -370,6 +415,378 @@ class IFSCommon:
         self.sync_tracker_items = sync_val is not None and sync_val.lower() == "true"
 
         self.sso_auth = SSOAuthAPI()
+
+    # ---------------------------------------------------------------------------
+    # Date utilities
+    # ---------------------------------------------------------------------------
+
+    def _parse_ifs_date(self, date_str):
+        """Parse an IFS ISO 8601 date string to a datetime, or None on failure."""
+        if not date_str:
+            return None
+        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(date_str[:19], fmt)
+            except ValueError:
+                pass
+        return None
+
+
+    def _parse_pn_date(self, date_str):
+        """Parse a Project Notes MM/dd/yyyy date string to a datetime, or None."""
+        if not date_str:
+            return None
+        try:
+            return datetime.strptime(date_str.strip(), "%m/%d/%Y")
+        except ValueError:
+            return None
+
+
+    def _ifs_date_to_pn(self, date_str):
+        """Convert an IFS ISO date string to the Project Notes MM/dd/yyyy format."""
+        dt = self._parse_ifs_date(date_str)
+        return dt.strftime("%m/%d/%Y") if dt else ""
+
+
+    def _ifs_enum_to_pn(self, value):
+        """Convert an IFS CfEnum value (e.g. 'CfEnum_HIGH') to title-case (e.g. 'High')."""
+        if not value:
+            return ""
+        return value.replace("CfEnum_", "").title()
+
+
+    # ---------------------------------------------------------------------------
+    # Project Notes — project list
+    # ---------------------------------------------------------------------------
+
+    def _fetch_active_projects_from_pn(self):
+        """Return a list of active project dicts from the Project Notes local database.
+
+        Uses the built-in filter syntax so Project Notes does the filtering.
+
+        Each dict contains:
+            id               - internal PN project ID (used as FK for item_tracker)
+            project_number   - the IFS ProjectId / display key
+            project_name     - human-readable name
+            client_name      - customer / client name
+            last_invoice_date
+        """
+        pnc = ProjectNotesCommon()
+
+        xmldoc = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<projectnotes>\n'
+            '  <table filter_field_1="project_status" filter_value_1="Active" name="projects" />\n'
+            '</projectnotes>\n'
+        )
+
+        xmlresult = projectnotes.get_data(xmldoc)
+        if not xmlresult:
+            return []
+
+        xmlval = QDomDocument()
+        if not xmlval.setContent(xmlresult):
+            print("Could not parse Project Notes project data.")
+            return []
+
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0)
+        projects_table = pnc.find_node(xmlroot, "table", "name", "projects")
+        if projects_table.isNull():
+            print("No projects table found in Project Notes response.")
+            return []
+
+        projects = []
+        row = projects_table.firstChild()
+        while not row.isNull():
+            # Read the raw text content of the id column, NOT the lookupvalue.
+            # get_column_value returns lookupvalue when present (e.g. the project_number
+            # display string), which is not the internal PK we need as an FK in
+            # item_tracker.  Direct text access bypasses that override.
+            id_col     = pnc.find_node(row, "column", "name", "id")
+            raw_id     = id_col.toElement().text() if not id_col.isNull() else ""
+
+            projects.append({
+                "id":                raw_id,
+                "project_number":    pnc.get_column_value(row, "project_number")    or "",
+                "project_name":      pnc.get_column_value(row, "project_name")      or "",
+                "client_name":       pnc.get_column_value(row, "client_id")         or "",
+                "last_invoice_date": pnc.get_column_value(row, "last_invoice_date") or "",
+            })
+            row = row.nextSibling()
+
+        return projects
+
+
+    # ---------------------------------------------------------------------------
+    # Project Notes — project ID lookup
+    # ---------------------------------------------------------------------------
+
+    def _lookup_project_internal_id(self, pnc, project_number):
+        """Return the internal PN primary-key for a project, looked up by project_number.
+
+        This is the authoritative way to get the FK value needed when writing
+        item_tracker rows.  We query the projects table directly and read the raw
+        text content of the id column — NOT the lookupvalue, which get_column_value
+        would return and which may be the human-readable project_number string rather
+        than the actual numeric PK.
+
+        Returns the ID string on success, or None if the project cannot be found.
+        """
+        xmldoc = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<projectnotes>\n'
+            f'  <table filter_field_1="project_number" filter_value_1="{project_number}" name="projects" />\n'
+            '</projectnotes>\n'
+        )
+
+        xmlresult = projectnotes.get_data(xmldoc)
+        if not xmlresult:
+            return None
+
+        xmlval = QDomDocument()
+        if not xmlval.setContent(xmlresult):
+            return None
+
+        xmlroot      = xmlval.elementsByTagName("projectnotes").at(0)
+        projects_tbl = pnc.find_node(xmlroot, "table", "name", "projects")
+        if projects_tbl.isNull():
+            return None
+
+        first_row = projects_tbl.firstChild()
+        if first_row.isNull():
+            return None
+
+        # Read raw text — bypasses get_column_value's lookupvalue override
+        id_col = pnc.find_node(first_row, "column", "name", "id")
+        if id_col.isNull():
+            return None
+
+        raw_id = id_col.toElement().text()
+        return raw_id if raw_id else None
+
+
+    # ---------------------------------------------------------------------------
+    # Project Notes — item_tracker read / write
+    # ---------------------------------------------------------------------------
+
+    def _fetch_pn_items(self, project_id):
+        """Return a dict of existing item_tracker rows for a project, keyed by item_number.
+
+        Filters by the internal PN project ID so only items for this project are
+        returned. The dict is used for O(1) lookups during the sync loop.
+        """
+        pnc = ProjectNotesCommon()
+
+        xmldoc = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<projectnotes>\n'
+            f'  <table filter_field_1="project_id" filter_value_1="{project_id}" name="item_tracker" />\n'
+            '</projectnotes>\n'
+        )
+
+        xmlresult = projectnotes.get_data(xmldoc)
+        if not xmlresult:
+            return {}
+
+        xmlval = QDomDocument()
+        if not xmlval.setContent(xmlresult):
+            return {}
+
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0)
+        items_table = pnc.find_node(xmlroot, "table", "name", "item_tracker")
+        if items_table.isNull():
+            return {}
+
+        items = {}
+        row = items_table.firstChild()
+        while not row.isNull():
+            item_number = pnc.get_column_value(row, "item_number") or ""
+            items[item_number] = {
+                "item_number":    item_number,
+                "item_name":      pnc.get_column_value(row, "item_name")     or "",
+                "description":    pnc.get_column_value(row, "description")   or "",
+                "status":         pnc.get_column_value(row, "status")        or "",
+                "priority":       pnc.get_column_value(row, "priority")      or "",
+                "assigned_to":    pnc.get_column_value(row, "assigned_to")   or "",
+                "identified_by":  pnc.get_column_value(row, "identified_by") or "",
+                "date_due":       pnc.get_column_value(row, "date_due")      or "",
+                "last_update":    pnc.get_column_value(row, "last_update")   or "",
+                "date_resolved":  pnc.get_column_value(row, "date_resolved") or "",
+            }
+            row = row.nextSibling()
+
+        return items
+
+
+    def _write_pn_item(self, pnc, project_id, item_number, task):
+        """Push one IFS ActivityTask into the Project Notes item_tracker via update_data.
+
+        Maps IFS custom fields → PN column names and handles CfEnum_* stripping and
+        ISO→MM/dd/yyyy date conversion.
+        """
+        cf_status   = self._ifs_enum_to_pn(task.get("Cf_Status"))
+        cf_priority = self._ifs_enum_to_pn(task.get("Cf_Priority"))
+
+        # Fall back to the Completed flag if IFS has no explicit status field
+        if not cf_status:
+            cf_status = "Closed" if task.get("Completed") else "Open"
+
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<projectnotes>\n'
+            '  <table name="item_tracker">\n'
+            '    <row>\n'
+            '      <column name="item_type">Tracker</column>\n'
+            f'      <column name="project_id">{pnc.to_xml(project_id)}</column>\n'
+            f'      <column name="item_number">{pnc.to_xml(item_number)}</column>\n'
+            f'      <column name="item_name">{pnc.to_xml(task.get("Name") or "")}</column>\n'
+            f'      <column name="description">{pnc.to_xml(task.get("Info") or "")}</column>\n'
+            f'      <column name="status">{pnc.to_xml(cf_status)}</column>\n'
+            f'      <column name="priority">{pnc.to_xml(cf_priority)}</column>\n'
+            f'      <column name="assigned_to" lookupvalue="{pnc.to_xml(task.get("Cf_Assigned_To") or "").strip()}"></column>\n'
+            f'      <column name="identified_by" lookupvalue="{pnc.to_xml(task.get("Cf_Identified_By") or "").strip()}"></column>\n'
+            f'      <column name="date_due">{pnc.to_xml(self._ifs_date_to_pn(task.get("Cf_Datedue")))}</column>\n'
+            f'      <column name="last_update">{pnc.to_xml(self._ifs_date_to_pn(task.get("Cf_Date_Updated")))}</column>\n'
+            f'      <column name="date_resolved">{pnc.to_xml(self._ifs_date_to_pn(task.get("Cf_Dateresolved")))}</column>\n'
+            '    </row>\n'
+            '  </table>\n'
+            '</projectnotes>\n'
+        )
+
+        projectnotes.update_data(xml)
+
+
+    # ---------------------------------------------------------------------------
+    # IFS data fetches
+    # ---------------------------------------------------------------------------
+
+    def _fetch_issues_activity_seq(self, token, project_id):
+        """Return the ActivitySeq of the ISSUES activity for a project, or None.
+
+        Uses a direct OData filter on ActivityNo (no state filter) so the ISSUES
+        container is found regardless of its workflow state.
+        """
+        url = (
+            self.ifs_url.rstrip("/")
+            + "/main/ifsapplications/projection/v1/ActivityListHandling.svc/Activities"
+            + f"?$filter=(ProjectId eq '{project_id}' and ActivityNo eq 'ISSUES')"
+            + "&$select=ActivitySeq,ActivityNo,Description"
+            + "&$top=1"
+        )
+
+        try:
+            response = requests.get(
+                url,
+                verify=False,
+                timeout=(10, 60),
+                headers={"Authorization": f"Bearer {token}", "Prefer": "odata.maxpagesize=10"},
+            )
+        except Exception as e:
+            print(f"Network error fetching ISSUES activity for {project_id}: {e}")
+            return None
+
+        if response.status_code != 200:
+            return None  # No ISSUES activity on this project — not an error worth printing
+
+        values = response.json().get("value", [])
+        return values[0].get("ActivitySeq") if values else None
+
+
+    def _fetch_issue_tasks_full(self, token, activity_seq):
+        """Fetch ActivityTasks with all custom fields needed for the sync.
+
+        Uses a direct OData query (rather than IFSCommon.get_activity_tasks) so we
+        can include the Cf_* custom fields that the base method omits.
+        """
+        url = (
+            self.ifs_url.rstrip("/")
+            + f"/main/ifsapplications/projection/v1/ProjectScopeAndScheduleHandling.svc"
+            + f"/Activities(ActivitySeq={activity_seq})/ActivityTasks"
+            + "?$orderby=TaskId"
+            + "&$select=TaskId,Name,Info,Completed,CompletedDate"
+            + ",Cf_Date_Updated,Cf_Assigned_To,Cf_Identified_By"
+            + ",Cf_Datedue,Cf_Dateresolved,Cf_Priority,Cf_Status"
+        )
+
+        try:
+            response = requests.get(
+                url,
+                verify=False,
+                timeout=(10, 120),
+                headers={"Authorization": f"Bearer {token}", "Prefer": "odata.maxpagesize=500"},
+            )
+        except Exception as e:
+            print(f"Network error fetching tasks for ActivitySeq {activity_seq}: {e}")
+            return []
+
+        if response.status_code != 200:
+            print(f"Task fetch failed {response.status_code}: {response.text}")
+            return []
+
+        return response.json().get("value", [])
+
+
+    # ---------------------------------------------------------------------------
+    # Sync logic
+    # ---------------------------------------------------------------------------
+
+    def _sync_project_tasks(self, pnc, project, tasks):
+        """Sync IFS ActivityTasks into the Project Notes item_tracker for one project.
+
+        Rules:
+          - If TaskId starts with project_number  → item was originally from PN;
+              extract item_number = TaskId[len(project_number):]
+          - Otherwise (IFS-native task)           → item_number = "IFS" + TaskId
+
+        For each resolved item_number:
+          - If PN already has that item and IFS Cf_Date_Updated is NOT newer → skip
+          - If PN already has that item and IFS is newer (or either date is absent) → update
+          - If PN does not have the item → create
+
+        Returns a dict with keys: created, updated, skipped.
+        """
+        project_number = project["project_number"]
+
+        # Resolve the internal PN project PK via a dedicated lookup rather than
+        # trusting the value cached during the project-list fetch.  This guarantees
+        # we have the real FK before writing any item_tracker rows; writing with a
+        # wrong or empty id would create orphaned records with no project link.
+        project_id = self._lookup_project_internal_id(pnc, project_number)
+        if not project_id:
+            print(f"       ERROR — could not resolve internal project ID for {project_number}, skipping writes")
+            return {"created": 0, "updated": 0, "skipped": 0}
+
+        pn_items = self._fetch_pn_items(project_id)
+
+        counts = {"created": 0, "updated": 0, "skipped": 0}
+
+        for task in tasks:
+            task_id = task.get("TaskId") or ""
+
+            # Determine the PN item_number for this task
+            if task_id.startswith(project_number):
+                item_number = task_id[len(project_number):]
+            else:
+                item_number = "IFS" + task_id
+
+            ifs_updated = self._parse_ifs_date(task.get("Cf_Date_Updated"))
+
+            if item_number in pn_items:
+                # Item already exists in PN — skip if PN is same age or newer
+                pn_updated = self._parse_pn_date(pn_items[item_number]["last_update"])
+
+                if ifs_updated and pn_updated and pn_updated >= ifs_updated:
+                    counts["skipped"] += 1
+                    continue
+
+                self._write_pn_item(pnc, project_id, item_number, task)
+                counts["updated"] += 1
+            else:
+                # Item not in PN — create it
+                self._write_pn_item(pnc, project_id, item_number, task)
+                counts["created"] += 1
+
+        return counts
 
     def _get_token(self):
         """Authenticate via SSO and return a valid Bearer token, or None on failure.
@@ -704,7 +1121,7 @@ class IFSCommon:
 
         segment = segment + "$orderby=ProjectId&"
 
-        request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectsHandling.svc/Projects?' + segment + '$filter=(Manager%20eq%20%27' + self.ifs_person_id + '%27)&$select=BudgetControlOn,ControlAsBudgeted,ControlOnTotalBudget,ProjUniquePurchase,ProjUniqueSale,State,ProjectId,Objstate,Objgrants,Name,Company,CustomerCategory,CustomerId,FinancialProjectExist,History,DefaultSite,ProjectPngExists,CheckForecast,Description,CompanyName,Manager,AccessOnOff,PlanStart,PlanFinish,ActualStart,ActualFinish,ApprovedDate,CloseDate,CancelDate,FrozenDate,EarnedValueMethod,BaselineRevisionNumber,Cf_Lastinvoiced,luname,keyref&$expand=AccountingProjectRef($select=ProjectGroup,Objgrants,luname,keyref),ManagerRef($select=Name,luname,keyref),CustomerIdRef($select=Name,Objgrants,luname,keyref)'
+        request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectsHandling.svc/Projects?' + segment + '$filter=(Manager%20eq%20%27' + self.ifs_person_id + '%27%20and%20(Objstate%20eq%20IfsApp.ProjectsHandling.ProjectState%27Initialized%27%20or%20Objstate%20eq%20IfsApp.ProjectsHandling.ProjectState%27Started%27%20or%20Objstate%20eq%20IfsApp.ProjectsHandling.ProjectState%27Approved%27))&$select=BudgetControlOn,ControlAsBudgeted,ControlOnTotalBudget,ProjUniquePurchase,ProjUniqueSale,State,ProjectId,Objstate,Objgrants,Name,Company,CustomerCategory,CustomerId,FinancialProjectExist,History,DefaultSite,ProjectPngExists,CheckForecast,Description,CompanyName,Manager,AccessOnOff,PlanStart,PlanFinish,ActualStart,ActualFinish,ApprovedDate,CloseDate,CancelDate,FrozenDate,EarnedValueMethod,BaselineRevisionNumber,Cf_Lastinvoiced,luname,keyref&$expand=AccountingProjectRef($select=ProjectGroup,Objgrants,luname,keyref),ManagerRef($select=Name,luname,keyref),CustomerIdRef($select=Name,Objgrants,luname,keyref)'
 
         result = requests.get(request_url, verify=False, timeout=(10, 120), headers={"Authorization": f"Bearer {token}", "Prefer": "odata.maxpagesize=500,odata.track-changes"})
 
@@ -757,6 +1174,19 @@ class IFSCommon:
             rd['projectsxmlrows'] +=  "    <column name=\"bcws\">" + str(costmetrics['ScheduledWork_aggr_']) + "</column>\n"
             rd['projectsxmlrows'] +=  "    <column name=\"bac\">" + str(metrics['Bac_aggr_']) + "</column>\n"
             rd['projectsxmlrows'] +=  "  </row>\n"
+
+            if self.sync_tracker_items:
+                t_sync = time.perf_counter()
+                activity_seq = self._fetch_issues_activity_seq(token, rowval['ProjectId'])
+                if activity_seq is not None:
+                    tasks = self._fetch_issue_tasks_full(token, activity_seq)
+                    if tasks:
+                        project_dict = {
+                            "project_number": rowval['ProjectId'],
+                            "project_name":   rowval['Description'],
+                        }
+                        counts = self._sync_project_tasks(self.pnc, project_dict, tasks)
+                        print(f"[Tracker Item Sync] {rowval['ProjectId']}: created={counts['created']} updated={counts['updated']} skipped={counts['skipped']} ({time.perf_counter()-t_sync:.2f}s)")
 
             self.get_team_members_xml(rgroups, clientsdict, rowval['ProjectId'], rd )
 
@@ -828,6 +1258,66 @@ class IFSCommon:
                 if rd['companyname']:
                     clientsdict[rd['companyname']] = True
 
+    def _check_and_close_projects(self, rd):
+        """Close any PN Active projects that are no longer active in IFS.
+
+        For each Active project in Project Notes, query IFS for its current Objstate.
+        If IFS reports a state other than Initialized/Started/Approved, append a
+        Closed status row to rd['projectsxmlrows'] so it is written in the same
+        update_data call as the rest of the import.
+        """
+        token = self._get_token()
+        if not token:
+            return
+
+        pn_projects = self._fetch_active_projects_from_pn()
+        if not pn_projects:
+            return
+
+        print(f"[Project Status Check] Checking {len(pn_projects)} active PN project(s) against IFS…")
+
+        active_states = {"Initialized", "Started", "Approved"}
+
+        for project in pn_projects:
+            pid = project["project_number"]
+
+            url = (
+                self.ifs_url.rstrip("/")
+                + "/main/ifsapplications/projection/v1/ProjectsHandling.svc/Projects"
+                + f"?$filter=(ProjectId%20eq%20%27{pid}%27)"
+                + "&$select=ProjectId,Objstate"
+                + "&$top=1"
+            )
+
+            try:
+                response = requests.get(
+                    url,
+                    verify=False,
+                    timeout=(10, 30),
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+            except Exception as e:
+                print(f"[Project Status Check] Network error checking {pid}: {e}")
+                continue
+
+            if response.status_code != 200:
+                # Project not visible (different manager, deleted, etc.) — leave PN unchanged
+                continue
+
+            values = response.json().get("value", [])
+            if not values:
+                continue
+
+            objstate = values[0].get("Objstate", "")
+            if objstate not in active_states:
+                print(f"[Project Status Check] {pid} is '{objstate}' in IFS — closing in Project Notes")
+                rd['projectsxmlrows'] += (
+                    "  <row>\n"
+                    f"    <column name=\"project_number\">{self.pnc.to_xml(pid)}</column>\n"
+                    "    <column name=\"project_status\">Closed</column>\n"
+                    "  </row>\n"
+                )
+
     def import_ifs_projects(self, parameter):
         timer = QElapsedTimer()
         timer.start()
@@ -848,6 +1338,8 @@ class IFSCommon:
         self.get_resource_groups(rgroups)
 
         self.get_projects_xml(rgroups, clientsdict, rd, parameter)
+
+        self._check_and_close_projects(rd)
 
         docxml += "<table name=\"clients\">\n"
         for k in clientsdict:
@@ -978,6 +1470,84 @@ class IFSCommon:
                     itemcount = itemcount + 1
 
                     itemrow = itemrow.nextSibling()
+
+    def sync_activity_tasks(self, parameter):
+        timer = QElapsedTimer()
+        timer.start()
+
+        """Sync IFS ISSUES activity tasks into Project Notes item_tracker for all active projects."""
+        if not self.get_has_settings():
+            msg = (
+                "IFS Cloud is not configured.\n\n"
+                "Please go to Plugins → Settings → IFS Cloud Settings and enter your IFS URL."
+            )
+            print(f"[Tracker Item Sync] {msg}")
+            QMessageBox.warning(QApplication.activeWindow(), "IFS Not Configured", msg)
+            return ""
+
+        pnc = ProjectNotesCommon()
+        t_total_start = time.perf_counter()
+
+        # --- Step 1: Get active projects from Project Notes (local, fast) ---
+        print("[Tracker Item Sync] Fetching active projects from Project Notes…")
+        t0 = time.perf_counter()
+        projects = self._fetch_active_projects_from_pn()
+        print(f"[Tracker Item Sync]   Project Notes query completed in {time.perf_counter() - t0:.2f}s")
+
+        if not projects:
+            print("[Tracker Item Sync] No active projects found — nothing to do.")
+            return ""
+
+        print(f"[Tracker Item Sync] Found {len(projects)} active project(s).")
+
+        # --- Step 2: Authenticate with IFS once up front ---
+        print("[Tracker Item Sync] Authenticating with IFS…")
+        t0 = time.perf_counter()
+        token = self._get_token()
+        print(f"[Tracker Item Sync]   IFS authentication completed in {time.perf_counter() - t0:.2f}s")
+
+        if not token:
+            print("[Tracker Item Sync] IFS authentication failed. Cannot sync tasks.")
+            return ""
+
+        # --- Step 3: For each project, fetch ISSUES tasks and sync to PN ---
+        total = len(projects)
+        total_created = 0
+        total_updated = 0
+        total_skipped = 0
+
+        for idx, project in enumerate(projects, start=1):
+            pid  = project["project_number"]
+            name = project["project_name"]
+            t0   = time.perf_counter()
+
+            print(f"[Tracker Item Sync]   ({idx}/{total}) {pid} — {name}")
+
+            activity_seq = self._fetch_issues_activity_seq(token, pid)
+
+            if activity_seq is None:
+                print(f"[Tracker Item Sync]       no ISSUES activity found, skipping")
+                continue
+
+            tasks = self._fetch_issue_tasks_full(token, activity_seq)
+            elapsed = time.perf_counter() - t0
+
+            if not tasks:
+                print(f"[Tracker Item Sync]       no tasks found ({elapsed:.2f}s)")
+                continue
+
+            print(f"[Tracker Item Sync]       {len(tasks)} task(s) fetched in {elapsed:.2f}s — syncing…")
+
+            counts = self._sync_project_tasks(pnc, project, tasks)
+            total_created += counts["created"]
+            total_updated += counts["updated"]
+            total_skipped += counts["skipped"]
+
+        # --- Step 4: Print summary ---
+        execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
+        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+
+        return ""
 
     # IMPORTANT:  This plugin relys on custom fields on the TASK Entity.  You'll need to evaluate the REST calls to determine the field info
     def export_ifs_tracker_items(self, parameter):

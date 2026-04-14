@@ -452,7 +452,7 @@ class ProjectNotesOutlookTools:
             word_editor = message.GetInspector.WordEditor
             word_editor.Range(0, 0).FormattedText = rtf_body
 
-            temp_mail.Close(0)
+            temp_mail.Close(1)  # 1 = olDiscard — discard without saving to Drafts
             del temp_mail
 
             outlook = None

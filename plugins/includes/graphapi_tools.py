@@ -145,11 +145,11 @@ class GraphAPITools:
 
         self.settings_pluginname = "Outlook Integration"
         self.use_graph_api = (self.pnc.get_plugin_setting("IntegrationType", self.settings_pluginname) == "Office 365 Application")
-        self.import_contacts = (self.pnc.get_plugin_setting("ImportContacts", self.settings_pluginname).lower() == "true")
-        self.export_contacts = (self.pnc.get_plugin_setting("ExportContacts", self.settings_pluginname).lower() == "true")
-        self.sync_todo_with_due = (self.pnc.get_plugin_setting("SyncToDoWithDue", self.settings_pluginname).lower() == "true")
-        self.sync_todo_without_due = (self.pnc.get_plugin_setting("SyncToDoDoWithoutDue", self.settings_pluginname).lower() == "true")
-        self.backup_emails = (self.pnc.get_plugin_setting("BackupEmails", self.settings_pluginname).lower() == "true")
+        self.import_contacts = ((self.pnc.get_plugin_setting("ImportContacts", self.settings_pluginname) or "").lower() == "true")
+        self.export_contacts = ((self.pnc.get_plugin_setting("ExportContacts", self.settings_pluginname) or "").lower() == "true")
+        self.sync_todo_with_due = ((self.pnc.get_plugin_setting("SyncToDoWithDue", self.settings_pluginname) or "").lower() == "true")
+        self.sync_todo_without_due = ((self.pnc.get_plugin_setting("SyncToDoDoWithoutDue", self.settings_pluginname) or "").lower() == "true")
+        self.backup_emails = ((self.pnc.get_plugin_setting("BackupEmails", self.settings_pluginname) or "").lower() == "true")
         self.backup_inbox_folder = self.pnc.get_plugin_setting("BackupInBoxFolder", self.settings_pluginname)
         self.backup_sent_folder = self.pnc.get_plugin_setting("BackupSentFolder", self.settings_pluginname)
 
@@ -594,7 +594,7 @@ class GraphAPITools:
         if QThread.currentThread().isInterruptionRequested():
             return
 
-        response = requests.get(graph_api_endpoint, headers=self.headers, timeout=15)
+        response = requests.get(graph_api_endpoint, headers=self.headers, timeout=30)
 
         # Check response status code
         if response.status_code == 200:
@@ -613,7 +613,7 @@ class GraphAPITools:
 
                 # Construct MSG download URL
                 msg_url = f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{email['id']}"
-                msg_response = requests.get(msg_url, headers=self.headers, timeout=15)
+                msg_response = requests.get(msg_url, headers=self.headers, timeout=45)
 
                 if msg_response.status_code == 200:
                     # print(f'parsing response text from {msg_url}')
