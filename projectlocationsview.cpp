@@ -5,6 +5,7 @@
 #include "databaseobjects.h"
 
 #include <QFileInfo>
+#include <QShowEvent>
 #include <QUrl>
 #include <QMimeData>
 
@@ -13,6 +14,7 @@ ProjectLocationsView::ProjectLocationsView(QWidget* parent) : TableView(parent)
     setObjectName("tableViewProjectLocations");
     setHasOpen(true);
     setAcceptDrops(true);
+    viewport()->setAcceptDrops(true);
 }
 
 ProjectLocationsView::~ProjectLocationsView()
@@ -22,11 +24,27 @@ ProjectLocationsView::~ProjectLocationsView()
     if (m_descriptionDelegate) delete m_descriptionDelegate;
 }
 
+// Qt's QAbstractItemView internals (model resets, HWND recreation on Windows,
+// setDragDropMode calls) can silently clear the viewport's WA_AcceptDrops flag,
+// breaking OLE drop registration.  Re-assert it in every place that can trigger it.
+void ProjectLocationsView::showEvent(QShowEvent *event)
+{
+    TableView::showEvent(event);
+    viewport()->setAcceptDrops(true);
+}
+
+void ProjectLocationsView::reset()
+{
+    TableView::reset();
+    viewport()->setAcceptDrops(true);
+}
+
 void ProjectLocationsView::setModel(QAbstractItemModel *model)
 {
     if (model)
     {
         TableView::setModel(model);
+        viewport()->setAcceptDrops(true);
 
         setColumnHidden(0, true);
         setColumnHidden(1, true);

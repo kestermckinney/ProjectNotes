@@ -48,12 +48,121 @@ class _SSOCallbackHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.end_headers()
-        self.wfile.write(b"""
-            <html><body>
-            <h1>Login Successful!</h1>
-            <p>You can close this window and return to the app.</p>
-            </body></html>
-        """)
+        self.wfile.write(b"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Notes &mdash; IFS Login</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(160deg, #1a2744 0%, #2a3f6f 60%, #1e3a5f 100%);
+    font-family: 'Segoe UI', Arial, sans-serif;
+  }
+  .card {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 48px 56px;
+    max-width: 460px;
+    width: 90%;
+    text-align: center;
+    backdrop-filter: blur(4px);
+  }
+  .logo {
+    margin-bottom: 28px;
+  }
+  .logo svg {
+    width: 64px;
+    height: 64px;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+  }
+  .app-name {
+    color: #ffffff;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .app-sub {
+    color: rgba(255,255,255,0.55);
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 36px;
+  }
+  .check-circle {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    box-shadow: 0 4px 16px rgba(46,204,113,0.4);
+    animation: pop 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+  }
+  @keyframes pop {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  .check-circle svg { width: 32px; height: 32px; }
+  h1 {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  p {
+    color: rgba(255,255,255,0.7);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .divider {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    margin: 32px 0 24px;
+  }
+  .footer {
+    color: rgba(255,255,255,0.3);
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- clipboard body -->
+      <rect x="10" y="14" width="44" height="46" rx="4" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+      <!-- clip at top -->
+      <rect x="22" y="8" width="20" height="12" rx="3" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.7)" stroke-width="2"/>
+      <!-- lines -->
+      <line x1="18" y1="30" x2="46" y2="30" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="18" y1="38" x2="46" y2="38" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="18" y1="46" x2="36" y2="46" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="app-name">Project Notes</div>
+  <div class="app-sub">IFS Integration</div>
+  <div class="check-circle">
+    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polyline points="6,17 13,24 26,9" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <h1>Login Successful</h1>
+  <p>You are now authenticated with IFS.<br>You can close this window and return to Project Notes.</p>
+  <hr class="divider">
+  <div class="footer">This window was opened automatically by Project Notes.</div>
+</div>
+</body>
+</html>""")
 
         self.server.auth_done.set()
 
@@ -158,14 +267,11 @@ class SSOAuthAPI:
             print(f"Function '{inspect.currentframe().f_code.co_name}': Could not reach IFS URL: {e}")
             return False
 
-        print(f"Function '{inspect.currentframe().f_code.co_name}': probe status={response.status_code}")
-
         realm_url = None
 
         if response.status_code == 401:
             # Standard case: 401 with WWW-Authenticate: Bearer realm="<url or name>"
             www_auth = response.headers.get("WWW-Authenticate", "")
-            print(f"Function '{inspect.currentframe().f_code.co_name}': WWW-Authenticate={www_auth}")
             match = re.search(r'realm="([^"]+)"', www_auth)
             if match:
                 realm_value = match.group(1)
@@ -183,7 +289,6 @@ class SSOAuthAPI:
             # Redirect case: Location header points at the Keycloak login page
             # whose path contains /auth/realms/<name>/
             location = response.headers.get("Location", "")
-            print(f"Function '{inspect.currentframe().f_code.co_name}': redirect Location={location}")
             match = re.search(r'(/auth/realms/[^/?#]+)', location)
             if match:
                 parsed = urlparse(location)
@@ -198,7 +303,6 @@ class SSOAuthAPI:
 
         # Fetch the OpenID Connect discovery document
         discovery_url = realm_url.rstrip("/") + "/.well-known/openid-configuration"
-        print(f"Function '{inspect.currentframe().f_code.co_name}': fetching discovery URL: {discovery_url}")
         try:
             discovery = requests.get(discovery_url, verify=False, timeout=(10, 30))
             discovery.raise_for_status()
@@ -214,8 +318,6 @@ class SSOAuthAPI:
             print(f"Function '{inspect.currentframe().f_code.co_name}': Discovery document missing authorization_endpoint or token_endpoint.")
             return False
 
-        print(f"Function '{inspect.currentframe().f_code.co_name}': auth_url={self.auth_url}")
-        print(f"Function '{inspect.currentframe().f_code.co_name}': token_url={self.token_url}")
         return True
 
     def _load_cached_token(self):
@@ -260,7 +362,8 @@ class SSOAuthAPI:
             return None
         try:
             token = json.loads(file.readAll().data().decode("utf-8"))
-        except Exception:
+        except Exception as e:
+            print(f"Function '{inspect.currentframe().f_code.co_name}': failed to parse token cache: {e}")
             return None
         finally:
             file.close()
@@ -803,7 +906,7 @@ class IFSCommon:
 
     def url_is_available(self):
         try:
-            response = requests.head(self.ifs_url, timeout=10)
+            response = requests.head(self.ifs_url, timeout=10, verify=False)
             return response.status_code < 400
         except (requests.ConnectionError, requests.Timeout):
             return False
@@ -820,6 +923,7 @@ class IFSCommon:
     def get_earned_value_metrics(self, projectid):
             token = self._get_token()
             if not token:
+                print(f"No token found! '{inspect.currentframe().f_code.co_name}'")
                 return ""
 
             request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectMonitoringHandling.svc/Projects(ProjectId=%27' + projectid + '%27)/ProjectAnalysisArray?$apply=aggregate(Bcws%20with%20sum%20as%20Bcws_aggr_,Bcwp%20with%20sum%20as%20Bcwp_aggr_,Acwp%20with%20sum%20as%20Acwp_aggr_,Bac%20with%20sum%20as%20Bac_aggr_,Etc%20with%20sum%20as%20Etc_aggr_,Eac%20with%20sum%20as%20Eac_aggr_,Vac%20with%20sum%20as%20Vac_aggr_,Cv%20with%20sum%20as%20Cv_aggr_,Sv%20with%20sum%20as%20Sv_aggr_)'
@@ -837,6 +941,7 @@ class IFSCommon:
     def get_cost_metrics(self, projectid):
         token = self._get_token()
         if not token:
+            print(f"No token found! '{inspect.currentframe().f_code.co_name}'")
             return ""
 
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectMonitoringHandling.svc/Projects(ProjectId=%27' + projectid + '%27)/ProjectCostArray?$apply=aggregate(Estimated%20with%20sum%20as%20Estimated_aggr_,Planned%20with%20sum%20as%20Planned_aggr_,Baseline%20with%20sum%20as%20Baseline_aggr_,EarnedValue%20with%20sum%20as%20EarnedValue_aggr_,ScheduledWork%20with%20sum%20as%20ScheduledWork_aggr_,PlannedCommitted%20with%20sum%20as%20PlannedCommitted_aggr_,Committed%20with%20sum%20as%20Committed_aggr_,Used%20with%20sum%20as%20Used_aggr_,Actual%20with%20sum%20as%20Actual_aggr_)'
@@ -854,6 +959,7 @@ class IFSCommon:
     def get_open_activities(self, projectid):
         token = self._get_token()
         if not token:
+            print(f"No token found! '{inspect.currentframe().f_code.co_name}'")
             return ""
 
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ActivityListHandling.svc/Activities?$filter=((((Objstate%20eq%20IfsApp.ActivityListHandling.ActivityState%27Planned%27%20or%20Objstate%20eq%20IfsApp.ActivityListHandling.ActivityState%27Released%27))%20and%20(ProjectId%20eq%20%27' + projectid + '%27)))&$orderby=ShortName,ActivityNo&$select=ProjectId,Description,EarlyStartDate,EarlyFinishDate,Manager,Company,CCusPoSeq,ActivitySeq,Objstate,Objgrants,ProgressCost,ProgressHours,ActivityNo,ProgressTemplate,SubProjectId,AccessOn,EarlyStart,ActualStart,EarlyFinish,ActualFinish,TotalWorkDays,ShortName,ProgressMethod,ExcludeResourceProgress,ManualProgressLevel,ManualProgressCost,ManualProgressHours,EstimatedProgress,ProgressTemplateStep,PlannedCostDriver,Note,LateStart,LateFinish,luname,keyref&$expand=ProjectRef($select=Name,Objgrants,luname,keyref),SubProjectRef($select=Description,Objgrants,luname,keyref)'
@@ -871,6 +977,7 @@ class IFSCommon:
     def get_activity_tasks(self, activityseq):
         token = self._get_token()
         if not token:
+            print(f"No token found! '{inspect.currentframe().f_code.co_name}'")
             return ""
 
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ProjectScopeAndScheduleHandling.svc/Activities(ActivitySeq=' + str(activityseq) + ')/ActivityTasks?$orderby=TaskId&$select=TaskId,Name,Info,Completed,Objgrants,CompletedDate,luname,keyref'
@@ -970,10 +1077,10 @@ class IFSCommon:
         if dateresolved.isValid():
             docdata["Cf_Dateresolved"] = dateresolved.toString("yyyy-MM-dd")
 
-        if not priority is None:
+        if priority is not None and priority != '':
             docdata["Cf_Priority"] = "CfEnum_" + priority.upper()
 
-        if not status is None:
+        if status is not None and status != '':
             docdata["Cf_Status"] = "CfEnum_" + status.upper()
 
         # print("sending doc:")
@@ -985,17 +1092,13 @@ class IFSCommon:
 
         token = self._get_token()
         if not token:
+            print(f"No token found! '{inspect.currentframe().f_code.co_name}'")
             return False
 
         result = requests.post(request_url, verify=False, json=docdata, timeout=(10, 120), headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
-        
+
         if (result.status_code != 201):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
-
-            # print("Debug JSON: create_activity_task")
-            # json_result = result.json()
-            # print(json.dumps(json_result, indent=4))
-
             return False
 
         return True
@@ -1021,10 +1124,10 @@ class IFSCommon:
         if dateresolved.isValid():
             docdata["Cf_Dateresolved"] = dateresolved.toString("yyyy-MM-dd")
 
-        if not priority is None:
+        if priority is not None and priority != '':
             docdata["Cf_Priority"] = "CfEnum_" + priority.upper()
-            
-        if not status is None:
+
+        if status is not None and status != '':
             docdata["Cf_Status"] = "CfEnum_" + status.upper()
 
         request_url = self.ifs_url + "/int/ifsapplications/entity/v1/ActivityTaskEntity.svc/ActivityTaskSet(TaskId='" + taskid + "')"
@@ -1033,10 +1136,11 @@ class IFSCommon:
 
         token = self._get_token()
         if not token:
+            print(f"No token found! '{inspect.currentframe().f_code.co_name}'")
             return False
 
         result = requests.patch(request_url, verify=False, json=docdata, timeout=(10, 120), headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
-        
+
         if (result.status_code != 200):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
             return False
@@ -1060,6 +1164,7 @@ class IFSCommon:
 
         token = self._get_token()
         if not token:
+            print(f"No token found! '{inspect.currentframe().f_code.co_name}'")
             return False
 
         result = requests.delete(request_url, verify=False, json=docdata, timeout=(10, 120), headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json", "If-Match": "*"})
@@ -1074,7 +1179,7 @@ class IFSCommon:
         if 'value' in json_data:
             for j in json_data['value']:
                 if 'ActivitySeq' in j:
-                    if j['ActivityNo'] == 'ISSUES':      
+                    if j['ActivityNo'] == 'ISSUES':
                         return j['ActivitySeq']
 
         return None
@@ -1083,6 +1188,7 @@ class IFSCommon:
 
         token = self._get_token()
         if not token:
+            print(f"No token found! '{inspect.currentframe().f_code.co_name}'")
             return
 
         if not self.ifs_person_id:
@@ -1125,16 +1231,11 @@ class IFSCommon:
 
         result = requests.get(request_url, verify=False, timeout=(10, 120), headers={"Authorization": f"Bearer {token}", "Prefer": "odata.maxpagesize=500,odata.track-changes"})
 
-        #print(f"Query for projects is : {request_url}")
-
         if (result.status_code != 200):
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
             return ""
 
         json_result = result.json()
-
-        #print("Debug JSON:")
-        #print(json.dumps(json_result, indent=4))
 
         for rowval in json_result['value']:
 
@@ -1193,10 +1294,11 @@ class IFSCommon:
         if self.pnc.set_save_state(statename, skip, top, projectcount) is None:
             print("Failed to set save state. Will retreive the same projects list again.")
 
-            
+
     def get_resource_groups(self, rgroups):
         token = self._get_token()
         if not token:
+            print(f"No token found! '{inspect.currentframe().f_code.co_name}'")
             return ""
 
         request_url = self.ifs_url + '/main/ifsapplications/projection/v1/ResourceGroupsHandling.svc/ResourceSet?$select=ResourceId,Description'
@@ -1207,12 +1309,7 @@ class IFSCommon:
             print(f"Function '{inspect.currentframe().f_code.co_name}', ODATA Request Failed {result.reason}: {result.text} url: {request_url}")
             return ""
 
-        #print(result.content)
-
         json_result = result.json()
-
-        # print("Debug JSON:")
-        # print(json.dumps(json_result, indent=4))
 
         for value in json_result['value']:
             rgroups[value['ResourceId']] = value['Description']        
@@ -1221,6 +1318,7 @@ class IFSCommon:
     def get_team_members_xml(self, rgroups, clientsdict, projectid, rd):
         token = self._get_token()
         if not token:
+            print(f"No token found! '{inspect.currentframe().f_code.co_name}'")
             return ""
 
         request_url = self.ifs_url + "/main/ifsapplications/projection/v1/ProjectResourceAllocationsHandling.svc/ProjResourceAllocations?$filter=(ProjectId%20eq%20%27" + projectid + "%27)&$expand=EmployeeIdRef($select=EmployeeName)"
@@ -1233,26 +1331,27 @@ class IFSCommon:
 
         json_result = result.json()
 
-        # print("IFS Team Members Debug JSON:")
-        # print(json.dumps(json_result, indent=4))
-
         for rowval in json_result['value']:
 
             if rowval['EmployeeIdRef'] is not None:  # some older projects or templates may not have employee asignments
-                rd['projectpeoplexmlrows'] += "  <row>\n"
+                name = rowval['EmployeeIdRef']['EmployeeName']
 
-                rd['projectpeoplexmlrows'] += "    <column name=\"project_id\" lookupvalue=\"" + self.pnc.to_xml(projectid) + "\"></column>\n"
-                rd['projectpeoplexmlrows'] += "    <column name=\"people_id\" lookupvalue=\"" + self.pnc.to_xml(rowval['EmployeeIdRef']['EmployeeName']) + "\"></column>\n"
-                rd['projectpeoplexmlrows'] += "    <column name=\"role\">" + self.pnc.to_xml(rgroups[rowval['ResourceParentId']]) + "</column>\n"
-                rd['projectpeoplexmlrows'] += "  </row>\n"
+                project_person_key = (projectid, name)
+                if project_person_key not in rd['projectpeopleadded']:
+                    rd['projectpeopleadded'].add(project_person_key)
+                    rd['projectpeoplexmlrows'] += "  <row>\n"
+                    rd['projectpeoplexmlrows'] += "    <column name=\"project_id\" lookupvalue=\"" + self.pnc.to_xml(projectid) + "\"></column>\n"
+                    rd['projectpeoplexmlrows'] += "    <column name=\"people_id\" lookupvalue=\"" + self.pnc.to_xml(name) + "\"></column>\n"
+                    rd['projectpeoplexmlrows'] += "    <column name=\"role\">" + self.pnc.to_xml(rgroups[rowval['ResourceParentId']]) + "</column>\n"
+                    rd['projectpeoplexmlrows'] += "  </row>\n"
 
-                rd['peoplexmlrows'] += "  <row>\n"
-
-                rd['peoplexmlrows'] += "    <column name=\"name\">" + self.pnc.to_xml(rowval['EmployeeIdRef']['EmployeeName']) + "</column>\n"
-                if rd['companyname']:
-                    rd['peoplexmlrows'] += "    <column name=\"client_id\" lookupvalue=\"" + self.pnc.to_xml(rd['companyname']) + "\"></column>\n"
-
-                rd['peoplexmlrows'] += "  </row>\n"
+                if name not in rd['peopleadded']:
+                    rd['peopleadded'].add(name)
+                    rd['peoplexmlrows'] += "  <row>\n"
+                    rd['peoplexmlrows'] += "    <column name=\"name\">" + self.pnc.to_xml(name) + "</column>\n"
+                    if rd['companyname']:
+                        rd['peoplexmlrows'] += "    <column name=\"client_id\" lookupvalue=\"" + self.pnc.to_xml(rd['companyname']) + "\"></column>\n"
+                    rd['peoplexmlrows'] += "  </row>\n"
 
                 # only add the company name once to the client list
                 if rd['companyname']:
@@ -1332,6 +1431,8 @@ class IFSCommon:
         rd['projectlocationsxmlrows'] = ''
         rd['peoplexmlrows'] = ''
         rd['projectpeoplexmlrows'] = ''
+        rd['peopleadded'] = set()          # tracks names already in peoplexmlrows
+        rd['projectpeopleadded'] = set()   # tracks (projectid, name) already in projectpeoplexmlrows
 
         docxml = "<projectnotes>\n"
 
@@ -1377,16 +1478,12 @@ class IFSCommon:
         print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
 
     def export_ifs_project_tracker_items(self, project_id, project_number):
-        #print(f"Gathering tracker items for {project_number}...")
-
-        xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table filter_field_1="id" filter_value_1="{project_id}" name="item_tracker" />\n</projectnotes>\n'
+        xmldoc = f'<?xml version="1.0" encoding="UTF-8"?>\n<projectnotes>\n<table filter_field_1="project_id" filter_value_1="{project_id}" name="item_tracker" />\n</projectnotes>\n'
         xmlresult = projectnotes.get_data(xmldoc)
 
-        #print(f"Tracker search returned: {xmlresult}")
-        
         xmlval = QDomDocument()
         xmlval.setContent(xmlresult)
-        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node  
+        xmlroot = xmlval.elementsByTagName("projectnotes").at(0) # get root node
 
         # show all tracker items
         trackeritems = self.pnc.find_node(xmlroot, "table", "name", "item_tracker")
@@ -1430,10 +1527,10 @@ class IFSCommon:
 
                     #print(f"Identified Issue {ifsitemid} in project {project_number}")
 
-                    duedate = None
+                    duedate = QDateTime()
                     assignedto = ''
-                    dateupdated = None
-                    dateresolved = None
+                    dateupdated = QDateTime()
+                    dateresolved = QDateTime()
                     identifiedby = ''
                     priority = ''
                     status = ''
@@ -1461,12 +1558,14 @@ class IFSCommon:
                     desc = self.pnc.get_column_value(itemrow, "description")
                     status = self.pnc.get_column_value(itemrow, "status")
 
-                    #if (isinternal != "1" and itemtype == "Tracker" and (itemstatus == "Assigned" or itemstatus == "New")):
-                    if not self.update_activity_task(issuesseq, project_number, ifsitemid, self.pnc.get_column_value(itemrow, "item_name"), desc, assignedto, dateupdated, duedate, dateresolved, identifiedby, priority, status):
-                        self.create_activity_task(issuesseq, project_number, ifsitemid, self.pnc.get_column_value(itemrow, "item_name"), desc, assignedto, dateupdated, duedate, dateresolved, identifiedby, priority, status)
-                    #else:
-                    #    self.delete_activity_task(issuesseq, project_number, ifsitemid)    
-                    
+                    item_name = self.pnc.get_column_value(itemrow, "item_name")
+
+                    if isinternal != "1":  
+                        if not self.update_activity_task(issuesseq, project_number, ifsitemid, item_name, desc, assignedto, dateupdated, duedate, dateresolved, identifiedby, priority, status):
+                            self.create_activity_task(issuesseq, project_number, ifsitemid, item_name, desc, assignedto, dateupdated, duedate, dateresolved, identifiedby, priority, status)
+                    else:
+                        self.delete_activity_task(issuesseq, project_number, ifsitemid)
+
                     itemcount = itemcount + 1
 
                     itemrow = itemrow.nextSibling()
@@ -1596,7 +1695,7 @@ class IFSCommon:
 
                 project_number = self.pnc.get_column_value(projectrow, "project_number")
                 project_id = self.pnc.get_column_value(projectrow, "id")
-                
+
                 projectcount += 1
 
                 self.export_ifs_project_tracker_items(project_id, project_number)
