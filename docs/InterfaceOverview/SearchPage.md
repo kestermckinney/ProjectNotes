@@ -1,6 +1,8 @@
 # Search Page
 
-The Search Page allows you to quickly search the entire database. Results are automatically filtered by options selected under the **View** menu. These options include **Internal Items**, **Resolved Tracker/Action Items**, and **Closed Projects**.
+The Search Page performs a full-text search across the entire database. Results are automatically filtered by options selected under the **View** menu. These options include **Internal Items**, **Resolved Tracker/Action Items**, and **Closed Projects**.
+
+> **Looking for a quick per-page filter?** Use the **Quick Search** box on the right end of the [Toolbar](<Toolbar.md#quick-search>) to instantly filter rows on the currently visible list page without leaving the page.
 
 **To access the Search Page:**
 

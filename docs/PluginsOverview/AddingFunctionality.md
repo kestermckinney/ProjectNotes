@@ -65,6 +65,17 @@ The user plugin folders (`~/Project Notes/plugins/` and `~/Project Notes/threads
 
 Both the application plugins folder and the user plugins folder are added to Python's `sys.path`, so plugins in either location can import shared modules from `includes/`.
 
+#### Referencing Installed Includes from User Plugins
+
+User plugins stored in `~/Project Notes/plugins/` can import shared helper modules from the application's installed `includes/` folder without copying those files. Because the application plugins folder is on `sys.path`, a standard import statement is all that is required:
+
+```python
+from includes.common import ProjectNotesCommon
+from includes.utils import some_helper_function
+```
+
+This means you can write a user plugin that uses `ProjectNotesCommon` — or any other shared module bundled with the application — and those modules will be loaded from the installed application folder even when your plugin lives in your home directory. When Project Notes is updated and the `includes/` modules change, your user plugin will automatically pick up the updated versions the next time it loads.
+
 ### Auto-Reload on File Changes
 
 Project Notes monitors all plugin folders for changes. When you save a modified `.py` file in any watched folder:

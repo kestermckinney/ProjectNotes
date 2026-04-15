@@ -124,7 +124,7 @@ ApplicationWindow {
                         text: qsTr("Help")
                         onClicked: {
                             hamburgerDrawer.close()
-                            Qt.openUrlExternally("https://projectnotes.readthedocs.io/")
+                            Qt.openUrlExternally("https://projectnotes.readthedocs.io/en/latest/Mobile/ProjectNotesMobile/")
                         }
                     }
 
