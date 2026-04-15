@@ -7,13 +7,14 @@ import projectnotes
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../plugins')))
 
 from includes.ifs_tools import IFSCommon
+import includes.ifs_tools as ifs_tools
 from PyQt6.QtCore import QThread
 
 
 # Project Notes Plugin Parameters
 pluginname = "IFS Integration"
 plugindescription = "Imports IFS Projects, Exports Item Tracker as Tasks.  Uses HTTP Authentication."
-plugintimerevent = 1 # how many minutes between the timer event
+plugintimerevent = 3 # how many minutes between the timer event
 
 pluginmenus = []
 
@@ -31,8 +32,10 @@ if ifs.get_has_settings():
 # def event_startup(parameter):
 #     return
 #
-# def event_shutdown(parameter):
-#     return
+def event_shutdown(parameter):
+    ifs_tools.shutdown_all_threads()
+    return ""
+
 #
 # def event_timer(parameter):
 #     return

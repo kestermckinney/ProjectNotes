@@ -170,6 +170,26 @@ class _SSOCallbackHandler(BaseHTTPRequestHandler):
         return  # Suppress log spam
 
 
+# Module-level registry of active _SSOCallbackThread instances.
+# Holding a reference here prevents Python's GC from destroying a QThread
+# object while the underlying C++ thread is still running (which would crash).
+# shutdown_all_threads() is called by event_shutdown in any plugin that uses
+# this module so all threads are joined before Py_FinalizeEx() is invoked.
+_active_threads: list = []
+
+
+def shutdown_all_threads() -> None:
+    """Signal and join every registered background thread.
+
+    Call this from event_shutdown in any plugin that imports ifs_tools so that
+    Python-spawned QThreads are stopped before the interpreter finalizes.
+    """
+    for t in list(_active_threads):
+        t.requestInterruption()
+        t.wait(5000)
+    _active_threads.clear()
+
+
 class _SSOCallbackThread(_QThread):
     """QThread that runs a one-shot local HTTP server to capture the OAuth2 redirect.
 
@@ -455,6 +475,7 @@ class SSOAuthAPI:
 
         # No valid cached token and refresh failed — do the full browser flow
         server_thread = _SSOCallbackThread()
+        _active_threads.append(server_thread)
         server_thread.start()
 
         try:
@@ -490,7 +511,13 @@ class SSOAuthAPI:
 
         finally:
             server_thread.requestInterruption()
-            server_thread.wait(3000)  # clean Qt-native join, max 3 s
+            server_thread.wait(5000)  # clean Qt-native join, max 5 s
+            # Remove from the registry only after the C++ thread has stopped.
+            # If wait() timed out the entry stays so shutdown_all_threads() can
+            # retry; Python GC is also prevented from destroying a live QThread.
+            if not server_thread.isRunning():
+                if server_thread in _active_threads:
+                    _active_threads.remove(server_thread)
 
         if "access_token" not in self.token_response:
             print(f"Function '{inspect.currentframe().f_code.co_name}': No access_token in SSO response.")
@@ -1287,7 +1314,6 @@ class IFSCommon:
                             "project_name":   rowval['Description'],
                         }
                         counts = self._sync_project_tasks(self.pnc, project_dict, tasks)
-                        print(f"[Tracker Item Sync] {rowval['ProjectId']}: created={counts['created']} updated={counts['updated']} skipped={counts['skipped']} ({time.perf_counter()-t_sync:.2f}s)")
 
             self.get_team_members_xml(rgroups, clientsdict, rowval['ProjectId'], rd )
 
@@ -1372,8 +1398,6 @@ class IFSCommon:
         pn_projects = self._fetch_active_projects_from_pn()
         if not pn_projects:
             return
-
-        print(f"[Project Status Check] Checking {len(pn_projects)} active PN project(s) against IFS…")
 
         active_states = {"Initialized", "Started", "Approved"}
 
@@ -1580,7 +1604,7 @@ class IFSCommon:
                 "IFS Cloud is not configured.\n\n"
                 "Please go to Plugins → Settings → IFS Cloud Settings and enter your IFS URL."
             )
-            print(f"[Tracker Item Sync] {msg}")
+            print(f"{msg}")
             QMessageBox.warning(QApplication.activeWindow(), "IFS Not Configured", msg)
             return ""
 
@@ -1588,25 +1612,17 @@ class IFSCommon:
         t_total_start = time.perf_counter()
 
         # --- Step 1: Get active projects from Project Notes (local, fast) ---
-        print("[Tracker Item Sync] Fetching active projects from Project Notes…")
         t0 = time.perf_counter()
         projects = self._fetch_active_projects_from_pn()
-        print(f"[Tracker Item Sync]   Project Notes query completed in {time.perf_counter() - t0:.2f}s")
 
         if not projects:
-            print("[Tracker Item Sync] No active projects found — nothing to do.")
             return ""
 
-        print(f"[Tracker Item Sync] Found {len(projects)} active project(s).")
-
         # --- Step 2: Authenticate with IFS once up front ---
-        print("[Tracker Item Sync] Authenticating with IFS…")
         t0 = time.perf_counter()
         token = self._get_token()
-        print(f"[Tracker Item Sync]   IFS authentication completed in {time.perf_counter() - t0:.2f}s")
 
         if not token:
-            print("[Tracker Item Sync] IFS authentication failed. Cannot sync tasks.")
             return ""
 
         # --- Step 3: For each project, fetch ISSUES tasks and sync to PN ---
@@ -1620,22 +1636,16 @@ class IFSCommon:
             name = project["project_name"]
             t0   = time.perf_counter()
 
-            print(f"[Tracker Item Sync]   ({idx}/{total}) {pid} — {name}")
-
             activity_seq = self._fetch_issues_activity_seq(token, pid)
 
             if activity_seq is None:
-                print(f"[Tracker Item Sync]       no ISSUES activity found, skipping")
                 continue
 
             tasks = self._fetch_issue_tasks_full(token, activity_seq)
             elapsed = time.perf_counter() - t0
 
             if not tasks:
-                print(f"[Tracker Item Sync]       no tasks found ({elapsed:.2f}s)")
                 continue
-
-            print(f"[Tracker Item Sync]       {len(tasks)} task(s) fetched in {elapsed:.2f}s — syncing…")
 
             counts = self._sync_project_tasks(pnc, project, tasks)
             total_created += counts["created"]
