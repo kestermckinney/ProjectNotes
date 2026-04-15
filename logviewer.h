@@ -43,6 +43,8 @@ private:
     qint64  m_pollLastSize = -1;
     QDateTime m_pollLastModified;
     QString m_filePath;
+
+    bool m_isLoading = false;
 };
 
 class LogViewer : public QDialog

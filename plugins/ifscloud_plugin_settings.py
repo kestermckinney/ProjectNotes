@@ -5,6 +5,7 @@ import platform
 import threading
 import time
 import json
+import projectnotes
 
 from includes.common import ProjectNotesCommon
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
@@ -92,6 +93,8 @@ class IFSCloudSettings(QDialog):
         self.pnc.set_plugin_setting("ReportServer", self.settings_pluginname, self.report_server)
 
         self.pnc.set_plugin_setting("SyncTrackerItems", self.settings_pluginname, "true" if self.ui.m_checkBoxSyncTrackerItems.isChecked() else "false")
+
+        projectnotes.force_reload("ifssync_thread")
 
         self.save_window_state()
         self.accept()

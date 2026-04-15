@@ -40,78 +40,79 @@ void LogLoader::onPollTimer()
 {
     QFileInfo fi(m_filePath);
     if (!fi.exists()) return;
+
     const qint64 newSize = fi.size();
     const QDateTime newMod = fi.lastModified();
 
     if (newSize != m_pollLastSize || newMod != m_pollLastModified) {
-        m_pollLastSize     = newSize;
+        m_pollLastSize = newSize;
         m_pollLastModified = newMod;
-        onFileChanged(m_filePath);
+        // Small debounce
+        QTimer::singleShot(10, this, [this]() { onFileChanged(m_filePath); });
     }
 }
 
 void LogLoader::loadFile()
 {
-    // Poll timer must be created on the worker thread (same pattern as m_topLoadTimer)
+    if (m_isLoading)
+        return;                    // ← prevent overlapping calls
+
+    m_isLoading = true;
+
+    // Create poll timer once (on worker thread)
     if (m_pollTimer == nullptr) {
-        m_pollLastSize     = QFileInfo(m_filePath).size();
+        m_pollLastSize = QFileInfo(m_filePath).size();
         m_pollLastModified = QFileInfo(m_filePath).lastModified();
-        m_pollTimer = new QTimer();  // no parent — lives on worker thread
+        m_pollTimer = new QTimer();
         connect(m_pollTimer, &QTimer::timeout, this, &LogLoader::onPollTimer, Qt::DirectConnection);
         m_pollTimer->start(500);
     }
 
-    // just load the bottom at first
     QFile file(m_filePath);
-    if (file.open(QIODevice::ReadOnly))
-    {
-        // we need to start with the end of the file
-        if (m_lastPosition == 0)
-        {
-            qint64 topofchunck = qMax(file.size() - 8192, 0);
-
-            // on the first call
-            if (m_topPosition == -1)
-            {
-                m_topPosition = topofchunck;
-            }
-
-            file.seek(topofchunck);
-
-            // if we aren't already loading the top of file start the laod
-            if (topofchunck > 0 && m_topLoadTimer == nullptr)
-            {
-                m_topLoadTimer = new QTimer();
-
-                connect(m_topLoadTimer, SIGNAL(timeout()), this, SLOT(timerUpdate()), Qt::DirectConnection);
-
-                m_topLoadTimer->start(100);
-            }
-        }
-        else
-        {
-            // Guard against file rotation/truncation (e.g. log file renamed at max size) start akk iver
-            if (m_lastPosition > file.size())
-                m_lastPosition = 0;
-
-            file.seek(m_lastPosition);
-        }
-
-        // Read in chunks to keep UI responsive
-        while (!file.atEnd() && !QThread::currentThread()->isInterruptionRequested())
-        {
-            QByteArray chunk = file.read(8192);
-            if (!chunk.isEmpty())
-            {
-                emit contentLoaded(m_filePath, QString::fromUtf8(chunk));
-                QThread::msleep(50);
-            }
-        }
-
-        m_lastPosition = file.pos();
-
-        file.close();
+    if (!file.open(QIODevice::ReadOnly)) {
+        m_isLoading = false;
+        return;
     }
+
+    // Guard against truncation / rotation
+    if (m_lastPosition > file.size())
+        m_lastPosition = 0;
+
+    if (m_lastPosition == 0)
+    {
+        // First load - start near the end
+        qint64 topOfChunk = qMax(file.size() - 8192, 0LL);
+        if (m_topPosition == -1)
+            m_topPosition = topOfChunk;
+
+        file.seek(topOfChunk);
+
+        if (topOfChunk > 0 && m_topLoadTimer == nullptr)
+        {
+            m_topLoadTimer = new QTimer();
+            connect(m_topLoadTimer, SIGNAL(timeout()), this, SLOT(timerUpdate()), Qt::DirectConnection);
+            m_topLoadTimer->start(100);
+        }
+    }
+    else
+    {
+        file.seek(m_lastPosition);
+    }
+
+    // Read in chunks
+    while (!file.atEnd() && !QThread::currentThread()->isInterruptionRequested())
+    {
+        QByteArray chunk = file.read(8192);
+        if (!chunk.isEmpty())
+        {
+            emit contentLoaded(m_filePath, QString::fromUtf8(chunk));
+            m_lastPosition = file.pos();        // ← update incrementally!
+            QThread::msleep(30);                // reduced a bit
+        }
+    }
+
+    file.close();
+    m_isLoading = false;
 }
 
 void LogLoader::timerUpdate()
