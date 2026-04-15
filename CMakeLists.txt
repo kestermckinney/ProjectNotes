@@ -247,10 +247,10 @@ if(APPLE)
         )
         add_custom_command(TARGET ProjectNotes POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E remove_directory "$<TARGET_FILE_DIR:ProjectNotes>/dictionary"
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
                 "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
                 "$<TARGET_FILE_DIR:ProjectNotes>/dictionary"
-            COMMENT "Copying dictionary (debug)"
+            COMMENT "Symlinking dictionary (debug)"
         )
     else()
         # ── Release: full app bundle ──────────────────────────────────────────
