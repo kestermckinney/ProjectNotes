@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "sortfilterproxymodel.h"
+#include "sqlquerymodel.h"
 #include "databaseobjects.h"
 #include <QSqlQuery>
 
@@ -16,11 +17,38 @@ bool SortFilterProxyModel::filterAcceptsRow(int source_row,
     // Quick search: show row if any column value contains the search text.
     // Column 0 is always the record UUID — skip it to avoid UUID false-positives.
     if (!m_quickSearch.isEmpty()) {
-        QAbstractItemModel* src = sourceModel();
+        SqlQueryModel* src = static_cast<SqlQueryModel*>(sourceModel());
         const int colCount = src->columnCount();
         for (int col = 1; col < colCount; ++col) {
             const QModelIndex idx = src->index(source_row, col, source_t_parent);
-            if (src->data(idx).toString().contains(m_quickSearch, Qt::CaseInsensitive))
+
+            // For lookup columns resolve the display value (the FK stored in the
+            // model is a UUID/ID — not what the delegate shows).
+            const QString lookupTable = src->getLookupTable(col);
+            QString displayVal;
+            if (!lookupTable.isEmpty()) {
+                const QString fkCol  = src->getLookupFkColumnName(col);
+                const QString valCol = src->getLookupValueColumnName(col);
+                const QString fkVal  = src->data(idx).toString();
+                if (!fkVal.isEmpty()) {
+                    const QString cacheKey = lookupTable + '\x1F' + fkCol + '\x1F' + valCol + '\x1F' + fkVal;
+                    auto it = m_sortLookupCache.constFind(cacheKey);
+                    if (it != m_sortLookupCache.constEnd()) {
+                        displayVal = it.value();
+                    } else {
+                        const QString sql = QString("SELECT %1 FROM %2 WHERE %3 = '%4'")
+                                                .arg(valCol, lookupTable, fkCol, fkVal);
+                        QSqlQuery query(src->getDBOs()->getDb());
+                        if (query.exec(sql) && query.next())
+                            displayVal = query.value(0).toString();
+                        m_sortLookupCache[cacheKey] = displayVal;
+                    }
+                }
+            } else {
+                displayVal = src->data(idx).toString();
+            }
+
+            if (displayVal.contains(m_quickSearch, Qt::CaseInsensitive))
                 return true;
         }
         return false;

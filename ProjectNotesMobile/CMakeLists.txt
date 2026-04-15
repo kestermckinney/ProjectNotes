@@ -25,6 +25,8 @@ if(CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
     set(_OPENSSL_TRIPLET "${_VCPKG_IOS_ROOT}/x64-ios-simulator")
 else()
     set(_OPENSSL_TRIPLET "${_VCPKG_IOS_ROOT}/arm64-ios")
+    set(CMAKE_OSX_ARCHITECTURES            "arm64")
+    set(QT_INSTALL_ARCH_PRIMARY             "ios-arm64")
 endif()
 
 set(OPENSSL_ROOT_DIR      "${_OPENSSL_TRIPLET}" CACHE PATH   "OpenSSL root (vcpkg iOS triplet)" FORCE)

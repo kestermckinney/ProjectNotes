@@ -31,6 +31,7 @@
 #include <QMimeData>
 #include <QActionGroup>
 #include <QDesktopServices>
+#include <QLineEdit>
 #include "mainwindow.h"
 #include "cloudsyncsettingsdialog.h"
 #include "appsettings.h"
@@ -820,6 +821,16 @@ void MainWindow::navigateToPage(BasePage* widget, QVariant recordId)
         navigateCurrentPage()->submitRecord();
     }
 
+    // Clear quick search when leaving the current page
+    if (m_quickSearchEdit && !m_quickSearchEdit->text().isEmpty())
+    {
+        if (navigateCurrentPage() && navigateCurrentPage()->getCurrentModel())
+            navigateCurrentPage()->getCurrentModel()->setQuickSearch(QString());
+        m_quickSearchEdit->blockSignals(true);
+        m_quickSearchEdit->clear();
+        m_quickSearchEdit->blockSignals(false);
+    }
+
     widget->openRecord(recordId);
 
     ui->stackedWidget->setCurrentWidget(widget);
@@ -857,6 +868,15 @@ void MainWindow::navigateBackward()
             navigateCurrentPage()->submitRecord();
         }
 
+        if (m_quickSearchEdit && !m_quickSearchEdit->text().isEmpty())
+        {
+            if (navigateCurrentPage() && navigateCurrentPage()->getCurrentModel())
+                navigateCurrentPage()->getCurrentModel()->setQuickSearch(QString());
+            m_quickSearchEdit->blockSignals(true);
+            m_quickSearchEdit->clear();
+            m_quickSearchEdit->blockSignals(false);
+        }
+
         m_navigationLocation--;
 
         HistoryNode* hn = m_forwardBackHistory.at(m_navigationLocation);
@@ -884,6 +904,15 @@ void MainWindow::navigateForward()
         {
             navigateCurrentPage()->saveState();
             navigateCurrentPage()->submitRecord();
+        }
+
+        if (m_quickSearchEdit && !m_quickSearchEdit->text().isEmpty())
+        {
+            if (navigateCurrentPage() && navigateCurrentPage()->getCurrentModel())
+                navigateCurrentPage()->getCurrentModel()->setQuickSearch(QString());
+            m_quickSearchEdit->blockSignals(true);
+            m_quickSearchEdit->clear();
+            m_quickSearchEdit->blockSignals(false);
         }
 
         m_navigationLocation++;
@@ -1364,6 +1393,8 @@ void MainWindow::textColor()
 void MainWindow::setupTextActions()
 {
     QToolBar *tb = ui->toolBarFormat;
+    QToolBar *tbs = ui->toolBarSearch;
+
     QMenu *menu = ui->menuFormat;
 
     const QIcon boldIcon = QIcon(rsrcPath + "/textbold.png");
@@ -1514,6 +1545,49 @@ void MainWindow::setupTextActions()
     m_comboBoxSize->setCurrentIndex(m_comboBoxSize->findText("11"));
 
     connect(m_comboBoxSize, &ComboBox::textActivated, this, &MainWindow::textSize);
+
+    // Quick search — pushed to the right end of the toolbar
+    // Create the search box
+    m_quickSearchEdit = new QLineEdit(tb);
+    m_quickSearchEdit->setPlaceholderText(tr("Search…"));
+    m_quickSearchEdit->setMaximumWidth(300);
+    m_quickSearchEdit->setMinimumWidth(200);        // prevents it from getting too small
+    m_quickSearchEdit->setClearButtonEnabled(true);
+
+    // Container for the search box + right margin
+    QWidget* searchContainer = new QWidget(tb);
+    QHBoxLayout* searchLay = new QHBoxLayout(searchContainer);
+
+    // Make sure the spacer is strong
+    searchContainer->setMinimumWidth(0);
+
+    searchLay->addStretch(1);
+    searchLay->addWidget(m_quickSearchEdit);
+    searchLay->setContentsMargins(0, 0, 5, 0);     // ← This creates space on the right
+    searchLay->setSpacing(0);
+
+    // Big expanding spacer (pushes everything to the right)
+    QWidget* spacer = new QWidget(tb);
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    // Add to toolbar in correct order
+    tbs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+    tbs->addWidget(spacer);           // pushes search to the right
+    tbs->addWidget(searchContainer);  // search box with right padding
+
+    connect(m_quickSearchEdit, &QLineEdit::textChanged, this, &MainWindow::onQuickSearchChanged);
+}
+
+void MainWindow::onQuickSearchChanged(const QString& text)
+{
+    BasePage* page = navigateCurrentPage();
+    if (!page)
+        return;
+    SortFilterProxyModel* model = page->getCurrentModel();
+    if (!model)
+        return;
+    model->setQuickSearch(text);
 }
 
 void MainWindow::textStyle(int styleIndex)

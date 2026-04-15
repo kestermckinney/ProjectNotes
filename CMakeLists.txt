@@ -196,12 +196,19 @@ target_link_libraries(ProjectNotes PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${Pyth
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.
+# Debug builds on macOS skip the bundle to speed up the build/run cycle.
+if(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(_macos_bundle FALSE)
+else()
+    set(_macos_bundle TRUE)
+endif()
+
 set_target_properties(ProjectNotes PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER "com.kestermckinney.projectnotes"
     MACOSX_BUNDLE_BUNDLE_NAME "Project Notes"
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-    MACOSX_BUNDLE TRUE
+    MACOSX_BUNDLE ${_macos_bundle}
     WIN32_EXECUTABLE TRUE
 )
 
@@ -219,82 +226,109 @@ if(QT_VERSION_MAJOR EQUAL 6)
 endif()
 
 if(APPLE)
-    # ── Fast plugin-only sync target ───────────────────────────────────────────
-    # Build just this target (instead of the full ProjectNotes target) when only
-    # .py files changed.  In Qt Creator: right-click project → Build → sync_plugins,
-    # or add a custom Build Step with "Make arguments: sync_plugins".
-    # Uses rsync --checksum so only content-changed files are actually copied.
-    add_custom_target(sync_plugins
-        COMMAND rsync -rv --checksum
-            "${CMAKE_CURRENT_SOURCE_DIR}/plugins/"
-            "$<TARGET_BUNDLE_DIR:ProjectNotes>/Contents/Resources/plugins/"
-        COMMAND rsync -rv --checksum
-            "${CMAKE_CURRENT_SOURCE_DIR}/threads/"
-            "$<TARGET_BUNDLE_DIR:ProjectNotes>/Contents/Resources/threads/"
-        COMMENT "Syncing Python plugins to app bundle (changed files only)"
-        VERBATIM
-    )
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        # ── Debug: no bundle — symlink resources for fast iteration ───────────
+        # No-op target so Qt Creator's "Build → sync_plugins" step doesn't fail.
+        add_custom_target(sync_plugins
+            COMMENT "sync_plugins: no-op in debug (plugins are symlinked)"
+        )
 
-    # $<TARGET_FILE_DIR:ProjectNotes> resolves to .app/Contents/MacOS at build time.
-    set(BUNDLE_RESOURCES   "$<TARGET_FILE_DIR:ProjectNotes>/../Resources")
-    set(BUNDLE_FRAMEWORKS  "$<TARGET_FILE_DIR:ProjectNotes>/../Frameworks")
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
+                "$<TARGET_FILE_DIR:ProjectNotes>/plugins"
+            COMMENT "Symlinking plugins (debug)"
+        )
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                "${CMAKE_CURRENT_SOURCE_DIR}/threads"
+                "$<TARGET_FILE_DIR:ProjectNotes>/threads"
+            COMMENT "Symlinking threads (debug)"
+        )
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E remove_directory "$<TARGET_FILE_DIR:ProjectNotes>/dictionary"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
+                "$<TARGET_FILE_DIR:ProjectNotes>/dictionary"
+            COMMENT "Copying dictionary (debug)"
+        )
+    else()
+        # ── Release: full app bundle ──────────────────────────────────────────
+        # Fast plugin-only sync target — build just this when only .py files changed.
+        # In Qt Creator: right-click project → Build → sync_plugins,
+        # or add a custom Build Step with "Make arguments: sync_plugins".
+        add_custom_target(sync_plugins
+            COMMAND rsync -rv --checksum
+                "${CMAKE_CURRENT_SOURCE_DIR}/plugins/"
+                "$<TARGET_BUNDLE_DIR:ProjectNotes>/Contents/Resources/plugins/"
+            COMMAND rsync -rv --checksum
+                "${CMAKE_CURRENT_SOURCE_DIR}/threads/"
+                "$<TARGET_BUNDLE_DIR:ProjectNotes>/Contents/Resources/threads/"
+            COMMENT "Syncing Python plugins to app bundle (changed files only)"
+            VERBATIM
+        )
 
-    # Compute the Python.framework root from the version-specific root dir.
-    # Python3_ROOT_DIR = /Library/Frameworks/Python.framework/Versions/X.Y
-    get_filename_component(_python_framework_root "${Python3_ROOT_DIR}/../.." REALPATH)
+        # $<TARGET_FILE_DIR:ProjectNotes> resolves to .app/Contents/MacOS at build time.
+        set(BUNDLE_RESOURCES   "$<TARGET_FILE_DIR:ProjectNotes>/../Resources")
+        set(BUNDLE_FRAMEWORKS  "$<TARGET_FILE_DIR:ProjectNotes>/../Frameworks")
 
-    # Locate macdeployqt next to qmake.
-    get_target_property(_qmake_loc Qt${QT_VERSION_MAJOR}::qmake IMPORTED_LOCATION)
-    get_filename_component(_qt_bin "${_qmake_loc}" DIRECTORY)
+        # Compute the Python.framework root from the version-specific root dir.
+        # Python3_ROOT_DIR = /Library/Frameworks/Python.framework/Versions/X.Y
+        get_filename_component(_python_framework_root "${Python3_ROOT_DIR}/../.." REALPATH)
 
-    # ── 1. Copy plugins (real files — symlinks are rejected by notarization) ──
-    add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/plugins"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
-            "${BUNDLE_RESOURCES}/plugins"
-        COMMENT "Copying plugins into bundle Resources"
-    )
+        # Locate macdeployqt next to qmake.
+        get_target_property(_qmake_loc Qt${QT_VERSION_MAJOR}::qmake IMPORTED_LOCATION)
+        get_filename_component(_qt_bin "${_qmake_loc}" DIRECTORY)
 
-    # ── 2. Copy threads ────────────────────────────────────────────────────────
-    add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/threads"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/threads"
-            "${BUNDLE_RESOURCES}/threads"
-        COMMENT "Copying threads into bundle Resources"
-    )
+        # ── 1. Copy plugins (real files — symlinks are rejected by notarization) ──
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/plugins"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
+                "${BUNDLE_RESOURCES}/plugins"
+            COMMENT "Copying plugins into bundle Resources"
+        )
 
-    # ── 3. Copy dictionary ─────────────────────────────────────────────────────
-    add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/dictionary"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
-            "${BUNDLE_RESOURCES}/dictionary"
-        COMMENT "Copying dictionary into bundle Resources"
-    )
+        # ── 2. Copy threads ────────────────────────────────────────────────────────
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/threads"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_CURRENT_SOURCE_DIR}/threads"
+                "${BUNDLE_RESOURCES}/threads"
+            COMMENT "Copying threads into bundle Resources"
+        )
 
-    # ── 4. Deploy Qt frameworks into the bundle ────────────────────────────────
-    add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND "${_qt_bin}/macdeployqt"
-            "$<TARGET_BUNDLE_DIR:ProjectNotes>"
-            -always-overwrite
-        COMMENT "Deploying Qt into app bundle (macdeployqt)"
-        VERBATIM
-    )
+        # ── 3. Copy dictionary ─────────────────────────────────────────────────────
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/dictionary"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
+                "${BUNDLE_RESOURCES}/dictionary"
+            COMMENT "Copying dictionary into bundle Resources"
+        )
 
-    # ── 5. Bundle Python.framework ─────────────────────────────────────────────
-    add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${BUNDLE_FRAMEWORKS}"
-        COMMAND ${CMAKE_COMMAND}
-            "-DPYTHON_FRAMEWORK_SRC=${_python_framework_root}"
-            "-DFRAMEWORKS=${BUNDLE_FRAMEWORKS}"
-            "-DEXECUTABLE=$<TARGET_FILE:ProjectNotes>"
-            "-DPYTHON_VERSION=${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
-            -P "${CMAKE_CURRENT_SOURCE_DIR}/packaging/macos/BundlePythonFramework.cmake"
-        COMMENT "Bundling Python.framework into Contents/Frameworks"
-        VERBATIM
-    )
+        # ── 4. Deploy Qt frameworks into the bundle ────────────────────────────────
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND "${_qt_bin}/macdeployqt"
+                "$<TARGET_BUNDLE_DIR:ProjectNotes>"
+                -always-overwrite
+            COMMENT "Deploying Qt into app bundle (macdeployqt)"
+            VERBATIM
+        )
+
+        # ── 5. Bundle Python.framework ─────────────────────────────────────────────
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${BUNDLE_FRAMEWORKS}"
+            COMMAND ${CMAKE_COMMAND}
+                "-DPYTHON_FRAMEWORK_SRC=${_python_framework_root}"
+                "-DFRAMEWORKS=${BUNDLE_FRAMEWORKS}"
+                "-DEXECUTABLE=$<TARGET_FILE:ProjectNotes>"
+                "-DPYTHON_VERSION=${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
+                -P "${CMAKE_CURRENT_SOURCE_DIR}/packaging/macos/BundlePythonFramework.cmake"
+            COMMENT "Bundling Python.framework into Contents/Frameworks"
+            VERBATIM
+        )
+    endif()
 else()
     add_custom_command(TARGET ProjectNotes POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E create_symlink

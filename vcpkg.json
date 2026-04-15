@@ -1,10 +1,13 @@
 {
-"dependencies": [
+  "dependencies": [
     {
-      "name": "openssl"
+      "name": "openssl",
+      "platform": "windows"
     },
     {
-      "name": "hunspell"
+      "name": "hunspell",
+      "platform": "windows"
     }
   ]
-} 
+}
+
