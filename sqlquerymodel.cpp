@@ -2230,6 +2230,7 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
     QString whereclause;   // WHERE clause used to locate an existing record
     QString fields;        // comma-separated column names for INSERT
     QString updatevalues;  // comma-separated "col = val" pairs for UPDATE SET
+    QString checkvalues;   // AND-separated "col = val / col IS NULL" pairs for no-change detection
     QString insertvalues;  // comma-separated values for INSERT VALUES
     QString keyfield = getColumnName(0);  // the primary-key column name (always column 0)
     QString keyvalue;      // the primary-key value from the XML, if present
@@ -2395,14 +2396,19 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
                     return true;
                 }
 
+                if (!checkvalues.isEmpty())
+                    checkvalues += " and ";
+
                 if (field_value.isNull())
                 {
                     updatevalues += QString("%1 = NULL").arg(field_name);
+                    checkvalues  += QString("%1 IS NULL").arg(field_name);
                     insertvalues += "NULL";
                 }
                 else
                 {
                     updatevalues += QString("%1 = '%2'").arg(field_name, field_value.toString());
+                    checkvalues  += QString("%1 = '%2'").arg(field_name, field_value.toString());
                     insertvalues += QString("'%1'").arg(field_value.toString());
                 }
             }
@@ -2477,6 +2483,24 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
         }
         else
         {
+            // Before issuing the UPDATE, check whether every column value is
+            // already identical to what is in the database.  If nothing has
+            // changed we skip the UPDATE entirely so that sync-related columns
+            // (e.g. last_sync_date) are not touched unnecessarily.
+            if (!checkvalues.isEmpty())
+            {
+                QString nochange_sql = QString("select count(*) from %1 where %2 and deleted = 0 and %3")
+                                           .arg(m_tablename, id_whereclause, checkvalues);
+                QString nochange_count = getDBOs()->execute(nochange_sql);
+                if (nochange_count == "1")
+                {
+#ifdef QT_DEBUG
+                    QLog_Debug(DEBUGLOG, QString("Import skipped unchanged row in %1 for %2").arg(m_tablename, id_whereclause));
+#endif
+                    return true;
+                }
+            }
+
             sql = QString("update %1 set %2, deleted = 0 where %3").arg(m_tablename, updatevalues, id_whereclause);
             disp_optype = KeyColumnChange::Update;
         }
