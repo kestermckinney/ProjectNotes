@@ -57,14 +57,35 @@ ApplicationWindow {
 
             Rectangle {
                 Layout.fillWidth: true
-                height: 80
-                color: palette.button
+                height: 110
+                color: "#0A7AFF"
 
-                Label {
+                ColumnLayout {
                     anchors.centerIn: parent
-                    text: qsTr("Project Notes")
-                    font.pixelSize: 18
-                    font.bold: true
+                    spacing: 8
+
+                    Rectangle {
+                        Layout.alignment: Qt.AlignHCenter
+                        width: 52; height: 52
+                        radius: 12
+                        color: "white"
+
+                        Label {
+                            anchors.centerIn: parent
+                            text: "PN"
+                            font.pixelSize: 20
+                            font.bold: true
+                            color: "#0A7AFF"
+                        }
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: qsTr("Project Notes")
+                        font.pixelSize: 16
+                        font.bold: true
+                        color: "white"
+                    }
                 }
             }
 
@@ -152,6 +173,8 @@ ApplicationWindow {
 
     // ── Persistent header toolbar ─────────────────────────────────────────────
     header: ToolBar {
+        background: Rectangle { color: "#0A7AFF" }
+
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: 4
@@ -160,8 +183,8 @@ ApplicationWindow {
             ToolButton {
                 id: navButton
                 // depth 1 = initial SwipeView item; depth > 1 = a detail page is open
-                text: pageStack.depth > 1 ? "‹" : "≡"
-                font.pixelSize: 29
+                icon.name: pageStack.depth > 1 ? "chevron.left" : "line.3.horizontal"
+                icon.color: "white"
                 onClicked: {
                     if (pageStack.depth > 1)
                         pageStack.pop()
@@ -179,6 +202,7 @@ ApplicationWindow {
                 font.bold: true
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
+                color: "white"
             }
 
             Item { width: navButton.width }
@@ -192,7 +216,7 @@ ApplicationWindow {
         id: syncStrip
         z: 10
         anchors { top: parent.top; left: parent.left; right: parent.right }
-        height: AppController.syncProgress >= 0.0 ? 3 : 0
+        height: AppController.syncProgress >= 0.0 ? 5 : 0
         color: palette.window        // strip background (shows when bar < 100%)
 
         Behavior on height { NumberAnimation { duration: 150 } }

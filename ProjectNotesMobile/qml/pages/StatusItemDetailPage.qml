@@ -104,9 +104,9 @@ Page {
         leftPadding: 16
         bottomPadding: 4
         font.pixelSize: 13
-        font.weight: Font.Medium
-        color: palette.mid
-        background: Rectangle { color: palette.window }
+        font.weight: Font.Semibold
+        color: "#0A7AFF"
+        background: Rectangle { color: Qt.rgba(10/255, 122/255, 255/255, 0.06) }
     }
 
     component FieldRow: Rectangle {

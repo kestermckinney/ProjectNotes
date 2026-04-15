@@ -145,10 +145,28 @@ Page {
         ScrollIndicator.vertical: ScrollIndicator {}
     }
 
-    Label {
+    Column {
         anchors.centerIn: parent
         visible: listView.count === 0
-        text: qsTr("No tracker items.")
-        color: palette.mid
+        spacing: 10
+
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: "\u26A0\uFE0F"
+            font.pixelSize: 52
+        }
+        Label {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: qsTr("No Tracker Items")
+            font.pixelSize: 17
+            font.bold: true
+        }
+        Label {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: qsTr("Tap + to log an issue, risk, or action item.")
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 14
+            color: palette.mid
+        }
     }
 }

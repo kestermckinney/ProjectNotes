@@ -143,11 +143,28 @@ Page {
     }
 
     // ── Empty state ───────────────────────────────────────────────────────────
-    Label {
+    Column {
         anchors.centerIn: parent
         visible: listView.count === 0
-        text: qsTr("No items found.")
-        horizontalAlignment: Text.AlignHCenter
-        color: palette.mid
+        spacing: 10
+
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: "\uD83D\uDCCB"
+            font.pixelSize: 52
+        }
+        Label {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: qsTr("No Items")
+            font.pixelSize: 17
+            font.bold: true
+        }
+        Label {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: qsTr("Tracker items from all projects appear here.")
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 14
+            color: palette.mid
+        }
     }
 }

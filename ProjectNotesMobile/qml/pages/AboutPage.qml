@@ -14,6 +14,24 @@ Page {
         anchors.centerIn: parent
         spacing: 12
 
+        // ── App icon ──────────────────────────────────────────────────────────
+        Rectangle {
+            Layout.alignment: Qt.AlignHCenter
+            width: 80; height: 80
+            radius: 18
+            color: "#0A7AFF"
+
+            Label {
+                anchors.centerIn: parent
+                text: "PN"
+                font.pixelSize: 30
+                font.bold: true
+                color: "white"
+            }
+        }
+
+        Item { height: 4 }
+
         Label {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("Project Notes")
@@ -35,10 +53,11 @@ Page {
             color: palette.mid
         }
 
-        Item { height: 12 }
+        Item { height: 16 }
 
         Button {
             Layout.alignment: Qt.AlignHCenter
+            highlighted: true
             text: qsTr("Documentation")
             onClicked: Qt.openUrlExternally("https://projectnotes.readthedocs.io/")
         }
