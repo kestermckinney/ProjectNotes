@@ -508,6 +508,11 @@ PluginManager::~PluginManager()
 
     PyEval_RestoreThread(m_pythreadstate);
 
+    // Force a GC pass before finalizing so any Python-owned QThread objects
+    // (e.g. _SSOCallbackThread) whose C++ threads have already stopped are
+    // destroyed cleanly rather than being torn down mid-run by Py_FinalizeEx().
+    PyRun_SimpleString("import gc; gc.collect()");
+
     reset_stdout();
 
     Py_FinalizeEx();

@@ -96,12 +96,7 @@ void FilterDataDialog::setSourceModelView(SqlQueryModel *model, TableView *view)
     m_columnModel->setFilteringModel(model);
     m_columnModel->refresh();
 
-    QModelIndex qi = m_columnModel->index(m_selectedColumn, 0);
-
     m_valuesModel->setFilteringModel(model);
-    m_valuesModel->setValuesColumn(m_columnModel->data(qi).toString());
-    m_valuesModel->setDeletedFilterInView(model->getDeletedFilterInView());
-    m_valuesModel->refresh();
 
     ui->tableViewColumnName->setColumnValuesModel(m_valuesModel);
     ui->tableViewColumnName->setFilteredModel(model);
