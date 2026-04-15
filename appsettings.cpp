@@ -166,14 +166,10 @@ void AppSettings::setWindowStateData(const QString& stateDataName, const QVarian
 
 void AppSettings::setWindowState(const QString& windowName, QWidget* window)
 {
-    int x = window->geometry().left();
-    int y = window->geometry().top();
     int w = window->geometry().width();
     int h = window->geometry().height();
     bool maximized = window->isMaximized();
 
-    setWindowX(windowName, x);
-    setWindowY(windowName, y);
     if (h > 0) setWindowHeight(windowName, h);
     if (w > 0) setWindowWidth(windowName, w);
     setWindowMaximized(windowName, maximized);
@@ -185,18 +181,15 @@ void AppSettings::setWindowState(const QString& windowName, QWidget* window)
 
 bool AppSettings::getWindowState(const QString& windowName, QWidget* window)
 {
-    int x = getWindowX(windowName);
-    int y = getWindowY(windowName);
     int w = getWindowWidth(windowName);
     int h = getWindowHeight(windowName);
 
-    if ( x == -1 || y == -1 || w == -1 || h == -1)
+    if ( w == -1 || h == -1)
     {
         return false;
     }
 
     window->resize(w, h);
-    window->move(x, y);
 
     if (window->objectName() == "MainWindow")
         ((MainWindow*)window)->statusBar()->setVisible(getWindowStatusBar(windowName));
