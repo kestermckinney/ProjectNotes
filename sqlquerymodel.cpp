@@ -72,9 +72,10 @@ void SqlQueryModel::refreshImpactedRecordsets(QModelIndex index)
                     {
                         QVariant val = m_cache[index.row()].value(0);
                         QModelIndex qmi = recordset->findIndex(val, ck_col);
-                        if (qmi.isValid())
+                        while (qmi.isValid())
                         {
                             recordset->reloadRecord(qmi);
+                            qmi = recordset->findNextIndex(val, ck_col, qmi);
                         }
                     }
                 }
@@ -384,7 +385,15 @@ void SqlQueryModel::refresh()
     sql_query.setForwardOnly(true);
     sql_query.prepare(fullsql);
     if (!sql_query.exec())
+    {
         QLog_Error(ERRORLOG,QString("%1 SQL QUERY FAILED: %2\nSQL: %3").arg(objectName(), sql_query.lastError().text(), fullsql));
+    }
+#ifdef QT_DEBUG
+    else
+    {
+        QLog_Debug(DEBUGLOG,QString("SQL QUERY EXECUTED SUCCESSFUL: %1\nSQL: %2").arg(objectName(), fullsql));
+    }
+#endif
 
     // add a blank row for drop downs
     if (m_showBlank)
@@ -1321,16 +1330,25 @@ const QVariant SqlQueryModel::findValue(QVariant& lookupValue, int searchColumn,
 
 const QModelIndex SqlQueryModel::findIndex(QVariant& lookupValue, int searchColumn)
 {
-    int row = 0;
-
-    for ( QVector<QVector<QVariant>>::Iterator itrow = m_cache.begin(); itrow != m_cache.end(); ++itrow )
+    for ( int row = 0; row < rowCount(QModelIndex()); row++ )
     {
-        if ( (*itrow)[searchColumn].toString().compare(lookupValue.toString()) == 0 )
+        if ( m_cache[row][searchColumn].toString().compare(lookupValue.toString()) == 0 )
         {
             return index(row, 0); // key is always at 0
         }
+    }
 
-        row++;
+    return QModelIndex();
+}
+
+const QModelIndex SqlQueryModel::findNextIndex(QVariant& lookupValue, int searchColumn, QModelIndex& startIndex)
+{
+    for ( int row = startIndex.row() + 1; row < rowCount(QModelIndex()); row++ )
+    {
+        if ( m_cache[row][searchColumn].toString().compare(lookupValue.toString()) == 0 )
+        {
+            return index(row, 0); // key is always at 0
+        }
     }
 
     return QModelIndex();

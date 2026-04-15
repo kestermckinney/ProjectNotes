@@ -109,6 +109,8 @@ public:
     QVector<QVariant> emptyrecord();
     const QVariant findValue(QVariant& lookupValue, int searchColumn, int returnColumn);
     const QModelIndex findIndex(QVariant& lookupValue, int searchColumn);
+    const QModelIndex findNextIndex(QVariant& lookupValue, int searchColumn, QModelIndex& startIndex);
+
     void setShowBlank(bool show = true) { m_showBlank = show; }
     bool reloadRecord(const QModelIndex& index);
     bool loadAndFilterRow(const QVariant& id);
