@@ -11,7 +11,7 @@
 class SortFilterProxyModel : public QSortFilterProxyModel
 {
 public:
-    SortFilterProxyModel(QObject* parent = 0);
+    SortFilterProxyModel(QObject* parent = nullptr);
     bool filterAcceptsRow(int sourceRow,
                           const QModelIndex &sourceParent) const override;
     QVariant headerData(int section, Qt::Orientation orientation,
@@ -19,10 +19,14 @@ public:
 
     bool lessThan(const QModelIndex &sourceLeft, const QModelIndex &sourceRight) const override;
 
+    void setQuickSearch(const QString& text);
+    QString quickSearch() const { return m_quickSearch; }
+
 private:
     // Cache for lookup display values — avoids repeated DB queries during sort.
     // Key: "table\x1Ffkcol\x1Fvalcol\x1FfkValue", Value: display string.
     mutable QHash<QString, QString> m_sortLookupCache;
+    QString m_quickSearch;
 };
 
 #endif // SORTFILTERPROXYMODEL_H

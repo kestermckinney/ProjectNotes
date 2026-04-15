@@ -56,8 +56,6 @@ find_library(HUNSPELL_LIBRARIES NAMES hunspell hunspell-1.7)
 message(STATUS "Hunspell includes: ${Hunspell_INCLUDE_DIRS}")
 message(STATUS "Hunspell library: ${HUNSPELL_LIBRARIES}")
 
-include_directories(${Hunspell_INCLUDE_DIRS})
-
 set(PROJECT_SOURCES
     main.cpp
     mainwindow.cpp 
@@ -90,18 +88,62 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_SOURCES}
         ${APP_ICON_RESOURCE_WINDOWS}
         ${APP_ICON_MACOS}
-        actionitemprojectnotesmodel.cpp actionitemsdetailsmeetingsmodel.h actionitemsdetailsmeetingsmodel.cpp actionitemprojectnotesmodel.h clientslistview.cpp clientslistview.h clientsmodel.cpp clientsmodel.h clientspage.cpp clientspage.h columnview.cpp columnview.h comboboxdelegate.cpp comboboxdelegate.h databasestructure.cpp databasestructure.h databasecreate.cpp databasecreate.h databaseviews.cpp databaseviews.h databaseupgrade_v1_0_0.cpp databaseupgrade_v1_0_0.h databaseupgrade_v1_2_0.cpp databaseupgrade_v1_2_0.h databaseupgrade_v5_0_0.cpp databaseupgrade_v5_0_0.h     filterdatadialog.cpp filterdatadialog.h filterdatadialog.ui filtersavestructure.h   itemdetailsdelegate.cpp itemdetailsdelegate.h itemdetailspage.cpp itemdetailspage.h itemdetailteamlistmodel.cpp itemdetailteamlistmodel.h meetingattendeesmodel.cpp meetingattendeesmodel.h meetingattendeesview.cpp meetingattendeesview.h notesactionitemsmodel.cpp notesactionitemsmodel.h notesactionitemsview.cpp notesactionitemsview.h peoplelistview.cpp peoplelistview.h peoplemodel.cpp peoplemodel.h peoplepage.cpp peoplepage.h basepage.cpp basepage.h checkboxdelegate.cpp checkboxdelegate.h columnmodel.cpp columnmodel.h combobox.cpp combobox.h sqlcomboboxdelegate.cpp sqlcomboboxdelegate.h databaseobjects.cpp databaseobjects.h dateeditdelegate.cpp dateeditdelegate.h dateeditex.cpp dateeditex.h inlinespellchecker.cpp inlinespellchecker.h lineeditfilebutton.cpp lineeditfilebutton.h lineeditfilebuttondelegate.cpp lineeditfilebuttondelegate.h plaintexteditdelegate.h plaintextedit.h plaintexteditdelegate.cpp plaintextedit.cpp
-        appsettings.cpp appsettings.h sortfilterproxymodel.cpp sortfilterproxymodel.h spellchecker.cpp spellchecker.h sqlquerymodel.cpp sqlquerymodel.h tableview.cpp tableview.h textedit.cpp textedit.h texteditdelegate.cpp texteditdelegate.h projectdetailsdelegate.cpp projectdetailsdelegate.h projectdetailspage.cpp projectdetailspage.h projectlocationsmodel.cpp projectlocationsmodel.h projectlocationsview.cpp projectlocationsview.h projectnotesdelegate.cpp projectnotesdelegate.h projectnotesmodel.cpp projectnotesmodel.h projectnotespage.cpp projectnotespage.h projectnotesview.cpp projectnotesview.h projectsmodel.h projectsmodel.cpp projectslistview.h projectslistview.cpp projectslistpage.h projectslistpage.cpp projectslistmodel.h projectslistmodel.cpp projectteammembersmodel.cpp projectteammembersmodel.h projectteammembersview.cpp projectteammembersview.h runguard.cpp runguard.h searchpage.cpp searchpage.h searchresultsmodel.cpp searchresultsmodel.h searchresultsview.cpp searchresultsview.h statusreportitemsmodel.cpp statusreportitemsmodel.h statusreportitemsview.cpp statusreportitemsview.h teamsmodel.cpp teamsmodel.h trackeritemcommentsmodel.cpp trackeritemcommentsmodel.h trackeritemcommentsview.cpp trackeritemcommentsview.h trackeritemsmodel.cpp trackeritemsmodel.h trackeritemsview.cpp trackeritemsview.h valueselectmodel.cpp valuesview.h valuesview.cpp valueselectmodel.h
+
+        # ── Desktop-only UI sources ────────────────────────────────────────────
+        # Core data layer (models, database, logging) now lives in ProjectNotesCore.
+
+        appsettings.cpp appsettings.h
+        basepage.cpp basepage.h
+        checkboxdelegate.cpp checkboxdelegate.h
+        clientslistview.cpp clientslistview.h
+        clientspage.cpp clientspage.h
+        columnview.cpp columnview.h
         combobox.cpp combobox.h
-        allitemsview.cpp allitemsview.h allitemspage.cpp allitemspage.h
+        comboboxdelegate.cpp comboboxdelegate.h
+        dateeditdelegate.cpp dateeditdelegate.h
+        dateeditex.cpp dateeditex.h
+        filterdatadialog.cpp filterdatadialog.h filterdatadialog.ui
+        inlinespellchecker.cpp inlinespellchecker.h
+        itemdetailsdelegate.cpp itemdetailsdelegate.h
+        itemdetailspage.cpp itemdetailspage.h
+        lineeditfilebutton.cpp lineeditfilebutton.h
+        lineeditfilebuttondelegate.cpp lineeditfilebuttondelegate.h
+        logviewer.cpp logviewer.h
+        meetingattendeesview.cpp meetingattendeesview.h
+        notesactionitemsview.cpp notesactionitemsview.h
+        peoplelistview.cpp peoplelistview.h
+        peoplepage.cpp peoplepage.h
+        plaintextedit.cpp plaintextedit.h
+        plaintexteditdelegate.cpp plaintexteditdelegate.h
+        plugin.cpp plugin.h
+        pluginmanager.cpp pluginmanager.h
+        projectdetailsdelegate.cpp projectdetailsdelegate.h
+        projectdetailspage.cpp projectdetailspage.h
+        projectlocationsview.cpp projectlocationsview.h
+        projectnotesdelegate.cpp projectnotesdelegate.h
+        projectnotespage.cpp projectnotespage.h
+        projectnotesview.cpp projectnotesview.h
+        projectslistpage.cpp projectslistpage.h
+        projectslistview.cpp projectslistview.h
+        projectteammembersview.cpp projectteammembersview.h
+        pythonworker.cpp pythonworker.h
+        runguard.cpp runguard.h
+        searchpage.cpp searchpage.h
+        searchresultsview.cpp searchresultsview.h
+        spellchecker.cpp spellchecker.h
+        sqlcomboboxdelegate.cpp sqlcomboboxdelegate.h
+        statusreportitemsview.cpp statusreportitemsview.h
+        tableview.cpp tableview.h
+        textedit.cpp textedit.h
+        texteditdelegate.cpp texteditdelegate.h
+        trackeritemcommentsview.cpp trackeritemcommentsview.h
+        trackeritemsview.cpp trackeritemsview.h
+        valuesview.cpp valuesview.h
+        vcardparser.h
+        allitemsview.cpp allitemsview.h
+        allitemspage.cpp allitemspage.h
         spellcheckdialog.cpp spellcheckdialog.h spellcheckdialog.ui
         cloudsyncsettingsdialog.cpp cloudsyncsettingsdialog.h cloudsyncsettingsdialog.ui
-        plugin.cpp plugin.h pluginmanager.cpp pluginmanager.h
-        vcardparser.h
-        logviewer.cpp logviewer.h
-        pythonworker.cpp pythonworker.h QLogger.cpp QLogger.h QLoggerLevel.h QLoggerWriter.cpp QLoggerWriter.h
-        pythonworker.h
-
     )
 
 # Define target properties for Android with Qt 6 as:
@@ -131,26 +173,42 @@ message(STATUS "Python3 executable: ${Python3_EXECUTABLE}")
 message(STATUS "Python3 library: ${Python3_LIBRARIES}")
 message(STATUS "Python3 include dir: ${Python3_INCLUDE_DIRS}")
 
-# include directories for Python
-include_directories(${Python3_INCLUDE_DIRS})
+# Python includes are scoped to the desktop executable (added below after target is defined)
+# link_directories must remain at directory level for linker
 link_directories(${Python3_LIBRARY_DIRS})
 
 # Include the source directory in the include directories for the executable
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${Python3_INCLUDE_DIRS}
+)
+
+# Hunspell headers are only needed by the desktop spellcheck code
+if(Hunspell_INCLUDE_DIRS AND NOT "${Hunspell_INCLUDE_DIRS}" MATCHES "NOTFOUND")
+    target_include_directories(${PROJECT_NAME} PRIVATE ${Hunspell_INCLUDE_DIRS})
+endif()
 
 add_subdirectory(../SqliteSyncPro/src SqliteSyncPro)
+add_subdirectory(ProjectNotesCore)
 
-target_link_libraries(ProjectNotes PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${Python3_LIBRARIES} Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml Qt${QT_VERSION_MAJOR}::Network "${HUNSPELL_LIBRARIES}" SqliteSyncProLib)
+target_link_libraries(ProjectNotes PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${Python3_LIBRARIES} Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml Qt${QT_VERSION_MAJOR}::Network "${HUNSPELL_LIBRARIES}" SqliteSyncProLib ProjectNotesCore)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
 # explicit, fixed bundle identifier manually though.
+# Debug builds on macOS skip the bundle to speed up the build/run cycle.
+if(APPLE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(_macos_bundle FALSE)
+else()
+    set(_macos_bundle TRUE)
+endif()
+
 set_target_properties(ProjectNotes PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER "com.kestermckinney.projectnotes"
     MACOSX_BUNDLE_BUNDLE_NAME "Project Notes"
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-    MACOSX_BUNDLE TRUE
+    MACOSX_BUNDLE ${_macos_bundle}
     WIN32_EXECUTABLE TRUE
 )
 
@@ -168,82 +226,109 @@ if(QT_VERSION_MAJOR EQUAL 6)
 endif()
 
 if(APPLE)
-    # ── Fast plugin-only sync target ───────────────────────────────────────────
-    # Build just this target (instead of the full ProjectNotes target) when only
-    # .py files changed.  In Qt Creator: right-click project → Build → sync_plugins,
-    # or add a custom Build Step with "Make arguments: sync_plugins".
-    # Uses rsync --checksum so only content-changed files are actually copied.
-    add_custom_target(sync_plugins
-        COMMAND rsync -rv --checksum
-            "${CMAKE_CURRENT_SOURCE_DIR}/plugins/"
-            "$<TARGET_BUNDLE_DIR:ProjectNotes>/Contents/Resources/plugins/"
-        COMMAND rsync -rv --checksum
-            "${CMAKE_CURRENT_SOURCE_DIR}/threads/"
-            "$<TARGET_BUNDLE_DIR:ProjectNotes>/Contents/Resources/threads/"
-        COMMENT "Syncing Python plugins to app bundle (changed files only)"
-        VERBATIM
-    )
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        # ── Debug: no bundle — symlink resources for fast iteration ───────────
+        # No-op target so Qt Creator's "Build → sync_plugins" step doesn't fail.
+        add_custom_target(sync_plugins
+            COMMENT "sync_plugins: no-op in debug (plugins are symlinked)"
+        )
 
-    # $<TARGET_FILE_DIR:ProjectNotes> resolves to .app/Contents/MacOS at build time.
-    set(BUNDLE_RESOURCES   "$<TARGET_FILE_DIR:ProjectNotes>/../Resources")
-    set(BUNDLE_FRAMEWORKS  "$<TARGET_FILE_DIR:ProjectNotes>/../Frameworks")
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
+                "$<TARGET_FILE_DIR:ProjectNotes>/plugins"
+            COMMENT "Symlinking plugins (debug)"
+        )
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                "${CMAKE_CURRENT_SOURCE_DIR}/threads"
+                "$<TARGET_FILE_DIR:ProjectNotes>/threads"
+            COMMENT "Symlinking threads (debug)"
+        )
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E remove_directory "$<TARGET_FILE_DIR:ProjectNotes>/dictionary"
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
+                "$<TARGET_FILE_DIR:ProjectNotes>/dictionary"
+            COMMENT "Symlinking dictionary (debug)"
+        )
+    else()
+        # ── Release: full app bundle ──────────────────────────────────────────
+        # Fast plugin-only sync target — build just this when only .py files changed.
+        # In Qt Creator: right-click project → Build → sync_plugins,
+        # or add a custom Build Step with "Make arguments: sync_plugins".
+        add_custom_target(sync_plugins
+            COMMAND rsync -rv --checksum
+                "${CMAKE_CURRENT_SOURCE_DIR}/plugins/"
+                "$<TARGET_BUNDLE_DIR:ProjectNotes>/Contents/Resources/plugins/"
+            COMMAND rsync -rv --checksum
+                "${CMAKE_CURRENT_SOURCE_DIR}/threads/"
+                "$<TARGET_BUNDLE_DIR:ProjectNotes>/Contents/Resources/threads/"
+            COMMENT "Syncing Python plugins to app bundle (changed files only)"
+            VERBATIM
+        )
 
-    # Compute the Python.framework root from the version-specific root dir.
-    # Python3_ROOT_DIR = /Library/Frameworks/Python.framework/Versions/X.Y
-    get_filename_component(_python_framework_root "${Python3_ROOT_DIR}/../.." REALPATH)
+        # $<TARGET_FILE_DIR:ProjectNotes> resolves to .app/Contents/MacOS at build time.
+        set(BUNDLE_RESOURCES   "$<TARGET_FILE_DIR:ProjectNotes>/../Resources")
+        set(BUNDLE_FRAMEWORKS  "$<TARGET_FILE_DIR:ProjectNotes>/../Frameworks")
 
-    # Locate macdeployqt next to qmake.
-    get_target_property(_qmake_loc Qt${QT_VERSION_MAJOR}::qmake IMPORTED_LOCATION)
-    get_filename_component(_qt_bin "${_qmake_loc}" DIRECTORY)
+        # Compute the Python.framework root from the version-specific root dir.
+        # Python3_ROOT_DIR = /Library/Frameworks/Python.framework/Versions/X.Y
+        get_filename_component(_python_framework_root "${Python3_ROOT_DIR}/../.." REALPATH)
 
-    # ── 1. Copy plugins (real files — symlinks are rejected by notarization) ──
-    add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/plugins"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
-            "${BUNDLE_RESOURCES}/plugins"
-        COMMENT "Copying plugins into bundle Resources"
-    )
+        # Locate macdeployqt next to qmake.
+        get_target_property(_qmake_loc Qt${QT_VERSION_MAJOR}::qmake IMPORTED_LOCATION)
+        get_filename_component(_qt_bin "${_qmake_loc}" DIRECTORY)
 
-    # ── 2. Copy threads ────────────────────────────────────────────────────────
-    add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/threads"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/threads"
-            "${BUNDLE_RESOURCES}/threads"
-        COMMENT "Copying threads into bundle Resources"
-    )
+        # ── 1. Copy plugins (real files — symlinks are rejected by notarization) ──
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/plugins"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
+                "${BUNDLE_RESOURCES}/plugins"
+            COMMENT "Copying plugins into bundle Resources"
+        )
 
-    # ── 3. Copy dictionary ─────────────────────────────────────────────────────
-    add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/dictionary"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
-            "${BUNDLE_RESOURCES}/dictionary"
-        COMMENT "Copying dictionary into bundle Resources"
-    )
+        # ── 2. Copy threads ────────────────────────────────────────────────────────
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/threads"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_CURRENT_SOURCE_DIR}/threads"
+                "${BUNDLE_RESOURCES}/threads"
+            COMMENT "Copying threads into bundle Resources"
+        )
 
-    # ── 4. Deploy Qt frameworks into the bundle ────────────────────────────────
-    add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND "${_qt_bin}/macdeployqt"
-            "$<TARGET_BUNDLE_DIR:ProjectNotes>"
-            -always-overwrite
-        COMMENT "Deploying Qt into app bundle (macdeployqt)"
-        VERBATIM
-    )
+        # ── 3. Copy dictionary ─────────────────────────────────────────────────────
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E remove_directory "${BUNDLE_RESOURCES}/dictionary"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
+                "${BUNDLE_RESOURCES}/dictionary"
+            COMMENT "Copying dictionary into bundle Resources"
+        )
 
-    # ── 5. Bundle Python.framework ─────────────────────────────────────────────
-    add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${BUNDLE_FRAMEWORKS}"
-        COMMAND ${CMAKE_COMMAND}
-            "-DPYTHON_FRAMEWORK_SRC=${_python_framework_root}"
-            "-DFRAMEWORKS=${BUNDLE_FRAMEWORKS}"
-            "-DEXECUTABLE=$<TARGET_FILE:ProjectNotes>"
-            "-DPYTHON_VERSION=${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
-            -P "${CMAKE_CURRENT_SOURCE_DIR}/packaging/macos/BundlePythonFramework.cmake"
-        COMMENT "Bundling Python.framework into Contents/Frameworks"
-        VERBATIM
-    )
+        # ── 4. Deploy Qt frameworks into the bundle ────────────────────────────────
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND "${_qt_bin}/macdeployqt"
+                "$<TARGET_BUNDLE_DIR:ProjectNotes>"
+                -always-overwrite
+            COMMENT "Deploying Qt into app bundle (macdeployqt)"
+            VERBATIM
+        )
+
+        # ── 5. Bundle Python.framework ─────────────────────────────────────────────
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${BUNDLE_FRAMEWORKS}"
+            COMMAND ${CMAKE_COMMAND}
+                "-DPYTHON_FRAMEWORK_SRC=${_python_framework_root}"
+                "-DFRAMEWORKS=${BUNDLE_FRAMEWORKS}"
+                "-DEXECUTABLE=$<TARGET_FILE:ProjectNotes>"
+                "-DPYTHON_VERSION=${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
+                -P "${CMAKE_CURRENT_SOURCE_DIR}/packaging/macos/BundlePythonFramework.cmake"
+            COMMENT "Bundling Python.framework into Contents/Frameworks"
+            VERBATIM
+        )
+    endif()
 else()
     add_custom_command(TARGET ProjectNotes POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E create_symlink

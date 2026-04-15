@@ -1,0 +1,287 @@
+// Copyright (C) 2022, 2023, 2024, 2025, 2026 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import ProjectNotesMobile
+
+// TrackerItemDetailPage — view/edit a single tracker item.
+// Accessible from ProjectTrackerPage, AllItemsPage, and NoteActionItemsPage.
+// Uses AppController.trackerItemDetailModel (filtered to one item by openTrackerItem()).
+// Columns from trackeritemsmodel.cpp:
+//   0=id, 1=item_number, 2=item_type, 3=item_name, 4=identified_by,
+//   5=date_identified, 6=description, 7=assigned_to, 8=priority,
+//   9=status, 10=date_due, 11=last_update, 12=date_resolved,
+//   13=note_id, 14=project_id, 15=internal_item
+
+Page {
+    id: root
+    title: qsTr("Item Detail")
+
+    property int    itemRow:             0    // always row 0 of the filtered detail model
+    property string itemId:              ""
+    property string initialType:         ""
+    property string initialName:         ""
+    property string initialDescription:  ""
+    property string initialIdentifiedBy: ""
+    property string initialAssignedTo:   ""
+    property string initialPriority:     ""
+    property string initialStatus:       ""
+    property string initialDateIdentified: ""
+    property string initialDateDue:      ""
+    property bool   initialInternal:     false
+    property bool   _skipSave:           false
+
+    function _saveNow() {
+        AppController.saveTrackerItemDetail(
+            root.itemRow,
+            typeCombo.currentIndex >= 0 ? typeCombo.model[typeCombo.currentIndex] : "",
+            nameField.text,
+            descEdit.text,
+            identifiedByCombo.currentIndex >= 0
+                ? AppController.teamMemberPersonIdAtRow(identifiedByCombo.currentIndex) : "",
+            assignedToCombo.currentIndex >= 0
+                ? AppController.teamMemberPersonIdAtRow(assignedToCombo.currentIndex) : "",
+            priorityCombo.currentIndex >= 0 ? priorityCombo.model[priorityCombo.currentIndex] : "",
+            statusCombo.currentIndex >= 0   ? statusCombo.model[statusCombo.currentIndex]     : "",
+            dateIdentifiedField.text,
+            dateDueField.text,
+            internalSwitch.checked
+        )
+    }
+
+    StackView.onDeactivating: {
+        if (!root._skipSave)
+            root._saveNow()
+    }
+
+    // ── Header: copy + delete ─────────────────────────────────────────────────
+    header: ToolBar {
+        RowLayout {
+            anchors { left: parent.left; right: parent.right; margins: 8 }
+            height: parent.height
+            Item { Layout.fillWidth: true }
+
+            ToolButton {
+                icon.name: "doc.on.doc"
+                onClicked: {
+                    root._saveNow()
+                    root._skipSave = true
+                    var newRow = AppController.copyTrackerItemDetail(root.itemRow)
+                    if (newRow < 0) { root._skipSave = false; return }
+                    // copyTrackerItemDetail already called openTrackerItem; row 0 is the copy.
+                    var newId = AppController.trackerItemIdAtRow(0)
+                    var d = AppController.getTrackerItemDetailData(0)
+                    root.StackView.view.replace(Qt.resolvedUrl("TrackerItemDetailPage.qml"), {
+                        itemRow:              0,
+                        itemId:               newId,
+                        initialType:          (d.item_type        || "").toString(),
+                        initialName:          (d.item_name        || "").toString(),
+                        initialDescription:   (d.description      || "").toString(),
+                        initialIdentifiedBy:  (d.identified_by    || "").toString(),
+                        initialAssignedTo:    (d.assigned_to      || "").toString(),
+                        initialPriority:      (d.priority         || "").toString(),
+                        initialStatus:        (d.status           || "").toString(),
+                        initialDateIdentified:(d.date_identified   || "").toString(),
+                        initialDateDue:       (d.date_due         || "").toString(),
+                        initialInternal:      (d.internal_item    || "0") !== "0"
+                    })
+                }
+            }
+
+            ToolButton {
+                icon.name: "trash"
+                onClicked: {
+                    root._skipSave = true
+                    AppController.deleteTrackerItemDetail(root.itemRow)
+                    root.StackView.view.pop()
+                }
+            }
+        }
+    }
+
+    // ── Footer: Comments icon ─────────────────────────────────────────────────
+    footer: ToolBar {
+        RowLayout {
+            anchors.centerIn: parent
+            spacing: 32
+
+            ToolButton {
+                icon.name: "text.bubble"
+                text: qsTr("Comments")
+                display: AbstractButton.TextUnderIcon
+                onClicked: {
+                    root._saveNow()
+                    root.StackView.view.push(Qt.resolvedUrl("TrackerItemCommentsPage.qml"), {
+                        itemId: root.itemId
+                    })
+                }
+            }
+        }
+    }
+
+    // ── Body ──────────────────────────────────────────────────────────────────
+    ScrollView {
+        anchors.fill: parent
+        contentWidth: availableWidth
+
+        ColumnLayout {
+            width: parent.width
+            spacing: 0
+
+            SectionHeader { text: qsTr("Type") }
+            FieldRow {
+                ComboBox {
+                    id: typeCombo
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
+                    model: AppController.trackerItemTypeOptions()
+                    Component.onCompleted: {
+                        var idx = model.indexOf(root.initialType)
+                        currentIndex = idx >= 0 ? idx : 0
+                    }
+                }
+            }
+
+            SectionHeader { text: qsTr("Name") }
+            FieldRow {
+                TextField {
+                    id: nameField
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: root.initialName
+                    inputMethodHints: Qt.ImhNoPredictiveText
+                    background: Item {}
+                }
+            }
+
+            SectionHeader { text: qsTr("Description") }
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: Math.max(120, descEdit.contentHeight + 24)
+                color: palette.base
+
+                TextEdit {
+                    id: descEdit
+                    anchors { fill: parent; margins: 8 }
+                    text: root.initialDescription
+                    wrapMode: TextEdit.Wrap
+                    color: palette.text
+                    selectByMouse: true
+                }
+                Rectangle {
+                    anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
+                    height: 1; color: palette.mid; opacity: 0.3
+                }
+            }
+
+            SectionHeader { text: qsTr("Identified By") }
+            FieldRow {
+                ComboBox {
+                    id: identifiedByCombo
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
+                    model: AppController.projectTeamMembersModel
+                    textRole: "name"
+                    Component.onCompleted: {
+                        var row = AppController.teamMemberRowForPersonId(root.initialIdentifiedBy)
+                        currentIndex = row >= 0 ? row : -1
+                    }
+                }
+            }
+
+            SectionHeader { text: qsTr("Assigned To") }
+            FieldRow {
+                ComboBox {
+                    id: assignedToCombo
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
+                    model: AppController.projectTeamMembersModel
+                    textRole: "name"
+                    Component.onCompleted: {
+                        var row = AppController.teamMemberRowForPersonId(root.initialAssignedTo)
+                        currentIndex = row >= 0 ? row : -1
+                    }
+                    onActivated: function(idx) {
+                        if (idx >= 0) {
+                            var curStatus = statusCombo.currentIndex >= 0
+                                ? statusCombo.model[statusCombo.currentIndex] : ""
+                            if (curStatus === "New") {
+                                var assignedIdx = statusCombo.model.indexOf("Assigned")
+                                if (assignedIdx >= 0) statusCombo.currentIndex = assignedIdx
+                            }
+                        }
+                    }
+                }
+            }
+
+            SectionHeader { text: qsTr("Priority") }
+            FieldRow {
+                ComboBox {
+                    id: priorityCombo
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
+                    model: AppController.trackerItemPriorityOptions()
+                    Component.onCompleted: {
+                        var idx = model.indexOf(root.initialPriority)
+                        currentIndex = idx >= 0 ? idx : 0
+                    }
+                }
+            }
+
+            SectionHeader { text: qsTr("Status") }
+            FieldRow {
+                ComboBox {
+                    id: statusCombo
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
+                    model: AppController.trackerItemStatusOptions()
+                    Component.onCompleted: {
+                        var idx = model.indexOf(root.initialStatus)
+                        currentIndex = idx >= 0 ? idx : 0
+                    }
+                }
+            }
+
+            SectionHeader { text: qsTr("Date Identified") }
+            DateFieldRow { id: dateIdentifiedField; text: root.initialDateIdentified }
+
+            SectionHeader { text: qsTr("Date Due") }
+            DateFieldRow { id: dateDueField; text: root.initialDateDue }
+
+            SectionHeader {
+                visible: AppController.showInternalItems
+                text: qsTr("Internal")
+            }
+            FieldRow {
+                visible: AppController.showInternalItems
+                Switch {
+                    id: internalSwitch
+                    anchors { left: parent.left; verticalCenter: parent.verticalCenter; leftMargin: 12 }
+                    checked: root.initialInternal
+                    text: qsTr("Internal Item")
+                }
+            }
+
+            Item { Layout.preferredHeight: 24 }
+        }
+    }
+
+    component SectionHeader: Label {
+        Layout.fillWidth: true
+        Layout.topMargin: 20
+        leftPadding: 16
+        bottomPadding: 4
+        font.pixelSize: 13
+        font.weight: Font.Medium
+        color: palette.mid
+        background: Rectangle { color: palette.window }
+    }
+
+    component FieldRow: Rectangle {
+        default property alias content: innerItem.data
+        Layout.fillWidth: true
+        Layout.preferredHeight: 44
+        color: palette.base
+        Item { id: innerItem; anchors.fill: parent }
+        Rectangle {
+            anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
+            height: 1; color: palette.mid; opacity: 0.3
+        }
+    }
+}

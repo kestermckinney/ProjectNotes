@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "notesactionitemsmodel.h"
-#include "appsettings.h"
 #include "databaseobjects.h"
 
 NotesActionItemsModel::NotesActionItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)

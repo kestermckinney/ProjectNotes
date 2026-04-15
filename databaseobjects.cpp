@@ -633,17 +633,6 @@ bool DatabaseObjects::getShowInternalItems()
     return ret;
 }
 
-
-void DatabaseObjects::setGlobalProjectFilter(const QString& value)
-{
-    saveParameter("UserFilter:ProjectFilter", value );
-}
-
-QString DatabaseObjects::getGlobalProjectFilter()
-{
-    return loadParameter("UserFilter:ProjectFilter");
-}
-
 void DatabaseObjects::setProjectManager(const QString& value)
 {
     saveParameter("Preferences:ProjectManager", value );
@@ -716,20 +705,20 @@ void DatabaseObjects::setGlobalSearches( bool refresh )
         allitemsmodel()->clearFilter(9);
     }
 
-    if (getGlobalProjectFilter().isEmpty())
-    {
+    // if (getGlobalProjectFilter().isEmpty())
+    // {
         // don't clear this one becasue we may have it open  projectinformationmodel()->clearFilter(0);
-        projectslistmodel()->clearFilter(0);
-        searchresultsmodel()->clearFilter(7);
-    }
-    else
-    {
-        projectslistmodel()->setFilter(0, getGlobalProjectFilter());
+    projectslistmodel()->clearFilter(0);
+    searchresultsmodel()->clearFilter(7);
+    // }
+    // else
+    // {
+    //     projectslistmodel()->setFilter(0, getGlobalProjectFilter());
 
-        QString projectnumber = execute(QString("select project_number from projects where id = '%1'").arg(getGlobalProjectFilter()));
+    //     QString projectnumber = execute(QString("select project_number from projects where id = '%1'").arg(getGlobalProjectFilter()));
 
-        searchresultsmodel()->setFilter(7, projectnumber);
-    }
+    //     searchresultsmodel()->setFilter(7, projectnumber);
+    // }
 
 
     if (refresh)

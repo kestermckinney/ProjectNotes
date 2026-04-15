@@ -33,7 +33,7 @@ Single-instance MDI Qt application enforced via `RunGuard` (UUID-based). Entry p
 
 ### Page System (MVC)
 
-All pages inherit from `PNBasePage`. Key pages:
+All pages inherit from `BasePage`. Key pages:
 - `ProjectsListPage`, `ProjectDetailsPage`, `ProjectNotesPage`
 - `ItemDetailsPage` (risks, issues, action items)
 - `PeoplePage`, `ClientsPage`, `SearchPage`
@@ -42,7 +42,7 @@ All pages inherit from `PNBasePage`. Key pages:
 
 - `databaseobjects.h/cpp` — ORM-like wrappers for database interaction
 - `databasestructure.cpp` — Full schema definition and incremental upgrade logic via `UpgradeDatabase()`; versioned upgrade logic is split into `databaseupgrade_v*.cpp` files
-- `PNSqlQueryModel` → `PNSortFilterProxyModel` → `PNTableView` pipeline for all tabular data
+- `SqlQueryModel` → `SortFilterProxyModel` → `TableView` pipeline for all tabular data
 - SQLite database at `database/ProjectNotes.db`; schema version tracked in `application_version` table
 
 Key tables: `projects`, `project_notes`, `item_tracker`, `item_tracker_updates`, `people`, `clients`, `meeting_attendees`, `project_locations`, `project_people`, `application_settings`
@@ -56,18 +56,17 @@ Key tables: `projects`, `project_notes`, `item_tracker`, `item_tracker_updates`,
 
 ### Custom Delegates
 
-Cell editors in table views are implemented as delegates: `PNCheckboxDelegate`, `PNComboboxDelegate`, `PNDateEditDelegate`, `PNLineEditFileButtonDelegate`, `PNPlainTextEditDelegate`, `PNTextEditDelegate`
+Cell editors in table views are implemented as delegates: `CheckboxDelegate`, `ComboboxDelegate`, `DateEditDelegate`, `LineEditFileButtonDelegate`, `PlainTextEditDelegate`, `TextEditDelegate`
 
 ### Other Key Utilities
 
-- `PNSettings` — QSettings wrapper for persistent preferences
-- `PNPlainTextEdit` + `PNInlineSpellChecker` — Custom text editor with Hunspell spell-checking
+- `AppSettings` — QSettings wrapper for persistent preferences
+- `PlainTextEdit` + `InlineSpellChecker` — Custom text editor with Hunspell spell-checking
 - `ImportExport` — XML-based data import/export
 - `QLogger` — Structured logging; log viewer available via `LogViewer`
 
 ## Naming Conventions
 
-- `PN*` prefix for all custom ProjectNotes classes
 - `*Model` for data models, `*Page` for page widgets, `*Dialog` for dialogs, `*Delegate` for cell editors
 
 ## Plugin Development

@@ -426,6 +426,17 @@ QVariant SqlQueryModel::data(const QModelIndex &index, int role) const
         reformatValue(retval, m_columnType[index.column()]);
     }
 
+    // Named column roles for QML delegates: Qt::UserRole + colIndex → column value.
+    // This lets QML access any column via model.columnName without calling data() explicitly.
+    if (role >= Qt::UserRole && index.row() >= 0 && index.row() < m_cache.size()) {
+        int col = role - Qt::UserRole;
+        if (col >= 0 && col < m_columnCount) {
+            retval = m_cache[index.row()][col];
+            reformatValue(retval, m_columnType[col]);
+            return retval;
+        }
+    }
+
     // make a light gray backround when not edit_table
     if (m_cache.size() > index.row() && role == Qt::BackgroundRole && index.row() >= 0)
     {
@@ -439,6 +450,14 @@ QVariant SqlQueryModel::data(const QModelIndex &index, int role) const
     }
 
     return retval;
+}
+
+QHash<int, QByteArray> SqlQueryModel::roleNames() const
+{
+    QHash<int, QByteArray> roles = QAbstractTableModel::roleNames();
+    for (auto it = m_columnName.constBegin(); it != m_columnName.constEnd(); ++it)
+        roles[Qt::UserRole + it.key()] = it.value().toUtf8();
+    return roles;
 }
 
 void SqlQueryModel::clear()

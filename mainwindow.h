@@ -17,6 +17,7 @@
 #include <QProgressBar>
 #include <QLabel>
 #include <QNetworkInformation>
+#include <QLineEdit>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -145,6 +146,7 @@ private slots:
     void onPluginLoaded(const QString& pluginpath);
     void onPluginUnLoaded(const QString& pluginpath);
     void onRefreshRequested();
+    void onQuickSearchChanged(const QString& text);
     void onTimerWaitForThreads();
     void onSyncRowChanged(const QString& tableName, const QString& id);
     void onSyncStatusUpdated(int percentComplete, qint64 pendingPush, qint64 pendingPull);
@@ -206,6 +208,7 @@ private:
     QComboBox* m_comboBoxStyle;
     QFontComboBox* m_comboBoxFont;
     QComboBox* m_comboBoxSize;
+    QLineEdit* m_quickSearchEdit = nullptr;
 
     QString m_mainConnectionName = "mainconnection";
     QTimer* m_waitForThreadsTimer = nullptr;
