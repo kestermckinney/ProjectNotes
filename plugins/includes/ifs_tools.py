@@ -1,5 +1,5 @@
 # Copyright (C) 2025, 2026 Paul McKinney
-from includes.common import ProjectNotesCommon
+from includes.common import ProjectNotesCommon 
 from PyQt6 import QtCore
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtCore import QFile, QIODevice, QDateTime, QUrl, QDir, QFileInfo, QElapsedTimer, QThread
@@ -14,10 +14,10 @@ import inspect
 import json
 import threading
 import webbrowser
+from requests_oauthlib import OAuth2Session
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 from PyQt6.QtCore import QThread as _QThread
-from requests_oauthlib import OAuth2Session
 from urllib3.exceptions import InsecureRequestWarning
 
 # Allow OAuth2 over plain HTTP for the localhost callback server.
@@ -31,19 +31,24 @@ import projectnotes
 
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
+auth_response_path = None
+auth_code_event = None
 
-class _SSOCallbackHandler(BaseHTTPRequestHandler):
-    """Local HTTP handler that captures the OAuth2 redirect from Keycloak."""
-
+class CallbackHandler(BaseHTTPRequestHandler):
     def do_GET(self):
+        global auth_response_path
+        global auth_code_event
+
         parsed = urlparse(self.path)
 
+        # Only handle the /callback path; ignore favicon etc.
         if parsed.path != "/callback":
             self.send_response(204)
             self.end_headers()
             return
 
-        self.server.auth_response_path = self.path
+        print(f"Callback received: {self.path}")
+        auth_response_path = self.path
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -164,79 +169,11 @@ class _SSOCallbackHandler(BaseHTTPRequestHandler):
 </body>
 </html>""")
 
-        self.server.auth_done.set()
+        # Signal the main thread that we got the callback
+        auth_code_event.set()
 
     def log_message(self, format, *args):
         return  # Suppress log spam
-
-
-# Module-level registry of active _SSOCallbackThread instances.
-# Holding a reference here prevents Python's GC from destroying a QThread
-# object while the underlying C++ thread is still running (which would crash).
-# shutdown_all_threads() is called by event_shutdown in any plugin that uses
-# this module so all threads are joined before Py_FinalizeEx() is invoked.
-_active_threads: list = []
-
-
-def shutdown_all_threads() -> None:
-    """Signal and join every registered background thread.
-
-    Call this from event_shutdown in any plugin that imports ifs_tools so that
-    Python-spawned QThreads are stopped before the interpreter finalizes.
-    """
-    for t in list(_active_threads):
-        t.requestInterruption()
-        t.wait(5000)
-    _active_threads.clear()
-
-
-class _SSOCallbackThread(_QThread):
-    """QThread that runs a one-shot local HTTP server to capture the OAuth2 redirect.
-
-    Uses handle_request() in a loop so the thread can exit cleanly via
-    requestInterruption() — no blocking shutdown() call needed.
-    """
-
-    def __init__(self, port=8080):
-        super().__init__()
-        self.auth_path = None
-        self._done = threading.Event()
-        self._port = port
-
-    def run(self):
-        try:
-            server = HTTPServer(("localhost", self._port), _SSOCallbackHandler)
-        except OSError as e:
-            print(f"[SSO] Could not start callback server on port {self._port}: {e}")
-            self._done.set()
-            return
-
-        server.timeout = 1.0          # handle_request returns after 1 s if no connection
-        server.auth_done = self._done
-        server.auth_response_path = None
-
-        while not self.isInterruptionRequested() and not self._done.is_set():
-            server.handle_request()
-
-        if server.auth_response_path:
-            self.auth_path = server.auth_response_path
-
-        server.server_close()
-
-    def wait_for_auth(self, timeout_seconds=120):
-        """Wait up to timeout_seconds for the OAuth redirect.
-
-        Returns True if the redirect was received.  Returns False on timeout
-        or when the owning QThread receives a shutdown interruption request.
-        """
-        deadline = time.time() + timeout_seconds
-        while time.time() < deadline:
-            if _QThread.currentThread().isInterruptionRequested():
-                return False
-            if self._done.wait(timeout=1.0):
-                return True
-        return False
-
 
 class SSOAuthAPI:
     """Handles Keycloak SSO authentication for IFS Cloud REST calls.
@@ -263,7 +200,7 @@ class SSOAuthAPI:
         self.temporary_folder = self.pnc.get_temporary_folder()
         self.token_cache_file = self.temporary_folder + "/ifs_sso_token_cache.json"
 
-        self.token_response = None
+        # self.token_response = None
         self.access_token = None
         self.current_user = None
 
@@ -340,33 +277,31 @@ class SSOAuthAPI:
 
         return True
 
-    def _load_cached_token(self):
-        """Return the cached token dict if it exists and has not expired, otherwise None."""
-        file = QFile(self.token_cache_file)
-        if not file.exists() or file.size() == 0:
-            return None
-        if not file.open(QIODevice.OpenModeFlag.ReadOnly):
-            print(f"Function '{inspect.currentframe().f_code.co_name}': Could not open {self.token_cache_file}.")
+    def load_cached_token(self):
+        """Return the cached token if it exists and has not expired, otherwise None."""
+        token = None
+
+        if not os.path.exists(self.token_cache_file):
             return None
         try:
-            token = json.loads(file.readAll().data().decode("utf-8"))
-        except Exception:
-            return None
-        finally:
-            file.close()
-        # expires_at is a Unix timestamp written by requests_oauthlib
-        if token.get("expires_at", 0) > time.time():
-            return token
+            with open(self.token_cache_file, "r") as f:
+                token = json.load(f)
+            # expires_at is a Unix timestamp written by requests_oauthlib
+            if token.get("expires_at", 0) > time.time():
+                return token
+            print("Cached token has expired.")
+        except Exception as e:
+            print(f"Could not read token cache: {e}")
         return None
 
-    def _save_token(self, token):
-        """Persist the token dict to disk for reuse across process restarts."""
-        file = QFile(self.token_cache_file)
-        if file.open(QIODevice.OpenModeFlag.WriteOnly):
-            file.write(json.dumps(token).encode("utf-8"))
-            file.close()
-        else:
-            print(f"Function '{inspect.currentframe().f_code.co_name}': Failed to open {self.token_cache_file} for writing.")
+    def save_token(self, token):
+        """Persist the token dict to disk for reuse across runs."""
+        try:
+            with open(self.token_cache_file, "w") as f:
+                json.dump(token, f)
+            print(f"Token cached to {self.token_cache_file}")
+        except Exception as e:
+            print(f"Warning: could not save token cache: {e}")
 
     def _try_refresh_token(self):
         """Use the stored refresh_token to obtain a new access token without a browser.
@@ -374,19 +309,26 @@ class SSOAuthAPI:
         Returns the new access token string on success, or None if the refresh
         token is absent, expired, or the Keycloak request fails.
         """
+        print("Trying to refresh token...")
+
         # Read the raw cache file without checking access-token expiry.
         file = QFile(self.token_cache_file)
         if not file.exists() or file.size() == 0:
             return None
-        if not file.open(QIODevice.OpenModeFlag.ReadOnly):
-            return None
+
+        token = None
+        new_token = None
+
         try:
-            token = json.loads(file.readAll().data().decode("utf-8"))
+            with open(self.token_cache_file, "r") as f:
+                token = json.load(f)
         except Exception as e:
             print(f"Function '{inspect.currentframe().f_code.co_name}': failed to parse token cache: {e}")
             return None
         finally:
             file.close()
+
+        print(f"found token: {token}")
 
         refresh_token = token.get("refresh_token")
         if not refresh_token:
@@ -413,9 +355,9 @@ class SSOAuthAPI:
             if "expires_in" in new_token and "expires_at" not in new_token:
                 new_token["expires_at"] = time.time() + new_token["expires_in"] - 10
 
-            self.token_response = new_token
+            # self.token_response = new_token
             self.access_token = new_token["access_token"]
-            self._save_token(new_token)
+            self.save_token(new_token)
             self._lookup_current_user()
             return self.access_token
 
@@ -457,12 +399,12 @@ class SSOAuthAPI:
 
         # Return the in-process cached token if still valid
         if self.access_token is not None:
-            cached = self._load_cached_token()
+            cached = self.load_cached_token()
             if cached:
                 return self.access_token
 
         # Try the on-disk token cache before opening the browser
-        cached = self._load_cached_token()
+        cached = self.load_cached_token()
         if cached:
             self.access_token = cached["access_token"]
             self._lookup_current_user()
@@ -473,58 +415,58 @@ class SSOAuthAPI:
         if token:
             return token
 
-        # No valid cached token and refresh failed — do the full browser flow
-        server_thread = _SSOCallbackThread()
-        _active_threads.append(server_thread)
+        global auth_response_path
+        global auth_code_event
+
+        auth_code_event = threading.Event()
+        auth_response_path = None
+
+        print("Starting local callback server on http://localhost:8080...")
+        server = HTTPServer(("localhost", 8080), CallbackHandler)
+        server_thread = threading.Thread(target=server.serve_forever, daemon=True)
         server_thread.start()
+        print("Local server is running.")
+
+        oauth = OAuth2Session(client_id=self.CLIENT_ID, redirect_uri=self.REDIRECT_URI, scope=self.SCOPE)
+
+        authorization_url, state = oauth.authorization_url(
+            self.auth_url,
+            access_type="offline",
+            prompt="consent"
+        )
+
+        print("Opening browser for login...")
+        webbrowser.open(authorization_url)
+
+        print("Waiting for Keycloak to redirect back...")
+        received = auth_code_event.wait(timeout=120)
+
+        if not received or auth_response_path is None:
+            print("Timeout or no callback received. Exiting.")
+            server.shutdown()
+            return None
+
+        print("Processing login response...")
+        full_url = f"http://localhost:8080{auth_response_path}"
 
         try:
-            oauth = OAuth2Session(
-                client_id=self.CLIENT_ID,
-                redirect_uri=self.REDIRECT_URI,
-                scope=self.SCOPE,
-            )
-
-            authorization_url, _ = oauth.authorization_url(
-                self.auth_url,
-                access_type="offline",
-                prompt="consent",
-            )
-
-            webbrowser.open(authorization_url)
-
-            if not server_thread.wait_for_auth(timeout_seconds=120):
-                print(f"Function '{inspect.currentframe().f_code.co_name}': SSO login timed out or was cancelled.")
-                return None
-
-            full_url = f"http://localhost:8080{server_thread.auth_path}"
-
-            self.token_response = oauth.fetch_token(
+            token = oauth.fetch_token(
                 self.token_url,
                 authorization_response=full_url,
-                client_secret=False,
+                client_secret=False
             )
-
+            self.save_token(token)
         except Exception as e:
-            print(f"Function '{inspect.currentframe().f_code.co_name}': Error during SSO authentication: {e}")
+            print("Error exchanging code for token:", e)
+            print("Full callback URL was:", full_url)
+            server.shutdown()
             return None
-
         finally:
-            server_thread.requestInterruption()
-            server_thread.wait(5000)  # clean Qt-native join, max 5 s
-            # Remove from the registry only after the C++ thread has stopped.
-            # If wait() timed out the entry stays so shutdown_all_threads() can
-            # retry; Python GC is also prevented from destroying a live QThread.
-            if not server_thread.isRunning():
-                if server_thread in _active_threads:
-                    _active_threads.remove(server_thread)
+            server.shutdown()
 
-        if "access_token" not in self.token_response:
-            print(f"Function '{inspect.currentframe().f_code.co_name}': No access_token in SSO response.")
-            return None
+        self.access_token = token["access_token"]
+        self.save_token(token)
 
-        self.access_token = self.token_response["access_token"]
-        self._save_token(self.token_response)
         self._lookup_current_user()
 
         return self.access_token
@@ -1733,6 +1675,6 @@ if __name__ == '__main__':
 
     rd = {}
 
-    #ifs.get_resource_groups(rgroups)
+    ifs.get_resource_groups(rgroups)
     #ifs.get_team_members_xml(rgroups, clientsdict, 'P3114M', rd)
 
