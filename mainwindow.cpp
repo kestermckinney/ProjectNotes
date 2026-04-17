@@ -2223,7 +2223,7 @@ void MainWindow::onTimerWaitForThreads()
     {
         // Stop both timers before closing so neither fires again during teardown.
         m_waitForThreadsTimer->stop();
-        m_pluginManager->stopPollTimer();
+        m_pluginManager->stopWatcher();
         this->close();  // once all plugins are unloaded we can quit
     }
 

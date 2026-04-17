@@ -8,12 +8,12 @@
 #include <QPlainTextEdit>
 #include <QDir>
 #include <QSet>
-#include <QDateTime>
 #include <QTabWidget>
 #include <QVBoxLayout>
 #include <QScrollBar>
 #include <QThread>
 #include <QTimer>
+#include <QFileSystemWatcher>
 
 class LogLoader : public QObject
 {
@@ -32,16 +32,11 @@ public:
     LogLoader(const QString& filePath);
     ~LogLoader();
 
-private slots:
-    void onPollTimer();
-
 private:
     qint64 m_topPosition = -1;
     qint64 m_lastPosition = 0;
     QTimer* m_topLoadTimer = nullptr;
-    QTimer* m_pollTimer = nullptr;
-    qint64  m_pollLastSize = -1;
-    QDateTime m_pollLastModified;
+    QFileSystemWatcher* m_fileWatcher = nullptr;
     QString m_filePath;
 
     bool m_isLoading = false;
@@ -56,7 +51,6 @@ private slots:
     void onClearLog();
     void onInsertContent(const QString& filePath, const QString& content);
     void onUpdateContent(const QString& filePath, const QString& content);
-    void onPollTimer();
 
 signals:
     void closed();
@@ -70,7 +64,7 @@ private:
     QPushButton* m_close;
     QMap<QString, QPlainTextEdit*> m_fileTabs;
     QMap<QString, QThread*> m_loadingThreads;
-    QTimer* m_pollTimer;
+    QFileSystemWatcher* m_folderWatcher = nullptr;
     QSet<QString> m_knownLogFiles;
 
 public:

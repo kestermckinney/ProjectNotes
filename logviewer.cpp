@@ -15,10 +15,9 @@ LogLoader::LogLoader(const QString& filePath)
 
 LogLoader::~LogLoader()
 {
-    if (m_pollTimer) {
-        m_pollTimer->stop();
-        delete m_pollTimer;
-        m_pollTimer = nullptr;
+    if (m_fileWatcher) {
+        delete m_fileWatcher;
+        m_fileWatcher = nullptr;
     }
 
     if (m_topLoadTimer)
@@ -33,23 +32,12 @@ LogLoader::~LogLoader()
 
 void LogLoader::onFileChanged(const QString &filePath)
 {
-    loadFile();
-}
+    // Re-add the path in case the platform dropped the watch after the event
+    if (m_fileWatcher && !m_fileWatcher->files().contains(filePath))
+        m_fileWatcher->addPath(filePath);
 
-void LogLoader::onPollTimer()
-{
-    QFileInfo fi(m_filePath);
-    if (!fi.exists()) return;
-
-    const qint64 newSize = fi.size();
-    const QDateTime newMod = fi.lastModified();
-
-    if (newSize != m_pollLastSize || newMod != m_pollLastModified) {
-        m_pollLastSize = newSize;
-        m_pollLastModified = newMod;
-        // Small debounce
-        QTimer::singleShot(10, this, [this]() { onFileChanged(m_filePath); });
-    }
+    // Small debounce to let the writer finish
+    QTimer::singleShot(10, this, [this]() { loadFile(); });
 }
 
 void LogLoader::loadFile()
@@ -59,13 +47,11 @@ void LogLoader::loadFile()
 
     m_isLoading = true;
 
-    // Create poll timer once (on worker thread)
-    if (m_pollTimer == nullptr) {
-        m_pollLastSize = QFileInfo(m_filePath).size();
-        m_pollLastModified = QFileInfo(m_filePath).lastModified();
-        m_pollTimer = new QTimer();
-        connect(m_pollTimer, &QTimer::timeout, this, &LogLoader::onPollTimer, Qt::DirectConnection);
-        m_pollTimer->start(500);
+    // Create file watcher once (on worker thread)
+    if (m_fileWatcher == nullptr) {
+        m_fileWatcher = new QFileSystemWatcher();
+        m_fileWatcher->addPath(m_filePath);
+        connect(m_fileWatcher, &QFileSystemWatcher::fileChanged, this, &LogLoader::onFileChanged, Qt::DirectConnection);
     }
 
     QFile file(m_filePath);
@@ -191,10 +177,9 @@ LogViewer::LogViewer(QWidget* parent) : QDialog(parent)
     for (const QString& path : m_fileTabs.keys())
         m_knownLogFiles.insert(path);
 
-    m_pollTimer = new QTimer(this);
-    m_pollTimer->setInterval(1500);
-    connect(m_pollTimer, &QTimer::timeout, this, &LogViewer::onPollTimer);
-    m_pollTimer->start();
+    m_folderWatcher = new QFileSystemWatcher(this);
+    m_folderWatcher->addPath(m_folderPath);
+    connect(m_folderWatcher, &QFileSystemWatcher::directoryChanged, this, &LogViewer::onFolderChanged);
 }
 
 void LogViewer::showEvent(QShowEvent *event)
@@ -374,18 +359,4 @@ void LogViewer::onClearLog()
     }
 }
 
-void LogViewer::onPollTimer()
-{
-    QDir dir(m_folderPath);
-    bool changed = false;
-    for (const QFileInfo& fi : dir.entryInfoList({"*.log"}, QDir::Files)) {
-        const QString path = fi.absoluteFilePath();
-        if (!m_knownLogFiles.contains(path)) {
-            m_knownLogFiles.insert(path);
-            changed = true;
-        }
-    }
-    if (changed)
-        onFolderChanged(m_folderPath);
-}
 

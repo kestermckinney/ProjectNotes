@@ -21,10 +21,7 @@
 
 #include "QLogger.h"
 #include "QLoggerWriter.h"
-#include <QTimer>
-#include <QMap>
-#include <QSet>
-#include <QDateTime>
+#include <QFileSystemWatcher>
 #include <QFileInfo>
 
 typedef std::function<void(std::string)> stdout_write_type;
@@ -41,7 +38,12 @@ public:
     const QList<Plugin*>& plugins() const { return m_pluginlist; }
     void forceReload(const QString& module);
     int loadedCount();
-    void stopPollTimer() { if (m_pollTimer) m_pollTimer->stop(); }
+    void stopWatcher() {
+        if (m_fileWatcher) {
+            m_fileWatcher->removePaths(m_fileWatcher->files());
+            m_fileWatcher->removePaths(m_fileWatcher->directories());
+        }
+    }
 
 signals:
     void pluginLoaded(const QString& path);
@@ -58,14 +60,11 @@ private slots:
     void onFileChanged(const QString& filepath);
     void onFolderChanged(const QString& folderPath);
     void onForceReload(const QString& module);
-    void onPollTimer();
 
 private:
     QList<Plugin*> m_pluginlist;
     PyThreadState* m_pythreadstate;
-    QTimer* m_pollTimer;
-    QMap<QString, QDateTime> m_watchedFiles;   // path → last known lastModified
-    QSet<QString> m_watchedDirFiles;           // .py paths currently known in plugins/ + threads/
+    QFileSystemWatcher* m_fileWatcher;
     QString m_pluginspath;
     QString m_threadspath;
     QString m_userPluginspath;
