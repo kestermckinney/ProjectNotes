@@ -29,18 +29,6 @@ if ifs.get_has_settings():
 #
 # Supported Events
 
-# def event_startup(parameter):
-#     return
-#
-def event_shutdown(parameter):
-    ifs_tools.shutdown_all_threads()
-    return ""
-
-#
-# def event_timer(parameter):
-#     return
-#
-
 def event_timer(parameter):
     if not ifs.get_has_settings() or not ifs.url_is_available():
         return ""

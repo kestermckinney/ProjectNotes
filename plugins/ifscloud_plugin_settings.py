@@ -48,6 +48,9 @@ class IFSCloudSettings(QDialog):
         self.url = self.pnc.get_plugin_setting("URL", self.settings_pluginname)
         self.ui.lineEditURL.setText(self.url or "")
 
+        self.realm = self.pnc.get_plugin_setting("Realm", self.settings_pluginname)
+        self.ui.lineEditRealm.setText(self.realm or "")
+
         self.domain_user = self.pnc.get_plugin_setting("DomainUser", self.settings_pluginname)
         self.ui.lineEditDomainUser.setText(self.domain_user or "")
 
@@ -82,6 +85,9 @@ class IFSCloudSettings(QDialog):
 
         self.url = self.ui.lineEditURL.text()
         self.pnc.set_plugin_setting("URL", self.settings_pluginname, self.url)
+
+        self.realm = self.ui.lineEditRealm.text()
+        self.pnc.set_plugin_setting("Realm", self.settings_pluginname, self.realm)
 
         self.domain_user = self.ui.lineEditDomainUser.text()
         self.pnc.set_plugin_setting("DomainUser", self.settings_pluginname, self.domain_user)
