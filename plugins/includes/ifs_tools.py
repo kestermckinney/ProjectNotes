@@ -193,6 +193,7 @@ class SSOAuthAPI:
         self.settings_pluginname = "IFS Cloud"
 
         self.ifs_url = self.pnc.get_plugin_setting("URL", self.settings_pluginname) or ""
+        self.ifs_realm = self.pnc.get_plugin_setting("Realm", self.settings_pluginname) or "cciprod"
 
         self.auth_url = None
         self.token_url = None
@@ -205,61 +206,8 @@ class SSOAuthAPI:
         self.current_user = None
 
     def _discover_endpoints(self):
-        """Discover the Keycloak auth and token URLs from the IFS base URL.
-
-        Makes an unauthenticated request to the IFS API. The server either
-        returns a 401 with a WWW-Authenticate header pointing at the Keycloak
-        realm, or redirects to the Keycloak login page (whose URL contains the
-        realm path). Either way the OpenID Connect discovery document is then
-        fetched to get the exact auth/token endpoint URLs.
-        """
-        import re
-
-        probe_url = self.ifs_url.rstrip("/") + "/main/ifsapplications/projection/v1/"
-        try:
-            # allow_redirects=False so we can inspect the first response;
-            # some IFS deployments return a redirect rather than a bare 401.
-            response = requests.get(probe_url, verify=False, timeout=(10, 30), allow_redirects=False)
-        except Exception as e:
-            print(f"Function '{inspect.currentframe().f_code.co_name}': Could not reach IFS URL: {e}")
-            return False
-
-        realm_url = None
-
-        if response.status_code == 401:
-            # Standard case: 401 with WWW-Authenticate: Bearer realm="<url or name>"
-            www_auth = response.headers.get("WWW-Authenticate", "")
-            match = re.search(r'realm="([^"]+)"', www_auth)
-            if match:
-                realm_value = match.group(1)
-                if realm_value.startswith("http"):
-                    # Full URL realm — use directly
-                    realm_url = realm_value
-                elif "@" in realm_value:
-                    # Format: "client_id@host/auth/realms/name/" — take the part after @
-                    realm_url = "https://" + realm_value.split("@", 1)[1]
-                else:
-                    # Short realm name — construct the standard Keycloak path
-                    realm_url = self.ifs_url.rstrip("/") + "/auth/realms/" + realm_value
-
-        elif response.status_code in (301, 302, 307, 308):
-            # Redirect case: Location header points at the Keycloak login page
-            # whose path contains /auth/realms/<name>/
-            location = response.headers.get("Location", "")
-            match = re.search(r'(/auth/realms/[^/?#]+)', location)
-            if match:
-                parsed = urlparse(location)
-                realm_url = f"{parsed.scheme}://{parsed.netloc}{match.group(1)}"
-
-        if not realm_url:
-            print(f"Function '{inspect.currentframe().f_code.co_name}': Could not determine Keycloak realm URL. "
-                  f"status={response.status_code}, "
-                  f"WWW-Authenticate={response.headers.get('WWW-Authenticate', 'none')}, "
-                  f"Location={response.headers.get('Location', 'none')}")
-            return False
-
-        # Fetch the OpenID Connect discovery document
-        discovery_url = realm_url.rstrip("/") + "/.well-known/openid-configuration"
+        """Fetch Keycloak auth/token URLs from the configured realm's discovery document."""
+        discovery_url = self.ifs_url.rstrip("/") + f"/auth/realms/{self.ifs_realm}/.well-known/openid-configuration"
         try:
             discovery = requests.get(discovery_url, verify=False, timeout=(10, 30))
             discovery.raise_for_status()
@@ -1099,7 +1047,7 @@ class IFSCommon:
         if status is not None and status != '':
             docdata["Cf_Status"] = "CfEnum_" + status.upper()
 
-        request_url = self.ifs_url + "/int/ifsapplications/entity/v1/ActivityTaskEntity.svc/ActivityTaskSet(TaskId='" + taskid + "')"
+        request_url = self.ifs_url + "/main/ifsapplications/projection/v1/ProjectScopeAndScheduleHandling.svc/ActivityTasks(TaskId='" + taskid + "')"
 
         #print(f"Updating Activity in IFS, makeing url request: {request_url}")
 
@@ -1127,7 +1075,7 @@ class IFSCommon:
             "ProjectCostElement": "LABOR-INT",
             }
 
-        request_url = self.ifs_url + "/int/ifsapplications/entity/v1/ActivityTaskEntity.svc/ActivityTaskSet(TaskId='" + taskid + "')"
+        request_url = self.ifs_url + "/main/ifsapplications/projection/v1/ProjectScopeAndScheduleHandling.svc/ActivityTasks(TaskId='" + taskid + "')"
 
         #print(f"Deleting Activity in IFS, makeing url request: {request_url}")
 

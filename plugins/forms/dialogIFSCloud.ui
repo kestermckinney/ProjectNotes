@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>382</width>
-    <height>212</height>
+    <height>238</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -50,10 +50,25 @@
        </property>
       </widget>
      </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="labelRealm">
+       <property name="text">
+        <string>Realm:</string>
+       </property>
+      </widget>
+     </item>
      <item row="1" column="1">
+      <widget class="QLineEdit" name="lineEditRealm">
+       <property name="placeholderText">
+        <string>cciprod</string>
+       </property>
+      </widget>
+     </item>
+
+     <item row="2" column="1">
       <widget class="QLineEdit" name="lineEditDomainUser"/>
      </item>
-     <item row="1" column="0">
+     <item row="2" column="0">
       <widget class="QLabel" name="labelDomainUser">
        <property name="text">
         <string>Domain User:</string>
@@ -61,7 +76,7 @@
       </widget>
      </item>
 
-     <item row="2" column="0">
+     <item row="3" column="0">
       <widget class="QLabel" name="labelDomainPassword">
        <property name="text">
         <string>Domain Password:</string>
@@ -69,15 +84,13 @@
       </widget>
      </item>
 
-     <item row="2" column="1">
+     <item row="3" column="1">
       <widget class="QLineEdit" name="lineEditDomainPassword">
        <property name="echoMode">
         <enum>QLineEdit::Password</enum>
        </property>
       </widget>
      </item>
-
-
 
      <item row="4" column="0">
       <widget class="QLabel" name="labelReportServer">
