@@ -137,6 +137,7 @@ private slots:
     void on_actionXML_Import_triggered();
     void on_actionXML_Export_triggered();
     void on_actionSync_All_triggered();
+    void on_actionSyncStats_triggered();
 
     void slotPluginMenu(Plugin* plugin, const QString& functionname, const QString& parameter);
     void on_actionOpen_Item_triggered();

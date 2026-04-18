@@ -346,6 +346,7 @@ void MainWindow::setButtonAndMenuStates()
 
     ui->actionSearch->setEnabled(dbopen);
     ui->actionSync_All->setEnabled(m_syncApi && m_syncApi->isInitialized());
+    ui->actionSyncStats->setEnabled(m_syncApi && m_syncApi->isInitialized());
 
     if (m_syncProgressBar && (!m_syncApi || !m_syncApi->isInitialized()))
         m_syncProgressBar->hide();
@@ -426,6 +427,8 @@ void MainWindow::setButtonAndMenuStates()
     }
     else
         ui->actionView_LogView->setChecked(false);
+
+    ui->actionSyncStats->setChecked(m_syncApi && m_syncApi->isStatsVisible());
 
     if (dbopen)
     {
@@ -661,6 +664,12 @@ void MainWindow::on_actionSync_All_triggered()
         m_syncApi->syncAll();
 }
 
+void MainWindow::on_actionSyncStats_triggered()
+{
+    if (m_syncApi)
+        m_syncApi->showStats(ui->actionSyncStats->isChecked());
+}
+
 void MainWindow::on_actionOpen_Database_triggered()
 {
     CloudSyncSettingsDialog dlg(this);
@@ -737,6 +746,11 @@ void MainWindow::openDatabase(const QString& dbfile)
                     Qt::QueuedConnection);
             connect(m_syncApi, &SqliteSyncPro::syncStatusUpdated,
                     this, &MainWindow::onSyncStatusUpdated,
+                    Qt::QueuedConnection);
+            connect(m_syncApi, &SqliteSyncPro::statsWindowClosed,
+                    this, [this]() {
+                        ui->actionSyncStats->setChecked(false);
+                    },
                     Qt::QueuedConnection);
         } else {
 #ifdef QT_DEBUG

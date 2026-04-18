@@ -1609,6 +1609,7 @@
     <addaction name="actionClosed_Projects"/>
     <addaction name="separator"/>
     <addaction name="actionStatus_Bar"/>
+    <addaction name="actionSyncStats"/>
     <addaction name="separator"/>
     <addaction name="actionProjects"/>
     <addaction name="actionPeople"/>
@@ -1869,6 +1870,24 @@
    </property>
    <property name="statusTip">
     <string>Re-sync all records with the remote host</string>
+   </property>
+  </action>
+  <action name="actionSyncStats">
+   <property name="icon">
+    <iconset resource="Resources.qrc">
+     <normaloff>:/icons/syncstats.png</normaloff>:/icons/syncstats.png</iconset>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Sync &amp;Stats</string>
+   </property>
+   <property name="toolTip">
+    <string>Show sync network traffic statistics</string>
+   </property>
+   <property name="statusTip">
+    <string>Show sync network traffic statistics</string>
    </property>
   </action>
   <action name="actionExit">

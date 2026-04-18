@@ -51,5 +51,6 @@
         <file>icons/sync.png</file>
         <file>icons/assigned-items.png</file>
         <file>icons/plugins.png</file>
+        <file>icons/syncstats.png</file>
     </qresource>
 </RCC>
