@@ -101,7 +101,7 @@ void CloudSyncSettingsDialog::on_comboBoxSyncHostType_currentIndexChanged(int in
 
 void CloudSyncSettingsDialog::updateSupabaseKeyVisibility(int hostTypeIndex)
 {
-    // index 1 = Supabase; all others (0 = Self-Hosted) don't need the anon key
+    // index 1 = Supabase only needs the anon key
     const bool isSupabase = (hostTypeIndex == 1);
     ui->labelSupabaseKey->setVisible(isSupabase);
     ui->lineEditSupabaseKey->setVisible(isSupabase);
