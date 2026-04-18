@@ -17,7 +17,7 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(DatabaseObjects* dbo): SqlQuery
     setObjectName("ProjectTeamMembersModel");
 
     // note you can't use aliases for column names it will mess up query builer when it adds fundamental colums
-    setBaseSql("SELECT project_people.id, project_id, project_people.people_id, name, receive_status_report, project_people.role, email, (select pr2.project_number from projects pr2 where pr2.id=project_people.project_id) project_number, (select pr.project_name from projects pr where pr.id=project_people.project_id) project_name, (select client_name from clients c where c.id=p.client_id) client_name FROM project_people left join people p on p.id=project_people.people_id");
+    setBaseSql("SELECT project_people.id, project_id, project_people.people_id, name, receive_status_report, project_people.role, email, (select pr2.project_number from projects pr2 where pr2.id=project_people.project_id) project_number, (select pr.project_name from projects pr where pr.id=project_people.project_id) project_name, (select client_name from clients c where c.id=p.client_id) client_name, p.office_phone, p.cell_phone FROM project_people left join people p on p.id=project_people.people_id");
 
     setTableName("project_people", "Project People");
 
@@ -33,6 +33,8 @@ ProjectTeamMembersModel::ProjectTeamMembersModel(DatabaseObjects* dbo): SqlQuery
     addColumn("project_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
     addColumn("project_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
     addColumn("client_name", tr("Client Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly);
+    addColumn("office_phone", tr("Office Phone"), DBPhoneNumber, DBNotSearchable, DBNotRequired, DBReadOnly);
+    addColumn("cell_phone", tr("Cell Phone"), DBPhoneNumber, DBNotSearchable, DBNotRequired, DBReadOnly);
 
     QStringList key1 = {"project_id", "people_id"};
 

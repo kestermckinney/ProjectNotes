@@ -94,6 +94,25 @@ Page {
                         Layout.fillWidth: true
                     }
                 }
+
+                RowLayout {
+                    spacing: 4
+                    Layout.alignment: Qt.AlignVCenter
+
+                    Button {
+                        visible: (model.cell_phone || "").length > 0
+                        text: qsTr("Cell")
+                        font.pixelSize: 11
+                        onClicked: Qt.openUrlExternally("tel://" + model.cell_phone)
+                    }
+
+                    Button {
+                        visible: (model.office_phone || "").length > 0
+                        text: qsTr("Office")
+                        font.pixelSize: 11
+                        onClicked: Qt.openUrlExternally("tel://" + model.office_phone)
+                    }
+                }
             }
             onClicked: {
                 root.stackView.push(Qt.resolvedUrl("PersonDetailPage.qml"), {

@@ -9,7 +9,8 @@ import ProjectNotesMobile
 // MeetingAttendeesPage — attendees list for a single meeting note.
 // Columns from meetingattendeesmodel.cpp:
 //   0=id, 1=note_id, 2=person_id, 3=name, 4=project_name,
-//   5=email, 6=client_name, 7=project_id, 8=project_number
+//   5=email, 6=client_name, 7=project_id, 8=project_number,
+//   9=office_phone, 10=cell_phone
 
 Page {
     id: root
@@ -54,34 +55,58 @@ Page {
         delegate: ItemDelegate {
             width: listView.width
 
-            contentItem: ColumnLayout {
-                spacing: 3
+            contentItem: RowLayout {
+                spacing: 8
 
-                Label {
-                    text: model.name || ""
-                    font.bold: true
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
-                }
-
-                RowLayout {
+                ColumnLayout {
+                    spacing: 3
                     Layout.fillWidth: true
 
                     Label {
-                        visible: (model.client_name || "") !== ""
-                        text: model.client_name || ""
-                        font.pixelSize: 12
-                        color: palette.placeholderText
+                        text: model.name || ""
+                        font.bold: true
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
 
-                    Label {
-                        visible: (model.email || "") !== ""
-                        text: model.email || ""
-                        font.pixelSize: 12
-                        color: palette.placeholderText
-                        elide: Text.ElideRight
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Label {
+                            visible: (model.client_name || "") !== ""
+                            text: model.client_name || ""
+                            font.pixelSize: 12
+                            color: palette.placeholderText
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
+                        }
+
+                        Label {
+                            visible: (model.email || "") !== ""
+                            text: model.email || ""
+                            font.pixelSize: 12
+                            color: palette.placeholderText
+                            elide: Text.ElideRight
+                        }
+                    }
+                }
+
+                RowLayout {
+                    spacing: 4
+                    Layout.alignment: Qt.AlignVCenter
+
+                    Button {
+                        visible: (model.cell_phone || "").length > 0
+                        text: qsTr("Cell")
+                        font.pixelSize: 11
+                        onClicked: Qt.openUrlExternally("tel://" + model.cell_phone)
+                    }
+
+                    Button {
+                        visible: (model.office_phone || "").length > 0
+                        text: qsTr("Office")
+                        font.pixelSize: 11
+                        onClicked: Qt.openUrlExternally("tel://" + model.office_phone)
                     }
                 }
             }
