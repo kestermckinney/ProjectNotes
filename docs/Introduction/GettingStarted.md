@@ -6,7 +6,25 @@ Project Notes automatically creates and opens a local database when it first lau
 
 If you are developing or testing plugins and need a separate environment that does not touch your production data, see [Developer Profile](<DeveloperProfile.md>).
 
-If you want to sync your data with a cloud host (sucha Supabase or a self-hosted PostgREST server), configure the connection from **File > Cloud Sync Settings...**. See [File Menu](../InterfaceOverview/FileMenu.md) for details.
+If you want to sync your data with a cloud host, configure the connection from **File > Cloud Sync Settings...**. See [File Menu](../InterfaceOverview/FileMenu.md) for details and [Remote Host](../InterfaceOverview/RemoteHost.md) for a full feature reference.
+
+## Cloud Sync Setup
+
+Cloud sync lets you access your Project Notes data from multiple machines and keep everything in sync automatically. Project Notes uses a [PostgREST](https://postgrest.org) API layer over a PostgreSQL database for all cloud sync operations. You have three hosting options:
+
+| Option | Best For |
+| :--- | :--- |
+| **Supabase** | Easiest setup — managed PostgreSQL + PostgREST with a free tier |
+| **Neon + PostgREST** | Serverless Postgres backend with a self-managed PostgREST layer |
+| **Self-Hosted PostgREST** | Full control — run PostgreSQL and PostgREST on your own server or VM |
+
+All three options use the same connection settings in Project Notes (**File > Cloud Sync Settings...**). Choose the option that matches your infrastructure preferences:
+
+- [Setting Up Supabase](<CloudSync_Supabase.md>)
+- [Setting Up Neon with PostgREST](<CloudSync_Neon.md>)
+- [Setting Up a Self-Hosted PostgREST Server](<CloudSync_SelfHosted.md>)
+
+Once your server is running, see [Remote Host](<../InterfaceOverview/RemoteHost.md>) for a complete reference of all sync features, settings, and troubleshooting steps.
 
 ## Setting Yourself as the Project Manager
 
@@ -43,7 +61,9 @@ Once your clients and people are setup, you will need to tell Project Notes whic
 
 ## Plugin Settings
 
-Project Notes helps you find and generate files and folders related to your project. In order to do this you need to configure the plugins. Each plugin has its own settings accessible under **Plugins > Settings**. For example, the **Export Meeting Notes** and **Export Tracker Items** plugins each have a sub-folder setting that controls where generated reports are saved. See [Plugin Settings](<../StandardPlugins/PluginSettings.md>) for a full list of available settings.
+Project Notes plugins are highly configurable. Each plugin exposes its own settings dialog under **Plugins > Settings**. Settings control things like where exported files are saved, which folders the File Finder scans, and how integrations with Outlook or Office 365 are authenticated. See [Plugin Settings](<../StandardPlugins/PluginSettings.md>) for a full list of available settings and configuration options.
+
+Plugin settings are stored in your local OS profile (registry on Windows, plist on macOS, ini on Linux) and are not synced to the cloud host. If you move to a new machine, use the **Settings Migrator** (under **Plugins > Settings**) to transfer your configuration.
 
 ## Populating Your Project Data And Plugins
 
