@@ -115,7 +115,6 @@ void AppController::configureSyncApi()
 
         // Mobile-friendly limits: smaller batches to conserve bandwidth and
         // battery; longer interval between cycles than the desktop default.
-        m_syncApi->setDefaultBatchSize(25);
         m_syncApi->setSyncIntervalMs(30000);  // 30 s between cycles
     }
 
