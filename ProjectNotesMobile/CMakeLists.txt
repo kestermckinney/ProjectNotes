@@ -77,7 +77,13 @@ target_sources(ProjectNotesMobile PRIVATE "${IOS_ASSET_CATALOG}")
 #          flat resource layout — all QML files are part of one module regardless
 #          of source subdirectory.
 qt_policy(SET QTP0001 NEW)
+# QTP0004: warn if pragma Singleton is present but QT_QML_SINGLETON_TYPE not set.
+# Keeping NEW so the build warns loudly if future singletons miss the property.
 qt_policy(SET QTP0004 NEW)
+
+# Mark Theme.qml as a singleton so qt_add_qml_module writes "singleton Theme 1.0 Theme.qml"
+# into the generated qmldir — required for "Theme.navyDark" access in QML files.
+set_source_files_properties(qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 # ── QML module (enables AOT compilation via qmlsc / qmltc in Qt 6.4+) ────────
 qt_add_qml_module(ProjectNotesMobile
@@ -88,6 +94,7 @@ qt_add_qml_module(ProjectNotesMobile
         MobileSettings.cpp  MobileSettings.h
         TextFormatter.cpp   TextFormatter.h
     QML_FILES
+        qml/Theme.qml
         qml/Main.qml
         qml/pages/ProjectsListPage.qml
         qml/pages/PeoplePage.qml

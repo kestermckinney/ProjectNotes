@@ -47,9 +47,9 @@ Page {
     function categoryColor(cat) {
         switch (cat) {
             case "In Progress": return "#e07000"
-            case "Completed":   return "#228822"
-            case "Starting":    return "#0055cc"
-            default:            return palette.mid
+            case "Completed":   return Theme.accentGreenDark
+            case "Starting":    return palette.link
+            default:            return palette.placeholderText
         }
     }
 
@@ -98,10 +98,28 @@ Page {
         ScrollIndicator.vertical: ScrollIndicator {}
     }
 
-    Label {
+    Column {
         anchors.centerIn: parent
         visible: listView.count === 0
-        text: qsTr("No status items.")
-        color: palette.mid
+        spacing: 10
+
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: "\uD83D\uDCCA"
+            font.pixelSize: 52
+        }
+        Label {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: qsTr("No Status Items")
+            font.pixelSize: 17
+            font.bold: true
+        }
+        Label {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: qsTr("Tap + to add a status item.")
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 14
+            color: palette.placeholderText
+        }
     }
 }

@@ -25,8 +25,8 @@ Page {
         switch (status) {
             case "New":      return "#cc0000"
             case "Assigned": return "#e07000"
-            case "Resolved": return "#228822"
-            default:         return palette.mid
+            case "Resolved": return Theme.accentGreenDark
+            default:         return palette.placeholderText
         }
     }
 
@@ -116,7 +116,7 @@ Page {
                         return parts.join("  ·  ")
                     }
                     font.pixelSize: 12
-                    color: palette.mid
+                    color: palette.placeholderText
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
@@ -150,6 +150,6 @@ Page {
         anchors.centerIn: parent
         visible: listView.count === 0
         text: qsTr("No action items.")
-        color: palette.mid
+        color: palette.placeholderText
     }
 }

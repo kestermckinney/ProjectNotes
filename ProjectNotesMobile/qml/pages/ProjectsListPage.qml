@@ -65,25 +65,57 @@ Page {
         delegate: ItemDelegate {
             width: listView.width
             contentItem: ColumnLayout {
-                spacing: 2
+                spacing: 4
 
                 Label {
-                    // project_name role exposed by SqlQueryModel::roleNames()
                     text: model.project_name || ""
                     font.bold: true
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
-                Label {
-                    text: {
-                        var num    = model.project_number || ""
-                        var status = model.project_status || ""
-                        return num ? num + "  ·  " + status : status
-                    }
-                    font.pixelSize: 12
-                    color: palette.mid
-                    elide: Text.ElideRight
+                RowLayout {
                     Layout.fillWidth: true
+                    spacing: 6
+
+                    Label {
+                        visible: (model.project_number || "") !== ""
+                        text: model.project_number || ""
+                        font.pixelSize: 12
+                        color: palette.placeholderText
+                    }
+
+                    Label {
+                        visible: (model.project_number || "") !== "" && (model.project_status || "") !== ""
+                        text: "·"
+                        font.pixelSize: 12
+                        color: palette.placeholderText
+                    }
+
+                    Rectangle {
+                        visible: (model.project_status || "") !== ""
+                        width: 7; height: 7; radius: 4
+                        color: {
+                            var s = model.project_status || ""
+                            if (s === "Active")                      return Theme.accentGreen
+                            if (s === "On Hold")                     return "#ff9500"
+                            if (s === "Closed" || s === "Complete")  return "#8e8e93"
+                            return Theme.navyMid
+                        }
+                    }
+
+                    Label {
+                        text: model.project_status || ""
+                        font.pixelSize: 12
+                        color: {
+                            var s = model.project_status || ""
+                            if (s === "Active")                      return Theme.accentGreenDark
+                            if (s === "On Hold")                     return "#e07000"
+                            if (s === "Closed" || s === "Complete")  return palette.placeholderText
+                            return Theme.navyMid
+                        }
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                    }
                 }
             }
 
@@ -107,11 +139,28 @@ Page {
     }
 
     // ── Empty state ───────────────────────────────────────────────────────────
-    Label {
+    Column {
         anchors.centerIn: parent
         visible: listView.count === 0
-        text: qsTr("No projects found.\nTap sync or create a new project.")
-        horizontalAlignment: Text.AlignHCenter
-        color: palette.mid
+        spacing: 10
+
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: "\uD83D\uDCC2"
+            font.pixelSize: 52
+        }
+        Label {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: qsTr("No Projects")
+            font.pixelSize: 17
+            font.bold: true
+        }
+        Label {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: qsTr("Tap + to add one or sync to load your data.")
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 14
+            color: palette.placeholderText
+        }
     }
 }

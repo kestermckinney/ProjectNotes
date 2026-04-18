@@ -14,6 +14,24 @@ Page {
         anchors.centerIn: parent
         spacing: 12
 
+        // ── App icon ──────────────────────────────────────────────────────────
+        Rectangle {
+            Layout.alignment: Qt.AlignHCenter
+            width: 80; height: 80
+            radius: 18
+            color: Theme.navyMid
+
+            Label {
+                anchors.centerIn: parent
+                text: "PN"
+                font.pixelSize: 30
+                font.bold: true
+                color: "white"
+            }
+        }
+
+        Item { height: 4 }
+
         Label {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("Project Notes")
@@ -25,20 +43,21 @@ Page {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("Version 5.0.0")
             font.pixelSize: 15
-            color: palette.mid
+            color: palette.placeholderText
         }
 
         Label {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("© 2022–2026 Paul McKinney")
             font.pixelSize: 13
-            color: palette.mid
+            color: palette.placeholderText
         }
 
-        Item { height: 12 }
+        Item { height: 16 }
 
         Button {
             Layout.alignment: Qt.AlignHCenter
+            highlighted: true
             text: qsTr("Documentation")
             onClicked: Qt.openUrlExternally("https://projectnotes.readthedocs.io/")
         }
@@ -46,7 +65,7 @@ Page {
         Button {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("Release Notes")
-            onClicked: Qt.openUrlExternally("https://github.com/kestermckinney/ProjectNotes/wiki/Release%20Notes")
+            onClicked: Qt.openUrlExternally("https://github.com/kestermckinney/ProjectNotes/releases")
         }
 
         Button {

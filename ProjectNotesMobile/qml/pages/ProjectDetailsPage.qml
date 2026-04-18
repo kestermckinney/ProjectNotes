@@ -211,9 +211,9 @@ Page {
                 ToolButton {
                     Layout.fillWidth: true
                     icon.name: modelData.icon
-                    text: modelData.label
-                    font.pixelSize: 10
-                    display: AbstractButton.TextUnderIcon
+                    ToolTip.text: modelData.label
+                    ToolTip.visible: hovered || pressed
+                    display: AbstractButton.IconOnly
                     onClicked: root.StackView.view.push(
                         Qt.resolvedUrl(modelData.page),
                         { projectId: root.projectId,
@@ -232,9 +232,9 @@ Page {
         leftPadding: 16
         bottomPadding: 4
         font.pixelSize: 13
-        font.weight: Font.Medium
-        color: palette.mid
-        background: Rectangle { color: palette.window }
+        font.weight: Font.Semibold
+        color: Theme.navyMid
+        background: Rectangle { color: Theme.sectionBg }
     }
 
     component FieldRow: Rectangle {
@@ -252,7 +252,7 @@ Page {
         Rectangle {
             anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
             height: 1
-            color: palette.mid
+            color: palette.placeholderText
             opacity: 0.3
         }
     }
