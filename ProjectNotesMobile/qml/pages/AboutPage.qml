@@ -65,7 +65,7 @@ Page {
         Button {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("Release Notes")
-            onClicked: Qt.openUrlExternally("https://github.com/kestermckinney/ProjectNotes/wiki/Release%20Notes")
+            onClicked: Qt.openUrlExternally("https://github.com/kestermckinney/ProjectNotes/releases")
         }
 
         Button {
