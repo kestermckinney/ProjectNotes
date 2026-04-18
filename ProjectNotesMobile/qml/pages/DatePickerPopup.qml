@@ -174,7 +174,7 @@ Popup {
             Rectangle {
                 anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
                 height: 1
-                color: palette.mid
+                color: palette.placeholderText
                 opacity: 0.3
             }
         }
@@ -258,7 +258,7 @@ Popup {
             opacity: 1.0 - Math.abs(Tumbler.displacement) / (Tumbler.tumbler.visibleItemCount / 2)
             font.pixelSize: Math.abs(Tumbler.displacement) < 0.5 ? 20 : 16
             font.bold: Math.abs(Tumbler.displacement) < 0.5
-            color: Math.abs(Tumbler.displacement) < 0.5 ? palette.text : palette.mid
+            color: Math.abs(Tumbler.displacement) < 0.5 ? palette.text : palette.placeholderText
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
         }

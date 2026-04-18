@@ -19,7 +19,7 @@ Page {
             Layout.alignment: Qt.AlignHCenter
             width: 80; height: 80
             radius: 18
-            color: "#0A7AFF"
+            color: Theme.navyMid
 
             Label {
                 anchors.centerIn: parent
@@ -43,14 +43,14 @@ Page {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("Version 5.0.0")
             font.pixelSize: 15
-            color: palette.mid
+            color: palette.placeholderText
         }
 
         Label {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("© 2022–2026 Paul McKinney")
             font.pixelSize: 13
-            color: palette.mid
+            color: palette.placeholderText
         }
 
         Item { height: 16 }

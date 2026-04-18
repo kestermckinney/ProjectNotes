@@ -81,14 +81,14 @@ Page {
                         visible: (model.project_number || "") !== ""
                         text: model.project_number || ""
                         font.pixelSize: 12
-                        color: palette.mid
+                        color: palette.placeholderText
                     }
 
                     Label {
                         visible: (model.project_number || "") !== "" && (model.project_status || "") !== ""
                         text: "·"
                         font.pixelSize: 12
-                        color: palette.mid
+                        color: palette.placeholderText
                     }
 
                     Rectangle {
@@ -96,10 +96,10 @@ Page {
                         width: 7; height: 7; radius: 4
                         color: {
                             var s = model.project_status || ""
-                            if (s === "Active")                      return "#34c759"
+                            if (s === "Active")                      return Theme.accentGreen
                             if (s === "On Hold")                     return "#ff9500"
                             if (s === "Closed" || s === "Complete")  return "#8e8e93"
-                            return "#0A7AFF"
+                            return Theme.navyMid
                         }
                     }
 
@@ -108,10 +108,10 @@ Page {
                         font.pixelSize: 12
                         color: {
                             var s = model.project_status || ""
-                            if (s === "Active")                      return "#228822"
+                            if (s === "Active")                      return Theme.accentGreenDark
                             if (s === "On Hold")                     return "#e07000"
-                            if (s === "Closed" || s === "Complete")  return palette.mid
-                            return "#0A7AFF"
+                            if (s === "Closed" || s === "Complete")  return palette.placeholderText
+                            return Theme.navyMid
                         }
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -160,7 +160,7 @@ Page {
             text: qsTr("Tap + to add one or sync to load your data.")
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
-            color: palette.mid
+            color: palette.placeholderText
         }
     }
 }

@@ -2091,7 +2091,7 @@ void MainWindow::on_actionHelp_triggered()
 
 void MainWindow::on_actionWhat_s_New_triggered()
 {
-    QDesktopServices::openUrl(QUrl("https://github.com/kestermckinney/ProjectNotes/wiki/Release%20Notes", QUrl::TolerantMode));
+    QDesktopServices::openUrl(QUrl("https://github.com/kestermckinney/ProjectNotes/releases", QUrl::TolerantMode));
 }
 
 void MainWindow::on_actionIncrease_Font_Size_triggered()

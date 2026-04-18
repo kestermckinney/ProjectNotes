@@ -71,7 +71,7 @@ Page {
                         visible: (model.client_name || "") !== ""
                         text: model.client_name || ""
                         font.pixelSize: 12
-                        color: palette.mid
+                        color: palette.placeholderText
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
@@ -80,7 +80,7 @@ Page {
                         visible: (model.email || "") !== ""
                         text: model.email || ""
                         font.pixelSize: 12
-                        color: palette.mid
+                        color: palette.placeholderText
                         elide: Text.ElideRight
                     }
                 }
@@ -101,6 +101,6 @@ Page {
         anchors.centerIn: parent
         visible: listView.count === 0
         text: qsTr("No attendees.")
-        color: palette.mid
+        color: palette.placeholderText
     }
 }

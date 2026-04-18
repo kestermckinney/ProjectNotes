@@ -59,7 +59,7 @@ Page {
                 Rectangle {
                     width: 38; height: 38
                     radius: 19
-                    color: "#0A7AFF"
+                    color: Theme.navyMid
                     Layout.alignment: Qt.AlignVCenter
 
                     Label {
@@ -89,7 +89,7 @@ Page {
                             return email || role
                         }
                         font.pixelSize: 12
-                        color: palette.mid
+                        color: palette.placeholderText
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
@@ -132,7 +132,7 @@ Page {
             text: qsTr("Tap + to add a contact.")
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
-            color: palette.mid
+            color: palette.placeholderText
         }
     }
 }

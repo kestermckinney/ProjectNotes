@@ -58,7 +58,7 @@ ApplicationWindow {
             Rectangle {
                 Layout.fillWidth: true
                 height: 110
-                color: "#0A7AFF"
+                color: Theme.navyDark
 
                 ColumnLayout {
                     anchors.centerIn: parent
@@ -75,7 +75,7 @@ ApplicationWindow {
                             text: "PN"
                             font.pixelSize: 20
                             font.bold: true
-                            color: "#0A7AFF"
+                            color: Theme.navyDark
                         }
                     }
 
@@ -154,7 +154,7 @@ ApplicationWindow {
                         text: qsTr("What's New")
                         onClicked: {
                             hamburgerDrawer.close()
-                            Qt.openUrlExternally("https://github.com/kestermckinney/ProjectNotes/wiki/Release%20Notes")
+                            Qt.openUrlExternally("https://github.com/kestermckinney/ProjectNotes/releases")
                         }
                     }
 
@@ -173,7 +173,9 @@ ApplicationWindow {
 
     // ── Persistent header toolbar ─────────────────────────────────────────────
     header: ToolBar {
-        background: Rectangle { color: "#0A7AFF" }
+        // palette.window drives the iOS-style ToolBar tint; background overrides the QML layer
+        palette.window: Theme.navyDark
+        background: Rectangle { color: Theme.navyDark }
 
         RowLayout {
             anchors.fill: parent
@@ -224,7 +226,7 @@ ApplicationWindow {
         Rectangle {
             anchors { top: parent.top; left: parent.left; bottom: parent.bottom }
             width: parent.width * Math.max(0.0, Math.min(1.0, AppController.syncProgress))
-            color: AppController.syncHasError ? "#cc2222" : "#34c759"  // red / iOS green
+            color: AppController.syncHasError ? "#cc2222" : Theme.accentGreen  // red / iOS green
             Behavior on width { NumberAnimation { duration: 350; easing.type: Easing.OutCubic } }
         }
     }

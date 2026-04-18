@@ -77,7 +77,7 @@ Page {
                     Label {
                         text: model.note_date || ""
                         font.pixelSize: 12
-                        color: palette.mid
+                        color: palette.placeholderText
                     }
                 }
 
@@ -85,7 +85,7 @@ Page {
                     visible: AppController.showInternalItems && (model.internal_item || "0") !== "0"
                     text: qsTr("Internal")
                     font.pixelSize: 11
-                    color: "#0055cc"
+                    color: palette.link
                 }
             }
 
@@ -126,7 +126,7 @@ Page {
             text: qsTr("Tap + to add a meeting note.")
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
-            color: palette.mid
+            color: palette.placeholderText
         }
     }
 }

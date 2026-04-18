@@ -75,7 +75,7 @@ Page {
                         return parts.join("  ·  ")
                     }
                     font.pixelSize: 12
-                    color: palette.mid
+                    color: palette.placeholderText
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
@@ -84,7 +84,7 @@ Page {
                     visible: (model.receive_status_report || "0") !== "0"
                     text: qsTr("Receives Status Report")
                     font.pixelSize: 11
-                    color: "#0055cc"
+                    color: palette.link
                 }
             }
 
@@ -105,6 +105,6 @@ Page {
         anchors.centerIn: parent
         visible: listView.count === 0
         text: qsTr("No team members.")
-        color: palette.mid
+        color: palette.placeholderText
     }
 }

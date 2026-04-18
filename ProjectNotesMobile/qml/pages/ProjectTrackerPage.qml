@@ -24,8 +24,8 @@ Page {
         switch (status) {
             case "New":      return "#cc0000"
             case "Assigned": return "#e07000"
-            case "Resolved": return "#228822"
-            default:         return palette.mid
+            case "Resolved": return Theme.accentGreenDark
+            default:         return palette.placeholderText
         }
     }
 
@@ -115,7 +115,7 @@ Page {
                         return parts.join("  ·  ")
                     }
                     font.pixelSize: 12
-                    color: palette.mid
+                    color: palette.placeholderText
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
@@ -166,7 +166,7 @@ Page {
             text: qsTr("Tap + to log an issue, risk, or action item.")
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
-            color: palette.mid
+            color: palette.placeholderText
         }
     }
 }
