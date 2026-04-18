@@ -51,7 +51,7 @@ Rectangle {
     Rectangle {
         anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
         height: 1
-        color: palette.mid
+        color: palette.placeholderText
         opacity: 0.3
     }
 

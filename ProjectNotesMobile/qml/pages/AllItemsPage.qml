@@ -28,8 +28,8 @@ Page {
         switch (status) {
             case "New":      return "#cc0000"
             case "Assigned": return "#e07000"
-            case "Resolved": return "#228822"
-            default:         return palette.mid
+            case "Resolved": return Theme.accentGreenDark
+            default:         return palette.placeholderText
         }
     }
 
@@ -112,7 +112,7 @@ Page {
                         return parts.join("  ·  ")
                     }
                     font.pixelSize: 12
-                    color: palette.mid
+                    color: palette.placeholderText
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
@@ -143,11 +143,28 @@ Page {
     }
 
     // ── Empty state ───────────────────────────────────────────────────────────
-    Label {
+    Column {
         anchors.centerIn: parent
         visible: listView.count === 0
-        text: qsTr("No items found.")
-        horizontalAlignment: Text.AlignHCenter
-        color: palette.mid
+        spacing: 10
+
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: "\uD83D\uDCCB"
+            font.pixelSize: 52
+        }
+        Label {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: qsTr("No Items")
+            font.pixelSize: 17
+            font.bold: true
+        }
+        Label {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: qsTr("Tracker items from all projects appear here.")
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 14
+            color: palette.placeholderText
+        }
     }
 }

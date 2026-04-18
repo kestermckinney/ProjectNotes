@@ -77,7 +77,7 @@ Page {
                     Label {
                         text: model.note_date || ""
                         font.pixelSize: 12
-                        color: palette.mid
+                        color: palette.placeholderText
                     }
                 }
 
@@ -85,7 +85,7 @@ Page {
                     visible: AppController.showInternalItems && (model.internal_item || "0") !== "0"
                     text: qsTr("Internal")
                     font.pixelSize: 11
-                    color: "#0055cc"
+                    color: palette.link
                 }
             }
 
@@ -105,10 +105,28 @@ Page {
         ScrollIndicator.vertical: ScrollIndicator {}
     }
 
-    Label {
+    Column {
         anchors.centerIn: parent
         visible: listView.count === 0
-        text: qsTr("No notes.")
-        color: palette.mid
+        spacing: 10
+
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: "\uD83D\uDCDD"
+            font.pixelSize: 52
+        }
+        Label {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: qsTr("No Notes")
+            font.pixelSize: 17
+            font.bold: true
+        }
+        Label {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: qsTr("Tap + to add a meeting note.")
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 14
+            color: palette.placeholderText
+        }
     }
 }

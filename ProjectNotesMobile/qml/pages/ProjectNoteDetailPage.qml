@@ -131,7 +131,7 @@ Page {
             }
 
             // Divider between rows
-            Rectangle { Layout.fillWidth: true; height: 1; color: palette.mid; opacity: 0.3 }
+            Rectangle { Layout.fillWidth: true; height: 1; color: palette.placeholderText; opacity: 0.3 }
 
             // ── Row 2: indent / unindent, alignment ───────────────────────────
             RowLayout {
@@ -147,7 +147,7 @@ Page {
                     onClicked: { TextFormatter.unindentText(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus() } }
 
                 // Separator
-                Rectangle { width: 1; height: 24; color: palette.mid; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
+                Rectangle { width: 1; height: 24; color: palette.placeholderText; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
 
                 // Alignment: 0=left 1=center 2=right 3=justify
                 ToolButton { icon.name: "text.alignleft";   focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
@@ -160,7 +160,7 @@ Page {
                     onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 3); noteEdit.forceActiveFocus() } }
 
                 // Separator
-                Rectangle { width: 1; height: 24; color: palette.mid; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
+                Rectangle { width: 1; height: 24; color: palette.placeholderText; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
 
                 // Font family / size / color picker
                 ToolButton {
@@ -255,12 +255,13 @@ Page {
                     textFormat: TextEdit.RichText
                     wrapMode: TextEdit.Wrap
                     font.pixelSize: 15
+                    color: palette.windowText   // default for unstyled text; HTML explicit colors still override
                     selectByMouse: true
                 }
 
                 Rectangle {
                     anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-                    height: 1; color: palette.mid; opacity: 0.3
+                    height: 1; color: palette.placeholderText; opacity: 0.3
                 }
             }
 
@@ -292,7 +293,20 @@ Page {
     // looks like HTML unchanged.
     function toRichText(s) {
         if (!s) return ""
-        if (s.indexOf("<html") !== -1 || s.indexOf("<HTML") !== -1) return s
+        if (s.indexOf("<html") !== -1 || s.indexOf("<HTML") !== -1) {
+            // In dark mode, replace explicitly dark text colors with the system text color
+            // so notes typed in light mode don't become invisible.
+            if (palette.window.hslLightness < 0.5) {
+                var light = palette.windowText.toString()
+                return s.replace(/color\s*:\s*#([0-9a-fA-F]{6})/gi, function(match, hex) {
+                    var luma = (0.299 * parseInt(hex.substring(0,2),16)
+                              + 0.587 * parseInt(hex.substring(2,4),16)
+                              + 0.114 * parseInt(hex.substring(4,6),16)) / 255
+                    return luma < 0.4 ? ("color:" + light) : match
+                })
+            }
+            return s
+        }
         return s.replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
@@ -305,9 +319,9 @@ Page {
         leftPadding: 16
         bottomPadding: 4
         font.pixelSize: 13
-        font.weight: Font.Medium
-        color: palette.mid
-        background: Rectangle { color: palette.window }
+        font.weight: Font.Semibold
+        color: Theme.navyMid
+        background: Rectangle { color: Theme.sectionBg }
     }
 
     component FieldRow: Rectangle {
@@ -318,7 +332,7 @@ Page {
         Item { id: innerItem; anchors.fill: parent }
         Rectangle {
             anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-            height: 1; color: palette.mid; opacity: 0.3
+            height: 1; color: palette.placeholderText; opacity: 0.3
         }
     }
 

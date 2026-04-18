@@ -34,7 +34,7 @@ Page {
             FieldRow {
                 ComboBox {
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: [qsTr("Self-Hosted PostgREST"), qsTr("Supabase")]
+                    model: [qsTr("Self-Hosted PostgREST"), qsTr("Supabase"), qsTr("Neon")]
                     currentIndex: AppController.syncHostType
                     onActivated: AppController.syncHostType = currentIndex
                 }
@@ -45,9 +45,11 @@ Page {
                 TextField {
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: AppController.syncPostgrestUrl
-                    placeholderText: AppController.syncHostType === 0
-                        ? qsTr("https://your-server/rest/v1")
-                        : qsTr("https://xyz.supabase.co/rest/v1")
+                    placeholderText: AppController.syncHostType === 1
+                        ? qsTr("https://xyz.supabase.co")
+                        : AppController.syncHostType === 2
+                            ? qsTr("https://your-project.neon.tech")
+                            : qsTr("https://your-server/rest/v1")
                     inputMethodHints: Qt.ImhUrlCharactersOnly | Qt.ImhNoPredictiveText
                     background: Item {}
                     onEditingFinished: AppController.syncPostgrestUrl = text
@@ -118,9 +120,9 @@ Page {
         leftPadding: 16
         bottomPadding: 4
         font.pixelSize: 13
-        font.weight: Font.Medium
-        color: palette.mid
-        background: Rectangle { color: palette.window }
+        font.weight: Font.Semibold
+        color: Theme.navyMid
+        background: Rectangle { color: Theme.sectionBg }
     }
 
     component FieldRow: Rectangle {
@@ -138,7 +140,7 @@ Page {
         Rectangle {
             anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
             height: 1
-            color: palette.mid
+            color: palette.placeholderText
             opacity: 0.3
         }
     }
@@ -175,7 +177,7 @@ Page {
             Rectangle {
                 anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
                 height: 1
-                color: palette.mid
+                color: palette.placeholderText
                 opacity: 0.3
             }
         }

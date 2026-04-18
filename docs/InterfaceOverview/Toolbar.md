@@ -42,3 +42,19 @@ The toolbar provides a quick way for you to access some of the more common funct
 | ![Image](<../img/icon-font-size.png>) | Select the font size for the selected text. Only applicable for meeting notes. |
 
 <br>
+
+## Quick Search
+
+The **Quick Search** box is located on the right end of the toolbar. As you type, it instantly filters the rows displayed in the current list page — no need to press Enter. The filter is applied to all visible columns.
+
+Quick Search is available on any page that displays a list, such as the Project List, People List, Client List, Notes Page, and Item Tracker Page. The search is cleared automatically when you navigate away from the current page.
+
+**To use Quick Search:**
+
+1. Type text in the **Search…** box on the right side of the toolbar.
+2. The current list filters in real time to show only rows that contain the entered text.
+3. Clear the box (or use the × button) to remove the filter.
+
+> **Tip:** Quick Search filters the current view only. To search across all data in the database, use the [Search Page](<SearchPage.md>) instead.
+
+<br>

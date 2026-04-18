@@ -25,6 +25,7 @@ nav:
     - 'People List Page': InterfaceOverview/PeopleListPage.md
     - 'Client List Page': InterfaceOverview/ClientListPage.md
     - 'Search Page': InterfaceOverview/SearchPage.md
+    - 'Error Log': InterfaceOverview/ErrorLog.md
     - 'Filter Tool': InterfaceOverview/FilterTool.md
     - 'Sorting and Sizing Columns': InterfaceOverview/SortingandSizingColumns.md
     - 'Earned Value Terms': InterfaceOverview/EarnedValueTerms.md
@@ -55,6 +56,8 @@ nav:
     - 'Schedule a Customer Lessons Learned Meeting': StandardPlugins/ScheduleaCustomerLessonsLearned.md
     - 'IFS Cloud Integration': StandardPlugins/IFSCloud.md
     - 'Editor': StandardPlugins/Editor.md
+  - 'Project Notes Mobile':
+    - 'Overview': Mobile/ProjectNotesMobile.md
 
 markdown_extensions:
   - tables

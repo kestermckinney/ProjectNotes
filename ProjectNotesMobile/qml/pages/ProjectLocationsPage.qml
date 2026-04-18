@@ -71,7 +71,7 @@ Page {
                     Label {
                         text: model.location_type || ""
                         font.pixelSize: 12
-                        color: palette.mid
+                        color: palette.placeholderText
                     }
                 }
 
@@ -79,7 +79,7 @@ Page {
                     visible: (model.full_path || "") !== "" && (model.location_description || "") !== ""
                     text: model.full_path || ""
                     font.pixelSize: 12
-                    color: palette.mid
+                    color: palette.placeholderText
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
@@ -102,6 +102,6 @@ Page {
         anchors.centerIn: parent
         visible: listView.count === 0
         text: qsTr("No files or folders.")
-        color: palette.mid
+        color: palette.placeholderText
     }
 }
