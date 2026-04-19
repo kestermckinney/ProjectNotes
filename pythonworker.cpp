@@ -267,6 +267,14 @@ void PythonWorker::unloadModule()
 
     if (!m_isloaded)
     {
+        // Still emit so onUnloadComplete can remove a never-loaded plugin from
+        // the list (e.g. file deleted before load completed). Unlock and wake
+        // before emitting — emit may synchronously delete this PythonWorker
+        // (direct connection), so m_loadingmutex and m_loadwait must not be
+        // touched after the emit.
+        m_loadwait.wakeAll();
+        locker.unlock();
+        emit unloadComplete();
         return;
     }
 
@@ -308,9 +316,13 @@ void PythonWorker::unloadModule()
     m_isloading = false;
     m_isloaded = false;
 
-    emit unloadComplete();
-
+    // Unlock and wake before emitting — emit may synchronously delete this
+    // PythonWorker (direct connection), so m_loadingmutex and m_loadwait must
+    // not be touched after the emit.
     m_loadwait.wakeAll();
+    locker.unlock();
+
+    emit unloadComplete();
 }
 
 void PythonWorker::reloadModule()
