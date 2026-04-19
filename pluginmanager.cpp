@@ -520,22 +520,27 @@ void PluginManager::unloadAll()
 
 void PluginManager::onUnloadComplete(const QString &modulepath)
 {
-    QLog_Info(CONSOLELOG, QString("Module '%1' unloaded.").arg(modulepath));
+    // Copy before any deletions — for non-threaded (direct connection) plugins,
+    // modulepath is a reference to Plugin::m_modulepath, which is destroyed by
+    // "delete *it" below. A local copy keeps all subsequent uses valid.
+    const QString path = modulepath;
 
-    QFileInfo file(modulepath);
+    QLog_Info(CONSOLELOG, QString("Module '%1' unloaded.").arg(path));
+
+    QFileInfo file(path);
 
     if (!file.exists())
     {
         // file is gone, close out the thread
         for (auto it = m_pluginlist.begin(); it != m_pluginlist.end();)
         {
-            if ((*it)->modulepath().compare(modulepath) == 0)
+            if ((*it)->modulepath().compare(path) == 0)
             {
-                m_fileWatcher->removePath(modulepath);
+                m_fileWatcher->removePath(path);
 
                 delete *it;
                 it = m_pluginlist.erase(it);
-                QLog_Info(CONSOLELOG, QString("Module '%1' no longer exists. Thread stopped.").arg(modulepath));
+                QLog_Info(CONSOLELOG, QString("Module '%1' no longer exists. Thread stopped.").arg(path));
             }
             else
             {
@@ -544,7 +549,7 @@ void PluginManager::onUnloadComplete(const QString &modulepath)
         }
     }
 
-    emit pluginUnLoaded(modulepath);
+    emit pluginUnLoaded(path);
 }
 
 void PluginManager::onFileChanged(const QString &filepath)
@@ -558,7 +563,11 @@ void PluginManager::onFileChanged(const QString &filepath)
     QLog_Info(CONSOLELOG, QString("Module file '%1' changed.").arg(filepath));
 
     QFileInfo file(filepath);
+    bool fileDeleted = !file.exists();
 
+    // Collect matching plugins before acting — non-threaded plugin unload/reload
+    // can synchronously modify m_pluginlist, invalidating range-for iterators.
+    QList<Plugin*> toAction;
     for (Plugin* p : m_pluginlist)
     {
         bool related_import = false;
@@ -574,14 +583,21 @@ void PluginManager::onFileChanged(const QString &filepath)
         }
 
         if (related_import || p->modulepath().compare(filepath, Qt::CaseInsensitive) == 0)
-        {
-            p->reloadPlugin();
-        }
+            toAction.append(p);
     }
 
-    // Re-add the path if the editor used a delete+recreate save strategy,
-    // which causes QFileSystemWatcher to silently drop the watch.
-    if (!m_fileWatcher->files().contains(filepath))
+    for (Plugin* p : toAction)
+    {
+        // When the file is gone, unload rather than reload so event_shutdown is
+        // honored and onUnloadComplete clears the plugin from the list and menu.
+        if (fileDeleted && p->modulepath().compare(filepath, Qt::CaseInsensitive) == 0)
+            p->unloadPlugin();
+        else
+            p->reloadPlugin();
+    }
+
+    // Re-add the path only if the file still exists (editor delete+recreate save strategy).
+    if (!fileDeleted && !m_fileWatcher->files().contains(filepath))
         m_fileWatcher->addPath(filepath);
 }
 
