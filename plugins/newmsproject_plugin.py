@@ -56,25 +56,29 @@ class NewMSProjectSettings(QDialog):
         self.ui.buttonBox.accepted.connect(self.save_settings)
         self.ui.buttonBox.rejected.connect(self.reject_changes)
 
-        x = pnc.get_plugin_setting("X", self.settings_pluginname)
-        y = pnc.get_plugin_setting("Y", self.settings_pluginname)
         w = pnc.get_plugin_setting("W", self.settings_pluginname)
         h = pnc.get_plugin_setting("H", self.settings_pluginname)
 
         self.export_subfolder = pnc.get_plugin_setting("ExportSubFolder", self.settings_pluginname)
         self.ui.lineEditExportSubFolder.setText(self.export_subfolder or "")
 
-        if (x is not None and y is not None and w is not None and h is not None):
-            self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
+        if w is not None and h is not None:
+            self.ui.resize(int(w), int(h))
+        self.center_on_main_window()
+
+    def center_on_main_window(self):
+        main_window = QApplication.activeWindow()
+        if main_window:
+            main_geometry = main_window.geometry()
+            x = main_geometry.x() + (main_geometry.width() - self.width()) // 2
+            y = main_geometry.y() + (main_geometry.height() - self.height()) // 2
+            self.move(max(0, x), max(0, y))
 
     def save_window_state(self):
-        # Save window position and size
-        pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
-        pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
         pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
         pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
-        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+        # print(f"saving dimensions {self.size().width()},{self.size().height()}")
 
     def save_settings(self):
         self.export_subfolder = self.ui.lineEditExportSubFolder.text()

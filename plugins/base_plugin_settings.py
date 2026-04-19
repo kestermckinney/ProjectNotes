@@ -135,8 +135,6 @@ class FileFinderSettings(QDialog):
         self.populate_table_from_json(self.search_locations, self.ui.tableSearchLocations)
         self.populate_table_from_json(self.classifications, self.ui.tableClassifications)
 
-        x = self.pnc.get_plugin_setting("X", self.settings_pluginname)
-        y = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
         w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
         h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
 
@@ -151,8 +149,9 @@ class FileFinderSettings(QDialog):
 
             #print(f"loading file finder columns {lc1}, {mc1}, {mc2}")
 
-        if (x is not None and y is not None and w is not None and h is not None):
-            self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
+        if w is not None and h is not None:
+            self.ui.resize(int(w), int(h))
+        self.center_on_main_window()
 
     def copy_table_to_json(self, qtable):
         data = []
@@ -249,10 +248,15 @@ class FileFinderSettings(QDialog):
         if (row > -1):
             value = self.ui.tableClassifications.removeRow(row)
 
+    def center_on_main_window(self):
+        main_window = QApplication.activeWindow()
+        if main_window:
+            main_geometry = main_window.geometry()
+            x = main_geometry.x() + (main_geometry.width() - self.width()) // 2
+            y = main_geometry.y() + (main_geometry.height() - self.height()) // 2
+            self.move(max(0, x), max(0, y))
+
     def save_window_state(self):
-        # Save window position and size
-        self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
-        self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
         self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
@@ -260,7 +264,7 @@ class FileFinderSettings(QDialog):
         self.pnc.set_plugin_setting("mc1", self.settings_pluginname, f"{self.ui.tableClassifications.columnWidth(0)}")
         self.pnc.set_plugin_setting("mc2", self.settings_pluginname, f"{self.ui.tableClassifications.columnWidth(1)}")
 
-        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+        # print(f"saving dimensions {self.size().width()},{self.size().height()}")
 
     def save_settings(self):
         self.search_locations = self.copy_table_to_json(self.ui.tableSearchLocations)
@@ -304,16 +308,15 @@ class EditorSettings(QDialog):
         self.ui.buttonBox.accepted.connect(self.save_settings)
         self.ui.buttonBox.rejected.connect(self.reject_changes)
 
-        x = self.pnc.get_plugin_setting("X", self.settings_pluginname)
-        y = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
         w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
         h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
 
         self.editor_path = self.pnc.get_plugin_setting("EditorPath", self.settings_pluginname)
         self.ui.lineEditFullPath.setText(self.editor_path or "")
 
-        if (x is not None and y is not None and w is not None and h is not None):
-            self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
+        if w is not None and h is not None:
+            self.ui.resize(int(w), int(h))
+        self.center_on_main_window()
 
     def edit_location(self):
         value = self.ui.lineEditFullPath.text()
@@ -327,14 +330,19 @@ class EditorSettings(QDialog):
         if (file_path is not None and file_path != ''):
             self.ui.lineEditFullPath.setText(file_path)        
 
+    def center_on_main_window(self):
+        main_window = QApplication.activeWindow()
+        if main_window:
+            main_geometry = main_window.geometry()
+            x = main_geometry.x() + (main_geometry.width() - self.width()) // 2
+            y = main_geometry.y() + (main_geometry.height() - self.height()) // 2
+            self.move(max(0, x), max(0, y))
+
     def save_window_state(self):
-        # Save window position and size
-        self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
-        self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
         self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
-        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+        # print(f"saving dimensions {self.size().width()},{self.size().height()}")
 
     def save_settings(self):
         self.editor_path = self.ui.lineEditFullPath.text()
@@ -345,7 +353,7 @@ class EditorSettings(QDialog):
 
     def reject_changes(self):
         self.save_window_state()
-        
+
         # Call the base class implementation
         self.reject()
 
@@ -373,8 +381,6 @@ class OutlookIntegrationSettings(QDialog):
         self.ui.buttonBox.accepted.connect(self.save_settings)
         self.ui.buttonBox.rejected.connect(self.reject_changes)
 
-        x = self.pnc.get_plugin_setting("X", self.settings_pluginname)
-        y = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
         w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
         h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
 
@@ -391,17 +397,23 @@ class OutlookIntegrationSettings(QDialog):
         self.ui.checkBoxSendO365.setChecked((self.pnc.get_plugin_setting("SendO365", self.settings_pluginname) or "").lower() == "true")
         self.ui.checkBoxScheduleO365.setChecked((self.pnc.get_plugin_setting("ScheduleO365", self.settings_pluginname) or "").lower() == "true")
 
-        if (x is not None and y is not None and w is not None and h is not None):
-            self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
+        if w is not None and h is not None:
+            self.ui.resize(int(w), int(h))
+        self.center_on_main_window()
+
+    def center_on_main_window(self):
+        main_window = QApplication.activeWindow()
+        if main_window:
+            main_geometry = main_window.geometry()
+            x = main_geometry.x() + (main_geometry.width() - self.width()) // 2
+            y = main_geometry.y() + (main_geometry.height() - self.height()) // 2
+            self.move(max(0, x), max(0, y))
 
     def save_window_state(self):
-        # Save window position and size
-        self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
-        self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
         self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
-        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+        # print(f"saving dimensions {self.size().width()},{self.size().height()}")
 
     def save_settings(self):
 
@@ -474,8 +486,6 @@ class MyShortcutSettings(QDialog):
 
         self.populate_table_from_json(self.myshortcuts, self.ui.tableShortcuts)
 
-        x = self.pnc.get_plugin_setting("X", self.settings_pluginname)
-        y = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
         w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
         h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
 
@@ -490,8 +500,9 @@ class MyShortcutSettings(QDialog):
             self.ui.tableShortcuts.setColumnWidth(2, int(c3))
             self.ui.tableShortcuts.setColumnWidth(3, int(c4))
 
-        if (x is not None and y is not None and w is not None and h is not None):
-            self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
+        if w is not None and h is not None:
+            self.ui.resize(int(w), int(h))
+        self.center_on_main_window()
 
     def copy_table_to_json(self, qtable):
         data = []
@@ -542,10 +553,15 @@ class MyShortcutSettings(QDialog):
         if (row > -1):
             value = self.ui.tableShortcuts.removeRow(row)
 
+    def center_on_main_window(self):
+        main_window = QApplication.activeWindow()
+        if main_window:
+            main_geometry = main_window.geometry()
+            x = main_geometry.x() + (main_geometry.width() - self.width()) // 2
+            y = main_geometry.y() + (main_geometry.height() - self.height()) // 2
+            self.move(max(0, x), max(0, y))
+
     def save_window_state(self):
-        # Save window position and size
-        self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
-        self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
         self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
@@ -554,7 +570,7 @@ class MyShortcutSettings(QDialog):
         self.pnc.set_plugin_setting("c3", self.settings_pluginname, f"{self.ui.tableShortcuts.columnWidth(2)}")
         self.pnc.set_plugin_setting("c4", self.settings_pluginname, f"{self.ui.tableShortcuts.columnWidth(3)}")
 
-        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+        # print(f"saving dimensions {self.size().width()},{self.size().height()}")
 
     def save_settings(self):
         self.myshortcuts = self.copy_table_to_json(self.ui.tableShortcuts)
@@ -644,8 +660,6 @@ class MeetingEmailTypesSettings(QDialog):
         self.meeting_types = self.pnc.get_plugin_setting("MeetingEmailTypes", self.settings_pluginname)
         self.populate_table_from_json(self.meeting_types, self.ui.tableWidgetMeetingEmailTypes)
 
-        x = self.pnc.get_plugin_setting("X", self.settings_pluginname)
-        y = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
         w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
         h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
 
@@ -668,9 +682,10 @@ class MeetingEmailTypesSettings(QDialog):
             self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(4, int(c5))
             self.ui.tableWidgetMeetingEmailTypes.setColumnWidth(5, int(c6))
 
-        if (x is not None and y is not None and w is not None and h is not None):
-            #print(f"loading dimensions {int(x)},{int(y)},{int(w)},{int(h)}")
-            self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
+        if w is not None and h is not None:
+            #print(f"loading dimensions {int(w)},{int(h)}")
+            self.ui.resize(int(w), int(h))
+        self.center_on_main_window()
 
         self.ui_template = EditMETemplate(self.ui)
         self.ui_template.buttonBox.accepted.connect(self.update_row)
@@ -766,10 +781,15 @@ class MeetingEmailTypesSettings(QDialog):
         if (row > -1):
             value = self.ui.tableWidgetMeetingEmailTypes.removeRow(row)
 
+    def center_on_main_window(self):
+        main_window = QApplication.activeWindow()
+        if main_window:
+            main_geometry = main_window.geometry()
+            x = main_geometry.x() + (main_geometry.width() - self.width()) // 2
+            y = main_geometry.y() + (main_geometry.height() - self.height()) // 2
+            self.move(max(0, x), max(0, y))
+
     def save_window_state(self):
-        # Save window position and size
-        self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
-        self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
         self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
@@ -780,7 +800,7 @@ class MeetingEmailTypesSettings(QDialog):
         self.pnc.set_plugin_setting("c5", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(4)}")
         self.pnc.set_plugin_setting("c6", self.settings_pluginname, f"{self.ui.tableWidgetMeetingEmailTypes.columnWidth(5)}")
 
-        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+        # print(f"saving dimensions {self.size().width()},{self.size().height()}")
 
     def save_settings(self):
         self.meeting_types = self.copy_table_to_json(self.ui.tableWidgetMeetingEmailTypes)
@@ -824,13 +844,12 @@ class SettingsMigrator(QDialog):
 
         self.load_all_plugin_settings()
 
-        x = self.pnc.get_plugin_setting("X", self.settings_pluginname)
-        y = self.pnc.get_plugin_setting("Y", self.settings_pluginname)
         w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
         h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
 
-        if (x is not None and y is not None and w is not None and h is not None):
-            self.ui.setGeometry(QRect(int(x), int(y), int(w), int(h)))
+        if w is not None and h is not None:
+            self.ui.resize(int(w), int(h))
+        self.center_on_main_window()
 
     def load_all_plugin_settings(self):
         self.listWidgetPlugins.clear()
@@ -968,18 +987,23 @@ class SettingsMigrator(QDialog):
         
         return
 
+    def center_on_main_window(self):
+        main_window = QApplication.activeWindow()
+        if main_window:
+            main_geometry = main_window.geometry()
+            x = main_geometry.x() + (main_geometry.width() - self.width()) // 2
+            y = main_geometry.y() + (main_geometry.height() - self.height()) // 2
+            self.move(max(0, x), max(0, y))
+
     def save_window_state(self):
-        # Save window position and size
-        self.pnc.set_plugin_setting("X", self.settings_pluginname, f"{self.pos().x()}")
-        self.pnc.set_plugin_setting("Y", self.settings_pluginname, f"{self.pos().y()}")
         self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
         self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
 
-        # print(f"saving dimensions {self.pos().x()},{self.pos().y()},{self.size().width()},{self.size().height()}")
+        # print(f"saving dimensions {self.size().width()},{self.size().height()}")
 
     def reject_changes(self):
         self.save_window_state()
-        
+
         # Call the base class implementation
         self.reject()
 
