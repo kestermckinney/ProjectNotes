@@ -17,6 +17,8 @@ Page {
     property string projectId:    ""
     property string projectTitle: ""
 
+    StackView.onActivated: AppController.setProjectFilter(root.projectId)
+
     header: ToolBar {
         RowLayout {
             anchors { left: parent.left; right: parent.right; margins: 8 }

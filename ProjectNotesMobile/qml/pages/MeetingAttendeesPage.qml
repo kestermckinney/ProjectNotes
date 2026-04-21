@@ -18,7 +18,7 @@ Page {
 
     property string noteId: ""
 
-    StackView.onActivated: AppController.refreshMeetingAttendees()
+    StackView.onActivated: AppController.setNoteFilter(root.noteId, "")
 
     header: ToolBar {
         RowLayout {
@@ -98,15 +98,17 @@ Page {
                     Button {
                         visible: (model.cell_phone || "").length > 0
                         text: qsTr("Cell")
-                        font.pixelSize: 11
-                        onClicked: Qt.openUrlExternally("tel://" + model.cell_phone)
+                        implicitHeight: 44
+                        leftPadding: 12; rightPadding: 12
+                        onClicked: Qt.openUrlExternally("tel:" + (model.cell_phone || "").replace(/[^\d+]/g, ""))
                     }
 
                     Button {
                         visible: (model.office_phone || "").length > 0
                         text: qsTr("Office")
-                        font.pixelSize: 11
-                        onClicked: Qt.openUrlExternally("tel://" + model.office_phone)
+                        implicitHeight: 44
+                        leftPadding: 12; rightPadding: 12
+                        onClicked: Qt.openUrlExternally("tel:" + (model.office_phone || "").replace(/[^\d+]/g, ""))
                     }
                 }
             }

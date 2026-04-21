@@ -113,9 +113,6 @@ void AppController::configureSyncApi()
                 this,      &AppController::onSyncStatusUpdated,
                 Qt::QueuedConnection);
 
-        // Mobile-friendly limits: smaller batches to conserve bandwidth and
-        // battery; longer interval between cycles than the desktop default.
-        m_syncApi->setSyncIntervalMs(30000);  // 30 s between cycles
     }
 
     m_syncApi->setSyncHostType(global_MobileSettings.getSyncHostType());

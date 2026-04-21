@@ -16,7 +16,7 @@ Page {
 
     property string itemId: ""
 
-    StackView.onActivated: AppController.refreshTrackerComments()
+    StackView.onActivated: AppController.openTrackerItem(root.itemId)
 
     header: ToolBar {
         RowLayout {

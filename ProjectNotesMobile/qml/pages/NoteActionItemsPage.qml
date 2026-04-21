@@ -19,7 +19,7 @@ Page {
     property string noteId:    ""
     property string projectId: ""
 
-    StackView.onActivated: AppController.refreshNoteActionItems()
+    StackView.onActivated: AppController.setNoteFilter(root.noteId, root.projectId)
 
     function statusColor(status) {
         switch (status) {
