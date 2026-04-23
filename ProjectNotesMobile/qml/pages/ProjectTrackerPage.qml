@@ -144,8 +144,6 @@ Page {
             onClicked: {
                 var itemId = model.id || ""
 
-                console.log("Projec Tracker Page: ", itemId)
-
                 if (!itemId) return
                 AppController.openTrackerItem(itemId)
                 var d = AppController.getTrackerItemDetailData(0)
