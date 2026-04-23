@@ -34,6 +34,7 @@
 #include <QDomAttr>
 #include <QDomNodeList>
 #include <QReadWriteLock>
+#include <functional>
 
 // common colors
 #define QCOLOR_YELLOW QColor(173, 172, 58)
@@ -79,6 +80,13 @@ public:
     void backupDatabase(const QString& file);
     bool saveParameter( const QString& parametername, const QString& parametervalue );
     QString loadParameter( const QVariant& parametername );
+
+    static void setLocalSettingsCallbacks(
+        std::function<void(const QString&, const QString&)> saver,
+        std::function<QString(const QString&)> loader
+    );
+    void saveLocalParameter(const QString& name, const QString& value);
+    QString loadLocalParameter(const QString& name);
 
     void setGlobalSearches( bool refresh );
     QString& getDatabaseFile() { return m_databaseFile; }
@@ -240,6 +248,9 @@ private:
     QList<QDomNode> findTableNodes(const QDomNode& xmlelement, const QString& tablename);
     // list of created models
     QList<SqlQueryModel*> m_openRecordsets;
+
+    static std::function<void(const QString&, const QString&)> s_localSave;
+    static std::function<QString(const QString&)> s_localLoad;
 
     // keep track of key column changes to update display
     QList<KeyColumnChange> m_keyColumnChanges;

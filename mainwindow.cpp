@@ -49,6 +49,11 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    DatabaseObjects::setLocalSettingsCallbacks(
+        [](const QString& key, const QString& val) { global_Settings.setWindowStateData(key, val); },
+        [](const QString& key) -> QString { return global_Settings.getWindowStateData(key).toString(); }
+    );
+
     QLoggerManager *logmanager = QLoggerManager::getInstance();
 
     QString logloc = LogViewer::getLogFileLocation();

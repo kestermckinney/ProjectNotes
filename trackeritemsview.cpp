@@ -34,7 +34,10 @@ void TrackerItemsView::setModel(QAbstractItemModel *model)
         TableView::setModel(model);
 
         // see setbuttonitems for visible columns
+        setColumnHidden(17, true);
+        setColumnHidden(18, true);
         setColumnHidden(19, true);
+        setColumnHidden(20, true);
 
         // setup model lists
         m_itemPriority.setStringList(DatabaseObjects::item_priority);

@@ -32,6 +32,8 @@ void ProjectTeamMembersView::setModel(QAbstractItemModel *model)
         setColumnHidden(7, true);
         setColumnHidden(8, true);
         setColumnHidden(9, true);
+        setColumnHidden(10, true);
+        setColumnHidden(11, true);
         // setup model lists
 
         DatabaseObjects* dbo = qobject_cast<SqlQueryModel*>(dynamic_cast<SortFilterProxyModel*>(model)->sourceModel())->getDBOs();

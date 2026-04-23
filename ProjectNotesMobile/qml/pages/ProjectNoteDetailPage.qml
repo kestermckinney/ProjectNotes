@@ -297,17 +297,6 @@ Page {
     function toRichText(s) {
         if (!s) return ""
         if (s.indexOf("<html") !== -1 || s.indexOf("<HTML") !== -1) {
-            // In dark mode, replace explicitly dark text colors with the system text color
-            // so notes typed in light mode don't become invisible.
-            // if (palette.window.hslLightness < 0.5) {
-            //     var light = palette.windowText.toString()
-            //     return s.replace(/color\s*:\s*#([0-9a-fA-F]{6})/gi, function(match, hex) {
-            //         var luma = (0.299 * parseInt(hex.substring(0,2),16)
-            //                   + 0.587 * parseInt(hex.substring(2,4),16)
-            //                   + 0.114 * parseInt(hex.substring(4,6),16)) / 255
-            //         return luma < 0.4 ? ("color:" + light) : match
-            //     })
-            // }
             return s
         }
         return s.replace(/&/g, "&amp;")

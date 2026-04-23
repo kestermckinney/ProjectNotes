@@ -70,6 +70,30 @@ QStringList DatabaseObjects::file_types = {
 DatabaseObjects global_DBObjects(nullptr);
 QReadWriteLock db_rwlock;
 
+std::function<void(const QString&, const QString&)> DatabaseObjects::s_localSave;
+std::function<QString(const QString&)> DatabaseObjects::s_localLoad;
+
+void DatabaseObjects::setLocalSettingsCallbacks(
+    std::function<void(const QString&, const QString&)> saver,
+    std::function<QString(const QString&)> loader)
+{
+    s_localSave = saver;
+    s_localLoad = loader;
+}
+
+void DatabaseObjects::saveLocalParameter(const QString& name, const QString& value)
+{
+    if (s_localSave)
+        s_localSave(name, value);
+}
+
+QString DatabaseObjects::loadLocalParameter(const QString& name)
+{
+    if (s_localLoad)
+        return s_localLoad(name);
+    return QString();
+}
+
 
 DatabaseObjects::DatabaseObjects(QObject *parent) : QObject(parent)
 {
@@ -598,37 +622,37 @@ QString DatabaseObjects::loadParameter( const QVariant& parametername )
 
 void DatabaseObjects::setShowResolvedTrackerItems(bool value)
 {
-    saveParameter("ViewFilter:ShowResolvedTrackerItems", (value ? "1": "0"));
+    saveLocalParameter("ViewFilter:ShowResolvedTrackerItems", (value ? "1": "0"));
 }
 
 bool DatabaseObjects::getShowResolvedTrackerItems()
 {
-    QString value = loadParameter("ViewFilter:ShowResolvedTrackerItems");
+    QString value = loadLocalParameter("ViewFilter:ShowResolvedTrackerItems");
     bool ret = (bool)value.toUInt();
     return ret;
 }
 
 void DatabaseObjects::setShowClosedProjects(bool value)
 {
-    saveParameter("UserFilter:ShowClosedProjects", (value ? "1": "0"));
+    saveLocalParameter("UserFilter:ShowClosedProjects", (value ? "1": "0"));
     emit showClosedProjectsChanged(value);
 }
 
 bool DatabaseObjects::getShowClosedProjects()
 {
-    QString value = loadParameter("UserFilter:ShowClosedProjects");
+    QString value = loadLocalParameter("UserFilter:ShowClosedProjects");
     bool ret = (bool)value.toUInt();
     return ret;
 }
 
 void DatabaseObjects::setShowInternalItems(bool value)
 {
-    saveParameter("UserFilter:ShowInternalItems", (value ? "1": "0"));
+    saveLocalParameter("UserFilter:ShowInternalItems", (value ? "1": "0"));
 }
 
 bool DatabaseObjects::getShowInternalItems()
 {
-    QString value = loadParameter("UserFilter:ShowInternalItems");
+    QString value = loadLocalParameter("UserFilter:ShowInternalItems");
     bool ret = (bool)value.toUInt();
     return ret;
 }

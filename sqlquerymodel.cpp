@@ -1846,7 +1846,7 @@ void SqlQueryModel::activateUserFilter(const QString& filterName)
 
         parmname = QString("UserFilter:%1:IsActive").arg(filter_name);
 
-        getDBOs()->saveParameter(parmname, val);
+        getDBOs()->saveLocalParameter(parmname, val);
     }
 }
 
@@ -1865,7 +1865,7 @@ void SqlQueryModel::deactivateUserFilter(const QString& filterName)
 
         parmname = QString("UserFilter:%1:IsActive").arg(filter_name);
 
-        getDBOs()->saveParameter(parmname, val);
+        getDBOs()->saveLocalParameter(parmname, val);
     }
 }
 
@@ -1880,7 +1880,7 @@ void SqlQueryModel::loadLastUserFilterState(const QString& filterName)
     parmname = QString("UserFilter:%1:IsActive").arg(filter_name);
     parmname.replace(" ", "_", Qt::CaseSensitive);
 
-    val = getDBOs()->loadParameter(parmname);
+    val = getDBOs()->loadLocalParameter(parmname);
 
     if (val.compare("true") == 0)
         m_userFilterActive = true;
@@ -1931,7 +1931,7 @@ void SqlQueryModel::saveUserFilter(const QString& filterName)
 
     QString parmname = QString("UserFilter:%1").arg(filter_name);
 
-    getDBOs()->saveParameter( parmname, xml );
+    getDBOs()->saveLocalParameter( parmname, xml );
 }
 
 void SqlQueryModel::loadUserFilter(const QString& filterName)
@@ -1944,7 +1944,7 @@ void SqlQueryModel::loadUserFilter(const QString& filterName)
     parmname = QString("UserFilter:%1").arg(filter_name);
     parmname.replace(" ", "_", Qt::CaseSensitive);
 
-    QString xml = getDBOs()->loadParameter(parmname);
+    QString xml = getDBOs()->loadLocalParameter(parmname);
 
     if (xml.isEmpty())
     {

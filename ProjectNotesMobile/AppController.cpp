@@ -30,6 +30,11 @@ AppController* AppController::create(QQmlEngine* /*engine*/, QJSEngine* /*script
 AppController::AppController(QObject* parent)
     : QObject(parent)
 {
+    DatabaseObjects::setLocalSettingsCallbacks(
+        [](const QString& key, const QString& val) { global_MobileSettings.setValue(key, val); },
+        [](const QString& key) -> QString { return global_MobileSettings.getValue(key).toString(); }
+    );
+
     // Set up structured logging to the app data directory
     const QString logPath = MobileSettings::dataLocation() + "/logs";
     QDir().mkpath(logPath);
