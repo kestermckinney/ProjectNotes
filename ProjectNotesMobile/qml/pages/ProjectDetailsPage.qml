@@ -55,6 +55,13 @@ Page {
             root._saveNow()
     }
 
+    Component.onDestruction: {
+        root.forceActiveFocus()
+        Qt.inputMethod.hide()
+        if (!root._skipSave)
+            root._saveNow()
+    }
+
     // ── Toolbar: copy + delete ────────────────────────────────────────────────
     header: ToolBar {
         RowLayout {
@@ -112,6 +119,7 @@ Page {
                     id: numberField
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialProjectNumber
+                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhNoPredictiveText
                     background: Item {}
                 }
@@ -123,6 +131,7 @@ Page {
                     id: nameField
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialProjectName
+                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhNoPredictiveText
                     background: Item {}
                 }

@@ -32,6 +32,13 @@ Page {
             root._saveNow()
     }
 
+    Component.onDestruction: {
+        root.forceActiveFocus()
+        Qt.inputMethod.hide()
+        if (!root._skipSave)
+            root._saveNow()
+    }
+
     // ── Toolbar: copy + delete ────────────────────────────────────────────────
     header: ToolBar {
         RowLayout {
@@ -86,6 +93,7 @@ Page {
                     id: nameField
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialName
+                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhNoPredictiveText
                     background: Item {}
                 }
@@ -97,6 +105,7 @@ Page {
                     id: emailField
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialEmail
+                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhEmailCharactersOnly
                     background: Item {}
                 }
@@ -108,6 +117,7 @@ Page {
                     id: officePhoneField
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialOfficePhone
+                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhDialableCharactersOnly
                     background: Item {}
                 }
@@ -119,6 +129,7 @@ Page {
                     id: cellPhoneField
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialCellPhone
+                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhDialableCharactersOnly
                     background: Item {}
                 }
@@ -130,6 +141,7 @@ Page {
                     id: roleField
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialRole
+                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhNoPredictiveText
                     background: Item {}
                 }

@@ -9,6 +9,7 @@ import ProjectNotesMobile
 // ProjectTrackerPage — tracker items filtered to the current project.
 // Mirrors the Tracker Items tab in the desktop project details view.
 // Uses AppController.trackerItemsModel (filtered by setProjectFilter).
+// Detail editing is handled by TrackerItemDetailPage.
 
 Page {
     id: root
@@ -19,6 +20,11 @@ Page {
     property StackView stackView: StackView.view
 
     StackView.onActivated: AppController.refreshTrackerItems()
+
+    Component.onDestruction: {
+        root.forceActiveFocus()
+        Qt.inputMethod.hide()
+    }
 
     function statusColor(status) {
         switch (status) {
@@ -137,24 +143,28 @@ Page {
 
             onClicked: {
                 var itemId = model.id || ""
+
+                console.log("Projec Tracker Page: ", itemId)
+
                 if (!itemId) return
                 AppController.openTrackerItem(itemId)
+                var d = AppController.getTrackerItemDetailData(0)
                 root.stackView.push(Qt.resolvedUrl("TrackerItemDetailPage.qml"), {
                     itemRow:              0,
                     itemId:               itemId,
-                    initialItemNumber:    model.item_number       || "",
-                    initialProjectNumber: model.project_number    || "",
-                    initialProjectName:   model.project_name      || "",
-                    initialType:          model.item_type         || "",
-                    initialName:          model.item_name         || "",
-                    initialDescription:   model.description       || "",
-                    initialIdentifiedBy:  model.identified_by     || "",
-                    initialAssignedTo:    model.assigned_to       || "",
-                    initialPriority:      model.priority          || "",
-                    initialStatus:        model.status            || "",
-                    initialDateIdentified:model.date_identified    || "",
-                    initialDateDue:       model.date_due          || "",
-                    initialInternal:      (model.internal_item    || "0") !== "0"
+                    initialItemNumber:    (d.item_number        || "").toString(),
+                    initialProjectNumber: (d.project_number     || "").toString(),
+                    initialProjectName:   (d.project_name       || "").toString(),
+                    initialType:          (d.item_type          || "").toString(),
+                    initialName:          (d.item_name          || "").toString(),
+                    initialDescription:   (d.description        || "").toString(),
+                    initialIdentifiedBy:  (d.identified_by      || "").toString(),
+                    initialAssignedTo:    (d.assigned_to        || "").toString(),
+                    initialPriority:      (d.priority           || "").toString(),
+                    initialStatus:        (d.status             || "").toString(),
+                    initialDateIdentified:(d.date_identified     || "").toString(),
+                    initialDateDue:       (d.date_due           || "").toString(),
+                    initialInternal:      (d.internal_item      || "0") !== "0"
                 })
             }
         }

@@ -37,9 +37,16 @@ Page {
     property bool   initialInternal:      false
     property bool   _skipSave:            false
 
+    function _releaseInputFocus() {
+        root.forceActiveFocus()
+        Qt.inputMethod.hide()
+    }
+
     function _saveNow() {
+        root._releaseInputFocus()
         dateIdentifiedField.commitPending()
         dateDueField.commitPending()
+
         AppController.saveTrackerItemDetail(
             root.itemRow,
             itemNumberField.text,
@@ -58,6 +65,8 @@ Page {
         )
     }
 
+    StackView.onActivated: root._skipSave = false
+
     StackView.onDeactivating: {
         if (!root._skipSave) {
             root._saveNow()
@@ -65,8 +74,13 @@ Page {
         }
     }
 
-    // Fallback: save on destruction only if onDeactivating did not fire
-    // (e.g. iOS swipe-back gesture bypassing the deactivating signal).
+    StackView.onRemoved: {
+        if (!root._skipSave) {
+            root._saveNow()
+            root._skipSave = true
+        }
+    }
+
     Component.onDestruction: {
         if (!root._skipSave)
             root._saveNow()
@@ -176,6 +190,7 @@ Page {
                     id: itemNumberField
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialItemNumber
+                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhNoPredictiveText
                     background: Item {}
                 }
@@ -200,6 +215,7 @@ Page {
                     id: nameField
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialName
+                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhNoPredictiveText
                     background: Item {}
                 }

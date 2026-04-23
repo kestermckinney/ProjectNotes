@@ -754,6 +754,26 @@ void AppController::openTrackerItem(const QString& itemId)
     global_DBObjects.actionitemsdetailsmodel()->setFilter(0, itemId);
     global_DBObjects.actionitemsdetailsmodel()->refresh();
 
+    // Keep the per-project team-member lookup in sync with the opened item.
+    // TrackerItemDetailPage uses projectTeamMembersModel for Identified By and
+    // Assigned To. When navigating from ProjectDetailsPage this was already set
+    // up by setProjectFilter(projectId), but the home/all-items path only calls
+    // openTrackerItem(itemId). Without refreshing this filter here, the detail
+    // page sees the wrong project team list (or an empty one) and save paths
+    // that depend on those comboboxes break.
+    QString projectId;
+    if (global_DBObjects.actionitemsdetailsmodel()->rowCount(QModelIndex()) > 0) {
+        projectId = global_DBObjects.actionitemsdetailsmodel()
+                        ->data(global_DBObjects.actionitemsdetailsmodel()->index(0, 14))
+                        .toString();
+    }
+
+    if (!projectId.isEmpty())
+        global_DBObjects.projectteammembersmodel()->setFilter(1, projectId);
+    else
+        global_DBObjects.projectteammembersmodel()->clearFilter(1);
+    global_DBObjects.projectteammembersmodel()->refresh();
+
     // Filter comments to the same item (col 1 = item_id)
     global_DBObjects.trackeritemscommentsmodel()->setFilter(1, itemId);
     global_DBObjects.trackeritemscommentsmodel()->refresh();
@@ -807,17 +827,17 @@ QVariantMap AppController::getTrackerItemDetailData(int row) const
 }
 
 bool AppController::saveTrackerItemDetail(int row,
-                                           const QString& itemNumber,
-                                           const QString& itemType,
-                                           const QString& itemName,
-                                           const QString& description,
-                                           const QString& identifiedBy,
-                                           const QString& assignedTo,
-                                           const QString& priority,
-                                           const QString& status,
-                                           const QString& dateIdentified,
-                                           const QString& dateDue,
-                                           bool           internalItem)
+                                          const QString& itemNumber,
+                                          const QString& itemType,
+                                          const QString& itemName,
+                                          const QString& description,
+                                          const QString& identifiedBy,
+                                          const QString& assignedTo,
+                                          const QString& priority,
+                                          const QString& status,
+                                          const QString& dateIdentified,
+                                          const QString& dateDue,
+                                          bool           internalItem)
 {
     QAbstractItemModel* model = global_DBObjects.actionitemsdetailsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
