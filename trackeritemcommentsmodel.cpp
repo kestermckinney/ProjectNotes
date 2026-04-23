@@ -30,8 +30,6 @@ TrackerItemCommentsModel::TrackerItemCommentsModel(DatabaseObjects* dbo): SqlQue
     addColumn("project_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("project_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
-    setDeletedFilterInView(true);
-
     setOrderBy("lastupdated_date");
 }
 

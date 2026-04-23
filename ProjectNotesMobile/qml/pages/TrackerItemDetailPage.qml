@@ -13,29 +13,36 @@ import ProjectNotesMobile
 //   0=id, 1=item_number, 2=item_type, 3=item_name, 4=identified_by,
 //   5=date_identified, 6=description, 7=assigned_to, 8=priority,
 //   9=status, 10=date_due, 11=last_update, 12=date_resolved,
-//   13=note_id, 14=project_id, 15=internal_item
+//   13=note_id, 14=project_id, 15=internal_item,
+//   19=project_name, 20=project_number
 
 Page {
     id: root
     title: qsTr("Item Detail")
 
-    property int    itemRow:             0    // always row 0 of the filtered detail model
-    property string itemId:              ""
-    property string initialType:         ""
-    property string initialName:         ""
-    property string initialDescription:  ""
-    property string initialIdentifiedBy: ""
-    property string initialAssignedTo:   ""
-    property string initialPriority:     ""
-    property string initialStatus:       ""
+    property int    itemRow:              0    // always row 0 of the filtered detail model
+    property string itemId:               ""
+    property string initialItemNumber:    ""
+    property string initialProjectNumber: ""
+    property string initialProjectName:   ""
+    property string initialType:          ""
+    property string initialName:          ""
+    property string initialDescription:   ""
+    property string initialIdentifiedBy:  ""
+    property string initialAssignedTo:    ""
+    property string initialPriority:      ""
+    property string initialStatus:        ""
     property string initialDateIdentified: ""
-    property string initialDateDue:      ""
-    property bool   initialInternal:     false
-    property bool   _skipSave:           false
+    property string initialDateDue:       ""
+    property bool   initialInternal:      false
+    property bool   _skipSave:            false
 
     function _saveNow() {
+        dateIdentifiedField.commitPending()
+        dateDueField.commitPending()
         AppController.saveTrackerItemDetail(
             root.itemRow,
+            itemNumberField.text,
             typeCombo.currentIndex >= 0 ? typeCombo.model[typeCombo.currentIndex] : "",
             nameField.text,
             descEdit.text,
@@ -52,6 +59,15 @@ Page {
     }
 
     StackView.onDeactivating: {
+        if (!root._skipSave) {
+            root._saveNow()
+            root._skipSave = true
+        }
+    }
+
+    // Fallback: save on destruction only if onDeactivating did not fire
+    // (e.g. iOS swipe-back gesture bypassing the deactivating signal).
+    Component.onDestruction: {
         if (!root._skipSave)
             root._saveNow()
     }
@@ -76,6 +92,9 @@ Page {
                     root.StackView.view.replace(Qt.resolvedUrl("TrackerItemDetailPage.qml"), {
                         itemRow:              0,
                         itemId:               newId,
+                        initialItemNumber:    (d.item_number      || "").toString(),
+                        initialProjectNumber: root.initialProjectNumber,
+                        initialProjectName:   root.initialProjectName,
                         initialType:          (d.item_type        || "").toString(),
                         initialName:          (d.item_name        || "").toString(),
                         initialDescription:   (d.description      || "").toString(),
@@ -129,6 +148,38 @@ Page {
         ColumnLayout {
             width: parent.width
             spacing: 0
+
+            SectionHeader { text: qsTr("Project Number") }
+            FieldRow {
+                Label {
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: root.initialProjectNumber !== "" ? root.initialProjectNumber : qsTr("—")
+                    color: root.initialProjectNumber !== "" ? palette.text : palette.placeholderText
+                    font.pixelSize: 16
+                }
+            }
+
+            SectionHeader { text: qsTr("Project Name") }
+            FieldRow {
+                Label {
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: root.initialProjectName !== "" ? root.initialProjectName : qsTr("—")
+                    color: root.initialProjectName !== "" ? palette.text : palette.placeholderText
+                    font.pixelSize: 16
+                    elide: Text.ElideRight
+                }
+            }
+
+            SectionHeader { text: qsTr("Item Number") }
+            FieldRow {
+                TextField {
+                    id: itemNumberField
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: root.initialItemNumber
+                    inputMethodHints: Qt.ImhNoPredictiveText
+                    background: Item {}
+                }
+            }
 
             SectionHeader { text: qsTr("Type") }
             FieldRow {
@@ -268,7 +319,7 @@ Page {
         leftPadding: 16
         bottomPadding: 4
         font.pixelSize: 13
-        font.weight: Font.Semibold
+        font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }
     }

@@ -66,6 +66,9 @@ public:
     Q_INVOKABLE int     currentFontPointSize(QQuickTextDocument* doc, int pos) const;
     Q_INVOKABLE QColor  currentFontColor(QQuickTextDocument* doc, int pos) const;
 
+    // Serialize the backing QTextDocument so toolbar formatting changes are persisted.
+    Q_INVOKABLE QString documentHtml(QQuickTextDocument* doc) const;
+
     // Returns the list of available font families for use in the font picker.
     Q_INVOKABLE QStringList availableFontFamilies() const;
 };

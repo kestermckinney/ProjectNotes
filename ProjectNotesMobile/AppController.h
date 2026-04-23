@@ -164,6 +164,7 @@ public:
     Q_INVOKABLE int         copyTrackerItemDetail(int row);
     Q_INVOKABLE QVariantMap getTrackerItemDetailData(int row) const;
     Q_INVOKABLE bool        saveTrackerItemDetail(int row,
+                                const QString& itemNumber,
                                 const QString& itemType,
                                 const QString& itemName,
                                 const QString& description,
@@ -285,6 +286,7 @@ private slots:
     void onSyncProgress(const QString& tableName, int processed, int total);
     void onSyncStatusUpdated(int percentComplete, qint64 pendingPush, qint64 pendingPull);
     void onSyncSettingsChanged();
+    void onSyncRowChanged(const QString& tableName, const QString& id);
 
 private:
     SqliteSyncPro* m_syncApi      = nullptr;

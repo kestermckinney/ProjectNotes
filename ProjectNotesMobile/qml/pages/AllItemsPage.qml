@@ -99,22 +99,43 @@ Page {
                     Layout.fillWidth: true
                 }
 
-                // Row 3: project_number  |  priority  |  due date
-                Label {
-                    text: {
-                        var parts = []
-                        var proj  = model.project_number || ""
-                        var pri   = model.priority       || ""
-                        var due   = model.date_due       || ""
-                        if (proj) parts.push(proj)
-                        if (pri)  parts.push(pri)
-                        if (due)  parts.push("Due: " + due)
-                        return parts.join("  ·  ")
-                    }
-                    font.pixelSize: 12
-                    color: palette.placeholderText
-                    elide: Text.ElideRight
+                // Row 3: project_number · priority (model color) · due date (model color)
+                RowLayout {
                     Layout.fillWidth: true
+                    spacing: 0
+
+                    Label {
+                        visible: (model.project_number || "") !== ""
+                        text: model.project_number || ""
+                        font.pixelSize: 12
+                        color: palette.placeholderText
+                    }
+
+                    Label {
+                        visible: (model.project_number || "") !== "" && (model.priority || "") !== ""
+                        text: "  ·  "
+                        font.pixelSize: 12
+                        color: palette.placeholderText
+                    }
+
+                    Label {
+                        visible: (model.priority || "") !== ""
+                        text: model.priority || ""
+                        font.pixelSize: 12
+                        color: model.priority_foreground || palette.placeholderText
+                    }
+
+                    Label {
+                        visible: (model.date_due || "") !== ""
+                        text: {
+                            var sep = (model.project_number || model.priority) ? "  ·  " : ""
+                            return sep + "Due: " + (model.date_due || "")
+                        }
+                        font.pixelSize: 12
+                        color: model.date_due_foreground || palette.placeholderText
+                        Layout.fillWidth: true
+                        elide: Text.ElideRight
+                    }
                 }
             }
 
@@ -125,6 +146,9 @@ Page {
                 root.stackView.push(Qt.resolvedUrl("TrackerItemDetailPage.qml"), {
                     itemRow:              0,
                     itemId:               itemId,
+                    initialItemNumber:    model.item_number       || "",
+                    initialProjectNumber: model.project_number    || "",
+                    initialProjectName:   model.project_name      || "",
                     initialType:          model.item_type         || "",
                     initialName:          model.item_name         || "",
                     initialDescription:   model.description       || "",

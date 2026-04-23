@@ -50,6 +50,9 @@ Page {
                     root.StackView.view.push(Qt.resolvedUrl("TrackerItemDetailPage.qml"), {
                         itemRow:              0,
                         itemId:               newId,
+                        initialItemNumber:    (d.item_number        || "").toString(),
+                        initialProjectNumber: (d.project_number     || "").toString(),
+                        initialProjectName:   (d.project_name       || "").toString(),
                         initialType:          (d.item_type         || "").toString(),
                         initialName:          (d.item_name         || "").toString(),
                         initialDescription:   (d.description       || "").toString(),
@@ -107,17 +110,28 @@ Page {
                     Layout.fillWidth: true
                 }
 
-                Label {
-                    text: {
-                        var parts = []
-                        if (model.priority || "") parts.push(model.priority)
-                        if (model.date_due || "") parts.push("Due: " + model.date_due)
-                        return parts.join("  ·  ")
-                    }
-                    font.pixelSize: 12
-                    color: palette.placeholderText
-                    elide: Text.ElideRight
+                RowLayout {
                     Layout.fillWidth: true
+                    spacing: 0
+
+                    Label {
+                        visible: (model.priority || "") !== ""
+                        text: model.priority || ""
+                        font.pixelSize: 12
+                        color: model.priority_foreground || palette.placeholderText
+                    }
+
+                    Label {
+                        visible: (model.date_due || "") !== ""
+                        text: {
+                            var sep = (model.priority || "") !== "" ? "  ·  " : ""
+                            return sep + "Due: " + (model.date_due || "")
+                        }
+                        font.pixelSize: 12
+                        color: model.date_due_foreground || palette.placeholderText
+                        Layout.fillWidth: true
+                        elide: Text.ElideRight
+                    }
                 }
             }
 
@@ -128,6 +142,9 @@ Page {
                 root.stackView.push(Qt.resolvedUrl("TrackerItemDetailPage.qml"), {
                     itemRow:              0,
                     itemId:               itemId,
+                    initialItemNumber:    model.item_number       || "",
+                    initialProjectNumber: model.project_number    || "",
+                    initialProjectName:   model.project_name      || "",
                     initialType:          model.item_type         || "",
                     initialName:          model.item_name         || "",
                     initialDescription:   model.description       || "",

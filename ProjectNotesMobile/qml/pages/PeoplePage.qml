@@ -96,23 +96,28 @@ Page {
                 }
 
                 RowLayout {
-                    spacing: 4
+                    spacing: 0
                     Layout.alignment: Qt.AlignVCenter
 
-                    Button {
+                    ToolButton {
                         visible: (model.cell_phone || "").length > 0
-                        text: qsTr("Cell")
-                        implicitHeight: 44
-                        leftPadding: 12; rightPadding: 12
+                        icon.name: "iphone"
+                        implicitWidth: 44; implicitHeight: 44
                         onClicked: Qt.openUrlExternally("tel:" + (model.cell_phone || "").replace(/[^\d+]/g, ""))
                     }
 
-                    Button {
+                    ToolButton {
                         visible: (model.office_phone || "").length > 0
-                        text: qsTr("Office")
-                        implicitHeight: 44
-                        leftPadding: 12; rightPadding: 12
+                        icon.name: "phone.fill"
+                        implicitWidth: 44; implicitHeight: 44
                         onClicked: Qt.openUrlExternally("tel:" + (model.office_phone || "").replace(/[^\d+]/g, ""))
+                    }
+
+                    ToolButton {
+                        visible: (model.email || "").length > 0
+                        icon.name: "envelope"
+                        implicitWidth: 44; implicitHeight: 44
+                        onClicked: Qt.openUrlExternally("mailto:" + (model.email || ""))
                     }
                 }
             }

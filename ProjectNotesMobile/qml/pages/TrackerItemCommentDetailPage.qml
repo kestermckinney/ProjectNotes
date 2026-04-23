@@ -20,6 +20,7 @@ Page {
     property bool   _skipSave:   false
 
     function _saveNow() {
+        dateField.commitPending()
         var byId = updatedByCombo.currentIndex >= 0
             ? AppController.peopleIdAtRow(updatedByCombo.currentIndex) : ""
         AppController.saveComment(root.commentRow, dateField.text, noteEdit.text, byId)
@@ -119,7 +120,7 @@ Page {
         leftPadding: 16
         bottomPadding: 4
         font.pixelSize: 13
-        font.weight: Font.Semibold
+        font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }
     }

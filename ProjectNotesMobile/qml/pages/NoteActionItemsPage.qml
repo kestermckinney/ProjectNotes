@@ -51,6 +51,9 @@ Page {
                     root.StackView.view.push(Qt.resolvedUrl("TrackerItemDetailPage.qml"), {
                         itemRow:              0,
                         itemId:               newId,
+                        initialItemNumber:    (d.item_number        || "").toString(),
+                        initialProjectNumber: (d.project_number     || "").toString(),
+                        initialProjectName:   (d.project_name       || "").toString(),
                         initialType:          (d.item_type         || "").toString(),
                         initialName:          (d.item_name         || "").toString(),
                         initialDescription:   (d.description       || "").toString(),
@@ -126,9 +129,13 @@ Page {
                 var itemId = model.id || ""
                 if (!itemId) return
                 AppController.openTrackerItem(itemId)
+                var d = AppController.getTrackerItemDetailData(0)
                 root.StackView.view.push(Qt.resolvedUrl("TrackerItemDetailPage.qml"), {
                     itemRow:              0,
                     itemId:               itemId,
+                    initialItemNumber:    model.item_number       || "",
+                    initialProjectNumber: (d.project_number       || "").toString(),
+                    initialProjectName:   (d.project_name         || "").toString(),
                     initialType:          model.item_type         || "",
                     initialName:          model.item_name         || "",
                     initialDescription:   model.description       || "",

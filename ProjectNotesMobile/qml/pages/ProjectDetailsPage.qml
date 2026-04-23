@@ -30,6 +30,8 @@ Page {
     property bool   _skipSave:                false
 
     function _saveNow() {
+        statusDateField.commitPending()
+        invoiceDateField.commitPending()
         var clientId = (clientCombo.currentIndex >= 0)
             ? AppController.clientIdAtRow(clientCombo.currentIndex) : ""
         var status = (statusCombo.currentIndex >= 0)
@@ -232,7 +234,7 @@ Page {
         leftPadding: 16
         bottomPadding: 4
         font.pixelSize: 13
-        font.weight: Font.Semibold
+        font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }
     }

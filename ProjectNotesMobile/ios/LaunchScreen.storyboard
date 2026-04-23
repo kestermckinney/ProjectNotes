@@ -22,8 +22,40 @@
                     <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <viewLayoutGuide key="safeAreaLayoutGuide" id="Bcu-3y-fUS"/>
+                        <subviews>
+                            <!-- Navy header bar — matches the app's persistent ToolBar -->
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="hdr-vw-001">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="96"/>
+                                <color key="backgroundColor" red="0.165" green="0.251" blue="0.435" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <!-- "Project Notes" label -->
+                                <subviews>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left"
+                                           horizontalHuggingPriority="251" verticalHuggingPriority="251"
+                                           text="Project Notes"
+                                           textAlignment="center"
+                                           lineBreakMode="middleTruncation"
+                                           translatesAutoresizingMaskIntoConstraints="NO" id="ttl-lb-001">
+                                        <rect key="frame" x="0.0" y="52" width="393" height="28"/>
+                                        <fontDescription key="fontDescription" type="boldSystem" pointSize="17"/>
+                                        <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstItem="ttl-lb-001" firstAttribute="leading" secondItem="hdr-vw-001" secondAttribute="leading" id="c1"/>
+                                    <constraint firstItem="ttl-lb-001" firstAttribute="trailing" secondItem="hdr-vw-001" secondAttribute="trailing" id="c2"/>
+                                    <constraint firstItem="ttl-lb-001" firstAttribute="bottom" secondItem="hdr-vw-001" secondAttribute="bottom" constant="-8" id="c3"/>
+                                </constraints>
+                            </view>
+                        </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="hdr-vw-001" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leading" id="c4"/>
+                            <constraint firstItem="hdr-vw-001" firstAttribute="trailing" secondItem="Ze5-6b-2t3" secondAttribute="trailing" id="c5"/>
+                            <constraint firstItem="hdr-vw-001" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="top" id="c6"/>
+                            <constraint firstItem="hdr-vw-001" firstAttribute="height" constant="96" id="c7"/>
+                        </constraints>
+                        <viewLayoutGuide key="safeAreaLayoutGuide" id="Bcu-3y-fUS"/>
                     </view>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1"

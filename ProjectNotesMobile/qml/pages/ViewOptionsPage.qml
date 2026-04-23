@@ -58,7 +58,7 @@ Page {
         leftPadding: 16
         bottomPadding: 4
         font.pixelSize: 13
-        font.weight: Font.Semibold
+        font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }
     }

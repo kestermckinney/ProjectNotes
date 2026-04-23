@@ -25,8 +25,10 @@ Page {
     }
 
     function _saveNow() {
+        dateField.commitPending()
         AppController.saveProjectNote(root.noteRow, titleField.text, dateField.text,
-                                      noteEdit.text, internalSwitch.checked)
+                                      TextFormatter.documentHtml(noteEdit.textDocument),
+                                      internalSwitch.checked)
     }
 
     StackView.onDeactivating: {
@@ -83,19 +85,20 @@ Page {
                                                  noteEdit.selectionStart,
                                                  noteEdit.selectionEnd, idx)
                         noteEdit.forceActiveFocus()
+                        Qt.inputMethod.hide()
                         currentIndex = 0   // reset so re-selecting same style always fires
                     }
                 }
                 ToolButton { text: qsTr("B");  font.bold: true;      font.pixelSize: 16; focusPolicy: Qt.NoFocus
-                    onClicked: { TextFormatter.toggleBold(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus() } }
+                    onClicked: { TextFormatter.toggleBold(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
                 ToolButton { text: qsTr("I");  font.italic: true;    font.pixelSize: 16; focusPolicy: Qt.NoFocus
-                    onClicked: { TextFormatter.toggleItalic(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus() } }
+                    onClicked: { TextFormatter.toggleItalic(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
                 ToolButton { text: qsTr("U");  font.underline: true; font.pixelSize: 16; focusPolicy: Qt.NoFocus
-                    onClicked: { TextFormatter.toggleUnderline(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus() } }
+                    onClicked: { TextFormatter.toggleUnderline(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
                 ToolButton { text: qsTr("A+"); font.pixelSize: 14;   focusPolicy: Qt.NoFocus
-                    onClicked: { TextFormatter.increaseFontSize(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus() } }
+                    onClicked: { TextFormatter.increaseFontSize(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
                 ToolButton { text: qsTr("A−"); font.pixelSize: 12;   focusPolicy: Qt.NoFocus
-                    onClicked: { TextFormatter.decreaseFontSize(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus() } }
+                    onClicked: { TextFormatter.decreaseFontSize(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
                 Item { Layout.fillWidth: true }
 
                 ToolButton {
@@ -142,22 +145,22 @@ Page {
                 Item { implicitWidth: 4; Layout.alignment: Qt.AlignVCenter }
                 // Indent / unindent
                 ToolButton { text: qsTr("⇥");  font.pixelSize: 16; focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
-                    onClicked: { TextFormatter.indentText(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus() } }
+                    onClicked: { TextFormatter.indentText(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
                 ToolButton { text: qsTr("⇤");  font.pixelSize: 16; focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
-                    onClicked: { TextFormatter.unindentText(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus() } }
+                    onClicked: { TextFormatter.unindentText(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
 
                 // Separator
                 Rectangle { width: 1; height: 24; color: palette.placeholderText; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
 
                 // Alignment: 0=left 1=center 2=right 3=justify
                 ToolButton { icon.name: "text.alignleft";   focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
-                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 0); noteEdit.forceActiveFocus() } }
+                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 0); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
                 ToolButton { icon.name: "text.aligncenter"; focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
-                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 1); noteEdit.forceActiveFocus() } }
+                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 1); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
                 ToolButton { icon.name: "text.alignright";  focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
-                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 2); noteEdit.forceActiveFocus() } }
+                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 2); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
                 ToolButton { icon.name: "text.justify";     focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
-                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 3); noteEdit.forceActiveFocus() } }
+                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 3); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
 
                 // Separator
                 Rectangle { width: 1; height: 24; color: palette.placeholderText; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
@@ -296,15 +299,15 @@ Page {
         if (s.indexOf("<html") !== -1 || s.indexOf("<HTML") !== -1) {
             // In dark mode, replace explicitly dark text colors with the system text color
             // so notes typed in light mode don't become invisible.
-            if (palette.window.hslLightness < 0.5) {
-                var light = palette.windowText.toString()
-                return s.replace(/color\s*:\s*#([0-9a-fA-F]{6})/gi, function(match, hex) {
-                    var luma = (0.299 * parseInt(hex.substring(0,2),16)
-                              + 0.587 * parseInt(hex.substring(2,4),16)
-                              + 0.114 * parseInt(hex.substring(4,6),16)) / 255
-                    return luma < 0.4 ? ("color:" + light) : match
-                })
-            }
+            // if (palette.window.hslLightness < 0.5) {
+            //     var light = palette.windowText.toString()
+            //     return s.replace(/color\s*:\s*#([0-9a-fA-F]{6})/gi, function(match, hex) {
+            //         var luma = (0.299 * parseInt(hex.substring(0,2),16)
+            //                   + 0.587 * parseInt(hex.substring(2,4),16)
+            //                   + 0.114 * parseInt(hex.substring(4,6),16)) / 255
+            //         return luma < 0.4 ? ("color:" + light) : match
+            //     })
+            // }
             return s
         }
         return s.replace(/&/g, "&amp;")
@@ -319,7 +322,7 @@ Page {
         leftPadding: 16
         bottomPadding: 4
         font.pixelSize: 13
-        font.weight: Font.Semibold
+        font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }
     }
@@ -348,6 +351,7 @@ Page {
             TextFormatter.applyFontColor(noteEdit.textDocument,
                                          root._fontSelStart, root._fontSelEnd, textColor)
             noteEdit.forceActiveFocus()
+            Qt.inputMethod.hide()
         }
     }
 }

@@ -1,7 +1,7 @@
 // Copyright (C) 2022, 2023, 2024, 2025, 2026 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
-// Shared date input row: tapping opens the iOS-style wheel picker.
+// Shared date input row: tapping opens the grid calendar picker.
 // Usage:
 //   DateFieldRow { id: myDate; text: someInitialValue }
 //   then read myDate.text when saving.
@@ -15,6 +15,21 @@ Rectangle {
 
     property string text: ""
     property string placeholderText: qsTr("MM/DD/YYYY")
+
+    // Call before saving: commits a date selected in the popup but not yet confirmed via Done.
+    // Handles the case where the user picks a date then navigates back without tapping Done.
+    function commitPending() {
+        if (picker.opened && picker._selectedDate !== null) {
+            var d = picker._selectedDate
+            var m  = d.getMonth() + 1
+            var dy = d.getDate()
+            var y  = d.getFullYear()
+            text = (m  < 10 ? "0" + m  : "" + m)  + "/"
+                 + (dy < 10 ? "0" + dy : "" + dy) + "/"
+                 + y
+        }
+        if (picker.opened) picker.close()
+    }
 
     Layout.fillWidth: true
     Layout.preferredHeight: 44
@@ -40,10 +55,17 @@ Rectangle {
         }
 
         Button {
+            text: qsTr("Clear")
+            font.pixelSize: 12
+            flat: true
+            visible: root.text !== ""
+            onClicked: { root.text = "" }
+        }
+
+        Button {
             text: qsTr("Today")
             font.pixelSize: 12
             flat: true
-            enabled: true
             onClicked: root.text = Qt.formatDate(new Date(), "MM/dd/yyyy")
         }
     }

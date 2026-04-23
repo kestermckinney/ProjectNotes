@@ -439,6 +439,11 @@ QColor TextFormatter::currentFontColor(QQuickTextDocument* doc, int pos) const
     return (brush.style() == Qt::NoBrush) ? Qt::black : brush.color();
 }
 
+QString TextFormatter::documentHtml(QQuickTextDocument* doc) const
+{
+    return doc ? doc->textDocument()->toHtml() : QString();
+}
+
 QStringList TextFormatter::availableFontFamilies() const
 {
     return QFontDatabase::families();

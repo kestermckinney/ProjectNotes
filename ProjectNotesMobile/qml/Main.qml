@@ -272,9 +272,11 @@ ApplicationWindow {
     }
 
     // ── Startup ───────────────────────────────────────────────────────────────
-    Component.onCompleted: {
+    // Defer DB init so the QML shell renders its first frame before the
+    // synchronous SQL work begins — eliminates the black-screen delay.
+    Component.onCompleted: Qt.callLater(function() {
         AppController.openOrCreateDatabase()
         if (AppController.syncEnabled)
             AppController.startSync()
-    }
+    })
 }

@@ -105,6 +105,9 @@ void AppController::configureSyncApi()
 {
     if (!m_syncApi) {
         m_syncApi = new SqliteSyncPro(this);
+        connect(m_syncApi, &SqliteSyncPro::rowChanged,
+                this,      &AppController::onSyncRowChanged,
+                Qt::QueuedConnection);
         connect(m_syncApi, &SqliteSyncPro::syncCompleted,
                 this,      &AppController::onSyncComplete);
         connect(m_syncApi, &SqliteSyncPro::syncProgress,
@@ -112,7 +115,6 @@ void AppController::configureSyncApi()
         connect(m_syncApi, &SqliteSyncPro::syncStatusUpdated,
                 this,      &AppController::onSyncStatusUpdated,
                 Qt::QueuedConnection);
-
     }
 
     m_syncApi->setSyncHostType(global_MobileSettings.getSyncHostType());
@@ -154,6 +156,9 @@ void AppController::stopSync()
 
 void AppController::onSyncComplete(const SyncResult& result)
 {
+    // Flush all row changes accumulated during the sync cycle in one pass.
+    global_DBObjects.updateDisplayData();
+
     if (result.success) {
         m_syncHasError = false;
         // Ask SqliteSyncPro to count remaining pending records and emit
@@ -164,6 +169,11 @@ void AppController::onSyncComplete(const SyncResult& result)
         // Turn bar red; no popup — the bar is the only sync error indicator.
         setSyncProgress(m_syncProgress, true);
     }
+}
+
+void AppController::onSyncRowChanged(const QString& tableName, const QString& id)
+{
+    global_DBObjects.pushRowChange(tableName, id, KeyColumnChange::Update);
 }
 
 void AppController::onSyncProgress(const QString& /*tableName*/, int /*processed*/, int /*total*/)
@@ -792,6 +802,7 @@ QVariantMap AppController::getTrackerItemDetailData(int row) const
 }
 
 bool AppController::saveTrackerItemDetail(int row,
+                                           const QString& itemNumber,
                                            const QString& itemType,
                                            const QString& itemName,
                                            const QString& description,
@@ -806,6 +817,7 @@ bool AppController::saveTrackerItemDetail(int row,
     QAbstractItemModel* model = global_DBObjects.actionitemsdetailsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
     bool ok = true;
+    ok &= model->setData(model->index(row,  1), itemNumber);
     ok &= model->setData(model->index(row,  2), itemType);
     ok &= model->setData(model->index(row,  3), itemName);
     ok &= model->setData(model->index(row,  4), identifiedBy);

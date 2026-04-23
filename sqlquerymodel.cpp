@@ -437,6 +437,15 @@ QVariant SqlQueryModel::data(const QModelIndex &index, int role) const
         }
     }
 
+    // Foreground color roles: Qt::UserRole + 1000 + colIndex → ForegroundRole color for that column.
+    // Allows QML to access per-column model colors via model.colname_foreground.
+    if (role >= Qt::UserRole + 1000 && index.row() >= 0 && index.row() < m_cache.size()) {
+        int col = role - Qt::UserRole - 1000;
+        if (col >= 0 && col < m_columnCount) {
+            return this->data(this->index(index.row(), col), Qt::ForegroundRole);
+        }
+    }
+
     // make a light gray backround when not edit_table
     if (m_cache.size() > index.row() && role == Qt::BackgroundRole && index.row() >= 0)
     {
@@ -455,8 +464,10 @@ QVariant SqlQueryModel::data(const QModelIndex &index, int role) const
 QHash<int, QByteArray> SqlQueryModel::roleNames() const
 {
     QHash<int, QByteArray> roles = QAbstractTableModel::roleNames();
-    for (auto it = m_columnName.constBegin(); it != m_columnName.constEnd(); ++it)
+    for (auto it = m_columnName.constBegin(); it != m_columnName.constEnd(); ++it) {
         roles[Qt::UserRole + it.key()] = it.value().toUtf8();
+        roles[Qt::UserRole + 1000 + it.key()] = (it.value() + "_foreground").toUtf8();
+    }
     return roles;
 }
 

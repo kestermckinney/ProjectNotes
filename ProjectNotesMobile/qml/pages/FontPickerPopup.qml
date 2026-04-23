@@ -155,7 +155,7 @@ Popup {
                     Layout.fillWidth: true
                     leftPadding: 16; topPadding: 14; bottomPadding: 4
                     text: qsTr("FONT FAMILY")
-                    font.pixelSize: 12; font.weight: Font.Medium
+                    font.pixelSize: 12; font.weight: 500
                     color: palette.placeholderText
                 }
                 ComboBox {
@@ -170,7 +170,7 @@ Popup {
                     Layout.fillWidth: true
                     leftPadding: 16; topPadding: 16; bottomPadding: 6
                     text: qsTr("SIZE")
-                    font.pixelSize: 12; font.weight: Font.Medium
+                    font.pixelSize: 12; font.weight: 500
                     color: palette.placeholderText
                 }
                 Flow {
@@ -205,7 +205,7 @@ Popup {
                     Layout.fillWidth: true
                     leftPadding: 16; topPadding: 16; bottomPadding: 8
                     text: qsTr("COLOR")
-                    font.pixelSize: 12; font.weight: Font.Medium
+                    font.pixelSize: 12; font.weight: 500
                     color: palette.placeholderText
                 }
                 Flow {
