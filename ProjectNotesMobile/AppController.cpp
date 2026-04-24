@@ -10,6 +10,7 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <QTextDocument>
 #include <QTimer>
 
 using namespace QLogger;
@@ -340,9 +341,9 @@ bool AppController::savePerson(int row, const QString& name, const QString& emai
 
 bool AppController::saveProject(int row, const QString& projectNumber,
                                  const QString& projectName, const QString& projectStatus,
-                                 const QString& clientId, const QString& lastStatusDate,
-                                 const QString& lastInvoiceDate, const QString& invoicingPeriod,
-                                 const QString& statusReportPeriod)
+                                 const QString& primaryContactId, const QString& clientId,
+                                 const QString& lastStatusDate, const QString& lastInvoiceDate,
+                                 const QString& invoicingPeriod, const QString& statusReportPeriod)
 {
     QAbstractItemModel* model = global_DBObjects.projectslistmodelproxy();
     if (row < 0 || row >= model->rowCount())
@@ -352,6 +353,7 @@ bool AppController::saveProject(int row, const QString& projectNumber,
     ok &= model->setData(model->index(row,  2), projectName);
     ok &= model->setData(model->index(row,  3), lastStatusDate);
     ok &= model->setData(model->index(row,  4), lastInvoiceDate);
+    ok &= model->setData(model->index(row,  5), primaryContactId);
     ok &= model->setData(model->index(row, 11), invoicingPeriod);
     ok &= model->setData(model->index(row, 12), statusReportPeriod);
     ok &= model->setData(model->index(row, 13), clientId);
@@ -458,6 +460,83 @@ QString AppController::peopleNameForId(const QString& personId) const
             return model->data(model->index(row, 1)).toString();  // col 1 = name
     }
     return {};
+}
+
+QString AppController::peopleEmailForId(const QString& personId) const
+{
+    if (personId.isEmpty()) return {};
+    QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
+    for (int row = 0; row < model->rowCount(); ++row) {
+        if (model->data(model->index(row, 0)).toString() == personId)
+            return model->data(model->index(row, 2)).toString();  // col 2 = email
+    }
+    return {};
+}
+
+QString AppController::clientNameForId(const QString& clientId) const
+{
+    if (clientId.isEmpty()) return {};
+    QAbstractItemModel* model = global_DBObjects.clientsmodelproxy();
+    for (int row = 0; row < model->rowCount(); ++row) {
+        if (model->data(model->index(row, 0)).toString() == clientId)
+            return model->data(model->index(row, 1)).toString();  // col 1 = client_name
+    }
+    return {};
+}
+
+QString AppController::projectNumberForId(const QString& projectId) const
+{
+    if (projectId.isEmpty()) return {};
+    QAbstractItemModel* model = global_DBObjects.projectslistmodelproxy();
+    for (int row = 0; row < model->rowCount(); ++row) {
+        if (model->data(model->index(row, 0)).toString() == projectId)
+            return model->data(model->index(row, 1)).toString();  // col 1 = project_number
+    }
+    return {};
+}
+
+QString AppController::projectNameForId(const QString& projectId) const
+{
+    if (projectId.isEmpty()) return {};
+    QAbstractItemModel* model = global_DBObjects.projectslistmodelproxy();
+    for (int row = 0; row < model->rowCount(); ++row) {
+        if (model->data(model->index(row, 0)).toString() == projectId)
+            return model->data(model->index(row, 2)).toString();  // col 2 = project_name
+    }
+    return {};
+}
+
+QString AppController::teamMemberEmailList() const
+{
+    QAbstractItemModel* model = global_DBObjects.projectteammembersmodelproxy();
+    QStringList emails;
+    for (int row = 0; row < model->rowCount(); ++row) {
+        const QString email = model->data(model->index(row, 6)).toString();  // col 6 = email
+        if (!email.isEmpty() && !emails.contains(email))
+            emails.append(email);
+    }
+    return emails.join(",");
+}
+
+QString AppController::attendeeEmailList() const
+{
+    QAbstractItemModel* model = global_DBObjects.meetingattendeesmodelproxy();
+    QStringList emails;
+    for (int row = 0; row < model->rowCount(); ++row) {
+        const QString email = model->data(model->index(row, 5)).toString();  // col 5 = email
+        if (!email.isEmpty() && !emails.contains(email))
+            emails.append(email);
+    }
+    return emails.join(",");
+}
+
+QString AppController::htmlToPlainText(const QString& html) const
+{
+    if (html.isEmpty() || !html.contains('<'))
+        return html;
+    QTextDocument doc;
+    doc.setHtml(html);
+    return doc.toPlainText();
 }
 
 // teamMemberRowForPersonId — search col 2 (people_id) in projectTeamMembersModelProxy
@@ -861,6 +940,22 @@ QString AppController::trackerItemIdAtRow(int row) const
     QAbstractItemModel* model = global_DBObjects.actionitemsdetailsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return {};
     return model->data(model->index(row, 0)).toString();
+}
+
+bool AppController::isItemNumberUnique(const QString& itemId, const QString& itemNumber) const
+{
+    if (itemNumber.isEmpty()) return true;
+    QString safeId     = itemId.trimmed();
+    QString safeNumber = itemNumber.trimmed().replace("'", "''");
+    safeId.replace("'", "''");
+    QString sql = QString(
+        "SELECT COUNT(*) FROM item_tracker "
+        "WHERE project_id = (SELECT project_id FROM item_tracker WHERE id = '%1') "
+        "AND item_number = '%2' "
+        "AND id != '%1' "
+        "AND deleted = 0"
+    ).arg(safeId, safeNumber);
+    return global_DBObjects.execute(sql).toInt() == 0;
 }
 
 // ── Tracker item comments ─────────────────────────────────────────────────────

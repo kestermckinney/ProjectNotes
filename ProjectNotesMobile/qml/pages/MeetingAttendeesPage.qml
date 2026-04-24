@@ -16,7 +16,10 @@ Page {
     id: root
     title: qsTr("Attendees")
 
-    property string noteId: ""
+    property string noteId:    ""
+    property string noteBody:  ""
+    property string noteTitle: ""
+    property string noteDate:  ""
 
     StackView.onActivated: AppController.setNoteFilter(root.noteId, "")
 
@@ -113,7 +116,18 @@ Page {
                         visible: (model.email || "").length > 0
                         icon.name: "envelope"
                         implicitWidth: 44; implicitHeight: 44
-                        onClicked: Qt.openUrlExternally("mailto:" + (model.email || ""))
+                        onClicked: {
+                            var parts = []
+                            var pn = (model.project_number || "").trim()
+                            var nm = (model.project_name  || "").trim()
+                            if (pn || nm) parts.push((pn + " " + nm).trim())
+                            if (root.noteTitle) parts.push(root.noteTitle.trim())
+                            if (root.noteDate)  parts.push(root.noteDate.trim())
+                            var subject = parts.join(" - ")
+                            Qt.openUrlExternally("mailto:" + (model.email || "")
+                                + "?subject=" + encodeURIComponent(subject)
+                                + "&body="    + encodeURIComponent(root.noteBody))
+                        }
                     }
                 }
             }

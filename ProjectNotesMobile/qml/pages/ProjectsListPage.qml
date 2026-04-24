@@ -43,11 +43,23 @@ Page {
                         initialProjectNumber:     (d.project_number       || "").toString(),
                         initialProjectName:       (d.project_name         || "").toString(),
                         initialProjectStatus:     (d.project_status       || "").toString(),
+                        initialPrimaryContact:    (d.primary_contact      || "").toString(),
                         initialClientId:          (d.client_id            || "").toString(),
                         initialLastStatusDate:    (d.last_status_date     || "").toString(),
                         initialLastInvoiceDate:   (d.last_invoice_date    || "").toString(),
                         initialInvoicingPeriod:   (d.invoicing_period     || "").toString(),
-                        initialStatusReportPeriod:(d.status_report_period || "").toString()
+                        initialStatusReportPeriod:(d.status_report_period || "").toString(),
+                        initialBudget:            (d.budget               || "").toString(),
+                        initialActual:            (d.actual               || "").toString(),
+                        initialBcwp:              (d.bcwp                 || "").toString(),
+                        initialBcws:              (d.bcws                 || "").toString(),
+                        initialBac:               (d.bac                  || "").toString(),
+                        initialPctConsumed:       (d.pct_consumed         || "").toString(),
+                        initialEac:               (d.eac                  || "").toString(),
+                        initialCv:                (d.cv                   || "").toString(),
+                        initialSv:                (d.sv                   || "").toString(),
+                        initialPctComplete:       (d.pct_complete         || "").toString(),
+                        initialCpi:               (d.cpi                  || "").toString()
                     })
                 }
             }
@@ -68,7 +80,11 @@ Page {
                 spacing: 4
 
                 Label {
-                    text: model.project_name || ""
+                    text: {
+                        var num  = model.project_number || ""
+                        var name = model.project_name   || ""
+                        return num ? num + "  " + name : name
+                    }
                     font.bold: true
                     elide: Text.ElideRight
                     Layout.fillWidth: true
@@ -78,18 +94,14 @@ Page {
                     spacing: 6
 
                     Label {
-                        visible: (model.project_number || "") !== ""
-                        text: model.project_number || ""
+                        visible: (AppController.clientNameForId(model.client_id || "") || "") !== ""
+                        text: AppController.clientNameForId(model.client_id || "") || ""
                         font.pixelSize: 12
                         color: palette.placeholderText
+                        elide: Text.ElideRight
                     }
 
-                    Label {
-                        visible: (model.project_number || "") !== "" && (model.project_status || "") !== ""
-                        text: "·"
-                        font.pixelSize: 12
-                        color: palette.placeholderText
-                    }
+                    Item { Layout.fillWidth: true }
 
                     Rectangle {
                         visible: (model.project_status || "") !== ""
@@ -104,6 +116,7 @@ Page {
                     }
 
                     Label {
+                        visible: (model.project_status || "") !== ""
                         text: model.project_status || ""
                         font.pixelSize: 12
                         color: {
@@ -114,23 +127,34 @@ Page {
                             return Theme.navyMid
                         }
                         elide: Text.ElideRight
-                        Layout.fillWidth: true
                     }
                 }
             }
 
             onClicked: {
                 root.stackView.push(Qt.resolvedUrl("ProjectDetailsPage.qml"), {
-                    projectRow:              index,
-                    projectId:               model.id                || "",
-                    initialProjectNumber:    model.project_number    || "",
-                    initialProjectName:      model.project_name      || "",
-                    initialProjectStatus:    model.project_status    || "",
-                    initialClientId:         model.client_id         || "",
-                    initialLastStatusDate:   model.last_status_date  || "",
-                    initialLastInvoiceDate:  model.last_invoice_date || "",
-                    initialInvoicingPeriod:  model.invoicing_period  || "",
-                    initialStatusReportPeriod: model.status_report_period || ""
+                    projectRow:               index,
+                    projectId:                model.id                    || "",
+                    initialProjectNumber:     model.project_number        || "",
+                    initialProjectName:       model.project_name          || "",
+                    initialProjectStatus:     model.project_status        || "",
+                    initialPrimaryContact:    model.primary_contact       || "",
+                    initialClientId:          model.client_id             || "",
+                    initialLastStatusDate:    model.last_status_date      || "",
+                    initialLastInvoiceDate:   model.last_invoice_date     || "",
+                    initialInvoicingPeriod:   model.invoicing_period      || "",
+                    initialStatusReportPeriod:model.status_report_period  || "",
+                    initialBudget:            model.budget                || "",
+                    initialActual:            model.actual                || "",
+                    initialBcwp:              model.bcwp                  || "",
+                    initialBcws:              model.bcws                  || "",
+                    initialBac:               model.bac                   || "",
+                    initialPctConsumed:       model.pct_consumed          || "",
+                    initialEac:               model.eac                   || "",
+                    initialCv:                model.cv                    || "",
+                    initialSv:                model.sv                    || "",
+                    initialPctComplete:       model.pct_complete          || "",
+                    initialCpi:               model.cpi                   || ""
                 })
             }
         }

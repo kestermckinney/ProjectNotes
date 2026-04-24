@@ -36,6 +36,7 @@ Page {
     property string initialDateDue:       ""
     property bool   initialInternal:      false
     property bool   _skipSave:            false
+    property string _validatedItemNumber: root.initialItemNumber
 
     function _releaseInputFocus() {
         root.forceActiveFocus()
@@ -49,7 +50,7 @@ Page {
 
         AppController.saveTrackerItemDetail(
             root.itemRow,
-            itemNumberField.text,
+            root._validatedItemNumber,
             typeCombo.currentIndex >= 0 ? typeCombo.model[typeCombo.currentIndex] : "",
             nameField.text,
             descEdit.text,
@@ -168,7 +169,7 @@ Page {
                 Label {
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialProjectNumber !== "" ? root.initialProjectNumber : qsTr("—")
-                    color: root.initialProjectNumber !== "" ? palette.text : palette.placeholderText
+                    color: palette.placeholderText
                     font.pixelSize: 16
                 }
             }
@@ -178,7 +179,7 @@ Page {
                 Label {
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialProjectName !== "" ? root.initialProjectName : qsTr("—")
-                    color: root.initialProjectName !== "" ? palette.text : palette.placeholderText
+                    color: palette.placeholderText
                     font.pixelSize: 16
                     elide: Text.ElideRight
                 }
@@ -191,8 +192,18 @@ Page {
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialItemNumber
                     horizontalAlignment: TextInput.AlignLeft
+                    leftPadding: 0; rightPadding: 0
                     inputMethodHints: Qt.ImhNoPredictiveText
                     background: Item {}
+                    onEditingFinished: {
+                        if (text === root._validatedItemNumber) return
+                        if (!AppController.isItemNumberUnique(root.itemId, text)) {
+                            duplicateNumberDialog.open()
+                            text = root._validatedItemNumber
+                        } else {
+                            root._validatedItemNumber = text
+                        }
+                    }
                 }
             }
 
@@ -211,11 +222,13 @@ Page {
 
             SectionHeader { text: qsTr("Name") }
             FieldRow {
+
                 TextField {
                     id: nameField
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialName
                     horizontalAlignment: TextInput.AlignLeft
+                    leftPadding: 0; rightPadding: 0
                     inputMethodHints: Qt.ImhNoPredictiveText
                     background: Item {}
                 }
@@ -349,6 +362,20 @@ Page {
         Rectangle {
             anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
             height: 1; color: palette.placeholderText; opacity: 0.3
+        }
+    }
+
+    Dialog {
+        id: duplicateNumberDialog
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        title: qsTr("Duplicate Item Number")
+        modal: true
+        standardButtons: Dialog.Ok
+        Label {
+            text: qsTr("This item number is already used by another item in this project. Please enter a unique number.")
+            wrapMode: Text.Wrap
+            width: 240
         }
     }
 }

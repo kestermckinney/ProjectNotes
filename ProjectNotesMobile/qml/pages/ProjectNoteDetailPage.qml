@@ -102,6 +102,27 @@ Page {
                 Item { Layout.fillWidth: true }
 
                 ToolButton {
+                    icon.name: "envelope"
+                    focusPolicy: Qt.NoFocus
+                    onClicked: {
+                        root._saveNow()
+                        var emails  = AppController.attendeeEmailList()
+                        if (emails === "") return
+                        var projNum  = AppController.projectNumberForId(root.projectId)
+                        var projName = AppController.projectNameForId(root.projectId)
+                        var dateParts = root.initialDate ? root.initialDate.split("-") : []
+                        var formattedDate = dateParts.length === 3
+                            ? (parseInt(dateParts[1]) + "/" + parseInt(dateParts[2]) + "/" + dateParts[0])
+                            : root.initialDate
+                        var subject = projNum + " " + projName + " - " + titleField.text + " - " + formattedDate
+                        var body    = AppController.htmlToPlainText(TextFormatter.documentHtml(noteEdit.textDocument)).replace(/\n/g, '\r\n')
+                        Qt.openUrlExternally("mailto:" + emails
+                            + "?subject=" + encodeURIComponent(subject)
+                            + "&body="    + encodeURIComponent(body))
+                    }
+                }
+
+                ToolButton {
                     icon.name: "doc.on.doc"
                     focusPolicy: Qt.NoFocus
                     onClicked: {
@@ -199,7 +220,10 @@ Page {
                 onClicked: {
                     root._saveNow()
                     root.StackView.view.push(Qt.resolvedUrl("MeetingAttendeesPage.qml"), {
-                        noteId: root.noteId
+                        noteId:    root.noteId,
+                        noteBody:  AppController.htmlToPlainText(TextFormatter.documentHtml(noteEdit.textDocument)).replace(/\n/g, '\r\n'),
+                        noteTitle: titleField.text,
+                        noteDate:  dateField.text
                     })
                 }
             }
@@ -234,6 +258,7 @@ Page {
                     id: titleField
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialTitle
+                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhNoPredictiveText
                     background: Item {}
                 }

@@ -22,16 +22,30 @@ Page {
     property string initialProjectNumber:     ""
     property string initialProjectName:       ""
     property string initialProjectStatus:     ""
+    property string initialPrimaryContact:    ""
     property string initialClientId:          ""
     property string initialLastStatusDate:    ""
     property string initialLastInvoiceDate:   ""
     property string initialInvoicingPeriod:   ""
     property string initialStatusReportPeriod: ""
+    property string initialBudget:            ""
+    property string initialActual:            ""
+    property string initialBcwp:              ""
+    property string initialBcws:              ""
+    property string initialBac:               ""
+    property string initialPctConsumed:       ""
+    property string initialEac:              ""
+    property string initialCv:               ""
+    property string initialSv:               ""
+    property string initialPctComplete:       ""
+    property string initialCpi:              ""
     property bool   _skipSave:                false
 
     function _saveNow() {
         statusDateField.commitPending()
         invoiceDateField.commitPending()
+        var primaryContactId = (primaryContactCombo.currentIndex >= 0)
+            ? AppController.teamMemberPersonIdAtRow(primaryContactCombo.currentIndex) : ""
         var clientId = (clientCombo.currentIndex >= 0)
             ? AppController.clientIdAtRow(clientCombo.currentIndex) : ""
         var status = (statusCombo.currentIndex >= 0)
@@ -41,7 +55,7 @@ Page {
         var srPeriod = (statusReportCombo.currentIndex >= 0)
             ? statusReportCombo.model[statusReportCombo.currentIndex] : ""
         AppController.saveProject(root.projectRow, numberField.text, nameField.text,
-                                  status, clientId, statusDateField.text,
+                                  status, primaryContactId, clientId, statusDateField.text,
                                   invoiceDateField.text, invPeriod, srPeriod)
     }
 
@@ -62,12 +76,22 @@ Page {
             root._saveNow()
     }
 
-    // ── Toolbar: copy + delete ────────────────────────────────────────────────
+    // ── Toolbar: email + copy + delete ───────────────────────────────────────
     header: ToolBar {
         RowLayout {
             anchors { left: parent.left; right: parent.right; margins: 8 }
             height: parent.height
             Item { Layout.fillWidth: true }
+
+            ToolButton {
+                icon.name: "envelope"
+                onClicked: {
+                    var emails  = AppController.teamMemberEmailList()
+                    var subject = numberField.text + " " + nameField.text + " -"
+                    if (emails !== "")
+                        Qt.openUrlExternally("mailto:" + emails + "?subject=" + encodeURIComponent(subject))
+                }
+            }
 
             ToolButton {
                 icon.name: "doc.on.doc"
@@ -83,11 +107,23 @@ Page {
                         initialProjectNumber:     (d.project_number       || "").toString(),
                         initialProjectName:       (d.project_name         || "").toString(),
                         initialProjectStatus:     (d.project_status       || "").toString(),
+                        initialPrimaryContact:    (d.primary_contact      || "").toString(),
                         initialClientId:          (d.client_id            || "").toString(),
                         initialLastStatusDate:    (d.last_status_date     || "").toString(),
                         initialLastInvoiceDate:   (d.last_invoice_date    || "").toString(),
                         initialInvoicingPeriod:   (d.invoicing_period     || "").toString(),
-                        initialStatusReportPeriod:(d.status_report_period || "").toString()
+                        initialStatusReportPeriod:(d.status_report_period || "").toString(),
+                        initialBudget:            (d.budget               || "").toString(),
+                        initialActual:            (d.actual               || "").toString(),
+                        initialBcwp:              (d.bcwp                 || "").toString(),
+                        initialBcws:              (d.bcws                 || "").toString(),
+                        initialBac:               (d.bac                  || "").toString(),
+                        initialPctConsumed:       (d.pct_consumed         || "").toString(),
+                        initialEac:               (d.eac                  || "").toString(),
+                        initialCv:                (d.cv                   || "").toString(),
+                        initialSv:                (d.sv                   || "").toString(),
+                        initialPctComplete:       (d.pct_complete         || "").toString(),
+                        initialCpi:               (d.cpi                  || "").toString()
                     })
                 }
             }
@@ -164,6 +200,20 @@ Page {
                 }
             }
 
+            SectionHeader { text: qsTr("Primary Contact") }
+            FieldRow {
+                ComboBox {
+                    id: primaryContactCombo
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
+                    model: AppController.projectTeamMembersModel
+                    textRole: "name"
+                    Component.onCompleted: {
+                        var row = AppController.teamMemberRowForPersonId(root.initialPrimaryContact)
+                        currentIndex = (row >= 0) ? row : -1
+                    }
+                }
+            }
+
             // ── Dates ─────────────────────────────────────────────────────────
 
             SectionHeader { text: qsTr("Last Status Date") }
@@ -197,6 +247,107 @@ Page {
                         var idx = model.indexOf(root.initialStatusReportPeriod)
                         currentIndex = (idx >= 0) ? idx : -1
                     }
+                }
+            }
+
+            // ── Earned Value ──────────────────────────────────────────────────
+
+            SectionHeader { text: qsTr("Budget") }
+            FieldRow {
+                Label {
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: { var v = parseFloat(root.initialBudget); return (!isNaN(v) && root.initialBudget !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
+                    color: (!isNaN(parseFloat(root.initialBudget)) && root.initialBudget !== "") ? palette.text : palette.placeholderText
+                }
+            }
+
+            SectionHeader { text: qsTr("Actual") }
+            FieldRow {
+                Label {
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: { var v = parseFloat(root.initialActual); return (!isNaN(v) && root.initialActual !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
+                    color: (!isNaN(parseFloat(root.initialActual)) && root.initialActual !== "") ? palette.text : palette.placeholderText
+                }
+            }
+
+            SectionHeader { text: qsTr("BCWP") }
+            FieldRow {
+                Label {
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: { var v = parseFloat(root.initialBcwp); return (!isNaN(v) && root.initialBcwp !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
+                    color: (!isNaN(parseFloat(root.initialBcwp)) && root.initialBcwp !== "") ? palette.text : palette.placeholderText
+                }
+            }
+
+            SectionHeader { text: qsTr("BCWS") }
+            FieldRow {
+                Label {
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: { var v = parseFloat(root.initialBcws); return (!isNaN(v) && root.initialBcws !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
+                    color: (!isNaN(parseFloat(root.initialBcws)) && root.initialBcws !== "") ? palette.text : palette.placeholderText
+                }
+            }
+
+            SectionHeader { text: qsTr("BAC") }
+            FieldRow {
+                Label {
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: { var v = parseFloat(root.initialBac); return (!isNaN(v) && root.initialBac !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
+                    color: (!isNaN(parseFloat(root.initialBac)) && root.initialBac !== "") ? palette.text : palette.placeholderText
+                }
+            }
+
+            SectionHeader { text: qsTr("% Consumed") }
+            FieldRow {
+                Label {
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: { var v = parseFloat(root.initialPctConsumed); return (!isNaN(v) && root.initialPctConsumed !== "") ? v.toLocaleString(Qt.locale(), "f", 2) + "%" : qsTr("—") }
+                    color: (!isNaN(parseFloat(root.initialPctConsumed)) && root.initialPctConsumed !== "") ? palette.text : palette.placeholderText
+                }
+            }
+
+            SectionHeader { text: qsTr("EAC") }
+            FieldRow {
+                Label {
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: { var v = parseFloat(root.initialEac); return (!isNaN(v) && root.initialEac !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
+                    color: (!isNaN(parseFloat(root.initialEac)) && root.initialEac !== "") ? palette.text : palette.placeholderText
+                }
+            }
+
+            SectionHeader { text: qsTr("CV") }
+            FieldRow {
+                Label {
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: { var v = parseFloat(root.initialCv); return (!isNaN(v) && root.initialCv !== "") ? v.toLocaleString(Qt.locale(), "f", 2) + "%" : qsTr("—") }
+                    color: (!isNaN(parseFloat(root.initialCv)) && root.initialCv !== "") ? palette.text : palette.placeholderText
+                }
+            }
+
+            SectionHeader { text: qsTr("SV") }
+            FieldRow {
+                Label {
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: { var v = parseFloat(root.initialSv); return (!isNaN(v) && root.initialSv !== "") ? v.toLocaleString(Qt.locale(), "f", 2) + "%" : qsTr("—") }
+                    color: (!isNaN(parseFloat(root.initialSv)) && root.initialSv !== "") ? palette.text : palette.placeholderText
+                }
+            }
+
+            SectionHeader { text: qsTr("% Complete") }
+            FieldRow {
+                Label {
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: { var v = parseFloat(root.initialPctComplete); return (!isNaN(v) && root.initialPctComplete !== "") ? v.toLocaleString(Qt.locale(), "f", 2) + "%" : qsTr("—") }
+                    color: (!isNaN(parseFloat(root.initialPctComplete)) && root.initialPctComplete !== "") ? palette.text : palette.placeholderText
+                }
+            }
+
+            SectionHeader { text: qsTr("CPI") }
+            FieldRow {
+                Label {
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: { var v = parseFloat(root.initialCpi); return (!isNaN(v) && root.initialCpi !== "") ? v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
+                    color: (!isNaN(parseFloat(root.initialCpi)) && root.initialCpi !== "") ? palette.text : palette.placeholderText
                 }
             }
 

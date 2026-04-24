@@ -38,11 +38,6 @@ Page {
         }
     }
 
-    function priorityLabel(priority) {
-        if (!priority) return ""
-        return "Priority: " + priority
-    }
-
     // ── Search / filter toolbar ───────────────────────────────────────────────
     header: ToolBar {
         RowLayout {
@@ -72,73 +67,72 @@ Page {
             contentItem: ColumnLayout {
                 spacing: 3
 
-                // Row 1: item_number · item_type  |  status (coloured)
-                RowLayout {
+                // Row 1: project_number + project_name (bold)
+                Label {
+                    text: {
+                        var num  = model.project_number || ""
+                        var name = model.project_name   || ""
+                        return num ? num + "  " + name : name
+                    }
+                    font.bold: true
+                    elide: Text.ElideRight
                     Layout.fillWidth: true
-                    spacing: 6
-
-                    Label {
-                        text: {
-                            var num  = model.item_number || ""
-                            var type = model.item_type   || ""
-                            return (num && type) ? num + "  ·  " + type : (num || type)
-                        }
-                        font.bold: true
-                        elide: Text.ElideRight
-                        Layout.fillWidth: true
-                    }
-
-                    Label {
-                        text: model.status || ""
-                        font.pixelSize: 12
-                        color: root.statusColor(model.status || "")
-                    }
                 }
 
-                // Row 2: item_name
+                // Row 2: item_number + item_name
                 Label {
-                    visible: (model.item_name || "") !== ""
-                    text: model.item_name || ""
+                    text: {
+                        var num  = model.item_number || ""
+                        var name = model.item_name   || ""
+                        return num ? num + "  " + name : name
+                    }
                     font.pixelSize: 13
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
 
-                // Row 3: project_number · priority (model color) · due date (model color)
+                // Row 3: status · priority · assigned_to · due date
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 0
 
                     Label {
-                        visible: (model.project_number || "") !== ""
-                        text: model.project_number || ""
+                        visible: (model.status || "") !== ""
+                        text: model.status || ""
                         font.pixelSize: 12
-                        color: palette.placeholderText
-                    }
-
-                    Label {
-                        visible: (model.project_number || "") !== "" && (model.priority || "") !== ""
-                        text: "  ·  "
-                        font.pixelSize: 12
-                        color: palette.placeholderText
+                        color: root.statusColor(model.status || "")
                     }
 
                     Label {
                         visible: (model.priority || "") !== ""
-                        text: model.priority || ""
+                        text: {
+                            var sep = (model.status || "") !== "" ? "  ·  " : ""
+                            return sep + (model.priority || "")
+                        }
                         font.pixelSize: 12
                         color: model.priority_foreground || palette.placeholderText
                     }
 
                     Label {
+                        visible: (model.assigned_to || "") !== ""
+                        text: {
+                            var sep = (model.status || model.priority) ? "  ·  " : ""
+                            return sep + AppController.peopleNameForId(model.assigned_to || "")
+                        }
+                        font.pixelSize: 12
+                        color: palette.placeholderText
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                    }
+
+                    Label {
                         visible: (model.date_due || "") !== ""
                         text: {
-                            var sep = (model.project_number || model.priority) ? "  ·  " : ""
+                            var sep = (model.status || model.priority || model.assigned_to) ? "  ·  " : ""
                             return sep + "Due: " + (model.date_due || "")
                         }
                         font.pixelSize: 12
                         color: model.date_due_foreground || palette.placeholderText
-                        Layout.fillWidth: true
                         elide: Text.ElideRight
                     }
                 }

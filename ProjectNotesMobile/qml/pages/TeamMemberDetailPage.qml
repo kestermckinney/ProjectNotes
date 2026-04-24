@@ -11,9 +11,11 @@ Page {
     title: qsTr("Team Member")
 
     property int    memberRow:                  -1
+    property string projectTitle:               ""
     property string initialPeopleId:            ""
     property string initialRole:                ""
     property bool   initialReceiveStatusReport: false
+    property string initialEmail:               ""
     property bool   _skipSave:                  false
 
     function _saveNow() {
@@ -34,12 +36,21 @@ Page {
             root._saveNow()
     }
 
-    // ── Toolbar: copy + delete ────────────────────────────────────────────────
+    // ── Toolbar: email + copy + delete ───────────────────────────────────────
     header: ToolBar {
         RowLayout {
             anchors { left: parent.left; right: parent.right; margins: 8 }
             height: parent.height
             Item { Layout.fillWidth: true }
+
+            ToolButton {
+                icon.name: "envelope"
+                visible: root.initialEmail !== ""
+                onClicked: {
+                    var subject = root.projectTitle + " -"
+                    Qt.openUrlExternally("mailto:" + root.initialEmail + "?subject=" + encodeURIComponent(subject))
+                }
+            }
 
             ToolButton {
                 icon.name: "doc.on.doc"
@@ -51,9 +62,11 @@ Page {
                     var d = AppController.getTeamMemberData(newRow)
                     root.StackView.view.replace(Qt.resolvedUrl("TeamMemberDetailPage.qml"), {
                         memberRow:                  newRow,
+                        projectTitle:               root.projectTitle,
                         initialPeopleId:            (d.people_id              || "").toString(),
                         initialRole:                (d.role                   || "").toString(),
-                        initialReceiveStatusReport: (d.receive_status_report  || "0") !== "0"
+                        initialReceiveStatusReport: (d.receive_status_report  || "0") !== "0",
+                        initialEmail:               (d.email                  || "").toString()
                     })
                 }
             }

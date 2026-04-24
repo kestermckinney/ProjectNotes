@@ -94,8 +94,9 @@ public:
     Q_INVOKABLE bool    saveClient(int row, const QString& clientName);
     Q_INVOKABLE bool    saveProject(int row, const QString& projectNumber,
                                     const QString& projectName, const QString& projectStatus,
-                                    const QString& clientId, const QString& lastStatusDate,
-                                    const QString& lastInvoiceDate, const QString& invoicingPeriod,
+                                    const QString& primaryContactId, const QString& clientId,
+                                    const QString& lastStatusDate, const QString& lastInvoiceDate,
+                                    const QString& invoicingPeriod,
                                     const QString& statusReportPeriod);
     Q_INVOKABLE bool    saveStatusItem(int row, const QString& category, const QString& description);
     Q_INVOKABLE bool    saveTeamMember(int row, const QString& peopleId, const QString& role, bool receiveStatusReport);
@@ -105,11 +106,18 @@ public:
                                         const QString& note, bool internalItem);
     Q_INVOKABLE int     clientRowForId(const QString& clientId) const;
     Q_INVOKABLE QString clientIdAtRow(int row) const;
+    Q_INVOKABLE QString clientNameForId(const QString& clientId) const;
     Q_INVOKABLE int     peopleRowForId(const QString& peopleId) const;
     Q_INVOKABLE QString peopleIdAtRow(int row) const;
     Q_INVOKABLE QString peopleNameForId(const QString& personId) const;
+    Q_INVOKABLE QString peopleEmailForId(const QString& personId) const;
     Q_INVOKABLE int     teamMemberRowForPersonId(const QString& personId) const;
     Q_INVOKABLE QString teamMemberPersonIdAtRow(int row) const;
+    Q_INVOKABLE QString teamMemberEmailList() const;
+    Q_INVOKABLE QString attendeeEmailList() const;
+    Q_INVOKABLE QString projectNumberForId(const QString& projectId) const;
+    Q_INVOKABLE QString projectNameForId(const QString& projectId) const;
+    Q_INVOKABLE QString htmlToPlainText(const QString& html) const;
 
     // ── Add / Delete / Copy (returns new proxy row, or -1 on failure) ────────
     Q_INVOKABLE int          addProject();
@@ -176,6 +184,7 @@ public:
                                 const QString& dateDue,
                                 bool           internalItem);
     Q_INVOKABLE QString     trackerItemIdAtRow(int row) const;
+    Q_INVOKABLE bool        isItemNumberUnique(const QString& itemId, const QString& itemNumber) const;
 
     // ── Tracker item comments CRUD ────────────────────────────────────────────
     Q_INVOKABLE int         addComment(const QString& itemId);

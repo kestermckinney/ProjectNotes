@@ -253,6 +253,7 @@ bool DatabaseObjects::openDatabase(const QString& databasepath, const QString& c
     m_projectActionItemsModelProxy->setSourceModel(m_projectActionItemsModel);
 
     m_allItemsModel = new TrackerItemsModel(this);
+    m_allItemsModel->setOrderBy("project_number, item_number");
     m_allItemsModelProxy = new SortFilterProxyModel(this);
     m_allItemsModelProxy->setSourceModel(m_allItemsModel);
 

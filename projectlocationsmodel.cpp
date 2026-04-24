@@ -35,7 +35,7 @@ ProjectLocationsModel::ProjectLocationsModel(DatabaseObjects* dbo): SqlQueryMode
 
     addUniqueKeys(key2, "Description");
 
-    setOrderBy("project_id");
+    setOrderBy("location_description");
 }
 
 
