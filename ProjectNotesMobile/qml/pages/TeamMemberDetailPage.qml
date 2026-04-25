@@ -21,7 +21,15 @@ Page {
     function _saveNow() {
         var peopleId = (personCombo.currentIndex >= 0)
             ? AppController.peopleIdAtRow(personCombo.currentIndex) : ""
-        AppController.saveTeamMember(root.memberRow, peopleId, roleField.text, statusSwitch.checked)
+        return AppController.saveTeamMember(root.memberRow, peopleId, roleField.text, statusSwitch.checked)
+    }
+
+    function _reloadData() {
+        var d = AppController.getTeamMemberData(root.memberRow)
+        var row = AppController.peopleRowForId((d.people_id || "").toString())
+        personCombo.currentIndex = row >= 0 ? row : -1
+        roleField.text = (d.role || "").toString()
+        statusSwitch.checked = (d.receive_status_report || "0") !== "0"
     }
 
     StackView.onDeactivating: {
@@ -55,7 +63,7 @@ Page {
             ToolButton {
                 icon.name: "doc.on.doc"
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root._skipSave = true
                     var newRow = AppController.copyTeamMember(root.memberRow)
                     if (newRow < 0) { root._skipSave = false; return }

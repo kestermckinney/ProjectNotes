@@ -326,6 +326,7 @@ bool AppController::savePerson(int row, const QString& name, const QString& emai
                                 const QString& officePhone, const QString& cellPhone,
                                 const QString& clientId, const QString& role)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
     if (row < 0 || row >= model->rowCount())
         return false;
@@ -336,6 +337,10 @@ bool AppController::savePerson(int row, const QString& name, const QString& emai
     ok &= model->setData(model->index(row, 4), cellPhone);
     ok &= model->setData(model->index(row, 5), clientId);
     ok &= model->setData(model->index(row, 6), role);
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+    }
     return ok;
 }
 
@@ -345,6 +350,7 @@ bool AppController::saveProject(int row, const QString& projectNumber,
                                  const QString& lastStatusDate, const QString& lastInvoiceDate,
                                  const QString& invoicingPeriod, const QString& statusReportPeriod)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.projectslistmodelproxy();
     if (row < 0 || row >= model->rowCount())
         return false;
@@ -358,45 +364,65 @@ bool AppController::saveProject(int row, const QString& projectNumber,
     ok &= model->setData(model->index(row, 12), statusReportPeriod);
     ok &= model->setData(model->index(row, 13), clientId);
     ok &= model->setData(model->index(row, 14), projectStatus);
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+    }
     return ok;
 }
 
 bool AppController::saveStatusItem(int row, const QString& category, const QString& description)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.statusreportitemsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
     bool ok = true;
     ok &= model->setData(model->index(row, 2), category);
     ok &= model->setData(model->index(row, 3), description);
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+    }
     return ok;
 }
 
 bool AppController::saveTeamMember(int row, const QString& peopleId, const QString& role, bool receiveStatusReport)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.projectteammembersmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
     bool ok = true;
     ok &= model->setData(model->index(row, 2), peopleId);
     ok &= model->setData(model->index(row, 4), receiveStatusReport ? "1" : "0");
     ok &= model->setData(model->index(row, 5), role);
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+    }
     return ok;
 }
 
 bool AppController::saveProjectLocation(int row, const QString& locationType,
                                          const QString& description, const QString& path)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.projectlocationsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
     bool ok = true;
     ok &= model->setData(model->index(row, 2), locationType);
     ok &= model->setData(model->index(row, 3), description);
     ok &= model->setData(model->index(row, 4), path);
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+    }
     return ok;
 }
 
 bool AppController::saveProjectNote(int row, const QString& title, const QString& date,
                                      const QString& note, bool internalItem)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.projectnotesmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
     bool ok = true;
@@ -404,15 +430,25 @@ bool AppController::saveProjectNote(int row, const QString& title, const QString
     ok &= model->setData(model->index(row, 3), date);
     ok &= model->setData(model->index(row, 4), note);
     ok &= model->setData(model->index(row, 5), internalItem ? "1" : "0");
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+    }
     return ok;
 }
 
 bool AppController::saveClient(int row, const QString& clientName)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.clientsmodelproxy();
     if (row < 0 || row >= model->rowCount())
         return false;
-    return model->setData(model->index(row, 1), clientName);
+    bool ok = model->setData(model->index(row, 1), clientName);
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+    }
+    return ok;
 }
 
 int AppController::clientRowForId(const QString& clientId) const
@@ -537,6 +573,11 @@ QString AppController::htmlToPlainText(const QString& html) const
     QTextDocument doc;
     doc.setHtml(html);
     return doc.toPlainText();
+}
+
+QString AppController::lastSaveError() const
+{
+    return global_DBObjects.lastSaveError();
 }
 
 // teamMemberRowForPersonId — search col 2 (people_id) in projectTeamMembersModelProxy
@@ -918,6 +959,7 @@ bool AppController::saveTrackerItemDetail(int row,
                                           const QString& dateDue,
                                           bool           internalItem)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.actionitemsdetailsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
     bool ok = true;
@@ -932,6 +974,10 @@ bool AppController::saveTrackerItemDetail(int row,
     ok &= model->setData(model->index(row,  9), status);
     ok &= model->setData(model->index(row, 10), dateDue);
     ok &= model->setData(model->index(row, 15), internalItem ? "1" : "0");
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+    }
     return ok;
 }
 
@@ -987,12 +1033,17 @@ QVariantMap AppController::getCommentData(int row) const
 bool AppController::saveComment(int row, const QString& date,
                                  const QString& note, const QString& updatedBy)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.trackeritemscommentsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
     bool ok = true;
     ok &= model->setData(model->index(row, 2), date);
     ok &= model->setData(model->index(row, 3), note);
     ok &= model->setData(model->index(row, 4), updatedBy);
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+    }
     return ok;
 }
 
@@ -1031,9 +1082,15 @@ QVariantMap AppController::getAttendeeData(int row) const
 
 bool AppController::saveAttendee(int row, const QString& personId)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.meetingattendeesmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
-    return model->setData(model->index(row, 2), personId);
+    bool ok = model->setData(model->index(row, 2), personId);
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+    }
+    return ok;
 }
 
 // ── Note action items ─────────────────────────────────────────────────────────

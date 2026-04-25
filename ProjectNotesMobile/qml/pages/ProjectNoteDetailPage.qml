@@ -26,9 +26,17 @@ Page {
 
     function _saveNow() {
         dateField.commitPending()
-        AppController.saveProjectNote(root.noteRow, titleField.text, dateField.text,
-                                      TextFormatter.documentHtml(noteEdit.textDocument),
-                                      internalSwitch.checked)
+        return AppController.saveProjectNote(root.noteRow, titleField.text, dateField.text,
+                                             TextFormatter.documentHtml(noteEdit.textDocument),
+                                             internalSwitch.checked)
+    }
+
+    function _reloadData() {
+        var d = AppController.getProjectNoteData(root.noteRow)
+        titleField.text     = (d.note_title    || "").toString()
+        dateField.text      = (d.note_date     || "").toString()
+        noteEdit.text       = root.toRichText((d.note || "").toString())
+        internalSwitch.checked = (d.internal_item || "0") !== "0"
     }
 
     StackView.onDeactivating: {
@@ -105,7 +113,7 @@ Page {
                     icon.name: "envelope"
                     focusPolicy: Qt.NoFocus
                     onClicked: {
-                        root._saveNow()
+                        if (!root._saveNow()) return
                         var emails  = AppController.attendeeEmailList()
                         if (emails === "") return
                         var projNum  = AppController.projectNumberForId(root.projectId)
@@ -126,7 +134,7 @@ Page {
                     icon.name: "doc.on.doc"
                     focusPolicy: Qt.NoFocus
                     onClicked: {
-                        root._saveNow()
+                        if (!root._saveNow()) return
                         root._skipSave = true
                         var newRow = AppController.copyProjectNote(root.noteRow)
                         if (newRow < 0) { root._skipSave = false; return }
@@ -218,7 +226,7 @@ Page {
                 text: qsTr("Attendees")
                 display: AbstractButton.TextUnderIcon
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root.StackView.view.push(Qt.resolvedUrl("MeetingAttendeesPage.qml"), {
                         noteId:    root.noteId,
                         noteBody:  AppController.htmlToPlainText(TextFormatter.documentHtml(noteEdit.textDocument)).replace(/\n/g, '\r\n'),
@@ -233,7 +241,7 @@ Page {
                 text: qsTr("Action Items")
                 display: AbstractButton.TextUnderIcon
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root.StackView.view.push(Qt.resolvedUrl("NoteActionItemsPage.qml"), {
                         noteId:    root.noteId,
                         projectId: root.projectId

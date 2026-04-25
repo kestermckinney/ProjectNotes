@@ -19,7 +19,15 @@ Page {
     function _saveNow() {
         var locType = (typeCombo.currentIndex >= 0)
             ? typeCombo.model[typeCombo.currentIndex] : ""
-        AppController.saveProjectLocation(root.locationRow, locType, descField.text, pathField.text)
+        return AppController.saveProjectLocation(root.locationRow, locType, descField.text, pathField.text)
+    }
+
+    function _reloadData() {
+        var d = AppController.getProjectLocationData(root.locationRow)
+        var ti = typeCombo.model.indexOf((d.location_type || "").toString())
+        typeCombo.currentIndex = ti >= 0 ? ti : 0
+        descField.text = (d.location_description || "").toString()
+        pathField.text = (d.full_path            || "").toString()
     }
 
     StackView.onDeactivating: {
@@ -44,7 +52,7 @@ Page {
             ToolButton {
                 icon.name: "doc.on.doc"
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root._skipSave = true
                     var newRow = AppController.copyProjectLocation(root.locationRow)
                     if (newRow < 0) { root._skipSave = false; return }

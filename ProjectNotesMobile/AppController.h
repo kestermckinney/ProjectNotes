@@ -118,6 +118,7 @@ public:
     Q_INVOKABLE QString projectNumberForId(const QString& projectId) const;
     Q_INVOKABLE QString projectNameForId(const QString& projectId) const;
     Q_INVOKABLE QString htmlToPlainText(const QString& html) const;
+    Q_INVOKABLE QString lastSaveError() const;
 
     // ── Add / Delete / Copy (returns new proxy row, or -1 on failure) ────────
     Q_INVOKABLE int          addProject();

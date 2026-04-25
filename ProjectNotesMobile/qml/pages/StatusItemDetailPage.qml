@@ -18,7 +18,14 @@ Page {
     function _saveNow() {
         var cat = (categoryCombo.currentIndex >= 0)
             ? categoryCombo.model[categoryCombo.currentIndex] : ""
-        AppController.saveStatusItem(root.itemRow, cat, descField.text)
+        return AppController.saveStatusItem(root.itemRow, cat, descField.text)
+    }
+
+    function _reloadData() {
+        var d = AppController.getStatusItemData(root.itemRow)
+        var ci = categoryCombo.model.indexOf((d.task_category || "").toString())
+        categoryCombo.currentIndex = ci >= 0 ? ci : 0
+        descField.text = (d.task_description || "").toString()
     }
 
     StackView.onDeactivating: {
@@ -36,7 +43,7 @@ Page {
             ToolButton {
                 icon.name: "doc.on.doc"
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root._skipSave = true
                     var newRow = AppController.copyStatusItem(root.itemRow)
                     if (newRow < 0) { root._skipSave = false; return }

@@ -21,6 +21,24 @@ ApplicationWindow {
         qsTr("Projects"), qsTr("People"), qsTr("Clients"), qsTr("Items")
     ]
 
+    // Attempt to save the current detail page and pop.  If the C++ layer
+    // rejects the data (lastSaveError is non-empty), reload the page to show
+    // the original valid values and stay — the errorOccurred signal will open
+    // the error dialog asynchronously.
+    function trySaveAndPop() {
+        var page = pageStack.currentItem
+        if (page && typeof page._saveNow === "function" && !page._skipSave) {
+            page._saveNow()
+            if (AppController.lastSaveError() !== "") {
+                if (typeof page._reloadData === "function")
+                    page._reloadData()
+                return  // validation error — stay on page, dialog opens via signal
+            }
+            page._skipSave = true  // prevent double-save from onDeactivating / onDestruction
+        }
+        pageStack.pop()
+    }
+
     // ── C++ signal connections ────────────────────────────────────────────────
     Connections {
         target: AppController
@@ -189,7 +207,7 @@ ApplicationWindow {
                 icon.color: "white"
                 onClicked: {
                     if (pageStack.depth > 1)
-                        pageStack.pop()
+                        trySaveAndPop()
                     else
                         hamburgerDrawer.open()
                 }

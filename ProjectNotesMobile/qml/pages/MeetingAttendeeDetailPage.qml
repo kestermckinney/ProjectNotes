@@ -21,7 +21,13 @@ Page {
     function _saveNow() {
         var personId = personCombo.currentIndex >= 0
             ? AppController.teamMemberPersonIdAtRow(personCombo.currentIndex) : ""
-        AppController.saveAttendee(root.attendeeRow, personId)
+        return AppController.saveAttendee(root.attendeeRow, personId)
+    }
+
+    function _reloadData() {
+        var d = AppController.getAttendeeData(root.attendeeRow)
+        var row = AppController.teamMemberRowForPersonId((d.person_id || "").toString())
+        personCombo.currentIndex = row >= 0 ? row : -1
     }
 
     StackView.onDeactivating: {

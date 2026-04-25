@@ -54,9 +54,27 @@ Page {
             ? invoicingCombo.model[invoicingCombo.currentIndex] : ""
         var srPeriod = (statusReportCombo.currentIndex >= 0)
             ? statusReportCombo.model[statusReportCombo.currentIndex] : ""
-        AppController.saveProject(root.projectRow, numberField.text, nameField.text,
-                                  status, primaryContactId, clientId, statusDateField.text,
-                                  invoiceDateField.text, invPeriod, srPeriod)
+        return AppController.saveProject(root.projectRow, numberField.text, nameField.text,
+                                         status, primaryContactId, clientId, statusDateField.text,
+                                         invoiceDateField.text, invPeriod, srPeriod)
+    }
+
+    function _reloadData() {
+        var d = AppController.getProjectData(root.projectRow)
+        numberField.text = (d.project_number || "").toString()
+        nameField.text   = (d.project_name   || "").toString()
+        var si = statusCombo.model.indexOf((d.project_status || "").toString())
+        statusCombo.currentIndex = si >= 0 ? si : 0
+        var ci = AppController.clientRowForId((d.client_id || "").toString())
+        clientCombo.currentIndex = ci >= 0 ? ci : -1
+        var pi = AppController.teamMemberRowForPersonId((d.primary_contact || "").toString())
+        primaryContactCombo.currentIndex = pi >= 0 ? pi : -1
+        statusDateField.text  = (d.last_status_date     || "").toString()
+        invoiceDateField.text = (d.last_invoice_date    || "").toString()
+        var ii = invoicingCombo.model.indexOf((d.invoicing_period || "").toString())
+        invoicingCombo.currentIndex = ii >= 0 ? ii : -1
+        var sri = statusReportCombo.model.indexOf((d.status_report_period || "").toString())
+        statusReportCombo.currentIndex = sri >= 0 ? sri : -1
     }
 
     Component.onCompleted: {
@@ -96,7 +114,7 @@ Page {
             ToolButton {
                 icon.name: "doc.on.doc"
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root._skipSave = true
                     var newRow = AppController.copyProject(root.projectRow)
                     if (newRow < 0) { root._skipSave = false; return }

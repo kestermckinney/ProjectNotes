@@ -23,7 +23,15 @@ Page {
         dateField.commitPending()
         var byId = updatedByCombo.currentIndex >= 0
             ? AppController.peopleIdAtRow(updatedByCombo.currentIndex) : ""
-        AppController.saveComment(root.commentRow, dateField.text, noteEdit.text, byId)
+        return AppController.saveComment(root.commentRow, dateField.text, noteEdit.text, byId)
+    }
+
+    function _reloadData() {
+        var d = AppController.getCommentData(root.commentRow)
+        dateField.text = (d.lastupdated_date || "").toString()
+        noteEdit.text  = (d.update_note      || "").toString()
+        var row = AppController.peopleRowForId((d.updated_by || "").toString())
+        updatedByCombo.currentIndex = row >= 0 ? row : -1
     }
 
     StackView.onDeactivating: {
@@ -40,7 +48,7 @@ Page {
             ToolButton {
                 icon.name: "doc.on.doc"
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root._skipSave = true
                     var newRow = AppController.copyComment(root.commentRow)
                     if (newRow < 0) { root._skipSave = false; return }
