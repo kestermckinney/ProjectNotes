@@ -11,6 +11,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QTextDocument>
+#include <QThread>
 #include <QTimer>
 
 using namespace QLogger;
@@ -57,7 +58,20 @@ AppController::AppController(QObject* parent)
 
 AppController::~AppController()
 {
-    stopSync();
+    if (m_syncApi && m_syncApiThread) {
+        // Shut the sync engine down on its own thread, then stop the thread.
+        // BlockingQueuedConnection waits for any in-flight initialize() call
+        // to return before shutdown() runs, so we never tear the engine down
+        // mid-bootstrap.
+        SqliteSyncPro* api = m_syncApi;
+        QMetaObject::invokeMethod(api, [api]() { api->shutdown(); },
+                                  Qt::BlockingQueuedConnection);
+        m_syncApiThread->quit();
+        m_syncApiThread->wait();
+        // m_syncApi is auto-deleted via the QThread::finished → deleteLater
+        // connection set up in configureSyncApi().
+        m_syncApi = nullptr;
+    }
     global_DBObjects.closeDatabase();
 }
 
@@ -107,19 +121,33 @@ bool AppController::openOrCreateDatabase()
 void AppController::configureSyncApi()
 {
     if (!m_syncApi) {
-        m_syncApi = new SqliteSyncPro(this);
+        // Lazy-create the sync API on its own thread. Done lazily so apps
+        // with sync disabled never spin up the thread.
+        m_syncApiThread = new QThread(this);
+        m_syncApiThread->setObjectName(QStringLiteral("SqliteSyncProThread"));
+
+        m_syncApi = new SqliteSyncPro;  // no parent — lives on the API thread
+        m_syncApi->moveToThread(m_syncApiThread);
+
+        // Tear the engine down on its own thread when the thread exits.
+        connect(m_syncApiThread, &QThread::finished,
+                m_syncApi,        &QObject::deleteLater);
+
+        // Cross-thread signal connections — auto-connection becomes queued.
         connect(m_syncApi, &SqliteSyncPro::rowChanged,
-                this,      &AppController::onSyncRowChanged,
-                Qt::QueuedConnection);
+                this,      &AppController::onSyncRowChanged);
         connect(m_syncApi, &SqliteSyncPro::syncCompleted,
                 this,      &AppController::onSyncComplete);
         connect(m_syncApi, &SqliteSyncPro::syncProgress,
                 this,      &AppController::onSyncProgress);
         connect(m_syncApi, &SqliteSyncPro::syncStatusUpdated,
-                this,      &AppController::onSyncStatusUpdated,
-                Qt::QueuedConnection);
+                this,      &AppController::onSyncStatusUpdated);
+
+        m_syncApiThread->start();
     }
 
+    // Setters are mutex-protected inside SqliteSyncPro, so it is safe to
+    // call them directly from the main thread.
     m_syncApi->setSyncHostType(global_MobileSettings.getSyncHostType());
     m_syncApi->setPostgrestUrl(global_MobileSettings.getSyncPostgrestUrl());
     m_syncApi->setEmail(global_MobileSettings.getSyncEmail());
@@ -135,26 +163,37 @@ void AppController::startSync()
 
     configureSyncApi();
 
-    // If a sync loop is already running, wake it for an immediate cycle instead
-    // of calling initialize() again. Re-initializing while the loop thread is
-    // live would overwrite m_syncWorker/m_syncThread; the old thread's cleanup
-    // lambda would then delete the NEW worker, causing a crash in run().
-    if (m_syncApi->isInitialized()) {
-        m_syncApi->retryNow();
-        return;
-    }
+    SqliteSyncPro* api = m_syncApi;
+    const QString dbPath = MobileSettings::dataLocation() + "/ProjectNotes.db";
 
-    m_syncApi->setDatabasePath(MobileSettings::dataLocation() + "/ProjectNotes.db");
-    if (!m_syncApi->initialize()) {
-        // Initialization failed — show red bar so the user knows sync is broken.
-        setSyncProgress(0.0, true);
-    }
+    // Run the heavy bootstrap (auth, WAL pragma, table discovery, persistent
+    // DB open) on the API thread so the UI stays responsive during launch.
+    QMetaObject::invokeMethod(api, [this, api, dbPath]() {
+        // If a sync loop is already running, wake it for an immediate cycle
+        // instead of calling initialize() again. Re-initializing while the
+        // loop thread is live would overwrite m_syncWorker/m_syncThread; the
+        // old thread's cleanup lambda would then delete the NEW worker,
+        // causing a crash in run().
+        if (api->isInitialized()) {
+            api->retryNow();
+            return;
+        }
+        api->setDatabasePath(dbPath);
+        if (!api->initialize()) {
+            // Init failed — flip the bar red on the UI thread.
+            QMetaObject::invokeMethod(this, [this]() {
+                setSyncProgress(0.0, true);
+            }, Qt::QueuedConnection);
+        }
+    }, Qt::QueuedConnection);
 }
 
 void AppController::stopSync()
 {
-    if (m_syncApi)
-        m_syncApi->shutdown();
+    if (!m_syncApi) return;
+    SqliteSyncPro* api = m_syncApi;
+    QMetaObject::invokeMethod(api, [api]() { api->shutdown(); },
+                              Qt::QueuedConnection);
 }
 
 void AppController::onSyncComplete(const SyncResult& result)
@@ -167,7 +206,13 @@ void AppController::onSyncComplete(const SyncResult& result)
         // Ask SqliteSyncPro to count remaining pending records and emit
         // syncStatusUpdated — same as the desktop.  That signal is the sole
         // authority on whether the bar shows or hides after a cycle.
-        m_syncApi->checkSyncStatus(result);
+        // checkSyncStatus touches the persistent DB connection that lives on
+        // the API thread, so dispatch it there.
+        if (SqliteSyncPro* api = m_syncApi) {
+            QMetaObject::invokeMethod(api, [api, result]() {
+                api->checkSyncStatus(result);
+            }, Qt::QueuedConnection);
+        }
     } else {
         // Turn bar red; no popup — the bar is the only sync error indicator.
         setSyncProgress(m_syncProgress, true);
@@ -277,16 +322,22 @@ void AppController::syncAll()
     if (!global_DBObjects.isOpen()) return;
 
     configureSyncApi();
-    m_syncApi->setDatabasePath(MobileSettings::dataLocation() + "/ProjectNotes.db");
 
-    if (!m_syncApi->isInitialized()) {
-        if (!m_syncApi->initialize()) {
-            setSyncProgress(0.0, true);  // red bar — no popup
-            return;
+    SqliteSyncPro* api = m_syncApi;
+    const QString dbPath = MobileSettings::dataLocation() + "/ProjectNotes.db";
+
+    QMetaObject::invokeMethod(api, [this, api, dbPath]() {
+        api->setDatabasePath(dbPath);
+        if (!api->isInitialized()) {
+            if (!api->initialize()) {
+                QMetaObject::invokeMethod(this, [this]() {
+                    setSyncProgress(0.0, true);  // red bar — no popup
+                }, Qt::QueuedConnection);
+                return;
+            }
         }
-    }
-
-    m_syncApi->syncAll();
+        api->syncAll();
+    }, Qt::QueuedConnection);
 }
 
 // ── Record editing ────────────────────────────────────────────────────────────

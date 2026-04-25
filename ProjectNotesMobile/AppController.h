@@ -16,6 +16,7 @@
 class SqliteSyncPro;
 class QQmlEngine;
 class QJSEngine;
+class QThread;
 
 // AppController — singleton exposed to QML as the application's main C++ object.
 // Responsibilities:
@@ -297,9 +298,15 @@ private slots:
     void onSyncRowChanged(const QString& tableName, const QString& id);
 
 private:
-    SqliteSyncPro* m_syncApi      = nullptr;
-    qreal          m_syncProgress = -1.0;  // -1 = bar hidden
-    bool           m_syncHasError = false;
+    // m_syncApi lives on m_syncApiThread so its blocking startup work
+    // (network auth, WAL pragma, table discovery, persistent DB open)
+    // does not stall the UI thread. The thread is long-lived because the
+    // persistent DB connection that initialize() opens is bound to it,
+    // and syncAll() / shutdown() must run on the same thread.
+    QThread*       m_syncApiThread = nullptr;
+    SqliteSyncPro* m_syncApi       = nullptr;
+    qreal          m_syncProgress  = -1.0;  // -1 = bar hidden
+    bool           m_syncHasError  = false;
 
     void configureSyncApi();
     void setSyncProgress(qreal progress, bool hasError = false);
