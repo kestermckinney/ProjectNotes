@@ -93,11 +93,8 @@ bool AppController::openOrCreateDatabase()
     if (isNewDatabase)
         global_DBObjects.setShowClosedProjects(true);
 
-    // Apply filters and populate all models before notifying QML.
-    // setGlobalSearches(false) wires up filter state without running queries,
-    // then setGlobalSearches(true) runs the actual SQL in dependency order.
+    // Apply filters selected from the view menu option.
     global_DBObjects.setGlobalSearches(false);
-    global_DBObjects.setGlobalSearches(true);
 
     // Tell QML the view-option properties are now readable.
     emit viewOptionsChanged();
@@ -227,23 +224,6 @@ void AppController::setSyncProgress(qreal progress, bool hasError)
 
 // ── Filter helpers ───────────────────────────────────────────────────────────
 
-void AppController::setPeopleFilter(const QString& filter)
-{
-    if (filter.isEmpty())
-        global_DBObjects.peoplemodel()->clearUserSearchString(1);
-    else
-        global_DBObjects.peoplemodel()->setUserSearchString(1, filter);
-    global_DBObjects.peoplemodel()->refresh();
-}
-
-void AppController::setClientsFilter(const QString& filter)
-{
-    if (filter.isEmpty())
-        global_DBObjects.clientsmodel()->clearUserSearchString(1);
-    else
-        global_DBObjects.clientsmodel()->setUserSearchString(1, filter);
-    global_DBObjects.clientsmodel()->refresh();
-}
 
 void AppController::setProjectFilter(const QString& projectId)
 {
@@ -266,17 +246,6 @@ void AppController::setProjectFilter(const QString& projectId)
     // Project notes: project_id is col 1
     global_DBObjects.projectnotesmodel()->setFilter(1, projectId);
     global_DBObjects.projectnotesmodel()->refresh();
-}
-
-void AppController::setAllItemsFilter(const QString& filter)
-{
-    SqlQueryModel* model = global_DBObjects.allitemsmodel();
-    if (filter.isEmpty()) {
-        model->clearUserSearchString(3);  // item_name col 3
-    } else {
-        model->setUserSearchString(3, filter);
-    }
-    model->refresh();
 }
 
 // ── View options ─────────────────────────────────────────────────────────────
@@ -339,7 +308,7 @@ bool AppController::savePerson(int row, const QString& name, const QString& emai
     ok &= model->setData(model->index(row, 6), role);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
+        emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -351,7 +320,7 @@ bool AppController::saveProject(int row, const QString& projectNumber,
                                  const QString& invoicingPeriod, const QString& statusReportPeriod)
 {
     global_DBObjects.setLastSaveError("");
-    QAbstractItemModel* model = global_DBObjects.projectslistmodelproxy();
+    QAbstractItemModel* model = global_DBObjects.projectinformationmodelproxy();
     if (row < 0 || row >= model->rowCount())
         return false;
     bool ok = true;
@@ -366,7 +335,7 @@ bool AppController::saveProject(int row, const QString& projectNumber,
     ok &= model->setData(model->index(row, 14), projectStatus);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
+        emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -381,7 +350,7 @@ bool AppController::saveStatusItem(int row, const QString& category, const QStri
     ok &= model->setData(model->index(row, 3), description);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
+        emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -397,7 +366,7 @@ bool AppController::saveTeamMember(int row, const QString& peopleId, const QStri
     ok &= model->setData(model->index(row, 5), role);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
+        emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -414,7 +383,7 @@ bool AppController::saveProjectLocation(int row, const QString& locationType,
     ok &= model->setData(model->index(row, 4), path);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
+        emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -432,7 +401,7 @@ bool AppController::saveProjectNote(int row, const QString& title, const QString
     ok &= model->setData(model->index(row, 5), internalItem ? "1" : "0");
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
+        emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -446,7 +415,7 @@ bool AppController::saveClient(int row, const QString& clientName)
     bool ok = model->setData(model->index(row, 1), clientName);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
+        emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -523,7 +492,7 @@ QString AppController::clientNameForId(const QString& clientId) const
 QString AppController::projectNumberForId(const QString& projectId) const
 {
     if (projectId.isEmpty()) return {};
-    QAbstractItemModel* model = global_DBObjects.projectslistmodelproxy();
+    QAbstractItemModel* model = global_DBObjects.projectinformationmodelproxy();
     for (int row = 0; row < model->rowCount(); ++row) {
         if (model->data(model->index(row, 0)).toString() == projectId)
             return model->data(model->index(row, 1)).toString();  // col 1 = project_number
@@ -534,7 +503,7 @@ QString AppController::projectNumberForId(const QString& projectId) const
 QString AppController::projectNameForId(const QString& projectId) const
 {
     if (projectId.isEmpty()) return {};
-    QAbstractItemModel* model = global_DBObjects.projectslistmodelproxy();
+    QAbstractItemModel* model = global_DBObjects.projectinformationmodelproxy();
     for (int row = 0; row < model->rowCount(); ++row) {
         if (model->data(model->index(row, 0)).toString() == projectId)
             return model->data(model->index(row, 2)).toString();  // col 2 = project_name
@@ -647,25 +616,25 @@ static QVariantMap proxyRowToMap(SortFilterProxyModel* proxy, int row)
 
 int AppController::addProject()
 {
-    return proxyRowFromSource(global_DBObjects.projectslistmodelproxy(),
-                              global_DBObjects.projectslistmodel()->newRecord());
+    return proxyRowFromSource(global_DBObjects.projectinformationmodelproxy(),
+                              global_DBObjects.projectinformationmodel()->newRecord());
 }
 
 bool AppController::deleteProject(int row)
 {
-    return deleteProxyRow(global_DBObjects.projectslistmodelproxy(),
-                          global_DBObjects.projectslistmodel(), row);
+    return deleteProxyRow(global_DBObjects.projectinformationmodelproxy(),
+                          global_DBObjects.projectinformationmodel(), row);
 }
 
 int AppController::copyProject(int row)
 {
-    return copyProxyRow(global_DBObjects.projectslistmodelproxy(),
-                        global_DBObjects.projectslistmodel(), row);
+    return copyProxyRow(global_DBObjects.projectinformationmodelproxy(),
+                        global_DBObjects.projectinformationmodel(), row);
 }
 
 QVariantMap AppController::getProjectData(int row) const
 {
-    return proxyRowToMap(global_DBObjects.projectslistmodelproxy(), row);
+    return proxyRowToMap(global_DBObjects.projectinformationmodelproxy(), row);
 }
 
 // ── People ────────────────────────────────────────────────────────────────────
@@ -976,7 +945,7 @@ bool AppController::saveTrackerItemDetail(int row,
     ok &= model->setData(model->index(row, 15), internalItem ? "1" : "0");
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
+        emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -1042,7 +1011,7 @@ bool AppController::saveComment(int row, const QString& date,
     ok &= model->setData(model->index(row, 4), updatedBy);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
+        emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -1088,7 +1057,7 @@ bool AppController::saveAttendee(int row, const QString& personId)
     bool ok = model->setData(model->index(row, 2), personId);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
+        emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -1164,6 +1133,11 @@ void AppController::refreshNoteActionItems()
     global_DBObjects.notesactionitemsmodel()->refresh();
 }
 
+void AppController::refreshProjectsList()
+{
+    global_DBObjects.projectinformationmodel()->refresh();
+}
+
 void AppController::setQuickSearch(QAbstractItemModel* model, const QString& text)
 {
     if (auto* proxy = dynamic_cast<SortFilterProxyModel*>(model))
@@ -1174,7 +1148,7 @@ void AppController::setQuickSearch(QAbstractItemModel* model, const QString& tex
 
 QAbstractItemModel* AppController::projectsListModel() const
 {
-    return global_DBObjects.projectslistmodelproxy();
+    return global_DBObjects.projectinformationmodelproxy();
 }
 
 QAbstractItemModel* AppController::projectsModel() const

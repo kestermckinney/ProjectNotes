@@ -133,7 +133,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
             const QVariant& cached = m_cache[index.row()].value(index.column());
             if (cached == testEscaped ||
                 (!cached.isNull() && !testEscaped.isNull() && cached.toString() == testEscaped.toString()))
-                return false;
+                return true;
         }
 
         // make sure column is edit_table

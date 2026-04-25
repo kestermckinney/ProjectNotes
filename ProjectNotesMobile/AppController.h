@@ -76,9 +76,6 @@ public:
     Q_INVOKABLE void startSync();
     Q_INVOKABLE void stopSync();
     Q_INVOKABLE void syncAll();
-    Q_INVOKABLE void setPeopleFilter(const QString& filter);
-    Q_INVOKABLE void setClientsFilter(const QString& filter);
-    Q_INVOKABLE void setAllItemsFilter(const QString& filter);
     Q_INVOKABLE void setProjectFilter(const QString& projectId);
 
     // ── Preferences helpers — index lookup and row-based setters ────────────
@@ -215,6 +212,7 @@ public:
     Q_INVOKABLE void        refreshAllItems();
     Q_INVOKABLE void        refreshProjectNotes();
     Q_INVOKABLE void        refreshNoteActionItems();
+    Q_INVOKABLE void        refreshProjectsList();
 
     // ── Quick search ─────────────────────────────────────────────────────────
     // Sets a client-side text filter on any proxy model.  Any row where at

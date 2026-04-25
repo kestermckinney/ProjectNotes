@@ -202,4 +202,10 @@ Page {
             color: palette.placeholderText
         }
     }
+    // ── Startup ───────────────────────────────────────────────────────────────
+    // Defer DB init so the QML shell renders its first frame before the
+    // synchronous SQL work begins — eliminates the black-screen delay.
+    // Component.onCompleted: Qt.callLater(function() {
+    //     AppController.projectsListModel.refresh()
+    // })
 }

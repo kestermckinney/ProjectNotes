@@ -294,6 +294,7 @@ ApplicationWindow {
     // synchronous SQL work begins — eliminates the black-screen delay.
     Component.onCompleted: Qt.callLater(function() {
         AppController.openOrCreateDatabase()
+        AppController.refreshProjectsList()
         if (AppController.syncEnabled)
             AppController.startSync()
     })
