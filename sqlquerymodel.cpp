@@ -88,7 +88,8 @@ void SqlQueryModel::refreshImpactedRecordsets(QModelIndex index)
                 QModelIndex qmi = recordset->findIndex(val, 0);
                 if (qmi.isValid())
                 {
-                    recordset->reloadRecord(qmi);
+                    if(!recordset->reloadRecord(qmi))
+                        recordset->removeCacheRecord(qmi);
                 }
                 else
                 {
@@ -336,6 +337,10 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
                     }
 #endif
                     reloadRecord(index);
+
+                    // check for all of the impacted open recordsets
+                    if (m_gui) // some recordsets aren't attached to the gui
+                        refreshImpactedRecordsets(index);
 
                     return false;
                 }

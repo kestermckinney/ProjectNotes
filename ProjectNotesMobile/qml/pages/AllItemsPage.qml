@@ -21,13 +21,6 @@ Page {
 
     property StackView stackView: null
 
-    StackView.onActivated: AppController.refreshAllItems()
-
-    Component.onDestruction: {
-        root.forceActiveFocus()
-        Qt.inputMethod.hide()
-    }
-
     // ── Status colour helper ──────────────────────────────────────────────────
     function statusColor(status) {
         switch (status) {

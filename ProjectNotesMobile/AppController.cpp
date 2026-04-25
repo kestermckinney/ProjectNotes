@@ -81,7 +81,7 @@ bool AppController::openOrCreateDatabase()
         }
     }
 
-    if (!global_DBObjects.openDatabase(dbPath, connName, false)) {
+    if (!global_DBObjects.openDatabase(dbPath, connName, true)) {
         emit errorOccurred(tr("Database Error"), tr("Failed to open database at %1").arg(dbPath));
         return false;
     }
@@ -339,7 +339,7 @@ bool AppController::savePerson(int row, const QString& name, const QString& emai
     ok &= model->setData(model->index(row, 6), role);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -366,7 +366,7 @@ bool AppController::saveProject(int row, const QString& projectNumber,
     ok &= model->setData(model->index(row, 14), projectStatus);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -381,7 +381,7 @@ bool AppController::saveStatusItem(int row, const QString& category, const QStri
     ok &= model->setData(model->index(row, 3), description);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -397,7 +397,7 @@ bool AppController::saveTeamMember(int row, const QString& peopleId, const QStri
     ok &= model->setData(model->index(row, 5), role);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -414,7 +414,7 @@ bool AppController::saveProjectLocation(int row, const QString& locationType,
     ok &= model->setData(model->index(row, 4), path);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -432,7 +432,7 @@ bool AppController::saveProjectNote(int row, const QString& title, const QString
     ok &= model->setData(model->index(row, 5), internalItem ? "1" : "0");
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -446,7 +446,7 @@ bool AppController::saveClient(int row, const QString& clientName)
     bool ok = model->setData(model->index(row, 1), clientName);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -976,7 +976,7 @@ bool AppController::saveTrackerItemDetail(int row,
     ok &= model->setData(model->index(row, 15), internalItem ? "1" : "0");
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -1042,7 +1042,7 @@ bool AppController::saveComment(int row, const QString& date,
     ok &= model->setData(model->index(row, 4), updatedBy);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
@@ -1088,7 +1088,7 @@ bool AppController::saveAttendee(int row, const QString& personId)
     bool ok = model->setData(model->index(row, 2), personId);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
-        if (!err.isEmpty()) emit errorOccurred(tr("Save Error"), err);
+        if (!err.isEmpty()) emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
 }
