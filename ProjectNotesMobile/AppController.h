@@ -13,9 +13,13 @@
 #include <QVariantMap>
 #include <QtQml/qqmlregistration.h>
 
+#include <memory>
+
 class SqliteSyncPro;
 class QQmlEngine;
 class QJSEngine;
+class QThread;
+class IdRowIndex;
 
 // AppController — singleton exposed to QML as the application's main C++ object.
 // Responsibilities:
@@ -76,9 +80,6 @@ public:
     Q_INVOKABLE void startSync();
     Q_INVOKABLE void stopSync();
     Q_INVOKABLE void syncAll();
-    Q_INVOKABLE void setPeopleFilter(const QString& filter);
-    Q_INVOKABLE void setClientsFilter(const QString& filter);
-    Q_INVOKABLE void setAllItemsFilter(const QString& filter);
     Q_INVOKABLE void setProjectFilter(const QString& projectId);
 
     // ── Preferences helpers — index lookup and row-based setters ────────────
@@ -94,8 +95,9 @@ public:
     Q_INVOKABLE bool    saveClient(int row, const QString& clientName);
     Q_INVOKABLE bool    saveProject(int row, const QString& projectNumber,
                                     const QString& projectName, const QString& projectStatus,
-                                    const QString& clientId, const QString& lastStatusDate,
-                                    const QString& lastInvoiceDate, const QString& invoicingPeriod,
+                                    const QString& primaryContactId, const QString& clientId,
+                                    const QString& lastStatusDate, const QString& lastInvoiceDate,
+                                    const QString& invoicingPeriod,
                                     const QString& statusReportPeriod);
     Q_INVOKABLE bool    saveStatusItem(int row, const QString& category, const QString& description);
     Q_INVOKABLE bool    saveTeamMember(int row, const QString& peopleId, const QString& role, bool receiveStatusReport);
@@ -105,11 +107,19 @@ public:
                                         const QString& note, bool internalItem);
     Q_INVOKABLE int     clientRowForId(const QString& clientId) const;
     Q_INVOKABLE QString clientIdAtRow(int row) const;
+    Q_INVOKABLE QString clientNameForId(const QString& clientId) const;
     Q_INVOKABLE int     peopleRowForId(const QString& peopleId) const;
     Q_INVOKABLE QString peopleIdAtRow(int row) const;
     Q_INVOKABLE QString peopleNameForId(const QString& personId) const;
+    Q_INVOKABLE QString peopleEmailForId(const QString& personId) const;
     Q_INVOKABLE int     teamMemberRowForPersonId(const QString& personId) const;
     Q_INVOKABLE QString teamMemberPersonIdAtRow(int row) const;
+    Q_INVOKABLE QString teamMemberEmailList() const;
+    Q_INVOKABLE QString attendeeEmailList() const;
+    Q_INVOKABLE QString projectNumberForId(const QString& projectId) const;
+    Q_INVOKABLE QString projectNameForId(const QString& projectId) const;
+    Q_INVOKABLE QString htmlToPlainText(const QString& html) const;
+    Q_INVOKABLE QString lastSaveError() const;
 
     // ── Add / Delete / Copy (returns new proxy row, or -1 on failure) ────────
     Q_INVOKABLE int          addProject();
@@ -176,6 +186,7 @@ public:
                                 const QString& dateDue,
                                 bool           internalItem);
     Q_INVOKABLE QString     trackerItemIdAtRow(int row) const;
+    Q_INVOKABLE bool        isItemNumberUnique(const QString& itemId, const QString& itemNumber) const;
 
     // ── Tracker item comments CRUD ────────────────────────────────────────────
     Q_INVOKABLE int         addComment(const QString& itemId);
@@ -205,6 +216,7 @@ public:
     Q_INVOKABLE void        refreshAllItems();
     Q_INVOKABLE void        refreshProjectNotes();
     Q_INVOKABLE void        refreshNoteActionItems();
+    Q_INVOKABLE void        refreshProjectsList();
 
     // ── Quick search ─────────────────────────────────────────────────────────
     // Sets a client-side text filter on any proxy model.  Any row where at
@@ -289,9 +301,24 @@ private slots:
     void onSyncRowChanged(const QString& tableName, const QString& id);
 
 private:
-    SqliteSyncPro* m_syncApi      = nullptr;
-    qreal          m_syncProgress = -1.0;  // -1 = bar hidden
-    bool           m_syncHasError = false;
+    // m_syncApi lives on m_syncApiThread so its blocking startup work
+    // (network auth, WAL pragma, table discovery, persistent DB open)
+    // does not stall the UI thread. The thread is long-lived because the
+    // persistent DB connection that initialize() opens is bound to it,
+    // and syncAll() / shutdown() must run on the same thread.
+    QThread*       m_syncApiThread = nullptr;
+    SqliteSyncPro* m_syncApi       = nullptr;
+    qreal          m_syncProgress  = -1.0;  // -1 = bar hidden
+    bool           m_syncHasError  = false;
+
+    // O(1) id→row indexes over the proxy models. Built once at databaseReady,
+    // self-invalidating on any model change. Replace per-call linear scans
+    // that QML list-delegate bindings hit thousands of times during scroll
+    // and quick-search.
+    std::unique_ptr<IdRowIndex> m_clientsIndex;            // clients proxy, id col 0
+    std::unique_ptr<IdRowIndex> m_peopleIndex;             // people proxy, id col 0
+    std::unique_ptr<IdRowIndex> m_projectsIndex;           // projects-list proxy, id col 0
+    std::unique_ptr<IdRowIndex> m_teamMembersByPersonIndex;// team-members proxy, people_id col 2
 
     void configureSyncApi();
     void setSyncProgress(qreal progress, bool hasError = false);

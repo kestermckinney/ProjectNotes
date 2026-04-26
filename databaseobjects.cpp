@@ -253,6 +253,7 @@ bool DatabaseObjects::openDatabase(const QString& databasepath, const QString& c
     m_projectActionItemsModelProxy->setSourceModel(m_projectActionItemsModel);
 
     m_allItemsModel = new TrackerItemsModel(this);
+    m_allItemsModel->setOrderBy("project_number, item_number");
     m_allItemsModelProxy = new SortFilterProxyModel(this);
     m_allItemsModelProxy->setSourceModel(m_allItemsModel);
 
@@ -729,21 +730,8 @@ void DatabaseObjects::setGlobalSearches( bool refresh )
         allitemsmodel()->clearFilter(9);
     }
 
-    // if (getGlobalProjectFilter().isEmpty())
-    // {
-        // don't clear this one becasue we may have it open  projectinformationmodel()->clearFilter(0);
     projectslistmodel()->clearFilter(0);
     searchresultsmodel()->clearFilter(7);
-    // }
-    // else
-    // {
-    //     projectslistmodel()->setFilter(0, getGlobalProjectFilter());
-
-    //     QString projectnumber = execute(QString("select project_number from projects where id = '%1'").arg(getGlobalProjectFilter()));
-
-    //     searchresultsmodel()->setFilter(7, projectnumber);
-    // }
-
 
     if (refresh)
     {

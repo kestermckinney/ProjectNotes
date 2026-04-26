@@ -7,6 +7,7 @@
 #include <QSortFilterProxyModel>
 #include <QHash>
 #include <QObject>
+#include <QTimer>
 
 class SortFilterProxyModel : public QSortFilterProxyModel
 {
@@ -27,6 +28,11 @@ private:
     // Key: "table\x1Ffkcol\x1Fvalcol\x1FfkValue", Value: display string.
     mutable QHash<QString, QString> m_sortLookupCache;
     QString m_quickSearch;
+    // Coalesces bursts of setQuickSearch() calls (one per keystroke) into a
+    // single invalidateRowsFilter() so we don't re-scan every row of the
+    // source model on every keystroke. Empty text invalidates immediately so
+    // clearing the field stays instant.
+    QTimer m_quickSearchDebounce;
 };
 
 #endif // SORTFILTERPROXYMODEL_H

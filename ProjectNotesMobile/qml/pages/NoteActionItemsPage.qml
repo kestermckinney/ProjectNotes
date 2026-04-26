@@ -40,6 +40,21 @@ Page {
                 placeholderText: qsTr("Search action items…")
                 onTextChanged: AppController.setQuickSearch(AppController.notesActionItemsModel, text)
                 inputMethodHints: Qt.ImhNoPredictiveText
+                rightPadding: clearBtn.visible ? clearBtn.width + 4 : 0
+
+                Label {
+                    id: clearBtn
+                    visible: searchField.text.length > 0
+                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 6 }
+                    text: "✕"
+                    font.pixelSize: 18
+                    color: palette.text
+                    MouseArea {
+                        anchors.fill: parent
+                        anchors.margins: -6
+                        onClicked: searchField.clear()
+                    }
+                }
             }
             ToolButton {
                 icon.name: "plus"
@@ -82,46 +97,49 @@ Page {
             contentItem: ColumnLayout {
                 spacing: 3
 
+                Label {
+                    text: {
+                        var num  = model.item_number || ""
+                        var name = model.item_name   || ""
+                        return num ? num + "  " + name : name
+                    }
+                    font.bold: true
+                    elide: Text.ElideRight
+                    Layout.fillWidth: true
+                }
+
                 RowLayout {
                     Layout.fillWidth: true
+                    spacing: 0
 
                     Label {
-                        text: {
-                            var num  = model.item_number || ""
-                            var type = model.item_type   || ""
-                            return (num && type) ? num + "  ·  " + type : (num || type)
-                        }
-                        font.bold: true
+                        visible: (model.assigned_to || "") !== ""
+                        text: AppController.peopleNameForId(model.assigned_to || "")
+                        font.pixelSize: 12
+                        color: palette.placeholderText
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
 
                     Label {
-                        text: model.status || ""
+                        visible: (model.status || "") !== ""
+                        text: {
+                            var sep = (model.assigned_to || "") !== "" ? "  ·  " : ""
+                            return sep + (model.status || "")
+                        }
                         font.pixelSize: 12
                         color: root.statusColor(model.status || "")
                     }
-                }
 
-                Label {
-                    visible: (model.item_name || "") !== ""
-                    text: model.item_name || ""
-                    font.pixelSize: 13
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
-                }
-
-                Label {
-                    text: {
-                        var parts = []
-                        if (model.priority || "") parts.push(model.priority)
-                        if (model.date_due || "") parts.push("Due: " + model.date_due)
-                        return parts.join("  ·  ")
+                    Label {
+                        visible: (model.date_due || "") !== ""
+                        text: {
+                            var sep = (model.assigned_to || model.status) ? "  ·  " : ""
+                            return sep + "Due: " + (model.date_due || "")
+                        }
+                        font.pixelSize: 12
+                        color: model.date_due_foreground || palette.placeholderText
                     }
-                    font.pixelSize: 12
-                    color: palette.placeholderText
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
                 }
             }
 

@@ -30,6 +30,21 @@ Page {
                 placeholderText: qsTr("Search notes…")
                 onTextChanged: AppController.setQuickSearch(AppController.projectNotesModel, text)
                 inputMethodHints: Qt.ImhNoPredictiveText
+                rightPadding: clearBtn.visible ? clearBtn.width + 4 : 0
+
+                Label {
+                    id: clearBtn
+                    visible: searchField.text.length > 0
+                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 6 }
+                    text: "✕"
+                    font.pixelSize: 18
+                    color: palette.text
+                    MouseArea {
+                        anchors.fill: parent
+                        anchors.margins: -6
+                        onClicked: searchField.clear()
+                    }
+                }
             }
             ToolButton {
                 icon.name: "plus"

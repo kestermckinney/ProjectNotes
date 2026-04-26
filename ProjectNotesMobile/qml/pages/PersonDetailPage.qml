@@ -22,9 +22,20 @@ Page {
     function _saveNow() {
         var clientId = (clientCombo.currentIndex >= 0)
             ? AppController.clientIdAtRow(clientCombo.currentIndex) : ""
-        AppController.savePerson(root.personRow, nameField.text, emailField.text,
-                                 officePhoneField.text, cellPhoneField.text,
-                                 clientId, roleField.text)
+        return AppController.savePerson(root.personRow, nameField.text, emailField.text,
+                                        officePhoneField.text, cellPhoneField.text,
+                                        clientId, roleField.text)
+    }
+
+    function _reloadData() {
+        var d = AppController.getPersonData(root.personRow)
+        nameField.text        = (d.name         || "").toString()
+        emailField.text       = (d.email        || "").toString()
+        officePhoneField.text = (d.office_phone || "").toString()
+        cellPhoneField.text   = (d.cell_phone   || "").toString()
+        roleField.text        = (d.role         || "").toString()
+        var row = AppController.clientRowForId((d.client_id || "").toString())
+        clientCombo.currentIndex = row >= 0 ? row : -1
     }
 
     StackView.onDeactivating: {
@@ -49,7 +60,7 @@ Page {
             ToolButton {
                 icon.name: "doc.on.doc"
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root._skipSave = true
                     var newRow = AppController.copyPerson(root.personRow)
                     if (newRow < 0) { root._skipSave = false; return }

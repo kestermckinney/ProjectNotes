@@ -15,7 +15,12 @@ Page {
     property bool   _skipSave:         false
 
     function _saveNow() {
-        AppController.saveClient(root.clientRow, clientNameField.text)
+        return AppController.saveClient(root.clientRow, clientNameField.text)
+    }
+
+    function _reloadData() {
+        var d = AppController.getClientData(root.clientRow)
+        clientNameField.text = (d.client_name || "").toString()
     }
 
     StackView.onDeactivating: {
@@ -40,7 +45,7 @@ Page {
             ToolButton {
                 icon.name: "doc.on.doc"
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root._skipSave = true
                     var newRow = AppController.copyClient(root.clientRow)
                     if (newRow < 0) { root._skipSave = false; return }

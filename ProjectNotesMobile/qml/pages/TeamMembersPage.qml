@@ -31,6 +31,21 @@ Page {
                 placeholderText: qsTr("Search team…")
                 onTextChanged: AppController.setQuickSearch(AppController.projectTeamMembersModel, text)
                 inputMethodHints: Qt.ImhNoPredictiveText
+                rightPadding: clearBtn.visible ? clearBtn.width + 4 : 0
+
+                Label {
+                    id: clearBtn
+                    visible: searchField.text.length > 0
+                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 6 }
+                    text: "✕"
+                    font.pixelSize: 18
+                    color: palette.text
+                    MouseArea {
+                        anchors.fill: parent
+                        anchors.margins: -6
+                        onClicked: searchField.clear()
+                    }
+                }
             }
             ToolButton {
                 icon.name: "plus"
@@ -40,9 +55,11 @@ Page {
                     var d = AppController.getTeamMemberData(newRow)
                     root.StackView.view.push(Qt.resolvedUrl("TeamMemberDetailPage.qml"), {
                         memberRow:                  newRow,
+                        projectTitle:               root.projectTitle,
                         initialPeopleId:            (d.people_id              || "").toString(),
                         initialRole:                (d.role                   || "").toString(),
-                        initialReceiveStatusReport: (d.receive_status_report  || "0") !== "0"
+                        initialReceiveStatusReport: (d.receive_status_report  || "0") !== "0",
+                        initialEmail:               (d.email                  || "").toString()
                     })
                 }
             }
@@ -75,8 +92,8 @@ Page {
                     Label {
                         text: {
                             var parts = []
-                            if (model.role  || "") parts.push(model.role)
-                            if (model.email || "") parts.push(model.email)
+                            if (model.client_name || "") parts.push(model.client_name)
+                            if (model.role        || "") parts.push(model.role)
                             return parts.join("  ·  ")
                         }
                         font.pixelSize: 12
@@ -115,7 +132,8 @@ Page {
                         visible: (model.email || "").length > 0
                         icon.name: "envelope"
                         implicitWidth: 44; implicitHeight: 44
-                        onClicked: Qt.openUrlExternally("mailto:" + (model.email || ""))
+                        onClicked: Qt.openUrlExternally("mailto:" + (model.email || "")
+                            + "?subject=" + encodeURIComponent(root.projectTitle + " -"))
                     }
                 }
             }
@@ -123,9 +141,11 @@ Page {
             onClicked: {
                 root.StackView.view.push(Qt.resolvedUrl("TeamMemberDetailPage.qml"), {
                     memberRow:                  index,
+                    projectTitle:               root.projectTitle,
                     initialPeopleId:            model.people_id              || "",
                     initialRole:                model.role                   || "",
-                    initialReceiveStatusReport: (model.receive_status_report || "0") !== "0"
+                    initialReceiveStatusReport: (model.receive_status_report || "0") !== "0",
+                    initialEmail:               model.email                  || ""
                 })
             }
         }

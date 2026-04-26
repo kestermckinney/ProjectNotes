@@ -755,7 +755,7 @@ class IFSCommon:
     # Sync logic
     # ---------------------------------------------------------------------------
 
-    def _sync_project_tasks(self, pnc, project, tasks):
+    def _sync_project_tasks(self, pnc, project, tasks, activity_seq=None):
         """Sync IFS ActivityTasks into the Project Notes item_tracker for one project.
 
         Rules:
@@ -797,15 +797,54 @@ class IFSCommon:
             ifs_updated = self._parse_ifs_date(task.get("Cf_Date_Updated"))
 
             if item_number in pn_items:
-                # Item already exists in PN — skip if PN is same age or newer
+                # Item already exists in PN — decide direction by comparing dates
                 pn_updated = self._parse_pn_date(pn_items[item_number]["last_update"])
 
-                if ifs_updated and pn_updated and pn_updated >= ifs_updated:
-                    counts["skipped"] += 1
-                    continue
+                if ifs_updated and pn_updated:
+                    if pn_updated > ifs_updated:
+                        # PN is newer -> push changes to IFS
+                        pn = pn_items[item_number]
+                        duedate = QDateTime()
+                        dateupdated = QDateTime()
+                        dateresolved = QDateTime()
+                        assignedto = ''
+                        identifiedby = ''
+                        priority = pn.get("priority") or ''
+                        status = pn.get("status") or ''
+                        item_name = pn.get("item_name") or ''
+                        desc = pn.get("description") or ''
 
-                self._write_pn_item(pnc, project_id, item_number, task)
-                counts["updated"] += 1
+                        if pn.get("date_due"):
+                            duedate = QDateTime.fromString(pn.get("date_due"), 'MM/dd/yyyy')
+                        if pn.get("last_update"):
+                            dateupdated = QDateTime.fromString(pn.get("last_update"), 'MM/dd/yyyy')
+                        if pn.get("date_resolved"):
+                            dateresolved = QDateTime.fromString(pn.get("date_resolved"), 'MM/dd/yyyy')
+                        if pn.get("assigned_to"):
+                            assignedto = pn.get("assigned_to").strip()
+                        if pn.get("identified_by"):
+                            identifiedby = pn.get("identified_by").strip()
+
+                        # Attempt to update existing IFS task
+                        if activity_seq is not None and self.update_activity_task(activity_seq, project_number, task_id, item_name, desc, assignedto, dateupdated, duedate, dateresolved, identifiedby, priority, status):
+                            counts["updated"] += 1
+                        else:
+                            # Fallback: try creating if update failed
+                            if activity_seq is not None and self.create_activity_task(activity_seq, project_number, task_id, item_name, desc, assignedto, dateupdated, duedate, dateresolved, identifiedby, priority, status):
+                                counts["created"] += 1
+                            else:
+                                counts["skipped"] += 1
+                    elif pn_updated == ifs_updated:
+                        counts["skipped"] += 1
+                        continue
+                    else:
+                        # IFS is newer -> update PN from IFS
+                        self._write_pn_item(pnc, project_id, item_number, task)
+                        counts["updated"] += 1
+                else:
+                    # Missing date info -> default to updating PN from IFS
+                    self._write_pn_item(pnc, project_id, item_number, task)
+                    counts["updated"] += 1
             else:
                 # Item not in PN — create it
                 self._write_pn_item(pnc, project_id, item_number, task)
@@ -1208,7 +1247,7 @@ class IFSCommon:
                             "project_number": rowval['ProjectId'],
                             "project_name":   rowval['Description'],
                         }
-                        counts = self._sync_project_tasks(self.pnc, project_dict, tasks)
+                        counts = self._sync_project_tasks(self.pnc, project_dict, tasks, activity_seq)
 
             self.get_team_members_xml(rgroups, clientsdict, rowval['ProjectId'], rd )
 
@@ -1542,7 +1581,7 @@ class IFSCommon:
             if not tasks:
                 continue
 
-            counts = self._sync_project_tasks(pnc, project, tasks)
+            counts = self._sync_project_tasks(pnc, project, tasks, activity_seq)
             total_created += counts["created"]
             total_updated += counts["updated"]
             total_skipped += counts["skipped"]

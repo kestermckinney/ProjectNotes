@@ -45,6 +45,21 @@ Page {
                 placeholderText: qsTr("Search items…")
                 onTextChanged: AppController.setQuickSearch(AppController.trackerItemsModel, text)
                 inputMethodHints: Qt.ImhNoPredictiveText
+                rightPadding: clearBtn.visible ? clearBtn.width + 4 : 0
+
+                Label {
+                    id: clearBtn
+                    visible: searchField.text.length > 0
+                    anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 6 }
+                    text: "✕"
+                    font.pixelSize: 18
+                    color: palette.text
+                    MouseArea {
+                        anchors.fill: parent
+                        anchors.margins: -6
+                        onClicked: searchField.clear()
+                    }
+                }
             }
             ToolButton {
                 icon.name: "plus"
@@ -87,31 +102,13 @@ Page {
             contentItem: ColumnLayout {
                 spacing: 3
 
-                RowLayout {
-                    Layout.fillWidth: true
-
-                    Label {
-                        text: {
-                            var num  = model.item_number || ""
-                            var type = model.item_type   || ""
-                            return (num && type) ? num + "  ·  " + type : (num || type)
-                        }
-                        font.bold: true
-                        elide: Text.ElideRight
-                        Layout.fillWidth: true
-                    }
-
-                    Label {
-                        text: model.status || ""
-                        font.pixelSize: 12
-                        color: root.statusColor(model.status || "")
-                    }
-                }
-
                 Label {
-                    visible: (model.item_name || "") !== ""
-                    text: model.item_name || ""
-                    font.pixelSize: 13
+                    text: {
+                        var num  = model.item_number || ""
+                        var name = model.item_name   || ""
+                        return num ? num + "  " + name : name
+                    }
+                    font.bold: true
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
@@ -121,21 +118,42 @@ Page {
                     spacing: 0
 
                     Label {
+                        visible: (model.status || "") !== ""
+                        text: model.status || ""
+                        font.pixelSize: 12
+                        color: root.statusColor(model.status || "")
+                    }
+
+                    Label {
                         visible: (model.priority || "") !== ""
-                        text: model.priority || ""
+                        text: {
+                            var sep = (model.status || "") !== "" ? "  ·  " : ""
+                            return sep + (model.priority || "")
+                        }
                         font.pixelSize: 12
                         color: model.priority_foreground || palette.placeholderText
                     }
 
                     Label {
+                        visible: (model.assigned_to || "") !== ""
+                        text: {
+                            var sep = (model.status || model.priority) ? "  ·  " : ""
+                            return sep + AppController.peopleNameForId(model.assigned_to || "")
+                        }
+                        font.pixelSize: 12
+                        color: palette.placeholderText
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                    }
+
+                    Label {
                         visible: (model.date_due || "") !== ""
                         text: {
-                            var sep = (model.priority || "") !== "" ? "  ·  " : ""
+                            var sep = (model.status || model.priority || model.assigned_to) ? "  ·  " : ""
                             return sep + "Due: " + (model.date_due || "")
                         }
                         font.pixelSize: 12
                         color: model.date_due_foreground || palette.placeholderText
-                        Layout.fillWidth: true
                         elide: Text.ElideRight
                     }
                 }

@@ -11,15 +11,25 @@ Page {
     title: qsTr("Team Member")
 
     property int    memberRow:                  -1
+    property string projectTitle:               ""
     property string initialPeopleId:            ""
     property string initialRole:                ""
     property bool   initialReceiveStatusReport: false
+    property string initialEmail:               ""
     property bool   _skipSave:                  false
 
     function _saveNow() {
         var peopleId = (personCombo.currentIndex >= 0)
             ? AppController.peopleIdAtRow(personCombo.currentIndex) : ""
-        AppController.saveTeamMember(root.memberRow, peopleId, roleField.text, statusSwitch.checked)
+        return AppController.saveTeamMember(root.memberRow, peopleId, roleField.text, statusSwitch.checked)
+    }
+
+    function _reloadData() {
+        var d = AppController.getTeamMemberData(root.memberRow)
+        var row = AppController.peopleRowForId((d.people_id || "").toString())
+        personCombo.currentIndex = row >= 0 ? row : -1
+        roleField.text = (d.role || "").toString()
+        statusSwitch.checked = (d.receive_status_report || "0") !== "0"
     }
 
     StackView.onDeactivating: {
@@ -34,7 +44,7 @@ Page {
             root._saveNow()
     }
 
-    // ── Toolbar: copy + delete ────────────────────────────────────────────────
+    // ── Toolbar: email + copy + delete ───────────────────────────────────────
     header: ToolBar {
         RowLayout {
             anchors { left: parent.left; right: parent.right; margins: 8 }
@@ -42,18 +52,29 @@ Page {
             Item { Layout.fillWidth: true }
 
             ToolButton {
+                icon.name: "envelope"
+                visible: root.initialEmail !== ""
+                onClicked: {
+                    var subject = root.projectTitle + " -"
+                    Qt.openUrlExternally("mailto:" + root.initialEmail + "?subject=" + encodeURIComponent(subject))
+                }
+            }
+
+            ToolButton {
                 icon.name: "doc.on.doc"
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root._skipSave = true
                     var newRow = AppController.copyTeamMember(root.memberRow)
                     if (newRow < 0) { root._skipSave = false; return }
                     var d = AppController.getTeamMemberData(newRow)
                     root.StackView.view.replace(Qt.resolvedUrl("TeamMemberDetailPage.qml"), {
                         memberRow:                  newRow,
+                        projectTitle:               root.projectTitle,
                         initialPeopleId:            (d.people_id              || "").toString(),
                         initialRole:                (d.role                   || "").toString(),
-                        initialReceiveStatusReport: (d.receive_status_report  || "0") !== "0"
+                        initialReceiveStatusReport: (d.receive_status_report  || "0") !== "0",
+                        initialEmail:               (d.email                  || "").toString()
                     })
                 }
             }

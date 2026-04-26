@@ -38,6 +38,12 @@ def event_timer(parameter):
 
     ifs.import_ifs_projects("")
 
+    # After projects are downloaded, sync IFS activity tasks into Project Notes
+    try:
+        ifs.sync_activity_tasks("")
+    except Exception as e:
+        print(f"IFS sync_activity_tasks failed: {e}")
+
     return ""
 
 def menuimport_ifs_projects(parameter):
@@ -47,5 +53,11 @@ def menuimport_ifs_projects(parameter):
 
     print("Importing IFS projects...")
     ifs.import_ifs_projects("all")
+
+    # After projects are downloaded, sync IFS activity tasks into Project Notes
+    try:
+        ifs.sync_activity_tasks("all")
+    except Exception as e:
+        print(f"IFS sync_activity_tasks failed: {e}")
 
     return ""
