@@ -4,6 +4,7 @@
 #include "clientspage.h"
 #include "mainwindow.h"
 #include "plaintextedit.h"
+#include "appsettings.h"
 #include "ui_mainwindow.h"
 #include "QLogger.h"
 #include "QLoggerWriter.h"
@@ -55,7 +56,7 @@ void ClientsPage::setButtonAndMenuStates()
 
 void ClientsPage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes Clients"));
+    topLevelWidget()->setWindowTitle(AppSettings::developerProfilePrefix() + QString("Project Notes Clients"));
 
     if (getRecordId().isNull())
     {

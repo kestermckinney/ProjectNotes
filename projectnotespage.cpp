@@ -4,6 +4,7 @@
 #include "projectnotespage.h"
 #include "databaseobjects.h"
 #include "notesactionitemsview.h"
+#include "appsettings.h"
 #include "QLogger.h"
 #include "QLoggerWriter.h"
 
@@ -52,7 +53,7 @@ void ProjectNotesPage::setPageTitle()
     QString project_number= global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,7)).toString();
     QString pagetitle = QString("%1 %2 %3").arg(project_number, ui->plainTextEditMeetingTitle->toPlainText(), ui->dateEditMeetingDate->text().left(25));
 
-    topLevelWidget()->setWindowTitle(QString("Project Notes Meeting [%1]").arg(pagetitle));
+    topLevelWidget()->setWindowTitle(AppSettings::developerProfilePrefix() + QString("Project Notes Meeting [%1]").arg(pagetitle));
     setHistoryText(pagetitle);
 }
 

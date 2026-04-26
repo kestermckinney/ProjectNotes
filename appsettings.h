@@ -23,6 +23,7 @@ public:
 
     static void setDeveloperProfile(const QString& profile);
     static QString developerProfile();
+    static QString developerProfilePrefix();
     static QString settingsOrganization();
     static QString dataLocation();
 
