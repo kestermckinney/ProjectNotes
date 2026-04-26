@@ -3,6 +3,7 @@
 
 #include "searchpage.h"
 #include "databaseobjects.h"
+#include "appsettings.h"
 
 #include "ui_mainwindow.h"
 
@@ -18,7 +19,7 @@ SearchPage::SearchPage()
 
 void SearchPage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes Search"));
+    topLevelWidget()->setWindowTitle(AppSettings::developerProfilePrefix() + QString("Project Notes Search"));
     setHistoryText("Search");
 }
 

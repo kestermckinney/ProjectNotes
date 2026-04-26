@@ -23,6 +23,13 @@ QString AppSettings::developerProfile()
     return s_developerProfile;
 }
 
+QString AppSettings::developerProfilePrefix()
+{
+    if (s_developerProfile.isEmpty())
+        return QString();
+    return QString("((" + s_developerProfile + ")) ");
+}
+
 QString AppSettings::settingsOrganization()
 {
     if (s_developerProfile.isEmpty())

@@ -49,6 +49,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    setWindowTitle(AppSettings::developerProfilePrefix() + windowTitle());
+
     DatabaseObjects::setLocalSettingsCallbacks(
         [](const QString& key, const QString& val) { global_Settings.setWindowStateData(key, val); },
         [](const QString& key) -> QString { return global_Settings.getWindowStateData(key).toString(); }

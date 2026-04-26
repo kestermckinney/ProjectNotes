@@ -23,11 +23,13 @@
     <!-- ── Package declarations ── -->
     <pkg-ref id="com.kestermckinney.projectnotes"/>
     <pkg-ref id="com.sqlitesyncpro.sqladmin"/>
+    <pkg-ref id="com.kestermckinney.projectnotes.ifsplugins"/>
 
     <!-- ── Install choices ── -->
     <choices-outline>
         <line choice="com.kestermckinney.projectnotes"/>
         <line choice="com.sqlitesyncpro.sqladmin"/>
+        <line choice="com.kestermckinney.projectnotes.ifsplugins"/>
     </choices-outline>
 
     <!-- ProjectNotes is required (not optional) -->
@@ -50,6 +52,16 @@
         <pkg-ref id="com.sqlitesyncpro.sqladmin"/>
     </choice>
 
+    <!-- IFS custom plugins are optional and unselected by default -->
+    <choice id="com.kestermckinney.projectnotes.ifsplugins"
+            visible="true"
+            enabled="true"
+            selected="false"
+            title="IFS Custom Plugins"
+            description="Custom plugins for IFS Cloud integration: SSRS report generation, IFS Cloud settings, and IFS synchronization support.">
+        <pkg-ref id="com.kestermckinney.projectnotes.ifsplugins"/>
+    </choice>
+
     <!-- ── pkg-ref payloads (resolved relative to the distribution file) ── -->
     <pkg-ref id="com.kestermckinney.projectnotes"
              version="5.0.0"
@@ -58,5 +70,9 @@
     <pkg-ref id="com.sqlitesyncpro.sqladmin"
              version="0.1.0"
              onConclusion="none">ProjectNotesRemoteHost.pkg</pkg-ref>
+
+    <pkg-ref id="com.kestermckinney.projectnotes.ifsplugins"
+             version="5.0.0"
+             onConclusion="none">IFSPlugins.pkg</pkg-ref>
 
 </installer-gui-script>
