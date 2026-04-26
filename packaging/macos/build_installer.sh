@@ -172,6 +172,8 @@ done
 mkdir -p \
     "${STAGING_DIR}/projectnotes" \
     "${STAGING_DIR}/sqladmin" \
+    "${STAGING_DIR}/ifsplugins/Project Notes.app/Contents/Resources/plugins/includes" \
+    "${STAGING_DIR}/ifsplugins/Project Notes.app/Contents/Resources/threads" \
     "${OUTPUT_DIR}"
 
 # Copy app bundles into staging roots.  Use ditto (not cp -R) so that bundle
@@ -183,6 +185,36 @@ ditto "${SA_APP}" "${STAGING_DIR}/sqladmin/Project Notes Remote Host.app"
 
 PN_STAGED="${STAGING_DIR}/projectnotes/Project Notes.app"
 SA_STAGED="${STAGING_DIR}/sqladmin/Project Notes Remote Host.app"
+PN_RESOURCES="${PN_STAGED}/Contents/Resources"
+
+# ── IFS plugin staging ────────────────────────────────────────────────────────
+# IFS plugin files are removed from the main bundle so they can be delivered
+# as a separate optional installer component.
+#
+# NOTE: Installing files into an already-signed app bundle invalidates the
+# Developer ID code signature.  When using --sign/--notarize, either:
+#   (a) omit the IFS choice and ship it separately, or
+#   (b) include IFS files in the main bundle and hide this choice.
+# For unsigned/internal builds this optional package works without restriction.
+
+IFS_PLUGIN_FILES=(
+    "plugins/ifs_ssrs_generate_plugin.py"
+    "plugins/ifscloud_plugin_settings.py"
+    "plugins/includes/ifs_tools.py"
+    "threads/ifssync_thread.py"
+)
+
+IFS_STAGING="${STAGING_DIR}/ifsplugins/Project Notes.app/Contents/Resources"
+
+log "Staging IFS plugin files..."
+for rel in "${IFS_PLUGIN_FILES[@]}"; do
+    src="${PROJECT_ROOT}/${rel}"
+    dst="${IFS_STAGING}/${rel}"
+    [[ -f "${src}" ]] || die "IFS plugin source not found: ${src}"
+    mkdir -p "$(dirname "${dst}")"
+    cp "${src}" "${dst}"
+    rm -f "${PN_RESOURCES}/${rel}"
+done
 
 # ── Step 3: Code signing ──────────────────────────────────────────────────────
 
@@ -215,6 +247,14 @@ pkgbuild \
     --install-location "/Applications" \
     "${OUTPUT_DIR}/ProjectNotesRemoteHost.pkg"
 log "Built: ProjectNotesRemoteHost.pkg"
+
+pkgbuild \
+    --root "${STAGING_DIR}/ifsplugins" \
+    --identifier "com.kestermckinney.projectnotes.ifsplugins" \
+    --version "${PN_VERSION}" \
+    --install-location "/Applications" \
+    "${OUTPUT_DIR}/IFSPlugins.pkg"
+log "Built: IFSPlugins.pkg"
 
 # ── Step 5: Build distribution package ────────────────────────────────────────
 
