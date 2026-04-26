@@ -276,8 +276,6 @@ class SSOAuthAPI:
         finally:
             file.close()
 
-        print(f"found token: {token}")
-
         refresh_token = token.get("refresh_token")
         if not refresh_token:
             return None
@@ -306,7 +304,10 @@ class SSOAuthAPI:
             # self.token_response = new_token
             self.access_token = new_token["access_token"]
             self.save_token(new_token)
-            self._lookup_current_user()
+
+            if self.current_user is None:
+                self._lookup_current_user()
+
             return self.access_token
 
         except Exception as e:
@@ -320,7 +321,8 @@ class SSOAuthAPI:
         jwt_claims = json.loads(base64.urlsafe_b64decode(jwt_payload))
         current_email = jwt_claims.get("preferred_username", "")
 
-        fnduser_url = self.ifs_url.rstrip("/") + f"/main/ifsapplications/projection/v1/PrUserHandling.svc/Reference_FndUser?$filter=WebUser eq '{current_email.upper()}'&$select=Identity,WebUser"
+        fnduser_url = self.ifs_url.rstrip('/') + f"/main/ifsapplications/projection/v1/UserRelatedData.svc/Reference_FndUser?$filter=WebUser eq '{current_email.upper()}'&$select=Identity,WebUser"
+
         try:
             result = requests.get(fnduser_url, verify=False, timeout=(10, 60),
                                   headers={"Authorization": f"Bearer {self.access_token}", "Content-Type": "application/json"})
@@ -328,12 +330,14 @@ class SSOAuthAPI:
                 users = result.json().get("value", [])
                 self.current_user = users[0].get("Identity") if users else None
             else:
-                print(f"Function '{inspect.currentframe().f_code.co_name}': Reference_FndUser lookup failed {result.status_code}: {result.text}")
-                self.current_user = None
+                print(f"IFS user lookup failed (HTTP {result.status_code}); falling back to login name.")
+                # Fall back to the JWT username if the dev instance lacks PrUserHandling grants
+                self.current_user = current_email.upper() if current_email else None
         except Exception as e:
             print(f"Function '{inspect.currentframe().f_code.co_name}': Reference_FndUser lookup error: {e}")
             self.current_user = None
 
+    
     def authenticate(self):
         """Return a valid Bearer access token, triggering a browser login if needed."""
 
@@ -355,7 +359,8 @@ class SSOAuthAPI:
         cached = self.load_cached_token()
         if cached:
             self.access_token = cached["access_token"]
-            self._lookup_current_user()
+            if self.current_user is None:
+                self._lookup_current_user()
             return self.access_token
 
         # Access token expired — try the refresh token before opening the browser
@@ -403,19 +408,19 @@ class SSOAuthAPI:
                 authorization_response=full_url,
                 client_secret=False
             )
-            self.save_token(token)
         except Exception as e:
             print("Error exchanging code for token:", e)
             print("Full callback URL was:", full_url)
-            server.shutdown()
+            threading.Thread(target=server.shutdown, daemon=True).start()
             return None
         finally:
-            server.shutdown()
+            threading.Thread(target=server.shutdown, daemon=True).start()
 
         self.access_token = token["access_token"]
         self.save_token(token)
 
-        self._lookup_current_user()
+        if self.current_user is None:
+            self._lookup_current_user()
 
         return self.access_token
 

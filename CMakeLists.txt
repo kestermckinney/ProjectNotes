@@ -373,6 +373,20 @@ if(WIN32)
     get_target_property(_qmake_loc Qt${QT_VERSION_MAJOR}::qmake IMPORTED_LOCATION)
     get_filename_component(_qt_bin "${_qmake_loc}" DIRECTORY)
 
+    # Locate dxcompiler.dll/dxil.dll from the Windows SDK (needed by Qt Charts / RHI)
+    file(GLOB _dxc_candidates
+        "C:/Program Files (x86)/Windows Kits/10/bin/*/x64/dxcompiler.dll"
+    )
+    if(_dxc_candidates)
+        list(SORT _dxc_candidates ORDER DESCENDING)
+        list(GET _dxc_candidates 0 _dxcompiler_dll)
+        get_filename_component(_dxc_dir "${_dxcompiler_dll}" DIRECTORY)
+        set(_dxil_dll "${_dxc_dir}/dxil.dll")
+        message(STATUS "Found dxcompiler.dll: ${_dxcompiler_dll}")
+    else()
+        message(WARNING "dxcompiler.dll not found in Windows SDK — Qt Charts may not render at runtime")
+    endif()
+
     set(DEPLOY_DIR  "${CMAKE_BINARY_DIR}/deploy")
     set(NSIS_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/windows")
 
@@ -411,31 +425,10 @@ if(WIN32)
             "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows/bin/libssl-3-x64.dll"
             "${DEPLOY_DIR}/libssl-3-x64.dll"
 
-        # 5. SqliteSyncPro vcpkg runtime DLLs
+        # 5. SqliteSyncPro runtime DLLs
         COMMAND ${CMAKE_COMMAND} -E copy
-            "${SQLITESYNCPRO_BUILD_DIR}/vcpkg_installed/x64-windows/bin/charset-1.dll"
-            "${DEPLOY_DIR}/charset-1.dll"
-        COMMAND ${CMAKE_COMMAND} -E copy
-            "${SQLITESYNCPRO_BUILD_DIR}/vcpkg_installed/x64-windows/bin/iconv-2.dll"
-            "${DEPLOY_DIR}/iconv-2.dll"
-        COMMAND ${CMAKE_COMMAND} -E copy
-            "${SQLITESYNCPRO_BUILD_DIR}/vcpkg_installed/x64-windows/bin/libecpg.dll"
-            "${DEPLOY_DIR}/libecpg.dll"
-        COMMAND ${CMAKE_COMMAND} -E copy
-            "${SQLITESYNCPRO_BUILD_DIR}/vcpkg_installed/x64-windows/bin/libecpg_compat.dll"
-            "${DEPLOY_DIR}/libecpg_compat.dll"
-        COMMAND ${CMAKE_COMMAND} -E copy
-            "${SQLITESYNCPRO_BUILD_DIR}/vcpkg_installed/x64-windows/bin/libpgtypes.dll"
-            "${DEPLOY_DIR}/libpgtypes.dll"
-        COMMAND ${CMAKE_COMMAND} -E copy
-            "${SQLITESYNCPRO_BUILD_DIR}/vcpkg_installed/x64-windows/bin/libpq.dll"
+            "${SQLITESYNCPRO_BUILD_DIR}/admin/libpq.dll"
             "${DEPLOY_DIR}/libpq.dll"
-        COMMAND ${CMAKE_COMMAND} -E copy
-            "${SQLITESYNCPRO_BUILD_DIR}/vcpkg_installed/x64-windows/bin/lz4.dll"
-            "${DEPLOY_DIR}/lz4.dll"
-        COMMAND ${CMAKE_COMMAND} -E copy
-            "${SQLITESYNCPRO_BUILD_DIR}/vcpkg_installed/x64-windows/bin/zlib1.dll"
-            "${DEPLOY_DIR}/zlib1.dll"
 
         # 6. Python embeddable distribution (python313.dll, .zip, .pyd files, etc.)
         COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -462,5 +455,15 @@ if(WIN32)
         DEPENDS ProjectNotes
         VERBATIM
     )
+
+    # Copy DirectX Shader Compiler DLLs required by Qt Charts (RHI backend)
+    if(_dxcompiler_dll AND EXISTS "${_dxcompiler_dll}")
+        add_custom_command(TARGET deploy POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy "${_dxcompiler_dll}" "${DEPLOY_DIR}/dxcompiler.dll"
+            COMMAND ${CMAKE_COMMAND} -E copy "${_dxil_dll}"       "${DEPLOY_DIR}/dxil.dll"
+            COMMENT "Copying DirectX Shader Compiler DLLs"
+            VERBATIM
+        )
+    endif()
 endif()
 
