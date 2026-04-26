@@ -30,10 +30,11 @@
 set -euo pipefail
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-
-SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Paul McKinney (TEAMID)}"
-INSTALLER_IDENTITY="${INSTALLER_IDENTITY:-Developer ID Installer: Paul McKinney (TEAMID)}"
-TEAM_ID="${TEAM_ID:-TEAMID}"
+TEAM_ID="UWCKDYP67Y"
+SIGN_IDENTITY="11477C487BBFAF86C840CFF198A5F7007BD4927D"
+SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Paul McKinney (UWCKDYP67Y)}"
+INSTALLER_IDENTITY="${INSTALLER_IDENTITY:-Developer ID Installer: Paul McKinney (2PY624KHXH)}"
+TEAM_ID="${TEAM_ID:-UWCKDYP67Y}"
 APPLE_ID="${APPLE_ID:-paul.mckinney@me.com}"
 NOTARIZE_KEYCHAIN_PROFILE="${NOTARIZE_KEYCHAIN_PROFILE:-ProjectNotes-Notarize}"
 
@@ -90,23 +91,43 @@ sign_bundle() {
 
     log "Signing: ${bundle}"
 
-    # Sign Python C-extension modules (.so) — notarization requires all
-    # executable code to be signed; .so files are skipped by codesign --deep
-    find "${bundle}/Contents/Frameworks" \
-         -name "*.so" 2>/dev/null | \
-    sort -r | while read -r item; do
-        codesign --force --verify --verbose \
-            --sign "${SIGN_IDENTITY}" \
-            "${item}" 2>&1 | grep -v "replacing existing signature" || true
-    done
+    # Strip build-system artifacts from nested frameworks.  Static archives
+    # (.a), pkg-config files (.pc), and shell config scripts (.sh) cannot be
+    # code-signed and cause codesign --strict to reject the bundle.  These
+    # files are development-only and not needed at runtime.
+    find "${bundle}/Contents" \
+        \( -name "*.a" -o -name "*.pc" \
+        -o -name "tclConfig.sh" -o -name "tkConfig.sh" \
+        -o -name "tclooConfig.sh" -o -name "tkooConfig.sh" \) \
+        -delete 2>/dev/null || true
 
-    # Sign nested frameworks and dylibs (depth-first, with Hardened Runtime)
-    find "${bundle}/Contents/Frameworks" \
-         \( -name "*.dylib" -o -name "*.framework" \) 2>/dev/null | \
-    sort -r | while read -r item; do
+    # Sign all executable code depth-first across the entire bundle.
+    # Use printf+cut (not awk) to sort by path length without splitting on spaces.
+    # --options runtime must match the outer bundle; --timestamp is required for
+    # Developer ID signatures.
+    find "${bundle}/Contents" \
+         \( -name "*.so" -o -name "*.dylib" \) 2>/dev/null | \
+    while IFS= read -r item; do printf '%d\t%s\n' "${#item}" "$item"; done | \
+    sort -rn | cut -f2- | \
+    while IFS= read -r item; do
         codesign --force --verify --verbose \
             --sign "${SIGN_IDENTITY}" \
             --options runtime \
+            --timestamp \
+            "${item}" 2>&1 | grep -v "replacing existing signature" || true
+    done
+
+    # Sign nested frameworks depth-first (longest path first ensures inner
+    # versioned binaries are signed before their enclosing bundle).
+    find "${bundle}/Contents" \
+         -name "*.framework" 2>/dev/null | \
+    while IFS= read -r item; do printf '%d\t%s\n' "${#item}" "$item"; done | \
+    sort -rn | cut -f2- | \
+    while IFS= read -r item; do
+        codesign --force --verify --verbose \
+            --sign "${SIGN_IDENTITY}" \
+            --options runtime \
+            --timestamp \
             "${item}" 2>&1 | grep -v "replacing existing signature" || true
     done
 
@@ -117,7 +138,8 @@ sign_bundle() {
     codesign --force --verify --verbose \
         --sign "${SIGN_IDENTITY}" \
         --options runtime \
-        "${extra_args[@]}" \
+        --timestamp \
+        ${extra_args[@]+"${extra_args[@]}"} \
         "${bundle}"
 
     codesign --verify --deep --strict --verbose=2 "${bundle}"
@@ -253,7 +275,7 @@ if [[ "${DO_DMG}" == true ]]; then
         "${DMG_PATH}"
 
     if [[ "${DO_SIGN}" == true ]]; then
-        codesign --sign "${SIGN_IDENTITY}" "${DMG_PATH}"
+        codesign --sign "${SIGN_IDENTITY}" --timestamp "${DMG_PATH}"
     fi
 
     if [[ "${DO_NOTARIZE}" == true ]]; then
