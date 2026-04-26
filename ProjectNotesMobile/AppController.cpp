@@ -10,11 +10,57 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <QHash>
 #include <QTextDocument>
 #include <QThread>
 #include <QTimer>
 
 using namespace QLogger;
+
+// ── IdRowIndex ───────────────────────────────────────────────────────────────
+// O(1) id→row hash for any QAbstractItemModel. Marks itself dirty on any
+// model change and rebuilds lazily on the next lookup. Replaces the per-row
+// linear scans that QML list delegates were hitting on every binding
+// re-evaluation (scroll, quick search, sync row update).
+class IdRowIndex
+{
+public:
+    IdRowIndex(QAbstractItemModel* model, int idColumn)
+        : m_model(model), m_idColumn(idColumn)
+    {
+        const auto invalidate = [this] { m_dirty = true; };
+        QObject::connect(model, &QAbstractItemModel::modelReset,    model, invalidate);
+        QObject::connect(model, &QAbstractItemModel::layoutChanged, model, invalidate);
+        QObject::connect(model, &QAbstractItemModel::dataChanged,   model, invalidate);
+        QObject::connect(model, &QAbstractItemModel::rowsInserted,  model, invalidate);
+        QObject::connect(model, &QAbstractItemModel::rowsRemoved,   model, invalidate);
+    }
+
+    int rowFor(const QString& id) const
+    {
+        if (id.isEmpty()) return -1;
+        if (m_dirty) rebuild();
+        return m_rows.value(id, -1);
+    }
+
+private:
+    void rebuild() const
+    {
+        m_rows.clear();
+        const int n = m_model->rowCount();
+        m_rows.reserve(n);
+        for (int row = 0; row < n; ++row) {
+            const QString id = m_model->data(m_model->index(row, m_idColumn)).toString();
+            if (!id.isEmpty()) m_rows.insert(id, row);
+        }
+        m_dirty = false;
+    }
+
+    QAbstractItemModel* m_model;
+    int                 m_idColumn;
+    mutable bool                m_dirty = true;
+    mutable QHash<QString, int> m_rows;
+};
 
 // ── Singleton plumbing ───────────────────────────────────────────────────────
 
@@ -109,6 +155,23 @@ bool AppController::openOrCreateDatabase()
 
     // Apply filters selected from the view menu option.
     global_DBObjects.setGlobalSearches(false);
+
+    // Build O(1) id→row indexes over the proxy models that QML list pages
+    // and detail-page combobox lookups hit on every binding evaluation.
+    // The team-members index keys on people_id (col 2) since callers look up
+    // a row by the person, not by the team_members.id.
+    global_DBObjects.clientsmodel()->refresh();
+    m_clientsIndex.reset(
+        new IdRowIndex(global_DBObjects.clientsmodelproxy(), 0));
+    global_DBObjects.peoplemodel()->refresh();
+    m_peopleIndex.reset(
+        new IdRowIndex(global_DBObjects.peoplemodelproxy(), 0));
+    global_DBObjects.projectinformationmodel()->refresh();
+    m_projectsIndex.reset(
+        new IdRowIndex(global_DBObjects.projectinformationmodelproxy(), 0));
+    global_DBObjects.projectteammembersmodel()->refresh();
+    m_teamMembersByPersonIndex.reset(
+         new IdRowIndex(global_DBObjects.projectteammembersmodelproxy(), 2));
 
     // Tell QML the view-option properties are now readable.
     emit viewOptionsChanged();
@@ -473,12 +536,7 @@ bool AppController::saveClient(int row, const QString& clientName)
 
 int AppController::clientRowForId(const QString& clientId) const
 {
-    QAbstractItemModel* model = global_DBObjects.clientsmodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 0)).toString() == clientId)
-            return row;
-    }
-    return -1;
+    return m_clientsIndex ? m_clientsIndex->rowFor(clientId) : -1;
 }
 
 QString AppController::clientIdAtRow(int row) const
@@ -491,12 +549,7 @@ QString AppController::clientIdAtRow(int row) const
 
 int AppController::peopleRowForId(const QString& peopleId) const
 {
-    QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 0)).toString() == peopleId)
-            return row;
-    }
-    return -1;
+    return m_peopleIndex ? m_peopleIndex->rowFor(peopleId) : -1;
 }
 
 QString AppController::peopleIdAtRow(int row) const
@@ -509,57 +562,47 @@ QString AppController::peopleIdAtRow(int row) const
 
 QString AppController::peopleNameForId(const QString& personId) const
 {
-    if (personId.isEmpty()) return {};
+    if (!m_peopleIndex) return {};
+    const int row = m_peopleIndex->rowFor(personId);
+    if (row < 0) return {};
     QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 0)).toString() == personId)
-            return model->data(model->index(row, 1)).toString();  // col 1 = name
-    }
-    return {};
+    return model->data(model->index(row, 1)).toString();  // col 1 = name
 }
 
 QString AppController::peopleEmailForId(const QString& personId) const
 {
-    if (personId.isEmpty()) return {};
+    if (!m_peopleIndex) return {};
+    const int row = m_peopleIndex->rowFor(personId);
+    if (row < 0) return {};
     QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 0)).toString() == personId)
-            return model->data(model->index(row, 2)).toString();  // col 2 = email
-    }
-    return {};
+    return model->data(model->index(row, 2)).toString();  // col 2 = email
 }
 
 QString AppController::clientNameForId(const QString& clientId) const
 {
-    if (clientId.isEmpty()) return {};
+    if (!m_clientsIndex) return {};
+    const int row = m_clientsIndex->rowFor(clientId);
+    if (row < 0) return {};
     QAbstractItemModel* model = global_DBObjects.clientsmodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 0)).toString() == clientId)
-            return model->data(model->index(row, 1)).toString();  // col 1 = client_name
-    }
-    return {};
+    return model->data(model->index(row, 1)).toString();  // col 1 = client_name
 }
 
 QString AppController::projectNumberForId(const QString& projectId) const
 {
-    if (projectId.isEmpty()) return {};
+    if (!m_projectsIndex) return {};
+    const int row = m_projectsIndex->rowFor(projectId);
+    if (row < 0) return {};
     QAbstractItemModel* model = global_DBObjects.projectinformationmodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 0)).toString() == projectId)
-            return model->data(model->index(row, 1)).toString();  // col 1 = project_number
-    }
-    return {};
+    return model->data(model->index(row, 1)).toString();  // col 1 = project_number
 }
 
 QString AppController::projectNameForId(const QString& projectId) const
 {
-    if (projectId.isEmpty()) return {};
+    if (!m_projectsIndex) return {};
+    const int row = m_projectsIndex->rowFor(projectId);
+    if (row < 0) return {};
     QAbstractItemModel* model = global_DBObjects.projectinformationmodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 0)).toString() == projectId)
-            return model->data(model->index(row, 2)).toString();  // col 2 = project_name
-    }
-    return {};
+    return model->data(model->index(row, 2)).toString();  // col 2 = project_name
 }
 
 QString AppController::teamMemberEmailList() const
@@ -603,13 +646,8 @@ QString AppController::lastSaveError() const
 // teamMemberRowForPersonId — search col 2 (people_id) in projectTeamMembersModelProxy
 int AppController::teamMemberRowForPersonId(const QString& personId) const
 {
-    if (personId.isEmpty()) return -1;
-    QAbstractItemModel* model = global_DBObjects.projectteammembersmodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 2)).toString() == personId)
-            return row;
-    }
-    return -1;
+    return m_teamMembersByPersonIndex
+        ? m_teamMembersByPersonIndex->rowFor(personId) : -1;
 }
 
 // teamMemberPersonIdAtRow — return col 2 (people_id) from projectTeamMembersModelProxy

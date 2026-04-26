@@ -13,10 +13,13 @@
 #include <QVariantMap>
 #include <QtQml/qqmlregistration.h>
 
+#include <memory>
+
 class SqliteSyncPro;
 class QQmlEngine;
 class QJSEngine;
 class QThread;
+class IdRowIndex;
 
 // AppController — singleton exposed to QML as the application's main C++ object.
 // Responsibilities:
@@ -307,6 +310,15 @@ private:
     SqliteSyncPro* m_syncApi       = nullptr;
     qreal          m_syncProgress  = -1.0;  // -1 = bar hidden
     bool           m_syncHasError  = false;
+
+    // O(1) id→row indexes over the proxy models. Built once at databaseReady,
+    // self-invalidating on any model change. Replace per-call linear scans
+    // that QML list-delegate bindings hit thousands of times during scroll
+    // and quick-search.
+    std::unique_ptr<IdRowIndex> m_clientsIndex;            // clients proxy, id col 0
+    std::unique_ptr<IdRowIndex> m_peopleIndex;             // people proxy, id col 0
+    std::unique_ptr<IdRowIndex> m_projectsIndex;           // projects-list proxy, id col 0
+    std::unique_ptr<IdRowIndex> m_teamMembersByPersonIndex;// team-members proxy, people_id col 2
 
     void configureSyncApi();
     void setSyncProgress(qreal progress, bool hasError = false);

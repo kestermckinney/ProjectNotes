@@ -265,7 +265,11 @@ ApplicationWindow {
         SwipeView {
             id: swipeView
             currentIndex: root.currentTabIndex
-            onCurrentIndexChanged: root.currentTabIndex = currentIndex
+            onCurrentIndexChanged: {
+                root.currentTabIndex = currentIndex
+                if (currentIndex === 3)
+                    AppController.refreshAllItems()
+            }
 
             ProjectsListPage { stackView: pageStack }
             PeoplePage        { stackView: pageStack }
@@ -294,7 +298,6 @@ ApplicationWindow {
     // synchronous SQL work begins — eliminates the black-screen delay.
     Component.onCompleted: Qt.callLater(function() {
         AppController.openOrCreateDatabase()
-        AppController.refreshProjectsList()
         if (AppController.syncEnabled)
             AppController.startSync()
     })

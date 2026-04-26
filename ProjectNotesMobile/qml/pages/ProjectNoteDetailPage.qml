@@ -27,7 +27,7 @@ Page {
     function _saveNow() {
         dateField.commitPending()
         return AppController.saveProjectNote(root.noteRow, titleField.text, dateField.text,
-                                             TextFormatter.documentHtml(noteEdit.textDocument),
+                                             root.scaleFontSizes(TextFormatter.documentHtml(noteEdit.textDocument), 1 / 1.5),
                                              internalSwitch.checked)
     }
 
@@ -35,7 +35,7 @@ Page {
         var d = AppController.getProjectNoteData(root.noteRow)
         titleField.text     = (d.note_title    || "").toString()
         dateField.text      = (d.note_date     || "").toString()
-        noteEdit.text       = root.toRichText((d.note || "").toString())
+        noteEdit.text       = root.toRichText(root.scaleFontSizes((d.note || "").toString(), 1.5))
         internalSwitch.checked = (d.internal_item || "0") !== "0"
     }
 
@@ -204,7 +204,7 @@ Page {
                         root._fontSelStart = noteEdit.selectionStart
                         root._fontSelEnd   = noteEdit.selectionEnd
                         var family = TextFormatter.currentFontFamily(noteEdit.textDocument, root._fontSelStart)
-                        var size   = TextFormatter.currentFontPointSize(noteEdit.textDocument, root._fontSelStart)
+                        var size   = Math.round(TextFormatter.currentFontPointSize(noteEdit.textDocument, root._fontSelStart) / 1.5)
                         var col    = TextFormatter.currentFontColor(noteEdit.textDocument, root._fontSelStart)
                         fontPicker.openWithFormat(family, size, col)
                     }
@@ -251,8 +251,11 @@ Page {
         }
     }
 
+    property bool _isScrolling: false
+
     // ── Page body ─────────────────────────────────────────────────────────────
     ScrollView {
+        id: scrollView
         anchors.fill: parent
         contentWidth: availableWidth
 
@@ -279,20 +282,65 @@ Page {
 
             // The note area grows with content; minimum 300px so it feels like
             // a real editor even for short notes.
-            Rectangle {
+            Flickable {
+                id: editorbox
                 Layout.fillWidth: true
                 Layout.preferredHeight: Math.max(300, noteEdit.contentHeight + 24)
-                color: palette.base
+                clip: true
+
+                ScrollBar.vertical: ScrollBar {
+                    policy: ScrollBar.AlwaysOn
+                    anchors { right: parent.right; top: parent.top }
+                }
+                ScrollBar.horizontal: ScrollBar {
+                    policy: ScrollBar.AlwaysOn
+                    anchors { bottom: parent.bottom; left: parent.left }
+                }
+
+                contentWidth: noteEdit.contentWidth > 0 ? noteEdit.contentWidth + 16 : editorbox.width
+                contentHeight: noteEdit.contentHeight > 0 ? noteEdit.contentHeight + 16 : editorbox.height
+
+                onMovementStarted: root._isScrolling = true
+                onMovementEnded: {
+                    root._isScrolling = false
+                    editorbox.ensureCursorVisible()
+                }
 
                 TextEdit {
                     id: noteEdit
-                    anchors { fill: parent; margins: 8 }
-                    text: root.toRichText(root.initialNote)
+                    x: 8
+                    y: 8
+                    width: editorbox.width - 16
+                    focus: true
+                    text: root.toRichText(root.scaleFontSizes(root.initialNote, 1.5))
                     textFormat: TextEdit.RichText
-                    wrapMode: TextEdit.Wrap
+                    wrapMode: TextEdit.NoWrap
                     font.pixelSize: 15
-                    color: palette.windowText   // default for unstyled text; HTML explicit colors still override
+                    color: palette.windowText
                     selectByMouse: true
+
+                    onCursorRectangleChanged: editorbox.ensureCursorVisible()
+                    onCursorPositionChanged: editorbox.ensureCursorVisible()
+                    onActiveFocusChanged: if (activeFocus) editorbox.ensureCursorVisible()
+                }
+
+function ensureCursorVisible() {
+                    const r = noteEdit.cursorRectangle
+                    const pad = 12
+
+                    const bottomVisible = contentY + editorbox.height
+                    if (r.y + r.height > bottomVisible) {
+                        contentY = Math.max(0, r.y - editorbox.height + r.height + pad)
+                    } else if (r.y < contentY) {
+                        contentY = Math.max(0, r.y - pad)
+                    }
+
+                    const rightVisible = contentX + editorbox.width
+                    if (r.x + r.width > rightVisible) {
+                        contentX = Math.max(0, r.x - editorbox.width + r.width + pad)
+                    } else if (r.x < contentX) {
+                        contentX = Math.max(0, r.x - pad)
+                    }
                 }
 
                 Rectangle {
@@ -338,6 +386,14 @@ Page {
                 .replace(/\n/g, "<br/>")
     }
 
+    function scaleFontSizes(html, factor) {
+        if (!html || html.indexOf("font-size") === -1) return html
+        return html.replace(/font-size\s*:\s*(\d+(?:\.\d+)?)(pt|px)/gi,
+            function(match, size, unit) {
+                return "font-size:" + Math.round(parseFloat(size) * factor) + unit
+            })
+    }
+
     component SectionHeader: Label {
         Layout.fillWidth: true
         Layout.topMargin: 20
@@ -369,7 +425,7 @@ Page {
             TextFormatter.applyFontFamily(noteEdit.textDocument,
                                           root._fontSelStart, root._fontSelEnd, family)
             TextFormatter.applyFontPointSize(noteEdit.textDocument,
-                                             root._fontSelStart, root._fontSelEnd, pointSize)
+                                             root._fontSelStart, root._fontSelEnd, Math.round(pointSize * 1.5))
             TextFormatter.applyFontColor(noteEdit.textDocument,
                                          root._fontSelStart, root._fontSelEnd, textColor)
             noteEdit.forceActiveFocus()

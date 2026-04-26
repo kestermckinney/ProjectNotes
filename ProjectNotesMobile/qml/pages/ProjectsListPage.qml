@@ -91,6 +91,12 @@ Page {
 
         delegate: ItemDelegate {
             width: listView.width
+
+            // Resolve once per delegate; the binding re-evaluates only when the
+            // row's client_id changes. Avoids a second linear-scan per row.
+            readonly property string _clientName:
+                AppController.clientNameForId(model.client_id || "") || ""
+
             contentItem: ColumnLayout {
                 spacing: 4
 
@@ -109,8 +115,8 @@ Page {
                     spacing: 6
 
                     Label {
-                        visible: (AppController.clientNameForId(model.client_id || "") || "") !== ""
-                        text: AppController.clientNameForId(model.client_id || "") || ""
+                        visible: _clientName !== ""
+                        text: _clientName
                         font.pixelSize: 12
                         color: palette.placeholderText
                         elide: Text.ElideRight
