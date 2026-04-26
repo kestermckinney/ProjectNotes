@@ -93,9 +93,12 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\D3Dcompiler_47.dll"
   File "${DEPLOY_DIR}\icuuc.dll"
   File "${DEPLOY_DIR}\opengl32sw.dll"
+  File "${DEPLOY_DIR}\Qt6Charts.dll"
   File "${DEPLOY_DIR}\Qt6Core.dll"
   File "${DEPLOY_DIR}\Qt6Gui.dll"
   File "${DEPLOY_DIR}\Qt6Network.dll"
+  File "${DEPLOY_DIR}\Qt6OpenGL.dll"
+  File "${DEPLOY_DIR}\Qt6OpenGLWidgets.dll"
   File "${DEPLOY_DIR}\Qt6Pdf.dll"
   File "${DEPLOY_DIR}\Qt6Sql.dll"
   File "${DEPLOY_DIR}\Qt6Svg.dll"
@@ -144,19 +147,14 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\legacy.dll"
   File "${DEPLOY_DIR}\libssl-3-x64.dll"
 
-  ; ── SqliteSyncPro vcpkg DLLs ─────────────────────────────────────────────────
-  File "${DEPLOY_DIR}\charset-1.dll"
-  File "${DEPLOY_DIR}\iconv-2.dll"
-  File "${DEPLOY_DIR}\libecpg.dll"
-  File "${DEPLOY_DIR}\libecpg_compat.dll"
-  File "${DEPLOY_DIR}\libffi-8.dll"
-  File "${DEPLOY_DIR}\libpgtypes.dll"
+  ; ── SqliteSyncPro runtime DLLs ───────────────────────────────────────────────
   File "${DEPLOY_DIR}\libpq.dll"
-  File "${DEPLOY_DIR}\lz4.dll"
-  File "${DEPLOY_DIR}\zlib1.dll"
 
-  ; ── Extra DLLs (OpenSSL non-x64 variants, SQLite) ───────────────────────────
+  ; ── Extra DLLs (OpenSSL non-x64 variants, SQLite, DirectX SC, libffi) ────────
+  File "${DEPLOY_DIR}\dxcompiler.dll"
+  File "${DEPLOY_DIR}\dxil.dll"
   File "${DEPLOY_DIR}\libcrypto-3.dll"
+  File "${DEPLOY_DIR}\libffi-8.dll"
   File "${DEPLOY_DIR}\libssl-3.dll"
   File "${DEPLOY_DIR}\sqlite3.dll"
 
@@ -422,9 +420,12 @@ Section Uninstall
   Delete "$INSTDIR\D3Dcompiler_47.dll"
   Delete "$INSTDIR\icuuc.dll"
   Delete "$INSTDIR\opengl32sw.dll"
+  Delete "$INSTDIR\Qt6Charts.dll"
   Delete "$INSTDIR\Qt6Core.dll"
   Delete "$INSTDIR\Qt6Gui.dll"
   Delete "$INSTDIR\Qt6Network.dll"
+  Delete "$INSTDIR\Qt6OpenGL.dll"
+  Delete "$INSTDIR\Qt6OpenGLWidgets.dll"
   Delete "$INSTDIR\Qt6Pdf.dll"
   Delete "$INSTDIR\Qt6Sql.dll"
   Delete "$INSTDIR\Qt6Svg.dll"
@@ -436,17 +437,12 @@ Section Uninstall
   Delete "$INSTDIR\legacy.dll"
   Delete "$INSTDIR\libssl-3-x64.dll"
 
-  Delete "$INSTDIR\charset-1.dll"
-  Delete "$INSTDIR\iconv-2.dll"
-  Delete "$INSTDIR\libecpg.dll"
-  Delete "$INSTDIR\libecpg_compat.dll"
-  Delete "$INSTDIR\libffi-8.dll"
-  Delete "$INSTDIR\libpgtypes.dll"
   Delete "$INSTDIR\libpq.dll"
-  Delete "$INSTDIR\lz4.dll"
-  Delete "$INSTDIR\zlib1.dll"
 
+  Delete "$INSTDIR\dxcompiler.dll"
+  Delete "$INSTDIR\dxil.dll"
   Delete "$INSTDIR\libcrypto-3.dll"
+  Delete "$INSTDIR\libffi-8.dll"
   Delete "$INSTDIR\libssl-3.dll"
   Delete "$INSTDIR\sqlite3.dll"
 
