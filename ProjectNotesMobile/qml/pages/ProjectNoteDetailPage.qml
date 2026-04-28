@@ -18,6 +18,11 @@ Page {
     property string initialNote:     ""
     property bool   initialInternal: false
     property bool   _skipSave:       false
+    property bool   _formatSheetOpen: false
+
+    // Saved selection for format sheet (focus leaves noteEdit when sheet opens)
+    property int _selStart: 0
+    property int _selEnd:   0
 
     Component.onCompleted: {
         if (root.noteId !== "")
@@ -33,9 +38,9 @@ Page {
 
     function _reloadData() {
         var d = AppController.getProjectNoteData(root.noteRow)
-        titleField.text     = (d.note_title    || "").toString()
-        dateField.text      = (d.note_date     || "").toString()
-        noteEdit.text       = root.toRichText(root.scaleFontSizes((d.note || "").toString(), 1.5))
+        titleField.text        = (d.note_title    || "").toString()
+        dateField.text         = (d.note_date     || "").toString()
+        noteEdit.text          = root.toRichText(root.scaleFontSizes((d.note || "").toString(), 1.5))
         internalSwitch.checked = (d.internal_item || "0") !== "0"
     }
 
@@ -44,173 +49,66 @@ Page {
             root._saveNow()
     }
 
-    // Selection range saved before the font picker opens (opening the popup
-    // shifts focus away from noteEdit, clearing its selection).
-    property int _fontSelStart: 0
-    property int _fontSelEnd:   0
-
-    // ── Formatting toolbar (Page header) ──────────────────────────────────────
+    // ── Header: utility buttons only ─────────────────────────────────────────
     header: ToolBar {
-        implicitHeight: 88  // two rows × 44 px
+        implicitHeight: 44
 
-        ColumnLayout {
+        RowLayout {
             anchors.fill: parent
             spacing: 0
 
-            // ── Row 1: style, character formatting, font size ─────────────────
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 44
-                spacing: 0
+            Item { Layout.fillWidth: true }
 
-                Item { implicitWidth: 4 }
-                ComboBox {
-                    id: styleCombo
-                    focusPolicy: Qt.NoFocus
-                    implicitWidth: 140
-                    popup.width: 220
-                    popup.x: 0
-                    model: [
-                        qsTr("Standard"),
-                        qsTr("Bullet (Disc)"),
-                        qsTr("Bullet (Circle)"),
-                        qsTr("Bullet (Square)"),
-                        qsTr("Ordered (1 2 3)"),
-                        qsTr("Ordered (a b c)"),
-                        qsTr("Ordered (A B C)"),
-                        qsTr("Ordered (i ii iii)"),
-                        qsTr("Ordered (I II III)"),
-                        qsTr("Heading 1"),
-                        qsTr("Heading 2"),
-                        qsTr("Heading 3"),
-                        qsTr("Heading 4"),
-                        qsTr("Heading 5"),
-                        qsTr("Heading 6")
-                    ]
-                    currentIndex: 0
-                    onActivated: function(idx) {
-                        TextFormatter.applyStyle(noteEdit.textDocument,
-                                                 noteEdit.selectionStart,
-                                                 noteEdit.selectionEnd, idx)
-                        noteEdit.forceActiveFocus()
-                        Qt.inputMethod.hide()
-                        currentIndex = 0   // reset so re-selecting same style always fires
-                    }
-                }
-                ToolButton { text: qsTr("B");  font.bold: true;      font.pixelSize: 16; focusPolicy: Qt.NoFocus
-                    onClicked: { TextFormatter.toggleBold(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
-                ToolButton { text: qsTr("I");  font.italic: true;    font.pixelSize: 16; focusPolicy: Qt.NoFocus
-                    onClicked: { TextFormatter.toggleItalic(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
-                ToolButton { text: qsTr("U");  font.underline: true; font.pixelSize: 16; focusPolicy: Qt.NoFocus
-                    onClicked: { TextFormatter.toggleUnderline(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
-                ToolButton { text: qsTr("A+"); font.pixelSize: 14;   focusPolicy: Qt.NoFocus
-                    onClicked: { TextFormatter.increaseFontSize(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
-                ToolButton { text: qsTr("A−"); font.pixelSize: 12;   focusPolicy: Qt.NoFocus
-                    onClicked: { TextFormatter.decreaseFontSize(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
-                Item { Layout.fillWidth: true }
-
-                ToolButton {
-                    icon.name: "envelope"
-                    focusPolicy: Qt.NoFocus
-                    onClicked: {
-                        if (!root._saveNow()) return
-                        var emails  = AppController.attendeeEmailList()
-                        if (emails === "") return
-                        var projNum  = AppController.projectNumberForId(root.projectId)
-                        var projName = AppController.projectNameForId(root.projectId)
-                        var dateParts = root.initialDate ? root.initialDate.split("-") : []
-                        var formattedDate = dateParts.length === 3
-                            ? (parseInt(dateParts[1]) + "/" + parseInt(dateParts[2]) + "/" + dateParts[0])
-                            : root.initialDate
-                        var subject = projNum + " " + projName + " - " + titleField.text + " - " + formattedDate
-                        var body    = AppController.htmlToPlainText(TextFormatter.documentHtml(noteEdit.textDocument)).replace(/\n/g, '\r\n')
-                        Qt.openUrlExternally("mailto:" + emails
-                            + "?subject=" + encodeURIComponent(subject)
-                            + "&body="    + encodeURIComponent(body))
-                    }
-                }
-
-                ToolButton {
-                    icon.name: "doc.on.doc"
-                    focusPolicy: Qt.NoFocus
-                    onClicked: {
-                        if (!root._saveNow()) return
-                        root._skipSave = true
-                        var newRow = AppController.copyProjectNote(root.noteRow)
-                        if (newRow < 0) { root._skipSave = false; return }
-                        var d = AppController.getProjectNoteData(newRow)
-                        root.StackView.view.replace(Qt.resolvedUrl("ProjectNoteDetailPage.qml"), {
-                            noteRow:         newRow,
-                            noteId:          (d.id            || "").toString(),
-                            projectId:       root.projectId,
-                            initialTitle:    (d.note_title    || "").toString(),
-                            initialDate:     (d.note_date     || "").toString(),
-                            initialNote:     (d.note          || "").toString(),
-                            initialInternal: (d.internal_item || "0") !== "0"
-                        })
-                    }
-                }
-
-                ToolButton {
-                    icon.name: "trash"
-                    focusPolicy: Qt.NoFocus
-                    onClicked: {
-                        root._skipSave = true
-                        AppController.deleteProjectNote(root.noteRow)
-                        root.StackView.view.pop()
-                    }
+            ToolButton {
+                icon.name: "envelope"
+                focusPolicy: Qt.NoFocus
+                onClicked: {
+                    if (!root._saveNow()) return
+                    var emails = AppController.attendeeEmailList()
+                    if (emails === "") return
+                    var projNum  = AppController.projectNumberForId(root.projectId)
+                    var projName = AppController.projectNameForId(root.projectId)
+                    var dateParts = root.initialDate ? root.initialDate.split("-") : []
+                    var formattedDate = dateParts.length === 3
+                        ? (parseInt(dateParts[1]) + "/" + parseInt(dateParts[2]) + "/" + dateParts[0])
+                        : root.initialDate
+                    var subject = projNum + " " + projName + " - " + titleField.text + " - " + formattedDate
+                    var body    = AppController.htmlToPlainText(TextFormatter.documentHtml(noteEdit.textDocument)).replace(/\n/g, '\r\n')
+                    Qt.openUrlExternally("mailto:" + emails
+                        + "?subject=" + encodeURIComponent(subject)
+                        + "&body="    + encodeURIComponent(body))
                 }
             }
 
-            // Divider between rows
-            Rectangle { Layout.fillWidth: true; height: 1; color: palette.placeholderText; opacity: 0.3 }
-
-            // ── Row 2: indent / unindent, alignment ───────────────────────────
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 43
-                spacing: 0
-
-                Item { implicitWidth: 4; Layout.alignment: Qt.AlignVCenter }
-                // Indent / unindent
-                ToolButton { text: qsTr("⇥");  font.pixelSize: 16; focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
-                    onClicked: { TextFormatter.indentText(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
-                ToolButton { text: qsTr("⇤");  font.pixelSize: 16; focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
-                    onClicked: { TextFormatter.unindentText(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
-
-                // Separator
-                Rectangle { width: 1; height: 24; color: palette.placeholderText; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
-
-                // Alignment: 0=left 1=center 2=right 3=justify
-                ToolButton { icon.name: "text.alignleft";   focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
-                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 0); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
-                ToolButton { icon.name: "text.aligncenter"; focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
-                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 1); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
-                ToolButton { icon.name: "text.alignright";  focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
-                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 2); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
-                ToolButton { icon.name: "text.justify";     focusPolicy: Qt.NoFocus; Layout.alignment: Qt.AlignVCenter
-                    onClicked: { TextFormatter.setAlignment(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 3); noteEdit.forceActiveFocus(); Qt.inputMethod.hide() } }
-
-                // Separator
-                Rectangle { width: 1; height: 24; color: palette.placeholderText; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
-
-                // Font family / size / color picker
-                ToolButton {
-                    text: qsTr("Font…")
-                    font.pixelSize: 13
-                    focusPolicy: Qt.NoFocus
-                    Layout.alignment: Qt.AlignVCenter
-                    onClicked: {
-                        root._fontSelStart = noteEdit.selectionStart
-                        root._fontSelEnd   = noteEdit.selectionEnd
-                        var family = TextFormatter.currentFontFamily(noteEdit.textDocument, root._fontSelStart)
-                        var size   = Math.round(TextFormatter.currentFontPointSize(noteEdit.textDocument, root._fontSelStart) / 1.5)
-                        var col    = TextFormatter.currentFontColor(noteEdit.textDocument, root._fontSelStart)
-                        fontPicker.openWithFormat(family, size, col)
-                    }
+            ToolButton {
+                icon.name: "doc.on.doc"
+                focusPolicy: Qt.NoFocus
+                onClicked: {
+                    if (!root._saveNow()) return
+                    root._skipSave = true
+                    var newRow = AppController.copyProjectNote(root.noteRow)
+                    if (newRow < 0) { root._skipSave = false; return }
+                    var d = AppController.getProjectNoteData(newRow)
+                    root.StackView.view.replace(Qt.resolvedUrl("ProjectNoteDetailPage.qml"), {
+                        noteRow:         newRow,
+                        noteId:          (d.id            || "").toString(),
+                        projectId:       root.projectId,
+                        initialTitle:    (d.note_title    || "").toString(),
+                        initialDate:     (d.note_date     || "").toString(),
+                        initialNote:     (d.note          || "").toString(),
+                        initialInternal: (d.internal_item || "0") !== "0"
+                    })
                 }
+            }
 
-                Item { Layout.fillWidth: true }
+            ToolButton {
+                icon.name: "trash"
+                focusPolicy: Qt.NoFocus
+                onClicked: {
+                    root._skipSave = true
+                    AppController.deleteProjectNote(root.noteRow)
+                    root.StackView.view.pop()
+                }
             }
         }
     }
@@ -251,8 +149,6 @@ Page {
         }
     }
 
-    property bool _isScrolling: false
-
     // ── Page body ─────────────────────────────────────────────────────────────
     ScrollView {
         id: scrollView
@@ -280,69 +176,50 @@ Page {
 
             SectionHeader { text: qsTr("Note") }
 
-            // The note area grows with content; minimum 300px so it feels like
-            // a real editor even for short notes.
-            Flickable {
-                id: editorbox
+            // // Explicit Flickable wrapper preserves the touch-event routing that
+            // // lets the TextEdit acquire keyboard focus when tapped on iOS.
+            // // Word-wrap + auto-height means the Flickable never actually scrolls;
+            // // the outer ScrollView handles all vertical scrolling.
+            Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.max(300, noteEdit.contentHeight + 24)
-                clip: true
-
-                ScrollBar.vertical: ScrollBar {
-                    policy: ScrollBar.AlwaysOn
-                    anchors { right: parent.right; top: parent.top }
-                }
-                ScrollBar.horizontal: ScrollBar {
-                    policy: ScrollBar.AlwaysOn
-                    anchors { bottom: parent.bottom; left: parent.left }
-                }
-
-                contentWidth: noteEdit.contentWidth > 0 ? noteEdit.contentWidth + 16 : editorbox.width
-                contentHeight: noteEdit.contentHeight > 0 ? noteEdit.contentHeight + 16 : editorbox.height
-
-                onMovementStarted: root._isScrolling = true
-                onMovementEnded: {
-                    root._isScrolling = false
-                    editorbox.ensureCursorVisible()
-                }
-
+                Layout.preferredHeight: Math.max(120, noteEdit.contentHeight + 24)
+                color: palette.base
                 TextEdit {
                     id: noteEdit
-                    x: 8
-                    y: 8
-                    width: editorbox.width - 16
-                    focus: true
-                    text: root.toRichText(root.scaleFontSizes(root.initialNote, 1.5))
-                    textFormat: TextEdit.RichText
-                    wrapMode: TextEdit.NoWrap
-                    font.pixelSize: 15
-                    color: palette.windowText
+                    anchors { fill: parent; margins: 8 }
+                    color: palette.text
                     selectByMouse: true
 
-                    onCursorRectangleChanged: editorbox.ensureCursorVisible()
-                    onCursorPositionChanged: editorbox.ensureCursorVisible()
-                    onActiveFocusChanged: if (activeFocus) editorbox.ensureCursorVisible()
+                    // x: 16
+                    // y: 8
+                    // width: parent.width - 32
+
+                    text: root.toRichText(root.scaleFontSizes(root.initialNote, 1.5))
+                    textFormat: TextEdit.RichText
+                    wrapMode: TextEdit.WordWrap
+                    // font.pixelSize: 15
+
+                    // onActiveFocusChanged: {
+                    //     if (activeFocus) Qt.inputMethod.show()
+                    // }
+
+                    // onCursorRectangleChanged: {
+                    //     if (!activeFocus) return
+                    //     var outerFlick = scrollView.contentItem
+                    //     if (!outerFlick) return
+                    //     // Cursor absolute position in ScrollView content space
+                    //     var cursorTop    = noteFlick.y + noteEdit.y + cursorRectangle.y
+                    //     var cursorBottom = cursorTop + cursorRectangle.height
+                    //     var viewTop      = outerFlick.contentY
+                    //     var viewBottom   = viewTop + scrollView.height
+
+                    //     if (cursorBottom > viewBottom) {
+                    //         outerFlick.contentY = Math.max(0, cursorBottom - scrollView.height + 16)
+                    //     } else if (cursorTop < viewTop) {
+                    //         outerFlick.contentY = Math.max(0, cursorTop - 16)
+                    //     }
+                    // }
                 }
-
-function ensureCursorVisible() {
-                    const r = noteEdit.cursorRectangle
-                    const pad = 12
-
-                    const bottomVisible = contentY + editorbox.height
-                    if (r.y + r.height > bottomVisible) {
-                        contentY = Math.max(0, r.y - editorbox.height + r.height + pad)
-                    } else if (r.y < contentY) {
-                        contentY = Math.max(0, r.y - pad)
-                    }
-
-                    const rightVisible = contentX + editorbox.width
-                    if (r.x + r.width > rightVisible) {
-                        contentX = Math.max(0, r.x - editorbox.width + r.width + pad)
-                    } else if (r.x < contentX) {
-                        contentX = Math.max(0, r.x - pad)
-                    }
-                }
-
                 Rectangle {
                     anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
                     height: 1; color: palette.placeholderText; opacity: 0.3
@@ -363,23 +240,124 @@ function ensureCursorVisible() {
                 }
             }
 
-            Item { Layout.preferredHeight: 24 }
+            // Extra space at the bottom so content is reachable above the keyboard
+            // + keyboard accessory bar (44 px) when the keyboard is open.
+            Item {
+                Layout.preferredHeight: Qt.inputMethod.visible
+                                        ? Qt.inputMethod.keyboardRectangle.height + 44 + 24
+                                        : 24
+            }
         }
+    }
+
+    // ── Keyboard accessory toolbar ────────────────────────────────────────────
+    // Floats above the iOS keyboard using Overlay.overlay coordinates.
+    Popup {
+        id: keyboardAccessory
+        parent: Overlay.overlay
+        modal: false
+        dim: false
+        closePolicy: Popup.NoAutoClose
+        padding: 0
+
+        x: 0
+        y: Qt.inputMethod.visible
+           ? Qt.inputMethod.keyboardRectangle.y - height
+           : (parent ? parent.height - height : 0)
+        width:  parent ? parent.width : 390
+        height: 44
+
+        visible: !_formatSheetOpen && (Qt.inputMethod.visible || noteEdit.selectionStart !== noteEdit.selectionEnd)
+
+        background: Rectangle {
+            color: Qt.rgba(palette.window.r, palette.window.g, palette.window.b, 0.97)
+            Rectangle {
+                anchors { top: parent.top; left: parent.left; right: parent.right }
+                height: 1; color: palette.mid; opacity: 0.4
+            }
+        }
+
+        contentItem: RowLayout {
+            anchors { fill: parent; leftMargin: 4; rightMargin: 4 }
+            spacing: 0
+
+            // Aa — open the Format sheet
+            ToolButton {
+                text: "Aa"
+                font.pixelSize: 16
+                font.weight: Font.DemiBold
+                focusPolicy: Qt.NoFocus
+                onClicked: {
+                    root._selStart = noteEdit.selectionStart
+                    root._selEnd   = noteEdit.selectionEnd
+                    formatSheet.textDocument = noteEdit.textDocument
+                    formatSheet.selStart     = root._selStart
+                    formatSheet.selEnd       = root._selEnd
+                    formatSheet.open()
+                }
+            }
+
+            Rectangle { width: 1; height: 22; color: palette.mid; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
+
+            ToolButton {
+                icon.name: "list.bullet"; focusPolicy: Qt.NoFocus
+                onClicked: {
+                    TextFormatter.applyStyle(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 1)
+                    noteEdit.forceActiveFocus()
+                }
+            }
+            ToolButton {
+                icon.name: "list.number"; focusPolicy: Qt.NoFocus
+                onClicked: {
+                    TextFormatter.applyStyle(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd, 4)
+                    noteEdit.forceActiveFocus()
+                }
+            }
+
+            Rectangle { width: 1; height: 22; color: palette.mid; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
+
+            ToolButton {
+                text: "⇥"; font.pixelSize: 15; focusPolicy: Qt.NoFocus
+                onClicked: {
+                    TextFormatter.indentText(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd)
+                    noteEdit.forceActiveFocus()
+                }
+            }
+            ToolButton {
+                text: "⇤"; font.pixelSize: 15; focusPolicy: Qt.NoFocus
+                onClicked: {
+                    TextFormatter.unindentText(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd)
+                    noteEdit.forceActiveFocus()
+                }
+            }
+
+            Item { Layout.fillWidth: true }
+
+            // Dismiss keyboard
+            ToolButton {
+                icon.name: "keyboard.chevron.compact.down"
+                focusPolicy: Qt.NoFocus
+                onClicked: Qt.inputMethod.hide()
+            }
+        }
+    }
+
+    // ── Format sheet ──────────────────────────────────────────────────────────
+    NoteFormatSheet {
+        id: formatSheet
+        parent: Overlay.overlay
+        onOpened: root._formatSheetOpen = true
+        onClosed: { root._formatSheetOpen = false; noteEdit.forceActiveFocus() }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    // Mirror the desktop ProjectNotesDelegate logic: notes that were saved
-    // before rich-text editing existed (or edited on other tools) are stored
-    // as plain text with \n line endings.  A RichText TextEdit treats \n as
-    // whitespace, collapsing all the newlines.  Convert those notes to minimal
-    // HTML so newlines render correctly; pass through anything that already
-    // looks like HTML unchanged.
+    // Notes stored as plain text (legacy) are converted to minimal HTML so
+    // newlines render correctly in RichText mode.
     function toRichText(s) {
         if (!s) return ""
-        if (s.indexOf("<html") !== -1 || s.indexOf("<HTML") !== -1) {
+        if (s.indexOf("<html") !== -1 || s.indexOf("<HTML") !== -1)
             return s
-        }
         return s.replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
@@ -414,22 +392,6 @@ function ensureCursorVisible() {
         Rectangle {
             anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
             height: 1; color: palette.placeholderText; opacity: 0.3
-        }
-    }
-
-    // ── Font picker popup ─────────────────────────────────────────────────────
-    FontPickerPopup {
-        id: fontPicker
-        parent: Overlay.overlay
-        onFontApplied: function(family, pointSize, textColor) {
-            TextFormatter.applyFontFamily(noteEdit.textDocument,
-                                          root._fontSelStart, root._fontSelEnd, family)
-            TextFormatter.applyFontPointSize(noteEdit.textDocument,
-                                             root._fontSelStart, root._fontSelEnd, Math.round(pointSize * 1.5))
-            TextFormatter.applyFontColor(noteEdit.textDocument,
-                                         root._fontSelStart, root._fontSelEnd, textColor)
-            noteEdit.forceActiveFocus()
-            Qt.inputMethod.hide()
         }
     }
 }

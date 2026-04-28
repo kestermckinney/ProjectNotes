@@ -82,6 +82,21 @@ static bool isUniformUnderline(QQuickTextDocument* doc, int selStart, int selEnd
     return true;
 }
 
+static bool isUniformStrikethrough(QQuickTextDocument* doc, int selStart, int selEnd)
+{
+    QTextCursor cursor = cursorForRange(doc, selStart, selEnd);
+    if (selStart == selEnd)
+        return cursor.charFormat().fontStrikeOut();
+
+    QTextCursor probe(doc->textDocument());
+    for (int pos = selStart; pos < selEnd; ++pos) {
+        probe.setPosition(pos);
+        if (!probe.charFormat().fontStrikeOut())
+            return false;
+    }
+    return true;
+}
+
 // ── Public slots ──────────────────────────────────────────────────────────────
 
 void TextFormatter::toggleBold(QQuickTextDocument* doc, int selStart, int selEnd)
@@ -111,6 +126,16 @@ void TextFormatter::toggleUnderline(QQuickTextDocument* doc, int selStart, int s
     QTextCursor cursor = cursorForRange(doc, selStart, selEnd);
     QTextCharFormat fmt;
     fmt.setFontUnderline(!allUnderline);
+    cursor.mergeCharFormat(fmt);
+}
+
+void TextFormatter::toggleStrikethrough(QQuickTextDocument* doc, int selStart, int selEnd)
+{
+    if (!doc) return;
+    bool allStrike = isUniformStrikethrough(doc, selStart, selEnd);
+    QTextCursor cursor = cursorForRange(doc, selStart, selEnd);
+    QTextCharFormat fmt;
+    fmt.setFontStrikeOut(!allStrike);
     cursor.mergeCharFormat(fmt);
 }
 

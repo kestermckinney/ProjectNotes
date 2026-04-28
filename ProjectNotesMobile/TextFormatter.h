@@ -31,6 +31,7 @@ public:
     Q_INVOKABLE void toggleBold(QQuickTextDocument* doc, int selStart, int selEnd);
     Q_INVOKABLE void toggleItalic(QQuickTextDocument* doc, int selStart, int selEnd);
     Q_INVOKABLE void toggleUnderline(QQuickTextDocument* doc, int selStart, int selEnd);
+    Q_INVOKABLE void toggleStrikethrough(QQuickTextDocument* doc, int selStart, int selEnd);
 
     // Toggle a bullet list on the paragraph(s) that overlap the selection.
     Q_INVOKABLE void toggleBulletList(QQuickTextDocument* doc, int selStart, int selEnd);

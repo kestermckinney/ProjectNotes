@@ -10,6 +10,10 @@
 
 int main(int argc, char *argv[])
 {
+#ifdef QT_DEBUG
+    qputenv("QML_IMPORT_TRACE", "1");
+#endif
+
     QGuiApplication app(argc, argv);
     app.setOrganizationName("ProjectNotes");
     app.setOrganizationDomain("kestermckinney.com");

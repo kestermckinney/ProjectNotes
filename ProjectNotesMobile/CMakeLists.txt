@@ -125,6 +125,7 @@ qt_add_qml_module(ProjectNotesMobile
         qml/pages/NoteActionItemsPage.qml
         qml/pages/DatePickerPopup.qml
         qml/pages/FontPickerPopup.qml
+        qml/pages/NoteFormatSheet.qml
 )
 
 # ── iOS bundle properties ─────────────────────────────────────────────────────

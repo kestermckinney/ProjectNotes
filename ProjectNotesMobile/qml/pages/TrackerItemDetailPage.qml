@@ -207,15 +207,6 @@ Page {
                     // leftPadding: 0; rightPadding: 0
                     inputMethodHints: Qt.ImhNoPredictiveText
                     background: Item {}
-                    // onEditingFinished: {
-                    //     if (text === root._validatedItemNumber) return
-                    //     if (!AppController.isItemNumberUnique(root.itemId, text)) {
-                    //         duplicateNumberDialog.open()
-                    //         text = root._validatedItemNumber
-                    //     } else {
-                    //         root._validatedItemNumber = text
-                    //     }
-                    // }
                 }
             }
 
