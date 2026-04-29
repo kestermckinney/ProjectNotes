@@ -67,6 +67,19 @@ public:
     Q_INVOKABLE int     currentFontPointSize(QQuickTextDocument* doc, int pos) const;
     Q_INVOKABLE QColor  currentFontColor(QQuickTextDocument* doc, int pos) const;
 
+    // Query the formatting state of the current selection / cursor position so
+    // the format sheet can highlight which options are already applied.
+    Q_INVOKABLE bool isBoldAt(QQuickTextDocument* doc, int selStart, int selEnd) const;
+    Q_INVOKABLE bool isItalicAt(QQuickTextDocument* doc, int selStart, int selEnd) const;
+    Q_INVOKABLE bool isUnderlineAt(QQuickTextDocument* doc, int selStart, int selEnd) const;
+    Q_INVOKABLE bool isStrikethroughAt(QQuickTextDocument* doc, int selStart, int selEnd) const;
+
+    // Block-level queries: return values matching the styleIndex / alignment
+    // conventions used by applyStyle / setAlignment. -1 means "no match".
+    Q_INVOKABLE int currentAlignment(QQuickTextDocument* doc, int pos) const;
+    Q_INVOKABLE int currentListStyle(QQuickTextDocument* doc, int pos) const;
+    Q_INVOKABLE int currentParagraphStyle(QQuickTextDocument* doc, int pos) const;
+
     // Serialize the backing QTextDocument so toolbar formatting changes are persisted.
     Q_INVOKABLE QString documentHtml(QQuickTextDocument* doc) const;
 

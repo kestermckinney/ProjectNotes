@@ -18,7 +18,17 @@ Popup {
     property int selEnd: 0
 
     property bool _showColors: false
-    property string _selectedColor: "#000000"
+    property color _selectedColor: "#000000"
+
+    // Active-state flags populated in onAboutToShow so the sheet can highlight
+    // whichever options are already applied at the cursor / selection.
+    property bool _isBold: false
+    property bool _isItalic: false
+    property bool _isUnderline: false
+    property bool _isStrikethrough: false
+    property int  _currentAlignment: 0       // 0=left, 1=center, 2=right, 3=justify
+    property int  _currentListStyle: -1      // -1=none, 1=disc, 4=decimal, etc.
+    property int  _currentParagraphStyle: -1 // -1=none, 0=body, 9=title, 10=heading, 11=subheading
 
     readonly property var _presetColors: [
         "#000000", "#404040", "#808080", "#c0c0c0",
@@ -55,6 +65,16 @@ Popup {
     onAboutToShow: {
         Qt.inputMethod.hide()
         _showColors = false
+        if (textDocument) {
+            _isBold               = TextFormatter.isBoldAt(textDocument, selStart, selEnd)
+            _isItalic             = TextFormatter.isItalicAt(textDocument, selStart, selEnd)
+            _isUnderline          = TextFormatter.isUnderlineAt(textDocument, selStart, selEnd)
+            _isStrikethrough      = TextFormatter.isStrikethroughAt(textDocument, selStart, selEnd)
+            _currentAlignment     = TextFormatter.currentAlignment(textDocument, selStart)
+            _currentListStyle     = TextFormatter.currentListStyle(textDocument, selStart)
+            _currentParagraphStyle = TextFormatter.currentParagraphStyle(textDocument, selStart)
+            _selectedColor        = TextFormatter.currentFontColor(textDocument, selStart)
+        }
     }
 
     background: Rectangle {
@@ -63,15 +83,19 @@ Popup {
         layer.enabled: true
     }
 
-    // Reusable button shape
+    // Reusable button shape. `active` highlights the button to indicate the
+    // formatting it controls is currently applied at the cursor/selection.
     component FormatBtn: ToolButton {
+        property bool active: false
         focusPolicy: Qt.NoFocus
         Layout.preferredWidth:  44
         Layout.preferredHeight: 44
         background: Rectangle {
-            color: "transparent"
+            color: parent.active
+                   ? Qt.rgba(palette.highlight.r, palette.highlight.g, palette.highlight.b, 0.20)
+                   : "transparent"
             radius: 8
-            border.color: palette.mid
+            border.color: parent.active ? palette.highlight : palette.mid
             border.width: 1
         }
     }
@@ -124,9 +148,20 @@ Popup {
                     ]
                     delegate: Item {
                         required property var modelData
+                        readonly property bool active: root._currentParagraphStyle === modelData.styleIdx
                         width:  styleLabel.implicitWidth + 20
                         height: 72
 
+                        Rectangle {
+                            anchors.centerIn: styleLabel
+                            width:  styleLabel.implicitWidth  + 16
+                            height: styleLabel.implicitHeight + 8
+                            radius: 6
+                            visible: parent.active
+                            color: Qt.rgba(palette.highlight.r, palette.highlight.g, palette.highlight.b, 0.20)
+                            border.color: palette.highlight
+                            border.width: 1
+                        }
                         Label {
                             id: styleLabel
                             anchors.centerIn: parent
@@ -158,18 +193,22 @@ Popup {
 
             FormatBtn {
                 text: "B"; font.bold: true; font.pixelSize: 18
+                active: root._isBold
                 onClicked: { TextFormatter.toggleBold(root.textDocument, root.selStart, root.selEnd); root.close() }
             }
             FormatBtn {
                 text: "I"; font.italic: true; font.pixelSize: 18
+                active: root._isItalic
                 onClicked: { TextFormatter.toggleItalic(root.textDocument, root.selStart, root.selEnd); root.close() }
             }
             FormatBtn {
                 text: "U"; font.underline: true; font.pixelSize: 18
+                active: root._isUnderline
                 onClicked: { TextFormatter.toggleUnderline(root.textDocument, root.selStart, root.selEnd); root.close() }
             }
             FormatBtn {
                 text: "S"; font.strikeout: true; font.pixelSize: 18
+                active: root._isStrikethrough
                 onClicked: { TextFormatter.toggleStrikethrough(root.textDocument, root.selStart, root.selEnd); root.close() }
             }
 
@@ -177,7 +216,7 @@ Popup {
 
             // Color toggle — expands inline color swatches
             FormatBtn {
-                icon.name: "pencil"
+                icon.name: "paintpalette"
                 background: Rectangle {
                     radius: 8
                     color: root._showColors ? palette.highlight : "transparent"
@@ -211,18 +250,29 @@ Popup {
                     Repeater {
                         model: root._presetColors
                         delegate: Rectangle {
+                            id: swatch
                             required property string modelData
+                            readonly property bool selected: Qt.colorEqual(root._selectedColor, swatch.modelData)
                             width: 30; height: 30; radius: 15
-                            color: modelData
-                            border.color: root._selectedColor === modelData ? palette.highlight
-                                         : (modelData === "#ffffff" ? palette.mid : "transparent")
-                            border.width: root._selectedColor === modelData ? 3 : 1
+                            // When selected, fill the outer disc with white so the inner
+                            // colored disc (shrunk slightly) sits inside a white ring.
+                            color: selected ? "white" : "transparent"
+
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width:  swatch.selected ? 22 : 30
+                                height: swatch.selected ? 22 : 30
+                                radius: width / 2
+                                color:  swatch.modelData
+                                border.color: swatch.modelData === "#ffffff" ? palette.mid : "transparent"
+                                border.width: 1
+                            }
 
                             MouseArea {
                                 anchors.fill: parent
                                 onClicked: {
-                                    root._selectedColor = modelData
-                                    TextFormatter.applyFontColor(root.textDocument, root.selStart, root.selEnd, modelData)
+                                    root._selectedColor = swatch.modelData
+                                    TextFormatter.applyFontColor(root.textDocument, root.selStart, root.selEnd, swatch.modelData)
                                     root._showColors = false
                                     root.close()
                                 }
@@ -245,10 +295,12 @@ Popup {
 
             FormatBtn {
                 icon.name: "list.bullet"
+                active: root._currentListStyle === 1
                 onClicked: { TextFormatter.applyStyle(root.textDocument, root.selStart, root.selEnd, 1); root.close() }
             }
             FormatBtn {
                 icon.name: "list.number"
+                active: root._currentListStyle === 4
                 onClicked: { TextFormatter.applyStyle(root.textDocument, root.selStart, root.selEnd, 4); root.close() }
             }
             FormatBtn {
@@ -264,14 +316,17 @@ Popup {
 
             FormatBtn {
                 icon.name: "text.alignleft"
+                active: root._currentAlignment === 0
                 onClicked: { TextFormatter.setAlignment(root.textDocument, root.selStart, root.selEnd, 0); root.close() }
             }
             FormatBtn {
                 icon.name: "text.aligncenter"
+                active: root._currentAlignment === 1
                 onClicked: { TextFormatter.setAlignment(root.textDocument, root.selStart, root.selEnd, 1); root.close() }
             }
             FormatBtn {
                 icon.name: "text.alignright"
+                active: root._currentAlignment === 2
                 onClicked: { TextFormatter.setAlignment(root.textDocument, root.selStart, root.selEnd, 2); root.close() }
             }
         }

@@ -36,15 +36,20 @@ static QTextCursor cursorForRange(QQuickTextDocument* doc, int selStart, int sel
 
 // Returns true if every character in the selection already has the property set.
 // When there is no selection (selStart == selEnd), checks the cursor char format.
+//
+// Note on the loop bounds: QTextCursor::charFormat() returns the format of the
+// character IMMEDIATELY BEFORE the cursor position (or after, when the cursor
+// is at the start of a block). So to inspect the character at index i, the
+// cursor must sit at position i + 1. To cover the selected characters
+// [selStart, selEnd), we walk positions [selStart + 1, selEnd].
 static bool isUniformBold(QQuickTextDocument* doc, int selStart, int selEnd)
 {
     QTextCursor cursor = cursorForRange(doc, selStart, selEnd);
     if (selStart == selEnd)
         return cursor.charFormat().fontWeight() >= QFont::Bold;
 
-    // Walk every block that overlaps the selection
     QTextCursor probe(doc->textDocument());
-    for (int pos = selStart; pos < selEnd; ++pos) {
+    for (int pos = selStart + 1; pos <= selEnd; ++pos) {
         probe.setPosition(pos);
         if (probe.charFormat().fontWeight() < QFont::Bold)
             return false;
@@ -59,7 +64,7 @@ static bool isUniformItalic(QQuickTextDocument* doc, int selStart, int selEnd)
         return cursor.charFormat().fontItalic();
 
     QTextCursor probe(doc->textDocument());
-    for (int pos = selStart; pos < selEnd; ++pos) {
+    for (int pos = selStart + 1; pos <= selEnd; ++pos) {
         probe.setPosition(pos);
         if (!probe.charFormat().fontItalic())
             return false;
@@ -74,7 +79,7 @@ static bool isUniformUnderline(QQuickTextDocument* doc, int selStart, int selEnd
         return cursor.charFormat().fontUnderline();
 
     QTextCursor probe(doc->textDocument());
-    for (int pos = selStart; pos < selEnd; ++pos) {
+    for (int pos = selStart + 1; pos <= selEnd; ++pos) {
         probe.setPosition(pos);
         if (!probe.charFormat().fontUnderline())
             return false;
@@ -89,7 +94,7 @@ static bool isUniformStrikethrough(QQuickTextDocument* doc, int selStart, int se
         return cursor.charFormat().fontStrikeOut();
 
     QTextCursor probe(doc->textDocument());
-    for (int pos = selStart; pos < selEnd; ++pos) {
+    for (int pos = selStart + 1; pos <= selEnd; ++pos) {
         probe.setPosition(pos);
         if (!probe.charFormat().fontStrikeOut())
             return false;
@@ -186,7 +191,8 @@ static int currentPointSize(QQuickTextDocument* doc, int selStart)
     QTextCursor probe(doc->textDocument());
     probe.setPosition(selStart);
     qreal ps = probe.charFormat().fontPointSize();
-    // 0 means "inherit from block/document default"; treat as 12pt (desktop default)
+    // 0 means "inherit from block/document default"
+    if (ps <= 0) ps = doc->textDocument()->defaultFont().pointSizeF();
     return (ps > 0) ? qRound(ps) : 12;
 }
 
@@ -210,7 +216,10 @@ void TextFormatter::increaseFontSize(QQuickTextDocument* doc, int selStart, int 
     QTextCursor cursor = cursorForRange(doc, selStart, selEnd);
     QTextCharFormat fmt;
     fmt.setFontPointSize(newSize);
-    cursor.mergeCharFormat(fmt);
+    cursor.setCharFormat(fmt);
+    cursor.clearSelection();
+    cursor.setPosition(selStart);
+    cursor.setPosition(selEnd, QTextCursor::KeepAnchor);
 }
 
 void TextFormatter::decreaseFontSize(QQuickTextDocument* doc, int selStart, int selEnd)
@@ -221,7 +230,10 @@ void TextFormatter::decreaseFontSize(QQuickTextDocument* doc, int selStart, int 
     QTextCursor cursor = cursorForRange(doc, selStart, selEnd);
     QTextCharFormat fmt;
     fmt.setFontPointSize(newSize);
-    cursor.mergeCharFormat(fmt);
+    cursor.setCharFormat(fmt);
+    cursor.clearSelection();
+    cursor.setPosition(selStart);
+    cursor.setPosition(selEnd, QTextCursor::KeepAnchor);
 }
 
 // ── Heading / paragraph style ─────────────────────────────────────────────────
@@ -493,6 +505,93 @@ QColor TextFormatter::currentFontColor(QQuickTextDocument* doc, int pos) const
         }
     }
     return Qt::black;
+}
+
+// ── Format-state queries (used by the format sheet to show active options) ──
+
+bool TextFormatter::isBoldAt(QQuickTextDocument* doc, int selStart, int selEnd) const
+{
+    if (!doc) return false;
+    return isUniformBold(doc, selStart, selEnd);
+}
+
+bool TextFormatter::isItalicAt(QQuickTextDocument* doc, int selStart, int selEnd) const
+{
+    if (!doc) return false;
+    return isUniformItalic(doc, selStart, selEnd);
+}
+
+bool TextFormatter::isUnderlineAt(QQuickTextDocument* doc, int selStart, int selEnd) const
+{
+    if (!doc) return false;
+    return isUniformUnderline(doc, selStart, selEnd);
+}
+
+bool TextFormatter::isStrikethroughAt(QQuickTextDocument* doc, int selStart, int selEnd) const
+{
+    if (!doc) return false;
+    return isUniformStrikethrough(doc, selStart, selEnd);
+}
+
+int TextFormatter::currentAlignment(QQuickTextDocument* doc, int pos) const
+{
+    if (!doc) return 0;
+    QTextDocument* tdoc = doc->textDocument();
+    QTextBlock block = tdoc->findBlock(qBound(0, pos, tdoc->characterCount() - 1));
+    Qt::Alignment a = block.blockFormat().alignment();
+    if (a & Qt::AlignHCenter) return 1;
+    if (a & Qt::AlignRight)   return 2;
+    if (a & Qt::AlignJustify) return 3;
+    return 0;
+}
+
+int TextFormatter::currentListStyle(QQuickTextDocument* doc, int pos) const
+{
+    if (!doc) return -1;
+    QTextDocument* tdoc = doc->textDocument();
+    QTextBlock block = tdoc->findBlock(qBound(0, pos, tdoc->characterCount() - 1));
+    QTextList* list = block.textList();
+    if (!list) return -1;
+
+    switch (list->format().style()) {
+        case QTextListFormat::ListDisc:       return 1;
+        case QTextListFormat::ListCircle:     return 2;
+        case QTextListFormat::ListSquare:     return 3;
+        case QTextListFormat::ListDecimal:    return 4;
+        case QTextListFormat::ListLowerAlpha: return 5;
+        case QTextListFormat::ListUpperAlpha: return 6;
+        case QTextListFormat::ListLowerRoman: return 7;
+        case QTextListFormat::ListUpperRoman: return 8;
+        default:                              return -1;
+    }
+}
+
+int TextFormatter::currentParagraphStyle(QQuickTextDocument* doc, int pos) const
+{
+    // Style indices match applyStyle: 0=Body, 9=Title (H1), 10=Heading (H2),
+    // 11=Subheading (H3). Detection uses the first character's point size and
+    // weight. Note: ProjectNoteDetailPage scales sizes by 1.5× on load and
+    // /1.5 on save, which can introduce ±1pt drift across save/reload — the
+    // ranges below absorb that drift.
+    if (!doc) return -1;
+    QTextDocument* tdoc = doc->textDocument();
+    QTextBlock block = tdoc->findBlock(qBound(0, pos, tdoc->characterCount() - 1));
+    if (!block.isValid()) return -1;
+
+    QTextCursor probe(tdoc);
+    probe.setPosition(block.position());
+    QTextCharFormat fmt = probe.charFormat();
+
+    qreal ps = fmt.fontPointSize();
+    if (ps <= 0) ps = tdoc->defaultFont().pointSizeF();
+    int size = qRound(ps);
+    bool bold = fmt.fontWeight() >= QFont::Bold;
+
+    if (bold && size >= 23 && size <= 25) return 9;   // Title
+    if (bold && size >= 19 && size <= 21) return 10;  // Heading
+    if (bold && size >= 15 && size <= 17) return 11;  // Subheading
+    if (!bold && size >= 11 && size <= 13) return 0;  // Body
+    return -1;
 }
 
 QString TextFormatter::documentHtml(QQuickTextDocument* doc) const

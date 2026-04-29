@@ -66,6 +66,19 @@ private:
 
 static AppController* s_instance = nullptr;
 
+static void appendEmailRecipient(QStringList& emails,
+                                 const QString& email,
+                                 const QString& personId,
+                                 const QString& excludedPersonId)
+{
+    if (!excludedPersonId.isEmpty() && personId == excludedPersonId)
+        return;
+
+    const QString trimmedEmail = email.trimmed();
+    if (!trimmedEmail.isEmpty() && !emails.contains(trimmedEmail, Qt::CaseInsensitive))
+        emails.append(trimmedEmail);
+}
+
 AppController* AppController::create(QQmlEngine* /*engine*/, QJSEngine* /*scriptEngine*/)
 {
     if (!s_instance)
@@ -636,10 +649,11 @@ QString AppController::teamMemberEmailList() const
 {
     QAbstractItemModel* model = global_DBObjects.projectteammembersmodelproxy();
     QStringList emails;
+    const QString projectManagerId = global_DBObjects.getProjectManager();
     for (int row = 0; row < model->rowCount(); ++row) {
+        const QString personId = model->data(model->index(row, 2)).toString(); // col 2 = people_id
         const QString email = model->data(model->index(row, 6)).toString();  // col 6 = email
-        if (!email.isEmpty() && !emails.contains(email))
-            emails.append(email);
+        appendEmailRecipient(emails, email, personId, projectManagerId);
     }
     return emails.join(",");
 }
@@ -648,10 +662,11 @@ QString AppController::attendeeEmailList() const
 {
     QAbstractItemModel* model = global_DBObjects.meetingattendeesmodelproxy();
     QStringList emails;
+    const QString projectManagerId = global_DBObjects.getProjectManager();
     for (int row = 0; row < model->rowCount(); ++row) {
+        const QString personId = model->data(model->index(row, 2)).toString(); // col 2 = person_id
         const QString email = model->data(model->index(row, 5)).toString();  // col 5 = email
-        if (!email.isEmpty() && !emails.contains(email))
-            emails.append(email);
+        appendEmailRecipient(emails, email, personId, projectManagerId);
     }
     return emails.join(",");
 }

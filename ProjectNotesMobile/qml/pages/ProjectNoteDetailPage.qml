@@ -191,36 +191,10 @@ Page {
                     color: palette.text
                     selectByMouse: true
 
-                    // x: 16
-                    // y: 8
-                    // width: parent.width - 32
-
                     text: root.toRichText(root.scaleFontSizes(root.initialNote, 1.5))
                     textFormat: TextEdit.RichText
                     wrapMode: TextEdit.WordWrap
                     font.family: "Arial"
-                    // font.pixelSize: 15
-
-                    // onActiveFocusChanged: {
-                    //     if (activeFocus) Qt.inputMethod.show()
-                    // }
-
-                    // onCursorRectangleChanged: {
-                    //     if (!activeFocus) return
-                    //     var outerFlick = scrollView.contentItem
-                    //     if (!outerFlick) return
-                    //     // Cursor absolute position in ScrollView content space
-                    //     var cursorTop    = noteFlick.y + noteEdit.y + cursorRectangle.y
-                    //     var cursorBottom = cursorTop + cursorRectangle.height
-                    //     var viewTop      = outerFlick.contentY
-                    //     var viewBottom   = viewTop + scrollView.height
-
-                    //     if (cursorBottom > viewBottom) {
-                    //         outerFlick.contentY = Math.max(0, cursorBottom - scrollView.height + 16)
-                    //     } else if (cursorTop < viewTop) {
-                    //         outerFlick.contentY = Math.max(0, cursorTop - 16)
-                    //     }
-                    // }
                 }
                 Rectangle {
                     anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
@@ -282,7 +256,7 @@ Page {
 
         contentItem: RowLayout {
             anchors { fill: parent; leftMargin: 4; rightMargin: 4 }
-            spacing: 0
+            spacing: 4
 
             // Aa — open the Format sheet
             ToolButton {
@@ -302,7 +276,8 @@ Page {
 
             // Font — open advanced font picker
             ToolButton {
-                icon.name: "paintpalette"
+                text: "ƒ"
+                font.pixelSize: 18
                 focusPolicy: Qt.NoFocus
                 onClicked: {
                     root._selStart = noteEdit.selectionStart
@@ -312,6 +287,30 @@ Page {
                     var currentColor  = TextFormatter.currentFontColor(noteEdit.textDocument, root._selStart)
                     console.info("family: ", currentFamily, " size: ", currentSize, " color: ", currentColor)
                     fontPicker.openWithFormat(currentFamily, currentSize, currentColor)
+                }
+            }
+
+            Rectangle { width: 1; height: 22; color: palette.mid; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
+
+            // Font size bump controls
+            ToolButton {
+                text: "A+"; font.pixelSize: 18; font.weight: Font.DemiBold; focusPolicy: Qt.NoFocus
+                onClicked: {
+                    var ss = noteEdit.selectionStart
+                    var se = noteEdit.selectionEnd
+                    TextFormatter.increaseFontSize(noteEdit.textDocument, ss, se)
+                    noteEdit.forceActiveFocus()
+                    noteEdit.select(ss, se)
+                }
+            }
+            ToolButton {
+                text: "A-"; font.pixelSize: 18; font.weight: Font.DemiBold; focusPolicy: Qt.NoFocus
+                onClicked: {
+                    var ss = noteEdit.selectionStart
+                    var se = noteEdit.selectionEnd
+                    TextFormatter.decreaseFontSize(noteEdit.textDocument, ss, se)
+                    noteEdit.forceActiveFocus()
+                    noteEdit.select(ss, se)
                 }
             }
 
@@ -365,7 +364,11 @@ Page {
         id: formatSheet
         parent: Overlay.overlay
         onOpened: root._formatSheetOpen = true
-        onClosed: { root._formatSheetOpen = false; noteEdit.forceActiveFocus() }
+        onClosed: {
+            root._formatSheetOpen = false
+            noteEdit.forceActiveFocus()
+            noteEdit.select(root._selStart, root._selEnd)
+        }
     }
 
     // ── Advanced font picker ──────────────────────────────────────────────────
@@ -374,12 +377,15 @@ Page {
         parent: Overlay.overlay
         scaleFactor: 1.5
         onOpened: root._fontPickerOpen = true
-        onClosed: { root._fontPickerOpen = false; noteEdit.forceActiveFocus() }
+        onClosed: {
+            root._fontPickerOpen = false
+            noteEdit.forceActiveFocus()
+            noteEdit.select(root._selStart, root._selEnd)
+        }
         onFontApplied: function(family, pointSize, textColor) {
             TextFormatter.applyFontFamily(noteEdit.textDocument, root._selStart, root._selEnd, family)
             TextFormatter.applyFontPointSize(noteEdit.textDocument, root._selStart, root._selEnd, pointSize)
             TextFormatter.applyFontColor(noteEdit.textDocument, root._selStart, root._selEnd, textColor)
-            noteEdit.forceActiveFocus()
         }
     }
 
