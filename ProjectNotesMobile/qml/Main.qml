@@ -14,6 +14,25 @@ ApplicationWindow {
     height: 844
     title: qsTr("Project Notes")
 
+    // Save current page data before app closes
+    function saveCurrentPage() {
+        var page = pageStack.currentItem
+        if (page && typeof page._saveNow === "function" && !page._skipSave) {
+            page._saveNow()
+        }
+    }
+
+    // Save on app close or background
+    Component.onDestruction: saveCurrentPage()
+
+    Connections {
+        target: Qt.application
+        function onStateChanged(state) {
+            if (state === Qt.ApplicationInactive || state === Qt.ApplicationSuspended)
+                saveCurrentPage()
+        }
+    }
+
     // Shared tab state — lives here so the TabBar (footer) and SwipeView
     // (inside the StackView initialItem component) can both bind to it.
     property int currentTabIndex: 0
