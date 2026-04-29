@@ -19,6 +19,7 @@ Page {
     property bool   initialInternal: false
     property bool   _skipSave:       false
     property bool   _formatSheetOpen: false
+    property bool   _fontPickerOpen: false
 
     // Saved selection for format sheet (focus leaves noteEdit when sheet opens)
     property int _selStart: 0
@@ -121,7 +122,7 @@ Page {
 
             ToolButton {
                 icon.name: "person.2"
-                text: qsTr("Attendees")
+                // text: qsTr("Attendees")
                 display: AbstractButton.TextUnderIcon
                 onClicked: {
                     if (!root._saveNow()) return
@@ -136,7 +137,7 @@ Page {
 
             ToolButton {
                 icon.name: "checklist"
-                text: qsTr("Action Items")
+                // text: qsTr("Action Items")
                 display: AbstractButton.TextUnderIcon
                 onClicked: {
                     if (!root._saveNow()) return
@@ -197,6 +198,7 @@ Page {
                     text: root.toRichText(root.scaleFontSizes(root.initialNote, 1.5))
                     textFormat: TextEdit.RichText
                     wrapMode: TextEdit.WordWrap
+                    font.family: "Arial"
                     // font.pixelSize: 15
 
                     // onActiveFocusChanged: {
@@ -265,11 +267,12 @@ Page {
            ? Qt.inputMethod.keyboardRectangle.y - height
            : (parent ? parent.height - height : 0)
         width:  parent ? parent.width : 390
-        height: 44
+        height: 48
 
-        visible: !_formatSheetOpen && (Qt.inputMethod.visible || noteEdit.selectionStart !== noteEdit.selectionEnd)
+        visible: !_formatSheetOpen && !_fontPickerOpen && (Qt.inputMethod.visible || noteEdit.selectionStart !== noteEdit.selectionEnd)
 
         background: Rectangle {
+            radius: 16
             color: Qt.rgba(palette.window.r, palette.window.g, palette.window.b, 0.97)
             Rectangle {
                 anchors { top: parent.top; left: parent.left; right: parent.right }
@@ -284,7 +287,7 @@ Page {
             // Aa — open the Format sheet
             ToolButton {
                 text: "Aa"
-                font.pixelSize: 16
+                font.pixelSize: 18
                 font.weight: Font.DemiBold
                 focusPolicy: Qt.NoFocus
                 onClicked: {
@@ -294,6 +297,21 @@ Page {
                     formatSheet.selStart     = root._selStart
                     formatSheet.selEnd       = root._selEnd
                     formatSheet.open()
+                }
+            }
+
+            // Font — open advanced font picker
+            ToolButton {
+                icon.name: "paintpalette"
+                focusPolicy: Qt.NoFocus
+                onClicked: {
+                    root._selStart = noteEdit.selectionStart
+                    root._selEnd   = noteEdit.selectionEnd
+                    var currentFamily = TextFormatter.currentFontFamily(noteEdit.textDocument, root._selStart)
+                    var currentSize   = TextFormatter.currentFontPointSize(noteEdit.textDocument, root._selStart)
+                    var currentColor  = TextFormatter.currentFontColor(noteEdit.textDocument, root._selStart)
+                    console.info("family: ", currentFamily, " size: ", currentSize, " color: ", currentColor)
+                    fontPicker.openWithFormat(currentFamily, currentSize, currentColor)
                 }
             }
 
@@ -317,14 +335,14 @@ Page {
             Rectangle { width: 1; height: 22; color: palette.mid; opacity: 0.4; Layout.alignment: Qt.AlignVCenter }
 
             ToolButton {
-                text: "⇥"; font.pixelSize: 15; focusPolicy: Qt.NoFocus
+                text: "⇥"; font.pixelSize: 18; focusPolicy: Qt.NoFocus
                 onClicked: {
                     TextFormatter.indentText(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd)
                     noteEdit.forceActiveFocus()
                 }
             }
             ToolButton {
-                text: "⇤"; font.pixelSize: 15; focusPolicy: Qt.NoFocus
+                text: "⇤"; font.pixelSize: 18; focusPolicy: Qt.NoFocus
                 onClicked: {
                     TextFormatter.unindentText(noteEdit.textDocument, noteEdit.selectionStart, noteEdit.selectionEnd)
                     noteEdit.forceActiveFocus()
@@ -348,6 +366,21 @@ Page {
         parent: Overlay.overlay
         onOpened: root._formatSheetOpen = true
         onClosed: { root._formatSheetOpen = false; noteEdit.forceActiveFocus() }
+    }
+
+    // ── Advanced font picker ──────────────────────────────────────────────────
+    FontPickerPopup {
+        id: fontPicker
+        parent: Overlay.overlay
+        scaleFactor: 1.5
+        onOpened: root._fontPickerOpen = true
+        onClosed: { root._fontPickerOpen = false; noteEdit.forceActiveFocus() }
+        onFontApplied: function(family, pointSize, textColor) {
+            TextFormatter.applyFontFamily(noteEdit.textDocument, root._selStart, root._selEnd, family)
+            TextFormatter.applyFontPointSize(noteEdit.textDocument, root._selStart, root._selEnd, pointSize)
+            TextFormatter.applyFontColor(noteEdit.textDocument, root._selStart, root._selEnd, textColor)
+            noteEdit.forceActiveFocus()
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

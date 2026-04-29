@@ -435,12 +435,29 @@ void TextFormatter::applyFontColor(QQuickTextDocument* doc, int selStart, int se
 
 QString TextFormatter::currentFontFamily(QQuickTextDocument* doc, int pos) const
 {
+    // Apple platforms expose hidden system fonts whose names begin with a dot
+    // (e.g. ".AppleSystemUIFont"). Qt's TextEdit.toHtml() bakes the resolved
+    // system font into saved HTML, so reloaded text carries those names as the
+    // "explicit" family even though the user never picked them. Treat any
+    // dotted family as unset and fall through to the document's defaultFont.
+    auto isHiddenSystemFont = [](const QString& f) {
+        return f.startsWith(QLatin1Char('.'));
+    };
+
     if (!doc) return QStringLiteral("Arial");
     QTextDocument* tdoc = doc->textDocument();
     QTextCursor probe(tdoc);
     probe.setPosition(qBound(0, pos, tdoc->characterCount() - 1));
-    QStringList families = probe.charFormat().fontFamilies().toStringList();
-    if (!families.isEmpty()) return families.first();
+    QTextCharFormat fmt = probe.charFormat();
+
+    const QStringList families = fmt.fontFamilies().toStringList();
+    for (const QString& f : families) {
+        if (!f.isEmpty() && !isHiddenSystemFont(f)) return f;
+    }
+    QString famProp = fmt.fontFamily();
+    if (!famProp.isEmpty() && !isHiddenSystemFont(famProp)) return famProp;
+    QString def = tdoc->defaultFont().family();
+    if (!def.isEmpty() && !isHiddenSystemFont(def)) return def;
     return QStringLiteral("Arial");
 }
 
@@ -451,17 +468,31 @@ int TextFormatter::currentFontPointSize(QQuickTextDocument* doc, int pos) const
     QTextCursor probe(tdoc);
     probe.setPosition(qBound(0, pos, tdoc->characterCount() - 1));
     qreal ps = probe.charFormat().fontPointSize();
+    if (ps <= 0) ps = tdoc->defaultFont().pointSizeF();
     return (ps > 0) ? qRound(ps) : 12;
 }
 
 QColor TextFormatter::currentFontColor(QQuickTextDocument* doc, int pos) const
 {
+    // HTML loaded without explicit "color:" styles has no foreground brush in
+    // the char format (style() == Qt::NoBrush). Qt's TextEdit then renders that
+    // text using its own "color" property (e.g. palette.text). Mirror that here
+    // so the picker reflects what the user actually sees, not a hard-coded black.
     if (!doc) return Qt::black;
     QTextDocument* tdoc = doc->textDocument();
     QTextCursor probe(tdoc);
     probe.setPosition(qBound(0, pos, tdoc->characterCount() - 1));
     QBrush brush = probe.charFormat().foreground();
-    return (brush.style() == Qt::NoBrush) ? Qt::black : brush.color();
+    if (brush.style() != Qt::NoBrush) return brush.color();
+
+    if (QObject* p = doc->parent()) {
+        QVariant v = p->property("color");
+        if (v.isValid()) {
+            QColor c = v.value<QColor>();
+            if (c.isValid()) return c;
+        }
+    }
+    return Qt::black;
 }
 
 QString TextFormatter::documentHtml(QQuickTextDocument* doc) const
@@ -471,5 +502,14 @@ QString TextFormatter::documentHtml(QQuickTextDocument* doc) const
 
 QStringList TextFormatter::availableFontFamilies() const
 {
-    return QFontDatabase::families();
+    // Filter out Apple's hidden system fonts (".AppleSystemUIFont", etc.)
+    // — they aren't user-pickable typefaces and only confuse the picker.
+    QStringList out;
+    const QStringList all = QFontDatabase::families();
+    out.reserve(all.size());
+    for (const QString& f : all) {
+        if (!f.startsWith(QLatin1Char('.')))
+            out.append(f);
+    }
+    return out;
 }

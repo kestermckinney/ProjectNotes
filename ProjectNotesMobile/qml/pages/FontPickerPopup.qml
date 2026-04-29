@@ -21,46 +21,49 @@ Popup {
     signal fontApplied(string family, int pointSize, color textColor)
 
     // ── Public API ────────────────────────────────────────────────────────────
-    // Deferred so indices are applied after the popup is fully open.
-    property var _pending: null
+    // Scale factor for font sizes (mobile uses 1.5× to enlarge text on phone
+    // screens; the user should see the logical size, not the scaled one).
+    property real scaleFactor: 1.0
 
     function openWithFormat(family, pointSize, textColor) {
-        _pending = { family: family, size: pointSize, colorStr: textColor.toString() }
+        // Apply values BEFORE open() so the popup renders correctly from the
+        // first frame. Mutating these scalar properties / currentIndex is safe;
+        // only mutating _familyModel during the open animation was unsafe.
+        if (_familyModel.length === 0)
+            _familyModel = TextFormatter.availableFontFamilies()
+
+        var fidx = -1
+        if (_familyModel.length > 0) {
+            fidx = _familyModel.indexOf(family)
+            if (fidx < 0 && family) {
+                var target = family.toLowerCase()
+                for (var i = 0; i < _familyModel.length; ++i) {
+                    if (_familyModel[i].toLowerCase() === target) { fidx = i; break }
+                }
+            }
+            familyCombo.currentIndex = (fidx >= 0) ? fidx : 0
+        }
+
+        var displaySize = Math.round(pointSize / scaleFactor)
+        _selectedSize = displaySize > 0 ? displaySize : 12
+
+        // Normalize to #rrggbb — QColor.toString() may return #aarrggbb;
+        // the preset swatches are stored without an alpha component.
+        var c = textColor.toString()
+        _selectedColorStr = (c.length === 9 && c[0] === "#") ? "#" + c.slice(3) : c
+
         open()
+
+        // Belt-and-suspenders: ComboBox can reset currentIndex when its model
+        // binding settles after open(). Re-assert on the next tick.
+        var idxAfter = (fidx >= 0) ? fidx : 0
+        Qt.callLater(function() { familyCombo.currentIndex = idxAfter })
     }
 
-    // Load font families once when the popup component is created — before any
-    // user interaction.  Doing it here (instead of lazily inside onOpened) keeps
-    // the model stable during the open animation so the ComboBox never reacts to
-    // a model change while Qt's popup machinery is running, which triggered:
-    //   ASSERT: "!isEmpty()" in qlist.h  (QList::first on an empty list)
     Component.onCompleted: {
         Qt.callLater(function() {
             _familyModel = TextFormatter.availableFontFamilies()
         })
-    }
-
-    onOpened: {
-        if (_pending) {
-            // Capture and clear _pending before the deferred callback fires.
-            var p = _pending
-            _pending = null
-
-            // Defer index/size/color assignment one tick so the ComboBox has
-            // finished its own open-animation before we mutate its currentIndex.
-            Qt.callLater(function() {
-                if (root._familyModel.length > 0) {
-                    var fidx = root._familyModel.indexOf(p.family)
-                    familyCombo.currentIndex = (fidx >= 0) ? fidx : 0
-                }
-                root._selectedSize = p.size > 0 ? p.size : 12
-
-                // Normalize to #rrggbb — QColor.toString() may return #aarrggbb;
-                // the preset swatches are stored without an alpha component.
-                var c = p.colorStr
-                root._selectedColorStr = (c.length === 9 && c[0] === "#") ? "#" + c.slice(3) : c
-            })
-        }
     }
 
     // ── Internal state ────────────────────────────────────────────────────────
@@ -70,7 +73,13 @@ Popup {
     // Pre-populated in Component.onCompleted — stable for the lifetime of the popup.
     property var _familyModel: []
 
+    // Preset sizes shown to the user (logical sizes, NOT scaled).
     property var _presetSizes: [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72]
+
+    // Return the scaled size that should actually be applied to the document.
+    function scaledSize() {
+        return Math.round(_selectedSize * scaleFactor)
+    }
 
     // 20 common colors in 4 rows of 5
     property var _presetColors: [
@@ -92,6 +101,8 @@ Popup {
     width:  parent ? parent.width : 390
     height: 480
     padding: 0
+
+    onAboutToShow: Qt.inputMethod.hide()
 
     enter: Transition {
         NumberAnimation { target: root; property: "slideY"; from: root.height; to: 0; duration: 280; easing.type: Easing.OutCubic }
@@ -128,7 +139,7 @@ Popup {
                     text: qsTr("Done"); flat: true; font.bold: true
                     onClicked: {
                         root.fontApplied(familyCombo.currentText,
-                                         root._selectedSize,
+                                         root.scaledSize(),
                                          root._selectedColorStr)
                         root.close()
                     }
@@ -244,7 +255,7 @@ Popup {
                         anchors.centerIn: parent
                         text: qsTr("Sample Text")
                         font.family:    familyCombo.currentText
-                        font.pointSize: root._selectedSize
+                        font.pointSize: Math.round(root._selectedSize * root.scaleFactor)
                         color:          root._selectedColorStr
                     }
                 }

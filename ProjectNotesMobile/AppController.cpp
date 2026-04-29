@@ -413,13 +413,17 @@ bool AppController::savePerson(int row, const QString& name, const QString& emai
     QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
     if (row < 0 || row >= model->rowCount())
         return false;
+
+    const QPersistentModelIndex pIdx(model->index(row, 0));
+    if (!pIdx.isValid()) return false;
+
     bool ok = true;
-    ok &= model->setData(model->index(row, 1), name);
-    ok &= model->setData(model->index(row, 2), email);
-    ok &= model->setData(model->index(row, 3), officePhone);
-    ok &= model->setData(model->index(row, 4), cellPhone);
-    ok &= model->setData(model->index(row, 5), clientId);
-    ok &= model->setData(model->index(row, 6), role);
+    ok &= model->setData(model->index(pIdx.row(), 1), name);
+    ok &= model->setData(model->index(pIdx.row(), 2), email);
+    ok &= model->setData(model->index(pIdx.row(), 3), officePhone);
+    ok &= model->setData(model->index(pIdx.row(), 4), cellPhone);
+    ok &= model->setData(model->index(pIdx.row(), 5), clientId);
+    ok &= model->setData(model->index(pIdx.row(), 6), role);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
         emit errorOccurred(tr("Could Not Save"), err);
@@ -437,16 +441,20 @@ bool AppController::saveProject(int row, const QString& projectNumber,
     QAbstractItemModel* model = global_DBObjects.projectinformationmodelproxy();
     if (row < 0 || row >= model->rowCount())
         return false;
+
+    const QPersistentModelIndex pIdx(model->index(row, 0));
+    if (!pIdx.isValid()) return false;
+
     bool ok = true;
-    ok &= model->setData(model->index(row,  1), projectNumber);
-    ok &= model->setData(model->index(row,  2), projectName);
-    ok &= model->setData(model->index(row,  3), lastStatusDate);
-    ok &= model->setData(model->index(row,  4), lastInvoiceDate);
-    ok &= model->setData(model->index(row,  5), primaryContactId);
-    ok &= model->setData(model->index(row, 11), invoicingPeriod);
-    ok &= model->setData(model->index(row, 12), statusReportPeriod);
-    ok &= model->setData(model->index(row, 13), clientId);
-    ok &= model->setData(model->index(row, 14), projectStatus);
+    ok &= model->setData(model->index(pIdx.row(),  1), projectNumber);
+    ok &= model->setData(model->index(pIdx.row(),  2), projectName);
+    ok &= model->setData(model->index(pIdx.row(),  3), lastStatusDate);
+    ok &= model->setData(model->index(pIdx.row(),  4), lastInvoiceDate);
+    ok &= model->setData(model->index(pIdx.row(),  5), primaryContactId);
+    ok &= model->setData(model->index(pIdx.row(), 11), invoicingPeriod);
+    ok &= model->setData(model->index(pIdx.row(), 12), statusReportPeriod);
+    ok &= model->setData(model->index(pIdx.row(), 13), clientId);
+    ok &= model->setData(model->index(pIdx.row(), 14), projectStatus);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
         emit errorOccurred(tr("Could Not Save"), err);
@@ -459,9 +467,13 @@ bool AppController::saveStatusItem(int row, const QString& category, const QStri
     global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.statusreportitemsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
+
+    const QPersistentModelIndex pIdx(model->index(row, 0));
+    if (!pIdx.isValid()) return false;
+
     bool ok = true;
-    ok &= model->setData(model->index(row, 2), category);
-    ok &= model->setData(model->index(row, 3), description);
+    ok &= model->setData(model->index(pIdx.row(), 2), category);
+    ok &= model->setData(model->index(pIdx.row(), 3), description);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
         emit errorOccurred(tr("Could Not Save"), err);
@@ -474,10 +486,14 @@ bool AppController::saveTeamMember(int row, const QString& peopleId, const QStri
     global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.projectteammembersmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
+
+    const QPersistentModelIndex pIdx(model->index(row, 0));
+    if (!pIdx.isValid()) return false;
+
     bool ok = true;
-    ok &= model->setData(model->index(row, 2), peopleId);
-    ok &= model->setData(model->index(row, 4), receiveStatusReport ? "1" : "0");
-    ok &= model->setData(model->index(row, 5), role);
+    ok &= model->setData(model->index(pIdx.row(), 2), peopleId);
+    ok &= model->setData(model->index(pIdx.row(), 4), receiveStatusReport ? "1" : "0");
+    ok &= model->setData(model->index(pIdx.row(), 5), role);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
         emit errorOccurred(tr("Could Not Save"), err);
@@ -491,10 +507,14 @@ bool AppController::saveProjectLocation(int row, const QString& locationType,
     global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.projectlocationsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
+
+    const QPersistentModelIndex pIdx(model->index(row, 0));
+    if (!pIdx.isValid()) return false;
+
     bool ok = true;
-    ok &= model->setData(model->index(row, 2), locationType);
-    ok &= model->setData(model->index(row, 3), description);
-    ok &= model->setData(model->index(row, 4), path);
+    ok &= model->setData(model->index(pIdx.row(), 2), locationType);
+    ok &= model->setData(model->index(pIdx.row(), 3), description);
+    ok &= model->setData(model->index(pIdx.row(), 4), path);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
         emit errorOccurred(tr("Could Not Save"), err);
@@ -508,11 +528,18 @@ bool AppController::saveProjectNote(int row, const QString& title, const QString
     global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.projectnotesmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
+
+    // Pin the record by persistent index so a re-sort triggered by an earlier
+    // setData()'s side effects can't leave later setData() calls writing to the
+    // wrong row.
+    const QPersistentModelIndex pIdx(model->index(row, 0));
+    if (!pIdx.isValid()) return false;
+
     bool ok = true;
-    ok &= model->setData(model->index(row, 2), title);
-    ok &= model->setData(model->index(row, 3), date);
-    ok &= model->setData(model->index(row, 4), note);
-    ok &= model->setData(model->index(row, 5), internalItem ? "1" : "0");
+    ok &= model->setData(model->index(pIdx.row(), 2), title);
+    ok &= model->setData(model->index(pIdx.row(), 3), date);
+    ok &= model->setData(model->index(pIdx.row(), 4), note);
+    ok &= model->setData(model->index(pIdx.row(), 5), internalItem ? "1" : "0");
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
         emit errorOccurred(tr("Could Not Save"), err);
@@ -705,8 +732,20 @@ static QVariantMap proxyRowToMap(SortFilterProxyModel* proxy, int row)
 
 int AppController::addProject()
 {
-    return proxyRowFromSource(global_DBObjects.projectinformationmodelproxy(),
-                              global_DBObjects.projectinformationmodel()->newRecord());
+    auto* src = global_DBObjects.projectinformationmodel();
+    QModelIndex srcIdx = src->newRecord();
+    if (!srcIdx.isValid()) return -1;
+
+    // Commit up front so saveProject's setData calls all take the UPDATE
+    // branch — avoids ProjectsModel::setData firing addDefaultPMToProject
+    // mid-save (same hazard fixed for project notes).
+    if (!src->insertCacheRow(srcIdx.row())) return -1;
+
+    const QString newId = src->data(src->index(srcIdx.row(), 0)).toString();
+    if (!newId.isEmpty())
+        global_DBObjects.addDefaultPMToProject(newId);
+
+    return proxyRowFromSource(global_DBObjects.projectinformationmodelproxy(), srcIdx);
 }
 
 bool AppController::deleteProject(int row)
@@ -859,8 +898,22 @@ QVariantMap AppController::getProjectLocationData(int row) const
 int AppController::addProjectNote(const QString& projectId)
 {
     QVariant fk(projectId);
-    return proxyRowFromSource(global_DBObjects.projectnotesmodelproxy(),
-                              global_DBObjects.projectnotesmodel()->newRecord(&fk));
+    auto* src = global_DBObjects.projectnotesmodel();
+    QModelIndex srcIdx = src->newRecord(&fk);
+    if (!srcIdx.isValid()) return -1;
+
+    // Commit the new row to the DB up front so subsequent setData() calls in
+    // saveProjectNote() all take the simple UPDATE branch. Without this, the
+    // first setData() takes the INSERT branch, which fires addDefaultPMToMeeting
+    // and cascades updateDisplayData() back into this same model mid-save —
+    // fragile and prone to leaving a stale proxy row behind.
+    if (!src->insertCacheRow(srcIdx.row())) return -1;
+
+    const QString newId = src->data(src->index(srcIdx.row(), 0)).toString();
+    if (!newId.isEmpty())
+        global_DBObjects.addDefaultPMToMeeting(newId);
+
+    return proxyRowFromSource(global_DBObjects.projectnotesmodelproxy(), srcIdx);
 }
 
 bool AppController::deleteProjectNote(int row)
@@ -1020,18 +1073,22 @@ bool AppController::saveTrackerItemDetail(int row,
     global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.actionitemsdetailsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
+
+    const QPersistentModelIndex pIdx(model->index(row, 0));
+    if (!pIdx.isValid()) return false;
+
     bool ok = true;
-    ok &= model->setData(model->index(row,  1), itemNumber);
-    ok &= model->setData(model->index(row,  2), itemType);
-    ok &= model->setData(model->index(row,  3), itemName);
-    ok &= model->setData(model->index(row,  4), identifiedBy);
-    ok &= model->setData(model->index(row,  5), dateIdentified);
-    ok &= model->setData(model->index(row,  6), description);
-    ok &= model->setData(model->index(row,  7), assignedTo);
-    ok &= model->setData(model->index(row,  8), priority);
-    ok &= model->setData(model->index(row,  9), status);
-    ok &= model->setData(model->index(row, 10), dateDue);
-    ok &= model->setData(model->index(row, 15), internalItem ? "1" : "0");
+    ok &= model->setData(model->index(pIdx.row(),  1), itemNumber);
+    ok &= model->setData(model->index(pIdx.row(),  2), itemType);
+    ok &= model->setData(model->index(pIdx.row(),  3), itemName);
+    ok &= model->setData(model->index(pIdx.row(),  4), identifiedBy);
+    ok &= model->setData(model->index(pIdx.row(),  5), dateIdentified);
+    ok &= model->setData(model->index(pIdx.row(),  6), description);
+    ok &= model->setData(model->index(pIdx.row(),  7), assignedTo);
+    ok &= model->setData(model->index(pIdx.row(),  8), priority);
+    ok &= model->setData(model->index(pIdx.row(),  9), status);
+    ok &= model->setData(model->index(pIdx.row(), 10), dateDue);
+    ok &= model->setData(model->index(pIdx.row(), 15), internalItem ? "1" : "0");
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
         emit errorOccurred(tr("Could Not Save"), err);
@@ -1094,10 +1151,14 @@ bool AppController::saveComment(int row, const QString& date,
     global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.trackeritemscommentsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
+
+    const QPersistentModelIndex pIdx(model->index(row, 0));
+    if (!pIdx.isValid()) return false;
+
     bool ok = true;
-    ok &= model->setData(model->index(row, 2), date);
-    ok &= model->setData(model->index(row, 3), note);
-    ok &= model->setData(model->index(row, 4), updatedBy);
+    ok &= model->setData(model->index(pIdx.row(), 2), date);
+    ok &= model->setData(model->index(pIdx.row(), 3), note);
+    ok &= model->setData(model->index(pIdx.row(), 4), updatedBy);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
         emit errorOccurred(tr("Could Not Save"), err);

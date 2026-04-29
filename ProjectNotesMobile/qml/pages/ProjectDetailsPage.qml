@@ -383,9 +383,9 @@ Page {
                 model: [
                     { label: qsTr("Status"),  icon: "chart.bar.doc.horizontal", page: "StatusItemsPage.qml"    },
                     { label: qsTr("Team"),    icon: "person.2",                  page: "TeamMembersPage.qml"    },
-                    { label: qsTr("Items"),   icon: "exclamationmark.triangle",  page: "ProjectTrackerPage.qml" },
+                    { label: qsTr("Items"),   icon: "checklist",  page: "ProjectTrackerPage.qml" },
                     { label: qsTr("Files"),   icon: "folder",                    page: "ProjectLocationsPage.qml"},
-                    { label: qsTr("Notes"),   icon: "doc.text",                  page: "ProjectNotesPage.qml"   }
+                    { label: qsTr("Notes"),   icon: "square.and.pencil",         page: "ProjectNotesPage.qml"   }
                 ]
 
                 ToolButton {

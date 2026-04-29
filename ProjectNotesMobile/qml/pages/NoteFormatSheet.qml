@@ -52,7 +52,10 @@ Popup {
         NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 180; easing.type: Easing.InCubic }
     }
 
-    onAboutToShow: _showColors = false
+    onAboutToShow: {
+        Qt.inputMethod.hide()
+        _showColors = false
+    }
 
     background: Rectangle {
         color: palette.base
