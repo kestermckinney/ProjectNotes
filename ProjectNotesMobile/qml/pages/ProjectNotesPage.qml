@@ -92,7 +92,7 @@ Page {
                     Label {
                         text: model.note_date || ""
                         font.pixelSize: 12
-                        color: palette.placeholderText
+                        color: Theme.mutedText
                     }
                 }
 
@@ -141,7 +141,7 @@ Page {
             text: qsTr("Tap + to add a meeting note.")
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
-            color: palette.placeholderText
+            color: Theme.mutedText
         }
     }
 }

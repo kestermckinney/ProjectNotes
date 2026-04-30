@@ -118,7 +118,7 @@ Page {
                         visible: _clientName !== ""
                         text: _clientName
                         font.pixelSize: 12
-                        color: palette.placeholderText
+                        color: Theme.mutedText
                         elide: Text.ElideRight
                     }
 
@@ -144,7 +144,7 @@ Page {
                             var s = model.project_status || ""
                             if (s === "Active")                      return Theme.accentGreenDark
                             if (s === "On Hold")                     return "#e07000"
-                            if (s === "Closed" || s === "Complete")  return palette.placeholderText
+                            if (s === "Closed" || s === "Complete")  return Theme.mutedText
                             return Theme.navyMid
                         }
                         elide: Text.ElideRight
@@ -205,7 +205,7 @@ Page {
             text: qsTr("Tap + to add one or sync to load your data.")
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
-            color: palette.placeholderText
+            color: Theme.mutedText
         }
     }
     // ── Startup ───────────────────────────────────────────────────────────────

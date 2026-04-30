@@ -121,7 +121,7 @@ Page {
             text: qsTr("Tap + to add a client.")
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
-            color: palette.placeholderText
+            color: Theme.mutedText
         }
     }
 }

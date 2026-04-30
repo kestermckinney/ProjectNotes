@@ -34,6 +34,8 @@ Page {
     property string initialStatus:        ""
     property string initialDateIdentified: ""
     property string initialDateDue:       ""
+    property string initialLastUpdate:    ""
+    property string initialDateResolved:  ""
     property bool   initialInternal:      false
     property bool   _skipSave:            false
     // property string _validatedItemNumber: root.initialItemNumber
@@ -84,6 +86,8 @@ Page {
         statusCombo.currentIndex = sti >= 0 ? sti : -1
         dateIdentifiedField.text = (d.date_identified || "").toString()
         dateDueField.text        = (d.date_due        || "").toString()
+        root.initialLastUpdate   = (d.last_update     || "").toString()
+        root.initialDateResolved = (d.date_resolved   || "").toString()
         internalSwitch.checked   = (d.internal_item   || "0") !== "0"
     }
 
@@ -131,6 +135,8 @@ Page {
                         initialStatus:        (d.status           || "").toString(),
                         initialDateIdentified:(d.date_identified   || "").toString(),
                         initialDateDue:       (d.date_due         || "").toString(),
+                        initialLastUpdate:    (d.last_update      || "").toString(),
+                        initialDateResolved:  (d.date_resolved    || "").toString(),
                         initialInternal:      (d.internal_item    || "0") !== "0"
                     })
                 }
@@ -155,7 +161,6 @@ Page {
 
             ToolButton {
                 icon.name: "text.bubble"
-                text: qsTr("Comments")
                 display: AbstractButton.TextUnderIcon
                 onClicked: {
                     if (!root._saveNow()) return
@@ -326,6 +331,26 @@ Page {
 
             SectionHeader { text: qsTr("Date Due") }
             DateFieldRow { id: dateDueField; text: root.initialDateDue }
+
+            SectionHeader { text: qsTr("Last Updated") }
+            FieldRow {
+                Label {
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: root.initialLastUpdate !== "" ? root.initialLastUpdate : qsTr("—")
+                    color: palette.placeholderText
+                    font.pixelSize: 16
+                }
+            }
+
+            SectionHeader { text: qsTr("Date Resolved") }
+            FieldRow {
+                Label {
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: root.initialDateResolved !== "" ? root.initialDateResolved : qsTr("—")
+                    color: palette.placeholderText
+                    font.pixelSize: 16
+                }
+            }
 
             SectionHeader {
                 visible: AppController.showInternalItems

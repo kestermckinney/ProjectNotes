@@ -66,7 +66,7 @@ Page {
             case "In Progress": return "#e07000"
             case "Completed":   return Theme.accentGreenDark
             case "Starting":    return palette.link
-            default:            return palette.placeholderText
+            default:            return Theme.mutedText
         }
     }
 
@@ -136,7 +136,7 @@ Page {
             text: qsTr("Tap + to add a status item.")
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
-            color: palette.placeholderText
+            color: Theme.mutedText
         }
     }
 }

@@ -86,7 +86,7 @@ Page {
                     Label {
                         text: AppController.peopleNameForId(model.updated_by || "")
                         font.pixelSize: 12
-                        color: palette.placeholderText
+                        color: Theme.mutedText
                     }
                 }
 
@@ -116,6 +116,6 @@ Page {
         anchors.centerIn: parent
         visible: listView.count === 0
         text: qsTr("No comments.")
-        color: palette.placeholderText
+        color: Theme.mutedText
     }
 }
