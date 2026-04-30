@@ -8,6 +8,8 @@
 #include "basepage.h"
 #include "combobox.h"
 
+#include <QApplication>
+#include <QWidget>
 #include <QLineEdit>
 #include <QTextEdit>
 #include <QCheckBox>
@@ -15,7 +17,29 @@
 
 ProjectNotesDelegate::ProjectNotesDelegate(QObject *parent) : QStyledItemDelegate(parent)
 {
+    m_mainWindow = findMainWindow();
+}
 
+MainWindow* ProjectNotesDelegate::findMainWindow()
+{
+    for (QWidget* widget : QApplication::topLevelWidgets()) {
+        MainWindow* mainWin = dynamic_cast<MainWindow*>(widget);
+        if (mainWin)
+            return mainWin;
+    }
+    return nullptr;
+}
+
+QString ProjectNotesDelegate::getScaledHtmlForWidget(const QString& html) const
+{
+    if (!m_mainWindow) return html;
+    return m_mainWindow->scaleHtmlFontSizesForWidget(html);
+}
+
+QString ProjectNotesDelegate::getUncaledHtmlForSave(const QString& html) const
+{
+    if (!m_mainWindow) return html;
+    return m_mainWindow->unscaleHtmlForSave(html);
 }
 
 void ProjectNotesDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
@@ -57,19 +81,20 @@ void ProjectNotesDelegate::setEditorData(QWidget *editor, const QModelIndex &ind
     case 4: // note
         {
             QTextEdit* textedit = static_cast<QTextEdit*>(editor);
+            QString dbHtml = value.toString();
 
-            // don't resent buffers if text hasn't changed
-            if (value.toString().contains("<html>", Qt::CaseInsensitive))
-            {
-                if (value.toString().compare(textedit->toHtml()) != 0)
-                    textedit->setHtml(value.toString());
-            }
-            else
-            {
-                if (value.toString().compare(textedit->toPlainText()) != 0)
-                    textedit->setPlainText(value.toString());
-            }
+            // don't reset buffers if text hasn't changed (compare scaled versions)
+            QString scaledHtml = getScaledHtmlForWidget(dbHtml);
+            QString currentHtml = scaledHtml.contains("<html>", Qt::CaseInsensitive)
+                ? textedit->toHtml()
+                : textedit->toPlainText();
 
+            if (scaledHtml.compare(currentHtml) != 0) {
+                if (scaledHtml.contains("<html>", Qt::CaseInsensitive))
+                    textedit->setHtml(scaledHtml);
+                else
+                    textedit->setPlainText(scaledHtml);
+            }
         }
         break;
     case 5: // note internal
@@ -112,7 +137,8 @@ void ProjectNotesDelegate::setModelData(QWidget *editor, QAbstractItemModel *mod
     case 4: // note text
         {
             QTextEdit* textedit = static_cast<QTextEdit*>(editor);
-            key_val = textedit->toHtml();
+            QString html = textedit->toHtml();
+            key_val = getUncaledHtmlForSave(html);
         }
         break;
     case 5: // note internal

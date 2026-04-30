@@ -5,8 +5,11 @@
 #include "databaseobjects.h"
 #include "notesactionitemsview.h"
 #include "appsettings.h"
+#include "mainwindow.h"
 #include "QLogger.h"
 #include "QLoggerWriter.h"
+
+#include <QTextEdit>
 
 using namespace QLogger;
 
@@ -44,6 +47,14 @@ void ProjectNotesPage::openRecord(QVariant& recordId)
 
     if (m_mapperProjectNotes != nullptr)
         m_mapperProjectNotes->toFirst();
+
+    // Load note HTML with zoom applied (column 4 is "note")
+    QString noteHtml = global_DBObjects.projecteditingnotesmodel()->data(
+        global_DBObjects.projecteditingnotesmodel()->index(0, 4)).toString();
+
+    MainWindow* mainWin = dynamic_cast<MainWindow*>(topLevelWidget());
+    if (mainWin && !noteHtml.isEmpty())
+        mainWin->setUnscaledHtml(noteHtml);
 
     // loadState();
 }
@@ -93,8 +104,10 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *ui )
     if (m_mapperProjectNotes == nullptr)
         m_mapperProjectNotes = new QDataWidgetMapper(this);
 
-    if (m_projectNotesDelegate == nullptr)
+    if (m_projectNotesDelegate == nullptr) {
         m_projectNotesDelegate = new ProjectNotesDelegate(this);
+        m_projectNotesDelegate->setMainWindow(dynamic_cast<MainWindow*>(topLevelWidget()));
+    }
 
     m_mapperProjectNotes->setItemDelegate(m_projectNotesDelegate);
 
@@ -103,9 +116,12 @@ void ProjectNotesPage::setupModels( Ui::MainWindow *ui )
     m_mapperProjectNotes->setSubmitPolicy(QDataWidgetMapper::AutoSubmit);
 
     m_mapperProjectNotes->addMapping(ui->plainTextEditMeetingTitle, 2);
-    m_mapperProjectNotes->addMapping(ui->textEditNotes, 4);
+    // Note: textEditNotes is handled manually for zoom support
     m_mapperProjectNotes->addMapping(ui->dateEditMeetingDate, 3);
     m_mapperProjectNotes->addMapping(ui->checkBoxInternalNote, 5);
+
+    connect(m_mapperProjectNotes, &QDataWidgetMapper::currentIndexChanged, this, &ProjectNotesPage::on_mapperIndexChanged);
+    connect(ui->textEditNotes, &QTextEdit::textChanged, this, &ProjectNotesPage::on_textEditNotes_textChanged);
 
     ui->tableViewAtendees->setModel(global_DBObjects.meetingattendeesmodelproxy());
     ui->tableViewActionItems->setModel(global_DBObjects.notesactionitemsmodelproxy());
@@ -144,4 +160,36 @@ void ProjectNotesPage::setButtonAndMenuStates()
        ui->tableViewActionItems->setColumnHidden(15, false);
     else
        ui->tableViewActionItems->setColumnHidden(15, true);
+}
+
+void ProjectNotesPage::on_mapperIndexChanged(int index)
+{
+    if (index < 0) return;
+
+    QString noteHtml = global_DBObjects.projecteditingnotesmodel()->data(
+        global_DBObjects.projecteditingnotesmodel()->index(index, 4)).toString();
+
+    MainWindow* mainWin = dynamic_cast<MainWindow*>(topLevelWidget());
+    if (mainWin) {
+        ui->textEditNotes->blockSignals(true);
+        mainWin->setUnscaledHtml(noteHtml);
+        ui->textEditNotes->blockSignals(false);
+    }
+}
+
+void ProjectNotesPage::on_textEditNotes_textChanged()
+{
+    if (!m_mapperProjectNotes) return;
+
+    int idx = m_mapperProjectNotes->currentIndex();
+    if (idx < 0) return;
+
+    MainWindow* mainWin = dynamic_cast<MainWindow*>(topLevelWidget());
+    if (!mainWin) return;
+
+    QString currentHtml = ui->textEditNotes->toHtml();
+    QString unscaledHtml = mainWin->unscaleHtmlForSave(currentHtml);
+
+    global_DBObjects.projecteditingnotesmodel()->setData(
+        global_DBObjects.projecteditingnotesmodel()->index(idx, 4), unscaledHtml, Qt::EditRole);
 }

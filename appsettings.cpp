@@ -300,6 +300,16 @@ void AppSettings::setStoredInt(const QString& valueName, int intVal)
     m_appConfig->setValue(path, value);
 }
 
+qreal AppSettings::getZoomFactor()
+{
+    return m_appConfig->value("ZoomFactor", 1.0).toReal();
+}
+
+void AppSettings::setZoomFactor(qreal factor)
+{
+    m_appConfig->setValue("ZoomFactor", factor);
+}
+
 void AppSettings::setWindowX(const QString& windowName, int X)
 {
     QString path = windowName + "/X";

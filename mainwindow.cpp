@@ -49,6 +49,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    m_zoomFactor = global_Settings.getZoomFactor();
+
     setWindowTitle(AppSettings::developerProfilePrefix() + windowTitle());
 
     DatabaseObjects::setLocalSettingsCallbacks(
@@ -151,6 +153,8 @@ MainWindow::MainWindow(QWidget *parent)
     openDatabase(dbfile);
 
     setButtonAndMenuStates();
+
+    applyZoom();
 }
 
 void MainWindow::addMenuItem(QMenu* menu, const QString& submenu, const QString& menutitle, QAction* action, int section)
@@ -1600,6 +1604,24 @@ void MainWindow::setupTextActions()
     tbs->addWidget(searchContainer);  // search box with right padding
 
     connect(m_quickSearchEdit, &QLineEdit::textChanged, this, &MainWindow::onQuickSearchChanged);
+
+    QMenu *viewMenu = menuBar()->findChild<QMenu*>("menuView");
+    if (!viewMenu) {
+        viewMenu = new QMenu(tr("&View"), this);
+        menuBar()->insertMenu(menuBar()->actions().first(), viewMenu);
+    }
+
+    m_actionZoomIn = viewMenu->addAction(tr("Zoom &In"), this, &MainWindow::textZoomIn);
+    m_actionZoomIn->setShortcut(Qt::CTRL | Qt::Key_Plus);
+    m_actionZoomIn->setEnabled(m_zoomFactor < 3.0);
+
+    m_actionZoomOut = viewMenu->addAction(tr("Zoom &Out"), this, &MainWindow::textZoomOut);
+    m_actionZoomOut->setShortcut(Qt::CTRL | Qt::Key_Minus);
+    m_actionZoomOut->setEnabled(m_zoomFactor > 0.5);
+
+    m_actionZoomReset = viewMenu->addAction(tr("&No Zoom"), this, &MainWindow::textZoomReset);
+    m_actionZoomReset->setShortcut(Qt::CTRL | Qt::Key_0);
+    m_actionZoomReset->setEnabled(qAbs(m_zoomFactor - 1.0) > 0.01);
 }
 
 void MainWindow::onQuickSearchChanged(const QString& text)
@@ -1766,10 +1788,141 @@ void MainWindow::textSize(const QString &p)
     qreal pointSize = p.toFloat();
     if (p.toFloat() > 0)
     {
+        // Apply scaled size to the text (user sees unscaled, we store scaled)
+        qreal scaledSize = pointSize * m_zoomFactor;
         QTextCharFormat fmt;
-        fmt.setFontPointSize(pointSize);
+        fmt.setFontPointSize(scaledSize);
         mergeFormatOnWordOrSelection(fmt);
     }
+}
+
+void MainWindow::textZoomIn()
+{
+    m_zoomFactor = qMin(3.0, m_zoomFactor + 0.25);
+    applyZoom();
+}
+
+void MainWindow::textZoomOut()
+{
+    m_zoomFactor = qMax(0.5, m_zoomFactor - 0.25);
+    applyZoom();
+}
+
+void MainWindow::textZoomReset()
+{
+    m_zoomFactor = 1.0;
+    applyZoom();
+}
+
+void MainWindow::applyZoom()
+{
+    global_Settings.setZoomFactor(m_zoomFactor);
+
+    qreal fontSize = 11 * m_zoomFactor;
+
+    QFont appFont = QApplication::font();
+    appFont.setPointSizeF(fontSize);
+    QApplication::setFont(appFont);
+
+    if (ui->textEditNotes) {
+        QFont textEditFont = ui->textEditNotes->font();
+        textEditFont.setPointSizeF(fontSize);
+        ui->textEditNotes->setFont(textEditFont);
+
+        if (!m_unscaledHtml.isEmpty()) {
+            QString scaledHtml = scaleHtmlFontSizes(m_unscaledHtml, m_zoomFactor);
+            ui->textEditNotes->setHtml(scaledHtml);
+        }
+    }
+
+    ui->tableViewProjects->applyZoom(m_zoomFactor);
+    ui->tableViewTrackerItems->applyZoom(m_zoomFactor);
+    ui->tableViewAllItems->applyZoom(m_zoomFactor);
+    ui->tableViewActionItems->applyZoom(m_zoomFactor);
+    ui->tableViewProjectNotes->applyZoom(m_zoomFactor);
+    ui->tableViewSearchResults->applyZoom(m_zoomFactor);
+    ui->tableViewTeam->applyZoom(m_zoomFactor);
+    ui->tableViewAtendees->applyZoom(m_zoomFactor);
+
+    int minLineEditHeight = qRound(20 * m_zoomFactor);
+    int minTextEditHeight = qRound(60 * m_zoomFactor);
+
+    QString fontSizeStr = QString::number(fontSize, 'f', 1);
+    QString existingSheet = qApp->styleSheet();
+    QString newRules = QString(
+        "* { font-size: %1pt; } "
+        "QLineEdit { min-height: %2px; } "
+        "QTextEdit { min-height: %3px; } "
+        "QSpinBox { min-height: %2px; } "
+        "QDoubleSpinBox { min-height: %2px; } "
+        "QComboBox { min-height: %2px; }"
+    ).arg(fontSizeStr).arg(minLineEditHeight).arg(minTextEditHeight);
+
+    if (existingSheet.isEmpty()) {
+        qApp->setStyleSheet(newRules);
+    } else {
+        qApp->setStyleSheet(existingSheet + "\n" + newRules);
+    }
+
+    m_actionZoomIn->setEnabled(m_zoomFactor < 3.0);
+    m_actionZoomOut->setEnabled(m_zoomFactor > 0.5);
+    m_actionZoomReset->setEnabled(qAbs(m_zoomFactor - 1.0) > 0.01);
+}
+
+QString MainWindow::scaleHtmlFontSizes(const QString& html, qreal factor) const
+{
+    if (html.isEmpty() || factor == 1.0) return html;
+
+    QString result = html;
+    QRegularExpression re1(R"(font-size:\s*(\d+(?:\.\d+)?)(pt|px))", QRegularExpression::CaseInsensitiveOption);
+    QRegularExpressionMatchIterator it = re1.globalMatch(result);
+
+    QStringList replacements;
+    while (it.hasNext()) {
+        QRegularExpressionMatch match = it.next();
+        QString sizeStr = match.captured(1);
+        QString unit = match.captured(2);
+        qreal size = sizeStr.toDouble();
+        qreal newSize = size * factor;
+        QString replacement = QString("font-size:%1%2").arg(newSize, 0, 'f', 1).arg(unit);
+        replacements.append(replacement);
+    }
+
+    it = re1.globalMatch(result);
+    int idx = 0;
+    while (it.hasNext()) {
+        QRegularExpressionMatch match = it.next();
+        result.replace(match.capturedStart(), match.capturedLength(), replacements.at(idx++));
+    }
+
+    return result;
+}
+
+void MainWindow::setUnscaledHtml(const QString& html)
+{
+    m_unscaledHtml = html;
+    if (ui->textEditNotes && !html.isEmpty()) {
+        QString scaledHtml = scaleHtmlFontSizes(html, m_zoomFactor);
+        ui->textEditNotes->setHtml(scaledHtml);
+    }
+}
+
+void MainWindow::refreshTextEditWithZoom()
+{
+    if (ui->textEditNotes && !m_unscaledHtml.isEmpty()) {
+        QString scaledHtml = scaleHtmlFontSizes(m_unscaledHtml, m_zoomFactor);
+        ui->textEditNotes->setHtml(scaledHtml);
+    }
+}
+
+QString MainWindow::unscaleHtmlForSave(const QString& scaledHtml) const
+{
+    return scaleHtmlFontSizes(scaledHtml, 1.0 / m_zoomFactor);
+}
+
+QString MainWindow::scaleHtmlFontSizesForWidget(const QString& html) const
+{
+    return scaleHtmlFontSizes(html, m_zoomFactor);
 }
 
 void MainWindow::cursorPositionChanged()
@@ -1835,7 +1988,12 @@ void MainWindow::currentCharFormatChanged(const QTextCharFormat &format)
 void MainWindow::fontChanged(const QFont &f)
 {
     m_comboBoxFont->setCurrentIndex(m_comboBoxFont->findText(QFontInfo(f).family()));
-    m_comboBoxSize->setCurrentIndex(m_comboBoxSize->findText(QString::number(f.pointSize())));
+
+    // Show unscaled font size in dropdown
+    qreal displaySize = f.pointSize();
+    qreal unscaledSize = (m_zoomFactor != 0.0) ? (displaySize / m_zoomFactor) : displaySize;
+    m_comboBoxSize->setCurrentIndex(m_comboBoxSize->findText(QString::number(unscaledSize)));
+
     m_actionTextBold->setChecked(f.bold());
     m_actionTextItalic->setChecked(f.italic());
     m_actionTextUnderline->setChecked(f.underline());

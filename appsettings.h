@@ -62,6 +62,9 @@ public:
     int getStoredInt(const QString& valueName);
     void setStoredInt(const QString& valueName, int intValue);
 
+    qreal getZoomFactor();
+    void setZoomFactor(qreal factor);
+
     SpellChecker* spellchecker();
 
 private:

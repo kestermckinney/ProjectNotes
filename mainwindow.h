@@ -190,6 +190,26 @@ private:
     void textAlign(QAction *a);
     void textColor();
 
+    void textZoomIn();
+    void textZoomOut();
+    void textZoomReset();
+
+    void refreshTextEditWithZoom();
+    void setUnscaledHtml(const QString& html);
+
+    QString unscaleHtmlForSave(const QString& scaledHtml) const;
+    qreal getCurrentZoomFactor() const { return m_zoomFactor; }
+    QString scaleHtmlFontSizesForWidget(const QString& html) const;
+
+private:
+    void applyZoom();
+    QString scaleHtmlFontSizes(const QString& html, qreal factor) const;
+
+    QString m_unscaledHtml;
+
+    friend class ProjectNotesPage;
+    friend class ProjectNotesDelegate;
+
     QAction *m_actionTextBold;
     QAction *m_actionTextUnderline;
     QAction *m_actionTextItalic;
@@ -205,6 +225,12 @@ private:
     QAction *m_actionCut;
     QAction *m_actionCopy;
     QAction *m_actionPaste;
+
+    QAction *m_actionZoomIn;
+    QAction *m_actionZoomOut;
+    QAction *m_actionZoomReset;
+
+    qreal m_zoomFactor = 1.0;
 
     QComboBox* m_comboBoxStyle;
     QFontComboBox* m_comboBoxFont;
