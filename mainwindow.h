@@ -191,6 +191,7 @@ private:
     void textZoomIn();
     void textZoomOut();
     void textZoomReset();
+    void updateZoomLabel();
 
     void refreshTextEditWithZoom();
     void setUnscaledHtml(const QString& html);
@@ -224,8 +225,9 @@ private:
     QAction *m_actionCopy;
     QAction *m_actionPaste;
 
-    QAction *m_actionZoomIn;
-    QAction *m_actionZoomOut;
+    QLabel *m_labelZoomPercent;
+    QPushButton *m_zoomInButton;
+    QPushButton *m_zoomOutButton;
     QAction *m_actionZoomReset;
 
     qreal m_zoomFactor = 1.0;

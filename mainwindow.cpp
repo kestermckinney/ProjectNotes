@@ -33,6 +33,10 @@
 #include <QActionGroup>
 #include <QDesktopServices>
 #include <QLineEdit>
+#include <QWidgetAction>
+#include <QPushButton>
+#include <QHBoxLayout>
+#include <QLabel>
 #include "mainwindow.h"
 #include "cloudsyncsettingsdialog.h"
 #include "appsettings.h"
@@ -1612,13 +1616,37 @@ void MainWindow::setupTextActions()
         menuBar()->insertMenu(menuBar()->actions().first(), viewMenu);
     }
 
-    m_actionZoomIn = viewMenu->addAction(tr("Zoom &In"), this, &MainWindow::textZoomIn);
-    m_actionZoomIn->setShortcut(Qt::CTRL | Qt::Key_Plus);
-    m_actionZoomIn->setEnabled(m_zoomFactor < 3.0);
+    QWidgetAction* zoomAction = new QWidgetAction(viewMenu);
+    QWidget* zoomWidget = new QWidget(viewMenu);
+    QHBoxLayout* zoomLayout = new QHBoxLayout(zoomWidget);
+    zoomLayout->setContentsMargins(16, 2, 16, 2);
+    zoomLayout->setSpacing(4);
 
-    m_actionZoomOut = viewMenu->addAction(tr("Zoom &Out"), this, &MainWindow::textZoomOut);
-    m_actionZoomOut->setShortcut(Qt::CTRL | Qt::Key_Minus);
-    m_actionZoomOut->setEnabled(m_zoomFactor > 0.5);
+    QPushButton* zoomOutBtn = new QPushButton("-", zoomWidget);
+    zoomOutBtn->setFixedWidth(24);
+    zoomOutBtn->setToolTip(tr("Zoom Out"));
+    m_zoomOutButton = zoomOutBtn;
+    connect(zoomOutBtn, &QPushButton::clicked, this, &MainWindow::textZoomOut);
+
+    m_labelZoomPercent = new QLabel(viewMenu);
+    m_labelZoomPercent->setAlignment(Qt::AlignCenter);
+    m_labelZoomPercent->setMinimumWidth(20);
+
+    QPushButton* zoomInBtn = new QPushButton("+", zoomWidget);
+    zoomInBtn->setFixedWidth(24);
+    zoomInBtn->setToolTip(tr("Zoom In"));
+    m_zoomInButton = zoomInBtn;
+    connect(zoomInBtn, &QPushButton::clicked, this, &MainWindow::textZoomIn);
+
+    zoomLayout->addWidget(zoomOutBtn);
+    zoomLayout->addWidget(m_labelZoomPercent);
+    zoomLayout->addWidget(zoomInBtn);
+
+    zoomAction->setDefaultWidget(zoomWidget);
+    viewMenu->addAction(zoomAction);
+    viewMenu->addSeparator();
+
+    updateZoomLabel();
 
     m_actionZoomReset = viewMenu->addAction(tr("&No Zoom"), this, &MainWindow::textZoomReset);
     m_actionZoomReset->setShortcut(Qt::CTRL | Qt::Key_0);
@@ -1815,6 +1843,18 @@ void MainWindow::textZoomReset()
     applyZoom();
 }
 
+void MainWindow::updateZoomLabel()
+{
+    if (!m_labelZoomPercent || !m_zoomInButton || !m_zoomOutButton) {
+        return;
+    }
+
+    int percent = qRound(m_zoomFactor * 100);
+    m_labelZoomPercent->setText(QString::number(percent) + "%");
+    m_zoomOutButton->setVisible(true);
+    m_zoomInButton->setVisible(true);
+}
+
 void MainWindow::applyZoom()
 {
     global_Settings.setZoomFactor(m_zoomFactor);
@@ -1845,8 +1885,10 @@ void MainWindow::applyZoom()
     ui->tableViewTeam->applyZoom(m_zoomFactor);
     ui->tableViewAtendees->applyZoom(m_zoomFactor);
 
-    int minLineEditHeight = qRound(20 * m_zoomFactor);
-    int minTextEditHeight = qRound(60 * m_zoomFactor);
+    QFont lineEditFont = QApplication::font();
+    QFontMetrics fm(lineEditFont);
+    int lineEditHeight = fm.lineSpacing() + 8;
+    int textEditHeight = fm.lineSpacing() * 3 + 8;
 
     QString fontSizeStr = QString::number(fontSize, 'f', 1);
     QString existingSheet = qApp->styleSheet();
@@ -1857,7 +1899,7 @@ void MainWindow::applyZoom()
         "QSpinBox { min-height: %2px; } "
         "QDoubleSpinBox { min-height: %2px; } "
         "QComboBox { min-height: %2px; }"
-    ).arg(fontSizeStr).arg(minLineEditHeight).arg(minTextEditHeight);
+    ).arg(fontSizeStr).arg(lineEditHeight).arg(textEditHeight);
 
     if (existingSheet.isEmpty()) {
         qApp->setStyleSheet(newRules);
@@ -1865,9 +1907,7 @@ void MainWindow::applyZoom()
         qApp->setStyleSheet(existingSheet + "\n" + newRules);
     }
 
-    m_actionZoomIn->setEnabled(m_zoomFactor < 3.0);
-    m_actionZoomOut->setEnabled(m_zoomFactor > 0.5);
-    m_actionZoomReset->setEnabled(qAbs(m_zoomFactor - 1.0) > 0.01);
+    updateZoomLabel();
 }
 
 QString MainWindow::scaleHtmlFontSizes(const QString& html, qreal factor) const
