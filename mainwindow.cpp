@@ -37,6 +37,8 @@
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QShortcut>
+#include <QKeySequence>
 #include "mainwindow.h"
 #include "cloudsyncsettingsdialog.h"
 #include "appsettings.h"
@@ -1619,7 +1621,7 @@ void MainWindow::setupTextActions()
     QWidgetAction* zoomAction = new QWidgetAction(viewMenu);
     QWidget* zoomWidget = new QWidget(viewMenu);
     QHBoxLayout* zoomLayout = new QHBoxLayout(zoomWidget);
-    zoomLayout->setContentsMargins(16, 2, 16, 2);
+    zoomLayout->setContentsMargins(16, 2, 20, 2);
     zoomLayout->setSpacing(4);
 
     QPushButton* zoomOutBtn = new QPushButton("-", zoomWidget);
@@ -1628,9 +1630,13 @@ void MainWindow::setupTextActions()
     m_zoomOutButton = zoomOutBtn;
     connect(zoomOutBtn, &QPushButton::clicked, this, &MainWindow::textZoomOut);
 
+    m_labelZoom = new QLabel(viewMenu);
+    m_labelZoom->setAlignment(Qt::AlignLeft);
+    m_labelZoom->setText("Zoom");
+
     m_labelZoomPercent = new QLabel(viewMenu);
     m_labelZoomPercent->setAlignment(Qt::AlignCenter);
-    m_labelZoomPercent->setMinimumWidth(20);
+    m_labelZoomPercent->setFixedWidth(50);
 
     QPushButton* zoomInBtn = new QPushButton("+", zoomWidget);
     zoomInBtn->setFixedWidth(24);
@@ -1638,6 +1644,18 @@ void MainWindow::setupTextActions()
     m_zoomInButton = zoomInBtn;
     connect(zoomInBtn, &QPushButton::clicked, this, &MainWindow::textZoomIn);
 
+    // === Keyboard shortcuts for zoom in/out ===
+    // Zoom In: Ctrl + '+' and Ctrl + '=' (covers both US and some intl layouts)
+    QShortcut* zoomInShortcut1 = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Plus), this);
+    QShortcut* zoomInShortcut2 = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Equal), this);
+    connect(zoomInShortcut1, &QShortcut::activated, this, &MainWindow::textZoomIn);
+    connect(zoomInShortcut2, &QShortcut::activated, this, &MainWindow::textZoomIn);
+    // Zoom Out: Ctrl + '-'
+    QShortcut* zoomOutShortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_Minus), this);
+    connect(zoomOutShortcut, &QShortcut::activated, this, &MainWindow::textZoomOut);
+    // === End keyboard shortcuts setup ===
+
+    zoomLayout->addWidget(m_labelZoom);
     zoomLayout->addWidget(zoomOutBtn);
     zoomLayout->addWidget(m_labelZoomPercent);
     zoomLayout->addWidget(zoomInBtn);
@@ -1650,7 +1668,6 @@ void MainWindow::setupTextActions()
 
     m_actionZoomReset = viewMenu->addAction(tr("&No Zoom"), this, &MainWindow::textZoomReset);
     m_actionZoomReset->setShortcut(Qt::CTRL | Qt::Key_0);
-    m_actionZoomReset->setEnabled(qAbs(m_zoomFactor - 1.0) > 0.01);
 }
 
 void MainWindow::onQuickSearchChanged(const QString& text)
@@ -1827,13 +1844,13 @@ void MainWindow::textSize(const QString &p)
 
 void MainWindow::textZoomIn()
 {
-    m_zoomFactor = qMin(3.0, m_zoomFactor + 0.25);
+    m_zoomFactor = qMin(3.0, m_zoomFactor + 0.10);
     applyZoom();
 }
 
 void MainWindow::textZoomOut()
 {
-    m_zoomFactor = qMax(0.5, m_zoomFactor - 0.25);
+    m_zoomFactor = qMax(0.5, m_zoomFactor - 0.10);
     applyZoom();
 }
 
@@ -1859,9 +1876,9 @@ void MainWindow::applyZoom()
 {
     global_Settings.setZoomFactor(m_zoomFactor);
 
-    qreal fontSize = 11 * m_zoomFactor;
+    qreal fontSize = m_startingFont.pointSizeF() * m_zoomFactor;
 
-    QFont appFont = QApplication::font();
+    QFont appFont = m_startingFont;
     appFont.setPointSizeF(fontSize);
     QApplication::setFont(appFont);
 
@@ -1885,21 +1902,26 @@ void MainWindow::applyZoom()
     ui->tableViewTeam->applyZoom(m_zoomFactor);
     ui->tableViewAtendees->applyZoom(m_zoomFactor);
 
-    QFont lineEditFont = QApplication::font();
-    QFontMetrics fm(lineEditFont);
-    int lineEditHeight = fm.lineSpacing() + 8;
+    // QFont lineEditFont = QApplication::font();
+    QFontMetrics fm(appFont);
+    int lineEditHeight = fm.lineSpacing() + 10;
     int textEditHeight = fm.lineSpacing() * 3 + 8;
 
     QString fontSizeStr = QString::number(fontSize, 'f', 1);
     QString existingSheet = qApp->styleSheet();
     QString newRules = QString(
         "* { font-size: %1pt; } "
+        "QMenu { font-size: %1pt; } "
         "QLineEdit { min-height: %2px; } "
         "QTextEdit { min-height: %3px; } "
+        "QPlainTextEdit { min-height: %2px; } "
         "QSpinBox { min-height: %2px; } "
         "QDoubleSpinBox { min-height: %2px; } "
         "QComboBox { min-height: %2px; }"
     ).arg(fontSizeStr).arg(lineEditHeight).arg(textEditHeight);
+
+    qDebug() << "style: " << newRules;
+    qDebug() << "zoom: " << m_zoomFactor << " starting font: " << m_startingFont;
 
     if (existingSheet.isEmpty()) {
         qApp->setStyleSheet(newRules);
