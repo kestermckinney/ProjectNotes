@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     // Set the attribute before creating QApplication this was needed for QWebView would work
     QCoreApplication::setAttribute(Qt::ApplicationAttribute::AA_ShareOpenGLContexts);
 
-    QApplication a(argc, argv);
+    QApplication a(argc, argv);      
 
     QCommandLineParser parser;
     parser.setApplicationDescription("Project Notes");
@@ -85,6 +85,8 @@ int main(int argc, char *argv[])
 #ifndef Q_OS_APPLE
         a.setWindowIcon(QIcon(":/icons/logo.png")); // "AppIcon.icns"
 #endif
+        QFont defaultFont;
+        w.setStartingFont(defaultFont);
         w.show();
 
         ret = a.exec();

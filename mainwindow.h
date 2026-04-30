@@ -78,6 +78,8 @@ public:
     QComboBox* fontSizeComboBox() { return m_comboBoxSize; }
     QComboBox* fontStyleComboBox() { return m_comboBoxStyle; }
 
+    void setStartingFont(const QFont startingFont) { m_startingFont = startingFont; }
+
 public slots:
     void slotOpen_ProjectDetails_triggered(QVariant recordId);
     void slotOpen_ItemDetails_triggered(QVariant recordId);
@@ -225,6 +227,7 @@ private:
     QAction *m_actionCopy;
     QAction *m_actionPaste;
 
+    QLabel *m_labelZoom;
     QLabel *m_labelZoomPercent;
     QPushButton *m_zoomInButton;
     QPushButton *m_zoomOutButton;
@@ -244,6 +247,7 @@ private:
     QProgressBar* m_syncProgressBar = nullptr;
     QLabel*       m_syncNetworkErrorLabel = nullptr;
     bool          m_syncNetworkError = false;
+    QFont         m_startingFont;
 };
 
 
