@@ -141,8 +141,6 @@ private slots:
 
     void slotPluginMenu(Plugin* plugin, const QString& functionname, const QString& parameter);
     void on_actionOpen_Item_triggered();
-    void on_actionIncrease_Font_Size_triggered();
-    void on_actionDecrease_Font_Size_triggered();
 
     void onPluginLoaded(const QString& pluginpath);
     void onPluginUnLoaded(const QString& pluginpath);

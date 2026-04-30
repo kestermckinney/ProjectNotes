@@ -11,6 +11,7 @@
 #include "plaintextedit.h"
 #include "textedit.h"
 #include "combobox.h"
+#include "lineeditfilebutton.h"
 
 #include <QStringListModel>
 #include <QMessageBox>
@@ -2273,55 +2274,6 @@ void MainWindow::on_actionHelp_triggered()
 void MainWindow::on_actionWhat_s_New_triggered()
 {
     QDesktopServices::openUrl(QUrl("https://github.com/kestermckinney/ProjectNotes/releases", QUrl::TolerantMode));
-}
-
-void MainWindow::on_actionIncrease_Font_Size_triggered()
-{
-    QFont af = QApplication::font();
-    af.setPointSize(af.pointSize() + 1);
-    QApplication::setFont(af);
-
-    global_Settings.setStoredInt("DefaultFontSize",  QApplication::font().pointSize());
-
-    QList<QWidget*> subwidgets = this->findChildren<QWidget*>();
-    QListIterator<QWidget*> it(subwidgets); // iterate through the list of widgets
-    QWidget *awiget;
-
-    while (it.hasNext()) {
-        awiget = it.next(); // take each widget in the list
-
-        if ( QString(awiget->metaObject()->className()).contains("TableView") )
-        {
-            qobject_cast<QTableView*>(awiget)->resizeColumnsToContents();
-            qobject_cast<QTableView*>(awiget)->resizeRowsToContents();
-        }
-    }
-
-    global_Settings.setStoredInt("DefaultFontSize",  QApplication::font().pointSize());
-}
-
-
-void MainWindow::on_actionDecrease_Font_Size_triggered()
-{
-    QFont af = QApplication::font();
-    af.setPointSize(af.pointSize() - 1);
-    QApplication::setFont(af);
-
-    QList<QWidget*> subwidgets = this->findChildren<QWidget*>();
-    QListIterator<QWidget*> it(subwidgets); // iterate through the list of widgets
-    QWidget *awiget;
-
-    while (it.hasNext()) {
-        awiget = it.next(); // take each widget in the list
-
-        if ( QString(awiget->metaObject()->className()).contains("TableView") )
-        {
-            qobject_cast<QTableView*>(awiget)->resizeColumnsToContents();
-            qobject_cast<QTableView*>(awiget)->resizeRowsToContents();
-        }
-    }
-
-    global_Settings.setStoredInt("DefaultFontSize",  QApplication::font().pointSize());
 }
 
 void MainWindow::onPluginLoaded(const QString& pluginpath)
