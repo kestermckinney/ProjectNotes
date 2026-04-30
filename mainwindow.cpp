@@ -1621,8 +1621,10 @@ void MainWindow::setupTextActions()
     QWidgetAction* zoomAction = new QWidgetAction(viewMenu);
     QWidget* zoomWidget = new QWidget(viewMenu);
     QHBoxLayout* zoomLayout = new QHBoxLayout(zoomWidget);
-    zoomLayout->setContentsMargins(16, 2, 20, 2);
+    zoomLayout->setContentsMargins(8, 2, 20, 0);
     zoomLayout->setSpacing(4);
+
+    const QIcon zoomIcon = QIcon(rsrcPath + "/search.png");
 
     QPushButton* zoomOutBtn = new QPushButton("-", zoomWidget);
     zoomOutBtn->setFixedWidth(24);
@@ -1655,6 +1657,11 @@ void MainWindow::setupTextActions()
     connect(zoomOutShortcut, &QShortcut::activated, this, &MainWindow::textZoomOut);
     // === End keyboard shortcuts setup ===
 
+    QLabel* iconLabel = new QLabel;
+    iconLabel->setPixmap(zoomIcon.pixmap(zoomOutBtn->iconSize()));
+    iconLabel->setFixedWidth(zoomInBtn->width());
+
+    zoomLayout->addWidget(iconLabel);
     zoomLayout->addWidget(m_labelZoom);
     zoomLayout->addWidget(zoomOutBtn);
     zoomLayout->addWidget(m_labelZoomPercent);
@@ -1666,7 +1673,8 @@ void MainWindow::setupTextActions()
 
     updateZoomLabel();
 
-    m_actionZoomReset = viewMenu->addAction(tr("&No Zoom"), this, &MainWindow::textZoomReset);
+    QIcon noZoomIcon(rsrcPath + "/no-zoom.png");
+    m_actionZoomReset = viewMenu->addAction(noZoomIcon, tr("&No Zoom"), this, &MainWindow::textZoomReset);
     m_actionZoomReset->setShortcut(Qt::CTRL | Qt::Key_0);
 }
 
@@ -1920,8 +1928,8 @@ void MainWindow::applyZoom()
         "QComboBox { min-height: %2px; }"
     ).arg(fontSizeStr).arg(lineEditHeight).arg(textEditHeight);
 
-    qDebug() << "style: " << newRules;
-    qDebug() << "zoom: " << m_zoomFactor << " starting font: " << m_startingFont;
+    // qDebug() << "style: " << newRules;
+    // qDebug() << "zoom: " << m_zoomFactor << " starting font: " << m_startingFont;
 
     if (existingSheet.isEmpty()) {
         qApp->setStyleSheet(newRules);

@@ -43,8 +43,6 @@
         <file>icons/whats-new.png</file>
         <file>icons/about.png</file>
         <file>icons/edit.png</file>
-        <file>icons/font-increase.png</file>
-        <file>icons/font-decrease.png</file>
         <file>icons/cloud-sync.png</file>
         <file>icons/export.png</file>
         <file>icons/import.png</file>
@@ -52,5 +50,6 @@
         <file>icons/assigned-items.png</file>
         <file>icons/plugins.png</file>
         <file>icons/syncstats.png</file>
+        <file>icons/no-zoom.png</file>
     </qresource>
 </RCC>
