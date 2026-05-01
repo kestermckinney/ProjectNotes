@@ -95,6 +95,9 @@ qt_add_qml_module(ProjectNotesMobile
         TextFormatter.cpp   TextFormatter.h
     QML_FILES
         qml/Theme.qml
+        qml/FormField.qml
+        qml/FormLabel.qml
+        qml/FieldRow.qml
         qml/Main.qml
         qml/pages/ProjectsListPage.qml
         qml/pages/PeoplePage.qml

@@ -183,35 +183,25 @@ Page {
 
             SectionHeader { text: qsTr("Project Number") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: root.initialProjectNumber !== "" ? root.initialProjectNumber : qsTr("—")
-                    color: palette.placeholderText
-                    font.pixelSize: 16
                 }
             }
 
             SectionHeader { text: qsTr("Project Name") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: root.initialProjectName !== "" ? root.initialProjectName : qsTr("—")
-                    color: palette.placeholderText
-                    font.pixelSize: 16
                     elide: Text.ElideRight
                 }
             }
 
             SectionHeader { text: qsTr("Item Number") }
             FieldRow {
-                TextField {
+                FormField {
                     id: itemNumber
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialItemNumber
-                    horizontalAlignment: TextInput.AlignLeft
-                    // leftPadding: 0; rightPadding: 0
                     inputMethodHints: Qt.ImhNoPredictiveText
-                    background: Item {}
                 }
             }
 
@@ -231,14 +221,10 @@ Page {
             SectionHeader { text: qsTr("Name") }
             FieldRow {
 
-                TextField {
+                FormField {
                     id: nameField
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialName
-                    horizontalAlignment: TextInput.AlignLeft
-                    leftPadding: 0; rightPadding: 0
                     inputMethodHints: Qt.ImhNoPredictiveText
-                    background: Item {}
                 }
             }
 
@@ -258,7 +244,7 @@ Page {
                 }
                 Rectangle {
                     anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-                    height: 1; color: palette.placeholderText; opacity: 0.3
+                    height: 1; color: Theme.mutedText; opacity: 0.3
                 }
             }
 
@@ -334,21 +320,15 @@ Page {
 
             SectionHeader { text: qsTr("Last Updated") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: root.initialLastUpdate !== "" ? root.initialLastUpdate : qsTr("—")
-                    color: palette.placeholderText
-                    font.pixelSize: 16
                 }
             }
 
             SectionHeader { text: qsTr("Date Resolved") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: root.initialDateResolved !== "" ? root.initialDateResolved : qsTr("—")
-                    color: palette.placeholderText
-                    font.pixelSize: 16
                 }
             }
 
@@ -379,18 +359,6 @@ Page {
         font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }
-    }
-
-    component FieldRow: Rectangle {
-        default property alias content: innerItem.data
-        Layout.fillWidth: true
-        Layout.preferredHeight: 44
-        color: palette.base
-        Item { id: innerItem; anchors.fill: parent }
-        Rectangle {
-            anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-            height: 1; color: palette.placeholderText; opacity: 0.3
-        }
     }
 
     Dialog {

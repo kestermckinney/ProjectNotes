@@ -134,7 +134,7 @@ Popup {
 
             Rectangle {
                 anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
-                height: 1; color: palette.placeholderText; opacity: 0.3
+                height: 1; color: Theme.mutedText; opacity: 0.3
             }
         }
 
@@ -191,7 +191,7 @@ Popup {
                             text: modelData
                             font.pixelSize: 12
                             font.bold: true
-                            color: palette.placeholderText
+                            color: Theme.mutedText
                         }
                     }
                 }
@@ -263,7 +263,7 @@ Popup {
                             color: isSelected   ? "white"
                                  : isToday      ? Theme.navyMid
                                  : isCurrent    ? palette.text
-                                                : palette.placeholderText
+                                                : Theme.mutedText
                         }
 
                         MouseArea {
@@ -276,7 +276,7 @@ Popup {
             }
         }
 
-        Rectangle { Layout.fillWidth: true; height: 1; color: palette.placeholderText; opacity: 0.2 }
+        Rectangle { Layout.fillWidth: true; height: 1; color: Theme.mutedText; opacity: 0.2 }
 
         // ── Footer: Today | Clear ─────────────────────────────────────────────
         RowLayout {

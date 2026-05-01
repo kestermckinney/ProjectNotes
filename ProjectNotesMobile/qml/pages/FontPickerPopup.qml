@@ -147,7 +147,7 @@ Popup {
             }
             Rectangle {
                 anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
-                height: 1; color: palette.placeholderText; opacity: 0.3
+                height: 1; color: Theme.mutedText; opacity: 0.3
             }
         }
 
@@ -167,7 +167,7 @@ Popup {
                     leftPadding: 16; topPadding: 14; bottomPadding: 4
                     text: qsTr("FONT FAMILY")
                     font.pixelSize: 12; font.weight: 500
-                    color: palette.placeholderText
+                    color: Theme.mutedText
                 }
                 ComboBox {
                     id: familyCombo
@@ -182,7 +182,7 @@ Popup {
                     leftPadding: 16; topPadding: 16; bottomPadding: 6
                     text: qsTr("SIZE")
                     font.pixelSize: 12; font.weight: 500
-                    color: palette.placeholderText
+                    color: Theme.mutedText
                 }
                 Flow {
                     Layout.fillWidth: true
@@ -217,7 +217,7 @@ Popup {
                     leftPadding: 16; topPadding: 16; bottomPadding: 8
                     text: qsTr("COLOR")
                     font.pixelSize: 12; font.weight: 500
-                    color: palette.placeholderText
+                    color: Theme.mutedText
                 }
                 Flow {
                     Layout.fillWidth: true

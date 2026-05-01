@@ -95,7 +95,7 @@ Page {
             Rectangle {
                 anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
                 height: 1
-                color: palette.placeholderText
+                color: Theme.mutedText
                 opacity: 0.3
             }
         }

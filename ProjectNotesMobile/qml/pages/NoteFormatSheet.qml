@@ -122,7 +122,7 @@ Popup {
             }
             Rectangle {
                 anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
-                height: 1; color: palette.placeholderText; opacity: 0.25
+                height: 1; color: Theme.mutedText; opacity: 0.25
             }
         }
 
@@ -181,7 +181,7 @@ Popup {
             }
         }
 
-        Rectangle { Layout.fillWidth: true; height: 1; color: palette.placeholderText; opacity: 0.25 }
+        Rectangle { Layout.fillWidth: true; height: 1; color: Theme.mutedText; opacity: 0.25 }
 
         // ── Character formatting row ───────────────────────────────────────────
         RowLayout {
@@ -238,7 +238,7 @@ Popup {
                 anchors.fill: parent
                 spacing: 0
 
-                Rectangle { Layout.fillWidth: true; height: 1; color: palette.placeholderText; opacity: 0.25 }
+                Rectangle { Layout.fillWidth: true; height: 1; color: Theme.mutedText; opacity: 0.25 }
 
                 Flow {
                     Layout.fillWidth: true
@@ -283,7 +283,7 @@ Popup {
             }
         }
 
-        Rectangle { Layout.fillWidth: true; height: 1; color: palette.placeholderText; opacity: 0.25 }
+        Rectangle { Layout.fillWidth: true; height: 1; color: Theme.mutedText; opacity: 0.25 }
 
         // ── List / indent / alignment row ─────────────────────────────────────
         RowLayout {

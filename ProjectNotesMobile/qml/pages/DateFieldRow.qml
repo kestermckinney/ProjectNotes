@@ -49,7 +49,7 @@ Rectangle {
             id: dateLabel
             Layout.fillWidth: true
             text: root.text !== "" ? root.text : root.placeholderText
-            color: root.text !== "" ? palette.text : palette.placeholderText
+            color: root.text !== "" ? palette.text : Theme.mutedText
             verticalAlignment: Text.AlignVCenter
             font.pixelSize: 16
         }
@@ -70,12 +70,10 @@ Rectangle {
         }
     }
 
-    Rectangle {
-        anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-        height: 1
-        color: palette.placeholderText
-        opacity: 0.3
-    }
+        Rectangle {
+            anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
+            height: 1; color: Theme.mutedText; opacity: 0.3
+        }
 
     DatePickerPopup {
         id: picker
