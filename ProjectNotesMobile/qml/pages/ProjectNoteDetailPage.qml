@@ -18,12 +18,16 @@ Page {
     property string initialNote:     ""
     property bool   initialInternal: false
     property bool   _skipSave:       false
+    property bool   isNewRecord:     false
     property bool   _formatSheetOpen: false
     property bool   _fontPickerOpen: false
 
     // Saved selection for format sheet (focus leaves noteEdit when sheet opens)
     property int _selStart: 0
     property int _selEnd:   0
+
+    function _isBlankNew() { return isNewRecord && titleField.text.trim() === "" }
+    function _discardNew()  { AppController.deleteProjectNote(root.noteRow) }
 
     Component.onCompleted: {
         if (root.noteId !== "")

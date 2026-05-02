@@ -55,6 +55,7 @@ Page {
                     var newId = (d.id || "").toString()
                     root.StackView.view.push(Qt.resolvedUrl("ProjectNoteDetailPage.qml"), {
                         noteRow:         newRow,
+                        isNewRecord:     true,
                         noteId:          newId,
                         projectId:       root.projectId,
                         initialTitle:    (d.note_title    || "").toString(),

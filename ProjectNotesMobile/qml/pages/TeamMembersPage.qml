@@ -55,6 +55,7 @@ Page {
                     var d = AppController.getTeamMemberData(newRow)
                     root.StackView.view.push(Qt.resolvedUrl("TeamMemberDetailPage.qml"), {
                         memberRow:                  newRow,
+                        isNewRecord:                true,
                         projectTitle:               root.projectTitle,
                         initialPeopleId:            (d.people_id              || "").toString(),
                         initialRole:                (d.role                   || "").toString(),

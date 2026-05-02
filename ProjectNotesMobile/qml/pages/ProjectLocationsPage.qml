@@ -52,6 +52,7 @@ Page {
                     var d = AppController.getProjectLocationData(newRow)
                     root.StackView.view.push(Qt.resolvedUrl("ProjectLocationDetailPage.qml"), {
                         locationRow:         newRow,
+                        isNewRecord:         true,
                         initialType:         (d.location_type        || "").toString(),
                         initialDescription:  (d.location_description || "").toString(),
                         initialPath:         (d.full_path            || "").toString()

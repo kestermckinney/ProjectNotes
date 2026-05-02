@@ -48,6 +48,7 @@ Page {
                     var d = AppController.getClientData(newRow)
                     root.stackView.push(Qt.resolvedUrl("ClientDetailPage.qml"), {
                         clientRow:         newRow,
+                        isNewRecord:       true,
                         initialClientName: (d.client_name || "").toString()
                     })
                 }

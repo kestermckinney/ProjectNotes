@@ -17,6 +17,10 @@ Page {
     property int    attendeeRow:   -1
     property string initialPerson: ""
     property bool   _skipSave:     false
+    property bool   isNewRecord:   false
+
+    function _isBlankNew() { return isNewRecord && personCombo.currentIndex < 0 }
+    function _discardNew()  { AppController.deleteAttendee(root.attendeeRow) }
 
     function _saveNow() {
         var personId = personCombo.currentIndex >= 0

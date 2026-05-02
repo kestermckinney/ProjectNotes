@@ -15,6 +15,10 @@ Page {
     property string initialDescription: ""
     property string initialPath:        ""
     property bool   _skipSave:          false
+    property bool   isNewRecord:        false
+
+    function _isBlankNew() { return isNewRecord && descField.text.trim() === "" && pathField.text.trim() === "" }
+    function _discardNew()  { AppController.deleteProjectLocation(root.locationRow) }
 
     function _saveNow() {
         var locType = (typeCombo.currentIndex >= 0)

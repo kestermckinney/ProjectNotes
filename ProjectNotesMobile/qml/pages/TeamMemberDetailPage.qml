@@ -17,6 +17,10 @@ Page {
     property bool   initialReceiveStatusReport: false
     property string initialEmail:               ""
     property bool   _skipSave:                  false
+    property bool   isNewRecord:                false
+
+    function _isBlankNew() { return isNewRecord && personCombo.currentIndex < 0 }
+    function _discardNew()  { AppController.deleteTeamMember(root.memberRow) }
 
     function _saveNow() {
         var peopleId = (personCombo.currentIndex >= 0)

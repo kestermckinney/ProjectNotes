@@ -54,6 +54,7 @@ Page {
                     var d = AppController.getProjectData(newRow)
                     root.stackView.push(Qt.resolvedUrl("ProjectDetailsPage.qml"), {
                         projectRow:               newRow,
+                        isNewRecord:              true,
                         projectId:                (d.id                   || "").toString(),
                         initialProjectNumber:     (d.project_number       || "").toString(),
                         initialProjectName:       (d.project_name         || "").toString(),

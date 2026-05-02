@@ -70,6 +70,7 @@ Page {
                     var d = AppController.getTrackerItemDetailData(0)
                     root.StackView.view.push(Qt.resolvedUrl("TrackerItemDetailPage.qml"), {
                         itemRow:              0,
+                        isNewRecord:          true,
                         itemId:               newId,
                         initialItemNumber:    (d.item_number        || "").toString(),
                         initialProjectNumber: (d.project_number     || "").toString(),

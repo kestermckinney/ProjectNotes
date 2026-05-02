@@ -48,6 +48,7 @@ Page {
                     var d = AppController.getPersonData(newRow)
                     root.stackView.push(Qt.resolvedUrl("PersonDetailPage.qml"), {
                         personRow:          newRow,
+                        isNewRecord:        true,
                         initialName:        (d.name         || "").toString(),
                         initialEmail:       (d.email        || "").toString(),
                         initialOfficePhone: (d.office_phone || "").toString(),

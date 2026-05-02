@@ -40,6 +40,10 @@ Page {
     property string initialPctComplete:       ""
     property string initialCpi:              ""
     property bool   _skipSave:                false
+    property bool   isNewRecord:              false
+
+    function _isBlankNew() { return isNewRecord && nameField.text.trim() === "" }
+    function _discardNew()  { AppController.deleteProject(root.projectRow) }
 
     function _saveNow() {
         statusDateField.commitPending()

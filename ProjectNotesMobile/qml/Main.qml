@@ -18,6 +18,12 @@ ApplicationWindow {
     function saveCurrentPage() {
         var page = pageStack.currentItem
         if (page && typeof page._saveNow === "function" && !page._skipSave) {
+            if (page.isNewRecord && typeof page._isBlankNew === "function" && page._isBlankNew()) {
+                page._skipSave = true
+                if (typeof page._discardNew === "function")
+                    page._discardNew()
+                return
+            }
             page._saveNow()
         }
     }
@@ -47,6 +53,13 @@ ApplicationWindow {
     function trySaveAndPop() {
         var page = pageStack.currentItem
         if (page && typeof page._saveNow === "function" && !page._skipSave) {
+            if (page.isNewRecord && typeof page._isBlankNew === "function" && page._isBlankNew()) {
+                page._skipSave = true
+                if (typeof page._discardNew === "function")
+                    page._discardNew()
+                pageStack.pop()
+                return
+            }
             page._saveNow()
             if (AppController.lastSaveError() !== "") {
                 if (typeof page._reloadData === "function")

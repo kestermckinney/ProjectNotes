@@ -18,6 +18,10 @@ Page {
     property string initialNote: ""
     property string initialBy:   ""
     property bool   _skipSave:   false
+    property bool   isNewRecord: false
+
+    function _isBlankNew() { return isNewRecord && noteEdit.text.trim() === "" }
+    function _discardNew()  { AppController.deleteComment(root.commentRow) }
 
     function _saveNow() {
         dateField.commitPending()

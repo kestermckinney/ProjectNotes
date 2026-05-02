@@ -13,6 +13,10 @@ Page {
     property int    clientRow:         -1
     property string initialClientName: ""
     property bool   _skipSave:         false
+    property bool   isNewRecord:       false
+
+    function _isBlankNew() { return isNewRecord && clientNameField.text.trim() === "" }
+    function _discardNew()  { AppController.deleteClient(root.clientRow) }
 
     function _saveNow() {
         return AppController.saveClient(root.clientRow, clientNameField.text)

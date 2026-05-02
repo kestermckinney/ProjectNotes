@@ -18,6 +18,10 @@ Page {
     property string initialClientId:    ""
     property string initialRole:        ""
     property bool   _skipSave:          false
+    property bool   isNewRecord:        false
+
+    function _isBlankNew() { return isNewRecord && nameField.text.trim() === "" }
+    function _discardNew()  { AppController.deletePerson(root.personRow) }
 
     function _saveNow() {
         var clientId = (clientCombo.currentIndex >= 0)

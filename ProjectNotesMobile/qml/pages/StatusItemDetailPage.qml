@@ -14,6 +14,10 @@ Page {
     property string initialCategory:    ""
     property string initialDescription: ""
     property bool   _skipSave:          false
+    property bool   isNewRecord:        false
+
+    function _isBlankNew() { return isNewRecord && descField.text.trim() === "" }
+    function _discardNew()  { AppController.deleteStatusItem(root.itemRow) }
 
     function _saveNow() {
         var cat = (categoryCombo.currentIndex >= 0)

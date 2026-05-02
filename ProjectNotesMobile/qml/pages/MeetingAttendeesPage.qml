@@ -57,6 +57,7 @@ Page {
                     var d = AppController.getAttendeeData(newRow)
                     root.StackView.view.push(Qt.resolvedUrl("MeetingAttendeeDetailPage.qml"), {
                         attendeeRow:  newRow,
+                        isNewRecord:  true,
                         initialPerson:(d.person_id || "").toString()
                     })
                 }

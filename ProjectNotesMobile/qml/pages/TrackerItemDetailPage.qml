@@ -38,7 +38,11 @@ Page {
     property string initialDateResolved:  ""
     property bool   initialInternal:      false
     property bool   _skipSave:            false
+    property bool   isNewRecord:          false
     // property string _validatedItemNumber: root.initialItemNumber
+
+    function _isBlankNew() { return isNewRecord && nameField.text.trim() === "" }
+    function _discardNew()  { AppController.deleteTrackerItemDetail(root.itemRow) }
 
     // function _releaseInputFocus() {
     //     root.forceActiveFocus()

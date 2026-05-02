@@ -53,6 +53,7 @@ Page {
                     var d = AppController.getStatusItemData(newRow)
                     root.StackView.view.push(Qt.resolvedUrl("StatusItemDetailPage.qml"), {
                         itemRow:            newRow,
+                        isNewRecord:        true,
                         initialCategory:    (d.task_category    || "").toString(),
                         initialDescription: (d.task_description || "").toString()
                     })

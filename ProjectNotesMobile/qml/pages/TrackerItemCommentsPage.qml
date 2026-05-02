@@ -52,6 +52,7 @@ Page {
                     var d = AppController.getCommentData(newRow)
                     root.StackView.view.push(Qt.resolvedUrl("TrackerItemCommentDetailPage.qml"), {
                         commentRow:    newRow,
+                        isNewRecord:   true,
                         initialDate:   (d.lastupdated_date || "").toString(),
                         initialNote:   (d.update_note      || "").toString(),
                         initialBy:     (d.updated_by       || "").toString()
