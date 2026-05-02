@@ -18,6 +18,7 @@ Page {
     property string initialNote:     ""
     property bool   initialInternal: false
     property bool   _skipSave:       false
+    property bool   _hasChanges:     false
     property bool   isNewRecord:     false
     property bool   _formatSheetOpen: false
     property bool   _fontPickerOpen: false
@@ -35,10 +36,13 @@ Page {
     }
 
     function _saveNow() {
+        if (!root._hasChanges) return true
         dateField.commitPending()
-        return AppController.saveProjectNote(root.noteRow, titleField.text, dateField.text,
-                                             root.scaleFontSizes(TextFormatter.documentHtml(noteEdit.textDocument), 1 / 1.5),
-                                             internalSwitch.checked)
+        var result = AppController.saveProjectNote(root.noteRow, titleField.text, dateField.text,
+                                                    root.scaleFontSizes(TextFormatter.documentHtml(noteEdit.textDocument), 1 / 1.5),
+                                                    internalSwitch.checked)
+        if (result) root._hasChanges = false
+        return result
     }
 
     function _reloadData() {
@@ -170,11 +174,16 @@ Page {
                     id: titleField
                     text: root.initialTitle
                     inputMethodHints: Qt.ImhNoPredictiveText
+                    onTextChanged: root._hasChanges = true
                 }
             }
 
             SectionHeader { text: qsTr("Date") }
-            DateFieldRow { id: dateField; text: root.initialDate }
+            DateFieldRow {
+                id: dateField
+                text: root.initialDate
+                onTextChanged: root._hasChanges = true
+            }
 
             SectionHeader { text: qsTr("Note") }
 
@@ -196,6 +205,7 @@ Page {
                     textFormat: TextEdit.RichText
                     wrapMode: TextEdit.WordWrap
                     font.family: "Arial"
+                    onTextChanged: root._hasChanges = true
                 }
                 Rectangle {
                     anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
@@ -214,6 +224,7 @@ Page {
                     anchors { left: parent.left; verticalCenter: parent.verticalCenter; leftMargin: 12 }
                     checked: root.initialInternal
                     text: qsTr("Internal Item")
+                    onToggled: root._hasChanges = true
                 }
             }
 

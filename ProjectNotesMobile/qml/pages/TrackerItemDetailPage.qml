@@ -38,6 +38,7 @@ Page {
     property string initialDateResolved:  ""
     property bool   initialInternal:      false
     property bool   _skipSave:            false
+    property bool   _hasChanges:          false
     property bool   isNewRecord:          false
     // property string _validatedItemNumber: root.initialItemNumber
 
@@ -50,11 +51,12 @@ Page {
     // }
 
     function _saveNow() {
+        if (!root._hasChanges) return true
         // root._releaseInputFocus()
         dateIdentifiedField.commitPending()
         dateDueField.commitPending()
 
-        return AppController.saveTrackerItemDetail(
+        var result = AppController.saveTrackerItemDetail(
             root.itemRow,
             root.itemId,
             itemNumber.text,
@@ -71,6 +73,8 @@ Page {
             dateDueField.text,
             internalSwitch.checked
         )
+        if (result) root._hasChanges = false
+        return result
     }
 
     function _reloadData() {
@@ -207,6 +211,7 @@ Page {
                     id: itemNumber
                     text: root.initialItemNumber
                     inputMethodHints: Qt.ImhNoPredictiveText
+                    onTextChanged: root._hasChanges = true
                 }
             }
 
@@ -220,6 +225,7 @@ Page {
                         var idx = model.indexOf(root.initialType)
                         currentIndex = idx >= 0 ? idx : 0
                     }
+                    onActivated: root._hasChanges = true
                 }
             }
 
@@ -230,6 +236,7 @@ Page {
                     id: nameField
                     text: root.initialName
                     inputMethodHints: Qt.ImhNoPredictiveText
+                    onTextChanged: root._hasChanges = true
                 }
             }
 
@@ -246,6 +253,7 @@ Page {
                     wrapMode: TextEdit.Wrap
                     color: palette.text
                     selectByMouse: true
+                    onTextChanged: root._hasChanges = true
                 }
                 Rectangle {
                     anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
@@ -264,6 +272,7 @@ Page {
                         var row = AppController.teamMemberRowForPersonId(root.initialIdentifiedBy)
                         currentIndex = row >= 0 ? row : -1
                     }
+                    onActivated: root._hasChanges = true
                 }
             }
 
@@ -279,6 +288,7 @@ Page {
                         currentIndex = row >= 0 ? row : -1
                     }
                     onActivated: function(idx) {
+                        root._hasChanges = true
                         if (idx >= 0) {
                             var curStatus = statusCombo.currentIndex >= 0
                                 ? statusCombo.model[statusCombo.currentIndex] : ""
@@ -301,6 +311,7 @@ Page {
                         var idx = model.indexOf(root.initialPriority)
                         currentIndex = idx >= 0 ? idx : 0
                     }
+                    onActivated: root._hasChanges = true
                 }
             }
 
@@ -314,14 +325,15 @@ Page {
                         var idx = model.indexOf(root.initialStatus)
                         currentIndex = idx >= 0 ? idx : 0
                     }
+                    onActivated: root._hasChanges = true
                 }
             }
 
             SectionHeader { text: qsTr("Date Identified") }
-            DateFieldRow { id: dateIdentifiedField; text: root.initialDateIdentified }
+            DateFieldRow { id: dateIdentifiedField; text: root.initialDateIdentified; onTextChanged: root._hasChanges = true }
 
             SectionHeader { text: qsTr("Date Due") }
-            DateFieldRow { id: dateDueField; text: root.initialDateDue }
+            DateFieldRow { id: dateDueField; text: root.initialDateDue; onTextChanged: root._hasChanges = true }
 
             SectionHeader { text: qsTr("Last Updated") }
             FieldRow {
@@ -348,6 +360,7 @@ Page {
                     anchors { left: parent.left; verticalCenter: parent.verticalCenter; leftMargin: 12 }
                     checked: root.initialInternal
                     text: qsTr("Internal Item")
+                    onToggled: root._hasChanges = true
                 }
             }
 

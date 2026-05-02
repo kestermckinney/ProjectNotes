@@ -17,15 +17,19 @@ Page {
     property int    attendeeRow:   -1
     property string initialPerson: ""
     property bool   _skipSave:     false
+    property bool   _hasChanges:   false
     property bool   isNewRecord:   false
 
     function _isBlankNew() { return isNewRecord && personCombo.currentIndex < 0 }
     function _discardNew()  { AppController.deleteAttendee(root.attendeeRow) }
 
     function _saveNow() {
+        if (!root._hasChanges) return true
         var personId = personCombo.currentIndex >= 0
             ? AppController.teamMemberPersonIdAtRow(personCombo.currentIndex) : ""
-        return AppController.saveAttendee(root.attendeeRow, personId)
+        var result = AppController.saveAttendee(root.attendeeRow, personId)
+        if (result) root._hasChanges = false
+        return result
     }
 
     function _reloadData() {
@@ -75,6 +79,7 @@ Page {
                         var row = AppController.teamMemberRowForPersonId(root.initialPerson)
                         currentIndex = row >= 0 ? row : -1
                     }
+                    onActivated: root._hasChanges = true
                 }
             }
 

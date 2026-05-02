@@ -17,15 +17,19 @@ Page {
     property bool   initialReceiveStatusReport: false
     property string initialEmail:               ""
     property bool   _skipSave:                  false
+    property bool   _hasChanges:                false
     property bool   isNewRecord:                false
 
     function _isBlankNew() { return isNewRecord && personCombo.currentIndex < 0 }
     function _discardNew()  { AppController.deleteTeamMember(root.memberRow) }
 
     function _saveNow() {
+        if (!root._hasChanges) return true
         var peopleId = (personCombo.currentIndex >= 0)
             ? AppController.peopleIdAtRow(personCombo.currentIndex) : ""
-        return AppController.saveTeamMember(root.memberRow, peopleId, roleField.text, statusSwitch.checked)
+        var result = AppController.saveTeamMember(root.memberRow, peopleId, roleField.text, statusSwitch.checked)
+        if (result) root._hasChanges = false
+        return result
     }
 
     function _reloadData() {
@@ -113,6 +117,7 @@ Page {
                         var row = AppController.peopleRowForId(root.initialPeopleId)
                         currentIndex = (row >= 0) ? row : -1
                     }
+                    onActivated: root._hasChanges = true
                 }
             }
 
@@ -122,6 +127,7 @@ Page {
                     id: roleField
                     text: root.initialRole
                     inputMethodHints: Qt.ImhNoPredictiveText
+                    onTextChanged: root._hasChanges = true
                 }
             }
 
@@ -132,6 +138,7 @@ Page {
                     anchors { left: parent.left; verticalCenter: parent.verticalCenter; leftMargin: 12 }
                     checked: root.initialReceiveStatusReport
                     text: qsTr("Receives Status Report")
+                    onToggled: root._hasChanges = true
                 }
             }
 

@@ -15,15 +15,19 @@ Page {
     property string initialDescription: ""
     property string initialPath:        ""
     property bool   _skipSave:          false
+    property bool   _hasChanges:        false
     property bool   isNewRecord:        false
 
     function _isBlankNew() { return isNewRecord && descField.text.trim() === "" && pathField.text.trim() === "" }
     function _discardNew()  { AppController.deleteProjectLocation(root.locationRow) }
 
     function _saveNow() {
+        if (!root._hasChanges) return true
         var locType = (typeCombo.currentIndex >= 0)
             ? typeCombo.model[typeCombo.currentIndex] : ""
-        return AppController.saveProjectLocation(root.locationRow, locType, descField.text, pathField.text)
+        var result = AppController.saveProjectLocation(root.locationRow, locType, descField.text, pathField.text)
+        if (result) root._hasChanges = false
+        return result
     }
 
     function _reloadData() {
@@ -114,6 +118,7 @@ Page {
                         var idx = model.indexOf(root.initialType)
                         currentIndex = (idx >= 0) ? idx : 0
                     }
+                    onActivated: root._hasChanges = true
                 }
             }
 
@@ -123,6 +128,7 @@ Page {
                     id: descField
                     text: root.initialDescription
                     inputMethodHints: Qt.ImhNoPredictiveText
+                    onTextChanged: root._hasChanges = true
                 }
             }
 
@@ -132,6 +138,7 @@ Page {
                     id: pathField
                     text: root.initialPath
                     inputMethodHints: Qt.ImhUrlCharactersOnly | Qt.ImhNoPredictiveText
+                    onTextChanged: root._hasChanges = true
                 }
             }
 

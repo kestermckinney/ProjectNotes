@@ -18,16 +18,20 @@ Page {
     property string initialNote: ""
     property string initialBy:   ""
     property bool   _skipSave:   false
+    property bool   _hasChanges: false
     property bool   isNewRecord: false
 
     function _isBlankNew() { return isNewRecord && noteEdit.text.trim() === "" }
     function _discardNew()  { AppController.deleteComment(root.commentRow) }
 
     function _saveNow() {
+        if (!root._hasChanges) return true
         dateField.commitPending()
         var byId = updatedByCombo.currentIndex >= 0
             ? AppController.peopleIdAtRow(updatedByCombo.currentIndex) : ""
-        return AppController.saveComment(root.commentRow, dateField.text, noteEdit.text, byId)
+        var result = AppController.saveComment(root.commentRow, dateField.text, noteEdit.text, byId)
+        if (result) root._hasChanges = false
+        return result
     }
 
     function _reloadData() {
@@ -86,7 +90,7 @@ Page {
             spacing: 0
 
             SectionHeader { text: qsTr("Date") }
-            DateFieldRow { id: dateField; text: root.initialDate }
+            DateFieldRow { id: dateField; text: root.initialDate; onTextChanged: root._hasChanges = true }
 
             SectionHeader { text: qsTr("Updated By") }
             FieldRow {
@@ -99,6 +103,7 @@ Page {
                         var row = AppController.peopleRowForId(root.initialBy)
                         currentIndex = row >= 0 ? row : -1
                     }
+                    onActivated: root._hasChanges = true
                 }
             }
 
@@ -115,6 +120,7 @@ Page {
                     wrapMode: TextEdit.Wrap
                     color: palette.text
                     selectByMouse: true
+                    onTextChanged: root._hasChanges = true
                 }
                 Rectangle {
                     anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }

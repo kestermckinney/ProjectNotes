@@ -14,15 +14,19 @@ Page {
     property string initialCategory:    ""
     property string initialDescription: ""
     property bool   _skipSave:          false
+    property bool   _hasChanges:        false
     property bool   isNewRecord:        false
 
     function _isBlankNew() { return isNewRecord && descField.text.trim() === "" }
     function _discardNew()  { AppController.deleteStatusItem(root.itemRow) }
 
     function _saveNow() {
+        if (!root._hasChanges) return true
         var cat = (categoryCombo.currentIndex >= 0)
             ? categoryCombo.model[categoryCombo.currentIndex] : ""
-        return AppController.saveStatusItem(root.itemRow, cat, descField.text)
+        var result = AppController.saveStatusItem(root.itemRow, cat, descField.text)
+        if (result) root._hasChanges = false
+        return result
     }
 
     function _reloadData() {
@@ -89,6 +93,7 @@ Page {
                         var idx = model.indexOf(root.initialCategory)
                         currentIndex = (idx >= 0) ? idx : 0
                     }
+                    onActivated: root._hasChanges = true
                 }
             }
 
@@ -102,6 +107,7 @@ Page {
                     wrapMode: TextArea.Wrap
                     color: palette.text
                     background: Item {}
+                    onTextChanged: root._hasChanges = true
                 }
             }
 
