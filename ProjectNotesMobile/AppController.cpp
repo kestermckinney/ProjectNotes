@@ -1254,6 +1254,21 @@ bool AppController::saveAttendee(int row, const QString& personId)
     global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.meetingattendeesmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
+
+    QString safeNote   = model->data(model->index(row, 1)).toString().replace("'", "''");
+    QString safeId     = model->data(model->index(row, 0)).toString().replace("'", "''");
+    QString safePerson = QString(personId).replace("'", "''");
+    QString sql = QString(
+        "SELECT COUNT(*) FROM meeting_attendees "
+        "WHERE note_id = '%1' AND person_id = '%2' AND id != '%3' AND deleted = 0"
+    ).arg(safeNote, safePerson, safeId);
+    if (global_DBObjects.execute(sql).toInt() > 0) {
+        const QString msg = tr("Attendee already exists.");
+        global_DBObjects.setLastSaveError(msg);
+        emit errorOccurred(tr("Could Not Save"), msg);
+        return false;
+    }
+
     bool ok = model->setData(model->index(row, 2), personId);
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
