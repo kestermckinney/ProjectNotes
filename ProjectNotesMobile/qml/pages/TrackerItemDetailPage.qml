@@ -56,6 +56,7 @@ Page {
 
         return AppController.saveTrackerItemDetail(
             root.itemRow,
+            root.itemId,
             itemNumber.text,
             typeCombo.currentIndex >= 0 ? typeCombo.model[typeCombo.currentIndex] : "",
             nameField.text,

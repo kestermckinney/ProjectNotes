@@ -1073,6 +1073,7 @@ QVariantMap AppController::getTrackerItemDetailData(int row) const
 }
 
 bool AppController::saveTrackerItemDetail(int row,
+                                          const QString& itemId,
                                           const QString& itemNumber,
                                           const QString& itemType,
                                           const QString& itemName,
@@ -1091,6 +1092,22 @@ bool AppController::saveTrackerItemDetail(int row,
 
     const QPersistentModelIndex pIdx(model->index(row, 0));
     if (!pIdx.isValid()) return false;
+
+    const QString projectId = model->data(model->index(pIdx.row(), 14)).toString();
+
+    if (!isItemNameUnique(projectId, itemId, itemName)) {
+        const QString msg = tr("\"%1\" is already in use").arg(itemName.trimmed());
+        global_DBObjects.setLastSaveError(msg);
+        emit errorOccurred(tr("Could Not Save"), msg);
+        return false;
+    }
+
+    if (!isItemNumberUnique(projectId, itemId, itemNumber)) {
+        const QString msg = tr("Item number \"%1\" is already in use").arg(itemNumber.trimmed());
+        global_DBObjects.setLastSaveError(msg);
+        emit errorOccurred(tr("Could Not Save"), msg);
+        return false;
+    }
 
     bool ok = true;
     ok &= model->setData(model->index(pIdx.row(),  1), itemNumber);
@@ -1118,19 +1135,37 @@ QString AppController::trackerItemIdAtRow(int row) const
     return model->data(model->index(row, 0)).toString();
 }
 
-bool AppController::isItemNumberUnique(const QString& itemId, const QString& itemNumber) const
+bool AppController::isItemNumberUnique(const QString& projectId, const QString& itemId, const QString& itemNumber) const
 {
     if (itemNumber.isEmpty()) return true;
-    QString safeId     = itemId.trimmed();
-    QString safeNumber = itemNumber.trimmed().replace("'", "''");
-    safeId.replace("'", "''");
+    if (projectId.trimmed().isEmpty()) return true;
+    QString safeProject = projectId.trimmed().replace("'", "''");
+    QString safeId      = itemId.trimmed().replace("'", "''");
+    QString safeNumber  = itemNumber.trimmed().replace("'", "''");
     QString sql = QString(
         "SELECT COUNT(*) FROM item_tracker "
-        "WHERE project_id = (SELECT project_id FROM item_tracker WHERE id = '%1') "
+        "WHERE project_id = '%1' "
         "AND item_number = '%2' "
-        "AND id != '%1' "
+        "AND id != '%3' "
         "AND deleted = 0"
-    ).arg(safeId, safeNumber);
+    ).arg(safeProject, safeNumber, safeId);
+    return global_DBObjects.execute(sql).toInt() == 0;
+}
+
+bool AppController::isItemNameUnique(const QString& projectId, const QString& itemId, const QString& itemName) const
+{
+    if (itemName.trimmed().isEmpty()) return true;
+    if (projectId.trimmed().isEmpty()) return true;
+    QString safeProject = projectId.trimmed().replace("'", "''");
+    QString safeId      = itemId.trimmed().replace("'", "''");
+    QString safeName    = itemName.trimmed().replace("'", "''");
+    QString sql = QString(
+        "SELECT COUNT(*) FROM item_tracker "
+        "WHERE project_id = '%1' "
+        "AND item_name = '%2' "
+        "AND id != '%3' "
+        "AND deleted = 0"
+    ).arg(safeProject, safeName, safeId);
     return global_DBObjects.execute(sql).toInt() == 0;
 }
 

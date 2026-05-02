@@ -286,7 +286,7 @@ Page {
                     var currentFamily = TextFormatter.currentFontFamily(noteEdit.textDocument, root._selStart)
                     var currentSize   = TextFormatter.currentFontPointSize(noteEdit.textDocument, root._selStart)
                     var currentColor  = TextFormatter.currentFontColor(noteEdit.textDocument, root._selStart)
-                    console.info("family: ", currentFamily, " size: ", currentSize, " color: ", currentColor)
+
                     fontPicker.openWithFormat(currentFamily, currentSize, currentColor)
                 }
             }

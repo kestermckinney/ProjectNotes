@@ -174,6 +174,7 @@ public:
     Q_INVOKABLE int         copyTrackerItemDetail(int row);
     Q_INVOKABLE QVariantMap getTrackerItemDetailData(int row) const;
     Q_INVOKABLE bool        saveTrackerItemDetail(int row,
+                                const QString& itemId,
                                 const QString& itemNumber,
                                 const QString& itemType,
                                 const QString& itemName,
@@ -186,7 +187,8 @@ public:
                                 const QString& dateDue,
                                 bool           internalItem);
     Q_INVOKABLE QString     trackerItemIdAtRow(int row) const;
-    Q_INVOKABLE bool        isItemNumberUnique(const QString& itemId, const QString& itemNumber) const;
+    Q_INVOKABLE bool        isItemNumberUnique(const QString& projectId, const QString& itemId, const QString& itemNumber) const;
+    Q_INVOKABLE bool        isItemNameUnique(const QString& projectId, const QString& itemId, const QString& itemName) const;
 
     // ── Tracker item comments CRUD ────────────────────────────────────────────
     Q_INVOKABLE int         addComment(const QString& itemId);
