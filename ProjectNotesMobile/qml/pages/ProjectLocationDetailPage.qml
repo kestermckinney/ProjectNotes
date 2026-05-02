@@ -95,7 +95,12 @@ Page {
                 icon.name: "safari"
                 text: qsTr("Open in Browser")
                 display: AbstractButton.TextUnderIcon
-                onClicked: Qt.openUrlExternally(pathField.text)
+                onClicked: {
+                    var url = pathField.text
+                    if (!url.startsWith("http://") && !url.startsWith("https://"))
+                        url = "http://" + url
+                    Qt.openUrlExternally(url)
+                }
             }
         }
     }
