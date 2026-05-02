@@ -21,6 +21,11 @@ Page {
 
     StackView.onActivated: AppController.refreshTrackerItems()
 
+    Connections {
+        target: AppController
+        function onViewOptionsChanged() { AppController.refreshTrackerItems() }
+    }
+
     Component.onDestruction: {
         root.forceActiveFocus()
         Qt.inputMethod.hide()

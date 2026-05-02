@@ -14,6 +14,7 @@ PeoplePage::PeoplePage()
 void PeoplePage::openRecord(QVariant& recordId)
 {
     setRecordId(recordId);
+    global_DBObjects.peoplemodel()->refreshIfDirty();
 
     if (!recordId.isNull())
     {

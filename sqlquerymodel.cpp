@@ -403,6 +403,8 @@ void SqlQueryModel::setTableName(const QString &table, const QString &displayNam
 
 void SqlQueryModel::refresh()
 {
+    m_dirty = false;
+
     QSqlQuery sql_query;
     QString orderby;
     QString fullsql;
@@ -1035,6 +1037,8 @@ const QModelIndex SqlQueryModel::newRecord(const QVariant* fkValue1, const QVari
 
 void SqlQueryModel::removeCacheRecord(QModelIndex index)
 {
+    if (m_dirty) return;
+
     beginRemoveRows(QModelIndex(), index.row(), index.row());
 
     m_cache.remove(index.row());
@@ -1453,6 +1457,8 @@ const QModelIndex SqlQueryModel::findNextIndex(QVariant& lookupValue, int search
 
 bool SqlQueryModel::reloadRecord(const QModelIndex& index)
 {
+    if (m_dirty) return false;
+
     DB_LOCK;
     QSqlQuery select(getDBOs()->getDb());
     // Include base filters (e.g. deleted filter) so that a record soft-deleted via sync
@@ -2743,6 +2749,8 @@ bool SqlQueryModel::matchesFilter(int column, const QVariant& value)
 
 bool SqlQueryModel::loadAndFilterRow(const QVariant& id)  // load the record and see if it matches filter
 {
+    if (m_dirty) return false;
+
     QVector<QVariant> newrecord = emptyrecord();
 
     DB_LOCK;
@@ -2776,6 +2784,8 @@ bool SqlQueryModel::loadAndFilterRow(const QVariant& id)  // load the record and
 
 bool SqlQueryModel::copyAndFilterRow(QModelIndex& qmi, SqlQueryModel& pnmodel)
 {
+    if (m_dirty) return false;
+
     QVector<QVariant> newrecord = emptyrecord();
 
     int c = pnmodel.columnCount();

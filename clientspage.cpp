@@ -19,6 +19,7 @@ ClientsPage::ClientsPage()
 void ClientsPage::openRecord(QVariant& recordId)
 {
     setRecordId(recordId);
+    global_DBObjects.clientsmodel()->refreshIfDirty();
 
     if (!recordId.isNull())
     {

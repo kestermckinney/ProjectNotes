@@ -735,20 +735,20 @@ void DatabaseObjects::setGlobalSearches( bool refresh )
 
     if (refresh)
     {
-        peoplemodel()->refresh();
-        clientsmodel()->refresh();
-        projectnotesmodel()->refresh();
-        actionitemsdetailsmeetingsmodel()->refresh();
-        notesactionitemsmodel()->refresh();
-        actionitemprojectnotesmodel()->refresh();
-        actionitemsdetailsmodel()->refresh();
+        peoplemodel()->markDirty();
+        clientsmodel()->markDirty();
+        projectnotesmodel()->markDirty();
+        actionitemsdetailsmeetingsmodel()->markDirty();
+        notesactionitemsmodel()->markDirty();
+        actionitemprojectnotesmodel()->markDirty();
+        actionitemsdetailsmodel()->markDirty();
 
-        trackeritemsmodel()->refresh();
-        allitemsmodel()->refresh();
-        projectinformationmodel()->refresh();
-        projectslistmodel()->refresh();
-        unfilteredprojectslistmodel()->refresh();
-        searchresultsmodel()->refresh();
+        trackeritemsmodel()->markDirty();
+        allitemsmodel()->markDirty();
+        projectinformationmodel()->markDirty();
+        projectslistmodel()->markDirty();
+        unfilteredprojectslistmodel()->markDirty();
+        searchresultsmodel()->markDirty();
     }
 }
 

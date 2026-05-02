@@ -297,8 +297,24 @@ ApplicationWindow {
             currentIndex: root.currentTabIndex
             onCurrentIndexChanged: {
                 root.currentTabIndex = currentIndex
-                if (currentIndex === 3)
-                    AppController.refreshAllItems()
+                switch (currentIndex) {
+                    case 0: AppController.refreshProjectsList(); break
+                    case 1: AppController.refreshPeople();       break
+                    case 2: AppController.refreshClients();      break
+                    case 3: AppController.refreshAllItems();     break
+                }
+            }
+
+            Connections {
+                target: AppController
+                function onViewOptionsChanged() {
+                    switch (swipeView.currentIndex) {
+                        case 0: AppController.refreshProjectsList(); break
+                        case 1: AppController.refreshPeople();       break
+                        case 2: AppController.refreshClients();      break
+                        case 3: AppController.refreshAllItems();     break
+                    }
+                }
             }
 
             ProjectsListPage { stackView: pageStack }

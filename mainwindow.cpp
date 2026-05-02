@@ -1089,6 +1089,10 @@ void MainWindow::on_actionClosed_Projects_triggered()
 {
     global_DBObjects.setShowClosedProjects(ui->actionClosed_Projects->isChecked());
     global_DBObjects.setGlobalSearches(true);
+    if (navigateCurrentPage()) {
+        QVariant recordId = navigateCurrentPage()->getRecordId();
+        navigateCurrentPage()->openRecord(recordId);
+    }
 }
 
 void MainWindow::on_actionStatus_Bar_triggered()
@@ -1338,6 +1342,10 @@ void MainWindow::on_actionInternal_Items_triggered()
 {
     global_DBObjects.setShowInternalItems(ui->actionInternal_Items->isChecked());
     global_DBObjects.setGlobalSearches(true);
+    if (navigateCurrentPage()) {
+        QVariant recordId = navigateCurrentPage()->getRecordId();
+        navigateCurrentPage()->openRecord(recordId);
+    }
 
     setButtonAndMenuStates();
 }
@@ -1358,8 +1366,12 @@ void MainWindow::on_actionResolved_Tracker_Action_Items_triggered()
         global_DBObjects.allitemsmodel()->clearFilter(9);
     }
 
-    global_DBObjects.trackeritemsmodel()->refresh();
-    global_DBObjects.allitemsmodel()->refresh();
+    global_DBObjects.trackeritemsmodel()->markDirty();
+    global_DBObjects.allitemsmodel()->markDirty();
+    if (navigateCurrentPage()) {
+        QVariant recordId = navigateCurrentPage()->getRecordId();
+        navigateCurrentPage()->openRecord(recordId);
+    }
 
     setButtonAndMenuStates();
 }

@@ -1353,6 +1353,16 @@ void AppController::refreshProjectsList()
     global_DBObjects.projectinformationmodel()->refresh();
 }
 
+void AppController::refreshPeople()
+{
+    global_DBObjects.peoplemodel()->refresh();
+}
+
+void AppController::refreshClients()
+{
+    global_DBObjects.clientsmodel()->refresh();
+}
+
 void AppController::setQuickSearch(QAbstractItemModel* model, const QString& text)
 {
     if (auto* proxy = dynamic_cast<SortFilterProxyModel*>(model))

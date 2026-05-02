@@ -219,6 +219,8 @@ public:
     Q_INVOKABLE void        refreshProjectNotes();
     Q_INVOKABLE void        refreshNoteActionItems();
     Q_INVOKABLE void        refreshProjectsList();
+    Q_INVOKABLE void        refreshPeople();
+    Q_INVOKABLE void        refreshClients();
 
     // ── Quick search ─────────────────────────────────────────────────────────
     // Sets a client-side text filter on any proxy model.  Any row where at

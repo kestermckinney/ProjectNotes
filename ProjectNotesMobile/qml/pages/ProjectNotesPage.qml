@@ -20,6 +20,11 @@ Page {
 
     StackView.onActivated: AppController.refreshProjectNotes()
 
+    Connections {
+        target: AppController
+        function onViewOptionsChanged() { AppController.refreshProjectNotes() }
+    }
+
     header: ToolBar {
         RowLayout {
             anchors { left: parent.left; right: parent.right; margins: 8 }
