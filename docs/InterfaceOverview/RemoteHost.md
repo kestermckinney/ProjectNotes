@@ -18,6 +18,14 @@ For Neon, use **Self-Hosted** mode when running the admin tool and point it at y
 
 The admin tool walks through a six-page wizard:
 
+#### Upgrading from Project Notes 5.0.0
+
+Project Notes 5.0.1 adds a server-managed `server_modified_at` column on `sync_data`. The pull cursor reads this column instead of `updateddate` so changes are no longer missed when records carry backdated dates (e.g., from clock skew or imported historical data).
+
+If you connect the admin tool to a database that was set up with Project Notes 5.0.0 or earlier, the wizard detects the missing column when you click Next on the Connection page and offers to upgrade the database. The upgrade runs in a single transaction — if anything fails the database is left untouched. The data itself is preserved; only the schema changes.
+
+Older Project Notes clients (≤ 5.0.0) can still **push** to an upgraded database, but their pulls will continue to use the old `updateddate` filter and remain exposed to the missed-record bug until they are upgraded to 5.0.1.
+
 #### Page 1 — Connection
 
 Enter your database credentials and select the hosting mode.
@@ -40,14 +48,15 @@ Displays a summary of your connection details for review before setup begins. Co
 
 #### Page 3 — Install
 
-Runs the 21-step database setup sequence on a background thread. Each step is shown in a progress log with a success or failure indicator.
+Runs the 23-step database setup sequence on a background thread. Each step is shown in a progress log with a success or failure indicator.
 
 What the setup creates:
 - **PostgreSQL roles** — `pnauthenticator` (PostgREST authenticator), `pnanon` (anonymous access), and `pnapp_user` (authenticated app access), with appropriate role grants
 - **Schema usage grants** — PostgREST roles are granted access to the public schema
 - **JWT helper functions** — functions to encode and sign JWT tokens (self-hosted only; Supabase manages its own JWT infrastructure)
 - **`auth_users` table** — stores bcrypt-hashed passwords for user authentication (self-hosted only; Supabase Auth handles this in hosted mode)
-- **`sync_data` table** — the central table where all synchronized records are stored, with an index on `(userid, tablename, updateddate)` for efficient pull queries
+- **`sync_data` table** — the central table where all synchronized records are stored, with an index on `(userid, tablename, server_modified_at)` for efficient pull queries
+- **`sync_data_stamp_server_time` trigger** — populates `sync_data.server_modified_at` on every insert and update so the pull cursor is monotonic across all clients regardless of clock skew or backdated row dates
 - **Row-level security (RLS)** — policies on `sync_data` so each user can only read and write their own records
 - **`rpc_login` function** — a PostgREST RPC endpoint that validates credentials and returns a JWT token (self-hosted only)
 

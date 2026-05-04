@@ -1244,6 +1244,8 @@ void DatabaseObjects::updateDisplayData()
 
             if (recordset->tablename().compare( keyColChange.table) == 0)
             {
+                recordset->refreshIfDirty();
+
                 if (keyColChange.operation_type == KeyColumnChange::Update)
                 {
                     QModelIndex qmi = recordset->findIndex(keyColChange.value, 0);
