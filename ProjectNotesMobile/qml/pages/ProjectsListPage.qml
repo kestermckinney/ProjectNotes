@@ -54,6 +54,7 @@ Page {
                     var d = AppController.getProjectData(newRow)
                     root.stackView.push(Qt.resolvedUrl("ProjectDetailsPage.qml"), {
                         projectRow:               newRow,
+                        isNewRecord:              true,
                         projectId:                (d.id                   || "").toString(),
                         initialProjectNumber:     (d.project_number       || "").toString(),
                         initialProjectName:       (d.project_name         || "").toString(),
@@ -91,6 +92,12 @@ Page {
 
         delegate: ItemDelegate {
             width: listView.width
+
+            // Resolve once per delegate; the binding re-evaluates only when the
+            // row's client_id changes. Avoids a second linear-scan per row.
+            readonly property string _clientName:
+                AppController.clientNameForId(model.client_id || "") || ""
+
             contentItem: ColumnLayout {
                 spacing: 4
 
@@ -109,10 +116,10 @@ Page {
                     spacing: 6
 
                     Label {
-                        visible: (AppController.clientNameForId(model.client_id || "") || "") !== ""
-                        text: AppController.clientNameForId(model.client_id || "") || ""
+                        visible: _clientName !== ""
+                        text: _clientName
                         font.pixelSize: 12
-                        color: palette.placeholderText
+                        color: Theme.mutedText
                         elide: Text.ElideRight
                     }
 
@@ -138,7 +145,7 @@ Page {
                             var s = model.project_status || ""
                             if (s === "Active")                      return Theme.accentGreenDark
                             if (s === "On Hold")                     return "#e07000"
-                            if (s === "Closed" || s === "Complete")  return palette.placeholderText
+                            if (s === "Closed" || s === "Complete")  return Theme.mutedText
                             return Theme.navyMid
                         }
                         elide: Text.ElideRight
@@ -199,7 +206,13 @@ Page {
             text: qsTr("Tap + to add one or sync to load your data.")
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
-            color: palette.placeholderText
+            color: Theme.mutedText
         }
     }
+    // ── Startup ───────────────────────────────────────────────────────────────
+    // Defer DB init so the QML shell renders its first frame before the
+    // synchronous SQL work begins — eliminates the black-screen delay.
+    // Component.onCompleted: Qt.callLater(function() {
+    //     AppController.projectsListModel.refresh()
+    // })
 }

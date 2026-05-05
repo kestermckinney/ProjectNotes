@@ -6,6 +6,7 @@
 #include "plaintextedit.h"
 #include "itemdetailspage.h"
 #include "databaseobjects.h"
+#include "appsettings.h"
 #include "ui_mainwindow.h"
 
 ItemDetailsPage::ItemDetailsPage()
@@ -48,7 +49,7 @@ void ItemDetailsPage::openRecord(QVariant& recordId)
 void ItemDetailsPage::setPageTitle()
 {
     QString page_title = QString("%1 %2 %3").arg(ui->lineEditNumber->text(), ui->lineEditItemNumber->text(), ui->plainTextEditName->toPlainText().left(25));
-    topLevelWidget()->setWindowTitle(QString("Project Notes Item [%1]").arg(page_title));
+    topLevelWidget()->setWindowTitle(AppSettings::developerProfilePrefix() + QString("Project Notes Item [%1]").arg(page_title));
     setHistoryText(page_title);
 }
 

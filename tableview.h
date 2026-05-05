@@ -44,6 +44,7 @@ public:
     bool getHasOpen() { return m_hasOpen; }
     void setHasOpen(bool hasOpen) { m_hasOpen = hasOpen; }
     void setKeyToOpenField(int keyToOpenField) { m_keyToOpenField = keyToOpenField; }
+    void applyZoom(qreal zoomFactor);
 
 protected:
     void mouseMoveEvent(QMouseEvent *event) override;

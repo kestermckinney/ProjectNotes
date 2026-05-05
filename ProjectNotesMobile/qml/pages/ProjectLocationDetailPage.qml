@@ -15,11 +15,27 @@ Page {
     property string initialDescription: ""
     property string initialPath:        ""
     property bool   _skipSave:          false
+    property bool   _hasChanges:        false
+    property bool   isNewRecord:        false
+
+    function _isBlankNew() { return isNewRecord && descField.text.trim() === "" && pathField.text.trim() === "" }
+    function _discardNew()  { AppController.deleteProjectLocation(root.locationRow) }
 
     function _saveNow() {
+        if (!root._hasChanges) return true
         var locType = (typeCombo.currentIndex >= 0)
             ? typeCombo.model[typeCombo.currentIndex] : ""
-        AppController.saveProjectLocation(root.locationRow, locType, descField.text, pathField.text)
+        var result = AppController.saveProjectLocation(root.locationRow, locType, descField.text, pathField.text)
+        if (result) root._hasChanges = false
+        return result
+    }
+
+    function _reloadData() {
+        var d = AppController.getProjectLocationData(root.locationRow)
+        var ti = typeCombo.model.indexOf((d.location_type || "").toString())
+        typeCombo.currentIndex = ti >= 0 ? ti : 0
+        descField.text = (d.location_description || "").toString()
+        pathField.text = (d.full_path            || "").toString()
     }
 
     StackView.onDeactivating: {
@@ -44,7 +60,7 @@ Page {
             ToolButton {
                 icon.name: "doc.on.doc"
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root._skipSave = true
                     var newRow = AppController.copyProjectLocation(root.locationRow)
                     if (newRow < 0) { root._skipSave = false; return }
@@ -79,7 +95,12 @@ Page {
                 icon.name: "safari"
                 text: qsTr("Open in Browser")
                 display: AbstractButton.TextUnderIcon
-                onClicked: Qt.openUrlExternally(pathField.text)
+                onClicked: {
+                    var url = pathField.text
+                    if (!url.startsWith("http://") && !url.startsWith("https://"))
+                        url = "http://" + url
+                    Qt.openUrlExternally(url)
+                }
             }
         }
     }
@@ -102,30 +123,27 @@ Page {
                         var idx = model.indexOf(root.initialType)
                         currentIndex = (idx >= 0) ? idx : 0
                     }
+                    onActivated: root._hasChanges = true
                 }
             }
 
             SectionHeader { text: qsTr("Description") }
             FieldRow {
-                TextField {
+                FormField {
                     id: descField
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialDescription
-                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhNoPredictiveText
-                    background: Item {}
+                    onTextChanged: root._hasChanges = true
                 }
             }
 
             SectionHeader { text: qsTr("Path / URL") }
             FieldRow {
-                TextField {
+                FormField {
                     id: pathField
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialPath
-                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhUrlCharactersOnly | Qt.ImhNoPredictiveText
-                    background: Item {}
+                    onTextChanged: root._hasChanges = true
                 }
             }
 
@@ -142,17 +160,5 @@ Page {
         font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }
-    }
-
-    component FieldRow: Rectangle {
-        default property alias content: innerItem.data
-        Layout.fillWidth: true
-        Layout.preferredHeight: 44
-        color: palette.base
-        Item { id: innerItem; anchors.fill: parent }
-        Rectangle {
-            anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-            height: 1; color: palette.placeholderText; opacity: 0.3
-        }
     }
 }

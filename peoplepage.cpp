@@ -3,6 +3,7 @@
 
 #include "peoplepage.h"
 #include "mainwindow.h"
+#include "appsettings.h"
 #include "ui_mainwindow.h"
 
 PeoplePage::PeoplePage()
@@ -13,6 +14,7 @@ PeoplePage::PeoplePage()
 void PeoplePage::openRecord(QVariant& recordId)
 {
     setRecordId(recordId);
+    global_DBObjects.peoplemodel()->refreshIfDirty();
 
     if (!recordId.isNull())
     {
@@ -51,7 +53,7 @@ void PeoplePage::setButtonAndMenuStates()
 
 void PeoplePage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes People"));
+    topLevelWidget()->setWindowTitle(AppSettings::developerProfilePrefix() + QString("Project Notes People"));
 
     if (getRecordId().isNull())
     {

@@ -18,13 +18,28 @@ Page {
     property string initialClientId:    ""
     property string initialRole:        ""
     property bool   _skipSave:          false
+    property bool   isNewRecord:        false
+
+    function _isBlankNew() { return isNewRecord && nameField.text.trim() === "" }
+    function _discardNew()  { AppController.deletePerson(root.personRow) }
 
     function _saveNow() {
         var clientId = (clientCombo.currentIndex >= 0)
             ? AppController.clientIdAtRow(clientCombo.currentIndex) : ""
-        AppController.savePerson(root.personRow, nameField.text, emailField.text,
-                                 officePhoneField.text, cellPhoneField.text,
-                                 clientId, roleField.text)
+        return AppController.savePerson(root.personRow, nameField.text, emailField.text,
+                                        officePhoneField.text, cellPhoneField.text,
+                                        clientId, roleField.text)
+    }
+
+    function _reloadData() {
+        var d = AppController.getPersonData(root.personRow)
+        nameField.text        = (d.name         || "").toString()
+        emailField.text       = (d.email        || "").toString()
+        officePhoneField.text = (d.office_phone || "").toString()
+        cellPhoneField.text   = (d.cell_phone   || "").toString()
+        roleField.text        = (d.role         || "").toString()
+        var row = AppController.clientRowForId((d.client_id || "").toString())
+        clientCombo.currentIndex = row >= 0 ? row : -1
     }
 
     StackView.onDeactivating: {
@@ -49,7 +64,7 @@ Page {
             ToolButton {
                 icon.name: "doc.on.doc"
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root._skipSave = true
                     var newRow = AppController.copyPerson(root.personRow)
                     if (newRow < 0) { root._skipSave = false; return }
@@ -89,61 +104,46 @@ Page {
 
             SectionHeader { text: qsTr("Name") }
             FieldRow {
-                TextField {
+                FormField {
                     id: nameField
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialName
-                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhNoPredictiveText
-                    background: Item {}
                 }
             }
 
             SectionHeader { text: qsTr("Email") }
             FieldRow {
-                TextField {
+                FormField {
                     id: emailField
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialEmail
-                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhEmailCharactersOnly
-                    background: Item {}
                 }
             }
 
             SectionHeader { text: qsTr("Office Phone") }
             FieldRow {
-                TextField {
+                FormField {
                     id: officePhoneField
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialOfficePhone
-                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhDialableCharactersOnly
-                    background: Item {}
                 }
             }
 
             SectionHeader { text: qsTr("Cell Phone") }
             FieldRow {
-                TextField {
+                FormField {
                     id: cellPhoneField
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialCellPhone
-                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhDialableCharactersOnly
-                    background: Item {}
                 }
             }
 
             SectionHeader { text: qsTr("Role") }
             FieldRow {
-                TextField {
+                FormField {
                     id: roleField
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialRole
-                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhNoPredictiveText
-                    background: Item {}
                 }
             }
 
@@ -178,25 +178,5 @@ Page {
         font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }
-    }
-
-    component FieldRow: Rectangle {
-        default property alias content: innerItem.data
-
-        Layout.fillWidth: true
-        Layout.preferredHeight: 44
-        color: palette.base
-
-        Item {
-            id: innerItem
-            anchors.fill: parent
-        }
-
-        Rectangle {
-            anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-            height: 1
-            color: palette.placeholderText
-            opacity: 0.3
-        }
     }
 }

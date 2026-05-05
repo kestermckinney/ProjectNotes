@@ -730,38 +730,25 @@ void DatabaseObjects::setGlobalSearches( bool refresh )
         allitemsmodel()->clearFilter(9);
     }
 
-    // if (getGlobalProjectFilter().isEmpty())
-    // {
-        // don't clear this one becasue we may have it open  projectinformationmodel()->clearFilter(0);
     projectslistmodel()->clearFilter(0);
     searchresultsmodel()->clearFilter(7);
-    // }
-    // else
-    // {
-    //     projectslistmodel()->setFilter(0, getGlobalProjectFilter());
-
-    //     QString projectnumber = execute(QString("select project_number from projects where id = '%1'").arg(getGlobalProjectFilter()));
-
-    //     searchresultsmodel()->setFilter(7, projectnumber);
-    // }
-
 
     if (refresh)
     {
-        peoplemodel()->refresh();
-        clientsmodel()->refresh();
-        projectnotesmodel()->refresh();
-        actionitemsdetailsmeetingsmodel()->refresh();
-        notesactionitemsmodel()->refresh();
-        actionitemprojectnotesmodel()->refresh();
-        actionitemsdetailsmodel()->refresh();
+        peoplemodel()->markDirty();
+        clientsmodel()->markDirty();
+        projectnotesmodel()->markDirty();
+        actionitemsdetailsmeetingsmodel()->markDirty();
+        notesactionitemsmodel()->markDirty();
+        actionitemprojectnotesmodel()->markDirty();
+        actionitemsdetailsmodel()->markDirty();
 
-        trackeritemsmodel()->refresh();
-        allitemsmodel()->refresh();
-        projectinformationmodel()->refresh();
-        projectslistmodel()->refresh();
-        unfilteredprojectslistmodel()->refresh();
-        searchresultsmodel()->refresh();
+        trackeritemsmodel()->markDirty();
+        allitemsmodel()->markDirty();
+        projectinformationmodel()->markDirty();
+        projectslistmodel()->markDirty();
+        unfilteredprojectslistmodel()->markDirty();
+        searchresultsmodel()->markDirty();
     }
 }
 
@@ -1257,6 +1244,8 @@ void DatabaseObjects::updateDisplayData()
 
             if (recordset->tablename().compare( keyColChange.table) == 0)
             {
+                recordset->refreshIfDirty();
+
                 if (keyColChange.operation_type == KeyColumnChange::Update)
                 {
                     QModelIndex qmi = recordset->findIndex(keyColChange.value, 0);

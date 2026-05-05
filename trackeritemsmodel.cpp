@@ -128,6 +128,12 @@ const QModelIndex TrackerItemsModel::newRecord(const QVariant* fkValue1, const Q
 
 bool TrackerItemsModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
+    // Capture old status before any changes
+    QString oldStatus;
+    if (index.column() == 9) {
+        oldStatus = data(index).toString();
+    }
+
     if ( SqlQueryModel::setData(index, value, role) )
     {
         QVariant curdate = QDateTime::currentDateTime().toString("MM/dd/yyyy");
@@ -140,11 +146,18 @@ bool TrackerItemsModel::setData(const QModelIndex &index, const QVariant &value,
                 SqlQueryModel::setData(qmi_status, "Assigned", role);
         }
 
-        // if the issue was changed to resolved them change the resolved date
+        // if the issue was changed to resolved then change the resolved date
         if (index.column() == 9 && value.toString() == "Resolved")
         {
             QModelIndex qmi_resolved = this->index(index.row(), 12);
             SqlQueryModel::setData(qmi_resolved, curdate, role);
+        }
+
+        // if changed from resolved, clear the resolved date
+        if (index.column() == 9 && oldStatus == "Resolved" && value.toString() != "Resolved")
+        {
+            QModelIndex qmi_resolved = this->index(index.row(), 12);
+            SqlQueryModel::setData(qmi_resolved, QVariant(), role);
         }
 
         // set the date the record was updated

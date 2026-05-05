@@ -99,6 +99,45 @@ bool NotesActionItemsModel::setData(const QModelIndex &index, const QVariant &va
     return false;
 }
 
+QVariant NotesActionItemsModel::data(const QModelIndex &index, int role) const
+{
+    if (role == Qt::ForegroundRole)
+    {
+        if (index.column() == 8) // priority
+        {
+            QString value = data(index).toString();
+
+            if (value.compare("High") == 0)
+            {
+                 return QVariant(QCOLOR_RED);
+            }
+            else if (value.compare("Medium") == 0)
+            {
+                return QVariant(QCOLOR_YELLOW);
+            }
+        }
+        else if (index.column() == 10) // due date
+        {
+            QVariant value = data(index);
+
+            QDateTime datecol = parseDateTime(value.toString());
+
+            qint64 dif = datecol.daysTo(QDateTime::currentDateTime());
+
+            if (dif == 0)
+            {
+                return QVariant(QCOLOR_YELLOW);
+            }
+            else if (dif > 0)
+            {
+                return QVariant(QCOLOR_RED);
+            }
+        }
+    }
+
+    return SqlQueryModel::data(index, role);
+}
+
 void NotesActionItemsModel::prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex)
 {
     QVariant project_id = data(this->index(sourceIndex.row(), 14));

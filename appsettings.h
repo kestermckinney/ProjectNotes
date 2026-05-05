@@ -23,6 +23,7 @@ public:
 
     static void setDeveloperProfile(const QString& profile);
     static QString developerProfile();
+    static QString developerProfilePrefix();
     static QString settingsOrganization();
     static QString dataLocation();
 
@@ -60,6 +61,9 @@ public:
     bool getTableSortColumn(const QString& viewName, int& column, QString& direction);
     int getStoredInt(const QString& valueName);
     void setStoredInt(const QString& valueName, int intValue);
+
+    qreal getZoomFactor();
+    void setZoomFactor(qreal factor);
 
     SpellChecker* spellchecker();
 

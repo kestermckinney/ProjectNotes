@@ -8,7 +8,11 @@
 
 SortFilterProxyModel::SortFilterProxyModel(QObject *parent): QSortFilterProxyModel(parent)
 {
-
+    m_quickSearchDebounce.setSingleShot(true);
+    m_quickSearchDebounce.setInterval(250);
+    QObject::connect(&m_quickSearchDebounce, &QTimer::timeout, this, [this]() {
+        invalidateRowsFilter();
+    });
 }
 
 bool SortFilterProxyModel::filterAcceptsRow(int source_row,
@@ -61,7 +65,13 @@ void SortFilterProxyModel::setQuickSearch(const QString& text)
     if (m_quickSearch == text)
         return;
     m_quickSearch = text;
-    invalidateRowsFilter();
+    if (text.isEmpty()) {
+        // Field cleared — show all rows immediately, no debounce.
+        m_quickSearchDebounce.stop();
+        invalidateRowsFilter();
+    } else {
+        m_quickSearchDebounce.start();
+    }
 }
 
 QVariant SortFilterProxyModel::headerData(int section, Qt::Orientation orientation,

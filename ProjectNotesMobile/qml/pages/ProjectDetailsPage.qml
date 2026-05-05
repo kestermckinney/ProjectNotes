@@ -40,6 +40,10 @@ Page {
     property string initialPctComplete:       ""
     property string initialCpi:              ""
     property bool   _skipSave:                false
+    property bool   isNewRecord:              false
+
+    function _isBlankNew() { return isNewRecord && nameField.text.trim() === "" }
+    function _discardNew()  { AppController.deleteProject(root.projectRow) }
 
     function _saveNow() {
         statusDateField.commitPending()
@@ -54,9 +58,27 @@ Page {
             ? invoicingCombo.model[invoicingCombo.currentIndex] : ""
         var srPeriod = (statusReportCombo.currentIndex >= 0)
             ? statusReportCombo.model[statusReportCombo.currentIndex] : ""
-        AppController.saveProject(root.projectRow, numberField.text, nameField.text,
-                                  status, primaryContactId, clientId, statusDateField.text,
-                                  invoiceDateField.text, invPeriod, srPeriod)
+        return AppController.saveProject(root.projectRow, numberField.text, nameField.text,
+                                         status, primaryContactId, clientId, statusDateField.text,
+                                         invoiceDateField.text, invPeriod, srPeriod)
+    }
+
+    function _reloadData() {
+        var d = AppController.getProjectData(root.projectRow)
+        numberField.text = (d.project_number || "").toString()
+        nameField.text   = (d.project_name   || "").toString()
+        var si = statusCombo.model.indexOf((d.project_status || "").toString())
+        statusCombo.currentIndex = si >= 0 ? si : 0
+        var ci = AppController.clientRowForId((d.client_id || "").toString())
+        clientCombo.currentIndex = ci >= 0 ? ci : -1
+        var pi = AppController.teamMemberRowForPersonId((d.primary_contact || "").toString())
+        primaryContactCombo.currentIndex = pi >= 0 ? pi : -1
+        statusDateField.text  = (d.last_status_date     || "").toString()
+        invoiceDateField.text = (d.last_invoice_date    || "").toString()
+        var ii = invoicingCombo.model.indexOf((d.invoicing_period || "").toString())
+        invoicingCombo.currentIndex = ii >= 0 ? ii : -1
+        var sri = statusReportCombo.model.indexOf((d.status_report_period || "").toString())
+        statusReportCombo.currentIndex = sri >= 0 ? sri : -1
     }
 
     Component.onCompleted: {
@@ -96,7 +118,7 @@ Page {
             ToolButton {
                 icon.name: "doc.on.doc"
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root._skipSave = true
                     var newRow = AppController.copyProject(root.projectRow)
                     if (newRow < 0) { root._skipSave = false; return }
@@ -151,25 +173,19 @@ Page {
 
             SectionHeader { text: qsTr("Project Number") }
             FieldRow {
-                TextField {
+                FormField {
                     id: numberField
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialProjectNumber
-                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhNoPredictiveText
-                    background: Item {}
                 }
             }
 
             SectionHeader { text: qsTr("Project Name") }
             FieldRow {
-                TextField {
+                FormField {
                     id: nameField
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialProjectName
-                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhNoPredictiveText
-                    background: Item {}
                 }
             }
 
@@ -254,100 +270,78 @@ Page {
 
             SectionHeader { text: qsTr("Budget") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: { var v = parseFloat(root.initialBudget); return (!isNaN(v) && root.initialBudget !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
-                    color: (!isNaN(parseFloat(root.initialBudget)) && root.initialBudget !== "") ? palette.text : palette.placeholderText
                 }
             }
 
             SectionHeader { text: qsTr("Actual") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: { var v = parseFloat(root.initialActual); return (!isNaN(v) && root.initialActual !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
-                    color: (!isNaN(parseFloat(root.initialActual)) && root.initialActual !== "") ? palette.text : palette.placeholderText
                 }
             }
 
             SectionHeader { text: qsTr("BCWP") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: { var v = parseFloat(root.initialBcwp); return (!isNaN(v) && root.initialBcwp !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
-                    color: (!isNaN(parseFloat(root.initialBcwp)) && root.initialBcwp !== "") ? palette.text : palette.placeholderText
                 }
             }
 
             SectionHeader { text: qsTr("BCWS") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: { var v = parseFloat(root.initialBcws); return (!isNaN(v) && root.initialBcws !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
-                    color: (!isNaN(parseFloat(root.initialBcws)) && root.initialBcws !== "") ? palette.text : palette.placeholderText
                 }
             }
 
             SectionHeader { text: qsTr("BAC") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: { var v = parseFloat(root.initialBac); return (!isNaN(v) && root.initialBac !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
-                    color: (!isNaN(parseFloat(root.initialBac)) && root.initialBac !== "") ? palette.text : palette.placeholderText
                 }
             }
 
             SectionHeader { text: qsTr("% Consumed") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: { var v = parseFloat(root.initialPctConsumed); return (!isNaN(v) && root.initialPctConsumed !== "") ? v.toLocaleString(Qt.locale(), "f", 2) + "%" : qsTr("—") }
-                    color: (!isNaN(parseFloat(root.initialPctConsumed)) && root.initialPctConsumed !== "") ? palette.text : palette.placeholderText
                 }
             }
 
             SectionHeader { text: qsTr("EAC") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: { var v = parseFloat(root.initialEac); return (!isNaN(v) && root.initialEac !== "") ? "$" + v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
-                    color: (!isNaN(parseFloat(root.initialEac)) && root.initialEac !== "") ? palette.text : palette.placeholderText
                 }
             }
 
             SectionHeader { text: qsTr("CV") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: { var v = parseFloat(root.initialCv); return (!isNaN(v) && root.initialCv !== "") ? v.toLocaleString(Qt.locale(), "f", 2) + "%" : qsTr("—") }
-                    color: (!isNaN(parseFloat(root.initialCv)) && root.initialCv !== "") ? palette.text : palette.placeholderText
                 }
             }
 
             SectionHeader { text: qsTr("SV") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: { var v = parseFloat(root.initialSv); return (!isNaN(v) && root.initialSv !== "") ? v.toLocaleString(Qt.locale(), "f", 2) + "%" : qsTr("—") }
-                    color: (!isNaN(parseFloat(root.initialSv)) && root.initialSv !== "") ? palette.text : palette.placeholderText
                 }
             }
 
             SectionHeader { text: qsTr("% Complete") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: { var v = parseFloat(root.initialPctComplete); return (!isNaN(v) && root.initialPctComplete !== "") ? v.toLocaleString(Qt.locale(), "f", 2) + "%" : qsTr("—") }
-                    color: (!isNaN(parseFloat(root.initialPctComplete)) && root.initialPctComplete !== "") ? palette.text : palette.placeholderText
                 }
             }
 
             SectionHeader { text: qsTr("CPI") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: { var v = parseFloat(root.initialCpi); return (!isNaN(v) && root.initialCpi !== "") ? v.toLocaleString(Qt.locale(), "f", 2) : qsTr("—") }
-                    color: (!isNaN(parseFloat(root.initialCpi)) && root.initialCpi !== "") ? palette.text : palette.placeholderText
                 }
             }
 
@@ -365,9 +359,9 @@ Page {
                 model: [
                     { label: qsTr("Status"),  icon: "chart.bar.doc.horizontal", page: "StatusItemsPage.qml"    },
                     { label: qsTr("Team"),    icon: "person.2",                  page: "TeamMembersPage.qml"    },
-                    { label: qsTr("Items"),   icon: "exclamationmark.triangle",  page: "ProjectTrackerPage.qml" },
+                    { label: qsTr("Items"),   icon: "checklist",  page: "ProjectTrackerPage.qml" },
                     { label: qsTr("Files"),   icon: "folder",                    page: "ProjectLocationsPage.qml"},
-                    { label: qsTr("Notes"),   icon: "doc.text",                  page: "ProjectNotesPage.qml"   }
+                    { label: qsTr("Notes"),   icon: "square.and.pencil",         page: "ProjectNotesPage.qml"   }
                 ]
 
                 ToolButton {
@@ -397,25 +391,5 @@ Page {
         font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }
-    }
-
-    component FieldRow: Rectangle {
-        default property alias content: innerItem.data
-
-        Layout.fillWidth: true
-        Layout.preferredHeight: 44
-        color: palette.base
-
-        Item {
-            id: innerItem
-            anchors.fill: parent
-        }
-
-        Rectangle {
-            anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-            height: 1
-            color: palette.placeholderText
-            opacity: 0.3
-        }
     }
 }

@@ -130,7 +130,7 @@
         <item>
          <widget class="QTabWidget" name="tabWidgetNotes">
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tabNote">
            <attribute name="title">
@@ -251,15 +251,27 @@
                   <item row="1" column="0">
                    <widget class="PlainTextEdit" name="plainTextEditMeetingTitle">
                     <property name="sizePolicy">
-                     <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                     <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
                       <horstretch>4</horstretch>
                       <verstretch>0</verstretch>
                      </sizepolicy>
+                    </property>
+                    <property name="minimumSize">
+                     <size>
+                      <width>0</width>
+                      <height>20</height>
+                     </size>
                     </property>
                     <property name="maximumSize">
                      <size>
                       <width>16777215</width>
                       <height>20</height>
+                     </size>
+                    </property>
+                    <property name="baseSize">
+                     <size>
+                      <width>0</width>
+                      <height>0</height>
                      </size>
                     </property>
                     <property name="tabChangesFocus">
@@ -440,7 +452,7 @@
            </sizepolicy>
           </property>
           <property name="currentIndex">
-           <number>3</number>
+           <number>0</number>
           </property>
           <property name="elideMode">
            <enum>Qt::TextElideMode::ElideNone</enum>
@@ -1556,7 +1568,7 @@
      <x>0</x>
      <y>0</y>
      <width>932</width>
-     <height>30</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -1621,8 +1633,6 @@
     <addaction name="separator"/>
     <addaction name="actionFilter"/>
     <addaction name="separator"/>
-    <addaction name="actionIncrease_Font_Size"/>
-    <addaction name="actionDecrease_Font_Size"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1873,12 +1883,12 @@
    </property>
   </action>
   <action name="actionSyncStats">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="Resources.qrc">
      <normaloff>:/icons/syncstats.png</normaloff>:/icons/syncstats.png</iconset>
-   </property>
-   <property name="checkable">
-    <bool>true</bool>
    </property>
    <property name="text">
     <string>Sync &amp;Stats</string>
@@ -2071,12 +2081,12 @@
    </property>
   </action>
   <action name="actionView_LogView">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="Resources.qrc">
      <normaloff>:/icons/logs.png</normaloff>:/icons/logs.png</iconset>
-   </property>
-   <property name="checkable">
-    <bool>true</bool>
    </property>
    <property name="text">
     <string>View Logs</string>
@@ -2092,12 +2102,12 @@
    </property>
   </action>
   <action name="actionInternal_Items">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="Resources.qrc">
      <normaloff>:/icons/internal.png</normaloff>:/icons/internal.png</iconset>
-   </property>
-   <property name="checkable">
-    <bool>true</bool>
    </property>
    <property name="text">
     <string>Internal Items</string>
@@ -2113,12 +2123,12 @@
    </property>
   </action>
   <action name="actionAll_Tracker_Action_Items">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="Resources.qrc">
      <normaloff>:/icons/all-items.png</normaloff>:/icons/all-items.png</iconset>
-   </property>
-   <property name="checkable">
-    <bool>true</bool>
    </property>
    <property name="text">
     <string>All Tracker/Action Items</string>
@@ -2134,12 +2144,12 @@
    </property>
   </action>
   <action name="actionStatus_Bar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="Resources.qrc">
      <normaloff>:/icons/statusbar.png</normaloff>:/icons/statusbar.png</iconset>
-   </property>
-   <property name="checkable">
-    <bool>true</bool>
    </property>
    <property name="text">
     <string>Status Bar</string>
@@ -2170,12 +2180,12 @@
    </property>
   </action>
   <action name="actionClosed_Projects">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="Resources.qrc">
      <normaloff>:/icons/closed-projects.png</normaloff>:/icons/closed-projects.png</iconset>
-   </property>
-   <property name="checkable">
-    <bool>true</bool>
    </property>
    <property name="text">
     <string>Closed Projects</string>
@@ -2377,12 +2387,12 @@
    </property>
   </action>
   <action name="actionResolved_Tracker_Action_Items">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="Resources.qrc">
      <normaloff>:/icons/assigned-items.png</normaloff>:/icons/assigned-items.png</iconset>
-   </property>
-   <property name="checkable">
-    <bool>true</bool>
    </property>
    <property name="text">
     <string>New and Assigned Tracker/Action Items</string>
@@ -2568,30 +2578,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+O</string>
-   </property>
-  </action>
-  <action name="actionIncrease_Font_Size">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/font-increase.png</normaloff>:/icons/font-increase.png</iconset>
-   </property>
-   <property name="text">
-    <string>Increase Font Size</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+=</string>
-   </property>
-  </action>
-  <action name="actionDecrease_Font_Size">
-   <property name="icon">
-    <iconset resource="Resources.qrc">
-     <normaloff>:/icons/font-decrease.png</normaloff>:/icons/font-decrease.png</iconset>
-   </property>
-   <property name="text">
-    <string>Decrease Font Size</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+-</string>
    </property>
   </action>
   <action name="actionForward_2">

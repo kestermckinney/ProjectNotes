@@ -46,7 +46,7 @@ const QModelIndex ProjectNotesModel::newRecord(const QVariant* fkValue1, const Q
     QVector<QVariant> qr = emptyrecord();
 
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
-    QVariant notetitle = QString("[Meeting Notes for %1]").arg(QDateTime::currentDateTime().toString("MM/dd/yyyy"));
+    QVariant notetitle = QString("[New Meeting]");
 
     qr[1] = *fkValue1;
     qr[2] = notetitle;

@@ -89,11 +89,32 @@ const QModelIndex ProjectsModel::newRecord(const QVariant* fkValue1, const QVari
     Q_UNUSED(fkValue1);
     Q_UNUSED(fkValue2);
 
-    QString unique_stamp = QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz");
+    // Find the first unused 5-digit zero-padded number starting at 00001
+    QSqlQuery query(getDBOs()->getDb());
+    query.prepare("SELECT COUNT(*) FROM projects WHERE project_number = ? AND deleted = 0");
+
+    int candidate = 1;
+    QString projectNumber;
+    bool inUse;
+    do {
+        projectNumber = QString("%1").arg(candidate++, 5, 10, QChar('0'));
+
+        query.bindValue(0, projectNumber);
+        inUse = query.exec() && query.next() && query.value(0).toInt() > 0;
+
+        if (!inUse) {
+            for (int row = 0; row < rowCount(QModelIndex()); ++row) {
+                if (data(index(row, 1)).toString() == projectNumber) {
+                    inUse = true;
+                    break;
+                }
+            }
+        }
+    } while (inUse);
 
     QVector<QVariant> qr = emptyrecord();
-    qr[1] = QString("[%1]").arg(unique_stamp);
-    qr[2] = QString("[New Project %1]").arg(unique_stamp);
+    qr[1] = projectNumber;
+    qr[2] = QString("[New Project %1]").arg(projectNumber);
     qr[11] = tr("Monthly");
     qr[12] = tr("Bi-Weekly");
     qr[14] = tr("Active");

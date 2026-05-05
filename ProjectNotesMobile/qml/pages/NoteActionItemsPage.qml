@@ -26,7 +26,7 @@ Page {
             case "New":      return "#cc0000"
             case "Assigned": return "#e07000"
             case "Resolved": return Theme.accentGreenDark
-            default:         return palette.placeholderText
+            default:         return Theme.mutedText
         }
     }
 
@@ -65,6 +65,7 @@ Page {
                     var d = AppController.getTrackerItemDetailData(0)
                     root.StackView.view.push(Qt.resolvedUrl("TrackerItemDetailPage.qml"), {
                         itemRow:              0,
+                        isNewRecord:          true,
                         itemId:               newId,
                         initialItemNumber:    (d.item_number        || "").toString(),
                         initialProjectNumber: (d.project_number     || "").toString(),
@@ -78,6 +79,8 @@ Page {
                         initialStatus:        (d.status            || "").toString(),
                         initialDateIdentified:(d.date_identified    || "").toString(),
                         initialDateDue:       (d.date_due          || "").toString(),
+                        initialLastUpdate:    (d.last_update       || "").toString(),
+                        initialDateResolved:  (d.date_resolved     || "").toString(),
                         initialInternal:      (d.internal_item     || "0") !== "0"
                     })
                 }
@@ -116,7 +119,7 @@ Page {
                         visible: (model.assigned_to || "") !== ""
                         text: AppController.peopleNameForId(model.assigned_to || "")
                         font.pixelSize: 12
-                        color: palette.placeholderText
+                        color: Theme.mutedText
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
@@ -138,7 +141,7 @@ Page {
                             return sep + "Due: " + (model.date_due || "")
                         }
                         font.pixelSize: 12
-                        color: model.date_due_foreground || palette.placeholderText
+                        color: model.date_due_foreground || Theme.mutedText
                     }
                 }
             }
@@ -163,6 +166,8 @@ Page {
                     initialStatus:        model.status            || "",
                     initialDateIdentified:model.date_identified    || "",
                     initialDateDue:       model.date_due          || "",
+                    initialLastUpdate:    (d.last_update          || "").toString(),
+                    initialDateResolved:  (d.date_resolved        || "").toString(),
                     initialInternal:      (model.internal_item    || "0") !== "0"
                 })
             }
@@ -175,6 +180,6 @@ Page {
         anchors.centerIn: parent
         visible: listView.count === 0
         text: qsTr("No action items.")
-        color: palette.placeholderText
+        color: Theme.mutedText
     }
 }

@@ -14,12 +14,60 @@ ApplicationWindow {
     height: 844
     title: qsTr("Project Notes")
 
+    // Save current page data before app closes
+    function saveCurrentPage() {
+        var page = pageStack.currentItem
+        if (page && typeof page._saveNow === "function" && !page._skipSave) {
+            if (page.isNewRecord && typeof page._isBlankNew === "function" && page._isBlankNew()) {
+                page._skipSave = true
+                if (typeof page._discardNew === "function")
+                    page._discardNew()
+                return
+            }
+            page._saveNow()
+        }
+    }
+
+    // Save on app close or background
+    Component.onDestruction: saveCurrentPage()
+
+    Connections {
+        target: Qt.application
+        function onStateChanged(state) {
+            if (state === Qt.ApplicationInactive || state === Qt.ApplicationSuspended)
+                saveCurrentPage()
+        }
+    }
+
     // Shared tab state — lives here so the TabBar (footer) and SwipeView
     // (inside the StackView initialItem component) can both bind to it.
     property int currentTabIndex: 0
     readonly property var tabTitles: [
         qsTr("Projects"), qsTr("People"), qsTr("Clients"), qsTr("Items")
     ]
+
+    // Attempt to save the current detail page and pop.  If the C++ layer
+    // rejects the data (lastSaveError is non-empty), stay on the page so the
+    // user can fix their input — the errorOccurred signal opens the dialog,
+    // and the typed values stay visible so it's clear which field is wrong.
+    function trySaveAndPop() {
+        var page = pageStack.currentItem
+        if (page && typeof page._saveNow === "function" && !page._skipSave) {
+            if (page.isNewRecord && typeof page._isBlankNew === "function" && page._isBlankNew()) {
+                page._skipSave = true
+                if (typeof page._discardNew === "function")
+                    page._discardNew()
+                pageStack.pop()
+                return
+            }
+            page._saveNow()
+            if (AppController.lastSaveError() !== "") {
+                return  // validation error — stay on page with typed values intact
+            }
+            page._skipSave = true  // prevent double-save from onDeactivating / onDestruction
+        }
+        pageStack.pop()
+    }
 
     // ── C++ signal connections ────────────────────────────────────────────────
     Connections {
@@ -189,7 +237,7 @@ ApplicationWindow {
                 icon.color: "white"
                 onClicked: {
                     if (pageStack.depth > 1)
-                        pageStack.pop()
+                        trySaveAndPop()
                     else
                         hamburgerDrawer.open()
                 }
@@ -247,7 +295,27 @@ ApplicationWindow {
         SwipeView {
             id: swipeView
             currentIndex: root.currentTabIndex
-            onCurrentIndexChanged: root.currentTabIndex = currentIndex
+            onCurrentIndexChanged: {
+                root.currentTabIndex = currentIndex
+                switch (currentIndex) {
+                    case 0: AppController.refreshProjectsList(); break
+                    case 1: AppController.refreshPeople();       break
+                    case 2: AppController.refreshClients();      break
+                    case 3: AppController.refreshAllItems();     break
+                }
+            }
+
+            Connections {
+                target: AppController
+                function onViewOptionsChanged() {
+                    switch (swipeView.currentIndex) {
+                        case 0: AppController.refreshProjectsList(); break
+                        case 1: AppController.refreshPeople();       break
+                        case 2: AppController.refreshClients();      break
+                        case 3: AppController.refreshAllItems();     break
+                    }
+                }
+            }
 
             ProjectsListPage { stackView: pageStack }
             PeoplePage        { stackView: pageStack }

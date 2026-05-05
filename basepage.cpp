@@ -221,7 +221,9 @@ void BasePage::openRecord(QVariant& recordId)
 {
     m_recordId = recordId;
 
-    // loadState();
+    if (m_currentModel)
+        if (auto* sqm = dynamic_cast<SqlQueryModel*>(m_currentModel->sourceModel()))
+            sqm->refreshIfDirty();
 }
 
 void BasePage::newRecord()

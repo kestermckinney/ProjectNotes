@@ -10,14 +10,74 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <QHash>
 #include <QTextDocument>
+#include <QThread>
 #include <QTimer>
 
 using namespace QLogger;
 
+// ── IdRowIndex ───────────────────────────────────────────────────────────────
+// O(1) id→row hash for any QAbstractItemModel. Marks itself dirty on any
+// model change and rebuilds lazily on the next lookup. Replaces the per-row
+// linear scans that QML list delegates were hitting on every binding
+// re-evaluation (scroll, quick search, sync row update).
+class IdRowIndex
+{
+public:
+    IdRowIndex(QAbstractItemModel* model, int idColumn)
+        : m_model(model), m_idColumn(idColumn)
+    {
+        const auto invalidate = [this] { m_dirty = true; };
+        QObject::connect(model, &QAbstractItemModel::modelReset,    model, invalidate);
+        QObject::connect(model, &QAbstractItemModel::layoutChanged, model, invalidate);
+        QObject::connect(model, &QAbstractItemModel::dataChanged,   model, invalidate);
+        QObject::connect(model, &QAbstractItemModel::rowsInserted,  model, invalidate);
+        QObject::connect(model, &QAbstractItemModel::rowsRemoved,   model, invalidate);
+    }
+
+    int rowFor(const QString& id) const
+    {
+        if (id.isEmpty()) return -1;
+        if (m_dirty) rebuild();
+        return m_rows.value(id, -1);
+    }
+
+private:
+    void rebuild() const
+    {
+        m_rows.clear();
+        const int n = m_model->rowCount();
+        m_rows.reserve(n);
+        for (int row = 0; row < n; ++row) {
+            const QString id = m_model->data(m_model->index(row, m_idColumn)).toString();
+            if (!id.isEmpty()) m_rows.insert(id, row);
+        }
+        m_dirty = false;
+    }
+
+    QAbstractItemModel* m_model;
+    int                 m_idColumn;
+    mutable bool                m_dirty = true;
+    mutable QHash<QString, int> m_rows;
+};
+
 // ── Singleton plumbing ───────────────────────────────────────────────────────
 
 static AppController* s_instance = nullptr;
+
+static void appendEmailRecipient(QStringList& emails,
+                                 const QString& email,
+                                 const QString& personId,
+                                 const QString& excludedPersonId)
+{
+    if (!excludedPersonId.isEmpty() && personId == excludedPersonId)
+        return;
+
+    const QString trimmedEmail = email.trimmed();
+    if (!trimmedEmail.isEmpty() && !emails.contains(trimmedEmail, Qt::CaseInsensitive))
+        emails.append(trimmedEmail);
+}
 
 AppController* AppController::create(QQmlEngine* /*engine*/, QJSEngine* /*scriptEngine*/)
 {
@@ -57,7 +117,20 @@ AppController::AppController(QObject* parent)
 
 AppController::~AppController()
 {
-    stopSync();
+    if (m_syncApi && m_syncApiThread) {
+        // Shut the sync engine down on its own thread, then stop the thread.
+        // BlockingQueuedConnection waits for any in-flight initialize() call
+        // to return before shutdown() runs, so we never tear the engine down
+        // mid-bootstrap.
+        SqliteSyncPro* api = m_syncApi;
+        QMetaObject::invokeMethod(api, [api]() { api->shutdown(); },
+                                  Qt::BlockingQueuedConnection);
+        m_syncApiThread->quit();
+        m_syncApiThread->wait();
+        // m_syncApi is auto-deleted via the QThread::finished → deleteLater
+        // connection set up in configureSyncApi().
+        m_syncApi = nullptr;
+    }
     global_DBObjects.closeDatabase();
 }
 
@@ -81,7 +154,7 @@ bool AppController::openOrCreateDatabase()
         }
     }
 
-    if (!global_DBObjects.openDatabase(dbPath, connName, false)) {
+    if (!global_DBObjects.openDatabase(dbPath, connName, true)) {
         emit errorOccurred(tr("Database Error"), tr("Failed to open database at %1").arg(dbPath));
         return false;
     }
@@ -93,11 +166,25 @@ bool AppController::openOrCreateDatabase()
     if (isNewDatabase)
         global_DBObjects.setShowClosedProjects(true);
 
-    // Apply filters and populate all models before notifying QML.
-    // setGlobalSearches(false) wires up filter state without running queries,
-    // then setGlobalSearches(true) runs the actual SQL in dependency order.
+    // Apply filters selected from the view menu option.
     global_DBObjects.setGlobalSearches(false);
-    global_DBObjects.setGlobalSearches(true);
+
+    // Build O(1) id→row indexes over the proxy models that QML list pages
+    // and detail-page combobox lookups hit on every binding evaluation.
+    // The team-members index keys on people_id (col 2) since callers look up
+    // a row by the person, not by the team_members.id.
+    global_DBObjects.clientsmodel()->refresh();
+    m_clientsIndex.reset(
+        new IdRowIndex(global_DBObjects.clientsmodelproxy(), 0));
+    global_DBObjects.peoplemodel()->refresh();
+    m_peopleIndex.reset(
+        new IdRowIndex(global_DBObjects.peoplemodelproxy(), 0));
+    global_DBObjects.projectinformationmodel()->refresh();
+    m_projectsIndex.reset(
+        new IdRowIndex(global_DBObjects.projectinformationmodelproxy(), 0));
+    global_DBObjects.projectteammembersmodel()->refresh();
+    m_teamMembersByPersonIndex.reset(
+         new IdRowIndex(global_DBObjects.projectteammembersmodelproxy(), 2));
 
     // Tell QML the view-option properties are now readable.
     emit viewOptionsChanged();
@@ -110,19 +197,33 @@ bool AppController::openOrCreateDatabase()
 void AppController::configureSyncApi()
 {
     if (!m_syncApi) {
-        m_syncApi = new SqliteSyncPro(this);
+        // Lazy-create the sync API on its own thread. Done lazily so apps
+        // with sync disabled never spin up the thread.
+        m_syncApiThread = new QThread(this);
+        m_syncApiThread->setObjectName(QStringLiteral("SqliteSyncProThread"));
+
+        m_syncApi = new SqliteSyncPro;  // no parent — lives on the API thread
+        m_syncApi->moveToThread(m_syncApiThread);
+
+        // Tear the engine down on its own thread when the thread exits.
+        connect(m_syncApiThread, &QThread::finished,
+                m_syncApi,        &QObject::deleteLater);
+
+        // Cross-thread signal connections — auto-connection becomes queued.
         connect(m_syncApi, &SqliteSyncPro::rowChanged,
-                this,      &AppController::onSyncRowChanged,
-                Qt::QueuedConnection);
+                this,      &AppController::onSyncRowChanged);
         connect(m_syncApi, &SqliteSyncPro::syncCompleted,
                 this,      &AppController::onSyncComplete);
         connect(m_syncApi, &SqliteSyncPro::syncProgress,
                 this,      &AppController::onSyncProgress);
         connect(m_syncApi, &SqliteSyncPro::syncStatusUpdated,
-                this,      &AppController::onSyncStatusUpdated,
-                Qt::QueuedConnection);
+                this,      &AppController::onSyncStatusUpdated);
+
+        m_syncApiThread->start();
     }
 
+    // Setters are mutex-protected inside SqliteSyncPro, so it is safe to
+    // call them directly from the main thread.
     m_syncApi->setSyncHostType(global_MobileSettings.getSyncHostType());
     m_syncApi->setPostgrestUrl(global_MobileSettings.getSyncPostgrestUrl());
     m_syncApi->setEmail(global_MobileSettings.getSyncEmail());
@@ -138,26 +239,37 @@ void AppController::startSync()
 
     configureSyncApi();
 
-    // If a sync loop is already running, wake it for an immediate cycle instead
-    // of calling initialize() again. Re-initializing while the loop thread is
-    // live would overwrite m_syncWorker/m_syncThread; the old thread's cleanup
-    // lambda would then delete the NEW worker, causing a crash in run().
-    if (m_syncApi->isInitialized()) {
-        m_syncApi->retryNow();
-        return;
-    }
+    SqliteSyncPro* api = m_syncApi;
+    const QString dbPath = MobileSettings::dataLocation() + "/ProjectNotes.db";
 
-    m_syncApi->setDatabasePath(MobileSettings::dataLocation() + "/ProjectNotes.db");
-    if (!m_syncApi->initialize()) {
-        // Initialization failed — show red bar so the user knows sync is broken.
-        setSyncProgress(0.0, true);
-    }
+    // Run the heavy bootstrap (auth, WAL pragma, table discovery, persistent
+    // DB open) on the API thread so the UI stays responsive during launch.
+    QMetaObject::invokeMethod(api, [this, api, dbPath]() {
+        // If a sync loop is already running, wake it for an immediate cycle
+        // instead of calling initialize() again. Re-initializing while the
+        // loop thread is live would overwrite m_syncWorker/m_syncThread; the
+        // old thread's cleanup lambda would then delete the NEW worker,
+        // causing a crash in run().
+        if (api->isInitialized()) {
+            api->retryNow();
+            return;
+        }
+        api->setDatabasePath(dbPath);
+        if (!api->initialize()) {
+            // Init failed — flip the bar red on the UI thread.
+            QMetaObject::invokeMethod(this, [this]() {
+                setSyncProgress(0.0, true);
+            }, Qt::QueuedConnection);
+        }
+    }, Qt::QueuedConnection);
 }
 
 void AppController::stopSync()
 {
-    if (m_syncApi)
-        m_syncApi->shutdown();
+    if (!m_syncApi) return;
+    SqliteSyncPro* api = m_syncApi;
+    QMetaObject::invokeMethod(api, [api]() { api->shutdown(); },
+                              Qt::QueuedConnection);
 }
 
 void AppController::onSyncComplete(const SyncResult& result)
@@ -170,7 +282,13 @@ void AppController::onSyncComplete(const SyncResult& result)
         // Ask SqliteSyncPro to count remaining pending records and emit
         // syncStatusUpdated — same as the desktop.  That signal is the sole
         // authority on whether the bar shows or hides after a cycle.
-        m_syncApi->checkSyncStatus(result);
+        // checkSyncStatus touches the persistent DB connection that lives on
+        // the API thread, so dispatch it there.
+        if (SqliteSyncPro* api = m_syncApi) {
+            QMetaObject::invokeMethod(api, [api, result]() {
+                api->checkSyncStatus(result);
+            }, Qt::QueuedConnection);
+        }
     } else {
         // Turn bar red; no popup — the bar is the only sync error indicator.
         setSyncProgress(m_syncProgress, true);
@@ -227,23 +345,6 @@ void AppController::setSyncProgress(qreal progress, bool hasError)
 
 // ── Filter helpers ───────────────────────────────────────────────────────────
 
-void AppController::setPeopleFilter(const QString& filter)
-{
-    if (filter.isEmpty())
-        global_DBObjects.peoplemodel()->clearUserSearchString(1);
-    else
-        global_DBObjects.peoplemodel()->setUserSearchString(1, filter);
-    global_DBObjects.peoplemodel()->refresh();
-}
-
-void AppController::setClientsFilter(const QString& filter)
-{
-    if (filter.isEmpty())
-        global_DBObjects.clientsmodel()->clearUserSearchString(1);
-    else
-        global_DBObjects.clientsmodel()->setUserSearchString(1, filter);
-    global_DBObjects.clientsmodel()->refresh();
-}
 
 void AppController::setProjectFilter(const QString& projectId)
 {
@@ -266,17 +367,6 @@ void AppController::setProjectFilter(const QString& projectId)
     // Project notes: project_id is col 1
     global_DBObjects.projectnotesmodel()->setFilter(1, projectId);
     global_DBObjects.projectnotesmodel()->refresh();
-}
-
-void AppController::setAllItemsFilter(const QString& filter)
-{
-    SqlQueryModel* model = global_DBObjects.allitemsmodel();
-    if (filter.isEmpty()) {
-        model->clearUserSearchString(3);  // item_name col 3
-    } else {
-        model->setUserSearchString(3, filter);
-    }
-    model->refresh();
 }
 
 // ── View options ─────────────────────────────────────────────────────────────
@@ -308,16 +398,22 @@ void AppController::syncAll()
     if (!global_DBObjects.isOpen()) return;
 
     configureSyncApi();
-    m_syncApi->setDatabasePath(MobileSettings::dataLocation() + "/ProjectNotes.db");
 
-    if (!m_syncApi->isInitialized()) {
-        if (!m_syncApi->initialize()) {
-            setSyncProgress(0.0, true);  // red bar — no popup
-            return;
+    SqliteSyncPro* api = m_syncApi;
+    const QString dbPath = MobileSettings::dataLocation() + "/ProjectNotes.db";
+
+    QMetaObject::invokeMethod(api, [this, api, dbPath]() {
+        api->setDatabasePath(dbPath);
+        if (!api->isInitialized()) {
+            if (!api->initialize()) {
+                QMetaObject::invokeMethod(this, [this]() {
+                    setSyncProgress(0.0, true);  // red bar — no popup
+                }, Qt::QueuedConnection);
+                return;
+            }
         }
-    }
-
-    m_syncApi->syncAll();
+        api->syncAll();
+    }, Qt::QueuedConnection);
 }
 
 // ── Record editing ────────────────────────────────────────────────────────────
@@ -326,16 +422,25 @@ bool AppController::savePerson(int row, const QString& name, const QString& emai
                                 const QString& officePhone, const QString& cellPhone,
                                 const QString& clientId, const QString& role)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
     if (row < 0 || row >= model->rowCount())
         return false;
+
+    const QPersistentModelIndex pIdx(model->index(row, 0));
+    if (!pIdx.isValid()) return false;
+
     bool ok = true;
-    ok &= model->setData(model->index(row, 1), name);
-    ok &= model->setData(model->index(row, 2), email);
-    ok &= model->setData(model->index(row, 3), officePhone);
-    ok &= model->setData(model->index(row, 4), cellPhone);
-    ok &= model->setData(model->index(row, 5), clientId);
-    ok &= model->setData(model->index(row, 6), role);
+    ok &= model->setData(model->index(pIdx.row(), 1), name);
+    ok &= model->setData(model->index(pIdx.row(), 2), email);
+    ok &= model->setData(model->index(pIdx.row(), 3), officePhone);
+    ok &= model->setData(model->index(pIdx.row(), 4), cellPhone);
+    ok &= model->setData(model->index(pIdx.row(), 5), clientId);
+    ok &= model->setData(model->index(pIdx.row(), 6), role);
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        emit errorOccurred(tr("Could Not Save"), err);
+    }
     return ok;
 }
 
@@ -345,84 +450,133 @@ bool AppController::saveProject(int row, const QString& projectNumber,
                                  const QString& lastStatusDate, const QString& lastInvoiceDate,
                                  const QString& invoicingPeriod, const QString& statusReportPeriod)
 {
-    QAbstractItemModel* model = global_DBObjects.projectslistmodelproxy();
+    global_DBObjects.setLastSaveError("");
+    QAbstractItemModel* model = global_DBObjects.projectinformationmodelproxy();
     if (row < 0 || row >= model->rowCount())
         return false;
+
+    const QPersistentModelIndex pIdx(model->index(row, 0));
+    if (!pIdx.isValid()) return false;
+
     bool ok = true;
-    ok &= model->setData(model->index(row,  1), projectNumber);
-    ok &= model->setData(model->index(row,  2), projectName);
-    ok &= model->setData(model->index(row,  3), lastStatusDate);
-    ok &= model->setData(model->index(row,  4), lastInvoiceDate);
-    ok &= model->setData(model->index(row,  5), primaryContactId);
-    ok &= model->setData(model->index(row, 11), invoicingPeriod);
-    ok &= model->setData(model->index(row, 12), statusReportPeriod);
-    ok &= model->setData(model->index(row, 13), clientId);
-    ok &= model->setData(model->index(row, 14), projectStatus);
+    ok &= model->setData(model->index(pIdx.row(),  1), projectNumber);
+    ok &= model->setData(model->index(pIdx.row(),  2), projectName);
+    ok &= model->setData(model->index(pIdx.row(),  3), lastStatusDate);
+    ok &= model->setData(model->index(pIdx.row(),  4), lastInvoiceDate);
+    ok &= model->setData(model->index(pIdx.row(),  5), primaryContactId);
+    ok &= model->setData(model->index(pIdx.row(), 11), invoicingPeriod);
+    ok &= model->setData(model->index(pIdx.row(), 12), statusReportPeriod);
+    ok &= model->setData(model->index(pIdx.row(), 13), clientId);
+    ok &= model->setData(model->index(pIdx.row(), 14), projectStatus);
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        emit errorOccurred(tr("Could Not Save"), err);
+    }
     return ok;
 }
 
 bool AppController::saveStatusItem(int row, const QString& category, const QString& description)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.statusreportitemsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
+
+    const QPersistentModelIndex pIdx(model->index(row, 0));
+    if (!pIdx.isValid()) return false;
+
     bool ok = true;
-    ok &= model->setData(model->index(row, 2), category);
-    ok &= model->setData(model->index(row, 3), description);
+    ok &= model->setData(model->index(pIdx.row(), 2), category);
+    ok &= model->setData(model->index(pIdx.row(), 3), description);
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        emit errorOccurred(tr("Could Not Save"), err);
+    }
     return ok;
 }
 
 bool AppController::saveTeamMember(int row, const QString& peopleId, const QString& role, bool receiveStatusReport)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.projectteammembersmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
+
+    const QPersistentModelIndex pIdx(model->index(row, 0));
+    if (!pIdx.isValid()) return false;
+
     bool ok = true;
-    ok &= model->setData(model->index(row, 2), peopleId);
-    ok &= model->setData(model->index(row, 4), receiveStatusReport ? "1" : "0");
-    ok &= model->setData(model->index(row, 5), role);
+    ok &= model->setData(model->index(pIdx.row(), 2), peopleId);
+    ok &= model->setData(model->index(pIdx.row(), 4), receiveStatusReport ? "1" : "0");
+    ok &= model->setData(model->index(pIdx.row(), 5), role);
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        emit errorOccurred(tr("Could Not Save"), err);
+    }
     return ok;
 }
 
 bool AppController::saveProjectLocation(int row, const QString& locationType,
                                          const QString& description, const QString& path)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.projectlocationsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
+
+    const QPersistentModelIndex pIdx(model->index(row, 0));
+    if (!pIdx.isValid()) return false;
+
     bool ok = true;
-    ok &= model->setData(model->index(row, 2), locationType);
-    ok &= model->setData(model->index(row, 3), description);
-    ok &= model->setData(model->index(row, 4), path);
+    ok &= model->setData(model->index(pIdx.row(), 2), locationType);
+    ok &= model->setData(model->index(pIdx.row(), 3), description);
+    ok &= model->setData(model->index(pIdx.row(), 4), path);
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        emit errorOccurred(tr("Could Not Save"), err);
+    }
     return ok;
 }
 
 bool AppController::saveProjectNote(int row, const QString& title, const QString& date,
                                      const QString& note, bool internalItem)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.projectnotesmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
+
+    // Pin the record by persistent index so a re-sort triggered by an earlier
+    // setData()'s side effects can't leave later setData() calls writing to the
+    // wrong row.
+    const QPersistentModelIndex pIdx(model->index(row, 0));
+    if (!pIdx.isValid()) return false;
+
     bool ok = true;
-    ok &= model->setData(model->index(row, 2), title);
-    ok &= model->setData(model->index(row, 3), date);
-    ok &= model->setData(model->index(row, 4), note);
-    ok &= model->setData(model->index(row, 5), internalItem ? "1" : "0");
+    ok &= model->setData(model->index(pIdx.row(), 2), title);
+    ok &= model->setData(model->index(pIdx.row(), 3), date);
+    ok &= model->setData(model->index(pIdx.row(), 4), note);
+    ok &= model->setData(model->index(pIdx.row(), 5), internalItem ? "1" : "0");
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        emit errorOccurred(tr("Could Not Save"), err);
+    }
     return ok;
 }
 
 bool AppController::saveClient(int row, const QString& clientName)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.clientsmodelproxy();
     if (row < 0 || row >= model->rowCount())
         return false;
-    return model->setData(model->index(row, 1), clientName);
+    bool ok = model->setData(model->index(row, 1), clientName);
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        emit errorOccurred(tr("Could Not Save"), err);
+    }
+    return ok;
 }
 
 int AppController::clientRowForId(const QString& clientId) const
 {
-    QAbstractItemModel* model = global_DBObjects.clientsmodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 0)).toString() == clientId)
-            return row;
-    }
-    return -1;
+    return m_clientsIndex ? m_clientsIndex->rowFor(clientId) : -1;
 }
 
 QString AppController::clientIdAtRow(int row) const
@@ -435,12 +589,7 @@ QString AppController::clientIdAtRow(int row) const
 
 int AppController::peopleRowForId(const QString& peopleId) const
 {
-    QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 0)).toString() == peopleId)
-            return row;
-    }
-    return -1;
+    return m_peopleIndex ? m_peopleIndex->rowFor(peopleId) : -1;
 }
 
 QString AppController::peopleIdAtRow(int row) const
@@ -453,67 +602,58 @@ QString AppController::peopleIdAtRow(int row) const
 
 QString AppController::peopleNameForId(const QString& personId) const
 {
-    if (personId.isEmpty()) return {};
+    if (!m_peopleIndex) return {};
+    const int row = m_peopleIndex->rowFor(personId);
+    if (row < 0) return {};
     QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 0)).toString() == personId)
-            return model->data(model->index(row, 1)).toString();  // col 1 = name
-    }
-    return {};
+    return model->data(model->index(row, 1)).toString();  // col 1 = name
 }
 
 QString AppController::peopleEmailForId(const QString& personId) const
 {
-    if (personId.isEmpty()) return {};
+    if (!m_peopleIndex) return {};
+    const int row = m_peopleIndex->rowFor(personId);
+    if (row < 0) return {};
     QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 0)).toString() == personId)
-            return model->data(model->index(row, 2)).toString();  // col 2 = email
-    }
-    return {};
+    return model->data(model->index(row, 2)).toString();  // col 2 = email
 }
 
 QString AppController::clientNameForId(const QString& clientId) const
 {
-    if (clientId.isEmpty()) return {};
+    if (!m_clientsIndex) return {};
+    const int row = m_clientsIndex->rowFor(clientId);
+    if (row < 0) return {};
     QAbstractItemModel* model = global_DBObjects.clientsmodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 0)).toString() == clientId)
-            return model->data(model->index(row, 1)).toString();  // col 1 = client_name
-    }
-    return {};
+    return model->data(model->index(row, 1)).toString();  // col 1 = client_name
 }
 
 QString AppController::projectNumberForId(const QString& projectId) const
 {
-    if (projectId.isEmpty()) return {};
-    QAbstractItemModel* model = global_DBObjects.projectslistmodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 0)).toString() == projectId)
-            return model->data(model->index(row, 1)).toString();  // col 1 = project_number
-    }
-    return {};
+    if (!m_projectsIndex) return {};
+    const int row = m_projectsIndex->rowFor(projectId);
+    if (row < 0) return {};
+    QAbstractItemModel* model = global_DBObjects.projectinformationmodelproxy();
+    return model->data(model->index(row, 1)).toString();  // col 1 = project_number
 }
 
 QString AppController::projectNameForId(const QString& projectId) const
 {
-    if (projectId.isEmpty()) return {};
-    QAbstractItemModel* model = global_DBObjects.projectslistmodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 0)).toString() == projectId)
-            return model->data(model->index(row, 2)).toString();  // col 2 = project_name
-    }
-    return {};
+    if (!m_projectsIndex) return {};
+    const int row = m_projectsIndex->rowFor(projectId);
+    if (row < 0) return {};
+    QAbstractItemModel* model = global_DBObjects.projectinformationmodelproxy();
+    return model->data(model->index(row, 2)).toString();  // col 2 = project_name
 }
 
 QString AppController::teamMemberEmailList() const
 {
     QAbstractItemModel* model = global_DBObjects.projectteammembersmodelproxy();
     QStringList emails;
+    const QString projectManagerId = global_DBObjects.getProjectManager();
     for (int row = 0; row < model->rowCount(); ++row) {
+        const QString personId = model->data(model->index(row, 2)).toString(); // col 2 = people_id
         const QString email = model->data(model->index(row, 6)).toString();  // col 6 = email
-        if (!email.isEmpty() && !emails.contains(email))
-            emails.append(email);
+        appendEmailRecipient(emails, email, personId, projectManagerId);
     }
     return emails.join(",");
 }
@@ -522,10 +662,11 @@ QString AppController::attendeeEmailList() const
 {
     QAbstractItemModel* model = global_DBObjects.meetingattendeesmodelproxy();
     QStringList emails;
+    const QString projectManagerId = global_DBObjects.getProjectManager();
     for (int row = 0; row < model->rowCount(); ++row) {
+        const QString personId = model->data(model->index(row, 2)).toString(); // col 2 = person_id
         const QString email = model->data(model->index(row, 5)).toString();  // col 5 = email
-        if (!email.isEmpty() && !emails.contains(email))
-            emails.append(email);
+        appendEmailRecipient(emails, email, personId, projectManagerId);
     }
     return emails.join(",");
 }
@@ -539,16 +680,16 @@ QString AppController::htmlToPlainText(const QString& html) const
     return doc.toPlainText();
 }
 
+QString AppController::lastSaveError() const
+{
+    return global_DBObjects.lastSaveError();
+}
+
 // teamMemberRowForPersonId — search col 2 (people_id) in projectTeamMembersModelProxy
 int AppController::teamMemberRowForPersonId(const QString& personId) const
 {
-    if (personId.isEmpty()) return -1;
-    QAbstractItemModel* model = global_DBObjects.projectteammembersmodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 2)).toString() == personId)
-            return row;
-    }
-    return -1;
+    return m_teamMembersByPersonIndex
+        ? m_teamMembersByPersonIndex->rowFor(personId) : -1;
 }
 
 // teamMemberPersonIdAtRow — return col 2 (people_id) from projectTeamMembersModelProxy
@@ -606,25 +747,37 @@ static QVariantMap proxyRowToMap(SortFilterProxyModel* proxy, int row)
 
 int AppController::addProject()
 {
-    return proxyRowFromSource(global_DBObjects.projectslistmodelproxy(),
-                              global_DBObjects.projectslistmodel()->newRecord());
+    auto* src = global_DBObjects.projectinformationmodel();
+    QModelIndex srcIdx = src->newRecord();
+    if (!srcIdx.isValid()) return -1;
+
+    // Commit up front so saveProject's setData calls all take the UPDATE
+    // branch — avoids ProjectsModel::setData firing addDefaultPMToProject
+    // mid-save (same hazard fixed for project notes).
+    if (!src->insertCacheRow(srcIdx.row())) return -1;
+
+    const QString newId = src->data(src->index(srcIdx.row(), 0)).toString();
+    if (!newId.isEmpty())
+        global_DBObjects.addDefaultPMToProject(newId);
+
+    return proxyRowFromSource(global_DBObjects.projectinformationmodelproxy(), srcIdx);
 }
 
 bool AppController::deleteProject(int row)
 {
-    return deleteProxyRow(global_DBObjects.projectslistmodelproxy(),
-                          global_DBObjects.projectslistmodel(), row);
+    return deleteProxyRow(global_DBObjects.projectinformationmodelproxy(),
+                          global_DBObjects.projectinformationmodel(), row);
 }
 
 int AppController::copyProject(int row)
 {
-    return copyProxyRow(global_DBObjects.projectslistmodelproxy(),
-                        global_DBObjects.projectslistmodel(), row);
+    return copyProxyRow(global_DBObjects.projectinformationmodelproxy(),
+                        global_DBObjects.projectinformationmodel(), row);
 }
 
 QVariantMap AppController::getProjectData(int row) const
 {
-    return proxyRowToMap(global_DBObjects.projectslistmodelproxy(), row);
+    return proxyRowToMap(global_DBObjects.projectinformationmodelproxy(), row);
 }
 
 // ── People ────────────────────────────────────────────────────────────────────
@@ -760,8 +913,22 @@ QVariantMap AppController::getProjectLocationData(int row) const
 int AppController::addProjectNote(const QString& projectId)
 {
     QVariant fk(projectId);
-    return proxyRowFromSource(global_DBObjects.projectnotesmodelproxy(),
-                              global_DBObjects.projectnotesmodel()->newRecord(&fk));
+    auto* src = global_DBObjects.projectnotesmodel();
+    QModelIndex srcIdx = src->newRecord(&fk);
+    if (!srcIdx.isValid()) return -1;
+
+    // Commit the new row to the DB up front so subsequent setData() calls in
+    // saveProjectNote() all take the simple UPDATE branch. Without this, the
+    // first setData() takes the INSERT branch, which fires addDefaultPMToMeeting
+    // and cascades updateDisplayData() back into this same model mid-save —
+    // fragile and prone to leaving a stale proxy row behind.
+    if (!src->insertCacheRow(srcIdx.row())) return -1;
+
+    const QString newId = src->data(src->index(srcIdx.row(), 0)).toString();
+    if (!newId.isEmpty())
+        global_DBObjects.addDefaultPMToMeeting(newId);
+
+    return proxyRowFromSource(global_DBObjects.projectnotesmodelproxy(), srcIdx);
 }
 
 bool AppController::deleteProjectNote(int row)
@@ -906,6 +1073,7 @@ QVariantMap AppController::getTrackerItemDetailData(int row) const
 }
 
 bool AppController::saveTrackerItemDetail(int row,
+                                          const QString& itemId,
                                           const QString& itemNumber,
                                           const QString& itemType,
                                           const QString& itemName,
@@ -918,20 +1086,45 @@ bool AppController::saveTrackerItemDetail(int row,
                                           const QString& dateDue,
                                           bool           internalItem)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.actionitemsdetailsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
+
+    const QPersistentModelIndex pIdx(model->index(row, 0));
+    if (!pIdx.isValid()) return false;
+
+    const QString projectId = model->data(model->index(pIdx.row(), 14)).toString();
+
+    if (!isItemNameUnique(projectId, itemId, itemName)) {
+        const QString msg = tr("\"%1\" is already in use").arg(itemName.trimmed());
+        global_DBObjects.setLastSaveError(msg);
+        emit errorOccurred(tr("Could Not Save"), msg);
+        return false;
+    }
+
+    if (!isItemNumberUnique(projectId, itemId, itemNumber)) {
+        const QString msg = tr("Item number \"%1\" is already in use").arg(itemNumber.trimmed());
+        global_DBObjects.setLastSaveError(msg);
+        emit errorOccurred(tr("Could Not Save"), msg);
+        return false;
+    }
+
     bool ok = true;
-    ok &= model->setData(model->index(row,  1), itemNumber);
-    ok &= model->setData(model->index(row,  2), itemType);
-    ok &= model->setData(model->index(row,  3), itemName);
-    ok &= model->setData(model->index(row,  4), identifiedBy);
-    ok &= model->setData(model->index(row,  5), dateIdentified);
-    ok &= model->setData(model->index(row,  6), description);
-    ok &= model->setData(model->index(row,  7), assignedTo);
-    ok &= model->setData(model->index(row,  8), priority);
-    ok &= model->setData(model->index(row,  9), status);
-    ok &= model->setData(model->index(row, 10), dateDue);
-    ok &= model->setData(model->index(row, 15), internalItem ? "1" : "0");
+    ok &= model->setData(model->index(pIdx.row(),  1), itemNumber);
+    ok &= model->setData(model->index(pIdx.row(),  2), itemType);
+    ok &= model->setData(model->index(pIdx.row(),  3), itemName);
+    ok &= model->setData(model->index(pIdx.row(),  4), identifiedBy);
+    ok &= model->setData(model->index(pIdx.row(),  5), dateIdentified);
+    ok &= model->setData(model->index(pIdx.row(),  6), description);
+    ok &= model->setData(model->index(pIdx.row(),  7), assignedTo);
+    ok &= model->setData(model->index(pIdx.row(),  8), priority);
+    ok &= model->setData(model->index(pIdx.row(),  9), status);
+    ok &= model->setData(model->index(pIdx.row(), 10), dateDue);
+    ok &= model->setData(model->index(pIdx.row(), 15), internalItem ? "1" : "0");
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        emit errorOccurred(tr("Could Not Save"), err);
+    }
     return ok;
 }
 
@@ -942,19 +1135,37 @@ QString AppController::trackerItemIdAtRow(int row) const
     return model->data(model->index(row, 0)).toString();
 }
 
-bool AppController::isItemNumberUnique(const QString& itemId, const QString& itemNumber) const
+bool AppController::isItemNumberUnique(const QString& projectId, const QString& itemId, const QString& itemNumber) const
 {
     if (itemNumber.isEmpty()) return true;
-    QString safeId     = itemId.trimmed();
-    QString safeNumber = itemNumber.trimmed().replace("'", "''");
-    safeId.replace("'", "''");
+    if (projectId.trimmed().isEmpty()) return true;
+    QString safeProject = projectId.trimmed().replace("'", "''");
+    QString safeId      = itemId.trimmed().replace("'", "''");
+    QString safeNumber  = itemNumber.trimmed().replace("'", "''");
     QString sql = QString(
         "SELECT COUNT(*) FROM item_tracker "
-        "WHERE project_id = (SELECT project_id FROM item_tracker WHERE id = '%1') "
+        "WHERE project_id = '%1' "
         "AND item_number = '%2' "
-        "AND id != '%1' "
+        "AND id != '%3' "
         "AND deleted = 0"
-    ).arg(safeId, safeNumber);
+    ).arg(safeProject, safeNumber, safeId);
+    return global_DBObjects.execute(sql).toInt() == 0;
+}
+
+bool AppController::isItemNameUnique(const QString& projectId, const QString& itemId, const QString& itemName) const
+{
+    if (itemName.trimmed().isEmpty()) return true;
+    if (projectId.trimmed().isEmpty()) return true;
+    QString safeProject = projectId.trimmed().replace("'", "''");
+    QString safeId      = itemId.trimmed().replace("'", "''");
+    QString safeName    = itemName.trimmed().replace("'", "''");
+    QString sql = QString(
+        "SELECT COUNT(*) FROM item_tracker "
+        "WHERE project_id = '%1' "
+        "AND item_name = '%2' "
+        "AND id != '%3' "
+        "AND deleted = 0"
+    ).arg(safeProject, safeName, safeId);
     return global_DBObjects.execute(sql).toInt() == 0;
 }
 
@@ -987,12 +1198,21 @@ QVariantMap AppController::getCommentData(int row) const
 bool AppController::saveComment(int row, const QString& date,
                                  const QString& note, const QString& updatedBy)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.trackeritemscommentsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
+
+    const QPersistentModelIndex pIdx(model->index(row, 0));
+    if (!pIdx.isValid()) return false;
+
     bool ok = true;
-    ok &= model->setData(model->index(row, 2), date);
-    ok &= model->setData(model->index(row, 3), note);
-    ok &= model->setData(model->index(row, 4), updatedBy);
+    ok &= model->setData(model->index(pIdx.row(), 2), date);
+    ok &= model->setData(model->index(pIdx.row(), 3), note);
+    ok &= model->setData(model->index(pIdx.row(), 4), updatedBy);
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        emit errorOccurred(tr("Could Not Save"), err);
+    }
     return ok;
 }
 
@@ -1031,9 +1251,30 @@ QVariantMap AppController::getAttendeeData(int row) const
 
 bool AppController::saveAttendee(int row, const QString& personId)
 {
+    global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.meetingattendeesmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
-    return model->setData(model->index(row, 2), personId);
+
+    QString safeNote   = model->data(model->index(row, 1)).toString().replace("'", "''");
+    QString safeId     = model->data(model->index(row, 0)).toString().replace("'", "''");
+    QString safePerson = QString(personId).replace("'", "''");
+    QString sql = QString(
+        "SELECT COUNT(*) FROM meeting_attendees "
+        "WHERE note_id = '%1' AND person_id = '%2' AND id != '%3' AND deleted = 0"
+    ).arg(safeNote, safePerson, safeId);
+    if (global_DBObjects.execute(sql).toInt() > 0) {
+        const QString msg = tr("Attendee already exists.");
+        global_DBObjects.setLastSaveError(msg);
+        emit errorOccurred(tr("Could Not Save"), msg);
+        return false;
+    }
+
+    bool ok = model->setData(model->index(row, 2), personId);
+    if (!ok) {
+        const QString err = global_DBObjects.lastSaveError();
+        emit errorOccurred(tr("Could Not Save"), err);
+    }
+    return ok;
 }
 
 // ── Note action items ─────────────────────────────────────────────────────────
@@ -1107,6 +1348,21 @@ void AppController::refreshNoteActionItems()
     global_DBObjects.notesactionitemsmodel()->refresh();
 }
 
+void AppController::refreshProjectsList()
+{
+    global_DBObjects.projectinformationmodel()->refresh();
+}
+
+void AppController::refreshPeople()
+{
+    global_DBObjects.peoplemodel()->refresh();
+}
+
+void AppController::refreshClients()
+{
+    global_DBObjects.clientsmodel()->refresh();
+}
+
 void AppController::setQuickSearch(QAbstractItemModel* model, const QString& text)
 {
     if (auto* proxy = dynamic_cast<SortFilterProxyModel*>(model))
@@ -1117,7 +1373,7 @@ void AppController::setQuickSearch(QAbstractItemModel* model, const QString& tex
 
 QAbstractItemModel* AppController::projectsListModel() const
 {
-    return global_DBObjects.projectslistmodelproxy();
+    return global_DBObjects.projectinformationmodelproxy();
 }
 
 QAbstractItemModel* AppController::projectsModel() const

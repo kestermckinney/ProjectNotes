@@ -57,24 +57,4 @@ Page {
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }
     }
-
-    component FieldRow: Rectangle {
-        default property alias content: innerItem.data
-
-        Layout.fillWidth: true
-        Layout.preferredHeight: 44
-        color: palette.base
-
-        Item {
-            id: innerItem
-            anchors.fill: parent
-        }
-
-        Rectangle {
-            anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-            height: 1
-            color: palette.placeholderText
-            opacity: 0.3
-        }
-    }
 }

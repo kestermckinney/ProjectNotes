@@ -71,6 +71,9 @@ public:
     void closeDatabase();
     QSqlDatabase& getDb() { return m_sqliteDb; }
 
+    void setLastSaveError(const QString& error) { m_lastSaveError = error; }
+    QString lastSaveError() const { return m_lastSaveError; }
+
     QString execute(const QString& sql);
     void addModel(SqlQueryModel* model);
     void removeModel(SqlQueryModel* model);
@@ -192,6 +195,7 @@ private:
     QString m_databaseFile;
     QSqlDatabase m_sqliteDb;
     bool m_gui = true;
+    QString m_lastSaveError;
 
     ClientsModel* m_clientsModel = nullptr;
     ClientsModel* m_unfilteredclientsModel = nullptr;

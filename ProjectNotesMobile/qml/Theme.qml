@@ -16,4 +16,10 @@ QtObject {
     readonly property color accentGreenDark: "#27ae60"
     // Section header background tint (6 % opacity navy)
     readonly property color sectionBg:       Qt.rgba(42/255, 63/255, 111/255, 0.06)
+
+    // Subtitle / secondary text on lists. The system palette's placeholderText
+    // is a medium gray that fails contrast in both modes — this stays close to
+    // the primary text color so the second line in a list cell stays readable.
+    readonly property bool  isDarkMode:      Qt.styleHints.colorScheme === Qt.Dark
+    readonly property color mutedText:       isDarkMode ? "#e8e8eb" : "#1c1c1e"
 }

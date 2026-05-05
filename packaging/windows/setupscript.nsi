@@ -58,6 +58,7 @@ RequestExecutionLevel user
 !insertmacro MULTIUSER_PAGE_INSTALLMODE
 !insertmacro MUI_PAGE_LICENSE "license.rtf"
 !insertmacro MUI_PAGE_DIRECTORY
+!insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_FINISHPAGE_RUN "$INSTDIR\Project Notes.exe"
 !insertmacro MUI_PAGE_FINISH
@@ -93,9 +94,12 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\D3Dcompiler_47.dll"
   File "${DEPLOY_DIR}\icuuc.dll"
   File "${DEPLOY_DIR}\opengl32sw.dll"
+  File "${DEPLOY_DIR}\Qt6Charts.dll"
   File "${DEPLOY_DIR}\Qt6Core.dll"
   File "${DEPLOY_DIR}\Qt6Gui.dll"
   File "${DEPLOY_DIR}\Qt6Network.dll"
+  File "${DEPLOY_DIR}\Qt6OpenGL.dll"
+  File "${DEPLOY_DIR}\Qt6OpenGLWidgets.dll"
   File "${DEPLOY_DIR}\Qt6Pdf.dll"
   File "${DEPLOY_DIR}\Qt6Sql.dll"
   File "${DEPLOY_DIR}\Qt6Svg.dll"
@@ -144,19 +148,14 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\legacy.dll"
   File "${DEPLOY_DIR}\libssl-3-x64.dll"
 
-  ; ── SqliteSyncPro vcpkg DLLs ─────────────────────────────────────────────────
-  File "${DEPLOY_DIR}\charset-1.dll"
-  File "${DEPLOY_DIR}\iconv-2.dll"
-  File "${DEPLOY_DIR}\libecpg.dll"
-  File "${DEPLOY_DIR}\libecpg_compat.dll"
-  File "${DEPLOY_DIR}\libffi-8.dll"
-  File "${DEPLOY_DIR}\libpgtypes.dll"
+  ; ── SqliteSyncPro runtime DLLs ───────────────────────────────────────────────
   File "${DEPLOY_DIR}\libpq.dll"
-  File "${DEPLOY_DIR}\lz4.dll"
-  File "${DEPLOY_DIR}\zlib1.dll"
 
-  ; ── Extra DLLs (OpenSSL non-x64 variants, SQLite) ───────────────────────────
+  ; ── Extra DLLs (OpenSSL non-x64 variants, SQLite, DirectX SC, libffi) ────────
+  File "${DEPLOY_DIR}\dxcompiler.dll"
+  File "${DEPLOY_DIR}\dxil.dll"
   File "${DEPLOY_DIR}\libcrypto-3.dll"
+  File "${DEPLOY_DIR}\libffi-8.dll"
   File "${DEPLOY_DIR}\libssl-3.dll"
   File "${DEPLOY_DIR}\sqlite3.dll"
 
@@ -208,10 +207,8 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\excelkill_plugin.py"
   File "${DEPLOY_DIR}\plugins\exportnotes_plugin.py"
   File "${DEPLOY_DIR}\plugins\exporttrackeritems_plugin.py"
-  File "${DEPLOY_DIR}\plugins\findprojectemailperson_plugin.py"
-  File "${DEPLOY_DIR}\plugins\ifscloud_plugin_settings.py"
-  File "${DEPLOY_DIR}\plugins\ifs_ssrs_generate_plugin.py"
-  File "${DEPLOY_DIR}\plugins\myshortcuts_plugin.py"
+   File "${DEPLOY_DIR}\plugins\findprojectemailperson_plugin.py"
+   File "${DEPLOY_DIR}\plugins\myshortcuts_plugin.py"
   File "${DEPLOY_DIR}\plugins\newchangeorder_plugin.py"
   File "${DEPLOY_DIR}\plugins\newmsproject_plugin.py"
   File "${DEPLOY_DIR}\plugins\newpcrregistry_plugin.py"
@@ -225,9 +222,8 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\includes\collaboration_tools.py"
   File "${DEPLOY_DIR}\plugins\includes\common.py"
   File "${DEPLOY_DIR}\plugins\includes\excel_tools.py"
-  File "${DEPLOY_DIR}\plugins\includes\graphapi_tools.py"
-  File "${DEPLOY_DIR}\plugins\includes\ifs_tools.py"
-  File "${DEPLOY_DIR}\plugins\includes\noteformatter.py"
+   File "${DEPLOY_DIR}\plugins\includes\graphapi_tools.py"
+   File "${DEPLOY_DIR}\plugins\includes\noteformatter.py"
   File "${DEPLOY_DIR}\plugins\includes\outlook_tools.py"
   File "${DEPLOY_DIR}\plugins\includes\word_tools.py"
 
@@ -238,9 +234,8 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\forms\dialogExportLocation.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogExportNotesOptions.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogExportTrackerOptions.ui"
-  File "${DEPLOY_DIR}\plugins\forms\dialogFileFinder.ui"
-  File "${DEPLOY_DIR}\plugins\forms\dialogIFSCloud.ui"
-  File "${DEPLOY_DIR}\plugins\forms\dialogMeetingEmailTemplate.ui"
+   File "${DEPLOY_DIR}\plugins\forms\dialogFileFinder.ui"
+   File "${DEPLOY_DIR}\plugins\forms\dialogMeetingEmailTemplate.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogMeetingEmailTypes.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogMyShortcuts.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogOutlookIntegrationOptions.ui"
@@ -255,9 +250,8 @@ Section "MainSection" SEC01
 
   ; ── Background threads ───────────────────────────────────────────────────────
   SetOutPath "$INSTDIR\threads"
-  File "${DEPLOY_DIR}\threads\filefinder_thread.py"
-  File "${DEPLOY_DIR}\threads\ifssync_thread.py"
-  File "${DEPLOY_DIR}\threads\outlooksync_thread.py"
+   File "${DEPLOY_DIR}\threads\filefinder_thread.py"
+   File "${DEPLOY_DIR}\threads\outlooksync_thread.py"
 
   ; ── Spell-check dictionaries ─────────────────────────────────────────────────
   SetOutPath "$INSTDIR\dictionary"
@@ -267,8 +261,23 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\dictionary\en_US.aff"
   File "${DEPLOY_DIR}\dictionary\en_US.dic"
   File "${DEPLOY_DIR}\dictionary\es_ANY.aff"
-  File "${DEPLOY_DIR}\dictionary\es_ANY.dic"
+   File "${DEPLOY_DIR}\dictionary\es_ANY.dic"
 
+SectionEnd
+
+Section "Custom IFS Plugins" SEC_IFS
+  SetOutPath "$INSTDIR\plugins"
+  File "${DEPLOY_DIR}\plugins\ifscloud_plugin_settings.py"
+  File "${DEPLOY_DIR}\plugins\ifs_ssrs_generate_plugin.py"
+
+  SetOutPath "$INSTDIR\plugins\forms"
+  File "${DEPLOY_DIR}\plugins\forms\dialogIFSCloud.ui"
+
+  SetOutPath "$INSTDIR\plugins\includes"
+  File "${DEPLOY_DIR}\plugins\includes\ifs_tools.py"
+
+  SetOutPath "$INSTDIR\threads"
+  File "${DEPLOY_DIR}\threads\ifssync_thread.py"
 SectionEnd
 
 Section -AdditionalIcons
@@ -298,6 +307,11 @@ FunctionEnd
 
 Function .onInit
   !insertmacro MULTIUSER_INIT
+
+  SectionGetFlags ${SEC_IFS} $0
+  IntOp $0 $0 & 0xFFFFFFFE  ; clears SF_SELECTED (same as SECTION_OFF mask)
+  SectionSetFlags ${SEC_IFS} $0
+
 FunctionEnd
 
 Function un.onInit
@@ -422,9 +436,12 @@ Section Uninstall
   Delete "$INSTDIR\D3Dcompiler_47.dll"
   Delete "$INSTDIR\icuuc.dll"
   Delete "$INSTDIR\opengl32sw.dll"
+  Delete "$INSTDIR\Qt6Charts.dll"
   Delete "$INSTDIR\Qt6Core.dll"
   Delete "$INSTDIR\Qt6Gui.dll"
   Delete "$INSTDIR\Qt6Network.dll"
+  Delete "$INSTDIR\Qt6OpenGL.dll"
+  Delete "$INSTDIR\Qt6OpenGLWidgets.dll"
   Delete "$INSTDIR\Qt6Pdf.dll"
   Delete "$INSTDIR\Qt6Sql.dll"
   Delete "$INSTDIR\Qt6Svg.dll"
@@ -436,17 +453,12 @@ Section Uninstall
   Delete "$INSTDIR\legacy.dll"
   Delete "$INSTDIR\libssl-3-x64.dll"
 
-  Delete "$INSTDIR\charset-1.dll"
-  Delete "$INSTDIR\iconv-2.dll"
-  Delete "$INSTDIR\libecpg.dll"
-  Delete "$INSTDIR\libecpg_compat.dll"
-  Delete "$INSTDIR\libffi-8.dll"
-  Delete "$INSTDIR\libpgtypes.dll"
   Delete "$INSTDIR\libpq.dll"
-  Delete "$INSTDIR\lz4.dll"
-  Delete "$INSTDIR\zlib1.dll"
 
+  Delete "$INSTDIR\dxcompiler.dll"
+  Delete "$INSTDIR\dxil.dll"
   Delete "$INSTDIR\libcrypto-3.dll"
+  Delete "$INSTDIR\libffi-8.dll"
   Delete "$INSTDIR\libssl-3.dll"
   Delete "$INSTDIR\sqlite3.dll"
 

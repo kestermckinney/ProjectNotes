@@ -52,6 +52,7 @@ Page {
                     var d = AppController.getProjectLocationData(newRow)
                     root.StackView.view.push(Qt.resolvedUrl("ProjectLocationDetailPage.qml"), {
                         locationRow:         newRow,
+                        isNewRecord:         true,
                         initialType:         (d.location_type        || "").toString(),
                         initialDescription:  (d.location_description || "").toString(),
                         initialPath:         (d.full_path            || "").toString()
@@ -86,7 +87,7 @@ Page {
                     Label {
                         text: model.location_type || ""
                         font.pixelSize: 12
-                        color: palette.placeholderText
+                        color: Theme.mutedText
                     }
                 }
 
@@ -94,7 +95,7 @@ Page {
                     visible: (model.full_path || "") !== "" && (model.location_description || "") !== ""
                     text: model.full_path || ""
                     font.pixelSize: 12
-                    color: palette.placeholderText
+                    color: Theme.mutedText
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                 }
@@ -117,6 +118,6 @@ Page {
         anchors.centerIn: parent
         visible: listView.count === 0
         text: qsTr("No files or folders.")
-        color: palette.placeholderText
+        color: Theme.mutedText
     }
 }

@@ -593,3 +593,8 @@ void TableView::slotResetColumns()
 {
     resizeColumnsToContents();
 }
+
+void TableView::applyZoom(qreal zoomFactor)
+{
+    verticalHeader()->setDefaultSectionSize(qRound(20 * zoomFactor));
+}

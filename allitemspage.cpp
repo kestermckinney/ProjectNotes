@@ -3,6 +3,7 @@
 
 #include "allitemspage.h"
 #include "databaseobjects.h"
+#include "appsettings.h"
 #include "ui_mainwindow.h"
 
 AllItemsPage::AllItemsPage()
@@ -33,6 +34,6 @@ void AllItemsPage::setButtonAndMenuStates()
 
 void AllItemsPage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes - Master Item List"));
+    topLevelWidget()->setWindowTitle(AppSettings::developerProfilePrefix() + QString("Project Notes - Master Item List"));
     setHistoryText("Master Item List");
 }

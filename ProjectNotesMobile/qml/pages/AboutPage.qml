@@ -41,16 +41,16 @@ Page {
 
         Label {
             Layout.alignment: Qt.AlignHCenter
-            text: qsTr("Version 5.0.0")
+            text: qsTr("Version 5.0.1")
             font.pixelSize: 15
-            color: palette.placeholderText
+            color: Theme.mutedText
         }
 
         Label {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("© 2022–2026 Paul McKinney")
             font.pixelSize: 13
-            color: palette.placeholderText
+            color: Theme.mutedText
         }
 
         Item { height: 16 }

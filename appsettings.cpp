@@ -23,6 +23,13 @@ QString AppSettings::developerProfile()
     return s_developerProfile;
 }
 
+QString AppSettings::developerProfilePrefix()
+{
+    if (s_developerProfile.isEmpty())
+        return QString();
+    return QString("((" + s_developerProfile + ")) ");
+}
+
 QString AppSettings::settingsOrganization()
 {
     if (s_developerProfile.isEmpty())
@@ -291,6 +298,16 @@ void AppSettings::setStoredInt(const QString& valueName, int intVal)
     QVariant value = intVal;
 
     m_appConfig->setValue(path, value);
+}
+
+qreal AppSettings::getZoomFactor()
+{
+    return m_appConfig->value("ZoomFactor", 1.0).toReal();
+}
+
+void AppSettings::setZoomFactor(qreal factor)
+{
+    m_appConfig->setValue("ZoomFactor", factor);
 }
 
 void AppSettings::setWindowX(const QString& windowName, int X)

@@ -78,6 +78,8 @@ public:
     QComboBox* fontSizeComboBox() { return m_comboBoxSize; }
     QComboBox* fontStyleComboBox() { return m_comboBoxStyle; }
 
+    void setStartingFont(const QFont startingFont) { m_startingFont = startingFont; }
+
 public slots:
     void slotOpen_ProjectDetails_triggered(QVariant recordId);
     void slotOpen_ItemDetails_triggered(QVariant recordId);
@@ -141,8 +143,6 @@ private slots:
 
     void slotPluginMenu(Plugin* plugin, const QString& functionname, const QString& parameter);
     void on_actionOpen_Item_triggered();
-    void on_actionIncrease_Font_Size_triggered();
-    void on_actionDecrease_Font_Size_triggered();
 
     void onPluginLoaded(const QString& pluginpath);
     void onPluginUnLoaded(const QString& pluginpath);
@@ -190,6 +190,27 @@ private:
     void textAlign(QAction *a);
     void textColor();
 
+    void textZoomIn();
+    void textZoomOut();
+    void textZoomReset();
+    void updateZoomLabel();
+
+    void refreshTextEditWithZoom();
+    void setUnscaledHtml(const QString& html);
+
+    QString unscaleHtmlForSave(const QString& scaledHtml) const;
+    qreal getCurrentZoomFactor() const { return m_zoomFactor; }
+    QString scaleHtmlFontSizesForWidget(const QString& html) const;
+
+private:
+    void applyZoom();
+    QString scaleHtmlFontSizes(const QString& html, qreal factor) const;
+
+    QString m_unscaledHtml;
+
+    friend class ProjectNotesPage;
+    friend class ProjectNotesDelegate;
+
     QAction *m_actionTextBold;
     QAction *m_actionTextUnderline;
     QAction *m_actionTextItalic;
@@ -206,6 +227,14 @@ private:
     QAction *m_actionCopy;
     QAction *m_actionPaste;
 
+    QLabel *m_labelZoom;
+    QLabel *m_labelZoomPercent;
+    QPushButton *m_zoomInButton;
+    QPushButton *m_zoomOutButton;
+    QAction *m_actionZoomReset;
+
+    qreal m_zoomFactor = 1.0;
+
     QComboBox* m_comboBoxStyle;
     QFontComboBox* m_comboBoxFont;
     QComboBox* m_comboBoxSize;
@@ -218,6 +247,7 @@ private:
     QProgressBar* m_syncProgressBar = nullptr;
     QLabel*       m_syncNetworkErrorLabel = nullptr;
     bool          m_syncNetworkError = false;
+    QFont         m_startingFont;
 };
 
 

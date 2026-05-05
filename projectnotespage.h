@@ -31,6 +31,8 @@ private:
 
 private slots:
     void on_tabWidgetNotes_currentChanged(int index);
+    void on_mapperIndexChanged(int index);
+    void on_textEditNotes_textChanged();
 };
 
 #endif // PROJECTNOTESPAGE_H

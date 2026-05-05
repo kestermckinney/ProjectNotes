@@ -55,6 +55,7 @@ Page {
                     var d = AppController.getTeamMemberData(newRow)
                     root.StackView.view.push(Qt.resolvedUrl("TeamMemberDetailPage.qml"), {
                         memberRow:                  newRow,
+                        isNewRecord:                true,
                         projectTitle:               root.projectTitle,
                         initialPeopleId:            (d.people_id              || "").toString(),
                         initialRole:                (d.role                   || "").toString(),
@@ -97,7 +98,7 @@ Page {
                             return parts.join("  ·  ")
                         }
                         font.pixelSize: 12
-                        color: palette.placeholderText
+                        color: Theme.mutedText
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
@@ -157,6 +158,6 @@ Page {
         anchors.centerIn: parent
         visible: listView.count === 0
         text: qsTr("No team members.")
-        color: palette.placeholderText
+        color: Theme.mutedText
     }
 }

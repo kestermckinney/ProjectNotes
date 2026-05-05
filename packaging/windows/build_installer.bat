@@ -1,5 +1,17 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
+
+rem Initialize VS 2022 environment so windeployqt can find MSVC redistributables
+if not defined VCINSTALLDIR (
+    set "_VCVARS=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+    if not exist "!_VCVARS!" set "_VCVARS=C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat"
+    if not exist "!_VCVARS!" set "_VCVARS=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+    if exist "!_VCVARS!" (
+        call "!_VCVARS!"
+    ) else (
+        echo WARNING: Could not find vcvars64.bat - MSVC redistributables may not be deployed.
+    )
+)
 
 set BUILD_CONFIG=Desktop_Qt_6_10_0_MSVC2022_64bit-Release
 set BUILD_DIR=%~dp0..\..\build\%BUILD_CONFIG%

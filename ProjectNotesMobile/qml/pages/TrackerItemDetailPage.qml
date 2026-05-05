@@ -20,7 +20,7 @@ Page {
     id: root
     title: qsTr("Item Detail")
 
-    property int    itemRow:              0    // always row 0 of the filtered detail model
+    property int    itemRow:              -1
     property string itemId:               ""
     property string initialItemNumber:    ""
     property string initialProjectNumber: ""
@@ -34,23 +34,32 @@ Page {
     property string initialStatus:        ""
     property string initialDateIdentified: ""
     property string initialDateDue:       ""
+    property string initialLastUpdate:    ""
+    property string initialDateResolved:  ""
     property bool   initialInternal:      false
     property bool   _skipSave:            false
-    property string _validatedItemNumber: root.initialItemNumber
+    property bool   _hasChanges:          false
+    property bool   isNewRecord:          false
+    // property string _validatedItemNumber: root.initialItemNumber
 
-    function _releaseInputFocus() {
-        root.forceActiveFocus()
-        Qt.inputMethod.hide()
-    }
+    function _isBlankNew() { return isNewRecord && nameField.text.trim() === "" }
+    function _discardNew()  { AppController.deleteTrackerItemDetail(root.itemRow) }
+
+    // function _releaseInputFocus() {
+    //     root.forceActiveFocus()
+    //     Qt.inputMethod.hide()
+    // }
 
     function _saveNow() {
-        root._releaseInputFocus()
+        if (!root._hasChanges) return true
+        // root._releaseInputFocus()
         dateIdentifiedField.commitPending()
         dateDueField.commitPending()
 
-        AppController.saveTrackerItemDetail(
+        var result = AppController.saveTrackerItemDetail(
             root.itemRow,
-            root._validatedItemNumber,
+            root.itemId,
+            itemNumber.text,
             typeCombo.currentIndex >= 0 ? typeCombo.model[typeCombo.currentIndex] : "",
             nameField.text,
             descEdit.text,
@@ -64,25 +73,41 @@ Page {
             dateDueField.text,
             internalSwitch.checked
         )
+        if (result) root._hasChanges = false
+        return result
     }
 
-    StackView.onActivated: root._skipSave = false
+    function _reloadData() {
+        var d = AppController.getTrackerItemDetailData(root.itemRow)
+        // root._validatedItemNumber = (d.item_number || "").toString()
+        itemNumber.text =  (d.item_number || "").toString() // root._validatedItemNumber
+        var ti = typeCombo.model.indexOf((d.item_type || "").toString())
+        typeCombo.currentIndex = ti >= 0 ? ti : 0
+        nameField.text   = (d.item_name    || "").toString()
+        descEdit.text    = (d.description  || "").toString()
+        var idBy = AppController.teamMemberRowForPersonId((d.identified_by || "").toString())
+        identifiedByCombo.currentIndex = idBy >= 0 ? idBy : -1
+        var asgn = AppController.teamMemberRowForPersonId((d.assigned_to || "").toString())
+        assignedToCombo.currentIndex = asgn >= 0 ? asgn : -1
+        var pri = priorityCombo.model.indexOf((d.priority || "").toString())
+        priorityCombo.currentIndex = pri >= 0 ? pri : -1
+        var sti = statusCombo.model.indexOf((d.status || "").toString())
+        statusCombo.currentIndex = sti >= 0 ? sti : -1
+        dateIdentifiedField.text = (d.date_identified || "").toString()
+        dateDueField.text        = (d.date_due        || "").toString()
+        root.initialLastUpdate   = (d.last_update     || "").toString()
+        root.initialDateResolved = (d.date_resolved   || "").toString()
+        internalSwitch.checked   = (d.internal_item   || "0") !== "0"
+    }
 
     StackView.onDeactivating: {
-        if (!root._skipSave) {
+        if (!root._skipSave)
             root._saveNow()
-            root._skipSave = true
-        }
-    }
-
-    StackView.onRemoved: {
-        if (!root._skipSave) {
-            root._saveNow()
-            root._skipSave = true
-        }
     }
 
     Component.onDestruction: {
+        root.forceActiveFocus()
+        Qt.inputMethod.hide()
         if (!root._skipSave)
             root._saveNow()
     }
@@ -97,7 +122,7 @@ Page {
             ToolButton {
                 icon.name: "doc.on.doc"
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root._skipSave = true
                     var newRow = AppController.copyTrackerItemDetail(root.itemRow)
                     if (newRow < 0) { root._skipSave = false; return }
@@ -119,6 +144,8 @@ Page {
                         initialStatus:        (d.status           || "").toString(),
                         initialDateIdentified:(d.date_identified   || "").toString(),
                         initialDateDue:       (d.date_due         || "").toString(),
+                        initialLastUpdate:    (d.last_update      || "").toString(),
+                        initialDateResolved:  (d.date_resolved    || "").toString(),
                         initialInternal:      (d.internal_item    || "0") !== "0"
                     })
                 }
@@ -143,10 +170,9 @@ Page {
 
             ToolButton {
                 icon.name: "text.bubble"
-                text: qsTr("Comments")
                 display: AbstractButton.TextUnderIcon
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root.StackView.view.push(Qt.resolvedUrl("TrackerItemCommentsPage.qml"), {
                         itemId: root.itemId
                     })
@@ -166,44 +192,26 @@ Page {
 
             SectionHeader { text: qsTr("Project Number") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: root.initialProjectNumber !== "" ? root.initialProjectNumber : qsTr("—")
-                    color: palette.placeholderText
-                    font.pixelSize: 16
                 }
             }
 
             SectionHeader { text: qsTr("Project Name") }
             FieldRow {
-                Label {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormLabel {
                     text: root.initialProjectName !== "" ? root.initialProjectName : qsTr("—")
-                    color: palette.placeholderText
-                    font.pixelSize: 16
                     elide: Text.ElideRight
                 }
             }
 
             SectionHeader { text: qsTr("Item Number") }
             FieldRow {
-                TextField {
-                    id: itemNumberField
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormField {
+                    id: itemNumber
                     text: root.initialItemNumber
-                    horizontalAlignment: TextInput.AlignLeft
-                    leftPadding: 0; rightPadding: 0
                     inputMethodHints: Qt.ImhNoPredictiveText
-                    background: Item {}
-                    onEditingFinished: {
-                        if (text === root._validatedItemNumber) return
-                        if (!AppController.isItemNumberUnique(root.itemId, text)) {
-                            duplicateNumberDialog.open()
-                            text = root._validatedItemNumber
-                        } else {
-                            root._validatedItemNumber = text
-                        }
-                    }
+                    onTextChanged: root._hasChanges = true
                 }
             }
 
@@ -217,20 +225,18 @@ Page {
                         var idx = model.indexOf(root.initialType)
                         currentIndex = idx >= 0 ? idx : 0
                     }
+                    onActivated: root._hasChanges = true
                 }
             }
 
             SectionHeader { text: qsTr("Name") }
             FieldRow {
 
-                TextField {
+                FormField {
                     id: nameField
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialName
-                    horizontalAlignment: TextInput.AlignLeft
-                    leftPadding: 0; rightPadding: 0
                     inputMethodHints: Qt.ImhNoPredictiveText
-                    background: Item {}
+                    onTextChanged: root._hasChanges = true
                 }
             }
 
@@ -247,10 +253,11 @@ Page {
                     wrapMode: TextEdit.Wrap
                     color: palette.text
                     selectByMouse: true
+                    onTextChanged: root._hasChanges = true
                 }
                 Rectangle {
                     anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-                    height: 1; color: palette.placeholderText; opacity: 0.3
+                    height: 1; color: Theme.mutedText; opacity: 0.3
                 }
             }
 
@@ -265,6 +272,7 @@ Page {
                         var row = AppController.teamMemberRowForPersonId(root.initialIdentifiedBy)
                         currentIndex = row >= 0 ? row : -1
                     }
+                    onActivated: root._hasChanges = true
                 }
             }
 
@@ -280,6 +288,7 @@ Page {
                         currentIndex = row >= 0 ? row : -1
                     }
                     onActivated: function(idx) {
+                        root._hasChanges = true
                         if (idx >= 0) {
                             var curStatus = statusCombo.currentIndex >= 0
                                 ? statusCombo.model[statusCombo.currentIndex] : ""
@@ -302,6 +311,7 @@ Page {
                         var idx = model.indexOf(root.initialPriority)
                         currentIndex = idx >= 0 ? idx : 0
                     }
+                    onActivated: root._hasChanges = true
                 }
             }
 
@@ -315,14 +325,29 @@ Page {
                         var idx = model.indexOf(root.initialStatus)
                         currentIndex = idx >= 0 ? idx : 0
                     }
+                    onActivated: root._hasChanges = true
                 }
             }
 
             SectionHeader { text: qsTr("Date Identified") }
-            DateFieldRow { id: dateIdentifiedField; text: root.initialDateIdentified }
+            DateFieldRow { id: dateIdentifiedField; text: root.initialDateIdentified; onTextChanged: root._hasChanges = true }
 
             SectionHeader { text: qsTr("Date Due") }
-            DateFieldRow { id: dateDueField; text: root.initialDateDue }
+            DateFieldRow { id: dateDueField; text: root.initialDateDue; onTextChanged: root._hasChanges = true }
+
+            SectionHeader { text: qsTr("Last Updated") }
+            FieldRow {
+                FormLabel {
+                    text: root.initialLastUpdate !== "" ? root.initialLastUpdate : qsTr("—")
+                }
+            }
+
+            SectionHeader { text: qsTr("Date Resolved") }
+            FieldRow {
+                FormLabel {
+                    text: root.initialDateResolved !== "" ? root.initialDateResolved : qsTr("—")
+                }
+            }
 
             SectionHeader {
                 visible: AppController.showInternalItems
@@ -335,6 +360,7 @@ Page {
                     anchors { left: parent.left; verticalCenter: parent.verticalCenter; leftMargin: 12 }
                     checked: root.initialInternal
                     text: qsTr("Internal Item")
+                    onToggled: root._hasChanges = true
                 }
             }
 
@@ -351,18 +377,6 @@ Page {
         font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }
-    }
-
-    component FieldRow: Rectangle {
-        default property alias content: innerItem.data
-        Layout.fillWidth: true
-        Layout.preferredHeight: 44
-        color: palette.base
-        Item { id: innerItem; anchors.fill: parent }
-        Rectangle {
-            anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-            height: 1; color: palette.placeholderText; opacity: 0.3
-        }
     }
 
     Dialog {

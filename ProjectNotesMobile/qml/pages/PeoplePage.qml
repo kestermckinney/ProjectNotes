@@ -48,6 +48,7 @@ Page {
                     var d = AppController.getPersonData(newRow)
                     root.stackView.push(Qt.resolvedUrl("PersonDetailPage.qml"), {
                         personRow:          newRow,
+                        isNewRecord:        true,
                         initialName:        (d.name         || "").toString(),
                         initialEmail:       (d.email        || "").toString(),
                         initialOfficePhone: (d.office_phone || "").toString(),
@@ -104,7 +105,7 @@ Page {
                             return email || role
                         }
                         font.pixelSize: 12
-                        color: palette.placeholderText
+                        color: Theme.mutedText
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
@@ -173,7 +174,7 @@ Page {
             text: qsTr("Tap + to add a contact.")
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
-            color: palette.placeholderText
+            color: Theme.mutedText
         }
     }
 }

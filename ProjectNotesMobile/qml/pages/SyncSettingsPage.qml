@@ -42,8 +42,7 @@ Page {
 
             SectionHeader { text: qsTr("Server URL") }
             FieldRow {
-                TextField {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormField {
                     text: AppController.syncPostgrestUrl
                     placeholderText: AppController.syncHostType === 1
                         ? qsTr("https://xyz.supabase.co")
@@ -51,7 +50,6 @@ Page {
                             ? qsTr("https://your-project.neon.tech")
                             : qsTr("https://your-server/rest/v1")
                     inputMethodHints: Qt.ImhUrlCharactersOnly | Qt.ImhNoPredictiveText
-                    background: Item {}
                     onEditingFinished: AppController.syncPostgrestUrl = text
                 }
             }
@@ -63,11 +61,9 @@ Page {
             }
             FieldRow {
                 visible: AppController.syncHostType === 1
-                TextField {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormField {
                     text: AppController.syncSupabaseKey
                     placeholderText: qsTr("anon key")
-                    background: Item {}
                     onEditingFinished: AppController.syncSupabaseKey = text
                 }
             }
@@ -75,35 +71,29 @@ Page {
             // ── Credentials ───────────────────────────────────────────────────
             SectionHeader { text: qsTr("Email") }
             FieldRow {
-                TextField {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormField {
                     text: AppController.syncEmail
                     placeholderText: qsTr("user@example.com")
                     inputMethodHints: Qt.ImhEmailCharactersOnly | Qt.ImhNoPredictiveText
-                    background: Item {}
                     onEditingFinished: AppController.syncEmail = text
                 }
             }
 
             SectionHeader { text: qsTr("Password") }
             FieldRow {
-                TextField {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormField {
                     text: AppController.syncPassword
                     placeholderText: qsTr("password")
                     echoMode: TextInput.Password
-                    background: Item {}
                     onEditingFinished: AppController.syncPassword = text
                 }
             }
 
             SectionHeader { text: qsTr("Encryption Phrase") }
             FieldRow {
-                TextField {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                FormField {
                     text: AppController.syncEncryptionPhrase
                     placeholderText: qsTr("optional passphrase")
-                    background: Item {}
                     onEditingFinished: AppController.syncEncryptionPhrase = text
                 }
             }
@@ -123,26 +113,6 @@ Page {
         font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }
-    }
-
-    component FieldRow: Rectangle {
-        default property alias content: innerItem.data
-
-        Layout.fillWidth: true
-        Layout.preferredHeight: 44
-        color: palette.base
-
-        Item {
-            id: innerItem
-            anchors.fill: parent
-        }
-
-        Rectangle {
-            anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-            height: 1
-            color: palette.placeholderText
-            opacity: 0.3
-        }
     }
 
     component SettingsRow: RowLayout {
@@ -177,7 +147,7 @@ Page {
             Rectangle {
                 anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
                 height: 1
-                color: palette.placeholderText
+                color: Theme.mutedText
                 opacity: 0.3
             }
         }

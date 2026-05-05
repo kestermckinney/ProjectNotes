@@ -17,11 +17,27 @@ Page {
     property bool   initialReceiveStatusReport: false
     property string initialEmail:               ""
     property bool   _skipSave:                  false
+    property bool   _hasChanges:                false
+    property bool   isNewRecord:                false
+
+    function _isBlankNew() { return isNewRecord && personCombo.currentIndex < 0 }
+    function _discardNew()  { AppController.deleteTeamMember(root.memberRow) }
 
     function _saveNow() {
+        if (!root._hasChanges) return true
         var peopleId = (personCombo.currentIndex >= 0)
             ? AppController.peopleIdAtRow(personCombo.currentIndex) : ""
-        AppController.saveTeamMember(root.memberRow, peopleId, roleField.text, statusSwitch.checked)
+        var result = AppController.saveTeamMember(root.memberRow, peopleId, roleField.text, statusSwitch.checked)
+        if (result) root._hasChanges = false
+        return result
+    }
+
+    function _reloadData() {
+        var d = AppController.getTeamMemberData(root.memberRow)
+        var row = AppController.peopleRowForId((d.people_id || "").toString())
+        personCombo.currentIndex = row >= 0 ? row : -1
+        roleField.text = (d.role || "").toString()
+        statusSwitch.checked = (d.receive_status_report || "0") !== "0"
     }
 
     StackView.onDeactivating: {
@@ -55,7 +71,7 @@ Page {
             ToolButton {
                 icon.name: "doc.on.doc"
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root._skipSave = true
                     var newRow = AppController.copyTeamMember(root.memberRow)
                     if (newRow < 0) { root._skipSave = false; return }
@@ -101,18 +117,17 @@ Page {
                         var row = AppController.peopleRowForId(root.initialPeopleId)
                         currentIndex = (row >= 0) ? row : -1
                     }
+                    onActivated: root._hasChanges = true
                 }
             }
 
             SectionHeader { text: qsTr("Role") }
             FieldRow {
-                TextField {
+                FormField {
                     id: roleField
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
                     text: root.initialRole
-                    horizontalAlignment: TextInput.AlignLeft
                     inputMethodHints: Qt.ImhNoPredictiveText
-                    background: Item {}
+                    onTextChanged: root._hasChanges = true
                 }
             }
 
@@ -123,6 +138,7 @@ Page {
                     anchors { left: parent.left; verticalCenter: parent.verticalCenter; leftMargin: 12 }
                     checked: root.initialReceiveStatusReport
                     text: qsTr("Receives Status Report")
+                    onToggled: root._hasChanges = true
                 }
             }
 
@@ -139,17 +155,5 @@ Page {
         font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }
-    }
-
-    component FieldRow: Rectangle {
-        default property alias content: innerItem.data
-        Layout.fillWidth: true
-        Layout.preferredHeight: 44
-        color: palette.base
-        Item { id: innerItem; anchors.fill: parent }
-        Rectangle {
-            anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-            height: 1; color: palette.placeholderText; opacity: 0.3
-        }
     }
 }

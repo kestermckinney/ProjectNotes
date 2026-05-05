@@ -3,6 +3,7 @@
 
 #include "projectdetailspage.h"
 #include "databaseobjects.h"
+#include "appsettings.h"
 #include <QCompleter>
 
 #include "ui_mainwindow.h"
@@ -64,7 +65,7 @@ void ProjectDetailsPage::openRecord(QVariant& recordId)
 void ProjectDetailsPage::setPageTitle()
 {
     QString  page_title = QString("%1 %2").arg(ui->lineEditNumber->text(), ui->plainTextEditProjectName->toPlainText().left(25));
-    topLevelWidget()->setWindowTitle(QString("Project Notes Project [%1]").arg(page_title));
+    topLevelWidget()->setWindowTitle(AppSettings::developerProfilePrefix() + QString("Project Notes Project [%1]").arg(page_title));
     setHistoryText(page_title);
 }
 

@@ -4,6 +4,7 @@
 #include "clientspage.h"
 #include "mainwindow.h"
 #include "plaintextedit.h"
+#include "appsettings.h"
 #include "ui_mainwindow.h"
 #include "QLogger.h"
 #include "QLoggerWriter.h"
@@ -18,6 +19,7 @@ ClientsPage::ClientsPage()
 void ClientsPage::openRecord(QVariant& recordId)
 {
     setRecordId(recordId);
+    global_DBObjects.clientsmodel()->refreshIfDirty();
 
     if (!recordId.isNull())
     {
@@ -55,7 +57,7 @@ void ClientsPage::setButtonAndMenuStates()
 
 void ClientsPage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes Clients"));
+    topLevelWidget()->setWindowTitle(AppSettings::developerProfilePrefix() + QString("Project Notes Clients"));
 
     if (getRecordId().isNull())
     {

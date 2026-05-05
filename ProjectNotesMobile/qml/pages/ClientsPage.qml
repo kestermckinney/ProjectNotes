@@ -48,6 +48,7 @@ Page {
                     var d = AppController.getClientData(newRow)
                     root.stackView.push(Qt.resolvedUrl("ClientDetailPage.qml"), {
                         clientRow:         newRow,
+                        isNewRecord:       true,
                         initialClientName: (d.client_name || "").toString()
                     })
                 }
@@ -121,7 +122,7 @@ Page {
             text: qsTr("Tap + to add a client.")
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
-            color: palette.placeholderText
+            color: Theme.mutedText
         }
     }
 }

@@ -14,11 +14,26 @@ Page {
     property string initialCategory:    ""
     property string initialDescription: ""
     property bool   _skipSave:          false
+    property bool   _hasChanges:        false
+    property bool   isNewRecord:        false
+
+    function _isBlankNew() { return isNewRecord && descField.text.trim() === "" }
+    function _discardNew()  { AppController.deleteStatusItem(root.itemRow) }
 
     function _saveNow() {
+        if (!root._hasChanges) return true
         var cat = (categoryCombo.currentIndex >= 0)
             ? categoryCombo.model[categoryCombo.currentIndex] : ""
-        AppController.saveStatusItem(root.itemRow, cat, descField.text)
+        var result = AppController.saveStatusItem(root.itemRow, cat, descField.text)
+        if (result) root._hasChanges = false
+        return result
+    }
+
+    function _reloadData() {
+        var d = AppController.getStatusItemData(root.itemRow)
+        var ci = categoryCombo.model.indexOf((d.task_category || "").toString())
+        categoryCombo.currentIndex = ci >= 0 ? ci : 0
+        descField.text = (d.task_description || "").toString()
     }
 
     StackView.onDeactivating: {
@@ -36,7 +51,7 @@ Page {
             ToolButton {
                 icon.name: "doc.on.doc"
                 onClicked: {
-                    root._saveNow()
+                    if (!root._saveNow()) return
                     root._skipSave = true
                     var newRow = AppController.copyStatusItem(root.itemRow)
                     if (newRow < 0) { root._skipSave = false; return }
@@ -78,6 +93,7 @@ Page {
                         var idx = model.indexOf(root.initialCategory)
                         currentIndex = (idx >= 0) ? idx : 0
                     }
+                    onActivated: root._hasChanges = true
                 }
             }
 
@@ -91,6 +107,7 @@ Page {
                     wrapMode: TextArea.Wrap
                     color: palette.text
                     background: Item {}
+                    onTextChanged: root._hasChanges = true
                 }
             }
 
@@ -107,17 +124,5 @@ Page {
         font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }
-    }
-
-    component FieldRow: Rectangle {
-        default property alias content: innerItem.data
-        Layout.fillWidth: true
-        Layout.preferredHeight: 44
-        color: palette.base
-        Item { id: innerItem; anchors.fill: parent }
-        Rectangle {
-            anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
-            height: 1; color: palette.placeholderText; opacity: 0.3
-        }
     }
 }

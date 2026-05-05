@@ -56,6 +56,8 @@ public:
 
     void clear();
     void refresh();
+    void markDirty() { m_dirty = true; }
+    void refreshIfDirty() { if (m_dirty) refresh(); }
 
     void setTableName(const QString &table, const QString &displayName);
     const QString& tablename() { return m_tablename; }
@@ -239,6 +241,7 @@ private:
     QVector<QHash<int, QVariant> > m_headers;
 
     bool m_showBlank = false;
+    bool m_dirty = false;
 
     QString m_orderBy;
     QString m_foreignKeyValue;

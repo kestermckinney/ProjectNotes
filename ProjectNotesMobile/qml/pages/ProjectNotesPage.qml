@@ -20,6 +20,11 @@ Page {
 
     StackView.onActivated: AppController.refreshProjectNotes()
 
+    Connections {
+        target: AppController
+        function onViewOptionsChanged() { AppController.refreshProjectNotes() }
+    }
+
     header: ToolBar {
         RowLayout {
             anchors { left: parent.left; right: parent.right; margins: 8 }
@@ -55,6 +60,7 @@ Page {
                     var newId = (d.id || "").toString()
                     root.StackView.view.push(Qt.resolvedUrl("ProjectNoteDetailPage.qml"), {
                         noteRow:         newRow,
+                        isNewRecord:     true,
                         noteId:          newId,
                         projectId:       root.projectId,
                         initialTitle:    (d.note_title    || "").toString(),
@@ -92,7 +98,7 @@ Page {
                     Label {
                         text: model.note_date || ""
                         font.pixelSize: 12
-                        color: palette.placeholderText
+                        color: Theme.mutedText
                     }
                 }
 
@@ -141,7 +147,7 @@ Page {
             text: qsTr("Tap + to add a meeting note.")
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
-            color: palette.placeholderText
+            color: Theme.mutedText
         }
     }
 }

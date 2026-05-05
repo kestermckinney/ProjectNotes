@@ -3,6 +3,7 @@
 
 #include "projectslistpage.h"
 #include "databaseobjects.h"
+#include "appsettings.h"
 
 #include "ui_mainwindow.h"
 #include "QLogger.h"
@@ -35,6 +36,6 @@ void ProjectsListPage::setButtonAndMenuStates()
 
 void ProjectsListPage::setPageTitle()
 {
-    topLevelWidget()->setWindowTitle(QString("Project Notes"));
+    topLevelWidget()->setWindowTitle(AppSettings::developerProfilePrefix() + QString("Project Notes"));
     setHistoryText("Projects List");
 }
