@@ -247,7 +247,6 @@ class SSOAuthAPI:
         try:
             with open(self.token_cache_file, "w") as f:
                 json.dump(token, f)
-            print(f"Token cached to {self.token_cache_file}")
         except Exception as e:
             print(f"Warning: could not save token cache: {e}")
 
@@ -275,8 +274,6 @@ class SSOAuthAPI:
             return None
         finally:
             file.close()
-
-        print(f"found token: {token}")
 
         refresh_token = token.get("refresh_token")
         if not refresh_token:
