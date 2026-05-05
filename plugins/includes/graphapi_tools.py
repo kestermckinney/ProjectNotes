@@ -213,7 +213,7 @@ class GraphAPITools:
             "contentType": "application/octet-stream"
         }
 
-        print(f"Uploading attachment '{file_name}' to message {draft_email_id}")
+        # print(f"Uploading attachment '{file_name}' to message {draft_email_id}")
 
         # Upload the attachment to the draft email
         response = requests.post(f"{self.GRAPH_API_ENDPOINT}/v1.0/me/messages/{draft_email_id}/attachments", headers=self.headers, json=attachment, timeout=15)
@@ -231,8 +231,8 @@ class GraphAPITools:
         if not self.import_contacts:  #  import contacts is disabled
             return
 
-        # timer = QElapsedTimer()
-        # timer.start()
+        timer = QElapsedTimer()
+        timer.start()
         
         saved_state = None
         statename = "people_import"
@@ -288,12 +288,12 @@ class GraphAPITools:
 
                 contactcount = contactcount + 1
                 xmldoc += '<row>\n'
-                xmldoc += f'<column name="name">{self.pnc.to_xml(contact.get("displayName", ""))}</column>\n'
+                xmldoc += f'<column name="name">{self.pnc.to_xml(contact.get("displayName", "")).strip()}</column>\n'
 
                 emails = contact.get("emailAddresses", [{"address": ""}])
 
                 if len(emails) > 0:
-                    xmldoc += f'<column name="email">{self.pnc.to_xml(emails[0]["address"])}</column>\n'
+                    xmldoc += f'<column name="email">{self.pnc.to_xml(emails[0]["address"]).strip()}</column>\n'
                 # else:
                 #     xmldoc += f'<column name="email"></column>\n'
 
@@ -301,15 +301,13 @@ class GraphAPITools:
 
                 if len(phones) > 0:
                     xmldoc += f'<column name="office_phone">{self.pnc.to_xml(phones[0])}</column>\n'
-                # else:
-                #     xmldoc += f'<column name="office_phone"></column>\n'
 
-                xmldoc += f'<column name="cell_phone">{self.pnc.to_xml(contact.get("mobilePhone", ""))}</column>\n'
-                xmldoc += f'<column name="id" lookupvalue="{self.pnc.to_xml(contact.get("companyName", ""))}"></column>\n'
-                xmldoc += f'<column name="role">{self.pnc.to_xml(contact.get("jobTitle", ""))}</column>\n'
+                xmldoc += f'<column name="cell_phone">{self.pnc.to_xml(contact.get("mobilePhone", "")).strip()}</column>\n'
+                xmldoc += f'<column name="id" lookupvalue="{self.pnc.to_xml(contact.get("companyName", "")).strip()}"></column>\n'
+                xmldoc += f'<column name="role">{self.pnc.to_xml(contact.get("jobTitle", "")).strip()}</column>\n'
                 xmldoc += '</row>\n'
 
-                cn = self.pnc.to_xml(contact.get("companyName", ""))
+                cn = self.pnc.to_xml(contact.get("companyName", "")).strip()
 
                 if cn is not None and cn != '':
                     xmlclients = xmlclients + f'<row><column name="client_name">{cn}</column></row>\n'
@@ -332,8 +330,8 @@ class GraphAPITools:
             if self.pnc.set_save_state(statename, skip, top, contactcount) is None:
                 print("Failed to set save state.  Will try to import the same contacts again.")
 
-        # execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
-        # print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
+        execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
+        print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds")
 
         return
 
@@ -650,8 +648,6 @@ class GraphAPITools:
         if response.status_code == 200:
             # Parse JSON response
             data = response.json()
-
-            #print(f'Email JSON:\n{json.dumps(data, indent=4)}\nEnd Email JSON')
 
             has_attach = (data.get('attachments') is not None) and (len(data.get('attachments')) > 0)
             boundary = data.get('internetMessageId').replace('@','').replace('.','').replace('<','').replace('>', '').replace('-','').upper()
