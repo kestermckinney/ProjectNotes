@@ -1924,20 +1924,22 @@ void MainWindow::applyZoom()
 
     // QFont lineEditFont = QApplication::font();
     QFontMetrics fm(appFont);
-    int lineEditHeight = fm.lineSpacing() + 10;
-    int textEditHeight = fm.lineSpacing() * 3 + 8;
+    int lineEditHeight = fm.lineSpacing() + 4;
+    int textEditHeight = fm.lineSpacing() * 3 + 4;
 
     QString fontSizeStr = QString::number(fontSize, 'f', 1);
     QString existingSheet = qApp->styleSheet();
     QString newRules = QString(
         "* { font-size: %1pt; } "
         "QMenu { font-size: %1pt; } "
-        "QLineEdit { min-height: %2px; } "
-        "QTextEdit { min-height: %3px; } "
+        "QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QDateEdit, QDateTimeEdit, QTimeEdit { "
+        "    min-height: %2px; "
+        "    padding: 1px 3px; "
+        "    border: 1px solid palette(mid); "
+        "    border-radius: 2px; "
+        "} "
         "QPlainTextEdit { min-height: %2px; } "
-        "QSpinBox { min-height: %2px; } "
-        "QDoubleSpinBox { min-height: %2px; } "
-        "QComboBox { min-height: %2px; }"
+        "QTextEdit { min-height: %3px; }"
     ).arg(fontSizeStr).arg(lineEditHeight).arg(textEditHeight);
 
     // qDebug() << "style: " << newRules;

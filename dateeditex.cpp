@@ -89,6 +89,12 @@ DateEditEx::DateEditEx(QWidget *parent) :
     QDateEdit(parent), d(new Private(this))
 {
     setCalendarPopup(true);
+    setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    if (QLineEdit* edit = d->lineEdit())
+    {
+        edit->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+        edit->setTextMargins(0, 0, 0, 0);
+    }
 
     QCalendarWidget* cal = calendarWidget();
 
@@ -226,6 +232,11 @@ void DateEditEx::setNullable(bool enable)
 void DateEditEx::showEvent(QShowEvent *event)
 {
     QDateEdit::showEvent(event);
+    if (QLineEdit* edit = d->lineEdit())
+    {
+        edit->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+        edit->setTextMargins(0, 0, 0, 0);
+    }
     d->setNull(d->null); // force empty string back in
 }
 
