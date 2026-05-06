@@ -199,9 +199,9 @@ class CollaborationTools:
 
         # determine what method to use to send emails
         use_graph_api = (self.pnc.get_plugin_setting("IntegrationType", "Outlook Integration") == "Office 365 Application")
-        use_o365 = (self.pnc.get_plugin_setting("SendO365", "Outlook Integration") or "").lower() == "true"
+        send_using_o365 = (self.pnc.get_plugin_setting("SendO365", "Outlook Integration") or "").lower() == "true"
 
-        if use_o365 and use_graph_api:
+        if send_using_o365 and use_graph_api:
             token = self.tapi.authenticate()
 
             if token is not None:
@@ -222,7 +222,23 @@ class CollaborationTools:
                 QMessageBox.critical(QApplication.activeWindow(),"Cannot Send Email", msg)
                 return ""
 
-        elif use_graph_api and not use_o365:
+        elif not send_using_o365:
+            if platform.system() == 'Windows':
+                pnot = ProjectNotesOutlookTools()
+
+                msg = pnot.send_email(addresses, email_subject, email_body_filled_in, attachments)
+                if msg is not None:
+                    print(msg)
+                    QMessageBox.critical(QApplication.activeWindow(),"Cannot Send Email", msg)
+                    return ""
+            else:
+                msg = "Sending email using Outlook is not supported on this operating system."
+                print(msg)
+                QMessageBox.critical(QApplication.activeWindow(),"Not Supported", msg)
+
+            return ""
+
+        elif not use_graph_api and send_using_o365:
             # Office 365 integration is active but email sending via O365 is not enabled.
             # Do NOT fall through to Outlook COM — that would sync to O365 anyway and
             # the user would see a duplicate.
@@ -231,20 +247,6 @@ class CollaborationTools:
             QMessageBox.warning(QApplication.activeWindow(), "Email Sending Disabled", msg)
             return ""
 
-        elif platform.system() == 'Windows':
-            pnot = ProjectNotesOutlookTools()
-
-            msg = pnot.send_email(addresses, email_subject, email_body_filled_in, attachments)
-            if msg is not None:
-                print(msg)
-                QMessageBox.critical(QApplication.activeWindow(),"Cannot Send Email", msg)
-                return ""
-
-            return ""
-        else:
-            msg = "Sending email using Outlook is not supported on this operating system."
-            print(msg)
-            QMessageBox.critical(QApplication.activeWindow(),"Not Supported", msg)
 
         return ""
 
@@ -281,9 +283,9 @@ class CollaborationTools:
 
         # determine what method to use to schedule meetings
         use_graph_api = (self.pnc.get_plugin_setting("IntegrationType", "Outlook Integration") == "Office 365 Application")
-        use_o365 = (self.pnc.get_plugin_setting("ScheduleO365", "Outlook Integration") or "").lower() == "true"
+        send_using_o365 = (self.pnc.get_plugin_setting("ScheduleO365", "Outlook Integration") or "").lower() == "true"
 
-        if use_o365 and use_graph_api:
+        if send_using_o365 and use_graph_api:
             token = self.tapi.authenticate()
 
             if token is not None:
@@ -309,7 +311,7 @@ class CollaborationTools:
                 QMessageBox.critical(QApplication.activeWindow(),"Cannot Draft a Meeting", msg)
                 return ""
 
-        elif use_graph_api and not use_o365:
+        elif use_graph_api and not send_using_o365:
             # Office 365 integration is active but meeting scheduling via O365 is not enabled.
             # Do NOT fall through to Outlook COM — on an Office 365 account, a COM-created
             # meeting syncs to the O365 calendar immediately, causing a duplicate.

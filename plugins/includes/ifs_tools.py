@@ -47,7 +47,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
             self.end_headers()
             return
 
-        print(f"Callback received: {self.path}")
+        # print(f"Callback received: {self.path}")
         auth_response_path = self.path
 
         self.send_response(200)
@@ -249,7 +249,6 @@ class SSOAuthAPI:
         try:
             with open(self.token_cache_file, "w") as f:
                 json.dump(token, f)
-            print(f"Token cached to {self.token_cache_file}")
         except Exception as e:
             print(f"Warning: could not save token cache: {e}")
 
@@ -401,7 +400,7 @@ class SSOAuthAPI:
         print("Opening browser for login...")
         webbrowser.open(authorization_url)
 
-        print("Waiting for Keycloak to redirect back...")
+        # print("Waiting for Keycloak to redirect back...")
         received = auth_code_event.wait(timeout=120)
 
         if not received or auth_response_path is None:
