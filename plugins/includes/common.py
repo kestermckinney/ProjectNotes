@@ -54,6 +54,14 @@ class ProjectNotesCommon:
     def get_main_window(self):
         return self.mainwindow
 
+    def check_url_reachable(self, url, timeout=3):
+        import requests
+        try:
+            requests.head(url, timeout=timeout, allow_redirects=False, verify=False)
+            return True
+        except requests.RequestException:
+            return False
+
     def get_temporary_folder(self):
         return self.temporary_folder
 
@@ -182,10 +190,15 @@ class ProjectNotesCommon:
     def strip_html_body(self, html):
         # Remove everything between <header> and </header>, including the tags
         html = re.sub(r'<header>.*?</header>', '', html, flags=re.DOTALL)
-        
+
         # Remove <html> and </html> tags, but keep their content
         html = re.sub(r'</?html>', '', html)
-        
+
+        # Qt's QTextDocument::toHtml() emits user-typed tabs as literal \t characters in
+        # text content. Email clients (and most HTML renderers without white-space:pre)
+        # collapse those to a single space, so convert them to non-breaking spaces.
+        html = html.replace("\t", "&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;")
+
         return html.strip()
 
     def valid_filename(self, val):

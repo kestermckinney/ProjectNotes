@@ -204,6 +204,8 @@ class SSOAuthAPI:
         # self.token_response = None
         self.access_token = None
         self.current_user = None
+        self._interactive_cooldown_until = None
+        self._interactive_cooldown_seconds = 3600
 
     def _discover_endpoints(self):
         """Fetch Keycloak auth/token URLs from the configured realm's discovery document."""
@@ -368,6 +370,14 @@ class SSOAuthAPI:
         if token:
             return token
 
+        if self._interactive_cooldown_until and QDateTime.currentDateTime() < self._interactive_cooldown_until:
+            print(f"IFS interactive sign-in is in cooldown until {self._interactive_cooldown_until.toString()}; skipping.")
+            return None
+
+        if not self.pnc.check_url_reachable(self.ifs_url):
+            print(f"Cannot reach IFS Cloud at {self.ifs_url}; skipping browser login.")
+            return None
+
         global auth_response_path
         global auth_code_event
 
@@ -395,7 +405,8 @@ class SSOAuthAPI:
         received = auth_code_event.wait(timeout=120)
 
         if not received or auth_response_path is None:
-            print("Timeout or no callback received. Exiting.")
+            self._interactive_cooldown_until = QDateTime.currentDateTime().addSecs(self._interactive_cooldown_seconds)
+            print(f"Timeout or no callback received; cooling down until {self._interactive_cooldown_until.toString()}.")
             server.shutdown()
             return None
 
@@ -409,7 +420,8 @@ class SSOAuthAPI:
                 client_secret=False
             )
         except Exception as e:
-            print("Error exchanging code for token:", e)
+            self._interactive_cooldown_until = QDateTime.currentDateTime().addSecs(self._interactive_cooldown_seconds)
+            print(f"Error exchanging code for token: {e}; cooling down until {self._interactive_cooldown_until.toString()}.")
             print("Full callback URL was:", full_url)
             threading.Thread(target=server.shutdown, daemon=True).start()
             return None
@@ -417,6 +429,7 @@ class SSOAuthAPI:
             threading.Thread(target=server.shutdown, daemon=True).start()
 
         self.access_token = token["access_token"]
+        self._interactive_cooldown_until = None
         self.save_token(token)
 
         if self.current_user is None:

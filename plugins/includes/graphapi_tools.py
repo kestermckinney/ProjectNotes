@@ -42,6 +42,8 @@ class TokenAPI:
         self.token_expires = None
         self.token_response = None
         self.access_token = None
+        self._interactive_cooldown_until = None
+        self._interactive_cooldown_seconds = 3600
 
     def authenticate(self):
         # return nothing if not configured
@@ -92,8 +94,19 @@ class TokenAPI:
             self.token_response = app.acquire_token_silent(self.scopes, account=accounts[0])
 
         if not self.token_response:
+            if self._interactive_cooldown_until and QDateTime.currentDateTime() < self._interactive_cooldown_until:
+                print(f"Microsoft interactive sign-in is in cooldown until {self._interactive_cooldown_until.toString()}; skipping.")
+                return None
+            auth_host = f"https://login.microsoftonline.com/{self.tenant_id}"
+            if not self.pnc.check_url_reachable(auth_host):
+                print(f"Cannot reach Microsoft sign-in at {auth_host}; skipping interactive login.")
+                return None
             # Poll for the access token (after user completes the login)
-            self.token_response = app.acquire_token_interactive(self.scopes)
+            self.token_response = app.acquire_token_interactive(self.scopes, timeout=120)
+            if not self.token_response or "access_token" not in self.token_response:
+                self._interactive_cooldown_until = QDateTime.currentDateTime().addSecs(self._interactive_cooldown_seconds)
+                print(f"Microsoft interactive sign-in did not complete; cooling down until {self._interactive_cooldown_until.toString()}.")
+                return None
 
         
         file = QFile(self.token_cache_file)
@@ -123,6 +136,7 @@ class TokenAPI:
                 return(None)
 
             self.access_token = self.token_response["access_token"]
+            self._interactive_cooldown_until = None
 
         # execution_time = timer.elapsed() / 1000  # Convert milliseconds to seconds
         # print(f"Function '{inspect.currentframe().f_code.co_name}' executed in {execution_time:.4f} seconds.")
