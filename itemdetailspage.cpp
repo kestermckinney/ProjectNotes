@@ -103,6 +103,7 @@ void ItemDetailsPage::setupModels( Ui::MainWindow *ui )
     m_mapperItemDetails->addMapping(ui->checkBoxInternal, 15);
 
     ui->plainTextEditDescription->setAllowEnter(true);
+    ui->plainTextEditDescription->setTopAligned(3);
 
 
     ui->comboBoxType->clear();

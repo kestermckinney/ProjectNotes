@@ -7,6 +7,9 @@
 using namespace QLogger;
 
 #include <QMimeData>
+#include <QResizeEvent>
+#include <QShowEvent>
+#include <QAbstractTextDocumentLayout>
 
 #include "appsettings.h"
 #include "plaintextedit.h"
@@ -20,7 +23,7 @@ PlainTextEdit::PlainTextEdit(QWidget *parent) : QPlainTextEdit(parent)
     setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     setWordWrapMode(QTextOption::WordWrap);
     setContentsMargins(0,0,0,0);
-    setViewportMargins(0,0,0,0);
+    setViewportMargins(3, 0, 3, 0);
     document()->setDocumentMargin(0.0);
 
     setTabChangesFocus(true);
@@ -28,6 +31,8 @@ PlainTextEdit::PlainTextEdit(QWidget *parent) : QPlainTextEdit(parent)
     connect(this, SIGNAL(textChanged()), this, SLOT(checkSpelling()));
 
     installEventFilter(this);
+
+    setCenterVertically(true);
 }
 
 PlainTextEdit::~PlainTextEdit()
@@ -104,6 +109,67 @@ bool PlainTextEdit::eventFilter(QObject *watched, QEvent *event)
     }
 
     return false;
+}
+
+void PlainTextEdit::setCenterVertically(bool center)
+{
+    if (m_centerVertically == center)
+        return;
+
+    m_centerVertically = center;
+
+    if (center)
+    {
+        connect(this, &QPlainTextEdit::textChanged, this, &PlainTextEdit::updateVerticalAlignment);
+        connect(document()->documentLayout(), &QAbstractTextDocumentLayout::documentSizeChanged,
+                this, &PlainTextEdit::updateVerticalAlignment);
+    }
+    else
+    {
+        disconnect(this, &QPlainTextEdit::textChanged, this, &PlainTextEdit::updateVerticalAlignment);
+        disconnect(document()->documentLayout(), &QAbstractTextDocumentLayout::documentSizeChanged,
+                   this, &PlainTextEdit::updateVerticalAlignment);
+        const QMargins m = viewportMargins();
+        setViewportMargins(m.left(), 0, m.right(), 0);
+    }
+
+    updateVerticalAlignment();
+}
+
+void PlainTextEdit::setTopAligned(int topMargin)
+{
+    setCenterVertically(false);
+    const QMargins m = viewportMargins();
+    setViewportMargins(m.left(), topMargin, m.right(), m.bottom());
+}
+
+void PlainTextEdit::updateVerticalAlignment()
+{
+    if (!m_centerVertically)
+        return;
+
+    const int textHeight = fontMetrics().height();
+    const int frame = frameWidth();
+    int topMargin = (height() - textHeight) / 2 - frame;
+
+    if (topMargin < 0)
+        topMargin = 0;
+
+    const QMargins current = viewportMargins();
+    if (current.top() != topMargin)
+        setViewportMargins(current.left(), topMargin, current.right(), current.bottom());
+}
+
+void PlainTextEdit::resizeEvent(QResizeEvent *event)
+{
+    QPlainTextEdit::resizeEvent(event);
+    updateVerticalAlignment();
+}
+
+void PlainTextEdit::showEvent(QShowEvent *event)
+{
+    QPlainTextEdit::showEvent(event);
+    updateVerticalAlignment();
 }
 
 void PlainTextEdit::insertFromMimeData(const QMimeData* source)
