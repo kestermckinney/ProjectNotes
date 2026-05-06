@@ -81,19 +81,28 @@ The People Page displays a list of all people in the currently open database. Th
 
 1. From the **View** menu, select **People**.
 
-## Changing Font Sizing
+## Zooming In and Out
 
-You can increase or decrease the font size throughout the entire application. This is particularly useful when sharing your screen during a meeting — a larger font makes the content easier for all participants to read.
+You can zoom the entire application in or out to scale every text element together — menus, toolbars, forms, tables, line edits, text editors, and dialogs. This is particularly useful when sharing your screen during a meeting, when working on a high-DPI display, or when you simply want larger text.
 
-Font size changes affect all text in the application: menus, toolbars, forms, tables, and text editors. The last font size you set is saved to your **local OS profile** and restored the next time you open the application.
+Zoom replaces the per-point font sizing used in earlier releases. Each zoom step changes the scale by 10%; zoom is clamped between **50% and 300%**. The current zoom percentage is displayed at the top of the **View** menu, between the **−** and **+** buttons.
 
-**To increase the font size:**
+The zoom factor is saved to your **local OS profile** and restored the next time you open the application.
 
-1. From the **View** menu, select **Increase Font Size**. Each selection increases the size by 1 point.
+**To zoom in:**
 
-**To decrease the font size:**
+- Click the **+** button at the top of the **View** menu, or
+- Press **Ctrl++** (also **Ctrl+=** on US keyboards).
 
-1. From the **View** menu, select **Decrease Font Size**. Each selection decreases the size by 1 point.
+**To zoom out:**
+
+- Click the **−** button at the top of the **View** menu, or
+- Press **Ctrl+−**.
+
+**To reset to 100%:**
+
+- From the **View** menu, select **No Zoom**, or
+- Press **Ctrl+0**.
 
 ## Reviewing Tracker and Action Items
 
@@ -114,7 +123,7 @@ You can control which item statuses are shown using the **View** menu checkboxes
 
 ## View State Storage
 
-The checkboxes in the View menu (**Closed Projects**, **Internal Items**, **Resolved Tracker/Action Items**) are saved in the **Project Notes database**, not the local OS profile. This means they are shared with anyone who opens the same database and are included in cloud sync. Your font size and column layouts are saved locally to your OS profile and are not shared.
+The checkboxes in the View menu (**Closed Projects**, **Internal Items**, **Resolved Tracker/Action Items**) are saved in the **Project Notes database**, not the local OS profile. This means they are shared with anyone who opens the same database and are included in cloud sync. Your zoom factor and column layouts are saved locally to your OS profile and are not shared.
 
 See [Plugin Settings — Where Settings Are Stored](<../StandardPlugins/PluginSettings.md>) for a complete breakdown of what is stored locally versus in the database.
 

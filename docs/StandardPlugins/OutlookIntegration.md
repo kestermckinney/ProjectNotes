@@ -10,15 +10,17 @@ When **Integration Type** is set to **Office 365 Application**, Project Notes us
 
 Requirements:
 - An **Azure Active Directory** app registration with `Mail.Send` and `Calendars.ReadWrite` permissions
-- The **Client ID**, **Tenant ID**, and optionally **Client Secret** entered in the Outlook Integration settings
+- The **Application ID** and **Tenant ID** entered in the Outlook Integration settings
 
 When Project Notes first needs to authenticate, it opens a browser window for you to sign in with your Microsoft 365 account. The token is cached so you are not prompted on every action.
 
 ### Microsoft Outlook COM (Windows Only)
 
-When **Integration Type** is not set to **Office 365 Application**, Project Notes uses COM automation to control the local Outlook desktop application. This method is Windows-only and requires Microsoft Outlook to be installed.
+When **Integration Type** is set to **Outlook Automation**, Project Notes uses COM automation to control the local Outlook desktop application. This method is Windows-only and requires Microsoft Outlook to be installed.
 
 When sending an email or scheduling a meeting, Outlook opens with a pre-populated draft. You review and send (or send directly) from Outlook.
+
+> **Note:** Email sending honors the **Integration Type** selection — when **Outlook Automation** is selected, email is delivered through the local Outlook application even if you have **Office 365 Application** credentials configured for other features. Earlier 5.0.x builds had a bug in which email was sent through Graph regardless of this setting; that has been fixed in 5.0.1.
 
 ## Configuring Outlook Integration Settings
 
@@ -30,12 +32,16 @@ The settings dialog contains the following fields:
 
 | Setting | Description |
 | :--- | :--- |
-| **Integration Type** | Choose **Office 365 Application** to use Graph API, or leave blank/other for Outlook COM (Windows). |
-| **Send Email via O365** | Enable to send emails through Office 365. |
-| **Schedule Meetings via O365** | Enable to schedule meetings through Office 365. |
-| **Client ID** | The Azure AD application (client) ID for your app registration. |
-| **Tenant ID** | Your Azure AD tenant ID. |
-| **Client Secret** | Optional client secret for app-only auth flows. |
+| **Integration Type** | Choose **Outlook Automation** to use the local Outlook desktop app via COM (Windows only), or **Office 365 Application** to use the Microsoft Graph API. |
+| **Application ID** | The Azure AD application (client) ID for your app registration. Required for Office 365 Application. |
+| **Tenant ID** | Your Azure AD tenant ID. Required for Office 365 Application. |
+| **Import Contacts** | Enable to allow importing contacts from Outlook. |
+| **Export New Contacts** | Enable to allow exporting new contacts to Outlook. |
+| **Sync ToDo Items with Due Dates** | Enable to sync action items that have a due date as Outlook tasks. |
+| **Sync ToDo Items without Due Dates** | Enable to also sync action items without a due date. |
+| **Backup Emails** | Enable to archive project-related emails to the project folder. |
+| **Backup Inbox Folder** | Folder name (or path) inside the inbox to archive from. |
+| **Backup Sent Folder** | Folder name (or path) inside the sent items to archive from. |
 
 ## Email Recipient Groups
 

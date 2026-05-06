@@ -169,6 +169,8 @@ Displays the full contact record for a team member.
 | Role | Job title or role |
 | Company | Associated client company |
 
+A phone-icon button appears next to **Office Phone** and **Cell Phone** when a number is present. Tapping the button opens your phone's dialer with that number pre-filled, using a `tel:` URL. The same call buttons appear on the Team Member Detail Page and Meeting Attendee Detail Page wherever a phone number is shown.
+
 ### Clients Page
 
 Lists all client companies in the database. A **Quick Search** bar filters the list as you type.

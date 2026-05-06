@@ -182,9 +182,25 @@ When cloud sync is active, a progress bar appears in the bottom-right corner of 
 
 ---
 
+## Sync Stats Window
+
+For a more detailed view of sync activity than the status-bar progress bar provides, you can open the **Sync Stats** window from **View > Sync Stats**. The menu item is a checkable toggle: select it to show the window, select it again (or close the window) to hide it.
+
+The window is provided by the underlying SqliteSyncPro engine and shows:
+
+- The current high-watermark timestamp used by the pull cursor
+- Counts of records pending push and pending pull, broken out by table
+- Any recent sync errors and the timestamp of the last successful sync cycle
+
+The Sync Stats menu item is only enabled once the sync engine has been initialized — that is, after Cloud Sync Settings have been configured and the first sync cycle has started.
+
+---
+
 ## Automatic Background Sync
 
-Project Notes runs a background sync process on a short interval while the application is open. Each cycle:
+Project Notes runs a background sync process on a short interval while the application is open. The sync engine starts asynchronously after the main window appears, so application startup is no longer blocked while it initializes — the first sync cycle runs shortly after the app is usable rather than during launch.
+
+Each sync cycle:
 
 1. Checks for local records created, modified, or deleted since the last sync
 2. Pushes those changes to the remote host via the PostgREST API
