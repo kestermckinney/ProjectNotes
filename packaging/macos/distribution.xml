@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <installer-gui-script minSpecVersion="2">
 
-    <title>Project Notes 5.0.0</title>
+    <title>Project Notes @VERSION@</title>
     <organization>com.kestermckinney</organization>
 
     <!-- Always install to /Applications on the system volume. -->
@@ -64,15 +64,15 @@
 
     <!-- ── pkg-ref payloads (resolved relative to the distribution file) ── -->
     <pkg-ref id="com.kestermckinney.projectnotes"
-             version="5.0.0"
+             version="@VERSION@"
              onConclusion="none">ProjectNotes.pkg</pkg-ref>
 
     <pkg-ref id="com.sqlitesyncpro.sqladmin"
-             version="0.1.0"
+             version="@VERSION@"
              onConclusion="none">ProjectNotesRemoteHost.pkg</pkg-ref>
 
     <pkg-ref id="com.kestermckinney.projectnotes.ifsplugins"
-             version="5.0.0"
+             version="@VERSION@"
              onConclusion="none">IFSPlugins.pkg</pkg-ref>
 
 </installer-gui-script>
