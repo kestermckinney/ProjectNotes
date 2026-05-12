@@ -49,8 +49,8 @@ SA_BUILD_DIR="${SA_BUILD_DIR:-${SQLADMIN_ROOT}/build/Qt_6_10_2_for_macOS-Release
 PN_APP="${PN_BUILD_DIR}/Project Notes.app"
 SA_APP="${SA_BUILD_DIR}/Project Notes Remote Host.app"
 
-PN_VERSION="5.0.0"
-SA_VERSION="0.1.0"
+PN_VERSION="5.0.1"
+SA_VERSION="5.0.1"
 INSTALLER_VERSION="${PN_VERSION}"
 
 STAGING_DIR="${SCRIPT_DIR}/staging"
@@ -262,13 +262,16 @@ log "=== Building Distribution Package ==="
 
 DIST_PKG="${OUTPUT_DIR}/ProjectNotes-${INSTALLER_VERSION}-macOS.pkg"
 
+DIST_XML_TMP="${OUTPUT_DIR}/distribution.xml"
+sed "s/@VERSION@/${INSTALLER_VERSION}/g" "${SCRIPT_DIR}/distribution.xml" > "${DIST_XML_TMP}"
+
 INSTALLER_SIGN_ARGS=()
 if [[ "${DO_SIGN}" == true ]]; then
     INSTALLER_SIGN_ARGS+=(--sign "${INSTALLER_IDENTITY}")
 fi
 
 productbuild \
-    --distribution "${SCRIPT_DIR}/distribution.xml" \
+    --distribution "${DIST_XML_TMP}" \
     --package-path "${OUTPUT_DIR}" \
     --resources "${RESOURCES_DIR}" \
     ${INSTALLER_SIGN_ARGS[@]+"${INSTALLER_SIGN_ARGS[@]}"} \

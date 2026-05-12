@@ -188,6 +188,19 @@ if(Hunspell_INCLUDE_DIRS AND NOT "${Hunspell_INCLUDE_DIRS}" MATCHES "NOTFOUND")
     target_include_directories(${PROJECT_NAME} PRIVATE ${Hunspell_INCLUDE_DIRS})
 endif()
 
+if(APPLE AND NOT OPENSSL_ROOT_DIR)
+    if(EXISTS "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/libcrypto.a")
+        set(OPENSSL_ROOT_DIR "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
+    else()
+        execute_process(
+            COMMAND brew --prefix openssl
+            OUTPUT_VARIABLE OPENSSL_ROOT_DIR
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+        )
+    endif()
+endif()
+
 add_subdirectory(../SqliteSyncPro/src SqliteSyncPro)
 add_subdirectory(ProjectNotesCore)
 
