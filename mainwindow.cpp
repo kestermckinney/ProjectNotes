@@ -1938,7 +1938,7 @@ void MainWindow::applyZoom()
         "    border: 1px solid palette(mid); "
         "    border-radius: 2px; "
         "} "
-        "QPlainTextEdit { min-height: %2px; } "
+        "QPlainTextEdit { min-height: %2px; border: 1px solid palette(mid); border-radius: 2px; } "
         "QTextEdit { min-height: %3px; }"
     ).arg(fontSizeStr).arg(lineEditHeight).arg(textEditHeight);
 

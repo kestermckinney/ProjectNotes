@@ -21,6 +21,7 @@ PlainTextEditDelegate::PlainTextEditDelegate(QObject *parent)
 QWidget *PlainTextEditDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &/* option */, const QModelIndex &/* index */) const
 {
     PlainTextEdit* editor = new PlainTextEdit(parent);
+    editor->setAutoFillBackground(true);
 
     return editor;
 }
@@ -37,9 +38,12 @@ void PlainTextEditDelegate::setEditorData(QWidget *editor, const QModelIndex &in
 void PlainTextEditDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
 {
     PlainTextEdit *plainTextEditor = static_cast<PlainTextEdit*>(editor);
-    plainTextEditor->setAutoFillBackground(true);
-
     model->setData(index, plainTextEditor->toPlainText(), Qt::EditRole);
+}
+
+void PlainTextEditDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &/* index */) const
+{
+    editor->setGeometry(option.rect);
 }
 
 

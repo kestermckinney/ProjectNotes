@@ -149,8 +149,8 @@ void PlainTextEdit::updateVerticalAlignment()
         return;
 
     const int textHeight = fontMetrics().height();
-    const int frame = frameWidth();
-    int topMargin = (height() - textHeight) / 2 - frame;
+    const int topInset = contentsRect().top();
+    int topMargin = (height() - textHeight) / 2 - topInset;
 
     if (topMargin < 0)
         topMargin = 0;
