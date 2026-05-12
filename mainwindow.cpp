@@ -1986,9 +1986,13 @@ QString MainWindow::scaleHtmlFontSizes(const QString& html, qreal factor) const
 void MainWindow::setUnscaledHtml(const QString& html)
 {
     m_unscaledHtml = html;
-    if (ui->textEditNotes && !html.isEmpty()) {
-        QString scaledHtml = scaleHtmlFontSizes(html, m_zoomFactor);
-        ui->textEditNotes->setHtml(scaledHtml);
+    if (ui->textEditNotes) {
+        if (!html.isEmpty()) {
+            QString scaledHtml = scaleHtmlFontSizes(html, m_zoomFactor);
+            ui->textEditNotes->setHtml(scaledHtml);
+        } else {
+            ui->textEditNotes->clear();
+        }
     }
 }
 
