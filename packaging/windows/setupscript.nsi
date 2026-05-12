@@ -215,6 +215,7 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\newpowerpoint_plugin.py"
   File "${DEPLOY_DIR}\plugins\newriskregister_plugin.py"
   File "${DEPLOY_DIR}\plugins\open_msproject_plugin.py"
+  File "${DEPLOY_DIR}\plugins\team_member_quick_add_plugin.py"
   File "${DEPLOY_DIR}\plugins\trackkerreport_plugin.py"
   File "${DEPLOY_DIR}\plugins\wordkill_plugin.py"
 
@@ -241,6 +242,7 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\forms\dialogOutlookIntegrationOptions.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogSettingsMigrator.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogSSRSOptions.ui"
+  File "${DEPLOY_DIR}\plugins\forms\dialogTeamMemberQuickAdd.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogTrackerRptOptions.ui"
 
   SetOutPath "$INSTDIR\plugins\templates"
@@ -350,6 +352,7 @@ Section Uninstall
   Delete "$INSTDIR\plugins\newpowerpoint_plugin.py"
   Delete "$INSTDIR\plugins\newriskregister_plugin.py"
   Delete "$INSTDIR\plugins\open_msproject_plugin.py"
+  Delete "$INSTDIR\plugins\team_member_quick_add_plugin.py"
   Delete "$INSTDIR\plugins\trackkerreport_plugin.py"
   Delete "$INSTDIR\plugins\wordkill_plugin.py"
 
@@ -379,6 +382,7 @@ Section Uninstall
   Delete "$INSTDIR\plugins\forms\dialogOutlookIntegrationOptions.ui"
   Delete "$INSTDIR\plugins\forms\dialogSettingsMigrator.ui"
   Delete "$INSTDIR\plugins\forms\dialogSSRSOptions.ui"
+  Delete "$INSTDIR\plugins\forms\dialogTeamMemberQuickAdd.ui"
   Delete "$INSTDIR\plugins\forms\dialogTrackerRptOptions.ui"
   Delete "$INSTDIR\plugins\forms\__pycache__\*.*"
   RMDir  "$INSTDIR\plugins\forms\__pycache__"

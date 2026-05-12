@@ -8,7 +8,9 @@ Email recipients are automatically populated based on the item you right-clicked
 
 ## Configuring Email Types
 
-Send Email menu items are configured in **Plugins > Settings > Meeting and Email Types**. Each email type defines a name, subject template, body template, recipient group, and the [data type](<../PluginsOverview/DataTypes.md>) it appears on (projects, project_people, meeting_attendees, etc.). This allows you to create customized email templates for different situations.
+Send Email menu items are configured in **Plugins > Settings > Meeting and Email Types**. Each email type defines a **Name**, **Subject** template, **Template** body, **Invitees** recipient group, and the **Data Type** that controls which right-click context shows it.
+
+For a full description of every field, all Invitees options, available Data Types, and the default email types included with Project Notes, see [Configuring Meeting and Email Types](<OutlookIntegration.md#configuring-meeting-and-email-types>) in the Outlook Integration reference.
 
 ## Sending an Email
 
