@@ -1581,6 +1581,7 @@ void MainWindow::setupTextActions()
 
     m_comboBoxSize = new ComboBox(tb);
     m_comboBoxSize->setObjectName("comboSize");
+    m_comboBoxSize->setFixedWidth(58);
     tb->addWidget(m_comboBoxSize);
     m_comboBoxSize->setEditable(true);
 
@@ -1939,7 +1940,9 @@ void MainWindow::applyZoom()
         "    border-radius: 2px; "
         "} "
         "QPlainTextEdit { min-height: %2px; border: 1px solid palette(mid); border-radius: 2px; } "
-        "QTextEdit { min-height: %3px; padding: 1px 3px; border: 1px solid palette(mid); border-radius: 2px; }"
+        "QTextEdit { min-height: %3px; padding: 1px 3px; border: 1px solid palette(mid); border-radius: 2px; } "
+        "QComboBox::drop-down, QDateEdit::drop-down, QDateTimeEdit::drop-down, QTimeEdit::drop-down { border: none; border-left: 1px solid palette(mid); border-top-right-radius: 2px; border-bottom-right-radius: 2px; width: 18px; } "
+        "QComboBox::down-arrow, QDateEdit::down-arrow, QDateTimeEdit::down-arrow, QTimeEdit::down-arrow { image: url(:/icons/down-arrow.svg); width: 8px; height: 5px; }"
     ).arg(fontSizeStr).arg(lineEditHeight).arg(textEditHeight);
 
     // qDebug() << "style: " << newRules;

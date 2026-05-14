@@ -51,5 +51,6 @@
         <file>icons/plugins.png</file>
         <file>icons/syncstats.png</file>
         <file>icons/no-zoom.png</file>
+        <file>icons/down-arrow.svg</file>
     </qresource>
 </RCC>
