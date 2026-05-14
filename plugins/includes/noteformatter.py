@@ -1,4 +1,5 @@
 # Copyright (C) 2025, 2026 Paul McKinney
+import re
 from includes.common import ProjectNotesCommon
 from PyQt6.QtXml import QDomDocument, QDomNode
 from PyQt6.QtWidgets import QMessageBox, QApplication
@@ -230,10 +231,8 @@ class NoteFormatter:
 	    padding:0in 5.4pt 0in 5.4pt;height:.25in'>
 	    <p class=MsoNormal><span style='mso-ascii-font-family:Calibri;mso-fareast-font-family:
 	    "Times New Roman";mso-hansi-font-family:Calibri;mso-bidi-font-family:Calibri;
-	    color:black;mso-color-alt:windowtext'>
-	    """
-	    htmldoc = htmldoc + self.pnc.to_html(day) + """
-	    </span><span
+	    color:black;mso-color-alt:windowtext'>"""
+	    htmldoc = htmldoc + self.pnc.to_html(day) + """</span><span
 	    style='mso-ascii-font-family:Calibri;mso-fareast-font-family:"Times New Roman";
 	    mso-hansi-font-family:Calibri;mso-bidi-font-family:Calibri'><o:p></o:p></span></p>
 	    </td>
@@ -261,8 +260,7 @@ class NoteFormatter:
 	    padding:0in 5.4pt 0in 5.4pt;height:.25in'>
 	    <p class=MsoNormal><span style='mso-ascii-font-family:Calibri;mso-fareast-font-family:
 	    "Times New Roman";mso-hansi-font-family:Calibri;mso-bidi-font-family:Calibri;
-	    color:black;mso-color-alt:windowtext'>
-	    """ + self.pnc.to_html(name) + """</span><span
+	    color:black;mso-color-alt:windowtext'>""" + self.pnc.to_html(name) + """</span><span
 	    style='mso-ascii-font-family:Calibri;mso-fareast-font-family:"Times New Roman";
 	    mso-hansi-font-family:Calibri;mso-bidi-font-family:Calibri'><o:p></o:p></span></p>
 	    </td>
@@ -283,18 +281,34 @@ class NoteFormatter:
 	    mso-bidi-font-family:Calibri'><o:p></o:p></span></b></p>
 	    </td>
 	    </tr>
-	    <tr style='mso-yfti-irow:4;height:17.25pt'>
+	    """
+
+	    if "<!DOCTYPE" in notes or "<html>" in notes:
+	        match = re.search(r'<body[^>]*>(.*?)</body>', notes, re.DOTALL)
+	        body_content = match.group(1).strip() if match else notes
+	        body_content = body_content.replace("	", "&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;")
+	        htmldoc += """<tr style='mso-yfti-irow:4;height:17.25pt'>
+	    <td width=844 colspan=11 valign=top style='width:633.05pt;border:solid gray 1.0pt;
+	    border-top:none;mso-border-top-alt:solid gray .5pt;mso-border-alt:solid gray .5pt;
+	    background:#D9E1F2;padding:0in 5.4pt 0in 5.4pt;height:17.25pt'>
+	    """ + body_content + """
+	    </td>
+	    </tr>
+	    """
+	    else:
+	        htmldoc += """<tr style='mso-yfti-irow:4;height:17.25pt'>
 	    <td width=844 colspan=11 valign=top style='width:633.05pt;border:solid gray 1.0pt;
 	    border-top:none;mso-border-top-alt:solid gray .5pt;mso-border-alt:solid gray .5pt;
 	    background:#D9E1F2;padding:0in 5.4pt 0in 5.4pt;height:17.25pt'>
 	    <p class=MsoNormal><span style='mso-ascii-font-family:Calibri;mso-fareast-font-family:
 	    "Times New Roman";mso-hansi-font-family:Calibri;mso-bidi-font-family:Calibri;
-	    color:black;mso-color-alt:windowtext'>""" + ( notes if "<html>" in notes else self.pnc.to_html(notes) ) + """</span><span
+	    color:black;mso-color-alt:windowtext'>""" + self.pnc.to_html(notes) + """</span><span
 	    style='mso-ascii-font-family:Calibri;mso-fareast-font-family:"Times New Roman";
 	    mso-hansi-font-family:Calibri;mso-bidi-font-family:Calibri'><o:p></o:p></span></p>
 	    </td>
 	    </tr>
 	    """
+
 	    return htmldoc
 
 	def get_html_trackerheader(self):

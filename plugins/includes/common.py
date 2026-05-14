@@ -194,11 +194,6 @@ class ProjectNotesCommon:
         # Remove <html> and </html> tags, but keep their content
         html = re.sub(r'</?html>', '', html)
 
-        # Qt's QTextDocument::toHtml() emits user-typed tabs as literal \t characters in
-        # text content. Email clients (and most HTML renderers without white-space:pre)
-        # collapse those to a single space, so convert them to non-breaking spaces.
-        html = html.replace("\t", "&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;")
-
         return html.strip()
 
     def valid_filename(self, val):
