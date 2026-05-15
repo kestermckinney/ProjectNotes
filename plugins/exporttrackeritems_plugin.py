@@ -362,7 +362,7 @@ class TrackerItemsExporter(QDialog):
         self.project_htmlreportname = f"{projectfolder}{projnum} Tracker Items{suffix}.html" if projectfolder else ""
 
         executedate = QDate.currentDate()
-        self.subject = f"{projnum} {projdes} - {executedate.toString('MM/dd/yyyy')}"
+        self.subject = f"{projnum} {projdes} - Tracker Items {executedate.toString('MM/dd/yyyy')}"
 
         self.progbar.setValue(20)
         self.progbar.setLabelText("Building item list...")

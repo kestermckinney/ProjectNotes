@@ -412,7 +412,7 @@ class GenerateTrackerReport(QDialog):
 
         # should we email?
         if noemail == False:
-            subject = projnum + " " + projdes + " - " + executedate.toString("MM/dd/yyyy")
+            subject = projnum + " " + projdes + " - Tracker Items " + executedate.toString("MM/dd/yyyy")
 
             if emailashtml:
                 pne.email_excel_html(sheet, subject, emaillist, None)
