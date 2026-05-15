@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "tableview.h"
+#include "sortfilterproxymodel.h"
 #include "appsettings.h"
 #include "databaseobjects.h"
 #include "databaseobjects.h"
@@ -144,6 +145,10 @@ void TableView::setModel(QAbstractItemModel *model)
 
         QTableView::setModel(model);
 
+        connect(selectionModel(), &QItemSelectionModel::currentRowChanged,
+                this, &TableView::onCurrentRowChanged,
+                Qt::UniqueConnection);
+
         global_Settings.getTableViewState(objectName(), *this);
         global_Settings.getTableSortColumn(objectName(), Col, Dir);
 
@@ -167,9 +172,12 @@ void TableView::setModel(QAbstractItemModel *model)
     }
     else if ( this->model() && model == nullptr ) // when closing or setting model to empty save the columns first on startup don't save a blank view
     {
+        if (SortFilterProxyModel* proxy = qobject_cast<SortFilterProxyModel*>(this->model()))
+            proxy->releasePinnedRow();
+
         global_Settings.setTableViewState(objectName(), *this);
 
-        QTableView::setModel(model);        
+        QTableView::setModel(model);
     }
 }
 
@@ -270,6 +278,20 @@ void TableView::dataRowSelected(const QModelIndex &index)
 void TableView::dataRowActivated(const QModelIndex &index)
 {
     Q_UNUSED(index);
+}
+
+void TableView::onCurrentRowChanged(const QModelIndex& current,
+                                    const QModelIndex& previous)
+{
+    Q_UNUSED(previous)
+    SortFilterProxyModel* proxy = qobject_cast<SortFilterProxyModel*>(model());
+    if (!proxy)
+        return;
+    if (!current.isValid()) {
+        proxy->releasePinnedRow();
+        return;
+    }
+    proxy->setPinnedRow(proxy->mapToSource(current).row());
 }
 
 void TableView::mouseMoveEvent(QMouseEvent *event)

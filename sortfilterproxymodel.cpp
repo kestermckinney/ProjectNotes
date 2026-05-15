@@ -8,6 +8,8 @@
 
 SortFilterProxyModel::SortFilterProxyModel(QObject *parent): QSortFilterProxyModel(parent)
 {
+    setDynamicSortFilter(false);
+
     m_quickSearchDebounce.setSingleShot(true);
     m_quickSearchDebounce.setInterval(250);
     QObject::connect(&m_quickSearchDebounce, &QTimer::timeout, this, [this]() {
@@ -78,6 +80,62 @@ QVariant SortFilterProxyModel::headerData(int section, Qt::Orientation orientati
                                 int role) const {
     return sourceModel()->headerData(section, orientation,
                                      role);
+}
+
+void SortFilterProxyModel::setSourceModel(QAbstractItemModel* sourceModel)
+{
+    if (QAbstractItemModel* old = this->sourceModel())
+        disconnect(old, &QAbstractItemModel::dataChanged,
+                   this, &SortFilterProxyModel::onSourceDataChanged);
+    QSortFilterProxyModel::setSourceModel(sourceModel);
+    if (sourceModel)
+        connect(sourceModel, &QAbstractItemModel::dataChanged,
+                this, &SortFilterProxyModel::onSourceDataChanged,
+                Qt::UniqueConnection);
+}
+
+void SortFilterProxyModel::sort(int column, Qt::SortOrder order)
+{
+    m_sortColumn  = column;
+    m_sortOrder   = order;
+    m_pendingSort = false;
+    QSortFilterProxyModel::sort(column, order);
+}
+
+void SortFilterProxyModel::onSourceDataChanged(const QModelIndex& topLeft,
+                                               const QModelIndex& bottomRight,
+                                               const QList<int>& roles)
+{
+    Q_UNUSED(roles)
+    if (m_sortColumn < 0)
+        return;
+
+    if (m_pinnedSourceRow >= 0
+        && m_pinnedSourceRow >= topLeft.row()
+        && m_pinnedSourceRow <= bottomRight.row())
+    {
+        m_pendingSort = true;
+        return;
+    }
+    QSortFilterProxyModel::sort(m_sortColumn, m_sortOrder);
+}
+
+void SortFilterProxyModel::setPinnedRow(int sourceRow)
+{
+    if (m_pinnedSourceRow >= 0 && m_pendingSort) {
+        m_pendingSort = false;
+        QSortFilterProxyModel::sort(m_sortColumn, m_sortOrder);
+    }
+    m_pinnedSourceRow = sourceRow;
+}
+
+void SortFilterProxyModel::releasePinnedRow()
+{
+    m_pinnedSourceRow = -1;
+    if (m_pendingSort && m_sortColumn >= 0) {
+        m_pendingSort = false;
+        QSortFilterProxyModel::sort(m_sortColumn, m_sortOrder);
+    }
 }
 
 bool SortFilterProxyModel::lessThan(const QModelIndex &sourceLeft, const QModelIndex &sourceRight) const

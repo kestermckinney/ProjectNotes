@@ -71,6 +71,9 @@ public slots:
     void slotResetColumns();
     void slotPluginMenu(Plugin* plugin, const QString& functionname, const QString& exportname, const QString& tablefilter, const QString& parameter);
 
+private slots:
+    void onCurrentRowChanged(const QModelIndex& current, const QModelIndex& previous);
+
 private:
     void sortMenu(QMenu* menu);
 
