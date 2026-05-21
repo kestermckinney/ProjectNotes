@@ -85,8 +85,6 @@ int main(int argc, char *argv[])
 #ifndef Q_OS_APPLE
         a.setWindowIcon(QIcon(":/icons/logo.png")); // "AppIcon.icns"
 #endif
-        QFont defaultFont;
-        w.setStartingFont(defaultFont);
         w.show();
 
         ret = a.exec();

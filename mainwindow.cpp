@@ -96,6 +96,7 @@ MainWindow::MainWindow(QWidget *parent)
     QFont af = QApplication::font();
     af.setPointSize(sz);
     QApplication::setFont(af);
+    m_startingFont = af;
 
     connect(ui->tableViewProjects, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ProjectDetails_triggered(QVariant)));
     connect(ui->tableViewTrackerItems, SIGNAL(signalOpenRecordWindow(QVariant)), this, SLOT(slotOpen_ItemDetails_triggered(QVariant)));
@@ -1931,7 +1932,6 @@ void MainWindow::applyZoom()
     int textEditHeight = fm.lineSpacing() * 3 + 4;
 
     QString fontSizeStr = QString::number(fontSize, 'f', 1);
-    QString existingSheet = qApp->styleSheet();
     QString newRules = QString(
         "* { font-size: %1pt; } "
         "QMenu { font-size: %1pt; } "
@@ -1950,11 +1950,7 @@ void MainWindow::applyZoom()
     // qDebug() << "style: " << newRules;
     // qDebug() << "zoom: " << m_zoomFactor << " starting font: " << m_startingFont;
 
-    if (existingSheet.isEmpty()) {
-        qApp->setStyleSheet(newRules);
-    } else {
-        qApp->setStyleSheet(existingSheet + "\n" + newRules);
-    }
+    qApp->setStyleSheet(newRules);
 
     updateZoomLabel();
 }
