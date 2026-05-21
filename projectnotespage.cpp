@@ -48,14 +48,6 @@ void ProjectNotesPage::openRecord(QVariant& recordId)
     if (m_mapperProjectNotes != nullptr)
         m_mapperProjectNotes->toFirst();
 
-    // Load note HTML with zoom applied (column 4 is "note")
-    QString noteHtml = global_DBObjects.projecteditingnotesmodel()->data(
-        global_DBObjects.projecteditingnotesmodel()->index(0, 4)).toString();
-
-    MainWindow* mainWin = dynamic_cast<MainWindow*>(topLevelWidget());
-    if (mainWin && !noteHtml.isEmpty())
-        mainWin->setUnscaledHtml(noteHtml);
-
     // loadState();
 }
 
@@ -192,4 +184,6 @@ void ProjectNotesPage::on_textEditNotes_textChanged()
 
     global_DBObjects.projecteditingnotesmodel()->setData(
         global_DBObjects.projecteditingnotesmodel()->index(idx, 4), unscaledHtml, Qt::EditRole);
+
+    mainWin->updateUnscaledHtml(unscaledHtml);
 }

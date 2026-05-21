@@ -1910,7 +1910,9 @@ void MainWindow::applyZoom()
 
         if (!m_unscaledHtml.isEmpty()) {
             QString scaledHtml = scaleHtmlFontSizes(m_unscaledHtml, m_zoomFactor);
+            ui->textEditNotes->blockSignals(true);
             ui->textEditNotes->setHtml(scaledHtml);
+            ui->textEditNotes->blockSignals(false);
         }
     }
 
@@ -1963,25 +1965,21 @@ QString MainWindow::scaleHtmlFontSizes(const QString& html, qreal factor) const
 
     QString result = html;
     QRegularExpression re1(R"(font-size:\s*(\d+(?:\.\d+)?)(pt|px))", QRegularExpression::CaseInsensitiveOption);
+
+    struct Replacement { qsizetype start; qsizetype length; QString text; };
+    QList<Replacement> replacements;
+
     QRegularExpressionMatchIterator it = re1.globalMatch(result);
-
-    QStringList replacements;
     while (it.hasNext()) {
         QRegularExpressionMatch match = it.next();
-        QString sizeStr = match.captured(1);
-        QString unit = match.captured(2);
-        qreal size = sizeStr.toDouble();
-        qreal newSize = size * factor;
-        QString replacement = QString("font-size:%1%2").arg(newSize, 0, 'f', 1).arg(unit);
-        replacements.append(replacement);
+        qreal newSize = match.captured(1).toDouble() * factor;
+        QString text = QString("font-size:%1%2").arg(newSize, 0, 'f', 1).arg(match.captured(2));
+        replacements.append({match.capturedStart(), match.capturedLength(), text});
     }
 
-    it = re1.globalMatch(result);
-    int idx = 0;
-    while (it.hasNext()) {
-        QRegularExpressionMatch match = it.next();
-        result.replace(match.capturedStart(), match.capturedLength(), replacements.at(idx++));
-    }
+    // Apply in reverse order so earlier string positions remain valid after each replacement
+    for (int i = replacements.size() - 1; i >= 0; --i)
+        result.replace(replacements[i].start, replacements[i].length, replacements[i].text);
 
     return result;
 }
@@ -1999,11 +1997,18 @@ void MainWindow::setUnscaledHtml(const QString& html)
     }
 }
 
+void MainWindow::updateUnscaledHtml(const QString& html)
+{
+    m_unscaledHtml = html;
+}
+
 void MainWindow::refreshTextEditWithZoom()
 {
     if (ui->textEditNotes && !m_unscaledHtml.isEmpty()) {
         QString scaledHtml = scaleHtmlFontSizes(m_unscaledHtml, m_zoomFactor);
+        ui->textEditNotes->blockSignals(true);
         ui->textEditNotes->setHtml(scaledHtml);
+        ui->textEditNotes->blockSignals(false);
     }
 }
 
@@ -2082,7 +2087,7 @@ void MainWindow::fontChanged(const QFont &f)
     m_comboBoxFont->setCurrentIndex(m_comboBoxFont->findText(QFontInfo(f).family()));
 
     // Show unscaled font size in dropdown
-    qreal displaySize = f.pointSize();
+    qreal displaySize = f.pointSizeF();
     qreal unscaledSize = (m_zoomFactor != 0.0) ? (displaySize / m_zoomFactor) : displaySize;
     m_comboBoxSize->setCurrentIndex(m_comboBoxSize->findText(QString::number(unscaledSize)));
 

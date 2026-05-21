@@ -197,6 +197,7 @@ private:
 
     void refreshTextEditWithZoom();
     void setUnscaledHtml(const QString& html);
+    void updateUnscaledHtml(const QString& html);
 
     QString unscaleHtmlForSave(const QString& scaledHtml) const;
     qreal getCurrentZoomFactor() const { return m_zoomFactor; }
