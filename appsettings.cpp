@@ -12,6 +12,17 @@
 using namespace QLogger;
 
 QString AppSettings::s_developerProfile;
+bool AppSettings::s_testSupabase = false;
+
+void AppSettings::setTestSupabase(bool test)
+{
+    s_testSupabase = test;
+}
+
+bool AppSettings::isTestSupabase()
+{
+    return s_testSupabase;
+}
 
 void AppSettings::setDeveloperProfile(const QString& profile)
 {
@@ -101,26 +112,6 @@ void AppSettings::setSyncEnabled(bool enabled)
     m_appConfig->setValue("Sync/Enabled", enabled);
 }
 
-int AppSettings::getSyncHostType()
-{
-    return m_appConfig->value("Sync/HostType", 0).toInt();
-}
-
-void AppSettings::setSyncHostType(int type)
-{
-    m_appConfig->setValue("Sync/HostType", type);
-}
-
-QString AppSettings::getSyncPostgrestUrl()
-{
-    return m_appConfig->value("Sync/PostgrestUrl").toString();
-}
-
-void AppSettings::setSyncPostgrestUrl(const QString& url)
-{
-    m_appConfig->setValue("Sync/PostgrestUrl", url);
-}
-
 QString AppSettings::getSyncEmail()
 {
     return m_appConfig->value("Sync/Email").toString();
@@ -139,16 +130,6 @@ QString AppSettings::getSyncPassword()
 void AppSettings::setSyncPassword(const QString& password)
 {
     m_appConfig->setValue("Sync/Password", password);
-}
-
-QString AppSettings::getSyncSupabaseKey()
-{
-    return m_appConfig->value("Sync/SupabaseKey").toString();
-}
-
-void AppSettings::setSyncSupabaseKey(const QString& key)
-{
-    m_appConfig->setValue("Sync/SupabaseKey", key);
 }
 
 QString AppSettings::getSyncEncryptionPhrase()

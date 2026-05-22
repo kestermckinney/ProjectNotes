@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>520</width>
-    <height>320</height>
+    <height>220</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -49,81 +49,41 @@
        <enum>QFormLayout::FieldGrowthPolicy::ExpandingFieldsGrow</enum>
       </property>
       <item row="0" column="0">
-       <widget class="QLabel" name="labelSyncHostType">
-        <property name="text">
-         <string>Sync Host Type:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QComboBox" name="comboBoxSyncHostType">
-        <item>
-         <property name="text">
-          <string>Self-Hosted PostgREST</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Supabase</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Neon</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="labelPostgrestURL">
-        <property name="text">
-         <string>Server URL:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="lineEditPostgrestURL">
-        <property name="placeholderText">
-         <string>http://localhost:3000  or  https://xxxx.supabase.co  or  https://your-project.neon.tech</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
        <widget class="QLabel" name="labelUsername">
         <property name="text">
          <string>Username (Email):</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
+      <item row="0" column="1">
        <widget class="QLineEdit" name="lineEditUsername">
         <property name="placeholderText">
          <string>user@example.com</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
+      <item row="1" column="0">
        <widget class="QLabel" name="labelPassword">
         <property name="text">
          <string>Password:</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
+      <item row="1" column="1">
        <widget class="QLineEdit" name="lineEditPassword">
         <property name="echoMode">
          <enum>QLineEdit::EchoMode::Password</enum>
         </property>
        </widget>
       </item>
-      <item row="4" column="0">
+      <item row="2" column="0">
        <widget class="QLabel" name="labelEncryptionPhrase">
         <property name="text">
          <string>Encryption Phrase:</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="1">
+      <item row="2" column="1">
        <widget class="QLineEdit" name="lineEditEncryptionPhrase">
         <property name="echoMode">
          <enum>QLineEdit::EchoMode::Normal</enum>
@@ -133,24 +93,30 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="0">
-       <widget class="QLabel" name="labelSupabaseKey">
-        <property name="text">
-         <string>Supabase Anon Key:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="1">
-       <widget class="QLineEdit" name="lineEditSupabaseKey">
-        <property name="echoMode">
-         <enum>QLineEdit::EchoMode::Normal</enum>
-        </property>
-        <property name="placeholderText">
-         <string>eyJ… (anon / public key from Supabase Dashboard)</string>
-        </property>
-       </widget>
-      </item>
      </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="labelSubscriptionStatus">
+     <property name="text">
+      <string>—</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignmentFlag::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="labelSubscription">
+     <property name="text">
+      <string>Manage your subscription at &lt;a href=&quot;https://www.projectnotespro.com&quot;&gt;www.projectnotespro.com&lt;/a&gt;.</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignmentFlag::AlignCenter</set>
+     </property>
+     <property name="openExternalLinks">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
    <item>
