@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>520</width>
-    <height>220</height>
+    <height>248</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -32,7 +32,7 @@
    <item>
     <widget class="QCheckBox" name="checkBoxSyncEnabled">
      <property name="text">
-      <string>Sync data with cloud host</string>
+      <string>Sync all your devices and backup your data</string>
      </property>
     </widget>
    </item>
@@ -99,7 +99,7 @@
    <item>
     <widget class="QLabel" name="labelSubscriptionStatus">
      <property name="text">
-      <string>—</string>
+      <string>Not connected — open a database to view subscription status</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignmentFlag::AlignCenter</set>

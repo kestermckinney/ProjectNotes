@@ -721,6 +721,8 @@ void MainWindow::on_actionOpen_Database_triggered()
             dlg.setSubscriptionStatus(QStringLiteral("<span style=\"color:red\">%1</span>")
                 .arg(tr("Subscription status unavailable")));
         }
+    } else {
+        dlg.setSubscriptionStatus(tr("Not connected — open a database to view subscription status"));
     }
 
     if (dlg.exec() != QDialog::Accepted)
@@ -769,6 +771,9 @@ void MainWindow::openDatabase(const QString& dbfile)
 
         m_syncApi->setDatabaseLock(&db_rwlock);
 
+        // Disconnect any signals from a prior initialization before reconnecting.
+        disconnect(m_syncApi, nullptr, this, nullptr);
+
         if (m_syncApi->initialize()) {
             connect(m_syncApi, &SqliteSyncPro::rowChanged,
                     this, &MainWindow::onSyncRowChanged,
@@ -794,6 +799,37 @@ void MainWindow::openDatabase(const QString& dbfile)
                         ui->actionSyncStats->setChecked(false);
                     },
                     Qt::QueuedConnection);
+
+            if (m_syncApi->isAuthenticated()) {
+                const SubscriptionStatus sub = m_syncApi->getSubscriptionStatus();
+                qDebug() << "Subscription check: valid=" << sub.valid
+                         << "hasActive=" << sub.hasActiveSubscription
+                         << "status=" << sub.status
+                         << "plan=" << sub.planName
+                         << "error=" << sub.errorMessage;
+                if (sub.valid && !sub.hasActiveSubscription) {
+                    QMessageBox msgBox(this);
+                    msgBox.setWindowTitle(tr("Project Notes Pro Subscription Expired"));
+                    msgBox.setIcon(QMessageBox::Warning);
+                    msgBox.setTextFormat(Qt::RichText);
+                    msgBox.setTextInteractionFlags(Qt::TextBrowserInteraction);
+                    msgBox.setText(
+                        tr("Your Project Notes Pro subscription has expired.<br><br>"
+                           "The application will no longer sync changes between your devices, "
+                           "and your data is no longer backed up to the Project Notes Pro server.<br><br>"
+                           "To re-enable sync, please visit "
+                           "<a href=\"https://www.projectnotespro.com\">www.projectnotespro.com</a> "
+                           "to renew your subscription."));
+                    msgBox.exec();
+
+                    // Stop the sync thread but keep m_syncApi alive so the settings dialog
+                    // can still query subscription status after the user dismisses this popup.
+                    QEventLoop stopLoop;
+                    connect(m_syncApi, &SqliteSyncPro::syncStopped, &stopLoop, &QEventLoop::quit);
+                    m_syncApi->shutdown();
+                    stopLoop.exec();
+                }
+            }
         } else {
 #ifdef QT_DEBUG
             qWarning() << "SqliteSyncPro initialize failed:" << m_syncApi->lastError();
@@ -1078,10 +1114,15 @@ void MainWindow::CloseDatabase()
         // Block row-changed propagation; we don't care about incoming sync updates anymore
         disconnect(m_syncApi, &SqliteSyncPro::rowChanged, this, &MainWindow::onSyncRowChanged);
 
-        QEventLoop loop;
-        connect(m_syncApi, &SqliteSyncPro::syncStopped, &loop, &QEventLoop::quit);
-        m_syncApi->shutdown();
-        loop.exec();   // returns once the worker thread has exited cleanly
+        // Only wait for syncStopped if the worker thread is actually running.
+        // If sync was already shut down (e.g. after an expired-subscription popup),
+        // isInitialized() is false and shutdown() is a no-op, so the signal will never fire.
+        if (m_syncApi->isInitialized()) {
+            QEventLoop loop;
+            connect(m_syncApi, &SqliteSyncPro::syncStopped, &loop, &QEventLoop::quit);
+            m_syncApi->shutdown();
+            loop.exec();   // returns once the worker thread has exited cleanly
+        }
 
         m_syncApi->deleteLater();
         m_syncApi = nullptr;
