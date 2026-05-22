@@ -60,12 +60,15 @@ set(PROJECT_SOURCES
     main.cpp
     mainwindow.cpp 
     aboutdialog.cpp
+    helpdialog.cpp
     filterdatadialog.cpp 
     findreplacedialog.cpp 
 
     preferencesdialog.cpp
     spellcheckdialog.cpp
-    aboutdialog.ui 
+    aboutdialog.ui
+    helpdialog.h
+    helpdialog.ui
     filterdatadialog.ui 
     findreplacedialog.ui 
     mainwindow.ui 
