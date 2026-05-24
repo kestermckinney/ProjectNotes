@@ -120,6 +120,19 @@
     </widget>
    </item>
    <item>
+    <widget class="QLabel" name="labelConnectionInfo">
+     <property name="text">
+      <string/>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignmentFlag::AlignCenter</set>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: #999999; font-size: 9pt;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Orientation::Horizontal</enum>

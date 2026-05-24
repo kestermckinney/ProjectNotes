@@ -725,6 +725,14 @@ void MainWindow::on_actionOpen_Database_triggered()
         dlg.setSubscriptionStatus(tr("Not connected — open a database to view subscription status"));
     }
 
+    {
+        const bool isTest = AppSettings::isTestSupabase();
+        const QString projectId = isTest ? QStringLiteral("lsulnvxgrlpuqtzonner")
+                                         : QStringLiteral("nrtjpzkrldwydkbopsml");
+        const QString env = isTest ? tr("Test") : tr("Production");
+        dlg.setConnectionInfo(tr("Project ID: %1 (%2)").arg(projectId, env));
+    }
+
     if (dlg.exec() != QDialog::Accepted)
         return;
 
@@ -759,7 +767,9 @@ void MainWindow::openDatabase(const QString& dbfile)
         const QString supabaseUrl = AppSettings::isTestSupabase()
             ? QStringLiteral("https://lsulnvxgrlpuqtzonner.supabase.co")
             : QStringLiteral("https://nrtjpzkrldwydkbopsml.supabase.co");
-        const QString supabaseKey = QStringLiteral("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzdWxudnhncmxwdXF0em9ubmVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1ODY0OTIsImV4cCI6MjA5NDE2MjQ5Mn0.AyEQHLZadhj5r0BNkvPASaMZ0gTr4LAueq0SGVuua3s");
+        const QString supabaseKey = AppSettings::isTestSupabase()
+            ? QStringLiteral("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzdWxudnhncmxwdXF0em9ubmVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1ODY0OTIsImV4cCI6MjA5NDE2MjQ5Mn0.AyEQHLZadhj5r0BNkvPASaMZ0gTr4LAueq0SGVuua3s")
+            : QStringLiteral("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ydGpwemtybGR3eWRrYm9wc21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTU0NTQsImV4cCI6MjA4OTQzMTQ1NH0.hzzyb5bFKDIFbrJ7Fa8INh57pWIkz52csQ2gQ_L302E");
 
         m_syncApi->setDatabasePath(dbfile);
         m_syncApi->setSyncHostType(1);

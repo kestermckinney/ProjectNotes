@@ -29,45 +29,6 @@ Page {
                 }
             }
 
-            // ── Remote host ───────────────────────────────────────────────────
-            SectionHeader { text: qsTr("Host Type") }
-            FieldRow {
-                ComboBox {
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: [qsTr("Self-Hosted PostgREST"), qsTr("Supabase"), qsTr("Neon")]
-                    currentIndex: AppController.syncHostType
-                    onActivated: AppController.syncHostType = currentIndex
-                }
-            }
-
-            SectionHeader { text: qsTr("Server URL") }
-            FieldRow {
-                FormField {
-                    text: AppController.syncPostgrestUrl
-                    placeholderText: AppController.syncHostType === 1
-                        ? qsTr("https://xyz.supabase.co")
-                        : AppController.syncHostType === 2
-                            ? qsTr("https://your-project.neon.tech")
-                            : qsTr("https://your-server/rest/v1")
-                    inputMethodHints: Qt.ImhUrlCharactersOnly | Qt.ImhNoPredictiveText
-                    onEditingFinished: AppController.syncPostgrestUrl = text
-                }
-            }
-
-            // Supabase anon key — only shown for Supabase host type
-            SectionHeader {
-                visible: AppController.syncHostType === 1
-                text: qsTr("Supabase Key")
-            }
-            FieldRow {
-                visible: AppController.syncHostType === 1
-                FormField {
-                    text: AppController.syncSupabaseKey
-                    placeholderText: qsTr("anon key")
-                    onEditingFinished: AppController.syncSupabaseKey = text
-                }
-            }
-
             // ── Credentials ───────────────────────────────────────────────────
             SectionHeader { text: qsTr("Email") }
             FieldRow {
@@ -98,7 +59,64 @@ Page {
                 }
             }
 
-            Item { Layout.preferredHeight: 24 }
+            // ── Subscription status ───────────────────────────────────────────
+            SectionHeader { text: qsTr("Subscription") }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: subscriptionLabel.implicitHeight + 24
+                color: palette.base
+
+                Label {
+                    id: subscriptionLabel
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 16; rightMargin: 16 }
+                    text: AppController.subscriptionStatusText.length > 0
+                          ? AppController.subscriptionStatusText
+                          : qsTr("Not connected — enable sync to view subscription status")
+                    textFormat: Text.RichText
+                    wrapMode: Text.Wrap
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
+                Rectangle {
+                    anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
+                    height: 1
+                    color: Theme.mutedText
+                    opacity: 0.3
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 44
+                color: palette.base
+
+                Label {
+                    anchors.centerIn: parent
+                    text: "<a href=\"https://www.projectnotespro.com\">www.projectnotespro.com</a>"
+                    textFormat: Text.RichText
+                    horizontalAlignment: Text.AlignHCenter
+                    onLinkActivated: Qt.openUrlExternally(link)
+                }
+
+                Rectangle {
+                    anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
+                    height: 1
+                    color: Theme.mutedText
+                    opacity: 0.3
+                }
+            }
+
+            Label {
+                Layout.fillWidth: true
+                Layout.topMargin: 8
+                Layout.bottomMargin: 16
+                horizontalAlignment: Text.AlignHCenter
+                text: AppController.supabaseConnectionInfo
+                font.pixelSize: 11
+                color: Theme.mutedText
+                opacity: 0.6
+            }
         }
     }
 

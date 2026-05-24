@@ -81,6 +81,9 @@ ApplicationWindow {
             // Filters are already applied by openOrCreateDatabase() before this
             // signal fires — no override needed here.
         }
+        function onSubscriptionExpired() {
+            subscriptionExpiredDialog.open()
+        }
     }
 
     Dialog {
@@ -90,6 +93,27 @@ ApplicationWindow {
         anchors.centerIn: Overlay.overlay
         standardButtons: Dialog.Ok
         Label { text: errorDialog.message; wrapMode: Text.Wrap; width: 260 }
+    }
+
+    Dialog {
+        id: subscriptionExpiredDialog
+        title: qsTr("Subscription Expired")
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        standardButtons: Dialog.Ok
+
+        Label {
+            width: 260
+            wrapMode: Text.Wrap
+            textFormat: Text.RichText
+            text: qsTr("Your Project Notes Pro subscription has expired.<br><br>"
+                      + "The application will no longer sync changes between your devices, "
+                      + "and your data is no longer backed up to the Project Notes Pro server.<br><br>"
+                      + "To re-enable sync, please visit "
+                      + "<a href=\"https://www.projectnotespro.com\">www.projectnotespro.com</a> "
+                      + "to renew your subscription.")
+            onLinkActivated: Qt.openUrlExternally(link)
+        }
     }
 
     // ── Hamburger drawer ──────────────────────────────────────────────────────

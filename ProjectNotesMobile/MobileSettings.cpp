@@ -4,6 +4,10 @@
 #include "MobileSettings.h"
 
 MobileSettings global_MobileSettings;
+bool MobileSettings::s_testSupabase = false;
+
+void MobileSettings::setTestSupabase(bool test) { s_testSupabase = test; }
+bool MobileSettings::isTestSupabase()           { return s_testSupabase; }
 
 MobileSettings::MobileSettings()
 {

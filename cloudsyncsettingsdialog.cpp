@@ -62,6 +62,11 @@ void CloudSyncSettingsDialog::setSubscriptionStatus(const QString& text)
     ui->labelSubscriptionStatus->setText(text);
 }
 
+void CloudSyncSettingsDialog::setConnectionInfo(const QString& text)
+{
+    ui->labelConnectionInfo->setText(text);
+}
+
 void CloudSyncSettingsDialog::on_checkBoxSyncEnabled_toggled(bool checked)
 {
     ui->groupBoxSync->setEnabled(checked);
