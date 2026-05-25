@@ -436,6 +436,8 @@ class ProjectNotesOutlookTools:
             for address in addresses:
                 message.Recipients.Add(address["emailAddress"]["address"])
 
+            message.Recipients.ResolveAll()
+
             # create a temporary email item to convert the HTML to RTF
             temp_mail = outlook.CreateItem(0)
             temp_mail.HTMLBody = body
@@ -446,8 +448,11 @@ class ProjectNotesOutlookTools:
             message.Duration = 60
             message.Subject = subject
 
-            outlook.ActiveExplorer().Activate()
             message.Display()
+
+            # Activate the Inspector window for THIS message
+            inspector = message.GetInspector
+            inspector.Activate()
 
             word_editor = message.GetInspector.WordEditor
             word_editor.Range(0, 0).FormattedText = rtf_body
@@ -479,8 +484,14 @@ class ProjectNotesOutlookTools:
             for address in addresses:
                 message.Recipients.Add(address["emailAddress"]["address"])
 
+            message.Recipients.ResolveAll()
+
             message.Display()
-            outlook.ActiveExplorer().Activate()
+
+            # Activate the Inspector window for THIS message
+            inspector = message.GetInspector
+            inspector.Activate()
+
 
             DefaultSignature = message.HTMLBody
 
