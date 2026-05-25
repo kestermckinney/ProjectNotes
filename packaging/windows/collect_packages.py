@@ -47,6 +47,12 @@ SKIP_DIRS = {
 # metadata only; .data directories are installer scratch space)
 SKIP_SUFFIXES = (".dist-info", ".data")
 
+# Individual file names excluded from copy and NSIS generation.
+# qsqlpsql.dll is Postgres-only and belongs in the Remote Host installer.
+SKIP_FILES = {
+    "qsqlpsql.dll",
+}
+
 
 def should_skip_dir(name: str) -> bool:
     if name in SKIP_DIRS:
@@ -76,8 +82,11 @@ def copy_filtered(src: str, dst: str) -> tuple[int, int]:
                 files_copied += fc
                 dirs_skipped += ds
         else:
-            shutil.copy2(entry.path, os.path.join(dst, entry.name))
-            files_copied += 1
+            if entry.name in SKIP_FILES:
+                print(f"  skip  {entry.name}")
+            else:
+                shutil.copy2(entry.path, os.path.join(dst, entry.name))
+                files_copied += 1
 
     return files_copied, dirs_skipped
 
@@ -110,6 +119,9 @@ def generate_nsis(staged_dir: str, install_path: str, uninstall_path: str) -> No
         if files:
             install_lines.append(f'   SetOutPath "{nsis_out}"')
             for fname in sorted(files):
+                if fname in SKIP_FILES:
+                    print(f"  skip  {fname}")
+                    continue
                 abs_src = os.path.join(root, fname)
                 install_lines.append(f'   File "{abs_src}"')
                 remove_lines.append(f'   Delete "{nsis_out}\\{fname}"')

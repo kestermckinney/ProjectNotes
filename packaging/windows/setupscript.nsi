@@ -7,12 +7,12 @@ RequestExecutionLevel user
 
 ; ── Product defines ───────────────────────────────────────────────────────────
 !define PRODUCT_NAME      "Project Notes"
-!define PRODUCT_VERSION   "5.0.1"
+!define PRODUCT_VERSION   "5.1.0"
 !define PRODUCT_PUBLISHER "Paul McKinney"
 !define PRODUCT_WEB_SITE  "https://github.com/kestermckinney/ProjectNotes"
 !define PRODUCT_DIR_REGKEY  "Software\Microsoft\Windows\CurrentVersion\App Paths\Project Notes.exe"
 !define PRODUCT_UNINST_KEY  "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
-!define PRODUCT_UNINST_ROOT_KEY "HKLM"
+!define PRODUCT_UNINST_ROOT_KEY "HKCU"
 
 ; ── Deploy directory (relative to this script's location) ─────────────────────
 ; Change BUILD_CONFIG if your Qt Creator kit name differs.
@@ -24,19 +24,6 @@ RequestExecutionLevel user
 ; tries to reference any files inside it.
 !system 'cmake --build "${BUILD_DIR}" --target deploy' = 0
 
-; ── Multi-user install ────────────────────────────────────────────────────────
-!define MULTIUSER_USE_PROGRAMFILES64
-!define MULTIUSER_INSTALLMODE_INSTDIR                  "${PRODUCT_NAME}"
-!define MULTIUSER_INSTALLMODE_INSTALL_REGISTRY_KEY     "${PRODUCT_NAME}"
-!define MULTIUSER_INSTALLMODE_UNINSTALL_REGISTRY_KEY   "${PRODUCT_NAME}"
-!define MULTIUSER_INSTALLMODE_DEFAULT_REGISTRY_VALUENAME "UninstallString"
-!define MULTIUSER_INSTALLMODE_INSTDIR_REGISTRY_VALUENAME "InstallLocation"
-!define MULTIUSER_INSTALLMODE_ALLOW_ELEVATION
-!define MULTIUSER_INSTALLMODE_DEFAULT_CURRENTUSER
-!define MULTIUSER_EXECUTIONLEVEL Highest
-!define MULTIUSER_MUI
-!define MULTIUSER_INSTALLMODE_COMMANDLINE
-!include MultiUser.nsh
 !include MUI2.nsh
 
 ; ── MUI settings ──────────────────────────────────────────────────────────────
@@ -55,7 +42,6 @@ RequestExecutionLevel user
 !define MUI_HEADERIMAGE_UNBITMAP              "installer_header.bmp"
 
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MULTIUSER_PAGE_INSTALLMODE
 !insertmacro MUI_PAGE_LICENSE "license.rtf"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_COMPONENTS
@@ -67,11 +53,15 @@ RequestExecutionLevel user
 
 !insertmacro MUI_LANGUAGE "English"
 
+; ── Component descriptions ─────────────────────────────────────────────────────
+LangString DESC_SEC01   ${LANG_ENGLISH} "Install Project Notes, standard plugins, spell-check dictionaries, and the embedded Python runtime."
+LangString DESC_SEC_IFS ${LANG_ENGLISH} "Install optional IFS Cloud integration plugins for SSRS report generation and IFS data synchronization. Not selected by default."
+
 ; ── Installer metadata ────────────────────────────────────────────────────────
 Name    "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 OutFile "ProjectNotes-${PRODUCT_VERSION}-Windows-x64-Setup.exe"
-InstallDir          "$PROGRAMFILES64\Project Notes"
-InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
+InstallDir          "$LOCALAPPDATA\Project Notes"
+InstallDirRegKey HKCU "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails   show
 ShowUnInstDetails show
 
@@ -83,11 +73,9 @@ Section "MainSection" SEC01
   ; ── Executables ─────────────────────────────────────────────────────────────
   File "${DEPLOY_DIR}\LICENSE.txt"
   File "${DEPLOY_DIR}\Project Notes.exe"
-  File "${DEPLOY_DIR}\Project Notes Remote Host.exe"
 
   CreateDirectory "$SMPROGRAMS\Project Notes"
   CreateShortCut  "$SMPROGRAMS\Project Notes\Project Notes.lnk"             "$INSTDIR\Project Notes.exe"
-  CreateShortCut  "$SMPROGRAMS\Project Notes\Project Notes Remote Host.lnk" "$INSTDIR\Project Notes Remote Host.exe"
   CreateShortCut  "$DESKTOP\Project Notes.lnk"                              "$INSTDIR\Project Notes.exe"
 
   ; ── Qt libraries (populated by windeployqt during cmake deploy) ─────────────
@@ -131,7 +119,6 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\sqldrivers\qsqlmimer.dll"
   File "${DEPLOY_DIR}\sqldrivers\qsqloci.dll"
   File "${DEPLOY_DIR}\sqldrivers\qsqlodbc.dll"
-  File "${DEPLOY_DIR}\sqldrivers\qsqlpsql.dll"
 
   SetOutPath "$INSTDIR\styles"
   File "${DEPLOY_DIR}\styles\qmodernwindowsstyle.dll"
@@ -147,9 +134,6 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\libcrypto-3-x64.dll"
   File "${DEPLOY_DIR}\legacy.dll"
   File "${DEPLOY_DIR}\libssl-3-x64.dll"
-
-  ; ── SqliteSyncPro runtime DLLs ───────────────────────────────────────────────
-  File "${DEPLOY_DIR}\libpq.dll"
 
   ; ── Extra DLLs (OpenSSL non-x64 variants, SQLite, DirectX SC, libffi) ────────
   File "${DEPLOY_DIR}\dxcompiler.dll"
@@ -291,7 +275,7 @@ SectionEnd
 
 Section -Post
   WriteUninstaller "$INSTDIR\uninst.exe"
-  WriteRegStr HKLM "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\Project Notes.exe"
+  WriteRegStr HKCU "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\Project Notes.exe"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName"       "$(^Name)"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString"   "$\"$INSTDIR\uninst.exe$\""
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "QuietUninstallString" "$\"$INSTDIR\uninstall.exe$\" /S"
@@ -301,6 +285,12 @@ Section -Post
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher"         "${PRODUCT_PUBLISHER}"
 SectionEnd
 
+; ── Component description callbacks ───────────────────────────────────────────
+!insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC01}   $(DESC_SEC01)
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_IFS} $(DESC_SEC_IFS)
+!insertmacro MUI_FUNCTION_DESCRIPTION_END
+
 ; ══════════════════════════════════════════════════════════════════════════════
 Function un.onUninstSuccess
   HideWindow
@@ -308,8 +298,6 @@ Function un.onUninstSuccess
 FunctionEnd
 
 Function .onInit
-  !insertmacro MULTIUSER_INIT
-
   SectionGetFlags ${SEC_IFS} $0
   IntOp $0 $0 & 0xFFFFFFFE  ; clears SF_SELECTED (same as SECTION_OFF mask)
   SectionSetFlags ${SEC_IFS} $0
@@ -317,7 +305,6 @@ Function .onInit
 FunctionEnd
 
 Function un.onInit
-  !insertmacro MULTIUSER_UNINIT
   MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 "Are you sure you want to completely remove Project Notes and all of its components?" IDYES +2
   Abort
 FunctionEnd
@@ -425,7 +412,6 @@ Section Uninstall
   Delete "$INSTDIR\sqldrivers\qsqlmimer.dll"
   Delete "$INSTDIR\sqldrivers\qsqloci.dll"
   Delete "$INSTDIR\sqldrivers\qsqlodbc.dll"
-  Delete "$INSTDIR\sqldrivers\qsqlpsql.dll"
   RMDir  "$INSTDIR\sqldrivers"
   Delete "$INSTDIR\styles\qmodernwindowsstyle.dll"
   RMDir  "$INSTDIR\styles"
@@ -435,7 +421,6 @@ Section Uninstall
 
   ; ── Root files ───────────────────────────────────────────────────────────────
   Delete "$INSTDIR\Project Notes.exe"
-  Delete "$INSTDIR\Project Notes Remote Host.exe"
 
   Delete "$INSTDIR\D3Dcompiler_47.dll"
   Delete "$INSTDIR\icuuc.dll"
@@ -456,8 +441,6 @@ Section Uninstall
   Delete "$INSTDIR\libcrypto-3-x64.dll"
   Delete "$INSTDIR\legacy.dll"
   Delete "$INSTDIR\libssl-3-x64.dll"
-
-  Delete "$INSTDIR\libpq.dll"
 
   Delete "$INSTDIR\dxcompiler.dll"
   Delete "$INSTDIR\dxil.dll"
@@ -508,11 +491,10 @@ Section Uninstall
   Delete "$SMPROGRAMS\Project Notes\Website.lnk"
   Delete "$DESKTOP\Project Notes.lnk"
   Delete "$SMPROGRAMS\Project Notes\Project Notes.lnk"
-  Delete "$SMPROGRAMS\Project Notes\Project Notes Remote Host.lnk"
   RMDir  "$SMPROGRAMS\Project Notes"
   RMDir  "$INSTDIR"
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
-  DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
+  DeleteRegKey HKCU "${PRODUCT_DIR_REGKEY}"
   SetAutoClose true
 SectionEnd
