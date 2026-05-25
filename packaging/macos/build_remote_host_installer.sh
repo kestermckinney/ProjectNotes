@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Copyright (C) 2026 Paul McKinney
-# build_installer.sh
+# build_remote_host_installer.sh
 # Builds a signed, notarized macOS installer (.pkg wrapped in .dmg) containing
-# ProjectNotes.app.
+# Project Notes Remote Host.app.
 #
 # Usage:
-#   ./build_installer.sh [options]
+#   ./build_remote_host_installer.sh [options]
 #
 # Options:
-#   --sign        Code-sign both app bundles (requires SIGN_IDENTITY)
+#   --sign        Code-sign the app bundle (requires SIGN_IDENTITY)
 #   --notarize    Submit the final .pkg for Apple notarization (implies --sign)
 #   --dmg         Wrap the signed .pkg in a distributable .dmg
 #   --all         Equivalent to --sign --notarize --dmg
@@ -20,11 +20,11 @@
 #   APPLE_ID                 Apple ID email for notarytool
 #   NOTARIZE_KEYCHAIN_PROFILE Keychain profile name created with:
 #                              xcrun notarytool store-credentials <profile>
-#   PN_BUILD_DIR             Path to the CMake Release build dir for ProjectNotes
+#   SA_BUILD_DIR             Path to the CMake Release build dir for ProjectNotesRemoteHost
 #
 # Prerequisites:
 #   - Xcode Command Line Tools (codesign, pkgbuild, productbuild, hdiutil, xcrun)
-#   - Both apps must be built in Release before running this script.
+#   - Project Notes Remote Host must be built in Release before running this script.
 
 set -euo pipefail
 
@@ -39,17 +39,18 @@ NOTARIZE_KEYCHAIN_PROFILE="${NOTARIZE_KEYCHAIN_PROFILE:-ProjectNotes-Notarize}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+SQLADMIN_ROOT="$(cd "${PROJECT_ROOT}/../SqliteSyncPro" && pwd)"
 
-# Adjust these to match your Qt Creator build directory names
-PN_BUILD_DIR="${PN_BUILD_DIR:-${PROJECT_ROOT}/build/Qt_6_10_2_for_macOS-Release}"
+# Adjust this to match your Qt Creator build directory name
+SA_BUILD_DIR="${SA_BUILD_DIR:-${SQLADMIN_ROOT}/build/Qt_6_10_2_for_macOS-Release/admin}"
 
-PN_APP="${PN_BUILD_DIR}/Project Notes.app"
+SA_APP="${SA_BUILD_DIR}/Project Notes Remote Host.app"
 
-PN_VERSION="5.1.0"
-INSTALLER_VERSION="${PN_VERSION}"
+SA_VERSION="5.1.0"
+INSTALLER_VERSION="${SA_VERSION}"
 
-STAGING_DIR="${SCRIPT_DIR}/staging"
-OUTPUT_DIR="${SCRIPT_DIR}/output"
+STAGING_DIR="${SCRIPT_DIR}/staging_remote_host"
+OUTPUT_DIR="${SCRIPT_DIR}/output_remote_host"
 RESOURCES_DIR="${SCRIPT_DIR}/resources"
 
 # ── Argument parsing ───────────────────────────────────────────────────────────
@@ -75,7 +76,7 @@ die()  { echo "ERROR: $*" >&2; exit 1; }
 
 require_app() {
     [[ -d "$1" ]] || die "App bundle not found: $1
-Build the project in Release first, or set PN_BUILD_DIR / SA_BUILD_DIR."
+Build the project in Release first, or set SA_BUILD_DIR."
 }
 
 # Deep-sign an app bundle with hardened runtime.
@@ -88,18 +89,13 @@ sign_bundle() {
 
     # Strip build-system artifacts from nested frameworks.  Static archives
     # (.a), pkg-config files (.pc), and shell config scripts (.sh) cannot be
-    # code-signed and cause codesign --strict to reject the bundle.  These
-    # files are development-only and not needed at runtime.
+    # code-signed and cause codesign --strict to reject the bundle.
     find "${bundle}/Contents" \
         \( -name "*.a" -o -name "*.pc" \
         -o -name "tclConfig.sh" -o -name "tkConfig.sh" \
         -o -name "tclooConfig.sh" -o -name "tkooConfig.sh" \) \
         -delete 2>/dev/null || true
 
-    # Sign all executable code depth-first across the entire bundle.
-    # Use printf+cut (not awk) to sort by path length without splitting on spaces.
-    # --options runtime must match the outer bundle; --timestamp is required for
-    # Developer ID signatures.
     find "${bundle}/Contents" \
          \( -name "*.so" -o -name "*.dylib" \) 2>/dev/null | \
     while IFS= read -r item; do printf '%d\t%s\n' "${#item}" "$item"; done | \
@@ -112,8 +108,6 @@ sign_bundle() {
             "${item}" 2>&1 | grep -v "replacing existing signature" || true
     done
 
-    # Sign nested frameworks depth-first (longest path first ensures inner
-    # versioned binaries are signed before their enclosing bundle).
     find "${bundle}/Contents" \
          -name "*.framework" 2>/dev/null | \
     while IFS= read -r item; do printf '%d\t%s\n' "${#item}" "$item"; done | \
@@ -126,7 +120,6 @@ sign_bundle() {
             "${item}" 2>&1 | grep -v "replacing existing signature" || true
     done
 
-    # Sign the bundle itself
     local extra_args=()
     [[ -n "${entitlements}" ]] && extra_args+=(--entitlements "${entitlements}")
 
@@ -143,16 +136,14 @@ sign_bundle() {
 
 # ── Step 1: Validate inputs ────────────────────────────────────────────────────
 
-log "=== Project Notes macOS Installer Build ==="
-log "Project Notes: ${PN_APP}"
+log "=== Project Notes Remote Host macOS Installer Build ==="
+log "Project Notes Remote Host: ${SA_APP}"
 
-require_app "${PN_APP}"
+require_app "${SA_APP}"
 
 # ── Step 2: Prepare staging area ──────────────────────────────────────────────
 
 log "Preparing staging area..."
-# Clear immutable flags then delete. Fall back to find -delete if rm -rf
-# is blocked by memory-mapped files (e.g. Python.framework dylibs in use).
 for _dir in "${STAGING_DIR}" "${OUTPUT_DIR}"; do
     if [[ -d "${_dir}" ]]; then
         chflags -R nouchg "${_dir}" 2>/dev/null || true
@@ -163,87 +154,44 @@ for _dir in "${STAGING_DIR}" "${OUTPUT_DIR}"; do
     fi
 done
 mkdir -p \
-    "${STAGING_DIR}/projectnotes" \
-    "${STAGING_DIR}/ifsplugins/Project Notes.app/Contents/Resources/plugins/includes" \
-    "${STAGING_DIR}/ifsplugins/Project Notes.app/Contents/Resources/threads" \
+    "${STAGING_DIR}/sqladmin" \
     "${OUTPUT_DIR}"
 
-# Copy app bundle into staging root.  Use ditto (not cp -R) so that bundle
-# structure, resource forks, and extended attributes are preserved correctly
-# without creating spurious ._* AppleDouble files that break code signing.
 log "Copying app bundle..."
-ditto "${PN_APP}" "${STAGING_DIR}/projectnotes/Project Notes.app"
+ditto "${SA_APP}" "${STAGING_DIR}/sqladmin/Project Notes Remote Host.app"
 
-PN_STAGED="${STAGING_DIR}/projectnotes/Project Notes.app"
-PN_RESOURCES="${PN_STAGED}/Contents/Resources"
-
-# ── IFS plugin staging ────────────────────────────────────────────────────────
-# IFS plugin files are removed from the main bundle so they can be delivered
-# as a separate optional installer component.
-#
-# NOTE: Installing files into an already-signed app bundle invalidates the
-# Developer ID code signature.  When using --sign/--notarize, either:
-#   (a) omit the IFS choice and ship it separately, or
-#   (b) include IFS files in the main bundle and hide this choice.
-# For unsigned/internal builds this optional package works without restriction.
-
-IFS_PLUGIN_FILES=(
-    "plugins/ifs_ssrs_generate_plugin.py"
-    "plugins/ifscloud_plugin_settings.py"
-    "plugins/includes/ifs_tools.py"
-    "threads/ifssync_thread.py"
-)
-
-IFS_STAGING="${STAGING_DIR}/ifsplugins/Project Notes.app/Contents/Resources"
-
-log "Staging IFS plugin files..."
-for rel in "${IFS_PLUGIN_FILES[@]}"; do
-    src="${PROJECT_ROOT}/${rel}"
-    dst="${IFS_STAGING}/${rel}"
-    [[ -f "${src}" ]] || die "IFS plugin source not found: ${src}"
-    mkdir -p "$(dirname "${dst}")"
-    cp "${src}" "${dst}"
-    rm -f "${PN_RESOURCES}/${rel}"
-done
+SA_STAGED="${STAGING_DIR}/sqladmin/Project Notes Remote Host.app"
 
 # ── Step 3: Code signing ──────────────────────────────────────────────────────
 
 if [[ "${DO_SIGN}" == true ]]; then
     log "=== Code Signing ==="
-    sign_bundle "${PN_STAGED}" "${SCRIPT_DIR}/ProjectNotes.entitlements"
+    sign_bundle "${SA_STAGED}"
 else
     log "Skipping code signing (pass --sign to enable)"
 fi
 
-# ── Step 4: Build component packages ──────────────────────────────────────────
+# ── Step 4: Build component package ───────────────────────────────────────────
 
-log "=== Building Component Packages ==="
-
-pkgbuild \
-    --root "${STAGING_DIR}/projectnotes" \
-    --component-plist "${SCRIPT_DIR}/ProjectNotes-component.plist" \
-    --identifier "com.kestermckinney.projectnotes" \
-    --version "${PN_VERSION}" \
-    --install-location "/Applications" \
-    "${OUTPUT_DIR}/ProjectNotes.pkg"
-log "Built: ProjectNotes.pkg"
+log "=== Building Component Package ==="
 
 pkgbuild \
-    --root "${STAGING_DIR}/ifsplugins" \
-    --identifier "com.kestermckinney.projectnotes.ifsplugins" \
-    --version "${PN_VERSION}" \
+    --root "${STAGING_DIR}/sqladmin" \
+    --component-plist "${SCRIPT_DIR}/ProjectNotesRemoteHost-component.plist" \
+    --identifier "com.sqlitesyncpro.sqladmin" \
+    --version "${SA_VERSION}" \
     --install-location "/Applications" \
-    "${OUTPUT_DIR}/IFSPlugins.pkg"
-log "Built: IFSPlugins.pkg"
+    "${OUTPUT_DIR}/ProjectNotesRemoteHost.pkg"
+log "Built: ProjectNotesRemoteHost.pkg"
 
 # ── Step 5: Build distribution package ────────────────────────────────────────
 
 log "=== Building Distribution Package ==="
 
-DIST_PKG="${OUTPUT_DIR}/ProjectNotes-${INSTALLER_VERSION}-macOS.pkg"
+DIST_PKG="${OUTPUT_DIR}/ProjectNotesRemoteHost-${INSTALLER_VERSION}-macOS.pkg"
 
-DIST_XML_TMP="${OUTPUT_DIR}/distribution.xml"
-sed "s/@VERSION@/${INSTALLER_VERSION}/g" "${SCRIPT_DIR}/distribution.xml" > "${DIST_XML_TMP}"
+DIST_XML_TMP="${OUTPUT_DIR}/distribution_remote_host.xml"
+sed "s/@VERSION@/${INSTALLER_VERSION}/g" "${SCRIPT_DIR}/distribution_remote_host.xml" > "${DIST_XML_TMP}"
 
 INSTALLER_SIGN_ARGS=()
 if [[ "${DO_SIGN}" == true ]]; then
@@ -288,10 +236,10 @@ if [[ "${DO_DMG}" == true ]]; then
     mkdir -p "${DMG_STAGING}"
     cp "${DIST_PKG}" "${DMG_STAGING}/"
 
-    DMG_PATH="${OUTPUT_DIR}/ProjectNotes-${INSTALLER_VERSION}-macOS.dmg"
+    DMG_PATH="${OUTPUT_DIR}/ProjectNotesRemoteHost-${INSTALLER_VERSION}-macOS.dmg"
 
     hdiutil create \
-        -volname "ProjectNotes ${PN_VERSION}" \
+        -volname "Project Notes Remote Host ${SA_VERSION}" \
         -srcfolder "${DMG_STAGING}" \
         -ov \
         -format UDZO \

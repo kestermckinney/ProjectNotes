@@ -22,13 +22,11 @@
 
     <!-- ── Package declarations ── -->
     <pkg-ref id="com.kestermckinney.projectnotes"/>
-    <pkg-ref id="com.sqlitesyncpro.sqladmin"/>
     <pkg-ref id="com.kestermckinney.projectnotes.ifsplugins"/>
 
     <!-- ── Install choices ── -->
     <choices-outline>
         <line choice="com.kestermckinney.projectnotes"/>
-        <line choice="com.sqlitesyncpro.sqladmin"/>
         <line choice="com.kestermckinney.projectnotes.ifsplugins"/>
     </choices-outline>
 
@@ -40,16 +38,6 @@
             title="Project Notes"
             description="Project management application — tracks notes, meetings, issues, action items, contacts, and clients.">
         <pkg-ref id="com.kestermckinney.projectnotes"/>
-    </choice>
-
-    <!-- Project Notes Remote Host is optional but selected by default -->
-    <choice id="com.sqlitesyncpro.sqladmin"
-            visible="true"
-            enabled="true"
-            selected="true"
-            title="Project Notes Remote Host"
-            description="Configures and manages the remote host server for Project Notes cloud synchronization.">
-        <pkg-ref id="com.sqlitesyncpro.sqladmin"/>
     </choice>
 
     <!-- IFS custom plugins are optional and unselected by default -->
@@ -66,10 +54,6 @@
     <pkg-ref id="com.kestermckinney.projectnotes"
              version="@VERSION@"
              onConclusion="none">ProjectNotes.pkg</pkg-ref>
-
-    <pkg-ref id="com.sqlitesyncpro.sqladmin"
-             version="@VERSION@"
-             onConclusion="none">ProjectNotesRemoteHost.pkg</pkg-ref>
 
     <pkg-ref id="com.kestermckinney.projectnotes.ifsplugins"
              version="@VERSION@"
