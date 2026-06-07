@@ -31,6 +31,7 @@ public:
     void setEncryptionPhrase(const QString& phrase);
 
     void setSubscriptionStatus(const QString& text);
+    void setConnectionInfo(const QString& text);
 
 protected:
     void showEvent(QShowEvent *event) override;

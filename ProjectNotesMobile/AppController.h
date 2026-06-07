@@ -63,6 +63,9 @@ class AppController : public QObject
     Q_PROPERTY(qreal   syncProgress READ syncProgress NOTIFY syncProgressChanged)
     Q_PROPERTY(bool    syncHasError READ syncHasError  NOTIFY syncProgressChanged)
 
+    Q_PROPERTY(QString subscriptionStatusText  READ subscriptionStatusText  NOTIFY subscriptionStatusChanged)
+    Q_PROPERTY(QString supabaseConnectionInfo  READ supabaseConnectionInfo  CONSTANT)
+
     // ── View options properties ──────────────────────────────────────────────
     Q_PROPERTY(bool showClosedProjects  READ showClosedProjects  WRITE setShowClosedProjects  NOTIFY viewOptionsChanged)
     Q_PROPERTY(bool showInternalItems   READ showInternalItems   WRITE setShowInternalItems   NOTIFY viewOptionsChanged)
@@ -270,6 +273,9 @@ public:
     qreal   syncProgress() const { return m_syncProgress; }
     bool    syncHasError() const { return m_syncHasError; }
 
+    QString subscriptionStatusText() const { return m_subscriptionStatusText; }
+    QString supabaseConnectionInfo() const;
+
     // ── View options accessors ───────────────────────────────────────────────
     bool showClosedProjects() const { return global_DBObjects.getShowClosedProjects(); }
     void setShowClosedProjects(bool v)
@@ -293,6 +299,8 @@ public:
 signals:
     void syncSettingsChanged();
     void syncProgressChanged();
+    void subscriptionStatusChanged();
+    void subscriptionExpired();
     void errorOccurred(const QString& title, const QString& message);
     void databaseReady();
     void viewOptionsChanged();
@@ -314,6 +322,7 @@ private:
     SqliteSyncPro* m_syncApi       = nullptr;
     qreal          m_syncProgress  = -1.0;  // -1 = bar hidden
     bool           m_syncHasError  = false;
+    QString        m_subscriptionStatusText;
 
     // O(1) id→row indexes over the proxy models. Built once at databaseReady,
     // self-invalidating on any model change. Replace per-call linear scans
@@ -326,6 +335,7 @@ private:
 
     void configureSyncApi();
     void setSyncProgress(qreal progress, bool hasError = false);
+    void setSubscriptionStatusText(const QString& text);
 };
 
 #endif // APPCONTROLLER_H

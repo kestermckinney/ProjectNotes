@@ -224,12 +224,19 @@ void AppController::configureSyncApi()
 
     // Setters are mutex-protected inside SqliteSyncPro, so it is safe to
     // call them directly from the main thread.
-    m_syncApi->setSyncHostType(global_MobileSettings.getSyncHostType());
-    m_syncApi->setPostgrestUrl(global_MobileSettings.getSyncPostgrestUrl());
+    const QString supabaseUrl = MobileSettings::isTestSupabase()
+        ? QStringLiteral("https://lsulnvxgrlpuqtzonner.supabase.co")
+        : QStringLiteral("https://nrtjpzkrldwydkbopsml.supabase.co");
+    const QString supabaseKey = MobileSettings::isTestSupabase()
+        ? QStringLiteral("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzdWxudnhncmxwdXF0em9ubmVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1ODY0OTIsImV4cCI6MjA5NDE2MjQ5Mn0.AyEQHLZadhj5r0BNkvPASaMZ0gTr4LAueq0SGVuua3s")
+        : QStringLiteral("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ydGpwemtybGR3eWRrYm9wc21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTU0NTQsImV4cCI6MjA4OTQzMTQ1NH0.hzzyb5bFKDIFbrJ7Fa8INh57pWIkz52csQ2gQ_L302E");
+
+    m_syncApi->setSyncHostType(1);  // always Supabase
+    m_syncApi->setPostgrestUrl(supabaseUrl);
+    m_syncApi->setSupabaseKey(supabaseKey);
     m_syncApi->setEmail(global_MobileSettings.getSyncEmail());
     m_syncApi->setPassword(global_MobileSettings.getSyncPassword());
     m_syncApi->setEncryptionPhrase(global_MobileSettings.getSyncEncryptionPhrase());
-    m_syncApi->setSupabaseKey(global_MobileSettings.getSyncSupabaseKey());
 }
 
 void AppController::startSync()
@@ -259,6 +266,43 @@ void AppController::startSync()
             // Init failed — flip the bar red on the UI thread.
             QMetaObject::invokeMethod(this, [this]() {
                 setSyncProgress(0.0, true);
+            }, Qt::QueuedConnection);
+            return;
+        }
+
+        // Check subscription status after a successful init (still on API thread).
+        if (api->isAuthenticated()) {
+            const SubscriptionStatus sub = api->getSubscriptionStatus();
+            QMetaObject::invokeMethod(this, [this, api, sub]() {
+                // Build display text matching the desktop style
+                QString text;
+                if (sub.valid) {
+                    const bool isActive =
+                        sub.status.compare(QLatin1String("active"),   Qt::CaseInsensitive) == 0 ||
+                        sub.status.compare(QLatin1String("trialing"), Qt::CaseInsensitive) == 0;
+                    const QString color = isActive ? QStringLiteral("green") : QStringLiteral("red");
+                    const QString statusWord = sub.status.isEmpty() ? tr("None") : sub.status;
+                    const QString statusHtml = QStringLiteral("<span style=\"color:%1\">%2</span>")
+                        .arg(color, statusWord);
+                    if (sub.hasActiveSubscription) {
+                        text = tr("Subscription: %1 — %2").arg(sub.planName, statusHtml);
+                        if (sub.currentPeriodEnd.isValid())
+                            text += tr(" (renews %1)").arg(sub.currentPeriodEnd.toString(QStringLiteral("MMM d, yyyy")));
+                    } else {
+                        text = tr("Subscription: %1").arg(statusHtml);
+                    }
+                } else {
+                    text = QStringLiteral("<span style=\"color:red\">%1</span>")
+                        .arg(tr("Subscription status unavailable"));
+                }
+                setSubscriptionStatusText(text);
+
+                if (sub.valid && !sub.hasActiveSubscription) {
+                    emit subscriptionExpired();
+                    // Stop sync but keep the API alive for status display
+                    QMetaObject::invokeMethod(api, [api]() { api->shutdown(); },
+                                              Qt::QueuedConnection);
+                }
             }, Qt::QueuedConnection);
         }
     }, Qt::QueuedConnection);
@@ -326,9 +370,8 @@ void AppController::onSyncSettingsChanged()
 {
     if (!global_MobileSettings.getSyncEnabled())      return;
     if (!global_DBObjects.isOpen())                   return;
-    if (global_MobileSettings.getSyncPostgrestUrl().isEmpty()) return;
-    if (global_MobileSettings.getSyncEmail().isEmpty())        return;
-    if (global_MobileSettings.getSyncPassword().isEmpty())     return;
+    if (global_MobileSettings.getSyncEmail().isEmpty())    return;
+    if (global_MobileSettings.getSyncPassword().isEmpty()) return;
 
     // Defer so the property setter call stack unwinds before startSync() runs
     QTimer::singleShot(0, this, &AppController::startSync);
@@ -341,6 +384,23 @@ void AppController::setSyncProgress(qreal progress, bool hasError)
     m_syncProgress = progress;
     m_syncHasError = hasError;
     emit syncProgressChanged();
+}
+
+QString AppController::supabaseConnectionInfo() const
+{
+    const bool isTest = MobileSettings::isTestSupabase();
+    const QString projectId = isTest ? QStringLiteral("lsulnvxgrlpuqtzonner")
+                                     : QStringLiteral("nrtjpzkrldwydkbopsml");
+    const QString env = isTest ? tr("Test") : tr("Production");
+    return tr("Project ID: %1 (%2)").arg(projectId, env);
+}
+
+void AppController::setSubscriptionStatusText(const QString& text)
+{
+    if (m_subscriptionStatusText == text)
+        return;
+    m_subscriptionStatusText = text;
+    emit subscriptionStatusChanged();
 }
 
 // ── Filter helpers ───────────────────────────────────────────────────────────

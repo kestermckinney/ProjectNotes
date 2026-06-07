@@ -725,6 +725,14 @@ void MainWindow::on_actionOpen_Database_triggered()
         dlg.setSubscriptionStatus(tr("Not connected — open a database to view subscription status"));
     }
 
+    {
+        const bool isTest = AppSettings::isTestSupabase();
+        const QString projectId = isTest ? QStringLiteral("lsulnvxgrlpuqtzonner")
+                                         : QStringLiteral("nrtjpzkrldwydkbopsml");
+        const QString env = isTest ? tr("Test") : tr("Production");
+        dlg.setConnectionInfo(tr("Project ID: %1 (%2)").arg(projectId, env));
+    }
+
     if (dlg.exec() != QDialog::Accepted)
         return;
 
