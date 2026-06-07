@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Project Notes
+GenericName=Project Management
+Comment=Track project notes, meeting minutes, risks, issues, action items, contacts, and clients
+Exec=projectnotes
+Icon=com.kestermckinney.projectnotes
+Categories=Office;ProjectManagement;
+Terminal=false
+StartupNotify=true

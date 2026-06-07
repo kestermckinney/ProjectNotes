@@ -9,9 +9,10 @@
 #include <QDir>
 #include <QRegularExpression>
 
-// TODO: remove
+// PyObject_HasAttrStringWithError was added in Python 3.13; provide a shim for
+// older interpreters (e.g. Python 3.12 in the Flatpak KDE 6.9 runtime).
 #ifndef Q_OS_WIN
-#if PY_VERSION_HEX < 0x030C0000 // Python 3.10
+#if PY_VERSION_HEX < 0x030D0000 // Python 3.13
 static int PyObject_HasAttrStringWithError(PyObject *obj, const char *attr_name) {
     if (!obj || !attr_name) {
         PyErr_SetString(PyExc_TypeError, "null argument to PyObject_HasAttrStringWithError");
