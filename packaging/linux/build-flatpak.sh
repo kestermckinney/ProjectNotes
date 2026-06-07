@@ -39,6 +39,9 @@ cmd_setup() {
     echo "==> Installing KDE runtime and SDK ${RUNTIME_VERSION}..."
     flatpak install -y --noninteractive flathub org.kde.Platform//${RUNTIME_VERSION} org.kde.Sdk//${RUNTIME_VERSION} || true
 
+    echo "==> Installing Qt WebEngine BaseApp ${RUNTIME_VERSION} (PDF-export plugins)..."
+    flatpak install -y --noninteractive flathub io.qt.qtwebengine.BaseApp//${RUNTIME_VERSION} || true
+
     echo "==> Setup complete."
 }
 
@@ -90,6 +93,10 @@ cmd_regen_pip() {
         --yaml --runtime="org.kde.Sdk//${RUNTIME_VERSION}" --output "$SCRIPT_DIR/python-deps"
     echo "    NOTE: Check python-deps.yaml for .tar.gz entries and replace with .whl URLs from PyPI"
     echo "==> Updated $SCRIPT_DIR/python-deps.yaml"
+    echo ""
+    echo "    PyQt6 / PyQt6-WebEngine sources are hand-pinned in python-pyqt6.yaml"
+    echo "    and python-pyqt6-webengine.yaml (built from source, not generated here)."
+    echo "    Versions must track the runtime Qt (currently Qt 6.9.x -> PyQt6 6.9.x)."
 }
 
 cmd_clean() {
