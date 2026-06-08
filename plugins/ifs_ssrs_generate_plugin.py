@@ -332,9 +332,9 @@ class GenerateSSRSReport(QDialog):
                     if dochtml:
                         ct.send_an_email(self.xmlstr, subject, dochtml, None, "Receives Status", True)                
                 elif emailasword:
-                    ct.send_an_email(self.xmlstr, subject, "", [basereportdocx], "Receives Status", False)
+                    ct.send_an_email(self.xmlstr, subject, "", basereportdocx, "Receives Status", True)
                 elif emailaspdf:
-                    ct.send_an_email(self.xmlstr, subject, "", [basereportpdf], "Receives Status", False)
+                    ct.send_an_email(self.xmlstr, subject, "", basereportpdf, "Receives Status", True)
             except Exception as e:
                 print(f"Error sending email: {e}")
 
