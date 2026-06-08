@@ -281,7 +281,8 @@ void AppController::startSync()
                         sub.status.compare(QLatin1String("active"),   Qt::CaseInsensitive) == 0 ||
                         sub.status.compare(QLatin1String("trialing"), Qt::CaseInsensitive) == 0;
                     const QString color = isActive ? QStringLiteral("green") : QStringLiteral("red");
-                    const QString statusWord = sub.status.isEmpty() ? tr("None") : sub.status;
+                    const QString statusWord = sub.status.isEmpty() ? tr("None")
+                        : (sub.status.at(0).toUpper() + sub.status.mid(1).toLower());
                     const QString statusHtml = QStringLiteral("<span style=\"color:%1\">%2</span>")
                         .arg(color, statusWord);
                     if (sub.hasActiveSubscription) {

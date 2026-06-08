@@ -129,35 +129,15 @@ ApplicationWindow {
 
             Rectangle {
                 Layout.fillWidth: true
-                height: 110
+                height: 32
                 color: Theme.navyDark
 
-                ColumnLayout {
+                Label {
                     anchors.centerIn: parent
-                    spacing: 8
-
-                    Rectangle {
-                        Layout.alignment: Qt.AlignHCenter
-                        width: 52; height: 52
-                        radius: 12
-                        color: "white"
-
-                        Label {
-                            anchors.centerIn: parent
-                            text: "PN"
-                            font.pixelSize: 20
-                            font.bold: true
-                            color: Theme.navyDark
-                        }
-                    }
-
-                    Label {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: qsTr("Project Notes")
-                        font.pixelSize: 16
-                        font.bold: true
-                        color: "white"
-                    }
+                    text: qsTr("Main Menu")
+                    font.pixelSize: 20
+                    font.bold: true
+                    color: "white"
                 }
             }
 
@@ -248,6 +228,7 @@ ApplicationWindow {
         // palette.window drives the iOS-style ToolBar tint; background overrides the QML layer
         palette.window: Theme.navyDark
         background: Rectangle { color: Theme.navyDark }
+        height: 100
 
         RowLayout {
             anchors.fill: parent
