@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.kestermckinney.projectnotes</id>
+  <metadata_license>FSFAP</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+
+  <name>Project Notes</name>
+  <summary>Project management and meeting notes application</summary>
+
+  <developer id="com.kestermckinney">
+    <name>Kester McKinney</name>
+  </developer>
+
+  <description>
+    <p>
+      Project Notes is a desktop application for project management that helps you
+      track notes, meeting minutes, risks, issues, action items, contacts, and clients.
+      It features a Python plugin system for extensibility and integrates with tools
+      like Outlook, IFS ERP, and MS Office.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">com.kestermckinney.projectnotes.desktop</launchable>
+
+  <url type="homepage">https://github.com/kestermckinney/ProjectNotes</url>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="5.0.1" date="2026-04-18"/>
+  </releases>
+
+  <provides>
+    <binary>projectnotes</binary>
+  </provides>
+</component>

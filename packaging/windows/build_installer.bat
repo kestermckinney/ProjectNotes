@@ -29,14 +29,24 @@ if errorlevel 1 (
     exit /b 1
 )
 
-rem Compile the NSIS installer (deploy target already ran above, !system in NSI is a no-op)
+rem Compile the Project Notes installer (deploy target already ran above, !system in NSI is a no-op)
 makensis "%~dp0setupscript.nsi"
 if errorlevel 1 (
     echo.
-    echo ERROR: makensis failed.
+    echo ERROR: makensis failed for Project Notes installer.
+    exit /b 1
+)
+
+rem Compile the Remote Host installer
+makensis "%~dp0setupscript_remotehost.nsi"
+if errorlevel 1 (
+    echo.
+    echo ERROR: makensis failed for Remote Host installer.
     exit /b 1
 )
 
 echo.
-echo Done. Installer: %~dp0ProjectNotes-Setup64.exe
+echo Done.
+echo   Project Notes installer    : %~dp0ProjectNotes-5.0.1-Windows-x64-Setup.exe
+echo   Remote Host installer      : %~dp0ProjectNotesRemoteHost-5.0.1-Windows-x64-Setup.exe
 endlocal
