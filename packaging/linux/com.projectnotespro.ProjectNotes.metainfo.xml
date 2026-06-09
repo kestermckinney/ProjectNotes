@@ -18,6 +18,10 @@
       It features a Python plugin system for extensibility and integrates with tools
       like Outlook and MS Office.
     </p>
+    <p>
+      Visit www.projectnotespro.com to download the companion mobile application and
+      to manage your online data storage subscription.
+    </p>
   </description>
 
   <launchable type="desktop-id">com.projectnotespro.ProjectNotes.desktop</launchable>
