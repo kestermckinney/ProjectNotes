@@ -2,7 +2,7 @@
 Type=Application
 Name=Project Notes
 GenericName=Project Management
-Comment=Track project notes, meeting minutes, risks, issues, action items, contacts, and clients
+Comment=Track project notes, meeting minutes, risks, issues, action items, contacts, and clients. Visit www.projectnotespro.com to download the companion mobile application and to manage your online data storage subscription.
 Exec=projectnotes
 Icon=com.projectnotespro.ProjectNotes
 Categories=Office;ProjectManagement;
