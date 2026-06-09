@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 
     QGuiApplication app(argc, argv);
     app.setOrganizationName("ProjectNotes");
-    app.setOrganizationDomain("kestermckinney.com");
+    app.setOrganizationDomain("projectnotespro.com");
     app.setApplicationName("Project Notes");
     app.setApplicationVersion("5.0.0");
 

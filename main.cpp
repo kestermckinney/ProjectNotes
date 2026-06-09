@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/bin");
     QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/plugins");
 
-    QCoreApplication::setOrganizationDomain("kestermckinney.com");
+    QCoreApplication::setOrganizationDomain("projectnotespro.com");
 
     // Set the attribute before creating QApplication this was needed for QWebView would work
     QCoreApplication::setAttribute(Qt::ApplicationAttribute::AA_ShareOpenGLContexts);
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
     if (parser.isSet(devProfileOption))
     {
         AppSettings::setDeveloperProfile(parser.value(devProfileOption));
-        QCoreApplication::setOrganizationDomain(parser.value(devProfileOption) + ".kestermckinney.com");
+        QCoreApplication::setOrganizationDomain(parser.value(devProfileOption) + ".projectnotespro.com");
         global_Settings.applyDeveloperProfile();
     }
 

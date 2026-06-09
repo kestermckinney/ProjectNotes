@@ -227,7 +227,7 @@ else()
 endif()
 
 set_target_properties(ProjectNotes PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER "com.kestermckinney.projectnotes"
+    MACOSX_BUNDLE_GUI_IDENTIFIER "com.projectnotespro.ProjectNotes"
     MACOSX_BUNDLE_BUNDLE_NAME "Project Notes"
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
@@ -390,11 +390,17 @@ else()
 
     # Install runtime assets alongside the executable so packaged builds
     # (e.g. Flatpak installs to /app/bin) can find them via appResourcesPath().
+    # The IFS ERP plugins are intentionally excluded from this (Flatpak/Linux)
+    # install — they are not shipped in the Flatpak. __pycache__ is excluded so
+    # stale compiled bytecode (including any IFS .pyc) is never bundled.
     install(DIRECTORY
             "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
             "${CMAKE_CURRENT_SOURCE_DIR}/threads"
             "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
         DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        PATTERN "__pycache__" EXCLUDE
+        PATTERN "*ifs*" EXCLUDE
+        PATTERN "*IFS*" EXCLUDE
     )
 
     # Freedesktop integration (Linux/Flatpak): desktop entry, AppStream metadata,
@@ -402,14 +408,14 @@ else()
     if(NOT WIN32)
         set(_linux_pkg "${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux")
 
-        install(FILES "${_linux_pkg}/com.kestermckinney.projectnotes.desktop"
+        install(FILES "${_linux_pkg}/com.projectnotespro.ProjectNotes.desktop"
             DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
         )
-        install(FILES "${_linux_pkg}/com.kestermckinney.projectnotes.metainfo.xml"
+        install(FILES "${_linux_pkg}/com.projectnotespro.ProjectNotes.metainfo.xml"
             DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo"
         )
         foreach(_size 64 128 256 512)
-            install(FILES "${_linux_pkg}/icons/${_size}x${_size}/com.kestermckinney.projectnotes.png"
+            install(FILES "${_linux_pkg}/icons/${_size}x${_size}/com.projectnotespro.ProjectNotes.png"
                 DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${_size}x${_size}/apps"
             )
         endforeach()

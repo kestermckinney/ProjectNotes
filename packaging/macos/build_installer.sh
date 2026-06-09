@@ -222,7 +222,7 @@ log "=== Building Component Packages ==="
 pkgbuild \
     --root "${STAGING_DIR}/projectnotes" \
     --component-plist "${SCRIPT_DIR}/ProjectNotes-component.plist" \
-    --identifier "com.kestermckinney.projectnotes" \
+    --identifier "com.projectnotespro.ProjectNotes" \
     --version "${PN_VERSION}" \
     --install-location "/Applications" \
     "${OUTPUT_DIR}/ProjectNotes.pkg"
@@ -230,7 +230,7 @@ log "Built: ProjectNotes.pkg"
 
 pkgbuild \
     --root "${STAGING_DIR}/ifsplugins" \
-    --identifier "com.kestermckinney.projectnotes.ifsplugins" \
+    --identifier "com.projectnotespro.ProjectNotes.ifsplugins" \
     --version "${PN_VERSION}" \
     --install-location "/Applications" \
     "${OUTPUT_DIR}/IFSPlugins.pkg"

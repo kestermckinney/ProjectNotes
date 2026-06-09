@@ -1,4 +1,4 @@
-app-id: com.kestermckinney.projectnotes
+app-id: com.projectnotespro.ProjectNotes
 runtime: org.kde.Platform
 runtime-version: '6.9'
 sdk: org.kde.Sdk
@@ -13,6 +13,16 @@ finish-args:
   - --share=network
   - --socket=fallback-x11
   - --socket=wayland
+  # Full home access is core to the product, not a convenience:
+  #  * The app scans the user's folders to discover project-related files and
+  #    surface them against the matching project.
+  #  * Plugins export generated reports and archived email content into the
+  #    user's own project folders (arbitrary locations the user chooses).
+  #  * Users author personal plugins in their own "Project Notes" folder, which
+  #    the app loads and hot-reloads at runtime.
+  # These span arbitrary user-chosen paths, so a narrower portal/xdg scope would
+  # break core features. NOTE: Flathub flags broad home access; this must be
+  # justified in the submission PR for a maintainer to grant the exception.
   - --filesystem=home
   - --device=dri
   # Qt WebEngine (from the BaseApp) installs under /app, but the runtime Qt's
@@ -50,15 +60,19 @@ modules:
       - -DCMAKE_BUILD_TYPE=Release
       - -DSQLITESYNCPRO_SRC_DIR=SqliteSyncPro/src
     sources:
-      # Build from the local working copy instead of cloning from GitHub.
-      # The path is relative to this manifest (packaging/linux/).
-      - type: dir
-        path: ../..
-      # Build SqliteSyncPro from the local sibling checkout instead of cloning
-      # from GitHub. ProjectNotes and SqliteSyncPro are co-developed on the same
-      # branch, so building both from the local working copy keeps them in sync
-      # and avoids cloning a stale branch that lacks the pro-version sync API
-      # (e.g. the SubscriptionStatus struct). Path is relative to this manifest.
-      - type: dir
-        path: ../../../SqliteSyncPro
+      # Pinned git sources for reproducible, Flathub-compatible builds.
+      # Flathub does not accept `type: dir`; sources must be immutable and
+      # fetched from the public remote. The pinned commit MUST be pushed to
+      # origin or flatpak-builder cannot fetch it. Bump `commit` (and ideally
+      # add a `tag`) for each new release.
+      - type: git
+        url: https://github.com/kestermckinney/ProjectNotes.git
+        commit: 2ddf65807248ccac4e5dd331c908bbbba6072b0d
+      # SqliteSyncPro is co-developed on the same branch and pinned by commit
+      # (the repo has no tags yet). Cloned into SqliteSyncPro/ to match the
+      # cmake config-opt -DSQLITESYNCPRO_SRC_DIR=SqliteSyncPro/src. Keep this
+      # commit in sync with the ProjectNotes commit above.
+      - type: git
+        url: https://github.com/kestermckinney/SqliteSyncPro.git
+        commit: 8321cf7dcfcc4ebca1d6affdc38894bf1c51b911
         dest: SqliteSyncPro
