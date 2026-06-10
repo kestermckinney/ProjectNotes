@@ -45,7 +45,7 @@ PN_BUILD_DIR="${PN_BUILD_DIR:-${PROJECT_ROOT}/build/Qt_6_10_2_for_macOS-Release}
 
 PN_APP="${PN_BUILD_DIR}/Project Notes.app"
 
-PN_VERSION="5.1.0"
+PN_VERSION="5.2.0"
 INSTALLER_VERSION="${PN_VERSION}"
 
 STAGING_DIR="${SCRIPT_DIR}/staging"

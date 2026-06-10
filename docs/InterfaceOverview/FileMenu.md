@@ -2,33 +2,31 @@
 
 ## Cloud Sync Settings
 
-Project Notes stores its database your user profile. The database is created automatically on first launch.
+Project Notes stores its database in your user profile. The database is created automatically on first launch.
 
-If you want to sync your data with a cloud host, use **Cloud Sync Settings** to configure the connection.  Syncing your databsae allows you to access your Project Notes data from multiple install locations.
+Cloud sync is provided by a **Project Notes Pro** subscription. With a subscription, your data is backed up to Project Notes Pro hosting and kept in sync across all of your devices — including the [Project Notes Mobile](../Mobile/ProjectNotesMobile.md) app. There is no server to set up and no host address to enter: you simply sign in with your subscription account. Manage your subscription at [www.projectnotespro.com](https://www.projectnotespro.com).
 
 **To configure cloud sync:**
 
 1. From the Project Notes **File** menu choose **Cloud Sync Settings...**
-2. Check **Sync data with cloud host** to enable syncing.
-3. Choose a **Sync Host Type**:
-   - **Self-Hosted PostgREST** — a PostgREST server you run yourself
-   - **Supabase** — a hosted Supabase project
-4. Enter the **Server URL**, **Username (Email)**, and **Password** for your host.
-5. Optionally enter an **Encryption Phrase** to encrypt data at rest on the server. Leave blank to disable encryption.  Be sure to keep your encryption phrase in a safe place.  You cannot recover it.
-6. If using Supabase, also enter the **Supabase Anon Key** from your Supabase Dashboard.
-7. Click **OK**.
+2. Check **Sync all your devices and backup your data** to enable syncing.
+3. Enter the **Username (Email)** and **Password** for your Project Notes Pro account.
+4. Optionally enter an **Encryption Phrase** to encrypt your data before it leaves your machine. Leave blank to disable encryption. Be sure to keep your encryption phrase in a safe place — it cannot be recovered, and every device that syncs this data must use the same phrase.
+5. Click **OK**.
 
-Your settings are saved immediately. If Project Notes cannot connect using the information provided, a warning dialog will appear. You can correct the settings by returning to **File > Cloud Sync Settings...**.
+The dialog shows your current **subscription status** and the **Project ID** your data is associated with. Your settings are saved immediately. If Project Notes cannot sign in with the information provided, a warning dialog will appear. You can correct the settings by returning to **File > Cloud Sync Settings...**.
+
+For a full reference of all cloud sync features, settings, and troubleshooting, see [Cloud Sync](RemoteHost.md).
 
 ## Sync All
 
-**Sync All** immediately synchronizes all project data with the configured cloud host. This is useful when you want to push or pull the latest changes without waiting for an automatic sync cycle.  In some rare isntances records may not get pushed to the server, or pulled.  This option resets all sync flags and starts over.  It can take some time for the full database to sync.  The syncronization progress bar at the bottom right of the status window will show the overall sync progress.
+**Sync All** immediately synchronizes all project data with Project Notes Pro hosting. This is useful when you want to push or pull the latest changes without waiting for an automatic sync cycle.  In some rare instances records may not get pushed to the server, or pulled.  This option resets all sync flags and starts over.  It can take some time for the full database to sync.  The synchronization progress bar at the bottom right of the status window will show the overall sync progress.
 
 **To sync all data:**
 
 1. From the Project Notes **File** menu choose **Sync All**.
 
-Project Notes will connect to the cloud host and synchronize all records. If the connection fails or no cloud host is configured, a warning dialog will appear. You can configure cloud sync settings under **File > Cloud Sync Settings...**.
+Project Notes will connect to Project Notes Pro hosting and synchronize all records. If the connection fails or cloud sync is not configured, a warning dialog will appear. You can configure cloud sync settings under **File > Cloud Sync Settings...**.
 
 ## Sync Status Bar
 

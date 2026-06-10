@@ -1,8 +1,18 @@
 # System Requirements
 
+## Desktop
+
 Project Notes' recommended system configuration includes:
 
-* Windows 7 or higher, MacOS 10.14 or higher, Linux
-* 8G of RAM 
-* 80MB of free disk space 
+* Windows 10 or 11 (64-bit), macOS 13 (Ventura) or higher, or Linux (available as a Flatpak)
+* 8 GB of RAM
+* 80 MB of free disk space
 * 1024x768 screen resolution or higher
+
+## Mobile
+
+[Project Notes Mobile](<../Mobile/ProjectNotesMobile.md>) is available for iPhone and iPad running iOS 16 or higher.
+
+## Cloud Sync
+
+Cloud sync (backup and multi-device synchronization) requires a [Project Notes Pro](https://www.projectnotespro.com) subscription. No additional server software is required.
