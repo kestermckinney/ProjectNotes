@@ -689,6 +689,14 @@ void SqlQueryModel::sqlEscape(QVariant& columnValue, DBColumnType columnType, bo
     }
 }
 
+// Doubles single quotes so a value can be safely interpolated into a single-quoted
+// SQL string literal.  Used for FK lookupvalue resolution SELECTs, where the value
+// (e.g. a contact name like "Katherine O'Connell") would otherwise break the query.
+QString SqlQueryModel::sqlEscapeLiteral(const QString& value)
+{
+    return QString(value).replace("'", "''");
+}
+
 QVariant SqlQueryModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (orientation == Qt::Horizontal) {
@@ -1610,7 +1618,7 @@ QString SqlQueryModel::constructWhereClause(bool includeUserFilter)
                     {
                         if ( !m_lookupTable[colnum].isEmpty() )
                         {
-                            QString fk_key_val =  m_userSearchString[colnum].toString();
+                            QString fk_key_val =  sqlEscapeLiteral(m_userSearchString[colnum].toString());
                             valuelist +=  QString(" %5 in (select %1 from %2 where %3 LIKE '%%4%')").arg(m_lookupFkColumnName[colnum], m_lookupTable[colnum], m_lookupValueColumnName[colnum], fk_key_val, m_columnName[colnum]);
                         }
                         else
@@ -1620,7 +1628,7 @@ QString SqlQueryModel::constructWhereClause(bool includeUserFilter)
                     {
                         if ( !m_lookupTable[colnum].isEmpty() )
                         {
-                            QString fk_key_val =  m_userSearchString[colnum].toString();
+                            QString fk_key_val =  sqlEscapeLiteral(m_userSearchString[colnum].toString());
                             valuelist +=  QString(" %5 in (select %1 from %2 where %3 = '%%4%')").arg(m_lookupFkColumnName[colnum], m_lookupTable[colnum], m_lookupValueColumnName[colnum], fk_key_val, m_columnName[colnum]);
                         }
                         else
@@ -2150,7 +2158,7 @@ QDomElement SqlQueryModel::toQDomElement( QDomDocument* xmlDocument, const QStri
 
             if ( !m_lookupTable[i].isEmpty() )
             {
-                QString fk_key_val = row.value(i).toString();
+                QString fk_key_val = sqlEscapeLiteral(row.value(i).toString());
                 QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookupValueColumnName[i], m_lookupTable[i], m_lookupFkColumnName[i], fk_key_val);
                 QString lookup_value = getDBOs()->execute(sql);
 
@@ -2356,7 +2364,7 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
                     // referenced table.
                     if (!lookup_value.isNull() && !m_lookupTable[colnum].isEmpty())
                     {
-                        QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookupFkColumnName[colnum], m_lookupTable[colnum], m_lookupValueColumnName[colnum], lookup_value);
+                        QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookupFkColumnName[colnum], m_lookupTable[colnum], m_lookupValueColumnName[colnum], sqlEscapeLiteral(lookup_value));
 #ifdef QT_DEBUG
                         QLog_Debug(DEBUGLOG, QString("EXEC LOOKUP EXISTING: %1").arg(sql));
 #endif
@@ -2446,7 +2454,7 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
                 // Resolve FK lookupvalue to the local UUID for the value lists.
                 if (!lookup_value.isNull() && !m_lookupTable[colnum].isEmpty())
                 {
-                    QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookupFkColumnName[colnum], m_lookupTable[colnum], m_lookupValueColumnName[colnum], lookup_value);
+                    QString sql = QString("select %1 from %2 where %3 = '%4'").arg(m_lookupFkColumnName[colnum], m_lookupTable[colnum], m_lookupValueColumnName[colnum], sqlEscapeLiteral(lookup_value));
 
                     field_value = getDBOs()->execute(sql);
                 }

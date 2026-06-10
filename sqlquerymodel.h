@@ -70,6 +70,7 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const override;
 
     void sqlEscape(QVariant& columnValue, DBColumnType columnType, bool noQuote = false) const;
+    static QString sqlEscapeLiteral(const QString& value);   // doubles single quotes for safe interpolation into SQL string literals
     void reformatValue(QVariant& columnValue, DBColumnType columnType) const;
 
     void addColumn(const QString& columnName, const QString& displayName, DBColumnType type, DBColumnSearchable searchable,
