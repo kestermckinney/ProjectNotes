@@ -9,6 +9,7 @@ nav:
   - 'Introduction':
     - 'Getting Started': Introduction/GettingStarted.md
     - 'System Requirements': Introduction/SystemRequirements.md
+    - 'Installing on Linux': Introduction/InstallLinux.md
   - 'Interface Overview':
     - 'File Menu': InterfaceOverview/FileMenu.md
     - 'Edit Menu': InterfaceOverview/EditMenu.md
