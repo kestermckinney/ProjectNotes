@@ -29,6 +29,21 @@ ProjectNotes is a project manager's workspace for notes, action items, project m
 - Runs on Windows, macOS, and Linux, with an iPhone and iPad companion app.
 - Backs up and synchronizes your data across all your devices with a [Project Notes Pro](https://www.projectnotespro.com) subscription.
 
+## Install On Linux
+
+Project Notes ships as a self-hosted Flatpak with automatic updates:
+
+```bash
+flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+flatpak remote-add --if-not-exists projectnotes \
+  https://kestermckinney.github.io/projectnotes-flatpak/projectnotes.flatpakrepo
+flatpak install projectnotes com.projectnotespro.ProjectNotes
+```
+
+Prefer a single file? Download `ProjectNotes.flatpak` from the
+[latest release](https://github.com/kestermckinney/ProjectNotes/releases/latest).
+Full instructions: [Installing on Linux](docs/Introduction/InstallLinux.md).
+
 ## Activity And Request Snapshot
 
 [![Open bugs](https://img.shields.io/github/issues-search?query=repo%3Akestermckinney%2FProjectNotes+is%3Aissue+is%3Aopen+%22%5BBug%5D%3A%22+in%3Atitle&label=open%20bugs&style=flat-square)](https://github.com/kestermckinney/ProjectNotes/issues?q=is%3Aissue%20is%3Aopen%20%22%5BBug%5D%3A%22%20in%3Atitle)

@@ -21,8 +21,11 @@ finish-args:
   #  * Users author personal plugins in their own "Project Notes" folder, which
   #    the app loads and hot-reloads at runtime.
   # These span arbitrary user-chosen paths, so a narrower portal/xdg scope would
-  # break core features. NOTE: Flathub flags broad home access; this must be
-  # justified in the submission PR for a maintainer to grant the exception.
+  # break core features. NOTE: the Flathub linter flags broad home access and a
+  # maintainer would have to grant an exception. We self-host the repo
+  # (kestermckinney.github.io/projectnotes-flatpak) instead, so there is no such
+  # gate — this permission installs as-is. The justification above is kept as
+  # documentation of why the scope is necessary.
   - --filesystem=home
   - --device=dri
   # Qt WebEngine (from the BaseApp) installs under /app, but the runtime Qt's
