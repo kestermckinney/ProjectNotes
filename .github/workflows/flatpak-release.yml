@@ -12,6 +12,8 @@ name: Flatpak Release
 # Required repository secrets (Settings > Secrets and variables > Actions):
 #   FLATPAK_GPG_PRIVATE_KEY   ASCII-armored private signing key (full block)
 #   FLATPAK_GPG_KEY_ID        The signing key's ID / fingerprint / uid
+#   FLATPAK_GPG_PASSPHRASE    Passphrase for the signing key (preset into the
+#                             agent so ostree can sign non-interactively)
 #   FLATPAK_PAGES_DEPLOY_TOKEN  PAT with `repo` scope on projectnotes-flatpak
 #
 # First-run checklist lives in docs/Introduction/InstallLinux.md.
@@ -49,10 +51,29 @@ jobs:
           flatpak install -y --noninteractive flathub io.qt.qtwebengine.BaseApp//6.9
 
       - name: Import GPG signing key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.FLATPAK_GPG_PASSPHRASE }}
         run: |
           export GNUPGHOME="$RUNNER_TEMP/gnupg"
           mkdir -p "$GNUPGHOME"; chmod 700 "$GNUPGHOME"
-          printf '%s' "${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}" | gpg --batch --import
+          # The signing key is passphrase-protected and ostree signs via gpgme/
+          # gpg-agent with no pinentry in this container. Let the agent take a
+          # preset passphrase and cache it long enough to outlast the ~25-min
+          # build before the export signs the commit.
+          printf '%s\n' allow-loopback-pinentry allow-preset-passphrase \
+            'default-cache-ttl 21600' 'max-cache-ttl 21600' \
+            > "$GNUPGHOME/gpg-agent.conf"
+          gpgconf --kill gpg-agent || true
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+          # Preset the passphrase for every (sub)key keygrip so signing the
+          # ostree commit needs no interactive prompt.
+          preset="$(gpgconf --list-dirs libexecdir)/gpg-preset-passphrase"
+          gpg --batch --with-colons --with-keygrip --list-secret-keys \
+            | awk -F: '$1 == "grp" { print $10 }' \
+            | while read -r grip; do
+                printf '%s' "$GPG_PASSPHRASE" | "$preset" --preset "$grip"
+              done
           echo "GNUPGHOME=$GNUPGHOME" >> "$GITHUB_ENV"
 
       - name: Fetch already-published repo (preserve update history)
