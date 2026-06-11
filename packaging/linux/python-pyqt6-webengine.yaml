@@ -36,7 +36,9 @@ build-commands:
     # QtWebEngineWidgets; QWebEnginePage/printToPdf in QtWebEngineCore). Skip
     # QtWebEngineQuick (QML). --jobs capped low to bound memory use.
     # NB: unlike PyQt6, PyQt6-WebEngine's sip-wheel has no --confirm-license flag.
-    tar xf pyqt6_webengine-6.9.0.tar.gz
+    # --no-same-owner: as root in the CI user namespace, restoring the
+    # archive's original uid/gid (501:20) fails with EINVAL and aborts tar.
+    tar xf pyqt6_webengine-6.9.0.tar.gz --no-same-owner
     cd pyqt6_webengine-6.9.0
     # sip resolves imported PyQt6 .sip files under <target_dir>/PyQt6/bindings,
     # and target_dir defaults to the build interpreter's site-packages (in /usr,
