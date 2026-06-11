@@ -57,16 +57,23 @@ jobs:
 
       - name: Fetch already-published repo (preserve update history)
         # Clone the live ostree repo so flatpak-builder exports incrementally
-        # into it; existing users get a delta, not a full re-download. Empty on
-        # the very first release — that's fine, we start a fresh repo.
+        # into it; existing users get a delta, not a full re-download. Only seed
+        # flatpak-repo when the clone is a real ostree repo (has objects/) —
+        # otherwise flatpak-builder aborts with "opendir(objects)". On the first
+        # release gh-pages holds only the staged extras (.flatpakrepo/icon), so
+        # we start fresh and let flatpak-builder initialize the repo.
         run: |
-          git clone --branch "$PAGES_BRANCH" --depth 1 \
-            "https://x-access-token:${{ secrets.FLATPAK_PAGES_DEPLOY_TOKEN }}@github.com/${PAGES_REPO}.git" \
-            "$RUNNER_TEMP/published" 2>/dev/null && \
-            cp -a "$RUNNER_TEMP/published" "$GITHUB_WORKSPACE/packaging/linux/flatpak-repo" || \
-            echo "No existing repo yet — starting fresh."
-          # Drop the .git so it isn't re-published as repo content.
-          rm -rf "$GITHUB_WORKSPACE/packaging/linux/flatpak-repo/.git" 2>/dev/null || true
+          DEST="$GITHUB_WORKSPACE/packaging/linux/flatpak-repo"
+          if git clone --branch "$PAGES_BRANCH" --depth 1 \
+               "https://x-access-token:${{ secrets.FLATPAK_PAGES_DEPLOY_TOKEN }}@github.com/${PAGES_REPO}.git" \
+               "$RUNNER_TEMP/published" 2>/dev/null && [ -d "$RUNNER_TEMP/published/objects" ]; then
+            cp -a "$RUNNER_TEMP/published" "$DEST"
+            # Drop the .git so it isn't re-published as repo content.
+            rm -rf "$DEST/.git" 2>/dev/null || true
+            echo "Seeded from published ostree repo (preserving update history)."
+          else
+            echo "No published ostree repo yet — starting fresh."
+          fi
 
       - name: Ensure dbus machine-id (container has none)
         # The flatpak-builder image ships no /etc/machine-id, so dbus activation
