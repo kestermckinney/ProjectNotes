@@ -33,9 +33,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Signing + Pages-deploy secrets live in the `github-pages` Environment;
-    # the job must opt into it or those secrets expand to empty strings.
-    environment: github-pages
     # Image ships flatpak + flatpak-builder + the org.kde Platform/SDK 6.9.
     # bubblewrap needs elevated privileges to build inside the container.
     container:
