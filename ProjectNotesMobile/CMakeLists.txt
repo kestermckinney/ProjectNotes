@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ProjectNotesMobile VERSION 5.0.0 LANGUAGES CXX)
+project(ProjectNotesMobile VERSION 5.2.0 LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -133,7 +133,7 @@ qt_add_qml_module(ProjectNotesMobile
 
 # ── iOS bundle properties ─────────────────────────────────────────────────────
 set_target_properties(ProjectNotesMobile PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER    "com.kestermckinney.projectnotesmobile"
+    MACOSX_BUNDLE_GUI_IDENTIFIER    "com.projectnotespro.ProjectNotesMobile"
     MACOSX_BUNDLE_BUNDLE_NAME       "Project Notes"
     MACOSX_BUNDLE_BUNDLE_VERSION    ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"

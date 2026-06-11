@@ -21,12 +21,6 @@ public:
     bool syncEnabled() const;
     void setSyncEnabled(bool enabled);
 
-    int syncHostType() const;
-    void setSyncHostType(int type);
-
-    QString postgrestUrl() const;
-    void setPostgrestUrl(const QString& url);
-
     QString email() const;
     void setEmail(const QString& email);
 
@@ -36,8 +30,8 @@ public:
     QString encryptionPhrase() const;
     void setEncryptionPhrase(const QString& phrase);
 
-    QString supabaseKey() const;
-    void setSupabaseKey(const QString& key);
+    void setSubscriptionStatus(const QString& text);
+    void setConnectionInfo(const QString& text);
 
 protected:
     void showEvent(QShowEvent *event) override;
@@ -45,11 +39,8 @@ protected:
 
 private slots:
     void on_checkBoxSyncEnabled_toggled(bool checked);
-    void on_comboBoxSyncHostType_currentIndexChanged(int index);
 
 private:
-    void updateSupabaseKeyVisibility(int hostTypeIndex);
-
     Ui::CloudSyncSettingsDialog *ui;
 };
 

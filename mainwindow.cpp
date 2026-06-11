@@ -695,12 +695,44 @@ void MainWindow::on_actionOpen_Database_triggered()
 
     // Pre-populate from saved settings
     dlg.setSyncEnabled(global_Settings.getSyncEnabled());
-    dlg.setSyncHostType(global_Settings.getSyncHostType());
-    dlg.setPostgrestUrl(global_Settings.getSyncPostgrestUrl());
     dlg.setEmail(global_Settings.getSyncEmail());
     dlg.setPassword(global_Settings.getSyncPassword());
     dlg.setEncryptionPhrase(global_Settings.getSyncEncryptionPhrase());
-    dlg.setSupabaseKey(global_Settings.getSyncSupabaseKey());
+
+    if (m_syncApi && m_syncApi->isAuthenticated()) {
+        const SubscriptionStatus sub = m_syncApi->getSubscriptionStatus();
+        if (sub.valid) {
+            const bool isActiveStatus =
+                sub.status.compare(QLatin1String("active"),   Qt::CaseInsensitive) == 0 ||
+                sub.status.compare(QLatin1String("trialing"), Qt::CaseInsensitive) == 0;
+            const QString color = isActiveStatus ? QStringLiteral("green") : QStringLiteral("red");
+            const QString statusWord = sub.status.isEmpty() ? tr("None") : sub.status;
+            const QString statusHtml = QStringLiteral("<span style=\"color:%1\">%2</span>")
+                .arg(color, statusWord);
+            QString text;
+            if (sub.hasActiveSubscription) {
+                text = tr("Subscription: %1 — %2").arg(sub.planName, statusHtml);
+                if (sub.currentPeriodEnd.isValid())
+                    text += tr(" (renews %1)").arg(sub.currentPeriodEnd.toString(QStringLiteral("MMM d, yyyy")));
+            } else {
+                text = tr("Subscription: %1").arg(statusHtml);
+            }
+            dlg.setSubscriptionStatus(text);
+        } else {
+            dlg.setSubscriptionStatus(QStringLiteral("<span style=\"color:red\">%1</span>")
+                .arg(tr("Subscription status unavailable")));
+        }
+    } else {
+        dlg.setSubscriptionStatus(tr("Not connected — open a database to view subscription status"));
+    }
+
+    {
+        const bool isTest = AppSettings::isTestSupabase();
+        const QString projectId = isTest ? QStringLiteral("lsulnvxgrlpuqtzonner")
+                                         : QStringLiteral("nrtjpzkrldwydkbopsml");
+        const QString env = isTest ? tr("Test") : tr("Production");
+        dlg.setConnectionInfo(tr("Project ID: %1 (%2)").arg(projectId, env));
+    }
 
     if (dlg.exec() != QDialog::Accepted)
         return;
@@ -710,12 +742,9 @@ void MainWindow::on_actionOpen_Database_triggered()
 
     // Persist sync settings immediately (before openDatabase so it can read them)
     global_Settings.setSyncEnabled(dlg.syncEnabled());
-    global_Settings.setSyncHostType(dlg.syncHostType());
-    global_Settings.setSyncPostgrestUrl(dlg.postgrestUrl());
     global_Settings.setSyncEmail(dlg.email());
     global_Settings.setSyncPassword(dlg.password());
     global_Settings.setSyncEncryptionPhrase(dlg.encryptionPhrase());
-    global_Settings.setSyncSupabaseKey(dlg.supabaseKey());
 
     // Create new database if the file does not yet exist
     if (!QFile::exists(dbfile))
@@ -736,15 +765,25 @@ void MainWindow::openDatabase(const QString& dbfile)
         if (!m_syncApi)
             m_syncApi = new SqliteSyncPro(this);
 
+        const QString supabaseUrl = AppSettings::isTestSupabase()
+            ? QStringLiteral("https://lsulnvxgrlpuqtzonner.supabase.co")
+            : QStringLiteral("https://nrtjpzkrldwydkbopsml.supabase.co");
+        const QString supabaseKey = AppSettings::isTestSupabase()
+            ? QStringLiteral("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzdWxudnhncmxwdXF0em9ubmVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1ODY0OTIsImV4cCI6MjA5NDE2MjQ5Mn0.AyEQHLZadhj5r0BNkvPASaMZ0gTr4LAueq0SGVuua3s")
+            : QStringLiteral("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ydGpwemtybGR3eWRrYm9wc21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTU0NTQsImV4cCI6MjA4OTQzMTQ1NH0.hzzyb5bFKDIFbrJ7Fa8INh57pWIkz52csQ2gQ_L302E");
+
         m_syncApi->setDatabasePath(dbfile);
-        m_syncApi->setSyncHostType(global_Settings.getSyncHostType());
-        m_syncApi->setPostgrestUrl(global_Settings.getSyncPostgrestUrl());
+        m_syncApi->setSyncHostType(1);
+        m_syncApi->setPostgrestUrl(supabaseUrl);
         m_syncApi->setEmail(global_Settings.getSyncEmail());
         m_syncApi->setPassword(global_Settings.getSyncPassword());
         m_syncApi->setEncryptionPhrase(global_Settings.getSyncEncryptionPhrase());
-        m_syncApi->setSupabaseKey(global_Settings.getSyncSupabaseKey());
+        m_syncApi->setSupabaseKey(supabaseKey);
 
         m_syncApi->setDatabaseLock(&db_rwlock);
+
+        // Disconnect any signals from a prior initialization before reconnecting.
+        disconnect(m_syncApi, nullptr, this, nullptr);
 
         if (m_syncApi->initialize()) {
             connect(m_syncApi, &SqliteSyncPro::rowChanged,
@@ -771,6 +810,37 @@ void MainWindow::openDatabase(const QString& dbfile)
                         ui->actionSyncStats->setChecked(false);
                     },
                     Qt::QueuedConnection);
+
+            if (m_syncApi->isAuthenticated()) {
+                const SubscriptionStatus sub = m_syncApi->getSubscriptionStatus();
+                qDebug() << "Subscription check: valid=" << sub.valid
+                         << "hasActive=" << sub.hasActiveSubscription
+                         << "status=" << sub.status
+                         << "plan=" << sub.planName
+                         << "error=" << sub.errorMessage;
+                if (sub.valid && !sub.hasActiveSubscription) {
+                    QMessageBox msgBox(this);
+                    msgBox.setWindowTitle(tr("Project Notes Pro Subscription Expired"));
+                    msgBox.setIcon(QMessageBox::Warning);
+                    msgBox.setTextFormat(Qt::RichText);
+                    msgBox.setTextInteractionFlags(Qt::TextBrowserInteraction);
+                    msgBox.setText(
+                        tr("Your Project Notes Pro subscription has expired.<br><br>"
+                           "The application will no longer sync changes between your devices, "
+                           "and your data is no longer backed up to the Project Notes Pro server.<br><br>"
+                           "To re-enable sync, please visit "
+                           "<a href=\"https://www.projectnotespro.com\">www.projectnotespro.com</a> "
+                           "to renew your subscription."));
+                    msgBox.exec();
+
+                    // Stop the sync thread but keep m_syncApi alive so the settings dialog
+                    // can still query subscription status after the user dismisses this popup.
+                    QEventLoop stopLoop;
+                    connect(m_syncApi, &SqliteSyncPro::syncStopped, &stopLoop, &QEventLoop::quit);
+                    m_syncApi->shutdown();
+                    stopLoop.exec();
+                }
+            }
         } else {
 #ifdef QT_DEBUG
             qWarning() << "SqliteSyncPro initialize failed:" << m_syncApi->lastError();
@@ -1055,10 +1125,15 @@ void MainWindow::CloseDatabase()
         // Block row-changed propagation; we don't care about incoming sync updates anymore
         disconnect(m_syncApi, &SqliteSyncPro::rowChanged, this, &MainWindow::onSyncRowChanged);
 
-        QEventLoop loop;
-        connect(m_syncApi, &SqliteSyncPro::syncStopped, &loop, &QEventLoop::quit);
-        m_syncApi->shutdown();
-        loop.exec();   // returns once the worker thread has exited cleanly
+        // Only wait for syncStopped if the worker thread is actually running.
+        // If sync was already shut down (e.g. after an expired-subscription popup),
+        // isInitialized() is false and shutdown() is a no-op, so the signal will never fire.
+        if (m_syncApi->isInitialized()) {
+            QEventLoop loop;
+            connect(m_syncApi, &SqliteSyncPro::syncStopped, &loop, &QEventLoop::quit);
+            m_syncApi->shutdown();
+            loop.exec();   // returns once the worker thread has exited cleanly
+        }
 
         m_syncApi->deleteLater();
         m_syncApi = nullptr;

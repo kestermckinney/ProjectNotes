@@ -357,7 +357,6 @@
    Delete "$INSTDIR\site-packages\PyQt6\Qt6\plugins\sqldrivers\qsqlmimer.dll"
    Delete "$INSTDIR\site-packages\PyQt6\Qt6\plugins\sqldrivers\qsqloci.dll"
    Delete "$INSTDIR\site-packages\PyQt6\Qt6\plugins\sqldrivers\qsqlodbc.dll"
-   Delete "$INSTDIR\site-packages\PyQt6\Qt6\plugins\sqldrivers\qsqlpsql.dll"
    Delete "$INSTDIR\site-packages\PyQt6\Qt6\plugins\styles\qmodernwindowsstyle.dll"
    Delete "$INSTDIR\site-packages\PyQt6\Qt6\plugins\texttospeech\qtexttospeech_mock.dll"
    Delete "$INSTDIR\site-packages\PyQt6\Qt6\plugins\texttospeech\qtexttospeech_sapi.dll"

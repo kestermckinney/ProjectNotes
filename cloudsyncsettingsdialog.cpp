@@ -10,8 +10,6 @@ CloudSyncSettingsDialog::CloudSyncSettingsDialog(QWidget *parent)
     , ui(new Ui::CloudSyncSettingsDialog)
 {
     ui->setupUi(this);
-    // Apply initial visibility based on default host type (index 0 = Self-Hosted)
-    updateSupabaseKeyVisibility(ui->comboBoxSyncHostType->currentIndex());
 }
 
 CloudSyncSettingsDialog::~CloudSyncSettingsDialog()
@@ -27,26 +25,6 @@ bool CloudSyncSettingsDialog::syncEnabled() const
 void CloudSyncSettingsDialog::setSyncEnabled(bool enabled)
 {
     ui->checkBoxSyncEnabled->setChecked(enabled);
-}
-
-int CloudSyncSettingsDialog::syncHostType() const
-{
-    return ui->comboBoxSyncHostType->currentIndex();
-}
-
-void CloudSyncSettingsDialog::setSyncHostType(int type)
-{
-    ui->comboBoxSyncHostType->setCurrentIndex(type);
-}
-
-QString CloudSyncSettingsDialog::postgrestUrl() const
-{
-    return ui->lineEditPostgrestURL->text();
-}
-
-void CloudSyncSettingsDialog::setPostgrestUrl(const QString& url)
-{
-    ui->lineEditPostgrestURL->setText(url);
 }
 
 QString CloudSyncSettingsDialog::email() const
@@ -79,32 +57,19 @@ void CloudSyncSettingsDialog::setEncryptionPhrase(const QString& phrase)
     ui->lineEditEncryptionPhrase->setText(phrase);
 }
 
-QString CloudSyncSettingsDialog::supabaseKey() const
+void CloudSyncSettingsDialog::setSubscriptionStatus(const QString& text)
 {
-    return ui->lineEditSupabaseKey->text();
+    ui->labelSubscriptionStatus->setText(text);
 }
 
-void CloudSyncSettingsDialog::setSupabaseKey(const QString& key)
+void CloudSyncSettingsDialog::setConnectionInfo(const QString& text)
 {
-    ui->lineEditSupabaseKey->setText(key);
+    ui->labelConnectionInfo->setText(text);
 }
 
 void CloudSyncSettingsDialog::on_checkBoxSyncEnabled_toggled(bool checked)
 {
     ui->groupBoxSync->setEnabled(checked);
-}
-
-void CloudSyncSettingsDialog::on_comboBoxSyncHostType_currentIndexChanged(int index)
-{
-    updateSupabaseKeyVisibility(index);
-}
-
-void CloudSyncSettingsDialog::updateSupabaseKeyVisibility(int hostTypeIndex)
-{
-    // index 1 = Supabase only needs the anon key
-    const bool isSupabase = (hostTypeIndex == 1);
-    ui->labelSupabaseKey->setVisible(isSupabase);
-    ui->lineEditSupabaseKey->setVisible(isSupabase);
 }
 
 void CloudSyncSettingsDialog::showEvent(QShowEvent *event)

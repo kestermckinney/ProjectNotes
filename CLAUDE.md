@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ProjectNotes is a Qt/C++ desktop application (v5.0.0) for project management — tracking notes, meeting minutes, risks, issues, action items, contacts, and clients. It embeds a Python plugin system for extensibility and integrates with tools like Outlook, IFS ERP, and MS Office.
+ProjectNotes is a Qt/C++ desktop application (v5.2.0) for project management — tracking notes, meeting minutes, risks, issues, action items, contacts, and clients. It embeds a Python plugin system for extensibility and integrates with tools like Outlook, IFS ERP, and MS Office.
 
 ## Build Commands
 

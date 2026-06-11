@@ -20,6 +20,9 @@ public:
 
     static QString dataLocation();
 
+    static void setTestSupabase(bool test);
+    static bool isTestSupabase();
+
     bool getSyncEnabled() const;
     void setSyncEnabled(bool enabled);
 
@@ -47,6 +50,7 @@ public:
 private:
     void ensureSettings() const;
     mutable QSettings* m_settings = nullptr;
+    static bool s_testSupabase;
 };
 
 extern MobileSettings global_MobileSettings;

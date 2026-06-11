@@ -5,6 +5,7 @@
 #include "runguard.h"
 #include "plugin.h"
 #include "appsettings.h"
+#include "helpdialog.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -16,7 +17,7 @@ int main(int argc, char *argv[])
     QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/bin");
     QCoreApplication::addLibraryPath("./site-packages/PyQt6/Qt6/plugins");
 
-    QCoreApplication::setOrganizationDomain("kestermckinney.com");
+    QCoreApplication::setOrganizationDomain("projectnotespro.com");
 
     // Set the attribute before creating QApplication this was needed for QWebView would work
     QCoreApplication::setAttribute(Qt::ApplicationAttribute::AA_ShareOpenGLContexts);
@@ -25,20 +26,36 @@ int main(int argc, char *argv[])
 
     QCommandLineParser parser;
     parser.setApplicationDescription("Project Notes");
-    parser.addHelpOption();
+    QCommandLineOption helpOption(QStringList() << "h" << "help",
+        "Show command-line options help dialog.");
+    parser.addOption(helpOption);
     QCommandLineOption devProfileOption(
         "developer-profile",
         "Use a separate settings profile for development.",
         "PROFILENAME");
     parser.addOption(devProfileOption);
-    parser.process(a);
+    QCommandLineOption testSupabaseOption(
+        "test-supabase",
+        "Use the test Supabase instance instead of production.");
+    parser.addOption(testSupabaseOption);
+    parser.parse(QCoreApplication::arguments());
+
+    if (parser.isSet(helpOption))
+    {
+        HelpDialog dlg;
+        dlg.exec();
+        return 0;
+    }
 
     if (parser.isSet(devProfileOption))
     {
         AppSettings::setDeveloperProfile(parser.value(devProfileOption));
-        QCoreApplication::setOrganizationDomain(parser.value(devProfileOption) + ".kestermckinney.com");
+        QCoreApplication::setOrganizationDomain(parser.value(devProfileOption) + ".projectnotespro.com");
         global_Settings.applyDeveloperProfile();
     }
+
+    if (parser.isSet(testSupabaseOption))
+        AppSettings::setTestSupabase(true);
 
     qRegisterMetaType<PythonPlugin>();
     qRegisterMetaType<PluginMenu>();

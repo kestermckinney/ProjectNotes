@@ -6,25 +6,24 @@ Project Notes automatically creates and opens a local database when it first lau
 
 If you are developing or testing plugins and need a separate environment that does not touch your production data, see [Developer Profile](<DeveloperProfile.md>).
 
-If you want to sync your data with a cloud host, configure the connection from **File > Cloud Sync Settings...**. See [File Menu](../InterfaceOverview/FileMenu.md) for details and [Remote Host](../InterfaceOverview/RemoteHost.md) for a full feature reference.
+If you want to back up your data and sync it across your devices, configure cloud sync from **File > Cloud Sync Settings...**. See [File Menu](../InterfaceOverview/FileMenu.md) for details and [Cloud Sync](../InterfaceOverview/RemoteHost.md) for a full feature reference.
 
 ## Cloud Sync Setup
 
-Cloud sync lets you access your Project Notes data from multiple machines and keep everything in sync automatically. Project Notes uses a [PostgREST](https://postgrest.org) API layer over a PostgreSQL database for all cloud sync operations. You have three hosting options:
+Cloud sync lets you back up your Project Notes data and keep it synchronized across all of your devices — your desktop installations and the [Project Notes Mobile](<../Mobile/ProjectNotesMobile.md>) app — automatically and in the background.
 
-| Option | Best For |
-| :--- | :--- |
-| **Supabase** | Easiest setup — managed PostgreSQL + PostgREST with a free tier |
-| **Neon + PostgREST** | Serverless Postgres backend with a self-managed PostgREST layer |
-| **Self-Hosted PostgREST** | Full control — run PostgreSQL and PostgREST on your own server or VM |
+Cloud sync is provided by a **Project Notes Pro** subscription. The hosting is fully managed: there is no server to set up and no host address or API key to enter. You simply sign in with your subscription account.
 
-All three options use the same connection settings in Project Notes (**File > Cloud Sync Settings...**). Choose the option that matches your infrastructure preferences:
+**To enable cloud sync:**
 
-- [Setting Up Supabase](<CloudSync_Supabase.md>)
-- [Setting Up Neon with PostgREST](<CloudSync_Neon.md>)
-- [Setting Up a Self-Hosted PostgREST Server](<CloudSync_SelfHosted.md>)
+1. Subscribe at [www.projectnotespro.com](https://www.projectnotespro.com).
+2. In Project Notes, choose **File > Cloud Sync Settings...**
+3. Check **Sync all your devices and backup your data**.
+4. Enter the **Username (Email)** and **Password** for your Project Notes Pro account.
+5. Optionally set an **Encryption Phrase** to encrypt your data before it leaves your machine. Keep it somewhere safe — it cannot be recovered, and every device must use the same phrase.
+6. Click **OK**.
 
-Once your server is running, see [Remote Host](<../InterfaceOverview/RemoteHost.md>) for a complete reference of all sync features, settings, and troubleshooting steps.
+See [Cloud Sync](<../InterfaceOverview/RemoteHost.md>) for a complete reference of all sync features, settings, and troubleshooting steps.
 
 ## Setting Yourself as the Project Manager
 

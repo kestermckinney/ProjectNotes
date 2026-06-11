@@ -14,24 +14,6 @@ Page {
         anchors.centerIn: parent
         spacing: 12
 
-        // ── App icon ──────────────────────────────────────────────────────────
-        Rectangle {
-            Layout.alignment: Qt.AlignHCenter
-            width: 80; height: 80
-            radius: 18
-            color: Theme.navyMid
-
-            Label {
-                anchors.centerIn: parent
-                text: "PN"
-                font.pixelSize: 30
-                font.bold: true
-                color: "white"
-            }
-        }
-
-        Item { height: 4 }
-
         Label {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("Project Notes")
@@ -41,7 +23,7 @@ Page {
 
         Label {
             Layout.alignment: Qt.AlignHCenter
-            text: qsTr("Version 5.0.1")
+            text: qsTr("Version 5.2.0")
             font.pixelSize: 15
             color: Theme.mutedText
         }
@@ -72,6 +54,50 @@ Page {
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("Source Code")
             onClicked: Qt.openUrlExternally("https://github.com/kestermckinney/ProjectNotes")
+        }
+
+        Item { height: 8 }
+
+        Rectangle {
+            Layout.alignment: Qt.AlignHCenter
+            width: root.width * 0.85
+            implicitHeight: promoColumn.implicitHeight + 24
+            color: Theme.sectionBg
+            radius: 10
+            border.color: Theme.navyMid
+            border.width: 1
+
+            ColumnLayout {
+                id: promoColumn
+                anchors { top: parent.top; left: parent.left; right: parent.right; margins: 12 }
+                spacing: 6
+
+                Label {
+                    Layout.fillWidth: true
+                    text: qsTr("Get the Full Experience")
+                    font.pixelSize: 15
+                    font.bold: true
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.Wrap
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    text: qsTr("Download the Project Notes desktop application for Windows or macOS to unlock the full suite of project management features — plugins, Outlook integration and advanced reporting.")
+                    font.pixelSize: 13
+                    color: Theme.mutedText
+                    wrapMode: Text.Wrap
+                    horizontalAlignment: Text.AlignHCenter
+                }
+            }
+        }
+
+        Label {
+            Layout.alignment: Qt.AlignHCenter
+            text: "<a href=\"https://www.projectnotespro.com\">www.projectnotespro.com</a>"
+            textFormat: Text.RichText
+            font.pixelSize: 15
+            onLinkActivated: Qt.openUrlExternally(link)
         }
     }
 }

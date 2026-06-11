@@ -1,0 +1,77 @@
+# ── PyQt6 built from source against the runtime's Qt (offline) ───────────────
+#
+# org.kde.Platform//6.9 ships Qt 6.9.3 but NOT PyQt6, and the embedded Python
+# interpreter (the runtime's Python 3.12) needs PyQt6 for the plugin system.
+#
+# PyQt6 is built from its sdist with sip-wheel rather than installed from a PyPI
+# wheel on purpose: the PyPI wheel bundles its own private copy of Qt, and the
+# plugins run *inside* the ProjectNotes process which has already loaded the
+# runtime's Qt. Two Qt copies (two QApplication globals) in one process is
+# unreliable, so PyQt6 must link the same Qt the C++ app links — the runtime's.
+#
+# Versions are pinned to match Qt 6.9.x (PyQt6 X.Y requires Qt >= X.Y):
+#   PyQt6 6.9.1, PyQt6-sip 13.10.2
+# Build tools (sip, PyQt-builder, ply, packaging, setuptools) are vendored as
+# wheels and installed into a throwaway prefix so they do not ship in the app.
+#
+# Regenerate the source list with build-flatpak.sh regen-pip if versions change.
+name: python3-pyqt6
+buildsystem: simple
+build-commands:
+  - |
+    set -e
+    # 1. Build backend into a throwaway prefix (not shipped in the app).
+    TOOLS="$PWD/_tools"
+    pip3 install --no-index --find-links="file://$PWD" --prefix="$TOOLS" \
+        ply packaging setuptools sip PyQt-builder
+    export PATH="$TOOLS/bin:$PATH"
+    export PYTHONPATH="$TOOLS/lib/python3.12/site-packages"
+
+    # 2. Runtime sip module into the app prefix (required by the bindings).
+    pip3 install --no-index --no-deps --find-links="file://$PWD" \
+        --prefix="$FLATPAK_DEST" PyQt6-sip
+
+    # 3. Compile PyQt6 against the runtime Qt (qmake6 from the SDK) into a wheel.
+    #    Build ONLY the bindings the plugins use, plus the modules the
+    #    PyQt6-WebEngine bindings %Import (QtNetwork/QtPrintSupport/QtWebChannel).
+    #    Building all ~35 modules is unnecessary and exhausts RAM on small hosts.
+    #    --jobs is capped low for the same reason (each g++ on the generated
+    #    sources is memory-hungry); raise it if the build host has plenty of RAM.
+    tar xf pyqt6-6.9.1.tar.gz
+    cd pyqt6-6.9.1
+    sip-wheel --confirm-license --verbose \
+        --qmake /usr/bin/qmake6 \
+        --enable QtCore --enable QtGui --enable QtWidgets \
+        --enable QtSql --enable QtXml \
+        --enable QtNetwork --enable QtPrintSupport --enable QtWebChannel \
+        --jobs "${FLATPAK_BUILDER_N_JOBS_PN:-2}"
+
+    # 4. Install the freshly built wheel into the app prefix.
+    #    sip-wheel emits a PEP 503-normalised (lowercase) filename, e.g.
+    #    pyqt6-6.9.1-cp310-abi3-manylinux_2_28_x86_64.whl
+    pip3 install --no-index --no-deps --prefix="$FLATPAK_DEST" pyqt6-*.whl
+sources:
+  # ── build tools (throwaway) ──
+  - type: file
+    url: https://files.pythonhosted.org/packages/a3/58/35da89ee790598a0700ea49b2a66594140f44dec458c07e8e3d4979137fc/ply-3.11-py2.py3-none-any.whl
+    sha256: 096f9b8350b65ebd2fd1346b12452efe5b9607f7482813ffca50c22722a807ce
+  - type: file
+    url: https://files.pythonhosted.org/packages/df/b2/87e62e8c3e2f4b32e5fe99e0b86d576da1312593b39f47d8ceef365e95ed/packaging-26.2-py3-none-any.whl
+    sha256: 5fc45236b9446107ff2415ce77c807cee2862cb6fac22b8a73826d0693b0980e
+  - type: file
+    url: https://files.pythonhosted.org/packages/9d/76/f789f7a86709c6b087c5a2f52f911838cad707cc613162401badc665acfe/setuptools-82.0.1-py3-none-any.whl
+    sha256: a59e362652f08dcd477c78bb6e7bd9d80a7995bc73ce773050228a348ce2e5bb
+  - type: file
+    url: https://files.pythonhosted.org/packages/0f/d9/36c6650bdb152d6089de179ceb94b71a862a0fa4af193fcf6ae09d4e2e19/sip-6.15.3-py3-none-any.whl
+    sha256: 60df2ee1d17f5375dd15f92ed6181937fea3761e094b73ddfcc550991711e007
+  - type: file
+    url: https://files.pythonhosted.org/packages/51/80/cbf9b332e01fc61e04c844560b59632842e93ef1e78a25c9caca03e7ab84/pyqt_builder-1.18.2-py3-none-any.whl
+    sha256: 7688a6bdb655275f397ba9b0024c765e90fc8700529fe5b6497960795232802c
+  # ── runtime sip module (compiled, cp312) ──
+  - type: file
+    url: https://files.pythonhosted.org/packages/21/40/de9491213f480a27199690616959a17a0f234962b86aa1dd4ca2584e922d/pyqt6_sip-13.10.2-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.whl
+    sha256: 37af463dcce39285e686d49523d376994d8a2508b9acccb7616c4b117c9c4ed7
+  # ── PyQt6 source (compiled against the runtime Qt) ──
+  - type: file
+    url: https://files.pythonhosted.org/packages/32/1b/567f46eb43ca961efd38d7a0b73efb70d7342854f075fd919179fdb2a571/pyqt6-6.9.1.tar.gz
+    sha256: 50642be03fb40f1c2111a09a1f5a0f79813e039c15e78267e6faaf8a96c1c3a6

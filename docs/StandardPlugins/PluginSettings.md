@@ -67,7 +67,7 @@ Plugin settings, UI state, and connection credentials are stored in your **opera
 | Category | Examples |
 | :--- | :--- |
 | Plugin configuration | Export sub-folders, IFS credentials, Outlook/Office 365 credentials, File Finder search locations and classifications, My Shortcuts definitions, meeting/email templates |
-| Cloud sync connection | Sync enabled flag, server URL, email, password, encryption phrase, Supabase key |
+| Cloud sync connection | Sync enabled flag, Project Notes Pro account email, password, and encryption phrase |
 | Window positions and sizes | Position and size of every dialog and the main window |
 | Table column widths and order | Column layout for every list view |
 | Table sort column and direction | Last sort applied to each list view |

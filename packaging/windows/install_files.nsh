@@ -380,7 +380,6 @@
    File "C:\Users\paulmckinney\Documents\ProjectNotes\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\deploy\site-packages\PyQt6\Qt6\plugins\sqldrivers\qsqlmimer.dll"
    File "C:\Users\paulmckinney\Documents\ProjectNotes\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\deploy\site-packages\PyQt6\Qt6\plugins\sqldrivers\qsqloci.dll"
    File "C:\Users\paulmckinney\Documents\ProjectNotes\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\deploy\site-packages\PyQt6\Qt6\plugins\sqldrivers\qsqlodbc.dll"
-   File "C:\Users\paulmckinney\Documents\ProjectNotes\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\deploy\site-packages\PyQt6\Qt6\plugins\sqldrivers\qsqlpsql.dll"
    SetOutPath "$INSTDIR\site-packages\PyQt6\Qt6\plugins\styles"
    File "C:\Users\paulmckinney\Documents\ProjectNotes\build\Desktop_Qt_6_10_0_MSVC2022_64bit-Release\deploy\site-packages\PyQt6\Qt6\plugins\styles\qmodernwindowsstyle.dll"
    SetOutPath "$INSTDIR\site-packages\PyQt6\Qt6\plugins\texttospeech"

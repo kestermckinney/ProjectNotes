@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Paul McKinney
 # build_installer.sh
 # Builds a signed, notarized macOS installer (.pkg wrapped in .dmg) containing
-# ProjectNotes.app and ProjectNotesRemoteHost.app.
+# ProjectNotes.app.
 #
 # Usage:
 #   ./build_installer.sh [options]
@@ -21,7 +21,6 @@
 #   NOTARIZE_KEYCHAIN_PROFILE Keychain profile name created with:
 #                              xcrun notarytool store-credentials <profile>
 #   PN_BUILD_DIR             Path to the CMake Release build dir for ProjectNotes
-#   SA_BUILD_DIR             Path to the CMake Release build dir for ProjectNotesRemoteHost
 #
 # Prerequisites:
 #   - Xcode Command Line Tools (codesign, pkgbuild, productbuild, hdiutil, xcrun)
@@ -40,17 +39,13 @@ NOTARIZE_KEYCHAIN_PROFILE="${NOTARIZE_KEYCHAIN_PROFILE:-ProjectNotes-Notarize}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-SQLADMIN_ROOT="$(cd "${PROJECT_ROOT}/../SqliteSyncPro" && pwd)"
 
 # Adjust these to match your Qt Creator build directory names
 PN_BUILD_DIR="${PN_BUILD_DIR:-${PROJECT_ROOT}/build/Qt_6_10_2_for_macOS-Release}"
-SA_BUILD_DIR="${SA_BUILD_DIR:-${SQLADMIN_ROOT}/build/Qt_6_10_2_for_macOS-Release/admin}"
 
 PN_APP="${PN_BUILD_DIR}/Project Notes.app"
-SA_APP="${SA_BUILD_DIR}/Project Notes Remote Host.app"
 
-PN_VERSION="5.0.1"
-SA_VERSION="5.0.1"
+PN_VERSION="5.2.0"
 INSTALLER_VERSION="${PN_VERSION}"
 
 STAGING_DIR="${SCRIPT_DIR}/staging"
@@ -150,10 +145,8 @@ sign_bundle() {
 
 log "=== Project Notes macOS Installer Build ==="
 log "Project Notes: ${PN_APP}"
-log "ProjectNotesRemoteHost: ${SA_APP}"
 
 require_app "${PN_APP}"
-require_app "${SA_APP}"
 
 # ── Step 2: Prepare staging area ──────────────────────────────────────────────
 
@@ -171,20 +164,17 @@ for _dir in "${STAGING_DIR}" "${OUTPUT_DIR}"; do
 done
 mkdir -p \
     "${STAGING_DIR}/projectnotes" \
-    "${STAGING_DIR}/sqladmin" \
     "${STAGING_DIR}/ifsplugins/Project Notes.app/Contents/Resources/plugins/includes" \
     "${STAGING_DIR}/ifsplugins/Project Notes.app/Contents/Resources/threads" \
     "${OUTPUT_DIR}"
 
-# Copy app bundles into staging roots.  Use ditto (not cp -R) so that bundle
+# Copy app bundle into staging root.  Use ditto (not cp -R) so that bundle
 # structure, resource forks, and extended attributes are preserved correctly
 # without creating spurious ._* AppleDouble files that break code signing.
-log "Copying app bundles..."
+log "Copying app bundle..."
 ditto "${PN_APP}" "${STAGING_DIR}/projectnotes/Project Notes.app"
-ditto "${SA_APP}" "${STAGING_DIR}/sqladmin/Project Notes Remote Host.app"
 
 PN_STAGED="${STAGING_DIR}/projectnotes/Project Notes.app"
-SA_STAGED="${STAGING_DIR}/sqladmin/Project Notes Remote Host.app"
 PN_RESOURCES="${PN_STAGED}/Contents/Resources"
 
 # ── IFS plugin staging ────────────────────────────────────────────────────────
@@ -221,7 +211,6 @@ done
 if [[ "${DO_SIGN}" == true ]]; then
     log "=== Code Signing ==="
     sign_bundle "${PN_STAGED}" "${SCRIPT_DIR}/ProjectNotes.entitlements"
-    sign_bundle "${SA_STAGED}"
 else
     log "Skipping code signing (pass --sign to enable)"
 fi
@@ -233,24 +222,15 @@ log "=== Building Component Packages ==="
 pkgbuild \
     --root "${STAGING_DIR}/projectnotes" \
     --component-plist "${SCRIPT_DIR}/ProjectNotes-component.plist" \
-    --identifier "com.kestermckinney.projectnotes" \
+    --identifier "com.projectnotespro.ProjectNotes" \
     --version "${PN_VERSION}" \
     --install-location "/Applications" \
     "${OUTPUT_DIR}/ProjectNotes.pkg"
 log "Built: ProjectNotes.pkg"
 
 pkgbuild \
-    --root "${STAGING_DIR}/sqladmin" \
-    --component-plist "${SCRIPT_DIR}/ProjectNotesRemoteHost-component.plist" \
-    --identifier "com.sqlitesyncpro.sqladmin" \
-    --version "${SA_VERSION}" \
-    --install-location "/Applications" \
-    "${OUTPUT_DIR}/ProjectNotesRemoteHost.pkg"
-log "Built: ProjectNotesRemoteHost.pkg"
-
-pkgbuild \
     --root "${STAGING_DIR}/ifsplugins" \
-    --identifier "com.kestermckinney.projectnotes.ifsplugins" \
+    --identifier "com.projectnotespro.ProjectNotes.ifsplugins" \
     --version "${PN_VERSION}" \
     --install-location "/Applications" \
     "${OUTPUT_DIR}/IFSPlugins.pkg"

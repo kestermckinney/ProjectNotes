@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ProjectNotes VERSION 5.0.1 LANGUAGES CXX)
+project(ProjectNotes VERSION 5.2.0 LANGUAGES CXX)
 
 if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum macOS deployment version")
@@ -41,7 +41,9 @@ if(WIN32)
 elseif(APPLE)
     find_package(Python3 3.13 REQUIRED COMPONENTS Interpreter Development)
 else()
-    find_package(Python3 3.14 REQUIRED COMPONENTS Interpreter Development)
+    # Linux (incl. Flatpak KDE 6.9 SDK, which ships Python 3.12). This is a
+    # minimum: a newer system Python (e.g. 3.14 on Fedora) is still accepted.
+    find_package(Python3 3.12 REQUIRED COMPONENTS Interpreter Development)
 endif()
 
 # Ensure we use the release libraries even in debug mode
@@ -60,12 +62,15 @@ set(PROJECT_SOURCES
     main.cpp
     mainwindow.cpp 
     aboutdialog.cpp
+    helpdialog.cpp
     filterdatadialog.cpp 
     findreplacedialog.cpp 
 
     preferencesdialog.cpp
     spellcheckdialog.cpp
-    aboutdialog.ui 
+    aboutdialog.ui
+    helpdialog.h
+    helpdialog.ui
     filterdatadialog.ui 
     findreplacedialog.ui 
     mainwindow.ui 
@@ -201,7 +206,12 @@ if(APPLE AND NOT OPENSSL_ROOT_DIR)
     endif()
 endif()
 
-add_subdirectory(../SqliteSyncPro/src SqliteSyncPro)
+# Location of the SqliteSyncPro source. Defaults to a sibling checkout
+# (normal local/dev build); the Flatpak build overrides this with
+# -DSQLITESYNCPRO_SRC_DIR=SqliteSyncPro/src, where the git source is fetched
+# into a subdirectory of the build root.
+set(SQLITESYNCPRO_SRC_DIR "../SqliteSyncPro/src" CACHE STRING "Path to SqliteSyncPro/src")
+add_subdirectory(${SQLITESYNCPRO_SRC_DIR} SqliteSyncPro)
 add_subdirectory(ProjectNotesCore)
 
 target_link_libraries(ProjectNotes PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${Python3_LIBRARIES} Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Charts "${HUNSPELL_LIBRARIES}" SqliteSyncProLib ProjectNotesCore)
@@ -217,7 +227,7 @@ else()
 endif()
 
 set_target_properties(ProjectNotes PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER "com.kestermckinney.projectnotes"
+    MACOSX_BUNDLE_GUI_IDENTIFIER "com.projectnotespro.ProjectNotes"
     MACOSX_BUNDLE_BUNDLE_NAME "Project Notes"
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
@@ -225,7 +235,13 @@ set_target_properties(ProjectNotes PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
-set_target_properties(ProjectNotes PROPERTIES OUTPUT_NAME "Project Notes")
+if(APPLE OR WIN32)
+    set_target_properties(ProjectNotes PROPERTIES OUTPUT_NAME "Project Notes")
+else()
+    # Linux/Flatpak: the .desktop Exec and the Flatpak manifest invoke
+    # "projectnotes", so the installed binary must use that name.
+    set_target_properties(ProjectNotes PROPERTIES OUTPUT_NAME "projectnotes")
+endif()
 
 include(GNUInstallDirs)
 install(TARGETS ProjectNotes
@@ -343,27 +359,67 @@ if(APPLE)
         )
     endif()
 else()
-    add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E create_symlink
+    # Dev convenience: when building out-of-source, expose the runtime assets
+    # next to the build-tree binary (symlinks for plugins/threads, a copy for
+    # dictionary). Skipped for in-source builds (e.g. the Flatpak, which builds
+    # in the source tree) where these directories already exist and symlinking
+    # onto them would fail.
+    if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
+                "${CMAKE_CURRENT_BINARY_DIR}/plugins"
+            COMMENT "Creating symbolic link to plugins folder"
+        )
+
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                "${CMAKE_CURRENT_SOURCE_DIR}/threads"
+                "${CMAKE_CURRENT_BINARY_DIR}/threads"
+            COMMENT "Creating symbolic link to threads folder"
+        )
+
+        add_custom_command(TARGET ProjectNotes POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/dictionary"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
+                "${CMAKE_CURRENT_BINARY_DIR}/dictionary"
+            COMMENT "Copying dictionary"
+        )
+    endif()
+
+    # Install runtime assets alongside the executable so packaged builds
+    # (e.g. Flatpak installs to /app/bin) can find them via appResourcesPath().
+    # The IFS ERP plugins are intentionally excluded from this (Flatpak/Linux)
+    # install — they are not shipped in the Flatpak. __pycache__ is excluded so
+    # stale compiled bytecode (including any IFS .pyc) is never bundled.
+    install(DIRECTORY
             "${CMAKE_CURRENT_SOURCE_DIR}/plugins"
-            "${CMAKE_CURRENT_BINARY_DIR}/plugins"
-        COMMENT "Creating symbolic link to plugins folder"
-    )
-
-    add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E create_symlink
             "${CMAKE_CURRENT_SOURCE_DIR}/threads"
-            "${CMAKE_CURRENT_BINARY_DIR}/threads"
-        COMMENT "Creating symbolic link to threads folder"
+            "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
+        DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        PATTERN "__pycache__" EXCLUDE
+        PATTERN "*ifs*" EXCLUDE
+        PATTERN "*IFS*" EXCLUDE
     )
 
-    add_custom_command(TARGET ProjectNotes POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/dictionary"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${CMAKE_CURRENT_SOURCE_DIR}/dictionary"
-            "${CMAKE_CURRENT_BINARY_DIR}/dictionary"
-        COMMENT "Copying dictionary"
-    )
+    # Freedesktop integration (Linux/Flatpak): desktop entry, AppStream metadata,
+    # and hicolor icons so the app appears in menus and Flatpak can export it.
+    if(NOT WIN32)
+        set(_linux_pkg "${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux")
+
+        install(FILES "${_linux_pkg}/com.projectnotespro.ProjectNotes.desktop"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
+        )
+        install(FILES "${_linux_pkg}/com.projectnotespro.ProjectNotes.metainfo.xml"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo"
+        )
+        foreach(_size 64 128 256 512)
+            install(FILES "${_linux_pkg}/icons/${_size}x${_size}/com.projectnotespro.ProjectNotes.png"
+                DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${_size}x${_size}/apps"
+            )
+        endforeach()
+    endif()
 endif()
 
 # ── Windows installer staging target ──────────────────────────────────────────

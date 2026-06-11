@@ -1,0 +1,74 @@
+# ── PyQt6-WebEngine bindings, built from source against the BaseApp's Qt ─────
+#
+# Qt WebEngine itself is supplied by `base: io.qt.qtwebengine.BaseApp`
+# (base-version 6.9), which is Qt WebEngine compiled from source against the
+# SAME org.kde.Platform 6.9 / Qt 6.9.x this app uses — so it shares the runtime
+# Qt rather than dragging in a second Qt stack. The BaseApp populates /app with
+# libQt6WebEngine*, headers, cmake configs and qmake .pri files before our
+# modules build.
+#
+# Here we compile only the Python bindings (PyQt6-WebEngine 6.9.0) on top of the
+# PyQt6 built by python-pyqt6.yaml. As with PyQt6, this is built from the sdist
+# rather than a PyPI wheel so the bindings link the runtime/BaseApp Qt.
+#
+# Two things make the bindings find Qt WebEngine:
+#   * QMAKEPATH=/app    — so the runtime's qmake6 also searches /app/mkspecs for
+#                         the WebEngine module .pri files installed by the BaseApp
+#   * PyQt6 on PYTHONPATH — PyQt6-WebEngine needs the PyQt6 bindings .sip files
+#                           (shipped inside the PyQt6 install) to compile against
+name: python3-pyqt6-webengine
+buildsystem: simple
+build-commands:
+  - |
+    set -e
+    # Build backend into a throwaway prefix (not shipped in the app).
+    TOOLS="$PWD/_tools"
+    pip3 install --no-index --find-links="file://$PWD" --prefix="$TOOLS" \
+        ply packaging setuptools sip PyQt-builder
+    export PATH="$TOOLS/bin:$PATH"
+    # PyQt6 (built by python-pyqt6.yaml, installed in /app) provides the bindings
+    # .sip files; the build tools live in $TOOLS.
+    export PYTHONPATH="$TOOLS/lib/python3.12/site-packages:$FLATPAK_DEST/lib/python3.12/site-packages"
+    # qmake6 is the runtime Qt (/usr); Qt WebEngine from the BaseApp lives in /app.
+    export QMAKEPATH=/app
+
+    # Build only the bindings the plugins use (QWebEngineView lives in
+    # QtWebEngineWidgets; QWebEnginePage/printToPdf in QtWebEngineCore). Skip
+    # QtWebEngineQuick (QML). --jobs capped low to bound memory use.
+    # NB: unlike PyQt6, PyQt6-WebEngine's sip-wheel has no --confirm-license flag.
+    tar xf pyqt6_webengine-6.9.0.tar.gz
+    cd pyqt6_webengine-6.9.0
+    # sip resolves imported PyQt6 .sip files under <target_dir>/PyQt6/bindings,
+    # and target_dir defaults to the build interpreter's site-packages (in /usr,
+    # read-only) — not where we installed PyQt6 (/app). sip-wheel has no flag for
+    # the search path, so point sip-include-dirs at the installed PyQt6 bindings.
+    sed -i "/^\[tool\.sip\.project\]/a sip-include-dirs = [\"$FLATPAK_DEST/lib/python3.12/site-packages/PyQt6/bindings\"]" pyproject.toml
+    sip-wheel --verbose \
+        --qmake /usr/bin/qmake6 \
+        --enable QtWebEngineCore --enable QtWebEngineWidgets \
+        --jobs "${FLATPAK_BUILDER_N_JOBS_PN:-2}"
+
+    # sip-wheel emits a PEP 503-normalised (lowercase) filename, e.g.
+    # pyqt6_webengine-6.9.0-cp310-abi3-manylinux_2_28_x86_64.whl
+    pip3 install --no-index --no-deps --prefix="$FLATPAK_DEST" pyqt6_webengine-*.whl
+sources:
+  # ── build tools (throwaway; same set as python-pyqt6.yaml, cached by sha) ──
+  - type: file
+    url: https://files.pythonhosted.org/packages/a3/58/35da89ee790598a0700ea49b2a66594140f44dec458c07e8e3d4979137fc/ply-3.11-py2.py3-none-any.whl
+    sha256: 096f9b8350b65ebd2fd1346b12452efe5b9607f7482813ffca50c22722a807ce
+  - type: file
+    url: https://files.pythonhosted.org/packages/df/b2/87e62e8c3e2f4b32e5fe99e0b86d576da1312593b39f47d8ceef365e95ed/packaging-26.2-py3-none-any.whl
+    sha256: 5fc45236b9446107ff2415ce77c807cee2862cb6fac22b8a73826d0693b0980e
+  - type: file
+    url: https://files.pythonhosted.org/packages/9d/76/f789f7a86709c6b087c5a2f52f911838cad707cc613162401badc665acfe/setuptools-82.0.1-py3-none-any.whl
+    sha256: a59e362652f08dcd477c78bb6e7bd9d80a7995bc73ce773050228a348ce2e5bb
+  - type: file
+    url: https://files.pythonhosted.org/packages/0f/d9/36c6650bdb152d6089de179ceb94b71a862a0fa4af193fcf6ae09d4e2e19/sip-6.15.3-py3-none-any.whl
+    sha256: 60df2ee1d17f5375dd15f92ed6181937fea3761e094b73ddfcc550991711e007
+  - type: file
+    url: https://files.pythonhosted.org/packages/51/80/cbf9b332e01fc61e04c844560b59632842e93ef1e78a25c9caca03e7ab84/pyqt_builder-1.18.2-py3-none-any.whl
+    sha256: 7688a6bdb655275f397ba9b0024c765e90fc8700529fe5b6497960795232802c
+  # ── PyQt6-WebEngine source (compiled against the BaseApp's Qt WebEngine) ──
+  - type: file
+    url: https://files.pythonhosted.org/packages/8f/1a/9971af004a7e859347702f816fb71ecd67c3e32b2f0ae8daf1c1ded99f62/pyqt6_webengine-6.9.0.tar.gz
+    sha256: 6ae537e3bbda06b8e06535e4852297e0bc3b00543c47929541fcc9b11981aa25
