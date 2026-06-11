@@ -37,7 +37,9 @@ build-commands:
     #    Building all ~35 modules is unnecessary and exhausts RAM on small hosts.
     #    --jobs is capped low for the same reason (each g++ on the generated
     #    sources is memory-hungry); raise it if the build host has plenty of RAM.
-    tar xf pyqt6-6.9.1.tar.gz
+    # --no-same-owner: as root in the CI user namespace, restoring the
+    # archive's original uid/gid (501:20) fails with EINVAL and aborts tar.
+    tar xf pyqt6-6.9.1.tar.gz --no-same-owner
     cd pyqt6-6.9.1
     sip-wheel --confirm-license --verbose \
         --qmake /usr/bin/qmake6 \
