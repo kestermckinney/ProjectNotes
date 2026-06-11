@@ -36,7 +36,7 @@
             enabled="false"
             selected="true"
             title="Project Notes"
-            description="Project management application — tracks notes, meetings, issues, action items, contacts, and clients.">
+            description="Project management application — tracks notes, meetings, issues, action items, contacts, and clients. Visit www.projectnotespro.com to download the companion mobile application and to manage your online data storage subscription.">
         <pkg-ref id="com.projectnotespro.ProjectNotes"/>
     </choice>
 
