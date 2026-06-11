@@ -68,6 +68,16 @@ jobs:
           # Drop the .git so it isn't re-published as repo content.
           rm -rf "$GITHUB_WORKSPACE/packaging/linux/flatpak-repo/.git" 2>/dev/null || true
 
+      - name: Ensure dbus machine-id (container has none)
+        # The flatpak-builder image ships no /etc/machine-id, so dbus activation
+        # during the build can't start a bus. Generate one before building.
+        run: |
+          mkdir -p /var/lib/dbus
+          if [ ! -s /etc/machine-id ]; then
+            dbus-uuidgen | tee /etc/machine-id /var/lib/dbus/machine-id >/dev/null 2>&1 \
+              || dbus-uuidgen --ensure=/etc/machine-id
+          fi
+
       - name: Build, sign, and bundle
         working-directory: packaging/linux
         env:
@@ -75,6 +85,8 @@ jobs:
           GPG_HOMEDIR: ${{ env.GNUPGHOME }}
           RUNTIME_REPO_URL: ${{ env.FLATPAKREPO_URL }}
           STRICT: '0'
+          # rofiles-fuse (FUSE) can't spawn inside the CI container; opt out.
+          DISABLE_ROFILES_FUSE: '1'
         run: |
           ./build-flatpak.sh build
           ./build-flatpak.sh repo
