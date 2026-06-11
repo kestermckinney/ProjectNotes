@@ -22,6 +22,15 @@ GPG_KEY_ID="${GPG_KEY_ID:-}"
 GPG_HOMEDIR="${GPG_HOMEDIR:-}"
 RUNTIME_REPO_URL="${RUNTIME_REPO_URL:-}"
 
+# DISABLE_ROFILES_FUSE  Set to 1 in containerized CI where rofiles-fuse can't
+#                       spawn (FUSE unavailable). Harmless to leave unset locally.
+DISABLE_ROFILES_FUSE="${DISABLE_ROFILES_FUSE:-0}"
+
+# Shared flatpak-builder flags. rofiles-fuse mounts the build cache read-only
+# mid-build via FUSE, which fails inside CI containers; let CI opt out.
+BUILDER_FLAGS=()
+[ "$DISABLE_ROFILES_FUSE" = "1" ] && BUILDER_FLAGS+=("--disable-rofiles-fuse")
+
 # Build the shared --gpg-sign/--gpg-homedir argument list into the named array.
 # Usage: gpg_sign_args MYARRAY ; then expand "${MYARRAY[@]}".
 gpg_sign_args() {
@@ -150,7 +159,7 @@ cmd_build() {
     echo "==> Building Flatpak..."
     echo "    (clones ProjectNotes + SqliteSyncPro from GitHub at pinned commits;"
     echo "     ensure those commits are pushed to origin first)"
-    flatpak-builder --force-clean "$BUILD_DIR" "$MANIFEST"
+    flatpak-builder "${BUILDER_FLAGS[@]}" --force-clean "$BUILD_DIR" "$MANIFEST"
     echo "==> Build complete. Output in $BUILD_DIR"
 }
 
@@ -165,7 +174,7 @@ cmd_run() {
 
 cmd_install() {
     echo "==> Installing Flatpak for current user..."
-    flatpak-builder --user --install --force-clean "$BUILD_DIR" "$MANIFEST"
+    flatpak-builder "${BUILDER_FLAGS[@]}" --user --install --force-clean "$BUILD_DIR" "$MANIFEST"
     echo "==> Installed. Run with: flatpak run $APP_ID"
 }
 
@@ -183,7 +192,7 @@ cmd_repo() {
     else
         echo "==> Exporting to repository at $REPO_DIR (unsigned; set GPG_KEY_ID to sign)..."
     fi
-    flatpak-builder --repo="$REPO_DIR" "${sign_args[@]}" --force-clean "$BUILD_DIR" "$MANIFEST"
+    flatpak-builder "${BUILDER_FLAGS[@]}" --repo="$REPO_DIR" "${sign_args[@]}" --force-clean "$BUILD_DIR" "$MANIFEST"
     echo "==> Repository created at $REPO_DIR"
 }
 
