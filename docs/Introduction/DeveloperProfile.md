@@ -1,4 +1,14 @@
-# Developer Profile
+# Command-Line Options
+
+Project Notes accepts a small set of command-line options, primarily for development and testing. Running Project Notes with `--help` (or `-h`) opens a dialog listing the available options:
+
+| Option | Description |
+|---|---|
+| `--help`, `-h` | Show the command-line options help dialog and exit. |
+| `--developer-profile <PROFILENAME>` | Run an isolated settings/database/log profile in a named sub-folder. See [Developer Profile](#developer-profile) below. |
+| `--test-supabase` | Connect cloud sync to the Project Notes Pro **test** environment instead of production. Intended for development only. |
+
+## Developer Profile
 
 The `--developer-profile` command-line argument lets you run a completely isolated instance of Project Notes alongside your production installation. It is intended for plugin developers and testers who need to experiment without touching their real data.
 
@@ -11,7 +21,7 @@ When `--developer-profile PROFILENAME` is specified, Project Notes changes three
 | Application settings | `ProjectNotes` organization key | `ProjectNotesPROFILENAME` organization key |
 | Database file | `<AppData>/ProjectNotes.db` | `<AppData>/PROFILENAME/ProjectNotes.db` |
 | Log files | `<AppData>/logs/` | `<AppData>/PROFILENAME/logs/` |
-| Organization domain | `projectnotes.com` | `PROFILENAME.projectnotes.com` |
+| Organization domain | `projectnotespro.com` | `PROFILENAME.projectnotespro.com` |
 
 Both the settings and the database are stored in your platform's standard app-data location. The developer profile places its database and logs in a named subfolder, so the two instances never interfere with each other.
 

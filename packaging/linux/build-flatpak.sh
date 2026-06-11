@@ -4,11 +4,34 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BUILD_DIR="$SCRIPT_DIR/flatpak-build"
-REPO_DIR="$SCRIPT_DIR/flatpak-repo"
-BUNDLE_FILE="$SCRIPT_DIR/ProjectNotes.flatpak"
+# REPO_DIR / BUNDLE_FILE are overridable via env so CI can export into a clone of
+# the already-published ostree repo (preserving update history / deltas).
+REPO_DIR="${REPO_DIR:-$SCRIPT_DIR/flatpak-repo}"
+BUNDLE_FILE="${BUNDLE_FILE:-$SCRIPT_DIR/ProjectNotes.flatpak}"
 APP_ID="com.projectnotespro.ProjectNotes"
 MANIFEST="$SCRIPT_DIR/${APP_ID}.yml"
 RUNTIME_VERSION="6.9"
+
+# ── Optional GPG signing / self-hosting knobs (all opt-in via env) ───────────
+# GPG_KEY_ID       If set, `repo` and `bundle` are signed with this key.
+# GPG_HOMEDIR      Optional GnuPG home holding that key (used by CI's ephemeral
+#                  keyring); passed through to flatpak as --gpg-homedir.
+# RUNTIME_REPO_URL If set, embedded in the bundle via --runtime-repo so that
+#                  installing the .flatpak also adds the auto-update remote.
+GPG_KEY_ID="${GPG_KEY_ID:-}"
+GPG_HOMEDIR="${GPG_HOMEDIR:-}"
+RUNTIME_REPO_URL="${RUNTIME_REPO_URL:-}"
+
+# Build the shared --gpg-sign/--gpg-homedir argument list into the named array.
+# Usage: gpg_sign_args MYARRAY ; then expand "${MYARRAY[@]}".
+gpg_sign_args() {
+    local -n _out="$1"
+    _out=()
+    if [ -n "$GPG_KEY_ID" ]; then
+        _out+=("--gpg-sign=$GPG_KEY_ID")
+        [ -n "$GPG_HOMEDIR" ] && _out+=("--gpg-homedir=$GPG_HOMEDIR")
+    fi
+}
 # Official Flathub linter, shipped as part of the org.flatpak.Builder flatpak.
 LINTER_APP="org.flatpak.Builder"
 METAINFO_FILE="$SCRIPT_DIR/${APP_ID}.metainfo.xml"
@@ -153,8 +176,14 @@ cmd_repo() {
     fi
     # Gate the publishable artifact on the Flathub-style lint. Honors STRICT=1.
     cmd_lint
-    echo "==> Exporting to local repository at $REPO_DIR..."
-    flatpak-builder --repo="$REPO_DIR" --force-clean "$BUILD_DIR" "$MANIFEST"
+    local sign_args
+    gpg_sign_args sign_args
+    if [ -n "$GPG_KEY_ID" ]; then
+        echo "==> Exporting to repository at $REPO_DIR (signed with $GPG_KEY_ID)..."
+    else
+        echo "==> Exporting to repository at $REPO_DIR (unsigned; set GPG_KEY_ID to sign)..."
+    fi
+    flatpak-builder --repo="$REPO_DIR" "${sign_args[@]}" --force-clean "$BUILD_DIR" "$MANIFEST"
     echo "==> Repository created at $REPO_DIR"
 }
 
@@ -163,8 +192,13 @@ cmd_bundle() {
         echo "Error: Repository not found. Run '$0 repo' first."
         exit 1
     fi
+    local sign_args
+    gpg_sign_args sign_args
+    local extra=()
+    # Embed the update remote so installing the bundle also wires up `flatpak update`.
+    [ -n "$RUNTIME_REPO_URL" ] && extra+=("--runtime-repo=$RUNTIME_REPO_URL")
     echo "==> Creating bundle at $BUNDLE_FILE..."
-    flatpak build-bundle "$REPO_DIR" "$BUNDLE_FILE" "$APP_ID"
+    flatpak build-bundle "${sign_args[@]}" "${extra[@]}" "$REPO_DIR" "$BUNDLE_FILE" "$APP_ID"
     echo "==> Bundle created: $BUNDLE_FILE"
     echo "    Install with: flatpak install $BUNDLE_FILE"
 }

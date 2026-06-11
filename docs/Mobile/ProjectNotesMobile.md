@@ -195,18 +195,16 @@ Displays the details for a client company.
 
 Open from **≡ → Cloud Sync Settings**.
 
-The mobile app synchronizes data with a cloud backend using [SqliteSyncPro](https://github.com/kestermckinney/SqliteSyncPro). Two backend types are supported: a self-hosted [PostgREST](https://postgrest.org) server or a [Supabase](https://supabase.com) project.
+The mobile app synchronizes data with **Project Notes Pro** hosting using [SqliteSyncPro](https://github.com/kestermckinney/SqliteSyncPro). Hosting is fully managed — there is no server address or API key to enter. You sign in with the same Project Notes Pro account you use on the desktop, and your data stays in sync across every device.
 
 | Setting | Description |
 | :--- | :--- |
 | Enable Sync | Master on/off toggle for cloud synchronization. When off, the app operates in local-only mode and no network requests are made. |
-| Host Type | Selects the backend type: **Self-Hosted PostgREST** or **Supabase**. This choice controls which additional fields are shown below. |
-| Server URL | The base URL of your PostgREST REST API endpoint (e.g., `https://your-server/rest/v1`). Shown when **Self-Hosted PostgREST** is selected. |
-| Supabase URL | The URL of your Supabase project (e.g., `https://xxxx.supabase.co`). Shown when **Supabase** is selected. |
-| Supabase API Key | The `anon` public key for your Supabase project. Shown when **Supabase** is selected. |
-| Email | The email address used to authenticate with the sync server. |
-| Password | The password for the sync account. |
-| Encryption Phrase | An optional passphrase used to encrypt sensitive data before it is sent to the server. If set, the same phrase must be configured on every device that syncs to this database. Leave blank to disable encryption. |
+| Email | The email address for your Project Notes Pro account. |
+| Password | The password for your Project Notes Pro account. |
+| Encryption Phrase | An optional passphrase used to encrypt your data before it is sent to the server. If set, the same phrase must be configured on every device that syncs this account. Leave blank to disable encryption. |
+
+The page also shows your current **subscription status** and a link to [www.projectnotespro.com](https://www.projectnotespro.com), where you manage your subscription, along with the Project ID your data is associated with.
 
 **Sync behavior:**
 

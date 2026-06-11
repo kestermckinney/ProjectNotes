@@ -1,0 +1,13 @@
+[Flatpak Repo]
+Title=Project Notes
+Url=https://kestermckinney.github.io/projectnotes-flatpak/
+Homepage=https://www.projectnotespro.com
+Comment=Project management and meeting notes application
+Description=Official Flatpak repository for Project Notes. Add this remote to install Project Notes and receive automatic updates via `flatpak update`.
+Icon=https://kestermckinney.github.io/projectnotes-flatpak/icon.png
+# Single-line, base64-encoded *public* half of the repo signing key.
+# Generate/export it with:
+#   gpg --export "ProjectNotes Flatpak Signing" | base64 --wrap=0
+# Paste the output as the value below (no line breaks). The matching private
+# key is held only as the FLATPAK_GPG_PRIVATE_KEY GitHub Actions secret.
+GPGKey=mDMEaim5ChYJKwYBBAHaRw8BAQdAHOlcxfGr1bSNS51QF2yNlj/VNOz0OEBWUxm/5OuK7JK0HFByb2plY3ROb3RlcyBGbGF0cGFrIFNpZ25pbmeIkwQTFgoAOxYhBP7IrmglyCav1WTEJLowJ+XyYXwiBQJqKbkKAhsDBQsJCAcCAiICBhUKCQgLAgQWAgMBAh4HAheAAAoJELowJ+XyYXwiEZUA/RJ7G5fCkAS31N/55ra2iF7UU/fD2X+J+9zVcxs1qGqoAQDDvHIasrUPi253yX083faucCJVajcVR1u4hzTCn3iOCbg4BGopuQoSCisGAQQBl1UBBQEBB0CPJq0de4gy30MDnUBmYNdnh+jynbqnA4RZ3TYZP3p7VgMBCAeIeAQYFgoAIBYhBP7IrmglyCav1WTEJLowJ+XyYXwiBQJqKbkKAhsMAAoJELowJ+XyYXwiD2cA/2NhcP8Kxde76sFdfKO+gyiipGGvhBB0TXZEWITYEP2TAP9JxMCoD3S7L1CS7gX+RnjePGylPgnsrcrAHHZAh7ijCw==

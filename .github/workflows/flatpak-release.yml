@@ -1,0 +1,121 @@
+name: Flatpak Release
+
+# Builds, signs, and publishes the Linux Flatpak when a version tag is pushed.
+# Outputs:
+#   * a GPG-signed ostree repo deployed to the DEDICATED Pages repo
+#     (kestermckinney/projectnotes-flatpak), giving users `flatpak update`;
+#   * a single-file ProjectNotes.flatpak bundle attached to the GitHub Release.
+#
+# The manifest clones the app + SqliteSyncPro from their PINNED commits, so make
+# sure those commits are pushed and the manifest is bumped before tagging.
+#
+# Required repository secrets (Settings > Secrets and variables > Actions):
+#   FLATPAK_GPG_PRIVATE_KEY   ASCII-armored private signing key (full block)
+#   FLATPAK_GPG_KEY_ID        The signing key's ID / fingerprint / uid
+#   FLATPAK_PAGES_DEPLOY_TOKEN  PAT with `repo` scope on projectnotes-flatpak
+#
+# First-run checklist lives in docs/Introduction/InstallLinux.md.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch: {}
+
+# The dedicated Pages repo that hosts ONLY the ostree repo. Kept separate from
+# the product site at kestermckinney.github.io/ProjectNotes so releases can
+# never clobber it.
+env:
+  PAGES_REPO: kestermckinney/projectnotes-flatpak
+  PAGES_BRANCH: gh-pages
+  FLATPAKREPO_URL: https://kestermckinney.github.io/projectnotes-flatpak/projectnotes.flatpakrepo
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Image ships flatpak + flatpak-builder + the org.kde Platform/SDK 6.9.
+    # bubblewrap needs elevated privileges to build inside the container.
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.9
+      options: --privileged
+
+    steps:
+      - name: Checkout packaging sources
+        uses: actions/checkout@v4
+
+      - name: Install build-time bases (Qt WebEngine BaseApp)
+        run: |
+          flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak install -y --noninteractive flathub io.qt.qtwebengine.BaseApp//6.9
+
+      - name: Import GPG signing key
+        run: |
+          export GNUPGHOME="$RUNNER_TEMP/gnupg"
+          mkdir -p "$GNUPGHOME"; chmod 700 "$GNUPGHOME"
+          printf '%s' "${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}" | gpg --batch --import
+          echo "GNUPGHOME=$GNUPGHOME" >> "$GITHUB_ENV"
+
+      - name: Fetch already-published repo (preserve update history)
+        # Clone the live ostree repo so flatpak-builder exports incrementally
+        # into it; existing users get a delta, not a full re-download. Empty on
+        # the very first release — that's fine, we start a fresh repo.
+        run: |
+          git clone --branch "$PAGES_BRANCH" --depth 1 \
+            "https://x-access-token:${{ secrets.FLATPAK_PAGES_DEPLOY_TOKEN }}@github.com/${PAGES_REPO}.git" \
+            "$RUNNER_TEMP/published" 2>/dev/null && \
+            cp -a "$RUNNER_TEMP/published" "$GITHUB_WORKSPACE/packaging/linux/flatpak-repo" || \
+            echo "No existing repo yet — starting fresh."
+          # Drop the .git so it isn't re-published as repo content.
+          rm -rf "$GITHUB_WORKSPACE/packaging/linux/flatpak-repo/.git" 2>/dev/null || true
+
+      - name: Build, sign, and bundle
+        working-directory: packaging/linux
+        env:
+          GPG_KEY_ID: ${{ secrets.FLATPAK_GPG_KEY_ID }}
+          GPG_HOMEDIR: ${{ env.GNUPGHOME }}
+          RUNTIME_REPO_URL: ${{ env.FLATPAKREPO_URL }}
+          STRICT: '0'
+        run: |
+          ./build-flatpak.sh build
+          ./build-flatpak.sh repo
+          ./build-flatpak.sh bundle
+
+      - name: Stage publishable extras into the repo
+        # Serve the .flatpakrepo and icon from the Pages root alongside ostree.
+        working-directory: packaging/linux
+        run: |
+          cp projectnotes.flatpakrepo flatpak-repo/projectnotes.flatpakrepo
+          cp icons/256x256/com.projectnotespro.ProjectNotes.png flatpak-repo/icon.png
+          touch flatpak-repo/.nojekyll
+
+      - name: Deploy ostree repo to dedicated Pages repo
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.FLATPAK_PAGES_DEPLOY_TOKEN }}
+          external_repository: kestermckinney/projectnotes-flatpak
+          publish_branch: gh-pages
+          publish_dir: packaging/linux/flatpak-repo
+          # Single-commit branch: keeps repo size bounded while retaining all
+          # current ostree objects (old + new versions) as files.
+          force_orphan: true
+          commit_message: "Publish Flatpak ${{ github.ref_name }}"
+
+      - name: Attach bundle + flatpakrepo to the GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            packaging/linux/ProjectNotes.flatpak
+            packaging/linux/projectnotes.flatpakrepo
+          body: |
+            ### Install on Linux (Flatpak)
+
+            **Auto-updating (recommended):**
+            ```bash
+            flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+            flatpak remote-add --if-not-exists projectnotes ${{ env.FLATPAKREPO_URL }}
+            flatpak install projectnotes com.projectnotespro.ProjectNotes
+            ```
+
+            **One-file install:** download `ProjectNotes.flatpak` below, then
+            `flatpak install ProjectNotes.flatpak` (also wires up `flatpak update`).

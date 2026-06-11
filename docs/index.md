@@ -16,3 +16,5 @@ Project managers spend much of their time accounting, tracking and reporting tas
 * Exporting Tracker Items to PDF (All Platforms)
 * Creating Status Reports in Excel (Windows Only)
 * Scheduling Meetings (Office 365 or Outlook)
+* Cloud Backup & Multi-Device Sync (Project Notes Pro subscription)
+* iPhone & iPad Companion App (Project Notes Mobile)
