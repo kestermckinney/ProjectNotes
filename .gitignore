@@ -1,0 +1,12 @@
+# Specify filepatterns you want git to ignore.
+
+build/
+*.txt.user
+graphify-out/
+packaging/windows/*.exe
+plugins/__pycache__
+plugins/includes/__pycache__
+.qtcreator/
+packaging/windows/Thumbs.db
+threads/__pycache__
+*.sublime-workspace
