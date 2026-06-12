@@ -8,4 +8,5 @@ build/
 Thumbs.db
 graphify-out/
 packaging/windows/*.exe
-.claude/settings.local.json
+packaging/linux/flatpak-repo
+packaging/linux/*.flatpak

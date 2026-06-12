@@ -12,6 +12,8 @@ name: Flatpak Release
 # Required repository secrets (Settings > Secrets and variables > Actions):
 #   FLATPAK_GPG_PRIVATE_KEY   ASCII-armored private signing key (full block)
 #   FLATPAK_GPG_KEY_ID        The signing key's ID / fingerprint / uid
+#   FLATPAK_GPG_PASSPHRASE    Passphrase for the signing key (preset into the
+#                             agent so ostree can sign non-interactively)
 #   FLATPAK_PAGES_DEPLOY_TOKEN  PAT with `repo` scope on projectnotes-flatpak
 #
 # First-run checklist lives in docs/Introduction/InstallLinux.md.
@@ -41,7 +43,7 @@ jobs:
 
     steps:
       - name: Checkout packaging sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install build-time bases (Qt WebEngine BaseApp)
         run: |
@@ -49,24 +51,60 @@ jobs:
           flatpak install -y --noninteractive flathub io.qt.qtwebengine.BaseApp//6.9
 
       - name: Import GPG signing key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.FLATPAK_GPG_PASSPHRASE }}
         run: |
           export GNUPGHOME="$RUNNER_TEMP/gnupg"
           mkdir -p "$GNUPGHOME"; chmod 700 "$GNUPGHOME"
-          printf '%s' "${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}" | gpg --batch --import
+          # The signing key is passphrase-protected and ostree signs via gpgme/
+          # gpg-agent with no pinentry in this container. Let the agent take a
+          # preset passphrase and cache it long enough to outlast the ~25-min
+          # build before the export signs the commit.
+          printf '%s\n' allow-loopback-pinentry allow-preset-passphrase \
+            'default-cache-ttl 21600' 'max-cache-ttl 21600' \
+            > "$GNUPGHOME/gpg-agent.conf"
+          gpgconf --kill gpg-agent || true
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+          # Preset the passphrase for every (sub)key keygrip so signing the
+          # ostree commit needs no interactive prompt.
+          preset="$(gpgconf --list-dirs libexecdir)/gpg-preset-passphrase"
+          gpg --batch --with-colons --with-keygrip --list-secret-keys \
+            | awk -F: '$1 == "grp" { print $10 }' \
+            | while read -r grip; do
+                printf '%s' "$GPG_PASSPHRASE" | "$preset" --preset "$grip"
+              done
           echo "GNUPGHOME=$GNUPGHOME" >> "$GITHUB_ENV"
 
       - name: Fetch already-published repo (preserve update history)
         # Clone the live ostree repo so flatpak-builder exports incrementally
-        # into it; existing users get a delta, not a full re-download. Empty on
-        # the very first release — that's fine, we start a fresh repo.
+        # into it; existing users get a delta, not a full re-download. Only seed
+        # flatpak-repo when the clone is a real ostree repo (has objects/) —
+        # otherwise flatpak-builder aborts with "opendir(objects)". On the first
+        # release gh-pages holds only the staged extras (.flatpakrepo/icon), so
+        # we start fresh and let flatpak-builder initialize the repo.
         run: |
-          git clone --branch "$PAGES_BRANCH" --depth 1 \
-            "https://x-access-token:${{ secrets.FLATPAK_PAGES_DEPLOY_TOKEN }}@github.com/${PAGES_REPO}.git" \
-            "$RUNNER_TEMP/published" 2>/dev/null && \
-            cp -a "$RUNNER_TEMP/published" "$GITHUB_WORKSPACE/packaging/linux/flatpak-repo" || \
-            echo "No existing repo yet — starting fresh."
-          # Drop the .git so it isn't re-published as repo content.
-          rm -rf "$GITHUB_WORKSPACE/packaging/linux/flatpak-repo/.git" 2>/dev/null || true
+          DEST="$GITHUB_WORKSPACE/packaging/linux/flatpak-repo"
+          if git clone --branch "$PAGES_BRANCH" --depth 1 \
+               "https://x-access-token:${{ secrets.FLATPAK_PAGES_DEPLOY_TOKEN }}@github.com/${PAGES_REPO}.git" \
+               "$RUNNER_TEMP/published" 2>/dev/null && [ -d "$RUNNER_TEMP/published/objects" ]; then
+            cp -a "$RUNNER_TEMP/published" "$DEST"
+            # Drop the .git so it isn't re-published as repo content.
+            rm -rf "$DEST/.git" 2>/dev/null || true
+            echo "Seeded from published ostree repo (preserving update history)."
+          else
+            echo "No published ostree repo yet — starting fresh."
+          fi
+
+      - name: Ensure dbus machine-id (container has none)
+        # The flatpak-builder image ships no /etc/machine-id, so dbus activation
+        # during the build can't start a bus. Generate one before building.
+        run: |
+          mkdir -p /var/lib/dbus
+          if [ ! -s /etc/machine-id ]; then
+            dbus-uuidgen | tee /etc/machine-id /var/lib/dbus/machine-id >/dev/null 2>&1 \
+              || dbus-uuidgen --ensure=/etc/machine-id
+          fi
 
       - name: Build, sign, and bundle
         working-directory: packaging/linux
@@ -75,6 +113,8 @@ jobs:
           GPG_HOMEDIR: ${{ env.GNUPGHOME }}
           RUNTIME_REPO_URL: ${{ env.FLATPAKREPO_URL }}
           STRICT: '0'
+          # rofiles-fuse (FUSE) can't spawn inside the CI container; opt out.
+          DISABLE_ROFILES_FUSE: '1'
         run: |
           ./build-flatpak.sh build
           ./build-flatpak.sh repo

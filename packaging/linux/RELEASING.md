@@ -66,6 +66,13 @@ GitHub Release with the bundle attached.
 
 ## Local testing (optional)
 
+> **The local build is NOT your working tree.** `build-flatpak.sh` clones the
+> `commit:` pins in `com.projectnotespro.ProjectNotes.yml` from GitHub — it does
+> not build local or uncommitted changes. If a local build produces an old
+> version, the pins are stale: bump both `commit:` fields (step 2 of the
+> per-release routine) to the pushed commits you want, then rebuild. The
+> generated version comes from `CMakeLists.txt VERSION` at the pinned commit.
+
 `build-flatpak.sh` honors the same knobs as CI, so you can dry-run a signed
 build locally:
 

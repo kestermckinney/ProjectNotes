@@ -70,12 +70,12 @@ modules:
       # add a `tag`) for each new release.
       - type: git
         url: https://github.com/kestermckinney/ProjectNotes.git
-        commit: 51856b0a53877b8ebe8c8b444d91c428aeedee0e
+        commit: 6363db3e890b74da9cd928b65db401493bfd4377
       # SqliteSyncPro is co-developed on the same branch and pinned by commit
       # (the repo has no tags yet). Cloned into SqliteSyncPro/ to match the
       # cmake config-opt -DSQLITESYNCPRO_SRC_DIR=SqliteSyncPro/src. Keep this
       # commit in sync with the ProjectNotes commit above.
       - type: git
         url: https://github.com/kestermckinney/SqliteSyncPro.git
-        commit: 8321cf7dcfcc4ebca1d6affdc38894bf1c51b911
+        commit: f5c6b295e89ad61d16f05fb72e4c40287dc66853
         dest: SqliteSyncPro
