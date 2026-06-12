@@ -38,7 +38,8 @@ RequestExecutionLevel user
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "license.rtf"
-!insertmacro MUI_PAGE_DIRECTORY
+; No directory page: installs per-user only, under
+; $LOCALAPPDATA\Project Notes Remote Host. The location is enforced in .onInit.
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_FINISHPAGE_RUN "$INSTDIR\Project Notes Remote Host.exe"
 !insertmacro MUI_PAGE_FINISH
@@ -56,6 +57,16 @@ ShowInstDetails   show
 ShowUnInstDetails show
 
 ; ══════════════════════════════════════════════════════════════════════════════
+Function .onInit
+  ; Enforce a per-user install location. If a stale registry value or a silent
+  ; /D= override points outside the user's profile, reset to the default under
+  ; $LOCALAPPDATA so the component is never installed system-wide.
+  StrLen $1 "$LOCALAPPDATA"
+  StrCpy $2 "$INSTDIR" $1
+  StrCmp $2 "$LOCALAPPDATA" +2 0
+    StrCpy $INSTDIR "$LOCALAPPDATA\Project Notes Remote Host"
+FunctionEnd
+
 Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer

@@ -35,7 +35,12 @@ class CollaborationTools:
         projects = self.pnc.find_node(xmlroot, "table", "name", "projects")
         if not projects.isNull():
             project = projects.firstChild()
-            cli = self.pnc.get_column_value(project, "id")
+            # use the project's client company NAME (the client_id lookupvalue) so it can be
+            # compared against each person's client_name below
+            cli = self.pnc.get_column_value(project, "client_id")
+            colnode = self.pnc.find_node(project, "column", "name", "client_id")
+            if not colnode.isNull() and colnode.attributes().namedItem("lookupvalue").nodeValue() is not None and colnode.attributes().namedItem("lookupvalue").nodeValue() != '':
+                cli = colnode.attributes().namedItem("lookupvalue").nodeValue()
 
 
         if invitees == "Internal Project Team":
@@ -132,9 +137,9 @@ class CollaborationTools:
             while not memberrow.isNull():
                 nm = self.pnc.get_column_value(memberrow, "name")
                 email = self.pnc.get_column_value(memberrow, "email")
-                pco = self.pnc.get_column_value(memberrow, "id")
+                pco = self.pnc.get_column_value(memberrow, "client_id")
 
-                colnode = self.pnc.find_node(memberrow, "column", "name", "id")
+                colnode = self.pnc.find_node(memberrow, "column", "name", "client_id")
                 if not colnode.isNull() and colnode.attributes().namedItem("lookupvalue").nodeValue() is not None and colnode.attributes().namedItem("lookupvalue").nodeValue() != '':
                     pco = colnode.attributes().namedItem("lookupvalue").nodeValue()
 

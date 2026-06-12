@@ -30,12 +30,23 @@ void PreferencesDialog::on_buttonBox_accepted()
     key_val = ui->comboBoxProjectManager->model()->data(ui->comboBoxProjectManager->model()->index(i, 0));
 
     global_DBObjects.setProjectManager(key_val.toString());
+
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
+    global_Settings.setAutoUpdateEnabled(ui->checkBoxAutoUpdate->isChecked());
+#endif
 }
 
 
 void PreferencesDialog::showEvent(QShowEvent *ev)
 {
     global_Settings.getWindowState(objectName(), this);
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
+    ui->checkBoxAutoUpdate->setChecked(global_Settings.getAutoUpdateEnabled());
+#else
+    // Linux updates are handled by Flatpak, so hide the auto-update preference.
+    ui->labelUpdates->hide();
+    ui->checkBoxAutoUpdate->hide();
+#endif
     if (global_DBObjects.isOpen())
     {
         ui->comboBoxManagerCompany->setModel(global_DBObjects.unfilteredclientsmodel());

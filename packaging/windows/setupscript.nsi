@@ -25,6 +25,12 @@ RequestExecutionLevel user
 !system 'cmake --build "${BUILD_DIR}" --target deploy' = 0
 
 !include MUI2.nsh
+!include FileFunc.nsh   ; GetParameters / GetOptions for unattended-update flags
+!include Sections.nsh   ; SF_SELECTED
+
+; Set to "1" (via the /relaunch command-line flag) when the in-app auto-updater
+; runs this installer; it tells .onInstSuccess to relaunch the app afterward.
+Var RelaunchFlag
 
 ; ── MUI settings ──────────────────────────────────────────────────────────────
 !define MUI_ABORTWARNING
@@ -43,7 +49,9 @@ RequestExecutionLevel user
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "license.rtf"
-!insertmacro MUI_PAGE_DIRECTORY
+; No directory page: Project Notes installs per-user only, under
+; $LOCALAPPDATA\Project Notes. The location is enforced in .onInit so it can
+; never be redirected to a system-wide path.
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_FINISHPAGE_RUN "$INSTDIR\Project Notes.exe"
@@ -67,6 +75,27 @@ ShowUnInstDetails show
 
 ; ══════════════════════════════════════════════════════════════════════════════
 Section "MainSection" SEC01
+  ; ── Unattended update: wait for a running instance to exit ───────────────────
+  ; The in-app updater launches this installer silently while Project Notes is
+  ; still running. Windows keeps the running executable locked, so wait until it
+  ; can be opened for writing before overwriting any files. Bounded to ~30s so a
+  ; stuck process can't hang the install forever. Skipped on a fresh install
+  ; (no existing exe) and for normal interactive runs.
+  IfSilent 0 waitdone
+  StrCpy $0 0
+  waitloop:
+    IfFileExists "$INSTDIR\Project Notes.exe" 0 waitdone
+    ClearErrors
+    FileOpen $1 "$INSTDIR\Project Notes.exe" a
+    IfErrors 0 unlocked
+      IntOp $0 $0 + 1
+      IntCmp $0 60 waitdone 0 waitdone   ; give up after ~30s and proceed
+      Sleep 500
+      Goto waitloop
+  unlocked:
+    FileClose $1
+  waitdone:
+
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
 
@@ -298,10 +327,44 @@ Function un.onUninstSuccess
 FunctionEnd
 
 Function .onInit
-  SectionGetFlags ${SEC_IFS} $0
-  IntOp $0 $0 & 0xFFFFFFFE  ; clears SF_SELECTED (same as SECTION_OFF mask)
-  SectionSetFlags ${SEC_IFS} $0
+  ; Enforce a per-user install location. If a stale registry value or a silent
+  ; /D= override points outside the user's profile, reset to the default under
+  ; $LOCALAPPDATA so the app is never installed system-wide.
+  StrLen $1 "$LOCALAPPDATA"
+  StrCpy $2 "$INSTDIR" $1
+  StrCmp $2 "$LOCALAPPDATA" +2 0
+    StrCpy $INSTDIR "$LOCALAPPDATA\Project Notes"
 
+  ; Detect the auto-updater's /relaunch flag so .onInstSuccess can reopen the app.
+  ${GetParameters} $R0
+  ClearErrors
+  ${GetOptions} $R0 "/relaunch" $R1
+  IfErrors +2 0
+    StrCpy $RelaunchFlag "1"
+
+  ; The IFS plugins are opt-in (deselected) for a normal install. During a silent
+  ; update, preserve whatever the user already had installed so the update does
+  ; not silently drop their IFS integration.
+  IfSilent 0 ifs_off
+    IfFileExists "$INSTDIR\plugins\ifs_ssrs_generate_plugin.py" ifs_on ifs_off
+  ifs_on:
+    SectionGetFlags ${SEC_IFS} $0
+    IntOp $0 $0 | ${SF_SELECTED}
+    SectionSetFlags ${SEC_IFS} $0
+    Goto ifs_done
+  ifs_off:
+    SectionGetFlags ${SEC_IFS} $0
+    IntOp $0 $0 & 0xFFFFFFFE  ; clears SF_SELECTED (same as SECTION_OFF mask)
+    SectionSetFlags ${SEC_IFS} $0
+  ifs_done:
+FunctionEnd
+
+Function .onInstSuccess
+  ; Only the in-app updater passes /relaunch; relaunch the app after a silent
+  ; install (the finish-page "run" option does not fire in silent mode). Normal
+  ; interactive installs leave $RelaunchFlag empty and use the finish page.
+  StrCmp $RelaunchFlag "1" 0 +2
+    Exec '"$INSTDIR\Project Notes.exe"'
 FunctionEnd
 
 Function un.onInit

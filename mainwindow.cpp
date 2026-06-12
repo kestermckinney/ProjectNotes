@@ -173,6 +173,27 @@ MainWindow::MainWindow(QWidget *parent)
     setButtonAndMenuStates();
 
     applyZoom();
+
+    // Auto-update: check GitHub shortly after startup and re-evaluate every few
+    // hours while the app stays open. checkForUpdatesIfDue() enforces the
+    // once-a-day cadence and honours the user's preference.
+    // Linux is excluded — Flatpak manages its own updates — so the whole feature
+    // (menu item, timers, network checks) is compiled out there.
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
+    m_updateManager = new UpdateManager(this);
+    connect(m_updateManager, &UpdateManager::updateAvailable, this, &MainWindow::onUpdateAvailable);
+    connect(m_updateManager, &UpdateManager::upToDate, this, &MainWindow::onUpdateUpToDate);
+    connect(m_updateManager, &UpdateManager::checkFailed, this, &MainWindow::onUpdateCheckFailed);
+    connect(m_updateManager, &UpdateManager::installerLaunched, this, &MainWindow::close);
+
+    m_updateCheckTimer = new QTimer(this);
+    connect(m_updateCheckTimer, &QTimer::timeout, this, &MainWindow::checkForUpdatesIfDue);
+    m_updateCheckTimer->start(6 * 60 * 60 * 1000); // re-evaluate every 6 hours
+
+    QTimer::singleShot(5000, this, &MainWindow::checkForUpdatesIfDue); // let the UI settle first
+#else
+    ui->actionCheckForUpdates->setVisible(false);
+#endif
 }
 
 void MainWindow::addMenuItem(QMenu* menu, const QString& submenu, const QString& menutitle, QAction* action, int section)
@@ -2486,6 +2507,69 @@ void MainWindow::on_actionSendSupportLogs_triggered()
     SupportBundle::sendLogsToSupport(this);
 }
 
+void MainWindow::on_actionCheckForUpdates_triggered()
+{
+    if (!m_updateManager) // updates are not offered on this platform (e.g. Linux/Flatpak)
+        return;
+
+    // Manual checks always report their result, regardless of the auto-update preference.
+    m_manualUpdateCheck = true;
+    m_updateManager->checkForUpdates(/*silent=*/false);
+}
+
+void MainWindow::checkForUpdatesIfDue()
+{
+    if (!m_updateManager || !global_Settings.getAutoUpdateEnabled())
+        return;
+
+    const QDateTime last = global_Settings.getLastUpdateCheck();
+    if (last.isValid() && last.secsTo(QDateTime::currentDateTime()) < 24 * 60 * 60)
+        return; // checked less than a day ago
+
+    m_manualUpdateCheck = false;
+    global_Settings.setLastUpdateCheck(QDateTime::currentDateTime());
+    m_updateManager->checkForUpdates(/*silent=*/true);
+}
+
+void MainWindow::onUpdateAvailable(const QString& version, const QString& releaseNotes, const QUrl& assetUrl)
+{
+    QString notes = releaseNotes;
+    if (notes.size() > 1500)
+        notes = notes.left(1500) + "...";
+
+    QMessageBox box(this);
+    box.setIcon(QMessageBox::Information);
+    box.setWindowTitle(tr("Software Update"));
+    box.setText(tr("Project Notes %1 is available. You are running %2.")
+                    .arg(version, UpdateManager::currentVersion()));
+    box.setInformativeText(tr("Would you like to download and install it now? "
+                              "Project Notes will close and reopen automatically."));
+    if (!notes.trimmed().isEmpty())
+        box.setDetailedText(notes);
+
+    QPushButton* installButton = box.addButton(tr("Install Now"), QMessageBox::AcceptRole);
+    box.addButton(tr("Later"), QMessageBox::RejectRole);
+    box.exec();
+
+    if (box.clickedButton() == installButton)
+        m_updateManager->downloadAndInstall(assetUrl);
+}
+
+void MainWindow::onUpdateUpToDate()
+{
+    if (m_manualUpdateCheck)
+        QMessageBox::information(this, tr("Software Update"),
+            tr("You are running the latest version of Project Notes (%1).")
+                .arg(UpdateManager::currentVersion()));
+}
+
+void MainWindow::onUpdateCheckFailed(const QString& error)
+{
+    if (m_manualUpdateCheck)
+        QMessageBox::warning(this, tr("Software Update"),
+            tr("Could not check for updates:\n%1").arg(error));
+}
+
 void MainWindow::onPluginLoaded(const QString& pluginpath)
 {
     HistoryNode* hn = (m_navigationLocation >= 0 ? m_forwardBackHistory.at(m_navigationLocation) : nullptr);
@@ -2510,6 +2594,9 @@ void MainWindow::onRefreshRequested()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+    if (m_updateCheckTimer)
+        m_updateCheckTimer->stop();
+
     if (navigateCurrentPage())
     {
         navigateCurrentPage()->saveState();

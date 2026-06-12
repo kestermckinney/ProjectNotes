@@ -142,6 +142,26 @@ void AppSettings::setSyncEncryptionPhrase(const QString& phrase)
     m_appConfig->setValue("Sync/EncryptionPhrase", phrase);
 }
 
+bool AppSettings::getAutoUpdateEnabled()
+{
+    return m_appConfig->value("Update/Enabled", true).toBool();
+}
+
+void AppSettings::setAutoUpdateEnabled(bool enabled)
+{
+    m_appConfig->setValue("Update/Enabled", enabled);
+}
+
+QDateTime AppSettings::getLastUpdateCheck()
+{
+    return m_appConfig->value("Update/LastCheck").toDateTime();
+}
+
+void AppSettings::setLastUpdateCheck(const QDateTime& dateTime)
+{
+    m_appConfig->setValue("Update/LastCheck", dateTime);
+}
+
 QVariant AppSettings::getWindowStateData(const QString& stateDataName)
 {
     return m_appConfig->value(stateDataName);

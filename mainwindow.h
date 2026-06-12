@@ -32,6 +32,7 @@ QT_END_NAMESPACE
 #include "logviewer.h"
 #include "pluginmanager.h"
 #include "sqlitesyncpro.h"
+#include "updatemanager.h"
 
 #define MAXHISTORYNODES 20
 
@@ -116,7 +117,13 @@ private slots:
     void on_actionAbout_triggered();
     void on_actionHelp_triggered();
     void on_actionWhat_s_New_triggered();
+    void on_actionCheckForUpdates_triggered();
     void on_actionSendSupportLogs_triggered();
+
+    void checkForUpdatesIfDue();
+    void onUpdateAvailable(const QString& version, const QString& releaseNotes, const QUrl& assetUrl);
+    void onUpdateUpToDate();
+    void onUpdateCheckFailed(const QString& error);
 
     void cursorPositionChanged();
     void alignmentChanged(Qt::Alignment a);
@@ -244,6 +251,10 @@ private:
 
     QString m_mainConnectionName = "mainconnection";
     QTimer* m_waitForThreadsTimer = nullptr;
+
+    UpdateManager* m_updateManager = nullptr;
+    QTimer* m_updateCheckTimer = nullptr;
+    bool m_manualUpdateCheck = false;
 
     SqliteSyncPro* m_syncApi = nullptr;
     QProgressBar* m_syncProgressBar = nullptr;

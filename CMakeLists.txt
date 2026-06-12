@@ -160,6 +160,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         spellcheckdialog.cpp spellcheckdialog.h spellcheckdialog.ui
         cloudsyncsettingsdialog.cpp cloudsyncsettingsdialog.h cloudsyncsettingsdialog.ui
         supportbundle.cpp supportbundle.h
+        updatemanager.cpp updatemanager.h
     )
 
 # Define target properties for Android with Qt 6 as:

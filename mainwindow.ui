@@ -1640,6 +1640,7 @@
     </property>
     <addaction name="actionHelp"/>
     <addaction name="actionWhat_s_New"/>
+    <addaction name="actionCheckForUpdates"/>
     <addaction name="actionSendSupportLogs"/>
     <addaction name="actionAbout"/>
    </widget>
@@ -2232,6 +2233,20 @@
    </property>
    <property name="statusTip">
     <string>Open the What's New help Section</string>
+   </property>
+  </action>
+  <action name="actionCheckForUpdates">
+   <property name="text">
+    <string>Check for Updates...</string>
+   </property>
+   <property name="toolTip">
+    <string>Check GitHub for a newer version of Project Notes</string>
+   </property>
+   <property name="statusTip">
+    <string>Check GitHub for a newer version of Project Notes</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::ApplicationSpecificRole</enum>
    </property>
   </action>
   <action name="actionSendSupportLogs">

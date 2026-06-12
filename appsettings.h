@@ -8,6 +8,7 @@
 #include <QMainWindow>
 #include <QTableView>
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDir>
 
 #include "spellchecker.h"
@@ -35,6 +36,11 @@ public:
     void setSyncPassword(const QString& password);
     QString getSyncEncryptionPhrase();
     void setSyncEncryptionPhrase(const QString& phrase);
+
+    bool getAutoUpdateEnabled();
+    void setAutoUpdateEnabled(bool enabled);
+    QDateTime getLastUpdateCheck();
+    void setLastUpdateCheck(const QDateTime& dateTime);
 
     static void setTestSupabase(bool test);
     static bool isTestSupabase();
