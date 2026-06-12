@@ -27,6 +27,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts)
+# CorePrivate exposes QtCore's private QZipWriter (qzipwriter_p.h), used by the
+# "Send Logs to Support" log bundler.
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS CorePrivate)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(ENV{QT_LOGGING_RULES} "qt.*.debug=true")
@@ -57,6 +60,13 @@ find_library(HUNSPELL_LIBRARIES NAMES hunspell hunspell-1.7)
 
 message(STATUS "Hunspell includes: ${Hunspell_INCLUDE_DIRS}")
 message(STATUS "Hunspell library: ${HUNSPELL_LIBRARIES}")
+
+# Log bundling for "Send Logs to Support" uses Qt's built-in QZipWriter
+# (QtCore private API, header QtCore/private/qzipwriter_p.h), so no external zip
+# library is required. It is provided by the Qt6::CorePrivate target, linked
+# into the executable below. (The vcpkg quazip port was avoided because it pulls
+# in a full vcpkg Qt rebuild, and a source build of QuaZip needs the Qt5Compat
+# module which is not part of this Qt install.)
 
 set(PROJECT_SOURCES
     main.cpp
@@ -149,6 +159,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         allitemspage.cpp allitemspage.h
         spellcheckdialog.cpp spellcheckdialog.h spellcheckdialog.ui
         cloudsyncsettingsdialog.cpp cloudsyncsettingsdialog.h cloudsyncsettingsdialog.ui
+        supportbundle.cpp supportbundle.h
     )
 
 # Define target properties for Android with Qt 6 as:
@@ -214,7 +225,7 @@ set(SQLITESYNCPRO_SRC_DIR "../SqliteSyncPro/src" CACHE STRING "Path to SqliteSyn
 add_subdirectory(${SQLITESYNCPRO_SRC_DIR} SqliteSyncPro)
 add_subdirectory(ProjectNotesCore)
 
-target_link_libraries(ProjectNotes PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${Python3_LIBRARIES} Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Charts "${HUNSPELL_LIBRARIES}" SqliteSyncProLib ProjectNotesCore)
+target_link_libraries(ProjectNotes PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${Python3_LIBRARIES} Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Charts "${HUNSPELL_LIBRARIES}" Qt${QT_VERSION_MAJOR}::CorePrivate SqliteSyncProLib ProjectNotesCore)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

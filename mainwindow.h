@@ -116,6 +116,7 @@ private slots:
     void on_actionAbout_triggered();
     void on_actionHelp_triggered();
     void on_actionWhat_s_New_triggered();
+    void on_actionSendSupportLogs_triggered();
 
     void cursorPositionChanged();
     void alignmentChanged(Qt::Alignment a);

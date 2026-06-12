@@ -8,3 +8,4 @@ build/
 Thumbs.db
 graphify-out/
 packaging/windows/*.exe
+.claude/settings.local.json

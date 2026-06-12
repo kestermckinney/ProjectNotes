@@ -8,7 +8,7 @@ All menu items below the divider line in the Plugins menu have been added by a P
 
 ## Viewing Log Output
 
-The **View Logs** option opens the Log Viewer window, which displays all log output written by Python plugins.
+The **View → Logs** option opens the Log Viewer window, which displays all log output written by Python plugins.
 
 The Log Viewer displays one tab per log file. Each log file corresponds to a plugin or a logging category. When a plugin writes to the log, the Log Viewer updates automatically — you do not need to close and reopen it to see new output. If a new log file is created while the window is open, a new tab appears automatically.
 

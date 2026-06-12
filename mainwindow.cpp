@@ -41,10 +41,12 @@
 #include <QKeySequence>
 #include "mainwindow.h"
 #include "cloudsyncsettingsdialog.h"
+#include "supportbundle.h"
 #include "appsettings.h"
 
 #include "QLogger.h"
 #include "QLoggerWriter.h"
+#include "synclog.h"
 
 using namespace QLogger;
 
@@ -74,8 +76,16 @@ MainWindow::MainWindow(QWidget *parent)
 
     logmanager->addDestination("error.log", ERRORLOG, LogLevel::Error, logloc, LogMode::OnlyFile);
     logmanager->addDestination("console.log", CONSOLELOG, LogLevel::Info, logloc, LogMode::OnlyFile);
+    logmanager->addDestination("syncerrors.log", SYNCERRORLOG, LogLevel::Warning, logloc, LogMode::OnlyFile);
 
     logmanager->resume();
+
+    // Route sync-library failures (raised via SyncLog::error from inside
+    // SqliteSyncProLib) into the dedicated syncerrors.log so they never fail
+    // silently. The library has no dependency on QLogger; this sink bridges it.
+    SyncLog::setErrorSink([](const QString &msg) {
+        QLog_Warning(SYNCERRORLOG, msg);
+    });
 
     // add special formatting button for html editor
     setupTextActions();
@@ -248,14 +258,12 @@ void MainWindow::buildPluginMenu(BasePage* currentPage)
     QMenu *menu = ui->menuPlugins;
     int itemCount = menu->actions().count() - 1;
 
-    for (int i = itemCount; i > 0; i--)
+    for (int i = itemCount; i >= 0; i--)
     {
         QAction *action = menu->actions().at(i);
         menu->removeAction(action);
         delete action;
     }
-
-    menu->addSeparator();
 
     // add globally available plugins
     for ( Plugin* p : m_pluginManager->plugins())
@@ -266,7 +274,7 @@ void MainWindow::buildPluginMenu(BasePage* currentPage)
             {
                 QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), this);
                 connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname(), m.parameter());});
-                addMenuItem(ui->menuPlugins, m.submenu(), m.menutitle(), act, 1);
+                addMenuItem(ui->menuPlugins, m.submenu(), m.menutitle(), act, 0);
             }
         }
     }
@@ -360,6 +368,12 @@ void MainWindow::setButtonAndMenuStates()
     ui->actionStatus_Bar->setChecked(ui->statusbar->isVisible());
 
     bool dbopen = global_DBObjects.isOpen();
+
+    // The Logs action now lives in the View menu but must stay reachable even when no
+    // database is open, so we no longer disable the View menu as a whole. Each View item
+    // manages its own enabled state per dbopen instead; the status bar toggle was the only
+    // item that previously relied solely on the menu-wide switch.
+    ui->actionStatus_Bar->setEnabled(dbopen);
 
     ui->stackedWidget->setVisible(dbopen);
 
@@ -607,9 +621,6 @@ void MainWindow::setButtonAndMenuStates()
         else
             ui->menuFormat->setEnabled(false);
 
-        // view items
-        ui->menuView->setEnabled(true);
-
         // filter tracker items
         ui->actionResolved_Tracker_Action_Items->setChecked(!global_DBObjects.getShowResolvedTrackerItems());
         ui->actionResolved_Tracker_Action_Items->setEnabled(true);
@@ -652,9 +663,6 @@ void MainWindow::setButtonAndMenuStates()
 
         // format menu items
         ui->menuFormat->setEnabled(false);
-
-        // view items
-        ui->menuView->setEnabled(false);
 
         // text format bar
         ui->toolBarFormat->setVisible(false);
@@ -793,6 +801,29 @@ void MainWindow::openDatabase(const QString& dbfile)
                     this, [this](const SyncResult &result){
                         m_syncNetworkError = result.hasNetworkError();
                         global_DBObjects.updateDisplayData();
+
+                        // Safety net: record any failed sync cycle to
+                        // syncerrors.log so failures never pass silently, even
+                        // if a future library path forgets to call SyncLog. The
+                        // library already logs per-table detail; this adds a
+                        // single cycle-level summary line.
+                        if (!result.success || result.hasNetworkError() ||
+                            result.hasAuthError() || result.totalDecryptionFailures() > 0) {
+                            QStringList failed;
+                            for (const auto &t : result.tableResults) {
+                                if (!t.success || t.networkError || t.authError || t.decryptionFailures > 0)
+                                    failed << t.tableName;
+                            }
+                            QLog_Warning(SYNCERRORLOG,
+                                QString("Sync cycle reported failure: %1%2")
+                                    .arg(result.errorMessage.isEmpty()
+                                             ? QStringLiteral("see per-table entries above")
+                                             : result.errorMessage,
+                                         failed.isEmpty()
+                                             ? QString()
+                                             : QStringLiteral(" (tables: %1)").arg(failed.join(QStringLiteral(", ")))));
+                        }
+
                         if (result.totalDecryptionFailures() > 0) {
                             QMessageBox::warning(this, tr("Cloud Sync"),
                                 tr("One or more records could not be decrypted during sync. "
@@ -800,6 +831,13 @@ void MainWindow::openDatabase(const QString& dbfile)
                                    "Please verify the phrase via File > Cloud Sync Settings."));
                         }
                         m_syncApi->checkSyncStatus(result);
+                    },
+                    Qt::QueuedConnection);
+            connect(m_syncApi, &SqliteSyncPro::authenticationRequired,
+                    this, [this]() {
+                        QLog_Error(SYNCERRORLOG,
+                            QString("Reauthentication failed; the cloud sync loop has stopped. "
+                                    "Verify the sync email/password via File > Cloud Sync Settings."));
                     },
                     Qt::QueuedConnection);
             connect(m_syncApi, &SqliteSyncPro::syncStatusUpdated,
@@ -2441,6 +2479,11 @@ void MainWindow::on_actionHelp_triggered()
 void MainWindow::on_actionWhat_s_New_triggered()
 {
     QDesktopServices::openUrl(QUrl("https://github.com/kestermckinney/ProjectNotes/releases", QUrl::TolerantMode));
+}
+
+void MainWindow::on_actionSendSupportLogs_triggered()
+{
+    SupportBundle::sendLogsToSupport(this);
 }
 
 void MainWindow::onPluginLoaded(const QString& pluginpath)

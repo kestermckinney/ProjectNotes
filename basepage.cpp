@@ -339,7 +339,7 @@ void BasePage::buildPluginMenu(PluginManager* pm, QMenu* menu)
             {               
                 QAction* act = new QAction(QIcon(":/icons/add-on.png"), m.menutitle(), menu);
                 connect(act, &QAction::triggered, this,[p, m, this](){slotPluginMenu(p, m.functionname(), m.tablefilter(), m.parameter());});
-                MainWindow::addMenuItem(menu, m.submenu(), m.menutitle(), act, 2);
+                MainWindow::addMenuItem(menu, m.submenu(), m.menutitle(), act, 1);
             }
         }
     }

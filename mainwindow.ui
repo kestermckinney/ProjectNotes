@@ -1610,7 +1610,6 @@
     <property name="title">
      <string>Pl&amp;ugins</string>
     </property>
-    <addaction name="actionView_LogView"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -1633,6 +1632,7 @@
     <addaction name="separator"/>
     <addaction name="actionFilter"/>
     <addaction name="separator"/>
+    <addaction name="actionView_LogView"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -1640,6 +1640,7 @@
     </property>
     <addaction name="actionHelp"/>
     <addaction name="actionWhat_s_New"/>
+    <addaction name="actionSendSupportLogs"/>
     <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menuFormat">
@@ -2089,7 +2090,7 @@
      <normaloff>:/icons/logs.png</normaloff>:/icons/logs.png</iconset>
    </property>
    <property name="text">
-    <string>View Logs</string>
+    <string>Logs</string>
    </property>
    <property name="toolTip">
     <string>Open the application logs</string>
@@ -2231,6 +2232,17 @@
    </property>
    <property name="statusTip">
     <string>Open the What's New help Section</string>
+   </property>
+  </action>
+  <action name="actionSendSupportLogs">
+   <property name="text">
+    <string>Send Logs to Support...</string>
+   </property>
+   <property name="toolTip">
+    <string>Zip the application log files and email them to support</string>
+   </property>
+   <property name="statusTip">
+    <string>Zip the application log files and email them to support</string>
    </property>
   </action>
   <action name="actionCustom_Plugins">

@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>599</width>
-    <height>372</height>
+    <height>340</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -152,6 +152,9 @@
          </property>
          <property name="wordWrap">
           <bool>true</bool>
+         </property>
+         <property name="margin">
+          <number>3</number>
          </property>
         </widget>
        </item>

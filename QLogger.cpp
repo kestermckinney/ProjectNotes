@@ -13,6 +13,7 @@ Q_DECLARE_METATYPE(QLogger::LogMessageDisplay)
 const QString DEBUGLOG = "debuglog";
 const QString CONSOLELOG = "console";
 const QString ERRORLOG = "errorlog";
+const QString SYNCERRORLOG = "syncerrors";
 
 namespace QLogger
 {
