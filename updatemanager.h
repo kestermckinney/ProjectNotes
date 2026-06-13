@@ -14,8 +14,11 @@ class QNetworkReply;
 class QProgressDialog;
 
 // Checks GitHub Releases for a newer ProjectNotes build, downloads the
-// platform installer, and launches it. On Windows the installer runs silently
-// and relaunches the app; on macOS the downloaded .dmg is opened for the user.
+// platform installer, and launches it. On both Windows and macOS the install is
+// unattended and the app relaunches itself: Windows runs the NSIS installer
+// silently (it waits on /waitpid, then /relaunch), while macOS launches a
+// detached helper that waits for the app to quit, swaps the installed .app for
+// the freshly downloaded bundle, and reopens it.
 //
 // Networking is asynchronous: callers invoke checkForUpdates()/downloadAndInstall()
 // and react to the signals below. The "silent" flag passed to checkForUpdates is
@@ -59,6 +62,12 @@ private:
     static QString selectPlatformAsset(const class QJsonArray &assets);
 
     void launchInstaller();
+
+#if defined(Q_OS_MACOS)
+    // Writes the detached swap/relaunch helper to a temp file (see launchInstaller).
+    // Returns the script path, or an empty string on failure.
+    QString writeMacRelaunchScript(const QString &zipPath, const QString &targetApp);
+#endif
 
     bool m_silent = false;
     QWidget *m_parentWidget = nullptr;

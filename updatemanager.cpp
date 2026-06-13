@@ -78,7 +78,10 @@ QString UpdateManager::selectPlatformAsset(const QJsonArray &assets)
         if (name.endsWith("-Windows-x64-Setup.exe", Qt::CaseInsensitive))
             return asset.value("browser_download_url").toString();
 #elif defined(Q_OS_MACOS)
-        if (name.contains("macOS", Qt::CaseInsensitive) && name.endsWith(".dmg", Qt::CaseInsensitive))
+        // The updater consumes a zip of the self-contained .app bundle (see
+        // launchInstaller()). The .pkg/.dmg first-install assets that may also be
+        // attached to the release are intentionally not matched here.
+        if (name.contains("macOS", Qt::CaseInsensitive) && name.endsWith(".zip", Qt::CaseInsensitive))
             return asset.value("browser_download_url").toString();
 #else
         Q_UNUSED(name);
@@ -262,22 +265,112 @@ void UpdateManager::launchInstaller()
     QLog_Info(CONSOLELOG, "Update installer launched; shutting down for unattended install.");
     emit installerLaunched();
 #elif defined(Q_OS_MACOS)
-    // macOS installs are semi-attended: open the disk image and let the user
-    // replace the app (the running app cannot overwrite itself).
-    if (!QDesktopServices::openUrl(QUrl::fromLocalFile(m_downloadPath)))
+    // Unattended swap + relaunch (mirrors the Windows /waitpid + /relaunch flow).
+    // The running app cannot overwrite its own bundle, so a detached helper waits
+    // for this process to exit, replaces the installed .app with the freshly
+    // downloaded one, and relaunches it.
+    //
+    // applicationDirPath() is ".../Project Notes.app/Contents/MacOS"; walk up three
+    // levels to the .app. When the app is not running from a bundle (a dev build),
+    // there is nothing to swap — just reveal the download and bail.
+    const QDir macosDir(QCoreApplication::applicationDirPath());
+    QDir appDir(macosDir);
+    const bool inBundle = appDir.cdUp()        // Contents
+                          && appDir.cdUp()      // Project Notes.app
+                          && appDir.path().endsWith(".app");
+    if (!inBundle)
     {
-        QMessageBox::warning(m_parentWidget, tr("Software Update"),
-                             tr("The update was downloaded but the disk image could not be opened.\n"
-                                "It is located at:\n%1").arg(m_downloadPath));
+        QLog_Warning(CONSOLELOG, "Not running from a .app bundle; revealing download instead of swapping.");
+        QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(m_downloadPath).absolutePath()));
         return;
     }
 
-    QMessageBox::information(m_parentWidget, tr("Software Update"),
-                            tr("Drag Project Notes into the Applications folder to finish updating, "
-                               "then reopen the app."));
+    const QString targetApp = appDir.path();
+    const QString scriptPath = writeMacRelaunchScript(m_downloadPath, targetApp);
+    if (scriptPath.isEmpty())
+    {
+        QMessageBox::warning(m_parentWidget, tr("Software Update"),
+                             tr("The update was downloaded but the installer could not be prepared."));
+        return;
+    }
+
+    if (!QProcess::startDetached("/bin/bash", {scriptPath}))
+    {
+        QLog_Error(ERRORLOG, QString("Failed to launch update helper %1").arg(scriptPath));
+        QMessageBox::warning(m_parentWidget, tr("Software Update"),
+                             tr("The update was downloaded but the installer could not be started."));
+        return;
+    }
+
+    QLog_Info(CONSOLELOG, "Update helper launched; shutting down for unattended install.");
     emit installerLaunched();
 #else
     // No unattended path on this platform; just reveal the download.
     QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(m_downloadPath).absolutePath()));
 #endif
 }
+
+#if defined(Q_OS_MACOS)
+QString UpdateManager::writeMacRelaunchScript(const QString &zipPath, const QString &targetApp)
+{
+    // The helper runs detached after the app quits. It waits for our PID to exit,
+    // expands the downloaded .app, replaces the installed bundle (escalating to an
+    // authenticated copy only if an in-place swap is denied — e.g. a pkg-installed
+    // bundle owned by root in /Applications), and relaunches.
+    const QString tempDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+    const QString scriptPath = QDir(tempDir).filePath("projectnotes_update.sh");
+
+    const QString script = QString(R"SH(#!/bin/bash
+PID=%1
+ZIP="%2"
+TARGET="%3"
+STAGE="$(mktemp -d -t pn_update)"
+
+# Wait for the running app to exit before touching its bundle.
+while kill -0 "$PID" 2>/dev/null; do sleep 0.2; done
+
+if ! /usr/bin/ditto -x -k "$ZIP" "$STAGE"; then
+    /usr/bin/open "$STAGE"
+    exit 1
+fi
+
+NEW_APP="$(/usr/bin/find "$STAGE" -maxdepth 2 -name '*.app' -type d | head -n 1)"
+if [ -z "$NEW_APP" ]; then
+    exit 1
+fi
+
+/usr/bin/xattr -dr com.apple.quarantine "$NEW_APP" 2>/dev/null || true
+
+# Inner swap script keeps path quoting simple when re-run under osascript.
+SWAP="$(mktemp -t pn_swap)"
+cat > "$SWAP" <<'SWAPEOF'
+#!/bin/bash
+set -e
+/bin/rm -rf "$1"
+/usr/bin/ditto "$2" "$1"
+SWAPEOF
+
+if ! /bin/bash "$SWAP" "$TARGET" "$NEW_APP" 2>/dev/null; then
+    /usr/bin/osascript -e "do shell script \"/bin/bash '$SWAP' '$TARGET' '$NEW_APP'\" with administrator privileges" || exit 1
+fi
+
+/usr/bin/open "$TARGET"
+
+/bin/rm -rf "$STAGE" "$SWAP" "$ZIP"
+/bin/rm -f "$0"
+)SH")
+        .arg(QCoreApplication::applicationPid())
+        .arg(zipPath, targetApp);
+
+    QFile out(scriptPath);
+    if (!out.open(QIODevice::WriteOnly | QIODevice::Truncate) ||
+        out.write(script.toUtf8()) != script.toUtf8().size())
+    {
+        QLog_Error(ERRORLOG, QString("Could not write update helper to %1").arg(scriptPath));
+        return QString();
+    }
+    out.close();
+
+    return scriptPath;
+}
+#endif

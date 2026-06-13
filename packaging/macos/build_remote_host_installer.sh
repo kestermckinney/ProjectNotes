@@ -29,11 +29,11 @@
 set -euo pipefail
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-TEAM_ID="UWCKDYP67Y"
+TEAM_ID="2PY624KHXH"
 SIGN_IDENTITY="11477C487BBFAF86C840CFF198A5F7007BD4927D"
-SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Paul McKinney (UWCKDYP67Y)}"
+SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Paul McKinney (2PY624KHXH)}"
 INSTALLER_IDENTITY="${INSTALLER_IDENTITY:-Developer ID Installer: Paul McKinney (2PY624KHXH)}"
-TEAM_ID="${TEAM_ID:-UWCKDYP67Y}"
+TEAM_ID="${TEAM_ID:-2PY624KHXH}"
 APPLE_ID="${APPLE_ID:-paul.mckinney@me.com}"
 NOTARIZE_KEYCHAIN_PROFILE="${NOTARIZE_KEYCHAIN_PROFILE:-ProjectNotes-Notarize}"
 

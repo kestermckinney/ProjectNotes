@@ -2,7 +2,8 @@
 # Copyright (C) 2026 Paul McKinney
 # build_installer.sh
 # Builds a signed, notarized macOS installer (.pkg wrapped in .dmg) containing
-# ProjectNotes.app.
+# ProjectNotes.app, plus a self-contained ProjectNotes-<ver>-macOS.zip consumed
+# by the in-app auto-updater (UpdateManager on macOS).
 #
 # Usage:
 #   ./build_installer.sh [options]
@@ -29,7 +30,7 @@
 set -euo pipefail
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-TEAM_ID="UWCKDYP67Y"
+TEAM_ID="2PY624KHXH"
 SIGN_IDENTITY="11477C487BBFAF86C840CFF198A5F7007BD4927D"
 SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Paul McKinney (UWCKDYP67Y)}"
 INSTALLER_IDENTITY="${INSTALLER_IDENTITY:-Developer ID Installer: Paul McKinney (2PY624KHXH)}"
@@ -177,6 +178,13 @@ ditto "${PN_APP}" "${STAGING_DIR}/projectnotes/Project Notes.app"
 PN_STAGED="${STAGING_DIR}/projectnotes/Project Notes.app"
 PN_RESOURCES="${PN_STAGED}/Contents/Resources"
 
+# Second, untouched copy for the in-app auto-updater asset.  Unlike the .pkg
+# bundle below, this one KEEPS the IFS plugin files so an update never strips
+# them from a user who already has them.  Signed/notarized/zipped in Step 8.
+UPDATER_APP="${STAGING_DIR}/updater/Project Notes.app"
+mkdir -p "${STAGING_DIR}/updater"
+ditto "${PN_APP}" "${UPDATER_APP}"
+
 # ── IFS plugin staging ────────────────────────────────────────────────────────
 # IFS plugin files are removed from the main bundle so they can be delivered
 # as a separate optional installer component.
@@ -211,6 +219,7 @@ done
 if [[ "${DO_SIGN}" == true ]]; then
     log "=== Code Signing ==="
     sign_bundle "${PN_STAGED}" "${SCRIPT_DIR}/ProjectNotes.entitlements"
+    sign_bundle "${UPDATER_APP}" "${SCRIPT_DIR}/ProjectNotes.entitlements"
 else
     log "Skipping code signing (pass --sign to enable)"
 fi
@@ -314,6 +323,37 @@ if [[ "${DO_DMG}" == true ]]; then
 
     log "Built: ${DMG_PATH}"
 fi
+
+# ── Step 8: Auto-updater zip ───────────────────────────────────────────────────
+# A zip of the self-contained .app consumed by the in-app updater
+# (UpdateManager::launchInstaller on macOS). selectPlatformAsset matches a
+# release asset whose name contains "macOS" and ends in ".zip".
+
+UPDATE_ZIP="${OUTPUT_DIR}/ProjectNotes-${INSTALLER_VERSION}-macOS.zip"
+
+log "=== Building auto-updater zip ==="
+# --keepParent so the archive expands to "Project Notes.app", not its contents.
+ditto -c -k --keepParent "${UPDATER_APP}" "${UPDATE_ZIP}"
+
+if [[ "${DO_NOTARIZE}" == true ]]; then
+    log "Notarizing updater app..."
+    xcrun notarytool submit "${UPDATE_ZIP}" \
+        --apple-id   "${APPLE_ID}" \
+        --team-id    "${TEAM_ID}" \
+        --keychain-profile "${NOTARIZE_KEYCHAIN_PROFILE}" \
+        --wait
+
+    # Staple the ticket onto the .app, then re-zip so the shipped archive carries it.
+    xcrun stapler staple "${UPDATER_APP}"
+    xcrun stapler validate "${UPDATER_APP}"
+    rm -f "${UPDATE_ZIP}"
+    ditto -c -k --keepParent "${UPDATER_APP}" "${UPDATE_ZIP}"
+    log "Updater app notarized and stapled."
+else
+    log "Skipping updater notarization (pass --notarize to enable)"
+fi
+
+log "Built: ${UPDATE_ZIP}"
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 
