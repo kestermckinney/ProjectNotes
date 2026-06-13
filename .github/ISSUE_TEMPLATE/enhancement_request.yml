@@ -1,0 +1,40 @@
+name: Enhancement request
+description: Suggest an improvement to ProjectNotes
+title: "[Enhancement]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Enhancement requests are strongest when they describe the real workflow problem you are trying to solve.
+  - type: textarea
+    id: use_case
+    attributes:
+      label: What workflow are you trying to improve?
+      placeholder: Describe the project-management task or team process involved.
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: What is difficult today?
+      placeholder: Explain the current limitation, friction, or workaround.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to see?
+      placeholder: Describe the feature, behavior, or UI change you want.
+    validations:
+      required: true
+  - type: textarea
+    id: value
+    attributes:
+      label: Why would this help?
+      placeholder: Explain the impact for project managers, teams, or reporting workflows.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or workarounds considered

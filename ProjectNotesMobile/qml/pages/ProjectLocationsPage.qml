@@ -13,7 +13,12 @@ import ProjectNotesMobile
 
 Page {
     id: root
-    title: qsTr("Files & Folders")
+    title: {
+        var base = qsTr("Files & Folders")
+        if (root.projectId === "") return base
+        return base + " — " + AppController.projectNumberForId(root.projectId)
+                    + " " + AppController.projectNameForId(root.projectId).substring(0, 20)
+    }
 
     property string projectId:    ""
     property string projectTitle: ""

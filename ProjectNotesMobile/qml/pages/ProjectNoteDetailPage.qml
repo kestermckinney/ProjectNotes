@@ -8,7 +8,12 @@ import ProjectNotesMobile
 
 Page {
     id: root
-    title: qsTr("Note")
+    title: {
+        var base = qsTr("Note")
+        if (root.projectId === "") return base
+        return base + " — " + AppController.projectNumberForId(root.projectId)
+                    + " " + AppController.projectNameForId(root.projectId).substring(0, 20)
+    }
 
     property int    noteRow:         -1
     property string noteId:          ""
@@ -82,10 +87,14 @@ Page {
                         ? (parseInt(dateParts[1]) + "/" + parseInt(dateParts[2]) + "/" + dateParts[0])
                         : root.initialDate
                     var subject = projNum + " " + projName + " - " + titleField.text + " - " + formattedDate
-                    var body    = AppController.htmlToPlainText(TextFormatter.documentHtml(noteEdit.textDocument)).replace(/\n/g, '\r\n')
-                    Qt.openUrlExternally("mailto:" + emails
-                        + "?subject=" + encodeURIComponent(subject)
-                        + "&body="    + encodeURIComponent(body))
+                    var body = AppController.htmlToPlainText(TextFormatter.documentHtml(noteEdit.textDocument))
+                    var actionItems = AppController.noteActionItemsSummary()
+                    if (actionItems !== "")
+                        body += "\n\nAction Items:\n" + actionItems
+                    var attendees = AppController.attendeeNameList()
+                    if (attendees !== "")
+                        body += "\n\nAttendees:\n" + attendees
+                    AppController.sendMeetingNotesEmail(emails, subject, body)
                 }
             }
 
@@ -114,9 +123,10 @@ Page {
                 icon.name: "trash"
                 focusPolicy: Qt.NoFocus
                 onClicked: {
-                    root._skipSave = true
-                    AppController.deleteProjectNote(root.noteRow)
-                    root.StackView.view.pop()
+                    if (AppController.deleteProjectNote(root.noteRow)) {
+                        root._skipSave = true
+                        root.StackView.view.pop()
+                    }
                 }
             }
         }
@@ -138,7 +148,8 @@ Page {
                         noteId:    root.noteId,
                         noteBody:  AppController.htmlToPlainText(TextFormatter.documentHtml(noteEdit.textDocument)).replace(/\n/g, '\r\n'),
                         noteTitle: titleField.text,
-                        noteDate:  dateField.text
+                        noteDate:  dateField.text,
+                        projectId: root.projectId
                     })
                 }
             }
@@ -151,6 +162,8 @@ Page {
                     if (!root._saveNow()) return
                     root.StackView.view.push(Qt.resolvedUrl("NoteActionItemsPage.qml"), {
                         noteId:    root.noteId,
+                        noteTitle: titleField.text,
+                        noteDate:  dateField.text,
                         projectId: root.projectId
                     })
                 }

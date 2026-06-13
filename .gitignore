@@ -10,3 +10,6 @@ graphify-out/
 packaging/windows/*.exe
 packaging/linux/flatpak-repo
 packaging/linux/*.flatpak
+packaging/macos/output*
+packaging/macos/staging*
+.DS_Store

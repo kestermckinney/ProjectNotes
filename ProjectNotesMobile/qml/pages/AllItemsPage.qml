@@ -169,6 +169,7 @@ Page {
                     initialDateDue:       (d.date_due           || "").toString(),
                     initialLastUpdate:    (d.last_update        || "").toString(),
                     initialDateResolved:  (d.date_resolved      || "").toString(),
+                    initialNoteId:        (d.note_id            || "").toString(),
                     initialInternal:      (d.internal_item      || "0") !== "0"
                 })
             }

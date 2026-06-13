@@ -28,7 +28,7 @@ Page {
         if (!root._hasChanges) return true
         dateField.commitPending()
         var byId = updatedByCombo.currentIndex >= 0
-            ? AppController.peopleIdAtRow(updatedByCombo.currentIndex) : ""
+            ? AppController.teamMemberPersonIdAtRow(updatedByCombo.currentIndex) : ""
         var result = AppController.saveComment(root.commentRow, dateField.text, noteEdit.text, byId)
         if (result) root._hasChanges = false
         return result
@@ -38,7 +38,7 @@ Page {
         var d = AppController.getCommentData(root.commentRow)
         dateField.text = (d.lastupdated_date || "").toString()
         noteEdit.text  = (d.update_note      || "").toString()
-        var row = AppController.peopleRowForId((d.updated_by || "").toString())
+        var row = AppController.teamMemberRowForPersonId((d.updated_by || "").toString())
         updatedByCombo.currentIndex = row >= 0 ? row : -1
     }
 
@@ -73,9 +73,10 @@ Page {
             ToolButton {
                 icon.name: "trash"
                 onClicked: {
-                    root._skipSave = true
-                    AppController.deleteComment(root.commentRow)
-                    root.StackView.view.pop()
+                    if (AppController.deleteComment(root.commentRow)) {
+                        root._skipSave = true
+                        root.StackView.view.pop()
+                    }
                 }
             }
         }
@@ -97,10 +98,10 @@ Page {
                 ComboBox {
                     id: updatedByCombo
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.peopleModel
+                    model: AppController.projectTeamMembersModel
                     textRole: "name"
                     Component.onCompleted: {
-                        var row = AppController.peopleRowForId(root.initialBy)
+                        var row = AppController.teamMemberRowForPersonId(root.initialBy)
                         currentIndex = row >= 0 ? row : -1
                     }
                     onActivated: root._hasChanges = true

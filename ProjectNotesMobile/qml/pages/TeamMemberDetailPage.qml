@@ -90,9 +90,10 @@ Page {
             ToolButton {
                 icon.name: "trash"
                 onClicked: {
-                    root._skipSave = true
-                    AppController.deleteTeamMember(root.memberRow)
-                    root.StackView.view.pop()
+                    if (AppController.deleteTeamMember(root.memberRow)) {
+                        root._skipSave = true
+                        root.StackView.view.pop()
+                    }
                 }
             }
         }

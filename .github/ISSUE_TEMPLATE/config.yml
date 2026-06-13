@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Project site
+    url: https://kestermckinney.github.io/ProjectNotes/
+    about: See the public project overview, activity snapshot, and contribution links.
+  - name: Documentation
+    url: https://projectnotes.readthedocs.io
+    about: Check the product documentation before opening a support request.
+  - name: Contributing guide
+    url: https://github.com/kestermckinney/ProjectNotes/blob/main/CONTRIBUTING.md
+    about: Review expectations for bug reports, enhancement requests, and pull requests.

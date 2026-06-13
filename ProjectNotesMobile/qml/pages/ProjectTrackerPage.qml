@@ -13,7 +13,12 @@ import ProjectNotesMobile
 
 Page {
     id: root
-    title: qsTr("Tracker Items")
+    title: {
+        var base = qsTr("Tracker Items")
+        if (root.projectId === "") return base
+        return base + " — " + AppController.projectNumberForId(root.projectId)
+                    + " " + AppController.projectNameForId(root.projectId).substring(0, 20)
+    }
 
     property string projectId:    ""
     property string projectTitle: ""
@@ -91,6 +96,7 @@ Page {
                         initialDateDue:       (d.date_due          || "").toString(),
                         initialLastUpdate:    (d.last_update       || "").toString(),
                         initialDateResolved:  (d.date_resolved     || "").toString(),
+                        initialNoteId:        (d.note_id           || "").toString(),
                         initialInternal:      (d.internal_item     || "0") !== "0"
                     })
                 }
@@ -190,6 +196,7 @@ Page {
                     initialDateDue:       (d.date_due           || "").toString(),
                     initialLastUpdate:    (d.last_update        || "").toString(),
                     initialDateResolved:  (d.date_resolved      || "").toString(),
+                    initialNoteId:        (d.note_id            || "").toString(),
                     initialInternal:      (d.internal_item      || "0") !== "0"
                 })
             }

@@ -93,6 +93,7 @@ qt_add_qml_module(ProjectNotesMobile
         AppController.cpp   AppController.h
         MobileSettings.cpp  MobileSettings.h
         TextFormatter.cpp   TextFormatter.h
+        MailComposer.mm     MailComposer.h
     QML_FILES
         qml/Theme.qml
         qml/FormField.qml
@@ -141,11 +142,12 @@ set_target_properties(ProjectNotesMobile PROPERTIES
     XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
 )
 
-# iOS-specific: set the custom Info.plist
+# iOS-specific: set the custom Info.plist and link MessageUI
 if(IOS OR (APPLE AND CMAKE_SYSTEM_NAME STREQUAL "iOS"))
     set_target_properties(ProjectNotesMobile PROPERTIES
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/ios/Info.plist"
     )
+    target_link_libraries(ProjectNotesMobile PRIVATE "-framework MessageUI")
 endif()
 
 # ── Link libraries ────────────────────────────────────────────────────────────

@@ -1,0 +1,57 @@
+name: Bug report
+description: Report a problem in ProjectNotes
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Clear reproduction details make this much easier to fix.
+  - type: input
+    id: version
+    attributes:
+      label: ProjectNotes version
+      placeholder: e.g. 5.0.1
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system
+      placeholder: e.g. Windows 11, macOS 14, Ubuntu 24.04
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      placeholder: Describe the bug in one or two sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open...
+        2. Click...
+        3. Enter...
+        4. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, screenshots, or extra context
+      description: Add any screenshots, error text, or notes that might help.

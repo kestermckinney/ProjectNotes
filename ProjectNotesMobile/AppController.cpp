@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "AppController.h"
+#include "MailComposer.h"
 
 #include "QLogger.h"
 #include "QLoggerWriter.h"
@@ -732,6 +733,50 @@ QString AppController::attendeeEmailList() const
     return emails.join(",");
 }
 
+void AppController::sendMeetingNotesEmail(const QString& commaSeparatedEmails,
+                                          const QString& subject,
+                                          const QString& body)
+{
+    QStringList addresses;
+    const auto parts = commaSeparatedEmails.split(u',', Qt::SkipEmptyParts);
+    for (const QString& p : parts)
+        addresses.append(p.trimmed());
+
+    MailComposer::present(addresses, subject, body);
+}
+
+QString AppController::attendeeNameList() const
+{
+    QAbstractItemModel* model = global_DBObjects.meetingattendeesmodelproxy();
+    QStringList names;
+    for (int row = 0; row < model->rowCount(); ++row) {
+        const QString name = model->data(model->index(row, 3)).toString(); // col 3 = name
+        if (!name.isEmpty())
+            names.append(name);
+    }
+    return names.join("\r\n");
+}
+
+QString AppController::noteActionItemsSummary() const
+{
+    QAbstractItemModel* model = global_DBObjects.notesactionitemsmodelproxy();
+    QStringList entries;
+    for (int row = 0; row < model->rowCount(); ++row) {
+        const QString item       = model->data(model->index(row,  3)).toString(); // col 3 = item_name
+        const QString assignedId = model->data(model->index(row,  7)).toString(); // col 7 = assigned_to (person_id)
+        const QString due        = model->data(model->index(row, 10)).toString(); // col 10 = date_due
+        const QString assigned   = assignedId.isEmpty() ? QString() : peopleNameForId(assignedId);
+
+        QString entry = item;
+        if (!assigned.isEmpty())
+            entry += "  Assigned To: " + assigned;
+        if (!due.isEmpty())
+            entry += "  Due By: " + due;
+        entries.append(entry);
+    }
+    return entries.join("\r\n");
+}
+
 QString AppController::htmlToPlainText(const QString& html) const
 {
     if (html.isEmpty() || !html.contains('<'))
@@ -781,6 +826,22 @@ static bool deleteProxyRow(SortFilterProxyModel* proxy, SqlQueryModel* source, i
     return source->deleteRecord(proxy->mapToSource(proxyIdx));
 }
 
+// Delete the record at proxy |row|, surfacing the model's blocked-delete message
+// to the user when child/foreign-key references prevent it. deleteRecord() (via
+// deleteCheck) already stores that message in lastSaveError on mobile; here we
+// emit it through the existing errorOccurred → errorDialog path used by saves.
+bool AppController::deleteAndReport(SortFilterProxyModel* proxy, SqlQueryModel* source, int row)
+{
+    global_DBObjects.setLastSaveError("");
+    if (deleteProxyRow(proxy, source, row))
+        return true;
+
+    const QString err = global_DBObjects.lastSaveError();
+    if (!err.isEmpty())
+        emit errorOccurred(tr("Cannot Delete"), err);
+    return false;
+}
+
 // Copy the record at proxy row |row|, return the new proxy row.
 static int copyProxyRow(SortFilterProxyModel* proxy, SqlQueryModel* source, int row)
 {
@@ -826,8 +887,8 @@ int AppController::addProject()
 
 bool AppController::deleteProject(int row)
 {
-    return deleteProxyRow(global_DBObjects.projectinformationmodelproxy(),
-                          global_DBObjects.projectinformationmodel(), row);
+    return deleteAndReport(global_DBObjects.projectinformationmodelproxy(),
+                           global_DBObjects.projectinformationmodel(), row);
 }
 
 int AppController::copyProject(int row)
@@ -851,8 +912,8 @@ int AppController::addPerson()
 
 bool AppController::deletePerson(int row)
 {
-    return deleteProxyRow(global_DBObjects.peoplemodelproxy(),
-                          global_DBObjects.peoplemodel(), row);
+    return deleteAndReport(global_DBObjects.peoplemodelproxy(),
+                           global_DBObjects.peoplemodel(), row);
 }
 
 int AppController::copyPerson(int row)
@@ -876,8 +937,8 @@ int AppController::addClient()
 
 bool AppController::deleteClient(int row)
 {
-    return deleteProxyRow(global_DBObjects.clientsmodelproxy(),
-                          global_DBObjects.clientsmodel(), row);
+    return deleteAndReport(global_DBObjects.clientsmodelproxy(),
+                           global_DBObjects.clientsmodel(), row);
 }
 
 int AppController::copyClient(int row)
@@ -902,8 +963,8 @@ int AppController::addStatusItem(const QString& projectId)
 
 bool AppController::deleteStatusItem(int row)
 {
-    return deleteProxyRow(global_DBObjects.statusreportitemsmodelproxy(),
-                          global_DBObjects.statusreportitemsmodel(), row);
+    return deleteAndReport(global_DBObjects.statusreportitemsmodelproxy(),
+                           global_DBObjects.statusreportitemsmodel(), row);
 }
 
 int AppController::copyStatusItem(int row)
@@ -928,8 +989,8 @@ int AppController::addTeamMember(const QString& projectId)
 
 bool AppController::deleteTeamMember(int row)
 {
-    return deleteProxyRow(global_DBObjects.projectteammembersmodelproxy(),
-                          global_DBObjects.projectteammembersmodel(), row);
+    return deleteAndReport(global_DBObjects.projectteammembersmodelproxy(),
+                           global_DBObjects.projectteammembersmodel(), row);
 }
 
 int AppController::copyTeamMember(int row)
@@ -954,8 +1015,8 @@ int AppController::addProjectLocation(const QString& projectId)
 
 bool AppController::deleteProjectLocation(int row)
 {
-    return deleteProxyRow(global_DBObjects.projectlocationsmodelproxy(),
-                          global_DBObjects.projectlocationsmodel(), row);
+    return deleteAndReport(global_DBObjects.projectlocationsmodelproxy(),
+                           global_DBObjects.projectlocationsmodel(), row);
 }
 
 int AppController::copyProjectLocation(int row)
@@ -994,8 +1055,8 @@ int AppController::addProjectNote(const QString& projectId)
 
 bool AppController::deleteProjectNote(int row)
 {
-    return deleteProxyRow(global_DBObjects.projectnotesmodelproxy(),
-                          global_DBObjects.projectnotesmodel(), row);
+    return deleteAndReport(global_DBObjects.projectnotesmodelproxy(),
+                           global_DBObjects.projectnotesmodel(), row);
 }
 
 int AppController::copyProjectNote(int row)
@@ -1081,6 +1142,13 @@ void AppController::openTrackerItem(const QString& itemId)
         global_DBObjects.projectteammembersmodel()->clearFilter(1);
     global_DBObjects.projectteammembersmodel()->refresh();
 
+    // Filter meetings to the same project (col 1 = project_id)
+    if (!projectId.isEmpty())
+        global_DBObjects.actionitemsdetailsmeetingsmodel()->setFilter(1, projectId);
+    else
+        global_DBObjects.actionitemsdetailsmeetingsmodel()->clearFilter(1);
+    global_DBObjects.actionitemsdetailsmeetingsmodel()->refresh();
+
     // Filter comments to the same item (col 1 = item_id)
     global_DBObjects.trackeritemscommentsmodel()->setFilter(1, itemId);
     global_DBObjects.trackeritemscommentsmodel()->refresh();
@@ -1109,8 +1177,8 @@ int AppController::addTrackerItem(const QString& projectId)
 
 bool AppController::deleteTrackerItemDetail(int row)
 {
-    return deleteProxyRow(global_DBObjects.actionitemsdetailsmodelproxy(),
-                          global_DBObjects.actionitemsdetailsmodel(), row);
+    return deleteAndReport(global_DBObjects.actionitemsdetailsmodelproxy(),
+                           global_DBObjects.actionitemsdetailsmodel(), row);
 }
 
 int AppController::copyTrackerItemDetail(int row)
@@ -1145,6 +1213,7 @@ bool AppController::saveTrackerItemDetail(int row,
                                           const QString& status,
                                           const QString& dateIdentified,
                                           const QString& dateDue,
+                                          const QString& noteId,
                                           bool           internalItem)
 {
     global_DBObjects.setLastSaveError("");
@@ -1181,6 +1250,7 @@ bool AppController::saveTrackerItemDetail(int row,
     ok &= model->setData(model->index(pIdx.row(),  8), priority);
     ok &= model->setData(model->index(pIdx.row(),  9), status);
     ok &= model->setData(model->index(pIdx.row(), 10), dateDue);
+    ok &= model->setData(model->index(pIdx.row(), 13), noteId);
     ok &= model->setData(model->index(pIdx.row(), 15), internalItem ? "1" : "0");
     if (!ok) {
         const QString err = global_DBObjects.lastSaveError();
@@ -1194,6 +1264,27 @@ QString AppController::trackerItemIdAtRow(int row) const
     QAbstractItemModel* model = global_DBObjects.actionitemsdetailsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return {};
     return model->data(model->index(row, 0)).toString();
+}
+
+QAbstractItemModel* AppController::trackerItemMeetingsModel() const
+{
+    return global_DBObjects.actionitemsdetailsmeetingsmodelproxy();
+}
+
+int AppController::meetingRowForNoteId(const QString& noteId) const
+{
+    if (noteId.isEmpty()) return -1;
+    auto* m = global_DBObjects.actionitemsdetailsmeetingsmodelproxy();
+    for (int r = 0; r < m->rowCount(); ++r)
+        if (m->data(m->index(r, 0)).toString() == noteId) return r;
+    return -1;
+}
+
+QString AppController::meetingNoteIdAtRow(int row) const
+{
+    auto* m = global_DBObjects.actionitemsdetailsmeetingsmodelproxy();
+    if (row < 0 || row >= m->rowCount()) return {};
+    return m->data(m->index(row, 0)).toString();
 }
 
 bool AppController::isItemNumberUnique(const QString& projectId, const QString& itemId, const QString& itemNumber) const
@@ -1241,8 +1332,8 @@ int AppController::addComment(const QString& itemId)
 
 bool AppController::deleteComment(int row)
 {
-    return deleteProxyRow(global_DBObjects.trackeritemscommentsmodelproxy(),
-                          global_DBObjects.trackeritemscommentsmodel(), row);
+    return deleteAndReport(global_DBObjects.trackeritemscommentsmodelproxy(),
+                           global_DBObjects.trackeritemscommentsmodel(), row);
 }
 
 int AppController::copyComment(int row)
@@ -1301,8 +1392,8 @@ int AppController::addAttendee(const QString& noteId)
 
 bool AppController::deleteAttendee(int row)
 {
-    return deleteProxyRow(global_DBObjects.meetingattendeesmodelproxy(),
-                          global_DBObjects.meetingattendeesmodel(), row);
+    return deleteAndReport(global_DBObjects.meetingattendeesmodelproxy(),
+                           global_DBObjects.meetingattendeesmodel(), row);
 }
 
 QVariantMap AppController::getAttendeeData(int row) const
@@ -1361,8 +1452,8 @@ int AppController::addNoteActionItem(const QString& noteId, const QString& proje
 
 bool AppController::deleteNoteActionItem(int row)
 {
-    return deleteProxyRow(global_DBObjects.notesactionitemsmodelproxy(),
-                          global_DBObjects.notesactionitemsmodel(), row);
+    return deleteAndReport(global_DBObjects.notesactionitemsmodelproxy(),
+                           global_DBObjects.notesactionitemsmodel(), row);
 }
 
 QString AppController::noteActionItemIdAtRow(int row) const

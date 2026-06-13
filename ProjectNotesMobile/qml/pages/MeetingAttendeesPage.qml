@@ -14,12 +14,18 @@ import ProjectNotesMobile
 
 Page {
     id: root
-    title: qsTr("Attendees")
+    title: {
+        var base = qsTr("Attendees")
+        if (root.noteDate === "") return base
+        return base + " — " + root.noteDate
+                    + " " + root.noteTitle.substring(0, 20)
+    }
 
     property string noteId:    ""
     property string noteBody:  ""
     property string noteTitle: ""
     property string noteDate:  ""
+    property string projectId: ""
 
     StackView.onActivated: AppController.setNoteFilter(root.noteId, "")
 

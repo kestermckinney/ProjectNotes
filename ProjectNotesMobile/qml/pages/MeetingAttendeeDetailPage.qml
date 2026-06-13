@@ -52,9 +52,10 @@ Page {
             ToolButton {
                 icon.name: "trash"
                 onClicked: {
-                    root._skipSave = true
-                    AppController.deleteAttendee(root.attendeeRow)
-                    root.StackView.view.pop()
+                    if (AppController.deleteAttendee(root.attendeeRow)) {
+                        root._skipSave = true
+                        root.StackView.view.pop()
+                    }
                 }
             }
         }

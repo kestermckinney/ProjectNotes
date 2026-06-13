@@ -12,9 +12,16 @@ import ProjectNotesMobile
 
 Page {
     id: root
-    title: qsTr("Comments")
+    title: {
+        var base = qsTr("Comments")
+        var num = root.itemNumber.trim()
+        var name = root.itemName.trim().substring(0, 20)
+        return base + " - " + num + " " + name
+    }
 
     property string itemId: ""
+    property string itemNumber: ""
+    property string itemName: ""
 
     StackView.onActivated: AppController.openTrackerItem(root.itemId)
 

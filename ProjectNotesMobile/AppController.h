@@ -20,6 +20,8 @@ class QQmlEngine;
 class QJSEngine;
 class QThread;
 class IdRowIndex;
+class SortFilterProxyModel;
+class SqlQueryModel;
 
 // AppController — singleton exposed to QML as the application's main C++ object.
 // Responsibilities:
@@ -46,6 +48,7 @@ class AppController : public QObject
     Q_PROPERTY(QAbstractItemModel* trackerItemCommentsModel READ trackerItemCommentsModel NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* notesActionItemsModel   READ notesActionItemsModel   NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* trackerItemDetailModel  READ trackerItemDetailModel  NOTIFY databaseReady)
+    Q_PROPERTY(QAbstractItemModel* trackerItemMeetingsModel READ trackerItemMeetingsModel NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* searchResultsModel      READ searchResultsModel      NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* statusReportItemsModel  READ statusReportItemsModel  NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* projectTeamMembersModel READ projectTeamMembersModel NOTIFY databaseReady)
@@ -119,6 +122,11 @@ public:
     Q_INVOKABLE QString teamMemberPersonIdAtRow(int row) const;
     Q_INVOKABLE QString teamMemberEmailList() const;
     Q_INVOKABLE QString attendeeEmailList() const;
+    Q_INVOKABLE QString attendeeNameList() const;
+    Q_INVOKABLE QString noteActionItemsSummary() const;
+    Q_INVOKABLE void    sendMeetingNotesEmail(const QString& commaSeparatedEmails,
+                                             const QString& subject,
+                                             const QString& body);
     Q_INVOKABLE QString projectNumberForId(const QString& projectId) const;
     Q_INVOKABLE QString projectNameForId(const QString& projectId) const;
     Q_INVOKABLE QString htmlToPlainText(const QString& html) const;
@@ -188,8 +196,11 @@ public:
                                 const QString& status,
                                 const QString& dateIdentified,
                                 const QString& dateDue,
+                                const QString& noteId,
                                 bool           internalItem);
     Q_INVOKABLE QString     trackerItemIdAtRow(int row) const;
+    Q_INVOKABLE int         meetingRowForNoteId(const QString& noteId) const;
+    Q_INVOKABLE QString     meetingNoteIdAtRow(int row) const;
     Q_INVOKABLE bool        isItemNumberUnique(const QString& projectId, const QString& itemId, const QString& itemNumber) const;
     Q_INVOKABLE bool        isItemNameUnique(const QString& projectId, const QString& itemId, const QString& itemName) const;
 
@@ -247,6 +258,7 @@ public:
     QAbstractItemModel* trackerItemCommentsModel()    const;
     QAbstractItemModel* notesActionItemsModel()       const;
     QAbstractItemModel* trackerItemDetailModel()      const;
+    QAbstractItemModel* trackerItemMeetingsModel()    const;
 
     // ── Sync settings accessors ──────────────────────────────────────────────
     bool    syncEnabled()          const { return global_MobileSettings.getSyncEnabled(); }
@@ -336,6 +348,11 @@ private:
     void configureSyncApi();
     void setSyncProgress(qreal progress, bool hasError = false);
     void setSubscriptionStatusText(const QString& text);
+
+    // Delete the record at proxy |row|, surfacing the model's blocked-delete
+    // message (child/foreign-key references) via errorOccurred() on failure.
+    // Returns true only if the record was actually deleted.
+    bool deleteAndReport(SortFilterProxyModel* proxy, SqlQueryModel* source, int row);
 };
 
 #endif // APPCONTROLLER_H

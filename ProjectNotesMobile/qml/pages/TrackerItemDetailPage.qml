@@ -18,7 +18,12 @@ import ProjectNotesMobile
 
 Page {
     id: root
-    title: qsTr("Item Detail")
+    title: {
+        var base = qsTr("Item Detail")
+        if (root.initialProjectNumber === "" && root.initialProjectName === "") return base
+        return base + " — " + root.initialProjectNumber
+                    + " " + root.initialProjectName.substring(0, 20)
+    }
 
     property int    itemRow:              -1
     property string itemId:               ""
@@ -37,6 +42,7 @@ Page {
     property string initialLastUpdate:    ""
     property string initialDateResolved:  ""
     property bool   initialInternal:      false
+    property string initialNoteId:        ""
     property bool   _skipSave:            false
     property bool   _hasChanges:          false
     property bool   isNewRecord:          false
@@ -71,6 +77,8 @@ Page {
             statusCombo.currentIndex >= 0   ? statusCombo.model[statusCombo.currentIndex]     : "",
             dateIdentifiedField.text,
             dateDueField.text,
+            meetingCombo.currentIndex >= 0
+                ? AppController.meetingNoteIdAtRow(meetingCombo.currentIndex) : "",
             internalSwitch.checked
         )
         if (result) root._hasChanges = false
@@ -98,6 +106,8 @@ Page {
         root.initialLastUpdate   = (d.last_update     || "").toString()
         root.initialDateResolved = (d.date_resolved   || "").toString()
         internalSwitch.checked   = (d.internal_item   || "0") !== "0"
+        var mtg = AppController.meetingRowForNoteId((d.note_id || "").toString())
+        meetingCombo.currentIndex = mtg >= 0 ? mtg : -1
     }
 
     StackView.onDeactivating: {
@@ -146,6 +156,7 @@ Page {
                         initialDateDue:       (d.date_due         || "").toString(),
                         initialLastUpdate:    (d.last_update      || "").toString(),
                         initialDateResolved:  (d.date_resolved    || "").toString(),
+                        initialNoteId:        (d.note_id          || "").toString(),
                         initialInternal:      (d.internal_item    || "0") !== "0"
                     })
                 }
@@ -154,9 +165,10 @@ Page {
             ToolButton {
                 icon.name: "trash"
                 onClicked: {
-                    root._skipSave = true
-                    AppController.deleteTrackerItemDetail(root.itemRow)
-                    root.StackView.view.pop()
+                    if (AppController.deleteTrackerItemDetail(root.itemRow)) {
+                        root._skipSave = true
+                        root.StackView.view.pop()
+                    }
                 }
             }
         }
@@ -174,7 +186,9 @@ Page {
                 onClicked: {
                     if (!root._saveNow()) return
                     root.StackView.view.push(Qt.resolvedUrl("TrackerItemCommentsPage.qml"), {
-                        itemId: root.itemId
+                        itemId:     root.itemId,
+                        itemNumber: itemNumber.text,
+                        itemName:   nameField.text
                     })
                 }
             }
@@ -202,6 +216,21 @@ Page {
                 FormLabel {
                     text: root.initialProjectName !== "" ? root.initialProjectName : qsTr("—")
                     elide: Text.ElideRight
+                }
+            }
+
+            SectionHeader { text: qsTr("Meeting") }
+            FieldRow {
+                ComboBox {
+                    id: meetingCombo
+                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
+                    model: AppController.trackerItemMeetingsModel
+                    textRole: "meeting"
+                    Component.onCompleted: {
+                        var row = AppController.meetingRowForNoteId(root.initialNoteId)
+                        currentIndex = row >= 0 ? row : -1
+                    }
+                    onActivated: root._hasChanges = true
                 }
             }
 

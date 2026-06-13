@@ -77,9 +77,10 @@ Page {
             ToolButton {
                 icon.name: "trash"
                 onClicked: {
-                    root._skipSave = true
-                    AppController.deleteProjectLocation(root.locationRow)
-                    root.StackView.view.pop()
+                    if (AppController.deleteProjectLocation(root.locationRow)) {
+                        root._skipSave = true
+                        root.StackView.view.pop()
+                    }
                 }
             }
         }

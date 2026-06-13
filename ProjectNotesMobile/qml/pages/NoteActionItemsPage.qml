@@ -14,9 +14,16 @@ import ProjectNotesMobile
 
 Page {
     id: root
-    title: qsTr("Action Items")
+    title: {
+        var base = qsTr("Action Items")
+        if (root.noteDate === "") return base
+        return base + " — " + root.noteDate
+                    + " " + root.noteTitle.substring(0, 20)
+    }
 
     property string noteId:    ""
+    property string noteTitle: ""
+    property string noteDate:  ""
     property string projectId: ""
 
     StackView.onActivated: AppController.setNoteFilter(root.noteId, root.projectId)
@@ -81,6 +88,7 @@ Page {
                         initialDateDue:       (d.date_due          || "").toString(),
                         initialLastUpdate:    (d.last_update       || "").toString(),
                         initialDateResolved:  (d.date_resolved     || "").toString(),
+                        initialNoteId:        (d.note_id           || "").toString(),
                         initialInternal:      (d.internal_item     || "0") !== "0"
                     })
                 }
@@ -168,6 +176,7 @@ Page {
                     initialDateDue:       model.date_due          || "",
                     initialLastUpdate:    (d.last_update          || "").toString(),
                     initialDateResolved:  (d.date_resolved        || "").toString(),
+                    initialNoteId:        (d.note_id              || "").toString(),
                     initialInternal:      (model.internal_item    || "0") !== "0"
                 })
             }
