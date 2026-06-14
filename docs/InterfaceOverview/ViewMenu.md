@@ -104,6 +104,18 @@ The zoom factor is saved to your **local OS profile** and restored the next time
 - From the **View** menu, select **No Zoom**, or
 - Press **Ctrl+0**.
 
+## Viewing Application Logs
+
+Project Notes records its activity to a set of log files that are useful when troubleshooting a plugin or a sync problem. The built-in **Log Viewer** lets you inspect these files without leaving the application.
+
+In earlier releases this item lived on the **Plugins** menu; it now appears on the **View** menu as **Logs**.
+
+**To open the Log Viewer:**
+
+1. From the **View** menu, select **Logs**.
+
+The viewer shows `error.log`, `console.log`, and `syncerrors.log`. See [Error Log](ErrorLog.md) for what each log contains, and the [Help Menu](HelpMenu.md) for how to email these logs to support.
+
 ## Reviewing Tracker and Action Items
 
 The Item Tracker displays action items and tracker items (risks, issues, and work items). By default, items with a status of **Resolved**, **Deferred**, or **Cancelled** are hidden from the view, so you focus on active items that need attention.

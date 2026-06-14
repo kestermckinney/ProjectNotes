@@ -16,6 +16,7 @@ nav:
     - 'Plugins Menu': InterfaceOverview/PluginsMenu.md
     - 'View Menu': InterfaceOverview/ViewMenu.md
     - 'History Menu': InterfaceOverview/HistoryMenu.md
+    - 'Help Menu': InterfaceOverview/HelpMenu.md
     - 'Toolbar': InterfaceOverview/Toolbar.md
     - 'Preferences': InterfaceOverview/Preferences.md
     - 'Project List Page': InterfaceOverview/ProjectListPage.md

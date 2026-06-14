@@ -41,7 +41,24 @@ SKIP_DIRS = {
     "pkg_resources",
     # adodbapi ships tests/examples that aren't needed
     "adodbapi",
+    # graphify (a developer tool) and its dependency tree leaked into the build
+    # environment. None of these are Project Notes runtime dependencies — they
+    # are excluded here so they are never bundled into the installer. The
+    # tree_sitter_* grammar packages are handled by the prefix rule below.
+    "graphify",
+    "numpy",
+    "numpy.libs",
+    "scipy",
+    "scipy.libs",
+    "networkx",
+    "datasketch",
+    "rapidfuzz",
+    "tree_sitter",
 }
+
+# Directory name prefixes that are always skipped. tree_sitter_* covers the ~30
+# per-language grammar packages pulled in by graphify (tree_sitter_python, etc.)
+SKIP_PREFIXES = ("tree_sitter_",)
 
 # Directory name suffixes that are always skipped (.dist-info contains pip
 # metadata only; .data directories are installer scratch space)
@@ -53,11 +70,27 @@ SKIP_FILES = {
     "qsqlpsql.dll",
 }
 
+# File name suffixes excluded from copy and NSIS generation. Stray wheels (e.g.
+# a scipy .whl dropped into site-packages) are build artifacts, not runtime files.
+SKIP_FILE_SUFFIXES = (".whl",)
+
 
 def should_skip_dir(name: str) -> bool:
     if name in SKIP_DIRS:
         return True
+    for prefix in SKIP_PREFIXES:
+        if name.startswith(prefix):
+            return True
     for suffix in SKIP_SUFFIXES:
+        if name.endswith(suffix):
+            return True
+    return False
+
+
+def should_skip_file(name: str) -> bool:
+    if name in SKIP_FILES:
+        return True
+    for suffix in SKIP_FILE_SUFFIXES:
         if name.endswith(suffix):
             return True
     return False
@@ -82,7 +115,7 @@ def copy_filtered(src: str, dst: str) -> tuple[int, int]:
                 files_copied += fc
                 dirs_skipped += ds
         else:
-            if entry.name in SKIP_FILES:
+            if should_skip_file(entry.name):
                 print(f"  skip  {entry.name}")
             else:
                 shutil.copy2(entry.path, os.path.join(dst, entry.name))
@@ -119,7 +152,7 @@ def generate_nsis(staged_dir: str, install_path: str, uninstall_path: str) -> No
         if files:
             install_lines.append(f'   SetOutPath "{nsis_out}"')
             for fname in sorted(files):
-                if fname in SKIP_FILES:
+                if should_skip_file(fname):
                     print(f"  skip  {fname}")
                     continue
                 abs_src = os.path.join(root, fname)

@@ -43,6 +43,22 @@ The **Managing Company** setting specifies your organization or company. This se
 
 **Note:** The managing company list is populated from the **Clients** data in your database. If you don't see your company in the list, add it as a client first (see [Client List Page](ClientListPage.md)).
 
+## Automatically Check for Updates
+
+Project Notes can keep itself up to date by checking GitHub for newer releases. The **Updates** section of the Preferences dialog controls this behavior with a single checkbox: **Automatically check for updates**.
+
+When enabled (the default), Project Notes quietly checks for a newer version in the background. If a newer release is found, it offers to download and install it for you; the installer runs automatically and Project Notes relaunches itself when it finishes. When no update is available, the background check stays silent so it never interrupts your work.
+
+You can also check at any time from the **Help** menu by choosing **Check for Updates…**. A manual check always reports its result — including telling you when you are already running the latest version. See the [Help Menu](HelpMenu.md) for more on manual update checks.
+
+**To turn automatic update checks on or off:**
+
+1. Open the **Preferences** dialog from the **File** menu.
+2. Under **Updates**, check or uncheck **Automatically check for updates**.
+3. Click **OK**.
+
+**Note:** Unlike the Project Manager and Managing Company settings, the update preference is stored in your **local OS profile** (not the database), so it applies to this installation only and is not shared through cloud sync.
+
 ## How Preferences Are Used
 
 ### In Communications
