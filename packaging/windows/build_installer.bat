@@ -47,6 +47,6 @@ if errorlevel 1 (
 
 echo.
 echo Done.
-echo   Project Notes installer    : %~dp0ProjectNotes-5.2.0-Windows-x64-Setup.exe
-echo   Remote Host installer      : %~dp0ProjectNotesRemoteHost-5.2.0-Windows-x64-Setup.exe
+echo   Project Notes installer    : %~dp0ProjectNotes-5.2.1-Windows-x64-Setup.exe
+echo   Remote Host installer      : %~dp0ProjectNotesRemoteHost-5.2.1-Windows-x64-Setup.exe
 endlocal

@@ -46,7 +46,7 @@ SA_BUILD_DIR="${SA_BUILD_DIR:-${SQLADMIN_ROOT}/build/Qt_6_10_2_for_macOS-Release
 
 SA_APP="${SA_BUILD_DIR}/Project Notes Remote Host.app"
 
-SA_VERSION="5.2.0"
+SA_VERSION="5.2.1"
 INSTALLER_VERSION="${SA_VERSION}"
 
 STAGING_DIR="${SCRIPT_DIR}/staging_remote_host"
