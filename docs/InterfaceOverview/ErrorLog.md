@@ -42,17 +42,28 @@ NameError: name 'fetch_data' is not defined
 
 ## Related Log Files
 
-Two additional log files are written to the same `logs/` folder:
+Several additional log files are written to the same `logs/` folder:
 
 | File | Level | Contents |
 | :--- | :--- | :--- |
 | `error.log` | Error | Plugin exceptions, stderr output, application errors |
 | `console.log` | Info | General informational messages and routine activity |
+| `syncerrors.log` | Warning | Cloud sync failures (see below) |
 | `debugging.log` | Debug | Verbose diagnostic output — written only in Debug builds |
+
+### Sync Error Log
+
+`syncerrors.log` is a dedicated log for **cloud sync** problems. Failures raised deep inside the synchronization engine are routed to this file so they are never lost or silently swallowed. If your data does not appear to be syncing correctly, this is the first log to check.
+
+Typical entries include connectivity failures, authentication problems, and records the server rejected. Each entry is written at the **Warning** level with a timestamp.
 
 ## Viewing Logs on Desktop
 
-The built-in **Log Viewer** (available from the **Help** menu) lets you inspect all three log files without leaving the application.
+The built-in **Log Viewer** lets you inspect all of these log files without leaving the application. Open it from the **View** menu by choosing **Logs**. (In earlier releases this item lived on the Plugins menu.)
+
+## Sending Logs to Support
+
+If you need help diagnosing a problem, Project Notes can package your log files and email them to support for you. From the **Help** menu choose **Send Logs to Support…** — Project Notes zips `error.log`, `console.log`, and `syncerrors.log` and attaches the archive to a new email addressed to support. See the [Help Menu](HelpMenu.md) for details.
 
 ## Troubleshooting Plugins
 

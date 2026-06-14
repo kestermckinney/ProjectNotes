@@ -70,6 +70,8 @@ Displays the full content of a single meeting note.
 | Attendees | List of meeting attendees — tap to open the [Meeting Attendees Page](#meeting-attendees-page) |
 | Action Items | Action items generated from this note — tap to open the [Note Action Items Page](#note-action-items-page) |
 
+**Emailing meeting notes:** When you email a meeting note, Project Notes Mobile opens the native iOS mail composer (the standard Mail compose sheet) pre-populated with the attendees as recipients and a message body that includes the note content, its action items, and the attendee list. You can review and edit the message before sending, and it is sent through your device's configured mail account. (Earlier builds opened a plain `mailto:` link, which could not include the full action-item and attendee details.)
+
 ### Meeting Attendees Page
 
 Lists all attendees for a specific meeting note. Tap an attendee to open the [Meeting Attendee Detail Page](#meeting-attendee-detail-page).
@@ -98,6 +100,7 @@ Displays the full details for a single tracker item.
 | Status | Current status: New, Assigned, In Progress, Resolved, Closed |
 | Priority | Priority level: Low, Medium, High, Critical |
 | Assigned To | Team member responsible for the item |
+| Meeting | The meeting note this item originated from, chosen from a drop-down of the project's notes. Linking an item to its meeting ties the item back to where it was raised. |
 | Due Date | Target completion date |
 | Opened Date | Date the item was opened |
 | Closed Date | Date the item was resolved or closed |
@@ -188,6 +191,14 @@ Displays the details for a client company.
 | Phone | Main phone number |
 | Website | Company website |
 | Notes | Freeform notes about the client |
+
+---
+
+## Editing and Deleting Records
+
+Detail pages show the project and note context in their title bar so you always know which record you are editing.
+
+When you delete a record that other records depend on — for example, a person who is still assigned to projects or a note that still has action items — the database blocks the delete to protect your data. The app now reports this with a clear message and keeps the record open, instead of appearing to do nothing. Remove or reassign the dependent records first, then try the delete again.
 
 ---
 
