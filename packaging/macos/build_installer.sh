@@ -30,11 +30,13 @@
 set -euo pipefail
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-TEAM_ID="2PY624KHXH"
-SIGN_IDENTITY="11477C487BBFAF86C840CFF198A5F7007BD4927D"
-SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Paul McKinney (UWCKDYP67Y)}"
+# Distribution requires the Developer ID *Application* cert (for the .app and its
+# nested binaries) and the Developer ID *Installer* cert (for the .pkg wrapper),
+# both under Apple Team 2PY624KHXH. Do NOT use an "Apple Development" identity —
+# Apple rejects it during notarization. Override any of these via the environment.
+TEAM_ID="${TEAM_ID:-2PY624KHXH}"
+SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Paul McKinney (2PY624KHXH)}"
 INSTALLER_IDENTITY="${INSTALLER_IDENTITY:-Developer ID Installer: Paul McKinney (2PY624KHXH)}"
-TEAM_ID="${TEAM_ID:-UWCKDYP67Y}"
 APPLE_ID="${APPLE_ID:-paul.mckinney@me.com}"
 NOTARIZE_KEYCHAIN_PROFILE="${NOTARIZE_KEYCHAIN_PROFILE:-ProjectNotes-Notarize}"
 
@@ -46,7 +48,7 @@ PN_BUILD_DIR="${PN_BUILD_DIR:-${PROJECT_ROOT}/build/Qt_6_10_2_for_macOS-Release}
 
 PN_APP="${PN_BUILD_DIR}/Project Notes.app"
 
-PN_VERSION="5.2.0"
+PN_VERSION="5.2.1"
 INSTALLER_VERSION="${PN_VERSION}"
 
 STAGING_DIR="${SCRIPT_DIR}/staging"
@@ -88,43 +90,73 @@ sign_bundle() {
     log "Signing: ${bundle}"
 
     # Strip build-system artifacts from nested frameworks.  Static archives
-    # (.a), pkg-config files (.pc), and shell config scripts (.sh) cannot be
-    # code-signed and cause codesign --strict to reject the bundle.  These
-    # files are development-only and not needed at runtime.
+    # (.a), object files (.o), pkg-config files (.pc), and shell config scripts
+    # (.sh) cannot be code-signed and cause notarization / codesign --strict to
+    # reject the bundle (e.g. Python's config-*/python.o).  These files are
+    # development-only and not needed at runtime.
     find "${bundle}/Contents" \
-        \( -name "*.a" -o -name "*.pc" \
+        \( -name "*.a" -o -name "*.o" -o -name "*.pc" \
         -o -name "tclConfig.sh" -o -name "tkConfig.sh" \
         -o -name "tclooConfig.sh" -o -name "tkooConfig.sh" \) \
         -delete 2>/dev/null || true
 
-    # Sign all executable code depth-first across the entire bundle.
-    # Use printf+cut (not awk) to sort by path length without splitting on spaces.
-    # --options runtime must match the outer bundle; --timestamp is required for
-    # Developer ID signatures.
-    find "${bundle}/Contents" \
-         \( -name "*.so" -o -name "*.dylib" \) 2>/dev/null | \
+    # ── Pass 1: sign every Mach-O binary directly, deepest path first ──────────
+    # We must sign the actual binaries, not just their enclosing bundles. The
+    # PyQt5 Qt5 frameworks ship from PyPI ad-hoc signed AND with a non-standard
+    # layout (no Versions/Current symlink), so signing the .framework bundle
+    # re-seals its CodeResources but leaves the inner Mach-O ad-hoc — which is
+    # exactly what notarization rejects ("not signed with a valid Developer ID
+    # certificate" / "no secure timestamp" / "hardened runtime not enabled").
+    # Signing the versioned binary directly fixes that; the bundle is re-sealed
+    # over it in Pass 2.
+    #
+    # Detect Mach-O files by content (not extension) so nothing is missed:
+    # loadable modules (.so/.dylib), framework main binaries (no extension), and
+    # bare executables such as Python.framework's bin/python3.13. A single
+    # batched `file` scan over the bundle is cheap. printf+cut (not awk) sorts by
+    # path length without splitting on spaces, so deepest paths sign first.
+    # `file` column-pads filenames with spaces before the description, so match
+    # "Mach-O" anywhere and strip the ":<spaces>Mach-O…" suffix to recover the
+    # path. Drop the universal-binary "(for architecture …)" sub-lines so each
+    # binary is signed once.
+    find "${bundle}/Contents" -type f -print0 2>/dev/null | \
+    xargs -0 file 2>/dev/null | \
+    grep "Mach-O" | grep -v "(for architecture" | \
+    sed -E 's/:[[:space:]]+Mach-O.*$//' | \
     while IFS= read -r item; do printf '%d\t%s\n' "${#item}" "$item"; done | \
     sort -rn | cut -f2- | \
     while IFS= read -r item; do
-        codesign --force --verify --verbose \
-            --sign "${SIGN_IDENTITY}" \
+        codesign --force --sign "${SIGN_IDENTITY}" \
             --options runtime \
             --timestamp \
             "${item}" 2>&1 | grep -v "replacing existing signature" || true
     done
 
-    # Sign nested frameworks depth-first (longest path first ensures inner
-    # versioned binaries are signed before their enclosing bundle).
+    # ── Pass 2: sign nested bundles depth-first to (re)seal their contents ─────
+    # Deepest path first ensures an inner bundle is sealed before the bundle that
+    # encloses it (e.g. QtWebEngineProcess.app before QtWebEngineCore.framework,
+    # and all nested frameworks before Python.framework). Frameworks get their
+    # CodeResources re-sealed over the Developer ID binaries signed in Pass 1;
+    # .app helpers also get their own Mach-O executable signed here. Entitlements
+    # are applied only to .app bundles (executables); they are meaningless on a
+    # plain framework.
     find "${bundle}/Contents" \
-         -name "*.framework" 2>/dev/null | \
+         \( -name "*.framework" -o -name "*.app" \) 2>/dev/null | \
     while IFS= read -r item; do printf '%d\t%s\n' "${#item}" "$item"; done | \
     sort -rn | cut -f2- | \
     while IFS= read -r item; do
-        codesign --force --verify --verbose \
-            --sign "${SIGN_IDENTITY}" \
-            --options runtime \
-            --timestamp \
-            "${item}" 2>&1 | grep -v "replacing existing signature" || true
+        if [[ "${item}" == *.app && -n "${entitlements}" ]]; then
+            codesign --force --sign "${SIGN_IDENTITY}" \
+                --options runtime \
+                --timestamp \
+                --entitlements "${entitlements}" \
+                "${item}" 2>&1 | grep -v "replacing existing signature" || true
+        else
+            codesign --force --sign "${SIGN_IDENTITY}" \
+                --options runtime \
+                --timestamp \
+                "${item}" 2>&1 | grep -v "replacing existing signature" || true
+        fi
     done
 
     # Sign the bundle itself
@@ -165,8 +197,6 @@ for _dir in "${STAGING_DIR}" "${OUTPUT_DIR}"; do
 done
 mkdir -p \
     "${STAGING_DIR}/projectnotes" \
-    "${STAGING_DIR}/ifsplugins/Project Notes.app/Contents/Resources/plugins/includes" \
-    "${STAGING_DIR}/ifsplugins/Project Notes.app/Contents/Resources/threads" \
     "${OUTPUT_DIR}"
 
 # Copy app bundle into staging root.  Use ditto (not cp -R) so that bundle
@@ -178,22 +208,20 @@ ditto "${PN_APP}" "${STAGING_DIR}/projectnotes/Project Notes.app"
 PN_STAGED="${STAGING_DIR}/projectnotes/Project Notes.app"
 PN_RESOURCES="${PN_STAGED}/Contents/Resources"
 
-# Second, untouched copy for the in-app auto-updater asset.  Unlike the .pkg
-# bundle below, this one KEEPS the IFS plugin files so an update never strips
-# them from a user who already has them.  Signed/notarized/zipped in Step 8.
+# Second copy for the in-app auto-updater asset.  Signed/notarized/zipped in
+# Step 8.
 UPDATER_APP="${STAGING_DIR}/updater/Project Notes.app"
 mkdir -p "${STAGING_DIR}/updater"
 ditto "${PN_APP}" "${UPDATER_APP}"
 
-# ── IFS plugin staging ────────────────────────────────────────────────────────
-# IFS plugin files are removed from the main bundle so they can be delivered
-# as a separate optional installer component.
-#
-# NOTE: Installing files into an already-signed app bundle invalidates the
-# Developer ID code signature.  When using --sign/--notarize, either:
-#   (a) omit the IFS choice and ship it separately, or
-#   (b) include IFS files in the main bundle and hide this choice.
-# For unsigned/internal builds this optional package works without restriction.
+# ── IFS plugin removal ──────────────────────────────────────────────────────────
+# The IFS Cloud plugins are excluded from the macOS distribution. Shipping them
+# as a separate optional installer component is incompatible with a notarized,
+# signed app: the component's payload is an unsigned partial .app (which fails
+# notarization) and installing it into the already-signed bundle would
+# invalidate the Developer ID signature on the user's machine. Strip the files
+# from both the installer bundle and the auto-updater bundle so neither carries
+# them.
 
 IFS_PLUGIN_FILES=(
     "plugins/ifs_ssrs_generate_plugin.py"
@@ -202,16 +230,14 @@ IFS_PLUGIN_FILES=(
     "threads/ifssync_thread.py"
 )
 
-IFS_STAGING="${STAGING_DIR}/ifsplugins/Project Notes.app/Contents/Resources"
-
-log "Staging IFS plugin files..."
+log "Removing IFS plugin files from macOS bundles..."
 for rel in "${IFS_PLUGIN_FILES[@]}"; do
-    src="${PROJECT_ROOT}/${rel}"
-    dst="${IFS_STAGING}/${rel}"
-    [[ -f "${src}" ]] || die "IFS plugin source not found: ${src}"
-    mkdir -p "$(dirname "${dst}")"
-    cp "${src}" "${dst}"
-    rm -f "${PN_RESOURCES}/${rel}"
+    for base in "${PN_RESOURCES}" "${UPDATER_APP}/Contents/Resources"; do
+        rm -f "${base}/${rel}"
+        # Also drop any compiled bytecode so the module cannot be imported.
+        mod="$(basename "${rel}" .py)"
+        rm -f "$(dirname "${base}/${rel}")/__pycache__/${mod}".*.pyc
+    done
 done
 
 # ── Step 3: Code signing ──────────────────────────────────────────────────────
@@ -236,14 +262,6 @@ pkgbuild \
     --install-location "/Applications" \
     "${OUTPUT_DIR}/ProjectNotes.pkg"
 log "Built: ProjectNotes.pkg"
-
-pkgbuild \
-    --root "${STAGING_DIR}/ifsplugins" \
-    --identifier "com.projectnotespro.ProjectNotes.ifsplugins" \
-    --version "${PN_VERSION}" \
-    --install-location "/Applications" \
-    "${OUTPUT_DIR}/IFSPlugins.pkg"
-log "Built: IFSPlugins.pkg"
 
 # ── Step 5: Build distribution package ────────────────────────────────────────
 

@@ -41,28 +41,31 @@ bool DatabaseStructure::UpgradeDatabase()
     QString targetversion = QString("%1.%2.%3")
         .arg(APP_VERSION_MAJOR).arg(APP_VERSION_MINOR).arg(APP_VERSION_PATCH);
 
-    if (currentversion == targetversion)
-        return true;  // Already current, nothing to do
-
-    // Drop all views before any schema changes
+    // Always drop and recreate views, even when the schema version is unchanged.
+    // Views are derived objects with no data, so rebuilding them on every launch
+    // is cheap and guarantees they match the current code. Without this a view
+    // definition fix would never reach a database already on the target version.
     db_DropAllViews();
 
-    // Run applicable upgrade steps in version order
-    if (currentversion == "1.0.0")
-        db_UpgradeStep_v1_0_0();
+    if (currentversion != targetversion)
+    {
+        // Run applicable upgrade steps in version order
+        if (currentversion == "1.0.0")
+            db_UpgradeStep_v1_0_0();
 
-    if (currentversion == "1.2.0" || currentversion == "1.0.0")
-        db_UpgradeStep_v1_2_0();
+        if (currentversion == "1.2.0" || currentversion == "1.0.0")
+            db_UpgradeStep_v1_2_0();
 
-    if (currentversion == "4.1.0" || currentversion == "1.2.0" || currentversion == "1.0.0")
-        db_UpgradeStep_v5_0_0();
+        if (currentversion == "4.1.0" || currentversion == "1.2.0" || currentversion == "1.0.0")
+            db_UpgradeStep_v5_0_0();
+
+        // Update version to target (only update current_version, never modify id)
+        global_DBObjects.execute(QString("update application_version set current_version = '%1';")
+            .arg(targetversion));
+    }
 
     // Recreate all views as final step (always uses current column names)
     db_CreateAllViews();
-
-    // Update version to target (only update current_version, never modify id)
-    global_DBObjects.execute(QString("update application_version set current_version = '%1';")
-        .arg(targetversion));
 
     return true;
 }

@@ -22,12 +22,10 @@
 
     <!-- ── Package declarations ── -->
     <pkg-ref id="com.projectnotespro.ProjectNotes"/>
-    <pkg-ref id="com.projectnotespro.ProjectNotes.ifsplugins"/>
 
     <!-- ── Install choices ── -->
     <choices-outline>
         <line choice="com.projectnotespro.ProjectNotes"/>
-        <line choice="com.projectnotespro.ProjectNotes.ifsplugins"/>
     </choices-outline>
 
     <!-- ProjectNotes is required (not optional) -->
@@ -40,23 +38,9 @@
         <pkg-ref id="com.projectnotespro.ProjectNotes"/>
     </choice>
 
-    <!-- IFS custom plugins are optional and unselected by default -->
-    <choice id="com.projectnotespro.ProjectNotes.ifsplugins"
-            visible="true"
-            enabled="true"
-            selected="false"
-            title="IFS Custom Plugins"
-            description="Custom plugins for IFS Cloud integration: SSRS report generation, IFS Cloud settings, and IFS synchronization support.">
-        <pkg-ref id="com.projectnotespro.ProjectNotes.ifsplugins"/>
-    </choice>
-
     <!-- ── pkg-ref payloads (resolved relative to the distribution file) ── -->
     <pkg-ref id="com.projectnotespro.ProjectNotes"
              version="@VERSION@"
              onConclusion="none">ProjectNotes.pkg</pkg-ref>
-
-    <pkg-ref id="com.projectnotespro.ProjectNotes.ifsplugins"
-             version="@VERSION@"
-             onConclusion="none">IFSPlugins.pkg</pkg-ref>
 
 </installer-gui-script>

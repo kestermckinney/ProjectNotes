@@ -273,6 +273,9 @@ class FileFinderSettings(QDialog):
         self.classifications = self.copy_table_to_json(self.ui.tableClassifications)
         self.pnc.set_plugin_setting("Classifications", self.settings_pluginname, self.classifications)
 
+        # reload the thread so it picks up the new search locations and classifications
+        projectnotes.force_reload("filefinder_thread")
+
         self.save_window_state()
         self.accept()
 
