@@ -76,10 +76,12 @@ modules:
       - type: git
         url: https://github.com/kestermckinney/ProjectNotes.git
         commit: 2a574c8845c27aba5fb4a6c7e4d67bf0d2a0e975
-      # SqliteSyncPro is co-developed on the same branch and pinned by commit
-      # (the repo has no tags yet). Cloned into SqliteSyncPro/ to match the
-      # cmake config-opt -DSQLITESYNCPRO_SRC_DIR=SqliteSyncPro/src. Keep this
-      # commit in sync with the ProjectNotes commit above.
+      # SqliteSyncPro is co-developed on the same branch (the repo has no tags).
+      # Cloned into SqliteSyncPro/ to match the cmake config-opt
+      # -DSQLITESYNCPRO_SRC_DIR=SqliteSyncPro/src. The release workflow resolves
+      # its default-branch (HEAD) tip at build time and overwrites the `commit:`
+      # below, so a release always pairs with the latest sync code. The value
+      # here is only the fallback for local/manual build-flatpak.sh runs.
       - type: git
         url: https://github.com/kestermckinney/SqliteSyncPro.git
         commit: 115f295251548779fa2bfb6720c8f4149e52a4d2
