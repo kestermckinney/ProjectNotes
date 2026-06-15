@@ -106,6 +106,27 @@ jobs:
               || dbus-uuidgen --ensure=/etc/machine-id
           fi
 
+      - name: Pin projectnotes source to this release commit
+        # The manifest builds ProjectNotes from a pinned git commit. For a tagged
+        # (or dispatched) release that commit MUST be the ref being built —
+        # otherwise the build silently ships whatever the hardcoded pin points at,
+        # which is how v5.2.1 first published 5.2.0. Overwrite the projectnotes
+        # `commit:` with the checked-out SHA so a release can never build a stale
+        # commit. SqliteSyncPro is a separate, untagged repo and stays explicitly
+        # pinned in the manifest.
+        working-directory: packaging/linux
+        env:
+          PN_SHA: ${{ github.sha }}
+        run: |
+          manifest="com.projectnotespro.ProjectNotes.yml"
+          awk -v sha="$PN_SHA" '
+            /url: .*kestermckinney\/ProjectNotes\.git/ { inpn = 1 }
+            inpn && /^[[:space:]]*commit:/ { sub(/commit:.*/, "commit: " sha); inpn = 0 }
+            { print }
+          ' "$manifest" > "$manifest.tmp" && mv "$manifest.tmp" "$manifest"
+          echo "Pinned projectnotes -> $PN_SHA"
+          grep -nE "kestermckinney/(ProjectNotes|SqliteSyncPro)\.git|commit:" "$manifest"
+
       - name: Build, sign, and bundle
         working-directory: packaging/linux
         env:

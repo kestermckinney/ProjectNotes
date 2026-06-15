@@ -66,8 +66,13 @@ modules:
       # Pinned git sources for reproducible, Flathub-compatible builds.
       # Flathub does not accept `type: dir`; sources must be immutable and
       # fetched from the public remote. The pinned commit MUST be pushed to
-      # origin or flatpak-builder cannot fetch it. Bump `commit` (and ideally
-      # add a `tag`) for each new release.
+      # origin or flatpak-builder cannot fetch it.
+      #
+      # NOTE: the release workflow (.github/workflows/flatpak-release.yml)
+      # overwrites the projectnotes `commit:` below with the tag's own SHA at
+      # build time, so a tagged release always builds its own commit. The value
+      # here is only used for local/manual `build-flatpak.sh` runs — keep it
+      # pointing at the latest released commit.
       - type: git
         url: https://github.com/kestermckinney/ProjectNotes.git
         commit: 2a574c8845c27aba5fb4a6c7e4d67bf0d2a0e975
