@@ -38,6 +38,11 @@ Page {
     Component.onCompleted: {
         if (root.noteId !== "")
             AppController.setNoteFilter(root.noteId, root.projectId)
+        // Reload fresh data from model and set text imperatively.
+        // This breaks the binding on noteEdit.text so that subsequent
+        // TextFormatter operations on the QTextDocument are never
+        // overwritten by a binding re-evaluation.
+        root._reloadData()
     }
 
     function _saveNow() {
@@ -292,6 +297,10 @@ Page {
                 onClicked: {
                     root._selStart = noteEdit.selectionStart
                     root._selEnd   = noteEdit.selectionEnd
+                    // Collapse selection before open() triggers
+                    // Qt.inputMethod.hide() (via onAboutToShow), which on iOS
+                    // deletes selected text when the keyboard resigns.
+                    noteEdit.select(root._selStart, root._selStart)
                     formatSheet.textDocument = noteEdit.textDocument
                     formatSheet.selStart     = root._selStart
                     formatSheet.selEnd       = root._selEnd
@@ -307,6 +316,8 @@ Page {
                 onClicked: {
                     root._selStart = noteEdit.selectionStart
                     root._selEnd   = noteEdit.selectionEnd
+                    // Collapse selection (same iOS workaround as Aa button).
+                    noteEdit.select(root._selStart, root._selStart)
                     var currentFamily = TextFormatter.currentFontFamily(noteEdit.textDocument, root._selStart)
                     var currentSize   = TextFormatter.currentFontPointSize(noteEdit.textDocument, root._selStart)
                     var currentColor  = TextFormatter.currentFontColor(noteEdit.textDocument, root._selStart)
@@ -420,7 +431,9 @@ Page {
     // newlines render correctly in RichText mode.
     function toRichText(s) {
         if (!s) return ""
-        if (s.indexOf("<html") !== -1 || s.indexOf("<HTML") !== -1)
+        // Detect any common HTML tag — covers full documents (<html>)
+        // and fragments (<p>, <body>, <div>, <b>, <li>, etc.).
+        if (/<(html|body|p|div|span|b|i|u|h[1-6]|ul|ol|li|br|table|tr|td|th|a|img|blockquote|pre|code|style)[\s>]/i.test(s))
             return s
         return s.replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
