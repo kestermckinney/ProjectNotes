@@ -134,12 +134,21 @@ qt_add_qml_module(ProjectNotesMobile
 
 # ── iOS bundle properties ─────────────────────────────────────────────────────
 set_target_properties(ProjectNotesMobile PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER    "com.projectnotespro.ProjectNotesMobile"
+    MACOSX_BUNDLE_GUI_IDENTIFIER    "com.projectnotespro.projectnotesmobile"
     MACOSX_BUNDLE_BUNDLE_NAME       "Project Notes"
     MACOSX_BUNDLE_BUNDLE_VERSION    ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
     MACOSX_BUNDLE TRUE
     XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+    # ── App Store signing (pinned to the registered App ID + team) ────────────
+    # Bundle ID must match the portal App ID exactly (case-sensitive).
+    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.projectnotespro.projectnotesmobile"
+    XCODE_ATTRIBUTE_DEVELOPMENT_TEAM          "2PY624KHXH"
+    XCODE_ATTRIBUTE_CODE_SIGN_STYLE           "Automatic"
+    # CFBundleVersion (build number) resolves from $(CURRENT_PROJECT_VERSION) in
+    # Info.plist. Default to 1 so ordinary builds are valid; packaging/ios/build_appstore.sh
+    # overrides it per upload (App Store Connect rejects duplicate build numbers).
+    XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION   "1"
 )
 
 # iOS-specific: set the custom Info.plist and link MessageUI

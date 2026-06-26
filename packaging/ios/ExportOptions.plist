@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- App Store distribution. "app-store-connect" is the Xcode 16+ name;
+         older Xcode used "app-store" (still accepted as an alias). -->
+    <key>method</key>
+    <string>app-store-connect</string>
+
+    <!-- Apple Team that owns the com.projectnotespro.projectnotesmobile App ID. -->
+    <key>teamID</key>
+    <string>2PY624KHXH</string>
+
+    <!-- Let Xcode resolve the Apple Distribution cert + App Store provisioning
+         profile automatically (matches CODE_SIGN_STYLE=Automatic in the build). -->
+    <key>signingStyle</key>
+    <string>automatic</string>
+
+    <!-- Export the signed .ipa to disk; build_appstore.sh handles upload separately. -->
+    <key>destination</key>
+    <string>export</string>
+
+    <!-- Upload dSYMs so App Store Connect can symbolicate crash reports. -->
+    <key>uploadSymbols</key>
+    <true/>
+
+    <!-- C++/Qt app has no Swift; harmless either way, kept for completeness. -->
+    <key>stripSwiftSymbols</key>
+    <true/>
+</dict>
+</plist>
