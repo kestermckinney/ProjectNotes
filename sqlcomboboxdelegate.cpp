@@ -112,6 +112,13 @@ void SqlComboBoxDelegate::setModelData(QWidget *editor, QAbstractItemModel *mode
         }
     }
 
+    if (!key_val.isValid() || key_val.isNull())
+    {
+        QVariant current = model->data(index);
+        if (current.isValid() && !current.isNull())
+            return;
+    }
+
     model->setData(index, key_val, Qt::EditRole);
 }
 

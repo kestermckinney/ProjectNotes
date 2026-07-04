@@ -276,9 +276,7 @@ def menu_send_notes(xmlstr, parameter):
 
 def menu_import_contacts_from_outlook(parameter):
     pnot = ProjectNotesOutlookTools()
-    pnot.import_contacts("")
-
-    return ""
+    return pnot.import_contacts("")
 
 def menu_export_contacts_to_outlook(parameter):
     pnot = ProjectNotesOutlookTools()

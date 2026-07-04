@@ -9,6 +9,7 @@ if (platform.system() == 'Windows'):
 import sys
 import time
 import re
+import gc
 
 from PyQt6 import QtSql, QtGui, QtCore, QtWidgets
 from PyQt6.QtCore import Qt, QDirIterator, QDir, QSettings, QFile, QDateTime
@@ -130,7 +131,7 @@ class ProjectNotesOutlookTools:
                                 workphone = content
                             elif colname == "cell_phone":
                                 cellphone = content
-                            elif colname == "id":
+                            elif colname == "client_id":
                                 company = colnode.attributes().namedItem("lookupvalue").nodeValue()
                             elif colname == "role":
                                 jobtitle = content
@@ -157,17 +158,20 @@ class ProjectNotesOutlookTools:
 
                 childnode = childnode.nextSibling()
 
-            outlook = None
-            mapi = None
-            contactsfold = None
-
         except Exception as e:  # catches any Python exception
-            # If it’s a COM error, the details are in e.args
+            # If it's a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to export contacts from Outlook.'
             print(msg)
             QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
+
+        outlook = None
+        mapi = None
+        contactsfold = None
+        cont_enum = None
+        contactlist = None
+        gc.collect()
 
         progbar.hide()
         progbar.close()
@@ -179,10 +183,6 @@ class ProjectNotesOutlookTools:
         return ""
 
     def import_contacts(self, xmlstr):
-        xmlval = QDomDocument()
-        if (xmlval.setContent(xmlstr) == False):
-            QMessageBox.critical(QApplication.activeWindow(),"Cannot Parse XML", "Unable to parse XML sent to plugin.")
-            return ""
 
         try:
             outlook = win32com.client.Dispatch("Outlook.Application")
@@ -246,7 +246,7 @@ class ProjectNotesOutlookTools:
                         # add the company name as a sub tablenode
                         if (contact.CompanyName is not None and contact.CompanyName != ''):
                             company_xml = self.pnc.to_xml(contact.CompanyName.strip())
-                            row_parts.append(f'<column name="id" number="5" lookupvalue="{company_xml}"></column>\n')
+                            row_parts.append(f'<column name="client_id" lookupvalue="{company_xml}"></column>\n')
                             xmlclients_parts.append(f'<row><column name="client_name">{company_xml}</column></row>\n')
 
                         row_parts.append("</row>\n")
@@ -265,18 +265,19 @@ class ProjectNotesOutlookTools:
             </projectnotes>
             """
 
-            outlook = None
-            mapi = None
-            contactsfold = None
-            cont_enum = None
-
         except Exception as e:  # catches any Python exception
-            # If it’s a COM error, the details are in e.args
+            # If it's a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to import contacts into Outlook.'
             print(msg)
             QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
+
+        outlook = None
+        mapi = None
+        contactsfold = None
+        cont_enum = None
+        gc.collect()
 
         progbar.hide()
         progbar.close()
@@ -401,21 +402,21 @@ class ProjectNotesOutlookTools:
                     if not QFile.exists(filename) and not QFile.exists(eml_filename):
                         message.SaveAs(filename, 3)
 
-            mail_enum = None
-            message = None
-
-            outlook = None
-            mapi = None
-            contactsfold = None
-            cont_enum = None
-
         except Exception as e:  # catches any Python exception
-            # If it’s a COM error, the details are in e.args
+            # If it's a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to export email from Outlook.'
             print(msg)
             QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
+
+        mail_enum = None
+        message = None
+        inbox = None
+        sent = None
+        outlook = None
+        mapi = None
+        gc.collect()
 
         progbar.setValue(100)
         progbar.setLabelText("Complete ...")
@@ -460,15 +461,17 @@ class ProjectNotesOutlookTools:
             temp_mail.Close(1)  # 1 = olDiscard — discard without saving to Drafts
             del temp_mail
 
-            outlook = None
-            message = None
         except Exception as e:  # catches any Python exception
-            # If it’s a COM error, the details are in e.args
+            # If it's a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to schedule meeting {subject} in Outlook.'
             print(msg)
             QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
+
+        outlook = None
+        message = None
+        gc.collect()
 
         self.bring_window_to_front(subject)
 
@@ -501,16 +504,17 @@ class ProjectNotesOutlookTools:
             for attachment in attachments:
                 message.Attachments.Add(attachment, 1)
 
-            outlook = None
-            message = None
-
         except Exception as e:  # catches any Python exception
-            # If it’s a COM error, the details are in e.args
+            # If it's a COM error, the details are in e.args
             msg = f'Error: {e} Attempting to send email {subject} in Outlook.'
             print(msg)
             QMessageBox.critical(QApplication.activeWindow(),"Python Exception", msg)
             if hasattr(e, 'args') and e.args:
                 print(f'COM error code: {e.args[0]}')   # usually a HRESULT like -2147352567
+
+        outlook = None
+        message = None
+        gc.collect()
 
         self.bring_window_to_front(subject)
 

@@ -434,6 +434,7 @@ class OutlookIntegrationSettings(QDialog):
         self.pnc.set_plugin_setting("SendO365", self.settings_pluginname, "true" if self.ui.checkBoxSendO365.isChecked() else "false")
 
         projectnotes.force_reload("outlooksync_thread")
+        projectnotes.force_reload("base_plugin")
 
         self.save_window_state()
         self.accept()

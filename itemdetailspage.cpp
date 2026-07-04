@@ -37,6 +37,9 @@ void ItemDetailsPage::openRecord(QVariant& recordId)
     QVariant project_id = global_DBObjects.actionitemsdetailsmodel()->data(
         global_DBObjects.actionitemsdetailsmodel()->index(0, 14));
 
+    global_DBObjects.teamsmodel()->setFilter(2, project_id.toString());
+    global_DBObjects.teamsmodel()->refresh();
+
     global_DBObjects.actionitemsdetailsmeetingsmodel()->setFilter(1, project_id.toString());
     global_DBObjects.actionitemsdetailsmeetingsmodel()->refresh();
 
@@ -144,6 +147,24 @@ void ItemDetailsPage::setupModels( Ui::MainWindow *ui )
     setCurrentView( ui->tableViewComments );
 
     ui->tableViewComments->verticalHeader()->setDefaultSectionSize( 15 * 4 );
+
+    connect(global_DBObjects.teamsmodel(), &QAbstractItemModel::modelReset, this, [this, ui]() {
+        if (!m_mapperItemDetails || !m_mapperItemDetails->model())
+            return;
+
+        int row = m_mapperItemDetails->currentIndex();
+        if (row < 0)
+            return;
+
+        QAbstractItemModel* model = m_mapperItemDetails->model();
+        QModelIndex idx;
+
+        idx = model->index(row, 4);
+        m_itemDetailsDelegate->setEditorData(ui->comboBoxIdentifiedBy, idx);
+
+        idx = model->index(row, 7);
+        m_itemDetailsDelegate->setEditorData(ui->comboBoxAssignedTo, idx);
+    });
 }
 
 void ItemDetailsPage::setButtonAndMenuStates()

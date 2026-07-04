@@ -317,7 +317,7 @@ class GraphAPITools:
                     xmldoc += f'<column name="office_phone">{self.pnc.to_xml(phones[0])}</column>\n'
 
                 xmldoc += f'<column name="cell_phone">{self.pnc.to_xml(contact.get("mobilePhone", "")).strip()}</column>\n'
-                xmldoc += f'<column name="id" lookupvalue="{self.pnc.to_xml(contact.get("companyName", "")).strip()}"></column>\n'
+                xmldoc += f'<column name="client_id" lookupvalue="{self.pnc.to_xml(contact.get("companyName", "")).strip()}"></column>\n'
                 xmldoc += f'<column name="role">{self.pnc.to_xml(contact.get("jobTitle", "")).strip()}</column>\n'
                 xmldoc += '</row>\n'
 
@@ -448,7 +448,7 @@ class GraphAPITools:
                         if colnode.attributes().namedItem("name").nodeValue() == "cell_phone":
                             cellphone = content
 
-                        if colnode.attributes().namedItem("name").nodeValue() == "id":
+                        if colnode.attributes().namedItem("name").nodeValue() == "client_id":
                             company = colnode.attributes().namedItem("lookupvalue").nodeValue()
 
                         if colnode.attributes().namedItem("name").nodeValue() == "role":

@@ -93,7 +93,11 @@ void SqlQueryModel::refreshImpactedRecordsets(QModelIndex index)
                 }
                 else
                 {
-                    recordset->copyAndFilterRow(index, *this);
+                    if (recordset->copyAndFilterRow(index, *this))
+                    {
+                        QModelIndex newIdx = recordset->index(recordset->rowCount(QModelIndex()) - 1, 0);
+                        recordset->reloadRecord(newIdx);
+                    }
                 }
             }
         }

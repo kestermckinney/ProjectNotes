@@ -127,13 +127,12 @@ void ItemDetailsDelegate::setEditorData(QWidget *editor, const QModelIndex &inde
                     if (i >= 0)
                     {
                         comboBox->setCurrentIndex(i);
-                        // test do you need to set current text after setting the index comboBox->setCurrentText(list_value.toString());
                     }
                     else
-                        comboBox->setCurrentText(QString());
+                        comboBox->setCurrentText(value.toString());
                 }
                 else
-                     comboBox->setCurrentText(QString());
+                     comboBox->setCurrentText(value.toString());
             }
         }
         break;
@@ -278,6 +277,13 @@ void ItemDetailsDelegate::setModelData(QWidget *editor, QAbstractItemModel *mode
                 {
                     key_val = comboBox->model()->data(comboBox->model()->index(i, 3));
                 }
+            }
+
+            if (!key_val.isValid() || key_val.isNull())
+            {
+                QVariant current = model->data(index);
+                if (current.isValid() && !current.isNull())
+                    return;
             }
         }
         break;

@@ -639,6 +639,7 @@ class IFSCommon:
         while not row.isNull():
             item_number = pnc.get_column_value(row, "item_number") or ""
             items[item_number] = {
+                "id":             pnc.get_column_value(row, "id")             or "",
                 "item_number":    item_number,
                 "item_name":      pnc.get_column_value(row, "item_name")     or "",
                 "description":    pnc.get_column_value(row, "description")   or "",
@@ -655,8 +656,13 @@ class IFSCommon:
         return items
 
 
-    def _write_pn_item(self, pnc, project_id, item_number, task):
+    def _write_pn_item(self, pnc, project_id, item_number, task, item_id=None):
         """Push one IFS ActivityTask into the Project Notes item_tracker via update_data.
+
+        When *item_id* is provided the XML includes the primary key, which tells the
+        C++ import layer to UPDATE the existing row instead of INSERTing a new one.
+        This handles the case where two IFS tasks share the same Name (item_name),
+        which would otherwise hit the UNIQUE(project_id, item_name) constraint.
 
         Maps IFS custom fields → PN column names and handles CfEnum_* stripping and
         ISO→MM/dd/yyyy date conversion.
@@ -668,11 +674,16 @@ class IFSCommon:
         if not cf_status:
             cf_status = "Closed" if task.get("Completed") else "Open"
 
+        id_column = ""
+        if item_id:
+            id_column = f'      <column name="id">{pnc.to_xml(item_id)}</column>\n'
+
         xml = (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<projectnotes>\n'
             '  <table name="item_tracker">\n'
             '    <row>\n'
+            f'{id_column}'
             '      <column name="item_type">Tracker</column>\n'
             f'      <column name="project_id">{pnc.to_xml(project_id)}</column>\n'
             f'      <column name="item_number">{pnc.to_xml(item_number)}</column>\n'
@@ -794,6 +805,7 @@ class IFSCommon:
             return {"created": 0, "updated": 0, "skipped": 0}
 
         pn_items = self._fetch_pn_items(project_id)
+        name_to_item = {v["item_name"]: k for k, v in pn_items.items() if v["item_name"]}
 
         counts = {"created": 0, "updated": 0, "skipped": 0}
 
@@ -858,9 +870,17 @@ class IFSCommon:
                     self._write_pn_item(pnc, project_id, item_number, task)
                     counts["updated"] += 1
             else:
-                # Item not in PN — create it
-                self._write_pn_item(pnc, project_id, item_number, task)
-                counts["created"] += 1
+                # Item not in PN by item_number — check for name collision
+                task_name = task.get("Name") or ""
+                if task_name and task_name in name_to_item:
+                    existing_key = name_to_item[task_name]
+                    existing_id = pn_items[existing_key]["id"]
+                    self._write_pn_item(pnc, project_id, item_number, task, item_id=existing_id)
+                    counts["updated"] += 1
+                else:
+                    # Truly new item
+                    self._write_pn_item(pnc, project_id, item_number, task)
+                    counts["created"] += 1
 
         return counts
 
