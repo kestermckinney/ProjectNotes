@@ -229,7 +229,6 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\newriskregister_plugin.py"
   File "${DEPLOY_DIR}\plugins\open_msproject_plugin.py"
   File "${DEPLOY_DIR}\plugins\team_member_quick_add_plugin.py"
-  File "${DEPLOY_DIR}\plugins\trackkerreport_plugin.py"
   File "${DEPLOY_DIR}\plugins\wordkill_plugin.py"
 
   SetOutPath "$INSTDIR\plugins\includes"
@@ -256,12 +255,10 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\forms\dialogSettingsMigrator.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogSSRSOptions.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogTeamMemberQuickAdd.ui"
-  File "${DEPLOY_DIR}\plugins\forms\dialogTrackerRptOptions.ui"
 
   SetOutPath "$INSTDIR\plugins\templates"
   File "${DEPLOY_DIR}\plugins\templates\Lessons Learned Template.xlsx"
   File "${DEPLOY_DIR}\plugins\templates\Risk Register Template.xlsx"
-  File "${DEPLOY_DIR}\plugins\templates\Tracker Items Template.xlsx"
 
   ; ── Background threads ───────────────────────────────────────────────────────
   SetOutPath "$INSTDIR\threads"
@@ -403,7 +400,6 @@ Section Uninstall
   Delete "$INSTDIR\plugins\newriskregister_plugin.py"
   Delete "$INSTDIR\plugins\open_msproject_plugin.py"
   Delete "$INSTDIR\plugins\team_member_quick_add_plugin.py"
-  Delete "$INSTDIR\plugins\trackkerreport_plugin.py"
   Delete "$INSTDIR\plugins\wordkill_plugin.py"
 
   Delete "$INSTDIR\plugins\includes\collaboration_tools.py"
@@ -433,14 +429,12 @@ Section Uninstall
   Delete "$INSTDIR\plugins\forms\dialogSettingsMigrator.ui"
   Delete "$INSTDIR\plugins\forms\dialogSSRSOptions.ui"
   Delete "$INSTDIR\plugins\forms\dialogTeamMemberQuickAdd.ui"
-  Delete "$INSTDIR\plugins\forms\dialogTrackerRptOptions.ui"
   Delete "$INSTDIR\plugins\forms\__pycache__\*.*"
   RMDir  "$INSTDIR\plugins\forms\__pycache__"
   RMDir  "$INSTDIR\plugins\forms"
 
   Delete "$INSTDIR\plugins\templates\Lessons Learned Template.xlsx"
   Delete "$INSTDIR\plugins\templates\Risk Register Template.xlsx"
-  Delete "$INSTDIR\plugins\templates\Tracker Items Template.xlsx"
   RMDir  "$INSTDIR\plugins\templates"
 
   Delete "$INSTDIR\plugins\__pycache__\*.*"

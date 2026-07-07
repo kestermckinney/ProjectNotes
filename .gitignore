@@ -13,3 +13,5 @@ packaging/linux/*.flatpak
 packaging/macos/output*
 packaging/macos/staging*
 .DS_Store
+.claude/
+.opencode/
