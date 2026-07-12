@@ -50,8 +50,8 @@ Var RelaunchFlag
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "license.rtf"
 ; No directory page: Project Notes installs per-user only, under
-; $LOCALAPPDATA\Project Notes. The location is enforced in .onInit so it can
-; never be redirected to a system-wide path.
+; $LOCALAPPDATA\Programs\Project Notes. The location is enforced in .onInit so
+; it can never be redirected to a system-wide path.
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_FINISHPAGE_RUN "$INSTDIR\Project Notes.exe"
@@ -68,7 +68,7 @@ LangString DESC_SEC_IFS ${LANG_ENGLISH} "Install optional IFS Cloud integration 
 ; ── Installer metadata ────────────────────────────────────────────────────────
 Name    "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 OutFile "ProjectNotes-${PRODUCT_VERSION}-Windows-x64-Setup.exe"
-InstallDir          "$LOCALAPPDATA\Project Notes"
+InstallDir          "$LOCALAPPDATA\Programs\Project Notes"
 InstallDirRegKey HKCU "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails   show
 ShowUnInstDetails show
@@ -328,11 +328,11 @@ FunctionEnd
 Function .onInit
   ; Enforce a per-user install location. If a stale registry value or a silent
   ; /D= override points outside the user's profile, reset to the default under
-  ; $LOCALAPPDATA so the app is never installed system-wide.
-  StrLen $1 "$LOCALAPPDATA"
+  ; $LOCALAPPDATA\Programs so the app is never installed system-wide.
+  StrLen $1 "$LOCALAPPDATA\Programs"
   StrCpy $2 "$INSTDIR" $1
-  StrCmp $2 "$LOCALAPPDATA" +2 0
-    StrCpy $INSTDIR "$LOCALAPPDATA\Project Notes"
+  StrCmp $2 "$LOCALAPPDATA\Programs" +2 0
+    StrCpy $INSTDIR "$LOCALAPPDATA\Programs\Project Notes"
 
   ; Detect the auto-updater's /relaunch flag so .onInstSuccess can reopen the app.
   ${GetParameters} $R0
