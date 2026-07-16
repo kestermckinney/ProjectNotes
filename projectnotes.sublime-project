@@ -9,4 +9,52 @@
 			"index_exclude_patterns": ["packaging/linux/.flatpak-builder/*", "packaging/linux/flatpak-build/*", "*.db"],
 		},
 	],
+	"build_systems":
+	[
+		{
+			"name": "ProjectNotes",
+			"selector": "source.c++, source.c",
+			"shell_cmd": "cmake --build .",
+			"working_dir": "$project_path/build/System_Qt_6_11_1-Debug",
+			"file_regex": "^(..[^:]*):([0-9]+):?([0-9]+)?:? (.*)$",
+			"variants":
+			[
+				{
+					"name": "Build Release",
+					"shell_cmd": "cmake --build .",
+					"working_dir": "$project_path/build/System_Qt_6_11_1-Release"
+				},
+				{
+					"name": "Rebuild Debug",
+					"shell_cmd": "cmake --build . --clean-first",
+					"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
+				},
+				{
+					"name": "Rebuild Release",
+					"shell_cmd": "cmake --build . --clean-first",
+					"working_dir": "$project_path/build/System_Qt_6_11_1-Release"
+				},
+				{
+					"name": "Run Debug",
+					"shell_cmd": "./projectnotes",
+					"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
+				},
+				{
+					"name": "Run Release",
+					"shell_cmd": "./projectnotes",
+					"working_dir": "$project_path/build/System_Qt_6_11_1-Release"
+				},
+				{
+					"name": "Build & Run Debug",
+					"shell_cmd": "cmake --build . && ./projectnotes",
+					"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
+				},
+				{
+					"name": "Build & Run Release",
+					"shell_cmd": "cmake --build . && ./projectnotes",
+					"working_dir": "$project_path/build/System_Qt_6_11_1-Release"
+				}
+			]
+		}
+	]
 }
