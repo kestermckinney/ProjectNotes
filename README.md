@@ -9,6 +9,8 @@
 [![Open issues](https://img.shields.io/github/issues/kestermckinney/ProjectNotes?style=for-the-badge)](https://github.com/kestermckinney/ProjectNotes/issues)
 [![Last commit](https://img.shields.io/github/last-commit/kestermckinney/ProjectNotes?style=for-the-badge)](https://github.com/kestermckinney/ProjectNotes/commits/main)
 
+![ProjectNotes demo](docs/img/demo.gif)
+
 ProjectNotes is a project manager's workspace for notes, action items, project metrics, reporting, and workflow automation. It is designed for people who manage multiple projects and need one place to capture decisions, track follow-up, and keep project communication moving.
 
 ## Explore
