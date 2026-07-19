@@ -45,7 +45,15 @@
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
 
-    <!-- ── App Store ──────────────────────────────────────────────────────── -->
+    <!-- ── App Store / export compliance ──────────────────────────────────── -->
+    <!-- The app encrypts sync row data with AES-256-GCM (SqliteSyncPro). Per Apple
+         (developer.apple.com/documentation/security/complying-with-encryption-export-regulations),
+         U.S. export law only applies if the app is distributed OUTSIDE the U.S. or
+         Canada. This app's App Store availability is restricted to the U.S. and
+         Canada, so no export occurs and NO export-compliance documentation is
+         required — hence NO. IMPORTANT: if availability is ever expanded beyond
+         the U.S./Canada, this MUST become <true/> and you must complete export
+         compliance in App Store Connect + add ITSEncryptionExportComplianceCode. -->
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
 
