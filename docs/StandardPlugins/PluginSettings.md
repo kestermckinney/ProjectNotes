@@ -27,6 +27,7 @@ The standard plugins are organized into several categories:
 **Export and Report Plugins:**
 - Export Meeting Notes — Export meeting notes to PDF
 - Export Tracker Items — Export tracker items and action items to PDF
+- Export Status Report — Export a project status report, with earned value metrics, to HTML and PDF
 - Tracker Report Generation — Generate customizable tracker/action item reports
 - Meeting Notes Archive — Archive meeting notes to a designated folder
 - Project Email Archive — Archive project-related emails
@@ -312,6 +313,8 @@ The variable `[$projects.project_number.1]` in the URL is replaced with the actu
 | **Settings Migrator** | Base Plugins Settings | Migrate plugin settings between machines or installations. |
 | **Export Notes** | Export Meeting Notes | Configure the project sub-folder where meeting notes exports are saved. |
 | **Export Tracker Items** | Export Tracker Items | Configure the project sub-folder where tracker item exports are saved. |
+| **Export Status Report** | Export Status Report | Configure the project sub-folder where status report exports are saved. See [Export Status Report](<ExportStatusReport.md>). |
+| **iCloud Contacts** | Base Plugins Settings | Configure the Apple Account email and app-specific password used for scheduled iCloud contact sync. See [iCloud Contacts](<iCloudContacts.md>). |
 | **IFS Cloud Settings** | IFS Cloud Plugins Settings | Configure IFS Cloud ERP integration credentials and options. See [IFS Cloud](<IFSCloud.md>). |
 | **New Change Order** | New Change Order | Configure the sub-folder for new change order documents. |
 | **New MS Project** | New MS Project | Configure the sub-folder for new MS Project files. |

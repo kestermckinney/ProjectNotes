@@ -33,6 +33,8 @@ Reports are generated using clean HTML with embedded CSS styling and rendered to
 | Comments/Resolution | All update notes concatenated |
 | Int | *(Internal report only)* Whether the item is marked internal |
 
+Items are grouped under a banner row for each status (**New**, **Assigned**, **Resolved**, **Deferred**, **Cancelled**, in that order), showing the item count for the group. Within each status group, items are sorted by **Priority** (High, Medium, Low), then by **Due Date**.
+
 ## Filtering Options
 
 The export dialog lets you filter which items appear in the report:

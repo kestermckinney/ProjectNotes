@@ -14,7 +14,7 @@ Optionally, enable **Export new Project Notes contacts not found in iCloud**. Pr
 4. Enter the email address used by your Apple Account and the app-specific password.
 5. Select **Test Connection**. Project Notes reports how many iCloud address books it found.
 6. To send new Project Notes contacts to iCloud, select **Export new Project Notes contacts not found in iCloud**.
-6. Enable scheduled imports and save.
+7. Enable scheduled imports and save.
 
 The app-specific password is stored in macOS Keychain, Windows Credential Manager, or the Linux desktop Secret Service. It is never saved in the Project Notes plugin settings or database. Changing or resetting the main Apple Account password revokes app-specific passwords; create and save a replacement if imports begin reporting an authentication failure.
 

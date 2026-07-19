@@ -35,7 +35,7 @@ Status report items are temporary items. Once an item is not longer needed on a 
 
 | **Column** | **Description** |
 | :--- | :--- |
-| Category | The category of the status report item: **In Progress** or **Complete** |
+| Category | The category of the status report item: **In Progress**, **Starting**, or **Completed**. These map to the **Activities in Progress**, **Activities For Next Period**, and **Activities Completed** sections of the [Export Status Report](<../StandardPlugins/ExportStatusReport.md>). |
 | Description | The status item description. |
 
 <br>
@@ -65,7 +65,7 @@ Team members are setup under the **Team** tab of the Project Page. Team members 
 | :--- | :--- |
 | Team Member | The person selected from values found in the [People List Page](<../InterfaceOverview/PeopleListPage.md>). |
 | Role | The role is an open text field. If a Role has been specified in the [People List Page](<../InterfaceOverview/PeopleListPage.md>), it will auto populate with a value you can change. |
-| Receive Status | When checked the Lua script that generates the status report can indicate who should receive it and email it to them. |
+| Receive Status | When checked, the [Export Status Report](<../StandardPlugins/ExportStatusReport.md>) plugin includes this team member as a stakeholder and, when emailing the report, sends it to them. |
 
 <br>
 **To add a team member:**
