@@ -21,6 +21,7 @@ The standard plugins are organized into several categories:
 - Send Meeting Notes — Email meeting notes to attendees
 - Send Project Emails — Send emails about projects to team members
 - Outlook Integration — Integrate with Outlook and Office 365 for scheduling and email
+- iCloud Contacts — Import iCloud contacts and optionally export new Project Notes contacts
 - Schedule Meeting Plugins — Schedule customer and internal kick-off, status, and lessons learned meetings
 
 **Export and Report Plugins:**

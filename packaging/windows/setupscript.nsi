@@ -237,6 +237,7 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\includes\common.py"
   File "${DEPLOY_DIR}\plugins\includes\excel_tools.py"
    File "${DEPLOY_DIR}\plugins\includes\graphapi_tools.py"
+  File "${DEPLOY_DIR}\plugins\includes\icloud_tools.py"
    File "${DEPLOY_DIR}\plugins\includes\noteformatter.py"
   File "${DEPLOY_DIR}\plugins\includes\outlook_tools.py"
   File "${DEPLOY_DIR}\plugins\includes\word_tools.py"
@@ -265,6 +266,7 @@ Section "MainSection" SEC01
   ; ── Background threads ───────────────────────────────────────────────────────
   SetOutPath "$INSTDIR\threads"
    File "${DEPLOY_DIR}\threads\filefinder_thread.py"
+   File "${DEPLOY_DIR}\threads\icloudsync_thread.py"
    File "${DEPLOY_DIR}\threads\outlooksync_thread.py"
 
   ; ── Spell-check dictionaries ─────────────────────────────────────────────────
@@ -409,6 +411,7 @@ Section Uninstall
   Delete "$INSTDIR\plugins\includes\common.py"
   Delete "$INSTDIR\plugins\includes\excel_tools.py"
   Delete "$INSTDIR\plugins\includes\graphapi_tools.py"
+  Delete "$INSTDIR\plugins\includes\icloud_tools.py"
   Delete "$INSTDIR\plugins\includes\ifs_tools.py"
   Delete "$INSTDIR\plugins\includes\noteformatter.py"
   Delete "$INSTDIR\plugins\includes\outlook_tools.py"
@@ -447,6 +450,7 @@ Section Uninstall
 
   ; ── Threads ──────────────────────────────────────────────────────────────────
   Delete "$INSTDIR\threads\filefinder_thread.py"
+  Delete "$INSTDIR\threads\icloudsync_thread.py"
   Delete "$INSTDIR\threads\ifssync_thread.py"
   Delete "$INSTDIR\threads\outlooksync_thread.py"
   Delete "$INSTDIR\threads\__pycache__\*.*"

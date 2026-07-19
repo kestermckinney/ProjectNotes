@@ -3,7 +3,6 @@
 # Use code below for testing
 if __name__ == '__main__':
     print("Entered __main__")
-
 def update_data(xml):
     return ""
 
@@ -12,4 +11,12 @@ def force_reload(module_name):
 
 def get_data(xml):
     return ""
-           
+
+def get_secret(service, account):
+    return None
+
+def set_secret(service, account, secret):
+    return True
+
+def delete_secret(service, account):
+    return True
