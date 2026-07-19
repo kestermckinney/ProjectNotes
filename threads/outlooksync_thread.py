@@ -19,6 +19,7 @@ plugintimerevent = 5 # how many minutes between the timer event
 pluginmenus = []
 
 stopevent = False  # after a token authentication failure the event will stop processing
+shutting_down = False  # set True by event_shutdown to abort running operations
 
 pnc = ProjectNotesCommon()
 
@@ -149,8 +150,9 @@ def menu_right_click_download_emails(xmlstr, parameter):
 
 def event_timer(parameter):
     global stopevent
+    global shutting_down
 
-    if QThread.currentThread().isInterruptionRequested():
+    if shutting_down or QThread.currentThread().isInterruptionRequested():
         return ""
 
     if not use_graph_api:
@@ -204,6 +206,12 @@ def menu_import_contacts(parameter):
     else:
         print("No token was returned.  Office 365 sync failed.  Make sure Outlook Integrations are configured correctly.")
 
+    return ""
+
+
+def event_shutdown(parameter):
+    global shutting_down
+    shutting_down = True
     return ""
 
 

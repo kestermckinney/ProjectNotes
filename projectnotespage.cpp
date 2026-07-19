@@ -41,7 +41,7 @@ void ProjectNotesPage::openRecord(QVariant& recordId)
     global_DBObjects.meetingattendeesmodel()->setFilter(1, recordId.toString());
     global_DBObjects.meetingattendeesmodel()->refresh();
 
-    // not needed global_DBObjects.notesactionitemsmodel()->setFilter(14, project_id.toString());
+    global_DBObjects.notesactionitemsmodel()->setFilter(14, global_DBObjects.projecteditingnotesmodel()->data(global_DBObjects.projecteditingnotesmodel()->index(0,1)).toString());
     global_DBObjects.notesactionitemsmodel()->setFilter(13, recordId.toString());
     global_DBObjects.notesactionitemsmodel()->refresh();
 

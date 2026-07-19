@@ -85,6 +85,19 @@ def _html_escape(s):
     return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+STATUS_GROUP_ORDER = ["New", "Assigned", "Resolved", "Defered", "Cancelled"]
+PRIORITY_SORT_ORDER = {"High": 0, "Medium": 1, "Low": 2}
+
+
+def build_group_status_header(status, count, colspan):
+    """Build a banner row identifying a group of items sharing a status."""
+    return (
+        f'<tr class="group-header">'
+        f'<td colspan="{colspan}">{_html_escape(status)} Items ({count})</td>'
+        f'</tr>\n'
+    )
+
+
 def generate_tracker_html(projnum, projdes, items_html, reportdate, show_internal):
     """Build the complete HTML document for the tracker items report."""
     return f"""<!DOCTYPE html>
@@ -109,6 +122,10 @@ table {{
     border-collapse: collapse;
     width: 100%;
     table-layout: fixed;
+}}
+tr {{
+    page-break-inside: avoid;
+    break-inside: avoid;
 }}
 th {{
     background-color: #EEECE1;
@@ -149,6 +166,19 @@ td {{
 .priority-high   {{ color: #C00000; font-weight: bold; }}
 .priority-medium {{ color: #9C6500; font-weight: bold; }}
 .priority-low    {{ color: #375623; font-weight: bold; }}
+
+.group-header {{
+    page-break-after: avoid;
+    break-after: avoid;
+}}
+.group-header td {{
+    background-color: #1F497D;
+    color: #FFFFFF;
+    border: 1px solid #808080;
+    padding: 3px 4px;
+    font-size: 8pt;
+    font-weight: bold;
+}}
 
 .footer {{
     margin-top: 8px;
@@ -368,8 +398,8 @@ class TrackerItemsExporter(QDialog):
         self.progbar.setLabelText("Building item list...")
         QtWidgets.QApplication.processEvents()
 
-        # Build HTML rows from tracker items
-        rows_parts = []
+        # Collect included tracker items
+        collected_items = []
         repitemrow = repitem.firstChild()
 
         while not repitemrow.isNull():
@@ -399,15 +429,62 @@ class TrackerItemsExporter(QDialog):
                         comment_parts.append(f"{updated_by} - {update_date}: {update_note}")
                         updaterow = updaterow.nextSibling()
 
-                rows_parts.append(build_item_row(
-                    item_number, item_name, identified_by, date_identified,
-                    description, assigned_to, priority, status,
-                    date_due, last_update, date_resolved,
-                    "\n".join(comment_parts),
-                    isinternal, itemtype, self.internalreport
-                ))
+                collected_items.append({
+                    "item_number": item_number,
+                    "item_name": item_name,
+                    "identified_by": identified_by,
+                    "date_identified": date_identified,
+                    "description": description,
+                    "assigned_to": assigned_to,
+                    "priority": priority,
+                    "status": status,
+                    "date_due": date_due,
+                    "last_update": last_update,
+                    "date_resolved": date_resolved,
+                    "comments": "\n".join(comment_parts),
+                    "isinternal": isinternal,
+                    "itemtype": itemtype,
+                })
 
             repitemrow = repitemrow.nextSibling()
+
+        self.progbar.setValue(50)
+        self.progbar.setLabelText("Grouping items by status...")
+        QtWidgets.QApplication.processEvents()
+
+        def item_sort_key(indexed_item):
+            # Sort by priority (High, Medium, Low), then due date descending.
+            # Items with no parseable due date sort last within their priority,
+            # preserving their original relative order.
+            idx, item = indexed_item
+            priority_rank = PRIORITY_SORT_ORDER.get(item["priority"], len(PRIORITY_SORT_ORDER))
+            parsed_due = QDate.fromString(item["date_due"], "MM/dd/yyyy")
+            if parsed_due.isValid():
+                due_rank = (0, -parsed_due.toJulianDay())
+            else:
+                due_rank = (1, 0)
+            return (priority_rank, due_rank[0], due_rank[1], idx)
+
+        # Group items by status (fixed order), each group sorted by priority then due date
+        colspan = 13 if self.internalreport else 12
+        rows_parts = []
+
+        for group_status in STATUS_GROUP_ORDER:
+            group_items = [item for item in collected_items if item["status"] == group_status]
+            if not group_items:
+                continue
+
+            sorted_items = [item for _, item in sorted(enumerate(group_items), key=item_sort_key)]
+
+            rows_parts.append(build_group_status_header(group_status, len(group_items), colspan))
+
+            for item in sorted_items:
+                rows_parts.append(build_item_row(
+                    item["item_number"], item["item_name"], item["identified_by"], item["date_identified"],
+                    item["description"], item["assigned_to"], item["priority"], item["status"],
+                    item["date_due"], item["last_update"], item["date_resolved"], item["comments"],
+                    item["isinternal"], item["itemtype"], self.internalreport
+                ))
 
         self.progbar.setValue(60)
         self.progbar.setLabelText("Writing HTML file...")

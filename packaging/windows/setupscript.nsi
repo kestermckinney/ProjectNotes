@@ -7,7 +7,7 @@ RequestExecutionLevel user
 
 ; ── Product defines ───────────────────────────────────────────────────────────
 !define PRODUCT_NAME      "Project Notes"
-!define PRODUCT_VERSION   "5.2.1"
+!define PRODUCT_VERSION   "5.2.3"
 !define PRODUCT_PUBLISHER "Paul McKinney"
 !define PRODUCT_WEB_SITE  "https://github.com/kestermckinney/ProjectNotes"
 !define PRODUCT_DIR_REGKEY  "Software\Microsoft\Windows\CurrentVersion\App Paths\Project Notes.exe"
@@ -50,8 +50,8 @@ Var RelaunchFlag
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "license.rtf"
 ; No directory page: Project Notes installs per-user only, under
-; $LOCALAPPDATA\Project Notes. The location is enforced in .onInit so it can
-; never be redirected to a system-wide path.
+; $LOCALAPPDATA\Programs\Project Notes. The location is enforced in .onInit so
+; it can never be redirected to a system-wide path.
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_FINISHPAGE_RUN "$INSTDIR\Project Notes.exe"
@@ -68,7 +68,7 @@ LangString DESC_SEC_IFS ${LANG_ENGLISH} "Install optional IFS Cloud integration 
 ; ── Installer metadata ────────────────────────────────────────────────────────
 Name    "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 OutFile "ProjectNotes-${PRODUCT_VERSION}-Windows-x64-Setup.exe"
-InstallDir          "$LOCALAPPDATA\Project Notes"
+InstallDir          "$LOCALAPPDATA\Programs\Project Notes"
 InstallDirRegKey HKCU "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails   show
 ShowUnInstDetails show
@@ -219,6 +219,7 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\base_plugin_settings.py"
   File "${DEPLOY_DIR}\plugins\excelkill_plugin.py"
   File "${DEPLOY_DIR}\plugins\exportnotes_plugin.py"
+  File "${DEPLOY_DIR}\plugins\exportstatusreport_plugin.py"
   File "${DEPLOY_DIR}\plugins\exporttrackeritems_plugin.py"
    File "${DEPLOY_DIR}\plugins\findprojectemailperson_plugin.py"
    File "${DEPLOY_DIR}\plugins\myshortcuts_plugin.py"
@@ -229,7 +230,6 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\newriskregister_plugin.py"
   File "${DEPLOY_DIR}\plugins\open_msproject_plugin.py"
   File "${DEPLOY_DIR}\plugins\team_member_quick_add_plugin.py"
-  File "${DEPLOY_DIR}\plugins\trackkerreport_plugin.py"
   File "${DEPLOY_DIR}\plugins\wordkill_plugin.py"
 
   SetOutPath "$INSTDIR\plugins\includes"
@@ -237,6 +237,7 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\includes\common.py"
   File "${DEPLOY_DIR}\plugins\includes\excel_tools.py"
    File "${DEPLOY_DIR}\plugins\includes\graphapi_tools.py"
+  File "${DEPLOY_DIR}\plugins\includes\icloud_tools.py"
    File "${DEPLOY_DIR}\plugins\includes\noteformatter.py"
   File "${DEPLOY_DIR}\plugins\includes\outlook_tools.py"
   File "${DEPLOY_DIR}\plugins\includes\word_tools.py"
@@ -247,6 +248,7 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\forms\dialogEditor.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogExportLocation.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogExportNotesOptions.ui"
+  File "${DEPLOY_DIR}\plugins\forms\dialogExportStatusReportOptions.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogExportTrackerOptions.ui"
    File "${DEPLOY_DIR}\plugins\forms\dialogFileFinder.ui"
    File "${DEPLOY_DIR}\plugins\forms\dialogMeetingEmailTemplate.ui"
@@ -256,16 +258,15 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\forms\dialogSettingsMigrator.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogSSRSOptions.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogTeamMemberQuickAdd.ui"
-  File "${DEPLOY_DIR}\plugins\forms\dialogTrackerRptOptions.ui"
 
   SetOutPath "$INSTDIR\plugins\templates"
   File "${DEPLOY_DIR}\plugins\templates\Lessons Learned Template.xlsx"
   File "${DEPLOY_DIR}\plugins\templates\Risk Register Template.xlsx"
-  File "${DEPLOY_DIR}\plugins\templates\Tracker Items Template.xlsx"
 
   ; ── Background threads ───────────────────────────────────────────────────────
   SetOutPath "$INSTDIR\threads"
    File "${DEPLOY_DIR}\threads\filefinder_thread.py"
+   File "${DEPLOY_DIR}\threads\icloudsync_thread.py"
    File "${DEPLOY_DIR}\threads\outlooksync_thread.py"
 
   ; ── Spell-check dictionaries ─────────────────────────────────────────────────
@@ -329,11 +330,11 @@ FunctionEnd
 Function .onInit
   ; Enforce a per-user install location. If a stale registry value or a silent
   ; /D= override points outside the user's profile, reset to the default under
-  ; $LOCALAPPDATA so the app is never installed system-wide.
-  StrLen $1 "$LOCALAPPDATA"
+  ; $LOCALAPPDATA\Programs so the app is never installed system-wide.
+  StrLen $1 "$LOCALAPPDATA\Programs"
   StrCpy $2 "$INSTDIR" $1
-  StrCmp $2 "$LOCALAPPDATA" +2 0
-    StrCpy $INSTDIR "$LOCALAPPDATA\Project Notes"
+  StrCmp $2 "$LOCALAPPDATA\Programs" +2 0
+    StrCpy $INSTDIR "$LOCALAPPDATA\Programs\Project Notes"
 
   ; Detect the auto-updater's /relaunch flag so .onInstSuccess can reopen the app.
   ${GetParameters} $R0
@@ -391,6 +392,7 @@ Section Uninstall
   Delete "$INSTDIR\plugins\base_plugin_settings.py"
   Delete "$INSTDIR\plugins\excelkill_plugin.py"
   Delete "$INSTDIR\plugins\exportnotes_plugin.py"
+  Delete "$INSTDIR\plugins\exportstatusreport_plugin.py"
   Delete "$INSTDIR\plugins\exporttrackeritems_plugin.py"
   Delete "$INSTDIR\plugins\findprojectemailperson_plugin.py"
   Delete "$INSTDIR\plugins\ifscloud_plugin_settings.py"
@@ -403,13 +405,13 @@ Section Uninstall
   Delete "$INSTDIR\plugins\newriskregister_plugin.py"
   Delete "$INSTDIR\plugins\open_msproject_plugin.py"
   Delete "$INSTDIR\plugins\team_member_quick_add_plugin.py"
-  Delete "$INSTDIR\plugins\trackkerreport_plugin.py"
   Delete "$INSTDIR\plugins\wordkill_plugin.py"
 
   Delete "$INSTDIR\plugins\includes\collaboration_tools.py"
   Delete "$INSTDIR\plugins\includes\common.py"
   Delete "$INSTDIR\plugins\includes\excel_tools.py"
   Delete "$INSTDIR\plugins\includes\graphapi_tools.py"
+  Delete "$INSTDIR\plugins\includes\icloud_tools.py"
   Delete "$INSTDIR\plugins\includes\ifs_tools.py"
   Delete "$INSTDIR\plugins\includes\noteformatter.py"
   Delete "$INSTDIR\plugins\includes\outlook_tools.py"
@@ -423,6 +425,7 @@ Section Uninstall
   Delete "$INSTDIR\plugins\forms\dialogEditor.ui"
   Delete "$INSTDIR\plugins\forms\dialogExportLocation.ui"
   Delete "$INSTDIR\plugins\forms\dialogExportNotesOptions.ui"
+  Delete "$INSTDIR\plugins\forms\dialogExportStatusReportOptions.ui"
   Delete "$INSTDIR\plugins\forms\dialogExportTrackerOptions.ui"
   Delete "$INSTDIR\plugins\forms\dialogFileFinder.ui"
   Delete "$INSTDIR\plugins\forms\dialogIFSCloud.ui"
@@ -433,14 +436,12 @@ Section Uninstall
   Delete "$INSTDIR\plugins\forms\dialogSettingsMigrator.ui"
   Delete "$INSTDIR\plugins\forms\dialogSSRSOptions.ui"
   Delete "$INSTDIR\plugins\forms\dialogTeamMemberQuickAdd.ui"
-  Delete "$INSTDIR\plugins\forms\dialogTrackerRptOptions.ui"
   Delete "$INSTDIR\plugins\forms\__pycache__\*.*"
   RMDir  "$INSTDIR\plugins\forms\__pycache__"
   RMDir  "$INSTDIR\plugins\forms"
 
   Delete "$INSTDIR\plugins\templates\Lessons Learned Template.xlsx"
   Delete "$INSTDIR\plugins\templates\Risk Register Template.xlsx"
-  Delete "$INSTDIR\plugins\templates\Tracker Items Template.xlsx"
   RMDir  "$INSTDIR\plugins\templates"
 
   Delete "$INSTDIR\plugins\__pycache__\*.*"
@@ -449,6 +450,7 @@ Section Uninstall
 
   ; ── Threads ──────────────────────────────────────────────────────────────────
   Delete "$INSTDIR\threads\filefinder_thread.py"
+  Delete "$INSTDIR\threads\icloudsync_thread.py"
   Delete "$INSTDIR\threads\ifssync_thread.py"
   Delete "$INSTDIR\threads\outlooksync_thread.py"
   Delete "$INSTDIR\threads\__pycache__\*.*"

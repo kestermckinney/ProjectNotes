@@ -110,8 +110,8 @@ void NotesActionItemsView::slotNewRecord()
     QSortFilterProxyModel* sortmodel = dynamic_cast<QSortFilterProxyModel*>(this->model());
     SqlQueryModel* currentmodel = dynamic_cast<SqlQueryModel*>(sortmodel->sourceModel());
 
-    QVariant fk_value1 = dynamic_cast<NotesActionItemsModel*>(currentmodel)->getFilter(14);  // project id
-    QVariant fk_value2 = dynamic_cast<NotesActionItemsModel*>(currentmodel)->getFilter(13); // notet id
+    QVariant fk_value1 = dynamic_cast<NotesActionItemsModel*>(currentmodel)->getFilter(13); // note id
+    QVariant fk_value2 = dynamic_cast<NotesActionItemsModel*>(currentmodel)->getFilter(14);  // project id
 
     dynamic_cast<NotesActionItemsModel*>(currentmodel)->newRecord(&fk_value1, &fk_value2);
 }

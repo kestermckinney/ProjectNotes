@@ -39,12 +39,14 @@ nav:
   - 'Standard Plugins':
     - 'Plugin Settings': StandardPlugins/PluginSettings.md
     - 'Outlook Integration': StandardPlugins/OutlookIntegration.md
+    - 'iCloud Contacts': StandardPlugins/iCloudContacts.md
     - 'File Finder': StandardPlugins/FileFinder.md
     - 'My Shortcuts': StandardPlugins/MyShortcuts.md
     - 'Team Member Quick Add': StandardPlugins/TeamMemberQuickAdd.md
     - 'Export Meeting Notes': StandardPlugins/ExportMeetingNotes.md
     - 'Meeting Notes Archive': StandardPlugins/MeetingNotesArchive.md
     - 'Export Tracker Items': StandardPlugins/ExportTrackerItems.md
+    - 'Export Status Report': StandardPlugins/ExportStatusReport.md
     - 'Tracker Report Generation': StandardPlugins/TrackerReportGeneration.md
     - 'New Document Templates': StandardPlugins/NewDocumentTemplates.md
     - 'Send Meeting Notes': StandardPlugins/SendMeetingNotes.md

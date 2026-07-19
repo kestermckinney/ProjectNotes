@@ -46,6 +46,7 @@ Plugin::~Plugin()
 {
     if (m_thread && m_thread->isRunning())
     {
+        m_thread->requestInterruption();
         m_thread->quit();
         if (!m_thread->wait(15000))
         {

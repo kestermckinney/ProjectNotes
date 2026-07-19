@@ -8,6 +8,7 @@ import json
 import projectnotes
 
 from includes.common import ProjectNotesCommon, _settings_organization
+from includes.icloud_tools import APPLE_SERVICE, CardDAVClient, ICloudError
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtCore import Qt, QRect, QSettings
 from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QDialog, QFileDialog, QWidget, QTableWidgetItem, QStyledItemDelegate, QComboBox
@@ -27,6 +28,7 @@ pluginmenus = [
     {"menutitle" : "File Finder", "function" : "menu_file_collector_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "Editor", "function" : "menu_editor_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "Outlook Integration", "function" : "menu_outlook_integration_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
+    {"menutitle" : "iCloud Contacts", "function" : "menu_icloud_contacts_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "My Shortcuts", "function" : "menu_my_shortcut_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "Meeting and Email Types", "function" : "menu_meeting_email_types_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "Settings Migrator", "function" : "menu_settings_migrator", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
@@ -366,6 +368,133 @@ class EditorSettings(QDialog):
         # Call the base class implementation
         super().closeEvent(event)
 
+# iCloud Contacts Settings
+class ICloudContactsSettings(QDialog):
+    def __init__(self, parent: QMainWindow = None):
+        super().__init__(parent)
+        self.pnc = ProjectNotesCommon()
+        self.settings_pluginname = "iCloud Contacts"
+        self.setWindowTitle("iCloud Contacts")
+        self.setModal(True)
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.resize(560, 360)
+
+        layout = QtWidgets.QVBoxLayout(self)
+        intro = QtWidgets.QLabel(
+            "Sync iCloud contacts when Project Notes starts and every five minutes. "
+            "iCloud overwrites mapped contact fields; removing a contact from iCloud never "
+            "removes it from Project Notes.")
+        intro.setWordWrap(True)
+        layout.addWidget(intro)
+
+        form = QtWidgets.QFormLayout()
+        self.enabled = QtWidgets.QCheckBox("Enable scheduled iCloud contact sync")
+        self.export_new = QtWidgets.QCheckBox(
+            "Export new Project Notes contacts not found in iCloud")
+        self.account = QtWidgets.QLineEdit()
+        self.account.setPlaceholderText("name@example.com")
+        self.password = QtWidgets.QLineEdit()
+        self.password.setEchoMode(QtWidgets.QLineEdit.EchoMode.Password)
+        self.password.setPlaceholderText("Leave blank to keep the stored password")
+        form.addRow("", self.enabled)
+        form.addRow("", self.export_new)
+        form.addRow("Apple Account:", self.account)
+        form.addRow("App-specific password:", self.password)
+        layout.addLayout(form)
+
+        help_label = QtWidgets.QLabel(
+            '<a href="https://support.apple.com/102654">How to create an app-specific password</a>. '
+            "The password is saved only in your operating system credential store.")
+        help_label.setOpenExternalLinks(True)
+        help_label.setWordWrap(True)
+        layout.addWidget(help_label)
+
+        self.status = QtWidgets.QLabel()
+        self.status.setWordWrap(True)
+        layout.addWidget(self.status)
+
+        action_row = QtWidgets.QHBoxLayout()
+        self.test_button = QtWidgets.QPushButton("Test Connection")
+        self.test_button.clicked.connect(self.test_connection)
+        action_row.addWidget(self.test_button)
+        action_row.addStretch()
+        layout.addLayout(action_row)
+
+        self.buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Save |
+            QtWidgets.QDialogButtonBox.StandardButton.Cancel)
+        self.buttons.accepted.connect(self.save_settings)
+        self.buttons.rejected.connect(self.reject)
+        layout.addWidget(self.buttons)
+
+    def showEvent(self, event):
+        self.enabled.setChecked(
+            (self.pnc.get_plugin_setting("Enabled", self.settings_pluginname) or "false").lower() == "true")
+        self.export_new.setChecked(
+            (self.pnc.get_plugin_setting("ExportNewContacts", self.settings_pluginname) or "false").lower() == "true")
+        self.account.setText(self.pnc.get_plugin_setting("Account", self.settings_pluginname) or "")
+        self.password.clear()
+        last_status = self.pnc.get_plugin_setting("LastStatus", self.settings_pluginname) or "Not imported yet."
+        last_success = self.pnc.get_plugin_setting("LastSuccess", self.settings_pluginname) or "Never"
+        self.status.setText(f"Last successful sync: {last_success}\nStatus: {last_status}")
+        super().showEvent(event)
+
+    def _password_for_form(self):
+        entered = self.password.text().strip()
+        if entered:
+            return entered
+        account = self.account.text().strip()
+        if not account:
+            return None
+        return projectnotes.get_secret(APPLE_SERVICE, account)
+
+    def test_connection(self):
+        account = self.account.text().strip()
+        if not account:
+            QMessageBox.warning(self, "iCloud Contacts", "Enter your Apple Account first.")
+            return
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        self.test_button.setEnabled(False)
+        try:
+            password = self._password_for_form()
+            if not password:
+                raise ICloudError("Enter or store an app-specific password first.")
+            count = CardDAVClient(account, password).test_connection()
+            QMessageBox.information(self, "iCloud Contacts",
+                                    f"Connection successful. Found {count} address book(s).")
+        except (ICloudError, RuntimeError) as exc:
+            QMessageBox.critical(self, "iCloud Contacts", str(exc))
+        finally:
+            self.test_button.setEnabled(True)
+            QApplication.restoreOverrideCursor()
+
+    def save_settings(self):
+        old_account = self.pnc.get_plugin_setting("Account", self.settings_pluginname) or ""
+        account = self.account.text().strip()
+        if self.enabled.isChecked() and not account:
+            QMessageBox.warning(self, "iCloud Contacts", "Enter your Apple Account before enabling imports.")
+            return
+        try:
+            entered_password = self.password.text().strip()
+            if entered_password:
+                projectnotes.set_secret(APPLE_SERVICE, account, entered_password)
+                if old_account and old_account != account:
+                    projectnotes.delete_secret(APPLE_SERVICE, old_account)
+            elif self.enabled.isChecked() and not projectnotes.get_secret(APPLE_SERVICE, account):
+                QMessageBox.warning(self, "iCloud Contacts",
+                                    "Enter an app-specific password before enabling imports.")
+                return
+        except RuntimeError as exc:
+            QMessageBox.critical(self, "Secure Storage Unavailable", str(exc))
+            return
+
+        self.pnc.set_plugin_setting("Enabled", self.settings_pluginname,
+                                    "true" if self.enabled.isChecked() else "false")
+        self.pnc.set_plugin_setting("ExportNewContacts", self.settings_pluginname,
+                                    "true" if self.export_new.isChecked() else "false")
+        self.pnc.set_plugin_setting("Account", self.settings_pluginname, account)
+        self.accept()
+
 # Outlook Integration Settings
 class OutlookIntegrationSettings(QDialog):
     def __init__(self, parent: QMainWindow = None):
@@ -434,6 +563,7 @@ class OutlookIntegrationSettings(QDialog):
         self.pnc.set_plugin_setting("SendO365", self.settings_pluginname, "true" if self.ui.checkBoxSendO365.isChecked() else "false")
 
         projectnotes.force_reload("outlooksync_thread")
+        projectnotes.force_reload("base_plugin")
 
         self.save_window_state()
         self.accept()
@@ -1027,6 +1157,10 @@ def menu_outlook_integration_settings(parameter):
     ois.show()
     return ""
 
+def menu_icloud_contacts_settings(parameter):
+    ics.exec()
+    return ""
+
 def menu_my_shortcut_settings(parameter):
     mss.show()
     return ""
@@ -1122,16 +1256,26 @@ def setup_default_outlook_settings():
     if pnc_tmp.get_plugin_setting("ScheduleO365", settings_pluginname) is None:
         pnc_tmp.set_plugin_setting("ScheduleO365", settings_pluginname, "false")
 
+def setup_default_icloud_settings():
+    pnc_tmp = ProjectNotesCommon()
+    settings_pluginname = "iCloud Contacts"
+    if pnc_tmp.get_plugin_setting("Enabled", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("Enabled", settings_pluginname, "false")
+    if pnc_tmp.get_plugin_setting("ExportNewContacts", settings_pluginname) is None:
+        pnc_tmp.set_plugin_setting("ExportNewContacts", settings_pluginname, "false")
+
 setup_default_file_finder_settings()
 setup_default_editor_settings()
 setup_default_meeting_email_types_settings()
 setup_default_outlook_settings()
+setup_default_icloud_settings()
 
 pnc = ProjectNotesCommon()
 mets = MeetingEmailTypesSettings(pnc.get_main_window())
 sm = SettingsMigrator(pnc.get_main_window())
 mss = MyShortcutSettings(pnc.get_main_window())
 ois = OutlookIntegrationSettings(pnc.get_main_window())
+ics = ICloudContactsSettings(pnc.get_main_window())
 es = EditorSettings(pnc.get_main_window())
 ffs = FileFinderSettings(pnc.get_main_window())
 

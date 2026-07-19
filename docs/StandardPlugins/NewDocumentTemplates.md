@@ -23,7 +23,7 @@ All template and export plugins look for a **Files & Folders** entry on the proj
     ├── Schedule/             ← New MS Project
     ├── PCR's/                ← New Change Order, PCR Register
     ├── Risk Management/      ← New Risk Register
-    ├── Issues List/          ← Export Tracker Items, Generate Tracker Report
+    ├── Issues List/          ← Export Tracker Items
     └── Status Reports/       ← SSRS Report Capture (IFS)
 ```
 

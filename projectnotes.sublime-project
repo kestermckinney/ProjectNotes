@@ -9,4 +9,135 @@
 			"index_exclude_patterns": ["packaging/linux/.flatpak-builder/*", "packaging/linux/flatpak-build/*", "*.db"],
 		},
 	],
+	"build_systems":
+	[
+		{
+			"name": "Project Notes",
+			"selector": "source.c++, source.c",
+			"shell_cmd": "cmake --build .",
+			"file_regex": "^(..[^:]*):([0-9]+):?([0-9]+)?:? (.*)$",
+			"windows":
+			{
+				"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build .",
+				"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
+			},
+			"linux":
+			{
+				"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
+			},
+			"osx":
+			{
+				"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Debug"
+			},
+			"variants":
+			[
+				{
+					"name": "Build Release",
+					"shell_cmd": "cmake --build .",
+					"windows": {
+						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build .",
+						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
+					},
+					"linux": { "working_dir": "$project_path/build/System_Qt_6_11_1-Release" },
+					"osx": { "working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Release" },
+				},
+				{
+					"name": "Rebuild Debug",
+					"shell_cmd": "cmake --build . --clean-first",
+					"windows": {
+						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . --clean-first",
+						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
+					},
+					"linux": { "working_dir": "$project_path/build/System_Qt_6_11_1-Debug" },
+					"osx": { "working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Debug" },
+				},
+				{
+					"name": "Rebuild Release",
+					"shell_cmd": "cmake --build . --clean-first",
+					"windows": {
+						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . --clean-first",
+						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
+					},
+					"linux": { "working_dir": "$project_path/build/System_Qt_6_11_1-Release" },
+					"osx": { "working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Release" },
+				},
+				{
+					"name": "Run Debug",
+					"shell_cmd": "./projectnotes",
+					"windows":
+					{
+						"shell_cmd": "set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"Project Notes.exe\"",
+						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
+					},
+					"linux":
+					{
+						"shell_cmd": "./projectnotes",
+						"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
+					},
+					"osx":
+					{
+						"shell_cmd": "./\"Project Notes\"",
+						"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Debug"
+					},
+				},
+				{
+					"name": "Run Release",
+					"shell_cmd": "./projectnotes",
+					"windows":
+					{
+						"shell_cmd": "set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"Project Notes.exe\"",
+						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
+					},
+					"linux":
+					{
+						"shell_cmd": "./projectnotes",
+						"working_dir": "$project_path/build/System_Qt_6_11_1-Release"
+					},
+					"osx":
+					{
+						"shell_cmd": "open \"./Project Notes.app\"",
+						"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Release"
+					},
+				},
+				{
+					"name": "Build & Run Debug",
+					"shell_cmd": "cmake --build . && ./projectnotes",
+					"windows":
+					{
+						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"Project Notes.exe\"",
+						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
+					},
+					"linux":
+					{
+						"shell_cmd": "cmake --build . && ./projectnotes",
+						"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
+					},
+					"osx":
+					{
+						"shell_cmd": "cmake --build . && ./\"Project Notes\"",
+						"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Debug"
+					},
+				},
+				{
+					"name": "Build & Run Release",
+					"shell_cmd": "cmake --build . && ./projectnotes",
+					"windows":
+					{
+						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"Project Notes.exe\"",
+						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
+					},
+					"linux":
+					{
+						"shell_cmd": "cmake --build . && ./projectnotes",
+						"working_dir": "$project_path/build/System_Qt_6_11_1-Release"
+					},
+					"osx":
+					{
+						"shell_cmd": "cmake --build . && open \"./Project Notes.app\"",
+						"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Release"
+					},
+				},
+			]
+		}
+	]
 }

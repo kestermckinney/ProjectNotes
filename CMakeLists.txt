@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ProjectNotes VERSION 5.2.1 LANGUAGES CXX)
+project(ProjectNotes VERSION 5.2.3 LANGUAGES CXX)
 
 if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "Minimum macOS deployment version")
@@ -30,6 +30,9 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Sql Xml Netw
 # CorePrivate exposes QtCore's private QZipWriter (qzipwriter_p.h), used by the
 # "Send Logs to Support" log bundler.
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS CorePrivate)
+if(UNIX AND NOT APPLE AND NOT ANDROID)
+    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS DBus)
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(ENV{QT_LOGGING_RULES} "qt.*.debug=true")
@@ -159,6 +162,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         allitemspage.cpp allitemspage.h
         spellcheckdialog.cpp spellcheckdialog.h spellcheckdialog.ui
         cloudsyncsettingsdialog.cpp cloudsyncsettingsdialog.h cloudsyncsettingsdialog.ui
+        credentialstore.cpp credentialstore.h
         supportbundle.cpp supportbundle.h
         updatemanager.cpp updatemanager.h
     )
@@ -227,6 +231,13 @@ add_subdirectory(${SQLITESYNCPRO_SRC_DIR} SqliteSyncPro)
 add_subdirectory(ProjectNotesCore)
 
 target_link_libraries(ProjectNotes PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${Python3_LIBRARIES} Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Charts "${HUNSPELL_LIBRARIES}" Qt${QT_VERSION_MAJOR}::CorePrivate SqliteSyncProLib ProjectNotesCore)
+if(UNIX AND NOT APPLE AND NOT ANDROID)
+    target_link_libraries(ProjectNotes PRIVATE Qt${QT_VERSION_MAJOR}::DBus)
+elseif(APPLE)
+    target_link_libraries(ProjectNotes PRIVATE "-framework Security")
+elseif(WIN32)
+    target_link_libraries(ProjectNotes PRIVATE Advapi32)
+endif()
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
