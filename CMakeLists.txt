@@ -230,6 +230,15 @@ set(SQLITESYNCPRO_SRC_DIR "../SqliteSyncPro/src" CACHE STRING "Path to SqliteSyn
 add_subdirectory(${SQLITESYNCPRO_SRC_DIR} SqliteSyncPro)
 add_subdirectory(ProjectNotesCore)
 
+# ── QML desktop frontend (UI overhaul, Phase 1) ──────────────────────────────
+# Built as a separate ProjectNotesDesktop target that reuses ProjectNotesCore.
+# ON by default on desktop platforms; the existing Widgets ProjectNotes target
+# is not affected either way.
+option(BUILD_QML_DESKTOP "Build the new QML (Qt Quick) desktop frontend" ON)
+if(BUILD_QML_DESKTOP AND NOT ANDROID AND NOT IOS)
+    add_subdirectory(ProjectNotesDesktop)
+endif()
+
 target_link_libraries(ProjectNotes PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${Python3_LIBRARIES} Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Charts "${HUNSPELL_LIBRARIES}" Qt${QT_VERSION_MAJOR}::CorePrivate SqliteSyncProLib ProjectNotesCore)
 if(UNIX AND NOT APPLE AND NOT ANDROID)
     target_link_libraries(ProjectNotes PRIVATE Qt${QT_VERSION_MAJOR}::DBus)

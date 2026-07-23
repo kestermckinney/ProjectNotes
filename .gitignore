@@ -7,6 +7,9 @@ build/
 *.sublime-workspace
 Thumbs.db
 graphify-out/
+# SQLite runtime temp files
+*.db-shm
+*.db-wal
 packaging/windows/*.exe
 packaging/linux/flatpak-repo
 packaging/linux/*.flatpak
