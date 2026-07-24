@@ -50,7 +50,7 @@ Item {
                         delegate: Button {
                             required property var modelData
                             implicitHeight: 32
-                            padding: 12
+                            leftPadding: 14; rightPadding: 14; topPadding: 0; bottomPadding: 0
                             background: Rectangle {
                                 radius: Theme.radiusSm
                                 color: Theme.mode === modelData.key ? Theme.accent : Theme.surface2
@@ -108,7 +108,7 @@ Item {
                     }
                     Button {
                         implicitHeight: 32
-                        padding: 12
+                        leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
                         enabled: DesktopAppController.syncEnabled
                         background: Rectangle {
                             radius: Theme.radiusSm
@@ -116,8 +116,9 @@ Item {
                         }
                         contentItem: RowLayout {
                             spacing: 5
-                            MaterialIcon { name: "sync"; size: 16; color: "#ffffff" }
-                            Text { text: qsTr("Sync Now"); color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold }
+                            MaterialIcon { name: "sync"; size: 16; color: "#ffffff"; Layout.alignment: Qt.AlignVCenter }
+                            Text { text: qsTr("Sync Now"); color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
+                                   verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
                         }
                         onClicked: DesktopAppController.syncNow()
                     }
@@ -193,7 +194,7 @@ Item {
 
                     Button {
                         implicitHeight: 36
-                        padding: 14
+                        leftPadding: 14; rightPadding: 14; topPadding: 0; bottomPadding: 0
                         enabled: newFolderField.text.trim().length > 0
                         background: Rectangle {
                             radius: Theme.radiusSm
@@ -202,8 +203,9 @@ Item {
                         }
                         contentItem: RowLayout {
                             spacing: 6
-                            MaterialIcon { name: "add"; size: 18; color: "#ffffff" }
-                            Text { text: "Add Folder"; color: "#ffffff"; font.pixelSize: 13; font.weight: Font.DemiBold }
+                            MaterialIcon { name: "add"; size: 18; color: "#ffffff"; Layout.alignment: Qt.AlignVCenter }
+                            Text { text: "Add Folder"; color: "#ffffff"; font.pixelSize: 13; font.weight: Font.DemiBold
+                                   verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
                         }
                         onClicked: page._createFolder()
                     }
@@ -356,7 +358,7 @@ Item {
                 subtitle: "Import records from a Project Notes XML file. Export is available from any record's detail page."
                 Button {
                     implicitHeight: 36
-                    padding: 14
+                    leftPadding: 14; rightPadding: 14; topPadding: 0; bottomPadding: 0
                     background: Rectangle {
                         radius: Theme.radiusSm
                         color: parent.down ? Theme.surface : Theme.surface2
@@ -364,8 +366,9 @@ Item {
                     }
                     contentItem: RowLayout {
                         spacing: 6
-                        MaterialIcon { name: "upload"; size: 18; color: Theme.text2 }
-                        Text { text: qsTr("Import from XML…"); color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
+                        MaterialIcon { name: "upload"; size: 18; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                        Text { text: qsTr("Import from XML…"); color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
+                               verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
                     }
                     onClicked: importDialog.open()
                 }
@@ -394,14 +397,17 @@ Item {
         property bool checked: false
         signal toggledValue(bool value)
         Layout.fillWidth: true
-        spacing: 8
+        spacing: 10
         CheckBox {
             id: cb
             checked: chk.checked
+            padding: 0
+            implicitWidth: 18; implicitHeight: 18
+            Layout.alignment: Qt.AlignVCenter
             onToggled: chk.toggledValue(checked)
             indicator: Rectangle {
                 implicitWidth: 18; implicitHeight: 18; radius: 4
-                x: cb.leftPadding; y: cb.height/2 - height/2
+                x: 0; y: cb.height/2 - height/2
                 color: cb.checked ? Theme.accent : Theme.surface
                 border.color: cb.checked ? Theme.accent : Theme.border
                 MaterialIcon { anchors.centerIn: parent; visible: cb.checked; name: "check"; size: 14; color: "#ffffff" }

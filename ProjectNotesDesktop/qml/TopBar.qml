@@ -139,7 +139,7 @@ Rectangle {
         Button {
             visible: bar.showNew
             implicitHeight: 34
-            padding: 10
+            leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
             background: Rectangle {
                 radius: Theme.radiusSm
                 color: parent.down ? Theme.accentStrong : Theme.accent
