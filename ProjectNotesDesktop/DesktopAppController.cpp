@@ -48,6 +48,26 @@ DesktopAppController::DesktopAppController(QObject* parent)
 {
     if (!s_instance)
         s_instance = this;
+
+    // Install a backing store for DatabaseObjects "local" parameters (per-machine
+    // view filters like UserFilter:ShowInternalItems / ShowClosedProjects /
+    // ViewFilter:ShowResolvedTrackerItems). Without this the desktop app had no
+    // s_localSave/s_localLoad, so setShowInternalItems() was a no-op and
+    // getShowInternalItems() always returned false — the Show Internal / closed /
+    // resolved toggles never took effect. We use the same QSettings the Widgets
+    // app uses ("ProjectNotes"[+profile] / "AppSettings") so both frontends share
+    // the same view-option state.
+    DatabaseObjects::setLocalSettingsCallbacks(
+        [](const QString& key, const QString& val) {
+            QSettings s(QStringLiteral("ProjectNotes") + s_developerProfile,
+                        QStringLiteral("AppSettings"));
+            s.setValue(key, val);
+        },
+        [](const QString& key) -> QString {
+            QSettings s(QStringLiteral("ProjectNotes") + s_developerProfile,
+                        QStringLiteral("AppSettings"));
+            return s.value(key).toString();
+        });
 }
 
 DesktopAppController::~DesktopAppController()

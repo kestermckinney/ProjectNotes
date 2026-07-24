@@ -118,22 +118,25 @@ Item {
                     readonly property bool showFin: DesktopAppController.showInternalItems
 
                     Layout.fillWidth: true
-                    implicitHeight: showFin ? 112 : 74
+                    // Height follows content: taller when the financial strip
+                    // (which may wrap to two rows) is visible.
+                    implicitHeight: contentCol.implicitHeight + 20
                     color: (projId === page.selectedProjectId)
                            ? Theme.accentSoft
                            : (hover.hovered ? Theme.raise : Theme.surface)
 
                     ColumnLayout {
-                        anchors.fill: parent
+                        id: contentCol
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
                         anchors.leftMargin: 16
                         anchors.rightMargin: 16
                         anchors.topMargin: 10
-                        anchors.bottomMargin: 10
                         spacing: 8
 
                     RowLayout {
                         Layout.fillWidth: true
-                        Layout.fillHeight: !card.showFin
                         spacing: 14
 
                         // Number + status
@@ -203,19 +206,24 @@ Item {
                         MaterialIcon { name: "chevron_right"; size: 20; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
                     }
 
-                    // Financial strip — shown only when "Show Internal" is on.
-                    RowLayout {
+                    // Financial strip — the same "internal" columns the Widgets
+                    // app reveals under View ▸ Internal Items. Wraps to a second
+                    // row on narrow cards; each chip elides so nothing bleeds over.
+                    Flow {
                         Layout.fillWidth: true
+                        Layout.topMargin: 2
                         visible: card.showFin
-                        spacing: 8
-                        MetricChip { label: qsTr("Budget"); value: (card.model.budget || "").toString() }
-                        MetricChip { label: qsTr("Actual"); value: (card.model.actual || "").toString() }
-                        MetricChip { label: qsTr("BCWP");   accentColor: Theme.green; value: (card.model.bcwp || "").toString() }
-                        MetricChip {
-                            label: qsTr("EAC"); accentColor: Theme.amber
-                            value: (card.model.eac || "").toString() !== "" ? (card.model.eac || "").toString()
-                                                                            : (card.model.bac || "").toString()
-                        }
+                        spacing: 10
+                        MetricChip { label: qsTr("Budget");   value: (card.model.budget || "").toString() }
+                        MetricChip { label: qsTr("Actual");   value: (card.model.actual || "").toString() }
+                        MetricChip { label: qsTr("BCWP");     value: (card.model.bcwp || "").toString(); accentColor: Theme.green }
+                        MetricChip { label: qsTr("BCWS");     value: (card.model.bcws || "").toString() }
+                        MetricChip { label: qsTr("BAC");      value: (card.model.bac || "").toString() }
+                        MetricChip { label: qsTr("Consumed"); value: (card.model.pct_consumed || "").toString() }
+                        MetricChip { label: qsTr("EAC");      value: (card.model.eac || "").toString(); accentColor: Theme.amber }
+                        MetricChip { label: qsTr("CV");       value: (card.model.cv || "").toString() }
+                        MetricChip { label: qsTr("SV");       value: (card.model.sv || "").toString() }
+                        MetricChip { label: qsTr("CPI");      value: (card.model.cpi || "").toString() }
                         MetricChip { label: qsTr("Complete"); value: (card.model.pct_complete || "").toString() }
                     }
                     }
@@ -240,26 +248,26 @@ Item {
     }
 
     // Compact financial figure (label + value) used in the card financial strip.
-    // Shares row width equally and elides so long values never bleed over siblings.
-    component MetricChip: ColumnLayout {
+    // Fixed width so it tiles cleanly in a Flow; both lines elide so a long
+    // currency value never bleeds over the neighbouring chip.
+    component MetricChip: Column {
         id: chip
         property string label: ""
         property string value: ""
         property color accentColor: Theme.text
         readonly property bool _has: value !== undefined && value.toString().trim() !== ""
-        Layout.fillWidth: true
-        Layout.preferredWidth: 1
+        width: 96
         spacing: 1
         Text {
+            width: parent.width; elide: Text.ElideRight
             text: chip.label.toUpperCase(); color: Theme.text3
             font.pixelSize: 9; font.weight: Font.Bold
-            Layout.fillWidth: true; elide: Text.ElideRight
         }
         Text {
+            width: parent.width; elide: Text.ElideRight
             text: chip._has ? chip.value : "—"
             color: chip._has ? chip.accentColor : Theme.text3
             font.pixelSize: 12; font.weight: Font.DemiBold
-            Layout.fillWidth: true; elide: Text.ElideRight
         }
     }
 }
