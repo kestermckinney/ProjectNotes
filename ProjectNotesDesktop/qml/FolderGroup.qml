@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 import QtQuick
+import QtQml
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import ProjectNotesDesktop
@@ -33,6 +34,16 @@ Column {
     property var    dragLayer: null
 
     signal projectActivated(string projectId)
+
+    // "All Projects" has no FolderManager count — derive it live from the list
+    // model (Instantiator.count is reactive; its default QtObject delegate is
+    // non-visual so this just counts rows).
+    Instantiator {
+        id: allCounter
+        active: group.isAll
+        model: group.isAll ? group.listModel : null
+    }
+    readonly property int displayCount: group.isAll ? allCounter.count : group.folderCount
 
     // Handle a project dropped onto this group.
     function _handleDrop(drop) {
@@ -91,7 +102,7 @@ Column {
                 elide: Text.ElideRight
             }
             Text {
-                text: group.folderCount
+                text: group.displayCount
                 color: Theme.text3
                 font.pixelSize: 10
             }
@@ -146,7 +157,8 @@ Column {
                     spacing: 8
 
                     Rectangle {
-                        width: 6; height: 6; radius: 3
+                        implicitWidth: 6; implicitHeight: 6; radius: 3
+                        Layout.alignment: Qt.AlignVCenter
                         color: {
                             var s = (row.model.project_status || "").toString().toLowerCase()
                             if (s.indexOf("active") >= 0) return Theme.green
@@ -160,7 +172,10 @@ Column {
                         color: Theme.text2
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
-                        Layout.preferredWidth: 36
+                        // Natural width, capped + elided so a long number never
+                        // paints over the project name beside it.
+                        Layout.maximumWidth: 58
+                        elide: Text.ElideRight
                     }
                     Text {
                         text: (row.model.project_name || "").toString()

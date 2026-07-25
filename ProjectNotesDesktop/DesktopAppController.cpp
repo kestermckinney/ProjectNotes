@@ -890,6 +890,35 @@ bool DesktopAppController::deleteNoteActionItem(int row)
     return false;
 }
 
+QVariantMap DesktopAppController::getNoteActionItemData(int row) const
+{ return proxyRowToMap(global_DBObjects.notesactionitemsmodelproxy(), row); }
+
+bool DesktopAppController::saveNoteActionItem(int row, const QString& itemName,
+        const QString& itemType, const QString& priority, const QString& status,
+        const QString& assignedTo, const QString& identifiedBy,
+        const QString& dateIdentified, const QString& dateDue, const QString& description)
+{
+    global_DBObjects.setLastSaveError("");
+    QAbstractItemModel* model = global_DBObjects.notesactionitemsmodelproxy();
+    if (row < 0 || row >= model->rowCount()) return false;
+    // notesActionItemsModel columns: 2 item_type, 3 item_name, 4 identified_by,
+    // 5 date_identified, 6 description, 7 assigned_to, 8 priority, 9 status,
+    // 10 date_due (see notesactionitemsmodel.cpp SELECT order).
+    bool ok = true;
+    ok &= model->setData(model->index(row, 3),  itemName);
+    ok &= model->setData(model->index(row, 2),  itemType);
+    ok &= model->setData(model->index(row, 8),  priority);
+    ok &= model->setData(model->index(row, 9),  status);
+    ok &= model->setData(model->index(row, 7),  assignedTo);
+    ok &= model->setData(model->index(row, 4),  identifiedBy);
+    ok &= model->setData(model->index(row, 5),  dateIdentified);
+    ok &= model->setData(model->index(row, 10), dateDue);
+    ok &= model->setData(model->index(row, 6),  description);
+    if (!ok)
+        emit errorOccurred(tr("Could Not Save"), global_DBObjects.lastSaveError());
+    return ok;
+}
+
 // ── People ───────────────────────────────────────────────────────────────────
 
 int DesktopAppController::addPerson()
@@ -1115,9 +1144,17 @@ bool DesktopAppController::saveTrackerItemDetail(int row, const QString& itemId,
 
 int DesktopAppController::addComment(const QString& itemId)
 {
+    // newRecord() only appends an in-memory row (with item_id + defaults set);
+    // insertCacheRow() is what assigns a UUID and persists it. Without the
+    // insert, the following refresh (here or from QML) discarded the comment —
+    // the Add Comment button appeared to do nothing.
     QVariant fk(itemId);
-    return proxyRowFromSource(global_DBObjects.trackeritemscommentsmodelproxy(),
-                              global_DBObjects.trackeritemscommentsmodel()->newRecord(&fk));
+    auto* src = global_DBObjects.trackeritemscommentsmodel();
+    const QModelIndex srcIdx = src->newRecord(&fk);
+    if (!srcIdx.isValid()) return -1;
+    src->insertCacheRow(srcIdx.row());
+    src->refresh();
+    return proxyRowFromSource(global_DBObjects.trackeritemscommentsmodelproxy(), srcIdx);
 }
 
 bool DesktopAppController::deleteComment(int row)

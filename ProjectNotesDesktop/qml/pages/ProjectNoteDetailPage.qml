@@ -22,7 +22,14 @@ Item {
     property string _rcWord: ""
     property var    _rcSuggestions: []
 
+    // People list for the action-item Assigned/Identified combos.
+    property var    _people: []
+    function _peopleNames() { return _people.map(function(p){ return p.name }) }
+    function _idForName(n){ for (var i=0;i<_people.length;i++) if (_people[i].name===n) return _people[i].id; return "" }
+    function _nameForId(id){ for (var i=0;i<_people.length;i++) if (_people[i].id===id) return _people[i].name; return "" }
+
     Component.onCompleted: {
+        _people = DesktopAppController.peopleList()
         if (page.noteId !== "")
             DesktopAppController.setNoteFilter(page.noteId)
         _reload()
@@ -210,7 +217,7 @@ Item {
                                 Layout.fillWidth: true
                                 spacing: 8
                                 Rectangle {
-                                    width: 26; height: 26; radius: 13
+                                    implicitWidth: 26; implicitHeight: 26; radius: 13
                                     color: Theme.accentSoft
                                     Text {
                                         anchors.centerIn: parent
@@ -279,48 +286,158 @@ Item {
                         }
                         Repeater {
                             model: DesktopAppController.notesActionItemsModel
-                            delegate: RowLayout {
+                            delegate: ColumnLayout {
+                                id: ai
                                 required property int index
                                 required property var model
+                                property bool expanded: false
+                                property string _assignedId: ""
+                                property string _identifiedId: ""
                                 Layout.fillWidth: true
-                                spacing: 8
-                                MaterialIcon {
-                                    name: {
-                                        var s = (model.status || "").toString().toLowerCase()
-                                        if (s.indexOf("resolved") >= 0 || s.indexOf("closed") >= 0) return "check_circle"
-                                        return "radio_button_unchecked"
+                                spacing: 6
+
+                                // Pull the current model values into the editors, then open.
+                                function _edit() {
+                                    aiName.text       = (ai.model.item_name || "").toString()
+                                    aiType.value      = (ai.model.item_type || "").toString()
+                                    aiPriority.value  = (ai.model.priority || "").toString()
+                                    aiStatus.value    = (ai.model.status || "").toString()
+                                    ai._assignedId    = (ai.model.assigned_to || "").toString()
+                                    ai._identifiedId  = (ai.model.identified_by || "").toString()
+                                    aiAssigned.value  = page._nameForId(ai._assignedId)
+                                    aiIdentified.value= page._nameForId(ai._identifiedId)
+                                    aiDateId.text     = (ai.model.date_identified || "").toString()
+                                    aiDateDue.text    = (ai.model.date_due || "").toString()
+                                    aiDesc.text       = (ai.model.description || "").toString()
+                                    ai.expanded = true
+                                }
+                                // Persist all fields (in-place setData → summary updates live,
+                                // no refresh, so the editor stays open).
+                                function _save() {
+                                    DesktopAppController.saveNoteActionItem(ai.index,
+                                        aiName.text, aiType.value, aiPriority.value, aiStatus.value,
+                                        ai._assignedId, ai._identifiedId, aiDateId.text, aiDateDue.text,
+                                        aiDesc.text)
+                                }
+
+                                // Summary row (click to expand/collapse the editor)
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 8
+                                    MaterialIcon {
+                                        name: {
+                                            var s = (ai.model.status || "").toString().toLowerCase()
+                                            if (s.indexOf("resolved") >= 0 || s.indexOf("closed") >= 0) return "check_circle"
+                                            return "radio_button_unchecked"
+                                        }
+                                        size: 16
+                                        color: {
+                                            var s = (ai.model.status || "").toString().toLowerCase()
+                                            return (s.indexOf("resolved") >= 0 || s.indexOf("closed") >= 0)
+                                                   ? Theme.green : Theme.text3
+                                        }
+                                        Layout.alignment: Qt.AlignVCenter
                                     }
-                                    size: 16
-                                    color: {
-                                        var s = (model.status || "").toString().toLowerCase()
-                                        return (s.indexOf("resolved") >= 0 || s.indexOf("closed") >= 0)
-                                               ? Theme.green : Theme.text3
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 0
+                                        Text {
+                                            text: (ai.model.item_name || qsTr("(unnamed item)")).toString()
+                                            color: Theme.text; font.pixelSize: 13; elide: Text.ElideRight
+                                            Layout.fillWidth: true
+                                        }
+                                        Text {
+                                            text: {
+                                                var p = (ai.model.priority || "").toString()
+                                                var a = (ai.model.assigned_to || "").toString()
+                                                var who = a !== "" ? DesktopAppController.peopleNameForId(a) : ""
+                                                return [p, who].filter(function(x){ return x !== "" }).join(" · ")
+                                            }
+                                            visible: text !== ""
+                                            color: Theme.text3; font.pixelSize: 11; elide: Text.ElideRight
+                                            Layout.fillWidth: true
+                                        }
+                                    }
+                                    // Edit / collapse toggle
+                                    Rectangle {
+                                        implicitWidth: 26; implicitHeight: 26; radius: 6
+                                        color: eHover.hovered ? Theme.surface2 : "transparent"
+                                        Layout.alignment: Qt.AlignVCenter
+                                        MaterialIcon {
+                                            anchors.centerIn: parent
+                                            name: ai.expanded ? "expand_less" : "edit"
+                                            size: 15; color: Theme.text2
+                                        }
+                                        HoverHandler { id: eHover }
+                                        TapHandler { onTapped: ai.expanded ? ai.expanded = false : ai._edit() }
+                                    }
+                                    DeleteButton {
+                                        onClicked: {
+                                            DesktopAppController.deleteNoteActionItem(ai.index)
+                                            DesktopAppController.refreshNoteActionItems()
+                                        }
                                     }
                                 }
+
+                                // Inline editor — all editable action-item fields.
                                 ColumnLayout {
                                     Layout.fillWidth: true
-                                    spacing: 0
-                                    Text {
-                                        text: (model.item_name || qsTr("(unnamed item)")).toString()
-                                        color: Theme.text; font.pixelSize: 13; elide: Text.ElideRight
-                                        Layout.fillWidth: true
+                                    Layout.leftMargin: 24
+                                    visible: ai.expanded
+                                    spacing: 8
+
+                                    FormField {
+                                        id: aiName; label: qsTr("Item Name")
+                                        onEditingFinished: ai._save()
                                     }
-                                    Text {
-                                        text: {
-                                            var p = (model.priority || "").toString()
-                                            var a = (model.assigned_to || "").toString()
-                                            var who = a !== "" ? DesktopAppController.peopleNameForId(a) : ""
-                                            return [p, who].filter(function(x){ return x !== "" }).join(" · ")
+                                    GridLayout {
+                                        Layout.fillWidth: true; columns: 2; columnSpacing: 10; rowSpacing: 8
+                                        ComboField {
+                                            id: aiType; label: qsTr("Type")
+                                            options: DesktopAppController.itemTypeOptions()
+                                            onActivated: ai._save()
                                         }
-                                        visible: text !== ""
-                                        color: Theme.text3; font.pixelSize: 11; elide: Text.ElideRight
-                                        Layout.fillWidth: true
+                                        ComboField {
+                                            id: aiPriority; label: qsTr("Priority")
+                                            options: DesktopAppController.itemPriorityOptions()
+                                            onActivated: ai._save()
+                                        }
+                                        ComboField {
+                                            id: aiStatus; label: qsTr("Status")
+                                            options: DesktopAppController.itemStatusOptions()
+                                            onActivated: ai._save()
+                                        }
+                                        ComboField {
+                                            id: aiAssigned; label: qsTr("Assigned To")
+                                            options: page._peopleNames()
+                                            onActivated: (v) => { ai._assignedId = page._idForName(v); ai._save() }
+                                        }
+                                        ComboField {
+                                            id: aiIdentified; label: qsTr("Identified By")
+                                            options: page._peopleNames()
+                                            onActivated: (v) => { ai._identifiedId = page._idForName(v); ai._save() }
+                                        }
+                                        DateField { id: aiDateId; label: qsTr("Date Identified"); onEdited: ai._save() }
+                                        DateField { id: aiDateDue; label: qsTr("Date Due"); onEdited: ai._save() }
                                     }
-                                }
-                                DeleteButton {
-                                    onClicked: {
-                                        DesktopAppController.deleteNoteActionItem(index)
-                                        DesktopAppController.refreshNoteActionItems()
+                                    Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: Math.max(64, aiDesc.contentHeight + 18)
+                                        radius: Theme.radiusSm
+                                        color: Theme.surface
+                                        border.color: aiDesc.activeFocus ? Theme.accent : Theme.border
+                                        TextArea {
+                                            id: aiDesc
+                                            anchors.fill: parent
+                                            anchors.margins: 8
+                                            color: Theme.text
+                                            wrapMode: TextEdit.WordWrap
+                                            selectByMouse: true
+                                            background: null
+                                            font.pixelSize: 13
+                                            onEditingFinished: ai._save()
+                                        }
                                     }
                                 }
                             }
@@ -358,7 +475,7 @@ Item {
                     TapHandler { onTapped: peoplePicker.close() }
                 }
             }
-            Rectangle { Layout.fillWidth: true; height: 1; color: Theme.border }
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
             ListView {
                 id: peopleList
                 Layout.fillWidth: true

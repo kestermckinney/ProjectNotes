@@ -13,6 +13,7 @@ ColumnLayout {
     property string placeholder: ""
     property bool readOnly: false
     signal edited(string text)
+    signal editingFinished()
 
     spacing: 4
     Layout.fillWidth: true
@@ -44,6 +45,7 @@ ColumnLayout {
             font.pixelSize: 13
             selectByMouse: true
             onTextEdited: root.edited(text)
+            onEditingFinished: root.editingFinished()
         }
     }
 }

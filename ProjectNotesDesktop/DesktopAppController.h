@@ -219,6 +219,14 @@ public:
     // ── Note action items ────────────────────────────────────────────────────
     Q_INVOKABLE int         addNoteActionItem(const QString& noteId, const QString& projectId);
     Q_INVOKABLE bool        deleteNoteActionItem(int row);
+    // Full field values for the action item at proxy |row| (for inline editing).
+    Q_INVOKABLE QVariantMap getNoteActionItemData(int row) const;
+    // Save the editable action-item fields inline on the notes page.
+    Q_INVOKABLE bool        saveNoteActionItem(int row, const QString& itemName,
+                                const QString& itemType, const QString& priority,
+                                const QString& status, const QString& assignedTo,
+                                const QString& identifiedBy, const QString& dateIdentified,
+                                const QString& dateDue, const QString& description);
 
     // ── People CRUD ──────────────────────────────────────────────────────────
     Q_INVOKABLE int         addPerson();
