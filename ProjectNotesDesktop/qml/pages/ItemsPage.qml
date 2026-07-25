@@ -20,6 +20,8 @@ Item {
     RecordContextMenu {
         id: ctxMenu
         recordType: qsTr("Item")
+        model: DesktopAppController.allItemsModel
+        recordId: page._ctxId
         canDelete: false            // master list is a read-only view
         onOpenRequested:   page.itemActivated(page._ctxId)
         onNewRequested:    page.itemActivated(page._ctxId)

@@ -18,6 +18,10 @@
 #include "statusreportitemsmodel.h"
 #include "searchresultsmodel.h"
 
+#include "pluginmanager.h"
+#include "plugin.h"
+#include "pythonworker.h"
+
 #include "sqlitesyncpro.h"
 #include "syncresult.h"
 
@@ -151,6 +155,10 @@ bool DesktopAppController::openOrCreateDatabase()
 
     m_databaseOpen = true;
     emit databaseReady();
+
+    // Boot the embedded-Python plugin engine now that the database is open (some
+    // plugins query it as they register their menus).
+    ensurePluginManager();
 
     // Auto-start cloud sync if the user has it enabled (same as the Widgets app).
     // Deferred so the UI is up first; the heavy bootstrap runs on the sync thread.
@@ -410,6 +418,86 @@ void DesktopAppController::refreshModel(QAbstractItemModel* model)
 {
     if (SqlQueryModel* src = sourceModelOf(model))
         src->refresh();
+}
+
+// ── Python plugins ────────────────────────────────────────────────────────────
+
+void DesktopAppController::ensurePluginManager()
+{
+    if (m_pluginManager)
+        return;
+    // The constructor initialises the embedded interpreter and loads plugins
+    // from appDir/plugins (+ ~/Project Notes/plugins). It self-registers as
+    // PluginManager::instance() for the Python callbacks.
+    PluginManager::setDeveloperProfile(s_developerProfile);
+    m_pluginManager = new PluginManager(this);
+}
+
+QVariantList DesktopAppController::pluginMenusForModel(QAbstractItemModel* model)
+{
+    QVariantList out;
+    m_pluginMenuCache.clear();
+    if (!m_pluginManager)
+        return out;
+
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!src)
+        return out;
+    const QString table = src->tablename();
+    if (table.isEmpty())
+        return out;
+
+    // A menu appears on a table's right-click when its dataexport matches that
+    // table (empty dataexport = global menu, not a record menu) — same rule as
+    // the Widgets TableView::contextMenuEvent.
+    for (Plugin* p : m_pluginManager->plugins()) {
+        if (!p || !p->loaded())
+            continue;
+        for (const PluginMenu& m : p->pythonplugin().menus()) {
+            if (m.dataexport().compare(table, Qt::CaseInsensitive) != 0)
+                continue;
+
+            m_pluginMenuCache.append({ p, m.functionname(), m.tablefilter(), m.parameter() });
+
+            QVariantMap entry;
+            entry["title"]   = m.menutitle();
+            entry["submenu"] = m.submenu();
+            entry["index"]   = m_pluginMenuCache.size() - 1;
+            out.append(entry);
+        }
+    }
+    return out;
+}
+
+void DesktopAppController::runPluginMenu(QAbstractItemModel* model,
+                                         const QString& recordId, int index)
+{
+    if (index < 0 || index >= m_pluginMenuCache.size())
+        return;
+    const PluginMenuRef& ref = m_pluginMenuCache.at(index);
+    if (!ref.plugin)
+        return;
+
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!src)
+        return;
+
+    // Export just the selected record (col 0 = id), scoped by the menu's
+    // tablefilter, then hand the XML to the plugin — mirrors slotPluginMenu.
+    SqlQueryModel* exportModel = global_DBObjects.createExportObject(src->tablename());
+    if (!exportModel) {
+        emit errorOccurred(tr("Plugin"), tr("Nothing to export for this record type."));
+        return;
+    }
+    exportModel->setFilter(0, recordId);
+    exportModel->refresh();
+
+    QDomDocument* xdoc = global_DBObjects.createXMLExportDoc(exportModel, ref.tablefilter);
+    const QString xml = xdoc->toString();
+
+    ref.plugin->callXmlMethod(ref.functionname, xml, ref.parameter);
+
+    delete xdoc;
 }
 
 // ── Filters / refresh ────────────────────────────────────────────────────────

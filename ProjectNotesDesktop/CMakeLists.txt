@@ -14,6 +14,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickControls2 Sql Xml Network)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickControls2 Sql Xml Network)
+# DBus backs the Linux credential store used by the plugin secret API.
+if(UNIX AND NOT APPLE AND NOT ANDROID)
+    find_package(Qt6 REQUIRED COMPONENTS DBus)
+endif()
 
 # Hunspell — for inline spell-check in the note editor.
 find_path(Hunspell_INCLUDE_DIRS NAMES hunspell/hunspell.hxx)
@@ -34,10 +38,20 @@ qt_add_executable(ProjectNotesDesktop
     SpellCheck.cpp           SpellCheck.h
     # Shared rich-text bridge — reused verbatim from the mobile app.
     ../ProjectNotesMobile/TextFormatter.cpp ../ProjectNotesMobile/TextFormatter.h
+    # Embedded-Python plugin system — same sources the Widgets app compiles.
+    # PluginManager was decoupled from MainWindow (self-registered singleton) so
+    # it builds here too. credentialstore is pulled in by the plugin secret API.
+    ../plugin.cpp          ../plugin.h
+    ../pluginmanager.cpp   ../pluginmanager.h
+    ../pythonworker.cpp    ../pythonworker.h
+    ../credentialstore.cpp ../credentialstore.h
 )
 
-# So main.cpp can #include "TextFormatter.h".
-target_include_directories(ProjectNotesDesktop PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../ProjectNotesMobile)
+# So main.cpp can #include "TextFormatter.h"; Python headers for the plugin engine.
+target_include_directories(ProjectNotesDesktop PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../ProjectNotesMobile
+    ${Python3_INCLUDE_DIRS}
+)
 
 # ── QML module ────────────────────────────────────────────────────────────────
 set(DESKTOP_QML_FILES
@@ -95,9 +109,19 @@ target_link_libraries(ProjectNotesDesktop PRIVATE
     Qt6::Xml
     Qt6::Network
     "${HUNSPELL_LIBRARIES}"
+    "${Python3_LIBRARIES}"
     SqliteSyncProLib
     ProjectNotesCore
 )
+
+# Platform credential backend used by the plugin secret API (credentialstore).
+if(UNIX AND NOT APPLE AND NOT ANDROID)
+    target_link_libraries(ProjectNotesDesktop PRIVATE Qt6::DBus)
+elseif(APPLE)
+    target_link_libraries(ProjectNotesDesktop PRIVATE "-framework Security")
+elseif(WIN32)
+    target_link_libraries(ProjectNotesDesktop PRIVATE Advapi32)
+endif()
 
 if(Hunspell_INCLUDE_DIRS AND NOT "${Hunspell_INCLUDE_DIRS}" MATCHES "NOTFOUND")
     target_include_directories(ProjectNotesDesktop PRIVATE ${Hunspell_INCLUDE_DIRS})
@@ -112,6 +136,18 @@ add_custom_command(TARGET ProjectNotesDesktop POST_BUILD
         "${CMAKE_CURRENT_SOURCE_DIR}/../dictionary/en_US.dic"
         "$<TARGET_FILE_DIR:ProjectNotesDesktop>/dictionary/"
     COMMENT "Deploying en_US spell-check dictionary")
+
+# Deploy the Python plugins + threads next to the executable so the embedded
+# interpreter (PluginManager, which reads appDir/plugins and appDir/threads)
+# can load them at runtime.
+add_custom_command(TARGET ProjectNotesDesktop POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/../plugins"
+        "$<TARGET_FILE_DIR:ProjectNotesDesktop>/plugins"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/../threads"
+        "$<TARGET_FILE_DIR:ProjectNotesDesktop>/threads"
+    COMMENT "Deploying Python plugins and threads")
 
 # The runtime output goes to the shared build root (inherited setting), where a
 # build subdirectory named "ProjectNotesDesktop" already exists — so give the

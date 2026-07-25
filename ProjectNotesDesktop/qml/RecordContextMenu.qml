@@ -18,6 +18,13 @@ Popup {
     property bool   canDelete: true
     property bool   canExport: true
 
+    // Plugin menus: the list model this row belongs to + the row's id. When set,
+    // openAt() queries the controller for plugin menus whose table matches, and
+    // lists them below the built-in actions (like the Widgets table-view menu).
+    property var    model: null
+    property string recordId: ""
+    property var    _plugins: []
+
     signal openRequested()
     signal newRequested()
     signal deleteRequested()
@@ -39,6 +46,8 @@ Popup {
 
     // Open at a scene/window coordinate (kept inside the overlay bounds).
     function openAt(sx, sy) {
+        menu._plugins = (menu.model && typeof DesktopAppController !== "undefined")
+                        ? DesktopAppController.pluginMenusForModel(menu.model) : []
         var maxX = (parent ? parent.width : sx + width) - width - 6
         var maxY = (parent ? parent.height : sy + 320) - 320
         x = Math.max(6, Math.min(sx, maxX))
@@ -46,7 +55,11 @@ Popup {
         open()
     }
 
+    // The plugin section makes the menu taller; keep it on-screen once laid out.
+    onHeightChanged: if (visible && parent) y = Math.max(6, Math.min(y, parent.height - height - 6))
+
     function _fire(sig) { close(); sig() }
+    function _runPlugin(idx) { close(); DesktopAppController.runPluginMenu(menu.model, menu.recordId, idx) }
 
     contentItem: ColumnLayout {
         spacing: 0
@@ -76,6 +89,32 @@ Popup {
         MenuRow { icon: "ios_share";    label: qsTr("Export XML…"); visible: menu.canExport; onActivated: menu._fire(menu.exportRequested) }
         MenuRow { icon: "filter_list";  label: qsTr("Filter…");                              onActivated: menu._fire(menu.filterRequested) }
         MenuRow { icon: "refresh";      label: qsTr("Refresh");                              onActivated: menu._fire(menu.refreshRequested) }
+
+        // Plugin menus for this table (dataexport == model table), like the
+        // Widgets right-click. Submenu, when present, prefixes the title.
+        Rectangle {
+            Layout.fillWidth: true; Layout.preferredHeight: 1
+            color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
+            visible: menu._plugins.length > 0
+        }
+        Text {
+            visible: menu._plugins.length > 0
+            text: qsTr("PLUGINS"); color: Theme.text3
+            font.pixelSize: 10; font.weight: Font.Bold
+            Layout.leftMargin: 9; Layout.topMargin: 1; Layout.bottomMargin: 2
+        }
+        Repeater {
+            model: menu._plugins
+            delegate: MenuRow {
+                required property var modelData
+                required property int index
+                icon: "extension"
+                label: (modelData.submenu && modelData.submenu !== "")
+                       ? modelData.submenu + " › " + modelData.title
+                       : modelData.title
+                onActivated: menu._runPlugin(modelData.index !== undefined ? modelData.index : index)
+            }
+        }
     }
 
     component MenuRow: Rectangle {

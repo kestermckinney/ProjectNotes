@@ -19,6 +19,8 @@ Item {
     RecordContextMenu {
         id: ctxMenu
         recordType: qsTr("Client")
+        model: DesktopAppController.clientsModel
+        recordId: page._ctxId
         onOpenRequested:   page.clientActivated(page._ctxRow, page._ctxId)
         onNewRequested: {
             var cr = DesktopAppController.addClient()

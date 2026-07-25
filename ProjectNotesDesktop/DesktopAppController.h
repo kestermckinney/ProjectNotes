@@ -9,12 +9,15 @@
 #include <QStringList>
 #include <QVariantList>
 #include <QVariantMap>
+#include <QVector>
 
 class QQmlEngine;
 class QJSEngine;
 class QThread;
 class SqliteSyncPro;
 struct SyncResult;
+class PluginManager;
+class Plugin;
 
 // DesktopAppController — the QML bridge for the desktop app.
 //
@@ -138,6 +141,17 @@ public:
     Q_INVOKABLE void clearColumnFilters(QAbstractItemModel* model);
     // Re-run a list model's query (context-menu "Refresh").
     Q_INVOKABLE void refreshModel(QAbstractItemModel* model);
+
+    // ── Python plugins (right-click menus, mirrors the Widgets TableView) ─────
+    // Menus registered by loaded plugins whose dataexport matches this model's
+    // table, as [{ title, submenu, index }]. `index` is an opaque handle into a
+    // per-call cache; pass it back to runPluginMenu. Rebuilt on each call, so
+    // query it right before showing the menu.
+    Q_INVOKABLE QVariantList pluginMenusForModel(QAbstractItemModel* model);
+    // Run a plugin menu against a record: exports the record to XML (scoped by
+    // the menu's tablefilter) and hands it to the plugin function.
+    Q_INVOKABLE void runPluginMenu(QAbstractItemModel* model,
+                                   const QString& recordId, int index);
 
     // ── Filters (scope child models to a project / note) ─────────────────────
     Q_INVOKABLE void setProjectFilter(const QString& projectId);
@@ -327,6 +341,19 @@ private:
     static DesktopAppController* s_instance;
     static QString s_developerProfile;
     static bool    s_testSupabase;
+
+    // ── Plugins ──────────────────────────────────────────────────────────────
+    PluginManager* m_pluginManager = nullptr;
+    void ensurePluginManager();   // create the manager once, after the DB is open
+
+    // Per-call handle table for pluginMenusForModel → runPluginMenu.
+    struct PluginMenuRef {
+        Plugin* plugin = nullptr;
+        QString functionname;
+        QString tablefilter;
+        QString parameter;
+    };
+    QVector<PluginMenuRef> m_pluginMenuCache;
 };
 
 #endif // DESKTOPAPPCONTROLLER_H

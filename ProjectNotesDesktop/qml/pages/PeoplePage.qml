@@ -19,6 +19,8 @@ Item {
     RecordContextMenu {
         id: ctxMenu
         recordType: qsTr("Person")
+        model: DesktopAppController.peopleModel
+        recordId: page._ctxId
         onOpenRequested:   page.personActivated(page._ctxRow, page._ctxId)
         onNewRequested: {
             var pr = DesktopAppController.addPerson()

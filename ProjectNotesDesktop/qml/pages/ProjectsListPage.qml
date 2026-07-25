@@ -22,6 +22,8 @@ Item {
     RecordContextMenu {
         id: ctxMenu
         recordType: qsTr("Project")
+        model: DesktopAppController.projectsListModel
+        recordId: page._ctxId
         onOpenRequested:   page.projectActivated(page._ctxId)
         onNewRequested: {
             var r = DesktopAppController.addProject()

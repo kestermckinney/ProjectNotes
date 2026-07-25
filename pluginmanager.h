@@ -35,6 +35,15 @@ public:
     explicit PluginManager(QObject *parent = nullptr);
     ~PluginManager();
 
+    // The one live manager in this process (set in the constructor). Lets the
+    // embedded-Python callbacks reach it without a MainWindow dependency.
+    static PluginManager* instance() { return s_instance; }
+
+    // Developer profile exposed to Python plugins. Set by the host app before
+    // constructing the manager (Widgets: from AppSettings; QML desktop: from its
+    // own --developer-profile). Avoids a hard dependency on AppSettings::.
+    static void setDeveloperProfile(const QString& profile) { s_developerProfile = profile; }
+
     const QList<Plugin*>& plugins() const { return m_pluginlist; }
     void forceReload(const QString& module);
     int loadedCount();
@@ -62,6 +71,8 @@ private slots:
     void onForceReload(const QString& module);
 
 private:
+    static PluginManager* s_instance;
+    static QString s_developerProfile;
     QList<Plugin*> m_pluginlist;
     PyThreadState* m_pythreadstate;
     QFileSystemWatcher* m_fileWatcher;
