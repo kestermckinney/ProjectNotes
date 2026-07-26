@@ -401,12 +401,14 @@ Item {
                                             id: aiAssigned; label: qsTr("Assigned To")
                                             options: page._peopleNames()
                                             includeNone: true
+                                            searchable: true
                                             onActivated: (v) => { ai._assignedId = page._idForName(v); ai._save() }
                                         }
                                         ComboField {
                                             id: aiIdentified; label: qsTr("Identified By")
                                             options: page._peopleNames()
                                             includeNone: true
+                                            searchable: true
                                             onActivated: (v) => { ai._identifiedId = page._idForName(v); ai._save() }
                                         }
                                         DateField { id: aiDateId; label: qsTr("Date Identified"); onEdited: ai._save() }

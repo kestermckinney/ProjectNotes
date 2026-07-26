@@ -116,12 +116,14 @@ Item {
                     label: qsTr("Identified By"); id: identifiedCombo
                     options: page._peopleNames()
                     includeNone: true
+                    searchable: true
                     onActivated: (v) => { page._identifiedBy = page._idForName(v); page._changed = true }
                 }
                 ComboField {
                     label: qsTr("Assigned To"); id: assignedCombo
                     options: page._peopleNames()
                     includeNone: true
+                    searchable: true
                     onActivated: (v) => { page._assignedTo = page._idForName(v); page._changed = true }
                 }
                 ComboField {

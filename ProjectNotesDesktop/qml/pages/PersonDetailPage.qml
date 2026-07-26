@@ -61,6 +61,7 @@ Item {
                 FormField { label: qsTr("Email"); id: emailField; onEdited: page._changed = true }
                 ComboField {
                     label: qsTr("Client"); id: clientCombo; options: page._clientNames()
+                    includeNone: true; searchable: true
                     onActivated: (v) => { page._clientId = page._idForName(v); page._changed = true }
                 }
                 FormField { label: qsTr("Office Phone"); id: officeField; onEdited: page._changed = true }

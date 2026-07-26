@@ -151,6 +151,8 @@ Item {
                         id: clientCombo
                         label: qsTr("Client")
                         options: page._clientNames()
+                        includeNone: true
+                        searchable: true
                         onActivated: (v) => { page._clientId = page._idForName(page._clients, v); page._changed = true }
                     }
                     ComboField {
@@ -158,6 +160,7 @@ Item {
                         label: qsTr("Primary Contact")
                         options: page._peopleNames()
                         includeNone: true
+                        searchable: true
                         onActivated: (v) => { page._contactId = page._idForName(page._people, v); page._changed = true }
                     }
                     DateField { id: statusDate;  label: qsTr("Status Date");  onEdited: page._changed = true }
