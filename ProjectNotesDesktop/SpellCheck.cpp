@@ -11,7 +11,6 @@
 #include <QQuickTextDocument>
 #include <QRegularExpression>
 #include <QStandardPaths>
-#include <QTextCursor>
 #include <QTextDocument>
 
 // ── DesktopSpellChecker ───────────────────────────────────────────────────────
@@ -99,54 +98,31 @@ void DesktopSpellChecker::ignore(const QString& word)
         m_hunspell->add(word.toStdString());   // session-only (not persisted)
 }
 
-// ── SpellCheckHighlighter ─────────────────────────────────────────────────────
-
-SpellCheckHighlighter::SpellCheckHighlighter(QTextDocument* doc)
-    : QSyntaxHighlighter(doc)
-{
-    m_misspelledFormat.setUnderlineColor(QColor(0xc0, 0x44, 0x2e));
-    m_misspelledFormat.setUnderlineStyle(QTextCharFormat::SpellCheckUnderline);
-}
-
-void SpellCheckHighlighter::setEnabled(bool enabled)
-{
-    if (m_enabled == enabled)
-        return;
-    m_enabled = enabled;
-    rehighlight();
-}
-
-void SpellCheckHighlighter::highlightBlock(const QString& text)
-{
-    if (!m_enabled || !DesktopSpellChecker::instance().available())
-        return;
-
-    // Words: letters (incl. apostrophes) — skip 1-char tokens and numbers.
-    static const QRegularExpression re(QStringLiteral("[\\p{L}][\\p{L}']*"));
-    auto it = re.globalMatch(text);
-    while (it.hasNext()) {
-        const QRegularExpressionMatch m = it.next();
-        const QString word = m.captured(0);
-        if (word.length() < 2)
-            continue;
-        if (!DesktopSpellChecker::instance().isGood(word))
-            setFormat(m.capturedStart(0), m.capturedLength(0), m_misspelledFormat);
-    }
-}
-
 // ── SpellCheck (QML) ──────────────────────────────────────────────────────────
+
+// Word tokens: a letter followed by letters/apostrophes. The same regex is used
+// for the squiggle ranges, the dialog walk, and Change-All, so all three agree
+// on what a "word" is. Text positions align 1:1 with the source string indices
+// used by the editor's positionToRectangle()/remove()/insert() (for a rich-text
+// TextArea, block separators count as one character in both the document and its
+// toPlainText()).
+static const QRegularExpression& wordRegex()
+{
+    static const QRegularExpression re(QStringLiteral("[\\p{L}][\\p{L}']*"));
+    return re;
+}
 
 SpellCheck::SpellCheck(QObject* parent)
     : QObject(parent)
 {}
 
-void SpellCheck::setDocument(QQuickTextDocument* doc)
+void SpellCheck::setEditor(QQuickItem* editor)
 {
-    if (m_quickDoc == doc)
+    if (m_editor == editor)
         return;
-    m_quickDoc = doc;
-    rebuild();
-    emit documentChanged();
+    m_editor = editor;
+    emit editorChanged();
+    emit spellingChanged();
 }
 
 void SpellCheck::setEnabled(bool e)
@@ -154,29 +130,67 @@ void SpellCheck::setEnabled(bool e)
     if (m_enabled == e)
         return;
     m_enabled = e;
-    if (m_highlighter)
-        m_highlighter->setEnabled(e);
     emit enabledChanged();
+    emit spellingChanged();
 }
 
-void SpellCheck::rebuild()
+// The field's text: a TextArea (TextEdit) exposes a `textDocument`, so read its
+// plain text (positions match remove/insert); a TextField (TextInput) has none,
+// so fall back to its plain `text` property.
+QString SpellCheck::sourceText() const
 {
-    delete m_highlighter;
-    m_highlighter = nullptr;
-    if (m_quickDoc && m_quickDoc->textDocument()) {
-        m_highlighter = new SpellCheckHighlighter(m_quickDoc->textDocument());
-        m_highlighter->setEnabled(m_enabled);
+    if (!m_editor)
+        return {};
+    QQuickTextDocument* qd = m_editor->property("textDocument").value<QQuickTextDocument*>();
+    if (qd && qd->textDocument())
+        return qd->textDocument()->toPlainText();
+    return m_editor->property("text").toString();
+}
+
+// Apply a replacement over [start, start+length) using the editor's own QML
+// methods, which both TextArea and TextField provide.
+void SpellCheck::applyEdit(int start, int length, const QString& replacement)
+{
+    if (!m_editor)
+        return;
+    QMetaObject::invokeMethod(m_editor, "remove", Q_ARG(int, start), Q_ARG(int, start + length));
+    if (!replacement.isEmpty())
+        QMetaObject::invokeMethod(m_editor, "insert", Q_ARG(int, start), Q_ARG(QString, replacement));
+}
+
+QVariantList SpellCheck::misspelledRanges() const
+{
+    QVariantList out;
+    if (!m_enabled || !m_editor || !DesktopSpellChecker::instance().available())
+        return out;
+
+    const QString text = sourceText();
+    auto it = wordRegex().globalMatch(text);
+    while (it.hasNext()) {
+        const QRegularExpressionMatch m = it.next();
+        const QString word = m.captured(0);
+        if (word.length() < 2)
+            continue;
+        if (!DesktopSpellChecker::instance().isGood(word)) {
+            QVariantMap r;
+            r["start"]  = m.capturedStart(0);
+            r["length"] = m.capturedLength(0);
+            out.append(r);
+        }
     }
+    return out;
 }
 
 QString SpellCheck::wordAt(int position) const
 {
-    if (!m_quickDoc || !m_quickDoc->textDocument())
-        return {};
-    QTextCursor cursor(m_quickDoc->textDocument());
-    cursor.setPosition(position);
-    cursor.select(QTextCursor::WordUnderCursor);
-    return cursor.selectedText();
+    const QString text = sourceText();
+    auto it = wordRegex().globalMatch(text);
+    while (it.hasNext()) {
+        const QRegularExpressionMatch m = it.next();
+        if (position >= m.capturedStart(0) && position <= m.capturedEnd(0))
+            return m.captured(0);
+    }
+    return {};
 }
 
 QStringList SpellCheck::suggestionsFor(const QString& word) const
@@ -192,24 +206,78 @@ bool SpellCheck::isMisspelled(const QString& word) const
 
 void SpellCheck::replaceWord(int position, const QString& replacement)
 {
-    if (!m_quickDoc || !m_quickDoc->textDocument())
-        return;
-    QTextCursor cursor(m_quickDoc->textDocument());
-    cursor.setPosition(position);
-    cursor.select(QTextCursor::WordUnderCursor);
-    if (cursor.hasSelection())
-        cursor.insertText(replacement);
+    const QString text = sourceText();
+    auto it = wordRegex().globalMatch(text);
+    while (it.hasNext()) {
+        const QRegularExpressionMatch m = it.next();
+        if (position >= m.capturedStart(0) && position <= m.capturedEnd(0)) {
+            applyEdit(m.capturedStart(0), m.capturedLength(0), replacement);
+            return;
+        }
+    }
 }
 
 void SpellCheck::addToDictionary(const QString& word)
 {
     DesktopSpellChecker::instance().addToPersonal(word);
-    if (m_highlighter)
-        m_highlighter->rehighlight();
+    emit spellingChanged();
 }
 
-void SpellCheck::rehighlight()
+// ── Full-field spell-check (drives SpellCheckDialog.qml) ──────────────────────
+
+QVariantMap SpellCheck::nextMisspelled(int fromPos) const
 {
-    if (m_highlighter)
-        m_highlighter->rehighlight();
+    QVariantMap result;
+    result["found"] = false;
+    if (!m_editor || !DesktopSpellChecker::instance().available())
+        return result;
+
+    const QString text = sourceText();
+    auto it = wordRegex().globalMatch(text, qMax(0, fromPos));
+    while (it.hasNext()) {
+        const QRegularExpressionMatch m = it.next();
+        const QString word = m.captured(0);
+        if (word.length() < 2)
+            continue;
+        if (!DesktopSpellChecker::instance().isGood(word)) {
+            result["found"]  = true;
+            result["word"]   = word;
+            result["start"]  = m.capturedStart(0);
+            result["length"] = m.capturedLength(0);
+            return result;
+        }
+    }
+    return result;
+}
+
+void SpellCheck::replaceRange(int start, int length, const QString& replacement)
+{
+    applyEdit(start, length, replacement);
+}
+
+void SpellCheck::replaceAll(const QString& oldWord, const QString& newWord)
+{
+    if (!m_editor || oldWord.isEmpty())
+        return;
+    const QString text = sourceText();
+
+    // Collect match starts first; applying edits back-to-front keeps the earlier
+    // offsets valid. Every match equals oldWord, so the length is constant.
+    QList<int> starts;
+    auto it = wordRegex().globalMatch(text);
+    while (it.hasNext()) {
+        const QRegularExpressionMatch m = it.next();
+        if (m.captured(0) == oldWord)
+            starts.append(m.capturedStart(0));
+    }
+
+    const int len = oldWord.length();
+    for (int i = starts.size() - 1; i >= 0; --i)
+        applyEdit(starts[i], len, newWord);
+}
+
+void SpellCheck::ignoreAll(const QString& word)
+{
+    DesktopSpellChecker::instance().ignore(word);   // session-only
+    emit spellingChanged();
 }

@@ -125,6 +125,8 @@ Item {
                         id: nameField
                         label: qsTr("Project Name")
                         Layout.fillWidth: true
+                        spellCheck: true
+                        spellDialog: spellDialog
                         onEdited: page._changed = true
                     }
                     ComboField {
@@ -155,6 +157,7 @@ Item {
                         id: contactCombo
                         label: qsTr("Primary Contact")
                         options: page._peopleNames()
+                        includeNone: true
                         onActivated: (v) => { page._contactId = page._idForName(page._people, v); page._changed = true }
                     }
                     DateField { id: statusDate;  label: qsTr("Status Date");  onEdited: page._changed = true }
@@ -262,6 +265,7 @@ Item {
                                         color: Theme.text; background: null; font.pixelSize: 13
                                         onEditingFinished: DesktopAppController.saveStatusItem(
                                             index, (model.task_category || "").toString(), text)
+                                        SpellCheckField { dialog: spellDialog }
                                     }
                                 }
                                 RowDelete { onDel: { DesktopAppController.deleteStatusItem(index); DesktopAppController.refreshStatusItems() } }
@@ -379,6 +383,7 @@ Item {
                                         onEditingFinished: DesktopAppController.saveTeamMember(
                                             index, (model.people_id || "").toString(), text,
                                             (model.receive_status_report || "0") !== "0")
+                                        SpellCheckField { dialog: spellDialog }
                                     }
                                 }
                                 RowDelete { onDel: { DesktopAppController.deleteTeamMember(index); DesktopAppController.refreshTeamMembers() } }
@@ -660,6 +665,9 @@ Item {
             TapHandler { onTapped: bar.add() }
         }
     }
+
+    // Shared full-field spell-check dialog (opened by fields / right-click).
+    SpellCheckDialog { id: spellDialog }
 
     component RowDelete: Item {
         id: rd

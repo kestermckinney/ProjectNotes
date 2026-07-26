@@ -70,6 +70,9 @@ set(DESKTOP_QML_FILES
     qml/ComboField.qml
     qml/DateField.qml
     qml/NoteFormatToolbar.qml
+    qml/SpellCheckField.qml
+    qml/SpellSquiggle.qml
+    qml/SpellCheckDialog.qml
     qml/pages/ProjectsListPage.qml
     qml/pages/ProjectDetailPage.qml
     qml/pages/ProjectNoteDetailPage.qml

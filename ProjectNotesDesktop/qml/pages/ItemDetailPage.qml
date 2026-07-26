@@ -83,6 +83,8 @@ Item {
                 FormField {
                     label: qsTr("Item Name"); id: nameField
                     Layout.columnSpan: 2
+                    spellCheck: true
+                    spellDialog: spellDialog
                     onEdited: page._changed = true
                 }
             }
@@ -104,6 +106,7 @@ Item {
                     background: null
                     font.pixelSize: 13
                     onTextChanged: page._changed = true
+                    SpellCheckField { dialog: spellDialog }
                 }
             }
 
@@ -112,11 +115,13 @@ Item {
                 ComboField {
                     label: qsTr("Identified By"); id: identifiedCombo
                     options: page._peopleNames()
+                    includeNone: true
                     onActivated: (v) => { page._identifiedBy = page._idForName(v); page._changed = true }
                 }
                 ComboField {
                     label: qsTr("Assigned To"); id: assignedCombo
                     options: page._peopleNames()
+                    includeNone: true
                     onActivated: (v) => { page._assignedTo = page._idForName(v); page._changed = true }
                 }
                 ComboField {
@@ -227,6 +232,7 @@ Item {
                             selectByMouse: true
                             background: null
                             font.pixelSize: 13
+                            SpellCheckField { dialog: spellDialog }
                             onEditingFinished: {
                                 DesktopAppController.saveComment(cCard.index,
                                     (cCard.model.lastupdated_date || "").toString(),
@@ -240,4 +246,7 @@ Item {
             Item { Layout.preferredHeight: 8 }
         }
     }
+
+    // Shared full-field spell-check dialog (opened by fields / right-click).
+    SpellCheckDialog { id: spellDialog }
 }

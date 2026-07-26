@@ -17,11 +17,6 @@ Item {
     property bool   isNewRecord: false
     property bool   _changed: false
 
-    // Right-click spell-check menu state.
-    property int    _rcPos: -1
-    property string _rcWord: ""
-    property var    _rcSuggestions: []
-
     // People list for the action-item Assigned/Identified combos.
     property var    _people: []
     function _peopleNames() { return _people.map(function(p){ return p.name }) }
@@ -72,6 +67,8 @@ Item {
                 FormField {
                     label: qsTr("Title")
                     id: titleField
+                    spellCheck: true
+                    spellDialog: spellDialog
                     onEdited: page._changed = true
                 }
                 DateField {
@@ -121,6 +118,8 @@ Item {
             NoteFormatToolbar {
                 Layout.fillWidth: true
                 editor: noteEdit
+                dialog: spellDialog
+                spell: noteSpell.spell
             }
             Rectangle {
                 Layout.fillWidth: true
@@ -142,40 +141,9 @@ Item {
                     font.pixelSize: 13
                     onTextChanged: page._changed = true
 
-                    // Inline spell-check (red squiggle under unknown words).
-                    SpellCheck { id: spell; document: noteEdit.textDocument; enabled: true }
-
-                    // Right-click a misspelled word for suggestions.
-                    TapHandler {
-                        acceptedButtons: Qt.RightButton
-                        onTapped: (ep) => {
-                            var pos = noteEdit.positionAt(ep.position.x, ep.position.y)
-                            var w = spell.wordAt(pos)
-                            if (w !== "" && spell.isMisspelled(w)) {
-                                page._rcPos = pos
-                                page._rcWord = w
-                                page._rcSuggestions = spell.suggestionsFor(w).slice(0, 8)
-                                spellMenu.popup()
-                            }
-                        }
-                    }
-
-                    Menu {
-                        id: spellMenu
-                        Repeater {
-                            model: page._rcSuggestions
-                            MenuItem {
-                                required property var modelData
-                                text: modelData
-                                onTriggered: spell.replaceWord(page._rcPos, modelData)
-                            }
-                        }
-                        MenuSeparator { visible: page._rcSuggestions.length > 0 }
-                        MenuItem {
-                            text: qsTr("Add “%1” to Dictionary").arg(page._rcWord)
-                            onTriggered: spell.addToDictionary(page._rcWord)
-                        }
-                    }
+                    // Inline spell-check: red squiggle + right-click suggestions +
+                    // "Check Spelling…" (opens the shared full-field dialog).
+                    SpellCheckField { id: noteSpell; dialog: spellDialog }
                 }
             }
 
@@ -297,8 +265,9 @@ Item {
                                 spacing: 6
 
                                 // Pull the current model values into the editors, then open.
+                                // The name lives in the always-visible inline field, so it is
+                                // not re-populated here.
                                 function _edit() {
-                                    aiName.text       = (ai.model.item_name || "").toString()
                                     aiType.value      = (ai.model.item_type || "").toString()
                                     aiPriority.value  = (ai.model.priority || "").toString()
                                     aiStatus.value    = (ai.model.status || "").toString()
@@ -312,12 +281,28 @@ Item {
                                     ai.expanded = true
                                 }
                                 // Persist all fields (in-place setData → summary updates live,
-                                // no refresh, so the editor stays open).
+                                // no refresh, so the editor stays open). Uses the editor values,
+                                // which _edit() populated from the model.
                                 function _save() {
                                     DesktopAppController.saveNoteActionItem(ai.index,
-                                        aiName.text, aiType.value, aiPriority.value, aiStatus.value,
+                                        aiNameInline.text, aiType.value, aiPriority.value, aiStatus.value,
                                         ai._assignedId, ai._identifiedId, aiDateId.text, aiDateDue.text,
                                         aiDesc.text)
+                                }
+                                // Persist an inline name edit without disturbing the other fields:
+                                // read everything except the name straight from the model, so this
+                                // is safe even when the editor was never expanded.
+                                function _saveName() {
+                                    DesktopAppController.saveNoteActionItem(ai.index,
+                                        aiNameInline.text,
+                                        (ai.model.item_type || "").toString(),
+                                        (ai.model.priority || "").toString(),
+                                        (ai.model.status || "").toString(),
+                                        (ai.model.assigned_to || "").toString(),
+                                        (ai.model.identified_by || "").toString(),
+                                        (ai.model.date_identified || "").toString(),
+                                        (ai.model.date_due || "").toString(),
+                                        (ai.model.description || "").toString())
                                 }
 
                                 // Summary row (click to expand/collapse the editor)
@@ -341,10 +326,19 @@ Item {
                                     ColumnLayout {
                                         Layout.fillWidth: true
                                         spacing: 0
-                                        Text {
-                                            text: (ai.model.item_name || qsTr("(unnamed item)")).toString()
-                                            color: Theme.text; font.pixelSize: 13; elide: Text.ElideRight
+                                        // Inline, always-editable name — type it without expanding.
+                                        TextField {
+                                            id: aiNameInline
                                             Layout.fillWidth: true
+                                            color: Theme.text
+                                            font.pixelSize: 13
+                                            background: null
+                                            padding: 0
+                                            selectByMouse: true
+                                            placeholderText: qsTr("(unnamed item)")
+                                            placeholderTextColor: Theme.text3
+                                            Component.onCompleted: text = (ai.model.item_name || "").toString()
+                                            onEditingFinished: ai._saveName()
                                         }
                                         Text {
                                             text: {
@@ -369,7 +363,7 @@ Item {
                                             size: 15; color: Theme.text2
                                         }
                                         HoverHandler { id: eHover }
-                                        TapHandler { onTapped: ai.expanded ? ai.expanded = false : ai._edit() }
+                                        TapHandler { onTapped: { if (ai.expanded) { ai._save(); ai.expanded = false } else ai._edit() } }
                                     }
                                     DeleteButton {
                                         onClicked: {
@@ -386,10 +380,6 @@ Item {
                                     visible: ai.expanded
                                     spacing: 8
 
-                                    FormField {
-                                        id: aiName; label: qsTr("Item Name")
-                                        onEditingFinished: ai._save()
-                                    }
                                     GridLayout {
                                         Layout.fillWidth: true; columns: 2; columnSpacing: 10; rowSpacing: 8
                                         ComboField {
@@ -410,11 +400,13 @@ Item {
                                         ComboField {
                                             id: aiAssigned; label: qsTr("Assigned To")
                                             options: page._peopleNames()
+                                            includeNone: true
                                             onActivated: (v) => { ai._assignedId = page._idForName(v); ai._save() }
                                         }
                                         ComboField {
                                             id: aiIdentified; label: qsTr("Identified By")
                                             options: page._peopleNames()
+                                            includeNone: true
                                             onActivated: (v) => { ai._identifiedId = page._idForName(v); ai._save() }
                                         }
                                         DateField { id: aiDateId; label: qsTr("Date Identified"); onEdited: ai._save() }
@@ -437,6 +429,7 @@ Item {
                                             background: null
                                             font.pixelSize: 13
                                             onEditingFinished: ai._save()
+                                            SpellCheckField { dialog: spellDialog }
                                         }
                                     }
                                 }
@@ -449,6 +442,9 @@ Item {
             Item { Layout.preferredHeight: 8 }
         }
     }
+
+    // Shared full-field spell-check dialog (opened by fields / the toolbar).
+    SpellCheckDialog { id: spellDialog }
 
     // ── People picker (for adding an attendee) ────────────────────────────────
     Dialog {

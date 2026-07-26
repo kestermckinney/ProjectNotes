@@ -4,6 +4,7 @@
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
+import ProjectNotesDesktop
 
 // Labeled single-line text field.
 ColumnLayout {
@@ -12,6 +13,10 @@ ColumnLayout {
     property alias text: field.text
     property string placeholder: ""
     property bool readOnly: false
+    // Opt-in inline spell-check (off for codes/numbers/IDs). When on, pass the
+    // page's shared dialog as `spellDialog` to enable "Check Spelling…".
+    property bool spellCheck: false
+    property var  spellDialog: null
     signal edited(string text)
     signal editingFinished()
 
@@ -46,6 +51,15 @@ ColumnLayout {
             selectByMouse: true
             onTextEdited: root.edited(text)
             onEditingFinished: root.editingFinished()
+
+            Loader {
+                active: root.spellCheck
+                anchors.fill: parent
+                sourceComponent: SpellCheckField {
+                    target: field
+                    dialog: root.spellDialog
+                }
+            }
         }
     }
 }
