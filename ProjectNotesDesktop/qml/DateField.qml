@@ -4,6 +4,7 @@
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
+import QtQuick.Window
 
 // Labeled date input. Stores/produces dates as MM/DD/YYYY (the format the data
 // models display and accept). Type directly, or click the calendar to pick.
@@ -36,6 +37,7 @@ ColumnLayout {
     }
 
     Rectangle {
+        id: fieldBox
         Layout.fillWidth: true
         implicitHeight: 34
         radius: Theme.radiusSm
@@ -77,7 +79,6 @@ ColumnLayout {
         // ── Calendar popup ────────────────────────────────────────────────────
         Popup {
             id: popup
-            y: parent.height + 4
             width: 260
             padding: 10
             modal: false
@@ -91,6 +92,26 @@ ColumnLayout {
                 shownMonth = base.getMonth()
                 shownYear = base.getFullYear()
                 open()
+            }
+
+            // Position the popup below the field, but flip above / clamp sideways
+            // so a field low or near the edge of the window isn't clipped.
+            onAboutToShow: _place()
+            function _place() {
+                var win = fieldBox.Window.window
+                var ph = popup.height > 0 ? popup.height : 300
+                if (!win) { popup.x = 0; popup.y = fieldBox.height + 4; return }
+                var pos = fieldBox.mapToItem(null, 0, 0)
+                if (pos.y + fieldBox.height + 4 + ph > win.height && pos.y - ph - 4 >= 0)
+                    popup.y = -ph - 4
+                else
+                    popup.y = fieldBox.height + 4
+                var px = 0
+                if (pos.x + popup.width > win.width)
+                    px = win.width - popup.width - pos.x
+                if (pos.x + px < 0)
+                    px = -pos.x
+                popup.x = px
             }
             function _prev() {
                 if (shownMonth === 0) { shownMonth = 11; shownYear-- }

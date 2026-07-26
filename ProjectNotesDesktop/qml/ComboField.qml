@@ -6,12 +6,20 @@ import QtQuick.Controls.Basic
 import QtQuick.Layouts
 
 // Labeled combo box. `options` is a string list; two-way value via currentText.
+//
+// Set `includeNone: true` to prepend a "none" entry (e.g. for optional person
+// selectors). Choosing it emits activated("") and an empty `value` selects it.
 ColumnLayout {
     id: root
     property string label: ""
     property var options: []
     property string value: ""
+    property bool includeNone: false
+    property string noneLabel: qsTr("(none)")
     signal activated(string value)
+
+    // The model actually shown — options, optionally with the none entry first.
+    readonly property var _model: includeNone ? [noneLabel].concat(options) : options
 
     spacing: 4
     Layout.fillWidth: true
@@ -28,15 +36,18 @@ ColumnLayout {
         id: combo
         Layout.fillWidth: true
         implicitHeight: 34
-        model: root.options
+        model: root._model
         font.pixelSize: 13
 
         // Sync external value → selection without clobbering user edits.
         property bool _syncing: false
         function _syncFromValue() {
             _syncing = true
-            var i = root.options.indexOf(root.value)
-            currentIndex = i
+            // Empty value maps to the none entry when present.
+            if (root.includeNone && root.value === "")
+                currentIndex = 0
+            else
+                currentIndex = root._model.indexOf(root.value)
             _syncing = false
         }
         onModelChanged: _syncFromValue()
@@ -45,7 +56,11 @@ ColumnLayout {
             target: root
             function onValueChanged() { combo._syncFromValue() }
         }
-        onActivated: (i) => { if (!_syncing) root.activated(root.options[i]) }
+        onActivated: (i) => {
+            if (_syncing) return
+            if (root.includeNone && i === 0) root.activated("")
+            else root.activated(root._model[i])
+        }
 
         contentItem: Text {
             leftPadding: 10

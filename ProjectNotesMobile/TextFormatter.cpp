@@ -10,6 +10,9 @@
 #include <QTextBlockFormat>
 #include <QTextList>
 #include <QTextListFormat>
+#include <QTextTable>
+#include <QTextTableFormat>
+#include <QTextLength>
 #include <QBrush>
 #include <QColor>
 #include <QFontDatabase>
@@ -130,7 +133,13 @@ void TextFormatter::toggleUnderline(QQuickTextDocument* doc, int selStart, int s
     bool allUnderline = isUniformUnderline(doc, selStart, selEnd);
     QTextCursor cursor = cursorForRange(doc, selStart, selEnd);
     QTextCharFormat fmt;
-    fmt.setFontUnderline(!allUnderline);
+    // Drive TextUnderlineStyle (the enum the renderer honors) rather than only the
+    // FontUnderline bool, so this still wins when a char already carries an explicit
+    // underline-style property. Note: the visible "underline does nothing" bug was
+    // NOT here — it was the spell-check highlighter painting SpellCheckUnderline
+    // (invisible in Qt Quick) over flagged words, which masked the user's underline.
+    fmt.setUnderlineStyle(allUnderline ? QTextCharFormat::NoUnderline
+                                       : QTextCharFormat::SingleUnderline);
     cursor.mergeCharFormat(fmt);
 }
 
@@ -411,6 +420,27 @@ void TextFormatter::setAlignment(QQuickTextDocument* doc, int selStart, int selE
     cursor.endEditBlock();
 }
 
+void TextFormatter::insertTable(QQuickTextDocument* doc, int pos, int rows, int cols)
+{
+    if (!doc || rows < 1 || cols < 1) return;
+
+    QTextDocument* tdoc = doc->textDocument();
+    QTextCursor cursor(tdoc);
+    cursor.setPosition(qBound(0, pos, tdoc->characterCount() - 1));
+
+    QTextTableFormat fmt;
+    fmt.setCellPadding(4);
+    fmt.setCellSpacing(0);
+    fmt.setBorder(1);
+    fmt.setBorderStyle(QTextFrameFormat::BorderStyle_Solid);
+    fmt.setWidth(QTextLength(QTextLength::PercentageLength, 100));
+    // Equal-width columns so the table fills the editor evenly.
+    QVector<QTextLength> constraints(cols, QTextLength(QTextLength::PercentageLength, 100.0 / cols));
+    fmt.setColumnWidthConstraints(constraints);
+
+    cursor.insertTable(rows, cols, fmt);
+}
+
 // ── Font family / size / color setters ────────────────────────────────────────
 
 void TextFormatter::applyFontFamily(QQuickTextDocument* doc, int selStart, int selEnd,
@@ -440,6 +470,21 @@ void TextFormatter::applyFontColor(QQuickTextDocument* doc, int selStart, int se
     QTextCursor cursor = cursorForRange(doc, selStart, selEnd);
     QTextCharFormat fmt;
     fmt.setForeground(color);
+    cursor.mergeCharFormat(fmt);
+}
+
+void TextFormatter::applyFontHighlight(QQuickTextDocument* doc, int selStart, int selEnd,
+                                       const QColor& color)
+{
+    if (!doc) return;
+    QTextCursor cursor = cursorForRange(doc, selStart, selEnd);
+    QTextCharFormat fmt;
+    // An invalid or fully transparent color means "remove highlight": merge a
+    // NoBrush background so any existing highlight is cleared.
+    if (color.isValid() && color.alpha() > 0)
+        fmt.setBackground(color);
+    else
+        fmt.setBackground(QBrush(Qt::NoBrush));
     cursor.mergeCharFormat(fmt);
 }
 
@@ -505,6 +550,18 @@ QColor TextFormatter::currentFontColor(QQuickTextDocument* doc, int pos) const
         }
     }
     return Qt::black;
+}
+
+QColor TextFormatter::currentFontHighlight(QQuickTextDocument* doc, int pos) const
+{
+    // No highlight applied → return an invalid color so the picker shows "None".
+    if (!doc) return QColor();
+    QTextDocument* tdoc = doc->textDocument();
+    QTextCursor probe(tdoc);
+    probe.setPosition(qBound(0, pos, tdoc->characterCount() - 1));
+    QBrush brush = probe.charFormat().background();
+    if (brush.style() != Qt::NoBrush) return brush.color();
+    return QColor();
 }
 
 // ── Format-state queries (used by the format sheet to show active options) ──
