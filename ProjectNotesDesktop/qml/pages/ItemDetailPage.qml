@@ -26,7 +26,6 @@ Item {
     property string _assignedTo: ""
 
     Component.onCompleted: {
-        _people = DesktopAppController.peopleList()
         if (page.itemId !== "")
             DesktopAppController.openTrackerItem(page.itemId)
         _reload()
@@ -47,6 +46,10 @@ Item {
         internalCheck.checked = (d.internal_item || "0") !== "0"
         page._identifiedBy = (d.identified_by || "").toString()
         page._assignedTo   = (d.assigned_to || "").toString()
+        // Assigned To / Identified By list only this project's team members (plus
+        // whoever is already assigned, so an existing value keeps displaying).
+        page._people = DesktopAppController.teamMemberList(page.projectId,
+                            [page._identifiedBy, page._assignedTo])
         identifiedCombo.value = _nameForId(page._identifiedBy)
         assignedCombo.value   = _nameForId(page._assignedTo)
         page._changed = false
@@ -58,7 +61,11 @@ Item {
             numberField.text, typeCombo.value, nameField.text, descArea.text,
             page._identifiedBy, page._assignedTo, priorityCombo.value, statusCombo.value,
             idDate.text, dueDate.text, internalCheck.checked)
-        if (ok) page._changed = false
+        // Reload either way: on success to reflect data-layer side effects
+        // (assigning a person auto-advances a "New" item to "Assigned", resolving
+        // one sets the resolved date — see TrackerItemsModel::setData); on failure
+        // to snap the fields back to the last valid values (a rejected edit).
+        _reload()
         return ok
     }
 
@@ -194,6 +201,16 @@ Item {
                     Layout.fillWidth: true
                     implicitHeight: cCol.implicitHeight + 20
 
+                    // Persist the row from whatever the three editors currently hold.
+                    // On failure (a rule violation) reload the list so the editors
+                    // snap back to the last valid values from the model.
+                    function _saveComment() {
+                        var ok = DesktopAppController.saveComment(cCard.index,
+                            dateFld.text, noteArea.text, page._idForName(byCombo.value))
+                        if (!ok)
+                            DesktopAppController.refreshTrackerComments()
+                    }
+
                     ColumnLayout {
                         id: cCol
                         anchors.fill: parent
@@ -201,18 +218,27 @@ Item {
                         spacing: 6
                         RowLayout {
                             Layout.fillWidth: true
-                            Text {
+                            spacing: 10
+                            DateField {
+                                id: dateFld
+                                label: qsTr("Date Updated")
                                 text: (cCard.model.lastupdated_date || "").toString()
-                                color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold
+                                Layout.preferredWidth: 150
+                                onEdited: cCard._saveComment()
                             }
-                            Text {
-                                text: {
-                                    var by = (cCard.model.updated_by || "").toString()
-                                    return by !== "" ? "· " + DesktopAppController.peopleNameForId(by) : ""
-                                }
-                                color: Theme.text3; font.pixelSize: 11; Layout.fillWidth: true
+                            ComboField {
+                                id: byCombo
+                                label: qsTr("Updated By")
+                                Layout.fillWidth: true
+                                options: page._peopleNames()
+                                includeNone: true
+                                searchable: true
+                                value: page._nameForId((cCard.model.updated_by || "").toString())
+                                onActivated: cCard._saveComment()
                             }
                             Rectangle {
+                                Layout.alignment: Qt.AlignBottom
+                                Layout.bottomMargin: 6
                                 width: 22; height: 22; radius: 6
                                 color: dHover.hovered ? Theme.redSoft : "transparent"
                                 MaterialIcon { anchors.centerIn: parent; name: "close"; size: 14; color: Theme.red }
@@ -227,6 +253,7 @@ Item {
                         }
                         // Editable comment text
                         TextArea {
+                            id: noteArea
                             Layout.fillWidth: true
                             text: (cCard.model.update_note || "").toString()
                             color: Theme.text
@@ -235,11 +262,7 @@ Item {
                             background: null
                             font.pixelSize: 13
                             SpellCheckField { dialog: spellDialog }
-                            onEditingFinished: {
-                                DesktopAppController.saveComment(cCard.index,
-                                    (cCard.model.lastupdated_date || "").toString(),
-                                    text, (cCard.model.updated_by || "").toString())
-                            }
+                            onEditingFinished: cCard._saveComment()
                         }
                     }
                 }

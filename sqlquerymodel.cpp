@@ -43,6 +43,17 @@ SqlQueryModel::~SqlQueryModel()
         m_dbo->removeModel(this);
 }
 
+void SqlQueryModel::showNativeError(const QString& title, const QString& message) const
+{
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
+    if (m_gui && m_dbo->guiDialogsEnabled())
+        QMessageBox::critical(nullptr, title, message, QMessageBox::Ok);
+#else
+    Q_UNUSED(title);
+    Q_UNUSED(message);
+#endif
+}
+
 void SqlQueryModel::refreshImpactedRecordsets(QModelIndex index)
 {
     QListIterator<SqlQueryModel*> it_recordsets(m_dbo->getOpenModels());
@@ -154,12 +165,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
             {
                 const QString msg = m_headers[index.column()][Qt::EditRole].toString() + QObject::tr(" is a required field.");
                 getDBOs()->setLastSaveError(msg);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-                if (m_gui)
-                {
-                    QMessageBox::critical(nullptr, QObject::tr("Cannot update record"), msg, QMessageBox::Ok);
-                }
-#endif
+                showNativeError(QObject::tr("Cannot update record"), msg);
                 emit dataChanged(index, index); // reload correct value
                 return false;
             }
@@ -178,12 +184,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
             {
                 const QString msg = m_headers[index.column()][Qt::EditRole].toString() + QObject::tr(" must be a unique value.");
                 getDBOs()->setLastSaveError(msg);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-                if (m_gui)
-                {
-                    QMessageBox::critical(nullptr, QObject::tr("Cannot update record"), msg, QMessageBox::Ok);
-                }
-#endif
+                showNativeError(QObject::tr("Cannot update record"), msg);
                 emit dataChanged(index, index); // reload correct value
 
                 return false;
@@ -195,12 +196,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
         {
             const QString msg = m_headers[index.column()][Qt::EditRole].toString() + QObject::tr(" must be a unique value.");
             getDBOs()->setLastSaveError(msg);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-            if (m_gui)
-            {
-                QMessageBox::critical(nullptr, QObject::tr("Cannot update record"), msg, QMessageBox::Ok);
-            }
-#endif
+            showNativeError(QObject::tr("Cannot update record"), msg);
             emit dataChanged(index, index); // reload correct value
             return false;
         }
@@ -256,12 +252,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
 
                     const QString msg = m_headers[i][Qt::EditRole].toString() + QObject::tr(" is required.");
                     getDBOs()->setLastSaveError(msg);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-                    if (m_gui)
-                    {
-                        QMessageBox::critical(nullptr, QObject::tr("Cannot save record"), msg, QMessageBox::Ok);
-                    }
-#endif
+                    showNativeError(QObject::tr("Cannot save record"), msg);
                     // don't insert the record until the required fields are filled in
                     // make the record a new record again
                     m_cache[index.row()][0] = QVariant();
@@ -296,12 +287,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
             const QString msg = insert.lastError().text();
 
             getDBOs()->setLastSaveError(msg);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-            if (m_gui)
-            {
-                QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"), msg, QMessageBox::Ok);
-            }
-#endif
+            showNativeError(QObject::tr("Cannot insert record"), msg);
             emit dataChanged(index, index); // reload correct value - not sure if this is correct for insert
 
             return false;
@@ -334,12 +320,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
                 {                   
                     const QString msg = m_headers[index.column()][Qt::EditRole].toString() + QObject::tr(" was already updated by another process.");
                     getDBOs()->setLastSaveError(msg);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-                    if (m_gui)
-                    {
-                        QMessageBox::critical(nullptr, QObject::tr("Cannot update record"), msg, QMessageBox::Ok);
-                    }
-#endif
+                    showNativeError(QObject::tr("Cannot update record"), msg);
                     reloadRecord(index);
 
                     // check for all of the impacted open recordsets
@@ -372,12 +353,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
 
                 const QString msg = QObject::tr("Cannot update %1.\n%2").arg(m_headers[index.column()][Qt::EditRole].toString()).arg(update.lastError().text());
                 getDBOs()->setLastSaveError(msg);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-                if (m_gui)
-                {
-                    QMessageBox::critical(nullptr, QObject::tr("Cannot update record"), msg, QMessageBox::Ok);
-                }
-#endif
+                showNativeError(QObject::tr("Cannot update record"), msg);
                 emit dataChanged(index, index); // reload correct value - not sure if this is correct for insert
 
                 return false;
@@ -1014,13 +990,8 @@ bool SqlQueryModel::insertCacheRow(int row)
     getDBOs()->setLastSaveError(insert.lastError().text());
 
 
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-    if (m_gui)
-    {
-        QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
-           insert.lastError().text() + "\n" + insert.lastQuery(), QMessageBox::Ok);
-    }
-#endif
+    showNativeError(QObject::tr("Cannot insert record"),
+                    insert.lastError().text() + "\n" + insert.lastQuery());
     // revert the key so it stays as a new record
     m_cache[row][0] = QVariant();
     return false;
@@ -1086,13 +1057,8 @@ bool SqlQueryModel::deleteRecord(QModelIndex index)
 
     const QString msg =  QObject::tr("Cannot delete item.\n%1").arg(delrow.lastError().text());
     getDBOs()->setLastSaveError(msg);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-    if (m_gui)
-    {
-        QMessageBox::critical(nullptr, QObject::tr("Cannot delete item"),
-           delrow.lastError().text() + "\n" + delrow.lastQuery(), QMessageBox::Ok);
-    }
-#endif
+    showNativeError(QObject::tr("Cannot delete item"),
+                    delrow.lastError().text() + "\n" + delrow.lastQuery());
     return false;
 }
 
@@ -1242,7 +1208,7 @@ bool SqlQueryModel::columnChangeCheck(const QModelIndex &index)
         getDBOs()->setLastSaveError(message);
 
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-        if (m_gui)
+        if (m_gui && getDBOs()->guiDialogsEnabled())
         {
             message = m_displayName + QObject::tr(" is referenced in the following item(s):\n\n") + message +
                       QObject::tr("\nYou cannot change ") + m_displayName + QObject::tr(" until they are no longer assocated with the following items. Would you like to run a search for all related items?");
@@ -1354,9 +1320,14 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
 
     if (reference_count > 0)
     {
+        // Always record the blocking reason so a caller that suppresses native
+        // dialogs (e.g. the QML app) can still surface it.
+        getDBOs()->setLastSaveError(
+            m_displayName + QObject::tr(" is referenced in the following:\n\n") + message +
+            QObject::tr("\nYou cannot delete the ") + m_displayName + QObject::tr(" until the assocated items no longer reference it."));
 
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-        if (m_gui)
+        if (m_gui && getDBOs()->guiDialogsEnabled())
         {
             message = m_displayName + QObject::tr(" is referenced in the following:\n\n") + message +
                      QObject::tr("\nYou cannot delete the ") + m_displayName + QObject::tr(" until the assocated items no longer reference it. Would you like to run a search for all related items?");
@@ -1384,10 +1355,6 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
                 promptShowClosedProjects(key_columns, key_values, reference_count);
             }
         }
-#else
-        message = m_displayName + QObject::tr(" is referenced in the following:\n\n") + message +
-                  QObject::tr("\nYou cannot delete the ") + m_displayName + QObject::tr(" until the assocated items no longer reference it.");
-        getDBOs()->setLastSaveError(message);
 #endif
 
         return false;
@@ -2473,10 +2440,9 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
                 // allowed-values list (e.g. a status enum column).
                 if (m_lookupValues[colnum] && !m_lookupValues[colnum]->contains(field_value.toString(), Qt::CaseSensitive))
                 {
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-                    if (m_gui)
-                        QMessageBox::critical(nullptr, QObject::tr("Invalid Field Value"), QString("""%1"" is not a valid field value.").arg(field_value.toString()));
-#endif
+                    const QString msg = QString("""%1"" is not a valid field value.").arg(field_value.toString());
+                    getDBOs()->setLastSaveError(msg);
+                    showNativeError(QObject::tr("Invalid Field Value"), msg);
 
                     return false;
                 }

@@ -145,10 +145,11 @@ Item {
                         ColumnLayout {
                             spacing: 4
                             Layout.preferredWidth: 70
+                            Layout.alignment: Qt.AlignTop
                             Text {
                                 text: (card.model.project_number || "").toString()
                                 color: Theme.accent
-                                font.pixelSize: 15
+                                font.pixelSize: 14
                                 font.weight: Font.Bold
                             }
                             Rectangle {
@@ -180,6 +181,7 @@ Item {
                         // Name + client
                         ColumnLayout {
                             Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignTop
                             spacing: 3
                             Text {
                                 text: (card.model.project_name || "").toString()
@@ -197,6 +199,20 @@ Item {
                                     id: clientText
                                     text: DesktopAppController.clientNameForId(
                                               (card.model.client_id || "").toString())
+                                    color: Theme.text2
+                                    font.pixelSize: 12
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+                            }
+                            RowLayout {
+                                spacing: 6
+                                visible: contactText.text !== ""
+                                MaterialIcon { name: "person"; size: 14; color: Theme.text3 }
+                                Text {
+                                    id: contactText
+                                    text: DesktopAppController.peopleNameForId(
+                                              (card.model.primary_contact || "").toString())
                                     color: Theme.text2
                                     font.pixelSize: 12
                                     elide: Text.ElideRight

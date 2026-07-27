@@ -45,6 +45,12 @@ public:
 
     void refreshImpactedRecordsets(QModelIndex index);
 
+    // Show a native error popup, unless the caller has opted out of native
+    // dialogs (see DatabaseObjects::guiDialogsEnabled). The message is always
+    // recorded in lastSaveError() by the caller regardless, so a GUI that
+    // suppresses native popups can still surface it its own way.
+    void showNativeError(const QString& title, const QString& message) const;
+
     bool setData(const QModelIndex &index, const QVariant &value, int role) override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;

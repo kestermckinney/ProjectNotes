@@ -26,12 +26,18 @@ Item {
     property var _clients: []
     property var _people: []
 
-    // Calculated financial fields (display strings straight from the model).
+    // Financial fields. Budget/Actual/BCWP/BCWS/BAC are stored and editable;
+    // EAC (and the other EVM ratios) are calculated read-only in the model.
     property string _budget: ""
     property string _actual: ""
     property string _bcwp: ""
+    property string _bcws: ""
     property string _bac: ""
     property string _eac: ""
+    property string _cv: ""
+    property string _sv: ""
+    property string _cpi: ""
+    property string _pctComplete: ""
 
     signal noteActivated(int noteRow, string noteId)
     signal itemActivated(string itemId)
@@ -46,11 +52,34 @@ Item {
         for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i].name
         return ""
     }
+    // Reload the team-member list backing the Primary Contact combo (keeping the
+    // current contact) after the team roster changes.
+    function _refreshTeamPeople() {
+        page._people = DesktopAppController.teamMemberList(page.projectId, [page._contactId])
+    }
     function _money(v) { var s = (v || "").toString().trim(); return s === "" ? "—" : s }
+    // The data layer already formats percent columns with a trailing "%", so we
+    // only blank-guard here (don't append another).
+    function _pct(v)   { var s = (v || "").toString().trim(); return s === "" ? "—" : s }
+    function _num(v)   { var s = (v || "").toString().trim(); return s === "" ? "—" : s }
+
+    // Tracker-list display helpers (mirrors ItemsPage styling).
+    function _statusColor(s) {
+        s = (s || "").toLowerCase()
+        if (s.indexOf("resolved") >= 0 || s.indexOf("closed") >= 0) return Theme.green
+        if (s.indexOf("assigned") >= 0) return Theme.amber
+        if (s.indexOf("new") >= 0) return Theme.red
+        return Theme.text3
+    }
+    function _priorityColor(p) {
+        p = (p || "").toLowerCase()
+        if (p.indexOf("high") >= 0) return Theme.red
+        if (p.indexOf("medium") >= 0) return Theme.amber
+        return Theme.text3
+    }
 
     Component.onCompleted: {
         _clients = DesktopAppController.clientList()
-        _people  = DesktopAppController.peopleList()
         _reload()
         DesktopAppController.setProjectFilter(page.projectId)
         DesktopAppController.refreshProjectNotes()
@@ -70,13 +99,27 @@ Item {
         reportCombo.value = (d.status_report_period || "").toString()
         page._clientId  = (d.client_id || "").toString()
         page._contactId = (d.primary_contact || "").toString()
+        // Primary Contact lists only this project's team members (plus the current
+        // contact, so an existing value keeps displaying) — as in the Widgets app.
+        page._people = DesktopAppController.teamMemberList(page.projectId,
+                            [page._contactId])
         clientCombo.value  = _nameForId(page._clients, page._clientId)
         contactCombo.value = _nameForId(page._people, page._contactId)
         page._budget = (d.budget || "").toString()
         page._actual = (d.actual || "").toString()
         page._bcwp   = (d.bcwp || "").toString()
+        page._bcws   = (d.bcws || "").toString()
         page._bac    = (d.bac || "").toString()
         page._eac    = (d.eac || "").toString()
+        page._cv          = (d.cv || "").toString()
+        page._sv          = (d.sv || "").toString()
+        page._cpi         = (d.cpi || "").toString()
+        page._pctComplete = (d.pct_complete || "").toString()
+        budgetField.text = page._budget
+        actualField.text = page._actual
+        bcwpField.text   = page._bcwp
+        bcwsField.text   = page._bcws
+        bacField.text    = page._bac
         page._changed = false
     }
 
@@ -85,8 +128,12 @@ Item {
         var ok = DesktopAppController.saveProject(
             page.projectRow, numberField.text, nameField.text, statusCombo.value,
             page._contactId, page._clientId, statusDate.text, invoiceDate.text,
-            invoicingCombo.value, reportCombo.value)
-        if (ok) { page._changed = false; _reload() }   // reload to pick up recalculated EVM
+            invoicingCombo.value, reportCombo.value,
+            budgetField.text, actualField.text, bcwpField.text, bcwsField.text, bacField.text)
+        // reload to pick up recalculated EVM on success, or to revert the fields
+        // to the last valid values when a rule rejected the edit.
+        if (ok) page._changed = false
+        _reload()
         return ok
     }
 
@@ -179,18 +226,38 @@ Item {
                     }
                 }
 
-                // Calculated financial (EVM) tiles — gated by the "show internal /
-                // budget items" view option, like the Widgets app.
+                // Financial (EVM) fields — gated by the "show internal / budget
+                // items" view option, like the Widgets app. Budget/Actual/BCWP/
+                // BCWS/BAC are editable inputs; EAC is calculated (read-only).
+                // Editable budget inputs.
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.leftMargin: 24
                     Layout.rightMargin: 24
                     spacing: 10
                     visible: DesktopAppController.showInternalItems
-                    MetricTile { label: qsTr("Budget");        value: page._money(page._budget) }
-                    MetricTile { label: qsTr("Actual (ACWP)"); value: page._money(page._actual) }
-                    MetricTile { label: qsTr("BCWP"); value: page._money(page._bcwp); valueColor: Theme.green }
-                    MetricTile { label: qsTr("BAC / EAC"); value: page._money(page._eac !== "" ? page._eac : page._bac); valueColor: Theme.amber }
+                    // Commit on editingFinished (focus leaves the field) so the
+                    // calculated EVM tiles below refresh as each value is entered,
+                    // rather than only when navigating away.
+                    FormField { id: budgetField; label: qsTr("Budget");        onEdited: page._changed = true; onEditingFinished: page._saveNow() }
+                    FormField { id: actualField; label: qsTr("Actual (ACWP)"); onEdited: page._changed = true; onEditingFinished: page._saveNow() }
+                    FormField { id: bcwpField;   label: qsTr("BCWP");          onEdited: page._changed = true; onEditingFinished: page._saveNow() }
+                    FormField { id: bcwsField;   label: qsTr("BCWS");          onEdited: page._changed = true; onEditingFinished: page._saveNow() }
+                    FormField { id: bacField;    label: qsTr("BAC");           onEdited: page._changed = true; onEditingFinished: page._saveNow() }
+                }
+
+                // Calculated (read-only) tiles shown below the entered values.
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 24
+                    Layout.rightMargin: 24
+                    spacing: 10
+                    visible: DesktopAppController.showInternalItems
+                    MetricTile { label: qsTr("EAC");       value: page._money(page._eac); valueColor: Theme.amber }
+                    MetricTile { label: qsTr("CV");        value: page._pct(page._cv) }
+                    MetricTile { label: qsTr("SV");        value: page._pct(page._sv) }
+                    MetricTile { label: qsTr("CPI");       value: page._num(page._cpi) }
+                    MetricTile { label: qsTr("% Complete"); value: page._pct(page._pctComplete) }
                 }
 
                 Item { Layout.preferredHeight: 2 }
@@ -234,7 +301,10 @@ Item {
                         title: qsTr("Status Report Items")
                         icon: "flag"
                         addLabel: qsTr("Add Status Item")
-                        onAdd: { DesktopAppController.addStatusItem(page.projectId); DesktopAppController.refreshStatusItems() }
+                        // addStatusItem appends a pending (unsaved) row; it is INSERTed
+                        // only when a field is edited. Do NOT refresh here — refresh()
+                        // re-queries the DB and would wipe the new row before it is seen.
+                        onAdd: DesktopAppController.addStatusItem(page.projectId)
                     }
                     Repeater {
                         id: statusRep
@@ -304,32 +374,67 @@ Item {
                         id: trackerRep
                         model: DesktopAppController.projectTrackerItemsModel
                         delegate: Card {
+                            id: trackerCard
                             required property int index
                             required property var model
                             readonly property string iid: model.id !== undefined ? model.id : ""
                             Layout.fillWidth: true
-                            implicitHeight: 48
+                            implicitHeight: tiCol.implicitHeight + 20
                             color: tiHover.hovered ? Theme.raise : Theme.surface
-                            RowLayout {
-                                anchors.fill: parent
+                            ColumnLayout {
+                                id: tiCol
+                                anchors.left: parent.left; anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
                                 anchors.leftMargin: 12; anchors.rightMargin: 12
-                                spacing: 10
-                                Text {
-                                    text: (model.item_number || "").toString()
-                                    color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold
-                                    Layout.preferredWidth: 44
+                                spacing: 4
+                                // Title row: number · name · status
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 10
+                                    Text {
+                                        text: (trackerCard.model.item_number || "").toString()
+                                        color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold
+                                        Layout.preferredWidth: 44
+                                    }
+                                    Text {
+                                        text: (trackerCard.model.item_name || qsTr("(unnamed)")).toString()
+                                        color: Theme.text; font.pixelSize: 13; Layout.fillWidth: true; elide: Text.ElideRight
+                                    }
+                                    Rectangle {
+                                        readonly property color c: page._statusColor((trackerCard.model.status || "").toString())
+                                        visible: (trackerCard.model.status || "").toString() !== ""
+                                        radius: 5
+                                        color: Qt.rgba(c.r, c.g, c.b, 0.14)
+                                        implicitHeight: 18; implicitWidth: tiStatus.implicitWidth + 14
+                                        Layout.alignment: Qt.AlignVCenter
+                                        Text {
+                                            id: tiStatus; anchors.centerIn: parent
+                                            text: (trackerCard.model.status || "").toString()
+                                            color: parent.c; font.pixelSize: 10; font.weight: Font.DemiBold
+                                        }
+                                    }
+                                    MaterialIcon { name: "chevron_right"; size: 18; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
                                 }
-                                Text {
-                                    text: (model.item_name || qsTr("(unnamed)")).toString()
-                                    color: Theme.text; font.pixelSize: 13; Layout.fillWidth: true; elide: Text.ElideRight
+                                // Metadata row: assigned · priority · due
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    Layout.leftMargin: 54
+                                    spacing: 16
+                                    MetaPair {
+                                        label: qsTr("Assigned")
+                                        value: page._nameForId(page._people, (trackerCard.model.assigned_to || "").toString())
+                                    }
+                                    MetaPair {
+                                        label: qsTr("Priority")
+                                        value: (trackerCard.model.priority || "").toString()
+                                        valueColor: page._priorityColor((trackerCard.model.priority || "").toString())
+                                    }
+                                    MetaPair {
+                                        label: qsTr("Due")
+                                        value: (trackerCard.model.date_due || "").toString()
+                                    }
+                                    Item { Layout.fillWidth: true }
                                 }
-                                Text {
-                                    text: (model.status || "").toString()
-                                    color: Theme.text3; font.pixelSize: 11
-                                    elide: Text.ElideRight
-                                    Layout.maximumWidth: 110
-                                }
-                                MaterialIcon { name: "chevron_right"; size: 18; color: Theme.text3 }
                             }
                             HoverHandler { id: tiHover }
                             TapHandler { onTapped: { page._saveNow(); page.itemActivated(iid) } }
@@ -389,7 +494,7 @@ Item {
                                         SpellCheckField { dialog: spellDialog }
                                     }
                                 }
-                                RowDelete { onDel: { DesktopAppController.deleteTeamMember(index); DesktopAppController.refreshTeamMembers() } }
+                                RowDelete { onDel: { DesktopAppController.deleteTeamMember(index); DesktopAppController.refreshTeamMembers(); page._refreshTeamPeople() } }
                             }
                         }
                     }
@@ -411,7 +516,8 @@ Item {
                         title: qsTr("Locations")
                         icon: "folder"
                         addLabel: qsTr("Add Location")
-                        onAdd: { DesktopAppController.addProjectLocation(page.projectId); DesktopAppController.refreshProjectLocations() }
+                        // Pending row is INSERTed on first edit; refresh() would wipe it.
+                        onAdd: DesktopAppController.addProjectLocation(page.projectId)
                     }
                     Repeater {
                         id: locRep
@@ -529,6 +635,13 @@ Item {
         anchors.centerIn: parent
         width: 360; height: 420; modal: true; padding: 0
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
+
+        // Type-to-search text (lower-cased match target). Empty = show everyone.
+        property string _filter: ""
+
+        // Reset and focus the search box each time the picker opens.
+        onOpened: { _filter = ""; teamSearch.text = ""; teamSearch.forceActiveFocus() }
+
         contentItem: ColumnLayout {
             spacing: 0
             RowLayout {
@@ -537,21 +650,56 @@ Item {
                 MaterialIcon { name: "close"; size: 20; color: Theme.text3; TapHandler { onTapped: teamPicker.close() } }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
+
+            // Search field — filters the list below as you type.
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.margins: 12
+                implicitHeight: 34
+                radius: Theme.radiusSm
+                color: Theme.surface
+                border.color: teamSearch.activeFocus ? Theme.accent : Theme.border
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 10; anchors.rightMargin: 10
+                    spacing: 6
+                    MaterialIcon { name: "search"; size: 16; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+                    TextField {
+                        id: teamSearch
+                        Layout.fillWidth: true
+                        placeholderText: qsTr("Search people…")
+                        placeholderTextColor: Theme.text3
+                        color: Theme.text
+                        font.pixelSize: 13
+                        background: null
+                        verticalAlignment: Text.AlignVCenter
+                        selectByMouse: true
+                        onTextChanged: teamPicker._filter = text
+                    }
+                }
+            }
+
             ListView {
                 id: teamPeople
                 Layout.fillWidth: true; Layout.fillHeight: true; clip: true
                 model: DesktopAppController.peopleList()
                 delegate: ItemDelegate {
+                    id: teamDelegate
                     required property int index
                     required property var modelData
-                    width: teamPeople.width; height: 40
+                    // Collapse rows that don't contain the search text.
+                    readonly property bool _match: teamPicker._filter === ""
+                        || String(modelData.name).toLowerCase().indexOf(teamPicker._filter.toLowerCase()) >= 0
+                    visible: _match
+                    width: teamPeople.width; height: _match ? 40 : 0
                     contentItem: Text { text: modelData.name; color: Theme.text; font.pixelSize: 13; leftPadding: 14; verticalAlignment: Text.AlignVCenter }
-                    background: Rectangle { color: hovered ? Theme.surface2 : "transparent" }
+                    background: Rectangle { color: teamDelegate.hovered ? Theme.surface2 : "transparent" }
                     onClicked: {
                         var r = DesktopAppController.addTeamMember(page.projectId)
                         if (r >= 0) {
                             DesktopAppController.saveTeamMember(r, modelData.id, "", false)
                             DesktopAppController.refreshTeamMembers()
+                            page._refreshTeamPeople()
                         }
                         teamPicker.close()
                     }
@@ -561,6 +709,18 @@ Item {
     }
 
     // ── Inline reusable pieces ────────────────────────────────────────────────
+
+    // "LABEL value" metadata pair; hides itself when the value is empty.
+    component MetaPair: RowLayout {
+        id: mp
+        property string label: ""
+        property string value: ""
+        property color valueColor: Theme.text2
+        visible: value !== ""
+        spacing: 4
+        Text { text: mp.label; color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold }
+        Text { text: mp.value; color: mp.valueColor; font.pixelSize: 11 }
+    }
 
     // Read-only calculated-financial tile.
     component MetricTile: Rectangle {

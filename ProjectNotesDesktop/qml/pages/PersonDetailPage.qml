@@ -43,6 +43,7 @@ Item {
         var ok = DesktopAppController.savePerson(page.personRow, nameField.text, emailField.text,
                     officeField.text, cellField.text, page._clientId, roleField.text)
         if (ok) page._changed = false
+        else _reload()   // revert fields to last valid values when an edit is rejected
         return ok
     }
 

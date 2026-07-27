@@ -93,9 +93,17 @@ ColumnLayout {
         }
         onActivated: (i) => _commit(textAt(i)) // popup pick / keyboard select
         onAccepted: _commit(editText)          // Enter typed in the editor
-        // Typed text that was never committed (no pick, no Enter) is discarded
-        // when focus leaves so the box always shows a real value.
-        onActiveFocusChanged: if (!activeFocus && _filter !== "") _syncFromValue()
+        // When focus leaves: honor a cleared box (for a none-able combo that means
+        // committing "(none)" so the clear actually saves; otherwise revert), and
+        // discard any uncommitted partial search text so the box shows a real value.
+        onActiveFocusChanged: {
+            if (activeFocus)
+                return
+            if (editable && editText === "")
+                root.includeNone ? _commit("") : _syncFromValue()
+            else if (_filter !== "")
+                _syncFromValue()
+        }
 
         contentItem: TextField {
             leftPadding: 10

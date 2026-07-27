@@ -24,7 +24,10 @@ Item {
     function _nameForId(id){ for (var i=0;i<_people.length;i++) if (_people[i].id===id) return _people[i].name; return "" }
 
     Component.onCompleted: {
-        _people = DesktopAppController.peopleList()
+        // Action-item Assigned/Identified combos list only this project's team
+        // members (mirrors the Widgets team combos). _edit() re-loads this with the
+        // row's current values included so an existing assignment keeps displaying.
+        _people = DesktopAppController.teamMemberList(page.projectId)
         if (page.noteId !== "")
             DesktopAppController.setNoteFilter(page.noteId)
         _reload()
@@ -47,6 +50,7 @@ Item {
             page.noteRow, titleField.text, dateField.text,
             TextFormatter.documentHtml(noteEdit.textDocument), internalCheck.checked)
         if (ok) page._changed = false
+        else _reload()   // revert fields to last valid values when an edit is rejected
         return ok
     }
 
@@ -273,6 +277,10 @@ Item {
                                     aiStatus.value    = (ai.model.status || "").toString()
                                     ai._assignedId    = (ai.model.assigned_to || "").toString()
                                     ai._identifiedId  = (ai.model.identified_by || "").toString()
+                                    // Refresh the team list so this row's current
+                                    // people are present even if they left the team.
+                                    page._people = DesktopAppController.teamMemberList(
+                                        page.projectId, [ai._assignedId, ai._identifiedId])
                                     aiAssigned.value  = page._nameForId(ai._assignedId)
                                     aiIdentified.value= page._nameForId(ai._identifiedId)
                                     aiDateId.text     = (ai.model.date_identified || "").toString()
@@ -458,6 +466,15 @@ Item {
         padding: 0
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
 
+        // Type-to-search text (lower-cased match target). Empty = show everyone.
+        property string _filter: ""
+
+        // Reset and focus the search box each time the picker opens.
+        onOpened: {
+            _filter = ""; attendeeSearch.text = ""; attendeeSearch.forceActiveFocus()
+            peopleList.model = DesktopAppController.teamMemberList(page.projectId)
+        }
+
         contentItem: ColumnLayout {
             spacing: 0
             RowLayout {
@@ -474,17 +491,54 @@ Item {
                 }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
+
+            // Search field — filters the list below as you type.
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.margins: 12
+                implicitHeight: 34
+                radius: Theme.radiusSm
+                color: Theme.surface
+                border.color: attendeeSearch.activeFocus ? Theme.accent : Theme.border
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 10; anchors.rightMargin: 10
+                    spacing: 6
+                    MaterialIcon { name: "search"; size: 16; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+                    TextField {
+                        id: attendeeSearch
+                        Layout.fillWidth: true
+                        placeholderText: qsTr("Search people…")
+                        placeholderTextColor: Theme.text3
+                        color: Theme.text
+                        font.pixelSize: 13
+                        background: null
+                        verticalAlignment: Text.AlignVCenter
+                        selectByMouse: true
+                        onTextChanged: peoplePicker._filter = text
+                    }
+                }
+            }
+
             ListView {
                 id: peopleList
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-                model: DesktopAppController.peopleList()
+                // Only this project's team members may be added as attendees
+                // (matches the Widgets app). Refreshed on open so roster changes
+                // made while the note is open are reflected.
+                model: DesktopAppController.teamMemberList(page.projectId)
                 delegate: ItemDelegate {
+                    id: attendeeDelegate
                     required property int index
                     required property var modelData
+                    // Collapse rows that don't contain the search text.
+                    readonly property bool _match: peoplePicker._filter === ""
+                        || String(modelData.name).toLowerCase().indexOf(peoplePicker._filter.toLowerCase()) >= 0
+                    visible: _match
                     width: peopleList.width
-                    height: 40
+                    height: _match ? 40 : 0
                     contentItem: Text {
                         text: modelData.name
                         color: Theme.text
@@ -492,7 +546,7 @@ Item {
                         leftPadding: 14
                         verticalAlignment: Text.AlignVCenter
                     }
-                    background: Rectangle { color: hovered ? Theme.surface2 : "transparent" }
+                    background: Rectangle { color: attendeeDelegate.hovered ? Theme.surface2 : "transparent" }
                     onClicked: {
                         var r = DesktopAppController.addAttendee(page.noteId)
                         if (r >= 0) {

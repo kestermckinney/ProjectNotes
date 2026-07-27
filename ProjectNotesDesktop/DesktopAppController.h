@@ -7,9 +7,13 @@
 #include <QObject>
 #include <QAbstractItemModel>
 #include <QStringList>
+#include <QVariant>
 #include <QVariantList>
 #include <QVariantMap>
 #include <QVector>
+
+#include <initializer_list>
+#include <utility>
 
 class QQmlEngine;
 class QJSEngine;
@@ -180,6 +184,13 @@ public:
     // ── Picker lists ([{id,name}]) for client / person combos ────────────────
     Q_INVOKABLE QVariantList clientList() const;
     Q_INVOKABLE QVariantList peopleList() const;
+    // Team members of a project ([{id,name}]) for the Assigned To / Identified By
+    // / Primary Contact combos on project-scoped screens (mirrors the Widgets
+    // team combos). Any id in `includeIds` that is not a current team member is
+    // still appended, so an existing assignment to someone since removed from the
+    // team continues to display.
+    Q_INVOKABLE QVariantList teamMemberList(const QString& projectId,
+                                            const QStringList& includeIds = {}) const;
 
     // ── Static option lists (ComboBox models) ────────────────────────────────
     Q_INVOKABLE QStringList projectStatusOptions() const;
@@ -200,7 +211,10 @@ public:
                                         const QString& projectStatus, const QString& primaryContactId,
                                         const QString& clientId, const QString& lastStatusDate,
                                         const QString& lastInvoiceDate, const QString& invoicingPeriod,
-                                        const QString& statusReportPeriod);
+                                        const QString& statusReportPeriod,
+                                        const QString& budget, const QString& actual,
+                                        const QString& bcwp, const QString& bcws,
+                                        const QString& bac);
 
     // ── Project notes CRUD ───────────────────────────────────────────────────
     Q_INVOKABLE int         addProjectNote(const QString& projectId);
@@ -327,6 +341,15 @@ private slots:
     void onSyncStatusUpdated(int percentComplete, qint64 pendingPush, qint64 pendingPull);
 
 private:
+    // Apply an ordered set of column writes to `row`, stopping at the first
+    // failure and surfacing it through the themed error dialog. Writing in order
+    // and bailing early prevents partial inserts — a failed write on a NOT NULL
+    // column followed by a later successful write would otherwise insert a row
+    // with that column still null and raise a raw SQL constraint error — and it
+    // preserves the first, most specific error rather than a downstream cascade.
+    bool applyRowFields(QAbstractItemModel* model, int row,
+                        std::initializer_list<std::pair<int, QVariant>> fields);
+
     bool m_databaseOpen = false;
 
     // Sync engine (lives on m_syncApiThread; created lazily by configureSyncApi).

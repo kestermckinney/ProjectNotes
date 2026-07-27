@@ -29,7 +29,9 @@
 #include <QDomDocument>
 #include <QFile>
 #include <QFileInfo>
+#include <QSet>
 #include <QSettings>
+#include <QSqlQuery>
 #include <QStandardPaths>
 #include <QTextStream>
 #include <QThread>
@@ -147,6 +149,11 @@ bool DesktopAppController::openOrCreateDatabase()
                            tr("Failed to open database at %1").arg(dbPath));
         return false;
     }
+
+    // The QML app surfaces save/validation failures through its own themed
+    // dialog (errorOccurred → Main.qml). Suppress the models' native
+    // QMessageBox popups so a single blocked edit doesn't stack two dialogs.
+    global_DBObjects.setGuiDialogsEnabled(false);
 
     global_DBObjects.setGlobalSearches(false);
     global_DBObjects.projectinformationmodel()->refresh();
@@ -668,6 +675,59 @@ QVariantList DesktopAppController::peopleList() const
     return out;
 }
 
+QVariantList DesktopAppController::teamMemberList(const QString& projectId,
+                                                  const QStringList& includeIds) const
+{
+    QVariantList out;
+    if (projectId.isEmpty()) return out;
+
+    QSet<QString> seen;
+
+    DB_LOCK;
+    QSqlQuery qry(global_DBObjects.getDb());
+    qry.prepare("SELECT people.id, people.name FROM project_people "
+                "JOIN people ON people.id = project_people.people_id "
+                "WHERE project_people.project_id = ? "
+                "AND (project_people.deleted IS NULL OR project_people.deleted = 0) "
+                "AND (people.deleted IS NULL OR people.deleted = 0) "
+                "ORDER BY people.name");
+    qry.addBindValue(projectId);
+    qry.exec();
+    while (qry.next()) {
+        const QString id = qry.value(0).toString();
+        QVariantMap m;
+        m.insert("id",   id);
+        m.insert("name", qry.value(1).toString());
+        out.append(m);
+        seen.insert(id);
+    }
+    DB_UNLOCK;
+
+    // Keep any currently-referenced person who is no longer on the team so an
+    // existing assignment still shows (the Widgets team combo does the same).
+    for (const QString& id : includeIds) {
+        if (id.isEmpty() || seen.contains(id)) continue;
+        seen.insert(id);
+
+        DB_LOCK;
+        QSqlQuery pq(global_DBObjects.getDb());
+        pq.prepare("SELECT name FROM people WHERE id = ?");
+        pq.addBindValue(id);
+        pq.exec();
+        const bool found = pq.next();
+        const QString name = found ? pq.value(0).toString() : QString();
+        DB_UNLOCK;
+
+        if (found) {
+            QVariantMap m;
+            m.insert("id",   id);
+            m.insert("name", name);
+            out.append(m);
+        }
+    }
+    return out;
+}
+
 // ── Option lists ─────────────────────────────────────────────────────────────
 
 QStringList DesktopAppController::projectStatusOptions() const
@@ -722,12 +782,30 @@ QVariantMap DesktopAppController::getProjectData(int row) const
     return proxyRowToMap(global_DBObjects.projectinformationmodelproxy(), row);
 }
 
+bool DesktopAppController::applyRowFields(QAbstractItemModel* model, int row,
+        std::initializer_list<std::pair<int, QVariant>> fields)
+{
+    for (const auto& f : fields) {
+        if (!model->setData(model->index(row, f.first), f.second)) {
+            QString err = global_DBObjects.lastSaveError();
+            if (err.isEmpty())
+                err = tr("The record could not be saved.");
+            emit errorOccurred(tr("Could Not Save"), err);
+            return false;
+        }
+    }
+    return true;
+}
+
 bool DesktopAppController::saveProject(int row,
         const QString& projectNumber, const QString& projectName,
         const QString& projectStatus, const QString& primaryContactId,
         const QString& clientId, const QString& lastStatusDate,
         const QString& lastInvoiceDate, const QString& invoicingPeriod,
-        const QString& statusReportPeriod)
+        const QString& statusReportPeriod,
+        const QString& budget, const QString& actual,
+        const QString& bcwp, const QString& bcws,
+        const QString& bac)
 {
     global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.projectinformationmodelproxy();
@@ -736,19 +814,24 @@ bool DesktopAppController::saveProject(int row,
     const QPersistentModelIndex pIdx(model->index(row, 0));
     if (!pIdx.isValid()) return false;
 
-    bool ok = true;
-    ok &= model->setData(model->index(pIdx.row(),  1), projectNumber);
-    ok &= model->setData(model->index(pIdx.row(),  2), projectName);
-    ok &= model->setData(model->index(pIdx.row(),  3), lastStatusDate);
-    ok &= model->setData(model->index(pIdx.row(),  4), lastInvoiceDate);
-    ok &= model->setData(model->index(pIdx.row(),  5), primaryContactId);
-    ok &= model->setData(model->index(pIdx.row(), 11), invoicingPeriod);
-    ok &= model->setData(model->index(pIdx.row(), 12), statusReportPeriod);
-    ok &= model->setData(model->index(pIdx.row(), 13), clientId);
-    ok &= model->setData(model->index(pIdx.row(), 14), projectStatus);
-    if (!ok)
-        emit errorOccurred(tr("Could Not Save"), global_DBObjects.lastSaveError());
-    return ok;
+    if (!applyRowFields(model, pIdx.row(), {
+            { 1, projectNumber},   { 2, projectName},        { 3, lastStatusDate},
+            { 4, lastInvoiceDate}, { 5, primaryContactId},   { 6, budget},
+            { 7, actual},          { 8, bcwp},               { 9, bcws},
+            {10, bac},             {11, invoicingPeriod},    {12, statusReportPeriod},
+            {13, clientId},        {14, projectStatus} }))
+        return false;
+
+    // The EVM columns (eac, cv, sv, cpi, pct_complete) are computed in the
+    // SELECT, not stored, so per-cell setData leaves them stale in the cache.
+    // Re-query the row so the recalculated values are picked up everywhere that
+    // shares this model — the detail tiles and the project list card alike.
+    if (pIdx.isValid()) {
+        auto* proxy = global_DBObjects.projectinformationmodelproxy();
+        global_DBObjects.projectinformationmodel()->reloadRecord(
+            proxy->mapToSource(proxy->index(pIdx.row(), 0)));
+    }
+    return true;
 }
 
 // ── Project notes ────────────────────────────────────────────────────────────
@@ -802,14 +885,8 @@ bool DesktopAppController::saveProjectNote(int row, const QString& title, const 
     const QPersistentModelIndex pIdx(model->index(row, 0));
     if (!pIdx.isValid()) return false;
 
-    bool ok = true;
-    ok &= model->setData(model->index(pIdx.row(), 2), title);
-    ok &= model->setData(model->index(pIdx.row(), 3), date);
-    ok &= model->setData(model->index(pIdx.row(), 4), note);
-    ok &= model->setData(model->index(pIdx.row(), 5), internalItem ? "1" : "0");
-    if (!ok)
-        emit errorOccurred(tr("Could Not Save"), global_DBObjects.lastSaveError());
-    return ok;
+    return applyRowFields(model, pIdx.row(), {
+        {2, title}, {3, date}, {4, note}, {5, internalItem ? "1" : "0"} });
 }
 
 // ── Meeting attendees ────────────────────────────────────────────────────────
@@ -904,19 +981,10 @@ bool DesktopAppController::saveNoteActionItem(int row, const QString& itemName,
     // notesActionItemsModel columns: 2 item_type, 3 item_name, 4 identified_by,
     // 5 date_identified, 6 description, 7 assigned_to, 8 priority, 9 status,
     // 10 date_due (see notesactionitemsmodel.cpp SELECT order).
-    bool ok = true;
-    ok &= model->setData(model->index(row, 3),  itemName);
-    ok &= model->setData(model->index(row, 2),  itemType);
-    ok &= model->setData(model->index(row, 8),  priority);
-    ok &= model->setData(model->index(row, 9),  status);
-    ok &= model->setData(model->index(row, 7),  assignedTo);
-    ok &= model->setData(model->index(row, 4),  identifiedBy);
-    ok &= model->setData(model->index(row, 5),  dateIdentified);
-    ok &= model->setData(model->index(row, 10), dateDue);
-    ok &= model->setData(model->index(row, 6),  description);
-    if (!ok)
-        emit errorOccurred(tr("Could Not Save"), global_DBObjects.lastSaveError());
-    return ok;
+    return applyRowFields(model, row, {
+        {3,  itemName},      {2, itemType},   {8,  priority},
+        {9,  status},        {7, assignedTo}, {4,  identifiedBy},
+        {5,  dateIdentified}, {10, dateDue},  {6,  description} });
 }
 
 // ── People ───────────────────────────────────────────────────────────────────
@@ -959,16 +1027,9 @@ bool DesktopAppController::savePerson(int row, const QString& name, const QStrin
     const QPersistentModelIndex pIdx(model->index(row, 0));
     if (!pIdx.isValid()) return false;
 
-    bool ok = true;
-    ok &= model->setData(model->index(pIdx.row(), 1), name);
-    ok &= model->setData(model->index(pIdx.row(), 2), email);
-    ok &= model->setData(model->index(pIdx.row(), 3), officePhone);
-    ok &= model->setData(model->index(pIdx.row(), 4), cellPhone);
-    ok &= model->setData(model->index(pIdx.row(), 5), clientId);
-    ok &= model->setData(model->index(pIdx.row(), 6), role);
-    if (!ok)
-        emit errorOccurred(tr("Could Not Save"), global_DBObjects.lastSaveError());
-    return ok;
+    return applyRowFields(model, pIdx.row(), {
+        {1, name},      {2, email},    {3, officePhone},
+        {4, cellPhone}, {5, clientId}, {6, role} });
 }
 
 // ── Clients ──────────────────────────────────────────────────────────────────
@@ -1123,21 +1184,14 @@ bool DesktopAppController::saveTrackerItemDetail(int row, const QString& itemId,
         return false;
     }
 
-    bool ok = true;
-    ok &= model->setData(model->index(pIdx.row(),  1), itemNumber);
-    ok &= model->setData(model->index(pIdx.row(),  2), itemType);
-    ok &= model->setData(model->index(pIdx.row(),  3), itemName);
-    ok &= model->setData(model->index(pIdx.row(),  4), identifiedBy);
-    ok &= model->setData(model->index(pIdx.row(),  5), dateIdentified);
-    ok &= model->setData(model->index(pIdx.row(),  6), description);
-    ok &= model->setData(model->index(pIdx.row(),  7), assignedTo);
-    ok &= model->setData(model->index(pIdx.row(),  8), priority);
-    ok &= model->setData(model->index(pIdx.row(),  9), status);
-    ok &= model->setData(model->index(pIdx.row(), 10), dateDue);
-    ok &= model->setData(model->index(pIdx.row(), 15), internalItem ? "1" : "0");
-    if (!ok)
-        emit errorOccurred(tr("Could Not Save"), global_DBObjects.lastSaveError());
-    return ok;
+    // Status must be written BEFORE assigned_to: TrackerItemsModel::setData
+    // auto-advances a "New" item to "Assigned" when assigned_to is set. If status
+    // were written after, it would clobber that auto-advance back to "New".
+    return applyRowFields(model, pIdx.row(), {
+        { 1, itemNumber},    { 2, itemType},   { 3, itemName},
+        { 4, identifiedBy},  { 5, dateIdentified}, { 6, description},
+        { 8, priority},      { 9, status},     { 7, assignedTo},
+        {10, dateDue},       {15, internalItem ? "1" : "0"} });
 }
 
 // ── Tracker item comments ────────────────────────────────────────────────────
@@ -1181,13 +1235,8 @@ bool DesktopAppController::saveComment(int row, const QString& date,
     const QPersistentModelIndex pIdx(model->index(row, 0));
     if (!pIdx.isValid()) return false;
 
-    bool ok = true;
-    ok &= model->setData(model->index(pIdx.row(), 2), date);
-    ok &= model->setData(model->index(pIdx.row(), 3), note);
-    ok &= model->setData(model->index(pIdx.row(), 4), updatedBy);
-    if (!ok)
-        emit errorOccurred(tr("Could Not Save"), global_DBObjects.lastSaveError());
-    return ok;
+    return applyRowFields(model, pIdx.row(), {
+        {2, date}, {3, note}, {4, updatedBy} });
 }
 
 // ── Project team members ─────────────────────────────────────────────────────
@@ -1223,13 +1272,39 @@ bool DesktopAppController::saveTeamMember(int row, const QString& peopleId,
     const QPersistentModelIndex pIdx(model->index(row, 0));
     if (!pIdx.isValid()) return false;
 
-    bool ok = true;
-    ok &= model->setData(model->index(pIdx.row(), 2), peopleId);
-    ok &= model->setData(model->index(pIdx.row(), 4), receiveStatusReport ? "1" : "0");
-    ok &= model->setData(model->index(pIdx.row(), 5), role);
-    if (!ok)
-        emit errorOccurred(tr("Could Not Save"), global_DBObjects.lastSaveError());
-    return ok;
+    // Guard against adding the same person to a project twice. There is a partial
+    // unique index on project_people(project_id, people_id) WHERE deleted = 0, so a
+    // duplicate would otherwise surface as a raw SQL failure. Column 0 is the row id
+    // (empty for the not-yet-saved row we are filling in), column 1 is project_id.
+    const QString rowId     = model->index(pIdx.row(), 0).data().toString();
+    const QString projectId = model->index(pIdx.row(), 1).data().toString();
+    if (!peopleId.isEmpty() && !projectId.isEmpty())
+    {
+        DB_LOCK;
+        QSqlQuery dup(global_DBObjects.getDb());
+        dup.prepare("SELECT count(*) FROM project_people "
+                    "WHERE project_id = ? AND people_id = ? AND deleted = 0 AND id <> ?");
+        dup.addBindValue(projectId);
+        dup.addBindValue(peopleId);
+        dup.addBindValue(rowId);
+        dup.exec();
+        const bool exists = dup.next() && dup.value(0).toInt() > 0;
+        DB_UNLOCK;
+
+        if (exists)
+        {
+            emit errorOccurred(tr("Duplicate Team Member"),
+                               tr("That person is already a team member on this project."));
+            return false;
+        }
+    }
+
+    // people_id is written first: it is NOT NULL in the schema and carries the
+    // unique key, so it is the write that can be rejected. applyRowFields stops at
+    // the first failure, so a rejected people_id never lets the later writes insert
+    // a row with a null people_id (which would raise a raw SQL constraint error).
+    return applyRowFields(model, pIdx.row(), {
+        {2, peopleId}, {4, receiveStatusReport ? "1" : "0"}, {5, role} });
 }
 
 // ── Project locations ────────────────────────────────────────────────────────
@@ -1265,13 +1340,8 @@ bool DesktopAppController::saveProjectLocation(int row, const QString& locationT
     const QPersistentModelIndex pIdx(model->index(row, 0));
     if (!pIdx.isValid()) return false;
 
-    bool ok = true;
-    ok &= model->setData(model->index(pIdx.row(), 2), locationType);
-    ok &= model->setData(model->index(pIdx.row(), 3), description);
-    ok &= model->setData(model->index(pIdx.row(), 4), path);
-    if (!ok)
-        emit errorOccurred(tr("Could Not Save"), global_DBObjects.lastSaveError());
-    return ok;
+    return applyRowFields(model, pIdx.row(), {
+        {2, locationType}, {3, description}, {4, path} });
 }
 
 // ── Status report items ──────────────────────────────────────────────────────
@@ -1306,12 +1376,8 @@ bool DesktopAppController::saveStatusItem(int row, const QString& category, cons
     const QPersistentModelIndex pIdx(model->index(row, 0));
     if (!pIdx.isValid()) return false;
 
-    bool ok = true;
-    ok &= model->setData(model->index(pIdx.row(), 2), category);
-    ok &= model->setData(model->index(pIdx.row(), 3), description);
-    if (!ok)
-        emit errorOccurred(tr("Could Not Save"), global_DBObjects.lastSaveError());
-    return ok;
+    return applyRowFields(model, pIdx.row(), {
+        {2, category}, {3, description} });
 }
 
 QString DesktopAppController::lastSaveError() const

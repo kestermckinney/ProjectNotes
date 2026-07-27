@@ -27,6 +27,7 @@ Item {
         if (!page._changed) return true
         var ok = DesktopAppController.saveClient(page.clientRow, nameField.text)
         if (ok) page._changed = false
+        else _reload()   // revert fields to last valid values when an edit is rejected
         return ok
     }
 

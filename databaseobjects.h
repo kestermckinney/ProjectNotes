@@ -74,6 +74,14 @@ public:
     void setLastSaveError(const QString& error) { m_lastSaveError = error; }
     QString lastSaveError() const { return m_lastSaveError; }
 
+    // When false, the models suppress their own native QMessageBox error popups
+    // and only record the message in lastSaveError() for the caller to surface
+    // (e.g. the QML app routes it through a themed dialog). Interactive
+    // confirmations (delete prompts) are unaffected. Defaults to true so the
+    // Widgets app keeps its existing behaviour.
+    void setGuiDialogsEnabled(bool enabled) { m_guiDialogsEnabled = enabled; }
+    bool guiDialogsEnabled() const { return m_guiDialogsEnabled; }
+
     QString execute(const QString& sql);
     void addModel(SqlQueryModel* model);
     void removeModel(SqlQueryModel* model);
@@ -195,6 +203,7 @@ private:
     QString m_databaseFile;
     QSqlDatabase m_sqliteDb;
     bool m_gui = true;
+    bool m_guiDialogsEnabled = true;
     QString m_lastSaveError;
 
     ClientsModel* m_clientsModel = nullptr;

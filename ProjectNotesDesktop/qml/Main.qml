@@ -339,10 +339,72 @@ ApplicationWindow {
     Dialog {
         id: errorDialog
         anchors.centerIn: parent
+        width: 380
         modal: true
-        standardButtons: Dialog.Ok
+        padding: 0
+        closePolicy: Popup.CloseOnEscape
         title: "Error"
-        Label { id: errorLabel; wrapMode: Text.Wrap; width: 320; color: Theme.text }
+
+        // Fully themed chrome so the dialog matches the app instead of the
+        // platform default (which renders a black title bar / background).
+        background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
+        header: null
+        footer: null
+
+        contentItem: ColumnLayout {
+            spacing: 0
+
+            // Header
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.margins: 14
+                spacing: 8
+                MaterialIcon { name: "error"; size: 20; color: Theme.red }
+                Text {
+                    text: errorDialog.title
+                    color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
+                    Layout.fillWidth: true
+                }
+                MaterialIcon {
+                    name: "close"; size: 20; color: Theme.text3
+                    TapHandler { onTapped: errorDialog.close() }
+                }
+            }
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
+
+            // Message + button
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.margins: 18
+                spacing: 16
+                Text {
+                    id: errorLabel
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    color: Theme.text
+                    font.pixelSize: 13
+                }
+                Item {
+                    Layout.fillWidth: true
+                    implicitHeight: 30
+                    Rectangle {
+                        anchors.right: parent.right
+                        implicitHeight: 30
+                        implicitWidth: okText.implicitWidth + 26
+                        radius: Theme.radiusSm
+                        color: okHover.hovered ? Theme.accentStrong : Theme.accent
+                        Text {
+                            id: okText
+                            anchors.centerIn: parent
+                            text: qsTr("OK")
+                            color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
+                        }
+                        HoverHandler { id: okHover }
+                        TapHandler { onTapped: errorDialog.close() }
+                    }
+                }
+            }
+        }
     }
 
     FileDialog {
