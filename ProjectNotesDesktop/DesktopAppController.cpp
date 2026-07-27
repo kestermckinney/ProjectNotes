@@ -27,6 +27,7 @@
 
 #include <QDir>
 #include <QDomDocument>
+#include <QDesktopServices>
 #include <QFile>
 #include <QFileInfo>
 #include <QSet>
@@ -1342,6 +1343,62 @@ bool DesktopAppController::saveProjectLocation(int row, const QString& locationT
 
     return applyRowFields(model, pIdx.row(), {
         {2, locationType}, {3, description}, {4, path} });
+}
+
+bool DesktopAppController::setProjectLocationPath(int row, const QString& fileUrlOrPath)
+{
+    global_DBObjects.setLastSaveError("");
+    QAbstractItemModel* model = global_DBObjects.projectlocationsmodelproxy();
+    if (row < 0 || row >= model->rowCount()) return false;
+    // Setting the path (col 4) makes ProjectLocationsModel auto-detect the file
+    // type (col 2) and, when it is still empty, the description (col 3).
+    if (!model->setData(model->index(row, 4), localPath(fileUrlOrPath))) {
+        QString err = global_DBObjects.lastSaveError();
+        if (err.isEmpty()) err = tr("The location could not be saved.");
+        emit errorOccurred(tr("Could Not Save"), err);
+        return false;
+    }
+    return true;
+}
+
+bool DesktopAppController::addProjectLocationFromUrl(const QString& projectId,
+                                                     const QString& fileUrlOrPath)
+{
+    if (localPath(fileUrlOrPath).isEmpty()) return false;
+    const int row = addProjectLocation(projectId);
+    if (row < 0) return false;
+    return setProjectLocationPath(row, fileUrlOrPath);
+}
+
+void DesktopAppController::openProjectLocation(int row)
+{
+    QAbstractItemModel* model = global_DBObjects.projectlocationsmodelproxy();
+    if (row < 0 || row >= model->rowCount()) return;
+    const QString path = model->data(model->index(row, 4)).toString();
+    if (path.isEmpty()) return;
+
+    // A stored path with a URL scheme — http(s), the ms-office deep links that
+    // ProjectLocationsModel writes for Office web documents, mailto, file, … — is
+    // handed to the OS as a URL so the browser or the registered Office handler
+    // opens it; a bare filesystem path is opened as a local file.
+    static const QStringList urlSchemes = {
+        "http:", "https:", "ftp:", "mailto:", "file:",
+        "ms-word:", "ms-excel:", "ms-powerpoint:", "ms-project:",
+        "ms-visio:", "ms-access:", "onenote:"
+    };
+    for (const QString& s : urlSchemes) {
+        if (path.startsWith(s, Qt::CaseInsensitive)) {
+            QDesktopServices::openUrl(QUrl(path, QUrl::TolerantMode));
+            return;
+        }
+    }
+
+    if (path.startsWith("www.", Qt::CaseInsensitive)) {
+        QDesktopServices::openUrl(QUrl("https://" + path, QUrl::TolerantMode));
+        return;
+    }
+
+    QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }
 
 // ── Status report items ──────────────────────────────────────────────────────

@@ -294,6 +294,16 @@ public:
     Q_INVOKABLE QVariantMap getProjectLocationData(int row) const;
     Q_INVOKABLE bool        saveProjectLocation(int row, const QString& locationType,
                                                 const QString& description, const QString& path);
+    // Add a location for a browsed file or a dropped file / web link. The path
+    // is set on the model, which auto-detects the file type and description.
+    Q_INVOKABLE bool        addProjectLocationFromUrl(const QString& projectId,
+                                                      const QString& fileUrlOrPath);
+    // Set just the path on an existing location row (used by the per-row browse
+    // button); the model re-derives the file type + description.
+    Q_INVOKABLE bool        setProjectLocationPath(int row, const QString& fileUrlOrPath);
+    // Open a location with the OS default handler (browser, Office deep link, or
+    // local file), using desktop services like the Widgets app.
+    Q_INVOKABLE void        openProjectLocation(int row);
 
     // ── Status report items ──────────────────────────────────────────────────
     Q_INVOKABLE int         addStatusItem(const QString& projectId);

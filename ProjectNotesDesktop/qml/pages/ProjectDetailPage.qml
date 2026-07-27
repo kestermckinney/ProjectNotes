@@ -3,6 +3,7 @@
 
 import QtQuick
 import QtQuick.Controls.Basic
+import QtQuick.Dialogs
 import QtQuick.Layouts
 import ProjectNotesDesktop
 
@@ -503,63 +504,168 @@ Item {
             }
 
             // ── 3: LOCATIONS ───────────────────────────────────────────────────
-            ScrollView {
-                id: locationsScroll
-                clip: true
-                padding: 18
-                contentWidth: availableWidth
-                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                ColumnLayout {
-                    width: locationsScroll.availableWidth
-                    spacing: 10
-                    SectionBar {
-                        title: qsTr("Locations")
-                        icon: "folder"
-                        addLabel: qsTr("Add Location")
-                        // Pending row is INSERTed on first edit; refresh() would wipe it.
-                        onAdd: DesktopAppController.addProjectLocation(page.projectId)
-                    }
-                    Repeater {
-                        id: locRep
-                        model: DesktopAppController.projectLocationsModel
-                        delegate: Card {
-                            required property int index
-                            required property var model
-                            Layout.fillWidth: true
-                            implicitHeight: 50
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 12; anchors.rightMargin: 8
-                                spacing: 8
-                                ComboField {
-                                    Layout.preferredWidth: 120
-                                    Layout.fillWidth: false
-                                    options: DesktopAppController.fileTypeOptions()
-                                    value: (model.location_type || "").toString()
-                                    onActivated: (v) => DesktopAppController.saveProjectLocation(
-                                        index, v, (model.location_description || "").toString(),
-                                        (model.full_path || "").toString())
-                                }
-                                Rectangle {
-                                    Layout.fillWidth: true; implicitHeight: 30
-                                    radius: Theme.radiusSm; color: Theme.surface2; border.color: Theme.border
-                                    TextField {
-                                        anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 8
-                                        verticalAlignment: Text.AlignVCenter
-                                        text: (model.full_path || "").toString()
-                                        placeholderText: qsTr("Path or description")
-                                        placeholderTextColor: Theme.text3
-                                        color: Theme.text; background: null; font.pixelSize: 13
-                                        onEditingFinished: DesktopAppController.saveProjectLocation(
-                                            index, (model.location_type || "").toString(),
-                                            (model.location_description || "").toString(), text)
-                                    }
-                                }
-                                RowDelete { onDel: { DesktopAppController.deleteProjectLocation(index); DesktopAppController.refreshProjectLocations() } }
-                            }
+            // Wrapper hosts a DropArea so files / web links dragged anywhere onto
+            // the tab are added as locations (the ScrollView itself can't be a
+            // drop target without swallowing its own flick content).
+            Item {
+                id: locationsTab
+
+                // Adds one location per dropped file or web link. Local files
+                // arrive as file:// URLs (converted to a path in the controller);
+                // web links arrive as their URL, or as plain text from some apps.
+                DropArea {
+                    id: locationDrop
+                    anchors.fill: parent
+                    onDropped: (drop) => {
+                        if (drop.hasUrls) {
+                            for (var i = 0; i < drop.urls.length; i++)
+                                DesktopAppController.addProjectLocationFromUrl(page.projectId, drop.urls[i])
+                            drop.accept()
+                        } else if (drop.hasText && drop.text.length > 0) {
+                            DesktopAppController.addProjectLocationFromUrl(page.projectId, drop.text)
+                            drop.accept()
                         }
                     }
-                    Item { Layout.preferredHeight: 8 }
+                }
+
+                // Shared file picker: targetRow < 0 → add a new location,
+                // otherwise re-point that row's path.
+                FileDialog {
+                    id: locationFileDialog
+                    property int targetRow: -1
+                    title: qsTr("Select a file")
+                    fileMode: FileDialog.OpenFile
+                    onAccepted: {
+                        if (targetRow < 0)
+                            DesktopAppController.addProjectLocationFromUrl(page.projectId, selectedFile)
+                        else
+                            DesktopAppController.setProjectLocationPath(targetRow, selectedFile)
+                    }
+                }
+
+                ScrollView {
+                    id: locationsScroll
+                    anchors.fill: parent
+                    clip: true
+                    padding: 18
+                    contentWidth: availableWidth
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                    ColumnLayout {
+                        width: locationsScroll.availableWidth
+                        spacing: 10
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            SectionBar {
+                                Layout.fillWidth: true
+                                title: qsTr("Locations")
+                                icon: "folder"
+                                addLabel: qsTr("Add Location")
+                                // Pending row is INSERTed on first edit; refresh() would wipe it.
+                                onAdd: DesktopAppController.addProjectLocation(page.projectId)
+                            }
+                            // Browse for a file and add it as a new location.
+                            Rectangle {
+                                implicitHeight: 28; implicitWidth: browseRow.implicitWidth + 18
+                                radius: Theme.radiusSm
+                                color: browseHover.hovered ? Theme.surface2 : "transparent"
+                                border.color: Theme.border
+                                Layout.alignment: Qt.AlignVCenter
+                                RowLayout {
+                                    id: browseRow; anchors.centerIn: parent; spacing: 5
+                                    MaterialIcon { name: "folder_open"; size: 15; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                                    Text {
+                                        text: qsTr("Browse File"); color: Theme.text2
+                                        font.pixelSize: 12; font.weight: Font.DemiBold
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+                                }
+                                HoverHandler { id: browseHover }
+                                TapHandler { onTapped: { locationFileDialog.targetRow = -1; locationFileDialog.open() } }
+                            }
+                        }
+                        // Drop hint — only while a drag is hovering over the tab.
+                        Rectangle {
+                            Layout.fillWidth: true
+                            implicitHeight: 30
+                            visible: locationDrop.containsDrag
+                            radius: Theme.radiusSm
+                            color: Theme.accentSoft
+                            border.color: Theme.accent
+                            Text {
+                                anchors.centerIn: parent
+                                text: qsTr("Drop files or web links to add them")
+                                color: Theme.accent; font.pixelSize: 12; font.weight: Font.DemiBold
+                            }
+                        }
+                        Repeater {
+                            id: locRep
+                            model: DesktopAppController.projectLocationsModel
+                            delegate: Card {
+                                id: locCard
+                                required property int index
+                                required property var model
+                                Layout.fillWidth: true
+                                implicitHeight: 80
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 12; anchors.rightMargin: 8
+                                    spacing: 8
+                                    ComboField {
+                                        Layout.preferredWidth: 120
+                                        Layout.fillWidth: false
+                                        Layout.alignment: Qt.AlignVCenter
+                                        options: DesktopAppController.fileTypeOptions()
+                                        value: (locCard.model.location_type || "").toString()
+                                        onActivated: (v) => DesktopAppController.saveProjectLocation(
+                                            locCard.index, v, (locCard.model.location_description || "").toString(),
+                                            (locCard.model.full_path || "").toString())
+                                    }
+                                    // Name/description on top, file location below.
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 6
+                                        LocField {
+                                            Layout.fillWidth: true
+                                            icon: "label"
+                                            fieldText: (locCard.model.location_description || "").toString()
+                                            placeholder: qsTr("Name / description")
+                                            onCommit: (t) => DesktopAppController.saveProjectLocation(
+                                                locCard.index, (locCard.model.location_type || "").toString(),
+                                                t, (locCard.model.full_path || "").toString())
+                                        }
+                                        LocField {
+                                            Layout.fillWidth: true
+                                            icon: "link"
+                                            fieldText: (locCard.model.full_path || "").toString()
+                                            placeholder: qsTr("File path or web link")
+                                            onCommit: (t) => DesktopAppController.saveProjectLocation(
+                                                locCard.index, (locCard.model.location_type || "").toString(),
+                                                (locCard.model.location_description || "").toString(), t)
+                                        }
+                                    }
+                                    // Browse for / re-point this row's file.
+                                    RowIconBtn {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        icon: "folder_open"
+                                        onAct: { locationFileDialog.targetRow = locCard.index; locationFileDialog.open() }
+                                    }
+                                    // Open with the OS default handler.
+                                    RowIconBtn {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        icon: "open_in_new"; tint: Theme.accent
+                                        enabled: (locCard.model.full_path || "").toString().length > 0
+                                        onAct: DesktopAppController.openProjectLocation(locCard.index)
+                                    }
+                                    RowDelete {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        onDel: { DesktopAppController.deleteProjectLocation(locCard.index); DesktopAppController.refreshProjectLocations() }
+                                    }
+                                }
+                            }
+                        }
+                        Item { Layout.preferredHeight: 8 }
+                    }
                 }
             }
 
@@ -843,5 +949,48 @@ Item {
         }
         HoverHandler { id: rdHover }
         TapHandler { onTapped: rd.del() }
+    }
+
+    // One labelled inline text field inside a location card (name or path).
+    component LocField: Rectangle {
+        id: lf
+        property string icon: "label"
+        property string fieldText: ""
+        property string placeholder: ""
+        signal commit(string text)
+        implicitHeight: 30
+        radius: Theme.radiusSm; color: Theme.surface2; border.color: Theme.border
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 8; anchors.rightMargin: 8
+            spacing: 6
+            MaterialIcon { name: lf.icon; size: 15; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+            TextField {
+                Layout.fillWidth: true
+                verticalAlignment: Text.AlignVCenter
+                text: lf.fieldText
+                placeholderText: lf.placeholder
+                placeholderTextColor: Theme.text3
+                color: Theme.text; background: null; font.pixelSize: 13
+                onEditingFinished: lf.commit(text)
+            }
+        }
+    }
+
+    // Small square icon button for a row action (browse, open, …).
+    component RowIconBtn: Item {
+        id: rib
+        property string icon: "open_in_new"
+        property color tint: Theme.text2
+        signal act()
+        implicitWidth: 30; implicitHeight: 30
+        opacity: enabled ? 1 : 0.35
+        Rectangle {
+            anchors.centerIn: parent; width: 26; height: 26; radius: 6
+            color: ribHover.hovered && rib.enabled ? Theme.surface2 : "transparent"
+            MaterialIcon { anchors.centerIn: parent; name: rib.icon; size: 16; color: rib.tint }
+        }
+        HoverHandler { id: ribHover; enabled: rib.enabled }
+        TapHandler { enabled: rib.enabled; onTapped: rib.act() }
     }
 }
