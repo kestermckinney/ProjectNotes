@@ -51,7 +51,7 @@ Popup {
             { icon: "folder", label: qsTr("Show Closed Projects"),
               key: "", action: "toggle_closed", toggle: true, on: DesktopAppController.showClosedProjects },
             { icon: "task_alt", label: qsTr("Show Resolved Items"),
-              key: "", action: "toggle_resolved", toggle: true, on: DesktopAppController.newAndAssignedOnly },
+              key: "", action: "toggle_resolved", toggle: true, on: !DesktopAppController.newAndAssignedOnly },
         ]},
         { name: qsTr("Help"), items: [
             { icon: "info", label: qsTr("About"), key: "", action: "about" },
