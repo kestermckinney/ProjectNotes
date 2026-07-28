@@ -36,12 +36,16 @@ Column {
     signal projectActivated(string projectId)
 
     // "All Projects" has no FolderManager count — derive it live from the list
-    // model (Instantiator.count is reactive; its default QtObject delegate is
-    // non-visual so this just counts rows).
+    // model. Instantiator.count is reactive (and follows the proxy's quick-search
+    // filter, so it reflects the *visible* rows), but it only counts rows for
+    // which it actually instantiates an object — so it MUST have a delegate.
+    // Without one it instantiates nothing and count stays 0. A bare non-visual
+    // QtObject is enough just to count.
     Instantiator {
         id: allCounter
         active: group.isAll
         model: group.isAll ? group.listModel : null
+        delegate: QtObject {}
     }
     readonly property int displayCount: group.isAll ? allCounter.count : group.folderCount
 
@@ -143,12 +147,19 @@ Column {
                 x: 0; y: 1
                 radius: Theme.radiusSm
                 color: {
-                    if (drag.active) return Theme.surface2
+                    if (dragArea.drag.active) return Theme.surface2
                     if (row.projId === group.selectedProjectId) return Theme.accentSoft
-                    return hover.hovered ? Theme.surface2 : "transparent"
+                    return dragArea.containsMouse ? Theme.surface2 : "transparent"
                 }
 
                 property string projectId: row.projId
+
+                // ── Drag source (driven by the MouseArea below) ───────────────
+                Drag.active: dragArea.drag.active
+                Drag.source: content
+                Drag.keys: ["project"]
+                Drag.hotSpot.x: width / 2
+                Drag.hotSpot.y: height / 2
 
                 RowLayout {
                     anchors.fill: parent
@@ -186,31 +197,30 @@ Column {
                     }
                 }
 
-                HoverHandler { id: hover }
-                TapHandler {
-                    onTapped: group.projectActivated(row.projId)
-                }
-
-                // ── Drag source ───────────────────────────────────────────────
-                Drag.active: drag.active
-                Drag.keys: ["project"]
-                Drag.hotSpot.x: width / 2
-                Drag.hotSpot.y: height / 2
-
-                DragHandler {
-                    id: drag
-                    dragThreshold: 6
-                    onActiveChanged: {
-                        if (!active) {
-                            // Snap the row back into its list slot after the drop.
-                            content.x = 0
-                            content.y = 1
-                        }
-                    }
+                // Tap to open, drag to move the project into a folder. A
+                // MouseArea (not a DragHandler) is used on purpose:
+                //  • preventStealing stops the enclosing ScrollView/Flickable
+                //    from hijacking the vertical drag for scrolling — that steal
+                //    silently prevented the old DragHandler from ever activating.
+                //  • the drop is delivered explicitly on release, so it lands on
+                //    the folder header under the cursor instead of racing the
+                //    ParentChange revert that snaps the row back to its slot.
+                // On release the ParentChange state exits and restores content's
+                // saved parent + x/y (0,1), so no manual position reset is needed.
+                MouseArea {
+                    id: dragArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    preventStealing: true
+                    drag.target: content
+                    drag.threshold: 6
+                    onClicked: group.projectActivated(row.projId)
+                    onReleased: if (drag.active) content.Drag.drop()
                 }
 
                 states: State {
-                    when: drag.active
+                    when: dragArea.drag.active
                     ParentChange {
                         target: content
                         parent: group.dragLayer ? group.dragLayer : content.parent
