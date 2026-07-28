@@ -87,6 +87,10 @@ public:
     // production. Set from main.cpp before the engine loads.
     static void setTestSupabase(bool test) { s_testSupabase = test; }
 
+    // Absolute app data directory (AppDataLocation + optional developer profile).
+    // Matches AppSettings::dataLocation() so both frontends share one location.
+    static QString dataLocation();
+
     // ── Database ─────────────────────────────────────────────────────────────
     Q_INVOKABLE bool openOrCreateDatabase();
     bool databaseOpen() const { return m_databaseOpen; }
@@ -158,10 +162,18 @@ public:
     // per-call cache; pass it back to runPluginMenu. Rebuilt on each call, so
     // query it right before showing the menu.
     Q_INVOKABLE QVariantList pluginMenusForModel(QAbstractItemModel* model);
+    // As above, but keyed directly by table name — for heterogeneous lists (the
+    // global search results) where each row's table isn't the model's own table.
+    Q_INVOKABLE QVariantList pluginMenusForTable(const QString& table);
     // Run a plugin menu against a record: exports the record to XML (scoped by
     // the menu's tablefilter) and hands it to the plugin function.
     Q_INVOKABLE void runPluginMenu(QAbstractItemModel* model,
                                    const QString& recordId, int index);
+    Q_INVOKABLE void runPluginMenuForTable(const QString& table,
+                                           const QString& recordId, int index);
+    // The source SQL table backing a (possibly proxied) model — used by the QML
+    // record menus to route Export XML for a sub-table row. Empty if unknown.
+    Q_INVOKABLE QString tableNameForModel(QAbstractItemModel* model);
 
     // ── Filters (scope child models to a project / note) ─────────────────────
     Q_INVOKABLE void setProjectFilter(const QString& projectId);

@@ -159,6 +159,7 @@ ApplicationWindow {
         case "about":       selectSection("settings"); break
         case "sync":        DesktopAppController.syncNow(); break
         case "filter":      filterDialog.openFor(root.currentSection); break
+        case "logs":        logViewer.openViewer(); break
         case "exit":        Qt.quit(); break
         }
     }
@@ -228,6 +229,8 @@ ApplicationWindow {
             dragLayer: dragOverlay
             selectedProjectId: root.selectedProjectId
             onProjectActivated: (pid) => root.openProject(pid)
+            onExportRequested: (table, id) => root.exportRecord(table, id)
+            onFilterRequested: () => filterDialog.openFor(root.currentSection)
         }
 
         ColumnLayout {
@@ -300,11 +303,14 @@ ApplicationWindow {
         ProjectDetailPage {
             onNoteActivated: (noteRow, noteId) => root.openNote(noteRow, noteId, projectId)
             onItemActivated: (itemId) => root.openItem(itemId)
+            onExportRequested: (table, id) => root.exportRecord(table, id)
         }
     }
     Component {
         id: noteDetailComponent
-        ProjectNoteDetailPage {}
+        ProjectNoteDetailPage {
+            onExportRequested: (table, id) => root.exportRecord(table, id)
+        }
     }
     Component {
         id: peopleComponent
@@ -340,12 +346,15 @@ ApplicationWindow {
     }
     Component {
         id: itemDetailComponent
-        ItemDetailPage {}
+        ItemDetailPage {
+            onExportRequested: (table, id) => root.exportRecord(table, id)
+        }
     }
     Component {
         id: searchComponent
         SearchPage {
             onResultActivated: (dataType, dataId, fkId) => root.openSearchResult(dataType, dataId, fkId)
+            onExportRequested: (table, id) => root.exportRecord(table, id)
         }
     }
     Component {
@@ -546,4 +555,7 @@ ApplicationWindow {
 
     // Filter editor (opened from the TopBar Filter button and the hamburger menu).
     FilterDialog { id: filterDialog }
+
+    // Log Viewer — a separate, movable, non-modal window opened from the menu.
+    LogViewerWindow { id: logViewer }
 }

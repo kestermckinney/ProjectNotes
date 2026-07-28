@@ -223,6 +223,11 @@ Item {
                         if (!ok)
                             DesktopAppController.refreshTrackerComments()
                     }
+                    function _menu(sx, sy) {
+                        rowMenu.openFor(DesktopAppController.trackerItemCommentsModel,
+                            (cCard.model.id || "").toString(), qsTr("Comment"),
+                            (cCard.model.update_note || "").toString(), sx, sy)
+                    }
 
                     ColumnLayout {
                         id: cCol
@@ -248,6 +253,12 @@ Item {
                                 searchable: true
                                 value: page._nameForId((cCard.model.updated_by || "").toString())
                                 onActivated: cCard._saveComment()
+                            }
+                            KebabButton {
+                                implicitWidth: 22; implicitHeight: 22
+                                Layout.alignment: Qt.AlignBottom
+                                Layout.bottomMargin: 6
+                                onClicked: (sx, sy) => cCard._menu(sx, sy)
                             }
                             Rectangle {
                                 Layout.alignment: Qt.AlignBottom
@@ -278,11 +289,24 @@ Item {
                             onEditingFinished: cCard._saveComment()
                         }
                     }
+                    TapHandler {
+                        acceptedButtons: Qt.RightButton
+                        onTapped: (ev) => cCard._menu(ev.scenePosition.x, ev.scenePosition.y)
+                    }
                 }
             }
 
             Item { Layout.preferredHeight: 8 }
         }
+    }
+
+    // Routed to Main.exportRecord when a comment row's menu exports XML.
+    signal exportRequested(string table, string id)
+
+    // Shared record/plugin menu for the comments list.
+    RecordRowMenu {
+        id: rowMenu
+        onExportRecord: (table, id) => page.exportRequested(table, id)
     }
 
     // Shared full-field spell-check dialog (opened by fields / right-click).

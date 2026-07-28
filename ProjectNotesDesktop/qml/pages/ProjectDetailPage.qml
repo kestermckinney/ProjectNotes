@@ -53,6 +53,8 @@ Item {
 
     signal noteActivated(int noteRow, string noteId)
     signal itemActivated(string itemId)
+    // Routed to Main.exportRecord when a sub-table row's menu exports XML.
+    signal exportRequested(string table, string id)
 
     function _clientNames() { return _clients.map(function(c){ return c.name }) }
     function _peopleNames() { return _people.map(function(p){ return p.name }) }
@@ -322,10 +324,16 @@ Item {
                         id: statusRep
                         model: DesktopAppController.statusReportItemsModel
                         delegate: Card {
+                            id: stCard
                             required property int index
                             required property var model
                             Layout.fillWidth: true
                             implicitHeight: 50
+                            function _menu(sx, sy) {
+                                rowMenu.openFor(DesktopAppController.statusReportItemsModel,
+                                    (stCard.model.id || "").toString(), qsTr("Status Item"),
+                                    (stCard.model.task_description || "").toString(), sx, sy)
+                            }
                             RowLayout {
                                 anchors.fill: parent
                                 anchors.leftMargin: 12; anchors.rightMargin: 8
@@ -334,9 +342,9 @@ Item {
                                     Layout.preferredWidth: 130
                                     Layout.fillWidth: false
                                     options: DesktopAppController.statusItemCategoryOptions()
-                                    value: (model.task_category || "").toString()
+                                    value: (stCard.model.task_category || "").toString()
                                     onActivated: (v) => DesktopAppController.saveStatusItem(
-                                        index, v, (model.task_description || "").toString())
+                                        stCard.index, v, (stCard.model.task_description || "").toString())
                                 }
                                 Rectangle {
                                     Layout.fillWidth: true; implicitHeight: 30
@@ -344,16 +352,24 @@ Item {
                                     TextField {
                                         anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 8
                                         verticalAlignment: Text.AlignVCenter
-                                        text: (model.task_description || "").toString()
+                                        text: (stCard.model.task_description || "").toString()
                                         placeholderText: qsTr("Description")
                                         placeholderTextColor: Theme.text3
                                         color: Theme.text; background: null; font.pixelSize: 13
                                         onEditingFinished: DesktopAppController.saveStatusItem(
-                                            index, (model.task_category || "").toString(), text)
+                                            stCard.index, (stCard.model.task_category || "").toString(), text)
                                         SpellCheckField { dialog: spellDialog }
                                     }
                                 }
-                                RowDelete { onDel: { DesktopAppController.deleteStatusItem(index); DesktopAppController.refreshStatusItems() } }
+                                KebabButton {
+                                    Layout.alignment: Qt.AlignVCenter
+                                    onClicked: (sx, sy) => stCard._menu(sx, sy)
+                                }
+                                RowDelete { onDel: { DesktopAppController.deleteStatusItem(stCard.index); DesktopAppController.refreshStatusItems() } }
+                            }
+                            TapHandler {
+                                acceptedButtons: Qt.RightButton
+                                onTapped: (ev) => stCard._menu(ev.scenePosition.x, ev.scenePosition.y)
                             }
                         }
                     }
@@ -393,6 +409,11 @@ Item {
                             Layout.fillWidth: true
                             implicitHeight: tiCol.implicitHeight + 20
                             color: tiHover.hovered ? Theme.raise : Theme.surface
+                            function _menu(sx, sy) {
+                                rowMenu.openFor(DesktopAppController.projectTrackerItemsModel,
+                                    trackerCard.iid, qsTr("Tracker Item"),
+                                    (trackerCard.model.item_name || "").toString(), sx, sy)
+                            }
                             ColumnLayout {
                                 id: tiCol
                                 anchors.left: parent.left; anchors.right: parent.right
@@ -425,6 +446,12 @@ Item {
                                             color: parent.c; font.pixelSize: 10; font.weight: Font.DemiBold
                                         }
                                     }
+                                    KebabButton {
+                                        implicitWidth: 24; implicitHeight: 24
+                                        visible: tiHover.hovered
+                                        Layout.alignment: Qt.AlignVCenter
+                                        onClicked: (sx, sy) => trackerCard._menu(sx, sy)
+                                    }
                                     MaterialIcon { name: "chevron_right"; size: 18; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
                                 }
                                 // Metadata row: assigned · priority · due
@@ -450,6 +477,10 @@ Item {
                             }
                             HoverHandler { id: tiHover }
                             TapHandler { onTapped: { page._saveNow(); page.itemActivated(iid) } }
+                            TapHandler {
+                                acceptedButtons: Qt.RightButton
+                                onTapped: (ev) => trackerCard._menu(ev.scenePosition.x, ev.scenePosition.y)
+                            }
                         }
                     }
                     Item { Layout.preferredHeight: 8 }
@@ -476,17 +507,23 @@ Item {
                         id: teamRep
                         model: DesktopAppController.projectTeamMembersModel
                         delegate: Card {
+                            id: teamCard
                             required property int index
                             required property var model
                             Layout.fillWidth: true
                             implicitHeight: 50
+                            function _menu(sx, sy) {
+                                rowMenu.openFor(DesktopAppController.projectTeamMembersModel,
+                                    (teamCard.model.id || "").toString(), qsTr("Team Member"),
+                                    (teamCard.model.name || "").toString(), sx, sy)
+                            }
                             RowLayout {
                                 anchors.fill: parent
                                 anchors.leftMargin: 12; anchors.rightMargin: 8
                                 spacing: 10
                                 MaterialIcon { name: "person"; size: 18; color: Theme.text3 }
                                 Text {
-                                    text: (model.name || qsTr("(no name)")).toString()
+                                    text: (teamCard.model.name || qsTr("(no name)")).toString()
                                     color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
                                     Layout.preferredWidth: 150; elide: Text.ElideRight
                                 }
@@ -496,17 +533,25 @@ Item {
                                     TextField {
                                         anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 8
                                         verticalAlignment: Text.AlignVCenter
-                                        text: (model.role || "").toString()
+                                        text: (teamCard.model.role || "").toString()
                                         placeholderText: qsTr("Role")
                                         placeholderTextColor: Theme.text3
                                         color: Theme.text; background: null; font.pixelSize: 13
                                         onEditingFinished: DesktopAppController.saveTeamMember(
-                                            index, (model.people_id || "").toString(), text,
-                                            (model.receive_status_report || "0") !== "0")
+                                            teamCard.index, (teamCard.model.people_id || "").toString(), text,
+                                            (teamCard.model.receive_status_report || "0") !== "0")
                                         SpellCheckField { dialog: spellDialog }
                                     }
                                 }
-                                RowDelete { onDel: { DesktopAppController.deleteTeamMember(index); DesktopAppController.refreshTeamMembers(); page._refreshTeamPeople() } }
+                                KebabButton {
+                                    Layout.alignment: Qt.AlignVCenter
+                                    onClicked: (sx, sy) => teamCard._menu(sx, sy)
+                                }
+                                RowDelete { onDel: { DesktopAppController.deleteTeamMember(teamCard.index); DesktopAppController.refreshTeamMembers(); page._refreshTeamPeople() } }
+                            }
+                            TapHandler {
+                                acceptedButtons: Qt.RightButton
+                                onTapped: (ev) => teamCard._menu(ev.scenePosition.x, ev.scenePosition.y)
                             }
                         }
                     }
@@ -618,6 +663,12 @@ Item {
                                 required property var model
                                 Layout.fillWidth: true
                                 implicitHeight: 80
+                                function _menu(sx, sy) {
+                                    rowMenu.openFor(DesktopAppController.projectLocationsModel,
+                                        (locCard.model.id || "").toString(), qsTr("Location"),
+                                        (locCard.model.location_description || locCard.model.full_path || "").toString(),
+                                        sx, sy)
+                                }
                                 RowLayout {
                                     anchors.fill: parent
                                     anchors.leftMargin: 12; anchors.rightMargin: 8
@@ -668,10 +719,18 @@ Item {
                                         enabled: (locCard.model.full_path || "").toString().length > 0
                                         onAct: DesktopAppController.openProjectLocation(locCard.index)
                                     }
+                                    KebabButton {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        onClicked: (sx, sy) => locCard._menu(sx, sy)
+                                    }
                                     RowDelete {
                                         Layout.alignment: Qt.AlignVCenter
                                         onDel: { DesktopAppController.deleteProjectLocation(locCard.index); DesktopAppController.refreshProjectLocations() }
                                     }
+                                }
+                                TapHandler {
+                                    acceptedButtons: Qt.RightButton
+                                    onTapped: (ev) => locCard._menu(ev.scenePosition.x, ev.scenePosition.y)
                                 }
                             }
                         }
@@ -711,6 +770,11 @@ Item {
                             Layout.fillWidth: true
                             implicitHeight: 58
                             color: nHover.hovered ? Theme.raise : Theme.surface
+                            function _menu(sx, sy) {
+                                rowMenu.openFor(DesktopAppController.projectNotesModel,
+                                    (noteCard.model.id || "").toString(), qsTr("Note"),
+                                    (noteCard.model.note_title || "").toString(), sx, sy)
+                            }
                             RowLayout {
                                 anchors.fill: parent
                                 anchors.leftMargin: 14; anchors.rightMargin: 14
@@ -729,6 +793,11 @@ Item {
                                         color: Theme.text3; font.pixelSize: 12
                                     }
                                 }
+                                KebabButton {
+                                    implicitWidth: 24; implicitHeight: 24
+                                    visible: nHover.hovered
+                                    onClicked: (sx, sy) => noteCard._menu(sx, sy)
+                                }
                                 MaterialIcon { name: "chevron_right"; size: 20; color: Theme.text3 }
                             }
                             HoverHandler { id: nHover }
@@ -737,6 +806,10 @@ Item {
                                     page._saveNow()
                                     page.noteActivated(noteCard.index, (noteCard.model.id || "").toString())
                                 }
+                            }
+                            TapHandler {
+                                acceptedButtons: Qt.RightButton
+                                onTapped: (ev) => noteCard._menu(ev.scenePosition.x, ev.scenePosition.y)
                             }
                         }
                     }
@@ -944,6 +1017,13 @@ Item {
             HoverHandler { id: aHover }
             TapHandler { onTapped: bar.add() }
         }
+    }
+
+    // One shared record/plugin menu for every child list on this page (tracker,
+    // notes, team, locations, status). Rows call rowMenu.openFor(model, id, …).
+    RecordRowMenu {
+        id: rowMenu
+        onExportRecord: (table, id) => page.exportRequested(table, id)
     }
 
     // Shared full-field spell-check dialog (opened by fields / right-click).

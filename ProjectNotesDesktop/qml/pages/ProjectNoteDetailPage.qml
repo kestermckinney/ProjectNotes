@@ -193,10 +193,20 @@ Item {
                         Repeater {
                             model: DesktopAppController.meetingAttendeesModel
                             delegate: RowLayout {
+                                id: attRow
                                 required property int index
                                 required property var model
                                 Layout.fillWidth: true
                                 spacing: 8
+                                function _menu(sx, sy) {
+                                    rowMenu.openFor(DesktopAppController.meetingAttendeesModel,
+                                        (attRow.model.id || "").toString(), qsTr("Attendee"),
+                                        (attRow.model.name || "").toString(), sx, sy)
+                                }
+                                TapHandler {
+                                    acceptedButtons: Qt.RightButton
+                                    onTapped: (ev) => attRow._menu(ev.scenePosition.x, ev.scenePosition.y)
+                                }
                                 Rectangle {
                                     implicitWidth: 26; implicitHeight: 26; radius: 13
                                     color: Theme.accentSoft
@@ -226,9 +236,14 @@ Item {
                                         Layout.fillWidth: true
                                     }
                                 }
+                                KebabButton {
+                                    implicitWidth: 24; implicitHeight: 24
+                                    Layout.alignment: Qt.AlignVCenter
+                                    onClicked: (sx, sy) => attRow._menu(sx, sy)
+                                }
                                 DeleteButton {
                                     onClicked: {
-                                        DesktopAppController.deleteAttendee(index)
+                                        DesktopAppController.deleteAttendee(attRow.index)
                                         DesktopAppController.refreshMeetingAttendees()
                                     }
                                 }
@@ -321,6 +336,15 @@ Item {
                                         (ai.model.date_due || "").toString(),
                                         (ai.model.description || "").toString())
                                 }
+                                function _menu(sx, sy) {
+                                    rowMenu.openFor(DesktopAppController.notesActionItemsModel,
+                                        (ai.model.id || "").toString(), qsTr("Action Item"),
+                                        (ai.model.item_name || "").toString(), sx, sy)
+                                }
+                                TapHandler {
+                                    acceptedButtons: Qt.RightButton
+                                    onTapped: (ev) => ai._menu(ev.scenePosition.x, ev.scenePosition.y)
+                                }
 
                                 // Summary row (click to expand/collapse the editor)
                                 RowLayout {
@@ -381,6 +405,11 @@ Item {
                                         }
                                         HoverHandler { id: eHover }
                                         TapHandler { onTapped: { if (ai.expanded) { ai._save(); ai.expanded = false } else ai._edit() } }
+                                    }
+                                    KebabButton {
+                                        implicitWidth: 26; implicitHeight: 26
+                                        Layout.alignment: Qt.AlignVCenter
+                                        onClicked: (sx, sy) => ai._menu(sx, sy)
                                     }
                                     DeleteButton {
                                         onClicked: {
@@ -460,6 +489,15 @@ Item {
 
             Item { Layout.preferredHeight: 8 }
         }
+    }
+
+    // Routed to Main.exportRecord when a sub-list row's menu exports XML.
+    signal exportRequested(string table, string id)
+
+    // Shared record/plugin menu for the Attendees and Action Items lists.
+    RecordRowMenu {
+        id: rowMenu
+        onExportRecord: (table, id) => page.exportRequested(table, id)
     }
 
     // Shared full-field spell-check dialog (opened by fields / the toolbar).

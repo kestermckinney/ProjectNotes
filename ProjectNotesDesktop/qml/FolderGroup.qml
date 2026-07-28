@@ -34,6 +34,9 @@ Column {
     property var    dragLayer: null
 
     signal projectActivated(string projectId)
+    // A project row wants the shared record/plugin menu opened for it, at the
+    // given scene coordinates. Handled by ProjectSidebar.openProjectMenu.
+    signal menuRequested(string projId, string label, real sceneX, real sceneY)
 
     // "All Projects" has no FolderManager count — derive it live from the list
     // model. Instantiator.count is reactive (and follows the proxy's quick-search
@@ -156,6 +159,8 @@ Column {
             required property var model
 
             readonly property string projId: model.id !== undefined ? model.id : ""
+            readonly property string ctxLabel:
+                ((model.project_number || "") + " " + (model.project_name || "")).trim()
             // Re-evaluates when membershipRev changes.
             readonly property bool isMember:
                 group.isAll || (group.membershipRev >= 0
@@ -186,6 +191,10 @@ Column {
                 Drag.keys: ["project"]
                 Drag.hotSpot.x: width / 2
                 Drag.hotSpot.y: height / 2
+
+                // Passive hover across the whole row (coexists with the drag
+                // MouseArea) — drives the kebab's reveal.
+                HoverHandler { id: rowHover }
 
                 RowLayout {
                     anchors.fill: parent
@@ -221,6 +230,16 @@ Column {
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
+                    // Kebab: revealed on hover. It sits in the slot the drag
+                    // MouseArea vacates (rightMargin below), so its own tap is
+                    // not swallowed by the drag handler.
+                    KebabButton {
+                        id: kebab
+                        implicitWidth: 22; implicitHeight: 22
+                        visible: rowHover.hovered
+                        Layout.alignment: Qt.AlignVCenter
+                        onClicked: (sx, sy) => group.menuRequested(row.projId, row.ctxLabel, sx, sy)
+                    }
                 }
 
                 // Tap to open, drag to move the project into a folder. A
@@ -236,12 +255,23 @@ Column {
                 MouseArea {
                     id: dragArea
                     anchors.fill: parent
+                    // Uncover the kebab's slot while it's visible so its own tap
+                    // lands on the button rather than on this drag handler.
+                    anchors.rightMargin: kebab.visible ? kebab.width + 10 : 0
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     preventStealing: true
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
                     drag.target: content
                     drag.threshold: 6
-                    onClicked: group.projectActivated(row.projId)
+                    onClicked: (mouse) => {
+                        if (mouse.button === Qt.RightButton) {
+                            var p = dragArea.mapToItem(null, mouse.x, mouse.y)
+                            group.menuRequested(row.projId, row.ctxLabel, p.x, p.y)
+                        } else {
+                            group.projectActivated(row.projId)
+                        }
+                    }
                     onReleased: if (drag.active) content.Drag.drop()
                 }
 

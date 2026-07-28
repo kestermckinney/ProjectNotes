@@ -15,15 +15,27 @@ Popup {
     property string recordType: qsTr("Record")  // header title, e.g. "Person"
     property string recordLabel: ""              // the row's display label
     property bool   canOpen: true
+    property bool   canNew: true
     property bool   canDelete: true
     property bool   canExport: true
+    property bool   canFilter: true
+    property bool   canRefresh: true
+
+    // True when any of the top-group actions (Open/New/Delete) is present — drives
+    // the divider that separates that group from Export/Filter/Refresh, so the
+    // menu doesn't open with a stray divider when the top group is fully hidden.
+    readonly property bool _hasTopGroup: canOpen || canNew || canDelete
 
     // Plugin menus: the list model this row belongs to + the row's id. When set,
     // openAt() queries the controller for plugin menus whose table matches, and
     // lists them below the built-in actions (like the Widgets table-view menu).
     property var    model: null
     property string recordId: ""
+    // Alternative to `model` for heterogeneous lists (search results): when set,
+    // plugins are resolved/run by this table name instead of the model's table.
+    property string recordTable: ""
     property var    _plugins: []
+    property var    _sections: []
 
     signal openRequested()
     signal newRequested()
@@ -46,8 +58,15 @@ Popup {
 
     // Open at a scene/window coordinate (kept inside the overlay bounds).
     function openAt(sx, sy) {
-        menu._plugins = (menu.model && typeof DesktopAppController !== "undefined")
-                        ? DesktopAppController.pluginMenusForModel(menu.model) : []
+        if (typeof DesktopAppController === "undefined")
+            menu._plugins = []
+        else if (menu.recordTable !== "")
+            menu._plugins = DesktopAppController.pluginMenusForTable(menu.recordTable)
+        else if (menu.model)
+            menu._plugins = DesktopAppController.pluginMenusForModel(menu.model)
+        else
+            menu._plugins = []
+        menu._sections = menu._groupPlugins(menu._plugins)
         var maxX = (parent ? parent.width : sx + width) - width - 6
         var maxY = (parent ? parent.height : sy + 320) - 320
         x = Math.max(6, Math.min(sx, maxX))
@@ -59,7 +78,34 @@ Popup {
     onHeightChanged: if (visible && parent) y = Math.max(6, Math.min(y, parent.height - height - 6))
 
     function _fire(sig) { close(); sig() }
-    function _runPlugin(idx) { close(); DesktopAppController.runPluginMenu(menu.model, menu.recordId, idx) }
+    function _runPlugin(idx) {
+        close()
+        if (menu.recordTable !== "")
+            DesktopAppController.runPluginMenuForTable(menu.recordTable, menu.recordId, idx)
+        else
+            DesktopAppController.runPluginMenu(menu.model, menu.recordId, idx)
+    }
+
+    // Group the flat plugin list by submenu so each submenu renders as its own
+    // group-title header (like the record-type / "PLUGINS" headers) instead of a
+    // "Submenu › Title" prefix. First-seen submenu order is preserved; entries
+    // with no submenu collect under a plain "Plugins" header.
+    function _groupPlugins(list) {
+        var order = []
+        var byKey = ({})
+        for (var i = 0; i < list.length; i++) {
+            var m = list[i]
+            var key = (m.submenu && m.submenu !== "") ? m.submenu : ""
+            if (byKey[key] === undefined) { byKey[key] = []; order.push(key) }
+            byKey[key].push(m)
+        }
+        var out = []
+        for (var j = 0; j < order.length; j++) {
+            var k = order[j]
+            out.push({ header: (k === "" ? qsTr("Plugins") : k), items: byKey[k] })
+        }
+        return out
+    }
 
     contentItem: ColumnLayout {
         spacing: 0
@@ -83,36 +129,46 @@ Popup {
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft; Layout.bottomMargin: 3 }
 
         MenuRow { icon: "open_in_full"; label: qsTr("Open");        visible: menu.canOpen;   onActivated: menu._fire(menu.openRequested) }
-        MenuRow { icon: "add";          label: qsTr("New");                                  onActivated: menu._fire(menu.newRequested) }
+        MenuRow { icon: "add";          label: qsTr("New");         visible: menu.canNew;    onActivated: menu._fire(menu.newRequested) }
         MenuRow { icon: "delete";       label: qsTr("Delete");      visible: menu.canDelete; danger: true; onActivated: menu._fire(menu.deleteRequested) }
-        Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3 }
-        MenuRow { icon: "ios_share";    label: qsTr("Export XML…"); visible: menu.canExport; onActivated: menu._fire(menu.exportRequested) }
-        MenuRow { icon: "filter_list";  label: qsTr("Filter…");                              onActivated: menu._fire(menu.filterRequested) }
-        MenuRow { icon: "refresh";      label: qsTr("Refresh");                              onActivated: menu._fire(menu.refreshRequested) }
+        Rectangle {
+            visible: menu._hasTopGroup
+            Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft
+            Layout.topMargin: 3; Layout.bottomMargin: 3
+        }
+        MenuRow { icon: "ios_share";    label: qsTr("Export XML…"); visible: menu.canExport;  onActivated: menu._fire(menu.exportRequested) }
+        MenuRow { icon: "filter_list";  label: qsTr("Filter…");     visible: menu.canFilter;  onActivated: menu._fire(menu.filterRequested) }
+        MenuRow { icon: "refresh";      label: qsTr("Refresh");     visible: menu.canRefresh; onActivated: menu._fire(menu.refreshRequested) }
 
         // Plugin menus for this table (dataexport == model table), like the
-        // Widgets right-click. Submenu, when present, prefixes the title.
-        Rectangle {
-            Layout.fillWidth: true; Layout.preferredHeight: 1
-            color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
-            visible: menu._plugins.length > 0
-        }
-        Text {
-            visible: menu._plugins.length > 0
-            text: qsTr("PLUGINS"); color: Theme.text3
-            font.pixelSize: 10; font.weight: Font.Bold
-            Layout.leftMargin: 9; Layout.topMargin: 1; Layout.bottomMargin: 2
-        }
+        // Widgets right-click. Each submenu becomes its own group-title header
+        // (see _groupPlugins) so nested plugin actions read as clean sections
+        // rather than a "Submenu › Title" one-liner.
         Repeater {
-            model: menu._plugins
-            delegate: MenuRow {
+            model: menu._sections
+            delegate: ColumnLayout {
                 required property var modelData
-                required property int index
-                icon: "extension"
-                label: (modelData.submenu && modelData.submenu !== "")
-                       ? modelData.submenu + " › " + modelData.title
-                       : modelData.title
-                onActivated: menu._runPlugin(modelData.index !== undefined ? modelData.index : index)
+                Layout.fillWidth: true
+                spacing: 0
+
+                Rectangle {
+                    Layout.fillWidth: true; Layout.preferredHeight: 1
+                    color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
+                }
+                Text {
+                    text: modelData.header.toUpperCase(); color: Theme.text3
+                    font.pixelSize: 10; font.weight: Font.Bold
+                    Layout.leftMargin: 9; Layout.topMargin: 1; Layout.bottomMargin: 2
+                }
+                Repeater {
+                    model: modelData.items
+                    delegate: MenuRow {
+                        required property var modelData
+                        icon: "extension"
+                        label: modelData.title
+                        onActivated: menu._runPlugin(modelData.index)
+                    }
+                }
             }
         }
     }

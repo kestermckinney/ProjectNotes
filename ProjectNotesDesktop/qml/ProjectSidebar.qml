@@ -16,6 +16,39 @@ Rectangle {
     property string selectedProjectId: ""
     property var    dragLayer: null
     signal projectActivated(string projectId)
+    // Routed to Main (same contract as ProjectsListPage) so the sidebar's
+    // right-click / kebab menu can export a project or open the filter dialog.
+    signal exportRequested(string table, string id)
+    signal filterRequested()
+
+    // Shared record/plugin context menu for every project row in the sidebar
+    // (all FolderGroups funnel their right-click and kebab clicks here through
+    // openProjectMenu). One popup instance instead of one per row.
+    property string _ctxId: ""
+    RecordContextMenu {
+        id: projCtxMenu
+        recordType: qsTr("Project")
+        model: DesktopAppController.projectsListModel
+        recordId: sidebar._ctxId
+        onOpenRequested:   sidebar.projectActivated(sidebar._ctxId)
+        onNewRequested: {
+            var r = DesktopAppController.addProject()
+            if (r >= 0) sidebar.projectActivated(DesktopAppController.projectIdAtRow(r))
+        }
+        onDeleteRequested: DesktopAppController.deleteProject(
+                               DesktopAppController.projectRowForId(sidebar._ctxId))
+        onExportRequested: sidebar.exportRequested("projects", sidebar._ctxId)
+        onFilterRequested: sidebar.filterRequested()
+        onRefreshRequested: DesktopAppController.refreshModel(DesktopAppController.projectsListModel)
+    }
+
+    // Called by a FolderGroup row (right-click or kebab) to open the shared menu
+    // for a given project at scene coordinates.
+    function openProjectMenu(projId, label, sx, sy) {
+        sidebar._ctxId = projId
+        projCtxMenu.recordLabel = label
+        projCtxMenu.openAt(sx, sy)
+    }
 
     // Incremented on every folder/membership change so FolderGroup membership
     // bindings re-evaluate (FolderManager.isProjectInFolder is imperative).
@@ -109,6 +142,7 @@ Rectangle {
                         membershipRev:     sidebar.membershipRev
                         dragLayer:         sidebar.dragLayer
                         onProjectActivated: (pid) => sidebar.projectActivated(pid)
+                        onMenuRequested: (pid, label, sx, sy) => sidebar.openProjectMenu(pid, label, sx, sy)
                     }
                 }
 
@@ -121,6 +155,7 @@ Rectangle {
                     membershipRev:     sidebar.membershipRev
                     dragLayer:         sidebar.dragLayer
                     onProjectActivated: (pid) => sidebar.projectActivated(pid)
+                    onMenuRequested: (pid, label, sx, sy) => sidebar.openProjectMenu(pid, label, sx, sy)
                 }
             }
         }

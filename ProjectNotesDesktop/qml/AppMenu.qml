@@ -52,6 +52,7 @@ Popup {
               key: "", action: "toggle_closed", toggle: true, on: DesktopAppController.showClosedProjects },
             { icon: "task_alt", label: qsTr("Show Resolved Items"),
               key: "", action: "toggle_resolved", toggle: true, on: !DesktopAppController.newAndAssignedOnly },
+            { icon: "description", label: qsTr("Log Viewer"), key: "", action: "logs" },
         ]},
         { name: qsTr("Help"), items: [
             { icon: "info", label: qsTr("About"), key: "", action: "about" },

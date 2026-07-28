@@ -25,6 +25,9 @@
 
 #include "sqlitesyncpro.h"
 #include "syncresult.h"
+#include "synclog.h"
+
+#include "QLogger.h"
 
 #include <QDir>
 #include <QDomDocument>
@@ -77,6 +80,35 @@ DesktopAppController::DesktopAppController(QObject* parent)
                         QStringLiteral("AppSettings"));
             return s.value(key).toString();
         });
+
+    // Structured logging to the shared logs folder (same destinations the Widgets
+    // app configures), so the desktop app writes its own logs and the Log Viewer
+    // has current content to show.
+    const QString logloc = dataLocation() + "/logs";
+    QDir().mkpath(logloc);
+
+    QLoggerManager* logmanager = QLoggerManager::getInstance();
+#ifdef QT_DEBUG
+    logmanager->addDestination("debugging.log", DEBUGLOG, LogLevel::Debug, logloc, LogMode::OnlyFile);
+#endif
+    logmanager->addDestination("error.log", ERRORLOG, LogLevel::Error, logloc, LogMode::OnlyFile);
+    logmanager->addDestination("console.log", CONSOLELOG, LogLevel::Info, logloc, LogMode::OnlyFile);
+    logmanager->addDestination("syncerrors.log", SYNCERRORLOG, LogLevel::Warning, logloc, LogMode::OnlyFile);
+    logmanager->resume();
+
+    // Route sync-library failures (raised via SyncLog::error from inside
+    // SqliteSyncProLib) into syncerrors.log, mirroring the Widgets app.
+    SyncLog::setErrorSink([](const QString& msg) {
+        QLog_Warning(SYNCERRORLOG, msg);
+    });
+}
+
+QString DesktopAppController::dataLocation()
+{
+    QString base = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if (!s_developerProfile.isEmpty())
+        base += "/" + s_developerProfile;
+    return base;
 }
 
 DesktopAppController::~DesktopAppController()
@@ -132,9 +164,7 @@ bool DesktopAppController::openOrCreateDatabase()
     if (m_databaseOpen)
         return true;
 
-    QString dataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    if (!s_developerProfile.isEmpty())
-        dataDir += "/" + s_developerProfile;   // matches AppSettings::dataLocation()
+    const QString dataDir = dataLocation();   // matches AppSettings::dataLocation()
     const QString dbPath  = dataDir + "/ProjectNotes.db";
     const QString connName = "ProjectNotesDesktop";
 
@@ -501,16 +531,15 @@ void DesktopAppController::ensurePluginManager()
 
 QVariantList DesktopAppController::pluginMenusForModel(QAbstractItemModel* model)
 {
+    SqlQueryModel* src = sourceModelOf(model);
+    return pluginMenusForTable(src ? src->tablename() : QString());
+}
+
+QVariantList DesktopAppController::pluginMenusForTable(const QString& table)
+{
     QVariantList out;
     m_pluginMenuCache.clear();
-    if (!m_pluginManager)
-        return out;
-
-    SqlQueryModel* src = sourceModelOf(model);
-    if (!src)
-        return out;
-    const QString table = src->tablename();
-    if (table.isEmpty())
+    if (!m_pluginManager || table.isEmpty())
         return out;
 
     // A menu appears on a table's right-click when its dataexport matches that
@@ -535,22 +564,31 @@ QVariantList DesktopAppController::pluginMenusForModel(QAbstractItemModel* model
     return out;
 }
 
+QString DesktopAppController::tableNameForModel(QAbstractItemModel* model)
+{
+    SqlQueryModel* src = sourceModelOf(model);
+    return src ? src->tablename() : QString();
+}
+
 void DesktopAppController::runPluginMenu(QAbstractItemModel* model,
                                          const QString& recordId, int index)
+{
+    SqlQueryModel* src = sourceModelOf(model);
+    runPluginMenuForTable(src ? src->tablename() : QString(), recordId, index);
+}
+
+void DesktopAppController::runPluginMenuForTable(const QString& table,
+                                                 const QString& recordId, int index)
 {
     if (index < 0 || index >= m_pluginMenuCache.size())
         return;
     const PluginMenuRef& ref = m_pluginMenuCache.at(index);
-    if (!ref.plugin)
-        return;
-
-    SqlQueryModel* src = sourceModelOf(model);
-    if (!src)
+    if (!ref.plugin || table.isEmpty())
         return;
 
     // Export just the selected record (col 0 = id), scoped by the menu's
     // tablefilter, then hand the XML to the plugin — mirrors slotPluginMenu.
-    SqlQueryModel* exportModel = global_DBObjects.createExportObject(src->tablename());
+    SqlQueryModel* exportModel = global_DBObjects.createExportObject(table);
     if (!exportModel) {
         emit errorOccurred(tr("Plugin"), tr("Nothing to export for this record type."));
         return;

@@ -35,6 +35,7 @@ qt_add_executable(ProjectNotesDesktop
     main.cpp
     DesktopAppController.cpp DesktopAppController.h
     FolderManager.cpp        FolderManager.h
+    LogViewerController.cpp  LogViewerController.h
     SpellCheck.cpp           SpellCheck.h
     # Shared rich-text bridge — reused verbatim from the mobile app.
     ../ProjectNotesMobile/TextFormatter.cpp ../ProjectNotesMobile/TextFormatter.h
@@ -63,8 +64,11 @@ set(DESKTOP_QML_FILES
     qml/FolderGroup.qml
     qml/TopBar.qml
     qml/AppMenu.qml
+    qml/LogViewerWindow.qml
     qml/FilterDialog.qml
     qml/RecordContextMenu.qml
+    qml/RecordRowMenu.qml
+    qml/KebabButton.qml
     qml/Card.qml
     qml/FormField.qml
     qml/ComboField.qml

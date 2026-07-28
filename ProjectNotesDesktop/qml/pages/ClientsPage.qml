@@ -68,18 +68,27 @@ Item {
                             color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold
                             elide: Text.ElideRight; Layout.fillWidth: true
                         }
+                        KebabButton {
+                            Layout.alignment: Qt.AlignVCenter
+                            onClicked: (sx, sy) => card._openMenu(sx, sy)
+                        }
                         MaterialIcon { name: "chevron_right"; size: 20; color: Theme.text3 }
                     }
+
+                    // Populate the shared context menu for this row and open it at
+                    // the given scene coordinates — shared by right-click and kebab.
+                    function _openMenu(sx, sy) {
+                        page._ctxRow = card.index
+                        page._ctxId = card.cid
+                        ctxMenu.recordLabel = (card.model.client_name || "").toString()
+                        ctxMenu.openAt(sx, sy)
+                    }
+
                     HoverHandler { id: hover }
                     TapHandler { onTapped: page.clientActivated(card.index, card.cid) }
                     TapHandler {
                         acceptedButtons: Qt.RightButton
-                        onTapped: (ev) => {
-                            page._ctxRow = card.index
-                            page._ctxId = card.cid
-                            ctxMenu.recordLabel = (card.model.client_name || "").toString()
-                            ctxMenu.openAt(ev.scenePosition.x, ev.scenePosition.y)
-                        }
+                        onTapped: (ev) => card._openMenu(ev.scenePosition.x, ev.scenePosition.y)
                     }
                 }
             }

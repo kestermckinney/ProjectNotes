@@ -221,6 +221,10 @@ Item {
                             }
                         }
 
+                        KebabButton {
+                            Layout.alignment: Qt.AlignVCenter
+                            onClicked: (sx, sy) => card._openMenu(sx, sy)
+                        }
                         MaterialIcon { name: "chevron_right"; size: 20; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
                     }
 
@@ -246,16 +250,20 @@ Item {
                     }
                     }
 
+                    // Populate the shared context menu for this row and open it at
+                    // the given scene coordinates — shared by right-click and kebab.
+                    function _openMenu(sx, sy) {
+                        page._ctxId = card.projId
+                        ctxMenu.recordLabel = (card.model.project_number || "") + " "
+                                              + (card.model.project_name || "")
+                        ctxMenu.openAt(sx, sy)
+                    }
+
                     HoverHandler { id: hover }
                     TapHandler { onTapped: page.projectActivated(card.projId) }
                     TapHandler {
                         acceptedButtons: Qt.RightButton
-                        onTapped: (ev) => {
-                            page._ctxId = card.projId
-                            ctxMenu.recordLabel = (card.model.project_number || "") + " "
-                                                  + (card.model.project_name || "")
-                            ctxMenu.openAt(ev.scenePosition.x, ev.scenePosition.y)
-                        }
+                        onTapped: (ev) => card._openMenu(ev.scenePosition.x, ev.scenePosition.y)
                     }
                     // Drag-to-folder is available from the sidebar's project rows
                     // (incl. the "All Projects" group). List-card drag is a later
