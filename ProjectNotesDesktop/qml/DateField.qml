@@ -82,6 +82,8 @@ ColumnLayout {
             width: 260
             padding: 10
             modal: false
+            scale: Theme.uiScale
+            transformOrigin: Item.TopLeft
             background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
 
             property int shownMonth: (new Date()).getMonth()

@@ -17,6 +17,7 @@ Popup {
     dim: true
     padding: 0
     parent: Overlay.overlay
+    scale: Theme.uiScale   // match the zoomed workspace (centered origin)
     width: 680
     height: Math.min(560, parent ? parent.height - 60 : 560)
     x: parent ? Math.round((parent.width - width) / 2) : 0

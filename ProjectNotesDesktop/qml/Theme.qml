@@ -20,6 +20,21 @@ QtObject {
         mode = dark ? "light" : "dark"
     }
 
+    // ── UI zoom (screen-sharing / presentation) ─────────────────────────────────
+    // A global magnification factor. The shell applies it as a vector scale on a
+    // logical viewport (see Main.qml zoomLayer) so the whole UI grows/shrinks and
+    // REFLOWS to keep filling the window — crisp at any level because Qt Quick
+    // re-rasterises distance-field glyphs at the composited scale (no blockiness).
+    property real uiScale: 1.0
+    readonly property real minScale:  0.7
+    readonly property real maxScale:  2.5
+    readonly property real scaleStep: 0.1
+
+    function _clampScale(s) { return Math.max(minScale, Math.min(maxScale, Math.round(s * 100) / 100)) }
+    function zoomIn()    { uiScale = _clampScale(uiScale + scaleStep) }
+    function zoomOut()   { uiScale = _clampScale(uiScale - scaleStep) }
+    function zoomReset() { uiScale = 1.0 }
+
     // ── Surfaces ──────────────────────────────────────────────────────────────
     readonly property color bg:        dark ? "#1E1D1B" : "#F3F1EA"
     readonly property color surface:   dark ? "#262523" : "#FBFAF6"

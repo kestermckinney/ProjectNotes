@@ -20,6 +20,8 @@ Popup {
     dim: false
     padding: 6
     width: 232
+    scale: Theme.uiScale            // match the zoomed workspace
+    transformOrigin: Item.TopLeft   // grow down-right from the rail anchor
     // Rendered in the window overlay so it can float over the sidebar/content.
 
     background: Rectangle {
@@ -52,6 +54,9 @@ Popup {
               key: "", action: "toggle_closed", toggle: true, on: DesktopAppController.showClosedProjects },
             { icon: "task_alt", label: qsTr("Show Resolved Items"),
               key: "", action: "toggle_resolved", toggle: true, on: !DesktopAppController.newAndAssignedOnly },
+            { icon: "zoom_in",     label: qsTr("Zoom In"),    key: "⌘+", action: "zoom_in" },
+            { icon: "zoom_out",    label: qsTr("Zoom Out"),   key: "⌘−", action: "zoom_out" },
+            { icon: "restart_alt", label: qsTr("Reset Zoom"), key: "⌘0", action: "zoom_reset" },
             { icon: "description", label: qsTr("Log Viewer"), key: "", action: "logs" },
         ]},
         { name: qsTr("Help"), items: [
@@ -65,6 +70,10 @@ Popup {
         case "toggle_internal": DesktopAppController.showInternalItems = !DesktopAppController.showInternalItems; return
         case "toggle_closed":   DesktopAppController.showClosedProjects = !DesktopAppController.showClosedProjects; return
         case "toggle_resolved": DesktopAppController.newAndAssignedOnly = !DesktopAppController.newAndAssignedOnly; return
+        // Zoom acts in place and keeps the menu open so it can be nudged repeatedly.
+        case "zoom_in":         Theme.zoomIn();    return
+        case "zoom_out":        Theme.zoomOut();   return
+        case "zoom_reset":      Theme.zoomReset(); return
         default: menu.triggered(a); menu.close()
         }
     }

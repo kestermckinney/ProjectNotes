@@ -14,6 +14,7 @@ Dialog {
     id: dlg
     anchors.centerIn: parent
     width: 460
+    scale: Theme.uiScale   // match the zoomed workspace (centered origin)
     modal: true
     padding: 0
     closePolicy: Popup.CloseOnEscape

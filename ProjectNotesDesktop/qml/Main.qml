@@ -211,6 +211,17 @@ ApplicationWindow {
     }
 
     // ── Layout ────────────────────────────────────────────────────────────────
+    // Zoomable logical viewport. Its logical size shrinks as uiScale grows, then
+    // the scale transform magnifies it back to fill the window — so the whole UI
+    // reflows at the new size (like browser Ctrl +/−) and stays vector-crisp
+    // (Qt Quick re-rasterises distance-field glyphs at the composited scale).
+    Item {
+        id: zoomLayer
+        transformOrigin: Item.TopLeft
+        scale: Theme.uiScale
+        width:  (root.contentItem ? root.contentItem.width  : root.width)  / Theme.uiScale
+        height: (root.contentItem ? root.contentItem.height : root.height) / Theme.uiScale
+
     RowLayout {
         anchors.fill: parent
         spacing: 0
@@ -286,6 +297,28 @@ ApplicationWindow {
         anchors.fill: parent
         z: 9999
     }
+    } // zoomLayer
+
+    // Ctrl + mouse-wheel zoom. Captured in a transparent full-window layer above
+    // the content so ScrollViews don't eat it; a plain Item with only a
+    // WheelHandler stays transparent to every other event (clicks/hover fall
+    // through), and it sits below the window overlay so popups still render on top.
+    Item {
+        anchors.fill: parent
+        z: 10000
+        WheelHandler {
+            acceptedModifiers: Qt.ControlModifier
+            onWheel: (ev) => {
+                if (ev.angleDelta.y > 0) Theme.zoomIn()
+                else if (ev.angleDelta.y < 0) Theme.zoomOut()
+            }
+        }
+    }
+
+    // Keyboard zoom: Ctrl +/= in, Ctrl - out, Ctrl 0 reset (browser-style).
+    Shortcut { sequences: ["Ctrl+=", "Ctrl++"]; onActivated: Theme.zoomIn() }
+    Shortcut { sequence: "Ctrl+-";              onActivated: Theme.zoomOut() }
+    Shortcut { sequence: "Ctrl+0";              onActivated: Theme.zoomReset() }
 
     // ── Content components ────────────────────────────────────────────────────
     Component {
@@ -373,6 +406,7 @@ ApplicationWindow {
         id: errorDialog
         anchors.centerIn: parent
         width: 380
+        scale: Theme.uiScale   // match the zoomed workspace (centered origin)
         modal: true
         padding: 0
         closePolicy: Popup.CloseOnEscape
@@ -445,6 +479,7 @@ ApplicationWindow {
         id: confirmDeleteDialog
         anchors.centerIn: parent
         width: 380
+        scale: Theme.uiScale   // match the zoomed workspace (centered origin)
         modal: true
         padding: 0
         closePolicy: Popup.CloseOnEscape

@@ -73,6 +73,8 @@ Item {
         padding: 5
         width: 232
         parent: Overlay.overlay
+        scale: Theme.uiScale
+        transformOrigin: Item.TopLeft
 
         background: Rectangle {
             radius: Theme.radius

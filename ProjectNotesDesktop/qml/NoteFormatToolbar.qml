@@ -262,6 +262,8 @@ Rectangle {
         height: 320
         padding: 8
         modal: false
+        scale: Theme.uiScale
+        transformOrigin: Item.TopLeft
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
 
         property var _families: []
@@ -341,6 +343,8 @@ Rectangle {
         height: 260
         padding: 6
         modal: false
+        scale: Theme.uiScale
+        transformOrigin: Item.TopLeft
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
 
         function openFor(anchorItem) {
@@ -380,6 +384,8 @@ Rectangle {
         width: 180
         padding: 6
         modal: false
+        scale: Theme.uiScale
+        transformOrigin: Item.TopLeft
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
 
         function openFor(anchorItem) {
@@ -426,6 +432,8 @@ Rectangle {
         width: 244
         padding: 10
         modal: false
+        scale: Theme.uiScale
+        transformOrigin: Item.TopLeft
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
 
         function openFor(anchorItem) {

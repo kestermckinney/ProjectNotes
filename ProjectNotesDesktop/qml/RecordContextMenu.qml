@@ -49,6 +49,8 @@ Popup {
     padding: 5
     width: 232
     parent: Overlay.overlay
+    scale: Theme.uiScale            // match the zoomed workspace
+    transformOrigin: Item.TopLeft   // grow down-right from the cursor anchor
 
     background: Rectangle {
         radius: Theme.radius

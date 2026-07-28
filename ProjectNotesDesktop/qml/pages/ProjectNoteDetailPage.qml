@@ -511,6 +511,7 @@ Item {
         height: 420
         modal: true
         padding: 0
+        scale: Theme.uiScale   // match the zoomed workspace (centered origin)
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
 
         // Type-to-search text (lower-cased match target). Empty = show everyone.
