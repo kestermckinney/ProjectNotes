@@ -105,6 +105,11 @@ public:
     virtual bool deleteRecord(QModelIndex index);
     bool copyAndFilterRow(QModelIndex& qmi, SqlQueryModel& pnmodel);
     void deleteRelatedRecords(QVariant& keyval);
+    // Soft-delete a record's owned (DBExportable) child records recursively.
+    void cascadeDeleteExportableChildren(const QVariant& parentKeyValue);
+    // True if the record is referenced by any DBNotExportable related table
+    // (an external reference that must block deletion), false otherwise.
+    bool hasExternalReferences(const QVariant& keyValue);
     void removeCacheRecord(QModelIndex index);
 
     int rowCount(const QModelIndex &parent) const override;

@@ -827,7 +827,8 @@ static bool deleteProxyRow(SortFilterProxyModel* proxy, SqlQueryModel* source, i
 }
 
 // Delete the record at proxy |row|, surfacing the model's blocked-delete message
-// to the user when child/foreign-key references prevent it. deleteRecord() (via
+// to the user when an external (non-owned) reference prevents it. Owned child
+// records are cascade-deleted instead of blocking. deleteRecord() (via
 // deleteCheck) already stores that message in lastSaveError on mobile; here we
 // emit it through the existing errorOccurred → errorDialog path used by saves.
 bool AppController::deleteAndReport(SortFilterProxyModel* proxy, SqlQueryModel* source, int row)

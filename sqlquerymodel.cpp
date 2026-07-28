@@ -1050,6 +1050,11 @@ bool SqlQueryModel::deleteRecord(QModelIndex index)
         removeCacheRecord(index);
 
         deleteRelatedRecords(keyval);
+
+        // Cascade soft-delete the record's owned (DBExportable) child records,
+        // then flush the queued row changes so any open child views refresh.
+        cascadeDeleteExportableChildren(keyval);
+        getDBOs()->updateDisplayData();
         return true;
     }
 
@@ -1255,6 +1260,12 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
 
     for (int i = 0; i < m_relatedTable.size(); ++i)
     {
+        // Owned child records (DBExportable) are cascade-deleted along with the
+        // parent, so they must not block the delete.  Only DBNotExportable
+        // relations represent external references that prevent deletion.
+        if (m_relationExportable[i] == DBExportable)
+            continue;
+
         int relatedcount = 0;
 
         //set the where for all
@@ -2541,6 +2552,15 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
 
         if (isdelete)
         {
+            // Do not delete a record that is still referenced elsewhere by a
+            // non-owned relation; leave it in place (its owned children are only
+            // removed when the record itself is deleted below).
+            if (hasExternalReferences(id_field))
+            {
+                QLog_Error(ERRORLOG, QString("Import skipped delete in %1: %2 = '%3' is still referenced elsewhere.").arg(m_tablename, getColumnName(0), id_field));
+                return true;
+            }
+
             sql = QString("UPDATE %1 SET deleted = 1 WHERE %2").arg(m_tablename, id_whereclause);
             disp_optype = KeyColumnChange::Delete;
         }
@@ -2604,6 +2624,10 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
 
     // Notify the display layer so the relevant table views refresh the changed row.
     getDBOs()->pushRowChange(tablename(), id_field, disp_optype);
+
+    // When the row was soft-deleted, cascade the delete to its owned children.
+    if (disp_optype == KeyColumnChange::Delete)
+        cascadeDeleteExportableChildren(id_field);
 
     return true;
 }
@@ -2819,5 +2843,130 @@ void SqlQueryModel::deleteRelatedRecords(QVariant& keyval)
                 }
             }
         }
+    }
+}
+
+// hasExternalReferences - true if a record is referenced by a non-owned relation.
+//
+// Walks every related table registered as DBNotExportable (an external reference
+// rather than an owned child) and returns true as soon as one active row still
+// points at the record identified by keyValue.  DBExportable relations are owned
+// children that get cascade-deleted, so they are ignored here.
+//
+// Each relation maps one or more child columns to columns on this model.  The
+// parent value for a relation column is keyValue when that column is the primary
+// key (column 0); otherwise it is fetched from the record so multi-column and
+// non-primary-key references (e.g. project_people -> "is primary contact") work
+// the same for both the GUI and XML-import delete paths.
+bool SqlQueryModel::hasExternalReferences(const QVariant& keyValue)
+{
+    if (keyValue.isNull() || keyValue.toString().isEmpty())
+        return false;
+
+    for (int i = 0; i < m_relatedTable.size(); ++i)
+    {
+        if (m_relationExportable[i] == DBExportable)
+            continue; // owned children are cascaded, not a blocking reference
+
+        QString where_clause;
+
+        for (int c = 0; c < m_relatedColumns[i].count(); c++)
+        {
+            const QString col_name = m_relatedColumns[i].at(c);
+            const QString fk_col_name = m_relatedFkColumns[i].at(c);
+
+            QString parentVal;
+            if (getColumnNumber(fk_col_name) == 0)
+                parentVal = keyValue.toString();
+            else
+                parentVal = getDBOs()->execute(QString("select %1 from %2 where %3 = '%4'")
+                    .arg(fk_col_name, m_tablename, getColumnName(0), sqlEscapeLiteral(keyValue.toString())));
+
+            if (!where_clause.isEmpty())
+                where_clause += " and ";
+            where_clause += QString(" %1 = '%2' ").arg(col_name, sqlEscapeLiteral(parentVal));
+        }
+
+        const QString cnt = getDBOs()->execute(
+            QString("select count(*) from %1 where %2 AND deleted = 0").arg(m_relatedTable.at(i), where_clause));
+
+        if (cnt.toInt() > 0)
+            return true;
+    }
+
+    return false;
+}
+
+// cascadeDeleteExportableChildren - recursively soft-delete a record's owned children.
+//
+// Given the primary-key value of a parent row in this model's table, walk every
+// related table registered as DBExportable (the same ownership tree used for XML
+// export) and soft-delete each matching child, descending into the children's own
+// exportable children first.  Only owned children are removed; external
+// references (DBNotExportable) are left intact and instead block deletion up front.
+//
+// This uses getDBOs()->execute() and refresh(), which take the database
+// write-lock internally, so it must be called with no DB lock held.
+void SqlQueryModel::cascadeDeleteExportableChildren(const QVariant& parentKeyValue)
+{
+    if (parentKeyValue.isNull() || parentKeyValue.toString().isEmpty())
+        return;
+
+    for (int i = 0; i < m_relatedTable.size(); ++i)
+    {
+        if (m_relationExportable[i] != DBExportable)
+            continue;
+
+        SqlQueryModel* childModel = getDBOs()->createExportObject(m_relatedTable[i]);
+        if (!childModel)
+            continue;
+
+        // Filter the child model to the rows owned by this parent row.  Each
+        // relation column pair maps a child column to a column on this model;
+        // resolve the parent's value and set it as an equality filter.
+        bool filtered = true;
+        for (int c = 0; c < m_relatedColumns[i].count(); c++)
+        {
+            const QString childCol = m_relatedColumns[i].at(c);
+            const QString parentFkCol = m_relatedFkColumns[i].at(c);
+
+            QString parentVal;
+            if (getColumnNumber(parentFkCol) == 0)
+                parentVal = parentKeyValue.toString();
+            else
+                parentVal = getDBOs()->execute(QString("select %1 from %2 where %3 = '%4'")
+                    .arg(parentFkCol, m_tablename, getColumnName(0), sqlEscapeLiteral(parentKeyValue.toString())));
+
+            const int childColNum = childModel->getColumnNumber(childCol);
+            if (childColNum < 0)
+            {
+                filtered = false;
+                break;
+            }
+
+            childModel->setFilter(childColNum, parentVal);
+        }
+
+        if (filtered)
+        {
+            childModel->refresh();
+
+            for (const QVector<QVariant>& childRow : childModel->m_cache)
+            {
+                const QVariant childKey = childRow.value(0);
+                if (childKey.isNull() || childKey.toString().isEmpty())
+                    continue; // skip any blank drop-down placeholder row
+
+                // Delete grandchildren first, then the child itself.
+                childModel->cascadeDeleteExportableChildren(childKey);
+
+                getDBOs()->execute(QString("UPDATE %1 SET deleted = 1 WHERE %2 = '%3'")
+                    .arg(childModel->m_tablename, childModel->getColumnName(0), sqlEscapeLiteral(childKey.toString())));
+
+                getDBOs()->pushRowChange(childModel->m_tablename, childKey, KeyColumnChange::Delete);
+            }
+        }
+
+        delete childModel;
     }
 }

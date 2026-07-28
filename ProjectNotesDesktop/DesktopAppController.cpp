@@ -149,7 +149,8 @@ static QVariantMap proxyRowToMap(SortFilterProxyModel* proxy, int row)
 }
 
 // Delete the record at proxy |row|, surfacing the model's blocked-delete
-// message (child/foreign-key references) via errorOccurred() on failure.
+// message (external, non-owned references) via errorOccurred() on failure.
+// Owned child records are cascade-deleted rather than blocking the delete.
 static bool deleteProxyRow(SortFilterProxyModel* proxy, SqlQueryModel* source, int row)
 {
     const QModelIndex proxyIdx = proxy->index(row, 0);
