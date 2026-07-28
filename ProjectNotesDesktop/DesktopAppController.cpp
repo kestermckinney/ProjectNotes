@@ -5,6 +5,7 @@
 
 #include "databaseobjects.h"
 #include "sortfilterproxymodel.h"
+#include "FolderManager.h"
 #include "projectsmodel.h"
 #include "projectnotesmodel.h"
 #include "meetingattendeesmodel.h"
@@ -32,6 +33,7 @@
 #include <QFileInfo>
 #include <QSet>
 #include <QSettings>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QStandardPaths>
 #include <QTextStream>
@@ -248,6 +250,8 @@ bool DesktopAppController::importXmlFile(const QString& fileUrlOrPath)
     global_DBObjects.peoplemodel()->refresh();
     global_DBObjects.clientsmodel()->refresh();
     global_DBObjects.allitemsmodel()->refresh();
+    if (FolderManager* fm = FolderManager::instance())
+        fm->reload();   // an import may carry updated folder defs/memberships
     return true;
 }
 
@@ -373,12 +377,33 @@ QStringList DesktopAppController::columnDistinctValues(QAbstractItemModel* model
     const int col = src->getColumnNumber(field);
     if (col < 0) return {};
 
+    // Pull the distinct values from the base data rather than from the model's
+    // currently-loaded rows. If we read the live rows, then any filter the user
+    // has already applied has narrowed the model, so reopening the Filter dialog
+    // would only offer the values that survived the filter — you could no longer
+    // pick a different value. constructWhereClause(false) keeps the model's
+    // built-in filters (context filter, deleted-row filter) but drops the
+    // interactive user filter, matching the Widgets ValueSelectModel behavior.
+    const QString dbcol = src->getColumnName(col);
+    QString where = src->constructWhereClause(false);   // "" or " WHERE ... "
+    where = where.isEmpty() ? QStringLiteral(" WHERE ") : (where + QStringLiteral(" AND "));
+
+    const QString sql = "SELECT DISTINCT " + dbcol + " FROM ( " + src->BaseSQL()
+                        + where + dbcol + " IS NOT NULL )";
+
+    const SqlQueryModel::DBColumnType type = src->getType(col);
     QStringList values;
-    const int rows = src->rowCount(QModelIndex());
-    for (int r = 0; r < rows && values.size() < 500; ++r) {
-        const QString v = src->data(src->index(r, col), Qt::DisplayRole).toString().trimmed();
-        if (!v.isEmpty() && !values.contains(v))
-            values.append(v);
+    QSqlQuery q(src->getDBOs()->getDb());
+    if (q.exec(sql)) {
+        while (q.next() && values.size() < 500) {
+            QVariant raw = q.value(0);
+            src->reformatValue(raw, type);   // match the grid's display formatting
+            const QString v = raw.toString().trimmed();
+            if (!v.isEmpty() && !values.contains(v))
+                values.append(v);
+        }
+    } else {
+        qWarning() << "columnDistinctValues query failed:" << q.lastError().text() << sql;
     }
     values.sort(Qt::CaseInsensitive);
     return values;
@@ -428,6 +453,26 @@ void DesktopAppController::refreshModel(QAbstractItemModel* model)
         src->refresh();
 }
 
+int DesktopAppController::folderVisibleCount(QAbstractItemModel* model,
+                                             const QString& folderId) const
+{
+    FolderManager* fm = FolderManager::instance();
+    if (!model || !fm || folderId.isEmpty())
+        return 0;
+
+    // Walk the proxy's currently-visible rows (which already reflect the active
+    // quick-search and column filters) and count the folder members among them.
+    // Column 0 is the project id — the same value QML reads as model.id.
+    int count = 0;
+    const int rows = model->rowCount();
+    for (int r = 0; r < rows; ++r) {
+        const QString pid = model->data(model->index(r, 0)).toString();
+        if (!pid.isEmpty() && fm->isProjectInFolder(pid, folderId))
+            ++count;
+    }
+    return count;
+}
+
 // ── Python plugins ────────────────────────────────────────────────────────────
 
 void DesktopAppController::ensurePluginManager()
@@ -439,6 +484,19 @@ void DesktopAppController::ensurePluginManager()
     // PluginManager::instance() for the Python callbacks.
     PluginManager::setDeveloperProfile(s_developerProfile);
     m_pluginManager = new PluginManager(this);
+
+    // A plugin that imports data (Python set_data) runs on a worker thread with
+    // its own non-GUI DatabaseObjects, which queues the touched rows into
+    // global_DBObjects and then emits pluginRefreshRequest. Drain that queue on
+    // the GUI thread so the displayed lists pick up the added/updated/removed
+    // rows — the same wiring MainWindow::onRefreshRequested provides in the
+    // Widgets app. Without this, background plugin imports never reach the UI.
+    connect(m_pluginManager, &PluginManager::pluginRefreshRequest,
+            this, [] {
+                global_DBObjects.updateDisplayData();
+                if (FolderManager* fm = FolderManager::instance())
+                    fm->reload();
+            });
 }
 
 QVariantList DesktopAppController::pluginMenusForModel(QAbstractItemModel* model)
@@ -1605,6 +1663,8 @@ void DesktopAppController::onSyncRowChanged(const QString& tableName, const QStr
 void DesktopAppController::onSyncComplete(const SyncResult& result)
 {
     global_DBObjects.updateDisplayData();
+    if (FolderManager* fm = FolderManager::instance())
+        fm->reload();   // pick up folder defs/memberships pulled from another device
     m_syncNetworkError = result.hasNetworkError();
     if (result.success) {
         m_syncHasError = false;

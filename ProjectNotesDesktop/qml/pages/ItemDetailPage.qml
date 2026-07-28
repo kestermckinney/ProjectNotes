@@ -18,6 +18,19 @@ Item {
     readonly property string exportTable: "item_tracker"
     readonly property string exportId: itemId
 
+    // Consumed by the TopBar's Delete action (Main.deleteCurrent()).
+    readonly property bool canDelete: true
+
+    // Delete this tracker item. The detail model always holds the item at row 0.
+    // The project Tracker tab and the master Items list query item_tracker through
+    // separate models, so refresh them explicitly once the record is gone.
+    function _deleteRecord() {
+        if (!DesktopAppController.deleteTrackerItemDetail(0)) return false
+        DesktopAppController.refreshModel(DesktopAppController.projectTrackerItemsModel)
+        DesktopAppController.refreshAllItems()
+        return true
+    }
+
     function _peopleNames() { return _people.map(function(p){ return p.name }) }
     function _idForName(n){ for (var i=0;i<_people.length;i++) if (_people[i].name===n) return _people[i].id; return "" }
     function _nameForId(id){ for (var i=0;i<_people.length;i++) if (_people[i].id===id) return _people[i].name; return "" }

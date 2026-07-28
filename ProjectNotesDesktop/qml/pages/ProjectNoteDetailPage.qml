@@ -17,6 +17,15 @@ Item {
     property bool   isNewRecord: false
     property bool   _changed: false
 
+    // Consumed by the TopBar's Delete action (Main.deleteCurrent()).
+    readonly property bool canDelete: true
+
+    // Delete this note. Removes the row from the shared project-notes model, so the
+    // project's Notes tab refreshes itself once Main pops back to it.
+    function _deleteRecord() {
+        return DesktopAppController.deleteProjectNote(page.noteRow)
+    }
+
     // People list for the action-item Assigned/Identified combos.
     property var    _people: []
     function _peopleNames() { return _people.map(function(p){ return p.name }) }

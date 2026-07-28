@@ -23,6 +23,17 @@ Item {
     readonly property string exportTable: "projects"
     readonly property string exportId: projectId
 
+    // Consumed by the TopBar's Delete action (Main.deleteCurrent()).
+    readonly property bool canDelete: true
+
+    // Delete this project. Removes the row from the shared projects model, so the
+    // projects list refreshes itself once Main pops back to it.
+    function _deleteRecord() {
+        var r = DesktopAppController.projectRowForId(page.projectId)
+        if (r < 0) return false
+        return DesktopAppController.deleteProject(r)
+    }
+
     // Client / contact id<->name mapping tables (built once).
     property var _clients: []
     property var _people: []

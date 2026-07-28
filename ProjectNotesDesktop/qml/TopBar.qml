@@ -19,12 +19,14 @@ Rectangle {
     property bool showSearch: true
     property bool showBack: false
     property bool showExport: false
+    property bool showDelete: false
     property bool showFilter: true
 
     signal searchEdited(string text)
     signal addClicked()
     signal backClicked()
     signal exportClicked()
+    signal deleteClicked()
     signal filterClicked()
 
     Rectangle {
@@ -68,6 +70,25 @@ Rectangle {
         }
 
         Item { Layout.fillWidth: true }
+
+        // Delete record (shown on record detail pages)
+        Rectangle {
+            visible: bar.showDelete
+            implicitHeight: 34
+            implicitWidth: delRow.implicitWidth + 22
+            radius: Theme.radiusSm
+            color: delHover.hovered ? Theme.redSoft : Theme.surface
+            border.color: delHover.hovered ? Theme.red : Theme.border
+            RowLayout {
+                id: delRow
+                anchors.centerIn: parent
+                spacing: 6
+                MaterialIcon { name: "delete"; size: 17; color: Theme.red }
+                Text { text: qsTr("Delete"); color: Theme.red; font.pixelSize: 13 }
+            }
+            HoverHandler { id: delHover }
+            TapHandler { onTapped: bar.deleteClicked() }
+        }
 
         // Export XML (shown on record detail pages)
         Rectangle {

@@ -85,6 +85,12 @@ private:
     QVector<Folder>              m_folders;
     QHash<QString, QStringList>  m_memberships;   // projectId -> [folderId,...]
 
+    // The exact JSON string currently reflected in m_folders/m_memberships (as
+    // last loaded from or saved to application_settings). reload() compares the
+    // stored document against this so a no-op reload — e.g. after a sync cycle
+    // that didn't touch project_folders — skips the foldersChanged churn.
+    QString                      m_rawJson;
+
     static FolderManager* s_instance;
 
     static const QString kSettingKey;

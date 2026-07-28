@@ -174,18 +174,39 @@ ApplicationWindow {
         exportDialog.open()
     }
 
-    function goBack() {
-        _saveCurrent()
+    // Pop the current detail page and recompute the breadcrumb for the page we
+    // return to. Shared by goBack() and deleteCurrent().
+    function _popAndRecrumb() {
         if (contentStack.depth > 1) {
             contentStack.pop()
-            root.crumbSub = contentStack.depth > 1 ? root.crumbSub : ""
-            // Recompute crumb for the page we returned to.
             var it = contentStack.currentItem
             root.crumbSub = (it && it.projectId !== undefined && it.noteRow === undefined)
                 ? DesktopAppController.projectNumberForId(it.projectId) + " "
                   + DesktopAppController.projectNameForId(it.projectId)
                 : ""
         }
+    }
+
+    function goBack() {
+        _saveCurrent()
+        _popAndRecrumb()
+    }
+
+    // Delete the record shown on the current detail page, then return to its list.
+    // The page's _deleteRecord() removes the row from the underlying model(s); on
+    // success we pop back WITHOUT saving (the record no longer exists).
+    function deleteCurrent() {
+        var it = contentStack.currentItem
+        if (!it || typeof it._deleteRecord !== "function") return
+        if (it._deleteRecord())
+            _popAndRecrumb()
+    }
+
+    function confirmDelete() {
+        var it = contentStack.currentItem
+        if (!it || it.canDelete !== true) return
+        confirmLabel.text = root.crumbSub
+        confirmDeleteDialog.open()
     }
 
     // ── Layout ────────────────────────────────────────────────────────────────
@@ -228,7 +249,10 @@ ApplicationWindow {
                             && contentStack.currentItem.exportTable !== undefined
                             && contentStack.currentItem.exportTable !== ""
                             && contentStack.currentItem.exportId !== ""
+                showDelete: contentStack.currentItem
+                            && contentStack.currentItem.canDelete === true
                 onBackClicked: root.goBack()
+                onDeleteClicked: root.confirmDelete()
                 onExportClicked: root.exportRecord(contentStack.currentItem.exportTable,
                                                    contentStack.currentItem.exportId)
                 onAddClicked: root.addForCurrentSection()
@@ -401,6 +425,102 @@ ApplicationWindow {
                         }
                         HoverHandler { id: okHover }
                         TapHandler { onTapped: errorDialog.close() }
+                    }
+                }
+            }
+        }
+    }
+
+    // Delete confirmation for the current detail record (project / item / note).
+    Dialog {
+        id: confirmDeleteDialog
+        anchors.centerIn: parent
+        width: 380
+        modal: true
+        padding: 0
+        closePolicy: Popup.CloseOnEscape
+        title: qsTr("Delete Record")
+
+        background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
+        header: null
+        footer: null
+
+        contentItem: ColumnLayout {
+            spacing: 0
+
+            // Header
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.margins: 14
+                spacing: 8
+                MaterialIcon { name: "delete"; size: 20; color: Theme.red }
+                Text {
+                    text: confirmDeleteDialog.title
+                    color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
+                    Layout.fillWidth: true
+                }
+                MaterialIcon {
+                    name: "close"; size: 20; color: Theme.text3
+                    TapHandler { onTapped: confirmDeleteDialog.close() }
+                }
+            }
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
+
+            // Message + buttons
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.margins: 18
+                spacing: 16
+                Text {
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    color: Theme.text
+                    font.pixelSize: 13
+                    text: {
+                        var l = confirmLabel.text.trim()
+                        return l === ""
+                            ? qsTr("Delete this record? This cannot be undone.")
+                            : qsTr("Delete “%1”? This cannot be undone.").arg(l)
+                    }
+                }
+                // Hidden holder for the record label (set by confirmDelete()).
+                Text { id: confirmLabel; visible: false }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignRight
+                    spacing: 10
+                    Item { Layout.fillWidth: true }
+                    Rectangle {
+                        implicitHeight: 30
+                        implicitWidth: cancelText.implicitWidth + 26
+                        radius: Theme.radiusSm
+                        color: cancelHover.hovered ? Theme.surface2 : Theme.surface
+                        border.color: Theme.border
+                        Text {
+                            id: cancelText
+                            anchors.centerIn: parent
+                            text: qsTr("Cancel")
+                            color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                        }
+                        HoverHandler { id: cancelHover }
+                        TapHandler { onTapped: confirmDeleteDialog.close() }
+                    }
+                    Rectangle {
+                        implicitHeight: 30
+                        implicitWidth: delConfirmText.implicitWidth + 26
+                        radius: Theme.radiusSm
+                        color: delConfirmHover.hovered ? Theme.red : Theme.redSoft
+                        border.color: Theme.red
+                        Text {
+                            id: delConfirmText
+                            anchors.centerIn: parent
+                            text: qsTr("Delete")
+                            color: delConfirmHover.hovered ? "#ffffff" : Theme.red
+                            font.pixelSize: 12; font.weight: Font.DemiBold
+                        }
+                        HoverHandler { id: delConfirmHover }
+                        TapHandler { onTapped: { confirmDeleteDialog.close(); root.deleteCurrent() } }
                     }
                 }
             }

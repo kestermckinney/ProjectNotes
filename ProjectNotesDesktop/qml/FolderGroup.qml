@@ -47,7 +47,33 @@ Column {
         model: group.isAll ? group.listModel : null
         delegate: QtObject {}
     }
-    readonly property int displayCount: group.isAll ? allCounter.count : group.folderCount
+
+    // Bumped whenever the shared list model's visible rows change (the sidebar
+    // quick-search or the column-filter editor), so a named folder recounts the
+    // members that survive the active filter.
+    property int filterRev: 0
+    Connections {
+        target: group.listModel
+        enabled: !group.isAll
+        function onModelReset()    { group.filterRev++ }
+        function onRowsInserted()  { group.filterRev++ }
+        function onRowsRemoved()   { group.filterRev++ }
+        function onLayoutChanged() { group.filterRev++ }
+    }
+
+    // "All Projects" counts every visible row via the Instantiator above. A named
+    // folder counts only its members that are currently visible in the filtered
+    // model; with no filter active that equals its full membership. filterRev and
+    // membershipRev are touched so the count re-evaluates on filter/membership
+    // changes (folderVisibleCount is an imperative call).
+    readonly property int displayCount: {
+        if (group.isAll)
+            return allCounter.count
+        var _dep = group.filterRev + group.membershipRev
+        return _dep >= 0
+            ? DesktopAppController.folderVisibleCount(group.listModel, group.folderId)
+            : 0
+    }
 
     // Handle a project dropped onto this group.
     function _handleDrop(drop) {

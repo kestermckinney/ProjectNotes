@@ -54,6 +54,13 @@ QVariantList FolderManager::folders() const
 
 void FolderManager::reload()
 {
+    // Callers (sync completion, XML/plugin import) invoke this whenever external
+    // data may have changed. Only rebuild — and only signal QML — when the stored
+    // document actually differs from what we already hold, so an unrelated sync
+    // never resets the sidebar's expand state or re-instantiates its rows.
+    if (global_DBObjects.loadParameter(kSettingKey) == m_rawJson)
+        return;
+
     load();
     emit foldersChanged();
 }
@@ -64,6 +71,7 @@ void FolderManager::load()
     m_memberships.clear();
 
     const QString raw = global_DBObjects.loadParameter(kSettingKey);
+    m_rawJson = raw;
     if (raw.isEmpty())
         return;
 
@@ -127,7 +135,9 @@ void FolderManager::save()
     root.insert(QStringLiteral("memberships"), memberships);
 
     const QByteArray json = QJsonDocument(root).toJson(QJsonDocument::Compact);
-    global_DBObjects.saveParameter(kSettingKey, QString::fromUtf8(json));
+    m_rawJson = QString::fromUtf8(json);   // keep in step so a synced echo of this
+                                           // same value is recognised as a no-op
+    global_DBObjects.saveParameter(kSettingKey, m_rawJson);
 
     emit foldersChanged();
 }

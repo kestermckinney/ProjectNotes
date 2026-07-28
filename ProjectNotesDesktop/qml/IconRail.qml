@@ -47,16 +47,6 @@ Rectangle {
             }
         }
 
-        // Brand mark
-        Rectangle {
-            Layout.alignment: Qt.AlignHCenter
-            Layout.topMargin: 4
-            Layout.bottomMargin: 8
-            width: 30; height: 30; radius: 8
-            color: Theme.accent
-            MaterialIcon { anchors.centerIn: parent; name: "description"; size: 19; color: "#ffffff" }
-        }
-
         RailButton { icon: "description"; section: "projects" }
         RailButton { icon: "task_alt";    section: "items" }
         RailButton { icon: "group";       section: "people" }

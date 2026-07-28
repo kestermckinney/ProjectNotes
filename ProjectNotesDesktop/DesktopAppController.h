@@ -146,6 +146,12 @@ public:
     // Re-run a list model's query (context-menu "Refresh").
     Q_INVOKABLE void refreshModel(QAbstractItemModel* model);
 
+    // Count the projects in `folderId` that are currently *visible* in `model`
+    // (i.e. that survive the active quick-search / column filter). With no
+    // filter active this equals the folder's full membership, so sidebar folder
+    // badges show the filtered result set only while filtering is on.
+    Q_INVOKABLE int folderVisibleCount(QAbstractItemModel* model, const QString& folderId) const;
+
     // ── Python plugins (right-click menus, mirrors the Widgets TableView) ─────
     // Menus registered by loaded plugins whose dataexport matches this model's
     // table, as [{ title, submenu, index }]. `index` is an opaque handle into a
