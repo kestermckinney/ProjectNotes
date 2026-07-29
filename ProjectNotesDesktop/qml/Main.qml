@@ -29,7 +29,8 @@ ApplicationWindow {
         "people":   { icon: "group",       title: "People",   newLabel: "New Person",  search: true,  add: true  },
         "clients":  { icon: "apartment",   title: "Clients",  newLabel: "New Client",  search: true,  add: true  },
         "search":   { icon: "search",      title: "Search",   newLabel: "",            search: false, add: false },
-        "settings": { icon: "settings",    title: "Settings", newLabel: "",            search: false, add: false }
+        "settings": { icon: "settings",    title: "Settings", newLabel: "",            search: false, add: false },
+        "help":     { icon: "menu_book",   title: "User Guide", newLabel: "",           search: false, add: false }
     })
     readonly property var meta: sectionMeta[currentSection]
 
@@ -68,8 +69,24 @@ ApplicationWindow {
         case "items":    contentStack.push(itemsComponent); break
         case "search":   contentStack.push(searchComponent); break
         case "settings": contentStack.push(settingsComponent); break
+        case "help":     contentStack.push(helpComponent, { topic: root._pendingHelpTopic }); break
         default:         contentStack.push(stubComponent); break
         }
+    }
+
+    // Open the embedded User Guide on a topic. Called by the menu + F1 with the
+    // context topic for the current section; re-drives the page in place if help
+    // is already the active section.
+    property string _pendingHelpTopic: "index.md"
+    function openHelp(topic) {
+        var t = (topic && topic.length) ? topic : "index.md"
+        if (root.currentSection === "help" && contentStack.currentItem
+                && typeof contentStack.currentItem.openHelp === "function") {
+            contentStack.currentItem.openHelp(t)
+            return
+        }
+        root._pendingHelpTopic = t
+        root.selectSection("help")
     }
 
     // Navigate to a search result based on its datatype.
@@ -160,6 +177,7 @@ ApplicationWindow {
         case "sync":        DesktopAppController.syncNow(); break
         case "filter":      filterDialog.openFor(root.currentSection); break
         case "logs":        logViewer.openViewer(); break
+        case "help":        root.openHelp(root._helpTopicForSection(root.currentSection)); break
         case "exit":        Qt.quit(); break
         }
     }
@@ -395,6 +413,10 @@ ApplicationWindow {
         SettingsPage {}
     }
     Component {
+        id: helpComponent
+        HelpPage { topic: root._pendingHelpTopic }
+    }
+    Component {
         id: stubComponent
         StubPage {
             pageTitle: root.meta.title
@@ -593,4 +615,24 @@ ApplicationWindow {
 
     // Log Viewer — a separate, movable, non-modal window opened from the menu.
     LogViewerWindow { id: logViewer }
+
+    // Map the active shell section to the help topic that documents it, so F1 /
+    // Help ▸ User Guide opens context-sensitively. Falls back to the home page.
+    function _helpTopicForSection(section) {
+        switch (section) {
+        case "projects": return "InterfaceOverview/ProjectListPage.md"
+        case "people":   return "InterfaceOverview/PeopleListPage.md"
+        case "clients":  return "InterfaceOverview/ClientListPage.md"
+        case "items":    return "InterfaceOverview/ItemTrackerPage.md"
+        case "search":   return "InterfaceOverview/SearchPage.md"
+        case "settings": return "InterfaceOverview/Preferences.md"
+        default:         return "index.md"
+        }
+    }
+
+    // F1 opens the User Guide on the current screen's topic.
+    Shortcut {
+        sequence: StandardKey.HelpContents
+        onActivated: root.openHelp(root._helpTopicForSection(root.currentSection))
+    }
 }

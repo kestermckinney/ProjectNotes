@@ -36,6 +36,7 @@ qt_add_executable(ProjectNotesDesktop
     DesktopAppController.cpp DesktopAppController.h
     FolderManager.cpp        FolderManager.h
     LogViewerController.cpp  LogViewerController.h
+    HelpController.cpp       HelpController.h
     SpellCheck.cpp           SpellCheck.h
     # Shared rich-text bridge — reused verbatim from the mobile app.
     ../ProjectNotesMobile/TextFormatter.cpp ../ProjectNotesMobile/TextFormatter.h
@@ -65,6 +66,7 @@ set(DESKTOP_QML_FILES
     qml/TopBar.qml
     qml/AppMenu.qml
     qml/LogViewerWindow.qml
+    qml/HelpPage.qml
     qml/FilterDialog.qml
     qml/RecordContextMenu.qml
     qml/RecordRowMenu.qml
@@ -101,6 +103,21 @@ qt_add_qml_module(ProjectNotesDesktop
     RESOURCES
         resources/MaterialSymbolsRounded.woff2
         icons/projectnotes.ico
+)
+
+# ── In-app help content ───────────────────────────────────────────────────────
+# Bundle the shared Markdown docs (the same tree that builds the mkdocs website)
+# so the QML User Guide (HelpController + HelpPage.qml) renders them offline.
+# BASE = ../docs makes each file land at
+#   qrc:/qt/qml/ProjectNotesDesktop/help/<path-relative-to-docs>
+# CONFIGURE_DEPENDS re-globs when files are added/removed on the next build.
+file(GLOB_RECURSE HELP_MD  CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../docs/*.md")
+file(GLOB         HELP_IMG CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../docs/img/*")
+set(HELP_TOC "${CMAKE_CURRENT_SOURCE_DIR}/../docs/help_toc.json")
+qt_add_resources(ProjectNotesDesktop "helpcontent"
+    PREFIX "/qt/qml/ProjectNotesDesktop/help"
+    BASE   "${CMAKE_CURRENT_SOURCE_DIR}/../docs"
+    FILES  ${HELP_MD} ${HELP_IMG} ${HELP_TOC}
 )
 
 # ── Shared data layer ─────────────────────────────────────────────────────────

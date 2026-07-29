@@ -20,9 +20,10 @@ Popup {
     dim: false
     padding: 6
     width: 232
-    scale: Theme.uiScale            // match the zoomed workspace
-    transformOrigin: Item.TopLeft   // grow down-right from the rail anchor
-    // Rendered in the window overlay so it can float over the sidebar/content.
+    // A real floating window so the full File/Edit/View/Help list can spill past
+    // the window edge instead of being clipped (Qt keeps it on-screen). As a
+    // detached window it renders at 1x — the workspace zoom no longer applies.
+    popupType: Popup.Window
 
     background: Rectangle {
         radius: Theme.radius
@@ -60,6 +61,7 @@ Popup {
             { icon: "description", label: qsTr("Log Viewer"), key: "", action: "logs" },
         ]},
         { name: qsTr("Help"), items: [
+            { icon: "menu_book", label: qsTr("User Guide"), key: "F1", action: "help" },
             { icon: "info", label: qsTr("About"), key: "", action: "about" },
         ]},
     ]

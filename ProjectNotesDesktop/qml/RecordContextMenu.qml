@@ -48,9 +48,14 @@ Popup {
     dim: false
     padding: 5
     width: 232
-    parent: Overlay.overlay
-    scale: Theme.uiScale            // match the zoomed workspace
-    transformOrigin: Item.TopLeft   // grow down-right from the cursor anchor
+    // A real floating window so the menu can spill past the main-window edges when
+    // the plugin list makes it taller than the window (Qt keeps it on-screen).
+    // As a detached window it renders at 1x — the workspace zoom (Theme.uiScale)
+    // no longer applies, matching the LogViewerWindow precedent.
+    // NOTE: a window popup anchors to its PARENT ITEM's surface, so we keep the
+    // default parent (the page it's declared in) — NOT Overlay.overlay, which on
+    // Wayland collapses the anchor and dumps the menu in a window corner.
+    popupType: Popup.Window
 
     background: Rectangle {
         radius: Theme.radius
@@ -69,15 +74,15 @@ Popup {
         else
             menu._plugins = []
         menu._sections = menu._groupPlugins(menu._plugins)
-        var maxX = (parent ? parent.width : sx + width) - width - 6
-        var maxY = (parent ? parent.height : sy + 320) - 320
-        x = Math.max(6, Math.min(sx, maxX))
-        y = Math.max(6, Math.min(sy, maxY))
+        // sx,sy are scene (window) coordinates. A window popup positions relative to
+        // its parent item's surface, so convert to parent-local coords (this also
+        // accounts for the zoomLayer scale). It can still extend past the window
+        // edge — Qt keeps it on-screen.
+        var lp = menu.parent ? menu.parent.mapFromItem(null, sx, sy) : Qt.point(sx, sy)
+        x = lp.x
+        y = lp.y
         open()
     }
-
-    // The plugin section makes the menu taller; keep it on-screen once laid out.
-    onHeightChanged: if (visible && parent) y = Math.max(6, Math.min(y, parent.height - height - 6))
 
     function _fire(sig) { close(); sig() }
     function _runPlugin(idx) {

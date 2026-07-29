@@ -82,8 +82,10 @@ ColumnLayout {
             width: 260
             padding: 10
             modal: false
-            scale: Theme.uiScale
-            transformOrigin: Item.TopLeft
+            // A real floating window so the calendar can spill past the window edge
+            // when the field sits low and it fits neither above nor below inside the
+            // window (Qt keeps it on-screen). Renders at 1x — no workspace zoom.
+            popupType: Popup.Window
             background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
 
             property int shownMonth: (new Date()).getMonth()
@@ -96,24 +98,20 @@ ColumnLayout {
                 open()
             }
 
-            // Position the popup below the field, but flip above / clamp sideways
-            // so a field low or near the edge of the window isn't clipped.
+            // Prefer opening below the field, but flip above when the field sits low
+            // in the window. As a window popup it can spill past the window edge, so
+            // Qt handles final on-screen placement — no hard horizontal clamp needed.
             onAboutToShow: _place()
             function _place() {
+                popup.x = 0
                 var win = fieldBox.Window.window
                 var ph = popup.height > 0 ? popup.height : 300
-                if (!win) { popup.x = 0; popup.y = fieldBox.height + 4; return }
+                if (!win) { popup.y = fieldBox.height + 4; return }
                 var pos = fieldBox.mapToItem(null, 0, 0)
                 if (pos.y + fieldBox.height + 4 + ph > win.height && pos.y - ph - 4 >= 0)
                     popup.y = -ph - 4
                 else
                     popup.y = fieldBox.height + 4
-                var px = 0
-                if (pos.x + popup.width > win.width)
-                    px = win.width - popup.width - pos.x
-                if (pos.x + px < 0)
-                    px = -pos.x
-                popup.x = px
             }
             function _prev() {
                 if (shownMonth === 0) { shownMonth = 11; shownYear-- }

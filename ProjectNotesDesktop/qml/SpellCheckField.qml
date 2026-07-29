@@ -72,9 +72,11 @@ Item {
         dim: false
         padding: 5
         width: 232
-        parent: Overlay.overlay
-        scale: Theme.uiScale
-        transformOrigin: Item.TopLeft
+        // A real floating window so a long suggestion list can spill past the
+        // window edge (Qt keeps it on-screen). Renders at 1x — no workspace zoom.
+        // Keep the default parent (this field) — a window popup anchors to its
+        // parent item's surface; Overlay.overlay breaks that anchor on Wayland.
+        popupType: Popup.Window
 
         background: Rectangle {
             radius: Theme.radius
@@ -83,13 +85,14 @@ Item {
         }
 
         function openAt(sx, sy) {
-            var maxX = (parent ? parent.width : sx + width) - width - 6
-            var maxY = (parent ? parent.height : sy + 280) - 60
-            x = Math.max(6, Math.min(sx, maxX))
-            y = Math.max(6, Math.min(sy, maxY))
+            // sx,sy are scene coords; a window popup positions relative to its
+            // parent item's surface, so convert to parent-local (also handles the
+            // zoomLayer scale). It can still spill past the window edge.
+            var lp = menu.parent ? menu.parent.mapFromItem(null, sx, sy) : Qt.point(sx, sy)
+            x = lp.x
+            y = lp.y
             open()
         }
-        onHeightChanged: if (visible && parent) y = Math.max(6, Math.min(y, parent.height - height - 6))
 
         contentItem: ColumnLayout {
             spacing: 0

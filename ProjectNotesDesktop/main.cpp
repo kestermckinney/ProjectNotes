@@ -3,6 +3,7 @@
 
 #include "DesktopAppController.h"
 #include "FolderManager.h"
+#include "HelpController.h"
 #include "LogViewerController.h"
 #include "SpellCheck.h"
 #include "TextFormatter.h"
@@ -80,6 +81,8 @@ int main(int argc, char* argv[])
         "ProjectNotesDesktop", 1, 0, "FolderManager", &FolderManager::create);
     qmlRegisterSingletonType<LogViewerController>(
         "ProjectNotesDesktop", 1, 0, "LogViewerController", &LogViewerController::create);
+    qmlRegisterSingletonType<HelpController>(
+        "ProjectNotesDesktop", 1, 0, "HelpController", &HelpController::create);
     qmlRegisterSingletonType<TextFormatter>(
         "ProjectNotesDesktop", 1, 0, "TextFormatter", &TextFormatter::create);
     // Creatable (non-singleton) inline spell-check attach type.

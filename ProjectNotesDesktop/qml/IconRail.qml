@@ -64,6 +64,7 @@ Rectangle {
             selectable: false
             onClicked: Theme.toggle()
         }
+        RailButton { icon: "menu_book"; section: "help" }
         RailButton { icon: "settings"; section: "settings" }
 
         // Avatar
