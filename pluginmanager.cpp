@@ -12,6 +12,7 @@
 #include "QLogger.h"
 #include "QLoggerWriter.h"
 #include "databaseobjects.h"
+#include "credentialstore.h"
 
 using namespace QLogger;
 
@@ -175,6 +176,55 @@ static PyObject* force_reload(PyObject* self, PyObject* args)
     Py_RETURN_NONE;
 }
 
+static PyObject* get_secret(PyObject* self, PyObject* args)
+{
+    Q_UNUSED(self);
+    const char* service;
+    const char* account;
+    if (!PyArg_ParseTuple(args, "ss", &service, &account)) return nullptr;
+    QString error;
+    const QString secret = CredentialStore::read(QString::fromUtf8(service), QString::fromUtf8(account), &error);
+    if (!error.isEmpty())
+    {
+        PyErr_SetString(PyExc_RuntimeError, error.toUtf8().constData());
+        return nullptr;
+    }
+    if (secret.isEmpty()) Py_RETURN_NONE;
+    return PyUnicode_FromString(secret.toUtf8().constData());
+}
+
+static PyObject* set_secret(PyObject* self, PyObject* args)
+{
+    Q_UNUSED(self);
+    const char* service;
+    const char* account;
+    const char* secret;
+    if (!PyArg_ParseTuple(args, "sss", &service, &account, &secret)) return nullptr;
+    QString error;
+    if (!CredentialStore::write(QString::fromUtf8(service), QString::fromUtf8(account),
+                                QString::fromUtf8(secret), &error))
+    {
+        PyErr_SetString(PyExc_RuntimeError, error.toUtf8().constData());
+        return nullptr;
+    }
+    Py_RETURN_TRUE;
+}
+
+static PyObject* delete_secret(PyObject* self, PyObject* args)
+{
+    Q_UNUSED(self);
+    const char* service;
+    const char* account;
+    if (!PyArg_ParseTuple(args, "ss", &service, &account)) return nullptr;
+    QString error;
+    if (!CredentialStore::remove(QString::fromUtf8(service), QString::fromUtf8(account), &error))
+    {
+        PyErr_SetString(PyExc_RuntimeError, error.toUtf8().constData());
+        return nullptr;
+    }
+    Py_RETURN_TRUE;
+}
+
 
 
 PyMethodDef Stdout_methods[] =
@@ -189,6 +239,9 @@ PyMethodDef data_methods[] =
         {"update_data", update_data, METH_VARARGS, "projectnotes.update_data"},
         {"get_data", get_data, METH_VARARGS, "projectnotes.get_data"},
         {"force_reload", force_reload, METH_VARARGS, "projectnotes.force_reload"},
+        {"get_secret", get_secret, METH_VARARGS, "Read a secret from the operating-system credential store."},
+        {"set_secret", set_secret, METH_VARARGS, "Write a secret to the operating-system credential store."},
+        {"delete_secret", delete_secret, METH_VARARGS, "Delete a secret from the operating-system credential store."},
         {0, 0, 0, 0} // sentinel
 };
 

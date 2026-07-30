@@ -11,6 +11,7 @@ command: projectnotes
 finish-args:
   - --share=ipc
   - --share=network
+  - --talk-name=org.freedesktop.secrets
   - --socket=fallback-x11
   - --socket=wayland
   # Full home access is core to the product, not a convenience:
