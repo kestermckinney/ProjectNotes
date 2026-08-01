@@ -221,6 +221,7 @@ ApplicationWindow {
         case "preferences":
         case "about":       selectSection("settings"); break
         case "sync":        DesktopAppController.syncNow(); break
+        case "sync_all":    DesktopAppController.syncAll(); break
         case "filter":      filterDialog.openFor(root.currentSection); break
         case "logs":        logViewer.openViewer(); break
         case "help":        root.openHelp(root._helpTopicForSection(root.currentSection)); break

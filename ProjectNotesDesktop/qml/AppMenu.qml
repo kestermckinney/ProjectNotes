@@ -40,6 +40,7 @@ Popup {
             { icon: "download",  label: qsTr("Import XML…"), key: "",   action: "import" },
             { icon: "settings",  label: qsTr("Preferences"), key: "⌘,", action: "preferences" },
             { icon: "sync",      label: qsTr("Sync Now"),    key: "",   action: "sync" },
+            { icon: "sync_alt",  label: qsTr("Sync All"),    key: "",   action: "sync_all" },
             { icon: "logout",    label: qsTr("Exit"),        key: "",   action: "exit" },
         ]},
         { name: qsTr("Edit"), items: [
@@ -68,6 +69,27 @@ Popup {
         ]},
     ]
 
+    // Global (dataless) plugin menus — Plugins > Settings / Utilities / etc. in
+    // the Widgets menu bar. Rebuilt each time the menu opens since plugins can
+    // hot-reload. One group per distinct submenu (e.g. "Settings", "Utilities").
+    property var pluginGroups: []
+    function _rebuildPluginGroups() {
+        var bysubmenu = {}
+        var order = []
+        var entries = DesktopAppController.globalPluginMenus()
+        for (var i = 0; i < entries.length; i++) {
+            var e = entries[i]
+            var sub = e.submenu || qsTr("Plugins")
+            if (!bysubmenu[sub]) { bysubmenu[sub] = []; order.push(sub) }
+            bysubmenu[sub].push({ icon: "extension", label: e.title, key: "", action: "plugin:" + e.index })
+        }
+        var groups = []
+        for (var g = 0; g < order.length; g++)
+            groups.push({ name: qsTr("Plugins") + " · " + order[g], items: bysubmenu[order[g]] })
+        pluginGroups = groups
+    }
+    onAboutToShow: _rebuildPluginGroups()
+
     function _act(a) {
         switch (a) {
         case "toggle_theme":    Theme.toggle(); return
@@ -78,14 +100,20 @@ Popup {
         case "zoom_in":         Theme.zoomIn();    return
         case "zoom_out":        Theme.zoomOut();   return
         case "zoom_reset":      Theme.zoomReset(); return
-        default: menu.triggered(a); menu.close()
+        default:
+            if (a.indexOf("plugin:") === 0) {
+                DesktopAppController.runGlobalPluginMenu(parseInt(a.substring(7), 10))
+                menu.close()
+                return
+            }
+            menu.triggered(a); menu.close()
         }
     }
 
     contentItem: ColumnLayout {
         spacing: 0
         Repeater {
-            model: menu.groups
+            model: menu.groups.concat(menu.pluginGroups)
             delegate: ColumnLayout {
                 required property var modelData
                 Layout.fillWidth: true

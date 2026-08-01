@@ -612,6 +612,46 @@ void DesktopAppController::runPluginMenuForTable(const QString& table,
     delete xdoc;
 }
 
+QVariantList DesktopAppController::globalPluginMenus()
+{
+    QVariantList out;
+    m_globalPluginMenuCache.clear();
+    if (!m_pluginManager)
+        return out;
+
+    // A menu is "global" (Plugins > Settings / Utilities / etc. in the Widgets
+    // menu bar) when its dataexport is empty — same rule buildPluginMenu() uses
+    // to skip record menus, inverted.
+    for (Plugin* p : m_pluginManager->plugins()) {
+        if (!p || !p->loaded())
+            continue;
+        for (const PluginMenu& m : p->pythonplugin().menus()) {
+            if (!m.dataexport().isEmpty())
+                continue;
+
+            m_globalPluginMenuCache.append({ p, m.functionname(), QString(), m.parameter() });
+
+            QVariantMap entry;
+            entry["title"]   = m.menutitle();
+            entry["submenu"] = m.submenu();
+            entry["index"]   = m_globalPluginMenuCache.size() - 1;
+            out.append(entry);
+        }
+    }
+    return out;
+}
+
+void DesktopAppController::runGlobalPluginMenu(int index)
+{
+    if (index < 0 || index >= m_globalPluginMenuCache.size())
+        return;
+    const PluginMenuRef& ref = m_globalPluginMenuCache.at(index);
+    if (!ref.plugin)
+        return;
+
+    ref.plugin->callMethod(ref.functionname, ref.parameter);
+}
+
 // ── Filters / refresh ────────────────────────────────────────────────────────
 
 void DesktopAppController::setProjectFilter(const QString& projectId)
@@ -1873,6 +1913,34 @@ void DesktopAppController::syncNow()
                 }
             }, Qt::QueuedConnection);
         }
+    }, Qt::QueuedConnection);
+}
+
+void DesktopAppController::syncAll()
+{
+    if (!syncEnabled() || !global_DBObjects.isOpen())
+        return;
+
+    configureSyncApi();
+
+    SqliteSyncPro* api = m_syncApi;
+    QString dataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if (!s_developerProfile.isEmpty())
+        dataDir += "/" + s_developerProfile;
+    const QString dbPath = dataDir + "/ProjectNotes.db";
+
+    setSyncProgress(0.01, false);   // show the indicator immediately
+
+    QMetaObject::invokeMethod(api, [this, api, dbPath]() {
+        if (!api->isInitialized()) {
+            api->setDatabasePath(dbPath);
+            if (!api->initialize()) {
+                QMetaObject::invokeMethod(this, [this]() { setSyncProgress(0.0, true); },
+                                          Qt::QueuedConnection);
+                return;
+            }
+        }
+        api->syncAll();
     }, Qt::QueuedConnection);
 }
 

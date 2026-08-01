@@ -40,7 +40,8 @@ QVariant SearchResultsModel::data(const QModelIndex &index, int role) const
     QVariant val = SqlQueryModel::data(index, role);
 
     // datadescription is column 3; strip HTML for display if the content contains markup
-    if (index.column() == 3 && role == Qt::DisplayRole)
+    // role Qt::UserRole+3 is the QML named-role lookup for this column (see roleNames() in sqlquerymodel.cpp)
+    if (index.column() == 3 && (role == Qt::DisplayRole || role == Qt::UserRole + 3))
     {
         QString text = val.toString();
         if (text.contains('<'))

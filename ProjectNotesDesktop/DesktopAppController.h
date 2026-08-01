@@ -180,6 +180,15 @@ public:
     // record menus to route Export XML for a sub-table row. Empty if unknown.
     Q_INVOKABLE QString tableNameForModel(QAbstractItemModel* model);
 
+    // Global (dataless) plugin menus — Plugins > Settings/Utilities/etc. in the
+    // Widgets menu bar (dataexport is empty, so they never appear on a record's
+    // right-click menu). Surfaced from the app menu's Plugins group. Same
+    // { title, submenu, index }-cache pattern as pluginMenusForTable() above.
+    Q_INVOKABLE QVariantList globalPluginMenus();
+    // Run one: calls the plugin function directly with its configured
+    // parameter, no record/XML involved (mirrors MainWindow::slotPluginMenu).
+    Q_INVOKABLE void runGlobalPluginMenu(int index);
+
     // ── Filters (scope child models to a project / note) ─────────────────────
     Q_INVOKABLE void setProjectFilter(const QString& projectId);
     Q_INVOKABLE void setNoteFilter(const QString& noteId);
@@ -363,6 +372,10 @@ public:
 
     // ── Cloud sync ───────────────────────────────────────────────────────────
     Q_INVOKABLE void syncNow();    // configure + trigger an immediate sync cycle
+    // Full re-sync: marks every row dirty (re-push) and clears pull watermarks
+    // (re-pull everything) — mirrors the Widgets "Sync All" menu action and the
+    // Mobile app's "Sync All…" action.
+    Q_INVOKABLE void syncAll();
     Q_INVOKABLE void stopSync();   // stop the background sync loop
     // Show the SqliteSyncPro stats window (upload/download chart + per-table
     // byte/row counts) — mirrors the Widgets app's File > Cloud Sync Settings >
@@ -471,6 +484,7 @@ private:
         QString parameter;
     };
     QVector<PluginMenuRef> m_pluginMenuCache;
+    QVector<PluginMenuRef> m_globalPluginMenuCache;
 };
 
 #endif // DESKTOPAPPCONTROLLER_H

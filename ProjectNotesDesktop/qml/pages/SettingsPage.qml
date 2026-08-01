@@ -140,6 +140,24 @@ Item {
                         }
                         onClicked: DesktopAppController.syncNow()
                     }
+                    Button {
+                        implicitHeight: 32
+                        leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
+                        enabled: DesktopAppController.syncEnabled
+                        background: Rectangle {
+                            radius: Theme.radiusSm
+                            color: parent.down ? Theme.surface : Theme.surface2
+                            border.color: Theme.border
+                            opacity: parent.enabled ? 1.0 : 0.5
+                        }
+                        contentItem: RowLayout {
+                            spacing: 5
+                            MaterialIcon { name: "sync_alt"; size: 16; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                            Text { text: qsTr("Sync All"); color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                                   verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
+                        }
+                        onClicked: DesktopAppController.syncAll()
+                    }
                 }
                 // thin progress line
                 Rectangle {
