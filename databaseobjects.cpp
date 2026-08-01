@@ -1163,6 +1163,14 @@ QList<SqlQueryModel*>* DatabaseObjects::getData(const QDomDocument& xmldoc)
 void DatabaseObjects::addDefaultPMToProject(const QString& projectId)
 {
     QString pm = getProjectManager();
+
+    // No default Project Manager configured: do not insert a project_people row
+    // at all. Inserting with an empty people_id creates a junk team-member record
+    // (empty string passes the NOT NULL constraint) that later fails on XML
+    // export/import when it round-trips to a real NULL.
+    if (pm.trimmed().isEmpty())
+        return;
+
     QString guid = QUuid::createUuid().toString();
 
     QString insert = QString("insert into project_people (id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' and deleted = 0 )").arg(projectId).arg(pm).arg(guid);
@@ -1173,6 +1181,13 @@ void DatabaseObjects::addDefaultPMToProject(const QString& projectId)
 void DatabaseObjects::addDefaultPMToMeeting(const QString& noteId)
 {
     QString pm = getProjectManager();
+
+    // No default Project Manager configured: skip both the team-member and the
+    // meeting-attendee inserts rather than writing rows with an empty people_id /
+    // person_id (see addDefaultPMToProject).
+    if (pm.trimmed().isEmpty())
+        return;
+
     QString guid = QUuid::createUuid().toString();
     QString guid2 = QUuid::createUuid().toString();
 

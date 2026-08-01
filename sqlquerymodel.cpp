@@ -1373,7 +1373,13 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
     else
     {
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-        if (m_gui)
+        // Only prompt natively when native dialogs are enabled. The QML desktop
+        // app runs with m_gui == true but guiDialogsEnabled() == false because it
+        // presents its own themed delete-confirmation dialog; without this guard
+        // (matching the blocked-delete checks at ~1216/1341) it would pop a
+        // duplicate native QMessageBox on every delete — and block on it when
+        // running headless.
+        if (m_gui && getDBOs()->guiDialogsEnabled())
         {
             if ( QMessageBox::question(nullptr, QObject::tr("Delete item?"),
                 QObject::tr("Are you sure you want to delete ") + m_displayName + QObject::tr("?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )

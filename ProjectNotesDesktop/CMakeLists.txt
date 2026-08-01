@@ -14,6 +14,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickControls2 Sql Xml Network)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickControls2 Sql Xml Network)
+# CorePrivate exposes QtCore's private QZipWriter (qzipwriter_p.h), used by
+# DesktopAppController::sendLogsToSupport to build the support-log archive.
+find_package(Qt6 REQUIRED COMPONENTS CorePrivate)
 # DBus backs the Linux credential store used by the plugin secret API.
 if(UNIX AND NOT APPLE AND NOT ANDROID)
     find_package(Qt6 REQUIRED COMPONENTS DBus)
@@ -47,6 +50,8 @@ qt_add_executable(ProjectNotesDesktop
     ../pluginmanager.cpp   ../pluginmanager.h
     ../pythonworker.cpp    ../pythonworker.h
     ../credentialstore.cpp ../credentialstore.h
+    # Unattended software update (GitHub releases → silent install + relaunch).
+    ../updatemanager.cpp   ../updatemanager.h
 )
 
 # So main.cpp can #include "TextFormatter.h"; Python headers for the plugin engine.
@@ -70,6 +75,7 @@ set(DESKTOP_QML_FILES
     qml/FilterDialog.qml
     qml/RecordContextMenu.qml
     qml/RecordRowMenu.qml
+    qml/FindReplaceBar.qml
     qml/KebabButton.qml
     qml/Card.qml
     qml/FormField.qml
@@ -124,6 +130,7 @@ qt_add_resources(ProjectNotesDesktop "helpcontent"
 # ProjectNotesCore is added once at the top level (it is a sibling target).
 target_link_libraries(ProjectNotesDesktop PRIVATE
     Qt6::Core
+    Qt6::CorePrivate
     Qt6::Gui
     Qt6::Widgets
     Qt6::Qml

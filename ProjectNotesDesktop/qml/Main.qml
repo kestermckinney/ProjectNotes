@@ -23,6 +23,9 @@ ApplicationWindow {
     // Breadcrumb subtitle for the current detail page (project / note).
     property string crumbSub: ""
 
+    // Update-download progress for the themed downloader dialog (-1 = unknown).
+    property int _dlPercent: 0
+
     readonly property var sectionMeta: ({
         "projects": { icon: "description", title: "Projects", newLabel: "New Project", search: true,  add: true  },
         "items":    { icon: "task_alt",    title: "Items",    newLabel: "",            search: true,  add: false },
@@ -37,6 +40,9 @@ ApplicationWindow {
     Component.onCompleted: {
         if (DesktopAppController.openOrCreateDatabase())
             FolderManager.reload()
+        // Quiet launch-time update check (mirrors the Widgets app): only prompts
+        // if a newer release is available. Deferred so the UI is up first.
+        Qt.callLater(DesktopAppController.checkForUpdatesSilent)
     }
 
     Connections {
@@ -45,6 +51,46 @@ ApplicationWindow {
             errorDialog.title = title
             errorLabel.text = message
             errorDialog.open()
+        }
+        function onInfoOccurred(title, message) {
+            infoDialog.title = title
+            infoLabel.text = message
+            infoDialog.open()
+        }
+        function onUpToDate(version) {
+            infoDialog.title = qsTr("Check for Updates")
+            infoLabel.text = qsTr("You're up to date.\n\nProject Notes %1 is the latest version.").arg(version)
+            infoDialog.open()
+        }
+        function onUpdateCheckFailed(err) {
+            infoDialog.title = qsTr("Check for Updates")
+            infoLabel.text = qsTr("Could not check for updates:\n\n%1").arg(err)
+            infoDialog.open()
+        }
+        function onUpdateAvailable(version, notes) {
+            updateLabel.text = qsTr("Project Notes %1 is available. You are running %2.\n\n"
+                                    + "Install it now? The app will download the update, install it, "
+                                    + "and restart automatically.")
+                               .arg(version).arg(DesktopAppController.appVersion())
+            updateDialog.open()
+        }
+        function onUpdateDownloadStarted() {
+            root._dlPercent = -1
+            downloadDialog.open()
+        }
+        function onUpdateDownloadProgress(percent) {
+            root._dlPercent = percent
+        }
+        function onUpdateInstallFailed(err) {
+            downloadDialog.close()
+            infoDialog.title = qsTr("Software Update")
+            infoLabel.text = qsTr("The update could not be installed:\n\n%1").arg(err)
+            infoDialog.open()
+        }
+        function onQuitForUpdate() {
+            // The installer/relaunch helper is running; exit so it can replace us.
+            downloadDialog.close()
+            Qt.quit()
         }
     }
 
@@ -178,6 +224,8 @@ ApplicationWindow {
         case "filter":      filterDialog.openFor(root.currentSection); break
         case "logs":        logViewer.openViewer(); break
         case "help":        root.openHelp(root._helpTopicForSection(root.currentSection)); break
+        case "check_updates": DesktopAppController.checkForUpdates(); break
+        case "support_logs":  DesktopAppController.sendLogsToSupport(); break
         case "exit":        Qt.quit(); break
         }
     }
@@ -496,6 +544,249 @@ ApplicationWindow {
         }
     }
 
+    // Informational dialog (Send Logs result, up-to-date, update-check errors).
+    Dialog {
+        id: infoDialog
+        anchors.centerIn: parent
+        width: 400
+        scale: Theme.uiScale
+        modal: true
+        padding: 0
+        closePolicy: Popup.CloseOnEscape
+        title: qsTr("Information")
+
+        background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
+        header: null
+        footer: null
+
+        contentItem: ColumnLayout {
+            spacing: 0
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.margins: 14
+                spacing: 8
+                MaterialIcon { name: "info"; size: 20; color: Theme.accent }
+                Text {
+                    text: infoDialog.title
+                    color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
+                    Layout.fillWidth: true
+                }
+                MaterialIcon {
+                    name: "close"; size: 20; color: Theme.text3
+                    TapHandler { onTapped: infoDialog.close() }
+                }
+            }
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.margins: 18
+                spacing: 16
+                Text {
+                    id: infoLabel
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    color: Theme.text
+                    font.pixelSize: 13
+                }
+                Item {
+                    Layout.fillWidth: true
+                    implicitHeight: 30
+                    Rectangle {
+                        anchors.right: parent.right
+                        implicitHeight: 30
+                        implicitWidth: infoOkText.implicitWidth + 26
+                        radius: Theme.radiusSm
+                        color: infoOkHover.hovered ? Theme.accentStrong : Theme.accent
+                        Text {
+                            id: infoOkText
+                            anchors.centerIn: parent
+                            text: qsTr("OK")
+                            color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
+                        }
+                        HoverHandler { id: infoOkHover }
+                        TapHandler { onTapped: infoDialog.close() }
+                    }
+                }
+            }
+        }
+    }
+
+    // "Update available" dialog — offers to open the download page.
+    Dialog {
+        id: updateDialog
+        anchors.centerIn: parent
+        width: 400
+        scale: Theme.uiScale
+        modal: true
+        padding: 0
+        closePolicy: Popup.CloseOnEscape
+        title: qsTr("Update Available")
+
+        background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
+        header: null
+        footer: null
+
+        contentItem: ColumnLayout {
+            spacing: 0
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.margins: 14
+                spacing: 8
+                MaterialIcon { name: "system_update"; size: 20; color: Theme.accent }
+                Text {
+                    text: updateDialog.title
+                    color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
+                    Layout.fillWidth: true
+                }
+                MaterialIcon {
+                    name: "close"; size: 20; color: Theme.text3
+                    TapHandler { onTapped: updateDialog.close() }
+                }
+            }
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.margins: 18
+                spacing: 16
+                Text {
+                    id: updateLabel
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    color: Theme.text
+                    font.pixelSize: 13
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignRight
+                    spacing: 10
+                    Item { Layout.fillWidth: true }
+                    Rectangle {
+                        implicitHeight: 30
+                        implicitWidth: laterText.implicitWidth + 26
+                        radius: Theme.radiusSm
+                        color: laterHover.hovered ? Theme.surface2 : Theme.surface
+                        border.color: Theme.border
+                        Text {
+                            id: laterText
+                            anchors.centerIn: parent
+                            text: qsTr("Later")
+                            color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                        }
+                        HoverHandler { id: laterHover }
+                        TapHandler { onTapped: updateDialog.close() }
+                    }
+                    Rectangle {
+                        implicitHeight: 30
+                        implicitWidth: dlText.implicitWidth + 26
+                        radius: Theme.radiusSm
+                        color: dlHover.hovered ? Theme.accentStrong : Theme.accent
+                        Text {
+                            id: dlText
+                            anchors.centerIn: parent
+                            text: qsTr("Install & Restart")
+                            color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
+                        }
+                        HoverHandler { id: dlHover }
+                        TapHandler { onTapped: { updateDialog.close(); DesktopAppController.installUpdate() } }
+                    }
+                }
+            }
+        }
+    }
+
+    // Themed update-download progress (replaces UpdateManager's native dialog).
+    Dialog {
+        id: downloadDialog
+        anchors.centerIn: parent
+        width: 400
+        scale: Theme.uiScale
+        modal: true
+        padding: 0
+        closePolicy: Popup.NoAutoClose   // dismissed only via Cancel / completion
+        title: qsTr("Downloading Update")
+
+        background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
+        header: null
+        footer: null
+
+        contentItem: ColumnLayout {
+            spacing: 0
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.margins: 14
+                spacing: 8
+                MaterialIcon { name: "system_update"; size: 20; color: Theme.accent }
+                Text {
+                    text: downloadDialog.title
+                    color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
+                    Layout.fillWidth: true
+                }
+            }
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.margins: 18
+                spacing: 14
+                Text {
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    color: Theme.text
+                    font.pixelSize: 13
+                    text: root._dlPercent >= 0
+                          ? qsTr("Downloading the update… %1%").arg(root._dlPercent)
+                          : qsTr("Downloading the update…")
+                }
+                // Progress track + fill (indeterminate sweep when percent < 0).
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: 8
+                    radius: 4
+                    color: Theme.surface
+                    border.color: Theme.border
+                    clip: true
+                    Rectangle {
+                        id: dlFill
+                        height: parent.height
+                        radius: 4
+                        color: Theme.accent
+                        width: root._dlPercent >= 0
+                               ? parent.width * Math.max(0.02, root._dlPercent / 100)
+                               : parent.width * 0.3
+                        // Indeterminate: slide the partial bar back and forth.
+                        SequentialAnimation on x {
+                            running: downloadDialog.visible && root._dlPercent < 0
+                            loops: Animation.Infinite
+                            NumberAnimation { from: 0; to: dlFill.parent.width * 0.7; duration: 900; easing.type: Easing.InOutQuad }
+                            NumberAnimation { from: dlFill.parent.width * 0.7; to: 0; duration: 900; easing.type: Easing.InOutQuad }
+                        }
+                        // Determinate: pin to the left.
+                        Binding { target: dlFill; property: "x"; value: 0; when: root._dlPercent >= 0 }
+                    }
+                }
+                Item {
+                    Layout.fillWidth: true
+                    implicitHeight: 30
+                    Rectangle {
+                        anchors.right: parent.right
+                        implicitHeight: 30
+                        implicitWidth: dlCancelText.implicitWidth + 26
+                        radius: Theme.radiusSm
+                        color: dlCancelHover.hovered ? Theme.surface2 : Theme.surface
+                        border.color: Theme.border
+                        Text {
+                            id: dlCancelText
+                            anchors.centerIn: parent
+                            text: qsTr("Cancel")
+                            color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                        }
+                        HoverHandler { id: dlCancelHover }
+                        TapHandler { onTapped: { downloadDialog.close(); DesktopAppController.cancelUpdateDownload() } }
+                    }
+                }
+            }
+        }
+    }
+
     // Delete confirmation for the current detail record (project / item / note).
     Dialog {
         id: confirmDeleteDialog
@@ -632,7 +923,7 @@ ApplicationWindow {
 
     // F1 opens the User Guide on the current screen's topic.
     Shortcut {
-        sequence: StandardKey.HelpContents
+        sequences: [ StandardKey.HelpContents ]
         onActivated: root.openHelp(root._helpTopicForSection(root.currentSection))
     }
 }

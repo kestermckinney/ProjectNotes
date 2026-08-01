@@ -23,8 +23,13 @@ Item {
         model: DesktopAppController.allItemsModel
         recordId: page._ctxId
         canDelete: false            // master list is a read-only view
+        canDuplicate: true          // Copy Item (Widgets parity)
         onOpenRequested:   page.itemActivated(page._ctxId)
         onNewRequested:    page.itemActivated(page._ctxId)
+        onDuplicateRequested: {
+            var newId = DesktopAppController.copyTrackerItem(page._ctxId)
+            if (newId !== "") page.itemActivated(newId)
+        }
         onExportRequested: page.exportRequested("item_tracker", page._ctxId)
         onFilterRequested: page.filterRequested()
         onRefreshRequested: DesktopAppController.refreshAllItems()

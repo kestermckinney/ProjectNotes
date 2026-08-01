@@ -29,6 +29,11 @@ Rectangle {
 
     HoverHandler { id: hover }
     TapHandler {
+        // Take an exclusive grab so a tap on the kebab only opens the menu and
+        // does NOT also fall through to the row's activation TapHandler (which
+        // would navigate to the record). The default DragThreshold policy keeps
+        // only a passive grab, so both handlers would otherwise fire.
+        gesturePolicy: TapHandler.ReleaseWithinBounds
         onTapped: {
             var p = btn.mapToItem(null, btn.width / 2, btn.height)
             btn.clicked(p.x, p.y)

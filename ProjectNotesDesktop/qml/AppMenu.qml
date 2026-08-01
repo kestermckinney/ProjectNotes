@@ -62,6 +62,8 @@ Popup {
         ]},
         { name: qsTr("Help"), items: [
             { icon: "menu_book", label: qsTr("User Guide"), key: "F1", action: "help" },
+            { icon: "system_update", label: qsTr("Check for Updates…"), key: "", action: "check_updates" },
+            { icon: "forward_to_inbox", label: qsTr("Send Logs to Support…"), key: "", action: "support_logs" },
             { icon: "info", label: qsTr("About"), key: "", action: "about" },
         ]},
     ]

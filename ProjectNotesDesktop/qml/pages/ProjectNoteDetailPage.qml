@@ -63,6 +63,12 @@ Item {
         return ok
     }
 
+    // Ctrl+F opens the note's find & replace bar while this page is active.
+    Shortcut {
+        sequences: [ StandardKey.Find ]
+        onActivated: findBar.open()
+    }
+
     ScrollView {
         anchors.fill: parent
         anchors.margins: 18
@@ -122,11 +128,40 @@ Item {
             }
 
             // Note body: toolbar + editor
-            Text {
-                text: qsTr("Note")
-                color: Theme.text3
-                font.pixelSize: 11
-                font.weight: Font.DemiBold
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                Text {
+                    text: qsTr("Note")
+                    color: Theme.text3
+                    font.pixelSize: 11
+                    font.weight: Font.DemiBold
+                    Layout.fillWidth: true
+                }
+                // Find & Replace toggle (also Ctrl+F while editing the note).
+                Rectangle {
+                    implicitHeight: 24
+                    implicitWidth: frRow.implicitWidth + 14
+                    radius: Theme.radiusSm
+                    color: findBar.visible ? Theme.accentSoft : (frHover.hovered ? Theme.surface2 : "transparent")
+                    RowLayout {
+                        id: frRow
+                        anchors.centerIn: parent
+                        spacing: 4
+                        MaterialIcon { name: "find_replace"; size: 14; color: findBar.visible ? Theme.accent : Theme.text2 }
+                        Text {
+                            text: qsTr("Find / Replace")
+                            color: findBar.visible ? Theme.accent : Theme.text2
+                            font.pixelSize: 11; font.weight: Font.DemiBold
+                        }
+                    }
+                    HoverHandler { id: frHover }
+                    TapHandler { onTapped: findBar.toggle() }
+                }
+            }
+            FindReplaceBar {
+                id: findBar
+                editor: noteEdit
             }
             NoteFormatToolbar {
                 Layout.fillWidth: true

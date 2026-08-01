@@ -412,7 +412,7 @@ Item {
                             function _menu(sx, sy) {
                                 rowMenu.openFor(DesktopAppController.projectTrackerItemsModel,
                                     trackerCard.iid, qsTr("Tracker Item"),
-                                    (trackerCard.model.item_name || "").toString(), sx, sy)
+                                    (trackerCard.model.item_name || "").toString(), sx, sy, true)
                             }
                             ColumnLayout {
                                 id: tiCol
@@ -1025,6 +1025,10 @@ Item {
     RecordRowMenu {
         id: rowMenu
         onExportRecord: (table, id) => page.exportRequested(table, id)
+        onDuplicateRecord: (table, id) => {
+            var newId = DesktopAppController.copyTrackerItem(id)
+            if (newId !== "") { page._saveNow(); page.itemActivated(newId) }
+        }
     }
 
     // Shared full-field spell-check dialog (opened by fields / right-click).

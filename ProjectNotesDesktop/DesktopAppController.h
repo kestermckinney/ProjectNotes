@@ -18,6 +18,7 @@
 class QQmlEngine;
 class QJSEngine;
 class QThread;
+class UpdateManager;
 class SqliteSyncPro;
 struct SyncResult;
 class PluginManager;
@@ -86,6 +87,10 @@ public:
     // --test-supabase: route cloud sync at the TEST Supabase instance instead of
     // production. Set from main.cpp before the engine loads.
     static void setTestSupabase(bool test) { s_testSupabase = test; }
+
+    // Disable the GitHub update check (used by the test runner so the suite makes
+    // no network calls). Enabled by default.
+    static void setUpdateChecksEnabled(bool enabled) { s_updateChecksEnabled = enabled; }
 
     // Absolute app data directory (AppDataLocation + optional developer profile).
     // Matches AppSettings::dataLocation() so both frontends share one location.
@@ -331,6 +336,31 @@ public:
 
     Q_INVOKABLE QString     lastSaveError() const;
 
+    // ── Duplicate a tracker item ─────────────────────────────────────────────
+    // Copies the item (new id, "Copy of …" name, next item number in its
+    // project) — the Widgets "Copy Item" action. Returns the new item's id, or
+    // an empty string on failure.
+    Q_INVOKABLE QString copyTrackerItem(const QString& itemId);
+
+    // ── Help ▸ maintenance actions (mirror the Widgets Help menu) ────────────
+    Q_INVOKABLE QString appVersion() const;   // "5.2.3"
+    // Query GitHub for a newer release; answers via updateAvailable() /
+    // upToDate() / updateCheckFailed(). The silent variant is for the automatic
+    // launch-time check: it stays quiet unless an update is actually available.
+    Q_INVOKABLE void checkForUpdates();
+    Q_INVOKABLE void checkForUpdatesSilent();
+    // Download the platform installer for the last-offered update and run it
+    // unattended (silent install + relaunch on Windows/macOS). Progress is
+    // reported via updateDownloadStarted()/updateDownloadProgress() so the QML
+    // shell can show a themed dialog; on success the app must quit
+    // (quitForUpdate() → Qt.quit()).
+    Q_INVOKABLE void installUpdate();
+    // Abort an in-flight update download (themed Cancel button).
+    Q_INVOKABLE void cancelUpdateDownload();
+    // Zip every *.log into a timestamped archive on the Desktop and open a
+    // pre-addressed support email; reports the outcome via infoOccurred().
+    Q_INVOKABLE void sendLogsToSupport();
+
     // ── Cloud sync ───────────────────────────────────────────────────────────
     Q_INVOKABLE void syncNow();    // configure + trigger an immediate sync cycle
     Q_INVOKABLE void stopSync();   // stop the background sync loop
@@ -356,6 +386,21 @@ public:
 signals:
     void databaseReady();
     void errorOccurred(const QString& title, const QString& message);
+    // A non-error informational result (e.g. Send Logs to Support outcome).
+    void infoOccurred(const QString& title, const QString& message);
+    // Update-check results (see checkForUpdates). releaseNotes is the GitHub
+    // release body; installUpdate() acts on the last-offered release.
+    void updateAvailable(const QString& version, const QString& releaseNotes);
+    void upToDate(const QString& version);
+    void updateCheckFailed(const QString& error);
+    // Download failed (unattended install could not proceed).
+    void updateInstallFailed(const QString& error);
+    // The download has begun — the shell should show its themed progress dialog.
+    void updateDownloadStarted();
+    // Download progress; percent is 0..100, or -1 when the size is unknown.
+    void updateDownloadProgress(int percent);
+    // The installer/relaunch helper is running; the shell must now quit.
+    void quitForUpdate();
     void viewOptionsChanged();
     void syncSettingsChanged();
     void syncProgressChanged();
@@ -397,9 +442,16 @@ private:
     QString syncSetting(const QString& key) const;
     void    setSyncSetting(const QString& key, const QVariant& value);
 
+    // ── Software update (delegates to the shared UpdateManager) ───────────────
+    UpdateManager* m_updater      = nullptr;
+    QString        m_pendingAssetUrl;   // installer asset from the last check
+    bool           m_silentCheck  = false;
+    void ensureUpdater();
+
     static DesktopAppController* s_instance;
     static QString s_developerProfile;
     static bool    s_testSupabase;
+    static bool    s_updateChecksEnabled;
 
     // ── Plugins ──────────────────────────────────────────────────────────────
     PluginManager* m_pluginManager = nullptr;

@@ -28,7 +28,10 @@
 #include "synclog.h"
 
 #include "QLogger.h"
+#include "version.h"
+#include "updatemanager.h"
 
+#include <QDateTime>
 #include <QDir>
 #include <QDomDocument>
 #include <QDesktopServices>
@@ -43,10 +46,14 @@
 #include <QThread>
 #include <QTimer>
 #include <QUrl>
+#include <QUrlQuery>
+
+#include <private/qzipwriter_p.h>
 
 DesktopAppController* DesktopAppController::s_instance = nullptr;
 QString DesktopAppController::s_developerProfile;
 bool    DesktopAppController::s_testSupabase = false;
+bool    DesktopAppController::s_updateChecksEnabled = true;
 
 DesktopAppController* DesktopAppController::create(QQmlEngine* /*engine*/, QJSEngine* /*scriptEngine*/)
 {
@@ -1537,6 +1544,189 @@ bool DesktopAppController::saveStatusItem(int row, const QString& category, cons
 QString DesktopAppController::lastSaveError() const
 {
     return global_DBObjects.lastSaveError();
+}
+
+// ── Duplicate a tracker item ──────────────────────────────────────────────────
+
+QString DesktopAppController::copyTrackerItem(const QString& itemId)
+{
+    global_DBObjects.setLastSaveError("");
+    if (itemId.isEmpty())
+        return {};
+
+    // Filter the detail model down to just this item (row 0 becomes the source),
+    // then duplicate it. TrackerItemsModel::copyRecord renames the item to
+    // "Copy of …", assigns the next item number in the project, gives it a fresh
+    // id, and persists it (insertCacheRow) — same as the Widgets Copy Item action.
+    openTrackerItem(itemId);
+    auto* src = global_DBObjects.actionitemsdetailsmodel();
+    if (!src || src->rowCount(QModelIndex()) < 1)
+        return {};
+
+    const QModelIndex newIdx = src->copyRecord(src->index(0, 0));
+    if (!newIdx.isValid())
+        return {};
+
+    const QString newId = src->data(src->index(newIdx.row(), 0)).toString();
+
+    // Refresh the lists that show items so the copy appears immediately.
+    global_DBObjects.trackeritemsmodel()->refresh();
+    global_DBObjects.allitemsmodel()->refresh();
+
+    return newId;
+}
+
+// ── Help ▸ maintenance actions ────────────────────────────────────────────────
+
+QString DesktopAppController::appVersion() const
+{
+    return QStringLiteral("%1.%2.%3")
+        .arg(APP_VERSION_MAJOR).arg(APP_VERSION_MINOR).arg(APP_VERSION_PATCH);
+}
+
+// Create the shared UpdateManager once and translate its signals into the
+// controller's QML-facing signals. Reusing UpdateManager gives the QML app the
+// same battle-tested unattended install/relaunch flow the Widgets app ships:
+// a silent NSIS install (/waitpid + /relaunch) on Windows and a detached
+// swap-and-relaunch helper on macOS. (Linux has no installer asset — it updates
+// via Flatpak — so a check there reports "download manually".)
+void DesktopAppController::ensureUpdater()
+{
+    if (m_updater)
+        return;
+    m_updater = new UpdateManager(nullptr);   // no QWidget parent needed
+    // The QML shell renders its own themed dialogs, so suppress UpdateManager's
+    // native QProgressDialog/QMessageBox and consume its signals instead.
+    m_updater->setUseNativeUi(false);
+
+    connect(m_updater, &UpdateManager::updateAvailable, this,
+            [this](const QString& version, const QString& notes, const QUrl& assetUrl) {
+                m_pendingAssetUrl = assetUrl.toString();
+                emit updateAvailable(version, notes);
+            });
+    connect(m_updater, &UpdateManager::upToDate, this, [this]() {
+        if (!m_silentCheck) emit upToDate(appVersion());
+    });
+    connect(m_updater, &UpdateManager::checkFailed, this, [this](const QString& err) {
+        if (!m_silentCheck) emit updateCheckFailed(err);
+    });
+    connect(m_updater, &UpdateManager::downloadProgress, this,
+            [this](qint64 received, qint64 total) {
+                emit updateDownloadProgress(total > 0
+                    ? int((received * 100) / total) : -1);
+            });
+    connect(m_updater, &UpdateManager::updateError, this, [this](const QString& msg) {
+        emit updateInstallFailed(msg);
+    });
+    connect(m_updater, &UpdateManager::installerLaunched, this, [this]() {
+        emit quitForUpdate();   // shell calls Qt.quit() so the installer can proceed
+    });
+}
+
+void DesktopAppController::checkForUpdates()
+{
+    if (!s_updateChecksEnabled)
+        return;
+    m_silentCheck = false;
+    ensureUpdater();
+    m_updater->checkForUpdates(/*silent=*/false);
+}
+
+void DesktopAppController::checkForUpdatesSilent()
+{
+    if (!s_updateChecksEnabled)
+        return;
+    m_silentCheck = true;
+    ensureUpdater();
+    m_updater->checkForUpdates(/*silent=*/true);
+}
+
+void DesktopAppController::installUpdate()
+{
+    if (!m_updater || m_pendingAssetUrl.isEmpty()) {
+        emit updateInstallFailed(tr("No update is available to install."));
+        return;
+    }
+    emit updateDownloadStarted();
+    m_updater->downloadAndInstall(QUrl(m_pendingAssetUrl));
+}
+
+void DesktopAppController::cancelUpdateDownload()
+{
+    if (m_updater)
+        m_updater->cancelDownload();
+}
+
+void DesktopAppController::sendLogsToSupport()
+{
+    const QString supportEmail = QStringLiteral("admin@projectnotespro.com");
+    const QString logDir = dataLocation() + "/logs";
+
+    QDir dir(logDir);
+    const QFileInfoList logFiles =
+        dir.entryInfoList({ QStringLiteral("*.log") }, QDir::Files, QDir::Name);
+    if (logFiles.isEmpty()) {
+        emit infoOccurred(tr("Send Logs to Support"),
+            tr("No log files were found to send.\n\nLog files are stored in:\n%1")
+                .arg(QDir::toNativeSeparators(logDir)));
+        return;
+    }
+
+    // Prefer the Desktop; fall back to the temp dir if it isn't writable.
+    QString destDir = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    if (destDir.isEmpty() || !QFileInfo(destDir).isWritable())
+        destDir = QDir::tempPath();
+
+    const QString stamp = QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd-HHmmss"));
+    const QString zipPath = QDir(destDir).filePath(
+        QStringLiteral("ProjectNotes-logs-%1.zip").arg(stamp));
+
+    QZipWriter zip(zipPath);
+    if (zip.status() != QZipWriter::NoError) {
+        emit errorOccurred(tr("Send Logs to Support"),
+            tr("Could not create the log archive."));
+        return;
+    }
+    zip.setCompressionPolicy(QZipWriter::AlwaysCompress);
+    bool addedAny = false;
+    for (const QFileInfo& fi : logFiles) {
+        QFile in(fi.absoluteFilePath());
+        if (!in.open(QIODevice::ReadOnly))
+            continue;   // skip a locked/unreadable log rather than aborting
+        zip.addFile(fi.fileName(), in.readAll());
+        in.close();
+        if (zip.status() == QZipWriter::NoError)
+            addedAny = true;
+    }
+    zip.close();
+
+    if (!addedAny || zip.status() != QZipWriter::NoError) {
+        QLog_Error(SYNCERRORLOG, QString("Support bundle creation failed for %1").arg(zipPath));
+        emit errorOccurred(tr("Send Logs to Support"),
+            tr("Could not create the log archive."));
+        return;
+    }
+
+    // mailto can't carry attachments, so the body gives the path to attach.
+    QUrlQuery query;
+    query.addQueryItem(QStringLiteral("subject"),
+        tr("ProjectNotes Support Logs (v%1)").arg(appVersion()));
+    query.addQueryItem(QStringLiteral("body"),
+        tr("Please describe the problem you are seeing below.\n\n"
+           "IMPORTANT: attach the log archive located at:\n%1\n\n"
+           "--- describe your issue here ---\n")
+            .arg(QDir::toNativeSeparators(zipPath)));
+    QUrl mailUrl;
+    mailUrl.setScheme(QStringLiteral("mailto"));
+    mailUrl.setPath(supportEmail);
+    mailUrl.setQuery(query);
+    QDesktopServices::openUrl(mailUrl);
+
+    emit infoOccurred(tr("Send Logs to Support"),
+        tr("A log archive was created here:\n\n%1\n\n"
+           "An email to %2 has been started. Please attach that zip file to the "
+           "email and send it.")
+            .arg(QDir::toNativeSeparators(zipPath), supportEmail));
 }
 
 // ── Cloud sync ────────────────────────────────────────────────────────────────

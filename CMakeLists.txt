@@ -239,6 +239,16 @@ if(BUILD_QML_DESKTOP AND NOT ANDROID AND NOT IOS)
     add_subdirectory(ProjectNotesDesktop)
 endif()
 
+# Automated tests for the QML desktop frontend. OFF by default. Configure a
+# dedicated build dir with -DBUILD_QML_DESKTOP_TESTS=ON -DBUILD_QML_DESKTOP=OFF
+# so tests/desktop is the only target declaring the ProjectNotesDesktop QML
+# module (a second declaration of the same URI would clash).
+option(BUILD_QML_DESKTOP_TESTS "Build the QML desktop test suite" OFF)
+if(BUILD_QML_DESKTOP_TESTS AND NOT ANDROID AND NOT IOS)
+    enable_testing()
+    add_subdirectory(tests/desktop)
+endif()
+
 target_link_libraries(ProjectNotes PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${Python3_LIBRARIES} Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Xml Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Charts "${HUNSPELL_LIBRARIES}" Qt${QT_VERSION_MAJOR}::CorePrivate SqliteSyncProLib ProjectNotesCore)
 if(UNIX AND NOT APPLE AND NOT ANDROID)
     target_link_libraries(ProjectNotes PRIVATE Qt${QT_VERSION_MAJOR}::DBus)
