@@ -54,6 +54,81 @@ Window {
         win._editors = m
     }
 
+    // Content arrives from the background loader in small chunks (every ~30ms
+    // while tailing, every ~100ms while backfilling — see LogFileLoader). QtQuick's
+    // TextArea isn't viewport-virtualized like the Widgets QPlainTextEdit was, so
+    // an insert() re-lays-out the whole growing block; calling it once per chunk
+    // made big logs visibly stutter. Buffer chunks per file and flush them to the
+    // TextArea on a coalesced timer instead, so the UI does far fewer, larger
+    // inserts without changing the loader's own read pacing/threading.
+    property var _pendingAppend: ({})
+    property var _pendingPrepend: ({})
+
+    Timer {
+        id: flushTimer
+        interval: 120
+        repeat: true
+        onTriggered: win._flushPendingLogContent()
+    }
+
+    function _queueAppend(filePath, content) {
+        var m = win._pendingAppend
+        m[filePath] = (m[filePath] || "") + content
+        win._pendingAppend = m
+        if (!flushTimer.running) flushTimer.start()
+    }
+
+    function _queuePrepend(filePath, content) {
+        // Each new chunk is further back in the file than the last, so it must
+        // land above what's already buffered — prepend within the buffer too.
+        var m = win._pendingPrepend
+        m[filePath] = content + (m[filePath] || "")
+        win._pendingPrepend = m
+        if (!flushTimer.running) flushTimer.start()
+    }
+
+    function _flushPendingLogContent() {
+        var stillPending = false
+
+        for (var fp in win._pendingAppend) {
+            var content = win._pendingAppend[fp]
+            if (content === "") continue
+            var e = win._editors[fp]
+            if (!e) { stillPending = true; continue }
+            var fl = e.flick
+            var atBottom = !fl || (fl.contentY >= fl.contentHeight - fl.height - 4)
+            e.ta.insert(e.ta.length, content)
+            win._pendingAppend[fp] = ""
+            if (fl && atBottom)
+                Qt.callLater((function (flick) {
+                    return function () { flick.contentY = Math.max(0, flick.contentHeight - flick.height) }
+                })(fl))
+        }
+
+        for (var fp2 in win._pendingPrepend) {
+            var content2 = win._pendingPrepend[fp2]
+            if (content2 === "") continue
+            var e2 = win._editors[fp2]
+            if (!e2) { stillPending = true; continue }
+            var fl2 = e2.flick
+            var before = fl2 ? fl2.contentHeight : 0
+            e2.ta.insert(0, content2)
+            win._pendingPrepend[fp2] = ""
+            // Keep the same lines in view: shift down by the height just added.
+            if (fl2)
+                Qt.callLater((function (flick, beforeHeight) {
+                    return function () {
+                        var delta = flick.contentHeight - beforeHeight
+                        flick.contentY = Math.min(flick.contentY + delta,
+                                                   Math.max(0, flick.contentHeight - flick.height))
+                    }
+                })(fl2, before))
+        }
+
+        if (!stillPending)
+            flushTimer.stop()
+    }
+
     ListModel { id: tabsModel }   // { filePath, fileName }
 
     Connections {
@@ -67,30 +142,11 @@ Window {
         }
 
         function onContentAppended(filePath, content) {
-            var e = win._editors[filePath]
-            if (!e) return
-            var fl = e.flick
-            var atBottom = !fl || (fl.contentY >= fl.contentHeight - fl.height - 4)
-            e.ta.insert(e.ta.length, content)
-            if (fl && atBottom)
-                Qt.callLater(function () {
-                    fl.contentY = Math.max(0, fl.contentHeight - fl.height)
-                })
+            win._queueAppend(filePath, content)
         }
 
         function onContentPrepended(filePath, content) {
-            var e = win._editors[filePath]
-            if (!e) return
-            var fl = e.flick
-            var before = fl ? fl.contentHeight : 0
-            e.ta.insert(0, content)
-            // Keep the same lines in view: shift down by the height just added.
-            if (fl)
-                Qt.callLater(function () {
-                    var delta = fl.contentHeight - before
-                    fl.contentY = Math.min(fl.contentY + delta,
-                                           Math.max(0, fl.contentHeight - fl.height))
-                })
+            win._queuePrepend(filePath, content)
         }
 
         function onLogFileClosed(filePath) {

@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
     QApplication::setOrganizationDomain("projectnotespro.com");
     QApplication::setApplicationName("projectnotes");
     QApplication::setApplicationDisplayName("Project Notes");
-    QApplication::setApplicationVersion("5.2.3");
+    QApplication::setApplicationVersion("6.0.0");
 
     QStandardPaths::setTestModeEnabled(true);
     DesktopAppController::setDeveloperProfile("qmltest");

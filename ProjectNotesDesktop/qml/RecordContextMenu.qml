@@ -51,6 +51,11 @@ Popup {
     dim: false
     padding: 5
     width: 232
+    // Cap the popup height and let it scroll once the plugin/menu list grows
+    // past that — otherwise a table with many plugins produces a menu taller
+    // than the screen.
+    readonly property int maxMenuHeight: 480
+    height: Math.min(_content.implicitHeight + topPadding + bottomPadding, maxMenuHeight)
     // A real floating window so the menu can spill past the main-window edges when
     // the plugin list makes it taller than the window (Qt keeps it on-screen).
     // As a detached window it renders at 1x — the workspace zoom (Theme.uiScale)
@@ -117,67 +122,74 @@ Popup {
         return out
     }
 
-    contentItem: ColumnLayout {
-        spacing: 0
+    contentItem: ScrollView {
+        clip: true
+        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
-        // Header
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.leftMargin: 9; Layout.rightMargin: 9
-            Layout.topMargin: 2; Layout.bottomMargin: 5
-            spacing: 8
-            Text {
-                text: menu.recordType.toUpperCase(); color: Theme.text3
-                font.pixelSize: 10; font.weight: Font.Bold
-            }
-            Text {
-                text: menu.recordLabel; color: Theme.text2; font.pixelSize: 12
-                Layout.fillWidth: true; elide: Text.ElideRight
-                verticalAlignment: Text.AlignVCenter
-            }
-        }
-        Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft; Layout.bottomMargin: 3 }
+        ColumnLayout {
+            id: _content
+            width: menu.availableWidth
+            spacing: 0
 
-        MenuRow { icon: "open_in_full"; label: qsTr("Open");        visible: menu.canOpen;      onActivated: menu._fire(menu.openRequested) }
-        MenuRow { icon: "add";          label: qsTr("New");         visible: menu.canNew;       onActivated: menu._fire(menu.newRequested) }
-        MenuRow { icon: "content_copy"; label: qsTr("Duplicate");   visible: menu.canDuplicate; onActivated: menu._fire(menu.duplicateRequested) }
-        MenuRow { icon: "delete";       label: qsTr("Delete");      visible: menu.canDelete;    danger: true; onActivated: menu._fire(menu.deleteRequested) }
-        Rectangle {
-            visible: menu._hasTopGroup
-            Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft
-            Layout.topMargin: 3; Layout.bottomMargin: 3
-        }
-        MenuRow { icon: "ios_share";    label: qsTr("Export XML…"); visible: menu.canExport;  onActivated: menu._fire(menu.exportRequested) }
-        MenuRow { icon: "filter_list";  label: qsTr("Filter…");     visible: menu.canFilter;  onActivated: menu._fire(menu.filterRequested) }
-        MenuRow { icon: "refresh";      label: qsTr("Refresh");     visible: menu.canRefresh; onActivated: menu._fire(menu.refreshRequested) }
-
-        // Plugin menus for this table (dataexport == model table), like the
-        // Widgets right-click. Each submenu becomes its own group-title header
-        // (see _groupPlugins) so nested plugin actions read as clean sections
-        // rather than a "Submenu › Title" one-liner.
-        Repeater {
-            model: menu._sections
-            delegate: ColumnLayout {
-                required property var modelData
+            // Header
+            RowLayout {
                 Layout.fillWidth: true
-                spacing: 0
-
-                Rectangle {
-                    Layout.fillWidth: true; Layout.preferredHeight: 1
-                    color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
+                Layout.leftMargin: 9; Layout.rightMargin: 9
+                Layout.topMargin: 2; Layout.bottomMargin: 5
+                spacing: 8
+                Text {
+                    text: menu.recordType.toUpperCase(); color: Theme.text3
+                    font.pixelSize: 10; font.weight: Font.Bold
                 }
                 Text {
-                    text: modelData.header.toUpperCase(); color: Theme.text3
-                    font.pixelSize: 10; font.weight: Font.Bold
-                    Layout.leftMargin: 9; Layout.topMargin: 1; Layout.bottomMargin: 2
+                    text: menu.recordLabel; color: Theme.text2; font.pixelSize: 12
+                    Layout.fillWidth: true; elide: Text.ElideRight
+                    verticalAlignment: Text.AlignVCenter
                 }
-                Repeater {
-                    model: modelData.items
-                    delegate: MenuRow {
-                        required property var modelData
-                        icon: "extension"
-                        label: modelData.title
-                        onActivated: menu._runPlugin(modelData.index)
+            }
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft; Layout.bottomMargin: 3 }
+
+            MenuRow { icon: "open_in_full"; label: qsTr("Open");        visible: menu.canOpen;      onActivated: menu._fire(menu.openRequested) }
+            MenuRow { icon: "add";          label: qsTr("New");         visible: menu.canNew;       onActivated: menu._fire(menu.newRequested) }
+            MenuRow { icon: "content_copy"; label: qsTr("Duplicate");   visible: menu.canDuplicate; onActivated: menu._fire(menu.duplicateRequested) }
+            MenuRow { icon: "delete";       label: qsTr("Delete");      visible: menu.canDelete;    danger: true; onActivated: menu._fire(menu.deleteRequested) }
+            Rectangle {
+                visible: menu._hasTopGroup
+                Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft
+                Layout.topMargin: 3; Layout.bottomMargin: 3
+            }
+            MenuRow { icon: "ios_share";    label: qsTr("Export XML…"); visible: menu.canExport;  onActivated: menu._fire(menu.exportRequested) }
+            MenuRow { icon: "filter_list";  label: qsTr("Filter…");     visible: menu.canFilter;  onActivated: menu._fire(menu.filterRequested) }
+            MenuRow { icon: "refresh";      label: qsTr("Refresh");     visible: menu.canRefresh; onActivated: menu._fire(menu.refreshRequested) }
+
+            // Plugin menus for this table (dataexport == model table), like the
+            // Widgets right-click. Each submenu becomes its own group-title header
+            // (see _groupPlugins) so nested plugin actions read as clean sections
+            // rather than a "Submenu › Title" one-liner.
+            Repeater {
+                model: menu._sections
+                delegate: ColumnLayout {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    spacing: 0
+
+                    Rectangle {
+                        Layout.fillWidth: true; Layout.preferredHeight: 1
+                        color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
+                    }
+                    Text {
+                        text: modelData.header.toUpperCase(); color: Theme.text3
+                        font.pixelSize: 10; font.weight: Font.Bold
+                        Layout.leftMargin: 9; Layout.topMargin: 1; Layout.bottomMargin: 2
+                    }
+                    Repeater {
+                        model: modelData.items
+                        delegate: MenuRow {
+                            required property var modelData
+                            icon: "extension"
+                            label: modelData.title
+                            onActivated: menu._runPlugin(modelData.index)
+                        }
                     }
                 }
             }

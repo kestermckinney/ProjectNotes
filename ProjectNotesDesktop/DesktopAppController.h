@@ -343,7 +343,7 @@ public:
     Q_INVOKABLE QString copyTrackerItem(const QString& itemId);
 
     // ── Help ▸ maintenance actions (mirror the Widgets Help menu) ────────────
-    Q_INVOKABLE QString appVersion() const;   // "5.2.3"
+    Q_INVOKABLE QString appVersion() const;   // "6.0.0"
     // Query GitHub for a newer release; answers via updateAvailable() /
     // upToDate() / updateCheckFailed(). The silent variant is for the automatic
     // launch-time check: it stays quiet unless an update is actually available.
@@ -364,6 +364,12 @@ public:
     // ── Cloud sync ───────────────────────────────────────────────────────────
     Q_INVOKABLE void syncNow();    // configure + trigger an immediate sync cycle
     Q_INVOKABLE void stopSync();   // stop the background sync loop
+    // Show the SqliteSyncPro stats window (upload/download chart + per-table
+    // byte/row counts) — mirrors the Widgets app's File > Cloud Sync Settings >
+    // Sync Stats action. m_syncApi lives on its own worker thread, but this is a
+    // plain (non-queued) call, so it runs synchronously on the calling — GUI —
+    // thread, which is required since it creates/shows a QWidget window.
+    Q_INVOKABLE void showSyncStats();
 
     bool    syncEnabled() const;
     void    setSyncEnabled(bool v);

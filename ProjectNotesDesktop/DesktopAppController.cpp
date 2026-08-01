@@ -1876,6 +1876,13 @@ void DesktopAppController::syncNow()
     }, Qt::QueuedConnection);
 }
 
+void DesktopAppController::showSyncStats()
+{
+    configureSyncApi();
+    if (m_syncApi)
+        m_syncApi->showStats(true);
+}
+
 void DesktopAppController::stopSync()
 {
     if (!m_syncApi) return;

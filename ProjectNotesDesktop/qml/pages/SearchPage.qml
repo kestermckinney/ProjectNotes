@@ -54,6 +54,15 @@ Item {
         return ""
     }
 
+    // Coalesces bursts of keystrokes into a single performSearch() call so the
+    // whole-database query (a big UNION across every table) doesn't re-run on
+    // every keypress — same 250ms debounce used for quick-search filtering.
+    Timer {
+        id: searchDebounce
+        interval: 250
+        onTriggered: DesktopAppController.performSearch(searchField.text)
+    }
+
     // Configure the shared menu for a result row and open it at scene coords.
     function _openMenu(datatype, dataid, fkId, label, sx, sy) {
         page._ctxType = datatype
@@ -106,7 +115,14 @@ Item {
                     background: null
                     font.pixelSize: 15
                     selectByMouse: true
-                    onTextChanged: DesktopAppController.performSearch(text)
+                    onTextChanged: {
+                        if (text === "") {
+                            searchDebounce.stop()
+                            DesktopAppController.performSearch(text)
+                        } else {
+                            searchDebounce.restart()
+                        }
+                    }
                     Component.onCompleted: forceActiveFocus()
                 }
                 MaterialIcon {

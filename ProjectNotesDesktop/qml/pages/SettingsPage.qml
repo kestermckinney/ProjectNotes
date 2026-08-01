@@ -112,6 +112,24 @@ Item {
                         enabled: DesktopAppController.syncEnabled
                         background: Rectangle {
                             radius: Theme.radiusSm
+                            color: parent.down ? Theme.surface : Theme.surface2
+                            border.color: Theme.border
+                            opacity: parent.enabled ? 1.0 : 0.5
+                        }
+                        contentItem: RowLayout {
+                            spacing: 5
+                            MaterialIcon { name: "monitoring"; size: 16; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                            Text { text: qsTr("Sync Stats"); color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                                   verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
+                        }
+                        onClicked: DesktopAppController.showSyncStats()
+                    }
+                    Button {
+                        implicitHeight: 32
+                        leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
+                        enabled: DesktopAppController.syncEnabled
+                        background: Rectangle {
+                            radius: Theme.radiusSm
                             color: parent.enabled ? (parent.down ? Theme.accentStrong : Theme.accent) : Theme.surface2
                         }
                         contentItem: RowLayout {
@@ -378,13 +396,87 @@ Item {
             SettingsSection {
                 title: "About"
                 Text {
-                    text: "Project Notes " + Qt.application.version
-                    color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
+                    text: "Project Notes"
+                    color: Theme.text; font.pixelSize: 18; font.weight: Font.Bold
                 }
                 Text {
-                    text: "New QML desktop interface. Manage your subscription at www.projectnotespro.com."
-                    color: Theme.text3; font.pixelSize: 12; wrapMode: Text.WordWrap
+                    text: "Version " + Qt.application.version
+                    color: Theme.text3; font.pixelSize: 13
+                }
+                Text {
+                    text: "© 2022–2026 Paul McKinney"
+                    color: Theme.text3; font.pixelSize: 12
+                }
+
+                RowLayout {
+                    Layout.topMargin: 4
+                    spacing: 8
+
+                    Repeater {
+                        model: [
+                            { label: qsTr("Documentation"),  url: "https://projectnotes.readthedocs.io/" },
+                            { label: qsTr("Release Notes"),  url: "https://github.com/kestermckinney/ProjectNotes/releases" },
+                            { label: qsTr("Source Code"),    url: "https://github.com/kestermckinney/ProjectNotes" }
+                        ]
+                        delegate: Button {
+                            required property var modelData
+                            implicitHeight: 34
+                            leftPadding: 14; rightPadding: 14; topPadding: 0; bottomPadding: 0
+                            background: Rectangle {
+                                radius: Theme.radiusSm
+                                color: parent.down ? Theme.surface : Theme.surface2
+                                border.color: Theme.border
+                            }
+                            contentItem: Text {
+                                text: modelData.label
+                                color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            onClicked: Qt.openUrlExternally(modelData.url)
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.topMargin: 8
                     Layout.fillWidth: true
+                    Layout.preferredWidth: 420
+                    implicitHeight: promoColumn.implicitHeight + 24
+                    color: Theme.surface2
+                    radius: Theme.radius
+                    border.color: Theme.border
+
+                    ColumnLayout {
+                        id: promoColumn
+                        anchors { top: parent.top; left: parent.left; right: parent.right; margins: 12 }
+                        spacing: 6
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: qsTr("Take Project Notes With You")
+                            font.pixelSize: 14; font.weight: Font.Bold
+                            color: Theme.text
+                            wrapMode: Text.WordWrap
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: qsTr("Download the Project Notes mobile app for iOS to check status, review notes, and stay on top of tracker items on the go.")
+                            font.pixelSize: 12
+                            color: Theme.text3
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+
+                Text {
+                    Layout.topMargin: 4
+                    text: "<a href=\"https://www.projectnotespro.com\">www.projectnotespro.com</a>"
+                    textFormat: Text.RichText
+                    font.pixelSize: 13
+                    color: Theme.accent
+                    linkColor: Theme.accent
+                    onLinkActivated: Qt.openUrlExternally(link)
                 }
             }
         }

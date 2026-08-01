@@ -6,8 +6,8 @@ import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import ProjectNotesDesktop
 
-// Project sidebar: brand row, project search, and the folder groups (each a
-// drop target) followed by the implicit "All Projects" group.
+// Project sidebar: brand row and the folder groups (each a drop target)
+// followed by the implicit "All Projects" group.
 Rectangle {
     id: sidebar
     color: Theme.sidebar
@@ -78,36 +78,6 @@ Rectangle {
                 font.pixelSize: 15
                 font.weight: Font.DemiBold
                 Layout.fillWidth: true
-            }
-        }
-
-        // Search
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.leftMargin: 12
-            Layout.rightMargin: 12
-            Layout.bottomMargin: 8
-            implicitHeight: 32
-            radius: Theme.radiusSm
-            color: Theme.surface
-            border.color: Theme.border
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: 10
-                anchors.rightMargin: 8
-                spacing: 8
-                MaterialIcon { name: "search"; size: 16; color: Theme.text3 }
-                TextField {
-                    id: search
-                    Layout.fillWidth: true
-                    placeholderText: "Search projects"
-                    color: Theme.text
-                    placeholderTextColor: Theme.text3
-                    background: null
-                    font.pixelSize: 13
-                    onTextEdited: DesktopAppController.setQuickSearch(
-                                      DesktopAppController.projectsListModel, text)
-                }
             }
         }
 

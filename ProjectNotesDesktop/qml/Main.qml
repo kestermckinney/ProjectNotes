@@ -504,7 +504,8 @@ ApplicationWindow {
                 }
                 MaterialIcon {
                     name: "close"; size: 20; color: Theme.text3
-                    TapHandler { onTapped: errorDialog.close() }
+                    // Exclusive grab: see the matching infoDialog close button below.
+                    TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: errorDialog.close() }
                 }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
@@ -537,7 +538,7 @@ ApplicationWindow {
                             color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
                         }
                         HoverHandler { id: okHover }
-                        TapHandler { onTapped: errorDialog.close() }
+                        TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: errorDialog.close() }
                     }
                 }
             }
@@ -573,7 +574,10 @@ ApplicationWindow {
                 }
                 MaterialIcon {
                     name: "close"; size: 20; color: Theme.text3
-                    TapHandler { onTapped: infoDialog.close() }
+                    // Exclusive grab: a plain TapHandler only takes a passive grab, so
+                    // without this the same tap can also fall through to whatever's
+                    // behind the modal dialog (see the KebabButton fix for the same bug).
+                    TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: infoDialog.close() }
                 }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
@@ -604,7 +608,9 @@ ApplicationWindow {
                             color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
                         }
                         HoverHandler { id: infoOkHover }
-                        TapHandler { onTapped: infoDialog.close() }
+                        // Exclusive grab so this tap doesn't also fall through to
+                        // whatever's behind the dialog (e.g. a project row).
+                        TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: infoDialog.close() }
                     }
                 }
             }
@@ -640,7 +646,8 @@ ApplicationWindow {
                 }
                 MaterialIcon {
                     name: "close"; size: 20; color: Theme.text3
-                    TapHandler { onTapped: updateDialog.close() }
+                    // Exclusive grab: see the matching infoDialog close button above.
+                    TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: updateDialog.close() }
                 }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
@@ -673,7 +680,7 @@ ApplicationWindow {
                             color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
                         }
                         HoverHandler { id: laterHover }
-                        TapHandler { onTapped: updateDialog.close() }
+                        TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: updateDialog.close() }
                     }
                     Rectangle {
                         implicitHeight: 30
@@ -687,7 +694,7 @@ ApplicationWindow {
                             color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
                         }
                         HoverHandler { id: dlHover }
-                        TapHandler { onTapped: { updateDialog.close(); DesktopAppController.installUpdate() } }
+                        TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: { updateDialog.close(); DesktopAppController.installUpdate() } }
                     }
                 }
             }
@@ -780,7 +787,7 @@ ApplicationWindow {
                             color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
                         }
                         HoverHandler { id: dlCancelHover }
-                        TapHandler { onTapped: { downloadDialog.close(); DesktopAppController.cancelUpdateDownload() } }
+                        TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: { downloadDialog.close(); DesktopAppController.cancelUpdateDownload() } }
                     }
                 }
             }
@@ -818,7 +825,8 @@ ApplicationWindow {
                 }
                 MaterialIcon {
                     name: "close"; size: 20; color: Theme.text3
-                    TapHandler { onTapped: confirmDeleteDialog.close() }
+                    // Exclusive grab: see the matching infoDialog close button above.
+                    TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: confirmDeleteDialog.close() }
                 }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
@@ -861,7 +869,7 @@ ApplicationWindow {
                             color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
                         }
                         HoverHandler { id: cancelHover }
-                        TapHandler { onTapped: confirmDeleteDialog.close() }
+                        TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: confirmDeleteDialog.close() }
                     }
                     Rectangle {
                         implicitHeight: 30
@@ -877,7 +885,10 @@ ApplicationWindow {
                             font.pixelSize: 12; font.weight: Font.DemiBold
                         }
                         HoverHandler { id: delConfirmHover }
-                        TapHandler { onTapped: { confirmDeleteDialog.close(); root.deleteCurrent() } }
+                        // Exclusive grab matters most here: without it, this tap could
+                        // also fall through and activate whatever record row happens to
+                        // sit underneath the dialog, deleting the wrong thing.
+                        TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: { confirmDeleteDialog.close(); root.deleteCurrent() } }
                     }
                 }
             }

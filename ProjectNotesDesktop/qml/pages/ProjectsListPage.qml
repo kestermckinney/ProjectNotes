@@ -228,9 +228,37 @@ Item {
                         MaterialIcon { name: "chevron_right"; size: 20; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
                     }
 
+                    // Status/invoice dates + reporting periods — always visible (not
+                    // gated behind "Show Internal"): these drive whether a project
+                    // needs attention and are checked constantly. Date colors come
+                    // straight from the abstract data model's ForegroundRole (red/
+                    // yellow when a status or invoice is overdue for its period),
+                    // via the SqlQueryModel-generated <col>_foreground roles.
+                    Flow {
+                        Layout.fillWidth: true
+                        Layout.topMargin: 2
+                        spacing: 10
+                        MetricChip {
+                            label: qsTr("Status Date")
+                            value: (card.model.last_status_date || "").toString()
+                            accentColor: card.model.last_status_date_foreground || Theme.text
+                        }
+                        MetricChip {
+                            label: qsTr("Invoice Date")
+                            value: (card.model.last_invoice_date || "").toString()
+                            accentColor: card.model.last_invoice_date_foreground || Theme.text
+                        }
+                        MetricChip { label: qsTr("Invoice Period"); value: (card.model.invoicing_period || "").toString() }
+                        MetricChip { label: qsTr("Report Period");  value: (card.model.status_report_period || "").toString() }
+                    }
+
                     // Financial strip — the same "internal" columns the Widgets
                     // app reveals under View ▸ Internal Items. Wraps to a second
                     // row on narrow cards; each chip elides so nothing bleeds over.
+                    // Colors likewise come from the model's ForegroundRole where it
+                    // defines one (Consumed/CV/SV/Complete/CPI threshold flags);
+                    // BCWP/EAC keep their fixed accents since the model has no
+                    // color opinion on those two.
                     Flow {
                         Layout.fillWidth: true
                         Layout.topMargin: 2
@@ -241,12 +269,32 @@ Item {
                         MetricChip { label: qsTr("BCWP");     value: (card.model.bcwp || "").toString(); accentColor: Theme.green }
                         MetricChip { label: qsTr("BCWS");     value: (card.model.bcws || "").toString() }
                         MetricChip { label: qsTr("BAC");      value: (card.model.bac || "").toString() }
-                        MetricChip { label: qsTr("Consumed"); value: (card.model.pct_consumed || "").toString() }
+                        MetricChip {
+                            label: qsTr("Consumed")
+                            value: (card.model.pct_consumed || "").toString()
+                            accentColor: card.model.pct_consumed_foreground || Theme.text
+                        }
                         MetricChip { label: qsTr("EAC");      value: (card.model.eac || "").toString(); accentColor: Theme.amber }
-                        MetricChip { label: qsTr("CV");       value: (card.model.cv || "").toString() }
-                        MetricChip { label: qsTr("SV");       value: (card.model.sv || "").toString() }
-                        MetricChip { label: qsTr("CPI");      value: (card.model.cpi || "").toString() }
-                        MetricChip { label: qsTr("Complete"); value: (card.model.pct_complete || "").toString() }
+                        MetricChip {
+                            label: qsTr("CV")
+                            value: (card.model.cv || "").toString()
+                            accentColor: card.model.cv_foreground || Theme.text
+                        }
+                        MetricChip {
+                            label: qsTr("SV")
+                            value: (card.model.sv || "").toString()
+                            accentColor: card.model.sv_foreground || Theme.text
+                        }
+                        MetricChip {
+                            label: qsTr("CPI")
+                            value: (card.model.cpi || "").toString()
+                            accentColor: card.model.cpi_foreground || Theme.text
+                        }
+                        MetricChip {
+                            label: qsTr("Complete")
+                            value: (card.model.pct_complete || "").toString()
+                            accentColor: card.model.pct_complete_foreground || Theme.text
+                        }
                     }
                     }
 
