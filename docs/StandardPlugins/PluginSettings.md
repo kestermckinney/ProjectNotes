@@ -13,6 +13,8 @@ Project Notes comes with a comprehensive set of standard plugins installed and e
 
 All standard plugins are **highly configurable**. You can customize their behavior through settings dialogs accessible from the **Plugins > Settings** menu. This allows you to tailor Project Notes to your organization's specific workflows without modifying code.
 
+**Reaching Plugin Settings:** in the classic Widgets app, these are under the **Plugins > Settings** menu-bar item. In the QML desktop app, open the app menu (the menu icon at the top of the icon rail) — plugin settings appear grouped as **Plugins · Settings**, with a few utility items (Script Editor, Close Stranded Excel/Word, Outlook contact import/export) grouped under **Plugins · Utilities**. Both apps invoke the exact same plugin settings dialogs, so anything configured in one is immediately visible in the other.
+
 ### Standard Plugins Overview
 
 The standard plugins are organized into several categories:
@@ -41,7 +43,6 @@ The standard plugins are organized into several categories:
 - Editor — Configure external script editors
 - My Shortcuts — Define custom menu shortcuts
 - IFS Cloud — Integrate with IFS Cloud ERP system
-- Find Project Email — Search Outlook for project emails by team member (Windows only)
 
 ### Important Note: IFS-Related Plugins
 

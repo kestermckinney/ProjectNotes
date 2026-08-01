@@ -1,17 +1,17 @@
 # Preferences
 
-The Project Notes Preferences dialog allows you to configure application-wide settings that affect how Project Notes operates and communicates with team members and clients.
+The Project Notes Settings page allows you to configure application-wide settings that affect how Project Notes operates and communicates with team members and clients.
 
 ## Accessing Preferences
 
-**To open the Preferences dialog:**
+**To open the Settings page:**
 
-1. From the **File** menu, choose **Preferences...** (or press **Preferences** button if available)
-2. The Preferences dialog will open with all available settings
+1. Click the **Settings** icon in the icon rail, or choose **Preferences** from the app menu (the menu icon at the top of the icon rail).
+2. The Settings page opens with sections for Appearance, Cloud Sync, Project Folders, Preferences, View Options, Data, and About.
 
 ## Project Manager
 
-The **Project Manager** setting identifies you as the primary project manager for your organization. This setting is used to:
+The **Project Manager** setting, under the **Preferences** section of Settings, identifies you as the primary project manager for your organization. This setting is used to:
 
 - **Exclude you from communications** — When sending emails or generating reports, Project Notes may exclude the project manager from recipient lists to avoid sending information to yourself
 - **Track meeting attendance** — Some meeting scheduling features use this setting to determine if you should be included in meeting invitations
@@ -19,16 +19,15 @@ The **Project Manager** setting identifies you as the primary project manager fo
 
 **To set the Project Manager:**
 
-1. Open the **Preferences** dialog from the **File** menu
-2. Click the **Project Manager** dropdown
-3. Select your name from the list of people in your database
-4. Click **OK**
+1. Open **Settings** and find the **Preferences** section.
+2. Click the **Project Manager** drop down.
+3. Select your name from the list of people in your database — the setting saves immediately.
 
 **Note:** The project manager list is populated from the **People** data in your database. If you don't see your name in the list, add yourself as a person first (see [People List Page](PeopleListPage.md)).
 
 ## Managing Company
 
-The **Managing Company** setting specifies your organization or company. This setting is used to:
+The **Managing Company** setting, also under the **Preferences** section of Settings, specifies your organization or company. This setting is used to:
 
 - **Identify internal communications** — Project Notes distinguishes between internal-only communications and communications that include clients
 - **Exclude your company from client communications** — When generating client-facing documents, your company information may be filtered differently than client information
@@ -36,28 +35,17 @@ The **Managing Company** setting specifies your organization or company. This se
 
 **To set the Managing Company:**
 
-1. Open the **Preferences** dialog from the **File** menu
-2. Click the **Managing Company** dropdown
-3. Select your company name from the list of clients in your database
-4. Click **OK**
+1. Open **Settings** and find the **Preferences** section.
+2. Click the **Managing Company** drop down.
+3. Select your company name from the list of clients in your database — the setting saves immediately.
 
 **Note:** The managing company list is populated from the **Clients** data in your database. If you don't see your company in the list, add it as a client first (see [Client List Page](ClientListPage.md)).
 
-## Automatically Check for Updates
+## Checking for Updates
 
-Project Notes can keep itself up to date by checking GitHub for newer releases. The **Updates** section of the Preferences dialog controls this behavior with a single checkbox: **Automatically check for updates**.
+Project Notes can keep itself up to date by checking GitHub for newer releases. A quiet, background check runs automatically each time Project Notes starts. If a newer release is found, it offers to download and install it for you; the installer runs automatically and Project Notes relaunches itself when it finishes. When no update is available, the background check stays silent so it never interrupts your work.
 
-When enabled (the default), Project Notes quietly checks for a newer version in the background. If a newer release is found, it offers to download and install it for you; the installer runs automatically and Project Notes relaunches itself when it finishes. When no update is available, the background check stays silent so it never interrupts your work.
-
-You can also check at any time from the **Help** menu by choosing **Check for Updates…**. A manual check always reports its result — including telling you when you are already running the latest version. See the [Help Menu](HelpMenu.md) for more on manual update checks.
-
-**To turn automatic update checks on or off:**
-
-1. Open the **Preferences** dialog from the **File** menu.
-2. Under **Updates**, check or uncheck **Automatically check for updates**.
-3. Click **OK**.
-
-**Note:** Unlike the Project Manager and Managing Company settings, the update preference is stored in your **local OS profile** (not the database), so it applies to this installation only and is not shared through cloud sync.
+You can also check at any time from the app menu by choosing **Check for Updates…**. A manual check always reports its result — including telling you when you are already running the latest version.
 
 ## How Preferences Are Used
 
@@ -78,10 +66,10 @@ When generating reports (such as meeting minutes or tracker item reports), Proje
 
 ### In Filtering
 
-When you use the [Filter Tool](FilterTool.md) or [View Menu](ViewMenu.md) filtering options:
+When you use the [Filter Tool](FilterTool.md) or the **Show Internal / Budget Items** toggle:
 
 - **Client filtering** — You can filter data by the managing company to see only your organization's data
-- **Internal item visibility** — The "Show Internal Items" option works in conjunction with your project manager setting to determine what should be hidden when presenting to clients
+- **Internal item visibility** — The "Show Internal / Budget Items" option works in conjunction with your project manager setting to determine what should be hidden when presenting to clients
 
 ## Where Preferences Are Saved
 
@@ -91,7 +79,6 @@ See [Plugin Settings — Where Settings Are Stored](<../StandardPlugins/PluginSe
 
 ## Related Documentation
 
-- [File Menu](FileMenu.md) — Access Preferences from the File menu
 - [People List Page](PeopleListPage.md) — Manage people in your database
 - [Client List Page](ClientListPage.md) — Manage clients/companies in your database
 - [Presenting to Clients](PresentingToClients.md) — How to use preferences when presenting to clients

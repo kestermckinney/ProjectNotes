@@ -6,31 +6,46 @@
         { "title": "Home", "path": "index.md" },
         { "title": "Getting Started", "path": "Introduction/GettingStarted.md" },
         { "title": "System Requirements", "path": "Introduction/SystemRequirements.md" },
-        { "title": "Installing on Linux", "path": "Introduction/InstallLinux.md" }
+        { "title": "Installing on Linux", "path": "Introduction/InstallLinux.md" },
+        { "title": "Command-Line Options", "path": "Introduction/DeveloperProfile.md" }
       ]
     },
     {
       "title": "Interface Overview",
       "items": [
-        { "title": "File Menu", "path": "InterfaceOverview/FileMenu.md" },
-        { "title": "Edit Menu", "path": "InterfaceOverview/EditMenu.md" },
-        { "title": "Plugins Menu", "path": "InterfaceOverview/PluginsMenu.md" },
-        { "title": "View Menu", "path": "InterfaceOverview/ViewMenu.md" },
-        { "title": "History Menu", "path": "InterfaceOverview/HistoryMenu.md" },
-        { "title": "Help Menu", "path": "InterfaceOverview/HelpMenu.md" },
-        { "title": "Toolbar", "path": "InterfaceOverview/Toolbar.md" },
         { "title": "Preferences", "path": "InterfaceOverview/Preferences.md" },
         { "title": "Project List Page", "path": "InterfaceOverview/ProjectListPage.md" },
         { "title": "Project Page", "path": "InterfaceOverview/ProjectPage.md" },
         { "title": "Notes Page", "path": "InterfaceOverview/NotesPage.md" },
         { "title": "Item Tracker Page", "path": "InterfaceOverview/ItemTrackerPage.md" },
-        { "title": "Action Item Detail Page", "path": "InterfaceOverview/ActionItemDetailPage.md" },
+        { "title": "Action/Tracker Item Details", "path": "InterfaceOverview/ActionItemDetailPage.md" },
         { "title": "People List Page", "path": "InterfaceOverview/PeopleListPage.md" },
         { "title": "Client List Page", "path": "InterfaceOverview/ClientListPage.md" },
-        { "title": "Search Page", "path": "InterfaceOverview/SearchPage.md" },
-        { "title": "Error Log", "path": "InterfaceOverview/ErrorLog.md" },
+        { "title": "Search Page", "path": "InterfaceOverview/SearchPage.md" }
+      ]
+    },
+    {
+      "title": "Productivity Features",
+      "items": [
+        { "title": "Project Folders", "path": "InterfaceOverview/ProjectFolders.md" },
         { "title": "Filter Tool", "path": "InterfaceOverview/FilterTool.md" },
         { "title": "Sorting and Sizing Columns", "path": "InterfaceOverview/SortingandSizingColumns.md" },
+        { "title": "Find and Replace in Notes", "path": "InterfaceOverview/FindAndReplace.md" },
+        { "title": "Copying Items", "path": "InterfaceOverview/CopyingItems.md" },
+        { "title": "Spell Checking", "path": "InterfaceOverview/SpellChecking.md" },
+        { "title": "UI Zoom", "path": "InterfaceOverview/VectorZoom.md" },
+        { "title": "Error Log", "path": "InterfaceOverview/ErrorLog.md" }
+      ]
+    },
+    {
+      "title": "Cloud Sync",
+      "items": [
+        { "title": "Cloud Sync", "path": "InterfaceOverview/RemoteHost.md" }
+      ]
+    },
+    {
+      "title": "Reporting & Client Presentation",
+      "items": [
         { "title": "Earned Value Terms", "path": "InterfaceOverview/EarnedValueTerms.md" },
         { "title": "Presenting to Clients", "path": "InterfaceOverview/PresentingToClients.md" }
       ]

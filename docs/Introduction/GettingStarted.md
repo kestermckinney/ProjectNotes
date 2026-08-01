@@ -4,9 +4,9 @@
 
 Project Notes automatically creates and opens a local database when it first launches. The database is stored in your user profile.
 
-If you are developing or testing plugins and need a separate environment that does not touch your production data, see [Developer Profile](<DeveloperProfile.md>).
+If you are developing or testing plugins and need a separate environment that does not touch your production data, launch Project Notes with `--developer-profile PROFILENAME`. If you also need cloud sync to hit the test Project Notes Pro environment instead of production while testing, add `--test-supabase` at the same time. See [Command-Line Options](<DeveloperProfile.md>) for both flags and what each isolates.
 
-If you want to back up your data and sync it across your devices, configure cloud sync from **File > Cloud Sync Settings...**. See [File Menu](../InterfaceOverview/FileMenu.md) for details and [Cloud Sync](../InterfaceOverview/RemoteHost.md) for a full feature reference.
+If you want to back up your data and sync it across your devices, configure cloud sync from the **Cloud Sync** section of Settings (click the **Settings** icon in the icon rail). See [Cloud Sync](../InterfaceOverview/RemoteHost.md) for a full feature reference.
 
 ## Cloud Sync Setup
 
@@ -31,18 +31,20 @@ You will need to setup yourself to manage all of the projects. First you need to
 
 **To setup Project Notes:**
 
-1. Choose **Clients** from the **View** menu.
-2. Choose **New Item** from the **Edit** menu.
-3. Type in ***"Your Company Name.*"** in the new row.
-4. Choose **People** from the **View** menu.
-5. Choose **New Item** from the **Edit** menu.
+1. Click the **Clients** icon in the icon rail.
+2. Click **+ New** in the bar above the list.
+3. Type in ***"Your Company Name"*** in the new row.
+4. Click the **People** icon in the icon rail.
+5. Click **+ New** in the bar above the list.
 6. Type your **Name, Email**, and **Role** in the new row.
-7. From the **File** menu, choose **Preferences**.
+7. Choose **Preferences** from the app menu (the menu icon at the top of the icon rail).
 8. Select yourself as the **Project Manager**.
-9. Select ***"Your Company Name"*** as the **Client**.
-10. From the **Plugins** menu, choose **Settings > Export Notes** and set the sub-folder where meeting note exports will be saved.
-11. From the **Plugins** menu, choose **Settings > Export Tracker Items** and set the sub-folder where tracker item exports will be saved.
-12. From the **Plugins** menu, choose **Settings > File Finder** and add the root folder where your project files are stored so the File Finder can find them automatically.
+9. Select ***"Your Company Name"*** as the **Managing Company**.
+10. From the app menu, under **Plugins · Settings**, choose **Export Notes** and set the sub-folder where meeting note exports will be saved.
+11. From the app menu, under **Plugins · Settings**, choose **Export Tracker Items** and set the sub-folder where tracker item exports will be saved.
+12. From the app menu, under **Plugins · Settings**, choose **File Finder** and add the root folder where your project files are stored so the File Finder can find them automatically.
+
+See [Plugin Settings](<../StandardPlugins/PluginSettings.md>) for the full list of plugin settings reachable this way.
 
 ## Populating Your Database
 
@@ -51,7 +53,7 @@ Project Notes is capable of connecting information from various systems. In orde
 There are three methods to import clients and people.
 
 * **Importing From Outlook** - Project Notes includes Outlook contact sync utilities. See [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) for details. (Outlook COM sync requires Windows; Office 365 sync works on all platforms.)
-* **Importing From XML** - All database items can be imported from a [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) file. File import is accessible from the [File Menu](<../InterfaceOverview/FileMenu.md>).
+* **Importing From XML** - All database items can be imported from a [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) file. Choose **Import XML…** from the app menu (the menu icon at the top of the icon rail) to import a file.
 * **Entering Manually** - Client information can be entered using the [Client List Page](<../InterfaceOverview/ClientListPage.md>), and contacts can be entered using the [People List Page](<../InterfaceOverview/PeopleListPage.md>).
 
 ## Project Notes Preferences

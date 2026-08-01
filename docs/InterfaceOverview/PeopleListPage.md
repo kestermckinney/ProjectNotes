@@ -6,11 +6,11 @@ Project Notes keeps a list of people that can be associated with projects. You c
 
 ## The People List Page Layout
 
-To navigate to the People List Page, select **People** from the **View** menu. The view of people can be filtered using the [Filter Tool](<FilterTool.md>).
+To navigate to the People List Page, click the **People** icon in the icon rail. The view of people can be filtered using the [Filter Tool](<FilterTool.md>), or narrowed with the quick-search box above the list.
 
 **To create a new person:**
 
-1. Select **New Item** from the **Edit** menu.
+1. Click **+ New** in the bar above the list, or choose **New Record** from the app menu (the menu icon at the top of the icon rail).
 2. Type in the **Name**. **Name** is a required field.
 3. Type in the **Email**, **Office Phone**, **Mobile Phone** if available. Many plugins will require **Email**.
 4. Type in the **Role**. **Role** will be copied to the project team member role by default when a person is added to a project.
@@ -18,21 +18,11 @@ To navigate to the People List Page, select **People** from the **View** menu. T
 
 **To delete a person:**
 
-1. Click a cell in the persons row to select it.
-2. Select **Delete Item** from the **Edit** menu.
-3. Click **Yes** to confirm the deletion. Note: You may not be able to delete people if they are associated with other project information. In this case clicking, **Yes** opens the Search Page. The [File Menu](<../InterfaceOverview/FileMenu.md>) topic explains how the Search Page works.
+1. Right-click the person's card (or click its **⋮** button) to open its menu.
+2. Choose **Delete**.
+3. Click **Yes** to confirm the deletion. Note: You may not be able to delete people if they are associated with other project information. In this case, clicking **Yes** opens the Search Page — see [Search Page](<SearchPage.md>) for how to work with search results.
 
 **To edit a person:**
 
-1. Double-click the cell to activate the editor.
-2. Type in or select the new value.
-3. Click out of the cell or press **Enter**.
-
-**To add people by dragging contacts:**
-
-You can drag one or more contacts from your system contacts application (Contacts on macOS, Outlook on Windows) and drop them directly onto the People list. Project Notes will:
-
-1. Create any new client company records needed (using the contact's company name).
-2. Create or update each person's record using the contact's name, email, phone, and company. If a person with the same name already exists, they are not duplicated.
-
-This is useful for quickly importing a group of contacts without entering each one manually.
+1. Click the person's card to open it.
+2. Type in or select the new value in any field — changes save automatically.
