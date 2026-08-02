@@ -53,17 +53,18 @@ Popup {
     width: 232
     // Cap the popup height and let it scroll once the plugin/menu list grows
     // past that — otherwise a table with many plugins produces a menu taller
-    // than the screen.
-    readonly property int maxMenuHeight: 480
+    // than the window. Also clamped to the overlay so the drawn (scaled) menu
+    // always fits on-screen.
+    readonly property int maxMenuHeight:
+        Math.min(480, parent ? parent.height / Theme.uiScale - 12 : 480)
     height: Math.min(_content.implicitHeight + topPadding + bottomPadding, maxMenuHeight)
-    // A real floating window so the menu can spill past the main-window edges when
-    // the plugin list makes it taller than the window (Qt keeps it on-screen).
-    // As a detached window it renders at 1x — the workspace zoom (Theme.uiScale)
-    // no longer applies, matching the LogViewerWindow precedent.
-    // NOTE: a window popup anchors to its PARENT ITEM's surface, so we keep the
-    // default parent (the page it's declared in) — NOT Overlay.overlay, which on
-    // Wayland collapses the anchor and dumps the menu in a window corner.
-    popupType: Popup.Window
+    // Deliberately an in-scene popup (default Popup.Item) — popupType:
+    // Popup.Window (Qt 6.10) forwards clicks on the menu rows to the main window
+    // underneath, activating whatever record sits behind the menu instead of the
+    // row's action, so a detached window is unusable here.
+    parent: Overlay.overlay
+    scale: Theme.uiScale            // match the zoomed workspace
+    transformOrigin: Item.TopLeft   // grow down-right from the cursor anchor
 
     background: Rectangle {
         radius: Theme.radius
@@ -82,15 +83,19 @@ Popup {
         else
             menu._plugins = []
         menu._sections = menu._groupPlugins(menu._plugins)
-        // sx,sy are scene (window) coordinates. A window popup positions relative to
-        // its parent item's surface, so convert to parent-local coords (this also
-        // accounts for the zoomLayer scale). It can still extend past the window
-        // edge — Qt keeps it on-screen.
-        var lp = menu.parent ? menu.parent.mapFromItem(null, sx, sy) : Qt.point(sx, sy)
-        x = lp.x
-        y = lp.y
+        // sx,sy are scene (window) coordinates — the overlay's own space. The
+        // menu is drawn at Theme.uiScale, so clamp with its scaled footprint to
+        // keep it inside the window.
+        var sw = width * Theme.uiScale
+        var sh = height * Theme.uiScale
+        x = Math.max(6, Math.min(sx, (parent ? parent.width  : sx + sw) - sw - 6))
+        y = Math.max(6, Math.min(sy, (parent ? parent.height : sy + sh) - sh - 6))
         open()
     }
+
+    // The plugin section makes the menu taller; keep it on-screen once laid out.
+    onHeightChanged: if (visible && parent)
+        y = Math.max(6, Math.min(y, parent.height - height * Theme.uiScale - 6))
 
     function _fire(sig) { close(); sig() }
     function _runPlugin(idx) {
@@ -224,6 +229,12 @@ Popup {
             }
         }
         HoverHandler { id: rHover }
-        TapHandler { onTapped: mr.activated() }
+        // Exclusive grab so the tap doesn't fall through to the record row behind
+        // the menu (see the dialog-button fix in Main.qml). A plain passive-grab
+        // TapHandler lets the same press select/activate whatever's underneath.
+        TapHandler {
+            gesturePolicy: TapHandler.ReleaseWithinBounds
+            onTapped: mr.activated()
+        }
     }
 }

@@ -19,11 +19,21 @@ Popup {
     modal: true
     dim: false
     padding: 6
-    width: 232
-    // A real floating window so the full File/Edit/View/Help list can spill past
-    // the window edge instead of being clipped (Qt keeps it on-screen). As a
-    // detached window it renders at 1x — the workspace zoom no longer applies.
-    popupType: Popup.Window
+    // Size to the widest row rather than a fixed width, so long labels
+    // (e.g. "Show Internal / Budget Items") are never clipped. Clamped so the
+    // menu stays readable but doesn't grow unbounded.
+    width: Math.max(232, Math.min(implicitContentWidth + leftPadding + rightPadding, 460))
+    // Cap the height and scroll once the File/Edit/View/Help + plugin groups
+    // grow past that. The rail lowers this to the window's logical height so the
+    // in-scene popup never clips at the window edge; the ScrollView takes over.
+    property int maxMenuHeight: 760
+    height: Math.min(_content.implicitHeight + topPadding + bottomPadding, maxMenuHeight)
+    // Deliberately an in-scene popup (default Popup.Item) — popupType:
+    // Popup.Window (Qt 6.10) forwards clicks on the menu rows to the main window
+    // underneath, activating whatever record sits behind the menu instead of the
+    // row's action, so a detached window is unusable here.
+    scale: Theme.uiScale            // match the zoomed workspace
+    transformOrigin: Item.TopLeft   // grow down-right from the rail anchor
 
     background: Rectangle {
         radius: Theme.radius
@@ -63,7 +73,7 @@ Popup {
         ]},
         { name: qsTr("Help"), items: [
             { icon: "menu_book", label: qsTr("User Guide"), key: "F1", action: "help" },
-            { icon: "system_update", label: qsTr("Check for Updates…"), key: "", action: "check_updates" },
+            { icon: "system_update_alt", label: qsTr("Check for Updates…"), key: "", action: "check_updates" },
             { icon: "forward_to_inbox", label: qsTr("Send Logs to Support…"), key: "", action: "support_logs" },
             { icon: "info", label: qsTr("About"), key: "", action: "about" },
         ]},
@@ -110,55 +120,74 @@ Popup {
         }
     }
 
-    contentItem: ColumnLayout {
-        spacing: 0
-        Repeater {
-            model: menu.groups.concat(menu.pluginGroups)
-            delegate: ColumnLayout {
-                required property var modelData
-                Layout.fillWidth: true
-                spacing: 0
-                Text {
-                    text: modelData.name.toUpperCase()
-                    color: Theme.text3
-                    font.pixelSize: 10; font.weight: Font.Bold
-                    Layout.leftMargin: 10; Layout.topMargin: 7; Layout.bottomMargin: 3
-                }
-                Repeater {
-                    model: modelData.items
-                    delegate: Rectangle {
-                        required property var modelData
-                        Layout.fillWidth: true
-                        implicitHeight: 32
-                        radius: Theme.radiusSm
-                        color: rowHover.hovered ? Theme.surface2 : "transparent"
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 10; anchors.rightMargin: 10
-                            spacing: 10
-                            MaterialIcon {
-                                name: modelData.icon; size: 18; color: Theme.text2
-                                Layout.alignment: Qt.AlignVCenter
+    contentItem: ScrollView {
+        clip: true
+        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+        ColumnLayout {
+            id: _content
+            width: menu.availableWidth
+            spacing: 0
+            Repeater {
+                model: menu.groups.concat(menu.pluginGroups)
+                delegate: ColumnLayout {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    spacing: 0
+                    Text {
+                        text: modelData.name.toUpperCase()
+                        color: Theme.text3
+                        font.pixelSize: 10; font.weight: Font.Bold
+                        Layout.leftMargin: 10; Layout.topMargin: 7; Layout.bottomMargin: 3
+                    }
+                    Repeater {
+                        model: modelData.items
+                        delegate: Rectangle {
+                            required property var modelData
+                            Layout.fillWidth: true
+                            implicitHeight: 32
+                            // Report the row's natural width (content + the 10px side
+                            // margins) so the Popup can size to its widest row. The
+                            // RowLayout is anchored, so it won't drive width on its own.
+                            implicitWidth: rowContent.implicitWidth + 20
+                            radius: Theme.radiusSm
+                            color: rowHover.hovered ? Theme.surface2 : "transparent"
+                            RowLayout {
+                                id: rowContent
+                                anchors.fill: parent
+                                anchors.leftMargin: 10; anchors.rightMargin: 10
+                                spacing: 10
+                                MaterialIcon {
+                                    name: modelData.icon; size: 18; color: Theme.text2
+                                    Layout.alignment: Qt.AlignVCenter
+                                }
+                                Text {
+                                    text: modelData.label; color: Theme.text; font.pixelSize: 13
+                                    Layout.fillWidth: true; elide: Text.ElideRight
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                // check mark for active toggle items
+                                MaterialIcon {
+                                    visible: modelData.toggle === true && modelData.on === true
+                                    name: "check"; size: 17; color: Theme.accent
+                                    Layout.alignment: Qt.AlignVCenter
+                                }
+                                Text {
+                                    visible: (modelData.key || "") !== "" && !(modelData.toggle === true)
+                                    text: modelData.key || ""; color: Theme.text3; font.pixelSize: 11
+                                    verticalAlignment: Text.AlignVCenter
+                                }
                             }
-                            Text {
-                                text: modelData.label; color: Theme.text; font.pixelSize: 13
-                                Layout.fillWidth: true; elide: Text.ElideRight
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                            // check mark for active toggle items
-                            MaterialIcon {
-                                visible: modelData.toggle === true && modelData.on === true
-                                name: "check"; size: 17; color: Theme.accent
-                                Layout.alignment: Qt.AlignVCenter
-                            }
-                            Text {
-                                visible: (modelData.key || "") !== "" && !(modelData.toggle === true)
-                                text: modelData.key || ""; color: Theme.text3; font.pixelSize: 11
-                                verticalAlignment: Text.AlignVCenter
+                            HoverHandler { id: rowHover }
+                            // Exclusive grab (not a plain passive-grab TapHandler): a
+                            // passive grab lets the same tap fall through to the record
+                            // list behind the menu, selecting a row instead of firing
+                            // the action. Matches the dialog-button fix in Main.qml.
+                            TapHandler {
+                                gesturePolicy: TapHandler.ReleaseWithinBounds
+                                onTapped: menu._act(modelData.action)
                             }
                         }
-                        HoverHandler { id: rowHover }
-                        TapHandler { onTapped: menu._act(modelData.action) }
                     }
                 }
             }

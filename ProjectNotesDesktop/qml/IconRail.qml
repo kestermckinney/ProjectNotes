@@ -43,6 +43,9 @@ Rectangle {
                 id: appMenu
                 x: 46
                 y: 0
+                // Keep the in-scene popup inside the window (rail.height is the
+                // window's logical height; the menu opens ~10px from the top).
+                maxMenuHeight: rail.height - 16
                 onTriggered: (a) => rail.menuAction(a)
             }
         }
