@@ -67,6 +67,10 @@ Item {
     signal deleteRequested()
     signal newRequested()
     signal filterRequested()
+    // Column filter for one of this page's sub-tab lists (Status Report,
+    // Tracker, Team, Locations, Notes) — routed to Main's shared FilterDialog,
+    // keyed by the tab's filterSection name (see FilterDialog.openFor()).
+    signal subFilterRequested(string section)
 
     function _clientNames() { return _clients.map(function(c){ return c.name }) }
     function _peopleNames() { return _people.map(function(p){ return p.name }) }
@@ -109,6 +113,14 @@ Item {
         _reload()
         DesktopAppController.setProjectFilter(page.projectId)
         DesktopAppController.refreshProjectNotes()
+        // These sub-tab models are shared, project-scoped singletons reused by
+        // every ProjectDetailPage instance — clear any quick search left over
+        // from a previously-viewed project so it doesn't silently carry over.
+        DesktopAppController.setQuickSearch(DesktopAppController.statusReportItemsModel, "")
+        DesktopAppController.setQuickSearch(DesktopAppController.projectTrackerItemsModel, "")
+        DesktopAppController.setQuickSearch(DesktopAppController.projectTeamMembersModel, "")
+        DesktopAppController.setQuickSearch(DesktopAppController.projectLocationsModel, "")
+        DesktopAppController.setQuickSearch(DesktopAppController.projectNotesModel, "")
         tabBar.currentIndex = DesktopAppController.lastProjectDetailTab(page.projectId)
     }
 
@@ -366,10 +378,13 @@ Item {
                         title: qsTr("Status Report Items")
                         icon: "flag"
                         addLabel: qsTr("Add Status Item")
+                        searchModel: DesktopAppController.statusReportItemsModel
+                        filterSection: "statusreport"
                         // addStatusItem appends a pending (unsaved) row; it is INSERTed
                         // only when a field is edited. Do NOT refresh here — refresh()
                         // re-queries the DB and would wipe the new row before it is seen.
                         onAdd: DesktopAppController.addStatusItem(page.projectId)
+                        onFilter: page.subFilterRequested(filterSection)
                     }
                     Repeater {
                         id: statusRep
@@ -442,12 +457,15 @@ Item {
                         title: qsTr("Tracker Items")
                         icon: "task_alt"
                         addLabel: qsTr("Add Item")
+                        searchModel: DesktopAppController.projectTrackerItemsModel
+                        filterSection: "trackeritems"
                         onAdd: {
                             page._saveNow()
                             DesktopAppController.addTrackerItem(page.projectId)
                             var d = DesktopAppController.getTrackerItemDetailData(0)
                             if (d.id !== undefined) page.itemActivated(d.id.toString())
                         }
+                        onFilter: page.subFilterRequested(filterSection)
                     }
                     Repeater {
                         id: trackerRep
@@ -607,7 +625,10 @@ Item {
                         title: qsTr("Team")
                         icon: "groups"
                         addLabel: qsTr("Add Member")
+                        searchModel: DesktopAppController.projectTeamMembersModel
+                        filterSection: "team"
                         onAdd: { page._saveNow(); teamPicker.open() }
+                        onFilter: page.subFilterRequested(filterSection)
                     }
                     Repeater {
                         id: teamRep
@@ -723,8 +744,11 @@ Item {
                                 title: qsTr("Locations")
                                 icon: "folder"
                                 addLabel: qsTr("Add Location")
+                                searchModel: DesktopAppController.projectLocationsModel
+                                filterSection: "locations"
                                 // Pending row is INSERTed on first edit; refresh() would wipe it.
                                 onAdd: DesktopAppController.addProjectLocation(page.projectId)
+                                onFilter: page.subFilterRequested(filterSection)
                             }
                             // Browse for a file and add it as a new location.
                             Rectangle {
@@ -905,12 +929,15 @@ Item {
                         title: qsTr("Notes")
                         icon: "edit_note"
                         addLabel: qsTr("Add Note")
+                        searchModel: DesktopAppController.projectNotesModel
+                        filterSection: "notes"
                         onAdd: {
                             page._saveNow()
                             var r = DesktopAppController.addProjectNote(page.projectId)
                             if (r < 0) return
                             page.noteActivated(r, DesktopAppController.projectNoteIdAtRow(r))
                         }
+                        onFilter: page.subFilterRequested(filterSection)
                     }
                     Repeater {
                         id: notesRep
@@ -1145,14 +1172,67 @@ Item {
         property string title: ""
         property string icon: "folder"
         property string addLabel: qsTr("Add")
+        // Opt-in quick search: when set, a search field appears that filters
+        // this model live (mirrors TopBar's global search box).
+        property var searchModel: null
+        // Opt-in filter button: when non-empty, a Filter button appears and
+        // emits filter() — the page wires this to the shared FilterDialog,
+        // keyed by this section name (see FilterDialog.openFor()).
+        property string filterSection: ""
         signal add()
+        signal filter()
         Layout.fillWidth: true
         Layout.topMargin: 8
+        spacing: 8
         MaterialIcon { name: bar.icon; size: 18; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
         Text {
             text: bar.title; color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
             Layout.fillWidth: true; elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
+        }
+        Rectangle {
+            visible: bar.searchModel !== null
+            Layout.preferredWidth: 180
+            implicitHeight: 28
+            radius: Theme.radiusSm
+            color: Theme.surface
+            border.color: Theme.border
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 8
+                anchors.rightMargin: 6
+                spacing: 6
+                MaterialIcon { name: "search"; size: 15; color: Theme.text3 }
+                TextField {
+                    Layout.fillWidth: true
+                    placeholderText: qsTr("Search")
+                    color: Theme.text
+                    placeholderTextColor: Theme.text3
+                    background: null
+                    topPadding: 0; bottomPadding: 0
+                    verticalAlignment: Text.AlignVCenter
+                    font.pixelSize: 12
+                    onTextEdited: DesktopAppController.setQuickSearch(bar.searchModel, text)
+                }
+            }
+        }
+        Rectangle {
+            visible: bar.filterSection !== ""
+            implicitHeight: 28; implicitWidth: fRow.implicitWidth + 16
+            radius: Theme.radiusSm
+            color: fHover.hovered ? Theme.surface2 : Theme.surface
+            border.color: Theme.border
+            Layout.alignment: Qt.AlignVCenter
+            RowLayout {
+                id: fRow; anchors.centerIn: parent; spacing: 5
+                MaterialIcon { name: "filter_list"; size: 15; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                Text {
+                    text: qsTr("Filter"); color: Theme.text; font.pixelSize: 12
+                    verticalAlignment: Text.AlignVCenter
+                }
+            }
+            HoverHandler { id: fHover }
+            TapHandler { onTapped: bar.filter() }
         }
         Rectangle {
             implicitHeight: 28; implicitWidth: aRow.implicitWidth + 18

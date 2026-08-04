@@ -161,7 +161,7 @@ Rectangle {
             width: 1; height: 20; color: Theme.border
         }
 
-        FmtButton { glyph: "B"; onTriggered: bar._apply(TextFormatter.toggleBold) }
+        FmtButton { icon: "format_bold";           onTriggered: bar._apply(TextFormatter.toggleBold) }
         FmtButton { icon: "format_italic";        onTriggered: bar._apply(TextFormatter.toggleItalic) }
         FmtButton { icon: "format_underlined";    onTriggered: bar._apply(TextFormatter.toggleUnderline) }
         FmtButton { icon: "strikethrough_s";      onTriggered: bar._apply(TextFormatter.toggleStrikethrough) }

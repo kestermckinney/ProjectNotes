@@ -149,7 +149,11 @@ Dialog {
                 TextField {
                     id: changeField
                     anchors.fill: parent
-                    anchors.margins: 6
+                    anchors.leftMargin: 8
+                    anchors.rightMargin: 8
+                    topPadding: 0
+                    bottomPadding: 0
+                    verticalAlignment: Text.AlignVCenter
                     color: Theme.text
                     font.pixelSize: 13
                     background: null

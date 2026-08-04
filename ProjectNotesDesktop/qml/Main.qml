@@ -440,6 +440,7 @@ ApplicationWindow {
             onDeleteRequested: root.confirmDelete()
             onNewRequested: root.addForCurrentSection()
             onFilterRequested: filterDialog.openFor(root.currentSection)
+            onSubFilterRequested: (section) => filterDialog.openFor(section)
         }
     }
     Component {

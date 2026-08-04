@@ -11,6 +11,7 @@
 #include <QQuickTextDocument>
 #include <QRegularExpression>
 #include <QStandardPaths>
+#include <QTextCursor>
 #include <QTextDocument>
 
 // ── DesktopSpellChecker ───────────────────────────────────────────────────────
@@ -147,12 +148,30 @@ QString SpellCheck::sourceText() const
     return m_editor->property("text").toString();
 }
 
-// Apply a replacement over [start, start+length) using the editor's own QML
-// methods, which both TextArea and TextField provide.
+// Apply a replacement over [start, start+length). For a rich-text editor
+// (TextArea, which exposes a textDocument), we go through QTextCursor directly
+// and re-apply the replaced run's own QTextCharFormat — the editor's own QML
+// insert() otherwise inserts using the document's default char format, which
+// silently drops any bold/italic/font override the replaced word had. A plain
+// TextField has no textDocument and no rich formatting to lose, so it keeps
+// using the editor's own remove()/insert() methods.
 void SpellCheck::applyEdit(int start, int length, const QString& replacement)
 {
     if (!m_editor)
         return;
+
+    QQuickTextDocument* qd = m_editor->property("textDocument").value<QQuickTextDocument*>();
+    if (qd && qd->textDocument()) {
+        QTextCursor cursor(qd->textDocument());
+        cursor.setPosition(start);
+        cursor.setPosition(start + length, QTextCursor::KeepAnchor);
+        const QTextCharFormat format = cursor.charFormat();
+        cursor.removeSelectedText();
+        if (!replacement.isEmpty())
+            cursor.insertText(replacement, format);
+        return;
+    }
+
     QMetaObject::invokeMethod(m_editor, "remove", Q_ARG(int, start), Q_ARG(int, start + length));
     if (!replacement.isEmpty())
         QMetaObject::invokeMethod(m_editor, "insert", Q_ARG(int, start), Q_ARG(QString, replacement));

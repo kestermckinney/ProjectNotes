@@ -266,8 +266,10 @@ Item {
                             anchors.rightMargin: 8
                             spacing: 10
 
-                            // Icon picker (cycles through Theme.folderIcons)
+                            // Icon picker: click to open a grid of all available icons,
+                            // highlighting the one currently selected.
                             Rectangle {
+                                id: iconSwatch
                                 width: 30; height: 30; radius: 8
                                 color: "transparent"
                                 border.color: Theme.border
@@ -279,10 +281,8 @@ Item {
                                 }
                                 TapHandler {
                                     onTapped: {
-                                        var icons = Theme.folderIcons
-                                        var i = icons.indexOf(folderRow.folder.icon)
-                                        FolderManager.setFolderIcon(folderRow.folder.id,
-                                            icons[(i + 1) % icons.length])
+                                        var p = iconSwatch.mapToItem(null, 0, iconSwatch.height)
+                                        iconPickerMenu.openFor(folderRow.folder, p.x, p.y)
                                     }
                                 }
                             }
@@ -570,6 +570,69 @@ Item {
         fileMode: FileDialog.OpenFile
         nameFilters: [ qsTr("XML files (*.xml)") ]
         onAccepted: DesktopAppController.importXmlFile(selectedFile)
+    }
+
+    // Folder icon picker — a grid of Theme.folderIcons, highlighting the icon
+    // currently assigned to the folder being edited. Mirrors the themed in-scene
+    // Popup pattern used by SpellCheckField's context menu.
+    Popup {
+        id: iconPickerMenu
+        modal: true
+        dim: false
+        padding: 10
+        width: 184
+        parent: Overlay.overlay
+        scale: Theme.uiScale
+        transformOrigin: Item.TopLeft
+
+        property var _folder: null
+
+        background: Rectangle {
+            radius: Theme.radius
+            color: Theme.surface
+            border.color: Theme.border
+        }
+
+        function openFor(folder, sx, sy) {
+            iconPickerMenu._folder = folder
+            var maxX = (parent ? parent.width : sx + width) - width - 6
+            var maxY = (parent ? parent.height : sy + 200) - 6
+            x = Math.max(6, Math.min(sx, maxX))
+            y = Math.max(6, Math.min(sy, maxY))
+            open()
+        }
+
+        contentItem: GridLayout {
+            columns: 5
+            rowSpacing: 6
+            columnSpacing: 6
+            Repeater {
+                model: Theme.folderIcons
+                delegate: Rectangle {
+                    id: iconCell
+                    required property var modelData
+                    width: 28; height: 28; radius: 8
+                    color: iconCellHover.hovered ? Theme.surface2 : "transparent"
+                    border.width: 2
+                    border.color: iconPickerMenu._folder
+                                  && iconPickerMenu._folder.icon === modelData
+                                  ? Theme.accent : "transparent"
+                    MaterialIcon {
+                        anchors.centerIn: parent
+                        name: iconCell.modelData
+                        size: 17
+                        color: iconPickerMenu._folder ? iconPickerMenu._folder.color : Theme.text2
+                    }
+                    HoverHandler { id: iconCellHover }
+                    TapHandler {
+                        onTapped: {
+                            FolderManager.setFolderIcon(iconPickerMenu._folder.id, iconCell.modelData)
+                            iconPickerMenu.close()
+                        }
+                    }
+                }
+            }
+        }
     }
 
     function _createFolder() {

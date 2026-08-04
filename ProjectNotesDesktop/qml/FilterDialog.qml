@@ -62,6 +62,11 @@ Popup {
         case "items":    _model = DesktopAppController.allItemsModel;     _sectionLabel = qsTr("Master Items"); break
         case "people":   _model = DesktopAppController.peopleModel;       _sectionLabel = qsTr("People"); break
         case "clients":  _model = DesktopAppController.clientsModel;      _sectionLabel = qsTr("Clients"); break
+        case "statusreport": _model = DesktopAppController.statusReportItemsModel;  _sectionLabel = qsTr("Status Report Items"); break
+        case "trackeritems": _model = DesktopAppController.projectTrackerItemsModel; _sectionLabel = qsTr("Tracker Items"); break
+        case "team":          _model = DesktopAppController.projectTeamMembersModel; _sectionLabel = qsTr("Team"); break
+        case "locations":     _model = DesktopAppController.projectLocationsModel;   _sectionLabel = qsTr("Locations"); break
+        case "notes":         _model = DesktopAppController.projectNotesModel;       _sectionLabel = qsTr("Notes"); break
         default: return
         }
         _cols = DesktopAppController.filterColumns(_model)
