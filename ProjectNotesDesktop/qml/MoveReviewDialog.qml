@@ -38,7 +38,9 @@ Popup {
     }
 
     function _confirm() {
-        DesktopAppController.moveTrackerItemToProject(dlg._itemId, dlg._projectId)
+        // Drag/drop has no meeting-picker step, so the linked meeting (if any)
+        // is simply cleared — meetings are project-scoped.
+        DesktopAppController.moveTrackerItem(dlg._itemId, dlg._projectId, "")
         dlg._dismiss()
     }
     // Close on the next tick rather than synchronously inside the tap handler —

@@ -447,7 +447,8 @@ private slots:
     // collision, assigned_to/identified_by auto-added to the destination
     // project's team when missing, and a linked meeting (note_id) cleared.
     // Mirrors Widgets' ItemDetailsDelegate::verifyProjectNumber(), but for the
-    // QML bridge's checkTrackerItemMove()/moveTrackerItemToProject().
+    // QML bridge's checkTrackerItemMove()/moveTrackerItem() (passing an empty
+    // note id, matching the sidebar drag/drop path's unconditional clear).
     void test_20b_moveTrackerItemToProject()
     {
         // A second project to move items into.
@@ -511,7 +512,7 @@ private slots:
             QCOMPARE(members.size(), 1);
             QCOMPARE(members.first().toMap().value("id").toString(), moverId);
 
-            QVERIFY2(c->moveTrackerItemToProject(freeItemId, destProjectId),
+            QVERIFY2(c->moveTrackerItem(freeItemId, destProjectId, ""),
                      qPrintable(c->lastSaveError()));
 
             c->openTrackerItem(freeItemId);
@@ -545,7 +546,7 @@ private slots:
             QVERIFY(!newNumber.isEmpty());
             QVERIFY(newNumber != freeNumber);
 
-            QVERIFY2(c->moveTrackerItemToProject(itemId, destProjectId),
+            QVERIFY2(c->moveTrackerItem(itemId, destProjectId, ""),
                      qPrintable(c->lastSaveError()));
             c->openTrackerItem(itemId);
             QCOMPARE(c->getTrackerItemDetailData(0).value("item_number").toString(), newNumber);
@@ -564,7 +565,7 @@ private slots:
             QVERIFY(chk.value("willClearMeeting").toBool());
             QVERIFY(!chk.value("meetingTitle").toString().isEmpty());
 
-            QVERIFY2(c->moveTrackerItemToProject(itemId, destProjectId),
+            QVERIFY2(c->moveTrackerItem(itemId, destProjectId, ""),
                      qPrintable(c->lastSaveError()));
             c->openTrackerItem(itemId);
             const QVariantMap after = c->getTrackerItemDetailData(0);

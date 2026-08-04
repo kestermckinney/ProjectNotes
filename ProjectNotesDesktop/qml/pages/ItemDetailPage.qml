@@ -320,7 +320,7 @@ Item {
 
     // Routed to Main.exportRecord when a comment row's menu exports XML.
     signal exportRequested(string table, string id)
-    // Routed to Main → MoveToProjectDialog when "Move To…" is chosen.
+    // Routed to Main → MoveToDialog when "Move To…" is chosen.
     signal moveToRequested(string itemId)
 
     // Shared record/plugin menu for the comments list.

@@ -196,17 +196,20 @@ ApplicationWindow {
         contentStack.push(itemDetailComponent, { itemId: itemId })
     }
 
-    // Move a tracker item to a different project — shared by the sidebar drop
-    // handler and the "Move To…" project picker. Only opens the review dialog
-    // when the move actually needs attention (renumber / losing a linked
-    // meeting); a plain move (including any silent team auto-add) just happens.
+    // Move a tracker item to a different project via the sidebar drop handler
+    // (drag/drop has no "pick a meeting" step, so any linked meeting is simply
+    // cleared — meetings are project-scoped and can't follow the item). Only
+    // opens the review dialog when the move actually needs attention (renumber
+    // / losing a linked meeting); a plain move (including any silent team
+    // auto-add) just happens. The "Move To…" menu option uses MoveToDialog
+    // instead, which lets the user pick the destination meeting explicitly.
     function requestTrackerItemMove(itemId, projectId) {
         var chk = DesktopAppController.checkTrackerItemMove(itemId, projectId)
         if (!chk.valid) return
         if (chk.willRenumber || chk.willClearMeeting)
             moveReviewDialog.openFor(itemId, projectId, chk)
         else
-            DesktopAppController.moveTrackerItemToProject(itemId, projectId)
+            DesktopAppController.moveTrackerItem(itemId, projectId, "")
     }
 
     // Create a new record in the current section (shared by the TopBar + menu).
@@ -433,7 +436,7 @@ ApplicationWindow {
             onNoteActivated: (noteRow, noteId) => root.openNote(noteRow, noteId, projectId)
             onItemActivated: (itemId) => root.openItem(itemId)
             onExportRequested: (table, id) => root.exportRecord(table, id)
-            onMoveToRequested: (id) => moveToProjectDialog.openFor(id)
+            onMoveToRequested: (id) => moveToDialog.openFor(id)
             onDeleteRequested: root.confirmDelete()
             onNewRequested: root.addForCurrentSection()
             onFilterRequested: filterDialog.openFor(root.currentSection)
@@ -443,6 +446,7 @@ ApplicationWindow {
         id: noteDetailComponent
         ProjectNoteDetailPage {
             onExportRequested: (table, id) => root.exportRecord(table, id)
+            onMoveToRequested: (id) => moveToDialog.openFor(id)
         }
     }
     Component {
@@ -475,14 +479,14 @@ ApplicationWindow {
             onItemActivated: (itemId) => root.openItem(itemId)
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onFilterRequested: () => filterDialog.openFor(root.currentSection)
-            onMoveToRequested: (id) => moveToProjectDialog.openFor(id)
+            onMoveToRequested: (id) => moveToDialog.openFor(id)
         }
     }
     Component {
         id: itemDetailComponent
         ItemDetailPage {
             onExportRequested: (table, id) => root.exportRecord(table, id)
-            onMoveToRequested: (id) => moveToProjectDialog.openFor(id)
+            onMoveToRequested: (id) => moveToDialog.openFor(id)
         }
     }
     Component {
@@ -951,15 +955,13 @@ ApplicationWindow {
     // Filter editor (opened from the TopBar Filter button and the hamburger menu).
     FilterDialog { id: filterDialog }
 
-    // Tracker item → project move: the review dialog (shown only when the move
-    // needs attention — renumber or losing a linked meeting) and the project
-    // picker behind "Move To…". Shared by the sidebar drop handler and every
-    // "Move To…" menu entry via root.requestTrackerItemMove().
+    // Tracker item move: MoveReviewDialog confirms the sidebar drag/drop path
+    // (shown only when it needs attention — renumber or losing a linked
+    // meeting, via root.requestTrackerItemMove()); MoveToDialog is every
+    // "Move To…" menu entry's project + meeting picker and performs the move
+    // itself once the user presses Move.
     MoveReviewDialog { id: moveReviewDialog }
-    MoveToProjectDialog {
-        id: moveToProjectDialog
-        onProjectPicked: (itemId, projectId) => root.requestTrackerItemMove(itemId, projectId)
-    }
+    MoveToDialog { id: moveToDialog }
 
     // Log Viewer — a separate, movable, non-modal window opened from the menu.
     LogViewerWindow { id: logViewer }

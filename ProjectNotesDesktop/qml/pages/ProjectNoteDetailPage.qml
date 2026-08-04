@@ -171,7 +171,7 @@ Item {
             }
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.max(220, noteEdit.contentHeight + 24)
+                Layout.preferredHeight: Math.max(220, noteEdit.contentHeight + 40)
                 radius: Theme.radiusSm
                 color: Theme.surface
                 border.color: noteEdit.activeFocus ? Theme.accent : Theme.border
@@ -179,6 +179,7 @@ Item {
                     id: noteEdit
                     anchors.fill: parent
                     anchors.margins: 10
+                    anchors.bottomMargin: 16
                     color: Theme.text
                     textFormat: TextEdit.RichText
                     wrapMode: TextEdit.WordWrap
@@ -374,7 +375,8 @@ Item {
                                 function _menu(sx, sy) {
                                     rowMenu.openFor(DesktopAppController.notesActionItemsModel,
                                         (ai.model.id || "").toString(), qsTr("Action Item"),
-                                        (ai.model.item_name || "").toString(), sx, sy)
+                                        (ai.model.item_name || "").toString(), sx, sy,
+                                        /*allowDuplicate*/ false, /*allowMoveTo*/ true)
                                 }
                                 TapHandler {
                                     acceptedButtons: Qt.RightButton
@@ -408,12 +410,19 @@ Item {
                                             Layout.fillWidth: true
                                             color: Theme.text
                                             font.pixelSize: 13
+                                            horizontalAlignment: Text.AlignLeft
                                             background: null
                                             padding: 0
                                             selectByMouse: true
                                             placeholderText: qsTr("(unnamed item)")
                                             placeholderTextColor: Theme.text3
-                                            Component.onCompleted: text = (ai.model.item_name || "").toString()
+                                            Component.onCompleted: {
+                                                text = (ai.model.item_name || "").toString()
+                                                // TextInput scrolls to keep the cursor visible; setting
+                                                // text moves the cursor to the end, which can leave a
+                                                // long name scrolled so it appears right-aligned.
+                                                cursorPosition = 0
+                                            }
                                             onEditingFinished: ai._saveName()
                                         }
                                         Text {
@@ -425,6 +434,7 @@ Item {
                                             }
                                             visible: text !== ""
                                             color: Theme.text3; font.pixelSize: 11; elide: Text.ElideRight
+                                            horizontalAlignment: Text.AlignLeft
                                             Layout.fillWidth: true
                                         }
                                     }
@@ -528,11 +538,18 @@ Item {
 
     // Routed to Main.exportRecord when a sub-list row's menu exports XML.
     signal exportRequested(string table, string id)
+    // Routed to Main's shared Move To… dialog, same as ProjectDetailPage /
+    // ItemsPage / ItemDetailPage.
+    signal moveToRequested(string itemId)
 
     // Shared record/plugin menu for the Attendees and Action Items lists.
+    // Move To… is only ever offered for Action Items (see ai._menu()'s
+    // allowMoveTo arg) — attRow._menu() never sets it, so this handler simply
+    // never fires for an attendee row.
     RecordRowMenu {
         id: rowMenu
         onExportRecord: (table, id) => page.exportRequested(table, id)
+        onMoveToRecord: (id) => page.moveToRequested(id)
     }
 
     // Shared full-field spell-check dialog (opened by fields / the toolbar).

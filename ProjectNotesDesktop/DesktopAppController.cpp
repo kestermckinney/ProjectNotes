@@ -945,6 +945,22 @@ QVariantList DesktopAppController::peopleList() const
     return out;
 }
 
+QVariantList DesktopAppController::projectList() const
+{
+    QVariantList out;
+    auto* proxy = global_DBObjects.projectinformationmodelproxy();
+    if (!proxy) return out;
+    for (int row = 0; row < proxy->rowCount(); ++row) {
+        const QVariantMap m = proxyRowToMap(proxy, row);
+        QVariantMap e;
+        e.insert("id",   m.value("id").toString());
+        e.insert("name", (m.value("project_number").toString() + "  "
+                           + m.value("project_name").toString()).trimmed());
+        out.append(e);
+    }
+    return out;
+}
+
 QVariantList DesktopAppController::teamMemberList(const QString& projectId,
                                                   const QStringList& includeIds) const
 {
@@ -995,6 +1011,31 @@ QVariantList DesktopAppController::teamMemberList(const QString& projectId,
             out.append(m);
         }
     }
+    return out;
+}
+
+QVariantList DesktopAppController::notesForProject(const QString& projectId) const
+{
+    QVariantList out;
+    if (projectId.isEmpty()) return out;
+
+    DB_LOCK;
+    QSqlQuery qry(global_DBObjects.getDb());
+    qry.prepare("SELECT id, note_title, "
+                "strftime('%m/%d/%Y', datetime(note_date, 'unixepoch')) "
+                "FROM project_notes "
+                "WHERE project_id = ? AND (deleted IS NULL OR deleted = 0) "
+                "ORDER BY note_date DESC");
+    qry.addBindValue(projectId);
+    qry.exec();
+    while (qry.next()) {
+        QVariantMap m;
+        m.insert("id",    qry.value(0).toString());
+        m.insert("title", qry.value(1).toString());
+        m.insert("date",  qry.value(2).toString());
+        out.append(m);
+    }
+    DB_UNLOCK;
     return out;
 }
 
@@ -1561,7 +1602,8 @@ QVariantMap DesktopAppController::checkTrackerItemMove(const QString& itemId,
     return result;
 }
 
-bool DesktopAppController::moveTrackerItemToProject(const QString& itemId, const QString& newProjectId)
+bool DesktopAppController::moveTrackerItem(const QString& itemId, const QString& newProjectId,
+                                            const QString& newNoteId)
 {
     global_DBObjects.setLastSaveError("");
     if (itemId.isEmpty() || newProjectId.isEmpty()) return false;
@@ -1572,34 +1614,35 @@ bool DesktopAppController::moveTrackerItemToProject(const QString& itemId, const
     if (src->rowCount(QModelIndex()) == 0) return false;
 
     const QString currentProjectId = src->data(src->index(0, 14)).toString();
-    if (currentProjectId == newProjectId) return true;  // already there
-
-    const QString currentNumber = src->data(src->index(0, 1)).toString();
-    const QString assignedTo    = src->data(src->index(0, 7)).toString();
-    const QString identifiedBy  = src->data(src->index(0, 4)).toString();
-    const QString noteId        = src->data(src->index(0, 13)).toString();
-
-    const QString newNumber = isItemNumberUnique(newProjectId, itemId, currentNumber)
-        ? currentNumber : src->getNextItemNumber(newProjectId).toString();
+    const QString currentNumber    = src->data(src->index(0, 1)).toString();
+    const QString assignedTo       = src->data(src->index(0, 7)).toString();
+    const QString identifiedBy     = src->data(src->index(0, 4)).toString();
 
     QAbstractItemModel* proxy = global_DBObjects.actionitemsdetailsmodelproxy();
     if (proxy->rowCount() == 0) return false;
 
-    // note_id is project-scoped (a meeting can't span two projects), so a
-    // linked meeting is dropped as part of the move.
-    const bool ok = noteId.isEmpty()
-        ? applyRowFields(proxy, 0, { {1, newNumber}, {14, newProjectId} })
-        : applyRowFields(proxy, 0, { {1, newNumber}, {13, QString()}, {14, newProjectId} });
-    if (!ok) return false;
+    if (currentProjectId == newProjectId) {
+        // Same project: only the meeting link may be changing (newNoteId is
+        // caller-supplied — the Move To… dialog guarantees it belongs to this
+        // project, or is empty for "no meeting").
+        if (!applyRowFields(proxy, 0, { {13, newNoteId} })) return false;
+    } else {
+        const QString newNumber = isItemNumberUnique(newProjectId, itemId, currentNumber)
+            ? currentNumber : src->getNextItemNumber(newProjectId).toString();
 
-    for (const QString& personId : { identifiedBy, assignedTo })
-        if (!personId.isEmpty())
-            addPersonToProjectTeam(newProjectId, personId);
+        if (!applyRowFields(proxy, 0, { {1, newNumber}, {13, newNoteId}, {14, newProjectId} }))
+            return false;
+
+        for (const QString& personId : { identifiedBy, assignedTo })
+            if (!personId.isEmpty())
+                addPersonToProjectTeam(newProjectId, personId);
+        refreshTeamMembers();
+    }
 
     global_DBObjects.actionitemsdetailsmodel()->refresh();
+    global_DBObjects.notesactionitemsmodel()->refresh();
     global_DBObjects.trackeritemsmodel()->refresh();
     refreshAllItems();
-    refreshTeamMembers();
     return true;
 }
 
@@ -1749,8 +1792,13 @@ bool DesktopAppController::saveProjectLocation(int row, const QString& locationT
     const QPersistentModelIndex pIdx(model->index(row, 0));
     if (!pIdx.isValid()) return false;
 
+    // path (col 4) must be written BEFORE location_type (col 2): writing the path
+    // makes ProjectLocationsModel::setData re-derive the file type from it (see
+    // setProjectLocationPath above) and overwrite col 2 unconditionally, even when
+    // the path is unchanged. If type were written first, that re-derivation would
+    // immediately clobber the user's explicit type selection.
     return applyRowFields(model, pIdx.row(), {
-        {2, locationType}, {3, description}, {4, path} });
+        {4, path}, {2, locationType}, {3, description} });
 }
 
 bool DesktopAppController::setProjectLocationPath(int row, const QString& fileUrlOrPath)

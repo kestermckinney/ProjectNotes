@@ -59,7 +59,7 @@ Item {
     signal itemActivated(string itemId)
     // Routed to Main.exportRecord when a sub-table row's menu exports XML.
     signal exportRequested(string table, string id)
-    // Routed to Main → MoveToProjectDialog when a tracker item's "Move To…" is chosen.
+    // Routed to Main → MoveToDialog when a tracker item's "Move To…" is chosen.
     signal moveToRequested(string itemId)
     // Page-level record menu (kebab + right-click on the page background),
     // mirroring the sidebar's per-row Project menu. Routed to Main so it can
@@ -767,32 +767,99 @@ Item {
                                 id: locCard
                                 required property int index
                                 required property var model
+                                property bool expanded: false
                                 Layout.fillWidth: true
-                                implicitHeight: 80
+                                implicitHeight: locCol.implicitHeight + 20
                                 function _menu(sx, sy) {
                                     rowMenu.openFor(DesktopAppController.projectLocationsModel,
                                         (locCard.model.id || "").toString(), qsTr("Location"),
                                         (locCard.model.location_description || locCard.model.full_path || "").toString(),
                                         sx, sy)
                                 }
-                                RowLayout {
+                                // Icon that reflects the location's file type.
+                                readonly property var _typeIcons: ({
+                                    "File Folder": "folder",
+                                    "Web Link": "link",
+                                    "Microsoft Project": "view_timeline",
+                                    "Word Document": "description",
+                                    "Excel Document": "table_chart",
+                                    "PowerPoint Document": "slideshow",
+                                    "PDF File": "picture_as_pdf",
+                                    "Generic File (System Identified)": "text_snippet"
+                                })
+                                readonly property string _typeIcon:
+                                    _typeIcons[(locCard.model.location_type || "").toString()] || "text_snippet"
+                                ColumnLayout {
+                                    id: locCol
                                     anchors.fill: parent
-                                    anchors.leftMargin: 12; anchors.rightMargin: 8
+                                    anchors.margins: 10
                                     spacing: 8
-                                    ComboField {
-                                        Layout.preferredWidth: 120
-                                        Layout.fillWidth: false
-                                        Layout.alignment: Qt.AlignVCenter
-                                        options: DesktopAppController.fileTypeOptions()
-                                        value: (locCard.model.location_type || "").toString()
-                                        onActivated: (v) => DesktopAppController.saveProjectLocation(
-                                            locCard.index, v, (locCard.model.location_description || "").toString(),
-                                            (locCard.model.full_path || "").toString())
+
+                                    // Summary row (click to expand/collapse the editor)
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 8
+                                        MaterialIcon { name: locCard._typeIcon; size: 16; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+                                        Text {
+                                            text: (locCard.model.location_description || locCard.model.full_path
+                                                   || qsTr("(unnamed location)")).toString()
+                                            color: Theme.text
+                                            font.pixelSize: 13
+                                            elide: Text.ElideRight
+                                            horizontalAlignment: Text.AlignLeft
+                                            Layout.fillWidth: true
+                                        }
+                                        // Browse for / re-point this row's file.
+                                        RowIconBtn {
+                                            Layout.alignment: Qt.AlignVCenter
+                                            icon: "folder_open"
+                                            onAct: { locationFileDialog.targetRow = locCard.index; locationFileDialog.open() }
+                                        }
+                                        // Open with the OS default handler.
+                                        RowIconBtn {
+                                            Layout.alignment: Qt.AlignVCenter
+                                            icon: "open_in_new"; tint: Theme.accent
+                                            enabled: (locCard.model.full_path || "").toString().length > 0
+                                            onAct: DesktopAppController.openProjectLocation(locCard.index)
+                                        }
+                                        // Edit / collapse toggle
+                                        Rectangle {
+                                            implicitWidth: 26; implicitHeight: 26; radius: 6
+                                            color: locEHover.hovered ? Theme.surface2 : "transparent"
+                                            Layout.alignment: Qt.AlignVCenter
+                                            MaterialIcon {
+                                                anchors.centerIn: parent
+                                                name: locCard.expanded ? "expand_less" : "edit"
+                                                size: 15; color: Theme.text2
+                                            }
+                                            HoverHandler { id: locEHover }
+                                            TapHandler { onTapped: locCard.expanded = !locCard.expanded }
+                                        }
+                                        KebabButton {
+                                            Layout.alignment: Qt.AlignVCenter
+                                            onClicked: (sx, sy) => locCard._menu(sx, sy)
+                                        }
+                                        RowDelete {
+                                            Layout.alignment: Qt.AlignVCenter
+                                            onDel: { DesktopAppController.deleteProjectLocation(locCard.index); DesktopAppController.refreshProjectLocations() }
+                                        }
                                     }
-                                    // Name/description on top, file location below.
+
+                                    // Inline editor — type, name/description, path.
                                     ColumnLayout {
                                         Layout.fillWidth: true
+                                        Layout.leftMargin: 24
+                                        visible: locCard.expanded
                                         spacing: 6
+                                        ComboField {
+                                            Layout.fillWidth: true
+                                            label: qsTr("Type")
+                                            options: DesktopAppController.fileTypeOptions()
+                                            value: (locCard.model.location_type || "").toString()
+                                            onActivated: (v) => DesktopAppController.saveProjectLocation(
+                                                locCard.index, v, (locCard.model.location_description || "").toString(),
+                                                (locCard.model.full_path || "").toString())
+                                        }
                                         LocField {
                                             Layout.fillWidth: true
                                             icon: "label"
@@ -811,27 +878,6 @@ Item {
                                                 locCard.index, (locCard.model.location_type || "").toString(),
                                                 (locCard.model.location_description || "").toString(), t)
                                         }
-                                    }
-                                    // Browse for / re-point this row's file.
-                                    RowIconBtn {
-                                        Layout.alignment: Qt.AlignVCenter
-                                        icon: "folder_open"
-                                        onAct: { locationFileDialog.targetRow = locCard.index; locationFileDialog.open() }
-                                    }
-                                    // Open with the OS default handler.
-                                    RowIconBtn {
-                                        Layout.alignment: Qt.AlignVCenter
-                                        icon: "open_in_new"; tint: Theme.accent
-                                        enabled: (locCard.model.full_path || "").toString().length > 0
-                                        onAct: DesktopAppController.openProjectLocation(locCard.index)
-                                    }
-                                    KebabButton {
-                                        Layout.alignment: Qt.AlignVCenter
-                                        onClicked: (sx, sy) => locCard._menu(sx, sy)
-                                    }
-                                    RowDelete {
-                                        Layout.alignment: Qt.AlignVCenter
-                                        onDel: { DesktopAppController.deleteProjectLocation(locCard.index); DesktopAppController.refreshProjectLocations() }
                                     }
                                 }
                                 TapHandler {

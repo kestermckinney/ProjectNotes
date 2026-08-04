@@ -232,6 +232,9 @@ public:
     // ── Picker lists ([{id,name}]) for client / person combos ────────────────
     Q_INVOKABLE QVariantList clientList() const;
     Q_INVOKABLE QVariantList peopleList() const;
+    // All projects ([{id,name}], name = "number  project name") — backs the
+    // "Move To…" project combo.
+    Q_INVOKABLE QVariantList projectList() const;
     // Team members of a project ([{id,name}]) for the Assigned To / Identified By
     // / Primary Contact combos on project-scoped screens (mirrors the Widgets
     // team combos). Any id in `includeIds` that is not a current team member is
@@ -239,6 +242,9 @@ public:
     // team continues to display.
     Q_INVOKABLE QVariantList teamMemberList(const QString& projectId,
                                             const QStringList& includeIds = {}) const;
+    // Meeting notes for a project ([{id,title,date}]), newest first — backs the
+    // "Move To…" meeting picker for action items.
+    Q_INVOKABLE QVariantList notesForProject(const QString& projectId) const;
 
     // ── Static option lists (ComboBox models) ────────────────────────────────
     Q_INVOKABLE QStringList projectStatusOptions() const;
@@ -322,17 +328,26 @@ public:
     Q_INVOKABLE bool        isItemNameUnique(const QString& projectId, const QString& itemId, const QString& itemName) const;
     Q_INVOKABLE bool        isItemNumberUnique(const QString& projectId, const QString& itemId, const QString& itemNumber) const;
 
-    // ── Move a tracker item to a different project ───────────────────────────
+    // ── Move a tracker item to a different project and/or meeting ────────────
     // Read-only preview of what moving `itemId` to `newProjectId` would do:
     // { valid, projectName, oldNumber, newNumber, willRenumber, willClearMeeting,
     //   meetingTitle, membersToAdd:[{id,name}] }. `valid` is false when
-    // newProjectId is empty/unknown or equals the item's current project.
+    // newProjectId is empty/unknown or equals the item's current project. Used
+    // for the drag-and-drop move path's confirmation prompt; the Move To…
+    // dialog uses willRenumber/membersToAdd for its own inline hints and picks
+    // the meeting explicitly rather than relying on willClearMeeting.
     Q_INVOKABLE QVariantMap checkTrackerItemMove(const QString& itemId, const QString& newProjectId) const;
-    // Perform the move: reassigns project_id, renumbers if the current
-    // item_number collides in the destination, clears a project-scoped linked
-    // meeting (note_id), and auto-adds assigned_to/identified_by to the
-    // destination project's team if they aren't already members there.
-    Q_INVOKABLE bool        moveTrackerItemToProject(const QString& itemId, const QString& newProjectId);
+    // Perform the move: reassigns project_id (renumbering if the current
+    // item_number collides in the destination, and auto-adding assigned_to/
+    // identified_by to the destination project's team) when newProjectId
+    // differs from the item's current project, and always sets note_id to
+    // newNoteId (empty for "no meeting"). Passing the item's current
+    // project/note is a no-op. Used by both the "Move To…" dialog (explicit
+    // project + meeting) and the sidebar drag/drop path (explicit project,
+    // empty note — meetings are project-scoped and can't follow a cross-
+    // project move).
+    Q_INVOKABLE bool        moveTrackerItem(const QString& itemId, const QString& newProjectId,
+                                            const QString& newNoteId);
 
     // ── Tracker item comments ────────────────────────────────────────────────
     Q_INVOKABLE int         addComment(const QString& itemId);
@@ -471,7 +486,7 @@ private:
     bool applyRowFields(QAbstractItemModel* model, int row,
                         std::initializer_list<std::pair<int, QVariant>> fields);
 
-    // Helpers for moveTrackerItemToProject / checkTrackerItemMove.
+    // Helpers for moveTrackerItem / checkTrackerItemMove.
     bool isProjectTeamMember(const QString& projectId, const QString& peopleId) const;
     bool addPersonToProjectTeam(const QString& projectId, const QString& peopleId);
 
