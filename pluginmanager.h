@@ -2,6 +2,17 @@
 #ifndef PLUGINMANAGER_H
 #define PLUGINMANAGER_H
 
+// Pull in the debug CRT/STL declarations BEFORE the block below temporarily
+// undefines _DEBUG to include Python.h against the release CRT. <corecrt.h>
+// only declares _invalid_parameter under _DEBUG; if Python.h (which includes
+// the CRT headers) is processed first with _DEBUG undefined, corecrt.h's
+// include guard gets set without that declaration, and every later STL header
+// (<atomic>, <xmemory>, …) fails with "'_invalid_parameter': is not a member
+// of the global namespace". Including these here first keeps the guard correct.
+#include <atomic>
+#include <cstdlib>
+#include <functional>
+
 #ifdef _DEBUG
 #pragma push_macro("slots")
 #undef slots

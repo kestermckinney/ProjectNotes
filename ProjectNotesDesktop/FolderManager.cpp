@@ -264,7 +264,7 @@ bool FolderManager::removeProjectFromFolder(const QString& projectId, const QStr
 
 void FolderManager::removeProjectFromAllFolders(const QString& projectId)
 {
-    if (m_memberships.remove(projectId) > 0)
+    if (m_memberships.remove(projectId))
         save();
 }
 

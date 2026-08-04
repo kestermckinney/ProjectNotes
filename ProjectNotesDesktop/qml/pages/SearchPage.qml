@@ -206,7 +206,6 @@ Item {
                             }
                             KebabButton {
                                 implicitWidth: 26; implicitHeight: 26
-                                visible: rh.hovered
                                 onClicked: (sx, sy) => rc._menu(sx, sy)
                             }
                             MaterialIcon { name: "chevron_right"; size: 20; color: Theme.text3 }

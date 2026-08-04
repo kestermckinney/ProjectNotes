@@ -509,16 +509,28 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E make_directory   "${DEPLOY_DIR}"
 
         # 2. Application executables
+        # Ships the QML (Qt Quick) desktop frontend, not the legacy Widgets
+        # "ProjectNotes" target. The QML target already builds as
+        # "Project Notes.exe" (OUTPUT_NAME), matching the Widgets binary, so
+        # shortcuts, registry entries, and the installer script don't change;
+        # this copy just stages it (from its own build subdir) into DEPLOY_DIR.
         COMMAND ${CMAKE_COMMAND} -E copy
-            "$<TARGET_FILE:ProjectNotes>"
+            "$<TARGET_FILE:ProjectNotesDesktop>"
             "${DEPLOY_DIR}/Project Notes.exe"
         COMMAND ${CMAKE_COMMAND} -E copy
             "${SQLITESYNCPRO_BUILD_DIR}/admin/Project Notes Remote Host.exe"
             "${DEPLOY_DIR}/Project Notes Remote Host.exe"
 
         # 3. Qt DLLs and plugins via windeployqt
+        # --qmldir points windeployqt at the QML sources so it can statically
+        # scan imports (qt_add_qml_module compiles them into the binary, so
+        # they aren't visible on disk next to the exe). qmltooling (the QML
+        # debugger/profiler backends) is dev-only and skipped in the shipped
+        # installer.
         COMMAND "${_qt_bin}/windeployqt.exe"
             --release --no-translations
+            --qmldir "${CMAKE_CURRENT_SOURCE_DIR}/ProjectNotesDesktop"
+            --skip-plugin-types qmltooling
             --dir "${DEPLOY_DIR}"
             "${DEPLOY_DIR}/Project Notes.exe"
 
@@ -563,7 +575,7 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/dictionary" "${DEPLOY_DIR}/dictionary"
 
-        DEPENDS ProjectNotes
+        DEPENDS ProjectNotesDesktop
         VERBATIM
     )
 

@@ -14,9 +14,98 @@
 #include <QQmlApplicationEngine>
 #include <QQmlEngine>
 #include <QQuickStyle>
+#include <QWindow>
+
+#if defined(_WIN32)
+#include <windows.h>
+#include <shobjidl.h>
+#include <string>
+
+namespace {
+
+// The AppUserModel property keys (fmtid {9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3}).
+// Defined locally so we don't have to pull in propkey.h + INITGUID/Propsys.lib.
+constexpr PROPERTYKEY kPkeyAppUserModelId =
+    { { 0x9F4C2855, 0x9F79, 0x4B39, { 0xA8, 0xD0, 0xE1, 0xD4, 0x2D, 0xE1, 0xD5, 0xF3 } }, 5 };
+constexpr PROPERTYKEY kPkeyRelaunchCommand =
+    { { 0x9F4C2855, 0x9F79, 0x4B39, { 0xA8, 0xD0, 0xE1, 0xD4, 0x2D, 0xE1, 0xD5, 0xF3 } }, 2 };
+constexpr PROPERTYKEY kPkeyRelaunchIconResource =
+    { { 0x9F4C2855, 0x9F79, 0x4B39, { 0xA8, 0xD0, 0xE1, 0xD4, 0x2D, 0xE1, 0xD5, 0xF3 } }, 3 };
+constexpr PROPERTYKEY kPkeyRelaunchDisplayNameResource =
+    { { 0x9F4C2855, 0x9F79, 0x4B39, { 0xA8, 0xD0, 0xE1, 0xD4, 0x2D, 0xE1, 0xD5, 0xF3 } }, 4 };
+
+void setStringProperty(IPropertyStore* store, const PROPERTYKEY& key, const wchar_t* value)
+{
+    PROPVARIANT pv;
+    PropVariantInit(&pv);
+    const size_t len = wcslen(value) + 1;
+    pv.pwszVal = static_cast<LPWSTR>(CoTaskMemAlloc(len * sizeof(wchar_t)));
+    if (pv.pwszVal) {
+        pv.vt = VT_LPWSTR;
+        wcscpy_s(pv.pwszVal, len, value);
+        store->SetValue(key, pv);
+    }
+    PropVariantClear(&pv);
+}
+
+// Give the top-level window an explicit taskbar identity. Because this build sets
+// a custom AppUserModelID (see SetCurrentProcessExplicitAppUserModelID in main),
+// Windows no longer draws the taskbar button from the window's own icon — it
+// resolves the icon (and pin/relaunch behavior) from whatever carries that AUMID.
+// A dev/build-dir run has no Start-menu shortcut carrying it, so the taskbar button
+// comes up blank. Stamping RelaunchIconResource (plus command/name) onto the
+// window's property store points Windows straight at the exe's embedded icon, so
+// the taskbar button and any pinned shortcut render correctly without a shortcut.
+void applyWindowsTaskbarIdentity(QWindow* window)
+{
+    if (!window)
+        return;
+    const HWND hwnd = reinterpret_cast<HWND>(window->winId());
+    if (!hwnd)
+        return;
+
+    IPropertyStore* store = nullptr;
+    if (FAILED(SHGetPropertyStoreForWindow(hwnd, IID_PPV_ARGS(&store))) || !store)
+        return;
+
+    wchar_t exePath[MAX_PATH] = {};
+    GetModuleFileNameW(nullptr, exePath, MAX_PATH);
+    const std::wstring iconResource = std::wstring(exePath) + L",0";
+    const std::wstring relaunchCommand = L"\"" + std::wstring(exePath) + L"\"";
+
+    setStringProperty(store, kPkeyAppUserModelId, L"ProjectNotesPro.ProjectNotes.Desktop");
+    setStringProperty(store, kPkeyRelaunchIconResource, iconResource.c_str());
+    setStringProperty(store, kPkeyRelaunchCommand, relaunchCommand.c_str());
+    setStringProperty(store, kPkeyRelaunchDisplayNameResource, L"Project Notes");
+
+    store->Commit();
+    store->Release();
+}
+
+} // namespace
+#endif
 
 int main(int argc, char* argv[])
 {
+#if defined(_WIN32)
+    // Give the QML desktop app its own taskbar / Task Manager identity. Both this
+    // app and the legacy Widgets build ship as "Project Notes.exe"; without a
+    // distinct AppUserModelID, Windows 11 groups them under a single app identity
+    // and shows the Widgets icon for this process in the taskbar and Task Manager
+    // (the window title-bar icon comes from setWindowIcon and is unaffected).
+    // Setting an explicit AUMID before any window is created decouples them so the
+    // process uses its own embedded/window icon. Must be called early in main().
+    SetCurrentProcessExplicitAppUserModelID(L"ProjectNotesPro.ProjectNotes.Desktop");
+#endif
+
+    // Must be set before QApplication is constructed, or any Python plugin that
+    // imports PyQt6.QtWebEngineWidgets (exportnotes_plugin.py,
+    // exportstatusreport_plugin.py, exporttrackeritems_plugin.py) fails to load
+    // with "QtWebEngineWidgets must be imported or Qt.AA_ShareOpenGLContexts
+    // must be set before a QCoreApplication instance is created" — matches the
+    // Widgets app's main.cpp, which sets this for the same reason.
+    QCoreApplication::setAttribute(Qt::ApplicationAttribute::AA_ShareOpenGLContexts);
+
     // QApplication (not QGuiApplication): ProjectNotesCore surfaces database
     // errors through QMessageBox, which requires the Widgets application object.
     QApplication app(argc, argv);
@@ -97,6 +186,22 @@ int main(int argc, char* argv[])
         Qt::QueuedConnection);
 
     engine.load(url);
+
+    if (engine.rootObjects().isEmpty())
+        return -1;
+    auto* window = qobject_cast<QWindow*>(engine.rootObjects().first());
+
+#if defined(_WIN32)
+    // Must run before the window is shown: the taskbar resolves a window's
+    // identity (and icon) from this property store the moment the window is
+    // first mapped, and won't re-query it afterward. Main.qml keeps the
+    // ApplicationWindow's `visible` false for exactly this reason — showing it
+    // is deferred to the explicit window->show() below.
+    applyWindowsTaskbarIdentity(window);
+#endif
+
+    if (window)
+        window->show();
 
     return app.exec();
 }

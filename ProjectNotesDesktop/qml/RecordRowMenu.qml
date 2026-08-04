@@ -20,6 +20,8 @@ RecordContextMenu {
     signal exportRecord(string table, string id)
     // Re-emitted when Duplicate is chosen (only offered when openFor enables it).
     signal duplicateRecord(string table, string id)
+    // Re-emitted when Move To… is chosen (only offered when openFor enables it).
+    signal moveToRecord(string id)
 
     // Built-ins that make sense for a child record: the row already carries inline
     // open/add/delete affordances, so the menu adds only Export + Refresh + plugins.
@@ -34,16 +36,19 @@ RecordContextMenu {
         DesktopAppController.tableNameForModel(rowMenu.model), rowMenu.recordId)
     onDuplicateRequested: rowMenu.duplicateRecord(
         DesktopAppController.tableNameForModel(rowMenu.model), rowMenu.recordId)
+    onMoveToRequested: rowMenu.moveToRecord(rowMenu.recordId)
     onRefreshRequested: DesktopAppController.refreshModel(rowMenu.model)
 
     // Configure for one row and open at scene coordinates. Pass allowDuplicate
-    // true for row types that support Copy/Duplicate (tracker items).
-    function openFor(rowModel, id, type, label, sx, sy, allowDuplicate) {
+    // true for row types that support Copy/Duplicate, and allowMoveTo true for
+    // row types that support Move To… (both: tracker items only, so far).
+    function openFor(rowModel, id, type, label, sx, sy, allowDuplicate, allowMoveTo) {
         rowMenu.model = rowModel
         rowMenu.recordId = id
         rowMenu.recordType = type
         rowMenu.recordLabel = label
         rowMenu.canDuplicate = (allowDuplicate === true)
+        rowMenu.canMoveTo = (allowMoveTo === true)
         rowMenu.openAt(sx, sy)
     }
 }

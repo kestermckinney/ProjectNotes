@@ -18,15 +18,16 @@ Popup {
     property bool   canNew: true
     property bool   canDelete: true
     property bool   canDuplicate: false
+    property bool   canMoveTo: false
     property bool   canExport: true
     property bool   canFilter: true
     property bool   canRefresh: true
 
-    // True when any of the top-group actions (Open/New/Delete/Duplicate) is
-    // present — drives the divider that separates that group from
+    // True when any of the top-group actions (Open/New/Delete/Duplicate/Move To)
+    // is present — drives the divider that separates that group from
     // Export/Filter/Refresh, so the menu doesn't open with a stray divider when
     // the top group is fully hidden.
-    readonly property bool _hasTopGroup: canOpen || canNew || canDelete || canDuplicate
+    readonly property bool _hasTopGroup: canOpen || canNew || canDelete || canDuplicate || canMoveTo
 
     // Plugin menus: the list model this row belongs to + the row's id. When set,
     // openAt() queries the controller for plugin menus whose table matches, and
@@ -43,6 +44,7 @@ Popup {
     signal newRequested()
     signal deleteRequested()
     signal duplicateRequested()
+    signal moveToRequested()
     signal exportRequested()
     signal filterRequested()
     signal refreshRequested()
@@ -157,6 +159,7 @@ Popup {
             MenuRow { icon: "open_in_full"; label: qsTr("Open");        visible: menu.canOpen;      onActivated: menu._fire(menu.openRequested) }
             MenuRow { icon: "add";          label: qsTr("New");         visible: menu.canNew;       onActivated: menu._fire(menu.newRequested) }
             MenuRow { icon: "content_copy"; label: qsTr("Duplicate");   visible: menu.canDuplicate; onActivated: menu._fire(menu.duplicateRequested) }
+            MenuRow { icon: "drive_file_move"; label: qsTr("Move To…"); visible: menu.canMoveTo;   onActivated: menu._fire(menu.moveToRequested) }
             MenuRow { icon: "delete";       label: qsTr("Delete");      visible: menu.canDelete;    danger: true; onActivated: menu._fire(menu.deleteRequested) }
             Rectangle {
                 visible: menu._hasTopGroup

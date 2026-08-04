@@ -71,6 +71,7 @@ class DesktopAppController : public QObject
     Q_PROPERTY(bool    syncActive            READ syncActive   NOTIFY syncProgressChanged)
     Q_PROPERTY(QString syncDetail            READ syncDetail   NOTIFY syncProgressChanged)
     Q_PROPERTY(QString subscriptionStatusText READ subscriptionStatusText NOTIFY subscriptionStatusChanged)
+    Q_PROPERTY(QString projectManagerInitials READ projectManagerInitials NOTIFY projectManagerChanged)
     Q_PROPERTY(QString supabaseConnectionInfo READ supabaseConnectionInfo CONSTANT)
 
 public:
@@ -130,6 +131,16 @@ public:
     Q_INVOKABLE void    setManagingCompanyId(const QString& clientId);
     Q_INVOKABLE QString projectManagerId() const;
     Q_INVOKABLE void    setProjectManagerId(const QString& personId);
+    // Initials derived from the configured project manager's name (e.g. "Paul
+    // McKinney" -> "PM"); empty when no project manager has been set.
+    QString projectManagerInitials() const;
+
+    // Index of the last-selected tab on the project detail page, remembered per
+    // project (Status Report = 0, Tracker = 1, Team = 2, Locations = 3, Notes =
+    // 4). Defaults to the Tracker tab when no setting has been saved yet for
+    // that project.
+    Q_INVOKABLE int     lastProjectDetailTab(const QString& projectId) const;
+    Q_INVOKABLE void    setLastProjectDetailTab(const QString& projectId, int index);
 
     // ── View options ─────────────────────────────────────────────────────────
     bool showClosedProjects() const;
@@ -146,7 +157,12 @@ public:
     // Searchable columns of a list model: [{ field, label, isDate }].
     Q_INVOKABLE QVariantList filterColumns(QAbstractItemModel* model) const;
     // Distinct display values present in a column (for the value checkboxes).
-    Q_INVOKABLE QStringList  columnDistinctValues(QAbstractItemModel* model, const QString& field) const;
+    // Distinct values for a filterable column, as [{value, label}, ...]. `value`
+    // is the raw stored value (what filtering matches against); `label` is what
+    // to display — for foreign-key columns (e.g. client_id) that resolves the
+    // id to its lookup table's display column (e.g. client_name), matching the
+    // Widgets filter dialog's delegate-rendered value list.
+    Q_INVOKABLE QVariantList columnDistinctValues(QAbstractItemModel* model, const QString& field) const;
     // Apply the editor's per-column selections. Each spec:
     //   { field, values:[...], search:"", rangeStart:"", rangeEnd:"" }.
     Q_INVOKABLE void applyColumnFilters(QAbstractItemModel* model, const QVariantList& specs);
@@ -306,6 +322,18 @@ public:
     Q_INVOKABLE bool        isItemNameUnique(const QString& projectId, const QString& itemId, const QString& itemName) const;
     Q_INVOKABLE bool        isItemNumberUnique(const QString& projectId, const QString& itemId, const QString& itemNumber) const;
 
+    // ── Move a tracker item to a different project ───────────────────────────
+    // Read-only preview of what moving `itemId` to `newProjectId` would do:
+    // { valid, projectName, oldNumber, newNumber, willRenumber, willClearMeeting,
+    //   meetingTitle, membersToAdd:[{id,name}] }. `valid` is false when
+    // newProjectId is empty/unknown or equals the item's current project.
+    Q_INVOKABLE QVariantMap checkTrackerItemMove(const QString& itemId, const QString& newProjectId) const;
+    // Perform the move: reassigns project_id, renumbers if the current
+    // item_number collides in the destination, clears a project-scoped linked
+    // meeting (note_id), and auto-adds assigned_to/identified_by to the
+    // destination project's team if they aren't already members there.
+    Q_INVOKABLE bool        moveTrackerItemToProject(const QString& itemId, const QString& newProjectId);
+
     // ── Tracker item comments ────────────────────────────────────────────────
     Q_INVOKABLE int         addComment(const QString& itemId);
     Q_INVOKABLE bool        deleteComment(int row);
@@ -397,7 +425,7 @@ public:
     int     syncPercent()  const { return m_syncPercent; }
     bool    syncHasError() const { return m_syncHasError; }
     bool    syncNetworkError() const { return m_syncNetworkError; }
-    bool    syncActive()   const { return m_syncProgress >= 0.0; }
+    bool    syncActive()   const { return m_syncSessionActive; }
     QString syncDetail()   const;
     QString subscriptionStatusText() const { return m_subscriptionStatusText; }
     QString supabaseConnectionInfo() const;
@@ -421,6 +449,7 @@ signals:
     // The installer/relaunch helper is running; the shell must now quit.
     void quitForUpdate();
     void viewOptionsChanged();
+    void projectManagerChanged();
     void syncSettingsChanged();
     void syncProgressChanged();
     void subscriptionStatusChanged();
@@ -442,12 +471,20 @@ private:
     bool applyRowFields(QAbstractItemModel* model, int row,
                         std::initializer_list<std::pair<int, QVariant>> fields);
 
+    // Helpers for moveTrackerItemToProject / checkTrackerItemMove.
+    bool isProjectTeamMember(const QString& projectId, const QString& peopleId) const;
+    bool addPersonToProjectTeam(const QString& projectId, const QString& peopleId);
+
     bool m_databaseOpen = false;
 
     // Sync engine (lives on m_syncApiThread; created lazily by configureSyncApi).
     QThread*       m_syncApiThread = nullptr;
     SqliteSyncPro* m_syncApi       = nullptr;
-    qreal          m_syncProgress  = -1.0;   // -1 = hidden/idle
+    qreal          m_syncProgress  = -1.0;   // -1 = hidden/idle; else 0..1 (bar fill)
+    // True from when a sync becomes active until the database reports 100% synced
+    // (or the network drops). Drives bar visibility so it stays up and climbs to
+    // 100% instead of only showing during the active transfer of each cycle.
+    bool           m_syncSessionActive = false;
     int            m_syncPercent   = 0;      // 0..100 (from syncStatusUpdated)
     qint64         m_syncPendingPush = 0;
     qint64         m_syncPendingPull = 0;

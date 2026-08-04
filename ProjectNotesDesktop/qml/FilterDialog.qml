@@ -27,6 +27,18 @@ Popup {
         radius: Theme.radiusLg
         color: Theme.bg
         border.color: Theme.border
+
+        // Swallow presses at the popup layer so they don't leak through to the
+        // TapHandlers on the list cards/rows behind this modal. Pointer handlers
+        // only take a *passive* grab on press, so without an item here that
+        // actually accepts the event, delivery keeps walking front-to-back and
+        // also "taps" whatever record sits under the dialog — navigating away as
+        // soon as the dialog closes. The interactive controls above this
+        // (buttons, checkboxes, inputs) still work via their own passive grabs.
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.AllButtons
+        }
     }
 
     // ── State ─────────────────────────────────────────────────────────────────
@@ -35,7 +47,7 @@ Popup {
     property string _sectionLabel: ""
     property var    _cols: []            // [{field,label,isDate}]
     property int    _curIndex: 0
-    property var    _values: []          // distinct values for the current column
+    property var    _values: []          // distinct values for the current column: [{value,label}]
     property var    _sel: ({})           // { field: {values:[], search, start, end} }
 
     readonly property var  _curCol: (_cols.length > 0 && _curIndex >= 0 && _curIndex < _cols.length)
@@ -116,8 +128,15 @@ Popup {
     }
     function _apply() {
         DesktopAppController.applyColumnFilters(_model, _buildSpecs())
-        close()
+        _dismiss()
     }
+
+    // Close on the next tick rather than synchronously inside the tap handler.
+    // Closing mid-delivery tears down this modal (and its press-absorbing
+    // background) before the press/release has finished propagating, so the tap
+    // falls through to the list card behind and navigates. Deferring lets the
+    // event finish against the still-present modal, then the popup closes.
+    function _dismiss() { Qt.callLater(close) }
 
     // ── Layout ────────────────────────────────────────────────────────────────
     contentItem: ColumnLayout {
@@ -137,7 +156,10 @@ Popup {
                 color: closeHover.hovered ? Theme.surface2 : "transparent"
                 MaterialIcon { anchors.centerIn: parent; name: "close"; size: 19; color: Theme.text2 }
                 HoverHandler { id: closeHover }
-                TapHandler { onTapped: dlg.close() }
+                // Exclusive grab: a plain TapHandler only takes a passive grab, so
+                // without this the same tap also falls through to the list card
+                // behind the modal and navigates (matches the Main.qml dialog fix).
+                TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: dlg._dismiss() }
             }
         }
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
@@ -204,7 +226,7 @@ Popup {
                                 }
                             }
                             HoverHandler { id: colHover }
-                            TapHandler { onTapped: { dlg._curIndex = index; dlg._reloadValues() } }
+                            TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: { dlg._curIndex = index; dlg._reloadValues() } }
                         }
                     }
                 }
@@ -254,23 +276,23 @@ Popup {
                                 Rectangle {
                                     implicitWidth: 16; implicitHeight: 16; radius: 4
                                     Layout.alignment: Qt.AlignVCenter
-                                    color: dlg._isChecked(dlg._curField, modelData) ? Theme.accent : "transparent"
-                                    border.color: dlg._isChecked(dlg._curField, modelData) ? Theme.accent : Theme.border
+                                    color: dlg._isChecked(dlg._curField, modelData.value) ? Theme.accent : "transparent"
+                                    border.color: dlg._isChecked(dlg._curField, modelData.value) ? Theme.accent : Theme.border
                                     border.width: 1
                                     MaterialIcon {
                                         anchors.centerIn: parent
-                                        visible: dlg._isChecked(dlg._curField, modelData)
+                                        visible: dlg._isChecked(dlg._curField, modelData.value)
                                         name: "check"; size: 13; color: "#ffffff"
                                     }
                                 }
                                 Text {
-                                    text: modelData; color: Theme.text; font.pixelSize: 13
+                                    text: modelData.label; color: Theme.text; font.pixelSize: 13
                                     Layout.fillWidth: true; elide: Text.ElideRight
                                     verticalAlignment: Text.AlignVCenter
                                 }
                             }
                             HoverHandler { id: vHover }
-                            TapHandler { onTapped: dlg._toggleValue(dlg._curField, modelData) }
+                            TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: dlg._toggleValue(dlg._curField, modelData.value) }
                         }
                     }
                     Text {
@@ -354,7 +376,7 @@ Popup {
                 }
             }
             Item { Layout.fillWidth: true }
-            FooterButton { label: qsTr("Cancel"); onClicked: dlg.close() }
+            FooterButton { label: qsTr("Cancel"); onClicked: dlg._dismiss() }
             FooterButton { label: qsTr("Apply"); primary: true; onClicked: dlg._apply() }
         }
     }
@@ -418,6 +440,6 @@ Popup {
             }
         }
         HoverHandler { id: fbHover }
-        TapHandler { onTapped: fb.clicked() }
+        TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: fb.clicked() }
     }
 }

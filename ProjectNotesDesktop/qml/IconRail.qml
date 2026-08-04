@@ -12,6 +12,10 @@ Rectangle {
     color: Theme.rail
 
     property string currentSection: "projects"
+    // Forwarded to AppMenu so it can add the current record's table-scoped
+    // plugin menus (e.g. Export / Templates) alongside the global ones.
+    property string pluginMenuTable: ""
+    property string pluginMenuRecordId: ""
     signal sectionActivated(string section)
     // Navigation-style menu actions bubbled up to the shell (Main.qml).
     signal menuAction(string action)
@@ -46,6 +50,8 @@ Rectangle {
                 // Keep the in-scene popup inside the window (rail.height is the
                 // window's logical height; the menu opens ~10px from the top).
                 maxMenuHeight: rail.height - 16
+                pluginMenuTable: rail.pluginMenuTable
+                pluginMenuRecordId: rail.pluginMenuRecordId
                 onTriggered: (a) => rail.menuAction(a)
             }
         }
@@ -78,7 +84,8 @@ Rectangle {
             color: Theme.accentStrong
             Text {
                 anchors.centerIn: parent
-                text: "PM"
+                text: DesktopAppController.projectManagerInitials !== ""
+                      ? DesktopAppController.projectManagerInitials : "PM"
                 color: "#ffffff"
                 font.pixelSize: 11
                 font.bold: true

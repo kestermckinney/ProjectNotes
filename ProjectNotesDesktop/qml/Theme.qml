@@ -87,6 +87,6 @@ QtObject {
     // A small, safe set of Material Symbols usable as folder icons.
     readonly property var folderIcons: [
         "star", "folder", "favorite", "bookmark", "flag",
-        "label", "bolt", "workspaces", "inventory_2", "grade"
+        "label", "bolt", "workspaces", "inventory_2", "stars"
     ]
 }

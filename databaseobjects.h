@@ -188,6 +188,8 @@ public:
     QString getProjectManager();
     void setManagingCompany(const QString& value);
     QString getManagingCompany();
+    void setLastProjectDetailTab(const QString& projectId, int index);
+    int getLastProjectDetailTab(const QString& projectId);
 
     QDomDocument* createXMLExportDoc(SqlQueryModel* querymodel, const QString& filter = QString());
     QDomDocument* createXMLExportDoc(QList<SqlQueryModel*>* querymodels);

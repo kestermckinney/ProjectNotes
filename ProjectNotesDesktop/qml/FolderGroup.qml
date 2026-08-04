@@ -37,6 +37,9 @@ Column {
     // A project row wants the shared record/plugin menu opened for it, at the
     // given scene coordinates. Handled by ProjectSidebar.openProjectMenu.
     signal menuRequested(string projId, string label, real sceneX, real sceneY)
+    // A tracker item card (Drag.keys ["trackerItem"]) was dropped on a project
+    // row. Handled by ProjectSidebar → Main.requestTrackerItemMove.
+    signal itemMoveRequested(string itemId, string projectId)
 
     // "All Projects" has no FolderManager count — derive it live from the list
     // model. Instantiator.count is reactive (and follows the proxy's quick-search
@@ -179,6 +182,7 @@ Column {
                 radius: Theme.radiusSm
                 color: {
                     if (dragArea.drag.active) return Theme.surface2
+                    if (itemDrop.containsDrag) return Theme.dropHighlight
                     if (row.projId === group.selectedProjectId) return Theme.accentSoft
                     return dragArea.containsMouse ? Theme.surface2 : "transparent"
                 }
@@ -192,9 +196,19 @@ Column {
                 Drag.hotSpot.x: width / 2
                 Drag.hotSpot.y: height / 2
 
-                // Passive hover across the whole row (coexists with the drag
-                // MouseArea) — drives the kebab's reveal.
-                HoverHandler { id: rowHover }
+                // ── Drop target for a dragged tracker item card ────────────────
+                // Dropping a tracker item (ProjectDetailPage's trackerCard) here
+                // requests moving it to this row's project.
+                DropArea {
+                    id: itemDrop
+                    anchors.fill: parent
+                    keys: ["trackerItem"]
+                    onDropped: (drop) => {
+                        if (drop.source && drop.source.itemId)
+                            group.itemMoveRequested(drop.source.itemId, row.projId)
+                        drop.accept()
+                    }
+                }
 
                 RowLayout {
                     anchors.fill: parent
@@ -230,13 +244,11 @@ Column {
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
-                    // Kebab: revealed on hover. It sits in the slot the drag
-                    // MouseArea vacates (rightMargin below), so its own tap is
-                    // not swallowed by the drag handler.
+                    // Kebab sits in the slot the drag MouseArea vacates (rightMargin
+                    // below), so its own tap is not swallowed by the drag handler.
                     KebabButton {
                         id: kebab
                         implicitWidth: 22; implicitHeight: 22
-                        visible: rowHover.hovered
                         Layout.alignment: Qt.AlignVCenter
                         onClicked: (sx, sy) => group.menuRequested(row.projId, row.ctxLabel, sx, sy)
                     }
@@ -255,9 +267,9 @@ Column {
                 MouseArea {
                     id: dragArea
                     anchors.fill: parent
-                    // Uncover the kebab's slot while it's visible so its own tap
-                    // lands on the button rather than on this drag handler.
-                    anchors.rightMargin: kebab.visible ? kebab.width + 10 : 0
+                    // Uncover the kebab's slot so its own tap lands on the button
+                    // rather than on this drag handler.
+                    anchors.rightMargin: kebab.width + 10
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     preventStealing: true

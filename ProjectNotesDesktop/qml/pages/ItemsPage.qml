@@ -12,6 +12,7 @@ Item {
     signal itemActivated(string itemId)
     signal exportRequested(string table, string id)
     signal filterRequested()
+    signal moveToRequested(string itemId)
 
     property string _ctxId: ""
 
@@ -24,12 +25,14 @@ Item {
         recordId: page._ctxId
         canDelete: false            // master list is a read-only view
         canDuplicate: true          // Copy Item (Widgets parity)
+        canMoveTo: true
         onOpenRequested:   page.itemActivated(page._ctxId)
         onNewRequested:    page.itemActivated(page._ctxId)
         onDuplicateRequested: {
             var newId = DesktopAppController.copyTrackerItem(page._ctxId)
             if (newId !== "") page.itemActivated(newId)
         }
+        onMoveToRequested: page.moveToRequested(page._ctxId)
         onExportRequested: page.exportRequested("item_tracker", page._ctxId)
         onFilterRequested: page.filterRequested()
         onRefreshRequested: DesktopAppController.refreshAllItems()

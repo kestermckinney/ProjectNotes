@@ -16,6 +16,16 @@ Popup {
     // Emitted for navigation-style actions handled by the shell (Main.qml).
     signal triggered(string action)
 
+    // The table + id of whatever record is currently open (set by Main.qml via
+    // IconRail — same signal the TopBar's Export XML button uses). When present,
+    // table-scoped plugin menus (dataexport matching this table, e.g. the
+    // "Export" / "Templates" groups on a project) are added below the global
+    // ones, mirroring the Widgets Plugins menu bar (buildPluginMenu() adds both
+    // the global entries and BasePage::buildPluginMenu()'s current-page entries
+    // to the same menu).
+    property string pluginMenuTable: ""
+    property string pluginMenuRecordId: ""
+
     modal: true
     dim: false
     padding: 6
@@ -79,20 +89,25 @@ Popup {
         ]},
     ]
 
-    // Global (dataless) plugin menus — Plugins > Settings / Utilities / etc. in
-    // the Widgets menu bar. Rebuilt each time the menu opens since plugins can
-    // hot-reload. One group per distinct submenu (e.g. "Settings", "Utilities").
+    // Global (dataless) plugin menus, plus the open record's table-scoped ones
+    // when there is one — Plugins > Settings / Utilities / Export / Templates /
+    // etc. in the Widgets menu bar. Rebuilt each time the menu opens since
+    // plugins can hot-reload. One group per distinct submenu.
     property var pluginGroups: []
     function _rebuildPluginGroups() {
         var bysubmenu = {}
         var order = []
-        var entries = DesktopAppController.globalPluginMenus()
-        for (var i = 0; i < entries.length; i++) {
-            var e = entries[i]
-            var sub = e.submenu || qsTr("Plugins")
-            if (!bysubmenu[sub]) { bysubmenu[sub] = []; order.push(sub) }
-            bysubmenu[sub].push({ icon: "extension", label: e.title, key: "", action: "plugin:" + e.index })
+        function addEntries(entries, actionPrefix) {
+            for (var i = 0; i < entries.length; i++) {
+                var e = entries[i]
+                var sub = e.submenu || qsTr("Plugins")
+                if (!bysubmenu[sub]) { bysubmenu[sub] = []; order.push(sub) }
+                bysubmenu[sub].push({ icon: "extension", label: e.title, key: "", action: actionPrefix + e.index })
+            }
         }
+        addEntries(DesktopAppController.globalPluginMenus(), "plugin:")
+        if (menu.pluginMenuTable !== "" && menu.pluginMenuRecordId !== "")
+            addEntries(DesktopAppController.pluginMenusForTable(menu.pluginMenuTable), "tableplugin:")
         var groups = []
         for (var g = 0; g < order.length; g++)
             groups.push({ name: qsTr("Plugins") + " · " + order[g], items: bysubmenu[order[g]] })
@@ -111,6 +126,12 @@ Popup {
         case "zoom_out":        Theme.zoomOut();   return
         case "zoom_reset":      Theme.zoomReset(); return
         default:
+            if (a.indexOf("tableplugin:") === 0) {
+                DesktopAppController.runPluginMenuForTable(menu.pluginMenuTable, menu.pluginMenuRecordId,
+                                                            parseInt(a.substring(12), 10))
+                menu.close()
+                return
+            }
             if (a.indexOf("plugin:") === 0) {
                 DesktopAppController.runGlobalPluginMenu(parseInt(a.substring(7), 10))
                 menu.close()

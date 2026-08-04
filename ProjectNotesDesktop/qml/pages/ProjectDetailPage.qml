@@ -19,6 +19,10 @@ Item {
     property bool   isNewRecord: false
     property bool   _changed: false
 
+    // Overlay layer a dragged tracker item card reparents onto while dragging
+    // (threaded down from Main.qml's dragOverlay, same as the sidebar's).
+    property var    dragLayer: null
+
     // Consumed by the TopBar's Export XML action.
     readonly property string exportTable: "projects"
     readonly property string exportId: projectId
@@ -55,6 +59,14 @@ Item {
     signal itemActivated(string itemId)
     // Routed to Main.exportRecord when a sub-table row's menu exports XML.
     signal exportRequested(string table, string id)
+    // Routed to Main → MoveToProjectDialog when a tracker item's "Move To…" is chosen.
+    signal moveToRequested(string itemId)
+    // Page-level record menu (kebab + right-click on the page background),
+    // mirroring the sidebar's per-row Project menu. Routed to Main so it can
+    // reuse the same confirm-delete / add-project / filter flows as elsewhere.
+    signal deleteRequested()
+    signal newRequested()
+    signal filterRequested()
 
     function _clientNames() { return _clients.map(function(c){ return c.name }) }
     function _peopleNames() { return _people.map(function(p){ return p.name }) }
@@ -97,6 +109,7 @@ Item {
         _reload()
         DesktopAppController.setProjectFilter(page.projectId)
         DesktopAppController.refreshProjectNotes()
+        tabBar.currentIndex = DesktopAppController.lastProjectDetailTab(page.projectId)
     }
 
     property string _clientId: ""
@@ -151,6 +164,35 @@ Item {
         return ok
     }
 
+    // Refresh everything the page shows for this project: the core fields plus
+    // every child list. Backs the page-level menu's Refresh action.
+    function _refreshAll() {
+        DesktopAppController.refreshModel(DesktopAppController.projectsListModel)
+        page._reload()
+        DesktopAppController.refreshStatusItems()
+        DesktopAppController.refreshModel(DesktopAppController.projectTrackerItemsModel)
+        DesktopAppController.refreshTeamMembers()
+        page._refreshTeamPeople()
+        DesktopAppController.refreshProjectLocations()
+        DesktopAppController.refreshProjectNotes()
+    }
+
+    // Open the page's own record menu (kebab or right-click) at scene coords.
+    function _openSelfMenu(sx, sy) {
+        selfMenu.recordLabel = ((numberField.text || "") + " " + (nameField.text || "")).trim()
+        selfMenu.openAt(sx, sy)
+    }
+
+    // Right-click anywhere on the page background opens the project menu
+    // (parity with right-clicking a project row in the sidebar). Declared
+    // beneath the page content so field/button clicks still reach their own
+    // handlers first; only right-clicks on empty background fall through here.
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.RightButton
+        onClicked: (mouse) => page._openSelfMenu(mouse.x, mouse.y)
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -197,6 +239,14 @@ Item {
                         Layout.fillWidth: false
                         options: DesktopAppController.projectStatusOptions()
                         onActivated: page._changed = true
+                    }
+                    // Page-level record menu — parity with the sidebar's per-row
+                    // Project kebab (this project's own detail page previously had
+                    // no equivalent quick-actions entry point).
+                    KebabButton {
+                        Layout.alignment: Qt.AlignBottom
+                        Layout.bottomMargin: 6
+                        onClicked: (sx, sy) => page._openSelfMenu(sx, sy)
                     }
                 }
 
@@ -288,6 +338,7 @@ Item {
                 color: "transparent"
                 Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Theme.border }
             }
+            onCurrentIndexChanged: DesktopAppController.setLastProjectDetailTab(page.projectId, currentIndex)
             TabItem { iconName: "flag";        label: qsTr("Status Report"); count: statusRep.count }
             TabItem { iconName: "task_alt";    label: qsTr("Tracker");       count: trackerRep.count }
             TabItem { iconName: "groups";      label: qsTr("Team");          count: teamRep.count }
@@ -401,85 +452,140 @@ Item {
                     Repeater {
                         id: trackerRep
                         model: DesktopAppController.projectTrackerItemsModel
-                        delegate: Card {
-                            id: trackerCard
+                        // An outer Item is the actual Repeater/ColumnLayout child and
+                        // stays put (reserving the row's layout slot); the inner Card
+                        // is what visually reparents onto page.dragLayer while being
+                        // dragged (mirrors FolderGroup's row/content split).
+                        delegate: Item {
+                            id: trackerSlot
                             required property int index
                             required property var model
                             readonly property string iid: model.id !== undefined ? model.id : ""
                             Layout.fillWidth: true
-                            implicitHeight: tiCol.implicitHeight + 20
-                            color: tiHover.hovered ? Theme.raise : Theme.surface
+                            implicitHeight: trackerCard.implicitHeight
                             function _menu(sx, sy) {
                                 rowMenu.openFor(DesktopAppController.projectTrackerItemsModel,
-                                    trackerCard.iid, qsTr("Tracker Item"),
-                                    (trackerCard.model.item_name || "").toString(), sx, sy, true)
+                                    trackerSlot.iid, qsTr("Tracker Item"),
+                                    (trackerSlot.model.item_name || "").toString(), sx, sy, true, true)
                             }
-                            ColumnLayout {
-                                id: tiCol
-                                anchors.left: parent.left; anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.leftMargin: 12; anchors.rightMargin: 12
-                                spacing: 4
-                                // Title row: number · name · status
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 10
-                                    Text {
-                                        text: (trackerCard.model.item_number || "").toString()
-                                        color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold
-                                        Layout.preferredWidth: 44
-                                    }
-                                    Text {
-                                        text: (trackerCard.model.item_name || qsTr("(unnamed)")).toString()
-                                        color: Theme.text; font.pixelSize: 13; Layout.fillWidth: true; elide: Text.ElideRight
-                                    }
-                                    Rectangle {
-                                        readonly property color c: page._statusColor((trackerCard.model.status || "").toString())
-                                        visible: (trackerCard.model.status || "").toString() !== ""
-                                        radius: 5
-                                        color: Qt.rgba(c.r, c.g, c.b, 0.14)
-                                        implicitHeight: 18; implicitWidth: tiStatus.implicitWidth + 14
-                                        Layout.alignment: Qt.AlignVCenter
+
+                            Card {
+                                id: trackerCard
+                                width: trackerSlot.width
+                                x: 0; y: 0
+                                implicitHeight: tiCol.implicitHeight + 20
+                                height: implicitHeight
+                                color: dragArea.drag.active ? Theme.surface2
+                                     : (tiHover.hovered ? Theme.raise : Theme.surface)
+
+                                property string itemId: trackerSlot.iid
+
+                                ColumnLayout {
+                                    id: tiCol
+                                    anchors.left: parent.left; anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.leftMargin: 12; anchors.rightMargin: 12
+                                    spacing: 4
+                                    // Title row: number · name · status
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 10
                                         Text {
-                                            id: tiStatus; anchors.centerIn: parent
-                                            text: (trackerCard.model.status || "").toString()
-                                            color: parent.c; font.pixelSize: 10; font.weight: Font.DemiBold
+                                            text: (trackerSlot.model.item_number || "").toString()
+                                            color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold
+                                            elide: Text.ElideRight
+                                            Layout.preferredWidth: 60
+                                            Layout.maximumWidth: 60
+                                        }
+                                        Text {
+                                            text: (trackerSlot.model.item_name || qsTr("(unnamed)")).toString()
+                                            color: Theme.text; font.pixelSize: 13; Layout.fillWidth: true; elide: Text.ElideRight
+                                        }
+                                        Rectangle {
+                                            readonly property color c: page._statusColor((trackerSlot.model.status || "").toString())
+                                            visible: (trackerSlot.model.status || "").toString() !== ""
+                                            radius: 5
+                                            color: Qt.rgba(c.r, c.g, c.b, 0.14)
+                                            implicitHeight: 18; implicitWidth: tiStatus.implicitWidth + 14
+                                            Layout.alignment: Qt.AlignVCenter
+                                            Text {
+                                                id: tiStatus; anchors.centerIn: parent
+                                                text: (trackerSlot.model.status || "").toString()
+                                                color: parent.c; font.pixelSize: 10; font.weight: Font.DemiBold
+                                            }
+                                        }
+                                        KebabButton {
+                                            implicitWidth: 24; implicitHeight: 24
+                                            Layout.alignment: Qt.AlignVCenter
+                                            onClicked: (sx, sy) => trackerSlot._menu(sx, sy)
+                                        }
+                                        MaterialIcon { name: "chevron_right"; size: 18; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+                                    }
+                                    // Metadata row: assigned · priority · due
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Layout.leftMargin: 54
+                                        spacing: 16
+                                        MetaPair {
+                                            label: qsTr("Assigned")
+                                            value: page._nameForId(page._people, (trackerSlot.model.assigned_to || "").toString())
+                                        }
+                                        MetaPair {
+                                            label: qsTr("Priority")
+                                            value: (trackerSlot.model.priority || "").toString()
+                                            valueColor: page._priorityColor((trackerSlot.model.priority || "").toString())
+                                        }
+                                        MetaPair {
+                                            label: qsTr("Due")
+                                            value: (trackerSlot.model.date_due || "").toString()
+                                        }
+                                        Item { Layout.fillWidth: true }
+                                    }
+                                }
+                                HoverHandler { id: tiHover }
+
+                                // ── Drag source: drag onto a project row in the
+                                // sidebar to move this item there.
+                                Drag.active: dragArea.drag.active
+                                Drag.source: trackerCard
+                                Drag.keys: ["trackerItem"]
+                                Drag.hotSpot.x: width / 2
+                                Drag.hotSpot.y: height / 2
+
+                                // z: -1 so this background MouseArea sits behind
+                                // tiCol's own children — a click/press lands on the
+                                // kebab (or any future interactive child) first, and
+                                // only falls through to this MouseArea (activate /
+                                // context-menu / drag) where tiCol has nothing to
+                                // claim it.
+                                MouseArea {
+                                    id: dragArea
+                                    z: -1
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    preventStealing: true
+                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                    drag.target: trackerCard
+                                    drag.threshold: 6
+                                    onClicked: (mouse) => {
+                                        if (mouse.button === Qt.RightButton) {
+                                            var p = dragArea.mapToItem(null, mouse.x, mouse.y)
+                                            trackerSlot._menu(p.x, p.y)
+                                        } else {
+                                            page._saveNow()
+                                            page.itemActivated(trackerSlot.iid)
                                         }
                                     }
-                                    KebabButton {
-                                        implicitWidth: 24; implicitHeight: 24
-                                        visible: tiHover.hovered
-                                        Layout.alignment: Qt.AlignVCenter
-                                        onClicked: (sx, sy) => trackerCard._menu(sx, sy)
-                                    }
-                                    MaterialIcon { name: "chevron_right"; size: 18; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+                                    onReleased: if (drag.active) trackerCard.Drag.drop()
                                 }
-                                // Metadata row: assigned · priority · due
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    Layout.leftMargin: 54
-                                    spacing: 16
-                                    MetaPair {
-                                        label: qsTr("Assigned")
-                                        value: page._nameForId(page._people, (trackerCard.model.assigned_to || "").toString())
+
+                                states: State {
+                                    when: dragArea.drag.active
+                                    ParentChange {
+                                        target: trackerCard
+                                        parent: page.dragLayer ? page.dragLayer : trackerCard.parent
                                     }
-                                    MetaPair {
-                                        label: qsTr("Priority")
-                                        value: (trackerCard.model.priority || "").toString()
-                                        valueColor: page._priorityColor((trackerCard.model.priority || "").toString())
-                                    }
-                                    MetaPair {
-                                        label: qsTr("Due")
-                                        value: (trackerCard.model.date_due || "").toString()
-                                    }
-                                    Item { Layout.fillWidth: true }
                                 }
-                            }
-                            HoverHandler { id: tiHover }
-                            TapHandler { onTapped: { page._saveNow(); page.itemActivated(iid) } }
-                            TapHandler {
-                                acceptedButtons: Qt.RightButton
-                                onTapped: (ev) => trackerCard._menu(ev.scenePosition.x, ev.scenePosition.y)
                             }
                         }
                     }
@@ -795,7 +901,6 @@ Item {
                                 }
                                 KebabButton {
                                     implicitWidth: 24; implicitHeight: 24
-                                    visible: nHover.hovered
                                     onClicked: (sx, sy) => noteCard._menu(sx, sy)
                                 }
                                 MaterialIcon { name: "chevron_right"; size: 20; color: Theme.text3 }
@@ -1029,6 +1134,25 @@ Item {
             var newId = DesktopAppController.copyTrackerItem(id)
             if (newId !== "") { page._saveNow(); page.itemActivated(newId) }
         }
+        onMoveToRecord: (id) => page.moveToRequested(id)
+    }
+
+    // The project's own record/plugin menu — opened by the title row's kebab
+    // and by right-clicking the page background. Parity with the sidebar's
+    // per-row Project menu (RecordContextMenu there too).
+    RecordContextMenu {
+        id: selfMenu
+        recordType: qsTr("Project")
+        model: DesktopAppController.projectsListModel
+        recordId: page.projectId
+        canOpen: false
+        canDuplicate: false
+        canMoveTo: false
+        onNewRequested: page.newRequested()
+        onDeleteRequested: page.deleteRequested()
+        onExportRequested: page.exportRequested(page.exportTable, page.exportId)
+        onFilterRequested: page.filterRequested()
+        onRefreshRequested: page._refreshAll()
     }
 
     // Shared full-field spell-check dialog (opened by fields / right-click).

@@ -442,6 +442,137 @@ private slots:
         QVERIFY(mapHasValue(c->getTrackerItemDetailData(0), "Copy of"));
     }
 
+    // Move a tracker item to a different project: no-op on the item's own
+    // project, kept item_number when free in the destination, renumbered on a
+    // collision, assigned_to/identified_by auto-added to the destination
+    // project's team when missing, and a linked meeting (note_id) cleared.
+    // Mirrors Widgets' ItemDetailsDelegate::verifyProjectNumber(), but for the
+    // QML bridge's checkTrackerItemMove()/moveTrackerItemToProject().
+    void test_20b_moveTrackerItemToProject()
+    {
+        // A second project to move items into.
+        const int destRow = c->addProject();
+        QVERIFY(destRow >= 0);
+        const QString destProjectId = c->projectIdAtRow(destRow);
+        QVERIFY(!destProjectId.isEmpty());
+        QVERIFY2(c->saveProject(destRow, uniq("PN"), uniq("DestProject_"),
+                                c->projectStatusOptions().first(),
+                                m_personId, m_clientId, "07/01/2026", "07/15/2026",
+                                c->invoicingPeriodOptions().first(),
+                                c->statusReportPeriodOptions().first(),
+                                "0", "0", "0", "0", "0"),
+                 qPrintable(c->lastSaveError()));
+
+        // A person who is not (yet) a member of destProjectId, to exercise the
+        // auto-add path.
+        const int prow = c->addPerson();
+        QVERIFY(prow >= 0);
+        const QString moverName = uniq("Mover_");
+        QVERIFY2(c->savePerson(prow, moverName, "mv@example.com", "", "",
+                               m_clientId, "Analyst"),
+                 qPrintable(c->lastSaveError()));
+        const QString moverId = idForColumnValue(c->peopleModel(), 1, moverName);
+        QVERIFY(!moverId.isEmpty());
+
+        // ── No-op: "moving" to the item's own project is not a valid move ──────
+        {
+            QCOMPARE(c->addTrackerItem(m_projectId), 0);
+            const QString itemId = c->trackerItemDetailModel()->data(
+                c->trackerItemDetailModel()->index(0, 0)).toString();
+            QVERIFY2(c->saveTrackerItemDetail(0, itemId, uniq("N"),
+                        c->itemTypeOptions().first(), uniq("SameProj_"), "",
+                        "", "", c->itemPriorityOptions().first(),
+                        c->itemStatusOptions().first(), kDate1, kDate2, false),
+                     qPrintable(c->lastSaveError()));
+            QVERIFY(!c->checkTrackerItemMove(itemId, m_projectId).value("valid").toBool());
+        }
+
+        // ── Number free in the destination: kept as-is, mover auto-added ───────
+        QString freeItemId, freeNumber;
+        {
+            QCOMPARE(c->addTrackerItem(m_projectId), 0);
+            freeItemId = c->trackerItemDetailModel()->data(
+                c->trackerItemDetailModel()->index(0, 0)).toString();
+            freeNumber = uniq("F");
+            QVERIFY2(c->saveTrackerItemDetail(0, freeItemId, freeNumber,
+                        c->itemTypeOptions().first(), uniq("FreeNum_"), "",
+                        moverId, moverId, c->itemPriorityOptions().first(),
+                        c->itemStatusOptions().first(), kDate1, kDate2, false),
+                     qPrintable(c->lastSaveError()));
+
+            const QVariantMap chk = c->checkTrackerItemMove(freeItemId, destProjectId);
+            QVERIFY(chk.value("valid").toBool());
+            QCOMPARE(chk.value("oldNumber").toString(), freeNumber);
+            QCOMPARE(chk.value("newNumber").toString(), freeNumber);
+            QVERIFY(!chk.value("willRenumber").toBool());
+            QVERIFY(!chk.value("willClearMeeting").toBool());
+            // moverId is both assigned_to and identified_by → de-duplicated to one entry.
+            const QVariantList members = chk.value("membersToAdd").toList();
+            QCOMPARE(members.size(), 1);
+            QCOMPARE(members.first().toMap().value("id").toString(), moverId);
+
+            QVERIFY2(c->moveTrackerItemToProject(freeItemId, destProjectId),
+                     qPrintable(c->lastSaveError()));
+
+            c->openTrackerItem(freeItemId);
+            const QVariantMap after = c->getTrackerItemDetailData(0);
+            QCOMPARE(after.value("project_id").toString(), destProjectId);
+            QCOMPARE(after.value("item_number").toString(), freeNumber);
+
+            const QVariantList destTeam = c->teamMemberList(destProjectId);
+            bool found = false;
+            for (const QVariant& v : destTeam)
+                if (v.toMap().value("id").toString() == moverId) found = true;
+            QVERIFY(found);
+        }
+
+        // ── Number collides in the destination: renumbered ─────────────────────
+        {
+            QCOMPARE(c->addTrackerItem(m_projectId), 0);
+            const QString itemId = c->trackerItemDetailModel()->data(
+                c->trackerItemDetailModel()->index(0, 0)).toString();
+            // Reuses freeNumber, which the destination project now already holds.
+            QVERIFY2(c->saveTrackerItemDetail(0, itemId, freeNumber,
+                        c->itemTypeOptions().first(), uniq("Collide_"), "",
+                        "", "", c->itemPriorityOptions().first(),
+                        c->itemStatusOptions().first(), kDate1, kDate2, false),
+                     qPrintable(c->lastSaveError()));
+
+            const QVariantMap chk = c->checkTrackerItemMove(itemId, destProjectId);
+            QVERIFY(chk.value("valid").toBool());
+            QVERIFY(chk.value("willRenumber").toBool());
+            const QString newNumber = chk.value("newNumber").toString();
+            QVERIFY(!newNumber.isEmpty());
+            QVERIFY(newNumber != freeNumber);
+
+            QVERIFY2(c->moveTrackerItemToProject(itemId, destProjectId),
+                     qPrintable(c->lastSaveError()));
+            c->openTrackerItem(itemId);
+            QCOMPARE(c->getTrackerItemDetailData(0).value("item_number").toString(), newNumber);
+        }
+
+        // ── Linked meeting is cleared on move ───────────────────────────────────
+        {
+            const int aiRow = c->addNoteActionItem(m_noteId, m_projectId);
+            QVERIFY(aiRow >= 0);
+            const QString itemId = c->notesActionItemsModel()->data(
+                c->notesActionItemsModel()->index(aiRow, 0)).toString();
+            QVERIFY(!itemId.isEmpty());
+
+            const QVariantMap chk = c->checkTrackerItemMove(itemId, destProjectId);
+            QVERIFY(chk.value("valid").toBool());
+            QVERIFY(chk.value("willClearMeeting").toBool());
+            QVERIFY(!chk.value("meetingTitle").toString().isEmpty());
+
+            QVERIFY2(c->moveTrackerItemToProject(itemId, destProjectId),
+                     qPrintable(c->lastSaveError()));
+            c->openTrackerItem(itemId);
+            const QVariantMap after = c->getTrackerItemDetailData(0);
+            QCOMPARE(after.value("project_id").toString(), destProjectId);
+            QVERIFY(after.value("note_id").toString().isEmpty());
+        }
+    }
+
     void test_21_appVersion()
     {
         QCOMPARE(c->appVersion(), QStringLiteral("6.0.0"));

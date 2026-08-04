@@ -20,6 +20,8 @@ Rectangle {
     // right-click / kebab menu can export a project or open the filter dialog.
     signal exportRequested(string table, string id)
     signal filterRequested()
+    // A tracker item was dropped on a project row; forwarded from FolderGroup.
+    signal itemMoveRequested(string itemId, string projectId)
 
     // Shared record/plugin context menu for every project row in the sidebar
     // (all FolderGroups funnel their right-click and kebab clicks here through
@@ -113,6 +115,7 @@ Rectangle {
                         dragLayer:         sidebar.dragLayer
                         onProjectActivated: (pid) => sidebar.projectActivated(pid)
                         onMenuRequested: (pid, label, sx, sy) => sidebar.openProjectMenu(pid, label, sx, sy)
+                        onItemMoveRequested: (itemId, pid) => sidebar.itemMoveRequested(itemId, pid)
                     }
                 }
 
@@ -126,6 +129,7 @@ Rectangle {
                     dragLayer:         sidebar.dragLayer
                     onProjectActivated: (pid) => sidebar.projectActivated(pid)
                     onMenuRequested: (pid, label, sx, sy) => sidebar.openProjectMenu(pid, label, sx, sy)
+                    onItemMoveRequested: (itemId, pid) => sidebar.itemMoveRequested(itemId, pid)
                 }
             }
         }

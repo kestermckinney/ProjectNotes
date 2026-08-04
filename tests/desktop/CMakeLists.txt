@@ -65,7 +65,7 @@ target_include_directories(tst_qmldesktop PRIVATE
 # QT_RESOURCE_ALIAS relative to that dir so they land at the SAME resource paths
 # the app uses (qrc:/qt/qml/ProjectNotesDesktop/qml/...), which the pages'
 # internal `import ProjectNotesDesktop` and font/help lookups depend on.
-file(GLOB  DESK_QML_TOP   "${DESKTOP_DIR}/qml/*.qml")
+file(GLOB  DESK_QML_TOP   "${DESKTOP_DIR}/qml/*.qml" "${DESKTOP_DIR}/qml/*.js")
 file(GLOB  DESK_QML_PAGES "${DESKTOP_DIR}/qml/pages/*.qml")
 set(DESK_QML ${DESK_QML_TOP} ${DESK_QML_PAGES})
 foreach(_f ${DESK_QML})
@@ -75,9 +75,9 @@ endforeach()
 set_source_files_properties("${DESKTOP_DIR}/qml/Theme.qml"
     PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
-set(_font "${DESKTOP_DIR}/resources/MaterialSymbolsRounded.woff2")
+set(_font "${DESKTOP_DIR}/resources/MaterialSymbolsRounded.ttf")
 set(_ico  "${DESKTOP_DIR}/icons/projectnotes.ico")
-set_source_files_properties("${_font}" PROPERTIES QT_RESOURCE_ALIAS "resources/MaterialSymbolsRounded.woff2")
+set_source_files_properties("${_font}" PROPERTIES QT_RESOURCE_ALIAS "resources/MaterialSymbolsRounded.ttf")
 set_source_files_properties("${_ico}"  PROPERTIES QT_RESOURCE_ALIAS "icons/projectnotes.ico")
 
 qt_add_qml_module(tst_qmldesktop

@@ -9,7 +9,11 @@ import ProjectNotesDesktop
 
 ApplicationWindow {
     id: root
-    visible: true
+    // Shown explicitly from main.cpp after the Windows taskbar identity
+    // (AppUserModelID/RelaunchIconResource) is stamped onto the native window —
+    // that must happen before the window is first mapped, or the taskbar button
+    // is created without it and falls back to a generic icon.
+    visible: false
     width: 1200
     height: 800
     minimumWidth: 900
@@ -192,6 +196,19 @@ ApplicationWindow {
         contentStack.push(itemDetailComponent, { itemId: itemId })
     }
 
+    // Move a tracker item to a different project — shared by the sidebar drop
+    // handler and the "Move To…" project picker. Only opens the review dialog
+    // when the move actually needs attention (renumber / losing a linked
+    // meeting); a plain move (including any silent team auto-add) just happens.
+    function requestTrackerItemMove(itemId, projectId) {
+        var chk = DesktopAppController.checkTrackerItemMove(itemId, projectId)
+        if (!chk.valid) return
+        if (chk.willRenumber || chk.willClearMeeting)
+            moveReviewDialog.openFor(itemId, projectId, chk)
+        else
+            DesktopAppController.moveTrackerItemToProject(itemId, projectId)
+    }
+
     // Create a new record in the current section (shared by the TopBar + menu).
     function addForCurrentSection() {
         if (root.currentSection === "projects") {
@@ -296,6 +313,16 @@ ApplicationWindow {
         IconRail {
             Layout.fillHeight: true
             currentSection: root.currentSection
+            // Same "is there an open record" signal the TopBar's Export XML
+            // button uses — lets the app menu offer the Widgets Plugins-menu-bar
+            // parity group (dataexport matches the open record's table) below
+            // the always-present global (dataexport-less) plugin entries.
+            pluginMenuTable: contentStack.currentItem
+                             && contentStack.currentItem.exportTable !== undefined
+                             ? contentStack.currentItem.exportTable : ""
+            pluginMenuRecordId: contentStack.currentItem
+                                && contentStack.currentItem.exportId !== undefined
+                                ? contentStack.currentItem.exportId : ""
             onSectionActivated: (s) => root.selectSection(s)
             onMenuAction: (a) => root.handleMenuAction(a)
         }
@@ -309,6 +336,7 @@ ApplicationWindow {
             onProjectActivated: (pid) => root.openProject(pid)
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onFilterRequested: () => filterDialog.openFor(root.currentSection)
+            onItemMoveRequested: (itemId, pid) => root.requestTrackerItemMove(itemId, pid)
         }
 
         ColumnLayout {
@@ -401,9 +429,14 @@ ApplicationWindow {
     Component {
         id: projectDetailComponent
         ProjectDetailPage {
+            dragLayer: dragOverlay
             onNoteActivated: (noteRow, noteId) => root.openNote(noteRow, noteId, projectId)
             onItemActivated: (itemId) => root.openItem(itemId)
             onExportRequested: (table, id) => root.exportRecord(table, id)
+            onMoveToRequested: (id) => moveToProjectDialog.openFor(id)
+            onDeleteRequested: root.confirmDelete()
+            onNewRequested: root.addForCurrentSection()
+            onFilterRequested: filterDialog.openFor(root.currentSection)
         }
     }
     Component {
@@ -442,12 +475,14 @@ ApplicationWindow {
             onItemActivated: (itemId) => root.openItem(itemId)
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onFilterRequested: () => filterDialog.openFor(root.currentSection)
+            onMoveToRequested: (id) => moveToProjectDialog.openFor(id)
         }
     }
     Component {
         id: itemDetailComponent
         ItemDetailPage {
             onExportRequested: (table, id) => root.exportRecord(table, id)
+            onMoveToRequested: (id) => moveToProjectDialog.openFor(id)
         }
     }
     Component {
@@ -639,7 +674,7 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.margins: 14
                 spacing: 8
-                MaterialIcon { name: "system_update"; size: 20; color: Theme.accent }
+                MaterialIcon { name: "system_update_alt"; size: 20; color: Theme.accent }
                 Text {
                     text: updateDialog.title
                     color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
@@ -723,7 +758,7 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.margins: 14
                 spacing: 8
-                MaterialIcon { name: "system_update"; size: 20; color: Theme.accent }
+                MaterialIcon { name: "system_update_alt"; size: 20; color: Theme.accent }
                 Text {
                     text: downloadDialog.title
                     color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
@@ -915,6 +950,16 @@ ApplicationWindow {
 
     // Filter editor (opened from the TopBar Filter button and the hamburger menu).
     FilterDialog { id: filterDialog }
+
+    // Tracker item → project move: the review dialog (shown only when the move
+    // needs attention — renumber or losing a linked meeting) and the project
+    // picker behind "Move To…". Shared by the sidebar drop handler and every
+    // "Move To…" menu entry via root.requestTrackerItemMove().
+    MoveReviewDialog { id: moveReviewDialog }
+    MoveToProjectDialog {
+        id: moveToProjectDialog
+        onProjectPicked: (itemId, projectId) => root.requestTrackerItemMove(itemId, projectId)
+    }
 
     // Log Viewer — a separate, movable, non-modal window opened from the menu.
     LogViewerWindow { id: logViewer }

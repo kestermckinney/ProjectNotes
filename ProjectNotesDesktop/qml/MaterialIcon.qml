@@ -2,10 +2,16 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 import QtQuick
+import "MaterialIconCodepoints.js" as Icons
 
-// A single Material Symbols Rounded glyph. Pass the icon's ligature name as
-// `name` (e.g. "settings", "star", "folder"). The bundled variable font renders
-// the name into its glyph via the OpenType `liga` feature.
+// A single Material Symbols Rounded glyph. Pass the icon's name as `name`
+// (e.g. "settings", "star", "folder"). Rendered by looking the name up in the
+// font's private-use-area codepoint table and setting `text` to that
+// character directly — NOT via OpenType ligature substitution (font.features:
+// liga/rlig), which Windows' default DirectWrite text-shaping path doesn't
+// apply the same way FreeType/HarfBuzz does on Linux, leaving icons blank or
+// showing raw ligature names there. A direct codepoint is just a glyph
+// lookup, so it renders identically on every platform/font backend.
 Text {
     id: icon
     property string name: ""
@@ -14,14 +20,14 @@ Text {
     // Loaded once, shared across all instances.
     FontLoader {
         id: fontLoader
-        source: "qrc:/qt/qml/ProjectNotesDesktop/resources/MaterialSymbolsRounded.woff2"
+        source: "qrc:/qt/qml/ProjectNotesDesktop/resources/MaterialSymbolsRounded.ttf"
     }
 
-    text: name
+    text: Icons.codepoints[name] !== undefined
+          ? String.fromCodePoint(Icons.codepoints[name])
+          : ""
     font.family: fontLoader.name
     font.pixelSize: size
-    // Material Symbols relies on standard ligatures to map names to glyphs.
-    font.features: { "liga": 1 }
     verticalAlignment: Text.AlignVCenter
     horizontalAlignment: Text.AlignHCenter
     renderType: Text.QtRendering

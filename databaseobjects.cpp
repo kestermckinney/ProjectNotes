@@ -678,6 +678,19 @@ QString DatabaseObjects::getManagingCompany()
     return loadParameter("Preferences:ManagingCompany");
 }
 
+void DatabaseObjects::setLastProjectDetailTab(const QString& projectId, int index)
+{
+    saveParameter("UI:LastProjectDetailTab:" + projectId, QString::number(index));
+}
+
+int DatabaseObjects::getLastProjectDetailTab(const QString& projectId)
+{
+    QString value = loadParameter("UI:LastProjectDetailTab:" + projectId);
+    if (value.isEmpty())
+        return 1; // Tracker tab
+    return value.toInt();
+}
+
 void DatabaseObjects::setGlobalSearches( bool refresh )
 { 
     // setup default filters

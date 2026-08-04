@@ -92,6 +92,24 @@ Item {
             width: page.width - 36
             spacing: 14
 
+            RowLayout {
+                Layout.fillWidth: true
+                Item { Layout.fillWidth: true }
+                Rectangle {
+                    implicitHeight: 28; implicitWidth: moveRow.implicitWidth + 18
+                    radius: Theme.radiusSm
+                    color: moveHover.hovered ? Theme.surface2 : Theme.surface
+                    border.color: Theme.border
+                    RowLayout {
+                        id: moveRow; anchors.centerIn: parent; spacing: 5
+                        MaterialIcon { name: "drive_file_move"; size: 15; color: Theme.text2 }
+                        Text { text: qsTr("Move To…"); color: Theme.text2; font.pixelSize: 12; font.weight: Font.DemiBold }
+                    }
+                    HoverHandler { id: moveHover }
+                    TapHandler { onTapped: page.moveToRequested(page.itemId) }
+                }
+            }
+
             GridLayout {
                 Layout.fillWidth: true; columns: 2; columnSpacing: 14; rowSpacing: 12
                 FormField { label: qsTr("Item Number"); id: numberField; onEdited: page._changed = true }
@@ -302,6 +320,8 @@ Item {
 
     // Routed to Main.exportRecord when a comment row's menu exports XML.
     signal exportRequested(string table, string id)
+    // Routed to Main → MoveToProjectDialog when "Move To…" is chosen.
+    signal moveToRequested(string itemId)
 
     // Shared record/plugin menu for the comments list.
     RecordRowMenu {

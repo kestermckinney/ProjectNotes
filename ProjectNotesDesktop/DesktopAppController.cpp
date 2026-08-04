@@ -31,12 +31,16 @@
 #include "version.h"
 #include "updatemanager.h"
 
+#include <algorithm>
+
 #include <QDateTime>
 #include <QDir>
 #include <QDomDocument>
 #include <QDesktopServices>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QSet>
 #include <QSettings>
 #include <QSqlError>
@@ -165,6 +169,10 @@ static bool deleteProxyRow(SortFilterProxyModel* proxy, SqlQueryModel* source, i
     return source->deleteRecord(proxy->mapToSource(proxyIdx));
 }
 
+// Reapplies a model's persisted column filters (application_settings-backed);
+// defined further down alongside applyColumnFilters()/clearColumnFilters().
+static void restoreColumnFilters(SqlQueryModel* src);
+
 // ── Database ─────────────────────────────────────────────────────────────────
 
 bool DesktopAppController::openOrCreateDatabase()
@@ -201,8 +209,18 @@ bool DesktopAppController::openOrCreateDatabase()
     global_DBObjects.clientsmodel()->refresh();
     global_DBObjects.peoplemodel()->refresh();
 
+    // Restore any column filters left active in the Filter Editor before the
+    // last restart (persisted to application_settings, keyed per table). No-op
+    // (and no extra refresh) for models with nothing persisted; allitemsmodel
+    // is otherwise loaded lazily, so this only forces it early when needed.
+    restoreColumnFilters(global_DBObjects.projectinformationmodel());
+    restoreColumnFilters(global_DBObjects.clientsmodel());
+    restoreColumnFilters(global_DBObjects.peoplemodel());
+    restoreColumnFilters(global_DBObjects.allitemsmodel());
+
     m_databaseOpen = true;
     emit databaseReady();
+    emit projectManagerChanged();   // picks up any PM configured in a prior session
 
     // Boot the embedded-Python plugin engine now that the database is open (some
     // plugins query it as they register their menus).
@@ -331,7 +349,53 @@ void DesktopAppController::setManagingCompanyId(const QString& clientId)
 QString DesktopAppController::projectManagerId() const
 { return global_DBObjects.getProjectManager(); }
 void DesktopAppController::setProjectManagerId(const QString& personId)
-{ global_DBObjects.setProjectManager(personId); }
+{
+    global_DBObjects.setProjectManager(personId);
+    emit projectManagerChanged();
+}
+
+QString DesktopAppController::projectManagerInitials() const
+{
+    // Bound eagerly by IconRail.qml as part of the always-visible rail, which is
+    // constructed before Main.qml's Component.onCompleted calls
+    // openOrCreateDatabase() — querying the DB here before then would hit a
+    // closed/prepared-on-nothing QSqlQuery and surface a "Database Access
+    // Failed" dialog. projectManagerChanged() re-fires once the DB opens (see
+    // openOrCreateDatabase) so the real value populates right after.
+    if (!m_databaseOpen)
+        return QString();
+
+    const QString personId = global_DBObjects.getProjectManager();
+    if (personId.isEmpty())
+        return QString();
+
+    QString name;
+    auto* proxy = global_DBObjects.peoplemodelproxy();
+    if (proxy) {
+        for (int row = 0; row < proxy->rowCount(); ++row) {
+            if (proxy->data(proxy->index(row, 0)).toString() == personId) {
+                name = proxy->data(proxy->index(row, 1)).toString();
+                break;
+            }
+        }
+    }
+    if (name.isEmpty())
+        return QString();
+
+    const QStringList parts = name.split(' ', Qt::SkipEmptyParts);
+    if (parts.isEmpty())
+        return QString();
+
+    QString initials = parts.first().left(1);
+    if (parts.size() > 1)
+        initials += parts.last().left(1);
+    return initials.toUpper();
+}
+
+int DesktopAppController::lastProjectDetailTab(const QString& projectId) const
+{ return global_DBObjects.getLastProjectDetailTab(projectId); }
+void DesktopAppController::setLastProjectDetailTab(const QString& projectId, int index)
+{ global_DBObjects.setLastProjectDetailTab(projectId, index); }
 
 // ── View options ─────────────────────────────────────────────────────────────
 
@@ -407,7 +471,7 @@ QVariantList DesktopAppController::filterColumns(QAbstractItemModel* model) cons
     return out;
 }
 
-QStringList DesktopAppController::columnDistinctValues(QAbstractItemModel* model,
+QVariantList DesktopAppController::columnDistinctValues(QAbstractItemModel* model,
                                                        const QString& field) const
 {
     SqlQueryModel* src = sourceModelOf(model);
@@ -430,29 +494,61 @@ QStringList DesktopAppController::columnDistinctValues(QAbstractItemModel* model
                         + where + dbcol + " IS NOT NULL )";
 
     const SqlQueryModel::DBColumnType type = src->getType(col);
-    QStringList values;
+
+    // Foreign-key columns (e.g. client_id) store the id as the filterable
+    // value, but the Widgets dialog shows the id resolved through its lookup
+    // table's delegate (e.g. client_name) — reproduce that here explicitly
+    // since QML has no per-column paint delegate to fall back on.
+    const QString lookupTable  = src->getLookupTable(col);
+    const QString lookupFkCol  = src->getLookupFkColumnName(col);
+    const QString lookupValCol = src->getLookupValueColumnName(col);
+
+    QVariantList values;
+    QSet<QString> seen;
     QSqlQuery q(src->getDBOs()->getDb());
     if (q.exec(sql)) {
         while (q.next() && values.size() < 500) {
             QVariant raw = q.value(0);
             src->reformatValue(raw, type);   // match the grid's display formatting
             const QString v = raw.toString().trimmed();
-            if (!v.isEmpty() && !values.contains(v))
-                values.append(v);
+            if (v.isEmpty() || seen.contains(v)) continue;
+            seen.insert(v);
+
+            QString label = v;
+            if (!lookupTable.isEmpty()) {
+                QSqlQuery lq(src->getDBOs()->getDb());
+                lq.prepare(QString("SELECT %1 FROM %2 WHERE %3 = ?")
+                               .arg(lookupValCol, lookupTable, lookupFkCol));
+                lq.addBindValue(v);
+                if (lq.exec() && lq.next())
+                    label = lq.value(0).toString();
+            }
+
+            QVariantMap m;
+            m["value"] = v;
+            m["label"] = label;
+            values.append(m);
         }
     } else {
         qWarning() << "columnDistinctValues query failed:" << q.lastError().text() << sql;
     }
-    values.sort(Qt::CaseInsensitive);
+
+    std::sort(values.begin(), values.end(), [](const QVariant& a, const QVariant& b) {
+        return a.toMap().value("label").toString().compare(
+                   b.toMap().value("label").toString(), Qt::CaseInsensitive) < 0;
+    });
     return values;
 }
 
-void DesktopAppController::applyColumnFilters(QAbstractItemModel* model,
-                                              const QVariantList& specs)
+// application_settings key each model's column-filter spec is persisted under,
+// so the Filter Editor's selections survive an app restart.
+static QString columnFilterSettingKey(SqlQueryModel* src)
 {
-    SqlQueryModel* src = sourceModelOf(model);
-    if (!src) return;
+    return "UI:ColumnFilters:" + src->tablename();
+}
 
+static void applyFilterSpecsToModel(SqlQueryModel* src, const QVariantList& specs)
+{
     src->clearAllUserSearches();
 
     for (const QVariant& sv : specs) {
@@ -473,8 +569,19 @@ void DesktopAppController::applyColumnFilters(QAbstractItemModel* model,
         if (!start.isEmpty() || !end.isEmpty())
             src->setUserSearchRange(col, start, end);
     }
+}
 
-    src->activateUserFilter(QString());   // empty name → apply without persisting
+void DesktopAppController::applyColumnFilters(QAbstractItemModel* model,
+                                              const QVariantList& specs)
+{
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!src) return;
+
+    applyFilterSpecsToModel(src, specs);
+    src->activateUserFilter(QString());   // empty name → skip SqlQueryModel's own (QSettings-backed) persistence; we persist to application_settings below instead
+
+    const QByteArray json = QJsonDocument(QJsonArray::fromVariantList(specs)).toJson(QJsonDocument::Compact);
+    global_DBObjects.saveParameter(columnFilterSettingKey(src), QString::fromUtf8(json));
 }
 
 void DesktopAppController::clearColumnFilters(QAbstractItemModel* model)
@@ -483,6 +590,24 @@ void DesktopAppController::clearColumnFilters(QAbstractItemModel* model)
     if (!src) return;
     src->clearAllUserSearches();
     src->deactivateUserFilter(QString());
+    global_DBObjects.saveParameter(columnFilterSettingKey(src), QString());
+}
+
+// Reapply a model's persisted column filters (if any) after it's been created.
+// Called once per filterable model right after the database opens, so grids
+// stay filtered across an app restart the same way the Filter Editor left them.
+static void restoreColumnFilters(SqlQueryModel* src)
+{
+    const QString json = global_DBObjects.loadParameter(columnFilterSettingKey(src));
+    if (json.isEmpty())
+        return;
+
+    const QVariantList specs = QJsonDocument::fromJson(json.toUtf8()).array().toVariantList();
+    if (specs.isEmpty())
+        return;
+
+    applyFilterSpecsToModel(src, specs);
+    src->activateUserFilter(QString());
 }
 
 void DesktopAppController::refreshModel(QAbstractItemModel* model)
@@ -942,6 +1067,42 @@ bool DesktopAppController::applyRowFields(QAbstractItemModel* model, int row,
     return true;
 }
 
+bool DesktopAppController::isProjectTeamMember(const QString& projectId, const QString& peopleId) const
+{
+    if (projectId.isEmpty() || peopleId.isEmpty()) return true;
+    DB_LOCK;
+    QSqlQuery q(global_DBObjects.getDb());
+    q.prepare("SELECT count(*) FROM project_people "
+              "WHERE project_id = ? AND people_id = ? AND deleted = 0");
+    q.addBindValue(projectId);
+    q.addBindValue(peopleId);
+    q.exec();
+    const bool exists = q.next() && q.value(0).toInt() > 0;
+    DB_UNLOCK;
+    return exists;
+}
+
+bool DesktopAppController::addPersonToProjectTeam(const QString& projectId, const QString& peopleId)
+{
+    if (projectId.isEmpty() || peopleId.isEmpty()) return true;
+    if (isProjectTeamMember(projectId, peopleId)) return true;
+
+    // Mirrors addTeamMember()+saveTeamMember() (below), but writes straight
+    // against the *source* projectteammembersmodel rather than through
+    // projectteammembersmodelproxy(): that proxy is filtered to whichever
+    // project happens to be open on screen (setProjectFilter), which may not
+    // be `projectId` here, and addTeamMember/saveTeamMember's row argument
+    // would then resolve against the wrong proxy row.
+    auto* src = global_DBObjects.projectteammembersmodel();
+    QVariant fk(projectId);
+    const QModelIndex srcIdx = src->newRecord(&fk);
+    if (!srcIdx.isValid()) return false;
+
+    // people_id (col 2) first: it is NOT NULL / carries the unique key, so it
+    // is the write that can be rejected, mirroring saveTeamMember's ordering.
+    return applyRowFields(src, srcIdx.row(), { {2, peopleId}, {4, "0"}, {5, ""} });
+}
+
 bool DesktopAppController::saveProject(int row,
         const QString& projectNumber, const QString& projectName,
         const QString& projectStatus, const QString& primaryContactId,
@@ -1337,6 +1498,109 @@ bool DesktopAppController::saveTrackerItemDetail(int row, const QString& itemId,
         { 4, identifiedBy},  { 5, dateIdentified}, { 6, description},
         { 8, priority},      { 9, status},     { 7, assignedTo},
         {10, dateDue},       {15, internalItem ? "1" : "0"} });
+}
+
+// ── Move a tracker item to a different project ───────────────────────────────
+
+QVariantMap DesktopAppController::checkTrackerItemMove(const QString& itemId,
+                                                        const QString& newProjectId) const
+{
+    QVariantMap result;
+    result["valid"] = false;
+    if (itemId.isEmpty() || newProjectId.isEmpty()) return result;
+
+    // Same single-row load openTrackerItem() uses: filter the shared detail
+    // model down to this one item (col 0 = id).
+    auto* src = global_DBObjects.actionitemsdetailsmodel();
+    src->setFilter(0, itemId);
+    src->refresh();
+    if (src->rowCount(QModelIndex()) == 0) return result;
+
+    const QString currentProjectId = src->data(src->index(0, 14)).toString();
+    if (currentProjectId == newProjectId) return result;  // dropped on its own project
+
+    const QString currentNumber = src->data(src->index(0, 1)).toString();
+    const QString assignedTo    = src->data(src->index(0, 7)).toString();
+    const QString identifiedBy  = src->data(src->index(0, 4)).toString();
+    const QString noteId        = src->data(src->index(0, 13)).toString();
+
+    result["valid"]       = true;
+    result["projectName"] = projectNameForId(newProjectId);
+    result["oldNumber"]   = currentNumber;
+
+    const bool numberFree = isItemNumberUnique(newProjectId, itemId, currentNumber);
+    const QString newNumber = numberFree ? currentNumber : src->getNextItemNumber(newProjectId).toString();
+    result["newNumber"]    = newNumber;
+    result["willRenumber"] = !numberFree;
+
+    QVariantList membersToAdd;
+    for (const QString& personId : { identifiedBy, assignedTo }) {
+        if (personId.isEmpty() || isProjectTeamMember(newProjectId, personId)) continue;
+        bool already = false;
+        for (const QVariant& m : membersToAdd)
+            if (m.toMap().value("id").toString() == personId) { already = true; break; }
+        if (already) continue;
+        QVariantMap m;
+        m["id"]   = personId;
+        m["name"] = peopleNameForId(personId);
+        membersToAdd.append(m);
+    }
+    result["membersToAdd"] = membersToAdd;
+
+    result["willClearMeeting"] = false;
+    if (!noteId.isEmpty()) {
+        const QString title = global_DBObjects.execute(
+            QString("SELECT note_title FROM project_notes WHERE id = '%1' AND deleted = 0")
+                .arg(QString(noteId).replace("'", "''")));
+        if (!title.isEmpty()) {
+            result["willClearMeeting"] = true;
+            result["meetingTitle"]     = title;
+        }
+    }
+
+    return result;
+}
+
+bool DesktopAppController::moveTrackerItemToProject(const QString& itemId, const QString& newProjectId)
+{
+    global_DBObjects.setLastSaveError("");
+    if (itemId.isEmpty() || newProjectId.isEmpty()) return false;
+
+    auto* src = global_DBObjects.actionitemsdetailsmodel();
+    src->setFilter(0, itemId);
+    src->refresh();
+    if (src->rowCount(QModelIndex()) == 0) return false;
+
+    const QString currentProjectId = src->data(src->index(0, 14)).toString();
+    if (currentProjectId == newProjectId) return true;  // already there
+
+    const QString currentNumber = src->data(src->index(0, 1)).toString();
+    const QString assignedTo    = src->data(src->index(0, 7)).toString();
+    const QString identifiedBy  = src->data(src->index(0, 4)).toString();
+    const QString noteId        = src->data(src->index(0, 13)).toString();
+
+    const QString newNumber = isItemNumberUnique(newProjectId, itemId, currentNumber)
+        ? currentNumber : src->getNextItemNumber(newProjectId).toString();
+
+    QAbstractItemModel* proxy = global_DBObjects.actionitemsdetailsmodelproxy();
+    if (proxy->rowCount() == 0) return false;
+
+    // note_id is project-scoped (a meeting can't span two projects), so a
+    // linked meeting is dropped as part of the move.
+    const bool ok = noteId.isEmpty()
+        ? applyRowFields(proxy, 0, { {1, newNumber}, {14, newProjectId} })
+        : applyRowFields(proxy, 0, { {1, newNumber}, {13, QString()}, {14, newProjectId} });
+    if (!ok) return false;
+
+    for (const QString& personId : { identifiedBy, assignedTo })
+        if (!personId.isEmpty())
+            addPersonToProjectTeam(newProjectId, personId);
+
+    global_DBObjects.actionitemsdetailsmodel()->refresh();
+    global_DBObjects.trackeritemsmodel()->refresh();
+    refreshAllItems();
+    refreshTeamMembers();
+    return true;
 }
 
 // ── Tracker item comments ────────────────────────────────────────────────────
@@ -1875,6 +2139,7 @@ void DesktopAppController::syncNow()
         dataDir += "/" + s_developerProfile;
     const QString dbPath = dataDir + "/ProjectNotes.db";
 
+    m_syncSessionActive = true;     // keep the bar up until we reach 100%
     setSyncProgress(0.01, false);   // show the indicator immediately
 
     QMetaObject::invokeMethod(api, [this, api, dbPath]() {
@@ -1929,6 +2194,7 @@ void DesktopAppController::syncAll()
         dataDir += "/" + s_developerProfile;
     const QString dbPath = dataDir + "/ProjectNotes.db";
 
+    m_syncSessionActive = true;     // keep the bar up until we reach 100%
     setSyncProgress(0.01, false);   // show the indicator immediately
 
     QMetaObject::invokeMethod(api, [this, api, dbPath]() {
@@ -1956,6 +2222,7 @@ void DesktopAppController::stopSync()
     if (!m_syncApi) return;
     SqliteSyncPro* api = m_syncApi;
     QMetaObject::invokeMethod(api, [api]() { api->shutdown(); }, Qt::QueuedConnection);
+    m_syncSessionActive = false;
     setSyncProgress(-1.0, false);
 }
 
@@ -1970,6 +2237,12 @@ void DesktopAppController::onSyncComplete(const SyncResult& result)
     if (FolderManager* fm = FolderManager::instance())
         fm->reload();   // pick up folder defs/memberships pulled from another device
     m_syncNetworkError = result.hasNetworkError();
+    if (m_syncNetworkError) {
+        // Offline: hide the bar and let the offline indicator take over. A failed
+        // cycle doesn't run checkSyncStatus, so clear the session here directly.
+        m_syncSessionActive = false;
+        m_syncProgress = -1.0;
+    }
     if (result.success) {
         m_syncHasError = false;
         if (SqliteSyncPro* api = m_syncApi)
@@ -1983,13 +2256,20 @@ void DesktopAppController::onSyncComplete(const SyncResult& result)
 
 void DesktopAppController::onSyncProgress(const QString&, int, int)
 {
-    if (m_syncProgress < 0)
-        setSyncProgress(0.01, m_syncHasError);
+    // A cycle is actively transferring — we're in a sync session. Keep the bar
+    // visible (onSyncStatusUpdated fills in the real database percentage after
+    // the cycle); show a sliver until that first real percentage arrives.
+    m_syncSessionActive = true;
+    if (m_syncProgress < 0.0)
+        m_syncProgress = 0.01;
+    emit syncProgressChanged();
 }
 
-// Mirrors the Widgets app's onSyncStatusUpdated: percentComplete drives a
-// percentage indicator, visible while < 100 and hidden at 100; the pending
-// push/pull counts feed the detail text.
+// Mirrors the Widgets app's onSyncStatusUpdated: percentComplete is the % of the
+// database copied. The bar stays visible showing that percentage for the whole
+// sync session and only hides once the database reports 100% (or the network
+// drops, where the offline indicator takes over). The pending push/pull counts
+// feed the detail text.
 void DesktopAppController::onSyncStatusUpdated(int percentComplete, qint64 pendingPush, qint64 pendingPull)
 {
     m_syncPercent     = percentComplete;
@@ -1997,11 +2277,14 @@ void DesktopAppController::onSyncStatusUpdated(int percentComplete, qint64 pendi
     m_syncPendingPull = pendingPull;
 
     if (m_syncNetworkError) {
-        m_syncProgress = -1.0;          // hide bar; the offline indicator takes over
+        m_syncSessionActive = false;    // offline indicator takes over
+        m_syncProgress = -1.0;
     } else if (percentComplete >= 100) {
-        m_syncProgress = -1.0;          // fully synced — hide
+        m_syncSessionActive = false;    // database fully synced — hide the bar
+        m_syncProgress = -1.0;
         m_syncHasError = false;
     } else {
+        m_syncSessionActive = true;     // still copying — keep the bar up
         m_syncProgress = percentComplete / 100.0;
     }
     emit syncProgressChanged();

@@ -34,8 +34,13 @@ qt_policy(SET QTP0001 NEW)
 # no per-directory qmldir needed.
 qt_policy(SET QTP0004 NEW)
 
+if(WIN32)
+    set(APP_ICON_RESOURCE_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/appicon.rc")
+endif()
+
 qt_add_executable(ProjectNotesDesktop
     main.cpp
+    ${APP_ICON_RESOURCE_WINDOWS}
     DesktopAppController.cpp DesktopAppController.h
     FolderManager.cpp        FolderManager.h
     LogViewerController.cpp  LogViewerController.h
@@ -55,7 +60,11 @@ qt_add_executable(ProjectNotesDesktop
 )
 
 # So main.cpp can #include "TextFormatter.h"; Python headers for the plugin engine.
+# CMAKE_CURRENT_SOURCE_DIR is also required so the Windows resource compiler can
+# resolve the relative "icons/projectnotes.ico" path in appicon.rc — rc.exe looks
+# up resource files on its include path, and this is the dir that contains icons/.
 target_include_directories(ProjectNotesDesktop PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../ProjectNotesMobile
     ${Python3_INCLUDE_DIRS}
 )
@@ -65,6 +74,7 @@ set(DESKTOP_QML_FILES
     qml/Main.qml
     qml/Theme.qml
     qml/MaterialIcon.qml
+    qml/MaterialIconCodepoints.js
     qml/IconRail.qml
     qml/ProjectSidebar.qml
     qml/FolderGroup.qml
@@ -75,6 +85,8 @@ set(DESKTOP_QML_FILES
     qml/FilterDialog.qml
     qml/RecordContextMenu.qml
     qml/RecordRowMenu.qml
+    qml/MoveReviewDialog.qml
+    qml/MoveToProjectDialog.qml
     qml/FindReplaceBar.qml
     qml/KebabButton.qml
     qml/Card.qml
@@ -107,7 +119,7 @@ qt_add_qml_module(ProjectNotesDesktop
     VERSION 1.0
     QML_FILES ${DESKTOP_QML_FILES}
     RESOURCES
-        resources/MaterialSymbolsRounded.woff2
+        resources/MaterialSymbolsRounded.ttf
         icons/projectnotes.ico
 )
 
@@ -151,7 +163,9 @@ if(UNIX AND NOT APPLE AND NOT ANDROID)
 elseif(APPLE)
     target_link_libraries(ProjectNotesDesktop PRIVATE "-framework Security")
 elseif(WIN32)
-    target_link_libraries(ProjectNotesDesktop PRIVATE Advapi32)
+    # Advapi32: credentialstore (DPAPI). Shell32: SetCurrentProcessExplicitAppUserModelID
+    # in main.cpp, which gives this build its own taskbar/Task Manager identity.
+    target_link_libraries(ProjectNotesDesktop PRIVATE Advapi32 Shell32)
 endif()
 
 if(Hunspell_INCLUDE_DIRS AND NOT "${Hunspell_INCLUDE_DIRS}" MATCHES "NOTFOUND")
@@ -180,10 +194,15 @@ add_custom_command(TARGET ProjectNotesDesktop POST_BUILD
         "$<TARGET_FILE_DIR:ProjectNotesDesktop>/threads"
     COMMENT "Deploying Python plugins and threads")
 
-# The runtime output goes to the shared build root (inherited setting), where a
-# build subdirectory named "ProjectNotesDesktop" already exists — so give the
-# executable a distinct filename to avoid a name collision at link time.
-set_target_properties(ProjectNotesDesktop PROPERTIES OUTPUT_NAME "ProjectNotesQml")
+# Ship under the same executable name as the Widgets app ("Project Notes.exe")
+# so the built binary, installer shortcuts, and registry entries all line up.
+# The Widgets ProjectNotes target also emits "Project Notes.exe", so pin this
+# target's output to its own build subdirectory (CMAKE_CURRENT_BINARY_DIR =
+# .../ProjectNotesDesktop) to guarantee the two never clobber each other,
+# regardless of any inherited CMAKE_RUNTIME_OUTPUT_DIRECTORY.
+set_target_properties(ProjectNotesDesktop PROPERTIES
+    OUTPUT_NAME "Project Notes"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
 # ── Windows app icon ──────────────────────────────────────────────────────────
 if(WIN32)
