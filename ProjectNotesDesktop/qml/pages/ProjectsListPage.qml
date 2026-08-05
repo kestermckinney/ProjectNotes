@@ -35,25 +35,37 @@ Item {
         onRefreshRequested: DesktopAppController.refreshModel(DesktopAppController.projectsListModel)
     }
 
-    ScrollView {
+    // Virtualized list — only visible cards (plus cacheBuffer) are instantiated,
+    // and reuseItems recycles delegates while scrolling.
+    ListView {
+        id: list
         anchors.fill: parent
         anchors.margins: 16
         clip: true
-        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+        spacing: 10
+        model: DesktopAppController.projectsListModel
+        reuseItems: true
+        cacheBuffer: 800
+        boundsBehavior: Flickable.StopAtBounds
+        footer: Item { width: 1; height: 8 }
+        ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
-        ColumnLayout {
-            width: page.width - 32
-            spacing: 10
+        // Header row: result count + Show Internal toggle (mockup parity).
+        // Scrolls with the content, same as the old in-column header.
+        header: Item {
+            width: ListView.view ? ListView.view.width : 0
+            height: headerRow.implicitHeight + 12
 
-            // Header row: result count + Show Internal toggle (mockup parity)
             RowLayout {
-                Layout.fillWidth: true
-                Layout.bottomMargin: 2
+                id: headerRow
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
                 spacing: 10
 
                 Text {
-                    text: projRepeater.count + (projRepeater.count === 1 ? qsTr(" project")
-                                                                          : qsTr(" projects"))
+                    text: list.count + (list.count === 1 ? qsTr(" project")
+                                                         : qsTr(" projects"))
                     color: Theme.text3
                     font.pixelSize: 12
                 }
@@ -107,19 +119,16 @@ Item {
                     }
                 }
             }
+        }
 
-            Repeater {
-                id: projRepeater
-                model: DesktopAppController.projectsListModel
-
-                delegate: Card {
+        delegate: Card {
                     id: card
                     required property int index
                     required property var model
                     readonly property string projId: model.id !== undefined ? model.id : ""
                     readonly property bool showFin: DesktopAppController.showInternalItems
 
-                    Layout.fillWidth: true
+                    width: ListView.view ? ListView.view.width : 0
                     // Height follows content: taller when the financial strip
                     // (which may wrap to two rows) is visible.
                     implicitHeight: contentCol.implicitHeight + 20
@@ -316,8 +325,6 @@ Item {
                     // Drag-to-folder is available from the sidebar's project rows
                     // (incl. the "All Projects" group). List-card drag is a later
                     // enhancement — see plan Phase 2.
-                }
-            }
         }
     }
 

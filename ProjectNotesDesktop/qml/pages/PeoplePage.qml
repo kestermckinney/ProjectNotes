@@ -32,24 +32,27 @@ Item {
         onRefreshRequested: DesktopAppController.refreshModel(DesktopAppController.peopleModel)
     }
 
-    ScrollView {
+    // Virtualized list — only visible cards (plus cacheBuffer) are instantiated,
+    // and reuseItems recycles delegates while scrolling.
+    ListView {
+        id: list
         anchors.fill: parent
         anchors.margins: 16
         clip: true
-        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+        spacing: 10
+        model: DesktopAppController.peopleModel
+        reuseItems: true
+        cacheBuffer: 800
+        boundsBehavior: Flickable.StopAtBounds
+        footer: Item { width: 1; height: 8 }
+        ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
-        ColumnLayout {
-            width: page.width - 32
-            spacing: 10
-
-            Repeater {
-                model: DesktopAppController.peopleModel
-                delegate: Card {
+        delegate: Card {
                     id: card
                     required property int index
                     required property var model
                     readonly property string pid: model.id !== undefined ? model.id : ""
-                    Layout.fillWidth: true
+                    width: ListView.view ? ListView.view.width : 0
                     implicitHeight: 64
                     color: hover.hovered ? Theme.raise : Theme.surface
 
@@ -113,9 +116,6 @@ Item {
                         acceptedButtons: Qt.RightButton
                         onTapped: (ev) => card._openMenu(ev.scenePosition.x, ev.scenePosition.y)
                     }
-                }
-            }
-            Item { Layout.preferredHeight: 8 }
         }
     }
 }

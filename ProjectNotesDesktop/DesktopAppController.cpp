@@ -839,48 +839,60 @@ QString DesktopAppController::projectIdAtRow(int row) const
     return proxy->data(proxy->index(row, 0)).toString();
 }
 
+// The *ForId lookups below use the source model's hash-backed findValue()/
+// findIndex() (O(1) after the first call per column) instead of scanning the
+// proxy row-by-row — QML list delegates call these once per visible row, and
+// the old linear scans made opening a large list O(rows × lookup-table rows).
+// Row results are mapped back to proxy rows, which is what callers index.
+// Resolving on the source also means an active quick-search filter can no
+// longer hide a name from an unrelated list's lookup.
+
 int DesktopAppController::projectRowForId(const QString& projectId) const
 {
     auto* proxy = global_DBObjects.projectinformationmodelproxy();
-    if (!proxy || projectId.isEmpty()) return -1;
-    for (int row = 0; row < proxy->rowCount(); ++row)
-        if (proxy->data(proxy->index(row, 0)).toString() == projectId)
-            return row;
-    return -1;
+    auto* src   = global_DBObjects.projectinformationmodel();
+    if (!proxy || !src || projectId.isEmpty()) return -1;
+    QVariant key(projectId);
+    const QModelIndex srcIdx = src->findIndex(key, 0);
+    if (!srcIdx.isValid()) return -1;
+    const QModelIndex proxyIdx = proxy->mapFromSource(srcIdx);
+    return proxyIdx.isValid() ? proxyIdx.row() : -1;
 }
 
 QString DesktopAppController::projectNumberForId(const QString& projectId) const
 {
-    const int row = projectRowForId(projectId);
-    if (row < 0) return {};
-    auto* proxy = global_DBObjects.projectinformationmodelproxy();
-    return proxy->data(proxy->index(row, 1)).toString();  // col 1 = project_number
+    auto* src = global_DBObjects.projectinformationmodel();
+    if (!src || projectId.isEmpty()) return {};
+    QVariant key(projectId);
+    return src->findValue(key, 0, 1).toString();  // col 1 = project_number
 }
 
 QString DesktopAppController::projectNameForId(const QString& projectId) const
 {
-    const int row = projectRowForId(projectId);
-    if (row < 0) return {};
-    auto* proxy = global_DBObjects.projectinformationmodelproxy();
-    return proxy->data(proxy->index(row, 2)).toString();  // col 2 = project_name
+    auto* src = global_DBObjects.projectinformationmodel();
+    if (!src || projectId.isEmpty()) return {};
+    QVariant key(projectId);
+    return src->findValue(key, 0, 2).toString();  // col 2 = project_name
 }
 
 QString DesktopAppController::clientNameForId(const QString& clientId) const
 {
-    const int row = clientRowForId(clientId);
-    if (row < 0) return {};
-    auto* proxy = global_DBObjects.clientsmodelproxy();
-    return proxy->data(proxy->index(row, 1)).toString();  // col 1 = client_name
+    auto* src = global_DBObjects.clientsmodel();
+    if (!src || clientId.isEmpty()) return {};
+    QVariant key(clientId);
+    return src->findValue(key, 0, 1).toString();  // col 1 = client_name
 }
 
 int DesktopAppController::clientRowForId(const QString& clientId) const
 {
     auto* proxy = global_DBObjects.clientsmodelproxy();
-    if (!proxy || clientId.isEmpty()) return -1;
-    for (int row = 0; row < proxy->rowCount(); ++row)
-        if (proxy->data(proxy->index(row, 0)).toString() == clientId)
-            return row;
-    return -1;
+    auto* src   = global_DBObjects.clientsmodel();
+    if (!proxy || !src || clientId.isEmpty()) return -1;
+    QVariant key(clientId);
+    const QModelIndex srcIdx = src->findIndex(key, 0);
+    if (!srcIdx.isValid()) return -1;
+    const QModelIndex proxyIdx = proxy->mapFromSource(srcIdx);
+    return proxyIdx.isValid() ? proxyIdx.row() : -1;
 }
 
 QString DesktopAppController::clientIdAtRow(int row) const
@@ -893,11 +905,13 @@ QString DesktopAppController::clientIdAtRow(int row) const
 int DesktopAppController::peopleRowForId(const QString& peopleId) const
 {
     auto* proxy = global_DBObjects.peoplemodelproxy();
-    if (!proxy || peopleId.isEmpty()) return -1;
-    for (int row = 0; row < proxy->rowCount(); ++row)
-        if (proxy->data(proxy->index(row, 0)).toString() == peopleId)
-            return row;
-    return -1;
+    auto* src   = global_DBObjects.peoplemodel();
+    if (!proxy || !src || peopleId.isEmpty()) return -1;
+    QVariant key(peopleId);
+    const QModelIndex srcIdx = src->findIndex(key, 0);
+    if (!srcIdx.isValid()) return -1;
+    const QModelIndex proxyIdx = proxy->mapFromSource(srcIdx);
+    return proxyIdx.isValid() ? proxyIdx.row() : -1;
 }
 
 QString DesktopAppController::peopleIdAtRow(int row) const
@@ -909,10 +923,10 @@ QString DesktopAppController::peopleIdAtRow(int row) const
 
 QString DesktopAppController::peopleNameForId(const QString& personId) const
 {
-    const int row = peopleRowForId(personId);
-    if (row < 0) return {};
-    auto* proxy = global_DBObjects.peoplemodelproxy();
-    return proxy->data(proxy->index(row, 1)).toString();  // col 1 = name
+    auto* src = global_DBObjects.peoplemodel();
+    if (!src || personId.isEmpty()) return {};
+    QVariant key(personId);
+    return src->findValue(key, 0, 1).toString();  // col 1 = name
 }
 
 // ── Picker lists ─────────────────────────────────────────────────────────────

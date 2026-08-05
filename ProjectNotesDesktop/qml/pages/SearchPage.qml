@@ -133,24 +133,26 @@ Item {
             }
         }
 
-        // Results
-        ScrollView {
+        // Results — virtualized: only visible cards (plus cacheBuffer) exist,
+        // and reuseItems recycles delegates while scrolling.
+        ListView {
+            id: list
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            spacing: 8
+            model: DesktopAppController.searchResultsModel
+            reuseItems: true
+            cacheBuffer: 800
+            boundsBehavior: Flickable.StopAtBounds
+            footer: Item { width: 1; height: 8 }
+            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
-            ColumnLayout {
-                width: page.width - 40
-                spacing: 8
-
-                Repeater {
-                    model: DesktopAppController.searchResultsModel
-                    delegate: Card {
+            delegate: Card {
                         id: rc
                         required property int index
                         required property var model
-                        Layout.fillWidth: true
+                        width: ListView.view ? ListView.view.width : 0
                         implicitHeight: 60
                         color: rh.hovered ? Theme.raise : Theme.surface
 
@@ -221,9 +223,6 @@ Item {
                             acceptedButtons: Qt.RightButton
                             onTapped: (ev) => rc._menu(ev.scenePosition.x, ev.scenePosition.y)
                         }
-                    }
-                }
-                Item { Layout.preferredHeight: 8 }
             }
         }
     }
