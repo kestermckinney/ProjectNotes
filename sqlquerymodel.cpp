@@ -151,6 +151,9 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
                 return true;
         }
 
+        // the value is actually changing below, so any cached findValue()/findIndex() lookups go stale
+        invalidateValueIndex();
+
         // make sure column is edit_table
         // exit if no update table defined
         if ((m_columnIsEditable[index.column()] == DBReadOnly) || m_tablename.isEmpty())
@@ -337,6 +340,11 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
                     // WHERE clauses (string vs integer epoch mismatch).
                     m_cache[index.row()][index.column()] = escapedValue;
 
+                    // Direct grid edits bypass pushRowChange, so drop any proxy
+                    // lookup caches referencing this table (e.g. a person rename
+                    // read by another list's assigned-to sort/search).
+                    getDBOs()->invalidateLookupCaches(m_tablename);
+
                     emit dataChanged(index, index);
 
                     // check for all of the impacted open recordsets
@@ -500,6 +508,7 @@ QHash<int, QByteArray> SqlQueryModel::roleNames() const
 void SqlQueryModel::clear()
 {
     m_cache.clear();
+    invalidateValueIndex();
 }
 
 QDateTime SqlQueryModel::parseDateTime(const QString& entrydate)
@@ -938,6 +947,8 @@ bool SqlQueryModel::insertCacheRow(int row)
     if (row < 0 || row >= m_cache.size())
         return false;
 
+    invalidateValueIndex();
+
     // assign a new UUID key
     m_cache[row][0] = QUuid::createUuid().toString();
 
@@ -1004,6 +1015,7 @@ const QModelIndex SqlQueryModel::addRecord(QVector<QVariant>& newrecord)
 
     beginInsertRows(qmi, row, row);
     m_cache.append(newrecord);
+    invalidateValueIndex();
     endInsertRows();
 
     return index(row, 0);
@@ -1025,6 +1037,7 @@ void SqlQueryModel::removeCacheRecord(QModelIndex index)
     beginRemoveRows(QModelIndex(), index.row(), index.row());
 
     m_cache.remove(index.row());
+    invalidateValueIndex();
 
     endRemoveRows();
     // beginRemoveRows/endRemoveRows is sufficient to notify views of the removal.
@@ -1411,28 +1424,41 @@ void SqlQueryModel::promptShowClosedProjects(const QStringList &keyColumns, cons
     }
 }
 
-const QVariant SqlQueryModel::findValue(QVariant& lookupValue, int searchColumn, int returnColumn)
+const QHash<QString, int>& SqlQueryModel::valueIndexForColumn(int searchColumn)
 {
-    for ( QVector<QVector<QVariant>>::Iterator itrow = m_cache.begin(); itrow != m_cache.end(); ++itrow )
+    QHash<QString, int>& colIndex = m_valueIndex[searchColumn];
+
+    if (colIndex.isEmpty() && !m_cache.isEmpty())
     {
-        if ( (*itrow)[searchColumn].toString().compare(lookupValue.toString()) == 0 )
+        for (int row = 0; row < m_cache.size(); row++)
         {
-            return (*itrow)[returnColumn]; // key is always at 0
+            const QString key = m_cache[row][searchColumn].toString();
+            if (!colIndex.contains(key)) // first match wins, same as the linear scan it replaces
+                colIndex.insert(key, row);
         }
     }
+
+    return colIndex;
+}
+
+const QVariant SqlQueryModel::findValue(QVariant& lookupValue, int searchColumn, int returnColumn)
+{
+    const QHash<QString, int>& colIndex = valueIndexForColumn(searchColumn);
+    auto it = colIndex.constFind(lookupValue.toString());
+
+    if (it != colIndex.constEnd())
+        return m_cache[it.value()][returnColumn];
 
     return QVariant();
 }
 
 const QModelIndex SqlQueryModel::findIndex(QVariant& lookupValue, int searchColumn)
 {
-    for ( int row = 0; row < rowCount(QModelIndex()); row++ )
-    {
-        if ( m_cache[row][searchColumn].toString().compare(lookupValue.toString()) == 0 )
-        {
-            return index(row, 0); // key is always at 0
-        }
-    }
+    const QHash<QString, int>& colIndex = valueIndexForColumn(searchColumn);
+    auto it = colIndex.constFind(lookupValue.toString());
+
+    if (it != colIndex.constEnd())
+        return index(it.value(), 0); // key is always at 0
 
     return QModelIndex();
 }
@@ -1472,6 +1498,7 @@ bool SqlQueryModel::reloadRecord(const QModelIndex& index)
                 record[i] = select.value(i);
 
             m_cache[index.row()] = record;
+            invalidateValueIndex();
 
             DB_UNLOCK;
 

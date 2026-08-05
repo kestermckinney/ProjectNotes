@@ -7,6 +7,7 @@
 #include <QSortFilterProxyModel>
 #include <QHash>
 #include <QObject>
+#include <QSet>
 #include <QTimer>
 
 class SortFilterProxyModel : public QSortFilterProxyModel
@@ -30,6 +31,12 @@ public:
     void setPinnedRow(int sourceRow);
     void releasePinnedRow();
 
+    // Drop cached display values sourced from the given lookup table so the
+    // next sort/filter pass re-reads them. Called for every table write (app
+    // edits, plugins, sync) — without this a renamed person/client keeps its
+    // old name in sort/quick-search for the life of the session.
+    void invalidateLookupTable(const QString& table);
+
 private slots:
     void onSourceDataChanged(const QModelIndex& topLeft,
                              const QModelIndex& bottomRight,
@@ -39,6 +46,20 @@ private:
     // Cache for lookup display values — avoids repeated DB queries during sort.
     // Key: "table\x1Ffkcol\x1Fvalcol\x1FfkValue", Value: display string.
     mutable QHash<QString, QString> m_sortLookupCache;
+    // Tables already bulk-loaded into m_sortLookupCache via preloadLookupTable(),
+    // keyed by "table\x1Ffkcol\x1Fvalcol". Avoids re-querying row-by-row: the first
+    // lookup against a given (table, fkCol, valCol) pulls every row in one query
+    // instead of one query per distinct value hit during a sort/filter pass.
+    mutable QSet<QString> m_preloadedLookupTables;
+    void preloadLookupTable(const QString& lookupTable, const QString& fkCol,
+                            const QString& valCol, class SqlQueryModel* srcModel) const;
+    // Resolves one FK value's display text: preloads the whole table on first
+    // use, then falls back to a single-row query for any value added after
+    // that (e.g. a project/person created later in the session) so results
+    // stay correct instead of caching a permanent blank.
+    QString resolveLookupValue(const QString& lookupTable, const QString& fkCol,
+                               const QString& valCol, const QString& fkVal,
+                               class SqlQueryModel* srcModel) const;
     QString m_quickSearch;
     // Coalesces bursts of setQuickSearch() calls (one per keystroke) into a
     // single invalidateRowsFilter() so we don't re-scan every row of the

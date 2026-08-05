@@ -1231,6 +1231,10 @@ void DatabaseObjects::pushRowChange(const QString& table, const QVariant& value,
         return;
     }
 
+    // Any write can change a value other proxies resolve through their lookup
+    // caches (e.g. a person rename read by the items list's assigned-to sort).
+    invalidateLookupCaches(table);
+
     KeyColumnChange newChange{table, value, optype};
     if (!m_keyColumnChanges.contains(newChange))
     {
@@ -1238,6 +1242,15 @@ void DatabaseObjects::pushRowChange(const QString& table, const QVariant& value,
     }
 
     // qDebug() << "Push change to " << table << " of id " << value << " to change stack.";
+}
+
+void DatabaseObjects::invalidateLookupCaches(const QString& table)
+{
+    // All proxies are direct children of this object (created in
+    // createDatabaseObjects); each one drops only entries for this table.
+    const auto proxies = findChildren<SortFilterProxyModel*>(QString(), Qt::FindDirectChildrenOnly);
+    for (SortFilterProxyModel* proxy : proxies)
+        proxy->invalidateLookupTable(table);
 }
 
 // Pop the last added change; returns true if successful, false if empty

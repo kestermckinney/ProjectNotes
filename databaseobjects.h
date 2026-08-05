@@ -163,6 +163,12 @@ public:
     bool popRowChange(KeyColumnChange& outChange);
     void updateDisplayData();
 
+    // Drop every proxy's cached lookup display values for the given table.
+    // Must be called on any write to a table other models reference as a
+    // lookup (people, clients, projects, ...); pushRowChange() and
+    // SqlQueryModel::setData() cover all write paths between them.
+    void invalidateLookupCaches(const QString& table);
+
 
     // selection values for fields
     static QStringList item_type;

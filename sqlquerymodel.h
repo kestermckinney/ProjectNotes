@@ -55,7 +55,7 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
 
-    void setCacheData(const QModelIndex &index, const QVariant &value) { m_cache[index.row()][index.column()] = value; }
+    void setCacheData(const QModelIndex &index, const QVariant &value) { m_cache[index.row()][index.column()] = value; invalidateValueIndex(); }
 
     bool importXMLNode(const QDomNode& domnode);
     bool setData(QDomElement* xmlRow, bool ignoreKey);
@@ -125,6 +125,12 @@ public:
     const QVariant findValue(QVariant& lookupValue, int searchColumn, int returnColumn);
     const QModelIndex findIndex(QVariant& lookupValue, int searchColumn);
     const QModelIndex findNextIndex(QVariant& lookupValue, int searchColumn, QModelIndex& startIndex);
+
+    // findValue()/findIndex() are called from delegate paint() on every repaint,
+    // so they're backed by a QHash index (built lazily per search column) instead
+    // of a linear scan. Any code that mutates m_cache outside of the model's own
+    // methods below must call invalidateValueIndex() to keep it in sync.
+    void invalidateValueIndex() { m_valueIndex.clear(); }
 
     void setShowBlank(bool show = true) { m_showBlank = show; }
     bool reloadRecord(const QModelIndex& index);
@@ -251,6 +257,11 @@ private:
 
     QVector<QVector<QVariant>> m_cache;
     QVector<QHash<int, QVariant> > m_headers;
+
+    // Lazily-built index for findValue()/findIndex(): searchColumn -> (value -> first matching row).
+    // Cleared by invalidateValueIndex() whenever m_cache changes, rebuilt on next lookup.
+    QHash<int, QHash<QString, int>> m_valueIndex;
+    const QHash<QString, int>& valueIndexForColumn(int searchColumn);
 
     bool m_showBlank = false;
     bool m_dirty = false;
