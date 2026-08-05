@@ -21,6 +21,10 @@ Column {
     property color  folderColor: Theme.amber
     property int    folderCount: 0
     property bool   isAll: false
+    // The implicit "Not Categorized" group (projects that are members of no
+    // folder). Like isAll, dropping a project here clears all its folder
+    // memberships rather than adding it to a (nonexistent) folder.
+    property bool   isUncategorized: false
 
     // Selection state (owned by ProjectSidebar).
     property string selectedProjectId: ""
@@ -35,6 +39,9 @@ Column {
     // A tracker item card (Drag.keys ["trackerItem"]) was dropped on a project
     // row. Handled by ProjectSidebar → Main.requestTrackerItemMove.
     signal itemMoveRequested(string itemId, string projectId)
+    // The header was tapped and `expanded` flipped to the given value. The
+    // instantiating site (ProjectSidebar) persists this via FolderManager.
+    signal toggled(bool expandedNow)
 
     // Visible members of this folder ("" = every visible project), served from
     // the controller's one-pass snapshot. Referencing sidebarRev makes the
@@ -54,7 +61,7 @@ Column {
         var pid = drop.source ? drop.source.projectId : ""
         if (!pid)
             return
-        if (group.isAll)
+        if (group.isAll || group.isUncategorized)
             FolderManager.removeProjectFromAllFolders(pid)
         else
             FolderManager.addProjectToFolder(pid, group.folderId)
@@ -92,9 +99,9 @@ Column {
             spacing: 6
 
             MaterialIcon {
-                name: group.isAll ? "workspaces" : group.folderIcon
+                name: group.isAll ? "workspaces" : (group.isUncategorized ? "folder_off" : group.folderIcon)
                 size: 15
-                color: group.isAll ? Theme.text3 : group.folderColor
+                color: (group.isAll || group.isUncategorized) ? Theme.text3 : group.folderColor
             }
             Text {
                 text: group.folderName.toUpperCase()
@@ -117,7 +124,12 @@ Column {
             }
         }
 
-        TapHandler { onTapped: group.expanded = !group.expanded }
+        TapHandler {
+            onTapped: {
+                group.expanded = !group.expanded
+                group.toggled(group.expanded)
+            }
+        }
     }
 
     // ── Body: project rows (members only — see `members` above) ──────────────

@@ -32,9 +32,18 @@ class FolderManager : public QObject
 {
     Q_OBJECT
 
-    // List of folder maps { id, name, icon, color, count } for QML sidebar +
-    // settings editor. Re-emitted on every mutation.
+    // List of folder maps { id, name, icon, color, count, collapsed } for QML
+    // sidebar + settings editor. Re-emitted on every mutation.
     Q_PROPERTY(QVariantList folders READ folders NOTIFY foldersChanged)
+
+    // Collapsed state of the sidebar's two implicit groups (not real folders,
+    // so they have no entry in `folders`). Persisted alongside folders/
+    // memberships so collapse state survives a restart and syncs like the
+    // rest of this document.
+    Q_PROPERTY(bool allProjectsCollapsed READ allProjectsCollapsed
+                   WRITE setAllProjectsCollapsed NOTIFY allProjectsCollapsedChanged)
+    Q_PROPERTY(bool uncategorizedCollapsed READ uncategorizedCollapsed
+                   WRITE setUncategorizedCollapsed NOTIFY uncategorizedCollapsedChanged)
 
 public:
     explicit FolderManager(QObject* parent = nullptr);
@@ -43,6 +52,11 @@ public:
     static FolderManager* instance() { return s_instance; }
 
     QVariantList folders() const;
+
+    bool allProjectsCollapsed() const { return m_allProjectsCollapsed; }
+    void setAllProjectsCollapsed(bool collapsed);
+    bool uncategorizedCollapsed() const { return m_uncategorizedCollapsed; }
+    void setUncategorizedCollapsed(bool collapsed);
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
     // Load the stored JSON from application_settings. Call once the database is
@@ -58,6 +72,7 @@ public:
     Q_INVOKABLE bool    setFolderColor(const QString& folderId, const QString& color);
     Q_INVOKABLE bool    removeFolder(const QString& folderId);
     Q_INVOKABLE bool    moveFolder(const QString& folderId, int newIndex);
+    Q_INVOKABLE bool    setFolderCollapsed(const QString& folderId, bool collapsed);
 
     // ── Membership (multi-folder) ────────────────────────────────────────────
     Q_INVOKABLE bool        addProjectToFolder(const QString& projectId, const QString& folderId);
@@ -69,6 +84,8 @@ public:
 
 signals:
     void foldersChanged();
+    void allProjectsCollapsedChanged();
+    void uncategorizedCollapsedChanged();
 
 private:
     struct Folder {
@@ -76,6 +93,7 @@ private:
         QString name;
         QString icon;
         QString color;
+        bool    collapsed = false;
     };
 
     int  indexOfFolder(const QString& folderId) const;
@@ -84,6 +102,8 @@ private:
 
     QVector<Folder>              m_folders;
     QHash<QString, QStringList>  m_memberships;   // projectId -> [folderId,...]
+    bool                         m_allProjectsCollapsed  = false;
+    bool                         m_uncategorizedCollapsed = false;
 
     // The exact JSON string currently reflected in m_folders/m_memberships (as
     // last loaded from or saved to application_settings). reload() compares the

@@ -40,14 +40,33 @@ QVariantList FolderManager::folders() const
             if (it.value().contains(f.id)) ++count;
 
         QVariantMap m;
-        m.insert(QStringLiteral("id"),    f.id);
-        m.insert(QStringLiteral("name"),  f.name);
-        m.insert(QStringLiteral("icon"),  f.icon);
-        m.insert(QStringLiteral("color"), f.color);
-        m.insert(QStringLiteral("count"), count);
+        m.insert(QStringLiteral("id"),        f.id);
+        m.insert(QStringLiteral("name"),      f.name);
+        m.insert(QStringLiteral("icon"),      f.icon);
+        m.insert(QStringLiteral("color"),     f.color);
+        m.insert(QStringLiteral("count"),     count);
+        m.insert(QStringLiteral("collapsed"), f.collapsed);
         out.append(m);
     }
     return out;
+}
+
+void FolderManager::setAllProjectsCollapsed(bool collapsed)
+{
+    if (m_allProjectsCollapsed == collapsed)
+        return;
+    m_allProjectsCollapsed = collapsed;
+    save();
+    emit allProjectsCollapsedChanged();
+}
+
+void FolderManager::setUncategorizedCollapsed(bool collapsed)
+{
+    if (m_uncategorizedCollapsed == collapsed)
+        return;
+    m_uncategorizedCollapsed = collapsed;
+    save();
+    emit uncategorizedCollapsedChanged();
 }
 
 // ── Lifecycle ────────────────────────────────────────────────────────────────
@@ -63,6 +82,8 @@ void FolderManager::reload()
 
     load();
     emit foldersChanged();
+    emit allProjectsCollapsedChanged();
+    emit uncategorizedCollapsedChanged();
 }
 
 void FolderManager::load()
@@ -89,9 +110,13 @@ void FolderManager::load()
         f.name  = o.value(QStringLiteral("name")).toString();
         f.icon  = o.value(QStringLiteral("icon")).toString(QStringLiteral("folder"));
         f.color = o.value(QStringLiteral("color")).toString(QStringLiteral("#c98a1a"));
+        f.collapsed = o.value(QStringLiteral("collapsed")).toBool(false);
         if (!f.id.isEmpty())
             m_folders.append(f);
     }
+
+    m_allProjectsCollapsed   = root.value(QStringLiteral("allCollapsed")).toBool(false);
+    m_uncategorizedCollapsed = root.value(QStringLiteral("uncategorizedCollapsed")).toBool(false);
 
     const QJsonObject memberships = root.value(QStringLiteral("memberships")).toObject();
     for (auto it = memberships.constBegin(); it != memberships.constEnd(); ++it) {
@@ -112,11 +137,12 @@ void FolderManager::save()
     for (int i = 0; i < m_folders.size(); ++i) {
         const Folder& f = m_folders.at(i);
         QJsonObject o;
-        o.insert(QStringLiteral("id"),    f.id);
-        o.insert(QStringLiteral("name"),  f.name);
-        o.insert(QStringLiteral("icon"),  f.icon);
-        o.insert(QStringLiteral("color"), f.color);
-        o.insert(QStringLiteral("order"), i);
+        o.insert(QStringLiteral("id"),        f.id);
+        o.insert(QStringLiteral("name"),      f.name);
+        o.insert(QStringLiteral("icon"),      f.icon);
+        o.insert(QStringLiteral("color"),     f.color);
+        o.insert(QStringLiteral("order"),     i);
+        o.insert(QStringLiteral("collapsed"), f.collapsed);
         folders.append(o);
     }
 
@@ -133,6 +159,8 @@ void FolderManager::save()
     QJsonObject root;
     root.insert(QStringLiteral("folders"), folders);
     root.insert(QStringLiteral("memberships"), memberships);
+    root.insert(QStringLiteral("allCollapsed"), m_allProjectsCollapsed);
+    root.insert(QStringLiteral("uncategorizedCollapsed"), m_uncategorizedCollapsed);
 
     const QByteArray json = QJsonDocument(root).toJson(QJsonDocument::Compact);
     m_rawJson = QString::fromUtf8(json);   // keep in step so a synced echo of this
@@ -215,6 +243,18 @@ bool FolderManager::removeFolder(const QString& folderId)
         else
             ++it;
     }
+    save();
+    return true;
+}
+
+bool FolderManager::setFolderCollapsed(const QString& folderId, bool collapsed)
+{
+    const int i = indexOfFolder(folderId);
+    if (i < 0)
+        return false;
+    if (m_folders[i].collapsed == collapsed)
+        return true;
+    m_folders[i].collapsed = collapsed;
     save();
     return true;
 }

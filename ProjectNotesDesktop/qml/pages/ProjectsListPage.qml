@@ -24,16 +24,20 @@ Item {
         recordType: qsTr("Project")
         model: DesktopAppController.projectsListModel
         recordId: page._ctxId
+        canMoveTo: true
         onOpenRequested:   page.projectActivated(page._ctxId)
         onNewRequested: {
             var r = DesktopAppController.addProject()
             if (r >= 0) page.projectActivated(DesktopAppController.projectIdAtRow(r))
         }
         onDeleteRequested: DesktopAppController.deleteProject(DesktopAppController.projectRowForId(page._ctxId))
+        onMoveToRequested: moveToFolderDialog.openFor(page._ctxId, ctxMenu.recordLabel)
         onExportRequested: page.exportRequested("projects", page._ctxId)
         onFilterRequested: page.filterRequested()
         onRefreshRequested: DesktopAppController.refreshModel(DesktopAppController.projectsListModel)
     }
+
+    MoveToFolderDialog { id: moveToFolderDialog }
 
     // Virtualized list — only visible cards (plus cacheBuffer) are instantiated,
     // and reuseItems recycles delegates while scrolling.

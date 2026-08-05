@@ -87,6 +87,7 @@ set(DESKTOP_QML_FILES
     qml/RecordRowMenu.qml
     qml/MoveReviewDialog.qml
     qml/MoveToDialog.qml
+    qml/MoveToFolderDialog.qml
     qml/FindReplaceBar.qml
     qml/KebabButton.qml
     qml/Card.qml

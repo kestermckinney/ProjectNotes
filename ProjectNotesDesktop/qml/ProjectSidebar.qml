@@ -32,6 +32,7 @@ Rectangle {
         recordType: qsTr("Project")
         model: DesktopAppController.projectsListModel
         recordId: sidebar._ctxId
+        canMoveTo: true
         onOpenRequested:   sidebar.projectActivated(sidebar._ctxId)
         onNewRequested: {
             var r = DesktopAppController.addProject()
@@ -39,10 +40,13 @@ Rectangle {
         }
         onDeleteRequested: DesktopAppController.deleteProject(
                                DesktopAppController.projectRowForId(sidebar._ctxId))
+        onMoveToRequested: moveToFolderDialog.openFor(sidebar._ctxId, projCtxMenu.recordLabel)
         onExportRequested: sidebar.exportRequested("projects", sidebar._ctxId)
         onFilterRequested: sidebar.filterRequested()
         onRefreshRequested: DesktopAppController.refreshModel(DesktopAppController.projectsListModel)
     }
+
+    MoveToFolderDialog { id: moveToFolderDialog }
 
     // Called by a FolderGroup row (right-click or kebab) to open the shared menu
     // for a given project at scene coordinates.
@@ -101,23 +105,42 @@ Rectangle {
                         folderColor: modelData.color
                         folderCount: modelData.count
                         isAll:       false
+                        expanded:    !modelData.collapsed
                         selectedProjectId: sidebar.selectedProjectId
                         dragLayer:         sidebar.dragLayer
                         onProjectActivated: (pid) => sidebar.projectActivated(pid)
                         onMenuRequested: (pid, label, sx, sy) => sidebar.openProjectMenu(pid, label, sx, sy)
                         onItemMoveRequested: (itemId, pid) => sidebar.itemMoveRequested(itemId, pid)
+                        onToggled: (exp) => FolderManager.setFolderCollapsed(modelData.id, !exp)
                     }
+                }
+
+                FolderGroup {
+                    width: parent.width - 16
+                    folderId: "__uncategorized__"
+                    folderName: "Not Categorized"
+                    isAll: false
+                    isUncategorized: true
+                    expanded: !FolderManager.uncategorizedCollapsed
+                    selectedProjectId: sidebar.selectedProjectId
+                    dragLayer:         sidebar.dragLayer
+                    onProjectActivated: (pid) => sidebar.projectActivated(pid)
+                    onMenuRequested: (pid, label, sx, sy) => sidebar.openProjectMenu(pid, label, sx, sy)
+                    onItemMoveRequested: (itemId, pid) => sidebar.itemMoveRequested(itemId, pid)
+                    onToggled: (exp) => FolderManager.uncategorizedCollapsed = !exp
                 }
 
                 FolderGroup {
                     width: parent.width - 16
                     folderName: "All Projects"
                     isAll: true
+                    expanded: !FolderManager.allProjectsCollapsed
                     selectedProjectId: sidebar.selectedProjectId
                     dragLayer:         sidebar.dragLayer
                     onProjectActivated: (pid) => sidebar.projectActivated(pid)
                     onMenuRequested: (pid, label, sx, sy) => sidebar.openProjectMenu(pid, label, sx, sy)
                     onItemMoveRequested: (itemId, pid) => sidebar.itemMoveRequested(itemId, pid)
+                    onToggled: (exp) => FolderManager.allProjectsCollapsed = !exp
                 }
             }
         }

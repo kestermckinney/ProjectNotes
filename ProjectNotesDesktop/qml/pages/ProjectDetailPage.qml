@@ -1287,13 +1287,17 @@ Item {
         recordId: page.projectId
         canOpen: false
         canDuplicate: false
-        canMoveTo: false
+        canMoveTo: true
         onNewRequested: page.newRequested()
         onDeleteRequested: page.deleteRequested()
+        onMoveToRequested: moveToFolderDialog.openFor(page.projectId, selfMenu.recordLabel)
         onExportRequested: page.exportRequested(page.exportTable, page.exportId)
         onFilterRequested: page.filterRequested()
         onRefreshRequested: page._refreshAll()
     }
+
+    // "Move To Folder" for the project itself, opened from selfMenu above.
+    MoveToFolderDialog { id: moveToFolderDialog }
 
     // Shared full-field spell-check dialog (opened by fields / right-click).
     SpellCheckDialog { id: spellDialog }

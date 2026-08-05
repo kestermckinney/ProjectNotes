@@ -637,6 +637,11 @@ void DesktopAppController::refreshModel(QAbstractItemModel* model)
         src->refresh();
 }
 
+// Special folderProjects() key for "projects that belong to no folder" — the
+// sidebar's "Not Categorized" group (ProjectSidebar.qml). Mirrors the ""
+// (All Projects) convention below; not a real FolderManager folder id.
+static const QString kUncategorizedFolderKey = QStringLiteral("__uncategorized__");
+
 QVariantList DesktopAppController::folderProjects(const QString& folderId)
 {
     if (!m_folderSnapshotValid)
@@ -684,6 +689,8 @@ void DesktopAppController::rebuildFolderSnapshot()
             const QStringList memberOf = fm->foldersForProject(pid);
             for (const QString& fid : memberOf)
                 m_folderSnapshot[fid].append(row);
+            if (memberOf.isEmpty())
+                m_folderSnapshot[kUncategorizedFolderKey].append(row);
         }
     }
 }
