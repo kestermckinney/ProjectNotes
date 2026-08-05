@@ -17,16 +17,12 @@ Text {
     property string name: ""
     property int size: 20
 
-    // Loaded once, shared across all instances.
-    FontLoader {
-        id: fontLoader
-        source: "qrc:/qt/qml/ProjectNotesDesktop/resources/MaterialSymbolsRounded.ttf"
-    }
-
     text: Icons.codepoints[name] !== undefined
           ? String.fromCodePoint(Icons.codepoints[name])
           : ""
-    font.family: fontLoader.name
+    // The shared loader lives in the Theme singleton — a FontLoader declared
+    // here would be instantiated once per icon.
+    font.family: Theme.iconFont
     font.pixelSize: size
     verticalAlignment: Text.AlignVCenter
     horizontalAlignment: Text.AlignHCenter

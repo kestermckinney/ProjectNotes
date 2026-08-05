@@ -48,12 +48,13 @@ Item {
     }
 
     ScrollView {
+        id: pageScroll
         anchors.fill: parent
         anchors.margins: 20
         clip: true
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
         ColumnLayout {
-            width: page.width - 40
+            width: pageScroll.availableWidth
             spacing: 14
 
             FormField { label: qsTr("Name"); id: nameField; onEdited: page._changed = true }

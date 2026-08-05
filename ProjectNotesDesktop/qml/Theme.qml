@@ -35,6 +35,15 @@ QtObject {
     function zoomOut()   { uiScale = _clampScale(uiScale - scaleStep) }
     function zoomReset() { uiScale = 1.0 }
 
+    // ── Icon font ─────────────────────────────────────────────────────────────
+    // One FontLoader for the whole app. MaterialIcon binds to iconFont — a
+    // FontLoader declared inside MaterialIcon itself would be instantiated per
+    // icon (hundreds per list page).
+    readonly property FontLoader _iconFontLoader: FontLoader {
+        source: "qrc:/qt/qml/ProjectNotesDesktop/resources/MaterialSymbolsRounded.ttf"
+    }
+    readonly property string iconFont: _iconFontLoader.name
+
     // ── Surfaces ──────────────────────────────────────────────────────────────
     readonly property color bg:        dark ? "#1E1D1B" : "#F3F1EA"
     readonly property color surface:   dark ? "#262523" : "#FBFAF6"

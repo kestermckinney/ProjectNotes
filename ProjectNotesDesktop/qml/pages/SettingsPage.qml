@@ -25,13 +25,14 @@ Item {
     function _nameForId(list, id){ for (var i=0;i<list.length;i++) if (list[i].id===id) return list[i].name; return "" }
 
     ScrollView {
+        id: pageScroll
         anchors.fill: parent
         anchors.margins: 20
         clip: true
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
         ColumnLayout {
-            width: page.width - 40
+            width: pageScroll.availableWidth
             spacing: 22
 
             // ── Appearance ────────────────────────────────────────────────────
