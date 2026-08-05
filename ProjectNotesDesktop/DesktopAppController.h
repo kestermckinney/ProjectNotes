@@ -148,6 +148,12 @@ public:
     Q_INVOKABLE int     lastProjectDetailTab(const QString& projectId) const;
     Q_INVOKABLE void    setLastProjectDetailTab(const QString& projectId, int index);
 
+    // Draggable header height on the project detail page, persisted per-user
+    // (local QSettings, not the synced application_settings table). Returns 0
+    // when no preference has been saved yet.
+    Q_INVOKABLE int     projectDetailHeaderHeight() const;
+    Q_INVOKABLE void    setProjectDetailHeaderHeight(int height);
+
     // ── View options ─────────────────────────────────────────────────────────
     bool showClosedProjects() const;
     void setShowClosedProjects(bool v);

@@ -19,3 +19,4 @@ packaging/macos/staging*
 .DS_Store
 .claude/
 .opencode/
+*.aps

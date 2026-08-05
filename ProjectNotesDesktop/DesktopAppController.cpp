@@ -418,6 +418,11 @@ int DesktopAppController::lastProjectDetailTab(const QString& projectId) const
 void DesktopAppController::setLastProjectDetailTab(const QString& projectId, int index)
 { global_DBObjects.setLastProjectDetailTab(projectId, index); }
 
+int DesktopAppController::projectDetailHeaderHeight() const
+{ return global_DBObjects.getProjectDetailHeaderHeight(); }
+void DesktopAppController::setProjectDetailHeaderHeight(int height)
+{ global_DBObjects.setProjectDetailHeaderHeight(height); }
+
 // ── View options ─────────────────────────────────────────────────────────────
 
 bool DesktopAppController::showClosedProjects() const

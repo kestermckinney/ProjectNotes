@@ -691,6 +691,19 @@ int DatabaseObjects::getLastProjectDetailTab(const QString& projectId)
     return value.toInt();
 }
 
+void DatabaseObjects::setProjectDetailHeaderHeight(int height)
+{
+    saveLocalParameter("UI:ProjectDetailHeaderHeight", QString::number(height));
+}
+
+int DatabaseObjects::getProjectDetailHeaderHeight()
+{
+    QString value = loadLocalParameter("UI:ProjectDetailHeaderHeight");
+    if (value.isEmpty())
+        return 0; // no saved preference
+    return value.toInt();
+}
+
 void DatabaseObjects::setGlobalSearches( bool refresh )
 { 
     // setup default filters
