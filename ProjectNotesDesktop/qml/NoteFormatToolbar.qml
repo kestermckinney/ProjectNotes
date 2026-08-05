@@ -57,6 +57,49 @@ Rectangle {
         "#b4a7d6", "#d9d2e9", "#d5a6bd", "#ead1dc", "#00ff00", "#00ffff", "#ff00ff", "#ff9900"
     ]
 
+    // Live snapshot of the format under the cursor (or spanning the current
+    // selection). Drives the toolbar's font/size/attribute/color/style/alignment
+    // indicators so they always reflect what's actually under the cursor.
+    //
+    // Deliberately NOT a plain property binding on editor.selectionStart/End:
+    // those signals can fire WHILE the document is still being mutated (e.g.
+    // noteEdit.text = ... reparsing HTML into the QTextDocument block-by-block
+    // when switching notes). Querying the document with a fresh QTextCursor
+    // reentrantly from inside that same call stack crashed the app. Refreshing
+    // via Qt.callLater() defers the read to the next event-loop turn, after
+    // the mutation that triggered the signal has fully unwound.
+    property var _liveFmt: null
+
+    function _refreshLiveFmt() {
+        if (!bar.editor || !bar.editor.textDocument) { bar._liveFmt = null; return }
+        var doc = bar.editor.textDocument
+        var s = bar.editor.selectionStart
+        var e = bar.editor.selectionEnd
+        bar._liveFmt = {
+            bold: TextFormatter.isBoldAt(doc, s, e),
+            italic: TextFormatter.isItalicAt(doc, s, e),
+            underline: TextFormatter.isUnderlineAt(doc, s, e),
+            strikethrough: TextFormatter.isStrikethroughAt(doc, s, e),
+            family: TextFormatter.currentFontFamily(doc, e),
+            size: TextFormatter.currentFontPointSize(doc, e),
+            color: TextFormatter.currentFontColor(doc, e),
+            alignment: TextFormatter.currentAlignment(doc, e),
+            style: TextFormatter.currentParagraphStyle(doc, e)
+        }
+    }
+
+    onEditorChanged: Qt.callLater(_refreshLiveFmt)
+    Component.onCompleted: Qt.callLater(_refreshLiveFmt)
+
+    Connections {
+        target: bar.editor
+        ignoreUnknownSignals: true
+        function onSelectionStartChanged() { Qt.callLater(bar._refreshLiveFmt) }
+        function onSelectionEndChanged() { Qt.callLater(bar._refreshLiveFmt) }
+        function onCursorPositionChanged() { Qt.callLater(bar._refreshLiveFmt) }
+        function onTextChanged() { Qt.callLater(bar._refreshLiveFmt) }
+    }
+
     // Immediate ops that use the editor's live selection.
     function _apply(fn) {
         if (!editor) return
@@ -65,6 +108,7 @@ Rectangle {
         fn(editor.textDocument, ss, se)
         editor.forceActiveFocus()
         editor.select(ss, se)
+        Qt.callLater(bar._refreshLiveFmt)
     }
 
     // Stash the current selection before a popup opens.
@@ -80,6 +124,7 @@ Rectangle {
         fn(editor.textDocument, bar._selStart, bar._selEnd)
         editor.forceActiveFocus()
         editor.select(bar._selStart, bar._selEnd)
+        Qt.callLater(bar._refreshLiveFmt)
     }
 
     // Human-readable name for a paragraph-style index (see _paragraphStyles).
@@ -101,6 +146,10 @@ Rectangle {
             id: btn
             property string icon: ""
             property string glyph: ""
+            // True when the format this button toggles is active at the
+            // current cursor position/selection — shows a highlighted state
+            // so the toolbar reflects what's under the cursor.
+            property bool active: false
             signal triggered()
             implicitWidth: 30
             implicitHeight: 30
@@ -108,17 +157,19 @@ Rectangle {
             Rectangle {
                 anchors.centerIn: parent
                 width: 28; height: 28; radius: 6
-                color: hh.hovered ? Theme.surface : "transparent"
+                color: btn.active ? Theme.accentSoft : (hh.hovered ? Theme.surface : "transparent")
+                border.color: btn.active ? Theme.accent : "transparent"
+                border.width: 1
                 MaterialIcon {
                     anchors.centerIn: parent
                     visible: btn.icon !== ""
-                    name: btn.icon; size: 18; color: Theme.text2
+                    name: btn.icon; size: 18; color: btn.active ? Theme.accent : Theme.text2
                 }
                 Text {
                     anchors.centerIn: parent
                     visible: btn.glyph !== ""
                     text: btn.glyph
-                    color: Theme.text2
+                    color: btn.active ? Theme.accent : Theme.text2
                     font.pixelSize: 15
                     font.weight: Font.Bold
                 }
@@ -131,6 +182,9 @@ Rectangle {
         component ChipButton: Rectangle {
             id: chip
             property string label: ""
+            // Optional: render the label in this font family, so the Font chip
+            // previews the typeface under the cursor (e.g. Google-Docs-style).
+            property string previewFamily: ""
             property alias contentWidth: chipText.implicitWidth
             signal clicked()
             Layout.alignment: Qt.AlignVCenter
@@ -147,6 +201,7 @@ Rectangle {
                     text: chip.label
                     color: Theme.text2
                     font.pixelSize: 12
+                    font.family: chip.previewFamily
                     elide: Text.ElideRight
                     Layout.maximumWidth: 120
                 }
@@ -161,33 +216,26 @@ Rectangle {
             width: 1; height: 20; color: Theme.border
         }
 
-        FmtButton { icon: "format_bold";           onTriggered: bar._apply(TextFormatter.toggleBold) }
-        FmtButton { icon: "format_italic";        onTriggered: bar._apply(TextFormatter.toggleItalic) }
-        FmtButton { icon: "format_underlined";    onTriggered: bar._apply(TextFormatter.toggleUnderline) }
-        FmtButton { icon: "strikethrough_s";      onTriggered: bar._apply(TextFormatter.toggleStrikethrough) }
+        FmtButton { icon: "format_bold";        active: bar._liveFmt ? bar._liveFmt.bold : false;          onTriggered: bar._apply(TextFormatter.toggleBold) }
+        FmtButton { icon: "format_italic";      active: bar._liveFmt ? bar._liveFmt.italic : false;        onTriggered: bar._apply(TextFormatter.toggleItalic) }
+        FmtButton { icon: "format_underlined";  active: bar._liveFmt ? bar._liveFmt.underline : false;     onTriggered: bar._apply(TextFormatter.toggleUnderline) }
+        FmtButton { icon: "strikethrough_s";    active: bar._liveFmt ? bar._liveFmt.strikethrough : false; onTriggered: bar._apply(TextFormatter.toggleStrikethrough) }
         Sep {}
 
         // ── Font family ───────────────────────────────────────────────────────
+        // Label + preview always track the font under the cursor.
         ChipButton {
             id: fontChip
-            label: qsTr("Font")
+            label: bar._liveFmt && bar._liveFmt.family ? bar._liveFmt.family : qsTr("Font")
+            previewFamily: bar._liveFmt ? bar._liveFmt.family : ""
             onClicked: { bar._capture(); fontPopup.openFor(fontChip) }
         }
 
         // ── Font size ─────────────────────────────────────────────────────────
         ChipButton {
             id: sizeChip
-            label: {
-                var s = bar.editor ? TextFormatter.currentFontPointSize(bar.editor.textDocument, bar._selEnd) : 12
-                return s + ""
-            }
-            onClicked: {
-                bar._capture()
-                sizeChip.label = Qt.binding(function() {
-                    return TextFormatter.currentFontPointSize(bar.editor.textDocument, bar._selEnd) + ""
-                })
-                sizePopup.openFor(sizeChip)
-            }
+            label: bar._liveFmt ? (bar._liveFmt.size + "") : "12"
+            onClicked: { bar._capture(); sizePopup.openFor(sizeChip) }
         }
         FmtButton { icon: "text_increase"; onTriggered: bar._apply(TextFormatter.increaseFontSize) }
         FmtButton { icon: "text_decrease"; onTriggered: bar._apply(TextFormatter.decreaseFontSize) }
@@ -203,7 +251,7 @@ Rectangle {
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: 5
                 width: 16; height: 3; radius: 1
-                color: bar.editor ? TextFormatter.currentFontColor(bar.editor.textDocument, bar._selEnd) : Theme.text
+                color: bar._liveFmt ? bar._liveFmt.color : Theme.text
             }
         }
         // ── Highlight ─────────────────────────────────────────────────────────
@@ -224,25 +272,16 @@ Rectangle {
             onTriggered: { bar._capture(); tablePopup.openFor(tableBtn) }
         }
         Sep {}
-        FmtButton { icon: "format_align_left";    onTriggered: bar._apply(function(d,s,e){ TextFormatter.setAlignment(d,s,e,0) }) }
-        FmtButton { icon: "format_align_center";  onTriggered: bar._apply(function(d,s,e){ TextFormatter.setAlignment(d,s,e,1) }) }
-        FmtButton { icon: "format_align_right";   onTriggered: bar._apply(function(d,s,e){ TextFormatter.setAlignment(d,s,e,2) }) }
+        FmtButton { icon: "format_align_left";    active: bar._liveFmt ? bar._liveFmt.alignment === 0 : false; onTriggered: bar._apply(function(d,s,e){ TextFormatter.setAlignment(d,s,e,0) }) }
+        FmtButton { icon: "format_align_center";  active: bar._liveFmt ? bar._liveFmt.alignment === 1 : false; onTriggered: bar._apply(function(d,s,e){ TextFormatter.setAlignment(d,s,e,1) }) }
+        FmtButton { icon: "format_align_right";   active: bar._liveFmt ? bar._liveFmt.alignment === 2 : false; onTriggered: bar._apply(function(d,s,e){ TextFormatter.setAlignment(d,s,e,2) }) }
         Sep {}
 
         // ── Paragraph style (headings) ────────────────────────────────────────
         ChipButton {
             id: styleChip
-            label: {
-                var idx = bar.editor ? TextFormatter.currentParagraphStyle(bar.editor.textDocument, bar._selEnd) : -1
-                return bar._styleLabel(idx)
-            }
-            onClicked: {
-                bar._capture()
-                styleChip.label = Qt.binding(function() {
-                    return bar._styleLabel(TextFormatter.currentParagraphStyle(bar.editor.textDocument, bar._selEnd))
-                })
-                stylePopup.openFor(styleChip)
-            }
+            label: bar._liveFmt ? bar._styleLabel(bar._liveFmt.style) : qsTr("Style")
+            onClicked: { bar._capture(); stylePopup.openFor(styleChip) }
         }
 
         Item { Layout.fillWidth: true }
