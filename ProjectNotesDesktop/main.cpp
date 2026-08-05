@@ -10,10 +10,17 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
 #include <QIcon>
+#include <QMessageBox>
 #include <QQmlApplicationEngine>
 #include <QQmlEngine>
 #include <QQuickStyle>
+#include <QStandardPaths>
+#include <QTextStream>
 #include <QWindow>
 
 #if defined(_WIN32)
@@ -155,6 +162,40 @@ int main(int argc, char* argv[])
     // is force-killed mid-critical-section, so it is intentionally omitted.
     app.setWindowIcon(QIcon(":/qt/qml/ProjectNotesDesktop/icons/projectnotes.ico"));
 
+    // Point Qt WebEngine at the PyQt6 runtime bundled with the installer
+    // (ported from the Widgets main.cpp, which has always done this). Python
+    // export plugins import PyQt6.QtWebEngineWidgets when the plugin engine
+    // boots; in a deployed install the only WebEngine runtime is PyQt6's own,
+    // and without these overrides WebEngine looks for QtWebEngineProcess next
+    // to the app executable, fails, and qFatal()s — on Windows release builds
+    // that is a fail-fast abort: the app dies at startup with no dialog and
+    // nothing in the logs. Dev runs never hit it because the system Python's
+    // PyQt6 install is complete.
+#if defined(Q_OS_WIN)
+    const QString pyqtQtDir = QCoreApplication::applicationDirPath()
+                              + QStringLiteral("/site-packages/PyQt6/Qt6");
+    const QString webengineProcess = pyqtQtDir + QStringLiteral("/bin/QtWebEngineProcess.exe");
+    const QString webengineResources = pyqtQtDir + QStringLiteral("/resources");
+#elif defined(Q_OS_MACOS)
+    const QString pyqtQtDir = QCoreApplication::applicationDirPath()
+                              + QStringLiteral("/site-packages/PyQt6/Qt6");
+    const QString webengineProcess = pyqtQtDir
+        + QStringLiteral("/lib/QtWebEngineCore.framework/Versions/A/Helpers/"
+                         "QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess");
+    const QString webengineResources = pyqtQtDir
+        + QStringLiteral("/lib/QtWebEngineCore.framework/Versions/A/Resources");
+#endif
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
+    if (QFileInfo::exists(webengineProcess)) {
+        qputenv("QTWEBENGINEPROCESS_PATH", webengineProcess.toUtf8());
+        qputenv("QTWEBENGINE_RESOURCES_PATH", webengineResources.toUtf8());
+        qputenv("QTWEBENGINE_LOCALES_PATH",
+                (pyqtQtDir + QStringLiteral("/translations/qtwebengine_locales")).toUtf8());
+        QCoreApplication::addLibraryPath(pyqtQtDir + QStringLiteral("/bin"));
+        QCoreApplication::addLibraryPath(pyqtQtDir + QStringLiteral("/plugins"));
+    }
+#endif
+
     // Basic style is fully themeable (no platform palette overrides), which the
     // custom light/dark design system in Theme.qml relies on.
     QQuickStyle::setStyle("Basic");
@@ -179,6 +220,16 @@ int main(int argc, char* argv[])
 
     QQmlApplicationEngine engine;
 
+    // Collect QML warnings/errors so a failed UI load can be reported. On a
+    // deployed machine there is no console — without this, a QML load failure
+    // is a silent exit with no dialog and nothing in any log.
+    QStringList qmlIssues;
+    QObject::connect(&engine, &QQmlApplicationEngine::warnings, &app,
+                     [&qmlIssues](const QList<QQmlError>& warnings) {
+                         for (const QQmlError& w : warnings)
+                             qmlIssues << w.toString();
+                     });
+
     const QUrl url("qrc:/qt/qml/ProjectNotesDesktop/qml/Main.qml");
     QObject::connect(
         &engine, &QQmlApplicationEngine::objectCreationFailed,
@@ -187,8 +238,29 @@ int main(int argc, char* argv[])
 
     engine.load(url);
 
-    if (engine.rootObjects().isEmpty())
+    if (engine.rootObjects().isEmpty()) {
+        const QString details = qmlIssues.isEmpty()
+            ? QObject::tr("(no error details reported by the QML engine)")
+            : qmlIssues.join(QStringLiteral("\n"));
+
+        // Append to a startup log next to the app's data so failures on end-user
+        // machines leave a trace even if the dialog is dismissed unread.
+        const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        QDir().mkpath(dir);
+        QFile logFile(dir + QStringLiteral("/startup-error.log"));
+        if (logFile.open(QFile::WriteOnly | QFile::Append | QFile::Text)) {
+            QTextStream ts(&logFile);
+            ts << QDateTime::currentDateTime().toString(Qt::ISODate)
+               << " - failed to load Main.qml:\n" << details << "\n\n";
+        }
+
+        QMessageBox::critical(
+            nullptr, QStringLiteral("Project Notes"),
+            QObject::tr("The user interface failed to load.\n\n%1\n\n"
+                        "This has also been written to:\n%2")
+                .arg(details, QDir::toNativeSeparators(logFile.fileName())));
         return -1;
+    }
     auto* window = qobject_cast<QWindow*>(engine.rootObjects().first());
 
 #if defined(_WIN32)
