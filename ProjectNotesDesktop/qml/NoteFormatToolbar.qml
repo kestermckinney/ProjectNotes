@@ -201,7 +201,15 @@ Rectangle {
                     text: chip.label
                     color: Theme.text2
                     font.pixelSize: 12
-                    font.family: chip.previewFamily
+                    // Only override the family when we actually have one to preview.
+                    // An empty string is NOT a safe "use the default" no-op here: Qt's
+                    // DirectWrite font engine treats "" as a real request, fails to
+                    // resolve/rasterize it (falls through to the legacy "MS Sans Serif"
+                    // raster font, which DirectWrite can't use), and exhausts its font
+                    // fallback list — the next QList::first() on that empty list asserts
+                    // and crashes the app. `undefined` properly unsets the property
+                    // instead of assigning a hostile value.
+                    font.family: chip.previewFamily.length > 0 ? chip.previewFamily : undefined
                     elide: Text.ElideRight
                     Layout.maximumWidth: 120
                 }
