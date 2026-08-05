@@ -22,13 +22,8 @@ Column {
     property int    folderCount: 0
     property bool   isAll: false
 
-    // Shared projects proxy model + selection state (owned by ProjectSidebar).
-    property var    listModel: null
+    // Selection state (owned by ProjectSidebar).
     property string selectedProjectId: ""
-
-    // Bumped by ProjectSidebar on FolderManager.foldersChanged so membership
-    // bindings below re-evaluate (isProjectInFolder is an imperative call).
-    property int    membershipRev: 0
 
     // Overlay layer the dragged row reparents onto while dragging.
     property var    dragLayer: null
@@ -41,45 +36,18 @@ Column {
     // row. Handled by ProjectSidebar → Main.requestTrackerItemMove.
     signal itemMoveRequested(string itemId, string projectId)
 
-    // "All Projects" has no FolderManager count — derive it live from the list
-    // model. Instantiator.count is reactive (and follows the proxy's quick-search
-    // filter, so it reflects the *visible* rows), but it only counts rows for
-    // which it actually instantiates an object — so it MUST have a delegate.
-    // Without one it instantiates nothing and count stays 0. A bare non-visual
-    // QtObject is enough just to count.
-    Instantiator {
-        id: allCounter
-        active: group.isAll
-        model: group.isAll ? group.listModel : null
-        delegate: QtObject {}
+    // Visible members of this folder ("" = every visible project), served from
+    // the controller's one-pass snapshot. Referencing sidebarRev makes the
+    // binding re-fetch whenever the projects proxy or folder memberships change
+    // (folderProjects is an imperative call). Only member rows are instantiated
+    // — the old approach repeated the full projects model in every group and
+    // hid non-members, making the sidebar folders × projects delegates big.
+    readonly property var members: {
+        var _rev = DesktopAppController.sidebarRev
+        return DesktopAppController.folderProjects(group.isAll ? "" : group.folderId)
     }
 
-    // Bumped whenever the shared list model's visible rows change (the sidebar
-    // quick-search or the column-filter editor), so a named folder recounts the
-    // members that survive the active filter.
-    property int filterRev: 0
-    Connections {
-        target: group.listModel
-        enabled: !group.isAll
-        function onModelReset()    { group.filterRev++ }
-        function onRowsInserted()  { group.filterRev++ }
-        function onRowsRemoved()   { group.filterRev++ }
-        function onLayoutChanged() { group.filterRev++ }
-    }
-
-    // "All Projects" counts every visible row via the Instantiator above. A named
-    // folder counts only its members that are currently visible in the filtered
-    // model; with no filter active that equals its full membership. filterRev and
-    // membershipRev are touched so the count re-evaluates on filter/membership
-    // changes (folderVisibleCount is an imperative call).
-    readonly property int displayCount: {
-        if (group.isAll)
-            return allCounter.count
-        var _dep = group.filterRev + group.membershipRev
-        return _dep >= 0
-            ? DesktopAppController.folderVisibleCount(group.listModel, group.folderId)
-            : 0
-    }
+    readonly property int displayCount: members.length
 
     // Handle a project dropped onto this group.
     function _handleDrop(drop) {
@@ -152,26 +120,21 @@ Column {
         TapHandler { onTapped: group.expanded = !group.expanded }
     }
 
-    // ── Body: project rows ────────────────────────────────────────────────────
+    // ── Body: project rows (members only — see `members` above) ──────────────
     Repeater {
-        model: group.expanded ? group.listModel : null
+        model: group.expanded ? group.members : []
 
         delegate: Item {
             id: row
             required property int index
-            required property var model
+            required property var modelData
 
-            readonly property string projId: model.id !== undefined ? model.id : ""
+            readonly property string projId: (modelData.id || "").toString()
             readonly property string ctxLabel:
-                ((model.project_number || "") + " " + (model.project_name || "")).trim()
-            // Re-evaluates when membershipRev changes.
-            readonly property bool isMember:
-                group.isAll || (group.membershipRev >= 0
-                                && FolderManager.isProjectInFolder(projId, group.folderId))
+                ((modelData.project_number || "") + " " + (modelData.project_name || "")).trim()
 
             width: group.width
-            height: isMember ? 30 : 0
-            visible: isMember
+            height: 30
             clip: true
 
             Rectangle {
@@ -220,7 +183,7 @@ Column {
                         implicitWidth: 6; implicitHeight: 6; radius: 3
                         Layout.alignment: Qt.AlignVCenter
                         color: {
-                            var s = (row.model.project_status || "").toString().toLowerCase()
+                            var s = (row.modelData.project_status || "").toString().toLowerCase()
                             if (s.indexOf("active") >= 0) return Theme.green
                             if (s.indexOf("hold") >= 0)   return Theme.amber
                             if (s.indexOf("closed") >= 0) return Theme.text3
@@ -228,7 +191,7 @@ Column {
                         }
                     }
                     Text {
-                        text: (row.model.project_number || "").toString()
+                        text: (row.modelData.project_number || "").toString()
                         color: Theme.text2
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
@@ -238,7 +201,7 @@ Column {
                         elide: Text.ElideRight
                     }
                     Text {
-                        text: (row.model.project_name || "").toString()
+                        text: (row.modelData.project_name || "").toString()
                         color: Theme.text
                         font.pixelSize: 12
                         elide: Text.ElideRight

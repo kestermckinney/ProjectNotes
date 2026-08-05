@@ -218,6 +218,21 @@ bool DesktopAppController::openOrCreateDatabase()
     restoreColumnFilters(global_DBObjects.peoplemodel());
     restoreColumnFilters(global_DBObjects.allitemsmodel());
 
+    // Keep the sidebar's per-folder snapshots in step with the projects proxy
+    // (FolderManager's own signal is hooked up lazily in rebuildFolderSnapshot).
+    if (auto* projProxy = global_DBObjects.projectinformationmodelproxy()) {
+        connect(projProxy, &QAbstractItemModel::modelReset,
+                this, &DesktopAppController::invalidateFolderSnapshot);
+        connect(projProxy, &QAbstractItemModel::rowsInserted,
+                this, &DesktopAppController::invalidateFolderSnapshot);
+        connect(projProxy, &QAbstractItemModel::rowsRemoved,
+                this, &DesktopAppController::invalidateFolderSnapshot);
+        connect(projProxy, &QAbstractItemModel::layoutChanged,
+                this, &DesktopAppController::invalidateFolderSnapshot);
+        connect(projProxy, &QAbstractItemModel::dataChanged,
+                this, &DesktopAppController::invalidateFolderSnapshot);
+    }
+
     m_databaseOpen = true;
     emit databaseReady();
     emit projectManagerChanged();   // picks up any PM configured in a prior session
@@ -616,24 +631,65 @@ void DesktopAppController::refreshModel(QAbstractItemModel* model)
         src->refresh();
 }
 
-int DesktopAppController::folderVisibleCount(QAbstractItemModel* model,
-                                             const QString& folderId) const
+QVariantList DesktopAppController::folderProjects(const QString& folderId)
 {
-    FolderManager* fm = FolderManager::instance();
-    if (!model || !fm || folderId.isEmpty())
-        return 0;
+    if (!m_folderSnapshotValid)
+        rebuildFolderSnapshot();
+    return m_folderSnapshot.value(folderId);
+}
 
-    // Walk the proxy's currently-visible rows (which already reflect the active
-    // quick-search and column filters) and count the folder members among them.
-    // Column 0 is the project id — the same value QML reads as model.id.
-    int count = 0;
-    const int rows = model->rowCount();
-    for (int r = 0; r < rows; ++r) {
-        const QString pid = model->data(model->index(r, 0)).toString();
-        if (!pid.isEmpty() && fm->isProjectInFolder(pid, folderId))
-            ++count;
+void DesktopAppController::rebuildFolderSnapshot()
+{
+    m_folderSnapshot.clear();
+    m_folderSnapshotValid = true;
+
+    auto* proxy = global_DBObjects.projectinformationmodelproxy();
+    if (!proxy)
+        return;
+
+    FolderManager* fm = FolderManager::instance();
+    if (fm && !m_folderMgrConnected) {
+        // FolderManager is a QML singleton created after openDatabase(), so the
+        // membership hookup happens lazily on the first snapshot build.
+        connect(fm, &FolderManager::foldersChanged,
+                this, &DesktopAppController::invalidateFolderSnapshot);
+        m_folderMgrConnected = true;
     }
-    return count;
+
+    // One pass over the proxy's currently-visible rows (which already reflect
+    // the active quick-search and column filters). Each row lands in the ""
+    // (All Projects) list plus every folder it's a member of.
+    const int rows = proxy->rowCount();
+    for (int r = 0; r < rows; ++r) {
+        QVariantMap row;
+        const QString pid = proxy->data(proxy->index(r, 0)).toString();
+        row.insert(QStringLiteral("id"),             pid);
+        row.insert(QStringLiteral("project_number"), proxy->data(proxy->index(r, 1)).toString());
+        row.insert(QStringLiteral("project_name"),   proxy->data(proxy->index(r, 2)).toString());
+        row.insert(QStringLiteral("project_status"), proxy->data(proxy->index(r, 14)).toString());
+
+        m_folderSnapshot[QString()].append(row);
+        if (fm && !pid.isEmpty()) {
+            const QStringList memberOf = fm->foldersForProject(pid);
+            for (const QString& fid : memberOf)
+                m_folderSnapshot[fid].append(row);
+        }
+    }
+}
+
+void DesktopAppController::invalidateFolderSnapshot()
+{
+    m_folderSnapshotValid = false;
+    if (m_sidebarRevPending)
+        return;
+    // Coalesce bursts (a model reset fires rowsRemoved+rowsInserted+reset, a
+    // sync cycle touches many rows) into one rev bump per event-loop turn.
+    m_sidebarRevPending = true;
+    QTimer::singleShot(0, this, [this]() {
+        m_sidebarRevPending = false;
+        ++m_sidebarRev;
+        emit sidebarRevChanged();
+    });
 }
 
 // ── Python plugins ────────────────────────────────────────────────────────────

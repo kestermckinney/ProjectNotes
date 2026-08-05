@@ -58,6 +58,12 @@ class DesktopAppController : public QObject
     Q_PROPERTY(bool showInternalItems  READ showInternalItems  WRITE setShowInternalItems  NOTIFY viewOptionsChanged)
     Q_PROPERTY(bool newAndAssignedOnly READ newAndAssignedOnly WRITE setNewAndAssignedOnly NOTIFY viewOptionsChanged)
 
+    // Bumped (coalesced per event-loop turn) whenever the sidebar's per-folder
+    // project snapshots go stale — projects proxy reset/filter/data change or a
+    // folder membership change. FolderGroup references it so its rows/count
+    // bindings re-fetch folderProjects().
+    Q_PROPERTY(int sidebarRev READ sidebarRev NOTIFY sidebarRevChanged)
+
     // Cloud sync — settings are read/written to the same QSettings the Widgets
     // app uses, so both share one configuration.
     Q_PROPERTY(bool    syncEnabled          READ syncEnabled          WRITE setSyncEnabled          NOTIFY syncSettingsChanged)
@@ -171,11 +177,14 @@ public:
     // Re-run a list model's query (context-menu "Refresh").
     Q_INVOKABLE void refreshModel(QAbstractItemModel* model);
 
-    // Count the projects in `folderId` that are currently *visible* in `model`
-    // (i.e. that survive the active quick-search / column filter). With no
-    // filter active this equals the folder's full membership, so sidebar folder
-    // badges show the filtered result set only while filtering is on.
-    Q_INVOKABLE int folderVisibleCount(QAbstractItemModel* model, const QString& folderId) const;
+    // The projects in `folderId` that are currently *visible* in the projects
+    // list proxy (i.e. that survive the active quick-search / column filter),
+    // as [{id, project_number, project_name, project_status}]. "" = every
+    // visible project (the "All Projects" group). Served from a snapshot built
+    // in one pass over the proxy and cached until sidebarRev bumps — replaces
+    // the old per-folder full-model Repeater + O(rows) folderVisibleCount().
+    Q_INVOKABLE QVariantList folderProjects(const QString& folderId);
+    int sidebarRev() const { return m_sidebarRev; }
 
     // ── Python plugins (right-click menus, mirrors the Widgets TableView) ─────
     // Menus registered by loaded plugins whose dataexport matches this model's
@@ -464,6 +473,7 @@ signals:
     // The installer/relaunch helper is running; the shell must now quit.
     void quitForUpdate();
     void viewOptionsChanged();
+    void sidebarRevChanged();
     void projectManagerChanged();
     void syncSettingsChanged();
     void syncProgressChanged();
@@ -491,6 +501,15 @@ private:
     bool addPersonToProjectTeam(const QString& projectId, const QString& peopleId);
 
     bool m_databaseOpen = false;
+
+    // ── Sidebar folder snapshots (see folderProjects/sidebarRev) ─────────────
+    QHash<QString, QVariantList> m_folderSnapshot;   // folderId ("" = all) -> rows
+    bool m_folderSnapshotValid   = false;
+    bool m_sidebarRevPending     = false;   // a coalesced rev bump is queued
+    bool m_folderMgrConnected    = false;   // FolderManager signal hooked up
+    int  m_sidebarRev            = 0;
+    void rebuildFolderSnapshot();
+    void invalidateFolderSnapshot();
 
     // Sync engine (lives on m_syncApiThread; created lazily by configureSyncApi).
     QThread*       m_syncApiThread = nullptr;

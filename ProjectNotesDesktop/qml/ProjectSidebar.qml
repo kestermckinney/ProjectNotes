@@ -52,14 +52,6 @@ Rectangle {
         projCtxMenu.openAt(sx, sy)
     }
 
-    // Incremented on every folder/membership change so FolderGroup membership
-    // bindings re-evaluate (FolderManager.isProjectInFolder is imperative).
-    property int membershipRev: 0
-    Connections {
-        target: FolderManager
-        function onFoldersChanged() { sidebar.membershipRev++ }
-    }
-
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -109,9 +101,7 @@ Rectangle {
                         folderColor: modelData.color
                         folderCount: modelData.count
                         isAll:       false
-                        listModel:         DesktopAppController.projectsListModel
                         selectedProjectId: sidebar.selectedProjectId
-                        membershipRev:     sidebar.membershipRev
                         dragLayer:         sidebar.dragLayer
                         onProjectActivated: (pid) => sidebar.projectActivated(pid)
                         onMenuRequested: (pid, label, sx, sy) => sidebar.openProjectMenu(pid, label, sx, sy)
@@ -123,9 +113,7 @@ Rectangle {
                     width: parent.width - 16
                     folderName: "All Projects"
                     isAll: true
-                    listModel:         DesktopAppController.projectsListModel
                     selectedProjectId: sidebar.selectedProjectId
-                    membershipRev:     sidebar.membershipRev
                     dragLayer:         sidebar.dragLayer
                     onProjectActivated: (pid) => sidebar.projectActivated(pid)
                     onMenuRequested: (pid, label, sx, sy) => sidebar.openProjectMenu(pid, label, sx, sy)
