@@ -19,6 +19,11 @@ Item {
     property bool   isNewRecord: false
     property bool   _changed: false
 
+    // Draggable header height (see headerResizeHandle below). Defaults to the
+    // original proportional height until the user drags the handle or a saved
+    // per-user preference is loaded in Component.onCompleted.
+    property real   _headerHeight: page.height * 0.62
+
     // Overlay layer a dragged tracker item card reparents onto while dragging
     // (threaded down from Main.qml's dragOverlay, same as the sidebar's).
     property var    dragLayer: null
@@ -122,6 +127,8 @@ Item {
         DesktopAppController.setQuickSearch(DesktopAppController.projectLocationsModel, "")
         DesktopAppController.setQuickSearch(DesktopAppController.projectNotesModel, "")
         tabBar.currentIndex = DesktopAppController.lastProjectDetailTab(page.projectId)
+        var savedHeaderHeight = DesktopAppController.projectDetailHeaderHeight()
+        if (savedHeaderHeight > 0) page._headerHeight = savedHeaderHeight
     }
 
     property string _clientId: ""
@@ -213,7 +220,7 @@ Item {
         ScrollView {
             id: headerScroll
             Layout.fillWidth: true
-            Layout.maximumHeight: page.height * 0.62
+            Layout.preferredHeight: Math.min(page._headerHeight, Math.max(160, page.height - 200))
             clip: true
             contentWidth: availableWidth
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -337,6 +344,38 @@ Item {
                 }
 
                 Item { Layout.preferredHeight: 2 }
+            }
+        }
+
+        // ── Header resize handle ────────────────────────────────────────────────
+        // Drags page._headerHeight; the height is persisted per-user (not synced)
+        // via DesktopAppController.setProjectDetailHeaderHeight on release.
+        Rectangle {
+            id: headerResizeHandle
+            Layout.fillWidth: true
+            Layout.preferredHeight: 6
+            color: (handleArea.pressed || handleArea.containsMouse) ? Theme.accent : "transparent"
+
+            MouseArea {
+                id: handleArea
+                anchors.fill: parent
+                anchors.margins: -3
+                hoverEnabled: true
+                cursorShape: Qt.SizeVerCursor
+                property real dragStartY: 0
+                property real dragStartHeight: 0
+                onPressed: (mouse) => {
+                    dragStartY = mapToItem(page, mouse.x, mouse.y).y
+                    dragStartHeight = page._headerHeight
+                }
+                onPositionChanged: (mouse) => {
+                    if (!pressed) return
+                    var currentY = mapToItem(page, mouse.x, mouse.y).y
+                    var minH = 160
+                    var maxH = Math.max(minH, page.height - 200)
+                    page._headerHeight = Math.min(maxH, Math.max(minH, dragStartHeight + (currentY - dragStartY)))
+                }
+                onReleased: DesktopAppController.setProjectDetailHeaderHeight(page._headerHeight)
             }
         }
 
@@ -682,6 +721,25 @@ Item {
                                             teamCard.index, (teamCard.model.people_id || "").toString(), text,
                                             (teamCard.model.receive_status_report || "0") !== "0")
                                         SpellCheckField { dialog: spellDialog }
+                                    }
+                                }
+                                CheckBox {
+                                    id: statusCheck
+                                    Layout.alignment: Qt.AlignVCenter
+                                    checked: (teamCard.model.receive_status_report || "0") !== "0"
+                                    onToggled: DesktopAppController.saveTeamMember(
+                                        teamCard.index, (teamCard.model.people_id || "").toString(),
+                                        (teamCard.model.role || "").toString(), checked)
+                                    indicator: Rectangle {
+                                        implicitWidth: 18; implicitHeight: 18; radius: 4
+                                        x: statusCheck.leftPadding; y: parent.height/2 - height/2
+                                        color: statusCheck.checked ? Theme.accent : Theme.surface
+                                        border.color: statusCheck.checked ? Theme.accent : Theme.border
+                                        MaterialIcon { anchors.centerIn: parent; visible: statusCheck.checked; name: "check"; size: 14; color: "#ffffff" }
+                                    }
+                                    contentItem: Text {
+                                        text: qsTr("Status Report"); color: Theme.text3; font.pixelSize: 11
+                                        leftPadding: statusCheck.indicator.width + 6; verticalAlignment: Text.AlignVCenter
                                     }
                                 }
                                 KebabButton {
