@@ -204,6 +204,23 @@ bool DesktopAppController::openOrCreateDatabase()
     // QMessageBox popups so a single blocked edit doesn't stack two dialogs.
     global_DBObjects.setGuiDialogsEnabled(false);
 
+    // Keep the sidebar's per-folder snapshots in step with the projects proxy.
+    // Connected BEFORE the initial refresh() calls below so their resets (and
+    // everything after) invalidate any snapshot cached during the QML load.
+    // (FolderManager's own signal is hooked up lazily in rebuildFolderSnapshot.)
+    if (auto* projProxy = global_DBObjects.projectinformationmodelproxy()) {
+        connect(projProxy, &QAbstractItemModel::modelReset,
+                this, &DesktopAppController::invalidateFolderSnapshot);
+        connect(projProxy, &QAbstractItemModel::rowsInserted,
+                this, &DesktopAppController::invalidateFolderSnapshot);
+        connect(projProxy, &QAbstractItemModel::rowsRemoved,
+                this, &DesktopAppController::invalidateFolderSnapshot);
+        connect(projProxy, &QAbstractItemModel::layoutChanged,
+                this, &DesktopAppController::invalidateFolderSnapshot);
+        connect(projProxy, &QAbstractItemModel::dataChanged,
+                this, &DesktopAppController::invalidateFolderSnapshot);
+    }
+
     global_DBObjects.setGlobalSearches(false);
     global_DBObjects.projectinformationmodel()->refresh();
     global_DBObjects.clientsmodel()->refresh();
@@ -218,20 +235,9 @@ bool DesktopAppController::openOrCreateDatabase()
     restoreColumnFilters(global_DBObjects.peoplemodel());
     restoreColumnFilters(global_DBObjects.allitemsmodel());
 
-    // Keep the sidebar's per-folder snapshots in step with the projects proxy
-    // (FolderManager's own signal is hooked up lazily in rebuildFolderSnapshot).
-    if (auto* projProxy = global_DBObjects.projectinformationmodelproxy()) {
-        connect(projProxy, &QAbstractItemModel::modelReset,
-                this, &DesktopAppController::invalidateFolderSnapshot);
-        connect(projProxy, &QAbstractItemModel::rowsInserted,
-                this, &DesktopAppController::invalidateFolderSnapshot);
-        connect(projProxy, &QAbstractItemModel::rowsRemoved,
-                this, &DesktopAppController::invalidateFolderSnapshot);
-        connect(projProxy, &QAbstractItemModel::layoutChanged,
-                this, &DesktopAppController::invalidateFolderSnapshot);
-        connect(projProxy, &QAbstractItemModel::dataChanged,
-                this, &DesktopAppController::invalidateFolderSnapshot);
-    }
+    // The sidebar may have cached an empty snapshot while the QML tree was
+    // building (pre-open); force a rebuild + rev bump now that data is loaded.
+    invalidateFolderSnapshot();
 
     m_databaseOpen = true;
     emit databaseReady();
@@ -641,11 +647,16 @@ QVariantList DesktopAppController::folderProjects(const QString& folderId)
 void DesktopAppController::rebuildFolderSnapshot()
 {
     m_folderSnapshot.clear();
-    m_folderSnapshotValid = true;
 
+    // The sidebar builds during the QML load, BEFORE Main.qml's
+    // Component.onCompleted opens the database — the proxy doesn't exist yet.
+    // Don't cache that empty result as valid, or the sidebar stays blank until
+    // the next invalidation (which used to be the startup sync completing,
+    // minutes later — or never, with sync off).
     auto* proxy = global_DBObjects.projectinformationmodelproxy();
     if (!proxy)
         return;
+    m_folderSnapshotValid = true;
 
     FolderManager* fm = FolderManager::instance();
     if (fm && !m_folderMgrConnected) {
