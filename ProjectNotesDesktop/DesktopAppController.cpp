@@ -885,7 +885,7 @@ void DesktopAppController::ensureAllItemsLoaded()
     // marked the model dirty — a clean revisit keeps the cached rows, so no
     // model reset and no delegate rebuild.
     auto* model = global_DBObjects.allitemsmodel();
-    if (model->rowCount() == 0)
+    if (model->rowCount(QModelIndex()) == 0)
         model->refresh();
     else
         model->refreshIfDirty();
