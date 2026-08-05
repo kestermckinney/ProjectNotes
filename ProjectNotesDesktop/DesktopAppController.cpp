@@ -877,6 +877,19 @@ void DesktopAppController::refreshNoteActionItems()
 { global_DBObjects.notesactionitemsmodel()->refresh(); }
 void DesktopAppController::refreshAllItems()
 { global_DBObjects.allitemsmodel()->refresh(); }
+
+void DesktopAppController::ensureAllItemsLoaded()
+{
+    // Page-activation path (vs. the context menu's explicit refreshAllItems):
+    // load lazily on first visit, and afterwards only re-query when a write
+    // marked the model dirty — a clean revisit keeps the cached rows, so no
+    // model reset and no delegate rebuild.
+    auto* model = global_DBObjects.allitemsmodel();
+    if (model->rowCount() == 0)
+        model->refresh();
+    else
+        model->refreshIfDirty();
+}
 void DesktopAppController::refreshTeamMembers()
 { global_DBObjects.projectteammembersmodel()->refresh(); }
 void DesktopAppController::refreshProjectLocations()

@@ -365,35 +365,43 @@ Item {
             currentIndex: tabBar.currentIndex
 
             // ── 0: STATUS REPORT ITEMS ─────────────────────────────────────────
-            ScrollView {
-                id: statusScroll
-                clip: true
-                padding: 18
-                contentWidth: availableWidth
-                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                ColumnLayout {
-                    width: statusScroll.availableWidth
+            // Virtualized: only visible rows exist; the tab badge reads
+            // statusRep.count, which is the model's row count either way.
+            // No reuseItems on these tabs — delegates hold edit-field state.
+            Item {
+                ListView {
+                    id: statusRep
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    clip: true
                     spacing: 10
-                    SectionBar {
-                        title: qsTr("Status Report Items")
-                        icon: "flag"
-                        addLabel: qsTr("Add Status Item")
-                        searchModel: DesktopAppController.statusReportItemsModel
-                        filterSection: "statusreport"
-                        // addStatusItem appends a pending (unsaved) row; it is INSERTed
-                        // only when a field is edited. Do NOT refresh here — refresh()
-                        // re-queries the DB and would wipe the new row before it is seen.
-                        onAdd: DesktopAppController.addStatusItem(page.projectId)
-                        onFilter: page.subFilterRequested(filterSection)
+                    model: DesktopAppController.statusReportItemsModel
+                    boundsBehavior: Flickable.StopAtBounds
+                    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                    footer: Item { width: 1; height: 8 }
+                    header: Item {
+                        width: ListView.view ? ListView.view.width : 0
+                        height: statusBar.implicitHeight + 10
+                        SectionBar {
+                            id: statusBar
+                            anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
+                            title: qsTr("Status Report Items")
+                            icon: "flag"
+                            addLabel: qsTr("Add Status Item")
+                            searchModel: DesktopAppController.statusReportItemsModel
+                            filterSection: "statusreport"
+                            // addStatusItem appends a pending (unsaved) row; it is INSERTed
+                            // only when a field is edited. Do NOT refresh here — refresh()
+                            // re-queries the DB and would wipe the new row before it is seen.
+                            onAdd: DesktopAppController.addStatusItem(page.projectId)
+                            onFilter: page.subFilterRequested(filterSection)
+                        }
                     }
-                    Repeater {
-                        id: statusRep
-                        model: DesktopAppController.statusReportItemsModel
-                        delegate: Card {
+                    delegate: Card {
                             id: stCard
                             required property int index
                             required property var model
-                            Layout.fillWidth: true
+                            width: ListView.view ? ListView.view.width : 0
                             implicitHeight: 50
                             function _menu(sx, sy) {
                                 rowMenu.openFor(DesktopAppController.statusReportItemsModel,
@@ -437,49 +445,52 @@ Item {
                                 acceptedButtons: Qt.RightButton
                                 onTapped: (ev) => stCard._menu(ev.scenePosition.x, ev.scenePosition.y)
                             }
-                        }
                     }
-                    Item { Layout.preferredHeight: 8 }
                 }
             }
 
             // ── 1: TRACKER ─────────────────────────────────────────────────────
-            ScrollView {
-                id: trackerScroll
-                clip: true
-                padding: 18
-                contentWidth: availableWidth
-                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                ColumnLayout {
-                    width: trackerScroll.availableWidth
+            Item {
+                ListView {
+                    id: trackerRep
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    clip: true
                     spacing: 10
-                    SectionBar {
-                        title: qsTr("Tracker Items")
-                        icon: "task_alt"
-                        addLabel: qsTr("Add Item")
-                        searchModel: DesktopAppController.projectTrackerItemsModel
-                        filterSection: "trackeritems"
-                        onAdd: {
-                            page._saveNow()
-                            DesktopAppController.addTrackerItem(page.projectId)
-                            var d = DesktopAppController.getTrackerItemDetailData(0)
-                            if (d.id !== undefined) page.itemActivated(d.id.toString())
+                    model: DesktopAppController.projectTrackerItemsModel
+                    boundsBehavior: Flickable.StopAtBounds
+                    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                    footer: Item { width: 1; height: 8 }
+                    header: Item {
+                        width: ListView.view ? ListView.view.width : 0
+                        height: trackerBar.implicitHeight + 10
+                        SectionBar {
+                            id: trackerBar
+                            anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
+                            title: qsTr("Tracker Items")
+                            icon: "task_alt"
+                            addLabel: qsTr("Add Item")
+                            searchModel: DesktopAppController.projectTrackerItemsModel
+                            filterSection: "trackeritems"
+                            onAdd: {
+                                page._saveNow()
+                                DesktopAppController.addTrackerItem(page.projectId)
+                                var d = DesktopAppController.getTrackerItemDetailData(0)
+                                if (d.id !== undefined) page.itemActivated(d.id.toString())
+                            }
+                            onFilter: page.subFilterRequested(filterSection)
                         }
-                        onFilter: page.subFilterRequested(filterSection)
                     }
-                    Repeater {
-                        id: trackerRep
-                        model: DesktopAppController.projectTrackerItemsModel
-                        // An outer Item is the actual Repeater/ColumnLayout child and
-                        // stays put (reserving the row's layout slot); the inner Card
-                        // is what visually reparents onto page.dragLayer while being
-                        // dragged (mirrors FolderGroup's row/content split).
-                        delegate: Item {
+                    // An outer Item is the actual delegate and stays put
+                    // (reserving the row's slot); the inner Card is what visually
+                    // reparents onto page.dragLayer while being dragged (mirrors
+                    // FolderGroup's row/content split).
+                    delegate: Item {
                             id: trackerSlot
                             required property int index
                             required property var model
                             readonly property string iid: model.id !== undefined ? model.id : ""
-                            Layout.fillWidth: true
+                            width: ListView.view ? ListView.view.width : 0
                             implicitHeight: trackerCard.implicitHeight
                             function _menu(sx, sy) {
                                 rowMenu.openFor(DesktopAppController.projectTrackerItemsModel,
@@ -605,39 +616,42 @@ Item {
                                     }
                                 }
                             }
-                        }
                     }
-                    Item { Layout.preferredHeight: 8 }
                 }
             }
 
             // ── 2: TEAM ────────────────────────────────────────────────────────
-            ScrollView {
-                id: teamScroll
-                clip: true
-                padding: 18
-                contentWidth: availableWidth
-                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                ColumnLayout {
-                    width: teamScroll.availableWidth
+            Item {
+                ListView {
+                    id: teamRep
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    clip: true
                     spacing: 10
-                    SectionBar {
-                        title: qsTr("Team")
-                        icon: "groups"
-                        addLabel: qsTr("Add Member")
-                        searchModel: DesktopAppController.projectTeamMembersModel
-                        filterSection: "team"
-                        onAdd: { page._saveNow(); teamPicker.open() }
-                        onFilter: page.subFilterRequested(filterSection)
+                    model: DesktopAppController.projectTeamMembersModel
+                    boundsBehavior: Flickable.StopAtBounds
+                    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                    footer: Item { width: 1; height: 8 }
+                    header: Item {
+                        width: ListView.view ? ListView.view.width : 0
+                        height: teamBar.implicitHeight + 10
+                        SectionBar {
+                            id: teamBar
+                            anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
+                            title: qsTr("Team")
+                            icon: "groups"
+                            addLabel: qsTr("Add Member")
+                            searchModel: DesktopAppController.projectTeamMembersModel
+                            filterSection: "team"
+                            onAdd: { page._saveNow(); teamPicker.open() }
+                            onFilter: page.subFilterRequested(filterSection)
+                        }
                     }
-                    Repeater {
-                        id: teamRep
-                        model: DesktopAppController.projectTeamMembersModel
-                        delegate: Card {
+                    delegate: Card {
                             id: teamCard
                             required property int index
                             required property var model
-                            Layout.fillWidth: true
+                            width: ListView.view ? ListView.view.width : 0
                             implicitHeight: 50
                             function _menu(sx, sy) {
                                 rowMenu.openFor(DesktopAppController.projectTeamMembersModel,
@@ -680,9 +694,7 @@ Item {
                                 acceptedButtons: Qt.RightButton
                                 onTapped: (ev) => teamCard._menu(ev.scenePosition.x, ev.scenePosition.y)
                             }
-                        }
                     }
-                    Item { Layout.preferredHeight: 8 }
                 }
             }
 
@@ -726,18 +738,22 @@ Item {
                     }
                 }
 
-                ScrollView {
-                    id: locationsScroll
+                ListView {
+                    id: locRep
                     anchors.fill: parent
+                    anchors.margins: 18
                     clip: true
-                    padding: 18
-                    contentWidth: availableWidth
-                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                    ColumnLayout {
-                        width: locationsScroll.availableWidth
+                    spacing: 10
+                    model: DesktopAppController.projectLocationsModel
+                    boundsBehavior: Flickable.StopAtBounds
+                    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                    footer: Item { width: 1; height: 8 }
+                    header: Column {
+                        width: ListView.view ? ListView.view.width : 0
                         spacing: 10
+                        bottomPadding: 10
                         RowLayout {
-                            Layout.fillWidth: true
+                            width: parent.width
                             spacing: 8
                             SectionBar {
                                 Layout.fillWidth: true
@@ -772,8 +788,8 @@ Item {
                         }
                         // Drop hint — only while a drag is hovering over the tab.
                         Rectangle {
-                            Layout.fillWidth: true
-                            implicitHeight: 30
+                            width: parent.width
+                            height: 30
                             visible: locationDrop.containsDrag
                             radius: Theme.radiusSm
                             color: Theme.accentSoft
@@ -784,15 +800,13 @@ Item {
                                 color: Theme.accent; font.pixelSize: 12; font.weight: Font.DemiBold
                             }
                         }
-                        Repeater {
-                            id: locRep
-                            model: DesktopAppController.projectLocationsModel
-                            delegate: Card {
+                    }
+                    delegate: Card {
                                 id: locCard
                                 required property int index
                                 required property var model
                                 property bool expanded: false
-                                Layout.fillWidth: true
+                                width: ListView.view ? ListView.view.width : 0
                                 implicitHeight: locCol.implicitHeight + 20
                                 function _menu(sx, sy) {
                                     rowMenu.openFor(DesktopAppController.projectLocationsModel,
@@ -908,45 +922,47 @@ Item {
                                     acceptedButtons: Qt.RightButton
                                     onTapped: (ev) => locCard._menu(ev.scenePosition.x, ev.scenePosition.y)
                                 }
-                            }
-                        }
-                        Item { Layout.preferredHeight: 8 }
                     }
                 }
             }
 
             // ── 4: NOTES ───────────────────────────────────────────────────────
-            ScrollView {
-                id: notesScroll
-                clip: true
-                padding: 18
-                contentWidth: availableWidth
-                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                ColumnLayout {
-                    width: notesScroll.availableWidth
+            Item {
+                ListView {
+                    id: notesRep
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    clip: true
                     spacing: 10
-                    SectionBar {
-                        title: qsTr("Notes")
-                        icon: "edit_note"
-                        addLabel: qsTr("Add Note")
-                        searchModel: DesktopAppController.projectNotesModel
-                        filterSection: "notes"
-                        onAdd: {
-                            page._saveNow()
-                            var r = DesktopAppController.addProjectNote(page.projectId)
-                            if (r < 0) return
-                            page.noteActivated(r, DesktopAppController.projectNoteIdAtRow(r))
+                    model: DesktopAppController.projectNotesModel
+                    boundsBehavior: Flickable.StopAtBounds
+                    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+                    footer: Item { width: 1; height: 8 }
+                    header: Item {
+                        width: ListView.view ? ListView.view.width : 0
+                        height: notesBar.implicitHeight + 10
+                        SectionBar {
+                            id: notesBar
+                            anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
+                            title: qsTr("Notes")
+                            icon: "edit_note"
+                            addLabel: qsTr("Add Note")
+                            searchModel: DesktopAppController.projectNotesModel
+                            filterSection: "notes"
+                            onAdd: {
+                                page._saveNow()
+                                var r = DesktopAppController.addProjectNote(page.projectId)
+                                if (r < 0) return
+                                page.noteActivated(r, DesktopAppController.projectNoteIdAtRow(r))
+                            }
+                            onFilter: page.subFilterRequested(filterSection)
                         }
-                        onFilter: page.subFilterRequested(filterSection)
                     }
-                    Repeater {
-                        id: notesRep
-                        model: DesktopAppController.projectNotesModel
-                        delegate: Card {
+                    delegate: Card {
                             id: noteCard
                             required property int index
                             required property var model
-                            Layout.fillWidth: true
+                            width: ListView.view ? ListView.view.width : 0
                             implicitHeight: 58
                             color: nHover.hovered ? Theme.raise : Theme.surface
                             function _menu(sx, sy) {
@@ -989,9 +1005,7 @@ Item {
                                 acceptedButtons: Qt.RightButton
                                 onTapped: (ev) => noteCard._menu(ev.scenePosition.x, ev.scenePosition.y)
                             }
-                        }
                     }
-                    Item { Layout.preferredHeight: 8 }
                 }
             }
         }

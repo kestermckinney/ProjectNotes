@@ -221,6 +221,9 @@ public:
     Q_INVOKABLE void refreshMeetingAttendees();
     Q_INVOKABLE void refreshNoteActionItems();
     Q_INVOKABLE void refreshAllItems();
+    // Activation-time variant: first visit loads, later visits re-query only
+    // if the model was marked dirty by a write since the last refresh.
+    Q_INVOKABLE void ensureAllItemsLoaded();
     Q_INVOKABLE void refreshTeamMembers();
     Q_INVOKABLE void refreshProjectLocations();
     Q_INVOKABLE void refreshStatusItems();

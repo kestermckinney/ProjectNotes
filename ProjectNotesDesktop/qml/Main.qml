@@ -105,6 +105,18 @@ ApplicationWindow {
             it._saveNow()
     }
 
+    // Section pages are created once and reused across navigation, so
+    // revisiting a section doesn't rebuild its item tree (and keeps its scroll
+    // position). StackView never destroys items it didn't instantiate, so
+    // clear() just detaches them. Detail pages stay Component-pushed — they're
+    // parameterized per record and cheap relative to the master lists.
+    property var _pageCache: ({})
+    function _sectionPage(section, comp) {
+        if (!_pageCache[section])
+            _pageCache[section] = comp.createObject(root)
+        return _pageCache[section]
+    }
+
     function selectSection(section) {
         if (section === root.currentSection && contentStack.depth <= 1)
             return
@@ -113,12 +125,12 @@ ApplicationWindow {
         root.crumbSub = ""
         contentStack.clear()
         switch (section) {
-        case "projects": contentStack.push(projectsComponent); break
-        case "people":   contentStack.push(peopleComponent); break
-        case "clients":  contentStack.push(clientsComponent); break
-        case "items":    contentStack.push(itemsComponent); break
-        case "search":   contentStack.push(searchComponent); break
-        case "settings": contentStack.push(settingsComponent); break
+        case "projects": contentStack.push(_sectionPage("projects", projectsComponent)); break
+        case "people":   contentStack.push(_sectionPage("people", peopleComponent)); break
+        case "clients":  contentStack.push(_sectionPage("clients", clientsComponent)); break
+        case "items":    contentStack.push(_sectionPage("items", itemsComponent)); break
+        case "search":   contentStack.push(_sectionPage("search", searchComponent)); break
+        case "settings": contentStack.push(_sectionPage("settings", settingsComponent)); break
         case "help":     contentStack.push(helpComponent, { topic: root._pendingHelpTopic }); break
         default:         contentStack.push(stubComponent); break
         }
@@ -383,8 +395,10 @@ ApplicationWindow {
                 id: contentStack
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                initialItem: projectsComponent
                 clip: true
+                // Start on the cached projects page (an initialItem component
+                // would be StackView-owned and destroyed on the first clear()).
+                Component.onCompleted: push(root._sectionPage("projects", projectsComponent))
             }
         }
     }

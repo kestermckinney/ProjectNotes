@@ -16,7 +16,9 @@ Item {
 
     property string _ctxId: ""
 
-    Component.onCompleted: DesktopAppController.refreshAllItems()
+    // Fires on every push of this (cached) page, including the first: loads
+    // lazily on first visit, then re-queries only if the DB changed since.
+    StackView.onActivated: DesktopAppController.ensureAllItemsLoaded()
 
     RecordContextMenu {
         id: ctxMenu
