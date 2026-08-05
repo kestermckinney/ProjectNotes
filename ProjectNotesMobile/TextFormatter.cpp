@@ -511,8 +511,14 @@ QString TextFormatter::currentFontFamily(QQuickTextDocument* doc, int pos) const
     for (const QString& f : families) {
         if (!f.isEmpty() && !isHiddenSystemFont(f)) return f;
     }
-    QString famProp = fmt.fontFamily();
-    if (!famProp.isEmpty() && !isHiddenSystemFont(famProp)) return famProp;
+    // Deliberately NOT falling back to the deprecated QTextFormat::fontFamily()
+    // (singular) accessor here. It reads from the same underlying "families"
+    // property as fontFamilies() above, so it can't tell us anything new — but
+    // on at least one real machine (DirectWrite failing to initialize at all:
+    // DWriteCreateFactory itself throwing), Qt's own implementation of that
+    // deprecated getter called QList::first() on the same, empty families list
+    // with no emptiness check, hitting Q_ASSERT(!isEmpty()) in qlist.h and
+    // aborting the process. Skip straight to the document's default font.
     QString def = tdoc->defaultFont().family();
     if (!def.isEmpty() && !isHiddenSystemFont(def)) return def;
     return QStringLiteral("Arial");
