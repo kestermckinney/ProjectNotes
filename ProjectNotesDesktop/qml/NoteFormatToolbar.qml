@@ -201,17 +201,25 @@ Rectangle {
                     text: chip.label
                     color: Theme.text2
                     font.pixelSize: 12
-                    // Only override the family when we actually have one to preview.
-                    // An empty string is NOT a safe "use the default" no-op here: Qt's
-                    // DirectWrite font engine treats "" as a real request, fails to
-                    // resolve/rasterize it (falls through to the legacy "MS Sans Serif"
-                    // raster font, which DirectWrite can't use), and exhausts its font
-                    // fallback list — the next QList::first() on that empty list asserts
-                    // and crashes the app. `undefined` properly unsets the property
-                    // instead of assigning a hostile value.
-                    font.family: chip.previewFamily.length > 0 ? chip.previewFamily : undefined
                     elide: Text.ElideRight
                     Layout.maximumWidth: 120
+                }
+                // Only override the family when we actually have one to preview —
+                // font.family is a QString property, so `undefined` can't be assigned
+                // to it directly ("Unable to assign [undefined] to QString"; that
+                // assignment silently fails and leaves the property at "").  An empty
+                // string is not a safe "use the default" value either: Qt's DirectWrite
+                // engine treats "" as a real font request, fails to resolve/rasterize
+                // it (falls through to the legacy "MS Sans Serif" raster font, which
+                // DirectWrite can't use), and exhausts its font fallback list — the
+                // next QList::first() on that empty list asserts and crashes the app.
+                // A conditional Binding, by contrast, fully detaches when `when` is
+                // false and leaves font.family at its normal inherited value.
+                Binding {
+                    target: chipText
+                    property: "font.family"
+                    value: chip.previewFamily
+                    when: chip.previewFamily.length > 0
                 }
                 MaterialIcon { name: "arrow_drop_down"; size: 16; color: Theme.text3 }
             }
