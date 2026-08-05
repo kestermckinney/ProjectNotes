@@ -345,7 +345,14 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
                     // read by another list's assigned-to sort/search).
                     getDBOs()->invalidateLookupCaches(m_tablename);
 
-                    emit dataChanged(index, index);
+                    // Scope the change to this cell's roles. QML otherwise
+                    // re-reads every named + _foreground role of the row (~2 per
+                    // column); QTableView repaints the cell either way. Full-row
+                    // updates (reloadRecord) stay role-less on purpose.
+                    emit dataChanged(index, index,
+                                     { Qt::DisplayRole, Qt::EditRole, Qt::ForegroundRole,
+                                       Qt::UserRole + index.column(),
+                                       Qt::UserRole + 1000 + index.column() });
 
                     // check for all of the impacted open recordsets
                     if (m_gui) // some recordsets aren't attached to the gui
@@ -362,7 +369,11 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
                 const QString msg = QObject::tr("Cannot update %1.\n%2").arg(m_headers[index.column()][Qt::EditRole].toString()).arg(update.lastError().text());
                 getDBOs()->setLastSaveError(msg);
                 showNativeError(QObject::tr("Cannot update record"), msg);
-                emit dataChanged(index, index); // reload correct value - not sure if this is correct for insert
+                // reload correct value - not sure if this is correct for insert
+                emit dataChanged(index, index,
+                                 { Qt::DisplayRole, Qt::EditRole, Qt::ForegroundRole,
+                                   Qt::UserRole + index.column(),
+                                   Qt::UserRole + 1000 + index.column() });
 
                 return false;
 
@@ -513,7 +524,9 @@ void SqlQueryModel::clear()
 
 QDateTime SqlQueryModel::parseDateTime(const QString& entrydate)
 {
-    QStringList elements = entrydate.split(QRegularExpression("[-/.: ]"), Qt::SkipEmptyParts);
+    // Compiled once — this is called from delegate paint/ForegroundRole paths.
+    static const QRegularExpression kDateSeparators("[-/.: ]");
+    QStringList elements = entrydate.split(kDateSeparators, Qt::SkipEmptyParts);
     QString Mon, Day,Year, Hours, Min, Seconds, Mil;
     int add12hours = 0;
     int addcurrentyear = 0;

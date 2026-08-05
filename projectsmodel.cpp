@@ -128,12 +128,17 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
     {
         if (index.column() == 3) // status date
         {
-            QVariant value = data(index);
-
-            QDateTime datecol = parseDateTime(value.toString());
+            // Read the raw epoch directly instead of formatting data() to
+            // "MM/dd/yyyy" and regex-parsing it back — this branch runs per
+            // row per repaint. An empty value stays an invalid QDateTime,
+            // matching what parseDateTime("") produced.
+            const QVariant raw = rawValue(index.row(), index.column());
+            QDateTime datecol;
+            if (!raw.isNull() && !raw.toString().isEmpty())
+                datecol.setSecsSinceEpoch(raw.toLongLong());
             qint64 dif = datecol.daysTo(QDateTime::currentDateTime());
 
-            QString period = data( this->index(index.row(), 12)).toString();
+            QString period = rawValue(index.row(), 12).toString();
             if (period == "Weekly")
             {
                 if (dif > 7)
@@ -170,16 +175,18 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
         }
         else if (index.column() == 4) // invoice date
         {
-            QVariant value = data(index);
-
-            QDateTime datecol = parseDateTime(value.toString());
+            // Raw epoch read — see the status date branch above.
+            const QVariant raw = rawValue(index.row(), index.column());
+            QDateTime datecol;
+            if (!raw.isNull() && !raw.toString().isEmpty())
+                datecol.setSecsSinceEpoch(raw.toLongLong());
             QDate nextdate = datecol.date();
             nextdate = nextdate.addMonths(1);
             nextdate.setDate(nextdate.year(), nextdate.month(), 1); // set to the first of the next month
 
             qint64 dif = datecol.daysTo(QDateTime::currentDateTime());
 
-            QString period = data( this->index(index.row(), 11)).toString();
+            QString period = rawValue(index.row(), 11).toString();
 
             if (period == "Milestone")
             {

@@ -15,6 +15,16 @@ SortFilterProxyModel::SortFilterProxyModel(QObject *parent): QSortFilterProxyMod
     QObject::connect(&m_quickSearchDebounce, &QTimer::timeout, this, [this]() {
         invalidateRowsFilter();
     });
+
+    // Coalesces a burst of source dataChanged signals (multi-cell saves, a sync
+    // cycle) into a single re-sort per event-loop turn instead of one whole-
+    // model sort per changed cell.
+    m_resortDebounce.setSingleShot(true);
+    m_resortDebounce.setInterval(0);
+    QObject::connect(&m_resortDebounce, &QTimer::timeout, this, [this]() {
+        if (m_sortColumn >= 0)
+            QSortFilterProxyModel::sort(m_sortColumn, m_sortOrder);
+    });
 }
 
 bool SortFilterProxyModel::filterAcceptsRow(int source_row,
@@ -168,6 +178,12 @@ void SortFilterProxyModel::onSourceDataChanged(const QModelIndex& topLeft,
     if (m_sortColumn < 0)
         return;
 
+    // Only a change in the sort column can reorder rows — skip the re-sort for
+    // edits to other columns (setData emits single-cell ranges; full-row
+    // reloads span every column and still fall through).
+    if (topLeft.column() > m_sortColumn || bottomRight.column() < m_sortColumn)
+        return;
+
     if (m_pinnedSourceRow >= 0
         && m_pinnedSourceRow >= topLeft.row()
         && m_pinnedSourceRow <= bottomRight.row())
@@ -175,7 +191,7 @@ void SortFilterProxyModel::onSourceDataChanged(const QModelIndex& topLeft,
         m_pendingSort = true;
         return;
     }
-    QSortFilterProxyModel::sort(m_sortColumn, m_sortOrder);
+    m_resortDebounce.start();
 }
 
 void SortFilterProxyModel::setPinnedRow(int sourceRow)

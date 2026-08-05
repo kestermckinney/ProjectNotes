@@ -66,6 +66,9 @@ private:
     // source model on every keystroke. Empty text invalidates immediately so
     // clearing the field stays instant.
     QTimer m_quickSearchDebounce;
+    // Coalesces source dataChanged bursts into one re-sort per event-loop turn
+    // (see onSourceDataChanged).
+    QTimer m_resortDebounce;
 
     int           m_sortColumn      = -1;
     Qt::SortOrder m_sortOrder       = Qt::AscendingOrder;

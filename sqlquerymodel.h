@@ -278,6 +278,18 @@ private:
     bool matchesFilter(int column, const QVariant& value);
 
 protected:
+    // Raw cache value (what the DB stores — epoch seconds for dates, plain
+    // numbers for USD/percent), bypassing reformatValue(). For subclass
+    // ForegroundRole logic: reading data() there formats the value and forces
+    // a parse back, per cell per repaint.
+    QVariant rawValue(int row, int column) const
+    {
+        if (row < 0 || row >= m_cache.size())
+            return QVariant();
+        const QVector<QVariant>& record = m_cache.at(row);
+        return column >= 0 && column < record.size() ? record.at(column) : QVariant();
+    }
+
     // After a key search, if fewer results are visible than expected (due to the closed
     // project filter), prompt the user to enable Show Closed Projects and re-run the search.
     void promptShowClosedProjects(const QStringList &keyColumns, const QStringList &keyValues, int expectedCount);
