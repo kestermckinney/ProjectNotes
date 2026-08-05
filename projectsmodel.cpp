@@ -208,9 +208,13 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
             }
 
         }
+        // The threshold columns below must read the RAW number: data() returns
+        // the display string, and for the DBPercent columns ("95.00%") its
+        // toDouble() is 0, so those colors never fired. CPI (DBReal) parsed
+        // fine but reads the raw value too — it's cheaper than formatting.
         else if (index.column() == 15)  // percent consumed
         {
-            double value = data(index).toDouble();
+            double value = rawValue(index.row(), index.column()).toDouble();
 
             if (value >= 95.0)
                 return QVariant(QCOLOR_RED);
@@ -219,7 +223,7 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
         }
         else if (index.column() == 17) // cost variance
         {
-            double value = data(index).toDouble();
+            double value = rawValue(index.row(), index.column()).toDouble();
 
             if (value >= 10.0)
                 return QVariant(QCOLOR_RED);
@@ -228,7 +232,7 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
         }
         else if (index.column() == 18)  // schedule variance
         {
-            double value = data(index).toDouble();
+            double value = rawValue(index.row(), index.column()).toDouble();
 
             if (value >= 10.0)
                 return QVariant(QCOLOR_RED);
@@ -237,7 +241,7 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
         }
         else if (index.column() == 19)  // percent complete
         {
-            double value = data(index).toDouble();
+            double value = rawValue(index.row(), index.column()).toDouble();
 
             if (value >= 95.0)
                 return QVariant(QCOLOR_RED);
@@ -246,7 +250,7 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
         }
         else if (index.column() == 20)  // CPI
         {
-            double value = data(index).toDouble();
+            double value = rawValue(index.row(), index.column()).toDouble();
 
             if (value <= 0.8)
                 return QVariant(QCOLOR_RED);
