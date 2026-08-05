@@ -704,6 +704,19 @@ int DatabaseObjects::getProjectDetailHeaderHeight()
     return value.toInt();
 }
 
+void DatabaseObjects::setUiZoomPercent(int percent)
+{
+    saveLocalParameter("UI:ZoomPercent", QString::number(percent));
+}
+
+int DatabaseObjects::getUiZoomPercent()
+{
+    QString value = loadLocalParameter("UI:ZoomPercent");
+    if (value.isEmpty())
+        return 0; // no saved preference — caller keeps its built-in default
+    return value.toInt();
+}
+
 void DatabaseObjects::setGlobalSearches( bool refresh )
 { 
     // setup default filters

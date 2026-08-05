@@ -3,6 +3,7 @@
 
 pragma Singleton
 import QtQuick
+import ProjectNotesDesktop
 
 // Central design system — ported from the "ProjectNotes UI Mockup" tokens.
 // Warm off-white light theme / neutral dark theme with a navy accent.
@@ -34,6 +35,18 @@ QtObject {
     function zoomIn()    { uiScale = _clampScale(uiScale + scaleStep) }
     function zoomOut()   { uiScale = _clampScale(uiScale - scaleStep) }
     function zoomReset() { uiScale = 1.0 }
+
+    // Restore the last-saved zoom (persisted per-user, same local settings
+    // store as window geometry); falls back to the 1.0 default above the
+    // first time the app runs, before anything has been saved. Every change
+    // afterwards — from the wheel, keyboard, or menu — is saved right back out
+    // so it's still in effect on the next launch.
+    Component.onCompleted: {
+        var savedPercent = DesktopAppController.uiZoomPercent()
+        if (savedPercent > 0)
+            uiScale = _clampScale(savedPercent / 100)
+    }
+    onUiScaleChanged: DesktopAppController.setUiZoomPercent(Math.round(uiScale * 100))
 
     // ── Icon font ─────────────────────────────────────────────────────────────
     // One FontLoader for the whole app. MaterialIcon binds to iconFont — a

@@ -71,6 +71,114 @@ Rectangle {
 
         Item { Layout.fillWidth: true }
 
+        // Current UI zoom (Ctrl+wheel / Ctrl +/- / app menu). Always present so
+        // the level is never a mystery, but kept to a bare percentage — no
+        // +/- controls duplicated here — so it stays a compact readout, not
+        // another toolbar. Click opens a preset picker.
+        Rectangle {
+            id: zoomIndicator
+            implicitHeight: 28
+            implicitWidth: zoomRow.implicitWidth + 14
+            radius: Theme.radiusSm
+            color: (zoomHover.hovered || zoomMenu.visible) ? Theme.surface2 : "transparent"
+            RowLayout {
+                id: zoomRow
+                anchors.centerIn: parent
+                spacing: 4
+                MaterialIcon { name: "zoom_in"; size: 14; color: Theme.text3 }
+                Text {
+                    text: Math.round(Theme.uiScale * 100) + "%"
+                    color: Theme.text2
+                    font.pixelSize: 12
+                }
+            }
+            HoverHandler { id: zoomHover }
+            TapHandler {
+                gesturePolicy: TapHandler.ReleaseWithinBounds
+                onTapped: {
+                    var p = zoomIndicator.mapToItem(null, 0, zoomIndicator.height)
+                    zoomMenu.openAt(p.x, p.y)
+                }
+            }
+            ToolTip.visible: zoomHover.hovered && !zoomMenu.visible
+            ToolTip.text: qsTr("Zoom Level")
+            ToolTip.delay: 400
+        }
+
+        // Preset zoom levels, opened from the indicator above.
+        Popup {
+            id: zoomMenu
+            readonly property var levels: [130, 120, 110, 100, 90, 80]
+
+            modal: true
+            dim: false
+            padding: 5
+            width: _zoomContent.implicitWidth + leftPadding + rightPadding
+            height: _zoomContent.implicitHeight + topPadding + bottomPadding
+            // Deliberately an in-scene popup (see RecordContextMenu) — popupType:
+            // Popup.Window forwards clicks through to whatever sits behind it.
+            parent: Overlay.overlay
+            scale: Theme.uiScale
+            transformOrigin: Item.TopLeft
+
+            background: Rectangle {
+                radius: Theme.radius
+                color: Theme.surface
+                border.color: Theme.border
+            }
+
+            // Open just under the indicator, at scene (overlay) coordinates.
+            function openAt(sx, sy) {
+                var sw = width * Theme.uiScale
+                x = Math.max(6, Math.min(sx, (parent ? parent.width : sx + sw) - sw - 6))
+                y = sy
+                open()
+            }
+
+            contentItem: ColumnLayout {
+                id: _zoomContent
+                spacing: 0
+                Repeater {
+                    model: zoomMenu.levels
+                    delegate: Rectangle {
+                        id: levelRow
+                        required property int modelData
+                        readonly property bool current: Math.round(Theme.uiScale * 100) === modelData
+                        Layout.fillWidth: true
+                        implicitWidth: levelContent.implicitWidth + 20
+                        implicitHeight: 30
+                        radius: Theme.radiusSm
+                        color: levelHover.hovered ? Theme.surface2 : "transparent"
+                        RowLayout {
+                            id: levelContent
+                            anchors.fill: parent
+                            anchors.leftMargin: 10; anchors.rightMargin: 10
+                            spacing: 10
+                            Text {
+                                text: levelRow.modelData + "%"
+                                color: Theme.text
+                                font.pixelSize: 13
+                                font.weight: levelRow.current ? Font.DemiBold : Font.Normal
+                                Layout.fillWidth: true
+                            }
+                            MaterialIcon {
+                                visible: levelRow.current
+                                name: "check"; size: 15; color: Theme.accent
+                            }
+                        }
+                        HoverHandler { id: levelHover }
+                        TapHandler {
+                            gesturePolicy: TapHandler.ReleaseWithinBounds
+                            onTapped: {
+                                Theme.uiScale = levelRow.modelData / 100
+                                zoomMenu.close()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Delete record (shown on record detail pages)
         Rectangle {
             visible: bar.showDelete

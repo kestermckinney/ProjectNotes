@@ -41,7 +41,53 @@ ApplicationWindow {
     })
     readonly property var meta: sectionMeta[currentSection]
 
+    // Last known non-maximized geometry. x/y/width/height report the maximized
+    // rect while visibility is Maximized, so these are tracked separately —
+    // updated only while windowed — and are what gets persisted, so
+    // un-maximizing later restores the actual pre-maximize size instead of
+    // snapping to whatever the maximized rect happened to be.
+    property int _normalX: 0
+    property int _normalY: 0
+    property int _normalWidth: 0
+    property int _normalHeight: 0
+    onXChanged: if (visibility === Window.Windowed) _normalX = x
+    onYChanged: if (visibility === Window.Windowed) _normalY = y
+    onWidthChanged: if (visibility === Window.Windowed) _normalWidth = width
+    onHeightChanged: if (visibility === Window.Windowed) _normalHeight = height
+
+    // Restore the previous window geometry (falls back to the width/height/
+    // minimum* above when nothing has been saved yet, e.g. first run). Applied
+    // before main.cpp's window->show() — Component.onCompleted runs synchronously
+    // during engine.load(), which returns before show() is called — so the window
+    // maps directly at its saved size/position instead of flashing the default
+    // and then jumping.
+    function _restoreGeometry() {
+        var g = DesktopAppController.windowGeometry()
+        if (!g.valid)
+            return
+        // x/y come back as -1 when the saved position no longer lands on any
+        // connected screen (e.g. a monitor was unplugged) — leave Qt's default
+        // placement in that case and only restore the size.
+        if (g.x !== -1 && g.y !== -1) {
+            root.x = g.x
+            root.y = g.y
+        }
+        root.width = g.width
+        root.height = g.height
+        if (g.maximized)
+            root.visibility = Window.Maximized
+    }
+
+    // Persist the current geometry so the window reopens the same size/position
+    // next launch.
+    onClosing: {
+        DesktopAppController.saveWindowGeometry(
+            root._normalX, root._normalY, root._normalWidth, root._normalHeight,
+            root.visibility === Window.Maximized)
+    }
+
     Component.onCompleted: {
+        _restoreGeometry()
         if (DesktopAppController.openOrCreateDatabase())
             FolderManager.reload()
         // Quiet launch-time update check (mirrors the Widgets app): only prompts

@@ -41,6 +41,8 @@
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QGuiApplication>
+#include <QScreen>
 #include <QSet>
 #include <QSettings>
 #include <QSqlError>
@@ -422,6 +424,55 @@ int DesktopAppController::projectDetailHeaderHeight() const
 { return global_DBObjects.getProjectDetailHeaderHeight(); }
 void DesktopAppController::setProjectDetailHeaderHeight(int height)
 { global_DBObjects.setProjectDetailHeaderHeight(height); }
+
+int DesktopAppController::uiZoomPercent() const
+{ return global_DBObjects.getUiZoomPercent(); }
+void DesktopAppController::setUiZoomPercent(int percent)
+{ global_DBObjects.setUiZoomPercent(percent); }
+
+QVariantMap DesktopAppController::windowGeometry() const
+{
+    QVariantMap result;
+
+    const QString w = global_DBObjects.loadLocalParameter("UI:QMLMainWindow:Width");
+    const QString h = global_DBObjects.loadLocalParameter("UI:QMLMainWindow:Height");
+    if (w.isEmpty() || h.isEmpty())
+        return result;   // nothing saved yet — caller keeps its built-in defaults
+
+    const int x = global_DBObjects.loadLocalParameter("UI:QMLMainWindow:X").toInt();
+    const int y = global_DBObjects.loadLocalParameter("UI:QMLMainWindow:Y").toInt();
+    const int width = w.toInt();
+    const int height = h.toInt();
+
+    // Only restore the saved position if it still lands on a connected screen;
+    // otherwise fall back to Qt's default placement (e.g. an external monitor
+    // the window was last on has since been unplugged). Size is kept either way.
+    const QRect target(x, y, width, height);
+    bool onScreen = false;
+    for (QScreen* screen : QGuiApplication::screens()) {
+        if (screen->availableGeometry().intersects(target)) {
+            onScreen = true;
+            break;
+        }
+    }
+
+    result["x"]         = onScreen ? x : -1;
+    result["y"]         = onScreen ? y : -1;
+    result["width"]     = width;
+    result["height"]    = height;
+    result["maximized"] = global_DBObjects.loadLocalParameter("UI:QMLMainWindow:Maximized") == "1";
+    result["valid"]     = true;
+    return result;
+}
+
+void DesktopAppController::saveWindowGeometry(int x, int y, int width, int height, bool maximized)
+{
+    global_DBObjects.saveLocalParameter("UI:QMLMainWindow:X", QString::number(x));
+    global_DBObjects.saveLocalParameter("UI:QMLMainWindow:Y", QString::number(y));
+    global_DBObjects.saveLocalParameter("UI:QMLMainWindow:Width", QString::number(width));
+    global_DBObjects.saveLocalParameter("UI:QMLMainWindow:Height", QString::number(height));
+    global_DBObjects.saveLocalParameter("UI:QMLMainWindow:Maximized", maximized ? "1" : "0");
+}
 
 // ── View options ─────────────────────────────────────────────────────────────
 

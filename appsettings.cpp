@@ -6,6 +6,8 @@
 
 #include <QStatusBar>
 #include <QStandardPaths>
+#include <QScreen>
+#include <QGuiApplication>
 #include "QLogger.h"
 #include "QLoggerWriter.h"
 
@@ -174,10 +176,19 @@ void AppSettings::setWindowStateData(const QString& stateDataName, const QVarian
 
 void AppSettings::setWindowState(const QString& windowName, QWidget* window)
 {
-    int w = window->geometry().width();
-    int h = window->geometry().height();
+    // when maximized, geometry() reports the maximized rect rather than the
+    // restored one, so fall back to normalGeometry() to capture the position
+    // and size the window should return to
+    const QRect geom = window->isMaximized() ? window->normalGeometry() : window->geometry();
+
+    int x = geom.x();
+    int y = geom.y();
+    int w = geom.width();
+    int h = geom.height();
     bool maximized = window->isMaximized();
 
+    setWindowX(windowName, x);
+    setWindowY(windowName, y);
     if (h > 0) setWindowHeight(windowName, h);
     if (w > 0) setWindowWidth(windowName, w);
     setWindowMaximized(windowName, maximized);
@@ -198,6 +209,30 @@ bool AppSettings::getWindowState(const QString& windowName, QWidget* window)
     }
 
     window->resize(w, h);
+
+    int x = getWindowX(windowName);
+    int y = getWindowY(windowName);
+
+    if (x != -1 && y != -1)
+    {
+        // only restore the saved position if it still lands on a connected
+        // screen; otherwise leave the window at its default placement (e.g.
+        // an external monitor the window was last on has been unplugged)
+        const QRect target(x, y, w, h);
+        bool onScreen = false;
+
+        for (QScreen* screen : QGuiApplication::screens())
+        {
+            if (screen->availableGeometry().intersects(target))
+            {
+                onScreen = true;
+                break;
+            }
+        }
+
+        if (onScreen)
+            window->move(x, y);
+    }
 
     if (window->objectName() == "MainWindow")
         ((MainWindow*)window)->statusBar()->setVisible(getWindowStatusBar(windowName));

@@ -154,6 +154,22 @@ public:
     Q_INVOKABLE int     projectDetailHeaderHeight() const;
     Q_INVOKABLE void    setProjectDetailHeaderHeight(int height);
 
+    // UI zoom level (Theme.uiScale), persisted per-user (same local QSettings
+    // store as above). Stored/returned as a whole percentage (e.g. 130 for
+    // 1.30x) to avoid floating-point round-tripping through QSettings; returns
+    // 0 when no preference has been saved yet, so QML falls back to 1.0.
+    Q_INVOKABLE int     uiZoomPercent() const;
+    Q_INVOKABLE void    setUiZoomPercent(int percent);
+
+    // Main window geometry, persisted per-user (same shared QSettings store, but
+    // under its own key namespace — this is a separate top-level window from the
+    // Widgets app's, which persists its own geometry independently). Returns an
+    // empty map (no "valid" key) the first time the app runs, before anything has
+    // been saved; Main.qml keeps its built-in defaults in that case. Restored in
+    // Component.onCompleted, saved from the window's onClosing handler.
+    Q_INVOKABLE QVariantMap windowGeometry() const;
+    Q_INVOKABLE void        saveWindowGeometry(int x, int y, int width, int height, bool maximized);
+
     // ── View options ─────────────────────────────────────────────────────────
     bool showClosedProjects() const;
     void setShowClosedProjects(bool v);
