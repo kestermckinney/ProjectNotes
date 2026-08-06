@@ -98,7 +98,7 @@ Rectangle {
             HoverHandler { id: fsHover }
             TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: zr.action("toggle_fullscreen") }
             ToolTip.visible: fsHover.hovered
-            ToolTip.text: qsTr("Toggle Fullscreen")
+            ToolTip.text: qsTr("Toggle Fullscreen (%1)").arg(AppShortcuts.text("toggle_fullscreen"))
             ToolTip.delay: 400
         }
     }

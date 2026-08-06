@@ -507,6 +507,39 @@ ApplicationWindow {
     Shortcut { sequence: "Ctrl+-";              onActivated: Theme.zoomOut() }
     Shortcut { sequence: "Ctrl+0";              onActivated: Theme.zoomReset() }
 
+    // ── App menu shortcuts ───────────────────────────────────────────────────
+    // Portable sequences come from AppShortcuts.map — the same source AppMenu.qml
+    // reads to display the key beside each row, so the two can't drift. "search"
+    // and "find" share one key (both land on the same selectSection("search")
+    // call below); only one Shortcut is wired for it — a second Shortcut on the
+    // identical sequence would make both ambiguous and fire neither.
+    Shortcut { sequence: AppShortcuts.map["new"];         onActivated: root.addForCurrentSection() }
+    Shortcut { sequence: AppShortcuts.map["search"];      onActivated: root.selectSection("search") }
+    Shortcut { sequence: AppShortcuts.map["preferences"]; onActivated: root.selectSection("settings") }
+    Shortcut { sequence: AppShortcuts.map["exit"];        onActivated: Qt.quit() }
+    Shortcut {
+        sequence: AppShortcuts.map["export"]
+        onActivated: {
+            var it = contentStack.currentItem
+            if (it && it.exportTable !== undefined && it.exportTable !== "" && it.exportId !== "")
+                root.exportRecord(it.exportTable, it.exportId)
+        }
+    }
+    Shortcut { sequence: AppShortcuts.map["import"]; onActivated: importDialog.open() }
+    Shortcut { sequence: AppShortcuts.map["filter"]; onActivated: filterDialog.openFor(root.currentSection) }
+    // Always-on toggle (F11 win/linux, Control+Command+F mac — see AppShortcuts.fullscreen).
+    Shortcut { sequence: AppShortcuts.map["toggle_fullscreen"]; onActivated: root.handleMenuAction("toggle_fullscreen") }
+    // Esc only ever exits full screen (never enters it) — matches browser/OS
+    // convention. Only enabled while actually full screen so it doesn't swallow
+    // Esc from whatever a focused popup/field would otherwise use it for (those
+    // still get first crack at the key; this only fires once nothing else claims
+    // it — see Popup.CloseOnEscape and FindReplaceBar's own Keys.onEscapePressed).
+    Shortcut {
+        sequence: "Esc"
+        enabled: root.visibility === Window.FullScreen
+        onActivated: root.handleMenuAction("toggle_fullscreen")
+    }
+
     // ── Content components ────────────────────────────────────────────────────
     Component {
         id: projectsComponent

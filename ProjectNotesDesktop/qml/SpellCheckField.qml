@@ -35,6 +35,8 @@ Item {
     property var    _suggestions: []
     property bool   _hasSelection: false
     property bool   _canPaste: false
+    property bool   _canUndo: false
+    property bool   _canRedo: false
 
     // Paste the clipboard's plain text at the cursor, discarding any rich
     // formatting — mirrors TextEdit::slotPasteUnformated() in the Widgets app.
@@ -77,6 +79,8 @@ Item {
             root._suggestions = root._bad ? spell.suggestionsFor(w).slice(0, 8) : []
             root._hasSelection = root.target.selectedText.length > 0
             root._canPaste = root.target.canPaste === true
+            root._canUndo = root.target.canUndo === true
+            root._canRedo = root.target.canRedo === true
             menu.openAt(ep.scenePosition.x, ep.scenePosition.y)
         }
     }
@@ -176,9 +180,31 @@ Item {
                 color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
             }
 
+            // Undo/Redo — same ordering as TextEdit::contextMenuEvent() in the
+            // Widgets app (Undo, Redo, divider, then Cut/Copy/Paste/…). Ctrl+Z
+            // already works natively while the field has focus (Qt Quick's text
+            // editing controls handle it internally); these rows just expose the
+            // same operation via the menu, for parity with the Widgets menu and
+            // with reach for anyone who doesn't know the key.
+            SpellRow {
+                enabled: root._canUndo
+                icon: "undo"; label: qsTr("Undo")
+                onActivated: { menu.close(); root.target.undo() }
+            }
+            SpellRow {
+                enabled: root._canRedo
+                icon: "redo"; label: qsTr("Redo")
+                onActivated: { menu.close(); root.target.redo() }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true; Layout.preferredHeight: 1
+                color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
+            }
+
             // Standard edit actions — parity with TextEdit::contextMenuEvent()
             // in the Widgets app (Cut/Copy/Paste/Paste Unformatted/Delete/
-            // Select All), minus Undo/Redo which the toolbar already covers.
+            // Select All).
             SpellRow {
                 enabled: root._hasSelection
                 icon: "content_cut"; label: qsTr("Cut")

@@ -52,21 +52,24 @@ Popup {
         border.color: Theme.border
     }
 
-    // group model: { name, items:[{icon,label,key,action, toggle, on}] }
+    // group model: { name, items:[{icon,label,key,action, toggle, on}] }.
+    // `key` is the native display text for whatever real Shortcut Main.qml
+    // wires for that action — see AppShortcuts.qml, the single source of
+    // truth both sides read from. Blank means the action has no assigned key.
     readonly property var groups: [
         { name: qsTr("File"), items: [
-            { icon: "note_add",  label: qsTr("New Record"),  key: "",   action: "new" },
-            { icon: "search",    label: qsTr("Search…"),     key: "⌘K", action: "search" },
-            { icon: "ios_share", label: qsTr("Export XML…"), key: "",   action: "export" },
-            { icon: "download",  label: qsTr("Import XML…"), key: "",   action: "import" },
-            { icon: "settings",  label: qsTr("Preferences"), key: "⌘,", action: "preferences" },
+            { icon: "note_add",  label: qsTr("New Record"),  key: AppShortcuts.text("new"),         action: "new" },
+            { icon: "search",    label: qsTr("Search…"),     key: AppShortcuts.text("search"),      action: "search" },
+            { icon: "ios_share", label: qsTr("Export XML…"), key: AppShortcuts.text("export"),      action: "export" },
+            { icon: "download",  label: qsTr("Import XML…"), key: AppShortcuts.text("import"),      action: "import" },
+            { icon: "settings",  label: qsTr("Preferences"), key: AppShortcuts.text("preferences"), action: "preferences" },
             { icon: "sync",      label: qsTr("Sync Now"),    key: "",   action: "sync" },
             { icon: "sync_alt",  label: qsTr("Sync All"),    key: "",   action: "sync_all" },
-            { icon: "logout",    label: qsTr("Exit"),        key: "",   action: "exit" },
+            { icon: "logout",    label: qsTr("Exit"),        key: AppShortcuts.text("exit"),        action: "exit" },
         ]},
         { name: qsTr("Edit"), items: [
-            { icon: "search",       label: qsTr("Find"),        key: "⌘F", action: "find" },
-            { icon: "filter_list",  label: qsTr("Filter Data…"),key: "",   action: "filter" },
+            { icon: "search",       label: qsTr("Find"),        key: AppShortcuts.text("find"),   action: "find" },
+            { icon: "filter_list",  label: qsTr("Filter Data…"),key: AppShortcuts.text("filter"), action: "filter" },
         ]},
         { name: qsTr("View"), items: [
             { icon: Theme.dark ? "light_mode" : "dark_mode", label: qsTr("Dark Mode"),
@@ -79,12 +82,14 @@ Popup {
               key: "", action: "toggle_resolved", toggle: true, on: !DesktopAppController.newAndAssignedOnly },
             // Brave-style zoom control (− / percent / + / fullscreen), replacing
             // the old separate Zoom In / Zoom Out / Reset Zoom rows — rendered by
-            // ZoomMenuRow, see MenuFlyout's `custom: "zoom"` handling.
+            // ZoomMenuRow, see MenuFlyout's `custom: "zoom"` handling. Its own
+            // fullscreen button shows AppShortcuts.text("toggle_fullscreen") in
+            // its tooltip.
             { custom: "zoom" },
             { icon: "description", label: qsTr("Log Viewer"), key: "", action: "logs" },
         ]},
         { name: qsTr("Help"), items: [
-            { icon: "menu_book", label: qsTr("User Guide"), key: "F1", action: "help" },
+            { icon: "menu_book", label: qsTr("User Guide"), key: AppShortcuts.text("help"), action: "help" },
             { icon: "system_update_alt", label: qsTr("Check for Updates…"), key: "", action: "check_updates" },
             { icon: "forward_to_inbox", label: qsTr("Send Logs to Support…"), key: "", action: "support_logs" },
             { icon: "info", label: qsTr("About"), key: "", action: "about" },

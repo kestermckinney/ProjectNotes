@@ -43,6 +43,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QGuiApplication>
+#include <QKeySequence>
 #include <QScreen>
 #include <QSet>
 #include <QSettings>
@@ -533,6 +534,15 @@ QString DesktopAppController::clipboardPlainText() const
 {
     QClipboard* clipboard = QGuiApplication::clipboard();
     return clipboard ? clipboard->text() : QString();
+}
+
+// ── Keyboard shortcuts ────────────────────────────────────────────────────────
+
+QString DesktopAppController::nativeShortcutText(const QString& portableSequence) const
+{
+    if (portableSequence.isEmpty())
+        return {};
+    return QKeySequence(portableSequence).toString(QKeySequence::NativeText);
 }
 
 // ── Column filter editor ─────────────────────────────────────────────────────

@@ -57,6 +57,9 @@ qt_add_executable(ProjectNotesDesktop
     ../credentialstore.cpp ../credentialstore.h
     # Unattended software update (GitHub releases → silent install + relaunch).
     ../updatemanager.cpp   ../updatemanager.h
+    # Single-instance guard — same class the Widgets app uses, own UUID key
+    # (see main.cpp) so the two apps' guards don't interfere with each other.
+    ../runguard.cpp ../runguard.h
 )
 
 # So main.cpp can #include "TextFormatter.h"; Python headers for the plugin engine.
@@ -73,6 +76,7 @@ target_include_directories(ProjectNotesDesktop PRIVATE
 set(DESKTOP_QML_FILES
     qml/Main.qml
     qml/Theme.qml
+    qml/AppShortcuts.qml
     qml/MaterialIcon.qml
     qml/MaterialIconCodepoints.js
     qml/IconRail.qml
@@ -115,8 +119,8 @@ set(DESKTOP_QML_FILES
     qml/pages/StubPage.qml
 )
 
-# Theme.qml is a QML-file singleton (pragma Singleton).
-set_source_files_properties(qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+# Theme.qml and AppShortcuts.qml are QML-file singletons (pragma Singleton).
+set_source_files_properties(qml/Theme.qml qml/AppShortcuts.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(ProjectNotesDesktop
     URI ProjectNotesDesktop

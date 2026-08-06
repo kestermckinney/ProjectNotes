@@ -5,6 +5,7 @@
 #include "FolderManager.h"
 #include "HelpController.h"
 #include "LogViewerController.h"
+#include "runguard.h"
 #include "SpellCheck.h"
 #include "TextFormatter.h"
 
@@ -156,10 +157,18 @@ int main(int argc, char* argv[])
     if (parser.isSet(testSupabaseOption))
         DesktopAppController::setTestSupabase(true);
 
-    // Note: no single-instance guard. The QML app is designed to run alongside
-    // the Widgets app on the same WAL SQLite database, which handles concurrent
-    // access; a RunGuard/QSystemSemaphore can also hang a restart if the process
-    // is force-killed mid-critical-section, so it is intentionally omitted.
+    // Single-instance guard — same RunGuard class and behavior as the Widgets
+    // app (critical dialog, then exit), but its own UUID key so the two apps'
+    // guards are independent: this only blocks a second copy of THIS app, not
+    // the Widgets build running alongside it — both still share the same WAL
+    // SQLite database, which handles that concurrent access fine.
+    RunGuard guard("2863cc03-a39e-4aca-b328-de18b045d0ba");
+    if (!guard.tryToRun()) {
+        QMessageBox::critical(nullptr, QStringLiteral("Only One Instance"),
+            QObject::tr("Only one instance of Project Notes can be running at a time."));
+        return 0;
+    }
+
     app.setWindowIcon(QIcon(":/qt/qml/ProjectNotesDesktop/icons/projectnotes.ico"));
 
     // Point Qt WebEngine at the PyQt6 runtime bundled with the installer

@@ -191,6 +191,16 @@ public:
     // the normal rich-text paste() path.
     Q_INVOKABLE QString clipboardPlainText() const;
 
+    // ── Keyboard shortcuts ───────────────────────────────────────────────────
+    // Render a portable Qt key sequence ("Ctrl+N", "Ctrl+,") as the current
+    // platform's native display text ("Ctrl+N" on Windows/Linux, "⌘N" on
+    // macOS). AppShortcuts.qml holds the one canonical portable sequence per
+    // action; this is just the display side — the actual Shortcut items in
+    // Main.qml bind the same portable strings directly, and Qt's own platform
+    // integration remaps Ctrl<->Cmd for them, so the key shown here always
+    // matches the key that actually fires.
+    Q_INVOKABLE QString nativeShortcutText(const QString& portableSequence) const;
+
     // ── Column filter editor (mirrors the Widgets Filter Data dialog) ────────
     // Searchable columns of a list model: [{ field, label, isDate }].
     Q_INVOKABLE QVariantList filterColumns(QAbstractItemModel* model) const;
