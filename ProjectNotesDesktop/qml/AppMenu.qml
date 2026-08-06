@@ -19,10 +19,11 @@ Popup {
     // The table + id of whatever record is currently open (set by Main.qml via
     // IconRail — same signal the TopBar's Export XML button uses). When present,
     // table-scoped plugin menus (dataexport matching this table, e.g. the
-    // "Export" / "Templates" groups on a project) are added below the global
-    // ones, mirroring the Widgets Plugins menu bar (buildPluginMenu() adds both
-    // the global entries and BasePage::buildPluginMenu()'s current-page entries
-    // to the same menu).
+    // "Export" / "Templates" groups on a project) are folded into the same
+    // single "Plugins" entry as the global ones (see _rebuildPluginGroups),
+    // mirroring the Widgets Plugins menu bar (buildPluginMenu() adds both the
+    // global entries and BasePage::buildPluginMenu()'s current-page entries to
+    // the same menu).
     property string pluginMenuTable: ""
     property string pluginMenuRecordId: ""
 
@@ -90,30 +91,34 @@ Popup {
         ]},
     ]
 
-    // Global (dataless) plugin menus — the ones not tied to any particular
-    // record — collapse into a single "Plugins" entry (see _allGroups, which
-    // slots it in right after File) instead of spilling one top-level "Plugins
-    // · <submenu>" row per plugin submenu into the menu. Entries with no
-    // submenu become plain leaf rows inside it; entries that share a submenu
-    // become a nested group row (icon/label only, no more "Plugins ·" prefix
+    // All plugin menus — both the global (dataless) ones and, when a record is
+    // open, its table-scoped ones (Export / Templates / etc., tied to whatever's
+    // in pluginMenuTable/pluginMenuRecordId) — collapse into a single "Plugins"
+    // entry (see _allGroups, which slots it in right after File) instead of
+    // spilling one top-level row per plugin submenu into the menu. Entries with
+    // no submenu become plain leaf rows inside it; entries that share a submenu
+    // become a nested group row (icon/label only, no "Plugins ·" prefix needed
     // now that they're visually nested under Plugins already) — see
-    // MenuFlyout's group support and pluginSubFlyout below.
+    // MenuFlyout's group support and pluginSubFlyout below. Actions are tagged
+    // "plugin:" vs "tableplugin:" (see _act()) so global and table-scoped
+    // entries still dispatch to the right controller call despite sharing one
+    // menu.
     property var globalPluginGroup: null
-    // The open record's table-scoped plugin menus (Export / Templates / etc.,
-    // tied to whatever's in pluginMenuTable/pluginMenuRecordId) — these ARE
-    // tied to a data source, so they stay out of the Plugins entry and remain
-    // their own top-level submenu triggers, named by their submenu directly.
-    property var pluginGroups: []
     function _rebuildPluginGroups() {
         var byKey = {}
         var order = []
-        var globalEntries = DesktopAppController.globalPluginMenus()
-        for (var i = 0; i < globalEntries.length; i++) {
-            var e = globalEntries[i]
-            var key = e.submenu || ""
-            if (byKey[key] === undefined) { byKey[key] = []; order.push(key) }
-            byKey[key].push({ icon: "extension", label: e.title, key: "", action: "plugin:" + e.index })
+        function addEntries(entries, actionPrefix) {
+            for (var i = 0; i < entries.length; i++) {
+                var e = entries[i]
+                var key = e.submenu || ""
+                if (byKey[key] === undefined) { byKey[key] = []; order.push(key) }
+                byKey[key].push({ icon: "extension", label: e.title, key: "", action: actionPrefix + e.index })
+            }
         }
+        addEntries(DesktopAppController.globalPluginMenus(), "plugin:")
+        if (menu.pluginMenuTable !== "" && menu.pluginMenuRecordId !== "")
+            addEntries(DesktopAppController.pluginMenusForTable(menu.pluginMenuTable), "tableplugin:")
+
         var items = []
         for (var k = 0; k < order.length; k++) {
             var gkey = order[k]
@@ -123,35 +128,18 @@ Popup {
                 items.push({ icon: "extension", label: gkey, key: "", group: { name: gkey, items: byKey[gkey] } })
         }
         globalPluginGroup = items.length > 0 ? { name: qsTr("Plugins"), items: items } : null
-
-        var tableGroups = []
-        if (menu.pluginMenuTable !== "" && menu.pluginMenuRecordId !== "") {
-            var tEntries = DesktopAppController.pluginMenusForTable(menu.pluginMenuTable)
-            var tByKey = {}
-            var tOrder = []
-            for (var j = 0; j < tEntries.length; j++) {
-                var te = tEntries[j]
-                var tkey = te.submenu || qsTr("Plugins")
-                if (tByKey[tkey] === undefined) { tByKey[tkey] = []; tOrder.push(tkey) }
-                tByKey[tkey].push({ icon: "extension", label: te.title, key: "", action: "tableplugin:" + te.index })
-            }
-            for (var g = 0; g < tOrder.length; g++)
-                tableGroups.push({ name: tOrder[g], items: tByKey[tOrder[g]] })
-        }
-        pluginGroups = tableGroups
     }
     onAboutToShow: _rebuildPluginGroups()
 
     // Which top-level group (index into _allGroups) currently has its flyout
     // open, or -1. Only one flyout is open at a time — hovering a sibling
     // trigger row reassigns this and repoints the single shared flyout instead
-    // of opening a second popup. groups/pluginGroups is File/Edit/View/Help
-    // with the dynamic Plugins entry spliced in right after File, plus the
-    // open record's table-scoped submenu groups at the end.
+    // of opening a second popup. File/Edit/View/Help with the dynamic Plugins
+    // entry (global + table-scoped plugin menus, see _rebuildPluginGroups)
+    // spliced in right after File.
     readonly property var _allGroups:
         [menu.groups[0]].concat(menu.globalPluginGroup ? [menu.globalPluginGroup] : [])
                          .concat(menu.groups.slice(1))
-                         .concat(menu.pluginGroups)
     property int openGroupIndex: -1
     // The raw (unmapped) items of the open group — a live binding (not a
     // one-shot snapshot) so a toggle item's checkmark (Dark Mode, Show Closed
@@ -159,8 +147,8 @@ Popup {
     // to be closed and reopened.
     readonly property var _openRawItems:
         (openGroupIndex >= 0 && openGroupIndex < _allGroups.length) ? _allGroups[openGroupIndex].items : []
-    // groups/pluginGroups items carry {icon,label,key,action,toggle,on}; the
-    // flyout expects {icon,label,trailingText,toggle,checked}.
+    // groups/globalPluginGroup items carry {icon,label,key,action,toggle,on};
+    // the flyout expects {icon,label,trailingText,toggle,checked}.
     function _mapLeaf(it) {
         return { icon: it.icon || "", label: it.label || "", trailingText: it.key || "",
                  toggle: it.toggle === true, checked: it.on === true }
