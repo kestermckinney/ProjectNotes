@@ -22,6 +22,16 @@ The same commands are also available from the [Application Menu](<ApplicationMen
 
 Each step changes the zoom level by 10%. Zoom is clamped between 70% and 250%, so you cannot zoom out or in past a point where the interface would become unusable.
 
+## Full Screen
+
+The same **View** group row also has a fullscreen button, which hides the window's title bar and OS chrome so the interface fills the entire screen — useful together with UI Zoom for presentations.
+
+**To toggle full screen:**
+
+1. Click the fullscreen icon at the right end of the zoom row, or press **F11** (Windows/Linux) / **Control+Command+F** (macOS).
+
+**To leave full screen:** press **Esc**, or use the same button/shortcut again. Esc only ever exits full screen — it won't enter it — and only acts once nothing else on screen (an open dialog, a note's Find and Replace bar) is already using Esc for something of its own.
+
 ## Notes on Screen Sharing
 
 Because zoom reflows the layout rather than scaling a rendered image, the interface remains readable at high zoom levels instead of turning pixelated the way a screenshot or video stream scaled up would. This makes it well suited to live demonstrations where the audience is viewing a shared screen at reduced size or resolution.

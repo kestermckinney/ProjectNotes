@@ -11,6 +11,12 @@ Text fields such as note titles and the note body are checked for spelling as yo
 
 If no suggestions are available, the menu shows **(no suggestions)** instead. Right-clicking a word that isn't misspelled opens the same menu without the spelling suggestions.
 
+## Editing Commands
+
+The same right-click menu also has standard text-editing commands, below the spelling suggestions: **Undo**, **Redo**, then **Cut**, **Copy**, **Paste**, **Paste Unformatted**, **Delete**, and **Select All**. Cut/Copy/Delete need a selection first, and Paste/Paste Unformatted need something on the clipboard — each is grayed out otherwise.
+
+**Paste Unformatted** inserts the clipboard's plain text at the cursor, stripping out any fonts, colors, or other formatting it carried — useful when pasting from a web page or another document into a note without carrying its styling along.
+
 ## Checking an Entire Field
 
 For a full pass over everything you've written, use **Check Spelling…**, either from the right-click menu or from the spell-check button on the note formatting toolbar.
