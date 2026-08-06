@@ -158,115 +158,24 @@ Item {
                 }
             }
 
-            // Description, with a quick-glance preview of the most recent
-            // comments alongside it — so they're visible without scrolling
-            // down to the full (editable) Comments section below.
-            RowLayout {
+            Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold }
+            Rectangle {
                 Layout.fillWidth: true
-                spacing: 14
-
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Layout.preferredWidth: 2
-                    spacing: 6
-                    Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold }
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: Math.max(90, descArea.contentHeight + 20)
-                        radius: Theme.radiusSm
-                        color: Theme.surface
-                        border.color: descArea.activeFocus ? Theme.accent : Theme.border
-                        TextArea {
-                            id: descArea
-                            anchors.fill: parent
-                            anchors.margins: 8
-                            color: Theme.text
-                            wrapMode: TextEdit.WordWrap
-                            selectByMouse: true
-                            background: null
-                            font.pixelSize: 13
-                            onTextChanged: page._changed = true
-                            SpellCheckField { dialog: spellDialog }
-                        }
-                    }
-                }
-
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Layout.preferredWidth: 1
-                    Layout.alignment: Qt.AlignTop
-                    spacing: 6
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 6
-                        MaterialIcon { name: "forum"; size: 13; color: Theme.text3 }
-                        Text {
-                            text: qsTr("Recent Comments"); color: Theme.text3
-                            font.pixelSize: 11; font.weight: Font.DemiBold
-                            Layout.fillWidth: true
-                        }
-                    }
-                    Text {
-                        visible: commentsPreview.count === 0
-                        text: qsTr("No comments yet")
-                        color: Theme.text3; font.pixelSize: 12; font.italic: true
-                    }
-                    // Read-only preview — editing happens in the full list
-                    // further down the page. The model is oldest-first (see
-                    // trackeritemcommentsmodel.cpp's setOrderBy), so the most
-                    // recent rows are the last ones.
-                    Repeater {
-                        id: commentsPreview
-                        model: DesktopAppController.trackerItemCommentsModel
-                        delegate: Rectangle {
-                            id: previewRow
-                            required property int index
-                            required property var model
-                            readonly property bool _recent: previewRow.index >= commentsPreview.count - 3
-                            visible: _recent
-                            Layout.fillWidth: true
-                            implicitHeight: _recent ? pCol.implicitHeight + 16 : 0
-                            radius: Theme.radiusSm
-                            color: Theme.surface
-                            border.color: Theme.border
-
-                            ColumnLayout {
-                                id: pCol
-                                anchors.fill: parent
-                                anchors.margins: 8
-                                spacing: 2
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 6
-                                    Text {
-                                        text: (previewRow.model.lastupdated_date || "").toString()
-                                        color: Theme.text3; font.pixelSize: 10
-                                    }
-                                    Text {
-                                        text: DesktopAppController.peopleNameForId(
-                                            (previewRow.model.updated_by || "").toString())
-                                        color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold
-                                        elide: Text.ElideRight
-                                        horizontalAlignment: Text.AlignRight
-                                        Layout.fillWidth: true
-                                    }
-                                }
-                                Text {
-                                    text: (previewRow.model.update_note || "").toString()
-                                    color: Theme.text; font.pixelSize: 12
-                                    wrapMode: Text.WordWrap
-                                    maximumLineCount: 3
-                                    elide: Text.ElideRight
-                                    Layout.fillWidth: true
-                                }
-                            }
-                        }
-                    }
-                    Text {
-                        visible: commentsPreview.count > 3
-                        text: qsTr("+ %1 more").arg(commentsPreview.count - 3)
-                        color: Theme.text3; font.pixelSize: 11
-                    }
+                Layout.preferredHeight: Math.max(90, descArea.contentHeight + 20)
+                radius: Theme.radiusSm
+                color: Theme.surface
+                border.color: descArea.activeFocus ? Theme.accent : Theme.border
+                TextArea {
+                    id: descArea
+                    anchors.fill: parent
+                    anchors.margins: 8
+                    color: Theme.text
+                    wrapMode: TextEdit.WordWrap
+                    selectByMouse: true
+                    background: null
+                    font.pixelSize: 13
+                    onTextChanged: page._changed = true
+                    SpellCheckField { dialog: spellDialog }
                 }
             }
 

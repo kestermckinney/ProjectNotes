@@ -1196,6 +1196,39 @@ QVariantList DesktopAppController::notesForProject(const QString& projectId) con
     return out;
 }
 
+QVariantList DesktopAppController::recentCommentsForItem(const QString& itemId, int limit) const
+{
+    QVariantList out;
+    if (itemId.isEmpty() || limit <= 0) return out;
+
+    DB_LOCK;
+    QSqlQuery qry(global_DBObjects.getDb());
+    // lastupdated_date is normally an epoch int, but TrackerItemCommentsModel::
+    // setData() re-stamps it as a "MM/dd/yyyy" string on every edit — COALESCE
+    // falls back to the raw stored value when the epoch conversion comes back
+    // NULL, so an edited comment's date still displays instead of going blank.
+    qry.prepare("SELECT update_note, updated_by, "
+                "COALESCE(strftime('%m/%d/%Y', datetime(lastupdated_date, 'unixepoch')), "
+                "         lastupdated_date) "
+                "FROM item_tracker_updates "
+                "WHERE item_id = ? AND (deleted IS NULL OR deleted = 0) "
+                "ORDER BY lastupdated_date DESC LIMIT ?");
+    qry.addBindValue(itemId);
+    qry.addBindValue(limit);
+    qry.exec();
+    while (qry.next()) {
+        QVariantMap m;
+        m.insert("note", qry.value(0).toString());
+        // Safe to call while DB_LOCK is held: peopleNameForId() reads from the
+        // people model's in-memory cache, it doesn't run its own query.
+        m.insert("by",   peopleNameForId(qry.value(1).toString()));
+        m.insert("date", qry.value(2).toString());
+        out.append(m);
+    }
+    DB_UNLOCK;
+    return out;
+}
+
 // ── Option lists ─────────────────────────────────────────────────────────────
 
 QStringList DesktopAppController::projectStatusOptions() const

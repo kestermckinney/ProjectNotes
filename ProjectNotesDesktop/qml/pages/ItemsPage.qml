@@ -85,6 +85,11 @@ Item {
                     required property int index
                     required property var model
                     readonly property string iid: model.id !== undefined ? model.id : ""
+                    // Re-evaluates whenever `iid` changes — including when
+                    // ListView's reuseItems rebinds this delegate to a
+                    // different row while scrolling — so the preview always
+                    // matches the card it's currently showing.
+                    readonly property var _recentComments: DesktopAppController.recentCommentsForItem(card.iid, 2)
                     width: ListView.view ? ListView.view.width : 0
                     implicitHeight: itCol.implicitHeight + 24
                     color: hover.hovered ? Theme.raise : Theme.surface
@@ -172,14 +177,43 @@ Item {
                             MetaPair { label: qsTr("Resolved");   value: (card.model.date_resolved || "").toString() }
                         }
 
-                        // Description
-                        Text {
+                        // Description, with a compact preview of the most
+                        // recent comments alongside it so they're visible
+                        // without opening the item.
+                        RowLayout {
                             Layout.fillWidth: true
-                            visible: text !== ""
-                            text: (card.model.description || "").toString()
-                            color: Theme.text2; font.pixelSize: 12
-                            wrapMode: Text.WordWrap; elide: Text.ElideRight
-                            maximumLineCount: 2
+                            spacing: 14
+                            Text {
+                                Layout.fillWidth: true
+                                Layout.preferredWidth: 2
+                                visible: text !== ""
+                                text: (card.model.description || "").toString()
+                                color: Theme.text2; font.pixelSize: 12
+                                wrapMode: Text.WordWrap; elide: Text.ElideRight
+                                maximumLineCount: 2
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                Layout.preferredWidth: 1
+                                Layout.alignment: Qt.AlignTop
+                                visible: card._recentComments.length > 0
+                                spacing: 2
+                                Repeater {
+                                    model: card._recentComments
+                                    delegate: RowLayout {
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        spacing: 5
+                                        MaterialIcon { name: "forum"; size: 11; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+                                        Text {
+                                            text: (modelData.note || "").toString()
+                                            color: Theme.text3; font.pixelSize: 11
+                                            elide: Text.ElideRight
+                                            Layout.fillWidth: true
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                     // Populate the shared context menu for this row and open it at

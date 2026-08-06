@@ -279,6 +279,10 @@ public:
     // Meeting notes for a project ([{id,title,date}]), newest first — backs the
     // "Move To…" meeting picker for action items.
     Q_INVOKABLE QVariantList notesForProject(const QString& projectId) const;
+    // Most recent comments/updates on a tracker item ([{date,by,note}]), newest
+    // first — backs the compact preview on each card of the master Items list
+    // (ItemsPage).
+    Q_INVOKABLE QVariantList recentCommentsForItem(const QString& itemId, int limit) const;
 
     // ── Static option lists (ComboBox models) ────────────────────────────────
     Q_INVOKABLE QStringList projectStatusOptions() const;
