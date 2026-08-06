@@ -521,6 +521,7 @@ ApplicationWindow {
         ProjectNoteDetailPage {
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onMoveToRequested: (id) => moveToDialog.openFor(id)
+            onDeleteRequested: root.confirmDelete()
         }
     }
     Component {

@@ -17,8 +17,20 @@ Item {
     property bool   isNewRecord: false
     property bool   _changed: false
 
-    // Consumed by the TopBar's Delete action (Main.deleteCurrent()).
+    // Consumed by the TopBar's Delete action (Main.deleteCurrent()) and Export
+    // button, and by IconRail's hamburger menu (Main.qml binds these into
+    // AppMenu's pluginMenuTable/pluginMenuRecordId) so plugins whose dataexport
+    // is "project_notes" show up while a note is open — same convention as
+    // ItemDetailPage.
     readonly property bool canDelete: true
+    readonly property string exportTable: "project_notes"
+    readonly property string exportId: noteId
+
+    // Routed to Main's confirm-delete flow (root.confirmDelete()), same as
+    // ProjectDetailPage — fired by the page-level kebab/right-click menu below.
+    // The TopBar's own Delete button instead calls _deleteRecord() directly via
+    // canDelete/Main.deleteCurrent().
+    signal deleteRequested()
 
     // Delete this note. Removes the row from the shared project-notes model, so the
     // project's Notes tab refreshes itself once Main pops back to it.
@@ -63,6 +75,22 @@ Item {
         return ok
     }
 
+    // Open the note's own record/plugin menu (kebab or right-click) at scene
+    // coords — parity with ProjectDetailPage._openSelfMenu().
+    function _openSelfMenu(sx, sy) {
+        selfMenu.recordLabel = (titleField.text || "").toString()
+        selfMenu.openAt(sx, sy)
+    }
+
+    // Right-click anywhere on the page background opens the note menu.
+    // Declared beneath the page content so field/button clicks still reach
+    // their own handlers first — see ProjectDetailPage's identical pattern.
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.RightButton
+        onClicked: (mouse) => page._openSelfMenu(mouse.x, mouse.y)
+    }
+
     // Ctrl+F opens the note's find & replace bar while this page is active.
     Shortcut {
         sequences: [ StandardKey.Find ]
@@ -97,6 +125,14 @@ Item {
                     Layout.preferredWidth: 180
                     Layout.maximumWidth: 180
                     onEdited: page._changed = true
+                }
+                // Page-level record menu — exposes plugins whose dataexport is
+                // "project_notes" (Export/Send Meeting Notes/etc.), plus
+                // Delete/Export/Refresh. Parity with ProjectDetailPage's kebab.
+                KebabButton {
+                    Layout.alignment: Qt.AlignBottom
+                    Layout.bottomMargin: 6
+                    onClicked: (sx, sy) => page._openSelfMenu(sx, sy)
                 }
             }
 
@@ -537,7 +573,8 @@ Item {
         }
     }
 
-    // Routed to Main.exportRecord when a sub-list row's menu exports XML.
+    // Routed to Main.exportRecord — fired by a sub-list row's menu exporting
+    // XML, and by the note's own selfMenu below.
     signal exportRequested(string table, string id)
     // Routed to Main's shared Move To… dialog, same as ProjectDetailPage /
     // ItemsPage / ItemDetailPage.
@@ -551,6 +588,27 @@ Item {
         id: rowMenu
         onExportRecord: (table, id) => page.exportRequested(table, id)
         onMoveToRecord: (id) => page.moveToRequested(id)
+    }
+
+    // The note's own record/plugin menu — opened by the title row's kebab and
+    // by right-clicking the page background. Lists plugins whose dataexport is
+    // "project_notes" (e.g. base_plugin's "Send Meeting Notes") below the
+    // built-in actions. Parity with ProjectDetailPage's selfMenu; New/Filter/
+    // Move To aren't offered — there's no page-level equivalent action for a
+    // single open note the way there is for a project.
+    RecordContextMenu {
+        id: selfMenu
+        recordType: qsTr("Note")
+        model: DesktopAppController.projectNotesModel
+        recordId: page.noteId
+        canOpen: false
+        canNew: false
+        canDuplicate: false
+        canMoveTo: false
+        canFilter: false
+        onDeleteRequested: page.deleteRequested()
+        onExportRequested: page.exportRequested(page.exportTable, page.exportId)
+        onRefreshRequested: page._reload()
     }
 
     // Shared full-field spell-check dialog (opened by fields / the toolbar).
