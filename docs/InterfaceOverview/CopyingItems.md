@@ -1,6 +1,6 @@
 # Copying Items
 
-The Copy Item action lets you duplicate a risk, issue, or action item without re-typing its details — useful when you need several similar tracker items on the same project.
+The Copy Item action lets you duplicate a risk, issue, or action item without re-typing its details — useful when you need several similar tracker items on the same project. To reassign an existing item to a different project or meeting instead of duplicating it, see [Moving Items](<MovingItems.md>).
 
 **To copy an item:**
 

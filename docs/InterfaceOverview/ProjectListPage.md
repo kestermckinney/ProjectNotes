@@ -7,11 +7,15 @@ The Project List Page shows every project as a card. Click a **Projects** icon i
 1. Click **+ New** in the bar above the list, or choose **New Record** from the app menu (the menu icon at the top of the icon rail).
 2. A new project opens immediately with a default number and name surrounded by brackets. Edit the fields — changes save automatically.
 
+
+
 **To delete a project:**
 
 1. Right-click the project's card (or click its **⋮** button) to open its menu.
 2. Choose **Delete**.
 3. Click **Yes** to delete the project. If related items are found, Project Notes searches the database for related project information and opens the Search Page instead — you cannot delete a project that still has related records.
+
+
 
 **To view closed projects:**
 
@@ -27,9 +31,9 @@ The Project List Page also provides in-depth earned value metrics based on the c
 | Project Name | The project name should remain consistent across multiple systems. It should be a concise description of the project. |
 | Client | The client the project work applies. |
 | Status Date | The last time the status report was run. The value is shown in different colors to warn you when the next status report should be sent to the client. |
-| Report Period | **Weekly:** Red indicates it has been more than 7 days since the last report. Yellow indicates it has been exactly 7 days since the last report.  <br>**Bi-Weekly:** Red indicates it has been more than 14 days since the last report. Yellow indicates it has been more than 12 days since the last report.  <br>**Monthly:** Red indicates it has been more than 30 days since the last report. Yellow indicates it has been more than 25 days since the last report. |
+| Report Period | **Weekly:** Red indicates it has been more than 7 days since the last report. Yellow indicates it has been exactly 7 days since the last report.  **Bi-Weekly:** Red indicates it has been more than 14 days since the last report. Yellow indicates it has been more than 12 days since the last report.  **Monthly:** Red indicates it has been more than 30 days since the last report. Yellow indicates it has been more than 25 days since the last report. |
 | Invoice Date | The last date an invoice was sent. The value is shown in different colors to warn you when the next invoice should be sent to the client. |
-| Invoice Period | **Milestone:** Yellow indicates it has been more than 25 days since the last invoice. <br>**Monthly:** Red indicates it has been more than 1 month since the last report. <br>**Complete:** No color indicators will show. |
+| Invoice Period | **Milestone:** Yellow indicates it has been more than 25 days since the last invoice. **Monthly:** Red indicates it has been more than 1 month since the last report. **Complete:** No color indicators will show. |
 | Budget | The overall budgeted cost of the project. |
 | Actual | The actual cost of the project. |
 | Consumed | The percentage of the budget consumed. It is the actual cost divided by the budgeted cost. This value will display yellow to indicate 90% or more of the budget has been consumed. The value will display red to indicate 95% or more of the budget has been consumed. |
@@ -43,7 +47,7 @@ The Project List Page also provides in-depth earned value metrics based on the c
 | CPI | The cost performance index. This value will display yellow for values less than 1.0. This value will display red for values of 0.8 or less. |
 | Status | The status of the project: Active or Closed. |
 
-<br>
+
 **To hide earned value metrics:**
 
 1. From the app menu, uncheck **Show Internal / Budget Items** (or use the **Show Internal** toggle at the top of this page). Note: this will also hide **Notes** and **Item Tracker** items marked as **Internal**.

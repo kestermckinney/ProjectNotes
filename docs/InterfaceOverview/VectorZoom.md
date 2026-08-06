@@ -12,11 +12,13 @@ Unlike zooming a picture, UI Zoom is a true vector re-layout: the whole interfac
 2. Press **Ctrl** and **-** to zoom out.
 3. Press **Ctrl** and **0** to reset zoom to 100%.
 
+
+
 **To zoom with the mouse:**
 
 1. Hold **Ctrl** and roll the mouse wheel up to zoom in, or down to zoom out.
 
-The same commands are also available from the application menu, under **View > Zoom In**, **View > Zoom Out**, and **View > Reset Zoom**.
+The same commands are also available from the [Application Menu](<ApplicationMenu.md>)'s **View** group, as a single **−  /  percentage  /  +** row.
 
 Each step changes the zoom level by 10%. Zoom is clamped between 70% and 250%, so you cannot zoom out or in past a point where the interface would become unusable.
 

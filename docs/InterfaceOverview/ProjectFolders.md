@@ -1,6 +1,6 @@
 # Project Folders
 
-Project Folders let you group projects in the sidebar — for example a **Favorites** folder for the projects you check every day. A project can belong to several folders at once, and every project always continues to appear under the built-in **All Projects** group regardless of its folder memberships.
+Project Folders let you group projects in the sidebar — for example a **Favorites** folder for the projects you check every day. A project can belong to several folders at once, and every project always continues to appear under the built-in **All Projects** group regardless of its folder memberships. Projects that belong to no folder are also listed under a built-in **Not Categorized** group, shown between your own folders and **All Projects**.
 
 Folders, their icons and colors, and which projects belong to them are stored with your synced data, so they follow you across devices that share the same database.
 
@@ -25,7 +25,18 @@ Once a folder exists, add projects to it by dragging them in the sidebar.
 1. In the project sidebar, press and drag a project row.
 2. Drop it onto the header of the target folder group.
 
-The project is added to that folder without losing its membership in any other folder. Dropping a project onto the **All Projects** group instead removes it from every folder it currently belongs to. Each folder header shows a live count of the projects it contains, and a folder can be collapsed or expanded by clicking its header.
+The project is added to that folder without losing its membership in any other folder. Dropping a project onto the **All Projects** group instead removes it from every folder it currently belongs to. Each folder header shows a live count of the projects it contains, and a folder can be collapsed or expanded by clicking its header — Project Notes remembers which groups you collapsed and restores them on the next launch.
+
+## Moving a Project to Exactly One Folder
+
+Dragging *adds* a membership; the **Move To Folder** dialog instead puts a project in exactly one folder in a single click.
+
+**To move a project to a folder:**
+
+1. Right-click the project — in the sidebar, on its card on the [Project List Page](<ProjectListPage.md>), or on its own [Project Page](<ProjectPage.md>) — and choose **Move To…**. The **Move To Folder** dialog opens.
+2. Click the destination folder. The project's existing folder memberships are replaced with that single folder, and the dialog closes — there is no separate confirm step.
+
+Choosing **Not Categorized** at the bottom of the list removes the project from every folder instead.
 
 ## Assigning and Changing Folder Colors
 

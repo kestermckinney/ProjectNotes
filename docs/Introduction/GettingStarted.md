@@ -10,18 +10,19 @@ If you want to back up your data and sync it across your devices, configure clou
 
 ## Cloud Sync Setup
 
-Cloud sync lets you back up your Project Notes data and keep it synchronized across all of your devices — your desktop installations and the [Project Notes Mobile](<../Mobile/ProjectNotesMobile.md>) app — automatically and in the background.
+Cloud sync lets you back up your Project Notes data and keep it synchronized across all of your devices including your desktop installations and the [Project Notes Mobile](<../Mobile/ProjectNotesMobile.md>) application automatically and in the background.
 
-Cloud sync is provided by a **Project Notes Pro** subscription. The hosting is fully managed: there is no server to set up and no host address or API key to enter. You simply sign in with your subscription account.
+Cloud sync is provided by a **Project Notes Pro** subscription. The hosting is fully managed. There is no server to set up and no host address or API key to enter. You simply sign in with your subscription account.
 
 **To enable cloud sync:**
 
 1. Subscribe at [www.projectnotespro.com](https://www.projectnotespro.com).
-2. In Project Notes, choose **File > Cloud Sync Settings...**
-3. Check **Sync all your devices and backup your data**.
-4. Enter the **Username (Email)** and **Password** for your Project Notes Pro account.
+2. Click the **Settings** icon in the icon rail and open the **Cloud Sync** section.
+3. Check **Enable cloud sync**.
+4. Enter the **Sync Email** and **Sync Password** for your Project Notes Pro account.
 5. Optionally set an **Encryption Phrase** to encrypt your data before it leaves your machine. Keep it somewhere safe — it cannot be recovered, and every device must use the same phrase.
-6. Click **OK**.
+
+Each field saves as soon as you enter it — there is no separate OK or Save step.
 
 See [Cloud Sync](<../InterfaceOverview/RemoteHost.md>) for a complete reference of all sync features, settings, and troubleshooting steps.
 
@@ -56,9 +57,9 @@ There are three methods to import clients and people.
 * **Importing From XML** - All database items can be imported from a [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) file. Choose **Import XML…** from the app menu (the menu icon at the top of the icon rail) to import a file.
 * **Entering Manually** - Client information can be entered using the [Client List Page](<../InterfaceOverview/ClientListPage.md>), and contacts can be entered using the [People List Page](<../InterfaceOverview/PeopleListPage.md>).
 
-## Project Notes Preferences
+## Project Notes Settings
 
-Once your clients and people are setup, you will need to tell Project Notes which contact is the Project Manager coordinating all projects, and what company he works for. This information can be setup in the [Project Notes Preferences](<../InterfaceOverview/Preferences.md>).
+Once your clients and people are setup, you will need to tell Project Notes which contact is the Project Manager coordinating all projects, and what company they work for. This information can be set up by clicking the **Settings** icon in the icon rail — see [Project Notes Preferences](<../InterfaceOverview/Preferences.md>).
 
 ## Plugin Settings
 

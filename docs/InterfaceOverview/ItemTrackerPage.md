@@ -16,28 +16,8 @@ The fields below are shown on each item's card when viewing internal items. Fiel
 | Identified | The date the issue was identified. New records default to the current date, but can be edited. |
 | Description | A longer description of the item. |
 | Assigned To | The individual assigned to resolve the issue. Cannot be edited from the **Items** (all-projects) list. |
-| Priority | The priority as defined by your organization: |
-
-| **Priority** | **Description** |
-| :--- | :--- |
-| **Low** | Displays in a standard font color to indicate the item is low priority. |
-| **Medium** | Displays in a yellow/amber font to indicate the item is medium priority. |
-| **High** | Displays in a red font to indicate the item is high priority. |
-
-| **Field** | **Description** |
-| :--- | :--- |
-| Status | The status of the item: |
-
-| **Status** | **Description** |
-| :--- | :--- |
-| **Assigned** | The item has been assigned to an individual. It is assumed work is being done to resolve the item. |
-| **Deferred** | This item will not be completed during this project. |
-| **New** | The item was recently entered, but no one has been assigned to resolve it. This is the default value. |
-| **Resolved** | The item was completed successfully. If **Show Resolved Items** is turned off, these items do not show. |
-| **Canceled** | The item was not needed. |
-
-| **Field** | **Description** |
-| :--- | :--- |
+| Priority | The priority as defined by your organization: **Low** displays in a standard font color. **Medium** displays in a yellow/amber font. **High** displays in a red font. |
+| Status | The status of the item: **Assigned** (assigned to someone, work assumed in progress), **Deferred** (won't be completed during this project), **New** (the default — entered but not yet assigned), **Resolved** (completed; hidden when **Show Resolved Items** is off), or **Canceled** (not needed). |
 | Date Due | The date the item should be resolved by. |
 | Updated | The last time any changes were made to the record. This value is updated automatically each time the item is edited. |
 | Date Resolved | The date the item was resolved. The value is set automatically when the **Status** is changed to **Resolved**, but can be edited manually from the [Action Item Detail Page](<ActionItemDetailPage.md>). |
@@ -46,7 +26,7 @@ The fields below are shown on each item's card when viewing internal items. Fiel
 
 Comments/updates entered on the [Action Item Detail Page](<ActionItemDetailPage.md>) aren't shown as a field on the card — open the item to read or add them.
 
-<br>
+
 
 ### Filtering Items
 
@@ -62,16 +42,24 @@ New items can only be created from within a project — open the project's [Proj
 2. Type in the **Item Name** and **Description**, and select the **Assigned To** person.
 3. Select the **Due Date**, if required.
 
+
+
 **To delete an item:**
 
 1. Open the item (click its card) to reach the [Action Item Detail Page](<ActionItemDetailPage.md>).
 2. Click **Delete** in the bar above the item.
 3. Click **Yes** to confirm the deletion. Note: You may not be able to delete the item if it is associated with other project information. In this case, clicking **Yes** opens the Search Page — see [Search Page](<SearchPage.md>) for how to work with search results.
 
+
+
 **To edit an item:**
 
 1. From the project's **Tracker** tab, click the field you want to change directly on the card, or click the card to open the full [Action Item Detail Page](<ActionItemDetailPage.md>) for every field.
 2. Type in or select the new value — changes save automatically.
+
+### Moving and Copying Items
+
+To reassign an item to a different project or meeting, see [Moving Items](<MovingItems.md>). To duplicate an item onto the same project instead, see [Copying Items](<CopyingItems.md>).
 
 ### Viewing Items Across All Projects
 

@@ -12,6 +12,8 @@ The **Notes** tab on a project's [Project Page](<ProjectPage.md>) lists all of t
 
 1. From the **Notes** tab, click the meeting's card.
 
+
+
 ## Creating a New Meeting
 
 When you create a new meeting, the current date is automatically populated and a default meeting title is assigned.
@@ -23,6 +25,8 @@ When you create a new meeting, the current date is automatically populated and a
 3. Type in the **Date**.
 4. Check **Internal item** if the meeting notes are not intended for client reports.
 5. Type meeting minutes in the note body — use the formatting toolbar above it for bold, lists, and other rich text.
+
+
 
 ## Assigning Action Items
 
@@ -37,9 +41,13 @@ The **Action Items** panel sits next to **Attendees**, below the note body. Each
 3. Click the pencil icon to expand the row, then choose the **Assigned To** team member.
 4. Choose the **Date Due**, if needed.
 
+
+
 **To delete an Action Item:**
 
 1. Click the **×** button on the action item row. Note: You may not be able to delete the item if it is associated with other project information. In this case Project Notes opens the Search Page — see [Search Page](<SearchPage.md>) for how to work with search results.
+
+
 
 **To edit an action item:**
 
@@ -47,7 +55,11 @@ The **Action Items** panel sits next to **Attendees**, below the note body. Each
 2. Update **Type**, **Priority**, **Status**, **Assigned To**, **Identified By**, dates, or **Description**.
 3. Click the expand icon again (now showing a collapse arrow) to close the row — all fields have already been saved.
 
-**Recording Attendees**
+To reassign an item to a different project or meeting instead of editing it in place, see [Moving Items](<MovingItems.md>).
+
+
+
+## Recording Attendees
 
 It is important to record who attended a meeting to make sure the team is communicating effectively.
 
@@ -55,6 +67,8 @@ It is important to record who attended a meeting to make sure the team is commun
 
 1. From the note, click **Add** in the **Attendees** panel.
 2. Search for and click the team member who attended. Only people already on the project's team (see [Project Page](<ProjectPage.md>)) appear in this list.
+
+
 
 **To delete an attendee:**
 

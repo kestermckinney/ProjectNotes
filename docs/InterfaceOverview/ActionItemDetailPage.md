@@ -11,9 +11,13 @@ Comments can be multiple lines. When you add a new comment it defaults the **Dat
 1. From the Action Item Detail Page, click **Add Comment**.
 2. Type in the comment text.
 
+
+
 **To delete a comment:**
 
 1. Click the **×** button on the comment row.
+
+
 
 **To edit a comment:**
 
@@ -21,8 +25,10 @@ Comments can be multiple lines. When you add a new comment it defaults the **Dat
 2. Type in or select the new value.
 3. Click out of the field — the change saves automatically.
 
+
+
 **To open the Action Item Detail Page:**
 
 1. Click the item's card from the [Item Tracker Page](<ItemTrackerPage.md>) (a project's **Tracker** tab, or the **Items** icon in the icon rail).
 
-An action item created from a meeting note's **Action Items** panel can be edited inline right there — see [Notes Page](<NotesPage.md>). To reach the full Action Item Detail Page (for comments, or to move the item to a different project or meeting), find the item afterward on the [Item Tracker Page](<ItemTrackerPage.md>) and click its card.
+An action item created from a meeting note's **Action Items** panel can be edited inline right there — see [Notes Page](<NotesPage.md>). To reach the full Action Item Detail Page (for comments, or to [move](<MovingItems.md>) or [copy](<CopyingItems.md>) the item to a different project or meeting), find the item afterward on the [Item Tracker Page](<ItemTrackerPage.md>) and click its card.

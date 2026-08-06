@@ -13,6 +13,7 @@
     {
       "title": "Interface Overview",
       "items": [
+        { "title": "Application Menu", "path": "InterfaceOverview/ApplicationMenu.md" },
         { "title": "Preferences", "path": "InterfaceOverview/Preferences.md" },
         { "title": "Project List Page", "path": "InterfaceOverview/ProjectListPage.md" },
         { "title": "Project Page", "path": "InterfaceOverview/ProjectPage.md" },
@@ -32,6 +33,7 @@
         { "title": "Sorting and Sizing Columns", "path": "InterfaceOverview/SortingandSizingColumns.md" },
         { "title": "Find and Replace in Notes", "path": "InterfaceOverview/FindAndReplace.md" },
         { "title": "Copying Items", "path": "InterfaceOverview/CopyingItems.md" },
+        { "title": "Moving Items", "path": "InterfaceOverview/MovingItems.md" },
         { "title": "Spell Checking", "path": "InterfaceOverview/SpellChecking.md" },
         { "title": "UI Zoom", "path": "InterfaceOverview/VectorZoom.md" },
         { "title": "Error Log", "path": "InterfaceOverview/ErrorLog.md" }

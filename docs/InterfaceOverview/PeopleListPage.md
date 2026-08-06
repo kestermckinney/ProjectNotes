@@ -12,15 +12,19 @@ To navigate to the People List Page, click the **People** icon in the icon rail.
 
 1. Click **+ New** in the bar above the list, or choose **New Record** from the app menu (the menu icon at the top of the icon rail).
 2. Type in the **Name**. **Name** is a required field.
-3. Type in the **Email**, **Office Phone**, **Mobile Phone** if available. Many plugins will require **Email**.
+3. Type in the **Email**, **Office Phone**, **Cell Phone** if available. Many plugins will require **Email**.
 4. Type in the **Role**. **Role** will be copied to the project team member role by default when a person is added to a project.
 5. Select the **Client** from the drop down.
+
+
 
 **To delete a person:**
 
 1. Right-click the person's card (or click its **⋮** button) to open its menu.
 2. Choose **Delete**.
 3. Click **Yes** to confirm the deletion. Note: You may not be able to delete people if they are associated with other project information. In this case, clicking **Yes** opens the Search Page — see [Search Page](<SearchPage.md>) for how to work with search results.
+
+
 
 **To edit a person:**
 

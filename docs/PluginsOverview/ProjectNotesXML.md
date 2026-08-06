@@ -86,4 +86,3 @@ The XML document follows a parent child heiarchy that corresponds to the record 
 | name | Attribute | The name of the column to be imported | Yes |
 | lookupvalue | Attribute | In many cases a record relates to another record. For example People and Clients, are related by their record id. To relate records on import, this value should contain the corresponding name. For example: The project\_id field should have this value set to the project\_number. The client\_id field should have this value set to the client name. The people\_id should have this field set to the people name. | Yes |
 
-<br>

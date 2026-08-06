@@ -9,6 +9,10 @@ The Project Notes Settings page allows you to configure application-wide setting
 1. Click the **Settings** icon in the icon rail, or choose **Preferences** from the app menu (the menu icon at the top of the icon rail).
 2. The Settings page opens with sections for Appearance, Cloud Sync, Project Folders, Preferences, View Options, Data, and About.
 
+## Appearance
+
+The **Appearance** section at the top of Settings controls the app's theme: **System**, **Light**, or **Dark**. **System** follows your operating system's current theme and switches automatically if it changes. Click a button to switch immediately — there is nothing to save. The same choice, as a quick two-way toggle, is also available as **Dark Mode** in the [Application Menu](<ApplicationMenu.md>)'s **View** group.
+
 ## Project Manager
 
 The **Project Manager** setting, under the **Preferences** section of Settings, identifies you as the primary project manager for your organization. This setting is used to:
@@ -40,6 +44,32 @@ The **Managing Company** setting, also under the **Preferences** section of Sett
 3. Select your company name from the list of clients in your database — the setting saves immediately.
 
 **Note:** The managing company list is populated from the **Clients** data in your database. If you don't see your company in the list, add it as a client first (see [Client List Page](ClientListPage.md)).
+
+## View Options
+
+The **View Options** section holds three checkboxes that control what the Projects, Items, and Search lists show. Each takes effect immediately:
+
+- **Show closed projects** — Shows or hides projects whose **Project Status** is **Closed** on the [Project List Page](<ProjectListPage.md>).
+- **Show internal items** — Shows or hides notes and tracker items marked **Internal**, and the earned value/budget figures on the Project List and Project Page. See [Presenting to Clients](<PresentingToClients.md>).
+- **Only New and Assigned tracker items** — When checked, hides tracker items whose **Status** is **Resolved**, **Deferred**, or **Canceled**, on the [Item Tracker Page](<ItemTrackerPage.md>).
+
+These same three toggles are also reachable from the [Application Menu](<ApplicationMenu.md>)'s **View** group as **Show Closed Projects**, **Show Internal / Budget Items**, and **Show Resolved Items** — the two locations stay in sync.
+
+## Data
+
+The **Data** section imports records from a [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) file.
+
+**To import from XML:**
+
+1. Open **Settings** and go to the **Data** section.
+2. Click **Import from XML…**.
+3. Choose the `.xml` file and click **Open**.
+
+Export is handled separately, per record — open any project, note, item, person, or client and use its **Export** button (or **Export XML…** in the [Application Menu](<ApplicationMenu.md>)) to export just that record.
+
+## About
+
+The **About** section shows the installed version and links to the online documentation, release notes, and source code. It is also reachable by choosing **About** from the [Application Menu](<ApplicationMenu.md>)'s **Help** group.
 
 ## Checking for Updates
 

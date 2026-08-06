@@ -32,11 +32,15 @@ Some notes and tracker items contain sensitive information meant only for your i
 2. Check the **Internal item** checkbox.
 3. The note will be hidden from the list when **Show Internal / Budget Items** is turned off.
 
+
+
 **To mark a tracker item as internal:**
 
 1. Open the tracker item from the [Item Tracker Page](<ItemTrackerPage.md>) or [Action Item Detail Page](<ActionItemDetailPage.md>).
 2. Check the **Internal item** checkbox.
 3. The item will be hidden from the list when **Show Internal / Budget Items** is turned off.
+
+
 
 **To hide all internal content before presenting:**
 

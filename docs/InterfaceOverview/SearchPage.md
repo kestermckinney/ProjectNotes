@@ -8,9 +8,13 @@ The Search Page performs a full-text search across the entire database. Results 
 
 1. Click the **Search** icon in the icon rail, or choose **Search…** from the app menu.
 
+
+
 **To search for text:**
 
 1. From the Search Page, type in the search box. Results update automatically as you type.
+
+
 
 **To open a found item:**
 
