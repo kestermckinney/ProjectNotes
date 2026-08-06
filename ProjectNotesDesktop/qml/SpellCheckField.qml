@@ -33,6 +33,21 @@ Item {
     property string _word: ""
     property bool   _bad: false
     property var    _suggestions: []
+    property bool   _hasSelection: false
+    property bool   _canPaste: false
+
+    // Paste the clipboard's plain text at the cursor, discarding any rich
+    // formatting — mirrors TextEdit::slotPasteUnformated() in the Widgets app.
+    // Replaces the current selection, if any, same as a normal paste() would.
+    function _pasteUnformatted() {
+        var t = root.target
+        if (!t) return
+        var s = t.selectionStart, e = t.selectionEnd
+        var txt = DesktopAppController.clipboardPlainText()
+        if (e > s) t.remove(s, e)
+        t.insert(s, txt)
+        t.cursorPosition = s + txt.length
+    }
 
     SpellCheck {
         id: spell
@@ -60,6 +75,8 @@ Item {
             root._word = w
             root._bad = (w !== "" && spell.isMisspelled(w))
             root._suggestions = root._bad ? spell.suggestionsFor(w).slice(0, 8) : []
+            root._hasSelection = root.target.selectedText.length > 0
+            root._canPaste = root.target.canPaste === true
             menu.openAt(ep.scenePosition.x, ep.scenePosition.y)
         }
     }
@@ -153,10 +170,57 @@ Item {
                 icon: "spellcheck"; label: qsTr("Check Spelling…")
                 onActivated: { menu.close(); if (root.dialog) root.dialog.openFor(spell, root.target) }
             }
+
+            Rectangle {
+                Layout.fillWidth: true; Layout.preferredHeight: 1
+                color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
+            }
+
+            // Standard edit actions — parity with TextEdit::contextMenuEvent()
+            // in the Widgets app (Cut/Copy/Paste/Paste Unformatted/Delete/
+            // Select All), minus Undo/Redo which the toolbar already covers.
+            SpellRow {
+                enabled: root._hasSelection
+                icon: "content_cut"; label: qsTr("Cut")
+                onActivated: { menu.close(); root.target.cut() }
+            }
+            SpellRow {
+                enabled: root._hasSelection
+                icon: "content_copy"; label: qsTr("Copy")
+                onActivated: { menu.close(); root.target.copy() }
+            }
+            SpellRow {
+                enabled: root._canPaste
+                icon: "content_paste"; label: qsTr("Paste")
+                onActivated: { menu.close(); root.target.paste() }
+            }
+            SpellRow {
+                enabled: root._canPaste
+                icon: "content_paste_go"; label: qsTr("Paste Unformatted")
+                onActivated: { menu.close(); root._pasteUnformatted() }
+            }
+            SpellRow {
+                enabled: root._hasSelection
+                icon: "delete"; label: qsTr("Delete")
+                onActivated: { menu.close(); root.target.remove(root.target.selectionStart, root.target.selectionEnd) }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true; Layout.preferredHeight: 1
+                color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
+            }
+
+            SpellRow {
+                icon: "select_all"; label: qsTr("Select All")
+                onActivated: { menu.close(); root.target.selectAll() }
+            }
         }
 
         // One menu row — matches RecordContextMenu's MenuRow. `icon` optional:
         // when empty (suggestion words) the label sits at the left margin.
+        // `enabled` (Item's built-in property) dims the row and blocks its
+        // hover/tap, for actions like Cut/Paste that need a selection or
+        // clipboard content — parity with the Widgets menu's setEnabled().
         component SpellRow: Rectangle {
             id: sr
             property string icon: ""
@@ -165,6 +229,7 @@ Item {
             Layout.fillWidth: true
             implicitHeight: 32
             radius: Theme.radiusSm
+            opacity: sr.enabled ? 1.0 : 0.45
             color: srHover.hovered ? Theme.surface2 : "transparent"
             RowLayout {
                 anchors.fill: parent

@@ -184,6 +184,13 @@ public:
     // resync itself to whichever section it's showing when the rail switches.
     Q_INVOKABLE QString getQuickSearch(QAbstractItemModel* model) const;
 
+    // ── Clipboard ────────────────────────────────────────────────────────────
+    // Plain text off the system clipboard, for the note editor's "Paste
+    // Unformatted" — mirrors TextEdit::slotPasteUnformated() in the Widgets
+    // app, which inserts clipboard->text() directly instead of going through
+    // the normal rich-text paste() path.
+    Q_INVOKABLE QString clipboardPlainText() const;
+
     // ── Column filter editor (mirrors the Widgets Filter Data dialog) ────────
     // Searchable columns of a list model: [{ field, label, isDate }].
     Q_INVOKABLE QVariantList filterColumns(QAbstractItemModel* model) const;

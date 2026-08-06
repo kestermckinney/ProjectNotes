@@ -33,6 +33,7 @@
 
 #include <algorithm>
 
+#include <QClipboard>
 #include <QDateTime>
 #include <QDir>
 #include <QDomDocument>
@@ -524,6 +525,14 @@ QString DesktopAppController::getQuickSearch(QAbstractItemModel* model) const
     if (auto* proxy = qobject_cast<SortFilterProxyModel*>(model))
         return proxy->quickSearch();
     return {};
+}
+
+// ── Clipboard ────────────────────────────────────────────────────────────────
+
+QString DesktopAppController::clipboardPlainText() const
+{
+    QClipboard* clipboard = QGuiApplication::clipboard();
+    return clipboard ? clipboard->text() : QString();
 }
 
 // ── Column filter editor ─────────────────────────────────────────────────────
