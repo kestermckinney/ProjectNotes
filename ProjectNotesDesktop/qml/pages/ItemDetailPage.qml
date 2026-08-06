@@ -21,6 +21,12 @@ Item {
     // Consumed by the TopBar's Delete action (Main.deleteCurrent()).
     readonly property bool canDelete: true
 
+    // Routed to Main's confirm-delete flow (root.confirmDelete()) — fired by
+    // the page-level kebab/right-click menu below. The TopBar's own Delete
+    // button instead calls _deleteRecord() directly via canDelete/
+    // Main.deleteCurrent() — same split as ProjectDetailPage/ProjectNoteDetailPage.
+    signal deleteRequested()
+
     // Delete this tracker item. The detail model always holds the item at row 0.
     // The project Tracker tab and the master Items list query item_tracker through
     // separate models, so refresh them explicitly once the record is gone.
@@ -82,6 +88,23 @@ Item {
         return ok
     }
 
+    // Open the item's own record/plugin menu (kebab or right-click) at scene
+    // coords — parity with ProjectDetailPage/ProjectNoteDetailPage's
+    // _openSelfMenu().
+    function _openSelfMenu(sx, sy) {
+        selfMenu.recordLabel = ((numberField.text || "") + " " + (nameField.text || "")).trim()
+        selfMenu.openAt(sx, sy)
+    }
+
+    // Right-click anywhere on the page background opens the item menu.
+    // Declared beneath the page content so field/button clicks still reach
+    // their own handlers first — see ProjectDetailPage's identical pattern.
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.RightButton
+        onClicked: (mouse) => page._openSelfMenu(mouse.x, mouse.y)
+    }
+
     ScrollView {
         id: pageScroll
         anchors.fill: parent
@@ -109,6 +132,13 @@ Item {
                     HoverHandler { id: moveHover }
                     TapHandler { onTapped: page.moveToRequested(page.itemId) }
                 }
+                // Page-level record menu — exposes plugins whose dataexport is
+                // "item_tracker", plus Delete/Export/Refresh. Parity with
+                // ProjectDetailPage's kebab.
+                KebabButton {
+                    Layout.alignment: Qt.AlignVCenter
+                    onClicked: (sx, sy) => page._openSelfMenu(sx, sy)
+                }
             }
 
             GridLayout {
@@ -128,24 +158,115 @@ Item {
                 }
             }
 
-            Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold }
-            Rectangle {
+            // Description, with a quick-glance preview of the most recent
+            // comments alongside it — so they're visible without scrolling
+            // down to the full (editable) Comments section below.
+            RowLayout {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.max(90, descArea.contentHeight + 20)
-                radius: Theme.radiusSm
-                color: Theme.surface
-                border.color: descArea.activeFocus ? Theme.accent : Theme.border
-                TextArea {
-                    id: descArea
-                    anchors.fill: parent
-                    anchors.margins: 8
-                    color: Theme.text
-                    wrapMode: TextEdit.WordWrap
-                    selectByMouse: true
-                    background: null
-                    font.pixelSize: 13
-                    onTextChanged: page._changed = true
-                    SpellCheckField { dialog: spellDialog }
+                spacing: 14
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 2
+                    spacing: 6
+                    Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold }
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: Math.max(90, descArea.contentHeight + 20)
+                        radius: Theme.radiusSm
+                        color: Theme.surface
+                        border.color: descArea.activeFocus ? Theme.accent : Theme.border
+                        TextArea {
+                            id: descArea
+                            anchors.fill: parent
+                            anchors.margins: 8
+                            color: Theme.text
+                            wrapMode: TextEdit.WordWrap
+                            selectByMouse: true
+                            background: null
+                            font.pixelSize: 13
+                            onTextChanged: page._changed = true
+                            SpellCheckField { dialog: spellDialog }
+                        }
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    Layout.alignment: Qt.AlignTop
+                    spacing: 6
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 6
+                        MaterialIcon { name: "forum"; size: 13; color: Theme.text3 }
+                        Text {
+                            text: qsTr("Recent Comments"); color: Theme.text3
+                            font.pixelSize: 11; font.weight: Font.DemiBold
+                            Layout.fillWidth: true
+                        }
+                    }
+                    Text {
+                        visible: commentsPreview.count === 0
+                        text: qsTr("No comments yet")
+                        color: Theme.text3; font.pixelSize: 12; font.italic: true
+                    }
+                    // Read-only preview — editing happens in the full list
+                    // further down the page. The model is oldest-first (see
+                    // trackeritemcommentsmodel.cpp's setOrderBy), so the most
+                    // recent rows are the last ones.
+                    Repeater {
+                        id: commentsPreview
+                        model: DesktopAppController.trackerItemCommentsModel
+                        delegate: Rectangle {
+                            id: previewRow
+                            required property int index
+                            required property var model
+                            readonly property bool _recent: previewRow.index >= commentsPreview.count - 3
+                            visible: _recent
+                            Layout.fillWidth: true
+                            implicitHeight: _recent ? pCol.implicitHeight + 16 : 0
+                            radius: Theme.radiusSm
+                            color: Theme.surface
+                            border.color: Theme.border
+
+                            ColumnLayout {
+                                id: pCol
+                                anchors.fill: parent
+                                anchors.margins: 8
+                                spacing: 2
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 6
+                                    Text {
+                                        text: (previewRow.model.lastupdated_date || "").toString()
+                                        color: Theme.text3; font.pixelSize: 10
+                                    }
+                                    Text {
+                                        text: DesktopAppController.peopleNameForId(
+                                            (previewRow.model.updated_by || "").toString())
+                                        color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold
+                                        elide: Text.ElideRight
+                                        horizontalAlignment: Text.AlignRight
+                                        Layout.fillWidth: true
+                                    }
+                                }
+                                Text {
+                                    text: (previewRow.model.update_note || "").toString()
+                                    color: Theme.text; font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                    maximumLineCount: 3
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+                            }
+                        }
+                    }
+                    Text {
+                        visible: commentsPreview.count > 3
+                        text: qsTr("+ %1 more").arg(commentsPreview.count - 3)
+                        color: Theme.text3; font.pixelSize: 11
+                    }
                 }
             }
 
@@ -319,15 +440,38 @@ Item {
         }
     }
 
-    // Routed to Main.exportRecord when a comment row's menu exports XML.
+    // Routed to Main.exportRecord — fired by a comment row's menu exporting
+    // XML, and by the item's own selfMenu below.
     signal exportRequested(string table, string id)
-    // Routed to Main → MoveToDialog when "Move To…" is chosen.
+    // Routed to Main → MoveToDialog when "Move To…" is chosen — fired by the
+    // explicit button above and by selfMenu's Move To… entry.
     signal moveToRequested(string itemId)
 
     // Shared record/plugin menu for the comments list.
     RecordRowMenu {
         id: rowMenu
         onExportRecord: (table, id) => page.exportRequested(table, id)
+    }
+
+    // The item's own record/plugin menu — opened by the title row's kebab and
+    // by right-clicking the page background. Lists plugins whose dataexport is
+    // "item_tracker" below the built-in actions. Parity with
+    // ProjectDetailPage/ProjectNoteDetailPage's selfMenu; New/Filter aren't
+    // offered — there's no page-level equivalent action for a single open item.
+    RecordContextMenu {
+        id: selfMenu
+        recordType: qsTr("Item")
+        model: DesktopAppController.trackerItemDetailModel
+        recordId: page.itemId
+        canOpen: false
+        canNew: false
+        canDuplicate: false
+        canMoveTo: true
+        canFilter: false
+        onDeleteRequested: page.deleteRequested()
+        onExportRequested: page.exportRequested(page.exportTable, page.exportId)
+        onRefreshRequested: page._reload()
+        onMoveToRequested: (id) => page.moveToRequested(id)
     }
 
     // Shared full-field spell-check dialog (opened by fields / right-click).
