@@ -108,10 +108,10 @@ Popup {
             DesktopAppController.runPluginMenu(menu.model, menu.recordId, idx)
     }
 
-    // Group the flat plugin list by submenu so each submenu renders as its own
-    // group-title header (like the record-type / "PLUGINS" headers) instead of a
+    // Group the flat plugin list by submenu so each submenu becomes its own
+    // group-title submenu (see openGroupIndex/flyout below) instead of a
     // "Submenu › Title" prefix. First-seen submenu order is preserved; entries
-    // with no submenu collect under a plain "Plugins" header.
+    // with no submenu collect under a plain "Plugins" group.
     function _groupPlugins(list) {
         var order = []
         var byKey = ({})
@@ -127,6 +127,42 @@ Popup {
             out.push({ header: (k === "" ? qsTr("Plugins") : k), items: byKey[k] })
         }
         return out
+    }
+
+    // Which plugin group (index into _sections) currently has its flyout open,
+    // or -1. Mirrors AppMenu.qml's group-trigger state machine — see there for
+    // the fuller rationale on why closing isn't hover-driven (an earlier
+    // hover-grace-timer version raced the pointer crossing from the row to the
+    // flyout and would often vanish before it could be clicked).
+    property int openGroupIndex: -1
+    readonly property var _openRawItems:
+        (openGroupIndex >= 0 && openGroupIndex < _sections.length) ? _sections[openGroupIndex].items : []
+
+    Timer {
+        id: openDelay
+        interval: 300
+        property int pendingIndex: -1
+        onTriggered: menu._activateGroup(pendingIndex)
+    }
+    function _activateGroup(idx) {
+        if (idx < 0 || idx >= menu._sections.length) return
+        menu.openGroupIndex = idx
+        flyout.openBeside(pluginTriggerRepeater.itemAt(idx).triggerRow)
+    }
+    onClosed: {
+        openDelay.stop()
+        flyout.close()
+        openGroupIndex = -1
+    }
+
+    MenuFlyout {
+        id: flyout
+        // Plugin descriptors carry {title, index, submenu}; the flyout expects
+        // {icon, label, trailingText, toggle, checked}.
+        items: menu._openRawItems.map(function(it) {
+            return { icon: "extension", label: it.title, trailingText: "", toggle: false, checked: false }
+        })
+        onItemActivated: (i) => menu._runPlugin(menu._openRawItems[i].index)
     }
 
     contentItem: ScrollView {
@@ -171,13 +207,18 @@ Popup {
             MenuRow { icon: "refresh";      label: qsTr("Refresh");     visible: menu.canRefresh; onActivated: menu._fire(menu.refreshRequested) }
 
             // Plugin menus for this table (dataexport == model table), like the
-            // Widgets right-click. Each submenu becomes its own group-title header
-            // (see _groupPlugins) so nested plugin actions read as clean sections
-            // rather than a "Submenu › Title" one-liner.
+            // Widgets right-click. Each submenu is a group-title trigger row
+            // (see _groupPlugins/openGroupIndex) that opens `flyout` beside it,
+            // rather than an inline bold header followed by its items.
             Repeater {
+                id: pluginTriggerRepeater
                 model: menu._sections
                 delegate: ColumnLayout {
                     required property var modelData
+                    required property int index
+                    // Repeater.itemAt() returns this wrapper (divider + row), so
+                    // expose the row itself for positioning/hover-engagement.
+                    property alias triggerRow: row
                     Layout.fillWidth: true
                     spacing: 0
 
@@ -185,59 +226,27 @@ Popup {
                         Layout.fillWidth: true; Layout.preferredHeight: 1
                         color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
                     }
-                    Text {
-                        text: modelData.header.toUpperCase(); color: Theme.text3
-                        font.pixelSize: 10; font.weight: Font.Bold
-                        Layout.leftMargin: 9; Layout.topMargin: 1; Layout.bottomMargin: 2
-                    }
-                    Repeater {
-                        model: modelData.items
-                        delegate: MenuRow {
-                            required property var modelData
-                            icon: "extension"
-                            label: modelData.title
-                            onActivated: menu._runPlugin(modelData.index)
+                    MenuRow {
+                        id: row
+                        icon: "extension"
+                        label: modelData.header
+                        showChevron: true
+                        highlighted: menu.openGroupIndex === index
+                        onHoveredChanged: {
+                            if (hovered) {
+                                openDelay.pendingIndex = index
+                                openDelay.restart()
+                            } else if (openDelay.pendingIndex === index) {
+                                openDelay.stop()
+                            }
+                        }
+                        onActivated: {
+                            openDelay.stop()
+                            menu._activateGroup(index)
                         }
                     }
                 }
             }
-        }
-    }
-
-    component MenuRow: Rectangle {
-        id: mr
-        property string icon: ""
-        property string label: ""
-        property bool danger: false
-        signal activated()
-        Layout.fillWidth: true
-        implicitHeight: 32
-        radius: Theme.radiusSm
-        color: rHover.hovered ? Theme.surface2 : "transparent"
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 9; anchors.rightMargin: 9
-            spacing: 10
-            MaterialIcon {
-                name: mr.icon; size: 17
-                color: mr.danger ? Theme.red : Theme.text2
-                Layout.alignment: Qt.AlignVCenter
-            }
-            Text {
-                text: mr.label
-                color: mr.danger ? Theme.red : Theme.text
-                font.pixelSize: 13
-                Layout.fillWidth: true; elide: Text.ElideRight
-                verticalAlignment: Text.AlignVCenter
-            }
-        }
-        HoverHandler { id: rHover }
-        // Exclusive grab so the tap doesn't fall through to the record row behind
-        // the menu (see the dialog-button fix in Main.qml). A plain passive-grab
-        // TapHandler lets the same press select/activate whatever's underneath.
-        TapHandler {
-            gesturePolicy: TapHandler.ReleaseWithinBounds
-            onTapped: mr.activated()
         }
     }
 }

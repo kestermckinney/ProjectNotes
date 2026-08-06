@@ -80,6 +80,9 @@ set(DESKTOP_QML_FILES
     qml/FolderGroup.qml
     qml/TopBar.qml
     qml/AppMenu.qml
+    qml/MenuRow.qml
+    qml/MenuFlyout.qml
+    qml/ZoomMenuRow.qml
     qml/LogViewerWindow.qml
     qml/HelpPage.qml
     qml/FilterDialog.qml

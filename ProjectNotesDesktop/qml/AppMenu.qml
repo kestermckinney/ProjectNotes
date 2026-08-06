@@ -76,9 +76,10 @@ Popup {
               key: "", action: "toggle_closed", toggle: true, on: DesktopAppController.showClosedProjects },
             { icon: "task_alt", label: qsTr("Show Resolved Items"),
               key: "", action: "toggle_resolved", toggle: true, on: !DesktopAppController.newAndAssignedOnly },
-            { icon: "zoom_in",     label: qsTr("Zoom In"),    key: "⌘+", action: "zoom_in" },
-            { icon: "zoom_out",    label: qsTr("Zoom Out"),   key: "⌘−", action: "zoom_out" },
-            { icon: "restart_alt", label: qsTr("Reset Zoom"), key: "⌘0", action: "zoom_reset" },
+            // Brave-style zoom control (− / percent / + / fullscreen), replacing
+            // the old separate Zoom In / Zoom Out / Reset Zoom rows — rendered by
+            // ZoomMenuRow, see MenuFlyout's `custom: "zoom"` handling.
+            { custom: "zoom" },
             { icon: "description", label: qsTr("Log Viewer"), key: "", action: "logs" },
         ]},
         { name: qsTr("Help"), items: [
@@ -89,31 +90,161 @@ Popup {
         ]},
     ]
 
-    // Global (dataless) plugin menus, plus the open record's table-scoped ones
-    // when there is one — Plugins > Settings / Utilities / Export / Templates /
-    // etc. in the Widgets menu bar. Rebuilt each time the menu opens since
-    // plugins can hot-reload. One group per distinct submenu.
+    // Global (dataless) plugin menus — the ones not tied to any particular
+    // record — collapse into a single "Plugins" entry (see _allGroups, which
+    // slots it in right after File) instead of spilling one top-level "Plugins
+    // · <submenu>" row per plugin submenu into the menu. Entries with no
+    // submenu become plain leaf rows inside it; entries that share a submenu
+    // become a nested group row (icon/label only, no more "Plugins ·" prefix
+    // now that they're visually nested under Plugins already) — see
+    // MenuFlyout's group support and pluginSubFlyout below.
+    property var globalPluginGroup: null
+    // The open record's table-scoped plugin menus (Export / Templates / etc.,
+    // tied to whatever's in pluginMenuTable/pluginMenuRecordId) — these ARE
+    // tied to a data source, so they stay out of the Plugins entry and remain
+    // their own top-level submenu triggers, named by their submenu directly.
     property var pluginGroups: []
     function _rebuildPluginGroups() {
-        var bysubmenu = {}
+        var byKey = {}
         var order = []
-        function addEntries(entries, actionPrefix) {
-            for (var i = 0; i < entries.length; i++) {
-                var e = entries[i]
-                var sub = e.submenu || qsTr("Plugins")
-                if (!bysubmenu[sub]) { bysubmenu[sub] = []; order.push(sub) }
-                bysubmenu[sub].push({ icon: "extension", label: e.title, key: "", action: actionPrefix + e.index })
-            }
+        var globalEntries = DesktopAppController.globalPluginMenus()
+        for (var i = 0; i < globalEntries.length; i++) {
+            var e = globalEntries[i]
+            var key = e.submenu || ""
+            if (byKey[key] === undefined) { byKey[key] = []; order.push(key) }
+            byKey[key].push({ icon: "extension", label: e.title, key: "", action: "plugin:" + e.index })
         }
-        addEntries(DesktopAppController.globalPluginMenus(), "plugin:")
-        if (menu.pluginMenuTable !== "" && menu.pluginMenuRecordId !== "")
-            addEntries(DesktopAppController.pluginMenusForTable(menu.pluginMenuTable), "tableplugin:")
-        var groups = []
-        for (var g = 0; g < order.length; g++)
-            groups.push({ name: qsTr("Plugins") + " · " + order[g], items: bysubmenu[order[g]] })
-        pluginGroups = groups
+        var items = []
+        for (var k = 0; k < order.length; k++) {
+            var gkey = order[k]
+            if (gkey === "")
+                items = items.concat(byKey[gkey])
+            else
+                items.push({ icon: "extension", label: gkey, key: "", group: { name: gkey, items: byKey[gkey] } })
+        }
+        globalPluginGroup = items.length > 0 ? { name: qsTr("Plugins"), items: items } : null
+
+        var tableGroups = []
+        if (menu.pluginMenuTable !== "" && menu.pluginMenuRecordId !== "") {
+            var tEntries = DesktopAppController.pluginMenusForTable(menu.pluginMenuTable)
+            var tByKey = {}
+            var tOrder = []
+            for (var j = 0; j < tEntries.length; j++) {
+                var te = tEntries[j]
+                var tkey = te.submenu || qsTr("Plugins")
+                if (tByKey[tkey] === undefined) { tByKey[tkey] = []; tOrder.push(tkey) }
+                tByKey[tkey].push({ icon: "extension", label: te.title, key: "", action: "tableplugin:" + te.index })
+            }
+            for (var g = 0; g < tOrder.length; g++)
+                tableGroups.push({ name: tOrder[g], items: tByKey[tOrder[g]] })
+        }
+        pluginGroups = tableGroups
     }
     onAboutToShow: _rebuildPluginGroups()
+
+    // Which top-level group (index into _allGroups) currently has its flyout
+    // open, or -1. Only one flyout is open at a time — hovering a sibling
+    // trigger row reassigns this and repoints the single shared flyout instead
+    // of opening a second popup. groups/pluginGroups is File/Edit/View/Help
+    // with the dynamic Plugins entry spliced in right after File, plus the
+    // open record's table-scoped submenu groups at the end.
+    readonly property var _allGroups:
+        [menu.groups[0]].concat(menu.globalPluginGroup ? [menu.globalPluginGroup] : [])
+                         .concat(menu.groups.slice(1))
+                         .concat(menu.pluginGroups)
+    property int openGroupIndex: -1
+    // The raw (unmapped) items of the open group — a live binding (not a
+    // one-shot snapshot) so a toggle item's checkmark (Dark Mode, Show Closed
+    // Projects, …) updates immediately when clicked without the flyout needing
+    // to be closed and reopened.
+    readonly property var _openRawItems:
+        (openGroupIndex >= 0 && openGroupIndex < _allGroups.length) ? _allGroups[openGroupIndex].items : []
+    // groups/pluginGroups items carry {icon,label,key,action,toggle,on}; the
+    // flyout expects {icon,label,trailingText,toggle,checked}.
+    function _mapLeaf(it) {
+        return { icon: it.icon || "", label: it.label || "", trailingText: it.key || "",
+                 toggle: it.toggle === true, checked: it.on === true }
+    }
+
+    // Hover-to-open, like a native menu bar: entering a trigger row arms this
+    // and it fires _activateGroup() after a short delay. Clicking bypasses it.
+    // Deliberately no matching "hover-away closes it" timer — an earlier
+    // version raced a close-grace timer against the pointer crossing from the
+    // row to the flyout and would often vanish before it could be clicked.
+    // Like a native menu, once open it stays open until something else closes
+    // it (see the various onClosed/onOpenGroupIndexChanged handlers below).
+    Timer {
+        id: openDelay
+        interval: 300
+        property int pendingIndex: -1
+        onTriggered: menu._activateGroup(pendingIndex)
+    }
+    function _activateGroup(idx) {
+        if (idx < 0 || idx >= menu._allGroups.length) return
+        menu.openGroupIndex = idx
+        flyout.openBeside(triggerRepeater.itemAt(idx))
+    }
+    // Switching top-level groups invalidates whatever nested Plugins submenu
+    // (pluginSubFlyout) was open, since it belonged to the old group's items.
+    onOpenGroupIndexChanged: {
+        pluginSubOpenDelay.stop()
+        pluginSubFlyout.close()
+        pluginSubIndex = -1
+    }
+    onClosed: {
+        openDelay.stop(); pluginSubOpenDelay.stop()
+        flyout.close(); pluginSubFlyout.close()
+        openGroupIndex = -1; pluginSubIndex = -1
+    }
+
+    MenuFlyout {
+        id: flyout
+        // A declarative binding (not an imperative copy) so it stays live —
+        // see _openRawItems. Group rows (the Plugins entry's per-submenu rows)
+        // pass their raw `group` straight through — MenuFlyout doesn't need to
+        // understand it, only pluginSubFlyout below does.
+        items: menu._openRawItems.map(function(it) {
+            if (it.group) return { icon: it.icon || "", label: it.label || "", group: it.group }
+            if (it.custom) return { custom: it.custom }
+            return menu._mapLeaf(it)
+        })
+        onItemActivated: (i) => menu._act(menu._openRawItems[i].action)
+        onGroupHoverChanged: (i, hovered) => {
+            if (hovered) { pluginSubOpenDelay.pendingIndex = i; pluginSubOpenDelay.restart() }
+            else if (pluginSubOpenDelay.pendingIndex === i) pluginSubOpenDelay.stop()
+        }
+        onGroupActivated: (i) => { pluginSubOpenDelay.stop(); menu._activatePluginSub(i) }
+        onCustomActivated: (i, action) => menu._act(action)
+    }
+
+    // Second flyout level: only the Plugins entry ever has group rows (a
+    // plugin submenu, e.g. "Settings", nested one level under Plugins itself)
+    // — one extra flyout instance covers that, rather than making MenuFlyout
+    // generically self-nesting.
+    property int pluginSubIndex: -1
+    Timer {
+        id: pluginSubOpenDelay
+        interval: 300
+        property int pendingIndex: -1
+        onTriggered: menu._activatePluginSub(pendingIndex)
+    }
+    function _activatePluginSub(idx) {
+        var raw = menu._openRawItems[idx]
+        if (!raw || !raw.group) return
+        menu.pluginSubIndex = idx
+        pluginSubFlyout.openBeside(flyout.rowItemAt(idx))
+    }
+    MenuFlyout {
+        id: pluginSubFlyout
+        items: {
+            var raw = menu._openRawItems[menu.pluginSubIndex]
+            return (raw && raw.group) ? raw.group.items.map(menu._mapLeaf) : []
+        }
+        onItemActivated: (i) => {
+            var raw = menu._openRawItems[menu.pluginSubIndex]
+            if (raw && raw.group) menu._act(raw.group.items[i].action)
+        }
+    }
 
     function _act(a) {
         switch (a) {
@@ -149,66 +280,31 @@ Popup {
             id: _content
             width: menu.availableWidth
             spacing: 0
+            // One row per group (File / Plugins / Edit / View / Help, plus any
+            // table-scoped plugin submenu groups for the open record) — each is
+            // a submenu trigger that opens `flyout` beside it, rather than an
+            // inline bold header followed by its items. Keeps the top-level
+            // menu short regardless of how many plugins are installed.
             Repeater {
-                model: menu.groups.concat(menu.pluginGroups)
-                delegate: ColumnLayout {
+                id: triggerRepeater
+                model: menu._allGroups
+                delegate: MenuRow {
                     required property var modelData
-                    Layout.fillWidth: true
-                    spacing: 0
-                    Text {
-                        text: modelData.name.toUpperCase()
-                        color: Theme.text3
-                        font.pixelSize: 10; font.weight: Font.Bold
-                        Layout.leftMargin: 10; Layout.topMargin: 7; Layout.bottomMargin: 3
-                    }
-                    Repeater {
-                        model: modelData.items
-                        delegate: Rectangle {
-                            required property var modelData
-                            Layout.fillWidth: true
-                            implicitHeight: 32
-                            // Report the row's natural width (content + the 10px side
-                            // margins) so the Popup can size to its widest row. The
-                            // RowLayout is anchored, so it won't drive width on its own.
-                            implicitWidth: rowContent.implicitWidth + 20
-                            radius: Theme.radiusSm
-                            color: rowHover.hovered ? Theme.surface2 : "transparent"
-                            RowLayout {
-                                id: rowContent
-                                anchors.fill: parent
-                                anchors.leftMargin: 10; anchors.rightMargin: 10
-                                spacing: 10
-                                MaterialIcon {
-                                    name: modelData.icon; size: 18; color: Theme.text2
-                                    Layout.alignment: Qt.AlignVCenter
-                                }
-                                Text {
-                                    text: modelData.label; color: Theme.text; font.pixelSize: 13
-                                    Layout.fillWidth: true; elide: Text.ElideRight
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                                // check mark for active toggle items
-                                MaterialIcon {
-                                    visible: modelData.toggle === true && modelData.on === true
-                                    name: "check"; size: 17; color: Theme.accent
-                                    Layout.alignment: Qt.AlignVCenter
-                                }
-                                Text {
-                                    visible: (modelData.key || "") !== "" && !(modelData.toggle === true)
-                                    text: modelData.key || ""; color: Theme.text3; font.pixelSize: 11
-                                    verticalAlignment: Text.AlignVCenter
-                                }
-                            }
-                            HoverHandler { id: rowHover }
-                            // Exclusive grab (not a plain passive-grab TapHandler): a
-                            // passive grab lets the same tap fall through to the record
-                            // list behind the menu, selecting a row instead of firing
-                            // the action. Matches the dialog-button fix in Main.qml.
-                            TapHandler {
-                                gesturePolicy: TapHandler.ReleaseWithinBounds
-                                onTapped: menu._act(modelData.action)
-                            }
+                    required property int index
+                    label: modelData.name
+                    showChevron: true
+                    highlighted: menu.openGroupIndex === index
+                    onHoveredChanged: {
+                        if (hovered) {
+                            openDelay.pendingIndex = index
+                            openDelay.restart()
+                        } else if (openDelay.pendingIndex === index) {
+                            openDelay.stop()
                         }
+                    }
+                    onActivated: {
+                        openDelay.stop()
+                        menu._activateGroup(index)
                     }
                 }
             }

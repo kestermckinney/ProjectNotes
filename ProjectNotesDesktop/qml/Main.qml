@@ -50,6 +50,11 @@ ApplicationWindow {
     property int _normalY: 0
     property int _normalWidth: 0
     property int _normalHeight: 0
+
+    // Visibility to restore when leaving fullscreen (toggled from the app
+    // menu's zoom control) — so un-fullscreening lands back on Maximized if
+    // that's what it was before, rather than always dropping to Windowed.
+    property int _preFullScreenVisibility: Window.Windowed
     onXChanged: if (visibility === Window.Windowed) _normalX = x
     onYChanged: if (visibility === Window.Windowed) _normalY = y
     onWidthChanged: if (visibility === Window.Windowed) _normalWidth = width
@@ -302,6 +307,14 @@ ApplicationWindow {
         case "sync_all":    DesktopAppController.syncAll(); break
         case "filter":      filterDialog.openFor(root.currentSection); break
         case "logs":        logViewer.openViewer(); break
+        case "toggle_fullscreen":
+            if (root.visibility === Window.FullScreen) {
+                root.visibility = root._preFullScreenVisibility
+            } else {
+                root._preFullScreenVisibility = root.visibility
+                root.visibility = Window.FullScreen
+            }
+            break
         case "help":        root.openHelp(root._helpTopicForSection(root.currentSection)); break
         case "check_updates": DesktopAppController.checkForUpdates(); break
         case "support_logs":  DesktopAppController.sendLogsToSupport(); break
