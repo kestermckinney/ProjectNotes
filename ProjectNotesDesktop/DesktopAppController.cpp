@@ -519,6 +519,13 @@ void DesktopAppController::setQuickSearch(QAbstractItemModel* model, const QStri
         proxy->setQuickSearch(text);
 }
 
+QString DesktopAppController::getQuickSearch(QAbstractItemModel* model) const
+{
+    if (auto* proxy = qobject_cast<SortFilterProxyModel*>(model))
+        return proxy->quickSearch();
+    return {};
+}
+
 // ── Column filter editor ─────────────────────────────────────────────────────
 
 // Resolve the SqlQueryModel behind a proxy model handed over from QML.

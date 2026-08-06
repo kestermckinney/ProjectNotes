@@ -168,12 +168,31 @@ ApplicationWindow {
         return _pageCache[section]
     }
 
+    // The quick-search-able models, keyed by rail section — shared by the top
+    // bar's onSearchEdited (write) and selectSection's resync (read) so the
+    // two can't drift apart.
+    function _quickSearchModelForSection(section) {
+        switch (section) {
+        case "projects": return DesktopAppController.projectsListModel
+        case "people":   return DesktopAppController.peopleModel
+        case "clients":  return DesktopAppController.clientsModel
+        case "items":    return DesktopAppController.allItemsModel
+        default:         return null
+        }
+    }
+
     function selectSection(section) {
         if (section === root.currentSection && contentStack.depth <= 1)
             return
         _saveCurrent()
         root.currentSection = section
         root.crumbSub = ""
+        // The search field only tracks the field the user is looking at (see
+        // TopBar's searchText doc comment) — resync it here to whichever quick
+        // search is actually active for the section being switched to, rather
+        // than leaving behind whatever text the previous section left typed in.
+        var m = root._quickSearchModelForSection(section)
+        topBar.searchText = m ? DesktopAppController.getQuickSearch(m) : ""
         contentStack.clear()
         switch (section) {
         case "projects": contentStack.push(_sectionPage("projects", projectsComponent)); break
@@ -419,6 +438,7 @@ ApplicationWindow {
             spacing: 0
 
             TopBar {
+                id: topBar
                 Layout.fillWidth: true
                 crumbIcon: root.meta.icon
                 crumbTitle: root.meta.title
@@ -441,12 +461,8 @@ ApplicationWindow {
                 onAddClicked: root.addForCurrentSection()
                 onFilterClicked: filterDialog.openFor(root.currentSection)
                 onSearchEdited: (t) => {
-                    switch (root.currentSection) {
-                    case "projects": DesktopAppController.setQuickSearch(DesktopAppController.projectsListModel, t); break
-                    case "people":   DesktopAppController.setQuickSearch(DesktopAppController.peopleModel, t); break
-                    case "clients":  DesktopAppController.setQuickSearch(DesktopAppController.clientsModel, t); break
-                    case "items":    DesktopAppController.setQuickSearch(DesktopAppController.allItemsModel, t); break
-                    }
+                    var m = root._quickSearchModelForSection(root.currentSection)
+                    if (m) DesktopAppController.setQuickSearch(m, t)
                 }
             }
 

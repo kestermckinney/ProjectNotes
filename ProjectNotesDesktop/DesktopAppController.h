@@ -180,6 +180,9 @@ public:
 
     // ── Quick search ─────────────────────────────────────────────────────────
     Q_INVOKABLE void setQuickSearch(QAbstractItemModel* model, const QString& text);
+    // Current quick-search text for a model — lets the top bar's search field
+    // resync itself to whichever section it's showing when the rail switches.
+    Q_INVOKABLE QString getQuickSearch(QAbstractItemModel* model) const;
 
     // ── Column filter editor (mirrors the Widgets Filter Data dialog) ────────
     // Searchable columns of a list model: [{ field, label, isDate }].

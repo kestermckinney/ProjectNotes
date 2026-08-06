@@ -22,6 +22,12 @@ Rectangle {
     property bool showDelete: false
     property bool showFilter: true
 
+    // Set by the caller to resync the field's display to whichever section's
+    // quick search is currently active (e.g. on rail section switch). Reading
+    // it back gets the live text, but callers should treat it as write-only —
+    // it's an alias, not a binding, so it won't track edits made elsewhere.
+    property alias searchText: searchField.text
+
     signal searchEdited(string text)
     signal addClicked()
     signal backClicked()
