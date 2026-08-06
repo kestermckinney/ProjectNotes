@@ -30,7 +30,7 @@ TrackerItemCommentsModel::TrackerItemCommentsModel(DatabaseObjects* dbo): SqlQue
     addColumn("project_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("project_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
-    setOrderBy("lastupdated_date");
+    setOrderBy("lastupdated_date desc");
 }
 
 const QModelIndex TrackerItemCommentsModel::newRecord(const QVariant* fkValue1, const QVariant* fkValue2)

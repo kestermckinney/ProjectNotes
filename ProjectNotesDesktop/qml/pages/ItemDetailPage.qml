@@ -247,6 +247,12 @@ Item {
                     TapHandler {
                         onTapped: {
                             page._saveNow()
+                            // The tap doesn't steal keyboard focus on its own, so a
+                            // comment note still mid-edit would never fire its
+                            // onEditingFinished and its text would be lost when the
+                            // refresh below reloads the list from the database.
+                            // Force focus off it first so it commits via _saveComment().
+                            page.forceActiveFocus()
                             DesktopAppController.addComment(page.itemId)
                             DesktopAppController.refreshTrackerComments()
                         }
@@ -318,6 +324,9 @@ Item {
                                 HoverHandler { id: dHover }
                                 TapHandler {
                                     onTapped: {
+                                        // Same unsaved-edit race as Add Comment above: flush
+                                        // any other comment still mid-edit before the reload.
+                                        page.forceActiveFocus()
                                         DesktopAppController.deleteComment(cCard.index)
                                         DesktopAppController.refreshTrackerComments()
                                     }
