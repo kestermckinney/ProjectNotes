@@ -17,6 +17,9 @@ Item {
     property var    _clients: []
     property string _clientId: ""
 
+    // Navigation signal
+    signal goToClientRequested(string clientId)
+
     function _clientNames() { return _clients.map(function(c){ return c.name }) }
     function _idForName(n) { for (var i=0;i<_clients.length;i++) if (_clients[i].name===n) return _clients[i].id; return "" }
     function _nameForId(id){ for (var i=0;i<_clients.length;i++) if (_clients[i].id===id) return _clients[i].name; return "" }
@@ -47,6 +50,12 @@ Item {
         return ok
     }
 
+    function _openSelfMenu(sx, sy) {
+        selfMenu.recordLabel = (nameField.text || "").toString()
+        selfMenu.clientId = page._clientId
+        selfMenu.openAt(sx, sy)
+    }
+
     ScrollView {
         id: pageScroll
         anchors.fill: parent
@@ -57,7 +66,20 @@ Item {
             width: pageScroll.availableWidth
             spacing: 14
 
-            FormField { label: qsTr("Name"); id: nameField; onEdited: page._changed = true }
+            // Header with name field and kebab menu
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 12
+                FormField {
+                    label: qsTr("Name"); id: nameField; onEdited: page._changed = true
+                    Layout.fillWidth: true
+                }
+                KebabButton {
+                    Layout.alignment: Qt.AlignBottom
+                    Layout.bottomMargin: 6
+                    onClicked: (sx, sy) => page._openSelfMenu(sx, sy)
+                }
+            }
             GridLayout {
                 Layout.fillWidth: true; columns: 2; columnSpacing: 14; rowSpacing: 12
                 FormField { label: qsTr("Email"); id: emailField; onEdited: page._changed = true }
@@ -72,5 +94,24 @@ Item {
             }
             Item { Layout.preferredHeight: 8 }
         }
+    }
+
+    // Person's own record/plugin menu — opened by the kebab button
+    RecordContextMenu {
+        id: selfMenu
+        recordType: qsTr("Person")
+        model: DesktopAppController.peopleModel
+        recordId: page.personId
+        canOpen: false
+        canNew: false
+        canDelete: false
+        canDuplicate: false
+        canMoveTo: false
+        canExport: true
+        canFilter: false
+        canRefresh: true
+        onExportRequested: {} // Handled by parent (Main.qml)
+        onRefreshRequested: page._reload()
+        onGoToClientRequested: page.goToClientRequested(clientId)
     }
 }

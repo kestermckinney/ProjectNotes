@@ -39,8 +39,6 @@ RecordContextMenu {
         DesktopAppController.tableNameForModel(rowMenu.model), rowMenu.recordId)
     onMoveToRequested: rowMenu.moveToRecord(rowMenu.recordId)
     onRefreshRequested: DesktopAppController.refreshModel(rowMenu.model)
-    onGoToPersonRequested: rowMenu.goToPersonRequested(personId)
-    onGoToClientRequested: rowMenu.goToClientRequested(clientId)
 
     // Configure for one row and open at scene coordinates. Pass allowDuplicate
     // true for row types that support Copy/Duplicate, and allowMoveTo true for

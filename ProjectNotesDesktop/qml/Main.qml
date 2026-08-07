@@ -641,7 +641,15 @@ ApplicationWindow {
     }
     Component {
         id: personDetailComponent
-        PersonDetailPage {}
+        PersonDetailPage {
+            onGoToClientRequested: (clientId) => {
+                var row = DesktopAppController.clientRowForId(clientId)
+                if (row >= 0) {
+                    root.selectSection("clients")
+                    root.openClient(row, clientId)
+                }
+            }
+        }
     }
     Component {
         id: clientsComponent
