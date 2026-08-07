@@ -22,9 +22,7 @@ RecordContextMenu {
     signal duplicateRecord(string table, string id)
     // Re-emitted when Move To… is chosen (only offered when openFor enables it).
     signal moveToRecord(string id)
-    // Navigation signals
-    signal goToPersonRequested(string personId)
-    signal goToClientRequested(string clientId)
+    // Navigation signals are re-emitted from the base class (not redeclared here)
 
     // Built-ins that make sense for a child record: the row already carries inline
     // open/add/delete affordances, so the menu adds only Export + Refresh + plugins.
