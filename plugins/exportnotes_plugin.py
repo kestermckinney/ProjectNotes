@@ -138,12 +138,16 @@ h1 {{ font-size: 13pt; color: #1F497D; font-weight: bold; margin-bottom: 8px; }}
 .cell-notes {{ background-color: #DCE6F1; }}
 .col-item {{ width: 55%; }}
 .footer {{ font-size: 9pt; color: #555; margin-top: 16px; }}
+.branding {{ font-size: 9pt; color: #000000; margin-top: 2px; }}
+.branding a {{ color: #0066CC; text-decoration: none; }}
+.branding a:hover {{ text-decoration: underline; }}
 </style>
 </head>
 <body>
 <h1>Meeting Notes: {_html_escape(projnum)} {_html_escape(projdes)}</h1>
 {meetings_html}
 <p class="footer">Report Date: {_html_escape(reportdate)}</p>
+<p class="branding">Created by Project Notes (<a href="https://www.projectnotespro.com">www.projectnotespro.com</a>)</p>
 </body>
 </html>"""
 

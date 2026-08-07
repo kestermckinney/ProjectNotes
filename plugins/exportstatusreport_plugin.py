@@ -408,6 +408,18 @@ table.appendix-table .cell-label {{ width: 15%; }}
     font-size: 8pt;
     color: #666;
 }}
+.branding {{
+    font-size: 9pt;
+    color: #000000;
+    margin-top: 2px;
+}}
+.branding a {{
+    color: #0066CC;
+    text-decoration: none;
+}}
+.branding a:hover {{
+    text-decoration: underline;
+}}
 </style>
 </head>
 <body>
@@ -438,6 +450,7 @@ table.appendix-table .cell-label {{ width: 15%; }}
 {earned_value_html}
 {APPENDIX_HTML}
 <p class="footer">Report Date: {_html_escape(reportdate)}</p>
+<p class="branding">Created by Project Notes (<a href="https://www.projectnotespro.com">www.projectnotespro.com</a>)</p>
 </body>
 </html>"""
 

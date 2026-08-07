@@ -195,14 +195,15 @@ add_custom_command(TARGET ProjectNotesDesktop POST_BUILD
 # Deploy the Python plugins + threads next to the executable so the embedded
 # interpreter (PluginManager, which reads appDir/plugins and appDir/threads)
 # can load them at runtime.
+# Use symbolic links (dev convenience) instead of copying directories.
 add_custom_command(TARGET ProjectNotesDesktop POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
         "${CMAKE_CURRENT_SOURCE_DIR}/../plugins"
         "$<TARGET_FILE_DIR:ProjectNotesDesktop>/plugins"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    COMMAND ${CMAKE_COMMAND} -E create_symlink
         "${CMAKE_CURRENT_SOURCE_DIR}/../threads"
         "$<TARGET_FILE_DIR:ProjectNotesDesktop>/threads"
-    COMMENT "Deploying Python plugins and threads")
+    COMMENT "Symlinking Python plugins and threads")
 
 # Ship under the same executable name as the Widgets app ("Project Notes.exe")
 # so the built binary, installer shortcuts, and registry entries all line up.
