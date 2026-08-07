@@ -63,7 +63,7 @@ Popup {
     padding: 6
     width: Math.max(180, Math.min(implicitContentWidth + leftPadding + rightPadding, 420))
     property int maxFlyoutHeight: 480
-    height: Math.min(_content.implicitHeight + topPadding + bottomPadding, maxFlyoutHeight)
+    height: Math.min(_scroll.implicitHeight + topPadding + bottomPadding, maxFlyoutHeight)
     scale: Theme.uiScale
     transformOrigin: Item.TopLeft
 
@@ -105,52 +105,45 @@ Popup {
     onWidthChanged: _reposition()
     onHeightChanged: _reposition()
 
-    contentItem: ScrollView {
-        clip: true
-        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+    contentItem: MenuScrollView {
+        id: _scroll
+        Repeater {
+            id: rowRepeater
+            model: flyout.items
+            // Both row kinds are declared unconditionally (not swapped in via
+            // a Loader) so `modelData`/`index` stay ordinary lexically-scoped
+            // properties of this one delegate, same as every other row here —
+            // a Loader would parent the loaded item to itself, needing
+            // parent.modelData indirection instead, for no real benefit given
+            // how few items ever populate one of these flyouts.
+            delegate: Item {
+                id: rowWrap
+                required property var modelData
+                required property int index
+                Layout.fillWidth: true
+                implicitHeight: modelData.custom === "zoom" ? zoomRow.implicitHeight : leafRow.implicitHeight
+                implicitWidth: modelData.custom === "zoom" ? zoomRow.implicitWidth : leafRow.implicitWidth
 
-        ColumnLayout {
-            id: _content
-            width: flyout.availableWidth
-            spacing: 0
-            Repeater {
-                id: rowRepeater
-                model: flyout.items
-                // Both row kinds are declared unconditionally (not swapped in via
-                // a Loader) so `modelData`/`index` stay ordinary lexically-scoped
-                // properties of this one delegate, same as every other row here —
-                // a Loader would parent the loaded item to itself, needing
-                // parent.modelData indirection instead, for no real benefit given
-                // how few items ever populate one of these flyouts.
-                delegate: Item {
-                    id: rowWrap
-                    required property var modelData
-                    required property int index
-                    Layout.fillWidth: true
-                    implicitHeight: modelData.custom === "zoom" ? zoomRow.implicitHeight : leafRow.implicitHeight
-                    implicitWidth: modelData.custom === "zoom" ? zoomRow.implicitWidth : leafRow.implicitWidth
-
-                    MenuRow {
-                        id: leafRow
-                        anchors.fill: parent
-                        visible: rowWrap.modelData.custom === undefined
-                        icon: modelData.icon || ""
-                        label: modelData.label || ""
-                        trailingText: modelData.trailingText || ""
-                        toggle: modelData.toggle === true
-                        checked: modelData.checked === true
-                        showChevron: modelData.group !== undefined
-                        onHoveredChanged: if (modelData.group !== undefined)
-                                              flyout.groupHoverChanged(index, hovered)
-                        onActivated: modelData.group !== undefined ? flyout.groupActivated(index)
-                                                                    : flyout.itemActivated(index)
-                    }
-                    ZoomMenuRow {
-                        id: zoomRow
-                        anchors.fill: parent
-                        visible: rowWrap.modelData.custom === "zoom"
-                        onAction: (name) => flyout.customActivated(index, name)
-                    }
+                MenuRow {
+                    id: leafRow
+                    anchors.fill: parent
+                    visible: rowWrap.modelData.custom === undefined
+                    icon: modelData.icon || ""
+                    label: modelData.label || ""
+                    trailingText: modelData.trailingText || ""
+                    toggle: modelData.toggle === true
+                    checked: modelData.checked === true
+                    showChevron: modelData.group !== undefined
+                    onHoveredChanged: if (modelData.group !== undefined)
+                                          flyout.groupHoverChanged(index, hovered)
+                    onActivated: modelData.group !== undefined ? flyout.groupActivated(index)
+                                                                : flyout.itemActivated(index)
+                }
+                ZoomMenuRow {
+                    id: zoomRow
+                    anchors.fill: parent
+                    visible: rowWrap.modelData.custom === "zoom"
+                    onAction: (name) => flyout.customActivated(index, name)
                 }
             }
         }

@@ -38,7 +38,7 @@ Popup {
     // grow past that. The rail lowers this to the window's logical height so the
     // in-scene popup never clips at the window edge; the ScrollView takes over.
     property int maxMenuHeight: 760
-    height: Math.min(_content.implicitHeight + topPadding + bottomPadding, maxMenuHeight)
+    height: Math.min(_scroll.implicitHeight + topPadding + bottomPadding, maxMenuHeight)
     // Deliberately an in-scene popup (default Popup.Item) — popupType:
     // Popup.Window (Qt 6.10) forwards clicks on the menu rows to the main window
     // underneath, activating whatever record sits behind the menu instead of the
@@ -266,40 +266,33 @@ Popup {
         }
     }
 
-    contentItem: ScrollView {
-        clip: true
-        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-
-        ColumnLayout {
-            id: _content
-            width: menu.availableWidth
-            spacing: 0
-            // One row per group (File / Plugins / Edit / View / Help, plus any
-            // table-scoped plugin submenu groups for the open record) — each is
-            // a submenu trigger that opens `flyout` beside it, rather than an
-            // inline bold header followed by its items. Keeps the top-level
-            // menu short regardless of how many plugins are installed.
-            Repeater {
-                id: triggerRepeater
-                model: menu._allGroups
-                delegate: MenuRow {
-                    required property var modelData
-                    required property int index
-                    label: modelData.name
-                    showChevron: true
-                    highlighted: menu.openGroupIndex === index
-                    onHoveredChanged: {
-                        if (hovered) {
-                            openDelay.pendingIndex = index
-                            openDelay.restart()
-                        } else if (openDelay.pendingIndex === index) {
-                            openDelay.stop()
-                        }
-                    }
-                    onActivated: {
+    contentItem: MenuScrollView {
+        id: _scroll
+        // One row per group (File / Plugins / Edit / View / Help, plus any
+        // table-scoped plugin submenu groups for the open record) — each is
+        // a submenu trigger that opens `flyout` beside it, rather than an
+        // inline bold header followed by its items. Keeps the top-level
+        // menu short regardless of how many plugins are installed.
+        Repeater {
+            id: triggerRepeater
+            model: menu._allGroups
+            delegate: MenuRow {
+                required property var modelData
+                required property int index
+                label: modelData.name
+                showChevron: true
+                highlighted: menu.openGroupIndex === index
+                onHoveredChanged: {
+                    if (hovered) {
+                        openDelay.pendingIndex = index
+                        openDelay.restart()
+                    } else if (openDelay.pendingIndex === index) {
                         openDelay.stop()
-                        menu._activateGroup(index)
                     }
+                }
+                onActivated: {
+                    openDelay.stop()
+                    menu._activateGroup(index)
                 }
             }
         }

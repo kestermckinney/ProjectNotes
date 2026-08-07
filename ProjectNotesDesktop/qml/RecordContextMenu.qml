@@ -77,7 +77,7 @@ Popup {
     // always fits on-screen.
     readonly property int maxMenuHeight:
         Math.min(480, parent ? parent.height / Theme.uiScale - 12 : 480)
-    height: Math.min(_content.implicitHeight + topPadding + bottomPadding, maxMenuHeight)
+    height: Math.min(_scroll.implicitHeight + topPadding + bottomPadding, maxMenuHeight)
     // Deliberately an in-scene popup (default Popup.Item) — popupType:
     // Popup.Window (Qt 6.10) forwards clicks on the menu rows to the main window
     // underneath, activating whatever record sits behind the menu instead of the
@@ -283,96 +283,89 @@ Popup {
         }
     }
 
-    contentItem: ScrollView {
-        clip: true
-        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+    contentItem: MenuScrollView {
+        id: _scroll
 
+        // Header
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.leftMargin: 9; Layout.rightMargin: 9
+            Layout.topMargin: 2; Layout.bottomMargin: 5
+            spacing: 8
+            Text {
+                text: menu.recordType.toUpperCase(); color: Theme.text3
+                font.pixelSize: 10; font.weight: Font.Bold
+            }
+            Text {
+                text: menu.recordLabel; color: Theme.text2; font.pixelSize: 12
+                Layout.fillWidth: true; elide: Text.ElideRight
+                verticalAlignment: Text.AlignVCenter
+            }
+        }
+        Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft; Layout.bottomMargin: 3 }
+
+        MenuRow { icon: "open_in_full"; label: qsTr("Open");        visible: menu.canOpen;      onActivated: menu._fire(menu.openRequested) }
+        MenuRow { icon: "add";          label: qsTr("New");         visible: menu.canNew;       onActivated: menu._fire(menu.newRequested) }
+        MenuRow { icon: "content_copy"; label: qsTr("Duplicate");   visible: menu.canDuplicate; onActivated: menu._fire(menu.duplicateRequested) }
+        MenuRow { icon: "drive_file_move"; label: qsTr("Move To…"); visible: menu.canMoveTo;   onActivated: menu._fire(menu.moveToRequested) }
+        MenuRow { icon: "delete";       label: qsTr("Delete");      visible: menu.canDelete;    danger: true; onActivated: menu._fire(menu.deleteRequested) }
+        Rectangle {
+            visible: menu._hasTopGroup
+            Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft
+            Layout.topMargin: 3; Layout.bottomMargin: 3
+        }
+        MenuRow { icon: "ios_share";    label: qsTr("Export XML…"); visible: menu.canExport;  onActivated: menu._fire(menu.exportRequested) }
+        MenuRow {
+            id: quickFilterTriggerRow
+            icon: "filter_alt"
+            label: qsTr("Quick Filter")
+            visible: menu.canQuickFilter
+            showChevron: true
+            highlighted: menu.quickFilterOpen
+            onHoveredChanged: {
+                if (hovered) qfOpenDelay.restart()
+                else qfOpenDelay.stop()
+            }
+            onActivated: {
+                qfOpenDelay.stop()
+                menu._activateQuickFilter()
+            }
+        }
+        MenuRow { icon: "filter_list";  label: qsTr("Filter…");     visible: menu.canFilter;  onActivated: menu._fire(menu.filterRequested) }
+        MenuRow {
+            icon: "swap_vert"; label: qsTr("Sort…")
+            visible: menu.canFilter
+            onActivated: { menu.close(); menu.sortRequested(menu.x, menu.y) }
+        }
+        MenuRow { icon: "refresh";      label: qsTr("Refresh");     visible: menu.canRefresh; onActivated: menu._fire(menu.refreshRequested) }
+
+        // Plugin menus for this table (dataexport == model table), like the
+        // Widgets right-click, collapsed into a single "Plugins" trigger row
+        // (see _buildPluginGroup) that opens `flyout` beside it — submenus
+        // nest one level deeper via pluginSubFlyout — rather than one
+        // top-level row per plugin submenu.
         ColumnLayout {
-            id: _content
-            width: menu.availableWidth
+            Layout.fillWidth: true
             spacing: 0
+            visible: menu.pluginGroup !== null
 
-            // Header
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.leftMargin: 9; Layout.rightMargin: 9
-                Layout.topMargin: 2; Layout.bottomMargin: 5
-                spacing: 8
-                Text {
-                    text: menu.recordType.toUpperCase(); color: Theme.text3
-                    font.pixelSize: 10; font.weight: Font.Bold
-                }
-                Text {
-                    text: menu.recordLabel; color: Theme.text2; font.pixelSize: 12
-                    Layout.fillWidth: true; elide: Text.ElideRight
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft; Layout.bottomMargin: 3 }
-
-            MenuRow { icon: "open_in_full"; label: qsTr("Open");        visible: menu.canOpen;      onActivated: menu._fire(menu.openRequested) }
-            MenuRow { icon: "add";          label: qsTr("New");         visible: menu.canNew;       onActivated: menu._fire(menu.newRequested) }
-            MenuRow { icon: "content_copy"; label: qsTr("Duplicate");   visible: menu.canDuplicate; onActivated: menu._fire(menu.duplicateRequested) }
-            MenuRow { icon: "drive_file_move"; label: qsTr("Move To…"); visible: menu.canMoveTo;   onActivated: menu._fire(menu.moveToRequested) }
-            MenuRow { icon: "delete";       label: qsTr("Delete");      visible: menu.canDelete;    danger: true; onActivated: menu._fire(menu.deleteRequested) }
             Rectangle {
-                visible: menu._hasTopGroup
-                Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft
-                Layout.topMargin: 3; Layout.bottomMargin: 3
+                Layout.fillWidth: true; Layout.preferredHeight: 1
+                color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
             }
-            MenuRow { icon: "ios_share";    label: qsTr("Export XML…"); visible: menu.canExport;  onActivated: menu._fire(menu.exportRequested) }
             MenuRow {
-                id: quickFilterTriggerRow
-                icon: "filter_alt"
-                label: qsTr("Quick Filter")
-                visible: menu.canQuickFilter
+                id: pluginTriggerRow
+                icon: "extension"
+                label: menu.pluginGroup ? menu.pluginGroup.name : ""
                 showChevron: true
-                highlighted: menu.quickFilterOpen
+                highlighted: menu.pluginOpen
                 onHoveredChanged: {
-                    if (hovered) qfOpenDelay.restart()
-                    else qfOpenDelay.stop()
+                    if (hovered) openDelay.restart()
+                    else openDelay.stop()
                 }
                 onActivated: {
-                    qfOpenDelay.stop()
-                    menu._activateQuickFilter()
-                }
-            }
-            MenuRow { icon: "filter_list";  label: qsTr("Filter…");     visible: menu.canFilter;  onActivated: menu._fire(menu.filterRequested) }
-            MenuRow {
-                icon: "swap_vert"; label: qsTr("Sort…")
-                visible: menu.canFilter
-                onActivated: { menu.close(); menu.sortRequested(menu.x, menu.y) }
-            }
-            MenuRow { icon: "refresh";      label: qsTr("Refresh");     visible: menu.canRefresh; onActivated: menu._fire(menu.refreshRequested) }
-
-            // Plugin menus for this table (dataexport == model table), like the
-            // Widgets right-click, collapsed into a single "Plugins" trigger row
-            // (see _buildPluginGroup) that opens `flyout` beside it — submenus
-            // nest one level deeper via pluginSubFlyout — rather than one
-            // top-level row per plugin submenu.
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 0
-                visible: menu.pluginGroup !== null
-
-                Rectangle {
-                    Layout.fillWidth: true; Layout.preferredHeight: 1
-                    color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
-                }
-                MenuRow {
-                    id: pluginTriggerRow
-                    icon: "extension"
-                    label: menu.pluginGroup ? menu.pluginGroup.name : ""
-                    showChevron: true
-                    highlighted: menu.pluginOpen
-                    onHoveredChanged: {
-                        if (hovered) openDelay.restart()
-                        else openDelay.stop()
-                    }
-                    onActivated: {
-                        openDelay.stop()
-                        menu._activatePluginGroup()
-                    }
+                    openDelay.stop()
+                    menu._activatePluginGroup()
                 }
             }
         }

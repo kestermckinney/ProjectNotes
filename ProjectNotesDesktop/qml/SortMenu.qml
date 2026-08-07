@@ -78,7 +78,7 @@ Popup {
     padding: 6
     width: Math.max(200, Math.min(implicitContentWidth + leftPadding + rightPadding, 320))
     property int maxMenuHeight: 420
-    height: Math.min(_content.implicitHeight + topPadding + bottomPadding, maxMenuHeight)
+    height: Math.min(_scroll.implicitHeight + topPadding + bottomPadding, maxMenuHeight)
     scale: Theme.uiScale
     transformOrigin: Item.TopLeft
 
@@ -88,57 +88,50 @@ Popup {
         border.color: Theme.border
     }
 
-    contentItem: ScrollView {
-        clip: true
-        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+    contentItem: MenuScrollView {
+        id: _scroll
 
-        ColumnLayout {
-            id: _content
-            width: menu.availableWidth
-            spacing: 0
+        Text {
+            text: qsTr("SORT BY"); color: Theme.text3
+            font.pixelSize: 10; font.weight: Font.Bold
+            Layout.leftMargin: 9; Layout.topMargin: 2; Layout.bottomMargin: 3
+        }
 
-            Text {
-                text: qsTr("SORT BY"); color: Theme.text3
-                font.pixelSize: 10; font.weight: Font.Bold
-                Layout.leftMargin: 9; Layout.topMargin: 2; Layout.bottomMargin: 3
+        Repeater {
+            model: menu._cols
+            delegate: MenuRow {
+                required property var modelData
+                label: modelData.label || ""
+                toggle: true
+                checked: modelData.field === menu._field
+                onActivated: menu._pick(modelData.field)
             }
+        }
 
-            Repeater {
-                model: menu._cols
-                delegate: MenuRow {
-                    required property var modelData
-                    label: modelData.label || ""
-                    toggle: true
-                    checked: modelData.field === menu._field
-                    onActivated: menu._pick(modelData.field)
-                }
-            }
+        Rectangle {
+            Layout.fillWidth: true; Layout.preferredHeight: 1
+            color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
+        }
 
-            Rectangle {
-                Layout.fillWidth: true; Layout.preferredHeight: 1
-                color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
-            }
+        MenuRow {
+            icon: "arrow_upward"; label: qsTr("Ascending")
+            toggle: true; checked: !menu._descending
+            onActivated: menu._setDirection(false)
+        }
+        MenuRow {
+            icon: "arrow_downward"; label: qsTr("Descending")
+            toggle: true; checked: menu._descending
+            onActivated: menu._setDirection(true)
+        }
 
-            MenuRow {
-                icon: "arrow_upward"; label: qsTr("Ascending")
-                toggle: true; checked: !menu._descending
-                onActivated: menu._setDirection(false)
-            }
-            MenuRow {
-                icon: "arrow_downward"; label: qsTr("Descending")
-                toggle: true; checked: menu._descending
-                onActivated: menu._setDirection(true)
-            }
+        Rectangle {
+            Layout.fillWidth: true; Layout.preferredHeight: 1
+            color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
+        }
 
-            Rectangle {
-                Layout.fillWidth: true; Layout.preferredHeight: 1
-                color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
-            }
-
-            MenuRow {
-                icon: "backspace"; label: qsTr("Clear Sort")
-                onActivated: menu._clearSort()
-            }
+        MenuRow {
+            icon: "backspace"; label: qsTr("Clear Sort")
+            onActivated: menu._clearSort()
         }
     }
 }
