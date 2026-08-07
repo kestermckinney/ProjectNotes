@@ -100,6 +100,12 @@ Team members are set up under the **Team** tab of the Project Page. Team members
 2. Type in or select the new value.
 3. Click out of the field — the change saves automatically.
 
+**To navigate to a team member's person record:**
+
+1. Right-click on a team member's row (or click its **⋮** button) to open its menu.
+2. Choose **Go To Person** from the menu.
+3. The application will automatically switch to the People page and open that person's full record.
+
 
 
 ## Locations

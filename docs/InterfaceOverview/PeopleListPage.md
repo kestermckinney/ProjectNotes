@@ -24,9 +24,18 @@ To navigate to the People List Page, click the **People** icon in the icon rail.
 2. Choose **Delete**.
 3. Click **Yes** to confirm the deletion. Note: You may not be able to delete people if they are associated with other project information. In this case, clicking **Yes** opens the Search Page — see [Search Page](<SearchPage.md>) for how to work with search results.
 
+**To navigate to a person's client:**
 
+1. Right-click the person's card (or click its **⋮** button) to open its menu.
+2. If the person has a **Client** assigned, choose **Go To Client** from the menu.
+3. The application will automatically switch to the Clients page and open that client's record.
 
 **To edit a person:**
 
 1. Click the person's card to open it.
 2. Type in or select the new value in any field — changes save automatically.
+3. On the person detail page, click the **⋮** button in the top-right to access additional actions:
+   - **Export XML** — Export the person's record
+   - **Go To Client** — Navigate to the person's assigned client (if assigned)
+   - **Refresh** — Reload the person's data from the database
+   - **Plugins** — Any plugin actions configured for people records
