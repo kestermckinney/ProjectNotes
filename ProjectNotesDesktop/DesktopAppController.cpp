@@ -244,6 +244,22 @@ bool DesktopAppController::openOrCreateDatabase()
     restoreColumnFilters(global_DBObjects.peoplemodel());
     restoreColumnFilters(global_DBObjects.allitemsmodel());
 
+    // restoreColumnFilters() mutates the models directly (it isn't routed
+    // through applyColumnFilters()), so it never bumps filterRev on its own.
+    // That's normally fine — QML bindings read the model fresh on their first
+    // evaluation — but Main.qml's root Component.onCompleted (which calls
+    // openOrCreateDatabase(), and lands here) runs synchronously during
+    // engine.load(), before window->show(). That means the whole QML tree,
+    // including the TopBar's filterActive binding, has already latched its
+    // *first* value (against an empty pre-open model) by the time the four
+    // restores above run. Without an explicit bump here, a filter restored
+    // from a prior session leaves the Filter button unhighlighted until some
+    // unrelated filter change elsewhere bumps filterRev, or the user
+    // navigates off the initial section ("projects") and back — since a
+    // section change is itself a tracked dependency of that binding.
+    ++m_filterRev;
+    emit filterRevChanged();
+
     // Restore any persisted sort choice, for every filterable section (not
     // just the four above) — unlike column filters, sorting an unloaded model
     // is cheap (it only sets the pending column/order; the proxy applies it
@@ -254,6 +270,11 @@ bool DesktopAppController::openOrCreateDatabase()
                                      QStringLiteral("team"), QStringLiteral("locations"),
                                      QStringLiteral("notes") })
         restoreSort(modelForSection(section));
+
+    // Same reasoning as the filterRev bump above, for the Sort chip's
+    // sortActive binding.
+    ++m_sortRev;
+    emit sortRevChanged();
 
     // The sidebar may have cached an empty snapshot while the QML tree was
     // building (pre-open); force a rebuild + rev bump now that data is loaded.
@@ -1616,7 +1637,13 @@ int DesktopAppController::addProjectNote(const QString& projectId)
     if (!newId.isEmpty())
         global_DBObjects.addDefaultPMToMeeting(newId);
 
-    return proxyRowFromSource(global_DBObjects.projectnotesmodelproxy(), srcIdx);
+    // newRecord()/insertCacheRow() just appends to the cache — it doesn't honor
+    // the model's "note_date desc" base order. The list is always newest-first,
+    // so re-run the query and relocate the new (today-dated) note to find where
+    // that puts it, instead of leaving it wherever it landed in the cache.
+    src->refresh();
+    QVariant idLookup(newId);
+    return proxyRowFromSource(global_DBObjects.projectnotesmodelproxy(), src->findIndex(idLookup, 0));
 }
 
 bool DesktopAppController::deleteProjectNote(int row)
@@ -1655,6 +1682,36 @@ bool DesktopAppController::saveProjectNote(int row, const QString& title, const 
 
     return applyRowFields(model, pIdx.row(), {
         {2, title}, {3, date}, {4, note}, {5, internalItem ? "1" : "0"} });
+}
+
+// Duplicate a note — Widgets parity (ProjectNotesModel::copyRecord): keeps the
+// project and title, resets the date to now, leaves the note body blank, and
+// copies the attendee list. Action items are intentionally NOT copied. The
+// notes model is already filtered to the open project (see openProject), so
+// the copy just needs to find the source row for noteId.
+int DesktopAppController::copyProjectNote(const QString& noteId)
+{
+    global_DBObjects.setLastSaveError("");
+    if (noteId.isEmpty())
+        return -1;
+
+    auto* src = global_DBObjects.projectnotesmodel();
+    if (!src) return -1;
+
+    QVariant key(noteId);
+    const QModelIndex srcIdx = src->findIndex(key, 0);
+    if (!srcIdx.isValid()) return -1;
+
+    const QModelIndex newIdx = src->copyRecord(srcIdx);
+    if (!newIdx.isValid()) return -1;
+
+    // Same reasoning as addProjectNote(): the copy is appended to the cache
+    // with today's date, so re-run the query to put it in its newest-first
+    // spot rather than leaving it at the append position.
+    const QString newId = src->data(src->index(newIdx.row(), 0)).toString();
+    src->refresh();
+    QVariant idLookup(newId);
+    return proxyRowFromSource(global_DBObjects.projectnotesmodelproxy(), src->findIndex(idLookup, 0));
 }
 
 // ── Meeting attendees ────────────────────────────────────────────────────────

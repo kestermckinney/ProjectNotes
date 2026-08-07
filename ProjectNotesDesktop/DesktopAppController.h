@@ -385,6 +385,10 @@ public:
     Q_INVOKABLE QString     projectNoteIdAtRow(int row) const;
     Q_INVOKABLE bool        saveProjectNote(int row, const QString& title, const QString& date,
                                             const QString& note, bool internalItem);
+    // Duplicate a note (Widgets parity): copies project + title, resets the date
+    // to now, leaves the note body blank, copies attendees, and does not copy
+    // action items. Returns the new note's proxy row, or -1 on failure.
+    Q_INVOKABLE int         copyProjectNote(const QString& noteId);
 
     // ── Meeting attendees CRUD ───────────────────────────────────────────────
     Q_INVOKABLE int         addAttendee(const QString& noteId);

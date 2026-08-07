@@ -182,28 +182,106 @@ if(Hunspell_INCLUDE_DIRS AND NOT "${Hunspell_INCLUDE_DIRS}" MATCHES "NOTFOUND")
     target_include_directories(ProjectNotesDesktop PRIVATE ${Hunspell_INCLUDE_DIRS})
 endif()
 
-# Deploy the en_US dictionary next to the executable so DesktopSpellChecker can
-# load it at runtime (appDir/dictionary/en_US.{aff,dic}).
-add_custom_command(TARGET ProjectNotesDesktop POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:ProjectNotesDesktop>/dictionary"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/../dictionary/en_US.aff"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../dictionary/en_US.dic"
-        "$<TARGET_FILE_DIR:ProjectNotesDesktop>/dictionary/"
-    COMMENT "Deploying en_US spell-check dictionary")
+if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # ── macOS Release: full app bundle — real files + Qt/Python deployment ─────
+    # Mirrors the Widgets ProjectNotes target's macOS Release deploy steps (see
+    # top-level CMakeLists.txt) so "Project Notes.app" is self-contained and
+    # notarizable. Symlinks (used below for Debug/Win/Linux dev convenience) are
+    # rejected by notarization, so plugins/threads/dictionary are real copies here.
+    add_custom_target(sync_plugins_desktop
+        COMMAND rsync -rv --checksum
+            "${CMAKE_CURRENT_SOURCE_DIR}/../plugins/"
+            "$<TARGET_BUNDLE_DIR:ProjectNotesDesktop>/Contents/Resources/plugins/"
+        COMMAND rsync -rv --checksum
+            "${CMAKE_CURRENT_SOURCE_DIR}/../threads/"
+            "$<TARGET_BUNDLE_DIR:ProjectNotesDesktop>/Contents/Resources/threads/"
+        COMMENT "Syncing Python plugins to Project Notes (QML) app bundle (changed files only)"
+        VERBATIM)
 
-# Deploy the Python plugins + threads next to the executable so the embedded
-# interpreter (PluginManager, which reads appDir/plugins and appDir/threads)
-# can load them at runtime.
-# Use symbolic links (dev convenience) instead of copying directories.
-add_custom_command(TARGET ProjectNotesDesktop POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-        "${CMAKE_CURRENT_SOURCE_DIR}/../plugins"
-        "$<TARGET_FILE_DIR:ProjectNotesDesktop>/plugins"
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-        "${CMAKE_CURRENT_SOURCE_DIR}/../threads"
-        "$<TARGET_FILE_DIR:ProjectNotesDesktop>/threads"
-    COMMENT "Symlinking Python plugins and threads")
+    set(DESKTOP_BUNDLE_RESOURCES  "$<TARGET_FILE_DIR:ProjectNotesDesktop>/../Resources")
+    set(DESKTOP_BUNDLE_FRAMEWORKS "$<TARGET_FILE_DIR:ProjectNotesDesktop>/../Frameworks")
+
+    # Python3_ROOT_DIR is set (APPLE-only) at the top of the top-level
+    # CMakeLists.txt, before this subdirectory is added, so it is inherited here.
+    get_filename_component(_desktop_python_framework_root "${Python3_ROOT_DIR}/../.." REALPATH)
+
+    get_target_property(_desktop_qmake_loc Qt6::qmake IMPORTED_LOCATION)
+    get_filename_component(_desktop_qt_bin "${_desktop_qmake_loc}" DIRECTORY)
+
+    # ── 1. Copy plugins (real files) ────────────────────────────────────────────
+    add_custom_command(TARGET ProjectNotesDesktop POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E remove_directory "${DESKTOP_BUNDLE_RESOURCES}/plugins"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/../plugins"
+            "${DESKTOP_BUNDLE_RESOURCES}/plugins"
+        COMMENT "Copying plugins into bundle Resources")
+
+    # ── 2. Copy threads ─────────────────────────────────────────────────────────
+    add_custom_command(TARGET ProjectNotesDesktop POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E remove_directory "${DESKTOP_BUNDLE_RESOURCES}/threads"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/../threads"
+            "${DESKTOP_BUNDLE_RESOURCES}/threads"
+        COMMENT "Copying threads into bundle Resources")
+
+    # ── 3. Copy dictionary ──────────────────────────────────────────────────────
+    add_custom_command(TARGET ProjectNotesDesktop POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E remove_directory "${DESKTOP_BUNDLE_RESOURCES}/dictionary"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/../dictionary"
+            "${DESKTOP_BUNDLE_RESOURCES}/dictionary"
+        COMMENT "Copying dictionary into bundle Resources")
+
+    # ── 4. Deploy Qt frameworks into the bundle ─────────────────────────────────
+    # -qmldir points macdeployqt's qmlimportscanner at the QML sources so it also
+    # deploys the QML modules this app imports (QtQuick.Controls.Basic, .Layouts,
+    # .Dialogs, etc.) into Contents/Resources/qml — without it, only the
+    # directly-linked Qt frameworks are copied and the app fails to load its UI
+    # at runtime ("module ... is not installed").
+    add_custom_command(TARGET ProjectNotesDesktop POST_BUILD
+        COMMAND "${_desktop_qt_bin}/macdeployqt"
+            "$<TARGET_BUNDLE_DIR:ProjectNotesDesktop>"
+            "-qmldir=${CMAKE_CURRENT_SOURCE_DIR}/qml"
+            -always-overwrite
+        COMMENT "Deploying Qt into app bundle (macdeployqt)"
+        VERBATIM)
+
+    # ── 5. Bundle Python.framework ───────────────────────────────────────────────
+    add_custom_command(TARGET ProjectNotesDesktop POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${DESKTOP_BUNDLE_FRAMEWORKS}"
+        COMMAND ${CMAKE_COMMAND}
+            "-DPYTHON_FRAMEWORK_SRC=${_desktop_python_framework_root}"
+            "-DFRAMEWORKS=${DESKTOP_BUNDLE_FRAMEWORKS}"
+            "-DEXECUTABLE=$<TARGET_FILE:ProjectNotesDesktop>"
+            "-DPYTHON_VERSION=${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/macos/BundlePythonFramework.cmake"
+        COMMENT "Bundling Python.framework into Contents/Frameworks"
+        VERBATIM)
+else()
+    # ── macOS Debug / Windows / Linux: no bundle deployment — symlink resources
+    # for fast dev iteration (macOS Debug skips the bundle entirely, see the
+    # MACOSX_BUNDLE property below).
+    add_custom_command(TARGET ProjectNotesDesktop POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:ProjectNotesDesktop>/dictionary"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/../dictionary/en_US.aff"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../dictionary/en_US.dic"
+            "$<TARGET_FILE_DIR:ProjectNotesDesktop>/dictionary/"
+        COMMENT "Deploying en_US spell-check dictionary")
+
+    # Deploy the Python plugins + threads next to the executable so the embedded
+    # interpreter (PluginManager, which reads appDir/plugins and appDir/threads)
+    # can load them at runtime.
+    # Use symbolic links (dev convenience) instead of copying directories.
+    add_custom_command(TARGET ProjectNotesDesktop POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+            "${CMAKE_CURRENT_SOURCE_DIR}/../plugins"
+            "$<TARGET_FILE_DIR:ProjectNotesDesktop>/plugins"
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+            "${CMAKE_CURRENT_SOURCE_DIR}/../threads"
+            "$<TARGET_FILE_DIR:ProjectNotesDesktop>/threads"
+        COMMENT "Symlinking Python plugins and threads")
+endif()
 
 # Ship under the same executable name as the Widgets app ("Project Notes.exe")
 # so the built binary, installer shortcuts, and registry entries all line up.
@@ -218,4 +296,37 @@ set_target_properties(ProjectNotesDesktop PROPERTIES
 # ── Windows app icon ──────────────────────────────────────────────────────────
 if(WIN32)
     set_target_properties(ProjectNotesDesktop PROPERTIES WIN32_EXECUTABLE TRUE)
+endif()
+
+# ── macOS bundle identity ─────────────────────────────────────────────────────
+# Reuses the Widgets app's bundle identifier/name so this build replaces it in
+# place: same /Applications/Project Notes.app, same LaunchServices identity, so
+# packaging/macos/build_installer.sh (which pkgbuilds with the identifier below)
+# upgrades existing installs cleanly instead of installing a second app.
+# The icon, however, is NOT shared with the Widgets app — icons/projectnotes.icns
+# is generated from icons/projectnotes.ico (the QML app's own redesigned icon,
+# added in 5c72ee5 and already used for the Windows build via appicon.rc). The
+# .ico's largest embedded frame is 256x256, so the .icns's 512/1024 sizes are
+# upscaled from that; regenerate from a higher-res source if a crisper large
+# icon is ever needed (Finder Info window, Launchpad).
+# Debug builds skip the bundle entirely, matching the Widgets app's macOS Debug
+# behavior (see the ProjectNotes target's MACOSX_BUNDLE in the top-level
+# CMakeLists.txt) — faster build/run cycle, no code signing needed.
+if(APPLE)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(_desktop_macos_bundle FALSE)
+    else()
+        set(_desktop_macos_bundle TRUE)
+    endif()
+
+    set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/icons/projectnotes.icns" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    target_sources(ProjectNotesDesktop PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/icons/projectnotes.icns")
+
+    set_target_properties(ProjectNotesDesktop PROPERTIES
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.projectnotespro.ProjectNotes"
+        MACOSX_BUNDLE_BUNDLE_NAME "Project Notes"
+        MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
+        MACOSX_BUNDLE_ICON_FILE projectnotes.icns
+        MACOSX_BUNDLE ${_desktop_macos_bundle})
 endif()

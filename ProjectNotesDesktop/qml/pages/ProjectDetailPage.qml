@@ -1067,7 +1067,8 @@ Item {
                             function _menu(sx, sy) {
                                 rowMenu.openFor(DesktopAppController.projectNotesModel,
                                     (noteCard.model.id || "").toString(), qsTr("Note"),
-                                    (noteCard.model.note_title || "").toString(), sx, sy)
+                                    (noteCard.model.note_title || "").toString(), sx, sy,
+                                    /*allowDuplicate*/ true, /*allowMoveTo*/ false)
                             }
                             RowLayout {
                                 anchors.fill: parent
@@ -1404,8 +1405,13 @@ Item {
         id: rowMenu
         onExportRecord: (table, id) => page.exportRequested(table, id)
         onDuplicateRecord: (table, id) => {
-            var newId = DesktopAppController.copyTrackerItem(id)
-            if (newId !== "") { page._saveNow(); page.itemActivated(newId) }
+            if (table === "project_notes") {
+                var r = DesktopAppController.copyProjectNote(id)
+                if (r >= 0) { page._saveNow(); page.noteActivated(r, DesktopAppController.projectNoteIdAtRow(r)) }
+            } else {
+                var newId = DesktopAppController.copyTrackerItem(id)
+                if (newId !== "") { page._saveNow(); page.itemActivated(newId) }
+            }
         }
         onMoveToRecord: (id) => page.moveToRequested(id)
         onGoToPersonRequested: (personId) => page.goToPersonRequested(personId)

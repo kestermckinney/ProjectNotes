@@ -2,8 +2,9 @@
 # Copyright (C) 2026 Paul McKinney
 # build_installer.sh
 # Builds a signed, notarized macOS installer (.pkg wrapped in .dmg) containing
-# ProjectNotes.app, plus a self-contained ProjectNotes-<ver>-macOS.zip consumed
-# by the in-app auto-updater (UpdateManager on macOS).
+# the QML desktop frontend's "Project Notes.app" (ProjectNotesDesktop target),
+# plus a self-contained ProjectNotes-<ver>-macOS.zip consumed by the in-app
+# auto-updater (UpdateManager on macOS).
 #
 # Usage:
 #   ./build_installer.sh [options]
@@ -43,10 +44,15 @@ NOTARIZE_KEYCHAIN_PROFILE="${NOTARIZE_KEYCHAIN_PROFILE:-ProjectNotes-Notarize}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-# Adjust these to match your Qt Creator build directory names
+# Adjust these to match your Qt Creator build directory names. PN_BUILD_DIR is
+# the top-level CMake build dir — it contains both frontends' app bundles:
+#   ${PN_BUILD_DIR}/Project Notes.app                 — legacy Widgets frontend
+#   ${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app — QML frontend (shipped)
+# ProjectNotesDesktop's CMakeLists.txt pins RUNTIME_OUTPUT_DIRECTORY to its own
+# build subdirectory specifically so the two never collide.
 PN_BUILD_DIR="${PN_BUILD_DIR:-${PROJECT_ROOT}/build/Qt_6_10_2_for_macOS-Release}"
 
-PN_APP="${PN_BUILD_DIR}/Project Notes.app"
+PN_APP="${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app"
 
 PN_VERSION="6.0.0"
 INSTALLER_VERSION="${PN_VERSION}"
