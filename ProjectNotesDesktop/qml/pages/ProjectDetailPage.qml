@@ -72,10 +72,32 @@ Item {
     signal deleteRequested()
     signal newRequested()
     signal filterRequested()
+    signal sortRequested(real sx, real sy)
     // Column filter for one of this page's sub-tab lists (Status Report,
     // Tracker, Team, Locations, Notes) — routed to Main's shared FilterDialog,
     // keyed by the tab's filterSection name (see FilterDialog.openFor()).
     signal subFilterRequested(string section)
+    // Sort for one of this page's sub-tab lists — same idea as
+    // subFilterRequested above, but also carries the chip's own scene
+    // position since SortMenu.openFor() positions itself by coordinates
+    // rather than an Item reference (see SortMenu.qml's doc comment).
+    signal subSortRequested(string section, real sx, real sy)
+
+    // Whether a sub-tab's own model currently has an active column filter —
+    // drives its SectionBar's Filter chip highlight. Reads filterRev first so
+    // it re-evaluates whenever any filter (quick or manual) changes anywhere.
+    function _sectionFilterActive(section) {
+        DesktopAppController.filterRev
+        var m = DesktopAppController.modelForSection(section)
+        return m ? DesktopAppController.hasActiveColumnFilters(m) : false
+    }
+    // Whether a sub-tab's own model currently has an active sort — drives its
+    // SectionBar's Sort chip highlight. Reads sortRev first, same reason.
+    function _sectionSortActive(section) {
+        DesktopAppController.sortRev
+        var m = DesktopAppController.modelForSection(section)
+        return m ? (DesktopAppController.activeSort(m).field || "") !== "" : false
+    }
 
     function _clientNames() { return _clients.map(function(c){ return c.name }) }
     function _peopleNames() { return _people.map(function(p){ return p.name }) }
@@ -429,11 +451,14 @@ Item {
                             addLabel: qsTr("Add Status Item")
                             searchModel: DesktopAppController.statusReportItemsModel
                             filterSection: "statusreport"
+                            filterActive: page._sectionFilterActive("statusreport")
+                            sortActive: page._sectionSortActive("statusreport")
                             // addStatusItem appends a pending (unsaved) row; it is INSERTed
                             // only when a field is edited. Do NOT refresh here — refresh()
                             // re-queries the DB and would wipe the new row before it is seen.
                             onAdd: DesktopAppController.addStatusItem(page.projectId)
                             onFilter: page.subFilterRequested(filterSection)
+                            onSort: (sx, sy) => page.subSortRequested(filterSection, sx, sy)
                         }
                     }
                     delegate: Card {
@@ -511,6 +536,8 @@ Item {
                             addLabel: qsTr("Add Item")
                             searchModel: DesktopAppController.projectTrackerItemsModel
                             filterSection: "trackeritems"
+                            filterActive: page._sectionFilterActive("trackeritems")
+                            sortActive: page._sectionSortActive("trackeritems")
                             onAdd: {
                                 page._saveNow()
                                 DesktopAppController.addTrackerItem(page.projectId)
@@ -518,6 +545,7 @@ Item {
                                 if (d.id !== undefined) page.itemActivated(d.id.toString())
                             }
                             onFilter: page.subFilterRequested(filterSection)
+                            onSort: (sx, sy) => page.subSortRequested(filterSection, sx, sy)
                         }
                     }
                     // An outer Item is the actual delegate and stays put
@@ -682,8 +710,11 @@ Item {
                             addLabel: qsTr("Add Member")
                             searchModel: DesktopAppController.projectTeamMembersModel
                             filterSection: "team"
+                            filterActive: page._sectionFilterActive("team")
+                            sortActive: page._sectionSortActive("team")
                             onAdd: { page._saveNow(); teamPicker.open() }
                             onFilter: page.subFilterRequested(filterSection)
+                            onSort: (sx, sy) => page.subSortRequested(filterSection, sx, sy)
                         }
                     }
                     delegate: Card {
@@ -820,9 +851,12 @@ Item {
                                 addLabel: qsTr("Add Location")
                                 searchModel: DesktopAppController.projectLocationsModel
                                 filterSection: "locations"
+                                filterActive: page._sectionFilterActive("locations")
+                                sortActive: page._sectionSortActive("locations")
                                 // Pending row is INSERTed on first edit; refresh() would wipe it.
                                 onAdd: DesktopAppController.addProjectLocation(page.projectId)
                                 onFilter: page.subFilterRequested(filterSection)
+                                onSort: (sx, sy) => page.subSortRequested(filterSection, sx, sy)
                             }
                             // Browse for a file and add it as a new location.
                             Rectangle {
@@ -1007,6 +1041,8 @@ Item {
                             addLabel: qsTr("Add Note")
                             searchModel: DesktopAppController.projectNotesModel
                             filterSection: "notes"
+                            filterActive: page._sectionFilterActive("notes")
+                            sortActive: page._sectionSortActive("notes")
                             onAdd: {
                                 page._saveNow()
                                 var r = DesktopAppController.addProjectNote(page.projectId)
@@ -1014,6 +1050,7 @@ Item {
                                 page.noteActivated(r, DesktopAppController.projectNoteIdAtRow(r))
                             }
                             onFilter: page.subFilterRequested(filterSection)
+                            onSort: (sx, sy) => page.subSortRequested(filterSection, sx, sy)
                         }
                     }
                     delegate: Card {
@@ -1251,8 +1288,18 @@ Item {
         // emits filter() — the page wires this to the shared FilterDialog,
         // keyed by this section name (see FilterDialog.openFor()).
         property string filterSection: ""
+        // True when filterSection's model has an active column filter —
+        // highlights the Filter chip, mirroring TopBar's Filter button.
+        property bool filterActive: false
+        // True when filterSection's model has an active sort.
+        property bool sortActive: false
         signal add()
         signal filter()
+        // Carries the chip's own scene position (Overlay.overlay space) since
+        // SortMenu is a shared instance living in Main.qml, outside this
+        // pushed page's scope — an Item id can't cross that boundary, a
+        // couple of numbers can (see SortMenu.qml's openFor doc comment).
+        signal sort(real sx, real sy)
         Layout.fillWidth: true
         Layout.topMargin: 8
         spacing: 8
@@ -1292,19 +1339,43 @@ Item {
             visible: bar.filterSection !== ""
             implicitHeight: 28; implicitWidth: fRow.implicitWidth + 16
             radius: Theme.radiusSm
-            color: fHover.hovered ? Theme.surface2 : Theme.surface
-            border.color: Theme.border
+            color: bar.filterActive ? Theme.accentSoft : (fHover.hovered ? Theme.surface2 : Theme.surface)
+            border.color: bar.filterActive ? Theme.accent : Theme.border
             Layout.alignment: Qt.AlignVCenter
             RowLayout {
                 id: fRow; anchors.centerIn: parent; spacing: 5
-                MaterialIcon { name: "filter_list"; size: 15; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                MaterialIcon { name: "filter_list"; size: 15; color: bar.filterActive ? Theme.accent : Theme.text2; Layout.alignment: Qt.AlignVCenter }
                 Text {
-                    text: qsTr("Filter"); color: Theme.text; font.pixelSize: 12
+                    text: qsTr("Filter"); color: bar.filterActive ? Theme.accent : Theme.text; font.pixelSize: 12
                     verticalAlignment: Text.AlignVCenter
                 }
             }
             HoverHandler { id: fHover }
             TapHandler { onTapped: bar.filter() }
+        }
+        Rectangle {
+            id: sortChip
+            visible: bar.filterSection !== ""
+            implicitHeight: 28; implicitWidth: sRow.implicitWidth + 16
+            radius: Theme.radiusSm
+            color: bar.sortActive ? Theme.accentSoft : (sHover.hovered ? Theme.surface2 : Theme.surface)
+            border.color: bar.sortActive ? Theme.accent : Theme.border
+            Layout.alignment: Qt.AlignVCenter
+            RowLayout {
+                id: sRow; anchors.centerIn: parent; spacing: 5
+                MaterialIcon { name: "swap_vert"; size: 15; color: bar.sortActive ? Theme.accent : Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                Text {
+                    text: qsTr("Sort"); color: bar.sortActive ? Theme.accent : Theme.text; font.pixelSize: 12
+                    verticalAlignment: Text.AlignVCenter
+                }
+            }
+            HoverHandler { id: sHover }
+            TapHandler {
+                onTapped: {
+                    var p = sortChip.mapToItem(Overlay.overlay, 0, sortChip.height)
+                    bar.sort(p.x, p.y + 4)
+                }
+            }
         }
         Rectangle {
             implicitHeight: 28; implicitWidth: aRow.implicitWidth + 18
@@ -1351,6 +1422,7 @@ Item {
         onMoveToRequested: moveToFolderDialog.openFor(page.projectId, selfMenu.recordLabel)
         onExportRequested: page.exportRequested(page.exportTable, page.exportId)
         onFilterRequested: page.filterRequested()
+        onSortRequested: (sx, sy) => page.sortRequested(sx, sy)
         onRefreshRequested: page._refreshAll()
     }
 

@@ -90,6 +90,7 @@ set(DESKTOP_QML_FILES
     qml/LogViewerWindow.qml
     qml/HelpPage.qml
     qml/FilterDialog.qml
+    qml/SortMenu.qml
     qml/RecordContextMenu.qml
     qml/RecordRowMenu.qml
     qml/MoveReviewDialog.qml

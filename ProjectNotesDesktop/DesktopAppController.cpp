@@ -42,6 +42,7 @@
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QGuiApplication>
 #include <QKeySequence>
 #include <QScreen>
@@ -55,6 +56,7 @@
 #include <QTimer>
 #include <QUrl>
 #include <QUrlQuery>
+#include <QUuid>
 
 #include <private/qzipwriter_p.h>
 
@@ -176,6 +178,9 @@ static bool deleteProxyRow(SortFilterProxyModel* proxy, SqlQueryModel* source, i
 // Reapplies a model's persisted column filters (application_settings-backed);
 // defined further down alongside applyColumnFilters()/clearColumnFilters().
 static void restoreColumnFilters(SqlQueryModel* src);
+// Reapplies a model's persisted sort order; defined further down alongside
+// applySort()/clearSort().
+static void restoreSort(QAbstractItemModel* model);
 
 // ── Database ─────────────────────────────────────────────────────────────────
 
@@ -238,6 +243,17 @@ bool DesktopAppController::openOrCreateDatabase()
     restoreColumnFilters(global_DBObjects.clientsmodel());
     restoreColumnFilters(global_DBObjects.peoplemodel());
     restoreColumnFilters(global_DBObjects.allitemsmodel());
+
+    // Restore any persisted sort choice, for every filterable section (not
+    // just the four above) — unlike column filters, sorting an unloaded model
+    // is cheap (it only sets the pending column/order; the proxy applies it
+    // when it next builds its row mapping), so there's no reason to limit it.
+    for (const QString& section : { QStringLiteral("projects"), QStringLiteral("items"),
+                                     QStringLiteral("people"), QStringLiteral("clients"),
+                                     QStringLiteral("statusreport"), QStringLiteral("trackeritems"),
+                                     QStringLiteral("team"), QStringLiteral("locations"),
+                                     QStringLiteral("notes") })
+        restoreSort(modelForSection(section));
 
     // The sidebar may have cached an empty snapshot while the QML tree was
     // building (pre-open); force a rebuild + rev bump now that data is loaded.
@@ -643,11 +659,26 @@ QVariantList DesktopAppController::columnDistinctValues(QAbstractItemModel* mode
     return values;
 }
 
+// Scope string used to key a model's persisted UI state (column filters, sort
+// order) in application_settings. Ordinarily just the table name — but
+// global_DBObjects.trackeritemsmodel() (a project's own Tracker Items tab) and
+// .allitemsmodel() (the master cross-project Items list) are two separate
+// TrackerItemsModel instances that both report tablename() == "item_tracker".
+// Keying purely off tablename() would make filtering/sorting one silently
+// overwrite the other's persisted state. Disambiguate the project-scoped one.
+static QString settingsScopeForModel(SqlQueryModel* src)
+{
+    QString scope = src->tablename();
+    if (src == global_DBObjects.trackeritemsmodel())
+        scope += ":project";
+    return scope;
+}
+
 // application_settings key each model's column-filter spec is persisted under,
 // so the Filter Editor's selections survive an app restart.
 static QString columnFilterSettingKey(SqlQueryModel* src)
 {
-    return "UI:ColumnFilters:" + src->tablename();
+    return "UI:ColumnFilters:" + settingsScopeForModel(src);
 }
 
 static void applyFilterSpecsToModel(SqlQueryModel* src, const QVariantList& specs)
@@ -685,6 +716,9 @@ void DesktopAppController::applyColumnFilters(QAbstractItemModel* model,
 
     const QByteArray json = QJsonDocument(QJsonArray::fromVariantList(specs)).toJson(QJsonDocument::Compact);
     global_DBObjects.saveParameter(columnFilterSettingKey(src), QString::fromUtf8(json));
+
+    ++m_filterRev;
+    emit filterRevChanged();
 }
 
 void DesktopAppController::clearColumnFilters(QAbstractItemModel* model)
@@ -694,6 +728,177 @@ void DesktopAppController::clearColumnFilters(QAbstractItemModel* model)
     src->clearAllUserSearches();
     src->deactivateUserFilter(QString());
     global_DBObjects.saveParameter(columnFilterSettingKey(src), QString());
+
+    ++m_filterRev;
+    emit filterRevChanged();
+}
+
+QVariantList DesktopAppController::activeColumnFilters(QAbstractItemModel* model)
+{
+    QVariantList specs;
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!src) return specs;
+
+    const int cols = src->columnCount();
+    for (int c = 0; c < cols; ++c) {
+        if (!src->hasUserFilters(c)) continue;
+
+        QVariantMap spec;
+        spec["field"] = src->getColumnName(c);
+        spec["values"] = src->getUserFilter(c);
+        const QVariant search = src->getUserSearchString(c);
+        spec["search"] = search.isValid() ? search.toString() : QString();
+
+        QVariant start, end;
+        src->getUserSearchRange(c, start, end);
+        spec["rangeStart"] = start.isValid() ? start.toString() : QString();
+        spec["rangeEnd"]   = end.isValid()   ? end.toString()   : QString();
+
+        specs.append(spec);
+    }
+    return specs;
+}
+
+void DesktopAppController::applyQuickFilter(QAbstractItemModel* model, const QString& field,
+                                            const QVariantList& values)
+{
+    QVariantList specs = activeColumnFilters(model);
+
+    // Remove whatever's currently set for this field (if any) — either to
+    // replace it below, or, if it already matched exactly, to leave it
+    // removed (toggle-off: clicking an already-active Quick Filter again
+    // clears just that one).
+    bool wasSameValues = false;
+    for (int i = specs.size() - 1; i >= 0; --i) {
+        const QVariantMap spec = specs.at(i).toMap();
+        if (spec.value("field").toString() != field) continue;
+        if (spec.value("values").toList() == values)
+            wasSameValues = true;
+        specs.removeAt(i);
+    }
+
+    if (!wasSameValues) {
+        QVariantMap spec;
+        spec["field"] = field;
+        spec["values"] = values;
+        spec["search"] = QString();
+        spec["rangeStart"] = QString();
+        spec["rangeEnd"] = QString();
+        specs.append(spec);
+    }
+
+    applyColumnFilters(model, specs);   // also bumps filterRev + persists
+}
+
+bool DesktopAppController::hasActiveColumnFilters(QAbstractItemModel* model) const
+{
+    SqlQueryModel* src = sourceModelOf(model);
+    return src && src->hasUserFilters();
+}
+
+QAbstractItemModel* DesktopAppController::modelForSection(const QString& section) const
+{
+    if (section == "projects")     return projectsListModel();
+    if (section == "items")        return allItemsModel();
+    if (section == "people")       return peopleModel();
+    if (section == "clients")      return clientsModel();
+    if (section == "statusreport") return statusReportItemsModel();
+    if (section == "trackeritems") return projectTrackerItemsModel();
+    if (section == "team")         return projectTeamMembersModel();
+    if (section == "locations")    return projectLocationsModel();
+    if (section == "notes")        return projectNotesModel();
+    return nullptr;
+}
+
+// ── Sort ─────────────────────────────────────────────────────────────────────
+
+QVariantList DesktopAppController::sortColumns(QAbstractItemModel* model) const
+{
+    QVariantList out;
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!src) return out;
+
+    const int cols = src->columnCount();
+    for (int c = 1; c < cols; ++c) {          // column 0 is the hidden id
+        if (src->getType(c) == SqlQueryModel::DBHtml) continue;   // long free text
+        QVariantMap m;
+        m["field"] = src->getColumnName(c);
+        m["label"] = src->headerData(c, Qt::Horizontal, Qt::DisplayRole).toString();
+        out.append(m);
+    }
+    return out;
+}
+
+// application_settings key a model's sort order is persisted under — same
+// scope resolver the column filters use (see settingsScopeForModel above),
+// so the project-tracker/master-items key collision fix covers sort too.
+static QString sortSettingKey(SqlQueryModel* src)
+{
+    return "UI:SortOrder:" + settingsScopeForModel(src);
+}
+
+void DesktopAppController::applySort(QAbstractItemModel* model, const QString& field, bool descending)
+{
+    auto* proxy = qobject_cast<SortFilterProxyModel*>(model);
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!proxy || !src) return;
+
+    const int col = src->getColumnNumber(field);
+    if (col < 0) return;
+
+    proxy->sort(col, descending ? Qt::DescendingOrder : Qt::AscendingOrder);
+
+    QVariantMap spec;
+    spec["field"] = field;
+    spec["descending"] = descending;
+    const QByteArray json = QJsonDocument(QJsonObject::fromVariantMap(spec)).toJson(QJsonDocument::Compact);
+    global_DBObjects.saveParameter(sortSettingKey(src), QString::fromUtf8(json));
+
+    ++m_sortRev;
+    emit sortRevChanged();
+}
+
+void DesktopAppController::clearSort(QAbstractItemModel* model)
+{
+    auto* proxy = qobject_cast<SortFilterProxyModel*>(model);
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!proxy || !src) return;
+
+    proxy->sort(-1);   // restores the model's base ORDER BY
+    global_DBObjects.saveParameter(sortSettingKey(src), QString());
+
+    ++m_sortRev;
+    emit sortRevChanged();
+}
+
+QVariantMap DesktopAppController::activeSort(QAbstractItemModel* model) const
+{
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!src) return {};
+    const QString json = global_DBObjects.loadParameter(sortSettingKey(src));
+    if (json.isEmpty()) return {};
+    return QJsonDocument::fromJson(json.toUtf8()).object().toVariantMap();
+}
+
+// Reapply a model's persisted sort (if any) after it's been created. Unlike
+// restoreColumnFilters, sort()ing an unloaded model is cheap — it just sets
+// the pending column/order, which the proxy applies when it next builds its
+// row mapping — so every filterable section is restored here, not only the
+// four models restoreColumnFilters forces an early query for.
+static void restoreSort(QAbstractItemModel* model)
+{
+    auto* proxy = qobject_cast<SortFilterProxyModel*>(model);
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!proxy || !src) return;
+
+    const QString json = global_DBObjects.loadParameter(sortSettingKey(src));
+    if (json.isEmpty()) return;
+
+    const QVariantMap spec = QJsonDocument::fromJson(json.toUtf8()).object().toVariantMap();
+    const int col = src->getColumnNumber(spec.value("field").toString());
+    if (col < 0) return;
+
+    proxy->sort(col, spec.value("descending").toBool() ? Qt::DescendingOrder : Qt::AscendingOrder);
 }
 
 // Reapply a model's persisted column filters (if any) after it's been created.
@@ -1846,7 +2051,27 @@ bool DesktopAppController::moveTrackerItem(const QString& itemId, const QString&
         const QString newNumber = isItemNumberUnique(newProjectId, itemId, currentNumber)
             ? currentNumber : src->getNextItemNumber(newProjectId).toString();
 
-        if (!applyRowFields(proxy, 0, { {1, newNumber}, {13, newNoteId}, {14, newProjectId} }))
+        // item_number + project_id form a composite unique key (see
+        // addUniqueKeys() in trackeritemsmodel.cpp), but applyRowFields()
+        // commits one setData() per field, and each setData() validates the
+        // OTHER key column against the row's cached value at that moment —
+        // not the value another field in this same batch is about to take.
+        // Setting {item_number, project_id} directly can therefore hit a
+        // false collision at the halfway point even though the starting pair
+        // and the final pair are each genuinely unique: e.g. moving an item
+        // out of project A (which happens to also hold a *different* item
+        // already numbered newNumber) into project B — writing item_number
+        // first collides against A's own row; writing project_id first
+        // collides if B already holds this item's *old* number. Parking the
+        // row under a disposable UUID item_number first guarantees every
+        // intermediate state is unique, so project_id and the real newNumber
+        // can then land safely in either order.
+        const QString tempNumber = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        if (!applyRowFields(proxy, 0, { {1, tempNumber} }))
+            return false;
+        if (!applyRowFields(proxy, 0, { {13, newNoteId}, {14, newProjectId} }))
+            return false;
+        if (!applyRowFields(proxy, 0, { {1, newNumber} }))
             return false;
 
         for (const QString& personId : { identifiedBy, assignedTo })

@@ -21,6 +21,20 @@ Rectangle {
     property bool showExport: false
     property bool showDelete: false
     property bool showFilter: true
+    // True when the current section's model has any active column filter
+    // (manual or Quick Filter) — highlights the Filter button so it's obvious
+    // a filter is narrowing the list. Computed by the caller (Main.qml), same
+    // as every other bound property here — this component stays presentational.
+    property bool filterActive: false
+    property bool showSort: true
+    // True when the current section's model has an active sort — highlights
+    // the Sort button the same way filterActive highlights Filter.
+    property bool sortActive: false
+    // The Sort button itself, so the caller can position SortMenu.openFor()
+    // beside it (SortMenu is section-driven and opened directly by the
+    // caller, unlike Filter which routes through this bar's filterClicked
+    // signal — see Main.qml's onSortClicked wiring).
+    property alias sortButtonItem: sortBtn
 
     // Set by the caller to resync the field's display to whichever section's
     // quick search is currently active (e.g. on rail section switch). Reading
@@ -34,6 +48,7 @@ Rectangle {
     signal exportClicked()
     signal deleteClicked()
     signal filterClicked()
+    signal sortClicked()
 
     Rectangle {
         anchors.bottom: parent.bottom
@@ -251,23 +266,45 @@ Rectangle {
             }
         }
 
-        // Filter button (opens the filter editor for the current list)
+        // Filter button (opens the filter editor for the current list) —
+        // highlighted (accent bg/border/icon) while filterActive is true.
         Rectangle {
             visible: bar.showFilter
             implicitHeight: 34
             implicitWidth: filtRow.implicitWidth + 22
             radius: Theme.radiusSm
-            color: filtHover.hovered ? Theme.surface2 : Theme.surface
-            border.color: Theme.border
+            color: bar.filterActive ? Theme.accentSoft : (filtHover.hovered ? Theme.surface2 : Theme.surface)
+            border.color: bar.filterActive ? Theme.accent : Theme.border
             RowLayout {
                 id: filtRow
                 anchors.centerIn: parent
                 spacing: 6
-                MaterialIcon { name: "filter_list"; size: 17; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
-                Text { text: qsTr("Filter"); color: Theme.text; font.pixelSize: 13; verticalAlignment: Text.AlignVCenter }
+                MaterialIcon { name: "filter_list"; size: 17; color: bar.filterActive ? Theme.accent : Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                Text { text: qsTr("Filter"); color: bar.filterActive ? Theme.accent : Theme.text; font.pixelSize: 13; verticalAlignment: Text.AlignVCenter }
             }
             HoverHandler { id: filtHover }
             TapHandler { onTapped: bar.filterClicked() }
+        }
+
+        // Sort button (opens SortMenu for the current list) — same highlighted
+        // treatment as Filter while sortActive is true.
+        Rectangle {
+            id: sortBtn
+            visible: bar.showSort
+            implicitHeight: 34
+            implicitWidth: sortRow.implicitWidth + 22
+            radius: Theme.radiusSm
+            color: bar.sortActive ? Theme.accentSoft : (sortHover.hovered ? Theme.surface2 : Theme.surface)
+            border.color: bar.sortActive ? Theme.accent : Theme.border
+            RowLayout {
+                id: sortRow
+                anchors.centerIn: parent
+                spacing: 6
+                MaterialIcon { name: "swap_vert"; size: 17; color: bar.sortActive ? Theme.accent : Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                Text { text: qsTr("Sort"); color: bar.sortActive ? Theme.accent : Theme.text; font.pixelSize: 13; verticalAlignment: Text.AlignVCenter }
+            }
+            HoverHandler { id: sortHover }
+            TapHandler { onTapped: bar.sortClicked() }
         }
 
         // Add button

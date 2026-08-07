@@ -57,23 +57,42 @@ Popup {
 
     function openFor(section) {
         _section = section
+        // Model resolution is the one canonical section→model map (also used
+        // by Quick Filter/Sort and the top bar's quick-search resync) — this
+        // switch now only picks the translated label for the header.
+        _model = DesktopAppController.modelForSection(section)
+        if (!_model) return
         switch (section) {
-        case "projects": _model = DesktopAppController.projectsListModel; _sectionLabel = qsTr("Projects"); break
-        case "items":    _model = DesktopAppController.allItemsModel;     _sectionLabel = qsTr("Master Items"); break
-        case "people":   _model = DesktopAppController.peopleModel;       _sectionLabel = qsTr("People"); break
-        case "clients":  _model = DesktopAppController.clientsModel;      _sectionLabel = qsTr("Clients"); break
-        case "statusreport": _model = DesktopAppController.statusReportItemsModel;  _sectionLabel = qsTr("Status Report Items"); break
-        case "trackeritems": _model = DesktopAppController.projectTrackerItemsModel; _sectionLabel = qsTr("Tracker Items"); break
-        case "team":          _model = DesktopAppController.projectTeamMembersModel; _sectionLabel = qsTr("Team"); break
-        case "locations":     _model = DesktopAppController.projectLocationsModel;   _sectionLabel = qsTr("Locations"); break
-        case "notes":         _model = DesktopAppController.projectNotesModel;       _sectionLabel = qsTr("Notes"); break
-        default: return
+        case "projects": _sectionLabel = qsTr("Projects"); break
+        case "items":    _sectionLabel = qsTr("Master Items"); break
+        case "people":   _sectionLabel = qsTr("People"); break
+        case "clients":  _sectionLabel = qsTr("Clients"); break
+        case "statusreport": _sectionLabel = qsTr("Status Report Items"); break
+        case "trackeritems": _sectionLabel = qsTr("Tracker Items"); break
+        case "team":          _sectionLabel = qsTr("Team"); break
+        case "locations":     _sectionLabel = qsTr("Locations"); break
+        case "notes":         _sectionLabel = qsTr("Notes"); break
+        default: _sectionLabel = ""; break
         }
         _cols = DesktopAppController.filterColumns(_model)
-        _sel = ({})
+        // Preload whatever's already active (e.g. from a Quick Filter, or a
+        // filter left over from a previous session) so Apply doesn't wipe it
+        // out from under the user — this dialog used to always start blank.
+        _sel = _preloadSel()
         _curIndex = 0
         _reloadValues()
         open()
+    }
+
+    function _preloadSel() {
+        var specs = DesktopAppController.activeColumnFilters(_model)
+        var sel = {}
+        for (var i = 0; i < specs.length; i++) {
+            var s = specs[i]
+            sel[s.field] = { values: s.values || [], search: s.search || "",
+                              start: s.rangeStart || "", end: s.rangeEnd || "" }
+        }
+        return sel
     }
 
     function _reloadValues() {

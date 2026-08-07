@@ -16,8 +16,28 @@ Item {
     signal projectActivated(string projectId)
     signal exportRequested(string table, string id)
     signal filterRequested()
+    signal sortRequested(real sx, real sy)
 
     property string _ctxId: ""
+
+    // Quick Filter entries for a right-clicked project row: pre-filled from
+    // that row's own client/contact (omitted when the row has none set),
+    // plus the two always-available overdue toggles — status_overdue/
+    // invoicing_overdue are computed "Yes"/"No" columns mirroring the same
+    // red-highlight logic the Status/Invoice Date chips already show (see
+    // projectsmodel.cpp).
+    function _quickFiltersForRow(m) {
+        var qf = []
+        var clientId = (m.client_id || "").toString()
+        if (clientId !== "")
+            qf.push({ icon: "apartment", label: qsTr("This Client"), field: "client_id", values: [clientId] })
+        var contactId = (m.primary_contact || "").toString()
+        if (contactId !== "")
+            qf.push({ icon: "person", label: qsTr("This Contact"), field: "primary_contact", values: [contactId] })
+        qf.push({ icon: "event_busy", label: qsTr("Status Overdue"), field: "status_overdue", values: ["Yes"] })
+        qf.push({ icon: "receipt_long", label: qsTr("Invoicing Overdue"), field: "invoicing_overdue", values: ["Yes"] })
+        return qf
+    }
 
     RecordContextMenu {
         id: ctxMenu
@@ -34,6 +54,7 @@ Item {
         onMoveToRequested: moveToFolderDialog.openFor(page._ctxId, ctxMenu.recordLabel)
         onExportRequested: page.exportRequested("projects", page._ctxId)
         onFilterRequested: page.filterRequested()
+        onSortRequested: (sx, sy) => page.sortRequested(sx, sy)
         onRefreshRequested: DesktopAppController.refreshModel(DesktopAppController.projectsListModel)
     }
 
@@ -317,6 +338,7 @@ Item {
                         page._ctxId = card.projId
                         ctxMenu.recordLabel = (card.model.project_number || "") + " "
                                               + (card.model.project_name || "")
+                        ctxMenu.quickFilters = page._quickFiltersForRow(card.model)
                         ctxMenu.openAt(sx, sy)
                     }
 

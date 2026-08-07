@@ -46,6 +46,7 @@ QtObject {
         "preferences":       "Ctrl+,",
         "exit":              "Ctrl+Q",
         "filter":            "Ctrl+Shift+F",
+        "sort":              "Ctrl+Shift+S",
         "toggle_fullscreen": root.fullscreen,
         "help":              "F1"
     })

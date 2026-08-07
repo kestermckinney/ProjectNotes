@@ -12,9 +12,21 @@ Item {
     signal personActivated(int row, string personId)
     signal exportRequested(string table, string id)
     signal filterRequested()
+    signal sortRequested(real sx, real sy)
 
     property int    _ctxRow: -1
     property string _ctxId: ""
+
+    // Quick Filter entry for a right-clicked person row: pre-filled from that
+    // row's own client — client_id is a genuine direct column on the people
+    // table (peoplemodel.cpp), not derived, so no lookup fix was needed here.
+    function _quickFiltersForRow(m) {
+        var qf = []
+        var clientId = (m.client_id || "").toString()
+        if (clientId !== "")
+            qf.push({ icon: "apartment", label: qsTr("This Client"), field: "client_id", values: [clientId] })
+        return qf
+    }
 
     RecordContextMenu {
         id: ctxMenu
@@ -29,6 +41,7 @@ Item {
         onDeleteRequested: DesktopAppController.deletePerson(page._ctxRow)
         onExportRequested: page.exportRequested("people", page._ctxId)
         onFilterRequested: page.filterRequested()
+        onSortRequested: (sx, sy) => page.sortRequested(sx, sy)
         onRefreshRequested: DesktopAppController.refreshModel(DesktopAppController.peopleModel)
     }
 
@@ -107,6 +120,7 @@ Item {
                         page._ctxRow = card.index
                         page._ctxId = card.pid
                         ctxMenu.recordLabel = (card.model.name || "").toString()
+                        ctxMenu.quickFilters = page._quickFiltersForRow(card.model)
                         ctxMenu.openAt(sx, sy)
                     }
 

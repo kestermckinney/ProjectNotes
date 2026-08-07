@@ -356,6 +356,74 @@ private slots:
         QCOMPARE(pm->rowCount(), total);
     }
 
+    // Quick Filter (stacking/toggle/highlight plumbing), the computed overdue
+    // columns it depends on, and the Sort menu plumbing — see DesktopAppController's
+    // activeColumnFilters/applyQuickFilter/hasActiveColumnFilters/modelForSection
+    // and sortColumns/applySort/clearSort/activeSort.
+    void test_14b_quickFilterAndSort()
+    {
+        auto* pm = c->projectsListModel();
+        const int total = pm->rowCount();
+        QVERIFY(total >= 1);
+
+        // status_overdue/invoicing_overdue are computed "Yes"/"No" columns
+        // added specifically so the Quick Filter's overdue shortcuts can go
+        // through the same column-filter pipeline as everything else.
+        const QVariantList cols = c->filterColumns(pm);
+        bool hasStatusOverdue = false, hasInvoicingOverdue = false;
+        for (const QVariant& cv : cols) {
+            const QString field = cv.toMap().value("field").toString();
+            if (field == "status_overdue")    hasStatusOverdue = true;
+            if (field == "invoicing_overdue") hasInvoicingOverdue = true;
+        }
+        QVERIFY(hasStatusOverdue);
+        QVERIFY(hasInvoicingOverdue);
+
+        // modelForSection is the canonical section->model map Filter/Sort/
+        // quick search all share.
+        QCOMPARE(c->modelForSection("projects"), static_cast<QAbstractItemModel*>(pm));
+        QVERIFY(c->modelForSection("not-a-real-section") == nullptr);
+
+        // applyQuickFilter stacks: two different fields both survive one
+        // after the other instead of the second replacing the first.
+        QVERIFY(!c->hasActiveColumnFilters(pm));
+        const int filterRevBefore = c->filterRev();
+        c->applyQuickFilter(pm, "client_id", { m_clientId });
+        QVERIFY(c->filterRev() > filterRevBefore);
+        c->applyQuickFilter(pm, "project_status", { c->projectStatusOptions().first() });
+        QVariantList active = c->activeColumnFilters(pm);
+        QCOMPARE(active.size(), 2);
+        QVERIFY(c->hasActiveColumnFilters(pm));
+
+        // Re-applying the same field/values toggles it off instead of piling
+        // up a duplicate — makes a checkmarked Quick Filter row idempotent.
+        c->applyQuickFilter(pm, "project_status", { c->projectStatusOptions().first() });
+        active = c->activeColumnFilters(pm);
+        QCOMPARE(active.size(), 1);
+        QCOMPARE(active.first().toMap().value("field").toString(), QStringLiteral("client_id"));
+
+        c->clearColumnFilters(pm);
+        QVERIFY(!c->hasActiveColumnFilters(pm));
+        c->refreshModel(pm);
+        QCOMPARE(pm->rowCount(), total);
+
+        // Sort: pick a column, verify it round-trips through activeSort, and
+        // that sorting alone never changes which rows are present.
+        const QVariantList sortCols = c->sortColumns(pm);
+        QVERIFY(!sortCols.isEmpty());
+        const int sortRevBefore = c->sortRev();
+        c->applySort(pm, "project_name", true);
+        QVERIFY(c->sortRev() > sortRevBefore);
+        QVariantMap sort = c->activeSort(pm);
+        QCOMPARE(sort.value("field").toString(), QStringLiteral("project_name"));
+        QCOMPARE(sort.value("descending").toBool(), true);
+        QCOMPARE(pm->rowCount(), total);
+
+        c->clearSort(pm);
+        sort = c->activeSort(pm);
+        QVERIFY(sort.value("field").toString().isEmpty());
+    }
+
     void test_15_viewOptions()
     {
         const bool a = c->showClosedProjects();

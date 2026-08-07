@@ -216,8 +216,58 @@ public:
     Q_INVOKABLE void applyColumnFilters(QAbstractItemModel* model, const QVariantList& specs);
     // Clear all user column filters on a model.
     Q_INVOKABLE void clearColumnFilters(QAbstractItemModel* model);
+    // The model's currently-active filter specs, in the same shape
+    // applyColumnFilters() consumes — lets a caller preload/merge with
+    // whatever's already active instead of blindly overwriting it (used by
+    // FilterDialog's preload and by applyQuickFilter's merge below).
+    Q_INVOKABLE QVariantList activeColumnFilters(QAbstractItemModel* model);
+    // Apply one Quick Filter entry: merges `field`/`values` into whatever
+    // column filters are already active (read via activeColumnFilters()) and
+    // applies the combined set — so clicking a second Quick Filter stacks
+    // with the first instead of replacing it. Re-clicking the same field with
+    // the same values removes it instead (toggle), so a checkmarked Quick
+    // Filter menu item is idempotent to click again.
+    Q_INVOKABLE void applyQuickFilter(QAbstractItemModel* model, const QString& field, const QVariantList& values);
+    // True if the model has any active column filter (quick or manual) —
+    // drives the Filter button's highlighted state. Read filterRev first in
+    // the same QML binding to pick up changes (a plain bool return has no
+    // change notification of its own).
+    Q_INVOKABLE bool hasActiveColumnFilters(QAbstractItemModel* model) const;
+    // Bumped whenever a model's active column filters change (apply/clear/
+    // quick filter) — see hasActiveColumnFilters().
+    Q_PROPERTY(int filterRev READ filterRev NOTIFY filterRevChanged)
+    int filterRev() const { return m_filterRev; }
     // Re-run a list model's query (context-menu "Refresh").
     Q_INVOKABLE void refreshModel(QAbstractItemModel* model);
+    // The Q_PROPERTY model behind a rail section — the one canonical mapping
+    // FilterDialog, the quick-search resync, and Quick Filter/Sort all share
+    // (previously duplicated per-caller). Covers all 9 filterable sections:
+    // projects/items/people/clients plus the 5 project sub-tab sections
+    // (statusreport/trackeritems/team/locations/notes). Returns nullptr for
+    // an unrecognized section.
+    Q_INVOKABLE QAbstractItemModel* modelForSection(const QString& section) const;
+
+    // ── Sort ─────────────────────────────────────────────────────────────────
+    // Columns a list can be sorted by: [{ field, label }]. Deliberately not
+    // filterColumns() — that skips DBNotSearchable columns, which on
+    // TrackerItemsModel excludes project_name/project_number, exactly what
+    // you'd most want to sort the master Items list by. Skips only the hidden
+    // id column and long free-text (DBHtml) columns.
+    Q_INVOKABLE QVariantList sortColumns(QAbstractItemModel* model) const;
+    // Sort `model` by `field`, persisted the same way column filters are
+    // (application_settings, not QSettings) so it follows the user across
+    // synced machines. Sorts at the proxy (SortFilterProxyModel::sort()) so
+    // foreign-key columns sort by their resolved display text, not the raw id.
+    Q_INVOKABLE void applySort(QAbstractItemModel* model, const QString& field, bool descending);
+    // Restore natural (the model's base ORDER BY) order.
+    Q_INVOKABLE void clearSort(QAbstractItemModel* model);
+    // The model's current sort, as {field, descending} ({} if unsorted) — for
+    // the Sort menu's checkmarks.
+    Q_INVOKABLE QVariantMap activeSort(QAbstractItemModel* model) const;
+    // Bumped whenever a model's sort changes (applySort/clearSort) — read
+    // first in a QML binding the same way filterRev is, for reactivity.
+    Q_PROPERTY(int sortRev READ sortRev NOTIFY sortRevChanged)
+    int sortRev() const { return m_sortRev; }
 
     // The projects in `folderId` that are currently *visible* in the projects
     // list proxy (i.e. that survive the active quick-search / column filter),
@@ -523,6 +573,8 @@ signals:
     void quitForUpdate();
     void viewOptionsChanged();
     void sidebarRevChanged();
+    void filterRevChanged();
+    void sortRevChanged();
     void projectManagerChanged();
     void syncSettingsChanged();
     void syncProgressChanged();
@@ -559,6 +611,13 @@ private:
     int  m_sidebarRev            = 0;
     void rebuildFolderSnapshot();
     void invalidateFolderSnapshot();
+
+    // Bumped by applyColumnFilters/clearColumnFilters/applyQuickFilter — see
+    // filterRev/hasActiveColumnFilters(). Filter changes are discrete user
+    // actions (unlike sidebarRev's coalesced bursts), so no debounce needed.
+    int m_filterRev = 0;
+    // Bumped by applySort/clearSort — see sortRev/activeSort().
+    int m_sortRev = 0;
 
     // Sync engine (lives on m_syncApiThread; created lazily by configureSyncApi).
     QThread*       m_syncApiThread = nullptr;

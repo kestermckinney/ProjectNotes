@@ -22,6 +22,14 @@ Popup {
     property bool   canExport: true
     property bool   canFilter: true
     property bool   canRefresh: true
+    // Quick Filter: pre-filled column-filter shortcuts for the row this menu
+    // was opened for — set by the page (from the clicked row's own field
+    // values) just before calling openAt(). Each entry: {icon, label, field,
+    // values}. Empty hides the trigger row entirely — pages that don't wire
+    // Quick Filter (or a row with nothing fillable, e.g. no client set)
+    // don't need to opt out explicitly.
+    property var    quickFilters: []
+    readonly property bool canQuickFilter: quickFilters.length > 0
 
     // True when any of the top-group actions (Open/New/Delete/Duplicate/Move To)
     // is present — drives the divider that separates that group from
@@ -52,6 +60,11 @@ Popup {
     signal moveToRequested()
     signal exportRequested()
     signal filterRequested()
+    // Carries the menu's own scene position (Overlay.overlay space, same as
+    // openAt()'s sx,sy) as the anchor for SortMenu — it's a shared instance
+    // living in Main.qml, section-driven and positioned by coordinates rather
+    // than an Item reference (see SortMenu.qml's doc comment).
+    signal sortRequested(real sx, real sy)
     signal refreshRequested()
 
     modal: true
@@ -155,9 +168,71 @@ Popup {
         flyout.openBeside(pluginTriggerRow)
     }
     onClosed: {
-        openDelay.stop(); pluginSubOpenDelay.stop()
-        flyout.close(); pluginSubFlyout.close()
-        pluginOpen = false; pluginSubIndex = -1
+        openDelay.stop(); pluginSubOpenDelay.stop(); qfOpenDelay.stop()
+        flyout.close(); pluginSubFlyout.close(); qfFlyout.close()
+        pluginOpen = false; pluginSubIndex = -1; quickFilterOpen = false
+    }
+
+    // ── Quick Filter ─────────────────────────────────────────────────────────
+    // One flyout level (unlike Plugins' two) — a flat list of pre-filled
+    // column-filter shortcuts plus a trailing "Clear Filters" row. Mirrors the
+    // Plugins trigger/flyout pattern above.
+    property bool quickFilterOpen: false
+    Timer {
+        id: qfOpenDelay
+        interval: 300
+        onTriggered: menu._activateQuickFilter()
+    }
+    function _activateQuickFilter() {
+        if (!menu.canQuickFilter) return
+        menu.quickFilterOpen = true
+        qfFlyout.openBeside(quickFilterTriggerRow)
+    }
+    // True if `spec`'s field/values (from activeColumnFilters) exactly match
+    // a quick-filter entry — drives its checkmark.
+    function _quickFilterMatches(qf, activeSpecs) {
+        for (var i = 0; i < activeSpecs.length; i++) {
+            if (activeSpecs[i].field !== qf.field) continue
+            var v = activeSpecs[i].values
+            if (v.length !== qf.values.length) continue
+            var same = true
+            for (var j = 0; j < v.length; j++) {
+                if (v[j] !== qf.values[j]) { same = false; break }
+            }
+            if (same) return true
+        }
+        return false
+    }
+    MenuFlyout {
+        id: qfFlyout
+        items: {
+            // Reading filterRev makes this binding re-evaluate whenever any
+            // quick/manual filter changes, so checkmarks stay live while the
+            // menu is open (activeColumnFilters() itself has no change
+            // notification of its own — see DesktopAppController.filterRev).
+            var rev = DesktopAppController.filterRev
+            var activeSpecs = menu.model ? DesktopAppController.activeColumnFilters(menu.model) : []
+            var list = menu.quickFilters.map(function(qf) {
+                return { icon: qf.icon || "filter_alt", label: qf.label || "",
+                         trailingText: "", toggle: true,
+                         checked: menu._quickFilterMatches(qf, activeSpecs) }
+            })
+            list.push({ icon: "filter_alt_off", label: qsTr("Clear Filters"),
+                        trailingText: "", toggle: false, checked: false })
+            return list
+        }
+        onItemActivated: (i) => {
+            if (i === menu.quickFilters.length) {
+                DesktopAppController.clearColumnFilters(menu.model)
+                menu.close()
+                return
+            }
+            var qf = menu.quickFilters[i]
+            DesktopAppController.applyQuickFilter(menu.model, qf.field, qf.values)
+            // Deliberately don't close — quick filters are checkable/
+            // stackable (like AppMenu's View toggles), so the user can tick
+            // several from one open menu; `items` above re-evaluates live.
+        }
     }
 
     MenuFlyout {
@@ -246,7 +321,28 @@ Popup {
                 Layout.topMargin: 3; Layout.bottomMargin: 3
             }
             MenuRow { icon: "ios_share";    label: qsTr("Export XML…"); visible: menu.canExport;  onActivated: menu._fire(menu.exportRequested) }
+            MenuRow {
+                id: quickFilterTriggerRow
+                icon: "filter_alt"
+                label: qsTr("Quick Filter")
+                visible: menu.canQuickFilter
+                showChevron: true
+                highlighted: menu.quickFilterOpen
+                onHoveredChanged: {
+                    if (hovered) qfOpenDelay.restart()
+                    else qfOpenDelay.stop()
+                }
+                onActivated: {
+                    qfOpenDelay.stop()
+                    menu._activateQuickFilter()
+                }
+            }
             MenuRow { icon: "filter_list";  label: qsTr("Filter…");     visible: menu.canFilter;  onActivated: menu._fire(menu.filterRequested) }
+            MenuRow {
+                icon: "swap_vert"; label: qsTr("Sort…")
+                visible: menu.canFilter
+                onActivated: { menu.close(); menu.sortRequested(menu.x, menu.y) }
+            }
             MenuRow { icon: "refresh";      label: qsTr("Refresh");     visible: menu.canRefresh; onActivated: menu._fire(menu.refreshRequested) }
 
             // Plugin menus for this table (dataexport == model table), like the

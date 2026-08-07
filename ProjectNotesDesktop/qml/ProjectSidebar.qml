@@ -20,6 +20,7 @@ Rectangle {
     // right-click / kebab menu can export a project or open the filter dialog.
     signal exportRequested(string table, string id)
     signal filterRequested()
+    signal sortRequested(real sx, real sy)
     // A tracker item was dropped on a project row; forwarded from FolderGroup.
     signal itemMoveRequested(string itemId, string projectId)
 
@@ -43,6 +44,7 @@ Rectangle {
         onMoveToRequested: moveToFolderDialog.openFor(sidebar._ctxId, projCtxMenu.recordLabel)
         onExportRequested: sidebar.exportRequested("projects", sidebar._ctxId)
         onFilterRequested: sidebar.filterRequested()
+        onSortRequested: (sx, sy) => sidebar.sortRequested(sx, sy)
         onRefreshRequested: DesktopAppController.refreshModel(DesktopAppController.projectsListModel)
     }
 

@@ -36,9 +36,15 @@ TrackerItemsModel::TrackerItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
             internal_item,
             (select GROUP_CONCAT(update_note, ',') from item_tracker_updates where item_tracker.id=item_tracker_updates.item_id ) comments,
             (select project_status from projects p where p.id=item_tracker.project_id) project_status,
-            (select id from projects c where c.id=project_id) client_id,
+            (select client_id from projects c where c.id=project_id) client_id,
             (select project_name from projects p where p.id=item_tracker.project_id) project_name,
             (select project_number from projects p where p.id=item_tracker.project_id) project_number,
+            (case
+                when date_due is null or date_due = '' then 'No'
+                when date('now','localtime') > date(date_due,'unixepoch','localtime')
+                     and status not in ('Resolved','Cancelled') then 'Yes'
+                else 'No'
+            end) item_overdue,
             deleted
         FROM item_tracker
     ) item_tracker
@@ -70,9 +76,15 @@ TrackerItemsModel::TrackerItemsModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
     addColumn("internal_item", tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable, DBNotUnique);
     addColumn("comments", tr("Comments"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("project_status", tr("Project Status"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
-    addColumn("client_id", tr("Client"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    addColumn("client_id", tr("Client"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique,
+              "clients", "id", "client_name");
     addColumn("project_name", tr("Project Name"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("project_number", tr("Project Number"), DBString, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
+    // Computed "Yes"/"No" — date_due strictly in the past and not Resolved/
+    // Cancelled. Mirrors the red (overdue) branch of data()'s ForegroundRole
+    // logic below (column 10) so it's filterable via the same column-filter
+    // pipeline everything else uses — see the QML desktop Quick Filter feature.
+    addColumn("item_overdue", tr("Overdue"), DBString, DBSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
     QStringList key1 = {"project_id", "item_number"};
 

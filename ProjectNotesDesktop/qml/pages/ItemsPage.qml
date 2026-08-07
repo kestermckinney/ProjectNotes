@@ -12,6 +12,7 @@ Item {
     signal itemActivated(string itemId)
     signal exportRequested(string table, string id)
     signal filterRequested()
+    signal sortRequested(real sx, real sy)
     signal moveToRequested(string itemId)
 
     property string _ctxId: ""
@@ -37,6 +38,7 @@ Item {
         onMoveToRequested: page.moveToRequested(page._ctxId)
         onExportRequested: page.exportRequested("item_tracker", page._ctxId)
         onFilterRequested: page.filterRequested()
+        onSortRequested: (sx, sy) => page.sortRequested(sx, sy)
         onRefreshRequested: DesktopAppController.refreshAllItems()
     }
 
@@ -52,6 +54,31 @@ Item {
     function _pname(id) {
         var s = (id || "").toString()
         return s !== "" ? DesktopAppController.peopleNameForId(s) : ""
+    }
+
+    // Quick Filter entries for a right-clicked item row: pre-filled from that
+    // row's own client/assigned-to/identified-by (omitted when unset), plus
+    // the always-available overdue toggle and the three priority shortcuts.
+    // item_overdue is a computed "Yes"/"No" column (date_due in the past and
+    // not Resolved/Cancelled — see trackeritemsmodel.cpp); priority values
+    // are the exact case-sensitive strings DesktopAppController.itemPriorityOptions()
+    // returns ("Low"/"Medium"/"High").
+    function _quickFiltersForRow(m) {
+        var qf = []
+        var clientId = (m.client_id || "").toString()
+        if (clientId !== "")
+            qf.push({ icon: "apartment", label: qsTr("This Client"), field: "client_id", values: [clientId] })
+        var assignedId = (m.assigned_to || "").toString()
+        if (assignedId !== "")
+            qf.push({ icon: "person_pin", label: qsTr("This Assigned To"), field: "assigned_to", values: [assignedId] })
+        var identifiedId = (m.identified_by || "").toString()
+        if (identifiedId !== "")
+            qf.push({ icon: "badge", label: qsTr("This Identified By"), field: "identified_by", values: [identifiedId] })
+        qf.push({ icon: "event_busy", label: qsTr("Overdue Items"), field: "item_overdue", values: ["Yes"] })
+        qf.push({ icon: "priority_high", label: qsTr("High Priority"),   field: "priority", values: ["High"] })
+        qf.push({ icon: "flag",          label: qsTr("Medium Priority"), field: "priority", values: ["Medium"] })
+        qf.push({ icon: "low_priority",  label: qsTr("Low Priority"),    field: "priority", values: ["Low"] })
+        return qf
     }
 
     // "LABEL value" metadata pair; hides itself when the value is empty.
@@ -221,6 +248,7 @@ Item {
                     function _openMenu(sx, sy) {
                         page._ctxId = card.iid
                         ctxMenu.recordLabel = (card.model.item_name || "").toString()
+                        ctxMenu.quickFilters = page._quickFiltersForRow(card.model)
                         ctxMenu.openAt(sx, sy)
                     }
 

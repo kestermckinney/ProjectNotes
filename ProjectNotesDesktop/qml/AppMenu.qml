@@ -70,6 +70,7 @@ Popup {
         { name: qsTr("Edit"), items: [
             { icon: "search",       label: qsTr("Find"),        key: AppShortcuts.text("find"),   action: "find" },
             { icon: "filter_list",  label: qsTr("Filter Data…"),key: AppShortcuts.text("filter"), action: "filter" },
+            { icon: "swap_vert",    label: qsTr("Sort…"),       key: AppShortcuts.text("sort"),   action: "sort" },
         ]},
         { name: qsTr("View"), items: [
             { icon: Theme.dark ? "light_mode" : "dark_mode", label: qsTr("Dark Mode"),

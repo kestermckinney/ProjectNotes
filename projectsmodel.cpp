@@ -40,7 +40,30 @@ ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
         (case when bcwp > 0 then round((actual -  bcwp) / bcwp * 100.0, 2) else NULL end) cv,
         (case when bcws > 0 then round((bcwp -  bcws) / bcws * 100.0, 2) else NULL end) sv,
         (case when bac > 0 then round(bcwp / bac * 100.0, 2) else NULL end) pct_complete,
-        (case when actual > 0 then round(bcwp / actual, 2) else NULL end) cpi
+        (case when actual > 0 then round(bcwp / actual, 2) else NULL end) cpi,
+        (case
+            when last_status_date is null or last_status_date = '' then 'No'
+            when status_report_period = 'Weekly' and
+                 cast(julianday('now','localtime','start of day')
+                      - julianday(last_status_date,'unixepoch','localtime','start of day') as integer) > 7
+                 then 'Yes'
+            when status_report_period = 'Bi-Weekly' and
+                 cast(julianday('now','localtime','start of day')
+                      - julianday(last_status_date,'unixepoch','localtime','start of day') as integer) > 14
+                 then 'Yes'
+            when status_report_period = 'Monthly' and
+                 cast(julianday('now','localtime','start of day')
+                      - julianday(last_status_date,'unixepoch','localtime','start of day') as integer) >= 31
+                 then 'Yes'
+            else 'No'
+        end) status_overdue,
+        (case
+            when invoicing_period = 'Monthly' and
+                 (last_invoice_date is null or last_invoice_date = '' or
+                  date('now','localtime') > date(last_invoice_date,'unixepoch','localtime','start of month','+1 month'))
+                 then 'Yes'
+            else 'No'
+        end) invoicing_overdue
         FROM projects
         )");
 
@@ -70,6 +93,14 @@ ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
     addColumn("sv", tr("SV"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn("pct_complete", tr("Completed"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn("cpi", tr("CPI"), DBReal, DBSearchable, DBNotRequired, DBReadOnly);
+    // Computed "Yes"/"No" columns mirroring the red (overdue) branch of
+    // data()'s ForegroundRole logic below, so they're filterable through the
+    // same column-filter pipeline as every other field — see the QML desktop
+    // Quick Filter feature. Milestone/Complete invoicing periods never turn
+    // red today either, so invoicing_overdue can never be "Yes" for those —
+    // intentional, matches the existing color semantics exactly.
+    addColumn("status_overdue", tr("Status Overdue"), DBString, DBSearchable, DBNotRequired, DBReadOnly);
+    addColumn("invoicing_overdue", tr("Invoicing Overdue"), DBString, DBSearchable, DBNotRequired, DBReadOnly);
 
     addRelatedTable("project_notes", "project_id", "id", "Meeting", DBExportable);
     addRelatedTable("item_tracker", "project_id", "id", "Action/Tracker Item", DBExportable);

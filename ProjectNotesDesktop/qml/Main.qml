@@ -170,15 +170,28 @@ ApplicationWindow {
 
     // The quick-search-able models, keyed by rail section — shared by the top
     // bar's onSearchEdited (write) and selectSection's resync (read) so the
-    // two can't drift apart.
+    // two can't drift apart. Quick search only applies to the 4 top-level
+    // rail sections (not the 5 project sub-tabs); model resolution itself
+    // delegates to DesktopAppController.modelForSection(), the one canonical
+    // section→model map also used by Filter and Sort.
     function _quickSearchModelForSection(section) {
         switch (section) {
-        case "projects": return DesktopAppController.projectsListModel
-        case "people":   return DesktopAppController.peopleModel
-        case "clients":  return DesktopAppController.clientsModel
-        case "items":    return DesktopAppController.allItemsModel
-        default:         return null
+        case "projects": case "people": case "clients": case "items":
+            return DesktopAppController.modelForSection(section)
+        default:
+            return null
         }
+    }
+
+    // Opens SortMenu for whatever section is active, anchored beside the top
+    // bar's Sort button — used by the app-menu "Sort…" action and its keyboard
+    // shortcut, neither of which has a clicked row/chip of their own to
+    // position from (contrast the per-row/per-chip Sort triggers, which pass
+    // their own coordinates directly).
+    function _openSortMenuForCurrentSection() {
+        if (!topBar.sortButtonItem) return
+        var p = topBar.sortButtonItem.mapToItem(Overlay.overlay, 0, topBar.sortButtonItem.height)
+        sortMenu.openFor(root.currentSection, p.x, p.y + 4)
     }
 
     function selectSection(section) {
@@ -325,6 +338,7 @@ ApplicationWindow {
         case "sync":        DesktopAppController.syncNow(); break
         case "sync_all":    DesktopAppController.syncAll(); break
         case "filter":      filterDialog.openFor(root.currentSection); break
+        case "sort":        root._openSortMenuForCurrentSection(); break
         case "logs":        logViewer.openViewer(); break
         case "toggle_fullscreen":
             if (root.visibility === Window.FullScreen) {
@@ -429,6 +443,7 @@ ApplicationWindow {
             onProjectActivated: (pid) => root.openProject(pid)
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onFilterRequested: () => filterDialog.openFor(root.currentSection)
+            onSortRequested: (sx, sy) => sortMenu.openFor(root.currentSection, sx, sy)
             onItemMoveRequested: (itemId, pid) => root.requestTrackerItemMove(itemId, pid)
         }
 
@@ -447,6 +462,22 @@ ApplicationWindow {
                 showNew: root.meta.add && contentStack.depth <= 1
                 showSearch: root.meta.search && contentStack.depth <= 1
                 showFilter: root.meta.search && contentStack.depth <= 1
+                // Reads filterRev first so this re-evaluates whenever any
+                // filter (quick or manual) changes anywhere — see
+                // DesktopAppController.filterRev/hasActiveColumnFilters().
+                filterActive: {
+                    DesktopAppController.filterRev
+                    var m = DesktopAppController.modelForSection(root.currentSection)
+                    return m ? DesktopAppController.hasActiveColumnFilters(m) : false
+                }
+                showSort: root.meta.search && contentStack.depth <= 1
+                // Reads sortRev first for the same reason filterActive reads
+                // filterRev — see DesktopAppController.sortRev/activeSort().
+                sortActive: {
+                    DesktopAppController.sortRev
+                    var m = DesktopAppController.modelForSection(root.currentSection)
+                    return m ? (DesktopAppController.activeSort(m).field || "") !== "" : false
+                }
                 showBack: contentStack.depth > 1
                 showExport: contentStack.currentItem
                             && contentStack.currentItem.exportTable !== undefined
@@ -460,6 +491,7 @@ ApplicationWindow {
                                                    contentStack.currentItem.exportId)
                 onAddClicked: root.addForCurrentSection()
                 onFilterClicked: filterDialog.openFor(root.currentSection)
+                onSortClicked: root._openSortMenuForCurrentSection()
                 onSearchEdited: (t) => {
                     var m = root._quickSearchModelForSection(root.currentSection)
                     if (m) DesktopAppController.setQuickSearch(m, t)
@@ -527,6 +559,7 @@ ApplicationWindow {
     }
     Shortcut { sequence: AppShortcuts.map["import"]; onActivated: importDialog.open() }
     Shortcut { sequence: AppShortcuts.map["filter"]; onActivated: filterDialog.openFor(root.currentSection) }
+    Shortcut { sequence: AppShortcuts.map["sort"];   onActivated: root._openSortMenuForCurrentSection() }
     // Always-on toggle (F11 win/linux, Control+Command+F mac — see AppShortcuts.fullscreen).
     Shortcut { sequence: AppShortcuts.map["toggle_fullscreen"]; onActivated: root.handleMenuAction("toggle_fullscreen") }
     // Esc only ever exits full screen (never enters it) — matches browser/OS
@@ -549,6 +582,7 @@ ApplicationWindow {
             onProjectActivated: (pid) => root.openProject(pid)
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onFilterRequested: () => filterDialog.openFor(root.currentSection)
+            onSortRequested: (sx, sy) => sortMenu.openFor(root.currentSection, sx, sy)
         }
     }
     Component {
@@ -563,6 +597,8 @@ ApplicationWindow {
             onNewRequested: root.addForCurrentSection()
             onFilterRequested: filterDialog.openFor(root.currentSection)
             onSubFilterRequested: (section) => filterDialog.openFor(section)
+            onSortRequested: (sx, sy) => sortMenu.openFor(root.currentSection, sx, sy)
+            onSubSortRequested: (section, sx, sy) => sortMenu.openFor(section, sx, sy)
         }
     }
     Component {
@@ -579,6 +615,7 @@ ApplicationWindow {
             onPersonActivated: (row, personId) => root.openPerson(row, personId)
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onFilterRequested: () => filterDialog.openFor(root.currentSection)
+            onSortRequested: (sx, sy) => sortMenu.openFor(root.currentSection, sx, sy)
         }
     }
     Component {
@@ -591,6 +628,7 @@ ApplicationWindow {
             onClientActivated: (row, clientId) => root.openClient(row, clientId)
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onFilterRequested: () => filterDialog.openFor(root.currentSection)
+            onSortRequested: (sx, sy) => sortMenu.openFor(root.currentSection, sx, sy)
         }
     }
     Component {
@@ -603,6 +641,7 @@ ApplicationWindow {
             onItemActivated: (itemId) => root.openItem(itemId)
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onFilterRequested: () => filterDialog.openFor(root.currentSection)
+            onSortRequested: (sx, sy) => sortMenu.openFor(root.currentSection, sx, sy)
             onMoveToRequested: (id) => moveToDialog.openFor(id)
         }
     }
@@ -1079,6 +1118,7 @@ ApplicationWindow {
 
     // Filter editor (opened from the TopBar Filter button and the hamburger menu).
     FilterDialog { id: filterDialog }
+    SortMenu { id: sortMenu }
 
     // Tracker item move: MoveReviewDialog confirms the sidebar drag/drop path
     // (shown only when it needs attention — renumber or losing a linked

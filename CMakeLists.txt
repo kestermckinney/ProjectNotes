@@ -501,6 +501,12 @@ if(WIN32)
     set(DEPLOY_DIR  "${CMAKE_BINARY_DIR}/deploy")
     set(NSIS_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/windows")
 
+    # Only meaningful when the QML desktop target actually exists — stages
+    # its binary via $<TARGET_FILE:ProjectNotesDesktop>. Guarded so a
+    # -DBUILD_QML_DESKTOP=OFF configure (e.g. tests/desktop's dedicated
+    # "-DBUILD_QML_DESKTOP=OFF -DBUILD_QML_DESKTOP_TESTS=ON" build) doesn't
+    # fail to generate over a target that was never built.
+    if(TARGET ProjectNotesDesktop)
     add_custom_target(deploy
         COMMENT "Staging Windows deployment to ${DEPLOY_DIR}"
 
@@ -588,5 +594,6 @@ if(WIN32)
             VERBATIM
         )
     endif()
+    endif() # TARGET ProjectNotesDesktop
 endif()
 

@@ -72,7 +72,12 @@ foreach(_f ${DESK_QML})
     file(RELATIVE_PATH _rel "${DESKTOP_DIR}" "${_f}")
     set_source_files_properties("${_f}" PROPERTIES QT_RESOURCE_ALIAS "${_rel}")
 endforeach()
-set_source_files_properties("${DESKTOP_DIR}/qml/Theme.qml"
+# Theme.qml and AppShortcuts.qml are QML-file singletons (pragma Singleton) —
+# mirrors ProjectNotesDesktop/CMakeLists.txt's own set_source_files_properties
+# call. Missing this for AppShortcuts.qml here (while the app's own
+# CMakeLists.txt had it) previously left every AppShortcuts.map/.text() lookup
+# broken (undefined) specifically in this test target, caught by UiSmokeTest.
+set_source_files_properties("${DESKTOP_DIR}/qml/Theme.qml" "${DESKTOP_DIR}/qml/AppShortcuts.qml"
     PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 set(_font "${DESKTOP_DIR}/resources/MaterialSymbolsRounded.ttf")

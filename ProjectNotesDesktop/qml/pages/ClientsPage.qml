@@ -12,6 +12,7 @@ Item {
     signal clientActivated(int row, string clientId)
     signal exportRequested(string table, string id)
     signal filterRequested()
+    signal sortRequested(real sx, real sy)
 
     property int    _ctxRow: -1
     property string _ctxId: ""
@@ -29,6 +30,7 @@ Item {
         onDeleteRequested: DesktopAppController.deleteClient(page._ctxRow)
         onExportRequested: page.exportRequested("clients", page._ctxId)
         onFilterRequested: page.filterRequested()
+        onSortRequested: (sx, sy) => page.sortRequested(sx, sy)
         onRefreshRequested: DesktopAppController.refreshModel(DesktopAppController.clientsModel)
     }
 
