@@ -13,6 +13,7 @@ Item {
     signal exportRequested(string table, string id)
     signal filterRequested()
     signal sortRequested(real sx, real sy)
+    signal goToClientRequested(string clientId)
 
     property int    _ctxRow: -1
     property string _ctxId: ""
@@ -43,6 +44,7 @@ Item {
         onFilterRequested: page.filterRequested()
         onSortRequested: (sx, sy) => page.sortRequested(sx, sy)
         onRefreshRequested: DesktopAppController.refreshModel(DesktopAppController.peopleModel)
+        onGoToClientRequested: page.goToClientRequested(clientId)
     }
 
     // Virtualized list — only visible cards (plus cacheBuffer) are instantiated,
@@ -120,6 +122,7 @@ Item {
                         page._ctxRow = card.index
                         page._ctxId = card.pid
                         ctxMenu.recordLabel = (card.model.name || "").toString()
+                        ctxMenu.clientId = (card.model.client_id || "").toString()
                         ctxMenu.quickFilters = page._quickFiltersForRow(card.model)
                         ctxMenu.openAt(sx, sy)
                     }

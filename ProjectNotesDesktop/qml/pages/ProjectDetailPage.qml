@@ -82,6 +82,9 @@ Item {
     // position since SortMenu.openFor() positions itself by coordinates
     // rather than an Item reference (see SortMenu.qml's doc comment).
     signal subSortRequested(string section, real sx, real sy)
+    // Navigation signals from sub-table row menus
+    signal goToPersonRequested(string personId)
+    signal goToClientRequested(string clientId)
 
     // Whether a sub-tab's own model currently has an active column filter —
     // drives its SectionBar's Filter chip highlight. Reads filterRev first so
@@ -726,7 +729,8 @@ Item {
                             function _menu(sx, sy) {
                                 rowMenu.openFor(DesktopAppController.projectTeamMembersModel,
                                     (teamCard.model.id || "").toString(), qsTr("Team Member"),
-                                    (teamCard.model.name || "").toString(), sx, sy)
+                                    (teamCard.model.name || "").toString(), sx, sy, false, false,
+                                    (teamCard.model.people_id || "").toString())
                             }
                             RowLayout {
                                 anchors.fill: parent
@@ -1404,6 +1408,8 @@ Item {
             if (newId !== "") { page._saveNow(); page.itemActivated(newId) }
         }
         onMoveToRecord: (id) => page.moveToRequested(id)
+        onGoToPersonRequested: (personId) => page.goToPersonRequested(personId)
+        onGoToClientRequested: (clientId) => page.goToClientRequested(clientId)
     }
 
     // The project's own record/plugin menu — opened by the title row's kebab

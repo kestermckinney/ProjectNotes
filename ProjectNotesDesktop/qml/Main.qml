@@ -599,6 +599,20 @@ ApplicationWindow {
             onSubFilterRequested: (section) => filterDialog.openFor(section)
             onSortRequested: (sx, sy) => sortMenu.openFor(root.currentSection, sx, sy)
             onSubSortRequested: (section, sx, sy) => sortMenu.openFor(section, sx, sy)
+            onGoToPersonRequested: (personId) => {
+                var row = DesktopAppController.peopleRowForId(personId)
+                if (row >= 0) {
+                    root.selectSection("people")
+                    root.openPerson(row, personId)
+                }
+            }
+            onGoToClientRequested: (clientId) => {
+                var row = DesktopAppController.clientRowForId(clientId)
+                if (row >= 0) {
+                    root.selectSection("clients")
+                    root.openClient(row, clientId)
+                }
+            }
         }
     }
     Component {
@@ -616,6 +630,13 @@ ApplicationWindow {
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onFilterRequested: () => filterDialog.openFor(root.currentSection)
             onSortRequested: (sx, sy) => sortMenu.openFor(root.currentSection, sx, sy)
+            onGoToClientRequested: (clientId) => {
+                var row = DesktopAppController.clientRowForId(clientId)
+                if (row >= 0) {
+                    root.selectSection("clients")
+                    root.openClient(row, clientId)
+                }
+            }
         }
     }
     Component {

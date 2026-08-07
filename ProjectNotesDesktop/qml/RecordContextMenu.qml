@@ -46,6 +46,12 @@ Popup {
     // plugins are resolved/run by this table name instead of the model's table.
     property string recordTable: ""
     property var    _plugins: []
+    // Navigation IDs for "Go To Person" and "Go To Client" actions
+    // Set by the page before opening the menu if the row supports these navigation actions
+    property string personId: ""
+    property string clientId: ""
+    property bool   canGoToPerson: personId !== ""
+    property bool   canGoToClient: clientId !== ""
     // All of this record's plugin menus collapse into a single "Plugins" entry
     // (icon/label + nested items), mirroring AppMenu.qml's globalPluginGroup:
     // {name, items}, where items are either plain leaf entries (no submenu) or
@@ -66,6 +72,9 @@ Popup {
     // than an Item reference (see SortMenu.qml's doc comment).
     signal sortRequested(real sx, real sy)
     signal refreshRequested()
+    // Navigation signals for jumping to related records
+    signal goToPersonRequested(string personId)
+    signal goToClientRequested(string clientId)
 
     modal: true
     dim: false
@@ -310,7 +319,14 @@ Popup {
         MenuRow { icon: "drive_file_move"; label: qsTr("Move To…"); visible: menu.canMoveTo;   onActivated: menu._fire(menu.moveToRequested) }
         MenuRow { icon: "delete";       label: qsTr("Delete");      visible: menu.canDelete;    danger: true; onActivated: menu._fire(menu.deleteRequested) }
         Rectangle {
-            visible: menu._hasTopGroup
+            visible: menu._hasTopGroup || menu.canGoToPerson || menu.canGoToClient
+            Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft
+            Layout.topMargin: 3; Layout.bottomMargin: 3
+        }
+        MenuRow { icon: "person";       label: qsTr("Go To Person"); visible: menu.canGoToPerson; onActivated: { menu.close(); menu.goToPersonRequested(menu.personId) } }
+        MenuRow { icon: "apartment";    label: qsTr("Go To Client"); visible: menu.canGoToClient; onActivated: { menu.close(); menu.goToClientRequested(menu.clientId) } }
+        Rectangle {
+            visible: (menu.canGoToPerson || menu.canGoToClient) && (menu.canExport || menu.canFilter)
             Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft
             Layout.topMargin: 3; Layout.bottomMargin: 3
         }
