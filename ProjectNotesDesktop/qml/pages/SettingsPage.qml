@@ -427,6 +427,12 @@ Item {
                     color: Theme.text3; font.pixelSize: 13
                 }
                 Text {
+                    visible: text.length > 0
+                    text: DesktopAppController.developerProfile().length > 0
+                          ? "Profile: " + DesktopAppController.developerProfile() : ""
+                    color: Theme.text3; font.pixelSize: 13
+                }
+                Text {
                     text: "© 2022–2026 Paul McKinney"
                     color: Theme.text3; font.pixelSize: 12
                 }

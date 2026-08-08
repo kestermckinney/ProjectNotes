@@ -529,6 +529,9 @@ public:
     // just the header version it was compiled with — matches the Widgets
     // AboutDialog's Qt Version line.
     Q_INVOKABLE QString qtRuntimeVersion() const;
+    // Active --developer-profile name, or "" when running under the default
+    // profile — matches the Widgets app's window-title "((profile))" prefix.
+    Q_INVOKABLE QString developerProfile() const { return s_developerProfile; }
     // Query GitHub for a newer release; answers via updateAvailable() /
     // upToDate() / updateCheckFailed(). The silent variant is for the automatic
     // launch-time check: it stays quiet unless an update is actually available.
