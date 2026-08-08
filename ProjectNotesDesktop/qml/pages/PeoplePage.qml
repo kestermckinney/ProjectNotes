@@ -47,6 +47,32 @@ Item {
         onGoToClientRequested: page.goToClientRequested(clientId)
     }
 
+    // Drop a vCard (a .vcf file, or a contact dragged straight from Outlook /
+    // Contacts) anywhere on the list to add it: the contact's company is
+    // associated with a matching client (or a new one is created), and the
+    // person is added. See DesktopAppController::addPeopleFromVCardDrop().
+    DropArea {
+        anchors.fill: parent
+        onDropped: (drop) => {
+            var urls = []
+            if (drop.hasUrls)
+                for (var i = 0; i < drop.urls.length; i++)
+                    urls.push(drop.urls[i].toString())
+            var text = ""
+            for (var i = 0; i < drop.formats.length; i++) {
+                if (drop.formats[i].toLowerCase().indexOf("vcard") !== -1) {
+                    text = drop.getDataAsString(drop.formats[i])
+                    break
+                }
+            }
+            if (text === "" && drop.hasText && drop.text.indexOf("BEGIN:VCARD") !== -1)
+                text = drop.text
+            if (urls.length === 0 && text === "") { drop.accepted = false; return }
+            DesktopAppController.addPeopleFromVCardDrop(urls, text)
+            drop.accept()
+        }
+    }
+
     // Virtualized list — only visible cards (plus cacheBuffer) are instantiated,
     // and reuseItems recycles delegates while scrolling.
     ListView {

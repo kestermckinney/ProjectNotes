@@ -4,6 +4,7 @@
 #include "DesktopAppController.h"
 
 #include "databaseobjects.h"
+#include "vcardparser.h"
 #include "sortfilterproxymodel.h"
 #include "FolderManager.h"
 #include "projectsmodel.h"
@@ -341,6 +342,25 @@ static QString localPath(const QString& fileUrlOrPath)
 {
     const QUrl url(fileUrlOrPath);
     return url.isLocalFile() ? url.toLocalFile() : fileUrlOrPath;
+}
+
+// Reads each dropped file (fileUrls, as local file:// URLs) and appends its
+// content to any raw vCard text the drop already carried directly (a MIME
+// vCard drag, or plain text starting with BEGIN:VCARD). QML's DropArea hands
+// urls and text over separately (unlike QMimeData), so this stands in for
+// vcardparser.h's extractVCardText() for the QML drop path — the combined
+// result still just gets fed to parseVCards(), which only picks out actual
+// BEGIN:VCARD…END:VCARD blocks, so unrelated file content is harmless.
+static QString combineVCardSources(const QStringList& fileUrls, const QString& text)
+{
+    QString combined = text;
+    for (const QString& fileUrl : fileUrls)
+    {
+        QFile file(localPath(fileUrl));
+        if (file.open(QFile::ReadOnly))
+            combined += QString::fromUtf8(file.readAll()) + "\n";
+    }
+    return combined;
 }
 
 bool DesktopAppController::importXmlFile(const QString& fileUrlOrPath)
@@ -1857,6 +1877,35 @@ bool DesktopAppController::savePerson(int row, const QString& name, const QStrin
         {4, cellPhone}, {5, clientId}, {6, role} });
 }
 
+int DesktopAppController::addPeopleFromVCardDrop(const QStringList& fileUrls, const QString& text)
+{
+    const QList<VCardContact> contacts = parseVCards(combineVCardSources(fileUrls, text));
+    if (contacts.isEmpty())
+    {
+        emit errorOccurred(tr("No Contacts Found"),
+            tr("The dropped item didn't contain any recognizable vCard contacts."));
+        return 0;
+    }
+
+    for (const VCardContact& contact : contacts)
+    {
+        const QString clientId = findOrCreateClient(&global_DBObjects, contact.company);
+        findOrCreatePerson(&global_DBObjects, contact, clientId);
+    }
+
+    // findOrCreatePerson() writes through the unfiltered people model so the
+    // insert can't be scoped out by whatever filter the visible People list
+    // currently has active — refresh the model actually bound to peopleModel()
+    // so the new rows show up immediately rather than waiting for the next
+    // dirty-triggered reload.
+    global_DBObjects.peoplemodel()->refresh();
+
+    emit infoOccurred(tr("Contacts Added"), contacts.size() == 1
+        ? tr("1 contact was added.")
+        : tr("%1 contacts were added.").arg(contacts.size()));
+    return contacts.size();
+}
+
 // ── Clients ──────────────────────────────────────────────────────────────────
 
 int DesktopAppController::addClient()
@@ -2255,6 +2304,41 @@ bool DesktopAppController::saveTeamMember(int row, const QString& peopleId,
     // a row with a null people_id (which would raise a raw SQL constraint error).
     return applyRowFields(model, pIdx.row(), {
         {2, peopleId}, {4, receiveStatusReport ? "1" : "0"}, {5, role} });
+}
+
+int DesktopAppController::addTeamMembersFromVCardDrop(const QString& projectId,
+                                    const QStringList& fileUrls, const QString& text)
+{
+    if (projectId.isEmpty()) return 0;
+
+    const QList<VCardContact> contacts = parseVCards(combineVCardSources(fileUrls, text));
+    if (contacts.isEmpty())
+    {
+        emit errorOccurred(tr("No Contacts Found"),
+            tr("The dropped item didn't contain any recognizable vCard contacts."));
+        return 0;
+    }
+
+    for (const VCardContact& contact : contacts)
+    {
+        const QString clientId = findOrCreateClient(&global_DBObjects, contact.company);
+        const QString personId = findOrCreatePerson(&global_DBObjects, contact, clientId);
+        if (!personId.isEmpty())
+            addPersonToProjectTeam(projectId, personId);
+    }
+
+    // Mirrors moveTrackerItem()'s membersToAdd handling: findOrCreatePerson()
+    // writes through the unfiltered people model, and addPersonToProjectTeam()
+    // writes straight against the source team-members model rather than
+    // whatever project the visible proxy is currently filtered to — refresh
+    // both so the drop's results show up immediately on screen.
+    global_DBObjects.peoplemodel()->refresh();
+    refreshTeamMembers();
+
+    emit infoOccurred(tr("Contacts Added"), contacts.size() == 1
+        ? tr("1 contact was added to the team.")
+        : tr("%1 contacts were added to the team.").arg(contacts.size()));
+    return contacts.size();
 }
 
 // ── Project locations ────────────────────────────────────────────────────────

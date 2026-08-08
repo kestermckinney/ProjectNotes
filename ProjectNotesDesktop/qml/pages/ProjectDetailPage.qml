@@ -692,6 +692,35 @@ Item {
 
             // ── 2: TEAM ────────────────────────────────────────────────────────
             Item {
+                // Drop a vCard (a .vcf file, or a contact dragged straight from
+                // Outlook / Contacts) anywhere on the team list to add it: the
+                // contact's company is associated with a matching client (or a
+                // new one is created), the person is added/looked up, and they
+                // are added to this project's team. See
+                // DesktopAppController::addTeamMembersFromVCardDrop().
+                DropArea {
+                    anchors.fill: parent
+                    onDropped: (drop) => {
+                        var urls = []
+                        if (drop.hasUrls)
+                            for (var i = 0; i < drop.urls.length; i++)
+                                urls.push(drop.urls[i].toString())
+                        var text = ""
+                        for (var i = 0; i < drop.formats.length; i++) {
+                            if (drop.formats[i].toLowerCase().indexOf("vcard") !== -1) {
+                                text = drop.getDataAsString(drop.formats[i])
+                                break
+                            }
+                        }
+                        if (text === "" && drop.hasText && drop.text.indexOf("BEGIN:VCARD") !== -1)
+                            text = drop.text
+                        if (urls.length === 0 && text === "") { drop.accepted = false; return }
+                        DesktopAppController.addTeamMembersFromVCardDrop(page.projectId, urls, text)
+                        page._refreshTeamPeople()
+                        drop.accept()
+                    }
+                }
+
                 ListView {
                     id: teamRep
                     anchors.fill: parent

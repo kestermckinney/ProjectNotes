@@ -416,6 +416,15 @@ public:
     Q_INVOKABLE bool        savePerson(int row, const QString& name, const QString& email,
                                        const QString& officePhone, const QString& cellPhone,
                                        const QString& clientId, const QString& role);
+    // Parses vCard(s) dropped onto the People list (see vcardparser.h). Each
+    // contact's company is resolved to a client (associated if it already
+    // exists, created otherwise) and the person is added/looked up against
+    // it. fileUrls are local file:// URLs to read and scan for vCard blocks
+    // (e.g. a dropped .vcf); text is raw vCard data already carried by the
+    // drop itself (a direct MIME vCard drag, or plain text starting with
+    // BEGIN:VCARD) — pass an empty string when there is none. Returns the
+    // number of contacts found (0 if none, which also reports errorOccurred).
+    Q_INVOKABLE int         addPeopleFromVCardDrop(const QStringList& fileUrls, const QString& text);
 
     // ── Clients CRUD ─────────────────────────────────────────────────────────
     Q_INVOKABLE int         addClient();
@@ -474,6 +483,11 @@ public:
     Q_INVOKABLE QVariantMap getTeamMemberData(int row) const;
     Q_INVOKABLE bool        saveTeamMember(int row, const QString& peopleId,
                                            const QString& role, bool receiveStatusReport);
+    // Same vCard parsing as addPeopleFromVCardDrop() (client resolved/created,
+    // person added/looked up), plus each contact is added to projectId's team
+    // via addPersonToProjectTeam() (silently skipping anyone already on it).
+    Q_INVOKABLE int         addTeamMembersFromVCardDrop(const QString& projectId,
+                                const QStringList& fileUrls, const QString& text);
 
     // ── Project locations ────────────────────────────────────────────────────
     Q_INVOKABLE int         addProjectLocation(const QString& projectId);
