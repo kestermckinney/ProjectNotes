@@ -419,7 +419,11 @@ Item {
                     color: Theme.text; font.pixelSize: 18; font.weight: Font.Bold
                 }
                 Text {
-                    text: "Version " + Qt.application.version
+                    text: "Version " + Qt.application.version + " · Built " + DesktopAppController.buildTimestamp()
+                    color: Theme.text3; font.pixelSize: 13
+                }
+                Text {
+                    text: "Qt " + DesktopAppController.qtRuntimeVersion()
                     color: Theme.text3; font.pixelSize: 13
                 }
                 Text {

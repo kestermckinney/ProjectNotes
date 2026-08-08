@@ -522,6 +522,13 @@ public:
 
     // ── Help ▸ maintenance actions (mirror the Widgets Help menu) ────────────
     Q_INVOKABLE QString appVersion() const;   // "6.0.0"
+    // Compile-time build timestamp ("Aug  7 2026 14:32:10"), same __DATE__/
+    // __TIME__ source as the Widgets AboutDialog's BUILDV.
+    Q_INVOKABLE QString buildTimestamp() const;
+    // Qt version the running app is actually linked against (qVersion()), not
+    // just the header version it was compiled with — matches the Widgets
+    // AboutDialog's Qt Version line.
+    Q_INVOKABLE QString qtRuntimeVersion() const;
     // Query GitHub for a newer release; answers via updateAvailable() /
     // upToDate() / updateCheckFailed(). The silent variant is for the automatic
     // launch-time check: it stays quiet unless an update is actually available.

@@ -2518,6 +2518,19 @@ QString DesktopAppController::appVersion() const
         .arg(APP_VERSION_MAJOR).arg(APP_VERSION_MINOR).arg(APP_VERSION_PATCH);
 }
 
+QString DesktopAppController::buildTimestamp() const
+{
+    // Same __DATE__ " " __TIME__ source as the Widgets AboutDialog's BUILDV;
+    // evaluated here (rather than a file-scope const) so it reflects this
+    // translation unit's compile time.
+    return QStringLiteral(__DATE__ " " __TIME__);
+}
+
+QString DesktopAppController::qtRuntimeVersion() const
+{
+    return QString::fromLatin1(qVersion());
+}
+
 // Create the shared UpdateManager once and translate its signals into the
 // controller's QML-facing signals. Reusing UpdateManager gives the QML app the
 // same battle-tested unattended install/relaunch flow the Widgets app ships:
