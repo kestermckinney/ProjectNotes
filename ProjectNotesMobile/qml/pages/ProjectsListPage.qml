@@ -17,6 +17,27 @@ Page {
 
     property StackView stackView: null
 
+    // Quick Filter entries for a long-pressed project row: pre-filled from
+    // that row's own client/contact (omitted when the row has none set),
+    // plus the two always-available overdue toggles — status_overdue/
+    // invoicing_overdue are computed "Yes"/"No" columns (see projectsmodel.cpp).
+    function _quickFiltersForRow(m) {
+        var qf = []
+        var clientId = (m.client_id || "").toString()
+        if (clientId !== "")
+            qf.push({ label: qsTr("This Client"), field: "client_id", values: [clientId] })
+        var contactId = (m.primary_contact || "").toString()
+        if (contactId !== "")
+            qf.push({ label: qsTr("This Contact"), field: "primary_contact", values: [contactId] })
+        qf.push({ label: qsTr("Status Overdue"),    field: "status_overdue",    values: ["Yes"] })
+        qf.push({ label: qsTr("Invoicing Overdue"), field: "invoicing_overdue", values: ["Yes"] })
+        return qf
+    }
+
+    FilterSheet     { id: filterSheet }
+    SortSheet       { id: sortSheet }
+    QuickFilterSheet { id: qfSheet }
+
     // ── Toolbar: filter toggle + search ──────────────────────────────────────
     header: ToolBar {
         RowLayout {
@@ -43,6 +64,26 @@ Page {
                         anchors.margins: -6
                         onClicked: searchField.clear()
                     }
+                }
+            }
+
+            ToolButton {
+                icon.name: "line.3.horizontal.decrease.circle"
+                onClicked: filterSheet.openFor("projects", qsTr("Projects"))
+                Rectangle {
+                    visible: { AppController.filterRev; return AppController.hasActiveColumnFilters(AppController.projectsListModel) }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                }
+            }
+
+            ToolButton {
+                icon.name: "arrow.up.arrow.down"
+                onClicked: sortSheet.openFor("projects", qsTr("Projects"))
+                Rectangle {
+                    visible: { AppController.sortRev; return (AppController.activeSort(AppController.projectsListModel).field || "") !== "" }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
                 }
             }
 
@@ -89,22 +130,30 @@ Page {
         anchors.fill: parent
         model: AppController.projectsListModel
         clip: true
+        reuseItems: true
 
         delegate: ItemDelegate {
+            id: delegateRoot
+            required property int index
+            required property var model
             width: listView.width
 
             // Resolve once per delegate; the binding re-evaluates only when the
             // row's client_id changes. Avoids a second linear-scan per row.
             readonly property string _clientName:
-                AppController.clientNameForId(model.client_id || "") || ""
+                AppController.clientNameForId(delegateRoot.model.client_id || "") || ""
+
+            TapHandler {
+                onLongPressed: qfSheet.openWith(AppController.projectsListModel, root._quickFiltersForRow(delegateRoot.model))
+            }
 
             contentItem: ColumnLayout {
                 spacing: 4
 
                 Label {
                     text: {
-                        var num  = model.project_number || ""
-                        var name = model.project_name   || ""
+                        var num  = delegateRoot.model.project_number || ""
+                        var name = delegateRoot.model.project_name   || ""
                         return num ? num + "  " + name : name
                     }
                     font.bold: true
@@ -116,8 +165,8 @@ Page {
                     spacing: 6
 
                     Label {
-                        visible: _clientName !== ""
-                        text: _clientName
+                        visible: delegateRoot._clientName !== ""
+                        text: delegateRoot._clientName
                         font.pixelSize: 12
                         color: Theme.mutedText
                         elide: Text.ElideRight
@@ -126,10 +175,10 @@ Page {
                     Item { Layout.fillWidth: true }
 
                     Rectangle {
-                        visible: (model.project_status || "") !== ""
+                        visible: (delegateRoot.model.project_status || "") !== ""
                         width: 7; height: 7; radius: 4
                         color: {
-                            var s = model.project_status || ""
+                            var s = delegateRoot.model.project_status || ""
                             if (s === "Active")                      return Theme.accentGreen
                             if (s === "On Hold")                     return "#ff9500"
                             if (s === "Closed" || s === "Complete")  return "#8e8e93"
@@ -138,11 +187,11 @@ Page {
                     }
 
                     Label {
-                        visible: (model.project_status || "") !== ""
-                        text: model.project_status || ""
+                        visible: (delegateRoot.model.project_status || "") !== ""
+                        text: delegateRoot.model.project_status || ""
                         font.pixelSize: 12
                         color: {
-                            var s = model.project_status || ""
+                            var s = delegateRoot.model.project_status || ""
                             if (s === "Active")                      return Theme.accentGreenDark
                             if (s === "On Hold")                     return "#e07000"
                             if (s === "Closed" || s === "Complete")  return Theme.mutedText
@@ -155,28 +204,28 @@ Page {
 
             onClicked: {
                 root.stackView.push(Qt.resolvedUrl("ProjectDetailsPage.qml"), {
-                    projectRow:               index,
-                    projectId:                model.id                    || "",
-                    initialProjectNumber:     model.project_number        || "",
-                    initialProjectName:       model.project_name          || "",
-                    initialProjectStatus:     model.project_status        || "",
-                    initialPrimaryContact:    model.primary_contact       || "",
-                    initialClientId:          model.client_id             || "",
-                    initialLastStatusDate:    model.last_status_date      || "",
-                    initialLastInvoiceDate:   model.last_invoice_date     || "",
-                    initialInvoicingPeriod:   model.invoicing_period      || "",
-                    initialStatusReportPeriod:model.status_report_period  || "",
-                    initialBudget:            model.budget                || "",
-                    initialActual:            model.actual                || "",
-                    initialBcwp:              model.bcwp                  || "",
-                    initialBcws:              model.bcws                  || "",
-                    initialBac:               model.bac                   || "",
-                    initialPctConsumed:       model.pct_consumed          || "",
-                    initialEac:               model.eac                   || "",
-                    initialCv:                model.cv                    || "",
-                    initialSv:                model.sv                    || "",
-                    initialPctComplete:       model.pct_complete          || "",
-                    initialCpi:               model.cpi                   || ""
+                    projectRow:               delegateRoot.index,
+                    projectId:                delegateRoot.model.id                    || "",
+                    initialProjectNumber:     delegateRoot.model.project_number        || "",
+                    initialProjectName:       delegateRoot.model.project_name          || "",
+                    initialProjectStatus:     delegateRoot.model.project_status        || "",
+                    initialPrimaryContact:    delegateRoot.model.primary_contact       || "",
+                    initialClientId:          delegateRoot.model.client_id             || "",
+                    initialLastStatusDate:    delegateRoot.model.last_status_date      || "",
+                    initialLastInvoiceDate:   delegateRoot.model.last_invoice_date     || "",
+                    initialInvoicingPeriod:   delegateRoot.model.invoicing_period      || "",
+                    initialStatusReportPeriod:delegateRoot.model.status_report_period  || "",
+                    initialBudget:            delegateRoot.model.budget                || "",
+                    initialActual:            delegateRoot.model.actual                || "",
+                    initialBcwp:              delegateRoot.model.bcwp                  || "",
+                    initialBcws:              delegateRoot.model.bcws                  || "",
+                    initialBac:               delegateRoot.model.bac                   || "",
+                    initialPctConsumed:       delegateRoot.model.pct_consumed          || "",
+                    initialEac:               delegateRoot.model.eac                   || "",
+                    initialCv:                delegateRoot.model.cv                    || "",
+                    initialSv:                delegateRoot.model.sv                    || "",
+                    initialPctComplete:       delegateRoot.model.pct_complete          || "",
+                    initialCpi:               delegateRoot.model.cpi                   || ""
                 })
             }
         }

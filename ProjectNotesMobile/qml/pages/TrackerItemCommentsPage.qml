@@ -76,6 +76,9 @@ Page {
         clip: true
 
         delegate: ItemDelegate {
+            id: delegateRoot
+            required property int index
+            required property var model
             width: listView.width
 
             contentItem: ColumnLayout {
@@ -85,22 +88,22 @@ Page {
                     Layout.fillWidth: true
 
                     Label {
-                        text: model.lastupdated_date || ""
+                        text: delegateRoot.model.lastupdated_date || ""
                         font.bold: true
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
 
                     Label {
-                        text: AppController.peopleNameForId(model.updated_by || "")
+                        text: AppController.peopleNameForId(delegateRoot.model.updated_by || "")
                         font.pixelSize: 12
                         color: Theme.mutedText
                     }
                 }
 
                 Label {
-                    visible: (model.update_note || "") !== ""
-                    text: model.update_note || ""
+                    visible: (delegateRoot.model.update_note || "") !== ""
+                    text: delegateRoot.model.update_note || ""
                     font.pixelSize: 13
                     wrapMode: Text.WordWrap
                     Layout.fillWidth: true
@@ -109,10 +112,10 @@ Page {
 
             onClicked: {
                 root.StackView.view.push(Qt.resolvedUrl("TrackerItemCommentDetailPage.qml"), {
-                    commentRow:    index,
-                    initialDate:   model.lastupdated_date || "",
-                    initialNote:   model.update_note      || "",
-                    initialBy:     model.updated_by       || ""
+                    commentRow:    delegateRoot.index,
+                    initialDate:   delegateRoot.model.lastupdated_date || "",
+                    initialNote:   delegateRoot.model.update_note      || "",
+                    initialBy:     delegateRoot.model.updated_by       || ""
                 })
             }
         }

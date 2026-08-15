@@ -28,7 +28,10 @@ Page {
 
     Connections {
         target: AppController
-        function onViewOptionsChanged() { AppController.refreshTrackerItems() }
+        function onViewOptionsChanged() {
+            if (root.StackView.status !== StackView.Active) return
+            AppController.refreshTrackerItems()
+        }
     }
 
     Component.onDestruction: {
@@ -44,6 +47,28 @@ Page {
             default:         return Theme.mutedText
         }
     }
+
+    // Quick Filter entries for a long-pressed item row (project-scoped, so no
+    // client shortcut — every row already shares this project's client).
+    // item_overdue is a computed "Yes"/"No" column (see trackeritemsmodel.cpp).
+    function _quickFiltersForRow(m) {
+        var qf = []
+        var assignedId = (m.assigned_to || "").toString()
+        if (assignedId !== "")
+            qf.push({ label: qsTr("This Assigned To"), field: "assigned_to", values: [assignedId] })
+        var identifiedId = (m.identified_by || "").toString()
+        if (identifiedId !== "")
+            qf.push({ label: qsTr("This Identified By"), field: "identified_by", values: [identifiedId] })
+        qf.push({ label: qsTr("Overdue Items"),   field: "item_overdue", values: ["Yes"] })
+        qf.push({ label: qsTr("High Priority"),   field: "priority", values: ["High"] })
+        qf.push({ label: qsTr("Medium Priority"), field: "priority", values: ["Medium"] })
+        qf.push({ label: qsTr("Low Priority"),    field: "priority", values: ["Low"] })
+        return qf
+    }
+
+    FilterSheet     { id: filterSheet }
+    SortSheet       { id: sortSheet }
+    QuickFilterSheet { id: qfSheet }
 
     header: ToolBar {
         RowLayout {
@@ -69,6 +94,24 @@ Page {
                         anchors.margins: -6
                         onClicked: searchField.clear()
                     }
+                }
+            }
+            ToolButton {
+                icon.name: "line.3.horizontal.decrease.circle"
+                onClicked: filterSheet.openFor("trackeritems", qsTr("Tracker Items"))
+                Rectangle {
+                    visible: { AppController.filterRev; return AppController.hasActiveColumnFilters(AppController.trackerItemsModel) }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                }
+            }
+            ToolButton {
+                icon.name: "arrow.up.arrow.down"
+                onClicked: sortSheet.openFor("trackeritems", qsTr("Tracker Items"))
+                Rectangle {
+                    visible: { AppController.sortRev; return (AppController.activeSort(AppController.trackerItemsModel).field || "") !== "" }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
                 }
             }
             ToolButton {
@@ -112,6 +155,10 @@ Page {
 
         delegate: ItemDelegate {
             width: listView.width
+
+            TapHandler {
+                onLongPressed: qfSheet.openWith(AppController.trackerItemsModel, root._quickFiltersForRow(model))
+            }
 
             contentItem: ColumnLayout {
                 spacing: 3

@@ -65,13 +65,17 @@ void ProjectNotesPage::newRecord()
     QVariant note_id = global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,0));
     QVariant project_id = global_DBObjects.projecteditingnotesmodelproxy()->data(global_DBObjects.projecteditingnotesmodelproxy()->index(0,1));
 
-    int lastrow = dynamic_cast<SqlQueryModel*>(getCurrentModel()->sourceModel())->rowCount(QModelIndex());
+    QModelIndex index = dynamic_cast<SqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord(&note_id, &project_id);
 
-    dynamic_cast<SqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord(&note_id, &project_id);
+    int col = 1;
+    while (getCurrentView()->isColumnHidden(col))
+        col++;
 
-    getCurrentView()->selectRow(lastrow);
-    QModelIndex index = getCurrentView()->model()->index(lastrow, 0);
-    getCurrentView()->selectionModel()->select(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    auto* proxy = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model());
+    QModelIndex sort_index = proxy->index(proxy->mapFromSource(index).row(), col);
+
+    getCurrentView()->selectionModel()->select(sort_index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    getCurrentView()->scrollTo(sort_index, QAbstractItemView::PositionAtCenter);
 }
 
 void ProjectNotesPage::setupModels( Ui::MainWindow *ui )

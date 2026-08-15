@@ -48,6 +48,32 @@ Page {
     property bool   isNewRecord:          false
     // property string _validatedItemNumber: root.initialItemNumber
 
+    // Stable {id,name} snapshot backing identifiedByCombo/assignedToCombo —
+    // deliberately NOT the live AppController.peopleModel proxy, which the
+    // People tab's Sort feature can reorder/reset out from under a ComboBox
+    // bound directly to it (see AppController::teamMemberList doc comment).
+    // All people, not just this project's team, matches desktop's Identified
+    // By / Assigned To fields.
+    property var _people: []
+    function _peopleNames() { return root._people.map(function(p){ return p.name }) }
+    function _personIndexForId(id) {
+        for (var i = 0; i < root._people.length; i++)
+            if (root._people[i].id === id) return i
+        return -1
+    }
+
+    // Stable {id,name} snapshot backing meetingCombo — deliberately NOT the
+    // live actionitemsdetailsmeetingsmodelproxy, which sort() elsewhere can
+    // reorder out from under a ComboBox bound directly to it (see the
+    // AppController teamMemberList/clientList doc comments).
+    property var _meetings: []
+    function _meetingNames() { return root._meetings.map(function(m){ return m.name }) }
+    function _meetingIndexForId(id) {
+        for (var i = 0; i < root._meetings.length; i++)
+            if (root._meetings[i].id === id) return i
+        return -1
+    }
+
     function _isBlankNew() { return isNewRecord && nameField.text.trim() === "" }
     function _discardNew()  { AppController.deleteTrackerItemDetail(root.itemRow) }
 
@@ -69,16 +95,16 @@ Page {
             typeCombo.currentIndex >= 0 ? typeCombo.model[typeCombo.currentIndex] : "",
             nameField.text,
             descEdit.text,
-            identifiedByCombo.currentIndex >= 0
-                ? AppController.teamMemberPersonIdAtRow(identifiedByCombo.currentIndex) : "",
-            assignedToCombo.currentIndex >= 0
-                ? AppController.teamMemberPersonIdAtRow(assignedToCombo.currentIndex) : "",
+            (identifiedByCombo.currentIndex >= 0 && identifiedByCombo.currentIndex < root._people.length)
+                ? root._people[identifiedByCombo.currentIndex].id : "",
+            (assignedToCombo.currentIndex >= 0 && assignedToCombo.currentIndex < root._people.length)
+                ? root._people[assignedToCombo.currentIndex].id : "",
             priorityCombo.currentIndex >= 0 ? priorityCombo.model[priorityCombo.currentIndex] : "",
             statusCombo.currentIndex >= 0   ? statusCombo.model[statusCombo.currentIndex]     : "",
             dateIdentifiedField.text,
             dateDueField.text,
-            meetingCombo.currentIndex >= 0
-                ? AppController.meetingNoteIdAtRow(meetingCombo.currentIndex) : "",
+            (meetingCombo.currentIndex >= 0 && meetingCombo.currentIndex < root._meetings.length)
+                ? root._meetings[meetingCombo.currentIndex].id : "",
             internalSwitch.checked
         )
         if (result) root._hasChanges = false
@@ -93,10 +119,9 @@ Page {
         typeCombo.currentIndex = ti >= 0 ? ti : 0
         nameField.text   = (d.item_name    || "").toString()
         descEdit.text    = (d.description  || "").toString()
-        var idBy = AppController.teamMemberRowForPersonId((d.identified_by || "").toString())
-        identifiedByCombo.currentIndex = idBy >= 0 ? idBy : -1
-        var asgn = AppController.teamMemberRowForPersonId((d.assigned_to || "").toString())
-        assignedToCombo.currentIndex = asgn >= 0 ? asgn : -1
+        root._people = AppController.peopleList()
+        identifiedByCombo.currentIndex = root._personIndexForId((d.identified_by || "").toString())
+        assignedToCombo.currentIndex  = root._personIndexForId((d.assigned_to   || "").toString())
         var pri = priorityCombo.model.indexOf((d.priority || "").toString())
         priorityCombo.currentIndex = pri >= 0 ? pri : -1
         var sti = statusCombo.model.indexOf((d.status || "").toString())
@@ -106,8 +131,8 @@ Page {
         root.initialLastUpdate   = (d.last_update     || "").toString()
         root.initialDateResolved = (d.date_resolved   || "").toString()
         internalSwitch.checked   = (d.internal_item   || "0") !== "0"
-        var mtg = AppController.meetingRowForNoteId((d.note_id || "").toString())
-        meetingCombo.currentIndex = mtg >= 0 ? mtg : -1
+        root._meetings = AppController.meetingList()
+        meetingCombo.currentIndex = root._meetingIndexForId((d.note_id || "").toString())
     }
 
     StackView.onDeactivating: {
@@ -224,11 +249,10 @@ Page {
                 ComboBox {
                     id: meetingCombo
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.trackerItemMeetingsModel
-                    textRole: "meeting"
+                    model: root._meetingNames()
                     Component.onCompleted: {
-                        var row = AppController.meetingRowForNoteId(root.initialNoteId)
-                        currentIndex = row >= 0 ? row : -1
+                        root._meetings = AppController.meetingList()
+                        currentIndex = root._meetingIndexForId(root.initialNoteId)
                     }
                     onActivated: root._hasChanges = true
                 }
@@ -295,11 +319,10 @@ Page {
                 ComboBox {
                     id: identifiedByCombo
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.projectTeamMembersModel
-                    textRole: "name"
+                    model: root._peopleNames()
                     Component.onCompleted: {
-                        var row = AppController.teamMemberRowForPersonId(root.initialIdentifiedBy)
-                        currentIndex = row >= 0 ? row : -1
+                        root._people = AppController.peopleList()
+                        currentIndex = root._personIndexForId(root.initialIdentifiedBy)
                     }
                     onActivated: root._hasChanges = true
                 }
@@ -310,11 +333,10 @@ Page {
                 ComboBox {
                     id: assignedToCombo
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.projectTeamMembersModel
-                    textRole: "name"
+                    model: root._peopleNames()
                     Component.onCompleted: {
-                        var row = AppController.teamMemberRowForPersonId(root.initialAssignedTo)
-                        currentIndex = row >= 0 ? row : -1
+                        root._people = AppController.peopleList()
+                        currentIndex = root._personIndexForId(root.initialAssignedTo)
                     }
                     onActivated: function(idx) {
                         root._hasChanges = true

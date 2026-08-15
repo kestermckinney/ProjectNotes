@@ -11,6 +11,7 @@ Page {
     title: qsTr("File / Folder")
 
     property int    locationRow:        -1
+    property string locationId:         ""
     property string initialType:        ""
     property string initialDescription: ""
     property string initialPath:        ""
@@ -19,10 +20,20 @@ Page {
     property bool   isNewRecord:        false
 
     function _isBlankNew() { return isNewRecord && descField.text.trim() === "" && pathField.text.trim() === "" }
-    function _discardNew()  { AppController.deleteProjectLocation(root.locationRow) }
+    function _discardNew()  {
+        var row = AppController.rowForId(AppController.projectLocationsModel, root.locationId)
+        if (row < 0) return
+        AppController.deleteProjectLocation(row)
+    }
 
+    // Re-resolve locationRow from the stable locationId before every write —
+    // Sort/refresh elsewhere in the app can reorder or reset the shared
+    // projectLocationsModel proxy while this page is open.
     function _saveNow() {
         if (!root._hasChanges) return true
+        var row = AppController.rowForId(AppController.projectLocationsModel, root.locationId)
+        if (row < 0) return false   // record no longer exists
+        root.locationRow = row
         var locType = (typeCombo.currentIndex >= 0)
             ? typeCombo.model[typeCombo.currentIndex] : ""
         var result = AppController.saveProjectLocation(root.locationRow, locType, descField.text, pathField.text)
@@ -67,6 +78,7 @@ Page {
                     var d = AppController.getProjectLocationData(newRow)
                     root.StackView.view.replace(Qt.resolvedUrl("ProjectLocationDetailPage.qml"), {
                         locationRow:         newRow,
+                        locationId:          (d.id                    || "").toString(),
                         initialType:         (d.location_type        || "").toString(),
                         initialDescription:  (d.location_description || "").toString(),
                         initialPath:         (d.full_path            || "").toString()
@@ -77,7 +89,8 @@ Page {
             ToolButton {
                 icon.name: "trash"
                 onClicked: {
-                    if (AppController.deleteProjectLocation(root.locationRow)) {
+                    var row = AppController.rowForId(AppController.projectLocationsModel, root.locationId)
+                    if (row >= 0 && AppController.deleteProjectLocation(row)) {
                         root._skipSave = true
                         root.StackView.view.pop()
                     }

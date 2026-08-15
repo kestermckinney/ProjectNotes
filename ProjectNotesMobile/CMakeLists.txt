@@ -130,6 +130,9 @@ qt_add_qml_module(ProjectNotesMobile
         qml/pages/DatePickerPopup.qml
         qml/pages/FontPickerPopup.qml
         qml/pages/NoteFormatSheet.qml
+        qml/pages/FilterSheet.qml
+        qml/pages/SortSheet.qml
+        qml/pages/QuickFilterSheet.qml
 )
 
 # ── iOS bundle properties ─────────────────────────────────────────────────────

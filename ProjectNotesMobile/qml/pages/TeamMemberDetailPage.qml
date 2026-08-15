@@ -11,6 +11,7 @@ Page {
     title: qsTr("Team Member")
 
     property int    memberRow:                  -1
+    property string memberId:                   ""
     property string projectTitle:               ""
     property string initialPeopleId:            ""
     property string initialRole:                ""
@@ -20,13 +21,35 @@ Page {
     property bool   _hasChanges:                false
     property bool   isNewRecord:                false
 
-    function _isBlankNew() { return isNewRecord && personCombo.currentIndex < 0 }
-    function _discardNew()  { AppController.deleteTeamMember(root.memberRow) }
+    // Stable {id,name} snapshot backing personCombo — deliberately NOT the
+    // live AppController.peopleModel proxy, which the People tab's Sort
+    // feature can reorder/reset out from under a ComboBox bound directly to
+    // it (see AppController::teamMemberList doc comment).
+    property var _people: []
+    function _peopleNames() { return root._people.map(function(p){ return p.name }) }
+    function _personIndexForId(id) {
+        for (var i = 0; i < root._people.length; i++)
+            if (root._people[i].id === id) return i
+        return -1
+    }
 
+    function _isBlankNew() { return isNewRecord && personCombo.currentIndex < 0 }
+    function _discardNew()  {
+        var row = AppController.rowForId(AppController.projectTeamMembersModel, root.memberId)
+        if (row < 0) return
+        AppController.deleteTeamMember(row)
+    }
+
+    // Re-resolve memberRow from the stable memberId before every write —
+    // Sort/refresh elsewhere in the app can reorder or reset the shared
+    // projectTeamMembersModel proxy while this page is open.
     function _saveNow() {
         if (!root._hasChanges) return true
-        var peopleId = (personCombo.currentIndex >= 0)
-            ? AppController.peopleIdAtRow(personCombo.currentIndex) : ""
+        var row = AppController.rowForId(AppController.projectTeamMembersModel, root.memberId)
+        if (row < 0) return false   // record no longer exists
+        root.memberRow = row
+        var peopleId = (personCombo.currentIndex >= 0 && personCombo.currentIndex < root._people.length)
+            ? root._people[personCombo.currentIndex].id : ""
         var result = AppController.saveTeamMember(root.memberRow, peopleId, roleField.text, statusSwitch.checked)
         if (result) root._hasChanges = false
         return result
@@ -34,8 +57,8 @@ Page {
 
     function _reloadData() {
         var d = AppController.getTeamMemberData(root.memberRow)
-        var row = AppController.peopleRowForId((d.people_id || "").toString())
-        personCombo.currentIndex = row >= 0 ? row : -1
+        root._people = AppController.peopleList()
+        personCombo.currentIndex = root._personIndexForId((d.people_id || "").toString())
         roleField.text = (d.role || "").toString()
         statusSwitch.checked = (d.receive_status_report || "0") !== "0"
     }
@@ -78,6 +101,7 @@ Page {
                     var d = AppController.getTeamMemberData(newRow)
                     root.StackView.view.replace(Qt.resolvedUrl("TeamMemberDetailPage.qml"), {
                         memberRow:                  newRow,
+                        memberId:                   (d.id                     || "").toString(),
                         projectTitle:               root.projectTitle,
                         initialPeopleId:            (d.people_id              || "").toString(),
                         initialRole:                (d.role                   || "").toString(),
@@ -90,7 +114,8 @@ Page {
             ToolButton {
                 icon.name: "trash"
                 onClicked: {
-                    if (AppController.deleteTeamMember(root.memberRow)) {
+                    var row = AppController.rowForId(AppController.projectTeamMembersModel, root.memberId)
+                    if (row >= 0 && AppController.deleteTeamMember(row)) {
                         root._skipSave = true
                         root.StackView.view.pop()
                     }
@@ -112,11 +137,10 @@ Page {
                 ComboBox {
                     id: personCombo
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.peopleModel
-                    textRole: "name"
+                    model: root._peopleNames()
                     Component.onCompleted: {
-                        var row = AppController.peopleRowForId(root.initialPeopleId)
-                        currentIndex = (row >= 0) ? row : -1
+                        root._people = AppController.peopleList()
+                        currentIndex = root._personIndexForId(root.initialPeopleId)
                     }
                     onActivated: root._hasChanges = true
                 }

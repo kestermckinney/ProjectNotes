@@ -11,6 +11,7 @@ Page {
     title: qsTr("Status Item")
 
     property int    itemRow:            -1
+    property string itemId:             ""
     property string initialCategory:    ""
     property string initialDescription: ""
     property bool   _skipSave:          false
@@ -18,10 +19,20 @@ Page {
     property bool   isNewRecord:        false
 
     function _isBlankNew() { return isNewRecord && descField.text.trim() === "" }
-    function _discardNew()  { AppController.deleteStatusItem(root.itemRow) }
+    function _discardNew()  {
+        var row = AppController.rowForId(AppController.statusReportItemsModel, root.itemId)
+        if (row < 0) return
+        AppController.deleteStatusItem(row)
+    }
 
+    // Re-resolve itemRow from the stable itemId before every write — Sort/
+    // refresh elsewhere in the app can reorder or reset the shared
+    // statusReportItemsModel proxy while this page is open.
     function _saveNow() {
         if (!root._hasChanges) return true
+        var row = AppController.rowForId(AppController.statusReportItemsModel, root.itemId)
+        if (row < 0) return false   // record no longer exists
+        root.itemRow = row
         var cat = (categoryCombo.currentIndex >= 0)
             ? categoryCombo.model[categoryCombo.currentIndex] : ""
         var result = AppController.saveStatusItem(root.itemRow, cat, descField.text)
@@ -58,6 +69,7 @@ Page {
                     var d = AppController.getStatusItemData(newRow)
                     root.StackView.view.replace(Qt.resolvedUrl("StatusItemDetailPage.qml"), {
                         itemRow:            newRow,
+                        itemId:             (d.id                || "").toString(),
                         initialCategory:    (d.task_category    || "").toString(),
                         initialDescription: (d.task_description || "").toString()
                     })
@@ -67,7 +79,8 @@ Page {
             ToolButton {
                 icon.name: "trash"
                 onClicked: {
-                    if (AppController.deleteStatusItem(root.itemRow)) {
+                    var row = AppController.rowForId(AppController.statusReportItemsModel, root.itemId)
+                    if (row >= 0 && AppController.deleteStatusItem(row)) {
                         root._skipSave = true
                         root.StackView.view.pop()
                     }

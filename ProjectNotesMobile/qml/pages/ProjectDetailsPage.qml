@@ -42,16 +42,46 @@ Page {
     property bool   _skipSave:                false
     property bool   isNewRecord:              false
 
-    function _isBlankNew() { return isNewRecord && nameField.text.trim() === "" }
-    function _discardNew()  { AppController.deleteProject(root.projectRow) }
+    // Stable {id,name} snapshot backing primaryContactCombo — NOT the live
+    // AppController.projectTeamMembersModel proxy, which the Team tab's Sort
+    // feature can reorder/reset out from under a ComboBox bound directly to
+    // it (see AppController::teamMemberList doc comment).
+    property var _people: []
+    function _peopleNames() { return root._people.map(function(p){ return p.name }) }
+    function _personIndexForId(id) {
+        for (var i = 0; i < root._people.length; i++)
+            if (root._people[i].id === id) return i
+        return -1
+    }
+    // Same rationale, backing clientCombo — clientsModel is also Sort-able.
+    property var _clients: []
+    function _clientNames() { return root._clients.map(function(c){ return c.name }) }
+    function _clientIndexForId(id) {
+        for (var i = 0; i < root._clients.length; i++)
+            if (root._clients[i].id === id) return i
+        return -1
+    }
 
+    function _isBlankNew() { return isNewRecord && nameField.text.trim() === "" }
+    function _discardNew()  {
+        var row = AppController.rowForId(AppController.projectsListModel, root.projectId)
+        if (row < 0) return
+        AppController.deleteProject(row)
+    }
+
+    // Re-resolve projectRow from the stable projectId before every write —
+    // Sort/refresh elsewhere in the app can reorder or reset the shared
+    // projectsListModel proxy while this page is open.
     function _saveNow() {
+        var row = AppController.rowForId(AppController.projectsListModel, root.projectId)
+        if (row < 0) return false   // record no longer exists
+        root.projectRow = row
         statusDateField.commitPending()
         invoiceDateField.commitPending()
-        var primaryContactId = (primaryContactCombo.currentIndex >= 0)
-            ? AppController.teamMemberPersonIdAtRow(primaryContactCombo.currentIndex) : ""
-        var clientId = (clientCombo.currentIndex >= 0)
-            ? AppController.clientIdAtRow(clientCombo.currentIndex) : ""
+        var primaryContactId = (primaryContactCombo.currentIndex >= 0 && primaryContactCombo.currentIndex < root._people.length)
+            ? root._people[primaryContactCombo.currentIndex].id : ""
+        var clientId = (clientCombo.currentIndex >= 0 && clientCombo.currentIndex < root._clients.length)
+            ? root._clients[clientCombo.currentIndex].id : ""
         var status = (statusCombo.currentIndex >= 0)
             ? statusCombo.model[statusCombo.currentIndex] : ""
         var invPeriod = (invoicingCombo.currentIndex >= 0)
@@ -69,10 +99,11 @@ Page {
         nameField.text   = (d.project_name   || "").toString()
         var si = statusCombo.model.indexOf((d.project_status || "").toString())
         statusCombo.currentIndex = si >= 0 ? si : 0
-        var ci = AppController.clientRowForId((d.client_id || "").toString())
-        clientCombo.currentIndex = ci >= 0 ? ci : -1
-        var pi = AppController.teamMemberRowForPersonId((d.primary_contact || "").toString())
-        primaryContactCombo.currentIndex = pi >= 0 ? pi : -1
+        root._clients = AppController.clientList()
+        clientCombo.currentIndex = root._clientIndexForId((d.client_id || "").toString())
+        var contactId = (d.primary_contact || "").toString()
+        root._people = AppController.teamMemberList(root.projectId, [contactId])
+        primaryContactCombo.currentIndex = root._personIndexForId(contactId)
         statusDateField.text  = (d.last_status_date     || "").toString()
         invoiceDateField.text = (d.last_invoice_date    || "").toString()
         var ii = invoicingCombo.model.indexOf((d.invoicing_period || "").toString())
@@ -153,7 +184,8 @@ Page {
             ToolButton {
                 icon.name: "trash"
                 onClicked: {
-                    if (AppController.deleteProject(root.projectRow)) {
+                    var row = AppController.rowForId(AppController.projectsListModel, root.projectId)
+                    if (row >= 0 && AppController.deleteProject(row)) {
                         root._skipSave = true
                         root.StackView.view.pop()
                     }
@@ -208,11 +240,10 @@ Page {
                 ComboBox {
                     id: clientCombo
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.clientsModel
-                    textRole: "client_name"
+                    model: root._clientNames()
                     Component.onCompleted: {
-                        var row = AppController.clientRowForId(root.initialClientId)
-                        currentIndex = (row >= 0) ? row : -1
+                        root._clients = AppController.clientList()
+                        currentIndex = root._clientIndexForId(root.initialClientId)
                     }
                 }
             }
@@ -222,11 +253,10 @@ Page {
                 ComboBox {
                     id: primaryContactCombo
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.projectTeamMembersModel
-                    textRole: "name"
+                    model: root._peopleNames()
                     Component.onCompleted: {
-                        var row = AppController.teamMemberRowForPersonId(root.initialPrimaryContact)
-                        currentIndex = (row >= 0) ? row : -1
+                        root._people = AppController.teamMemberList(root.projectId, [root.initialPrimaryContact])
+                        currentIndex = root._personIndexForId(root.initialPrimaryContact)
                     }
                 }
             }

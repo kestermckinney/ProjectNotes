@@ -313,6 +313,7 @@ ApplicationWindow {
             Connections {
                 target: AppController
                 function onViewOptionsChanged() {
+                    if (pageStack.depth > 1) return   // a detail page is stacked on top
                     switch (swipeView.currentIndex) {
                         case 0: AppController.refreshProjectsList(); break
                         case 1: AppController.refreshPeople();       break
@@ -345,11 +346,26 @@ ApplicationWindow {
     }
 
     // ── Startup ───────────────────────────────────────────────────────────────
-    // Defer DB init so the QML shell renders its first frame before the
-    // synchronous SQL work begins — eliminates the black-screen delay.
-    Component.onCompleted: Qt.callLater(function() {
+    // Open the database synchronously, directly in Component.onCompleted —
+    // matching ProjectNotesDesktop's Main.qml construction exactly. This runs
+    // during engine.load(), before main.cpp's window->show(), so the DB open,
+    // initial model refresh(), and column-filter restore below all complete
+    // before any ListView delegate exists. Deferring the whole call via
+    // Qt.callLater() (the original approach, kept the tab chrome from flashing
+    // blank while SQL work ran) let the SwipeView's ListViews render and bind
+    // to these exact models FIRST, so that work ran against live-viewed
+    // proxies instead — unsafe for the same reason described in
+    // AppController::openOrCreateDatabase()'s sort comment. Desktop never
+    // defers this call and never hits it. iOS's own LaunchScreen storyboard
+    // already covers the launch gap, so there's no bare black-screen risk.
+    //
+    // Sort restoration is the one piece of openOrCreateDatabase() that is NOT
+    // synchronous with the rest of this — see restoreAllSorts() and the
+    // QTimer::singleShot() call in AppController::openOrCreateDatabase() for
+    // why it's deferred to its own later event-loop turn instead.
+    Component.onCompleted: {
         AppController.openOrCreateDatabase()
         if (AppController.syncEnabled)
             AppController.startSync()
-    })
+    }
 }

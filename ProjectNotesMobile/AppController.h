@@ -19,7 +19,6 @@ class SqliteSyncPro;
 class QQmlEngine;
 class QJSEngine;
 class QThread;
-class IdRowIndex;
 class SortFilterProxyModel;
 class SqlQueryModel;
 
@@ -88,11 +87,16 @@ public:
     Q_INVOKABLE void syncAll();
     Q_INVOKABLE void setProjectFilter(const QString& projectId);
 
-    // ── Preferences helpers — index lookup and row-based setters ────────────
-    Q_INVOKABLE int  managingCompanyIndex() const;
-    Q_INVOKABLE void setManagingCompanyByRow(int row);
-    Q_INVOKABLE int  projectManagerIndex() const;
-    Q_INVOKABLE void setProjectManagerByRow(int row);
+    // ── Preferences helpers — id-based, NOT row-based ────────────────────────
+    // Row-based equivalents used to live here (index into clientsModel/
+    // peopleModel directly) — replaced because those models are now
+    // Sort-able, and PreferencesPage.qml's combos stay alive on the shared
+    // StackView same as every other page (see teamMemberList() doc comment).
+    // The combos now bind to clientList()/peopleList() snapshots and save by id.
+    Q_INVOKABLE QString managingCompanyId() const { return global_DBObjects.getManagingCompany(); }
+    Q_INVOKABLE void    setManagingCompanyId(const QString& id) { global_DBObjects.setManagingCompany(id); }
+    Q_INVOKABLE QString projectManagerId() const { return global_DBObjects.getProjectManager(); }
+    Q_INVOKABLE void    setProjectManagerId(const QString& id) { global_DBObjects.setProjectManager(id); }
 
     // ── Record editing helpers ───────────────────────────────────────────────
     Q_INVOKABLE bool    savePerson(int row, const QString& name, const QString& email,
@@ -111,15 +115,9 @@ public:
                                             const QString& description, const QString& path);
     Q_INVOKABLE bool    saveProjectNote(int row, const QString& title, const QString& date,
                                         const QString& note, bool internalItem);
-    Q_INVOKABLE int     clientRowForId(const QString& clientId) const;
-    Q_INVOKABLE QString clientIdAtRow(int row) const;
     Q_INVOKABLE QString clientNameForId(const QString& clientId) const;
-    Q_INVOKABLE int     peopleRowForId(const QString& peopleId) const;
-    Q_INVOKABLE QString peopleIdAtRow(int row) const;
     Q_INVOKABLE QString peopleNameForId(const QString& personId) const;
     Q_INVOKABLE QString peopleEmailForId(const QString& personId) const;
-    Q_INVOKABLE int     teamMemberRowForPersonId(const QString& personId) const;
-    Q_INVOKABLE QString teamMemberPersonIdAtRow(int row) const;
     Q_INVOKABLE QString teamMemberEmailList() const;
     Q_INVOKABLE QString attendeeEmailList() const;
     Q_INVOKABLE QString attendeeNameList() const;
@@ -129,6 +127,20 @@ public:
                                              const QString& body);
     Q_INVOKABLE QString projectNumberForId(const QString& projectId) const;
     Q_INVOKABLE QString projectNameForId(const QString& projectId) const;
+    // Stable {id,name} snapshot of a project's team, for the Primary Contact
+    // combo — deliberately NOT the live projectTeamMembersModel proxy, which
+    // Sort can reorder/reset out from under a ComboBox bound directly to it
+    // (QQuickComboBox's currentIndex is a row number, and its internal
+    // delegate model isn't safe to keep alive across that model's sort()).
+    // `includeIds` keeps any currently-referenced person even if no longer on
+    // the team, so an existing assignment still displays (matches desktop).
+    Q_INVOKABLE QVariantList teamMemberList(const QString& projectId, const QStringList& includeIds) const;
+    // Same rationale as teamMemberList() above, for combos that pick a client
+    // or a person (clientsModel/peopleModel are both Sort-able) — a one-time
+    // {id,name} read of the live proxy into a plain array the ComboBox binds
+    // to instead, so a later sort() elsewhere can't invalidate it.
+    Q_INVOKABLE QVariantList clientList() const;
+    Q_INVOKABLE QVariantList peopleList() const;
     Q_INVOKABLE QString htmlToPlainText(const QString& html) const;
     Q_INVOKABLE QString lastSaveError() const;
 
@@ -201,6 +213,11 @@ public:
     Q_INVOKABLE QString     trackerItemIdAtRow(int row) const;
     Q_INVOKABLE int         meetingRowForNoteId(const QString& noteId) const;
     Q_INVOKABLE QString     meetingNoteIdAtRow(int row) const;
+    // Stable {id,name} snapshot backing the tracker item's Meeting combo —
+    // same rationale as teamMemberList()/clientList()/peopleList() above: the
+    // meetings proxy is live/sortable, and QQuickComboBox isn't safe to keep
+    // bound to a model across its sort(). id = note id, name = meeting label.
+    Q_INVOKABLE QVariantList meetingList() const;
     Q_INVOKABLE bool        isItemNumberUnique(const QString& projectId, const QString& itemId, const QString& itemNumber) const;
     Q_INVOKABLE bool        isItemNameUnique(const QString& projectId, const QString& itemId, const QString& itemName) const;
 
@@ -241,6 +258,73 @@ public:
     // least one column value contains |text| (case-insensitive) is shown;
     // all others are hidden.  Pass an empty string to clear.
     Q_INVOKABLE void        setQuickSearch(QAbstractItemModel* model, const QString& text);
+
+    // ── Column filter editor (mirrors DesktopAppController's Filter Editor) ──
+    // Searchable columns of a list model: [{ field, label, isDate }].
+    Q_INVOKABLE QVariantList filterColumns(QAbstractItemModel* model) const;
+    // Distinct values for a filterable column, as [{value, label}, ...]. `value`
+    // is the raw stored value (what filtering matches against); `label` is what
+    // to display — for foreign-key columns (e.g. client_id) that resolves the
+    // id to its lookup table's display column (e.g. client_name).
+    Q_INVOKABLE QVariantList columnDistinctValues(QAbstractItemModel* model, const QString& field) const;
+    // Apply the editor's per-column selections. Each spec:
+    //   { field, values:[...], search:"", rangeStart:"", rangeEnd:"" }.
+    Q_INVOKABLE void applyColumnFilters(QAbstractItemModel* model, const QVariantList& specs);
+    // Clear all user column filters on a model.
+    Q_INVOKABLE void clearColumnFilters(QAbstractItemModel* model);
+    // The model's currently-active filter specs, in the same shape
+    // applyColumnFilters() consumes — lets a caller preload/merge with
+    // whatever's already active instead of blindly overwriting it.
+    Q_INVOKABLE QVariantList activeColumnFilters(QAbstractItemModel* model);
+    // Apply one Quick Filter entry: merges `field`/`values` into whatever
+    // column filters are already active and applies the combined set — so
+    // picking a second Quick Filter stacks with the first instead of
+    // replacing it. Re-picking the same field with the same values removes
+    // it instead (toggle).
+    Q_INVOKABLE void applyQuickFilter(QAbstractItemModel* model, const QString& field, const QVariantList& values);
+    // True if the model has any active column filter (quick or manual) —
+    // drives the Filter button's highlighted state. Read filterRev first in
+    // the same QML binding to pick up changes.
+    Q_INVOKABLE bool hasActiveColumnFilters(QAbstractItemModel* model) const;
+    // Bumped whenever a model's active column filters change (apply/clear/
+    // quick filter) — see hasActiveColumnFilters().
+    Q_PROPERTY(int filterRev READ filterRev NOTIFY filterRevChanged)
+    int filterRev() const { return m_filterRev; }
+    // The Q_PROPERTY model behind a section key — the one canonical mapping
+    // FilterSheet/SortSheet/Quick Filter all share. Covers all 9 filterable
+    // sections: projects/items/people/clients plus the 5 project sub-tab
+    // sections (statusreport/trackeritems/team/locations/notes). Returns
+    // nullptr for an unrecognized section.
+    Q_INVOKABLE QAbstractItemModel* modelForSection(const QString& section) const;
+    // Re-run a list model's query (pull-to-refresh / after a quick filter).
+    Q_INVOKABLE void refreshModel(QAbstractItemModel* model);
+
+    // ── Sort ─────────────────────────────────────────────────────────────────
+    // Columns a list can be sorted by: [{ field, label }]. Deliberately not
+    // filterColumns() — that skips non-searchable columns that are still
+    // useful to sort by. Skips only the hidden id column and long free-text
+    // (DBHtml) columns.
+    Q_INVOKABLE QVariantList sortColumns(QAbstractItemModel* model) const;
+    // Sort `model` by `field`, persisted (application_settings) so it follows
+    // the user across synced machines. Sorts at the proxy
+    // (SortFilterProxyModel::sort()) so foreign-key columns sort by their
+    // resolved display text, not the raw id.
+    Q_INVOKABLE void applySort(QAbstractItemModel* model, const QString& field, bool descending);
+    // Restore natural (the model's base ORDER BY) order.
+    Q_INVOKABLE void clearSort(QAbstractItemModel* model);
+    // The model's current sort, as {field, descending} ({} if unsorted).
+    Q_INVOKABLE QVariantMap activeSort(QAbstractItemModel* model) const;
+    // Bumped whenever a model's sort changes (applySort/clearSort) — read
+    // first in a QML binding the same way filterRev is, for reactivity.
+    Q_PROPERTY(int sortRev READ sortRev NOTIFY sortRevChanged)
+    int sortRev() const { return m_sortRev; }
+    // Re-resolve a stable record id back to its current row in |model|'s
+    // proxy. Mirrors DesktopAppController::projectRowForId()/
+    // clientRowForId(). Detail pages call this immediately before every
+    // save/delete/copy so a row captured at list-tap time that went stale
+    // (a sort()/refresh() while the page was open) can't silently write to
+    // the wrong record. Returns -1 if the id no longer exists.
+    Q_INVOKABLE int rowForId(QAbstractItemModel* model, const QString& id) const;
 
     // ── Model accessors ──────────────────────────────────────────────────────
     QAbstractItemModel* projectsListModel()       const;
@@ -316,6 +400,8 @@ signals:
     void errorOccurred(const QString& title, const QString& message);
     void databaseReady();
     void viewOptionsChanged();
+    void filterRevChanged();
+    void sortRevChanged();
 
 private slots:
     void onSyncComplete(const SyncResult& result);
@@ -336,18 +422,19 @@ private:
     bool           m_syncHasError  = false;
     QString        m_subscriptionStatusText;
 
-    // O(1) id→row indexes over the proxy models. Built once at databaseReady,
-    // self-invalidating on any model change. Replace per-call linear scans
-    // that QML list-delegate bindings hit thousands of times during scroll
-    // and quick-search.
-    std::unique_ptr<IdRowIndex> m_clientsIndex;            // clients proxy, id col 0
-    std::unique_ptr<IdRowIndex> m_peopleIndex;             // people proxy, id col 0
-    std::unique_ptr<IdRowIndex> m_projectsIndex;           // projects-list proxy, id col 0
-    std::unique_ptr<IdRowIndex> m_teamMembersByPersonIndex;// team-members proxy, people_id col 2
+    // Bumped by applyColumnFilters/clearColumnFilters/applyQuickFilter and
+    // applySort/clearSort respectively — see filterRev()/sortRev() above.
+    int            m_filterRev     = 0;
+    int            m_sortRev       = 0;
 
     void configureSyncApi();
     void setSyncProgress(qreal progress, bool hasError = false);
     void setSubscriptionStatusText(const QString& text);
+
+    // Applies every filterable section's persisted sort order. Deferred (via
+    // QTimer::singleShot) off the end of openOrCreateDatabase() rather than
+    // called inline — see that method for why.
+    void restoreAllSorts();
 
     // Delete the record at proxy |row|, surfacing the model's blocked-delete
     // message (child/foreign-key references) via errorOccurred() on failure.
