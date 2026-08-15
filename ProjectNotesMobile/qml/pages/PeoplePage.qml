@@ -12,6 +12,21 @@ Page {
 
     property StackView stackView: null
 
+    // Quick Filter entry for a long-pressed person row: pre-filled from that
+    // row's own client — client_id is a genuine direct column on the people
+    // table (peoplemodel.cpp), not derived.
+    function _quickFiltersForRow(m) {
+        var qf = []
+        var clientId = (m.client_id || "").toString()
+        if (clientId !== "")
+            qf.push({ label: qsTr("This Client"), field: "client_id", values: [clientId] })
+        return qf
+    }
+
+    FilterSheet     { id: filterSheet }
+    SortSheet       { id: sortSheet }
+    QuickFilterSheet { id: qfSheet }
+
     header: ToolBar {
         RowLayout {
             anchors { left: parent.left; right: parent.right; margins: 8 }
@@ -41,6 +56,26 @@ Page {
             }
 
             ToolButton {
+                icon.name: "line.3.horizontal.decrease.circle"
+                onClicked: filterSheet.openFor("people", qsTr("People"))
+                Rectangle {
+                    visible: { AppController.filterRev; return AppController.hasActiveColumnFilters(AppController.peopleModel) }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                }
+            }
+
+            ToolButton {
+                icon.name: "arrow.up.arrow.down"
+                onClicked: sortSheet.openFor("people", qsTr("People"))
+                Rectangle {
+                    visible: { AppController.sortRev; return (AppController.activeSort(AppController.peopleModel).field || "") !== "" }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                }
+            }
+
+            ToolButton {
                 icon.name: "plus"
                 onClicked: {
                     var newRow = AppController.addPerson()
@@ -48,6 +83,7 @@ Page {
                     var d = AppController.getPersonData(newRow)
                     root.stackView.push(Qt.resolvedUrl("PersonDetailPage.qml"), {
                         personRow:          newRow,
+                        personId:           (d.id           || "").toString(),
                         isNewRecord:        true,
                         initialName:        (d.name         || "").toString(),
                         initialEmail:       (d.email        || "").toString(),
@@ -66,9 +102,18 @@ Page {
         anchors.fill: parent
         model: AppController.peopleModel
         clip: true
+        reuseItems: true
 
         delegate: ItemDelegate {
+            id: delegateRoot
+            required property int index
+            required property var model
             width: listView.width
+
+            TapHandler {
+                onLongPressed: qfSheet.openWith(AppController.peopleModel, root._quickFiltersForRow(delegateRoot.model))
+            }
+
             contentItem: RowLayout {
                 spacing: 12
 
@@ -80,7 +125,7 @@ Page {
 
                     Label {
                         anchors.centerIn: parent
-                        text: (model.name || "?").charAt(0).toUpperCase()
+                        text: (delegateRoot.model.name || "?").charAt(0).toUpperCase()
                         font.pixelSize: 16
                         font.bold: true
                         color: "white"
@@ -92,15 +137,15 @@ Page {
                     Layout.fillWidth: true
 
                     Label {
-                        text: model.name || ""
+                        text: delegateRoot.model.name || ""
                         font.bold: true
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
                     Label {
                         text: {
-                            var email = model.email || ""
-                            var role  = model.role  || ""
+                            var email = delegateRoot.model.email || ""
+                            var role  = delegateRoot.model.role  || ""
                             if (email && role) return email + "  ·  " + role
                             return email || role
                         }
@@ -116,36 +161,37 @@ Page {
                     Layout.alignment: Qt.AlignVCenter
 
                     ToolButton {
-                        visible: (model.cell_phone || "").length > 0
+                        visible: (delegateRoot.model.cell_phone || "").length > 0
                         icon.name: "iphone"
                         implicitWidth: 44; implicitHeight: 44
-                        onClicked: Qt.openUrlExternally("tel:" + (model.cell_phone || "").replace(/[^\d+]/g, ""))
+                        onClicked: Qt.openUrlExternally("tel:" + (delegateRoot.model.cell_phone || "").replace(/[^\d+]/g, ""))
                     }
 
                     ToolButton {
-                        visible: (model.office_phone || "").length > 0
+                        visible: (delegateRoot.model.office_phone || "").length > 0
                         icon.name: "phone.fill"
                         implicitWidth: 44; implicitHeight: 44
-                        onClicked: Qt.openUrlExternally("tel:" + (model.office_phone || "").replace(/[^\d+]/g, ""))
+                        onClicked: Qt.openUrlExternally("tel:" + (delegateRoot.model.office_phone || "").replace(/[^\d+]/g, ""))
                     }
 
                     ToolButton {
-                        visible: (model.email || "").length > 0
+                        visible: (delegateRoot.model.email || "").length > 0
                         icon.name: "envelope"
                         implicitWidth: 44; implicitHeight: 44
-                        onClicked: Qt.openUrlExternally("mailto:" + (model.email || ""))
+                        onClicked: Qt.openUrlExternally("mailto:" + (delegateRoot.model.email || ""))
                     }
                 }
             }
             onClicked: {
                 root.stackView.push(Qt.resolvedUrl("PersonDetailPage.qml"), {
-                    personRow:         index,
-                    initialName:       model.name          || "",
-                    initialEmail:      model.email         || "",
-                    initialOfficePhone:model.office_phone  || "",
-                    initialCellPhone:  model.cell_phone    || "",
-                    initialClientId:   model.client_id     || "",
-                    initialRole:       model.role          || ""
+                    personRow:         delegateRoot.index,
+                    personId:          delegateRoot.model.id           || "",
+                    initialName:       delegateRoot.model.name         || "",
+                    initialEmail:      delegateRoot.model.email        || "",
+                    initialOfficePhone:delegateRoot.model.office_phone || "",
+                    initialCellPhone:  delegateRoot.model.cell_phone   || "",
+                    initialClientId:   delegateRoot.model.client_id    || "",
+                    initialRole:       delegateRoot.model.role         || ""
                 })
             }
         }

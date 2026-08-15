@@ -26,6 +26,9 @@ Page {
 
     StackView.onActivated: AppController.setProjectFilter(root.projectId)
 
+    FilterSheet { id: filterSheet }
+    SortSheet   { id: sortSheet }
+
     header: ToolBar {
         RowLayout {
             anchors { left: parent.left; right: parent.right; margins: 8 }
@@ -53,6 +56,24 @@ Page {
                 }
             }
             ToolButton {
+                icon.name: "line.3.horizontal.decrease.circle"
+                onClicked: filterSheet.openFor("team", qsTr("Team"))
+                Rectangle {
+                    visible: { AppController.filterRev; return AppController.hasActiveColumnFilters(AppController.projectTeamMembersModel) }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                }
+            }
+            ToolButton {
+                icon.name: "arrow.up.arrow.down"
+                onClicked: sortSheet.openFor("team", qsTr("Team"))
+                Rectangle {
+                    visible: { AppController.sortRev; return (AppController.activeSort(AppController.projectTeamMembersModel).field || "") !== "" }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                }
+            }
+            ToolButton {
                 icon.name: "plus"
                 onClicked: {
                     var newRow = AppController.addTeamMember(root.projectId)
@@ -60,6 +81,7 @@ Page {
                     var d = AppController.getTeamMemberData(newRow)
                     root.StackView.view.push(Qt.resolvedUrl("TeamMemberDetailPage.qml"), {
                         memberRow:                  newRow,
+                        memberId:                   (d.id                     || "").toString(),
                         isNewRecord:                true,
                         projectTitle:               root.projectTitle,
                         initialPeopleId:            (d.people_id              || "").toString(),
@@ -79,6 +101,9 @@ Page {
         clip: true
 
         delegate: ItemDelegate {
+            id: delegateRoot
+            required property int index
+            required property var model
             width: listView.width
 
             contentItem: RowLayout {
@@ -89,7 +114,7 @@ Page {
                     Layout.fillWidth: true
 
                     Label {
-                        text: model.name || ""
+                        text: delegateRoot.model.name || ""
                         font.bold: true
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -98,8 +123,8 @@ Page {
                     Label {
                         text: {
                             var parts = []
-                            if (model.client_name || "") parts.push(model.client_name)
-                            if (model.role        || "") parts.push(model.role)
+                            if (delegateRoot.model.client_name || "") parts.push(delegateRoot.model.client_name)
+                            if (delegateRoot.model.role        || "") parts.push(delegateRoot.model.role)
                             return parts.join("  ·  ")
                         }
                         font.pixelSize: 12
@@ -109,7 +134,7 @@ Page {
                     }
 
                     Label {
-                        visible: (model.receive_status_report || "0") !== "0"
+                        visible: (delegateRoot.model.receive_status_report || "0") !== "0"
                         text: qsTr("Receives Status Report")
                         font.pixelSize: 11
                         color: palette.link
@@ -121,24 +146,24 @@ Page {
                     Layout.alignment: Qt.AlignVCenter
 
                     ToolButton {
-                        visible: (model.cell_phone || "").length > 0
+                        visible: (delegateRoot.model.cell_phone || "").length > 0
                         icon.name: "iphone"
                         implicitWidth: 44; implicitHeight: 44
-                        onClicked: Qt.openUrlExternally("tel:" + (model.cell_phone || "").replace(/[^\d+]/g, ""))
+                        onClicked: Qt.openUrlExternally("tel:" + (delegateRoot.model.cell_phone || "").replace(/[^\d+]/g, ""))
                     }
 
                     ToolButton {
-                        visible: (model.office_phone || "").length > 0
+                        visible: (delegateRoot.model.office_phone || "").length > 0
                         icon.name: "phone.fill"
                         implicitWidth: 44; implicitHeight: 44
-                        onClicked: Qt.openUrlExternally("tel:" + (model.office_phone || "").replace(/[^\d+]/g, ""))
+                        onClicked: Qt.openUrlExternally("tel:" + (delegateRoot.model.office_phone || "").replace(/[^\d+]/g, ""))
                     }
 
                     ToolButton {
-                        visible: (model.email || "").length > 0
+                        visible: (delegateRoot.model.email || "").length > 0
                         icon.name: "envelope"
                         implicitWidth: 44; implicitHeight: 44
-                        onClicked: Qt.openUrlExternally("mailto:" + (model.email || "")
+                        onClicked: Qt.openUrlExternally("mailto:" + (delegateRoot.model.email || "")
                             + "?subject=" + encodeURIComponent(root.projectTitle + " -"))
                     }
                 }
@@ -146,12 +171,13 @@ Page {
 
             onClicked: {
                 root.StackView.view.push(Qt.resolvedUrl("TeamMemberDetailPage.qml"), {
-                    memberRow:                  index,
+                    memberRow:                  delegateRoot.index,
+                    memberId:                   delegateRoot.model.id                   || "",
                     projectTitle:               root.projectTitle,
-                    initialPeopleId:            model.people_id              || "",
-                    initialRole:                model.role                   || "",
-                    initialReceiveStatusReport: (model.receive_status_report || "0") !== "0",
-                    initialEmail:               model.email                  || ""
+                    initialPeopleId:            delegateRoot.model.people_id            || "",
+                    initialRole:                delegateRoot.model.role                 || "",
+                    initialReceiveStatusReport: (delegateRoot.model.receive_status_report || "0") !== "0",
+                    initialEmail:               delegateRoot.model.email                || ""
                 })
             }
         }

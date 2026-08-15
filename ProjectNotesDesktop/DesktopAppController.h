@@ -385,6 +385,10 @@ public:
     Q_INVOKABLE QString     projectNoteIdAtRow(int row) const;
     Q_INVOKABLE bool        saveProjectNote(int row, const QString& title, const QString& date,
                                             const QString& note, bool internalItem);
+    // Duplicate a note (Widgets parity): copies project + title, resets the date
+    // to now, leaves the note body blank, copies attendees, and does not copy
+    // action items. Returns the new note's proxy row, or -1 on failure.
+    Q_INVOKABLE int         copyProjectNote(const QString& noteId);
 
     // ── Meeting attendees CRUD ───────────────────────────────────────────────
     Q_INVOKABLE int         addAttendee(const QString& noteId);
@@ -412,6 +416,15 @@ public:
     Q_INVOKABLE bool        savePerson(int row, const QString& name, const QString& email,
                                        const QString& officePhone, const QString& cellPhone,
                                        const QString& clientId, const QString& role);
+    // Parses vCard(s) dropped onto the People list (see vcardparser.h). Each
+    // contact's company is resolved to a client (associated if it already
+    // exists, created otherwise) and the person is added/looked up against
+    // it. fileUrls are local file:// URLs to read and scan for vCard blocks
+    // (e.g. a dropped .vcf); text is raw vCard data already carried by the
+    // drop itself (a direct MIME vCard drag, or plain text starting with
+    // BEGIN:VCARD) — pass an empty string when there is none. Returns the
+    // number of contacts found (0 if none, which also reports errorOccurred).
+    Q_INVOKABLE int         addPeopleFromVCardDrop(const QStringList& fileUrls, const QString& text);
 
     // ── Clients CRUD ─────────────────────────────────────────────────────────
     Q_INVOKABLE int         addClient();
@@ -470,6 +483,11 @@ public:
     Q_INVOKABLE QVariantMap getTeamMemberData(int row) const;
     Q_INVOKABLE bool        saveTeamMember(int row, const QString& peopleId,
                                            const QString& role, bool receiveStatusReport);
+    // Same vCard parsing as addPeopleFromVCardDrop() (client resolved/created,
+    // person added/looked up), plus each contact is added to projectId's team
+    // via addPersonToProjectTeam() (silently skipping anyone already on it).
+    Q_INVOKABLE int         addTeamMembersFromVCardDrop(const QString& projectId,
+                                const QStringList& fileUrls, const QString& text);
 
     // ── Project locations ────────────────────────────────────────────────────
     Q_INVOKABLE int         addProjectLocation(const QString& projectId);
@@ -504,6 +522,16 @@ public:
 
     // ── Help ▸ maintenance actions (mirror the Widgets Help menu) ────────────
     Q_INVOKABLE QString appVersion() const;   // "6.0.0"
+    // Compile-time build timestamp ("Aug  7 2026 14:32:10"), same __DATE__/
+    // __TIME__ source as the Widgets AboutDialog's BUILDV.
+    Q_INVOKABLE QString buildTimestamp() const;
+    // Qt version the running app is actually linked against (qVersion()), not
+    // just the header version it was compiled with — matches the Widgets
+    // AboutDialog's Qt Version line.
+    Q_INVOKABLE QString qtRuntimeVersion() const;
+    // Active --developer-profile name, or "" when running under the default
+    // profile — matches the Widgets app's window-title "((profile))" prefix.
+    Q_INVOKABLE QString developerProfile() const { return s_developerProfile; }
     // Query GitHub for a newer release; answers via updateAvailable() /
     // upToDate() / updateCheckFailed(). The silent variant is for the automatic
     // launch-time check: it stays quiet unless an update is actually available.

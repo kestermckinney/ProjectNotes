@@ -60,6 +60,14 @@ private:
     QString resolveLookupValue(const QString& lookupTable, const QString& fkCol,
                                const QString& valCol, const QString& fkVal,
                                class SqlQueryModel* srcModel) const;
+    // Bulk-loads the FK lookup table for the current sort column (m_sortColumn),
+    // via preloadLookupTable() above, before QSortFilterProxyModel::sort() runs —
+    // so lessThan() always resolves lookup values from cache instead of issuing
+    // an ad-hoc QSqlQuery mid-comparison. No-op if m_sortColumn isn't a lookup
+    // column, or if that table is already preloaded (preloadLookupTable() itself
+    // is idempotent, so calling this defensively at every sort call site costs
+    // nothing after the first hit).
+    void preloadCurrentSortColumn() const;
     QString m_quickSearch;
     // Coalesces bursts of setQuickSearch() calls (one per keystroke) into a
     // single invalidateRowsFilter() so we don't re-scan every row of the

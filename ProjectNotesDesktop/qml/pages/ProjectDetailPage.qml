@@ -692,6 +692,35 @@ Item {
 
             // â”€â”€ 2: TEAM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Item {
+                // Drop a vCard (a .vcf file, or a contact dragged straight from
+                // Outlook / Contacts) anywhere on the team list to add it: the
+                // contact's company is associated with a matching client (or a
+                // new one is created), the person is added/looked up, and they
+                // are added to this project's team. See
+                // DesktopAppController::addTeamMembersFromVCardDrop().
+                DropArea {
+                    anchors.fill: parent
+                    onDropped: (drop) => {
+                        var urls = []
+                        if (drop.hasUrls)
+                            for (var i = 0; i < drop.urls.length; i++)
+                                urls.push(drop.urls[i].toString())
+                        var text = ""
+                        for (var i = 0; i < drop.formats.length; i++) {
+                            if (drop.formats[i].toLowerCase().indexOf("vcard") !== -1) {
+                                text = drop.getDataAsString(drop.formats[i])
+                                break
+                            }
+                        }
+                        if (text === "" && drop.hasText && drop.text.indexOf("BEGIN:VCARD") !== -1)
+                            text = drop.text
+                        if (urls.length === 0 && text === "") { drop.accepted = false; return }
+                        DesktopAppController.addTeamMembersFromVCardDrop(page.projectId, urls, text)
+                        page._refreshTeamPeople()
+                        drop.accept()
+                    }
+                }
+
                 ListView {
                     id: teamRep
                     anchors.fill: parent
@@ -1067,7 +1096,8 @@ Item {
                             function _menu(sx, sy) {
                                 rowMenu.openFor(DesktopAppController.projectNotesModel,
                                     (noteCard.model.id || "").toString(), qsTr("Note"),
-                                    (noteCard.model.note_title || "").toString(), sx, sy)
+                                    (noteCard.model.note_title || "").toString(), sx, sy,
+                                    /*allowDuplicate*/ true, /*allowMoveTo*/ false)
                             }
                             RowLayout {
                                 anchors.fill: parent
@@ -1404,8 +1434,13 @@ Item {
         id: rowMenu
         onExportRecord: (table, id) => page.exportRequested(table, id)
         onDuplicateRecord: (table, id) => {
-            var newId = DesktopAppController.copyTrackerItem(id)
-            if (newId !== "") { page._saveNow(); page.itemActivated(newId) }
+            if (table === "project_notes") {
+                var r = DesktopAppController.copyProjectNote(id)
+                if (r >= 0) { page._saveNow(); page.noteActivated(r, DesktopAppController.projectNoteIdAtRow(r)) }
+            } else {
+                var newId = DesktopAppController.copyTrackerItem(id)
+                if (newId !== "") { page._saveNow(); page.itemActivated(newId) }
+            }
         }
         onMoveToRecord: (id) => page.moveToRequested(id)
         onGoToPersonRequested: (personId) => page.goToPersonRequested(personId)

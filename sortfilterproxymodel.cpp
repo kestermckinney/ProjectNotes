@@ -22,8 +22,10 @@ SortFilterProxyModel::SortFilterProxyModel(QObject *parent): QSortFilterProxyMod
     m_resortDebounce.setSingleShot(true);
     m_resortDebounce.setInterval(0);
     QObject::connect(&m_resortDebounce, &QTimer::timeout, this, [this]() {
-        if (m_sortColumn >= 0)
+        if (m_sortColumn >= 0) {
+            preloadCurrentSortColumn();
             QSortFilterProxyModel::sort(m_sortColumn, m_sortOrder);
+        }
     });
 }
 
@@ -106,6 +108,20 @@ QString SortFilterProxyModel::resolveLookupValue(const QString& lookupTable, con
     return displayVal;
 }
 
+void SortFilterProxyModel::preloadCurrentSortColumn() const
+{
+    if (m_sortColumn < 0)
+        return;
+    SqlQueryModel* src = static_cast<SqlQueryModel*>(sourceModel());
+    if (!src)
+        return;
+    const QString lookupTable = src->getLookupTable(m_sortColumn);
+    if (lookupTable.isEmpty())
+        return;   // not a lookup column — lessThan() compares raw values, no DB access needed
+    preloadLookupTable(lookupTable, src->getLookupFkColumnName(m_sortColumn),
+                        src->getLookupValueColumnName(m_sortColumn), src);
+}
+
 void SortFilterProxyModel::invalidateLookupTable(const QString& table)
 {
     const QString prefix = table + '\x1F';
@@ -167,6 +183,7 @@ void SortFilterProxyModel::sort(int column, Qt::SortOrder order)
     m_sortColumn  = column;
     m_sortOrder   = order;
     m_pendingSort = false;
+    preloadCurrentSortColumn();
     QSortFilterProxyModel::sort(column, order);
 }
 
@@ -198,6 +215,7 @@ void SortFilterProxyModel::setPinnedRow(int sourceRow)
 {
     if (m_pinnedSourceRow >= 0 && m_pendingSort) {
         m_pendingSort = false;
+        preloadCurrentSortColumn();
         QSortFilterProxyModel::sort(m_sortColumn, m_sortOrder);
     }
     m_pinnedSourceRow = sourceRow;
@@ -208,6 +226,7 @@ void SortFilterProxyModel::releasePinnedRow()
     m_pinnedSourceRow = -1;
     if (m_pendingSort && m_sortColumn >= 0) {
         m_pendingSort = false;
+        preloadCurrentSortColumn();
         QSortFilterProxyModel::sort(m_sortColumn, m_sortOrder);
     }
 }

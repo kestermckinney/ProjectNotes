@@ -24,6 +24,9 @@ Page {
 
     StackView.onActivated: AppController.setProjectFilter(root.projectId)
 
+    FilterSheet { id: filterSheet }
+    SortSheet   { id: sortSheet }
+
     header: ToolBar {
         RowLayout {
             anchors { left: parent.left; right: parent.right; margins: 8 }
@@ -51,6 +54,24 @@ Page {
                 }
             }
             ToolButton {
+                icon.name: "line.3.horizontal.decrease.circle"
+                onClicked: filterSheet.openFor("statusreport", qsTr("Status Items"))
+                Rectangle {
+                    visible: { AppController.filterRev; return AppController.hasActiveColumnFilters(AppController.statusReportItemsModel) }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                }
+            }
+            ToolButton {
+                icon.name: "arrow.up.arrow.down"
+                onClicked: sortSheet.openFor("statusreport", qsTr("Status Items"))
+                Rectangle {
+                    visible: { AppController.sortRev; return (AppController.activeSort(AppController.statusReportItemsModel).field || "") !== "" }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                }
+            }
+            ToolButton {
                 icon.name: "plus"
                 onClicked: {
                     var newRow = AppController.addStatusItem(root.projectId)
@@ -58,6 +79,7 @@ Page {
                     var d = AppController.getStatusItemData(newRow)
                     root.StackView.view.push(Qt.resolvedUrl("StatusItemDetailPage.qml"), {
                         itemRow:            newRow,
+                        itemId:             (d.id                || "").toString(),
                         isNewRecord:        true,
                         initialCategory:    (d.task_category    || "").toString(),
                         initialDescription: (d.task_description || "").toString()
@@ -83,6 +105,9 @@ Page {
         clip: true
 
         delegate: ItemDelegate {
+            id: delegateRoot
+            required property int index
+            required property var model
             width: listView.width
 
             contentItem: ColumnLayout {
@@ -92,17 +117,17 @@ Page {
                     Layout.fillWidth: true
 
                     Label {
-                        text: model.task_category || ""
+                        text: delegateRoot.model.task_category || ""
                         font.bold: true
                         font.pixelSize: 13
-                        color: root.categoryColor(model.task_category || "")
+                        color: root.categoryColor(delegateRoot.model.task_category || "")
                         Layout.fillWidth: true
                     }
                 }
 
                 Label {
-                    visible: (model.task_description || "") !== ""
-                    text: model.task_description || ""
+                    visible: (delegateRoot.model.task_description || "") !== ""
+                    text: delegateRoot.model.task_description || ""
                     font.pixelSize: 13
                     wrapMode: Text.WordWrap
                     Layout.fillWidth: true
@@ -111,9 +136,10 @@ Page {
 
             onClicked: {
                 root.StackView.view.push(Qt.resolvedUrl("StatusItemDetailPage.qml"), {
-                    itemRow:             index,
-                    initialCategory:     model.task_category    || "",
-                    initialDescription:  model.task_description || ""
+                    itemRow:             delegateRoot.index,
+                    itemId:              delegateRoot.model.id                 || "",
+                    initialCategory:     delegateRoot.model.task_category      || "",
+                    initialDescription:  delegateRoot.model.task_description   || ""
                 })
             }
         }

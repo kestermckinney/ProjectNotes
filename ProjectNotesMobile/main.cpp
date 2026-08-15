@@ -9,12 +9,65 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
+#include <QStandardPaths>
+#include <QDir>
+#include <QFile>
+#include <QTextStream>
+#include <QDateTime>
+#include <QMutex>
+#include <cstdio>
+
+static void pnmobileMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+    static QMutex outMutex;
+    static QFile logFile;
+    static bool initialized = false;
+    QMutexLocker locker(&outMutex);
+
+    if (!initialized) {
+        initialized = true;
+        const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        QDir().mkpath(dir);
+        const QString path = dir + "/pnmobile.log";
+        logFile.setFileName(path);
+        logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
+        QTextStream(&logFile) << "==== pnmobile log start "
+                              << QDateTime::currentDateTime().toString(Qt::ISODate)
+                              << " at " << path << "\n";
+        logFile.flush();
+    }
+
+    const QString level = [type]() {
+        switch (type) {
+        case QtDebugMsg: return "D"; case QtInfoMsg: return "I";
+        case QtWarningMsg: return "W"; case QtCriticalMsg: return "C";
+        case QtFatalMsg: return "F"; default: return "?";
+        }
+    }();
+    const QString line = QString("[%1] %2 %3:%4 %5\n")
+        .arg(level)
+        .arg(QDateTime::currentDateTime().toString("HH:mm:ss.zzz"))
+        .arg(context.file ? context.file : "")
+        .arg(context.line)
+        .arg(msg);
+
+    if (logFile.isOpen()) {
+        QTextStream(&logFile) << line;
+        logFile.flush();
+    }
+    // Mirror Qt's default handler so stderr still gets everything too.
+    fprintf(stderr, "%s", qPrintable(line));
+    fflush(stderr);
+}
 
 int main(int argc, char *argv[])
 {
 #ifdef QT_DEBUG
     qputenv("QML_IMPORT_TRACE", "1");
 #endif
+
+    qInstallMessageHandler(pnmobileMessageHandler);
+    qInfo("ProjectNotesMobile starting (pid=%d)", int(QCoreApplication::applicationPid()));
 
     QGuiApplication app(argc, argv);
     app.setOrganizationName("ProjectNotes");

@@ -4,6 +4,7 @@
 #include "DesktopAppController.h"
 
 #include "databaseobjects.h"
+#include "vcardparser.h"
 #include "sortfilterproxymodel.h"
 #include "FolderManager.h"
 #include "projectsmodel.h"
@@ -244,6 +245,22 @@ bool DesktopAppController::openOrCreateDatabase()
     restoreColumnFilters(global_DBObjects.peoplemodel());
     restoreColumnFilters(global_DBObjects.allitemsmodel());
 
+    // restoreColumnFilters() mutates the models directly (it isn't routed
+    // through applyColumnFilters()), so it never bumps filterRev on its own.
+    // That's normally fine — QML bindings read the model fresh on their first
+    // evaluation — but Main.qml's root Component.onCompleted (which calls
+    // openOrCreateDatabase(), and lands here) runs synchronously during
+    // engine.load(), before window->show(). That means the whole QML tree,
+    // including the TopBar's filterActive binding, has already latched its
+    // *first* value (against an empty pre-open model) by the time the four
+    // restores above run. Without an explicit bump here, a filter restored
+    // from a prior session leaves the Filter button unhighlighted until some
+    // unrelated filter change elsewhere bumps filterRev, or the user
+    // navigates off the initial section ("projects") and back — since a
+    // section change is itself a tracked dependency of that binding.
+    ++m_filterRev;
+    emit filterRevChanged();
+
     // Restore any persisted sort choice, for every filterable section (not
     // just the four above) — unlike column filters, sorting an unloaded model
     // is cheap (it only sets the pending column/order; the proxy applies it
@@ -254,6 +271,11 @@ bool DesktopAppController::openOrCreateDatabase()
                                      QStringLiteral("team"), QStringLiteral("locations"),
                                      QStringLiteral("notes") })
         restoreSort(modelForSection(section));
+
+    // Same reasoning as the filterRev bump above, for the Sort chip's
+    // sortActive binding.
+    ++m_sortRev;
+    emit sortRevChanged();
 
     // The sidebar may have cached an empty snapshot while the QML tree was
     // building (pre-open); force a rebuild + rev bump now that data is loaded.
@@ -320,6 +342,25 @@ static QString localPath(const QString& fileUrlOrPath)
 {
     const QUrl url(fileUrlOrPath);
     return url.isLocalFile() ? url.toLocalFile() : fileUrlOrPath;
+}
+
+// Reads each dropped file (fileUrls, as local file:// URLs) and appends its
+// content to any raw vCard text the drop already carried directly (a MIME
+// vCard drag, or plain text starting with BEGIN:VCARD). QML's DropArea hands
+// urls and text over separately (unlike QMimeData), so this stands in for
+// vcardparser.h's extractVCardText() for the QML drop path — the combined
+// result still just gets fed to parseVCards(), which only picks out actual
+// BEGIN:VCARD…END:VCARD blocks, so unrelated file content is harmless.
+static QString combineVCardSources(const QStringList& fileUrls, const QString& text)
+{
+    QString combined = text;
+    for (const QString& fileUrl : fileUrls)
+    {
+        QFile file(localPath(fileUrl));
+        if (file.open(QFile::ReadOnly))
+            combined += QString::fromUtf8(file.readAll()) + "\n";
+    }
+    return combined;
 }
 
 bool DesktopAppController::importXmlFile(const QString& fileUrlOrPath)
@@ -1616,7 +1657,13 @@ int DesktopAppController::addProjectNote(const QString& projectId)
     if (!newId.isEmpty())
         global_DBObjects.addDefaultPMToMeeting(newId);
 
-    return proxyRowFromSource(global_DBObjects.projectnotesmodelproxy(), srcIdx);
+    // newRecord()/insertCacheRow() just appends to the cache — it doesn't honor
+    // the model's "note_date desc" base order. The list is always newest-first,
+    // so re-run the query and relocate the new (today-dated) note to find where
+    // that puts it, instead of leaving it wherever it landed in the cache.
+    src->refresh();
+    QVariant idLookup(newId);
+    return proxyRowFromSource(global_DBObjects.projectnotesmodelproxy(), src->findIndex(idLookup, 0));
 }
 
 bool DesktopAppController::deleteProjectNote(int row)
@@ -1655,6 +1702,36 @@ bool DesktopAppController::saveProjectNote(int row, const QString& title, const 
 
     return applyRowFields(model, pIdx.row(), {
         {2, title}, {3, date}, {4, note}, {5, internalItem ? "1" : "0"} });
+}
+
+// Duplicate a note — Widgets parity (ProjectNotesModel::copyRecord): keeps the
+// project and title, resets the date to now, leaves the note body blank, and
+// copies the attendee list. Action items are intentionally NOT copied. The
+// notes model is already filtered to the open project (see openProject), so
+// the copy just needs to find the source row for noteId.
+int DesktopAppController::copyProjectNote(const QString& noteId)
+{
+    global_DBObjects.setLastSaveError("");
+    if (noteId.isEmpty())
+        return -1;
+
+    auto* src = global_DBObjects.projectnotesmodel();
+    if (!src) return -1;
+
+    QVariant key(noteId);
+    const QModelIndex srcIdx = src->findIndex(key, 0);
+    if (!srcIdx.isValid()) return -1;
+
+    const QModelIndex newIdx = src->copyRecord(srcIdx);
+    if (!newIdx.isValid()) return -1;
+
+    // Same reasoning as addProjectNote(): the copy is appended to the cache
+    // with today's date, so re-run the query to put it in its newest-first
+    // spot rather than leaving it at the append position.
+    const QString newId = src->data(src->index(newIdx.row(), 0)).toString();
+    src->refresh();
+    QVariant idLookup(newId);
+    return proxyRowFromSource(global_DBObjects.projectnotesmodelproxy(), src->findIndex(idLookup, 0));
 }
 
 // ── Meeting attendees ────────────────────────────────────────────────────────
@@ -1798,6 +1875,35 @@ bool DesktopAppController::savePerson(int row, const QString& name, const QStrin
     return applyRowFields(model, pIdx.row(), {
         {1, name},      {2, email},    {3, officePhone},
         {4, cellPhone}, {5, clientId}, {6, role} });
+}
+
+int DesktopAppController::addPeopleFromVCardDrop(const QStringList& fileUrls, const QString& text)
+{
+    const QList<VCardContact> contacts = parseVCards(combineVCardSources(fileUrls, text));
+    if (contacts.isEmpty())
+    {
+        emit errorOccurred(tr("No Contacts Found"),
+            tr("The dropped item didn't contain any recognizable vCard contacts."));
+        return 0;
+    }
+
+    for (const VCardContact& contact : contacts)
+    {
+        const QString clientId = findOrCreateClient(&global_DBObjects, contact.company);
+        findOrCreatePerson(&global_DBObjects, contact, clientId);
+    }
+
+    // findOrCreatePerson() writes through the unfiltered people model so the
+    // insert can't be scoped out by whatever filter the visible People list
+    // currently has active — refresh the model actually bound to peopleModel()
+    // so the new rows show up immediately rather than waiting for the next
+    // dirty-triggered reload.
+    global_DBObjects.peoplemodel()->refresh();
+
+    emit infoOccurred(tr("Contacts Added"), contacts.size() == 1
+        ? tr("1 contact was added.")
+        : tr("%1 contacts were added.").arg(contacts.size()));
+    return contacts.size();
 }
 
 // ── Clients ──────────────────────────────────────────────────────────────────
@@ -2200,6 +2306,41 @@ bool DesktopAppController::saveTeamMember(int row, const QString& peopleId,
         {2, peopleId}, {4, receiveStatusReport ? "1" : "0"}, {5, role} });
 }
 
+int DesktopAppController::addTeamMembersFromVCardDrop(const QString& projectId,
+                                    const QStringList& fileUrls, const QString& text)
+{
+    if (projectId.isEmpty()) return 0;
+
+    const QList<VCardContact> contacts = parseVCards(combineVCardSources(fileUrls, text));
+    if (contacts.isEmpty())
+    {
+        emit errorOccurred(tr("No Contacts Found"),
+            tr("The dropped item didn't contain any recognizable vCard contacts."));
+        return 0;
+    }
+
+    for (const VCardContact& contact : contacts)
+    {
+        const QString clientId = findOrCreateClient(&global_DBObjects, contact.company);
+        const QString personId = findOrCreatePerson(&global_DBObjects, contact, clientId);
+        if (!personId.isEmpty())
+            addPersonToProjectTeam(projectId, personId);
+    }
+
+    // Mirrors moveTrackerItem()'s membersToAdd handling: findOrCreatePerson()
+    // writes through the unfiltered people model, and addPersonToProjectTeam()
+    // writes straight against the source team-members model rather than
+    // whatever project the visible proxy is currently filtered to — refresh
+    // both so the drop's results show up immediately on screen.
+    global_DBObjects.peoplemodel()->refresh();
+    refreshTeamMembers();
+
+    emit infoOccurred(tr("Contacts Added"), contacts.size() == 1
+        ? tr("1 contact was added to the team.")
+        : tr("%1 contacts were added to the team.").arg(contacts.size()));
+    return contacts.size();
+}
+
 // ── Project locations ────────────────────────────────────────────────────────
 
 int DesktopAppController::addProjectLocation(const QString& projectId)
@@ -2375,6 +2516,19 @@ QString DesktopAppController::appVersion() const
 {
     return QStringLiteral("%1.%2.%3")
         .arg(APP_VERSION_MAJOR).arg(APP_VERSION_MINOR).arg(APP_VERSION_PATCH);
+}
+
+QString DesktopAppController::buildTimestamp() const
+{
+    // Same __DATE__ " " __TIME__ source as the Widgets AboutDialog's BUILDV;
+    // evaluated here (rather than a file-scope const) so it reflects this
+    // translation unit's compile time.
+    return QStringLiteral(__DATE__ " " __TIME__);
+}
+
+QString DesktopAppController::qtRuntimeVersion() const
+{
+    return QString::fromLatin1(qVersion());
 }
 
 // Create the shared UpdateManager once and translate its signals into the
