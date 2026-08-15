@@ -1,4 +1,4 @@
-// Copyright (C) 2026 Paul McKinney
+﻿// Copyright (C) 2026 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
 import QtQuick
@@ -241,7 +241,7 @@ Item {
         anchors.fill: parent
         spacing: 0
 
-        // ── Header (all project information, above the tabs) ──────────────────
+        // â”€â”€ Header (all project information, above the tabs) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         ScrollView {
             id: headerScroll
             Layout.fillWidth: true
@@ -252,19 +252,19 @@ Item {
 
             ColumnLayout {
                 width: headerScroll.availableWidth
-                spacing: 14
+                spacing: 10
 
                 // Title row: number · name · status (all editable inline)
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 24
-                    Layout.rightMargin: 24
-                    Layout.topMargin: 18
-                    spacing: 12
+                    Layout.leftMargin: 16
+                    Layout.rightMargin: 16
+                    Layout.topMargin: 13
+                    spacing: 9
                     FormField {
                         id: numberField
                         label: qsTr("Project Number")
-                        Layout.preferredWidth: 120
+                        Layout.preferredWidth: 110
                         Layout.fillWidth: false
                         onEdited: page._changed = true
                     }
@@ -279,7 +279,7 @@ Item {
                     ComboField {
                         id: statusCombo
                         label: qsTr("Status")
-                        Layout.preferredWidth: 170
+                        Layout.preferredWidth: 150
                         Layout.fillWidth: false
                         options: DesktopAppController.projectStatusOptions()
                         onActivated: page._changed = true
@@ -289,7 +289,7 @@ Item {
                     // no equivalent quick-actions entry point).
                     KebabButton {
                         Layout.alignment: Qt.AlignBottom
-                        Layout.bottomMargin: 6
+                        Layout.bottomMargin: 5
                         onClicked: (sx, sy) => page._openSelfMenu(sx, sy)
                     }
                 }
@@ -297,11 +297,11 @@ Item {
                 // Remaining editable fields
                 GridLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 24
-                    Layout.rightMargin: 24
+                    Layout.leftMargin: 16
+                    Layout.rightMargin: 16
                     columns: page.width > 940 ? 3 : 2
-                    columnSpacing: 14
-                    rowSpacing: 12
+                    columnSpacing: 10
+                    rowSpacing: 9
                     ComboField {
                         id: clientCombo
                         label: qsTr("Client")
@@ -340,9 +340,9 @@ Item {
                 // Editable budget inputs.
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 24
-                    Layout.rightMargin: 24
-                    spacing: 10
+                    Layout.leftMargin: 16
+                    Layout.rightMargin: 16
+                    spacing: 8
                     visible: DesktopAppController.showInternalItems
                     // Commit on editingFinished (focus leaves the field) so the
                     // calculated EVM tiles below refresh as each value is entered,
@@ -357,9 +357,9 @@ Item {
                 // Calculated (read-only) tiles shown below the entered values.
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 24
-                    Layout.rightMargin: 24
-                    spacing: 10
+                    Layout.leftMargin: 16
+                    Layout.rightMargin: 16
+                    spacing: 8
                     visible: DesktopAppController.showInternalItems
                     MetricTile { label: qsTr("EAC");       value: page._money(page._eac); valueColor: Theme.amber }
                     MetricTile { label: qsTr("CV");        value: page._pct(page._cv) }
@@ -372,7 +372,7 @@ Item {
             }
         }
 
-        // ── Header resize handle ────────────────────────────────────────────────
+        // â”€â”€ Header resize handle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Drags page._headerHeight; the height is persisted per-user (not synced)
         // via DesktopAppController.setProjectDetailHeaderHeight on release.
         Rectangle {
@@ -404,12 +404,12 @@ Item {
             }
         }
 
-        // ── Tabs (with live count badges) ─────────────────────────────────────
+        // â”€â”€ Tabs (with live count badges) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         TabBar {
             id: tabBar
             Layout.fillWidth: true
-            Layout.leftMargin: 24
-            Layout.rightMargin: 24
+            Layout.leftMargin: 16
+            Layout.rightMargin: 16
             background: Rectangle {
                 color: "transparent"
                 Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Theme.border }
@@ -422,13 +422,13 @@ Item {
             TabItem { iconName: "description"; label: qsTr("Notes");         count: notesRep.count }
         }
 
-        // ── Tab content ───────────────────────────────────────────────────────
+        // â”€â”€ Tab content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         StackLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
             currentIndex: tabBar.currentIndex
 
-            // ── 0: STATUS REPORT ITEMS ─────────────────────────────────────────
+            // â”€â”€ 0: STATUS REPORT ITEMS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             // Virtualized: only visible rows exist; the tab badge reads
             // statusRep.count, which is the model's row count either way.
             // No reuseItems on these tabs — delegates hold edit-field state.
@@ -436,16 +436,16 @@ Item {
                 ListView {
                     id: statusRep
                     anchors.fill: parent
-                    anchors.margins: 18
+                    anchors.margins: 13
                     clip: true
-                    spacing: 10
+                    spacing: 7
                     model: DesktopAppController.statusReportItemsModel
                     boundsBehavior: Flickable.StopAtBounds
                     ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-                    footer: Item { width: 1; height: 8 }
+                    footer: Item { width: 1; height: 6 }
                     header: Item {
                         width: ListView.view ? ListView.view.width : 0
-                        height: statusBar.implicitHeight + 10
+                        height: statusBar.implicitHeight + 8
                         SectionBar {
                             id: statusBar
                             anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
@@ -469,7 +469,7 @@ Item {
                             required property int index
                             required property var model
                             width: ListView.view ? ListView.view.width : 0
-                            implicitHeight: 50
+                            implicitHeight: 44
                             function _menu(sx, sy) {
                                 rowMenu.openFor(DesktopAppController.statusReportItemsModel,
                                     (stCard.model.id || "").toString(), qsTr("Status Item"),
@@ -477,10 +477,10 @@ Item {
                             }
                             RowLayout {
                                 anchors.fill: parent
-                                anchors.leftMargin: 12; anchors.rightMargin: 8
-                                spacing: 8
+                                anchors.leftMargin: 10; anchors.rightMargin: 6
+                                spacing: 6
                                 ComboField {
-                                    Layout.preferredWidth: 130
+                                    Layout.preferredWidth: 115
                                     Layout.fillWidth: false
                                     options: DesktopAppController.statusItemCategoryOptions()
                                     value: (stCard.model.task_category || "").toString()
@@ -488,7 +488,7 @@ Item {
                                         stCard.index, v, (stCard.model.task_description || "").toString())
                                 }
                                 Rectangle {
-                                    Layout.fillWidth: true; implicitHeight: 30
+                                    Layout.fillWidth: true; implicitHeight: 26
                                     radius: Theme.radiusSm; color: Theme.surface2; border.color: Theme.border
                                     TextField {
                                         anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 8
@@ -496,7 +496,7 @@ Item {
                                         text: (stCard.model.task_description || "").toString()
                                         placeholderText: qsTr("Description")
                                         placeholderTextColor: Theme.text3
-                                        color: Theme.text; background: null; font.pixelSize: 13
+                                        color: Theme.text; background: null; font.pixelSize: 12
                                         onEditingFinished: DesktopAppController.saveStatusItem(
                                             stCard.index, (stCard.model.task_category || "").toString(), text)
                                         SpellCheckField { dialog: spellDialog }
@@ -516,21 +516,21 @@ Item {
                 }
             }
 
-            // ── 1: TRACKER ─────────────────────────────────────────────────────
+            // â”€â”€ 1: TRACKER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Item {
                 ListView {
                     id: trackerRep
                     anchors.fill: parent
-                    anchors.margins: 18
+                    anchors.margins: 13
                     clip: true
-                    spacing: 10
+                    spacing: 7
                     model: DesktopAppController.projectTrackerItemsModel
                     boundsBehavior: Flickable.StopAtBounds
                     ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-                    footer: Item { width: 1; height: 8 }
+                    footer: Item { width: 1; height: 6 }
                     header: Item {
                         width: ListView.view ? ListView.view.width : 0
-                        height: trackerBar.implicitHeight + 10
+                        height: trackerBar.implicitHeight + 8
                         SectionBar {
                             id: trackerBar
                             anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
@@ -572,7 +572,7 @@ Item {
                                 id: trackerCard
                                 width: trackerSlot.width
                                 x: 0; y: 0
-                                implicitHeight: tiCol.implicitHeight + 20
+                                implicitHeight: tiCol.implicitHeight + 16
                                 height: implicitHeight
                                 color: dragArea.drag.active ? Theme.surface2
                                      : (tiHover.hovered ? Theme.raise : Theme.surface)
@@ -583,48 +583,48 @@ Item {
                                     id: tiCol
                                     anchors.left: parent.left; anchors.right: parent.right
                                     anchors.verticalCenter: parent.verticalCenter
-                                    anchors.leftMargin: 12; anchors.rightMargin: 12
-                                    spacing: 4
+                                    anchors.leftMargin: 10; anchors.rightMargin: 10
+                                    spacing: 3
                                     // Title row: number · name · status
                                     RowLayout {
                                         Layout.fillWidth: true
-                                        spacing: 10
+                                        spacing: 8
                                         Text {
                                             text: (trackerSlot.model.item_number || "").toString()
-                                            color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold
+                                            color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold
                                             elide: Text.ElideRight
-                                            Layout.preferredWidth: 60
-                                            Layout.maximumWidth: 60
+                                            Layout.preferredWidth: 52
+                                            Layout.maximumWidth: 52
                                         }
                                         Text {
                                             text: (trackerSlot.model.item_name || qsTr("(unnamed)")).toString()
-                                            color: Theme.text; font.pixelSize: 13; Layout.fillWidth: true; elide: Text.ElideRight
+                                            color: Theme.text; font.pixelSize: 12; Layout.fillWidth: true; elide: Text.ElideRight
                                         }
                                         Rectangle {
                                             readonly property color c: page._statusColor((trackerSlot.model.status || "").toString())
                                             visible: (trackerSlot.model.status || "").toString() !== ""
                                             radius: 5
                                             color: Qt.rgba(c.r, c.g, c.b, 0.14)
-                                            implicitHeight: 18; implicitWidth: tiStatus.implicitWidth + 14
+                                            implicitHeight: 16; implicitWidth: tiStatus.implicitWidth + 12
                                             Layout.alignment: Qt.AlignVCenter
                                             Text {
                                                 id: tiStatus; anchors.centerIn: parent
                                                 text: (trackerSlot.model.status || "").toString()
-                                                color: parent.c; font.pixelSize: 10; font.weight: Font.DemiBold
+                                                color: parent.c; font.pixelSize: 9; font.weight: Font.DemiBold
                                             }
                                         }
                                         KebabButton {
-                                            implicitWidth: 24; implicitHeight: 24
+                                            implicitWidth: 22; implicitHeight: 22
                                             Layout.alignment: Qt.AlignVCenter
                                             onClicked: (sx, sy) => trackerSlot._menu(sx, sy)
                                         }
-                                        MaterialIcon { name: "chevron_right"; size: 18; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+                                        MaterialIcon { name: "chevron_right"; size: 16; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
                                     }
                                     // Metadata row: assigned · priority · due
                                     RowLayout {
                                         Layout.fillWidth: true
-                                        Layout.leftMargin: 54
-                                        spacing: 16
+                                        Layout.leftMargin: 46
+                                        spacing: 13
                                         MetaPair {
                                             label: qsTr("Assigned")
                                             value: page._nameForId(page._people, (trackerSlot.model.assigned_to || "").toString())
@@ -643,7 +643,7 @@ Item {
                                 }
                                 HoverHandler { id: tiHover }
 
-                                // ── Drag source: drag onto a project row in the
+                                // â”€â”€ Drag source: drag onto a project row in the
                                 // sidebar to move this item there.
                                 Drag.active: dragArea.drag.active
                                 Drag.source: trackerCard
@@ -690,21 +690,21 @@ Item {
                 }
             }
 
-            // ── 2: TEAM ────────────────────────────────────────────────────────
+            // â”€â”€ 2: TEAM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Item {
                 ListView {
                     id: teamRep
                     anchors.fill: parent
-                    anchors.margins: 18
+                    anchors.margins: 13
                     clip: true
-                    spacing: 10
+                    spacing: 7
                     model: DesktopAppController.projectTeamMembersModel
                     boundsBehavior: Flickable.StopAtBounds
                     ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-                    footer: Item { width: 1; height: 8 }
+                    footer: Item { width: 1; height: 6 }
                     header: Item {
                         width: ListView.view ? ListView.view.width : 0
-                        height: teamBar.implicitHeight + 10
+                        height: teamBar.implicitHeight + 8
                         SectionBar {
                             id: teamBar
                             anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
@@ -725,7 +725,7 @@ Item {
                             required property int index
                             required property var model
                             width: ListView.view ? ListView.view.width : 0
-                            implicitHeight: 50
+                            implicitHeight: 44
                             function _menu(sx, sy) {
                                 rowMenu.openFor(DesktopAppController.projectTeamMembersModel,
                                     (teamCard.model.id || "").toString(), qsTr("Team Member"),
@@ -734,16 +734,16 @@ Item {
                             }
                             RowLayout {
                                 anchors.fill: parent
-                                anchors.leftMargin: 12; anchors.rightMargin: 8
-                                spacing: 10
-                                MaterialIcon { name: "person"; size: 18; color: Theme.text3 }
+                                anchors.leftMargin: 10; anchors.rightMargin: 6
+                                spacing: 8
+                                MaterialIcon { name: "person"; size: 15; color: Theme.text3 }
                                 Text {
                                     text: (teamCard.model.name || qsTr("(no name)")).toString()
-                                    color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
-                                    Layout.preferredWidth: 150; elide: Text.ElideRight
+                                    color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                                    Layout.preferredWidth: 130; elide: Text.ElideRight
                                 }
                                 Rectangle {
-                                    Layout.fillWidth: true; implicitHeight: 30
+                                    Layout.fillWidth: true; implicitHeight: 26
                                     radius: Theme.radiusSm; color: Theme.surface2; border.color: Theme.border
                                     TextField {
                                         anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 8
@@ -751,7 +751,7 @@ Item {
                                         text: (teamCard.model.role || "").toString()
                                         placeholderText: qsTr("Role")
                                         placeholderTextColor: Theme.text3
-                                        color: Theme.text; background: null; font.pixelSize: 13
+                                        color: Theme.text; background: null; font.pixelSize: 12
                                         onEditingFinished: DesktopAppController.saveTeamMember(
                                             teamCard.index, (teamCard.model.people_id || "").toString(), text,
                                             (teamCard.model.receive_status_report || "0") !== "0")
@@ -766,15 +766,15 @@ Item {
                                         teamCard.index, (teamCard.model.people_id || "").toString(),
                                         (teamCard.model.role || "").toString(), checked)
                                     indicator: Rectangle {
-                                        implicitWidth: 18; implicitHeight: 18; radius: 4
+                                        implicitWidth: 16; implicitHeight: 16; radius: 4
                                         x: statusCheck.leftPadding; y: parent.height/2 - height/2
                                         color: statusCheck.checked ? Theme.accent : Theme.surface
                                         border.color: statusCheck.checked ? Theme.accent : Theme.border
-                                        MaterialIcon { anchors.centerIn: parent; visible: statusCheck.checked; name: "check"; size: 14; color: "#ffffff" }
+                                        MaterialIcon { anchors.centerIn: parent; visible: statusCheck.checked; name: "check"; size: 12; color: "#ffffff" }
                                     }
                                     contentItem: Text {
-                                        text: qsTr("Status Report"); color: Theme.text3; font.pixelSize: 11
-                                        leftPadding: statusCheck.indicator.width + 6; verticalAlignment: Text.AlignVCenter
+                                        text: qsTr("Status Report"); color: Theme.text3; font.pixelSize: 10
+                                        leftPadding: statusCheck.indicator.width + 5; verticalAlignment: Text.AlignVCenter
                                     }
                                 }
                                 KebabButton {
@@ -791,7 +791,7 @@ Item {
                 }
             }
 
-            // ── 3: LOCATIONS ───────────────────────────────────────────────────
+            // â”€â”€ 3: LOCATIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             // Wrapper hosts a DropArea so files / web links dragged anywhere onto
             // the tab are added as locations (the ScrollView itself can't be a
             // drop target without swallowing its own flick content).
@@ -834,20 +834,20 @@ Item {
                 ListView {
                     id: locRep
                     anchors.fill: parent
-                    anchors.margins: 18
+                    anchors.margins: 13
                     clip: true
-                    spacing: 10
+                    spacing: 7
                     model: DesktopAppController.projectLocationsModel
                     boundsBehavior: Flickable.StopAtBounds
                     ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-                    footer: Item { width: 1; height: 8 }
+                    footer: Item { width: 1; height: 6 }
                     header: Column {
                         width: ListView.view ? ListView.view.width : 0
-                        spacing: 10
-                        bottomPadding: 10
+                        spacing: 8
+                        bottomPadding: 8
                         RowLayout {
                             width: parent.width
-                            spacing: 8
+                            spacing: 6
                             SectionBar {
                                 Layout.fillWidth: true
                                 title: qsTr("Locations")
@@ -864,17 +864,17 @@ Item {
                             }
                             // Browse for a file and add it as a new location.
                             Rectangle {
-                                implicitHeight: 28; implicitWidth: browseRow.implicitWidth + 18
+                                implicitHeight: 26; implicitWidth: browseRow.implicitWidth + 14
                                 radius: Theme.radiusSm
                                 color: browseHover.hovered ? Theme.surface2 : "transparent"
                                 border.color: Theme.border
                                 Layout.alignment: Qt.AlignVCenter
                                 RowLayout {
-                                    id: browseRow; anchors.centerIn: parent; spacing: 5
-                                    MaterialIcon { name: "folder_open"; size: 15; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                                    id: browseRow; anchors.centerIn: parent; spacing: 4
+                                    MaterialIcon { name: "folder_open"; size: 13; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
                                     Text {
                                         text: qsTr("Browse File"); color: Theme.text2
-                                        font.pixelSize: 12; font.weight: Font.DemiBold
+                                        font.pixelSize: 11; font.weight: Font.DemiBold
                                         verticalAlignment: Text.AlignVCenter
                                     }
                                 }
@@ -885,7 +885,7 @@ Item {
                         // Drop hint — only while a drag is hovering over the tab.
                         Rectangle {
                             width: parent.width
-                            height: 30
+                            height: 26
                             visible: locationDrop.containsDrag
                             radius: Theme.radiusSm
                             color: Theme.accentSoft
@@ -893,7 +893,7 @@ Item {
                             Text {
                                 anchors.centerIn: parent
                                 text: qsTr("Drop files or web links to add them")
-                                color: Theme.accent; font.pixelSize: 12; font.weight: Font.DemiBold
+                                color: Theme.accent; font.pixelSize: 11; font.weight: Font.DemiBold
                             }
                         }
                     }
@@ -903,7 +903,7 @@ Item {
                                 required property var model
                                 property bool expanded: false
                                 width: ListView.view ? ListView.view.width : 0
-                                implicitHeight: locCol.implicitHeight + 20
+                                implicitHeight: locCol.implicitHeight + 16
                                 function _menu(sx, sy) {
                                     rowMenu.openFor(DesktopAppController.projectLocationsModel,
                                         (locCard.model.id || "").toString(), qsTr("Location"),
@@ -926,19 +926,19 @@ Item {
                                 ColumnLayout {
                                     id: locCol
                                     anchors.fill: parent
-                                    anchors.margins: 10
-                                    spacing: 8
+                                    anchors.margins: 8
+                                    spacing: 6
 
                                     // Summary row (click to expand/collapse the editor)
                                     RowLayout {
                                         Layout.fillWidth: true
-                                        spacing: 8
-                                        MaterialIcon { name: locCard._typeIcon; size: 16; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+                                        spacing: 6
+                                        MaterialIcon { name: locCard._typeIcon; size: 14; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
                                         Text {
                                             text: (locCard.model.location_description || locCard.model.full_path
                                                    || qsTr("(unnamed location)")).toString()
                                             color: Theme.text
-                                            font.pixelSize: 13
+                                            font.pixelSize: 12
                                             elide: Text.ElideRight
                                             horizontalAlignment: Text.AlignLeft
                                             Layout.fillWidth: true
@@ -958,13 +958,13 @@ Item {
                                         }
                                         // Edit / collapse toggle
                                         Rectangle {
-                                            implicitWidth: 26; implicitHeight: 26; radius: 6
+                                            implicitWidth: 24; implicitHeight: 24; radius: Theme.radiusSm
                                             color: locEHover.hovered ? Theme.surface2 : "transparent"
                                             Layout.alignment: Qt.AlignVCenter
                                             MaterialIcon {
                                                 anchors.centerIn: parent
                                                 name: locCard.expanded ? "expand_less" : "edit"
-                                                size: 15; color: Theme.text2
+                                                size: 13; color: Theme.text2
                                             }
                                             HoverHandler { id: locEHover }
                                             TapHandler { onTapped: locCard.expanded = !locCard.expanded }
@@ -982,9 +982,9 @@ Item {
                                     // Inline editor — type, name/description, path.
                                     ColumnLayout {
                                         Layout.fillWidth: true
-                                        Layout.leftMargin: 24
+                                        Layout.leftMargin: 20
                                         visible: locCard.expanded
-                                        spacing: 6
+                                        spacing: 5
                                         ComboField {
                                             Layout.fillWidth: true
                                             label: qsTr("Type")
@@ -1022,21 +1022,21 @@ Item {
                 }
             }
 
-            // ── 4: NOTES ───────────────────────────────────────────────────────
+            // â”€â”€ 4: NOTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Item {
                 ListView {
                     id: notesRep
                     anchors.fill: parent
-                    anchors.margins: 18
+                    anchors.margins: 13
                     clip: true
-                    spacing: 10
+                    spacing: 7
                     model: DesktopAppController.projectNotesModel
                     boundsBehavior: Flickable.StopAtBounds
                     ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-                    footer: Item { width: 1; height: 8 }
+                    footer: Item { width: 1; height: 6 }
                     header: Item {
                         width: ListView.view ? ListView.view.width : 0
-                        height: notesBar.implicitHeight + 10
+                        height: notesBar.implicitHeight + 8
                         SectionBar {
                             id: notesBar
                             anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
@@ -1062,7 +1062,7 @@ Item {
                             required property int index
                             required property var model
                             width: ListView.view ? ListView.view.width : 0
-                            implicitHeight: 58
+                            implicitHeight: 48
                             color: nHover.hovered ? Theme.raise : Theme.surface
                             function _menu(sx, sy) {
                                 rowMenu.openFor(DesktopAppController.projectNotesModel,
@@ -1071,27 +1071,27 @@ Item {
                             }
                             RowLayout {
                                 anchors.fill: parent
-                                anchors.leftMargin: 14; anchors.rightMargin: 14
-                                spacing: 12
-                                MaterialIcon { name: "description"; size: 18; color: Theme.text3 }
+                                anchors.leftMargin: 11; anchors.rightMargin: 11
+                                spacing: 9
+                                MaterialIcon { name: "description"; size: 16; color: Theme.text3 }
                                 ColumnLayout {
                                     Layout.fillWidth: true
-                                    spacing: 2
+                                    spacing: 1
                                     Text {
                                         text: (noteCard.model.note_title || qsTr("(Untitled note)")).toString()
-                                        color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold
+                                        color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
                                         elide: Text.ElideRight; Layout.fillWidth: true
                                     }
                                     Text {
                                         text: (noteCard.model.note_date || "").toString()
-                                        color: Theme.text3; font.pixelSize: 12
+                                        color: Theme.text3; font.pixelSize: 11
                                     }
                                 }
                                 KebabButton {
-                                    implicitWidth: 24; implicitHeight: 24
+                                    implicitWidth: 22; implicitHeight: 22
                                     onClicked: (sx, sy) => noteCard._menu(sx, sy)
                                 }
-                                MaterialIcon { name: "chevron_right"; size: 20; color: Theme.text3 }
+                                MaterialIcon { name: "chevron_right"; size: 17; color: Theme.text3 }
                             }
                             HoverHandler { id: nHover }
                             TapHandler {
@@ -1110,11 +1110,11 @@ Item {
         }
     }
 
-    // ── Team member people picker ─────────────────────────────────────────────
+    // â”€â”€ Team member people picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     Dialog {
         id: teamPicker
         anchors.centerIn: parent
-        width: 360; height: 420; modal: true; padding: 0
+        width: 320; height: 380; modal: true; padding: 0
         scale: Theme.uiScale   // match the zoomed workspace (centered origin)
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
 
@@ -1127,32 +1127,32 @@ Item {
         contentItem: ColumnLayout {
             spacing: 0
             RowLayout {
-                Layout.fillWidth: true; Layout.margins: 14
-                Text { text: qsTr("Add Team Member"); color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold; Layout.fillWidth: true }
-                MaterialIcon { name: "close"; size: 20; color: Theme.text3; TapHandler { onTapped: teamPicker.close() } }
+                Layout.fillWidth: true; Layout.margins: 12
+                Text { text: qsTr("Add Team Member"); color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold; Layout.fillWidth: true }
+                MaterialIcon { name: "close"; size: 18; color: Theme.text3; TapHandler { onTapped: teamPicker.close() } }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
 
             // Search field — filters the list below as you type.
             Rectangle {
                 Layout.fillWidth: true
-                Layout.margins: 12
-                implicitHeight: 34
+                Layout.margins: 10
+                implicitHeight: 30
                 radius: Theme.radiusSm
                 color: Theme.surface
                 border.color: teamSearch.activeFocus ? Theme.accent : Theme.border
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 10; anchors.rightMargin: 10
-                    spacing: 6
-                    MaterialIcon { name: "search"; size: 16; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+                    anchors.leftMargin: 9; anchors.rightMargin: 9
+                    spacing: 5
+                    MaterialIcon { name: "search"; size: 14; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
                     TextField {
                         id: teamSearch
                         Layout.fillWidth: true
                         placeholderText: qsTr("Search people…")
                         placeholderTextColor: Theme.text3
                         color: Theme.text
-                        font.pixelSize: 13
+                        font.pixelSize: 12
                         background: null
                         verticalAlignment: Text.AlignVCenter
                         selectByMouse: true
@@ -1173,8 +1173,8 @@ Item {
                     readonly property bool _match: teamPicker._filter === ""
                         || String(modelData.name).toLowerCase().indexOf(teamPicker._filter.toLowerCase()) >= 0
                     visible: _match
-                    width: teamPeople.width; height: _match ? 40 : 0
-                    contentItem: Text { text: modelData.name; color: Theme.text; font.pixelSize: 13; leftPadding: 14; verticalAlignment: Text.AlignVCenter }
+                    width: teamPeople.width; height: _match ? 34 : 0
+                    contentItem: Text { text: modelData.name; color: Theme.text; font.pixelSize: 12; leftPadding: 12; verticalAlignment: Text.AlignVCenter }
                     background: Rectangle { color: teamDelegate.hovered ? Theme.surface2 : "transparent" }
                     onClicked: {
                         var r = DesktopAppController.addTeamMember(page.projectId)
@@ -1190,7 +1190,7 @@ Item {
         }
     }
 
-    // ── Inline reusable pieces ────────────────────────────────────────────────
+    // â”€â”€ Inline reusable pieces â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     // "LABEL value" metadata pair; hides itself when the value is empty.
     component MetaPair: RowLayout {
@@ -1199,9 +1199,9 @@ Item {
         property string value: ""
         property color valueColor: Theme.text2
         visible: value !== ""
-        spacing: 4
-        Text { text: mp.label; color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold }
-        Text { text: mp.value; color: mp.valueColor; font.pixelSize: 11 }
+        spacing: 3
+        Text { text: mp.label; color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold }
+        Text { text: mp.value; color: mp.valueColor; font.pixelSize: 10 }
     }
 
     // Read-only calculated-financial tile.
@@ -1210,22 +1210,22 @@ Item {
         property string value: "—"
         property color valueColor: Theme.text
         Layout.fillWidth: true
-        implicitHeight: 52
+        implicitHeight: 44
         radius: Theme.radius
         color: Theme.surface
         border.color: Theme.border
         ColumnLayout {
             anchors.fill: parent
-            anchors.leftMargin: 14; anchors.rightMargin: 14
-            anchors.topMargin: 8;   anchors.bottomMargin: 8
-            spacing: 2
+            anchors.leftMargin: 11; anchors.rightMargin: 11
+            anchors.topMargin: 6;   anchors.bottomMargin: 6
+            spacing: 1
             Text {
-                text: label; color: Theme.text3; font.pixelSize: 11
+                text: label; color: Theme.text3; font.pixelSize: 10
                 elide: Text.ElideRight; Layout.fillWidth: true
             }
             Text {
                 text: value; color: valueColor
-                font.pixelSize: 16; font.weight: Font.DemiBold
+                font.pixelSize: 14; font.weight: Font.DemiBold
                 elide: Text.ElideRight; Layout.fillWidth: true
             }
         }
@@ -1236,8 +1236,8 @@ Item {
         property string iconName: ""
         property string label: ""
         property int count: 0
-        implicitHeight: 42
-        implicitWidth: tabRow.implicitWidth + 28
+        implicitHeight: 36
+        implicitWidth: tabRow.implicitWidth + 22
         background: Rectangle {
             color: tb.hovered && !tb.checked ? Theme.surface2 : "transparent"
             Rectangle {
@@ -1248,33 +1248,33 @@ Item {
         }
         contentItem: RowLayout {
             id: tabRow
-            spacing: 6
+            spacing: 5
             MaterialIcon {
-                name: tb.iconName; size: 16
+                name: tb.iconName; size: 14
                 color: tb.checked ? Theme.accent : Theme.text2
                 Layout.alignment: Qt.AlignVCenter
             }
             Text {
                 text: tb.label
                 color: tb.checked ? Theme.accent : Theme.text2
-                font.pixelSize: 13
+                font.pixelSize: 12
                 font.weight: tb.checked ? Font.DemiBold : Font.Normal
                 verticalAlignment: Text.AlignVCenter
                 Layout.alignment: Qt.AlignVCenter
             }
             // Count badge next to the tab label.
             Rectangle {
-                radius: 9
+                radius: 8
                 color: Theme.surface2
-                implicitHeight: 16
-                implicitWidth: Math.max(18, cnt.implicitWidth + 12)
+                implicitHeight: 14
+                implicitWidth: Math.max(16, cnt.implicitWidth + 10)
                 Layout.alignment: Qt.AlignVCenter
                 Text {
                     id: cnt
                     anchors.centerIn: parent
                     text: tb.count.toString()
                     color: Theme.text3
-                    font.pixelSize: 10; font.weight: Font.DemiBold
+                    font.pixelSize: 9; font.weight: Font.DemiBold
                 }
             }
         }
@@ -1305,27 +1305,27 @@ Item {
         // couple of numbers can (see SortMenu.qml's openFor doc comment).
         signal sort(real sx, real sy)
         Layout.fillWidth: true
-        Layout.topMargin: 8
-        spacing: 8
-        MaterialIcon { name: bar.icon; size: 18; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
+        Layout.topMargin: 6
+        spacing: 6
+        MaterialIcon { name: bar.icon; size: 16; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
         Text {
-            text: bar.title; color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
+            text: bar.title; color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold
             Layout.fillWidth: true; elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
         }
         Rectangle {
             visible: bar.searchModel !== null
-            Layout.preferredWidth: 180
-            implicitHeight: 28
+            Layout.preferredWidth: 160
+            implicitHeight: 26
             radius: Theme.radiusSm
             color: Theme.surface
             border.color: Theme.border
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 8
-                anchors.rightMargin: 6
-                spacing: 6
-                MaterialIcon { name: "search"; size: 15; color: Theme.text3 }
+                anchors.leftMargin: 7
+                anchors.rightMargin: 5
+                spacing: 5
+                MaterialIcon { name: "search"; size: 13; color: Theme.text3 }
                 TextField {
                     Layout.fillWidth: true
                     placeholderText: qsTr("Search")
@@ -1334,23 +1334,23 @@ Item {
                     background: null
                     topPadding: 0; bottomPadding: 0
                     verticalAlignment: Text.AlignVCenter
-                    font.pixelSize: 12
+                    font.pixelSize: 11
                     onTextEdited: DesktopAppController.setQuickSearch(bar.searchModel, text)
                 }
             }
         }
         Rectangle {
             visible: bar.filterSection !== ""
-            implicitHeight: 28; implicitWidth: fRow.implicitWidth + 16
+            implicitHeight: 26; implicitWidth: fRow.implicitWidth + 13
             radius: Theme.radiusSm
             color: bar.filterActive ? Theme.accentSoft : (fHover.hovered ? Theme.surface2 : Theme.surface)
             border.color: bar.filterActive ? Theme.accent : Theme.border
             Layout.alignment: Qt.AlignVCenter
             RowLayout {
-                id: fRow; anchors.centerIn: parent; spacing: 5
-                MaterialIcon { name: "filter_list"; size: 15; color: bar.filterActive ? Theme.accent : Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                id: fRow; anchors.centerIn: parent; spacing: 4
+                MaterialIcon { name: "filter_list"; size: 13; color: bar.filterActive ? Theme.accent : Theme.text2; Layout.alignment: Qt.AlignVCenter }
                 Text {
-                    text: qsTr("Filter"); color: bar.filterActive ? Theme.accent : Theme.text; font.pixelSize: 12
+                    text: qsTr("Filter"); color: bar.filterActive ? Theme.accent : Theme.text; font.pixelSize: 11
                     verticalAlignment: Text.AlignVCenter
                 }
             }
@@ -1360,16 +1360,16 @@ Item {
         Rectangle {
             id: sortChip
             visible: bar.filterSection !== ""
-            implicitHeight: 28; implicitWidth: sRow.implicitWidth + 16
+            implicitHeight: 26; implicitWidth: sRow.implicitWidth + 13
             radius: Theme.radiusSm
             color: bar.sortActive ? Theme.accentSoft : (sHover.hovered ? Theme.surface2 : Theme.surface)
             border.color: bar.sortActive ? Theme.accent : Theme.border
             Layout.alignment: Qt.AlignVCenter
             RowLayout {
-                id: sRow; anchors.centerIn: parent; spacing: 5
-                MaterialIcon { name: "swap_vert"; size: 15; color: bar.sortActive ? Theme.accent : Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                id: sRow; anchors.centerIn: parent; spacing: 4
+                MaterialIcon { name: "swap_vert"; size: 13; color: bar.sortActive ? Theme.accent : Theme.text2; Layout.alignment: Qt.AlignVCenter }
                 Text {
-                    text: qsTr("Sort"); color: bar.sortActive ? Theme.accent : Theme.text; font.pixelSize: 12
+                    text: qsTr("Sort"); color: bar.sortActive ? Theme.accent : Theme.text; font.pixelSize: 11
                     verticalAlignment: Text.AlignVCenter
                 }
             }
@@ -1382,14 +1382,14 @@ Item {
             }
         }
         Rectangle {
-            implicitHeight: 28; implicitWidth: aRow.implicitWidth + 18
+            implicitHeight: 26; implicitWidth: aRow.implicitWidth + 14
             radius: Theme.radiusSm; color: aHover.hovered ? Theme.accentStrong : Theme.accent
             Layout.alignment: Qt.AlignVCenter
             RowLayout {
-                id: aRow; anchors.centerIn: parent; spacing: 5
-                MaterialIcon { name: "add"; size: 15; color: "#ffffff"; Layout.alignment: Qt.AlignVCenter }
+                id: aRow; anchors.centerIn: parent; spacing: 4
+                MaterialIcon { name: "add"; size: 13; color: "#ffffff"; Layout.alignment: Qt.AlignVCenter }
                 Text {
-                    text: bar.addLabel; color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
+                    text: bar.addLabel; color: "#ffffff"; font.pixelSize: 11; font.weight: Font.DemiBold
                     verticalAlignment: Text.AlignVCenter
                 }
             }
@@ -1441,11 +1441,11 @@ Item {
     component RowDelete: Item {
         id: rd
         signal del()
-        implicitWidth: 30; implicitHeight: 30
+        implicitWidth: 26; implicitHeight: 26
         Rectangle {
-            anchors.centerIn: parent; width: 26; height: 26; radius: 6
+            anchors.centerIn: parent; width: 22; height: 22; radius: Theme.radiusSm
             color: rdHover.hovered ? Theme.redSoft : "transparent"
-            MaterialIcon { anchors.centerIn: parent; name: "close"; size: 15; color: Theme.red }
+            MaterialIcon { anchors.centerIn: parent; name: "close"; size: 13; color: Theme.red }
         }
         HoverHandler { id: rdHover }
         TapHandler { onTapped: rd.del() }
@@ -1458,20 +1458,20 @@ Item {
         property string fieldText: ""
         property string placeholder: ""
         signal commit(string text)
-        implicitHeight: 30
+        implicitHeight: 28
         radius: Theme.radiusSm; color: Theme.surface2; border.color: Theme.border
         RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: 8; anchors.rightMargin: 8
-            spacing: 6
-            MaterialIcon { name: lf.icon; size: 15; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+            anchors.leftMargin: 7; anchors.rightMargin: 7
+            spacing: 5
+            MaterialIcon { name: lf.icon; size: 13; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
             TextField {
                 Layout.fillWidth: true
                 verticalAlignment: Text.AlignVCenter
                 text: lf.fieldText
                 placeholderText: lf.placeholder
                 placeholderTextColor: Theme.text3
-                color: Theme.text; background: null; font.pixelSize: 13
+                color: Theme.text; background: null; font.pixelSize: 12
                 onEditingFinished: lf.commit(text)
             }
         }
@@ -1483,12 +1483,12 @@ Item {
         property string icon: "open_in_new"
         property color tint: Theme.text2
         signal act()
-        implicitWidth: 30; implicitHeight: 30
+        implicitWidth: 26; implicitHeight: 26
         opacity: enabled ? 1 : 0.35
         Rectangle {
-            anchors.centerIn: parent; width: 26; height: 26; radius: 6
+            anchors.centerIn: parent; width: 22; height: 22; radius: Theme.radiusSm
             color: ribHover.hovered && rib.enabled ? Theme.surface2 : "transparent"
-            MaterialIcon { anchors.centerIn: parent; name: rib.icon; size: 16; color: rib.tint }
+            MaterialIcon { anchors.centerIn: parent; name: rib.icon; size: 14; color: rib.tint }
         }
         HoverHandler { id: ribHover; enabled: rib.enabled }
         TapHandler { enabled: rib.enabled; onTapped: rib.act() }

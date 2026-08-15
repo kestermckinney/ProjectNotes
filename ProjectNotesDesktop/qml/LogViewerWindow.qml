@@ -165,7 +165,7 @@ Window {
         // ── Tab strip ───────────────────────────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: 40
+            implicitHeight: 34
             color: Theme.surface
             visible: tabsModel.count > 0
 
@@ -178,8 +178,8 @@ Window {
             TabBar {
                 id: tabBar
                 anchors.fill: parent
-                anchors.leftMargin: 8
-                spacing: 4
+                anchors.leftMargin: 7
+                spacing: 3
                 background: null
 
                 Repeater {
@@ -188,8 +188,8 @@ Window {
                         id: tabBtn
                         required property var model
                         required property int index
-                        implicitHeight: 40
-                        implicitWidth: Math.max(90, tabLabel.implicitWidth + 28)
+                        implicitHeight: 34
+                        implicitWidth: Math.max(80, tabLabel.implicitWidth + 22)
                         padding: 0
 
                         contentItem: Text {
@@ -266,19 +266,19 @@ Window {
             visible: tabsModel.count === 0
             ColumnLayout {
                 anchors.centerIn: parent
-                spacing: 8
+                spacing: 6
                 MaterialIcon {
-                    name: "description"; size: 40; color: Theme.text3
+                    name: "description"; size: 34; color: Theme.text3
                     Layout.alignment: Qt.AlignHCenter
                 }
                 Text {
                     text: qsTr("No log files yet")
-                    color: Theme.text2; font.pixelSize: 14; font.weight: Font.DemiBold
+                    color: Theme.text2; font.pixelSize: 13; font.weight: Font.DemiBold
                     Layout.alignment: Qt.AlignHCenter
                 }
                 Text {
                     text: LogViewerController.logFolder()
-                    color: Theme.text3; font.pixelSize: 11
+                    color: Theme.text3; font.pixelSize: 10
                     Layout.alignment: Qt.AlignHCenter
                 }
             }
@@ -287,7 +287,7 @@ Window {
         // ── Footer ──────────────────────────────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: 52
+            implicitHeight: 44
             color: Theme.surface
 
             Rectangle {   // top divider
@@ -298,16 +298,16 @@ Window {
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 16
-                anchors.rightMargin: 16
-                spacing: 10
+                anchors.leftMargin: 12
+                anchors.rightMargin: 12
+                spacing: 8
 
                 Item { Layout.fillWidth: true }
 
                 // Clear Log — deletes the current tab's log file.
                 Rectangle {
-                    implicitHeight: 32
-                    implicitWidth: clearRow.implicitWidth + 24
+                    implicitHeight: 28
+                    implicitWidth: clearRow.implicitWidth + 18
                     radius: Theme.radiusSm
                     enabled: win._currentFilePath !== ""
                     opacity: enabled ? 1.0 : 0.4
@@ -316,9 +316,9 @@ Window {
                     RowLayout {
                         id: clearRow
                         anchors.centerIn: parent
-                        spacing: 6
-                        MaterialIcon { name: "delete"; size: 16; color: Theme.red }
-                        Text { text: qsTr("Clear Log"); color: Theme.red; font.pixelSize: 12 }
+                        spacing: 5
+                        MaterialIcon { name: "delete"; size: 14; color: Theme.red }
+                        Text { text: qsTr("Clear Log"); color: Theme.red; font.pixelSize: 11 }
                     }
                     HoverHandler { id: clearHover; enabled: parent.enabled }
                     TapHandler {
@@ -329,15 +329,15 @@ Window {
 
                 // Close — hides the window (loaders keep running).
                 Rectangle {
-                    implicitHeight: 32
-                    implicitWidth: closeText.implicitWidth + 28
+                    implicitHeight: 28
+                    implicitWidth: closeText.implicitWidth + 20
                     radius: Theme.radiusSm
                     color: closeHover.hovered ? Theme.accentStrong : Theme.accent
                     Text {
                         id: closeText
                         anchors.centerIn: parent
                         text: qsTr("Close")
-                        color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
+                        color: "#ffffff"; font.pixelSize: 11; font.weight: Font.DemiBold
                     }
                     HoverHandler { id: closeHover }
                     TapHandler { onTapped: win.hide() }

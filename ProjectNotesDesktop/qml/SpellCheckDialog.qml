@@ -13,7 +13,7 @@ import ProjectNotesDesktop
 Dialog {
     id: dlg
     anchors.centerIn: parent
-    width: 460
+    width: 400
     scale: Theme.uiScale   // match the zoomed workspace (centered origin)
     modal: true
     padding: 0
@@ -87,15 +87,15 @@ Dialog {
         // Header
         RowLayout {
             Layout.fillWidth: true
-            Layout.margins: 14
-            MaterialIcon { name: "spellcheck"; size: 20; color: Theme.accent }
+            Layout.margins: 12
+            MaterialIcon { name: "spellcheck"; size: 17; color: Theme.accent }
             Text {
                 text: qsTr("Check Spelling")
-                color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
+                color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold
                 Layout.fillWidth: true
             }
             MaterialIcon {
-                name: "close"; size: 20; color: Theme.text3
+                name: "close"; size: 16; color: Theme.text3
                 TapHandler { onTapped: dlg.close() }
             }
         }
@@ -104,20 +104,20 @@ Dialog {
         // ── Completed state ────────────────────────────────────────────────────
         ColumnLayout {
             Layout.fillWidth: true
-            Layout.margins: 20
-            spacing: 12
+            Layout.margins: 16
+            spacing: 9
             visible: dlg._finished
             RowLayout {
-                spacing: 8
-                MaterialIcon { name: "task_alt"; size: 20; color: Theme.green }
+                spacing: 6
+                MaterialIcon { name: "task_alt"; size: 17; color: Theme.green }
                 Text {
                     text: qsTr("Spell check complete.")
-                    color: Theme.text; font.pixelSize: 14
+                    color: Theme.text; font.pixelSize: 13
                 }
             }
             Item {
                 Layout.fillWidth: true
-                implicitHeight: 30
+                implicitHeight: 26
                 DialogButton {
                     anchors.right: parent.right
                     label: qsTr("Done"); primary: true
@@ -129,60 +129,60 @@ Dialog {
         // ── Review state ───────────────────────────────────────────────────────
         ColumnLayout {
             Layout.fillWidth: true
-            Layout.margins: 16
-            spacing: 10
+            Layout.margins: 13
+            spacing: 8
             visible: !dlg._finished
 
-            Text { text: qsTr("Not in dictionary:"); color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold }
+            Text { text: qsTr("Not in dictionary:"); color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold }
             Text {
                 text: dlg._word
-                color: Theme.red; font.pixelSize: 15; font.weight: Font.DemiBold
+                color: Theme.red; font.pixelSize: 14; font.weight: Font.DemiBold
             }
 
-            Text { text: qsTr("Change to:"); color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold }
+            Text { text: qsTr("Change to:"); color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold }
             Rectangle {
                 Layout.fillWidth: true
-                implicitHeight: 34
+                implicitHeight: 30
                 radius: Theme.radiusSm
                 color: Theme.surface
                 border.color: changeField.activeFocus ? Theme.accent : Theme.border
                 TextField {
                     id: changeField
                     anchors.fill: parent
-                    anchors.leftMargin: 8
-                    anchors.rightMargin: 8
+                    anchors.leftMargin: 7
+                    anchors.rightMargin: 7
                     topPadding: 0
                     bottomPadding: 0
                     verticalAlignment: Text.AlignVCenter
                     color: Theme.text
-                    font.pixelSize: 13
+                    font.pixelSize: 12
                     background: null
                     selectByMouse: true
                     onAccepted: dlg._change()
                 }
             }
 
-            Text { text: qsTr("Suggestions:"); color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold }
+            Text { text: qsTr("Suggestions:"); color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold }
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 140
+                Layout.preferredHeight: 120
                 radius: Theme.radiusSm
                 color: Theme.surface
                 border.color: Theme.border
                 ListView {
                     id: suggestList
                     anchors.fill: parent
-                    anchors.margins: 4
+                    anchors.margins: 3
                     clip: true
                     model: dlg._suggestions
                     delegate: ItemDelegate {
                         required property int index
                         required property var modelData
                         width: suggestList.width
-                        height: 28
+                        height: 25
                         contentItem: Text {
-                            text: modelData; color: Theme.text; font.pixelSize: 13
-                            leftPadding: 8; verticalAlignment: Text.AlignVCenter
+                            text: modelData; color: Theme.text; font.pixelSize: 12
+                            leftPadding: 7; verticalAlignment: Text.AlignVCenter
                         }
                         background: Rectangle {
                             radius: 4
@@ -198,10 +198,10 @@ Dialog {
             // Action buttons
             GridLayout {
                 Layout.fillWidth: true
-                Layout.topMargin: 4
+                Layout.topMargin: 3
                 columns: 3
-                columnSpacing: 8
-                rowSpacing: 8
+                columnSpacing: 6
+                rowSpacing: 6
                 DialogButton { Layout.fillWidth: true; label: qsTr("Ignore Once");     onClicked: dlg._ignoreOnce() }
                 DialogButton { Layout.fillWidth: true; label: qsTr("Ignore All");      onClicked: dlg._ignoreAll() }
                 DialogButton { Layout.fillWidth: true; label: qsTr("Add to Dictionary"); onClicked: dlg._addToDict() }
@@ -217,8 +217,8 @@ Dialog {
         property string label: ""
         property bool   primary: false
         signal clicked()
-        implicitHeight: 30
-        implicitWidth: btnText.implicitWidth + 22
+        implicitHeight: 26
+        implicitWidth: btnText.implicitWidth + 18
         radius: Theme.radiusSm
         color: primary ? (bHover.hovered ? Theme.accentStrong : Theme.accent)
                        : (bHover.hovered ? Theme.surface2 : Theme.surface)
@@ -228,7 +228,7 @@ Dialog {
             anchors.centerIn: parent
             text: parent.label
             color: parent.primary ? "#ffffff" : Theme.text
-            font.pixelSize: 12; font.weight: Font.DemiBold
+            font.pixelSize: 11; font.weight: Font.DemiBold
         }
         HoverHandler { id: bHover }
         TapHandler { onTapped: parent.clicked() }

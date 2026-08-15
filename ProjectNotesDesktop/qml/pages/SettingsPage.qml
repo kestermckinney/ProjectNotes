@@ -27,13 +27,13 @@ Item {
     ScrollView {
         id: pageScroll
         anchors.fill: parent
-        anchors.margins: 20
+        anchors.margins: 14
         clip: true
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
         ColumnLayout {
             width: pageScroll.availableWidth
-            spacing: 22
+            spacing: 16
 
             // ── Appearance ────────────────────────────────────────────────────
             SettingsSection {
@@ -41,7 +41,7 @@ Item {
                 subtitle: "Theme used across the application."
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 8
+                    spacing: 6
                     Repeater {
                         model: [
                             { key: "system", label: "System" },
@@ -50,17 +50,13 @@ Item {
                         ]
                         delegate: Button {
                             required property var modelData
-                            implicitHeight: 32
-                            leftPadding: 14; rightPadding: 14; topPadding: 0; bottomPadding: 0
-                            background: Rectangle {
-                                radius: Theme.radiusSm
-                                color: Theme.mode === modelData.key ? Theme.accent : Theme.surface2
-                                border.color: Theme.border
-                            }
+                            primary: Theme.mode === modelData.key
+                            implicitHeight: 28
+                            leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
                             contentItem: Text {
                                 text: modelData.label
                                 color: Theme.mode === modelData.key ? "#ffffff" : Theme.text
-                                font.pixelSize: 13
+                                font.pixelSize: 12
                                 verticalAlignment: Text.AlignVCenter
                             }
                             onClicked: Theme.mode = modelData.key
@@ -77,11 +73,11 @@ Item {
                 // Status + Sync now
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 10
+                    spacing: 8
                     MaterialIcon {
                         name: DesktopAppController.syncNetworkError ? "cloud_off"
                               : (DesktopAppController.syncActive ? "sync" : "cloud_done")
-                        size: 20
+                        size: 17
                         color: DesktopAppController.syncNetworkError ? Theme.red
                                : (DesktopAppController.syncActive ? Theme.accent : Theme.green)
                     }
@@ -92,7 +88,7 @@ Item {
                         Text {
                             Layout.fillWidth: true
                             color: DesktopAppController.syncNetworkError ? Theme.red : Theme.text
-                            font.pixelSize: 13
+                            font.pixelSize: 12
                             font.weight: Font.DemiBold
                             elide: Text.ElideRight
                             text: DesktopAppController.syncDetail
@@ -101,60 +97,45 @@ Item {
                             Layout.fillWidth: true
                             visible: DesktopAppController.subscriptionStatusText !== ""
                             color: Theme.text3
-                            font.pixelSize: 12
+                            font.pixelSize: 11
                             elide: Text.ElideRight
                             textFormat: Text.RichText
                             text: DesktopAppController.subscriptionStatusText
                         }
                     }
                     Button {
-                        implicitHeight: 32
-                        leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
+                        implicitHeight: 28
+                        leftPadding: 10; rightPadding: 10; topPadding: 0; bottomPadding: 0
                         enabled: DesktopAppController.syncEnabled
-                        background: Rectangle {
-                            radius: Theme.radiusSm
-                            color: parent.down ? Theme.surface : Theme.surface2
-                            border.color: Theme.border
-                            opacity: parent.enabled ? 1.0 : 0.5
-                        }
                         contentItem: RowLayout {
-                            spacing: 5
-                            MaterialIcon { name: "monitoring"; size: 16; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
-                            Text { text: qsTr("Sync Stats"); color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                            spacing: 4
+                            MaterialIcon { name: "monitoring"; size: 14; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                            Text { text: qsTr("Sync Stats"); color: Theme.text; font.pixelSize: 11; font.weight: Font.DemiBold
                                    verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
                         }
                         onClicked: DesktopAppController.showSyncStats()
                     }
                     Button {
-                        implicitHeight: 32
-                        leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
+                        primary: true
+                        implicitHeight: 28
+                        leftPadding: 10; rightPadding: 10; topPadding: 0; bottomPadding: 0
                         enabled: DesktopAppController.syncEnabled
-                        background: Rectangle {
-                            radius: Theme.radiusSm
-                            color: parent.enabled ? (parent.down ? Theme.accentStrong : Theme.accent) : Theme.surface2
-                        }
                         contentItem: RowLayout {
-                            spacing: 5
-                            MaterialIcon { name: "sync"; size: 16; color: "#ffffff"; Layout.alignment: Qt.AlignVCenter }
-                            Text { text: qsTr("Sync Now"); color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
+                            spacing: 4
+                            MaterialIcon { name: "sync"; size: 14; color: "#ffffff"; Layout.alignment: Qt.AlignVCenter }
+                            Text { text: qsTr("Sync Now"); color: "#ffffff"; font.pixelSize: 11; font.weight: Font.DemiBold
                                    verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
                         }
                         onClicked: DesktopAppController.syncNow()
                     }
                     Button {
-                        implicitHeight: 32
-                        leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
+                        implicitHeight: 28
+                        leftPadding: 10; rightPadding: 10; topPadding: 0; bottomPadding: 0
                         enabled: DesktopAppController.syncEnabled
-                        background: Rectangle {
-                            radius: Theme.radiusSm
-                            color: parent.down ? Theme.surface : Theme.surface2
-                            border.color: Theme.border
-                            opacity: parent.enabled ? 1.0 : 0.5
-                        }
                         contentItem: RowLayout {
-                            spacing: 5
-                            MaterialIcon { name: "sync_alt"; size: 16; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
-                            Text { text: qsTr("Sync All"); color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                            spacing: 4
+                            MaterialIcon { name: "sync_alt"; size: 14; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                            Text { text: qsTr("Sync All"); color: Theme.text; font.pixelSize: 11; font.weight: Font.DemiBold
                                    verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
                         }
                         onClicked: DesktopAppController.syncAll()
@@ -210,38 +191,34 @@ Item {
 
                     Rectangle {
                         Layout.fillWidth: true
-                        implicitHeight: 36
+                        implicitHeight: 30
                         radius: Theme.radiusSm
                         color: Theme.surface
                         border.color: Theme.border
                         TextField {
                             id: newFolderField
                             anchors.fill: parent
-                            anchors.leftMargin: 10
-                            anchors.rightMargin: 10
+                            anchors.leftMargin: 9
+                            anchors.rightMargin: 9
                             placeholderText: "New folder name…"
                             color: Theme.text
                             placeholderTextColor: Theme.text3
                             background: null
-                            font.pixelSize: 13
+                            font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
                             onAccepted: page._createFolder()
                         }
                     }
 
                     Button {
-                        implicitHeight: 36
-                        leftPadding: 14; rightPadding: 14; topPadding: 0; bottomPadding: 0
+                        primary: true
+                        implicitHeight: 30
+                        leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
                         enabled: newFolderField.text.trim().length > 0
-                        background: Rectangle {
-                            radius: Theme.radiusSm
-                            color: parent.enabled ? (parent.down ? Theme.accentStrong : Theme.accent)
-                                                  : Theme.surface2
-                        }
                         contentItem: RowLayout {
-                            spacing: 6
-                            MaterialIcon { name: "add"; size: 18; color: "#ffffff"; Layout.alignment: Qt.AlignVCenter }
-                            Text { text: "Add Folder"; color: "#ffffff"; font.pixelSize: 13; font.weight: Font.DemiBold
+                            spacing: 5
+                            MaterialIcon { name: "add"; size: 16; color: "#ffffff"; Layout.alignment: Qt.AlignVCenter }
+                            Text { text: "Add Folder"; color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
                                    verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
                         }
                         onClicked: page._createFolder()
@@ -256,28 +233,28 @@ Item {
                         required property var modelData
                         readonly property var folder: modelData
                         Layout.fillWidth: true
-                        implicitHeight: 48
+                        implicitHeight: 40
                         radius: Theme.radiusSm
                         color: Theme.surface
                         border.color: Theme.border
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.leftMargin: 10
-                            anchors.rightMargin: 8
-                            spacing: 10
+                            anchors.leftMargin: 9
+                            anchors.rightMargin: 7
+                            spacing: 8
 
                             // Icon picker: click to open a grid of all available icons,
                             // highlighting the one currently selected.
                             Rectangle {
                                 id: iconSwatch
-                                width: 30; height: 30; radius: 8
+                                width: 26; height: 26; radius: Theme.radiusSm
                                 color: "transparent"
                                 border.color: Theme.border
                                 MaterialIcon {
                                     anchors.centerIn: parent
                                     name: folderRow.folder.icon
-                                    size: 18
+                                    size: 15
                                     color: folderRow.folder.color
                                 }
                                 TapHandler {
@@ -291,7 +268,7 @@ Item {
                             Text {
                                 text: folderRow.folder.name
                                 color: Theme.text
-                                font.pixelSize: 14
+                                font.pixelSize: 13
                                 font.weight: Font.DemiBold
                                 Layout.fillWidth: true
                                 elide: Text.ElideRight
@@ -301,17 +278,17 @@ Item {
                                 text: folderRow.folder.count
                                       + (folderRow.folder.count === 1 ? " project" : " projects")
                                 color: Theme.text3
-                                font.pixelSize: 11
+                                font.pixelSize: 10
                             }
 
                             // Color swatches
                             Row {
-                                spacing: 4
+                                spacing: 3
                                 Repeater {
                                     model: Theme.folderColors
                                     delegate: Rectangle {
                                         required property var modelData
-                                        width: 16; height: 16; radius: 8
+                                        width: 14; height: 14; radius: 7
                                         color: modelData
                                         border.width: 2
                                         border.color: folderRow.folder.color === modelData
@@ -326,9 +303,9 @@ Item {
 
                             // Delete
                             Rectangle {
-                                width: 30; height: 30; radius: 8
+                                width: 26; height: 26; radius: Theme.radiusSm
                                 color: delHover.hovered ? Theme.redSoft : "transparent"
-                                MaterialIcon { anchors.centerIn: parent; name: "delete"; size: 18; color: Theme.red }
+                                MaterialIcon { anchors.centerIn: parent; name: "delete"; size: 15; color: Theme.red }
                                 HoverHandler { id: delHover }
                                 TapHandler { onTapped: FolderManager.removeFolder(folderRow.folder.id) }
                             }
@@ -340,7 +317,7 @@ Item {
                     visible: FolderManager.folders.length === 0
                     text: "No folders yet. Add one above — it will appear in the project sidebar."
                     color: Theme.text3
-                    font.pixelSize: 12
+                    font.pixelSize: 11
                 }
             }
 
@@ -351,8 +328,8 @@ Item {
                 GridLayout {
                     Layout.fillWidth: true
                     columns: 2
-                    columnSpacing: 14
-                    rowSpacing: 12
+                    columnSpacing: 10
+                    rowSpacing: 9
                     ComboField {
                         id: mgmtCombo
                         label: qsTr("Managing Company")
@@ -394,17 +371,12 @@ Item {
                 title: "Data"
                 subtitle: "Import records from a Project Notes XML file. Export is available from any record's detail page."
                 Button {
-                    implicitHeight: 36
-                    leftPadding: 14; rightPadding: 14; topPadding: 0; bottomPadding: 0
-                    background: Rectangle {
-                        radius: Theme.radiusSm
-                        color: parent.down ? Theme.surface : Theme.surface2
-                        border.color: Theme.border
-                    }
+                    implicitHeight: 30
+                    leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
                     contentItem: RowLayout {
-                        spacing: 6
-                        MaterialIcon { name: "upload"; size: 18; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
-                        Text { text: qsTr("Import from XML…"); color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
+                        spacing: 5
+                        MaterialIcon { name: "upload"; size: 16; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                        Text { text: qsTr("Import from XML…"); color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
                                verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
                     }
                     onClicked: importDialog.open()
@@ -416,20 +388,20 @@ Item {
                 title: "About"
                 Text {
                     text: "Project Notes"
-                    color: Theme.text; font.pixelSize: 18; font.weight: Font.Bold
+                    color: Theme.text; font.pixelSize: 16; font.weight: Font.Bold
                 }
                 Text {
                     text: "Version " + Qt.application.version
-                    color: Theme.text3; font.pixelSize: 13
+                    color: Theme.text3; font.pixelSize: 12
                 }
                 Text {
                     text: "© 2022–2026 Paul McKinney"
-                    color: Theme.text3; font.pixelSize: 12
+                    color: Theme.text3; font.pixelSize: 11
                 }
 
                 RowLayout {
-                    Layout.topMargin: 4
-                    spacing: 8
+                    Layout.topMargin: 3
+                    spacing: 6
 
                     Repeater {
                         model: [
@@ -439,16 +411,11 @@ Item {
                         ]
                         delegate: Button {
                             required property var modelData
-                            implicitHeight: 34
-                            leftPadding: 14; rightPadding: 14; topPadding: 0; bottomPadding: 0
-                            background: Rectangle {
-                                radius: Theme.radiusSm
-                                color: parent.down ? Theme.surface : Theme.surface2
-                                border.color: Theme.border
-                            }
+                            implicitHeight: 28
+                            leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
                             contentItem: Text {
                                 text: modelData.label
-                                color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
+                                color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                             }
@@ -458,30 +425,30 @@ Item {
                 }
 
                 Rectangle {
-                    Layout.topMargin: 8
+                    Layout.topMargin: 6
                     Layout.fillWidth: true
                     Layout.preferredWidth: 420
-                    implicitHeight: promoColumn.implicitHeight + 24
+                    implicitHeight: promoColumn.implicitHeight + 20
                     color: Theme.surface2
                     radius: Theme.radius
                     border.color: Theme.border
 
                     ColumnLayout {
                         id: promoColumn
-                        anchors { top: parent.top; left: parent.left; right: parent.right; margins: 12 }
-                        spacing: 6
+                        anchors { top: parent.top; left: parent.left; right: parent.right; margins: 10 }
+                        spacing: 5
 
                         Text {
                             Layout.fillWidth: true
                             text: qsTr("Take Project Notes With You")
-                            font.pixelSize: 14; font.weight: Font.Bold
+                            font.pixelSize: 13; font.weight: Font.Bold
                             color: Theme.text
                             wrapMode: Text.WordWrap
                         }
                         Text {
                             Layout.fillWidth: true
                             text: qsTr("Download the Project Notes mobile app for iOS to check status, review notes, and stay on top of tracker items on the go.")
-                            font.pixelSize: 12
+                            font.pixelSize: 11
                             color: Theme.text3
                             wrapMode: Text.WordWrap
                         }
@@ -489,10 +456,10 @@ Item {
                 }
 
                 Text {
-                    Layout.topMargin: 4
+                    Layout.topMargin: 3
                     text: "<a href=\"https://www.projectnotespro.com\">www.projectnotespro.com</a>"
                     textFormat: Text.RichText
-                    font.pixelSize: 13
+                    font.pixelSize: 12
                     color: Theme.accent
                     linkColor: Theme.accent
                     onLinkActivated: Qt.openUrlExternally(link)
@@ -508,26 +475,26 @@ Item {
         property bool checked: false
         signal toggledValue(bool value)
         Layout.fillWidth: true
-        spacing: 10
+        spacing: 8
         CheckBox {
             id: cb
             checked: chk.checked
             padding: 0
-            implicitWidth: 18; implicitHeight: 18
+            implicitWidth: 16; implicitHeight: 16
             Layout.alignment: Qt.AlignVCenter
             onToggled: chk.toggledValue(checked)
             indicator: Rectangle {
-                implicitWidth: 18; implicitHeight: 18; radius: 4
+                implicitWidth: 16; implicitHeight: 16; radius: 4
                 x: 0; y: cb.height/2 - height/2
                 color: cb.checked ? Theme.accent : Theme.surface
                 border.color: cb.checked ? Theme.accent : Theme.border
-                MaterialIcon { anchors.centerIn: parent; visible: cb.checked; name: "check"; size: 14; color: "#ffffff" }
+                MaterialIcon { anchors.centerIn: parent; visible: cb.checked; name: "check"; size: 12; color: "#ffffff" }
             }
             contentItem: Item {}
         }
         Text {
             text: chk.label
-            color: Theme.text; font.pixelSize: 13
+            color: Theme.text; font.pixelSize: 12
             verticalAlignment: Text.AlignVCenter
             Layout.fillWidth: true
         }
@@ -541,22 +508,22 @@ Item {
         property bool password: false
         signal committed(string v)
         Layout.fillWidth: true
-        spacing: 4
-        Text { text: sf.label; color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold }
+        spacing: 3
+        Text { text: sf.label; color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold }
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: 34
+            implicitHeight: 30
             radius: Theme.radiusSm
             color: Theme.surface
             border.color: sfInput.activeFocus ? Theme.accent : Theme.border
             TextField {
                 id: sfInput
                 anchors.fill: parent
-                anchors.leftMargin: 10; anchors.rightMargin: 10
+                anchors.leftMargin: 9; anchors.rightMargin: 9
                 verticalAlignment: Text.AlignVCenter
                 color: Theme.text
                 background: null
-                font.pixelSize: 13
+                font.pixelSize: 12
                 selectByMouse: true
                 echoMode: sf.password ? TextInput.PasswordEchoOnEdit : TextInput.Normal
                 Component.onCompleted: text = sf.value
@@ -580,8 +547,8 @@ Item {
         id: iconPickerMenu
         modal: true
         dim: false
-        padding: 10
-        width: 184
+        padding: 8
+        width: 160
         parent: Overlay.overlay
         scale: Theme.uiScale
         transformOrigin: Item.TopLeft
@@ -605,14 +572,14 @@ Item {
 
         contentItem: GridLayout {
             columns: 5
-            rowSpacing: 6
-            columnSpacing: 6
+            rowSpacing: 5
+            columnSpacing: 5
             Repeater {
                 model: Theme.folderIcons
                 delegate: Rectangle {
                     id: iconCell
                     required property var modelData
-                    width: 28; height: 28; radius: 8
+                    width: 24; height: 24; radius: Theme.radiusSm
                     color: iconCellHover.hovered ? Theme.surface2 : "transparent"
                     border.width: 2
                     border.color: iconPickerMenu._folder
@@ -621,7 +588,7 @@ Item {
                     MaterialIcon {
                         anchors.centerIn: parent
                         name: iconCell.modelData
-                        size: 17
+                        size: 15
                         color: iconPickerMenu._folder ? iconPickerMenu._folder.color : Theme.text2
                     }
                     HoverHandler { id: iconCellHover }
@@ -650,22 +617,22 @@ Item {
         property string subtitle: ""
         default property alias content: inner.data
         Layout.fillWidth: true
-        spacing: 10
+        spacing: 8
 
-        Text { text: title; color: Theme.text; font.pixelSize: 16; font.weight: Font.Bold }
+        Text { text: title; color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold }
         Text {
             text: subtitle
             visible: subtitle !== ""
             color: Theme.text2
-            font.pixelSize: 13
+            font.pixelSize: 12
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
         }
         ColumnLayout {
             id: inner
             Layout.fillWidth: true
-            Layout.topMargin: 4
-            spacing: 8
+            Layout.topMargin: 3
+            spacing: 6
         }
     }
 }

@@ -95,11 +95,11 @@ QtObject {
     readonly property color dropHighlight: accentSoft
 
     // ── Metrics ───────────────────────────────────────────────────────────────
-    readonly property int radiusSm: 8
-    readonly property int radius:   10
-    readonly property int radiusLg: 14
-    readonly property int railWidth: 56
-    readonly property int sidebarWidth: 264
+    readonly property int radiusSm: 6
+    readonly property int radius:   8
+    readonly property int radiusLg: 10
+    readonly property int railWidth: 48
+    readonly property int sidebarWidth: 228
 
     // Palette for folder color swatches in the settings editor.
     readonly property var folderColors: [

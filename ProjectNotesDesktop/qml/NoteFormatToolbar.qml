@@ -23,7 +23,7 @@ Rectangle {
     property int _selStart: 0
     property int _selEnd: 0
 
-    implicitHeight: 40
+    implicitHeight: 34
     radius: Theme.radiusSm
     color: Theme.surface2
     border.color: Theme.border
@@ -33,13 +33,13 @@ Rectangle {
     // Paragraph styles for the Style dropdown. `style` maps to TextFormatter.applyStyle:
     // 0 = normal body text, 9..14 = Heading 1..6.
     readonly property var _paragraphStyles: [
-        { label: qsTr("Normal text"), style: 0,  px: 13, wt: Font.Normal   },
-        { label: qsTr("Heading 1"),   style: 9,  px: 22, wt: Font.Bold     },
-        { label: qsTr("Heading 2"),   style: 10, px: 19, wt: Font.Bold     },
-        { label: qsTr("Heading 3"),   style: 11, px: 16, wt: Font.DemiBold },
-        { label: qsTr("Heading 4"),   style: 12, px: 14, wt: Font.DemiBold },
-        { label: qsTr("Heading 5"),   style: 13, px: 13, wt: Font.DemiBold },
-        { label: qsTr("Heading 6"),   style: 14, px: 12, wt: Font.DemiBold }
+        { label: qsTr("Normal text"), style: 0,  px: 12, wt: Font.Normal   },
+        { label: qsTr("Heading 1"),   style: 9,  px: 19, wt: Font.Bold     },
+        { label: qsTr("Heading 2"),   style: 10, px: 16, wt: Font.Bold     },
+        { label: qsTr("Heading 3"),   style: 11, px: 14, wt: Font.DemiBold },
+        { label: qsTr("Heading 4"),   style: 12, px: 12, wt: Font.DemiBold },
+        { label: qsTr("Heading 5"),   style: 13, px: 12, wt: Font.DemiBold },
+        { label: qsTr("Heading 6"),   style: 14, px: 11, wt: Font.DemiBold }
     ]
 
     // Google-Docs-style palette: grayscale row + hue columns at several shades.
@@ -138,9 +138,9 @@ Rectangle {
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: 6
-        anchors.rightMargin: 6
-        spacing: 2
+        anchors.leftMargin: 5
+        anchors.rightMargin: 5
+        spacing: 1
 
         component FmtButton: Item {
             id: btn
@@ -151,26 +151,26 @@ Rectangle {
             // so the toolbar reflects what's under the cursor.
             property bool active: false
             signal triggered()
-            implicitWidth: 30
-            implicitHeight: 30
+            implicitWidth: 26
+            implicitHeight: 26
             Layout.alignment: Qt.AlignVCenter
             Rectangle {
                 anchors.centerIn: parent
-                width: 28; height: 28; radius: 6
+                width: 24; height: 24; radius: Theme.radiusSm
                 color: btn.active ? Theme.accentSoft : (hh.hovered ? Theme.surface : "transparent")
                 border.color: btn.active ? Theme.accent : "transparent"
                 border.width: 1
                 MaterialIcon {
                     anchors.centerIn: parent
                     visible: btn.icon !== ""
-                    name: btn.icon; size: 18; color: btn.active ? Theme.accent : Theme.text2
+                    name: btn.icon; size: 15; color: btn.active ? Theme.accent : Theme.text2
                 }
                 Text {
                     anchors.centerIn: parent
                     visible: btn.glyph !== ""
                     text: btn.glyph
                     color: btn.active ? Theme.accent : Theme.text2
-                    font.pixelSize: 15
+                    font.pixelSize: 13
                     font.weight: Font.Bold
                 }
             }
@@ -188,21 +188,21 @@ Rectangle {
             property alias contentWidth: chipText.implicitWidth
             signal clicked()
             Layout.alignment: Qt.AlignVCenter
-            implicitHeight: 28
-            implicitWidth: chipRow.implicitWidth + 14
-            radius: 6
+            implicitHeight: 24
+            implicitWidth: chipRow.implicitWidth + 11
+            radius: Theme.radiusSm
             color: chHover.hovered ? Theme.surface : "transparent"
             RowLayout {
                 id: chipRow
                 anchors.centerIn: parent
-                spacing: 3
+                spacing: 2
                 Text {
                     id: chipText
                     text: chip.label
                     color: Theme.text2
-                    font.pixelSize: 12
+                    font.pixelSize: 11
                     elide: Text.ElideRight
-                    Layout.maximumWidth: 120
+                    Layout.maximumWidth: 100
                 }
                 // Only override the family when we actually have one to preview —
                 // font.family is a QString property, so `undefined` can't be assigned
@@ -221,7 +221,7 @@ Rectangle {
                     value: chip.previewFamily
                     when: chip.previewFamily.length > 0
                 }
-                MaterialIcon { name: "arrow_drop_down"; size: 16; color: Theme.text3 }
+                MaterialIcon { name: "arrow_drop_down"; size: 14; color: Theme.text3 }
             }
             HoverHandler { id: chHover }
             TapHandler { onTapped: chip.clicked() }
@@ -229,7 +229,7 @@ Rectangle {
 
         component Sep: Rectangle {
             Layout.alignment: Qt.AlignVCenter
-            width: 1; height: 20; color: Theme.border
+            width: 1; height: 17; color: Theme.border
         }
 
         FmtButton { icon: "format_bold";        active: bar._liveFmt ? bar._liveFmt.bold : false;          onTriggered: bar._apply(TextFormatter.toggleBold) }
@@ -265,8 +265,8 @@ Rectangle {
             Rectangle {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.bottom
-                anchors.bottomMargin: 5
-                width: 16; height: 3; radius: 1
+                anchors.bottomMargin: 4
+                width: 14; height: 2; radius: 1
                 color: bar._liveFmt ? bar._liveFmt.color : Theme.text
             }
         }
@@ -313,9 +313,9 @@ Rectangle {
     // ── Font family popup ─────────────────────────────────────────────────────
     Popup {
         id: fontPopup
-        width: 240
-        height: 320
-        padding: 8
+        width: 210
+        height: 280
+        padding: 6
         modal: false
         scale: Theme.uiScale
         transformOrigin: Item.TopLeft
@@ -338,24 +338,24 @@ Rectangle {
         }
 
         contentItem: ColumnLayout {
-            spacing: 6
+            spacing: 5
             Rectangle {
                 Layout.fillWidth: true
-                implicitHeight: 30
+                implicitHeight: 27
                 radius: Theme.radiusSm
                 color: Theme.surface
                 border.color: fontFilter.activeFocus ? Theme.accent : Theme.border
                 TextField {
                     id: fontFilter
                     anchors.fill: parent
-                    anchors.leftMargin: 8
-                    anchors.rightMargin: 8
+                    anchors.leftMargin: 7
+                    anchors.rightMargin: 7
                     verticalAlignment: Text.AlignVCenter
                     color: Theme.text
                     placeholderText: qsTr("Search fonts…")
                     placeholderTextColor: Theme.text3
                     background: null
-                    font.pixelSize: 12
+                    font.pixelSize: 11
                     selectByMouse: true
                 }
             }
@@ -370,13 +370,13 @@ Rectangle {
                     required property int index
                     required property var modelData
                     width: fontList.width
-                    height: 30
+                    height: 26
                     contentItem: Text {
                         text: modelData
                         color: Theme.text
-                        font.pixelSize: 13
+                        font.pixelSize: 12
                         font.family: modelData
-                        leftPadding: 8
+                        leftPadding: 7
                         verticalAlignment: Text.AlignVCenter
                         elide: Text.ElideRight
                     }
@@ -394,9 +394,9 @@ Rectangle {
     // ── Font size popup ───────────────────────────────────────────────────────
     Popup {
         id: sizePopup
-        width: 92
-        height: 260
-        padding: 6
+        width: 80
+        height: 230
+        padding: 5
         modal: false
         scale: Theme.uiScale
         transformOrigin: Item.TopLeft
@@ -415,13 +415,13 @@ Rectangle {
             ScrollBar.vertical: ScrollBar {}
             delegate: ItemDelegate {
                 required property var modelData
-                width: ListView.view ? ListView.view.width : 80
-                height: 30
+                width: ListView.view ? ListView.view.width : 70
+                height: 26
                 contentItem: Text {
                     text: modelData
                     color: Theme.text
-                    font.pixelSize: 13
-                    leftPadding: 10
+                    font.pixelSize: 12
+                    leftPadding: 8
                     verticalAlignment: Text.AlignVCenter
                 }
                 background: Rectangle { color: hovered ? Theme.surface2 : "transparent"; radius: 4 }
@@ -436,8 +436,8 @@ Rectangle {
     // ── Paragraph style popup (Normal text + Heading 1–6) ─────────────────────
     Popup {
         id: stylePopup
-        width: 180
-        padding: 6
+        width: 160
+        padding: 5
         modal: false
         scale: Theme.uiScale
         transformOrigin: Item.TopLeft
@@ -457,13 +457,13 @@ Rectangle {
                 delegate: Rectangle {
                     required property var modelData
                     Layout.fillWidth: true
-                    implicitHeight: 34
+                    implicitHeight: 30
                     radius: 4
                     color: stHover.hovered ? Theme.surface2 : "transparent"
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.left: parent.left
-                        anchors.leftMargin: 10
+                        anchors.leftMargin: 8
                         text: modelData.label
                         color: Theme.text
                         font.pixelSize: modelData.px
@@ -484,8 +484,8 @@ Rectangle {
     // ── Font color popup ──────────────────────────────────────────────────────
     Popup {
         id: colorPopup
-        width: 244
-        padding: 10
+        width: 210
+        padding: 8
         modal: false
         scale: Theme.uiScale
         transformOrigin: Item.TopLeft
@@ -499,26 +499,26 @@ Rectangle {
         }
 
         contentItem: ColumnLayout {
-            spacing: 8
+            spacing: 6
             Text {
                 text: qsTr("Text color")
-                color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold
+                color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold
             }
             Grid {
                 columns: 8
-                spacing: 6
+                spacing: 5
                 Repeater {
                     model: bar._fontColors
                     delegate: Rectangle {
                         required property string modelData
-                        width: 22; height: 22; radius: 11
+                        width: 19; height: 19; radius: 9.5
                         color: modelData
                         border.color: (modelData === "#ffffff" || modelData === "#000000") ? Theme.border : "transparent"
                         border.width: 1
                         HoverHandler { id: swHover }
                         Rectangle {
                             anchors.fill: parent
-                            radius: 11
+                            radius: 9.5
                             color: "transparent"
                             border.color: Theme.accent
                             border.width: swHover.hovered ? 2 : 0
@@ -538,8 +538,8 @@ Rectangle {
     // ── Highlight color popup ─────────────────────────────────────────────────
     Popup {
         id: highlightPopup
-        width: 244
-        padding: 10
+        width: 210
+        padding: 8
         modal: false
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
 
@@ -551,26 +551,26 @@ Rectangle {
         }
 
         contentItem: ColumnLayout {
-            spacing: 8
+            spacing: 6
             Text {
                 text: qsTr("Highlight")
-                color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold
+                color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold
             }
             Grid {
                 columns: 8
-                spacing: 6
+                spacing: 5
                 Repeater {
                     model: bar._highlightColors
                     delegate: Rectangle {
                         required property string modelData
-                        width: 22; height: 22; radius: 5
+                        width: 19; height: 19; radius: 4
                         color: modelData
                         border.color: Theme.border
                         border.width: 1
                         HoverHandler { id: hlHover }
                         Rectangle {
                             anchors.fill: parent
-                            radius: 5
+                            radius: 4
                             color: "transparent"
                             border.color: Theme.accent
                             border.width: hlHover.hovered ? 2 : 0
@@ -586,16 +586,16 @@ Rectangle {
             }
             Rectangle {
                 Layout.fillWidth: true
-                implicitHeight: 28
+                implicitHeight: 24
                 radius: Theme.radiusSm
                 color: noneHover.hovered ? Theme.surface2 : "transparent"
                 border.color: Theme.border
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 8
-                    spacing: 6
-                    MaterialIcon { name: "format_color_reset"; size: 15; color: Theme.text2 }
-                    Text { text: qsTr("No highlight"); color: Theme.text2; font.pixelSize: 12 }
+                    anchors.leftMargin: 7
+                    spacing: 5
+                    MaterialIcon { name: "format_color_reset"; size: 13; color: Theme.text2 }
+                    Text { text: qsTr("No highlight"); color: Theme.text2; font.pixelSize: 11 }
                 }
                 HoverHandler { id: noneHover }
                 TapHandler {
@@ -611,14 +611,14 @@ Rectangle {
     // ── Insert-table grid picker (drag/hover to choose rows × columns) ─────────
     Popup {
         id: tablePopup
-        padding: 10
+        padding: 8
         modal: false
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
 
         readonly property int maxRows: 8
         readonly property int maxCols: 10
-        readonly property int cell: 18
-        readonly property int gap: 3
+        readonly property int cell: 16
+        readonly property int gap: 2
         // Currently hovered extent; 0 means nothing hovered yet.
         property int hoverRows: 0
         property int hoverCols: 0
@@ -632,7 +632,7 @@ Rectangle {
         }
 
         contentItem: ColumnLayout {
-            spacing: 8
+            spacing: 6
             Grid {
                 id: cellGrid
                 columns: tablePopup.maxCols
@@ -672,7 +672,7 @@ Rectangle {
                 text: tablePopup.hoverRows > 0
                       ? tablePopup.hoverCols + " × " + tablePopup.hoverRows
                       : qsTr("Insert table")
-                color: Theme.text2; font.pixelSize: 12
+                color: Theme.text2; font.pixelSize: 11
             }
         }
     }

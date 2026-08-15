@@ -78,8 +78,8 @@ Popup {
 
     modal: true
     dim: false
-    padding: 5
-    width: 232
+    padding: 3
+    width: 192
     // Cap the popup height and let it scroll once the plugin/menu list grows
     // past that — otherwise a table with many plugins produces a menu taller
     // than the window. Also clamped to the overlay so the drawn (scaled) menu

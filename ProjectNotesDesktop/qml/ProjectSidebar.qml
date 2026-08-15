@@ -1,4 +1,4 @@
-// Copyright (C) 2026 Paul McKinney
+﻿// Copyright (C) 2026 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
 import QtQuick
@@ -65,17 +65,17 @@ Rectangle {
         // Header
         RowLayout {
             Layout.fillWidth: true
-            Layout.margins: 14
-            Layout.bottomMargin: 8
-            spacing: 8
+            Layout.margins: 12
+            Layout.bottomMargin: 6
+            spacing: 7
             Rectangle {
-                width: 22; height: 22; radius: 6; color: Theme.accent
-                MaterialIcon { anchors.centerIn: parent; name: "description"; size: 14; color: "#ffffff" }
+                width: 20; height: 20; radius: Theme.radiusSm; color: Theme.accent
+                MaterialIcon { anchors.centerIn: parent; name: "description"; size: 13; color: "#ffffff" }
             }
             Text {
                 text: "Project Notes"
                 color: Theme.text
-                font.pixelSize: 15
+                font.pixelSize: 14
                 font.weight: Font.DemiBold
                 Layout.fillWidth: true
             }
@@ -90,17 +90,17 @@ Rectangle {
 
             Column {
                 width: sidebar.width
-                spacing: 6
+                spacing: 4
                 topPadding: 2
-                bottomPadding: 12
-                leftPadding: 8
-                rightPadding: 8
+                bottomPadding: 10
+                leftPadding: 6
+                rightPadding: 6
 
                 Repeater {
                     model: FolderManager.folders
                     delegate: FolderGroup {
                         required property var modelData
-                        width: parent.width - 16
+                        width: parent.width - 12
                         folderId:    modelData.id
                         folderName:  modelData.name
                         folderIcon:  modelData.icon
@@ -118,7 +118,7 @@ Rectangle {
                 }
 
                 FolderGroup {
-                    width: parent.width - 16
+                    width: parent.width - 12
                     folderId: "__uncategorized__"
                     folderName: "Not Categorized"
                     isAll: false
@@ -133,7 +133,7 @@ Rectangle {
                 }
 
                 FolderGroup {
-                    width: parent.width - 16
+                    width: parent.width - 12
                     folderName: "All Projects"
                     isAll: true
                     expanded: !FolderManager.allProjectsCollapsed

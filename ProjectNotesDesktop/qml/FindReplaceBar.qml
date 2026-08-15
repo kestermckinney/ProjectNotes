@@ -22,7 +22,7 @@ Rectangle {
 
     visible: false
     Layout.fillWidth: true
-    implicitHeight: visible ? col.implicitHeight + 16 : 0
+    implicitHeight: visible ? col.implicitHeight + 12 : 0
     radius: Theme.radiusSm
     color: Theme.raise
     border.color: Theme.border
@@ -113,14 +113,14 @@ Rectangle {
         signal accepted()
         signal shiftAccepted()
         Layout.fillWidth: true
-        implicitHeight: 30
+        implicitHeight: 27
         radius: Theme.radiusSm
         color: Theme.surface
         border.color: tf.activeFocus ? Theme.accent : Theme.border
         TextField {
             id: tf
             anchors.fill: parent
-            anchors.leftMargin: 8; anchors.rightMargin: 8
+            anchors.leftMargin: 7; anchors.rightMargin: 7
             verticalAlignment: Text.AlignVCenter
             color: Theme.text
             placeholderText: parent.placeholder
@@ -140,8 +140,8 @@ Rectangle {
         property string label: ""
         property bool primary: false
         signal clicked()
-        implicitHeight: 30
-        implicitWidth: bbText.implicitWidth + 20
+        implicitHeight: 27
+        implicitWidth: bbText.implicitWidth + 16
         radius: Theme.radiusSm
         color: primary ? (bbHover.hovered ? Theme.accentStrong : Theme.accent)
                        : (bbHover.hovered ? Theme.surface2 : Theme.surface)
@@ -151,7 +151,7 @@ Rectangle {
             anchors.centerIn: parent
             text: parent.label
             color: parent.primary ? "#ffffff" : Theme.text
-            font.pixelSize: 12; font.weight: Font.DemiBold
+            font.pixelSize: 11; font.weight: Font.DemiBold
         }
         HoverHandler { id: bbHover }
         TapHandler { onTapped: parent.clicked() }
@@ -161,14 +161,14 @@ Rectangle {
         id: col
         anchors.left: parent.left; anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        anchors.leftMargin: 8; anchors.rightMargin: 8
-        spacing: 6
+        anchors.leftMargin: 7; anchors.rightMargin: 7
+        spacing: 5
 
         // Find row
         RowLayout {
             Layout.fillWidth: true
-            spacing: 6
-            MaterialIcon { name: "search"; size: 16; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+            spacing: 5
+            MaterialIcon { name: "search"; size: 14; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
             Box {
                 id: findBox
                 placeholder: qsTr("Find")
@@ -179,14 +179,14 @@ Rectangle {
             BarButton { label: qsTr("Next"); primary: true; onClicked: bar.findNext(true) }
             // Match case toggle
             Rectangle {
-                implicitHeight: 30; implicitWidth: 34
+                implicitHeight: 27; implicitWidth: 30
                 radius: Theme.radiusSm
                 color: bar.matchCase ? Theme.accent : (mcHover.hovered ? Theme.surface2 : Theme.surface)
                 border.color: bar.matchCase ? "transparent" : Theme.border
                 Text {
                     anchors.centerIn: parent; text: "Aa"
                     color: bar.matchCase ? "#ffffff" : Theme.text2
-                    font.pixelSize: 12; font.weight: Font.DemiBold
+                    font.pixelSize: 11; font.weight: Font.DemiBold
                 }
                 HoverHandler { id: mcHover }
                 TapHandler { onTapped: bar.matchCase = !bar.matchCase }
@@ -194,7 +194,7 @@ Rectangle {
                 ToolTip.text: qsTr("Match case")
             }
             MaterialIcon {
-                name: "close"; size: 18; color: Theme.text3
+                name: "close"; size: 16; color: Theme.text3
                 Layout.alignment: Qt.AlignVCenter
                 TapHandler { onTapped: bar.close() }
             }
@@ -203,8 +203,8 @@ Rectangle {
         // Replace row
         RowLayout {
             Layout.fillWidth: true
-            spacing: 6
-            MaterialIcon { name: "find_replace"; size: 16; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+            spacing: 5
+            MaterialIcon { name: "find_replace"; size: 14; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
             Box {
                 id: replaceBox
                 placeholder: qsTr("Replace with")
@@ -215,7 +215,7 @@ Rectangle {
             Text {
                 text: bar._status
                 visible: text !== ""
-                color: Theme.text3; font.pixelSize: 11
+                color: Theme.text3; font.pixelSize: 10
                 Layout.alignment: Qt.AlignVCenter
             }
             Item { Layout.fillWidth: true }

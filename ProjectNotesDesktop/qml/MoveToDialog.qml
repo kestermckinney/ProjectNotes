@@ -18,7 +18,7 @@ import ProjectNotesDesktop
 Dialog {
     id: dlg
     anchors.centerIn: parent
-    width: 400; height: content.implicitHeight + topPadding + bottomPadding
+    width: 360; height: content.implicitHeight + topPadding + bottomPadding
     modal: true; padding: 0
     scale: Theme.uiScale   // match the zoomed workspace (centered origin)
     background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
@@ -86,16 +86,16 @@ Dialog {
         id: content
         spacing: 0
         RowLayout {
-            Layout.fillWidth: true; Layout.margins: 14
-            Text { text: qsTr("Move To…"); color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold; Layout.fillWidth: true }
-            MaterialIcon { name: "close"; size: 20; color: Theme.text3; TapHandler { onTapped: dlg.close() } }
+            Layout.fillWidth: true; Layout.margins: 12
+            Text { text: qsTr("Move To…"); color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold; Layout.fillWidth: true }
+            MaterialIcon { name: "close"; size: 18; color: Theme.text3; TapHandler { onTapped: dlg.close() } }
         }
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
 
         ColumnLayout {
             Layout.fillWidth: true
-            Layout.margins: 16
-            spacing: 14
+            Layout.margins: 13
+            spacing: 10
 
             ComboField {
                 id: projectCombo
@@ -120,21 +120,21 @@ Dialog {
             // project actually differs from the item's current one.
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 4
+                spacing: 3
                 visible: dlg._check.valid === true
                 Text {
                     Layout.fillWidth: true
                     visible: dlg._check.willRenumber === true
                     text: qsTr("Item number will change from %1 to %2 in this project.")
                             .arg(dlg._check.oldNumber || "").arg(dlg._check.newNumber || "")
-                    color: Theme.text2; font.pixelSize: 11; wrapMode: Text.WordWrap
+                    color: Theme.text2; font.pixelSize: 10; wrapMode: Text.WordWrap
                 }
                 Text {
                     Layout.fillWidth: true
                     visible: (dlg._check.membersToAdd || []).length > 0
                     text: qsTr("Will also be added to the project's team: %1")
                             .arg((dlg._check.membersToAdd || []).map(function(m){ return m.name }).join(", "))
-                    color: Theme.text3; font.pixelSize: 11; wrapMode: Text.WordWrap
+                    color: Theme.text3; font.pixelSize: 10; wrapMode: Text.WordWrap
                 }
             }
         }
@@ -142,21 +142,21 @@ Dialog {
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
         RowLayout {
             Layout.fillWidth: true
-            Layout.margins: 12
-            spacing: 10
+            Layout.margins: 10
+            spacing: 8
             Item { Layout.fillWidth: true }
             Rectangle {
-                implicitWidth: 80; implicitHeight: 32; radius: Theme.radiusSm
+                implicitWidth: 70; implicitHeight: 28; radius: Theme.radiusSm
                 color: cancelHover.hovered ? Theme.surface2 : "transparent"
                 border.color: Theme.border
-                Text { anchors.centerIn: parent; text: qsTr("Cancel"); color: Theme.text2; font.pixelSize: 13 }
+                Text { anchors.centerIn: parent; text: qsTr("Cancel"); color: Theme.text2; font.pixelSize: 12 }
                 HoverHandler { id: cancelHover }
                 TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: dlg.close() }
             }
             Rectangle {
-                implicitWidth: 90; implicitHeight: 32; radius: Theme.radiusSm
+                implicitWidth: 78; implicitHeight: 28; radius: Theme.radiusSm
                 color: moveHover.hovered ? Theme.accentStrong : Theme.accent
-                Text { anchors.centerIn: parent; text: qsTr("Move"); color: "#ffffff"; font.pixelSize: 13; font.weight: Font.DemiBold }
+                Text { anchors.centerIn: parent; text: qsTr("Move"); color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold }
                 HoverHandler { id: moveHover }
                 TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: dlg._confirm() }
             }

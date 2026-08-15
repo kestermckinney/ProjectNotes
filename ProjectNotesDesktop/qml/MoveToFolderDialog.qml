@@ -21,7 +21,7 @@ Dialog {
     // projects list, so it must not inherit either one's bounds.
     parent: Overlay.overlay
     anchors.centerIn: parent
-    width: 300
+    width: 270
     height: content.implicitHeight + topPadding + bottomPadding
     modal: true; padding: 0
     scale: Theme.uiScale
@@ -49,9 +49,9 @@ Dialog {
         id: content
         spacing: 0
         RowLayout {
-            Layout.fillWidth: true; Layout.margins: 14
-            Text { text: qsTr("Move To Folder"); color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold; Layout.fillWidth: true }
-            MaterialIcon { name: "close"; size: 20; color: Theme.text3; TapHandler { onTapped: dlg.close() } }
+            Layout.fillWidth: true; Layout.margins: 12
+            Text { text: qsTr("Move To Folder"); color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold; Layout.fillWidth: true }
+            MaterialIcon { name: "close"; size: 18; color: Theme.text3; TapHandler { onTapped: dlg.close() } }
         }
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
 
@@ -59,15 +59,15 @@ Dialog {
             visible: dlg._label !== ""
             text: dlg._label
             color: Theme.text3
-            font.pixelSize: 11
+            font.pixelSize: 10
             Layout.fillWidth: true
-            Layout.leftMargin: 16; Layout.rightMargin: 16; Layout.topMargin: 10
+            Layout.leftMargin: 13; Layout.rightMargin: 13; Layout.topMargin: 8
             elide: Text.ElideRight
         }
 
         ColumnLayout {
             Layout.fillWidth: true
-            Layout.margins: 10
+            Layout.margins: 8
             spacing: 2
 
             Repeater {
@@ -76,20 +76,20 @@ Dialog {
                     id: folderRow
                     required property var modelData
                     Layout.fillWidth: true
-                    implicitHeight: 36
+                    implicitHeight: 32
                     radius: Theme.radiusSm
                     color: rowHover.hovered ? Theme.surface2 : "transparent"
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 8; anchors.rightMargin: 8
-                        spacing: 10
-                        MaterialIcon { name: folderRow.modelData.icon; size: 16; color: folderRow.modelData.color }
+                        anchors.leftMargin: 7; anchors.rightMargin: 7
+                        spacing: 8
+                        MaterialIcon { name: folderRow.modelData.icon; size: 14; color: folderRow.modelData.color }
                         Text {
                             text: folderRow.modelData.name
-                            color: Theme.text; font.pixelSize: 13
+                            color: Theme.text; font.pixelSize: 12
                             Layout.fillWidth: true; elide: Text.ElideRight
                         }
-                        Text { text: folderRow.modelData.count; color: Theme.text3; font.pixelSize: 11 }
+                        Text { text: folderRow.modelData.count; color: Theme.text3; font.pixelSize: 10 }
                     }
                     HoverHandler { id: rowHover }
                     TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: dlg._pick(folderRow.modelData.id) }
@@ -100,27 +100,27 @@ Dialog {
                 visible: FolderManager.folders.length === 0
                 text: qsTr("No folders yet — add one in Settings.")
                 color: Theme.text3
-                font.pixelSize: 12
-                Layout.margins: 6
+                font.pixelSize: 11
+                Layout.margins: 5
             }
 
             Rectangle {
                 Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.borderSoft
-                Layout.topMargin: 4; Layout.bottomMargin: 4
+                Layout.topMargin: 3; Layout.bottomMargin: 3
             }
 
             Rectangle {
                 id: uncatRow
                 Layout.fillWidth: true
-                implicitHeight: 36
+                implicitHeight: 32
                 radius: Theme.radiusSm
                 color: uncatHover.hovered ? Theme.surface2 : "transparent"
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 8; anchors.rightMargin: 8
-                    spacing: 10
-                    MaterialIcon { name: "folder_off"; size: 16; color: Theme.text3 }
-                    Text { text: qsTr("Not Categorized"); color: Theme.text; font.pixelSize: 13; Layout.fillWidth: true }
+                    anchors.leftMargin: 7; anchors.rightMargin: 7
+                    spacing: 8
+                    MaterialIcon { name: "folder_off"; size: 14; color: Theme.text3 }
+                    Text { text: qsTr("Not Categorized"); color: Theme.text; font.pixelSize: 12; Layout.fillWidth: true }
                 }
                 HoverHandler { id: uncatHover }
                 TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: dlg._pick("") }

@@ -18,8 +18,8 @@ Popup {
     padding: 0
     parent: Overlay.overlay
     scale: Theme.uiScale   // match the zoomed workspace (centered origin)
-    width: 680
-    height: Math.min(560, parent ? parent.height - 60 : 560)
+    width: 600
+    height: Math.min(480, parent ? parent.height - 60 : 480)
     x: parent ? Math.round((parent.width - width) / 2) : 0
     y: parent ? Math.round((parent.height - height) / 2) : 0
 
@@ -169,16 +169,16 @@ Popup {
         // Header
         RowLayout {
             Layout.fillWidth: true
-            Layout.margins: 15
-            spacing: 10
-            MaterialIcon { name: "filter_list"; size: 20; color: Theme.accent; Layout.alignment: Qt.AlignVCenter }
-            Text { text: qsTr("Filter Editor"); color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold; verticalAlignment: Text.AlignVCenter }
-            Text { text: "· " + dlg._sectionLabel; color: Theme.text3; font.pixelSize: 12; verticalAlignment: Text.AlignVCenter }
+            Layout.margins: 12
+            spacing: 8
+            MaterialIcon { name: "filter_list"; size: 17; color: Theme.accent; Layout.alignment: Qt.AlignVCenter }
+            Text { text: qsTr("Filter Editor"); color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold; verticalAlignment: Text.AlignVCenter }
+            Text { text: "· " + dlg._sectionLabel; color: Theme.text3; font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
             Item { Layout.fillWidth: true }
             Rectangle {
-                implicitWidth: 28; implicitHeight: 28; radius: Theme.radiusSm
+                implicitWidth: 24; implicitHeight: 24; radius: Theme.radiusSm
                 color: closeHover.hovered ? Theme.surface2 : "transparent"
-                MaterialIcon { anchors.centerIn: parent; name: "close"; size: 19; color: Theme.text2 }
+                MaterialIcon { anchors.centerIn: parent; name: "close"; size: 16; color: Theme.text2 }
                 HoverHandler { id: closeHover }
                 // Exclusive grab: a plain TapHandler only takes a passive grab, so
                 // without this the same tap also falls through to the list card
@@ -196,7 +196,7 @@ Popup {
 
             // Column list
             Rectangle {
-                Layout.preferredWidth: 210
+                Layout.preferredWidth: 180
                 Layout.fillHeight: true
                 color: Theme.sidebar
                 ColumnLayout {
@@ -204,8 +204,8 @@ Popup {
                     spacing: 0
                     Text {
                         text: qsTr("COLUMN NAME"); color: Theme.text3
-                        font.pixelSize: 10; font.weight: Font.Bold
-                        Layout.leftMargin: 14; Layout.topMargin: 11; Layout.bottomMargin: 4
+                        font.pixelSize: 9; font.weight: Font.Bold
+                        Layout.leftMargin: 11; Layout.topMargin: 9; Layout.bottomMargin: 3
                     }
                     ListView {
                         id: colList
@@ -217,35 +217,35 @@ Popup {
                             required property int index
                             required property var modelData
                             width: colList.width
-                            height: 34
+                            height: 30
                             color: index === dlg._curIndex ? Theme.accentSoft
                                    : (colHover.hovered ? Theme.surface2 : "transparent")
                             RowLayout {
                                 anchors.fill: parent
-                                anchors.leftMargin: 12; anchors.rightMargin: 10
-                                spacing: 9
+                                anchors.leftMargin: 10; anchors.rightMargin: 8
+                                spacing: 7
                                 Rectangle {
-                                    implicitWidth: 6; implicitHeight: 6; radius: 3
+                                    implicitWidth: 5; implicitHeight: 5; radius: 2.5
                                     color: dlg._active(modelData.field) ? Theme.accent : "transparent"
                                     Layout.alignment: Qt.AlignVCenter
                                 }
                                 Text {
                                     text: modelData.label
                                     color: index === dlg._curIndex ? Theme.accent : Theme.text
-                                    font.pixelSize: 13
+                                    font.pixelSize: 12
                                     font.weight: (index === dlg._curIndex || dlg._active(modelData.field)) ? Font.DemiBold : Font.Normal
                                     Layout.fillWidth: true; elide: Text.ElideRight
                                     verticalAlignment: Text.AlignVCenter
                                 }
                                 Rectangle {
                                     visible: dlg._count(modelData.field) > 0
-                                    radius: 9; color: Theme.accentSoft
-                                    implicitHeight: 16; implicitWidth: Math.max(18, cLbl.implicitWidth + 10)
+                                    radius: 8; color: Theme.accentSoft
+                                    implicitHeight: 14; implicitWidth: Math.max(16, cLbl.implicitWidth + 8)
                                     Layout.alignment: Qt.AlignVCenter
                                     Text {
                                         id: cLbl; anchors.centerIn: parent
                                         text: dlg._count(modelData.field).toString()
-                                        color: Theme.accent; font.pixelSize: 10; font.weight: Font.Bold
+                                        color: Theme.accent; font.pixelSize: 9; font.weight: Font.Bold
                                     }
                                 }
                             }
@@ -265,18 +265,18 @@ Popup {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 18; Layout.rightMargin: 18; Layout.topMargin: 12; Layout.bottomMargin: 4
-                    spacing: 8
-                    Text { text: qsTr("FILTER VALUES"); color: Theme.text3; font.pixelSize: 10; font.weight: Font.Bold }
-                    Text { text: dlg._curCol ? dlg._curCol.label : ""; color: Theme.text3; font.pixelSize: 11 }
+                    Layout.leftMargin: 14; Layout.rightMargin: 14; Layout.topMargin: 9; Layout.bottomMargin: 3
+                    spacing: 6
+                    Text { text: qsTr("FILTER VALUES"); color: Theme.text3; font.pixelSize: 9; font.weight: Font.Bold }
+                    Text { text: dlg._curCol ? dlg._curCol.label : ""; color: Theme.text3; font.pixelSize: 10 }
                     Item { Layout.fillWidth: true }
-                    Text { text: dlg._count(dlg._curField) + qsTr(" selected"); color: Theme.text3; font.pixelSize: 11 }
+                    Text { text: dlg._count(dlg._curField) + qsTr(" selected"); color: Theme.text3; font.pixelSize: 10 }
                 }
 
                 // Distinct-value checkboxes (non-date columns)
                 Rectangle {
                     Layout.fillWidth: true; Layout.fillHeight: true
-                    Layout.leftMargin: 14; Layout.rightMargin: 14
+                    Layout.leftMargin: 11; Layout.rightMargin: 11
                     radius: Theme.radiusSm
                     color: Theme.surface
                     border.color: Theme.border
@@ -291,14 +291,14 @@ Popup {
                             required property int index
                             required property var modelData
                             width: valList.width
-                            height: 32
+                            height: 28
                             color: vHover.hovered ? Theme.surface2 : "transparent"
                             RowLayout {
                                 anchors.fill: parent
-                                anchors.leftMargin: 12; anchors.rightMargin: 12
-                                spacing: 10
+                                anchors.leftMargin: 10; anchors.rightMargin: 10
+                                spacing: 8
                                 Rectangle {
-                                    implicitWidth: 16; implicitHeight: 16; radius: 4
+                                    implicitWidth: 14; implicitHeight: 14; radius: 4
                                     Layout.alignment: Qt.AlignVCenter
                                     color: dlg._isChecked(dlg._curField, modelData.value) ? Theme.accent : "transparent"
                                     border.color: dlg._isChecked(dlg._curField, modelData.value) ? Theme.accent : Theme.border
@@ -306,11 +306,11 @@ Popup {
                                     MaterialIcon {
                                         anchors.centerIn: parent
                                         visible: dlg._isChecked(dlg._curField, modelData.value)
-                                        name: "check"; size: 13; color: "#ffffff"
+                                        name: "check"; size: 11; color: "#ffffff"
                                     }
                                 }
                                 Text {
-                                    text: modelData.label; color: Theme.text; font.pixelSize: 13
+                                    text: modelData.label; color: Theme.text; font.pixelSize: 12
                                     Layout.fillWidth: true; elide: Text.ElideRight
                                     verticalAlignment: Text.AlignVCenter
                                 }
@@ -321,18 +321,18 @@ Popup {
                     }
                     Text {
                         anchors.centerIn: parent
-                        width: parent.width - 36
+                        width: parent.width - 30
                         visible: !dlg._curIsDate && dlg._values.length === 0
                         text: qsTr("No distinct values to list — use the search box below.")
-                        color: Theme.text3; font.pixelSize: 12
+                        color: Theme.text3; font.pixelSize: 11
                         horizontalAlignment: Text.AlignHCenter; wrapMode: Text.WordWrap
                     }
                     Text {
                         anchors.centerIn: parent
-                        width: parent.width - 36
+                        width: parent.width - 30
                         visible: dlg._curIsDate
                         text: qsTr("Use the range below to filter by date.")
-                        color: Theme.text3; font.pixelSize: 12
+                        color: Theme.text3; font.pixelSize: 11
                         horizontalAlignment: Text.AlignHCenter; wrapMode: Text.WordWrap
                     }
                 }
@@ -340,10 +340,10 @@ Popup {
                 // Contains-search (disabled for date columns)
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 18; Layout.rightMargin: 18; Layout.topMargin: 10
-                    spacing: 5
+                    Layout.leftMargin: 14; Layout.rightMargin: 14; Layout.topMargin: 8
+                    spacing: 4
                     opacity: dlg._curIsDate ? 0.45 : 1.0
-                    Text { text: qsTr("Search Text"); color: Theme.text2; font.pixelSize: 12; font.weight: Font.DemiBold }
+                    Text { text: qsTr("Search Text"); color: Theme.text2; font.pixelSize: 11; font.weight: Font.DemiBold }
                     FilterInput {
                         id: searchInput
                         enabled: !dlg._curIsDate
@@ -355,13 +355,13 @@ Popup {
                 // Date range (enabled for date columns)
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 18; Layout.rightMargin: 18; Layout.topMargin: 8; Layout.bottomMargin: 14
-                    spacing: 5
+                    Layout.leftMargin: 14; Layout.rightMargin: 14; Layout.topMargin: 6; Layout.bottomMargin: 11
+                    spacing: 4
                     opacity: dlg._curIsDate ? 1.0 : 0.45
-                    Text { text: qsTr("Range"); color: Theme.text2; font.pixelSize: 12; font.weight: Font.DemiBold }
+                    Text { text: qsTr("Range"); color: Theme.text2; font.pixelSize: 11; font.weight: Font.DemiBold }
                     RowLayout {
                         Layout.fillWidth: true
-                        spacing: 10
+                        spacing: 8
                         FilterInput {
                             id: startInput
                             enabled: dlg._curIsDate
@@ -369,7 +369,7 @@ Popup {
                             placeholder: qsTr("Start value")
                             onEdited: (t) => dlg._setStart(dlg._curField, t)
                         }
-                        MaterialIcon { name: "arrow_forward"; size: 18; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+                        MaterialIcon { name: "arrow_forward"; size: 15; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
                         FilterInput {
                             id: endInput
                             enabled: dlg._curIsDate
@@ -387,8 +387,8 @@ Popup {
         // Footer
         RowLayout {
             Layout.fillWidth: true
-            Layout.margins: 12
-            spacing: 8
+            Layout.margins: 10
+            spacing: 6
             FooterButton {
                 icon: "restart_alt"; label: qsTr("Reset all")
                 onClicked: { dlg._sel = ({}); dlg._syncInputs() }
@@ -413,21 +413,21 @@ Popup {
         signal edited(string text)
         // `enabled` (inherited from Item) cascades to the child TextField.
         Layout.fillWidth: true
-        implicitHeight: 32
-        implicitWidth: 100
+        implicitHeight: 28
+        implicitWidth: 90
         radius: Theme.radiusSm
         color: Theme.surface
         border.color: tf.activeFocus ? Theme.accent : Theme.border
         TextField {
             id: tf
             anchors.fill: parent
-            anchors.leftMargin: 10; anchors.rightMargin: 10
+            anchors.leftMargin: 9; anchors.rightMargin: 9
             verticalAlignment: Text.AlignVCenter
             color: Theme.text
             placeholderText: fi.placeholder
             placeholderTextColor: Theme.text3
             background: null
-            font.pixelSize: 13
+            font.pixelSize: 12
             selectByMouse: true
             onTextEdited: fi.edited(text)
         }
@@ -439,8 +439,8 @@ Popup {
         property string label: ""
         property bool primary: false
         signal clicked()
-        implicitHeight: 34
-        implicitWidth: fbRow.implicitWidth + 26
+        implicitHeight: 28
+        implicitWidth: fbRow.implicitWidth + 20
         radius: Theme.radiusSm
         color: primary ? (fbHover.hovered ? Theme.accentStrong : Theme.accent)
                        : (fbHover.hovered ? Theme.surface2 : Theme.surface)
@@ -449,17 +449,17 @@ Popup {
         RowLayout {
             id: fbRow
             anchors.centerIn: parent
-            spacing: 6
+            spacing: 5
             MaterialIcon {
                 visible: fb.icon !== ""
-                name: fb.icon; size: 17
+                name: fb.icon; size: 14
                 color: fb.primary ? "#ffffff" : Theme.text2
                 Layout.alignment: Qt.AlignVCenter
             }
             Text {
                 text: fb.label
                 color: fb.primary ? "#ffffff" : Theme.text
-                font.pixelSize: 13; font.weight: fb.primary ? Font.DemiBold : Font.Medium
+                font.pixelSize: 12; font.weight: fb.primary ? Font.DemiBold : Font.Medium
                 verticalAlignment: Text.AlignVCenter
             }
         }

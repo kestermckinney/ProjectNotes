@@ -97,14 +97,14 @@ Item {
     ListView {
         id: list
         anchors.fill: parent
-        anchors.margins: 16
+        anchors.margins: 12
         clip: true
-        spacing: 8
+        spacing: 6
         model: DesktopAppController.allItemsModel
         reuseItems: true
         cacheBuffer: 800
         boundsBehavior: Flickable.StopAtBounds
-        footer: Item { width: 1; height: 8 }
+        footer: Item { width: 1; height: 6 }
         ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
         delegate: Card {
@@ -118,22 +118,22 @@ Item {
                     // matches the card it's currently showing.
                     readonly property var _recentComments: DesktopAppController.recentCommentsForItem(card.iid, 2)
                     width: ListView.view ? ListView.view.width : 0
-                    implicitHeight: itCol.implicitHeight + 24
+                    implicitHeight: itCol.implicitHeight + 18
                     color: hover.hovered ? Theme.raise : Theme.surface
 
                     ColumnLayout {
                         id: itCol
                         anchors.left: parent.left;  anchors.right: parent.right
                         anchors.top: parent.top
-                        anchors.leftMargin: 16; anchors.rightMargin: 16; anchors.topMargin: 12
-                        spacing: 5
+                        anchors.leftMargin: 12; anchors.rightMargin: 12; anchors.topMargin: 9
+                        spacing: 4
 
                         // Title row: type badge · number · name · status
                         RowLayout {
                             Layout.fillWidth: true
-                            spacing: 12
+                            spacing: 9
                             Rectangle {
-                                implicitWidth: 30; implicitHeight: 30; radius: 8
+                                implicitWidth: 26; implicitHeight: 26; radius: Theme.radiusSm
                                 color: Theme.accentSoft
                                 Layout.alignment: Qt.AlignVCenter
                                 MaterialIcon {
@@ -144,17 +144,17 @@ Item {
                                         if (t.indexOf("issue") >= 0) return "error"
                                         return "task_alt"
                                     }
-                                    size: 16; color: Theme.accent
+                                    size: 14; color: Theme.accent
                                 }
                             }
                             Text {
                                 text: (card.model.item_number || "").toString()
-                                color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold
+                                color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold
                                 Layout.alignment: Qt.AlignVCenter
                             }
                             Text {
                                 text: (card.model.item_name || qsTr("(unnamed)")).toString()
-                                color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold
+                                color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
                                 elide: Text.ElideRight; Layout.fillWidth: true
                                 Layout.alignment: Qt.AlignVCenter
                             }
@@ -163,25 +163,25 @@ Item {
                                 visible: (card.model.status || "").toString() !== ""
                                 radius: 5
                                 color: Qt.rgba(c.r, c.g, c.b, 0.14)
-                                implicitHeight: 18; implicitWidth: stt.implicitWidth + 14
+                                implicitHeight: 16; implicitWidth: stt.implicitWidth + 12
                                 Layout.alignment: Qt.AlignVCenter
                                 Text {
                                     id: stt; anchors.centerIn: parent
                                     text: (card.model.status || "").toString()
-                                    color: parent.c; font.pixelSize: 10; font.weight: Font.DemiBold
+                                    color: parent.c; font.pixelSize: 9; font.weight: Font.DemiBold
                                 }
                             }
                             KebabButton {
                                 Layout.alignment: Qt.AlignVCenter
                                 onClicked: (sx, sy) => card._openMenu(sx, sy)
                             }
-                            MaterialIcon { name: "chevron_right"; size: 20; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+                            MaterialIcon { name: "chevron_right"; size: 17; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
                         }
 
                         // Project · type · priority
                         Text {
                             Layout.fillWidth: true
-                            color: Theme.text3; font.pixelSize: 11
+                            color: Theme.text3; font.pixelSize: 10
                             elide: Text.ElideRight
                             text: {
                                 var proj = ((card.model.project_number || "") + " " + (card.model.project_name || "")).trim()
@@ -195,7 +195,7 @@ Item {
                         // Field-value metadata (same fields the Widgets All Items grid shows).
                         Flow {
                             Layout.fillWidth: true
-                            spacing: 14
+                            spacing: 11
                             MetaPair { label: qsTr("Assigned");   value: page._pname(card.model.assigned_to) }
                             MetaPair { label: qsTr("Identified By"); value: page._pname(card.model.identified_by) }
                             MetaPair { label: qsTr("Identified"); value: (card.model.date_identified || "").toString() }
@@ -209,13 +209,13 @@ Item {
                         // without opening the item.
                         RowLayout {
                             Layout.fillWidth: true
-                            spacing: 14
+                            spacing: 11
                             Text {
                                 Layout.fillWidth: true
                                 Layout.preferredWidth: 2
                                 visible: text !== ""
                                 text: (card.model.description || "").toString()
-                                color: Theme.text2; font.pixelSize: 12
+                                color: Theme.text2; font.pixelSize: 11
                                 wrapMode: Text.WordWrap; elide: Text.ElideRight
                                 maximumLineCount: 2
                             }
@@ -224,17 +224,17 @@ Item {
                                 Layout.preferredWidth: 1
                                 Layout.alignment: Qt.AlignTop
                                 visible: card._recentComments.length > 0
-                                spacing: 2
+                                spacing: 1
                                 Repeater {
                                     model: card._recentComments
                                     delegate: RowLayout {
                                         required property var modelData
                                         Layout.fillWidth: true
-                                        spacing: 5
-                                        MaterialIcon { name: "forum"; size: 11; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+                                        spacing: 4
+                                        MaterialIcon { name: "forum"; size: 10; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
                                         Text {
                                             text: (modelData.note || "").toString()
-                                            color: Theme.text3; font.pixelSize: 11
+                                            color: Theme.text3; font.pixelSize: 10
                                             elide: Text.ElideRight
                                             Layout.fillWidth: true
                                         }

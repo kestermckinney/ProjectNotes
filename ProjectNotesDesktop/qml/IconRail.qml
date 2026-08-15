@@ -24,28 +24,28 @@ Rectangle {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.topMargin: 10
-        anchors.bottomMargin: 10
-        spacing: 4
+        anchors.topMargin: 8
+        anchors.bottomMargin: 8
+        spacing: 3
 
         // Application ("hamburger") menu
         Item {
             id: menuBtn
             Layout.alignment: Qt.AlignHCenter
-            implicitWidth: 40; implicitHeight: 40
+            implicitWidth: 34; implicitHeight: 34
             Rectangle {
                 anchors.centerIn: parent
-                width: 38; height: 38; radius: 9
+                width: 32; height: 32; radius: Theme.radiusSm
                 color: appMenu.opened ? Theme.surface2
                                       : (menuHover.hovered ? Theme.surface2 : "transparent")
-                MaterialIcon { anchors.centerIn: parent; name: "menu"; size: 22; color: Theme.text }
+                MaterialIcon { anchors.centerIn: parent; name: "menu"; size: 18; color: Theme.text }
             }
             HoverHandler { id: menuHover }
             TapHandler { onTapped: appMenu.opened ? appMenu.close() : appMenu.open() }
 
             AppMenu {
                 id: appMenu
-                x: 46
+                x: 40
                 y: 0
                 // Keep the in-scene popup inside the window (rail.height is the
                 // window's logical height; the menu opens ~10px from the top).
@@ -79,15 +79,15 @@ Rectangle {
         // Avatar
         Rectangle {
             Layout.alignment: Qt.AlignHCenter
-            Layout.topMargin: 6
-            width: 30; height: 30; radius: 15
+            Layout.topMargin: 5
+            width: 26; height: 26; radius: 13
             color: Theme.accentStrong
             Text {
                 anchors.centerIn: parent
                 text: DesktopAppController.projectManagerInitials !== ""
                       ? DesktopAppController.projectManagerInitials : "PM"
                 color: "#ffffff"
-                font.pixelSize: 11
+                font.pixelSize: 10
                 font.bold: true
             }
         }
@@ -104,19 +104,19 @@ Rectangle {
         readonly property bool active: selectable && rail.currentSection === section
 
         Layout.alignment: Qt.AlignHCenter
-        implicitWidth: 40
-        implicitHeight: 40
+        implicitWidth: 34
+        implicitHeight: 34
 
         Rectangle {
             anchors.centerIn: parent
-            width: 38; height: 38; radius: 9
+            width: 32; height: 32; radius: Theme.radiusSm
             color: btn.active ? Theme.accentSoft
                               : (hover.hovered ? Theme.surface2 : "transparent")
 
             MaterialIcon {
                 anchors.centerIn: parent
                 name: btn.icon
-                size: 22
+                size: 18
                 color: btn.active ? Theme.accent : Theme.text2
             }
         }
@@ -136,8 +136,8 @@ Rectangle {
     component SyncRailButton: Item {
         id: sb
         Layout.alignment: Qt.AlignHCenter
-        implicitWidth: 40
-        implicitHeight: 40
+        implicitWidth: 34
+        implicitHeight: 34
 
         readonly property bool active:   DesktopAppController.syncActive
         readonly property bool netError: DesktopAppController.syncNetworkError
@@ -145,7 +145,7 @@ Rectangle {
 
         Rectangle {
             anchors.centerIn: parent
-            width: 38; height: 38; radius: 9
+            width: 32; height: 32; radius: Theme.radiusSm
             color: sbHover.hovered ? Theme.surface2 : "transparent"
         }
 
@@ -153,7 +153,7 @@ Rectangle {
         Canvas {
             id: ring
             anchors.centerIn: parent
-            width: 34; height: 34
+            width: 28; height: 28
             visible: sb.active && !sb.anyError
             property real prog: Math.max(0.03, DesktopAppController.syncProgress)
             property color trackColor: Theme.border
@@ -164,7 +164,7 @@ Rectangle {
                 var ctx = getContext("2d")
                 ctx.reset()
                 var cx = width / 2, cy = height / 2, r = width / 2 - 2
-                ctx.lineWidth = 2.5
+                ctx.lineWidth = 2
                 ctx.lineCap = "round"
                 ctx.strokeStyle = trackColor
                 ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI); ctx.stroke()
@@ -180,7 +180,7 @@ Rectangle {
             anchors.centerIn: parent
             name: sb.netError ? "cloud_off"
                   : (sb.active ? "sync" : "cloud_done")
-            size: 20
+            size: 17
             color: sb.netError ? Theme.red
                    : (sb.active ? Theme.accent
                       : (DesktopAppController.syncEnabled ? Theme.green : Theme.text3))

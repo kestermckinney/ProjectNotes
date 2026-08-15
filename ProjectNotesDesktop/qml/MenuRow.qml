@@ -34,52 +34,52 @@ Rectangle {
     signal activated()
 
     Layout.fillWidth: true
-    implicitHeight: 32
-    // Report the row's natural width (content + the 10px side margins) so a
+    implicitHeight: 24
+    // Report the row's natural width (content + the 6px side margins) so a
     // Popup can size itself to its widest row — the RowLayout is anchored, so
     // it won't drive width on its own.
-    implicitWidth: rowContent.implicitWidth + 20
+    implicitWidth: rowContent.implicitWidth + 12
     radius: Theme.radiusSm
     color: (rHover.hovered || mr.highlighted) ? Theme.surface2 : "transparent"
 
     RowLayout {
         id: rowContent
         anchors.fill: parent
-        anchors.leftMargin: 10; anchors.rightMargin: 10
-        spacing: 10
+        anchors.leftMargin: 6; anchors.rightMargin: 6
+        spacing: 6
 
         // Fixed-size icon slot even when icon is "" (AppMenu's group-trigger
         // rows have no icon), so labels stay column-aligned across rows.
         Item {
-            Layout.preferredWidth: 18; Layout.preferredHeight: 18
+            Layout.preferredWidth: 14; Layout.preferredHeight: 14
             Layout.alignment: Qt.AlignVCenter
             MaterialIcon {
                 anchors.centerIn: parent
                 visible: mr.icon !== ""
-                name: mr.icon; size: 18
+                name: mr.icon; size: 14
                 color: mr.danger ? Theme.red : Theme.text2
             }
         }
         Text {
             text: mr.label
             color: mr.danger ? Theme.red : Theme.text
-            font.pixelSize: 13
+            font.pixelSize: 11
             Layout.fillWidth: true; elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
         }
         MaterialIcon {
             visible: mr.toggle && mr.checked
-            name: "check"; size: 17; color: Theme.accent
+            name: "check"; size: 13; color: Theme.accent
             Layout.alignment: Qt.AlignVCenter
         }
         Text {
             visible: mr.trailingText !== "" && !mr.toggle && !mr.showChevron
-            text: mr.trailingText; color: Theme.text3; font.pixelSize: 11
+            text: mr.trailingText; color: Theme.text3; font.pixelSize: 10
             verticalAlignment: Text.AlignVCenter
         }
         MaterialIcon {
             visible: mr.showChevron
-            name: "chevron_right"; size: 16; color: Theme.text3
+            name: "chevron_right"; size: 12; color: Theme.text3
             Layout.alignment: Qt.AlignVCenter
         }
     }

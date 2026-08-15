@@ -34,14 +34,14 @@ Item {
     ScrollView {
         id: pageScroll
         anchors.fill: parent
-        anchors.margins: 20
+        anchors.margins: 14
         clip: true
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
         ColumnLayout {
             width: pageScroll.availableWidth
-            spacing: 14
+            spacing: 10
             FormField { label: qsTr("Client Name"); id: nameField; onEdited: page._changed = true }
-            Item { Layout.preferredHeight: 8 }
+            Item { Layout.preferredHeight: 6 }
         }
     }
 }

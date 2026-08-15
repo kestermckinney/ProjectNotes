@@ -52,14 +52,14 @@ Item {
     ListView {
         id: list
         anchors.fill: parent
-        anchors.margins: 16
+        anchors.margins: 12
         clip: true
-        spacing: 10
+        spacing: 7
         model: DesktopAppController.peopleModel
         reuseItems: true
         cacheBuffer: 800
         boundsBehavior: Flickable.StopAtBounds
-        footer: Item { width: 1; height: 8 }
+        footer: Item { width: 1; height: 6 }
         ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
         delegate: Card {
@@ -68,16 +68,16 @@ Item {
                     required property var model
                     readonly property string pid: model.id !== undefined ? model.id : ""
                     width: ListView.view ? ListView.view.width : 0
-                    implicitHeight: 64
+                    implicitHeight: 54
                     color: hover.hovered ? Theme.raise : Theme.surface
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 16
-                        anchors.rightMargin: 16
-                        spacing: 14
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        spacing: 11
                         Rectangle {
-                            width: 36; height: 36; radius: 18
+                            width: 30; height: 30; radius: 15
                             color: Theme.accentSoft
                             Text {
                                 anchors.centerIn: parent
@@ -87,15 +87,15 @@ Item {
                                     var p = n.split(" ")
                                     return (p[0][0] || "") + (p.length > 1 ? p[p.length-1][0] : "")
                                 }
-                                color: Theme.accent; font.pixelSize: 13; font.weight: Font.Bold
+                                color: Theme.accent; font.pixelSize: 12; font.weight: Font.Bold
                             }
                         }
                         ColumnLayout {
                             Layout.fillWidth: true
-                            spacing: 2
+                            spacing: 1
                             Text {
                                 text: (card.model.name || qsTr("(no name)")).toString()
-                                color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold
+                                color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
                                 elide: Text.ElideRight; Layout.fillWidth: true
                             }
                             Text {
@@ -104,7 +104,7 @@ Item {
                                     var r = (card.model.role || "").toString()
                                     return [r, e].filter(function(x){ return x !== "" }).join("  ·  ")
                                 }
-                                color: Theme.text3; font.pixelSize: 12
+                                color: Theme.text3; font.pixelSize: 11
                                 elide: Text.ElideRight; Layout.fillWidth: true
                             }
                         }
@@ -112,7 +112,7 @@ Item {
                             Layout.alignment: Qt.AlignVCenter
                             onClicked: (sx, sy) => card._openMenu(sx, sy)
                         }
-                        MaterialIcon { name: "chevron_right"; size: 20; color: Theme.text3 }
+                        MaterialIcon { name: "chevron_right"; size: 17; color: Theme.text3 }
                     }
 
                     // Populate the shared context menu for this row and open it at

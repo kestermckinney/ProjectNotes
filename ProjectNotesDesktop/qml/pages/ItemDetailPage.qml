@@ -108,13 +108,13 @@ Item {
     ScrollView {
         id: pageScroll
         anchors.fill: parent
-        anchors.margins: 18
+        anchors.margins: 13
         clip: true
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
         ColumnLayout {
             width: pageScroll.availableWidth
-            spacing: 14
+            spacing: 10
 
             RowLayout {
                 Layout.fillWidth: true
@@ -142,7 +142,7 @@ Item {
             }
 
             GridLayout {
-                Layout.fillWidth: true; columns: 2; columnSpacing: 14; rowSpacing: 12
+                Layout.fillWidth: true; columns: 2; columnSpacing: 10; rowSpacing: 9
                 FormField { label: qsTr("Item Number"); id: numberField; onEdited: page._changed = true }
                 ComboField {
                     label: qsTr("Type"); id: typeCombo
@@ -158,29 +158,29 @@ Item {
                 }
             }
 
-            Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: 11; font.weight: Font.DemiBold }
+            Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold }
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.max(90, descArea.contentHeight + 20)
+                Layout.preferredHeight: Math.max(76, descArea.contentHeight + 16)
                 radius: Theme.radiusSm
                 color: Theme.surface
                 border.color: descArea.activeFocus ? Theme.accent : Theme.border
                 TextArea {
                     id: descArea
                     anchors.fill: parent
-                    anchors.margins: 8
+                    anchors.margins: 7
                     color: Theme.text
                     wrapMode: TextEdit.WordWrap
                     selectByMouse: true
                     background: null
-                    font.pixelSize: 13
+                    font.pixelSize: 12
                     onTextChanged: page._changed = true
                     SpellCheckField { dialog: spellDialog }
                 }
             }
 
             GridLayout {
-                Layout.fillWidth: true; columns: 2; columnSpacing: 14; rowSpacing: 12
+                Layout.fillWidth: true; columns: 2; columnSpacing: 10; rowSpacing: 9
                 ComboField {
                     label: qsTr("Identified By"); id: identifiedCombo
                     options: page._peopleNames()
@@ -213,35 +213,35 @@ Item {
                 id: internalCheck
                 onToggled: page._changed = true
                 indicator: Rectangle {
-                    implicitWidth: 18; implicitHeight: 18; radius: 4
+                    implicitWidth: 16; implicitHeight: 16; radius: 4
                     x: internalCheck.leftPadding; y: parent.height/2 - height/2
                     color: internalCheck.checked ? Theme.accent : Theme.surface
                     border.color: internalCheck.checked ? Theme.accent : Theme.border
-                    MaterialIcon { anchors.centerIn: parent; visible: internalCheck.checked; name: "check"; size: 14; color: "#ffffff" }
+                    MaterialIcon { anchors.centerIn: parent; visible: internalCheck.checked; name: "check"; size: 12; color: "#ffffff" }
                 }
                 contentItem: Text {
-                    text: qsTr("Internal item"); color: Theme.text; font.pixelSize: 13
-                    leftPadding: internalCheck.indicator.width + 8; verticalAlignment: Text.AlignVCenter
+                    text: qsTr("Internal item"); color: Theme.text; font.pixelSize: 12
+                    leftPadding: internalCheck.indicator.width + 7; verticalAlignment: Text.AlignVCenter
                 }
             }
 
             // Comments / updates
             RowLayout {
                 Layout.fillWidth: true
-                Layout.topMargin: 6
-                MaterialIcon { name: "forum"; size: 18; color: Theme.text2 }
+                Layout.topMargin: 5
+                MaterialIcon { name: "forum"; size: 16; color: Theme.text2 }
                 Text {
                     text: qsTr("Comments"); color: Theme.text
-                    font.pixelSize: 15; font.weight: Font.Bold; Layout.fillWidth: true
+                    font.pixelSize: 14; font.weight: Font.Bold; Layout.fillWidth: true
                 }
                 Rectangle {
-                    implicitHeight: 28; implicitWidth: cRow.implicitWidth + 18
+                    implicitHeight: 26; implicitWidth: cRow.implicitWidth + 14
                     radius: Theme.radiusSm
                     color: cHover.hovered ? Theme.accentStrong : Theme.accent
                     RowLayout {
-                        id: cRow; anchors.centerIn: parent; spacing: 5
-                        MaterialIcon { name: "add"; size: 15; color: "#ffffff" }
-                        Text { text: qsTr("Add Comment"); color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold }
+                        id: cRow; anchors.centerIn: parent; spacing: 4
+                        MaterialIcon { name: "add"; size: 13; color: "#ffffff" }
+                        Text { text: qsTr("Add Comment"); color: "#ffffff"; font.pixelSize: 11; font.weight: Font.DemiBold }
                     }
                     HoverHandler { id: cHover }
                     TapHandler {
@@ -267,7 +267,7 @@ Item {
                     required property int index
                     required property var model
                     Layout.fillWidth: true
-                    implicitHeight: cCol.implicitHeight + 20
+                    implicitHeight: cCol.implicitHeight + 16
 
                     // Persist the row from whatever the three editors currently hold.
                     // On failure (a rule violation) reload the list so the editors
@@ -287,16 +287,16 @@ Item {
                     ColumnLayout {
                         id: cCol
                         anchors.fill: parent
-                        anchors.margins: 10
-                        spacing: 6
+                        anchors.margins: 8
+                        spacing: 5
                         RowLayout {
                             Layout.fillWidth: true
-                            spacing: 10
+                            spacing: 8
                             DateField {
                                 id: dateFld
                                 label: qsTr("Date Updated")
                                 text: (cCard.model.lastupdated_date || "").toString()
-                                Layout.preferredWidth: 150
+                                Layout.preferredWidth: 130
                                 onEdited: cCard._saveComment()
                             }
                             ComboField {
@@ -310,17 +310,17 @@ Item {
                                 onActivated: cCard._saveComment()
                             }
                             KebabButton {
-                                implicitWidth: 22; implicitHeight: 22
+                                implicitWidth: 20; implicitHeight: 20
                                 Layout.alignment: Qt.AlignBottom
-                                Layout.bottomMargin: 6
+                                Layout.bottomMargin: 5
                                 onClicked: (sx, sy) => cCard._menu(sx, sy)
                             }
                             Rectangle {
                                 Layout.alignment: Qt.AlignBottom
-                                Layout.bottomMargin: 6
-                                width: 22; height: 22; radius: 6
+                                Layout.bottomMargin: 5
+                                width: 20; height: 20; radius: Theme.radiusSm
                                 color: dHover.hovered ? Theme.redSoft : "transparent"
-                                MaterialIcon { anchors.centerIn: parent; name: "close"; size: 14; color: Theme.red }
+                                MaterialIcon { anchors.centerIn: parent; name: "close"; size: 12; color: Theme.red }
                                 HoverHandler { id: dHover }
                                 TapHandler {
                                     onTapped: {
@@ -342,7 +342,7 @@ Item {
                             wrapMode: TextEdit.WordWrap
                             selectByMouse: true
                             background: null
-                            font.pixelSize: 13
+                            font.pixelSize: 12
                             SpellCheckField { dialog: spellDialog }
                             onEditingFinished: cCard._saveComment()
                         }

@@ -20,34 +20,34 @@ ColumnLayout {
     signal edited(string text)
     signal editingFinished()
 
-    spacing: 4
+    spacing: 3
     Layout.fillWidth: true
 
     Text {
         text: root.label
         visible: root.label !== ""
         color: Theme.text3
-        font.pixelSize: 11
+        font.pixelSize: 10
         font.weight: Font.DemiBold
     }
     Rectangle {
         Layout.fillWidth: true
-        implicitHeight: 34
+        implicitHeight: 30
         radius: Theme.radiusSm
         color: root.readOnly ? Theme.surface2 : Theme.surface
         border.color: field.activeFocus ? Theme.accent : Theme.border
         TextField {
             id: field
             anchors.fill: parent
-            anchors.leftMargin: 10
-            anchors.rightMargin: 10
+            anchors.leftMargin: 9
+            anchors.rightMargin: 9
             verticalAlignment: Text.AlignVCenter
             color: Theme.text
             placeholderText: root.placeholder
             placeholderTextColor: Theme.text3
             readOnly: root.readOnly
             background: null
-            font.pixelSize: 13
+            font.pixelSize: 12
             selectByMouse: true
             onTextEdited: root.edited(text)
             onEditingFinished: root.editingFinished()

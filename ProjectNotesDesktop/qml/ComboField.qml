@@ -28,24 +28,24 @@ ColumnLayout {
     // stable while the user types; searching only hides rows, never swaps models.
     readonly property var _model: includeNone ? [noneLabel].concat(options) : options
 
-    spacing: 4
+    spacing: 3
     Layout.fillWidth: true
 
     Text {
         text: root.label
         visible: root.label !== ""
         color: Theme.text3
-        font.pixelSize: 11
+        font.pixelSize: 10
         font.weight: Font.DemiBold
     }
 
     ComboBox {
         id: combo
         Layout.fillWidth: true
-        implicitHeight: 34
+        implicitHeight: 30
         editable: root.searchable
         model: root._model
-        font.pixelSize: 13
+        font.pixelSize: 12
 
         // Current type-to-search text (lower-cased match target). Empty = show all.
         property string _filter: ""
@@ -106,8 +106,8 @@ ColumnLayout {
         }
 
         contentItem: TextField {
-            leftPadding: 10
-            rightPadding: 28
+            leftPadding: 9
+            rightPadding: 26
             text: combo.editable ? combo.editText : combo.displayText
             enabled: combo.editable          // disabled → clicks open the popup
             // Stay editable even while the search popup is open. (Binding to
@@ -135,11 +135,11 @@ ColumnLayout {
         }
         indicator: MaterialIcon {
             name: "expand_more"
-            size: 18
+            size: 16
             color: Theme.text3
             anchors.verticalCenter: parent.verticalCenter
             anchors.right: parent.right
-            anchors.rightMargin: 8
+            anchors.rightMargin: 7
         }
         popup: Popup {
             y: combo.height + 2
@@ -171,7 +171,7 @@ ColumnLayout {
             contentItem: Text {
                 text: itemDelegate.modelData
                 color: Theme.text
-                font.pixelSize: 13
+                font.pixelSize: 12
                 verticalAlignment: Text.AlignVCenter
             }
             background: Rectangle {

@@ -76,7 +76,7 @@ Column {
     // ── Header (drop target) ──────────────────────────────────────────────────
     Item {
         width: parent.width
-        height: 26
+        height: 22
 
         DropArea {
             id: headerDrop
@@ -94,13 +94,13 @@ Column {
 
         RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: 6
-            anchors.rightMargin: 6
-            spacing: 6
+            anchors.leftMargin: 5
+            anchors.rightMargin: 5
+            spacing: 5
 
             MaterialIcon {
                 name: group.isAll ? "workspaces" : (group.isUncategorized ? "folder_off" : group.folderIcon)
-                size: 15
+                size: 13
                 color: (group.isAll || group.isUncategorized) ? Theme.text3 : group.folderColor
             }
             Text {
@@ -119,7 +119,7 @@ Column {
             }
             MaterialIcon {
                 name: group.expanded ? "expand_more" : "chevron_right"
-                size: 16
+                size: 14
                 color: Theme.text3
             }
         }
@@ -146,13 +146,13 @@ Column {
                 ((modelData.project_number || "") + " " + (modelData.project_name || "")).trim()
 
             width: group.width
-            height: 30
+            height: 26
             clip: true
 
             Rectangle {
                 id: content
                 width: row.width - 4
-                height: 28
+                height: 24
                 x: 0; y: 1
                 radius: Theme.radiusSm
                 color: {
@@ -187,12 +187,12 @@ Column {
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 8
-                    anchors.rightMargin: 8
-                    spacing: 8
+                    anchors.leftMargin: 6
+                    anchors.rightMargin: 6
+                    spacing: 6
 
                     Rectangle {
-                        implicitWidth: 6; implicitHeight: 6; radius: 3
+                        implicitWidth: 5; implicitHeight: 5; radius: 2.5
                         Layout.alignment: Qt.AlignVCenter
                         color: {
                             var s = (row.modelData.project_status || "").toString().toLowerCase()
@@ -205,17 +205,17 @@ Column {
                     Text {
                         text: (row.modelData.project_number || "").toString()
                         color: Theme.text2
-                        font.pixelSize: 12
+                        font.pixelSize: 11
                         font.weight: Font.DemiBold
                         // Natural width, capped + elided so a long number never
                         // paints over the project name beside it.
-                        Layout.maximumWidth: 58
+                        Layout.maximumWidth: 52
                         elide: Text.ElideRight
                     }
                     Text {
                         text: (row.modelData.project_name || "").toString()
                         color: Theme.text
-                        font.pixelSize: 12
+                        font.pixelSize: 11
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
@@ -223,7 +223,7 @@ Column {
                     // below), so its own tap is not swallowed by the drag handler.
                     KebabButton {
                         id: kebab
-                        implicitWidth: 22; implicitHeight: 22
+                        implicitWidth: 20; implicitHeight: 20
                         Layout.alignment: Qt.AlignVCenter
                         onClicked: (sx, sy) => group.menuRequested(row.projId, row.ctxLabel, sx, sy)
                     }

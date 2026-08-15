@@ -20,7 +20,7 @@ Popup {
     padding: 0
     parent: Overlay.overlay
     scale: Theme.uiScale   // match the zoomed workspace (centered origin)
-    width: 380
+    width: 340
     height: content.implicitHeight + topPadding + bottomPadding
     x: parent ? Math.round((parent.width - width) / 2) : 0
     y: parent ? Math.round((parent.height - height) / 2) : 0
@@ -62,12 +62,12 @@ Popup {
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.margins: 16
-            spacing: 10
-            MaterialIcon { name: "drive_file_move"; size: 20; color: Theme.accent; Layout.alignment: Qt.AlignVCenter }
+            Layout.margins: 13
+            spacing: 8
+            MaterialIcon { name: "drive_file_move"; size: 17; color: Theme.accent; Layout.alignment: Qt.AlignVCenter }
             Text {
                 text: qsTr("Move Tracker Item")
-                color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
+                color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold
                 Layout.fillWidth: true
             }
         }
@@ -75,13 +75,13 @@ Popup {
 
         ColumnLayout {
             Layout.fillWidth: true
-            Layout.margins: 16
-            spacing: 10
+            Layout.margins: 13
+            spacing: 8
 
             Text {
                 Layout.fillWidth: true
                 text: qsTr("Move this item to %1?").arg(dlg._info.projectName || "")
-                color: Theme.text; font.pixelSize: 13
+                color: Theme.text; font.pixelSize: 12
                 wrapMode: Text.WordWrap
             }
             Text {
@@ -89,7 +89,7 @@ Popup {
                 visible: dlg._info.willRenumber === true
                 text: qsTr("Item number will change from %1 to %2 — %2 is the next available number in the destination project.")
                         .arg(dlg._info.oldNumber || "").arg(dlg._info.newNumber || "")
-                color: Theme.text2; font.pixelSize: 12
+                color: Theme.text2; font.pixelSize: 11
                 wrapMode: Text.WordWrap
             }
             Text {
@@ -97,7 +97,7 @@ Popup {
                 visible: dlg._info.willClearMeeting === true
                 text: qsTr("This item is linked to the meeting “%1” — that link will be removed, since meetings are specific to one project.")
                         .arg(dlg._info.meetingTitle || "")
-                color: Theme.text2; font.pixelSize: 12
+                color: Theme.text2; font.pixelSize: 11
                 wrapMode: Text.WordWrap
             }
             Text {
@@ -105,28 +105,28 @@ Popup {
                 visible: (dlg._info.membersToAdd || []).length > 0
                 text: qsTr("Will also be added to the destination project's team: %1")
                         .arg((dlg._info.membersToAdd || []).map(function(m){ return m.name }).join(", "))
-                color: Theme.text3; font.pixelSize: 11
+                color: Theme.text3; font.pixelSize: 10
                 wrapMode: Text.WordWrap
             }
         }
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.margins: 16
-            spacing: 10
+            Layout.margins: 13
+            spacing: 8
             Item { Layout.fillWidth: true }
             Rectangle {
-                implicitWidth: 80; implicitHeight: 32; radius: Theme.radiusSm
+                implicitWidth: 70; implicitHeight: 28; radius: Theme.radiusSm
                 color: cancelHover.hovered ? Theme.surface2 : "transparent"
                 border.color: Theme.border
-                Text { anchors.centerIn: parent; text: qsTr("Cancel"); color: Theme.text2; font.pixelSize: 13 }
+                Text { anchors.centerIn: parent; text: qsTr("Cancel"); color: Theme.text2; font.pixelSize: 12 }
                 HoverHandler { id: cancelHover }
                 TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: dlg._dismiss() }
             }
             Rectangle {
-                implicitWidth: 90; implicitHeight: 32; radius: Theme.radiusSm
+                implicitWidth: 78; implicitHeight: 28; radius: Theme.radiusSm
                 color: moveHover.hovered ? Theme.accentStrong : Theme.accent
-                Text { anchors.centerIn: parent; text: qsTr("Move"); color: "#ffffff"; font.pixelSize: 13; font.weight: Font.DemiBold }
+                Text { anchors.centerIn: parent; text: qsTr("Move"); color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold }
                 HoverHandler { id: moveHover }
                 TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: dlg._confirm() }
             }

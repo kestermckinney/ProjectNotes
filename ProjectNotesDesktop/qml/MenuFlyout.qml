@@ -60,8 +60,8 @@ Popup {
     parent: Overlay.overlay
     modal: true
     dim: false
-    padding: 6
-    width: Math.max(180, Math.min(implicitContentWidth + leftPadding + rightPadding, 420))
+    padding: 3
+    width: Math.max(160, Math.min(implicitContentWidth + leftPadding + rightPadding, 340))
     property int maxFlyoutHeight: 480
     height: Math.min(_scroll.implicitHeight + topPadding + bottomPadding, maxFlyoutHeight)
     scale: Theme.uiScale

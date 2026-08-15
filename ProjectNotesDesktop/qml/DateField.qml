@@ -5,6 +5,7 @@ import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import QtQuick.Window
+import ProjectNotesDesktop
 
 // Labeled date input. Stores/produces dates as MM/DD/YYYY (the format the data
 // models display and accept). Type directly, or click the calendar to pick.
@@ -14,7 +15,7 @@ ColumnLayout {
     property string text: ""          // MM/DD/YYYY
     signal edited(string value)
 
-    spacing: 4
+    spacing: 3
     Layout.fillWidth: true
 
     function _parse(s) {
@@ -32,23 +33,23 @@ ColumnLayout {
         text: root.label
         visible: root.label !== ""
         color: Theme.text3
-        font.pixelSize: 11
+        font.pixelSize: 10
         font.weight: Font.DemiBold
     }
 
     Rectangle {
         id: fieldBox
         Layout.fillWidth: true
-        implicitHeight: 34
+        implicitHeight: 30
         radius: Theme.radiusSm
         color: Theme.surface
         border.color: (field.activeFocus || popup.visible) ? Theme.accent : Theme.border
 
         RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: 10
-            anchors.rightMargin: 6
-            spacing: 4
+            anchors.leftMargin: 9
+            anchors.rightMargin: 5
+            spacing: 3
             TextField {
                 id: field
                 Layout.fillWidth: true
@@ -58,7 +59,7 @@ ColumnLayout {
                 placeholderTextColor: Theme.text3
                 color: Theme.text
                 background: null
-                font.pixelSize: 13
+                font.pixelSize: 12
                 selectByMouse: true
                 onEditingFinished: { root.text = text; root.edited(text) }
                 // Keep in sync when the bound value changes externally.
@@ -68,9 +69,9 @@ ColumnLayout {
                 }
             }
             Rectangle {
-                Layout.preferredWidth: 26; Layout.preferredHeight: 26; radius: 6
+                Layout.preferredWidth: 22; Layout.preferredHeight: 22; radius: Theme.radiusSm
                 color: calHover.hovered ? Theme.surface2 : "transparent"
-                MaterialIcon { anchors.centerIn: parent; name: "calendar_today"; size: 16; color: Theme.text2 }
+                MaterialIcon { anchors.centerIn: parent; name: "calendar_today"; size: 14; color: Theme.text2 }
                 HoverHandler { id: calHover }
                 TapHandler { onTapped: popup.openAt(root._parse(root.text)) }
             }
@@ -131,12 +132,12 @@ ColumnLayout {
                                                 "July","August","September","October","November","December"]
 
             contentItem: ColumnLayout {
-                spacing: 6
+                spacing: 5
                 RowLayout {
                     Layout.fillWidth: true
                     Rectangle {
-                        width: 26; height: 26; radius: 6; color: pHover.hovered ? Theme.surface2 : "transparent"
-                        MaterialIcon { anchors.centerIn: parent; name: "chevron_left"; size: 18; color: Theme.text2 }
+                        width: 22; height: 22; radius: Theme.radiusSm; color: pHover.hovered ? Theme.surface2 : "transparent"
+                        MaterialIcon { anchors.centerIn: parent; name: "chevron_left"; size: 16; color: Theme.text2 }
                         HoverHandler { id: pHover }
                         TapHandler { onTapped: popup._prev() }
                     }
@@ -144,11 +145,11 @@ ColumnLayout {
                         Layout.fillWidth: true
                         horizontalAlignment: Text.AlignHCenter
                         text: popup._monthNames[popup.shownMonth] + " " + popup.shownYear
-                        color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
+                        color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
                     }
                     Rectangle {
-                        width: 26; height: 26; radius: 6; color: nHover.hovered ? Theme.surface2 : "transparent"
-                        MaterialIcon { anchors.centerIn: parent; name: "chevron_right"; size: 18; color: Theme.text2 }
+                        width: 22; height: 22; radius: Theme.radiusSm; color: nHover.hovered ? Theme.surface2 : "transparent"
+                        MaterialIcon { anchors.centerIn: parent; name: "chevron_right"; size: 16; color: Theme.text2 }
                         HoverHandler { id: nHover }
                         TapHandler { onTapped: popup._next() }
                     }
@@ -159,7 +160,7 @@ ColumnLayout {
                         required property var model
                         horizontalAlignment: Text.AlignHCenter
                         text: model.shortName
-                        color: Theme.text3; font.pixelSize: 10; font.weight: Font.Bold
+                        color: Theme.text3; font.pixelSize: 9; font.weight: Font.Bold
                     }
                 }
                 MonthGrid {
@@ -169,17 +170,17 @@ ColumnLayout {
                     year: popup.shownYear
                     delegate: Item {
                         required property var model
-                        implicitWidth: 32; implicitHeight: 28
+                        implicitWidth: 28; implicitHeight: 24
                         readonly property bool inMonth: model.month === popup.shownMonth
                         Rectangle {
                             anchors.centerIn: parent
-                            width: 26; height: 24; radius: 6
+                            width: 22; height: 20; radius: Theme.radiusSm
                             color: dtHover.hovered && inMonth ? Theme.accentSoft : "transparent"
                             Text {
                                 anchors.centerIn: parent
                                 text: model.day
                                 color: inMonth ? Theme.text : Theme.text3
-                                font.pixelSize: 12
+                                font.pixelSize: 11
                             }
                             HoverHandler { id: dtHover }
                             TapHandler {

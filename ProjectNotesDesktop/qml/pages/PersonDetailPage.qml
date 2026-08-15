@@ -59,29 +59,29 @@ Item {
     ScrollView {
         id: pageScroll
         anchors.fill: parent
-        anchors.margins: 20
+        anchors.margins: 14
         clip: true
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
         ColumnLayout {
             width: pageScroll.availableWidth
-            spacing: 14
+            spacing: 10
 
             // Header with name field and kebab menu
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 12
+                spacing: 9
                 FormField {
                     label: qsTr("Name"); id: nameField; onEdited: page._changed = true
                     Layout.fillWidth: true
                 }
                 KebabButton {
                     Layout.alignment: Qt.AlignBottom
-                    Layout.bottomMargin: 6
+                    Layout.bottomMargin: 4
                     onClicked: (sx, sy) => page._openSelfMenu(sx, sy)
                 }
             }
             GridLayout {
-                Layout.fillWidth: true; columns: 2; columnSpacing: 14; rowSpacing: 12
+                Layout.fillWidth: true; columns: 2; columnSpacing: 10; rowSpacing: 9
                 FormField { label: qsTr("Email"); id: emailField; onEdited: page._changed = true }
                 ComboField {
                     label: qsTr("Client"); id: clientCombo; options: page._clientNames()

@@ -117,7 +117,7 @@ Rectangle {
         // Header: back / forward + current topic title.
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: 46
+            implicitHeight: 40
             color: Theme.surface
 
             Rectangle {                       // bottom divider
@@ -128,8 +128,8 @@ Rectangle {
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 10; anchors.rightMargin: 14
-                spacing: 6
+                anchors.leftMargin: 9; anchors.rightMargin: 12
+                spacing: 5
 
                 NavButton {
                     glyph: "arrow_back"
@@ -144,10 +144,10 @@ Rectangle {
 
                 Text {
                     Layout.fillWidth: true
-                    Layout.leftMargin: 4
+                    Layout.leftMargin: 3
                     text: HelpController.topicTitle(page.current)
                     color: Theme.text
-                    font.pixelSize: 15
+                    font.pixelSize: 14
                     font.weight: Font.DemiBold
                     elide: Text.ElideRight
                 }
@@ -162,7 +162,7 @@ Rectangle {
 
             // ── Left pane: search + TOC / results ────────────────────────────────
             Rectangle {
-                Layout.preferredWidth: 288
+                Layout.preferredWidth: 252
                 Layout.fillHeight: true
                 color: Theme.sidebar
 
@@ -179,8 +179,8 @@ Rectangle {
                     // Search box
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.margins: 10
-                        implicitHeight: 34
+                        Layout.margins: 9
+                        implicitHeight: 30
                         radius: Theme.radiusSm
                         color: Theme.surface
                         border.color: searchInput.activeFocus ? Theme.accent : Theme.border
@@ -188,10 +188,10 @@ Rectangle {
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.leftMargin: 9; anchors.rightMargin: 6
-                            spacing: 6
+                            anchors.leftMargin: 8; anchors.rightMargin: 5
+                            spacing: 5
 
-                            MaterialIcon { name: "search"; size: 17; color: Theme.text3 }
+                            MaterialIcon { name: "search"; size: 14; color: Theme.text3 }
 
                             TextField {
                                 id: searchInput
@@ -202,12 +202,12 @@ Rectangle {
                                 color: Theme.text
                                 placeholderTextColor: Theme.text3
                                 background: null
-                                font.pixelSize: 13
+                                font.pixelSize: 12
                                 selectByMouse: true
                             }
 
                             MaterialIcon {
-                                name: "close"; size: 16; color: Theme.text3
+                                name: "close"; size: 14; color: Theme.text3
                                 visible: page.query.length > 0
                                 MouseArea {
                                     anchors.fill: parent; cursorShape: Qt.PointingHandCursor
@@ -238,8 +238,8 @@ Rectangle {
                                 visible: page.query.length > 0 && page.results.length === 0
                                 text: qsTr("No results for “%1”.").arg(page.query)
                                 color: Theme.text3
-                                font.pixelSize: 12
-                                Layout.margins: 12
+                                font.pixelSize: 11
+                                Layout.margins: 10
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
                             }
@@ -249,8 +249,8 @@ Rectangle {
                                 delegate: Rectangle {
                                     required property var modelData
                                     Layout.fillWidth: true
-                                    Layout.leftMargin: 6; Layout.rightMargin: 6
-                                    implicitHeight: resCol.implicitHeight + 12
+                                    Layout.leftMargin: 5; Layout.rightMargin: 5
+                                    implicitHeight: resCol.implicitHeight + 10
                                     radius: Theme.radiusSm
                                     color: resHover.hovered ? Theme.surface2 : "transparent"
 
@@ -258,12 +258,12 @@ Rectangle {
                                         id: resCol
                                         anchors.left: parent.left; anchors.right: parent.right
                                         anchors.verticalCenter: parent.verticalCenter
-                                        anchors.leftMargin: 10; anchors.rightMargin: 10
-                                        spacing: 2
+                                        anchors.leftMargin: 8; anchors.rightMargin: 8
+                                        spacing: 1
                                         Text {
                                             text: modelData.title
                                             color: Theme.text
-                                            font.pixelSize: 13
+                                            font.pixelSize: 12
                                             font.weight: Font.DemiBold
                                             Layout.fillWidth: true
                                             elide: Text.ElideRight
@@ -272,7 +272,7 @@ Rectangle {
                                             visible: (modelData.snippet || "").length > 0
                                             text: modelData.snippet
                                             color: Theme.text3
-                                            font.pixelSize: 11
+                                            font.pixelSize: 10
                                             Layout.fillWidth: true
                                             wrapMode: Text.WordWrap
                                             maximumLineCount: 2
@@ -295,21 +295,21 @@ Rectangle {
                                     // Section header (collapsible)
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        implicitHeight: 34
+                                        implicitHeight: 30
                                         color: secHover.hovered ? Theme.surface2 : "transparent"
                                         RowLayout {
                                             anchors.fill: parent
-                                            anchors.leftMargin: 8; anchors.rightMargin: 10
-                                            spacing: 4
+                                            anchors.leftMargin: 7; anchors.rightMargin: 8
+                                            spacing: 3
                                             MaterialIcon {
                                                 name: page.expanded[modelData.title] ? "expand_more" : "chevron_right"
-                                                size: 18; color: Theme.text2
+                                                size: 16; color: Theme.text2
                                             }
                                             Text {
                                                 Layout.fillWidth: true
                                                 text: modelData.title.toUpperCase()
                                                 color: Theme.text2
-                                                font.pixelSize: 11
+                                                font.pixelSize: 10
                                                 font.weight: Font.Bold
                                                 elide: Text.ElideRight
                                             }
@@ -325,7 +325,7 @@ Rectangle {
                                             required property var modelData
                                             readonly property bool isCurrent: modelData.path === page.current
                                             Layout.fillWidth: true
-                                            implicitHeight: 30
+                                            implicitHeight: 27
                                             color: isCurrent ? Theme.accentSoft
                                                              : (itemHover.hovered ? Theme.surface2 : "transparent")
                                             Rectangle {           // active accent bar
@@ -335,11 +335,11 @@ Rectangle {
                                             }
                                             Text {
                                                 anchors.fill: parent
-                                                anchors.leftMargin: 30; anchors.rightMargin: 10
+                                                anchors.leftMargin: 26; anchors.rightMargin: 8
                                                 verticalAlignment: Text.AlignVCenter
                                                 text: modelData.title
                                                 color: isCurrent ? Theme.accentStrong : Theme.text
-                                                font.pixelSize: 13
+                                                font.pixelSize: 12
                                                 font.weight: isCurrent ? Font.DemiBold : Font.Normal
                                                 elide: Text.ElideRight
                                             }
@@ -350,7 +350,7 @@ Rectangle {
                                 }
                             }
 
-                            Item { Layout.preferredHeight: 10 }   // bottom padding
+                            Item { Layout.preferredHeight: 8 }   // bottom padding
                         }
                     }
                 }
@@ -363,19 +363,19 @@ Rectangle {
                 Layout.fillHeight: true
                 clip: true
                 contentWidth: width
-                contentHeight: docText.implicitHeight + 48
+                contentHeight: docText.implicitHeight + 40
                 boundsBehavior: Flickable.StopAtBounds
                 ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
                 Text {
                     id: docText
-                    x: 28; y: 24
-                    width: contentFlick.width - 56
+                    x: 24; y: 20
+                    width: contentFlick.width - 48
                     text: HelpController.topicMarkdown(page.current)
                     textFormat: Text.MarkdownText
                     wrapMode: Text.WordWrap
                     color: Theme.text
-                    font.pixelSize: 14
+                    font.pixelSize: 13
                     onLinkActivated: (link) => {
                         var t = HelpController.resolveLink(page.current, link)
                         if (t && t.length) page.navigate(t)
@@ -392,13 +392,13 @@ Rectangle {
         id: btn
         property string glyph: ""
         signal clicked()
-        implicitWidth: 30; implicitHeight: 30
+        implicitWidth: 26; implicitHeight: 26
         radius: Theme.radiusSm
         color: btn.enabled && btnHover.hovered ? Theme.surface2 : "transparent"
         opacity: btn.enabled ? 1.0 : 0.35
         MaterialIcon {
             anchors.centerIn: parent
-            name: btn.glyph; size: 20; color: Theme.text2
+            name: btn.glyph; size: 17; color: Theme.text2
         }
         HoverHandler { id: btnHover }
         TapHandler { onTapped: btn.clicked() }

@@ -4,12 +4,13 @@
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
+import ProjectNotesDesktop
 
 // Breadcrumb / actions bar above the main content region.
 Rectangle {
     id: bar
     color: Theme.bg
-    implicitHeight: 52
+    implicitHeight: 44
 
     property string crumbIcon: "description"
     property string crumbTitle: "Projects"
@@ -58,35 +59,35 @@ Rectangle {
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: 18
-        anchors.rightMargin: 16
-        spacing: 12
+        anchors.leftMargin: 14
+        anchors.rightMargin: 12
+        spacing: 9
 
         // Back button (shown when navigated into a detail page)
         Rectangle {
             visible: bar.showBack
-            implicitWidth: 30; implicitHeight: 30; radius: Theme.radiusSm
+            implicitWidth: 26; implicitHeight: 26; radius: Theme.radiusSm
             color: backHover.hovered ? Theme.surface2 : "transparent"
-            MaterialIcon { anchors.centerIn: parent; name: "arrow_back"; size: 18; color: Theme.text2 }
+            MaterialIcon { anchors.centerIn: parent; name: "arrow_back"; size: 16; color: Theme.text2 }
             HoverHandler { id: backHover }
             TapHandler { onTapped: bar.backClicked() }
         }
 
-        MaterialIcon { name: bar.crumbIcon; size: 18; color: Theme.text3 }
+        MaterialIcon { name: bar.crumbIcon; size: 16; color: Theme.text3 }
         Text {
             text: bar.crumbTitle
             color: Theme.text
-            font.pixelSize: 15
+            font.pixelSize: 14
             font.weight: Font.DemiBold
         }
         MaterialIcon {
-            name: "chevron_right"; size: 18; color: Theme.text3
+            name: "chevron_right"; size: 16; color: Theme.text3
             visible: bar.crumbSub !== ""
         }
         Text {
             text: bar.crumbSub
             color: Theme.text2
-            font.pixelSize: 13
+            font.pixelSize: 12
             visible: bar.crumbSub !== ""
         }
 
@@ -98,19 +99,19 @@ Rectangle {
         // another toolbar. Click opens a preset picker.
         Rectangle {
             id: zoomIndicator
-            implicitHeight: 28
-            implicitWidth: zoomRow.implicitWidth + 14
+            implicitHeight: 24
+            implicitWidth: zoomRow.implicitWidth + 12
             radius: Theme.radiusSm
             color: (zoomHover.hovered || zoomMenu.visible) ? Theme.surface2 : "transparent"
             RowLayout {
                 id: zoomRow
                 anchors.centerIn: parent
-                spacing: 4
-                MaterialIcon { name: "zoom_in"; size: 14; color: Theme.text3 }
+                spacing: 3
+                MaterialIcon { name: "zoom_in"; size: 12; color: Theme.text3 }
                 Text {
                     text: Math.round(Theme.uiScale * 100) + "%"
                     color: Theme.text2
-                    font.pixelSize: 12
+                    font.pixelSize: 11
                 }
             }
             HoverHandler { id: zoomHover }
@@ -133,7 +134,7 @@ Rectangle {
 
             modal: true
             dim: false
-            padding: 5
+            padding: 4
             width: _zoomContent.implicitWidth + leftPadding + rightPadding
             height: _zoomContent.implicitHeight + topPadding + bottomPadding
             // Deliberately an in-scene popup (see RecordContextMenu) — popupType:
@@ -166,25 +167,25 @@ Rectangle {
                         required property int modelData
                         readonly property bool current: Math.round(Theme.uiScale * 100) === modelData
                         Layout.fillWidth: true
-                        implicitWidth: levelContent.implicitWidth + 20
-                        implicitHeight: 30
+                        implicitWidth: levelContent.implicitWidth + 16
+                        implicitHeight: 26
                         radius: Theme.radiusSm
                         color: levelHover.hovered ? Theme.surface2 : "transparent"
                         RowLayout {
                             id: levelContent
                             anchors.fill: parent
-                            anchors.leftMargin: 10; anchors.rightMargin: 10
-                            spacing: 10
+                            anchors.leftMargin: 8; anchors.rightMargin: 8
+                            spacing: 8
                             Text {
                                 text: levelRow.modelData + "%"
                                 color: Theme.text
-                                font.pixelSize: 13
+                                font.pixelSize: 12
                                 font.weight: levelRow.current ? Font.DemiBold : Font.Normal
                                 Layout.fillWidth: true
                             }
                             MaterialIcon {
                                 visible: levelRow.current
-                                name: "check"; size: 15; color: Theme.accent
+                                name: "check"; size: 13; color: Theme.accent
                             }
                         }
                         HoverHandler { id: levelHover }
@@ -203,17 +204,17 @@ Rectangle {
         // Delete record (shown on record detail pages)
         Rectangle {
             visible: bar.showDelete
-            implicitHeight: 34
-            implicitWidth: delRow.implicitWidth + 22
+            implicitHeight: 28
+            implicitWidth: delRow.implicitWidth + 18
             radius: Theme.radiusSm
             color: delHover.hovered ? Theme.redSoft : Theme.surface
             border.color: delHover.hovered ? Theme.red : Theme.border
             RowLayout {
                 id: delRow
                 anchors.centerIn: parent
-                spacing: 6
-                MaterialIcon { name: "delete"; size: 17; color: Theme.red }
-                Text { text: qsTr("Delete"); color: Theme.red; font.pixelSize: 13 }
+                spacing: 5
+                MaterialIcon { name: "delete"; size: 15; color: Theme.red }
+                Text { text: qsTr("Delete"); color: Theme.red; font.pixelSize: 12 }
             }
             HoverHandler { id: delHover }
             TapHandler { onTapped: bar.deleteClicked() }
@@ -222,17 +223,17 @@ Rectangle {
         // Export XML (shown on record detail pages)
         Rectangle {
             visible: bar.showExport
-            implicitHeight: 34
-            implicitWidth: expRow.implicitWidth + 22
+            implicitHeight: 28
+            implicitWidth: expRow.implicitWidth + 18
             radius: Theme.radiusSm
             color: expHover.hovered ? Theme.surface2 : Theme.surface
             border.color: Theme.border
             RowLayout {
                 id: expRow
                 anchors.centerIn: parent
-                spacing: 6
-                MaterialIcon { name: "download"; size: 17; color: Theme.text2 }
-                Text { text: qsTr("Export XML"); color: Theme.text; font.pixelSize: 13 }
+                spacing: 5
+                MaterialIcon { name: "download"; size: 15; color: Theme.text2 }
+                Text { text: qsTr("Export XML"); color: Theme.text; font.pixelSize: 12 }
             }
             HoverHandler { id: expHover }
             TapHandler { onTapped: bar.exportClicked() }
@@ -241,17 +242,17 @@ Rectangle {
         // Global search box
         Rectangle {
             visible: bar.showSearch
-            Layout.preferredWidth: 260
-            implicitHeight: 34
+            Layout.preferredWidth: 220
+            implicitHeight: 28
             radius: Theme.radiusSm
             color: Theme.surface
             border.color: Theme.border
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 10
-                anchors.rightMargin: 8
-                spacing: 8
-                MaterialIcon { name: "search"; size: 18; color: Theme.text3 }
+                anchors.leftMargin: 9
+                anchors.rightMargin: 7
+                spacing: 6
+                MaterialIcon { name: "search"; size: 16; color: Theme.text3 }
                 TextField {
                     id: searchField
                     Layout.fillWidth: true
@@ -259,10 +260,10 @@ Rectangle {
                     color: Theme.text
                     placeholderTextColor: Theme.text3
                     background: null
-                    font.pixelSize: 13
+                    font.pixelSize: 12
                     onTextEdited: bar.searchEdited(text)
                 }
-                Text { text: "⌘K"; color: Theme.text3; font.pixelSize: 11 }
+                Text { text: "⌘K"; color: Theme.text3; font.pixelSize: 10 }
             }
         }
 
@@ -270,17 +271,17 @@ Rectangle {
         // highlighted (accent bg/border/icon) while filterActive is true.
         Rectangle {
             visible: bar.showFilter
-            implicitHeight: 34
-            implicitWidth: filtRow.implicitWidth + 22
+            implicitHeight: 28
+            implicitWidth: filtRow.implicitWidth + 18
             radius: Theme.radiusSm
             color: bar.filterActive ? Theme.accentSoft : (filtHover.hovered ? Theme.surface2 : Theme.surface)
             border.color: bar.filterActive ? Theme.accent : Theme.border
             RowLayout {
                 id: filtRow
                 anchors.centerIn: parent
-                spacing: 6
-                MaterialIcon { name: "filter_list"; size: 17; color: bar.filterActive ? Theme.accent : Theme.text2; Layout.alignment: Qt.AlignVCenter }
-                Text { text: qsTr("Filter"); color: bar.filterActive ? Theme.accent : Theme.text; font.pixelSize: 13; verticalAlignment: Text.AlignVCenter }
+                spacing: 5
+                MaterialIcon { name: "filter_list"; size: 15; color: bar.filterActive ? Theme.accent : Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                Text { text: qsTr("Filter"); color: bar.filterActive ? Theme.accent : Theme.text; font.pixelSize: 12; verticalAlignment: Text.AlignVCenter }
             }
             HoverHandler { id: filtHover }
             TapHandler { onTapped: bar.filterClicked() }
@@ -291,17 +292,17 @@ Rectangle {
         Rectangle {
             id: sortBtn
             visible: bar.showSort
-            implicitHeight: 34
-            implicitWidth: sortRow.implicitWidth + 22
+            implicitHeight: 28
+            implicitWidth: sortRow.implicitWidth + 18
             radius: Theme.radiusSm
             color: bar.sortActive ? Theme.accentSoft : (sortHover.hovered ? Theme.surface2 : Theme.surface)
             border.color: bar.sortActive ? Theme.accent : Theme.border
             RowLayout {
                 id: sortRow
                 anchors.centerIn: parent
-                spacing: 6
-                MaterialIcon { name: "swap_vert"; size: 17; color: bar.sortActive ? Theme.accent : Theme.text2; Layout.alignment: Qt.AlignVCenter }
-                Text { text: qsTr("Sort"); color: bar.sortActive ? Theme.accent : Theme.text; font.pixelSize: 13; verticalAlignment: Text.AlignVCenter }
+                spacing: 5
+                MaterialIcon { name: "swap_vert"; size: 15; color: bar.sortActive ? Theme.accent : Theme.text2; Layout.alignment: Qt.AlignVCenter }
+                Text { text: qsTr("Sort"); color: bar.sortActive ? Theme.accent : Theme.text; font.pixelSize: 12; verticalAlignment: Text.AlignVCenter }
             }
             HoverHandler { id: sortHover }
             TapHandler { onTapped: bar.sortClicked() }
@@ -310,17 +311,14 @@ Rectangle {
         // Add button
         Button {
             visible: bar.showNew
-            implicitHeight: 34
-            leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
-            background: Rectangle {
-                radius: Theme.radiusSm
-                color: parent.down ? Theme.accentStrong : Theme.accent
-            }
+            primary: true
+            implicitHeight: 28
+            leftPadding: 10; rightPadding: 10; topPadding: 0; bottomPadding: 0
             contentItem: RowLayout {
-                spacing: 6
-                MaterialIcon { name: "add"; size: 18; color: "#ffffff"; Layout.alignment: Qt.AlignVCenter }
+                spacing: 5
+                MaterialIcon { name: "add"; size: 16; color: "#ffffff"; Layout.alignment: Qt.AlignVCenter }
                 Text {
-                    text: bar.newLabel; color: "#ffffff"; font.pixelSize: 13; font.weight: Font.DemiBold
+                    text: bar.newLabel; color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
                     verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter
                 }
             }

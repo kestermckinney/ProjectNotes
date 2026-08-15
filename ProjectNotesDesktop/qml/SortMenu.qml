@@ -75,8 +75,8 @@ Popup {
     parent: Overlay.overlay
     modal: true
     dim: false
-    padding: 6
-    width: Math.max(200, Math.min(implicitContentWidth + leftPadding + rightPadding, 320))
+    padding: 3
+    width: Math.max(170, Math.min(implicitContentWidth + leftPadding + rightPadding, 265))
     property int maxMenuHeight: 420
     height: Math.min(_scroll.implicitHeight + topPadding + bottomPadding, maxMenuHeight)
     scale: Theme.uiScale

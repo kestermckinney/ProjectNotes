@@ -65,34 +65,34 @@ Item {
     ListView {
         id: list
         anchors.fill: parent
-        anchors.margins: 16
+        anchors.margins: 12
         clip: true
-        spacing: 10
+        spacing: 7
         model: DesktopAppController.projectsListModel
         reuseItems: true
         cacheBuffer: 800
         boundsBehavior: Flickable.StopAtBounds
-        footer: Item { width: 1; height: 8 }
+        footer: Item { width: 1; height: 6 }
         ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
         // Header row: result count + Show Internal toggle (mockup parity).
         // Scrolls with the content, same as the old in-column header.
         header: Item {
             width: ListView.view ? ListView.view.width : 0
-            height: headerRow.implicitHeight + 12
+            height: headerRow.implicitHeight + 9
 
             RowLayout {
                 id: headerRow
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.top: parent.top
-                spacing: 10
+                spacing: 8
 
                 Text {
                     text: list.count + (list.count === 1 ? qsTr(" project")
                                                          : qsTr(" projects"))
                     color: Theme.text3
-                    font.pixelSize: 12
+                    font.pixelSize: 11
                 }
 
                 Item { Layout.fillWidth: true }
@@ -101,9 +101,9 @@ Item {
                 Rectangle {
                     id: internalToggle
                     readonly property bool on: DesktopAppController.showInternalItems
-                    implicitHeight: 32
-                    implicitWidth: togRow.implicitWidth + 24
-                    radius: 16
+                    implicitHeight: 28
+                    implicitWidth: togRow.implicitWidth + 20
+                    radius: 14
                     color: internalToggle.on ? Theme.accentSoft
                                              : (togHover.hovered ? Theme.surface2 : Theme.surface)
                     border.color: internalToggle.on ? Theme.accent : Theme.border
@@ -111,27 +111,27 @@ Item {
                     RowLayout {
                         id: togRow
                         anchors.centerIn: parent
-                        spacing: 8
+                        spacing: 6
                         MaterialIcon {
-                            name: "attach_money"; size: 16
+                            name: "attach_money"; size: 14
                             color: internalToggle.on ? Theme.accent : Theme.text3
                             Layout.alignment: Qt.AlignVCenter
                         }
                         Text {
                             text: qsTr("Show Internal")
                             color: internalToggle.on ? Theme.accent : Theme.text2
-                            font.pixelSize: 12; font.weight: Font.DemiBold
+                            font.pixelSize: 11; font.weight: Font.DemiBold
                             verticalAlignment: Text.AlignVCenter
                             Layout.alignment: Qt.AlignVCenter
                         }
                         // switch track
                         Rectangle {
-                            implicitWidth: 32; implicitHeight: 18; radius: 9
+                            implicitWidth: 28; implicitHeight: 16; radius: 8
                             Layout.alignment: Qt.AlignVCenter
                             color: internalToggle.on ? Theme.accent : Theme.surface2
                             border.color: internalToggle.on ? Theme.accent : Theme.border
                             Rectangle {
-                                width: 14; height: 14; radius: 7
+                                width: 12; height: 12; radius: 6
                                 y: 2; x: internalToggle.on ? parent.width - width - 2 : 2
                                 color: "#ffffff"
                                 Behavior on x { NumberAnimation { duration: 110 } }
@@ -156,7 +156,7 @@ Item {
                     width: ListView.view ? ListView.view.width : 0
                     // Height follows content: taller when the financial strip
                     // (which may wrap to two rows) is visible.
-                    implicitHeight: contentCol.implicitHeight + 20
+                    implicitHeight: contentCol.implicitHeight + 16
                     color: (projId === page.selectedProjectId)
                            ? Theme.accentSoft
                            : (hover.hovered ? Theme.raise : Theme.surface)
@@ -166,24 +166,24 @@ Item {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
-                        anchors.leftMargin: 16
-                        anchors.rightMargin: 16
-                        anchors.topMargin: 10
-                        spacing: 8
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        anchors.topMargin: 8
+                        spacing: 6
 
                     RowLayout {
                         Layout.fillWidth: true
-                        spacing: 14
+                        spacing: 11
 
                         // Number + status
                         ColumnLayout {
-                            spacing: 4
-                            Layout.preferredWidth: 70
+                            spacing: 3
+                            Layout.preferredWidth: 62
                             Layout.alignment: Qt.AlignTop
                             Text {
                                 text: (card.model.project_number || "").toString()
                                 color: Theme.accent
-                                font.pixelSize: 14
+                                font.pixelSize: 13
                                 font.weight: Font.Bold
                             }
                             Rectangle {
@@ -199,14 +199,14 @@ Item {
                                 visible: st !== ""
                                 radius: 4
                                 color: Qt.rgba(pillColor.r, pillColor.g, pillColor.b, 0.14)
-                                implicitHeight: 16
-                                implicitWidth: pill.implicitWidth + 12
+                                implicitHeight: 14
+                                implicitWidth: pill.implicitWidth + 10
                                 Text {
                                     id: pill
                                     anchors.centerIn: parent
                                     text: parent.st
                                     color: parent.pillColor
-                                    font.pixelSize: 10
+                                    font.pixelSize: 9
                                     font.weight: Font.DemiBold
                                 }
                             }
@@ -216,39 +216,39 @@ Item {
                         ColumnLayout {
                             Layout.fillWidth: true
                             Layout.alignment: Qt.AlignTop
-                            spacing: 3
+                            spacing: 2
                             Text {
                                 text: (card.model.project_name || "").toString()
                                 color: Theme.text
-                                font.pixelSize: 14
+                                font.pixelSize: 13
                                 font.weight: Font.DemiBold
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                             }
                             RowLayout {
-                                spacing: 6
+                                spacing: 5
                                 visible: clientText.text !== ""
-                                MaterialIcon { name: "apartment"; size: 14; color: Theme.text3 }
+                                MaterialIcon { name: "apartment"; size: 12; color: Theme.text3 }
                                 Text {
                                     id: clientText
                                     text: DesktopAppController.clientNameForId(
                                               (card.model.client_id || "").toString())
                                     color: Theme.text2
-                                    font.pixelSize: 12
+                                    font.pixelSize: 11
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
                                 }
                             }
                             RowLayout {
-                                spacing: 6
+                                spacing: 5
                                 visible: contactText.text !== ""
-                                MaterialIcon { name: "person"; size: 14; color: Theme.text3 }
+                                MaterialIcon { name: "person"; size: 12; color: Theme.text3 }
                                 Text {
                                     id: contactText
                                     text: DesktopAppController.peopleNameForId(
                                               (card.model.primary_contact || "").toString())
                                     color: Theme.text2
-                                    font.pixelSize: 12
+                                    font.pixelSize: 11
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
                                 }
@@ -259,7 +259,7 @@ Item {
                             Layout.alignment: Qt.AlignVCenter
                             onClicked: (sx, sy) => card._openMenu(sx, sy)
                         }
-                        MaterialIcon { name: "chevron_right"; size: 20; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
+                        MaterialIcon { name: "chevron_right"; size: 17; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
                     }
 
                     // Status/invoice dates + reporting periods — always visible (not
@@ -270,8 +270,8 @@ Item {
                     // via the SqlQueryModel-generated <col>_foreground roles.
                     Flow {
                         Layout.fillWidth: true
-                        Layout.topMargin: 2
-                        spacing: 10
+                        Layout.topMargin: 1
+                        spacing: 8
                         MetricChip {
                             label: qsTr("Status Date")
                             value: (card.model.last_status_date || "").toString()
@@ -295,9 +295,9 @@ Item {
                     // color opinion on those two.
                     Flow {
                         Layout.fillWidth: true
-                        Layout.topMargin: 2
+                        Layout.topMargin: 1
                         visible: card.showFin
-                        spacing: 10
+                        spacing: 8
                         MetricChip { label: qsTr("Budget");   value: (card.model.budget || "").toString() }
                         MetricChip { label: qsTr("Actual");   value: (card.model.actual || "").toString() }
                         MetricChip { label: qsTr("BCWP");     value: (card.model.bcwp || "").toString(); accentColor: Theme.green }
@@ -363,18 +363,18 @@ Item {
         property string value: ""
         property color accentColor: Theme.text
         readonly property bool _has: value !== undefined && value.toString().trim() !== ""
-        width: 96
+        width: 84
         spacing: 1
         Text {
             width: parent.width; elide: Text.ElideRight
             text: chip.label.toUpperCase(); color: Theme.text3
-            font.pixelSize: 9; font.weight: Font.Bold
+            font.pixelSize: 8; font.weight: Font.Bold
         }
         Text {
             width: parent.width; elide: Text.ElideRight
             text: chip._has ? chip.value : "—"
             color: chip._has ? chip.accentColor : Theme.text3
-            font.pixelSize: 12; font.weight: Font.DemiBold
+            font.pixelSize: 11; font.weight: Font.DemiBold
         }
     }
 }

@@ -29,11 +29,11 @@ Popup {
 
     modal: true
     dim: false
-    padding: 6
+    padding: 3
     // Size to the widest row rather than a fixed width, so long labels
     // (e.g. "Show Internal / Budget Items") are never clipped. Clamped so the
     // menu stays readable but doesn't grow unbounded.
-    width: Math.max(232, Math.min(implicitContentWidth + leftPadding + rightPadding, 460))
+    width: Math.max(192, Math.min(implicitContentWidth + leftPadding + rightPadding, 380))
     // Cap the height and scroll once the File/Edit/View/Help + plugin groups
     // grow past that. The rail lowers this to the window's logical height so the
     // in-scene popup never clips at the window edge; the ScrollView takes over.

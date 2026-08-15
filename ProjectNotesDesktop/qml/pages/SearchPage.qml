@@ -90,22 +90,22 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 20
-        spacing: 14
+        anchors.margins: 14
+        spacing: 10
 
         // Search input
         Rectangle {
             Layout.fillWidth: true
-            implicitHeight: 44
+            implicitHeight: 38
             radius: Theme.radius
             color: Theme.surface
             border.color: searchField.activeFocus ? Theme.accent : Theme.border
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 14
-                anchors.rightMargin: 12
-                spacing: 10
-                MaterialIcon { name: "search"; size: 20; color: Theme.text3 }
+                anchors.leftMargin: 12
+                anchors.rightMargin: 10
+                spacing: 8
+                MaterialIcon { name: "search"; size: 17; color: Theme.text3 }
                 TextField {
                     id: searchField
                     Layout.fillWidth: true
@@ -113,7 +113,7 @@ Item {
                     placeholderTextColor: Theme.text3
                     color: Theme.text
                     background: null
-                    font.pixelSize: 15
+                    font.pixelSize: 13
                     selectByMouse: true
                     onTextChanged: {
                         if (text === "") {
@@ -126,7 +126,7 @@ Item {
                     Component.onCompleted: forceActiveFocus()
                 }
                 MaterialIcon {
-                    name: "close"; size: 18; color: Theme.text3
+                    name: "close"; size: 16; color: Theme.text3
                     visible: searchField.text !== ""
                     TapHandler { onTapped: searchField.clear() }
                 }
@@ -140,12 +140,12 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            spacing: 8
+            spacing: 6
             model: DesktopAppController.searchResultsModel
             reuseItems: true
             cacheBuffer: 800
             boundsBehavior: Flickable.StopAtBounds
-            footer: Item { width: 1; height: 8 }
+            footer: Item { width: 1; height: 6 }
             ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
             delegate: Card {
@@ -153,7 +153,7 @@ Item {
                         required property int index
                         required property var model
                         width: ListView.view ? ListView.view.width : 0
-                        implicitHeight: 60
+                        implicitHeight: 50
                         color: rh.hovered ? Theme.raise : Theme.surface
 
                         function _menu(sx, sy) {
@@ -167,30 +167,30 @@ Item {
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.leftMargin: 14
-                            anchors.rightMargin: 14
-                            spacing: 12
+                            anchors.leftMargin: 11
+                            anchors.rightMargin: 11
+                            spacing: 9
                             Rectangle {
-                                width: 32; height: 32; radius: 8
+                                width: 27; height: 27; radius: Theme.radiusSm
                                 color: Theme.accentSoft
                                 MaterialIcon {
                                     anchors.centerIn: parent
                                     name: page._icon((rc.model.datatype || "").toString())
-                                    size: 17; color: Theme.accent
+                                    size: 15; color: Theme.accent
                                 }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                spacing: 2
+                                spacing: 1
                                 RowLayout {
-                                    spacing: 8
+                                    spacing: 6
                                     Text {
                                         text: (rc.model.datatype || "").toString()
-                                        color: Theme.text3; font.pixelSize: 10; font.weight: Font.Bold
+                                        color: Theme.text3; font.pixelSize: 9; font.weight: Font.Bold
                                     }
                                     Text {
                                         text: (rc.model.datadescription || rc.model.dataname || "").toString()
-                                        color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold
+                                        color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
                                         elide: Text.ElideRight; Layout.fillWidth: true
                                     }
                                 }
@@ -202,15 +202,15 @@ Item {
                                         var label = (rc.model.dataname || "").toString()
                                         return [label, proj].filter(function(x){ return x.trim() !== "" }).join("  ·  ")
                                     }
-                                    color: Theme.text3; font.pixelSize: 11
+                                    color: Theme.text3; font.pixelSize: 10
                                     elide: Text.ElideRight; Layout.fillWidth: true
                                 }
                             }
                             KebabButton {
-                                implicitWidth: 26; implicitHeight: 26
+                                implicitWidth: 22; implicitHeight: 22
                                 onClicked: (sx, sy) => rc._menu(sx, sy)
                             }
-                            MaterialIcon { name: "chevron_right"; size: 20; color: Theme.text3 }
+                            MaterialIcon { name: "chevron_right"; size: 17; color: Theme.text3 }
                         }
                         HoverHandler { id: rh }
                         TapHandler {
