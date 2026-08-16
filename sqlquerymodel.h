@@ -60,7 +60,6 @@ public:
     bool importXMLNode(const QDomNode& domnode);
     bool setData(QDomElement* xmlRow, bool ignoreKey);
 
-    void clear();
     void refresh();
     void markDirty() { m_dirty = true; }
     void refreshIfDirty() { if (m_dirty) refresh(); }
@@ -207,6 +206,12 @@ public:
     QDomElement toQDomElement( QDomDocument* xmlDocument, const QString& filter = QString());
 
 private:
+    // Only safe to call from within refresh()'s beginResetModel()/endResetModel()
+    // block — it mutates m_cache with no model-change signal of its own, so a
+    // standalone call would corrupt any attached view/proxy's persistent
+    // indexes. Kept private so nothing outside refresh() can call it directly.
+    void clear();
+
     QString m_tablename;  // the table to write data too, also the table to sync with other models when changed
     QString m_displayName;
     QString m_baseSql;
