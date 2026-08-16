@@ -14,8 +14,10 @@ cmake ..
 cmake --build .
 ```
 
+- The default target is `ProjectNotes`, the **QML** desktop frontend in `ProjectNotesDesktop/`. A plain `cmake --build .` builds only that.
+- The legacy Qt Widgets frontend is the separate `ProjectNotesWidgets` target and is **deprecated and off by default**. Build it with `cmake .. -DBUILD_WIDGETS_LEGACY=ON`. Linux/Flatpak still ships it, so its manifest passes that flag explicitly.
 - Requires CMake 3.16+, Qt6 (Qt5 fallback supported), Python 3 dev libraries, Hunspell 1.7
-- Qt modules used: Widgets, Core, SQL, XML, Network
+- Qt modules used: Widgets, Core, SQL, XML, Network, Qml/Quick (QML frontend)
 - Also requires `SqliteSyncPro` checked out as a sibling directory (`../SqliteSyncPro/src`) — it's linked as `SqliteSyncProLib`
 - No automated test framework exists in this project
 - No linting configuration
