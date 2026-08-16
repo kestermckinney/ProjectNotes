@@ -136,8 +136,18 @@ Popup {
     function _syncInputs() {
         var e = _entry(_curField)
         searchInput.text = e.search || ""
-        startInput.text  = e.start || ""
-        endInput.text    = e.end || ""
+        startInput.setText(e.start || "")
+        endInput.setText(e.end || "")
+    }
+
+    // The date boxes only emit `edited` once editing finishes, and every button
+    // here is a TapHandler that leaves focus in the text box — so a date typed
+    // by hand and followed straight by Apply (or by a click on another column)
+    // would be dropped. Pull what's in the boxes into _sel first.
+    function _captureDates() {
+        if (!_curIsDate || _curField === "") return
+        _setStart(_curField, startInput.editText)
+        _setEnd(_curField, endInput.editText)
     }
 
     function _buildSpecs() {
@@ -151,6 +161,7 @@ Popup {
         return specs
     }
     function _apply() {
+        _captureDates()
         DesktopAppController.applyColumnFilters(_model, _buildSpecs())
         _dismiss()
     }
@@ -250,7 +261,7 @@ Popup {
                                 }
                             }
                             HoverHandler { id: colHover }
-                            TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: { dlg._curIndex = index; dlg._reloadValues() } }
+                            TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: { dlg._captureDates(); dlg._curIndex = index; dlg._reloadValues() } }
                         }
                     }
                 }
@@ -362,20 +373,19 @@ Popup {
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 8
-                        FilterInput {
+                        // Type MM/DD/YYYY directly, or pick from the calendar.
+                        DateField {
                             id: startInput
                             enabled: dlg._curIsDate
                             Layout.fillWidth: true
-                            placeholder: qsTr("Start value")
-                            onEdited: (t) => dlg._setStart(dlg._curField, t)
+                            onEdited: (v) => dlg._setStart(dlg._curField, v)
                         }
                         MaterialIcon { name: "arrow_forward"; size: 15; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
-                        FilterInput {
+                        DateField {
                             id: endInput
                             enabled: dlg._curIsDate
                             Layout.fillWidth: true
-                            placeholder: qsTr("End value")
-                            onEdited: (t) => dlg._setEnd(dlg._curField, t)
+                            onEdited: (v) => dlg._setEnd(dlg._curField, v)
                         }
                     }
                 }

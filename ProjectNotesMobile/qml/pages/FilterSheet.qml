@@ -240,29 +240,24 @@ Popup {
             Layout.fillHeight: true
             spacing: 0
 
-            // Date range (date columns only)
+            // Date range (date columns only) — each end is a DateFieldRow, so
+            // tapping it opens the same grid calendar the detail pages use
+            // rather than making the user type a date into a plain text box.
             ColumnLayout {
                 visible: root._curIsDate
                 Layout.fillWidth: true
-                Layout.margins: 14
-                spacing: 8
-                Label { text: qsTr("Range"); font.pixelSize: 12; color: Theme.mutedText }
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 8
-                    TextField {
-                        id: startInput
-                        Layout.fillWidth: true
-                        placeholderText: qsTr("Start value")
-                        onTextEdited: root._setStart(root._curField, text)
-                    }
-                    Label { text: "→" }
-                    TextField {
-                        id: endInput
-                        Layout.fillWidth: true
-                        placeholderText: qsTr("End value")
-                        onTextEdited: root._setEnd(root._curField, text)
-                    }
+                Layout.bottomMargin: 6
+                spacing: 0
+
+                RangeHeader { text: qsTr("From") }
+                DateFieldRow {
+                    id: startInput
+                    onTextChanged: if (root._curField !== "") root._setStart(root._curField, text)
+                }
+                RangeHeader { text: qsTr("To") }
+                DateFieldRow {
+                    id: endInput
+                    onTextChanged: if (root._curField !== "") root._setEnd(root._curField, text)
                 }
             }
 
@@ -347,7 +342,12 @@ Popup {
             Button {
                 text: qsTr("Reset All")
                 flat: true
-                onClicked: root._sel = ({})
+                onClicked: {
+                    root._sel = ({})
+                    // Also blank the inputs, otherwise a column drilled into
+                    // keeps showing values that are no longer selected.
+                    searchInput.text = ""; startInput.text = ""; endInput.text = ""
+                }
             }
             Item { Layout.fillWidth: true }
             Button {
@@ -356,5 +356,18 @@ Popup {
                 onClicked: root._apply()
             }
         }
+    }
+
+    // Section header above each end of a date range — same styling the detail
+    // pages give their own SectionHeader.
+    component RangeHeader: Label {
+        Layout.fillWidth: true
+        Layout.topMargin: 14
+        leftPadding: 16
+        bottomPadding: 4
+        font.pixelSize: 13
+        font.weight: 600
+        color: Theme.navyMid
+        background: Rectangle { color: Theme.sectionBg }
     }
 }

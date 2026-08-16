@@ -37,13 +37,15 @@ Date columns can be filtered within a start/end range instead of a value list or
 **To filter by a range:**
 
 1. From the Filter Editor, choose a date column from the list on the left.
-2. Type in the **Start value**, if you want a starting range.
-3. Type in the **End value**, if you want an ending range.
+2. Set the start of the range, if you want one — either type the date, or click the calendar button beside the box and pick a day.
+3. Set the end of the range the same way, if you want one.
 4. Click **Apply**.
+
+The calendar also offers **Today** to fill in the current date, and **Clear** to empty that end of the range.
 
 ### Date Searches
 
-**Start value** and **End value** need to follow the ***MM/DD/YYYY*** date format in order to work correctly.
+Dates typed by hand need to follow the ***MM/DD/YYYY*** date format in order to work correctly. Dates chosen from the calendar are always entered in that format.
 
 ### Resetting the Filter
 

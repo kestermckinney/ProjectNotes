@@ -15,6 +15,13 @@ ColumnLayout {
     property string text: ""          // MM/DD/YYYY
     signal edited(string value)
 
+    // Live contents of the box. `text` only catches up when editing finishes,
+    // so callers that have to read or replace what's typed while the box still
+    // has focus (the Filter Editor's Start/End boxes — its buttons are
+    // TapHandlers that never take focus away) go through these instead.
+    property alias editText: field.text
+    function setText(value) { text = value; field.text = value }
+
     spacing: 3
     Layout.fillWidth: true
 
