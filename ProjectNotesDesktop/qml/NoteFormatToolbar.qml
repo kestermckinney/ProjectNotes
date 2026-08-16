@@ -321,6 +321,12 @@ Rectangle {
         transformOrigin: Item.TopLeft
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
 
+        // Clicking away dismisses the picker and nothing else — see
+        // ClickShield.qml. These pickers are non-modal, so without it the
+        // dismissing click also landed in the note body (moving the caret) or on
+        // whatever else sat behind them.
+        ClickShield { host: fontPopup }
+
         property var _families: []
         function openFor(anchorItem) {
             _families = TextFormatter.availableFontFamilies()
@@ -402,6 +408,9 @@ Rectangle {
         transformOrigin: Item.TopLeft
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
 
+        // Clicking away dismisses the picker and nothing else — see ClickShield.qml.
+        ClickShield { host: sizePopup }
+
         function openFor(anchorItem) {
             var p = anchorItem.mapToItem(bar, 0, anchorItem.height)
             x = Math.max(0, Math.min(p.x, bar.width - width))
@@ -442,6 +451,9 @@ Rectangle {
         scale: Theme.uiScale
         transformOrigin: Item.TopLeft
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
+
+        // Clicking away dismisses the picker and nothing else — see ClickShield.qml.
+        ClickShield { host: stylePopup }
 
         function openFor(anchorItem) {
             var p = anchorItem.mapToItem(bar, 0, anchorItem.height)
@@ -490,6 +502,9 @@ Rectangle {
         scale: Theme.uiScale
         transformOrigin: Item.TopLeft
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
+
+        // Clicking away dismisses the picker and nothing else — see ClickShield.qml.
+        ClickShield { host: colorPopup }
 
         function openFor(anchorItem) {
             var p = anchorItem.mapToItem(bar, 0, anchorItem.height)
@@ -542,6 +557,9 @@ Rectangle {
         padding: 8
         modal: false
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
+
+        // Clicking away dismisses the picker and nothing else — see ClickShield.qml.
+        ClickShield { host: highlightPopup }
 
         function openFor(anchorItem) {
             var p = anchorItem.mapToItem(bar, 0, anchorItem.height)
@@ -614,6 +632,9 @@ Rectangle {
         padding: 8
         modal: false
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
+
+        // Clicking away dismisses the picker and nothing else — see ClickShield.qml.
+        ClickShield { host: tablePopup }
 
         readonly property int maxRows: 8
         readonly property int maxCols: 10

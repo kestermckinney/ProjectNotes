@@ -25,6 +25,9 @@ Popup {
     x: parent ? Math.round((parent.width - width) / 2) : 0
     y: parent ? Math.round((parent.height - height) / 2) : 0
 
+    // Clicking away dismisses the dialog and nothing else — see ClickShield.qml.
+    ClickShield { host: dlg }
+
     property string _itemId: ""
     property string _projectId: ""
     property var    _info: ({})

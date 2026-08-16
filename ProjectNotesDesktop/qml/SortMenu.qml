@@ -88,6 +88,9 @@ Popup {
         border.color: Theme.border
     }
 
+    // Clicking away dismisses the menu and nothing else — see ClickShield.qml.
+    ClickShield { host: menu }
+
     contentItem: MenuScrollView {
         id: _scroll
 

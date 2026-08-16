@@ -101,6 +101,13 @@ Popup {
         border.color: Theme.border
     }
 
+    // Clicking away from this menu (or from its Quick Filter / Plugins flyout)
+    // dismisses it and nothing else — see ClickShield.qml for what leaks without
+    // it. Quick Filter is where this was most obvious: it deliberately stays
+    // open across picks, so the click that finally dismissed it also opened
+    // whichever record sat under the cursor.
+    ClickShield { host: menu }
+
     // Open at a scene/window coordinate (kept inside the overlay bounds).
     function openAt(sx, sy) {
         if (typeof DesktopAppController === "undefined")

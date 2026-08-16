@@ -87,6 +87,7 @@ set(DESKTOP_QML_FILES
     qml/AppMenu.qml
     qml/MenuRow.qml
     qml/MenuFlyout.qml
+    qml/ClickShield.qml
     qml/MenuScrollView.qml
     qml/ZoomMenuRow.qml
     qml/LogViewerWindow.qml

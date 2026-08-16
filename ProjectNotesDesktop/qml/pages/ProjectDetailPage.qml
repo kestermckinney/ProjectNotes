@@ -1148,6 +1148,9 @@ Item {
         scale: Theme.uiScale   // match the zoomed workspace (centered origin)
         background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
 
+        // Clicking away dismisses the picker and nothing else — see ClickShield.qml.
+        ClickShield { host: teamPicker }
+
         // Type-to-search text (lower-cased match target). Empty = show everyone.
         property string _filter: ""
 

@@ -97,6 +97,11 @@ ColumnLayout {
             transformOrigin: Item.TopLeft
             background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
 
+            // Clicking away dismisses the calendar and nothing else — see
+            // ClickShield.qml. A non-modal popup like this one blocks nothing
+            // at all, so its dismissing click always reached the page behind.
+            ClickShield { host: popup }
+
             property int shownMonth: (new Date()).getMonth()
             property int shownYear: (new Date()).getFullYear()
 

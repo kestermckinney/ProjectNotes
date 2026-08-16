@@ -41,6 +41,11 @@ Popup {
         }
     }
 
+    // The same leak, from the other side: the press that lands *outside* this
+    // dialog to dismiss it was reaching those TapHandlers too, because the
+    // overlay stops blocking the instant the dialog closes. See ClickShield.qml.
+    ClickShield { host: dlg }
+
     // ── State ─────────────────────────────────────────────────────────────────
     property var    _model: null
     property string _section: ""

@@ -106,6 +106,9 @@ Item {
             border.color: Theme.border
         }
 
+        // Clicking away dismisses the menu and nothing else — see ClickShield.qml.
+        ClickShield { host: menu }
+
         function openAt(sx, sy) {
             var maxX = (parent ? parent.width : sx + width) - width - 6
             var maxY = (parent ? parent.height : sy + 280) - 60

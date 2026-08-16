@@ -27,6 +27,9 @@ Dialog {
     scale: Theme.uiScale
     background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
 
+    // Clicking away dismisses the dialog and nothing else — see ClickShield.qml.
+    ClickShield { host: dlg }
+
     property string _projectId: ""
     property string _label: ""
 

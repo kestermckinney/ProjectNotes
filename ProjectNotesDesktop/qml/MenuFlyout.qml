@@ -58,7 +58,15 @@ Popup {
     // coordinate space from its host, mirroring RecordContextMenu's own existing
     // "parent: Overlay.overlay + clamp to overlay bounds" pattern.
     parent: Overlay.overlay
-    modal: true
+    // Deliberately *non-modal*, unlike the menu that hosts it: a modal flyout
+    // is the only popup the overlay will deliver input to, so a click on one of
+    // the host menu's other rows was spent closing the flyout and the row itself
+    // stayed unactivated (it took a second click), and a click away from both
+    // closed only the flyout, leaving the menu behind. Non-modal, the host menu
+    // stays the input target underneath: sibling rows activate on the first
+    // click, and a click outside dismisses flyout and menu together. The host's
+    // ClickShield keeps that dismissal from reaching the page behind the menu.
+    modal: false
     dim: false
     padding: 3
     width: Math.max(160, Math.min(implicitContentWidth + leftPadding + rightPadding, 340))

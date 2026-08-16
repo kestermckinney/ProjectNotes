@@ -149,6 +149,9 @@ Rectangle {
                 border.color: Theme.border
             }
 
+            // Clicking away dismisses the menu and nothing else — see ClickShield.qml.
+            ClickShield { host: zoomMenu }
+
             // Open just under the indicator, at scene (overlay) coordinates.
             function openAt(sx, sy) {
                 var sw = width * Theme.uiScale

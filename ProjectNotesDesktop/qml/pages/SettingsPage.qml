@@ -588,6 +588,9 @@ Item {
             border.color: Theme.border
         }
 
+        // Clicking away dismisses the picker and nothing else — see ClickShield.qml.
+        ClickShield { host: iconPickerMenu }
+
         function openFor(folder, sx, sy) {
             iconPickerMenu._folder = folder
             var maxX = (parent ? parent.width : sx + width) - width - 6

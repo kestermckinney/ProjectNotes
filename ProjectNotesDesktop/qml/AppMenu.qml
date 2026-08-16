@@ -52,6 +52,9 @@ Popup {
         border.color: Theme.border
     }
 
+    // Clicking away dismisses the menu and nothing else — see ClickShield.qml.
+    ClickShield { host: menu }
+
     // group model: { name, items:[{icon,label,key,action, toggle, on}] }.
     // `key` is the native display text for whatever real Shortcut Main.qml
     // wires for that action — see AppShortcuts.qml, the single source of
