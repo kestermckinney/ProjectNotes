@@ -217,6 +217,16 @@ The mobile app synchronizes data with **Project Notes Pro** hosting using [Sqlit
 
 The page also shows your current **subscription status** and a link to [www.projectnotespro.com](https://www.projectnotespro.com), where you manage your subscription, along with the Project ID your data is associated with.
 
+**Checking your settings:**
+
+Each field saves as soon as you leave it, so a mistyped password or a mismatched encryption phrase would otherwise sit unnoticed until you wondered why nothing was syncing. When you change one of these fields and then tap **Back**, the app signs in to Project Notes Pro with what you entered and confirms your encryption phrase opens the records already stored for your account. If something is wrong, a dialog appears before the page closes:
+
+- **Credentials rejected** — the email and password were not accepted. Sync will not run until they are corrected.
+- **Encryption phrase mismatch** — sign-in worked, but none of your stored records can be decrypted with the phrase you entered, so records from your other devices would be skipped. Every device on the account must use the same phrase.
+- **Host unreachable** — your settings were saved but could not be checked. They will be checked again the next time sync runs.
+
+Tap **Back to Settings** to stay and fix the field, or **Leave Anyway** to continue — your entries stay saved either way. The desktop app performs the same check when you navigate away from its Settings screen.
+
 **Sync behavior:**
 
 - The app syncs automatically in the background on a 30-second interval when **Enable Sync** is on.

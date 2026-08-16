@@ -33,6 +33,18 @@ An optional passphrase that encrypts your data before it leaves your machine. Th
 - Leave blank to disable encryption. Data is still protected in transit by HTTPS.
 - Changing the phrase requires a **Sync All** to re-push all records in the new encrypted state.
 
+### Checking Your Settings
+
+Each field saves as soon as you leave it, so a mistyped password or a mismatched encryption phrase would otherwise sit unnoticed until you wondered why nothing was syncing. To prevent that, Project Notes checks the Cloud Sync fields whenever you change one and then navigate away from Settings. It signs in to Project Notes Pro with the email and password you entered, and confirms that your encryption phrase opens the records already stored for your account.
+
+If something is wrong, a dialog appears before you leave the page:
+
+- **Credentials rejected** — the email and password were not accepted. Sync will not run until they are corrected.
+- **Encryption phrase mismatch** — sign-in worked, but none of your stored records can be decrypted with the phrase you entered. Records synced from your other devices would be skipped. (See the Encryption Phrase notes above — every device on the account must use the same phrase.)
+- **Host unreachable** — your settings were saved but could not be checked because Project Notes Pro could not be reached. They will be checked again the next time sync runs.
+
+Choose **Back to Settings** to stay and fix the field, or **Leave Anyway** to continue — your entries stay saved either way. The check only runs when you have actually changed one of the Cloud Sync fields.
+
 ### Subscription Status
 
 The Cloud Sync section displays the current state of your Project Notes Pro subscription as a status line below the sync icon — for example the plan name and whether the subscription is active.

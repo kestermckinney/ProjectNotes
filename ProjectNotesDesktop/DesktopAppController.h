@@ -79,6 +79,11 @@ class DesktopAppController : public QObject
     Q_PROPERTY(QString subscriptionStatusText READ subscriptionStatusText NOTIFY subscriptionStatusChanged)
     Q_PROPERTY(QString projectManagerInitials READ projectManagerInitials NOTIFY projectManagerChanged)
     Q_PROPERTY(QString supabaseConnectionInfo READ supabaseConnectionInfo CONSTANT)
+    // True once a cloud-sync credential/phrase field has been edited and not yet
+    // checked against the host — the Settings screen gates navigation on it (see
+    // verifySyncSettings). Cleared by a completed check.
+    Q_PROPERTY(bool syncSettingsUnverified READ syncSettingsUnverified NOTIFY syncSettingsUnverifiedChanged)
+    Q_PROPERTY(bool syncVerifyInProgress   READ syncVerifyInProgress   NOTIFY syncVerifyInProgressChanged)
 
 public:
     explicit DesktopAppController(QObject* parent = nullptr);
@@ -563,6 +568,17 @@ public:
     // thread, which is required since it creates/shows a QWidget window.
     Q_INVOKABLE void showSyncStats();
 
+    // Check the saved sync email/password against the sync host, and confirm the
+    // saved encryption phrase can decrypt the account's existing rows. Runs off
+    // the GUI thread; the verdict arrives as syncSettingsVerified(). The Settings
+    // screen calls this when the user navigates away after editing any cloud-sync
+    // field, so a typo is reported while they can still fix it rather than
+    // showing up later as a sync that never completes.
+    Q_INVOKABLE void verifySyncSettings();
+
+    bool    syncSettingsUnverified() const { return m_syncSettingsUnverified; }
+    bool    syncVerifyInProgress()   const { return m_syncVerifyInProgress; }
+
     bool    syncEnabled() const;
     void    setSyncEnabled(bool v);
     QString syncEmail() const;
@@ -608,6 +624,16 @@ signals:
     void syncProgressChanged();
     void subscriptionStatusChanged();
     void subscriptionExpired();
+    // Verdict from verifySyncSettings(). status is one of:
+    //   "ok"          — the host accepted the credentials and the phrase decrypts
+    //   "credentials" — the host rejected the email/password
+    //   "encryption"  — signed in, but no server row decrypts with this phrase
+    //   "offline"     — the host was unreachable, so nothing could be checked
+    //   "skipped"     — sync is off or unconfigured; there was nothing to check
+    // message is empty for "ok"/"skipped" and user-facing text otherwise.
+    void syncSettingsVerified(const QString& status, const QString& message);
+    void syncSettingsUnverifiedChanged();
+    void syncVerifyInProgressChanged();
 
 private slots:
     void onSyncRowChanged(const QString& tableName, const QString& id);
@@ -661,12 +687,25 @@ private:
     bool           m_syncHasError  = false;
     bool           m_syncNetworkError = false;
     QString        m_subscriptionStatusText;
+    // Set by the sync credential/phrase setters, cleared by a completed
+    // verifySyncSettings() — see syncSettingsUnverified.
+    bool           m_syncSettingsUnverified = false;
+    bool           m_syncVerifyInProgress   = false;
 
     void    configureSyncApi();
     void    setSyncProgress(qreal progress, bool hasError = false);
     void    setSubscriptionStatusText(const QString& text);
+    void    setSyncSettingsUnverified(bool unverified);
+    // Turns a verifySyncSettings() status into the user-facing message, clears
+    // the pending flag and emits syncSettingsVerified(). GUI thread only.
+    void    finishSyncVerification(const QString& status, const QString& detail);
     QString syncSetting(const QString& key) const;
     void    setSyncSetting(const QString& key, const QVariant& value);
+    // Sync host for the active environment (--test-supabase picks the TEST
+    // instance). Shared by configureSyncApi() and verifySyncSettings() so the
+    // engine and the settings check can't drift onto different servers.
+    static QString supabaseUrl();
+    static QString supabaseAnonKey();
 
     // ── Software update (delegates to the shared UpdateManager) ───────────────
     UpdateManager* m_updater      = nullptr;

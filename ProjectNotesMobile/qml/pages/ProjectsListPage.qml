@@ -36,7 +36,7 @@ Page {
 
     FilterSheet     { id: filterSheet }
     SortSheet       { id: sortSheet }
-    QuickFilterSheet { id: qfSheet }
+    QuickFilterDialog { id: qfDialog }
 
     // ── Toolbar: filter toggle + search ──────────────────────────────────────
     header: ToolBar {
@@ -143,9 +143,12 @@ Page {
             readonly property string _clientName:
                 AppController.clientNameForId(delegateRoot.model.client_id || "") || ""
 
-            TapHandler {
-                onLongPressed: qfSheet.openWith(AppController.projectsListModel, root._quickFiltersForRow(delegateRoot.model))
-            }
+            // Long press → Quick Filter. The delegate's own pressAndHold, not a
+            // TapHandler: only the button's hold timer (armed solely by
+            // connecting to this signal) suppresses the clicked() that would
+            // otherwise navigate to this row when you let go — see
+            // AllItemsPage.qml.
+            onPressAndHold: qfDialog.openWith(AppController.projectsListModel, root._quickFiltersForRow(delegateRoot.model))
 
             contentItem: ColumnLayout {
                 spacing: 4

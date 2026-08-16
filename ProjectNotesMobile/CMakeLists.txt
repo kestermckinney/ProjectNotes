@@ -132,7 +132,7 @@ qt_add_qml_module(ProjectNotesMobile
         qml/pages/NoteFormatSheet.qml
         qml/pages/FilterSheet.qml
         qml/pages/SortSheet.qml
-        qml/pages/QuickFilterSheet.qml
+        qml/pages/QuickFilterDialog.qml
 )
 
 # ── iOS bundle properties ─────────────────────────────────────────────────────

@@ -10,6 +10,18 @@ Page {
     id: root
     title: qsTr("Cloud Sync Settings")
 
+    // Push whatever is typed into the settings without waiting for the field to
+    // lose focus. Tapping Back (or backgrounding the app) doesn't always blur
+    // the active field first, so without this a value the user just typed would
+    // be dropped — and the credential check on the way out would test the old
+    // one. Main.qml calls this; committing an unchanged value is harmless
+    // because AppController's setters ignore it.
+    function _commitSyncFields() {
+        AppController.syncEmail           = emailField.text
+        AppController.syncPassword        = passwordField.text
+        AppController.syncEncryptionPhrase = phraseField.text
+    }
+
     ScrollView {
         anchors.fill: parent
         contentWidth: availableWidth
@@ -33,6 +45,7 @@ Page {
             SectionHeader { text: qsTr("Email") }
             FieldRow {
                 FormField {
+                    id: emailField
                     text: AppController.syncEmail
                     placeholderText: qsTr("user@example.com")
                     inputMethodHints: Qt.ImhEmailCharactersOnly | Qt.ImhNoPredictiveText
@@ -43,6 +56,7 @@ Page {
             SectionHeader { text: qsTr("Password") }
             FieldRow {
                 FormField {
+                    id: passwordField
                     text: AppController.syncPassword
                     placeholderText: qsTr("password")
                     echoMode: TextInput.Password
@@ -53,6 +67,7 @@ Page {
             SectionHeader { text: qsTr("Encryption Phrase") }
             FieldRow {
                 FormField {
+                    id: phraseField
                     text: AppController.syncEncryptionPhrase
                     placeholderText: qsTr("optional passphrase")
                     onEditingFinished: AppController.syncEncryptionPhrase = text

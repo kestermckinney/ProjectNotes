@@ -31,17 +31,27 @@ Page {
         }
     }
 
-    // Quick Filter entries for a long-pressed item row: pre-filled from that
-    // row's own client/assigned-to/identified-by (omitted when unset), plus
-    // the overdue toggle and the three priority shortcuts. item_overdue is a
-    // computed "Yes"/"No" column (see trackeritemsmodel.cpp).
+    // Quick Filter entries for a long-pressed item row: leads with "Assigned
+    // to Me" — the Project Manager configured in Preferences, omitted when
+    // none is set — then entries pre-filled from that row's own client/
+    // assigned-to/identified-by (omitted when unset), then the overdue toggle
+    // and the three priority shortcuts. "Assigned to Me" goes first so the one
+    // entry that doesn't depend on the pressed row keeps a stable position in
+    // the sheet. item_overdue is a computed "Yes"/"No" column (see
+    // trackeritemsmodel.cpp). Mirrors the desktop Master Item List's set —
+    // ProjectNotesDesktop/qml/pages/ItemsPage.qml.
     function _quickFiltersForRow(m) {
         var qf = []
+        var pmId = AppController.projectManagerId()
+        if (pmId !== "")
+            qf.push({ label: qsTr("Assigned to Me"), field: "assigned_to", values: [pmId] })
         var clientId = (m.client_id || "").toString()
         if (clientId !== "")
             qf.push({ label: qsTr("This Client"), field: "client_id", values: [clientId] })
         var assignedId = (m.assigned_to || "").toString()
-        if (assignedId !== "")
+        // Identical field/values to "Assigned to Me" when the pressed row is
+        // the PM's own — skip it rather than list the same shortcut twice.
+        if (assignedId !== "" && assignedId !== pmId)
             qf.push({ label: qsTr("This Assigned To"), field: "assigned_to", values: [assignedId] })
         var identifiedId = (m.identified_by || "").toString()
         if (identifiedId !== "")
@@ -55,7 +65,7 @@ Page {
 
     FilterSheet     { id: filterSheet }
     SortSheet       { id: sortSheet }
-    QuickFilterSheet { id: qfSheet }
+    QuickFilterDialog { id: qfDialog }
 
     // ── Search / filter toolbar ───────────────────────────────────────────────
     header: ToolBar {
@@ -122,9 +132,14 @@ Page {
             required property var model
             width: listView.width
 
-            TapHandler {
-                onLongPressed: qfSheet.openWith(AppController.allItemsModel, root._quickFiltersForRow(delegateRoot.model))
-            }
+            // Long press → Quick Filter. Uses the delegate's own pressAndHold
+            // rather than a TapHandler's longPressed: an ItemDelegate arms its
+            // hold timer only when something is connected to this signal, and
+            // only that timer firing suppresses the clicked() it would
+            // otherwise emit on release — via a TapHandler the dialog opened
+            // but letting go still counted as a tap and navigated to the row
+            // underneath it.
+            onPressAndHold: qfDialog.openWith(AppController.allItemsModel, root._quickFiltersForRow(delegateRoot.model))
 
             contentItem: ColumnLayout {
                 spacing: 3

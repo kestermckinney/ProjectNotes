@@ -49,12 +49,20 @@ Page {
     }
 
     // Quick Filter entries for a long-pressed item row (project-scoped, so no
-    // client shortcut — every row already shares this project's client).
-    // item_overdue is a computed "Yes"/"No" column (see trackeritemsmodel.cpp).
+    // client shortcut — every row already shares this project's client), led
+    // by "Assigned to Me" (the Project Manager configured in Preferences,
+    // omitted when none is set) so this project's own items narrow down the
+    // same way the All Items list does. item_overdue is a computed "Yes"/"No"
+    // column (see trackeritemsmodel.cpp).
     function _quickFiltersForRow(m) {
         var qf = []
+        var pmId = AppController.projectManagerId()
+        if (pmId !== "")
+            qf.push({ label: qsTr("Assigned to Me"), field: "assigned_to", values: [pmId] })
         var assignedId = (m.assigned_to || "").toString()
-        if (assignedId !== "")
+        // Identical field/values to "Assigned to Me" when the pressed row is
+        // the PM's own — skip it rather than list the same shortcut twice.
+        if (assignedId !== "" && assignedId !== pmId)
             qf.push({ label: qsTr("This Assigned To"), field: "assigned_to", values: [assignedId] })
         var identifiedId = (m.identified_by || "").toString()
         if (identifiedId !== "")
@@ -68,7 +76,7 @@ Page {
 
     FilterSheet     { id: filterSheet }
     SortSheet       { id: sortSheet }
-    QuickFilterSheet { id: qfSheet }
+    QuickFilterDialog { id: qfDialog }
 
     header: ToolBar {
         RowLayout {
@@ -156,9 +164,12 @@ Page {
         delegate: ItemDelegate {
             width: listView.width
 
-            TapHandler {
-                onLongPressed: qfSheet.openWith(AppController.trackerItemsModel, root._quickFiltersForRow(model))
-            }
+            // Long press → Quick Filter. The delegate's own pressAndHold, not a
+            // TapHandler: only the button's hold timer (armed solely by
+            // connecting to this signal) suppresses the clicked() that would
+            // otherwise navigate to this row when you let go — see
+            // AllItemsPage.qml.
+            onPressAndHold: qfDialog.openWith(AppController.trackerItemsModel, root._quickFiltersForRow(model))
 
             contentItem: ColumnLayout {
                 spacing: 3

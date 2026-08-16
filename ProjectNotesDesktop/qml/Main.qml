@@ -147,6 +147,21 @@ ApplicationWindow {
             downloadDialog.close()
             Qt.quit()
         }
+        // Verdict on the cloud sync settings the user just edited (see
+        // _gateOnSyncCheck). A late answer for a check the user already skipped
+        // has no navigation parked against it and is theirs to ignore.
+        function onSyncSettingsVerified(status, message) {
+            if (root._pendingNavigation === null)
+                return
+            if (message === "") {
+                // Nothing to report — carry on to wherever they were headed.
+                root._resumeNavigation()
+                syncCheckDialog.close()
+                return
+            }
+            syncCheckDialog.message = message
+            syncCheckDialog.status = status
+        }
     }
 
     // ── Navigation ────────────────────────────────────────────────────────────
@@ -194,10 +209,49 @@ ApplicationWindow {
         sortMenu.openFor(root.currentSection, p.x, p.y + 4)
     }
 
+    // ── Leaving Settings: check the cloud sync fields first ───────────────────
+    // The sync credentials and the encryption phrase are write-through — a
+    // mistyped password or a phrase that doesn't match the account is simply
+    // saved, and only shows up much later as a sync that never completes. So
+    // when the user walks away from Settings having edited any of them, verify
+    // them against the host and say so while they are still on the page that
+    // can fix it. Navigation waiting on that answer is parked here.
+    property var _pendingNavigation: null
+
+    // Returns true when `next` has been parked pending the check — the caller
+    // must then do nothing; _resumeNavigation() runs it once the user is done
+    // with the dialog.
+    function _gateOnSyncCheck(next) {
+        if (root.currentSection !== "settings" || !DesktopAppController.syncSettingsUnverified)
+            return false
+        root._pendingNavigation = next
+        syncCheckDialog.status = ""
+        DesktopAppController.verifySyncSettings()
+        // With sync off or unconfigured there is nothing to contact the host
+        // about: the verdict came back inside that call and already ran the
+        // navigation, so don't flash a dialog for it.
+        if (root._pendingNavigation !== null)
+            syncCheckDialog.open()
+        return true
+    }
+
+    function _resumeNavigation() {
+        var next = root._pendingNavigation
+        root._pendingNavigation = null
+        if (next)
+            next()
+    }
+
     function selectSection(section) {
         if (section === root.currentSection && contentStack.depth <= 1)
             return
         _saveCurrent()
+        if (_gateOnSyncCheck(function() { root._selectSectionNow(section) }))
+            return
+        _selectSectionNow(section)
+    }
+
+    function _selectSectionNow(section) {
         root.currentSection = section
         root.crumbSub = ""
         // The search field only tracks the field the user is looking at (see
@@ -844,6 +898,158 @@ ApplicationWindow {
                         // Exclusive grab so this tap doesn't also fall through to
                         // whatever's behind the dialog (e.g. a project row).
                         TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: infoDialog.close() }
+                    }
+                }
+            }
+        }
+    }
+
+    // Cloud sync check, shown while the user is on their way out of Settings
+    // after editing the sync credentials or the encryption phrase (see
+    // _gateOnSyncCheck). An empty status means the check is still running;
+    // anything else is a problem worth stopping for.
+    Dialog {
+        id: syncCheckDialog
+        property string status: ""
+        property string message: ""
+        readonly property bool checking: status === ""
+        // "Back to Settings" is the only outcome that keeps the user here, so
+        // credential/phrase problems are the only ones offering a second button.
+        readonly property bool fixable: status === "credentials" || status === "encryption"
+
+        anchors.centerIn: parent
+        width: 420
+        scale: Theme.uiScale   // match the zoomed workspace (centered origin)
+        modal: true
+        padding: 0
+        closePolicy: checking ? Popup.NoAutoClose : Popup.CloseOnEscape
+        title: checking ? qsTr("Checking Cloud Sync") : qsTr("Cloud Sync")
+
+        background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
+        header: null
+        footer: null
+
+        // Escape and the close button mean "stay here and fix it", so drop the
+        // navigation parked against this dialog. The buttons that do continue
+        // run it before closing.
+        onClosed: root._pendingNavigation = null
+
+        contentItem: ColumnLayout {
+            spacing: 0
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.margins: 14
+                spacing: 8
+                MaterialIcon {
+                    name: syncCheckDialog.checking ? "sync"
+                          : (syncCheckDialog.status === "offline" ? "cloud_off" : "error")
+                    size: 20
+                    color: syncCheckDialog.fixable ? Theme.red : Theme.accent
+                }
+                Text {
+                    text: syncCheckDialog.title
+                    color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
+                    Layout.fillWidth: true
+                }
+                MaterialIcon {
+                    name: "close"; size: 20; color: Theme.text3
+                    visible: !syncCheckDialog.checking
+                    // Exclusive grab: see the matching infoDialog close button above.
+                    TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: syncCheckDialog.close() }
+                }
+            }
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.margins: 18
+                spacing: 14
+
+                Text {
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    color: Theme.text
+                    font.pixelSize: 13
+                    text: syncCheckDialog.checking
+                          ? qsTr("Checking your sync email, password, and encryption phrase…")
+                          : syncCheckDialog.message
+                }
+
+                // Indeterminate sweep while the sync host is contacted — same
+                // treatment as the update downloader's unknown-size case.
+                Rectangle {
+                    Layout.fillWidth: true
+                    visible: syncCheckDialog.checking
+                    implicitHeight: 6
+                    radius: 3
+                    color: Theme.surface
+                    border.color: Theme.border
+                    clip: true
+                    Rectangle {
+                        id: syncCheckFill
+                        height: parent.height
+                        width: parent.width * 0.3
+                        radius: 3
+                        color: Theme.accent
+                        SequentialAnimation on x {
+                            running: syncCheckDialog.visible && syncCheckDialog.checking
+                            loops: Animation.Infinite
+                            NumberAnimation { from: 0; to: syncCheckFill.parent.width * 0.7; duration: 900; easing.type: Easing.InOutQuad }
+                            NumberAnimation { from: syncCheckFill.parent.width * 0.7; to: 0; duration: 900; easing.type: Easing.InOutQuad }
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+                    Item { Layout.fillWidth: true }
+
+                    // Leave with the settings as typed — they stay saved either way.
+                    Rectangle {
+                        visible: syncCheckDialog.fixable
+                        implicitHeight: 30
+                        implicitWidth: syncLeaveText.implicitWidth + 26
+                        radius: Theme.radiusSm
+                        color: syncLeaveHover.hovered ? Theme.surface2 : Theme.surface
+                        border.color: Theme.border
+                        Text {
+                            id: syncLeaveText
+                            anchors.centerIn: parent
+                            text: qsTr("Leave Anyway")
+                            color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                        }
+                        HoverHandler { id: syncLeaveHover }
+                        TapHandler {
+                            gesturePolicy: TapHandler.ReleaseWithinBounds
+                            onTapped: { root._resumeNavigation(); syncCheckDialog.close() }
+                        }
+                    }
+
+                    Rectangle {
+                        implicitHeight: 30
+                        implicitWidth: syncPrimaryText.implicitWidth + 26
+                        radius: Theme.radiusSm
+                        color: syncPrimaryHover.hovered ? Theme.accentStrong : Theme.accent
+                        Text {
+                            id: syncPrimaryText
+                            anchors.centerIn: parent
+                            text: syncCheckDialog.checking ? qsTr("Skip")
+                                  : (syncCheckDialog.fixable ? qsTr("Back to Settings") : qsTr("OK"))
+                            color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
+                        }
+                        HoverHandler { id: syncPrimaryHover }
+                        TapHandler {
+                            gesturePolicy: TapHandler.ReleaseWithinBounds
+                            onTapped: {
+                                // Skip and OK carry on to wherever the user was
+                                // headed; Back to Settings keeps them here.
+                                if (!syncCheckDialog.fixable)
+                                    root._resumeNavigation()
+                                syncCheckDialog.close()
+                            }
+                        }
                     }
                 }
             }

@@ -68,6 +68,12 @@ class AppController : public QObject
     Q_PROPERTY(QString subscriptionStatusText  READ subscriptionStatusText  NOTIFY subscriptionStatusChanged)
     Q_PROPERTY(QString supabaseConnectionInfo  READ supabaseConnectionInfo  CONSTANT)
 
+    // True once a sync credential/phrase field has been edited and not yet
+    // checked against the host — the Cloud Sync Settings page gates its back
+    // button on it (see verifySyncSettings). Cleared by a completed check.
+    Q_PROPERTY(bool syncSettingsUnverified READ syncSettingsUnverified NOTIFY syncSettingsUnverifiedChanged)
+    Q_PROPERTY(bool syncVerifyInProgress   READ syncVerifyInProgress   NOTIFY syncVerifyInProgressChanged)
+
     // ── View options properties ──────────────────────────────────────────────
     Q_PROPERTY(bool showClosedProjects  READ showClosedProjects  WRITE setShowClosedProjects  NOTIFY viewOptionsChanged)
     Q_PROPERTY(bool showInternalItems   READ showInternalItems   WRITE setShowInternalItems   NOTIFY viewOptionsChanged)
@@ -85,6 +91,13 @@ public:
     Q_INVOKABLE void startSync();
     Q_INVOKABLE void stopSync();
     Q_INVOKABLE void syncAll();
+    // Check the saved sync email/password against the sync host, and confirm the
+    // saved encryption phrase can decrypt the account's existing rows. Runs off
+    // the GUI thread; the verdict arrives as syncSettingsVerified(). The Cloud
+    // Sync Settings page calls this when the user leaves after editing a field,
+    // so a typo is reported while they can still fix it rather than showing up
+    // later as a sync that never completes. Mirrors the desktop app.
+    Q_INVOKABLE void verifySyncSettings();
     Q_INVOKABLE void setProjectFilter(const QString& projectId);
 
     // ── Preferences helpers — id-based, NOT row-based ────────────────────────
@@ -345,17 +358,20 @@ public:
     QAbstractItemModel* trackerItemMeetingsModel()    const;
 
     // ── Sync settings accessors ──────────────────────────────────────────────
+    // The four fields the Cloud Sync Settings page edits are implemented in the
+    // .cpp: each ignores a no-op write and marks the settings unverified so the
+    // page can check them on the way out (see verifySyncSettings).
     bool    syncEnabled()          const { return global_MobileSettings.getSyncEnabled(); }
-    void    setSyncEnabled(bool v)       { global_MobileSettings.setSyncEnabled(v); emit syncSettingsChanged(); }
+    void    setSyncEnabled(bool v);
 
     int     syncHostType()         const { return global_MobileSettings.getSyncHostType(); }
     void    setSyncHostType(int v)       { global_MobileSettings.setSyncHostType(v); emit syncSettingsChanged(); }
 
     QString syncEmail()            const { return global_MobileSettings.getSyncEmail(); }
-    void    setSyncEmail(const QString& v) { global_MobileSettings.setSyncEmail(v); emit syncSettingsChanged(); }
+    void    setSyncEmail(const QString& v);
 
     QString syncPassword()         const { return global_MobileSettings.getSyncPassword(); }
-    void    setSyncPassword(const QString& v) { global_MobileSettings.setSyncPassword(v); emit syncSettingsChanged(); }
+    void    setSyncPassword(const QString& v);
 
     QString syncPostgrestUrl()     const { return global_MobileSettings.getSyncPostgrestUrl(); }
     void    setSyncPostgrestUrl(const QString& v) { global_MobileSettings.setSyncPostgrestUrl(v); emit syncSettingsChanged(); }
@@ -364,10 +380,12 @@ public:
     void    setSyncSupabaseKey(const QString& v) { global_MobileSettings.setSyncSupabaseKey(v); emit syncSettingsChanged(); }
 
     QString syncEncryptionPhrase() const { return global_MobileSettings.getSyncEncryptionPhrase(); }
-    void    setSyncEncryptionPhrase(const QString& v) { global_MobileSettings.setSyncEncryptionPhrase(v); emit syncSettingsChanged(); }
+    void    setSyncEncryptionPhrase(const QString& v);
 
     qreal   syncProgress() const { return m_syncProgress; }
     bool    syncHasError() const { return m_syncHasError; }
+    bool    syncSettingsUnverified() const { return m_syncSettingsUnverified; }
+    bool    syncVerifyInProgress()   const { return m_syncVerifyInProgress; }
 
     QString subscriptionStatusText() const { return m_subscriptionStatusText; }
     QString supabaseConnectionInfo() const;
@@ -397,6 +415,16 @@ signals:
     void syncProgressChanged();
     void subscriptionStatusChanged();
     void subscriptionExpired();
+    // Verdict from verifySyncSettings(). status is one of:
+    //   "ok"          — the host accepted the credentials and the phrase decrypts
+    //   "credentials" — the host rejected the email/password
+    //   "encryption"  — signed in, but no server row decrypts with this phrase
+    //   "offline"     — the host was unreachable, so nothing could be checked
+    //   "skipped"     — sync is off or unconfigured; there was nothing to check
+    // message is empty for "ok"/"skipped" and user-facing text otherwise.
+    void syncSettingsVerified(const QString& status, const QString& message);
+    void syncSettingsUnverifiedChanged();
+    void syncVerifyInProgressChanged();
     void errorOccurred(const QString& title, const QString& message);
     void databaseReady();
     void viewOptionsChanged();
@@ -421,6 +449,10 @@ private:
     qreal          m_syncProgress  = -1.0;  // -1 = bar hidden
     bool           m_syncHasError  = false;
     QString        m_subscriptionStatusText;
+    // Set by the sync credential/phrase setters, cleared by a completed
+    // verifySyncSettings() — see syncSettingsUnverified.
+    bool           m_syncSettingsUnverified = false;
+    bool           m_syncVerifyInProgress   = false;
 
     // Bumped by applyColumnFilters/clearColumnFilters/applyQuickFilter and
     // applySort/clearSort respectively — see filterRev()/sortRev() above.
@@ -430,6 +462,15 @@ private:
     void configureSyncApi();
     void setSyncProgress(qreal progress, bool hasError = false);
     void setSubscriptionStatusText(const QString& text);
+    void setSyncSettingsUnverified(bool unverified);
+    // Turns a verifySyncSettings() status into the user-facing message, clears
+    // the pending flag and emits syncSettingsVerified(). GUI thread only.
+    void finishSyncVerification(const QString& status, const QString& detail);
+    // Sync host for the active environment (the TEST instance when the build is
+    // pointed at it). Shared by configureSyncApi() and verifySyncSettings() so
+    // the engine and the settings check can't drift onto different servers.
+    static QString supabaseUrl();
+    static QString supabaseAnonKey();
 
     // Applies every filterable section's persisted sort order. Deferred (via
     // QTimer::singleShot) off the end of openOrCreateDatabase() rather than

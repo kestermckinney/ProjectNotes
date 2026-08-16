@@ -1,15 +1,15 @@
 // Copyright (C) 2022, 2023, 2024, 2025, 2026 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
-// QuickFilterSheet — small action sheet triggered by long-pressing a list
+// QuickFilterDialog — centered modal dialog triggered by long-pressing a list
 // row, offering pre-filled "filter the list by this row's own value"
 // shortcuts. Mirrors the Quick Filter submenu in
 // ProjectNotesDesktop/qml/RecordContextMenu.qml, without the rest of that
 // menu (Open/Delete/Plugins/etc.) — mobile has no long-press context menu for
 // those actions yet, and they're already reachable from the detail page.
 // Usage:
-//   QuickFilterSheet { id: qfSheet }
-//   qfSheet.openWith(AppController.projectsListModel, [
+//   QuickFilterDialog { id: qfDialog }
+//   qfDialog.openWith(AppController.projectsListModel, [
 //       { label: qsTr("This Client"), field: "client_id", values: [clientId] }
 //   ])
 
@@ -24,7 +24,15 @@ Popup {
     property var _model: null
     property var _filters: []   // [{label, field, values}]
 
-    readonly property bool _hasActive: _model ? AppController.hasActiveColumnFilters(_model) : false
+    // Reads filterRev so the trailing "Clear Filters" row appears/disappears
+    // as shortcuts are picked while this dialog stays open —
+    // hasActiveColumnFilters() has no change notification of its own (see
+    // AppController.filterRev), so without this the row's visibility would be
+    // frozen at whatever was active when the dialog opened.
+    readonly property bool _hasActive: {
+        AppController.filterRev
+        return _model ? AppController.hasActiveColumnFilters(_model) : false
+    }
 
     // ── Public API ────────────────────────────────────────────────────────────
     function openWith(model, filters) {
@@ -50,23 +58,48 @@ Popup {
         return false
     }
 
-    // ── Popup geometry — slides up from screen bottom, sized to content (the
-    // quick-filter list is always short — a handful of shortcuts per row) ────
+    // ── Geometry — a card centered on the window ─────────────────────────────
+    // Parented to the window overlay rather than to the page that declares it:
+    // that centers it on the screen instead of within the list, and it keeps
+    // the dialog alive if anything hides the page underneath — a popup whose
+    // visual parent goes invisible is hidden along with it.
+    parent: Overlay.overlay
+    anchors.centerIn: parent
     modal: true
-    dim: true
-    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-
-    x: 0
-    y: parent ? parent.height - height : 0
-    width:  parent ? parent.width : 390
-    height: parent ? Math.min(_col.implicitHeight, parent.height - 60) : _col.implicitHeight
+    width: Math.min(340, (parent ? parent.width : 390) - 48)
     padding: 0
 
+    // Cap on the shortcut list alone (the title bar and Clear Filters row sit
+    // outside it), so a long set scrolls instead of running off-screen.
+    readonly property real _maxRowsHeight: (parent ? parent.height : 600) * 0.55
+
+    // Outside-tap dismissal is the backdrop TapHandler below rather than
+    // Popup.CloseOnPressOutside, because this dialog opens while the finger
+    // that long-pressed the row is still down — and that finger's release
+    // lands outside the dialog, on the backdrop. With CloseOnPressOutside the
+    // tail end of the very gesture that opened the dialog counts as a
+    // dismissal, so it vanished the instant the user lifted their finger (or
+    // dragged off the row and let go). A TapHandler only fires for a press and
+    // release it saw both halves of, so the stray release is ignored while a
+    // genuine tap outside still closes.
+    closePolicy: Popup.CloseOnEscape
+    Overlay.modal: Rectangle {
+        color: Qt.rgba(0, 0, 0, 0.45)
+        TapHandler { onTapped: root.close() }
+        Behavior on opacity { NumberAnimation { duration: 150 } }
+    }
+
     enter: Transition {
-        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 220; easing.type: Easing.OutCubic }
+        ParallelAnimation {
+            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 160; easing.type: Easing.OutCubic }
+            NumberAnimation { property: "scale";   from: 0.92; to: 1; duration: 160; easing.type: Easing.OutCubic }
+        }
     }
     exit: Transition {
-        NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 180; easing.type: Easing.InCubic }
+        ParallelAnimation {
+            NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 130; easing.type: Easing.InCubic }
+            NumberAnimation { property: "scale";   from: 1; to: 0.96; duration: 130; easing.type: Easing.InCubic }
+        }
     }
 
     background: Rectangle {
@@ -100,17 +133,24 @@ Popup {
             }
         }
 
-        Repeater {
+        ListView {
+            id: rowsList
+            Layout.fillWidth: true
+            Layout.preferredHeight: Math.min(contentHeight, root._maxRowsHeight)
             model: root._filters
+            interactive: contentHeight > height
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+
             delegate: ItemDelegate {
                 id: rowItem
                 required property var modelData
-                // Reads filterRev so the checkmark stays live while the sheet
-                // is open and the user picks more than one shortcut (like the
-                // desktop menu, this stays open across picks — see
+                // Reads filterRev so the checkmark stays live while the dialog
+                // is open and the user picks more than one shortcut (this
+                // stays open across picks, like the desktop menu — see
                 // AppController.filterRev).
                 readonly property bool checked_: { AppController.filterRev; return root._matches(modelData) }
-                Layout.fillWidth: true
+                width: ListView.view ? ListView.view.width : 0
                 text: modelData.label
 
                 contentItem: RowLayout {
@@ -124,7 +164,8 @@ Popup {
 
         Rectangle {
             visible: root._hasActive
-            Layout.fillWidth: true; height: 1; color: Theme.mutedText; opacity: 0.25
+            Layout.fillWidth: true; Layout.preferredHeight: 1
+            color: Theme.mutedText; opacity: 0.25
         }
 
         ItemDelegate {

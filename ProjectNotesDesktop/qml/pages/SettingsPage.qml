@@ -19,6 +19,15 @@ Item {
         mgmtCombo.value = _nameForId(_clients, DesktopAppController.managingCompanyId())
         pmCombo.value   = _nameForId(_people,  DesktopAppController.projectManagerId())
     }
+    // Called by the shell before it navigates away from this page (the same
+    // _saveNow() contract the detail pages implement). Flushes the cloud-sync
+    // fields so the credential check that follows sees what the user last typed.
+    function _saveNow() {
+        syncEmailField.commit()
+        syncPasswordField.commit()
+        syncPhraseField.commit()
+    }
+
     function _clientNames() { return _clients.map(function(c){ return c.name }) }
     function _peopleNames() { return _people.map(function(p){ return p.name }) }
     function _idForName(list, n) { for (var i=0;i<list.length;i++) if (list[i].name===n) return list[i].id; return "" }
@@ -161,17 +170,20 @@ Item {
                     onToggledValue: (v) => DesktopAppController.syncEnabled = v
                 }
                 SyncField {
+                    id: syncEmailField
                     label: qsTr("Sync Email")
                     value: DesktopAppController.syncEmail
                     onCommitted: (v) => DesktopAppController.syncEmail = v
                 }
                 SyncField {
+                    id: syncPasswordField
                     label: qsTr("Sync Password")
                     value: DesktopAppController.syncPassword
                     password: true
                     onCommitted: (v) => DesktopAppController.syncPassword = v
                 }
                 SyncField {
+                    id: syncPhraseField
                     label: qsTr("Encryption Phrase")
                     value: DesktopAppController.syncEncryptionPhrase
                     password: true
@@ -517,6 +529,11 @@ Item {
         property string value: ""
         property bool password: false
         signal committed(string v)
+        // Commit whatever is typed without waiting for focus to move — used by
+        // _saveNow() so a value the user typed and then navigated away from is
+        // saved (and checked) rather than lost. Committing an unchanged value is
+        // harmless: the controller's setters ignore it.
+        function commit() { sf.committed(sfInput.text) }
         Layout.fillWidth: true
         spacing: 3
         Text { text: sf.label; color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold }

@@ -56,20 +56,29 @@ Item {
         return s !== "" ? DesktopAppController.peopleNameForId(s) : ""
     }
 
-    // Quick Filter entries for a right-clicked item row: pre-filled from that
-    // row's own client/assigned-to/identified-by (omitted when unset), plus
-    // the always-available overdue toggle and the three priority shortcuts.
-    // item_overdue is a computed "Yes"/"No" column (date_due in the past and
-    // not Resolved/Cancelled — see trackeritemsmodel.cpp); priority values
-    // are the exact case-sensitive strings DesktopAppController.itemPriorityOptions()
-    // returns ("Low"/"Medium"/"High").
+    // Quick Filter entries for a right-clicked item row: leads with "Assigned
+    // to Me" — the Project Manager configured in Preferences, omitted when
+    // none is set — then entries pre-filled from that row's own client/
+    // assigned-to/identified-by (omitted when unset), then the always-available
+    // overdue toggle and the three priority shortcuts. "Assigned to Me" goes
+    // first so the one entry that doesn't depend on the clicked row keeps a
+    // stable position in the flyout. item_overdue is a computed "Yes"/"No"
+    // column (date_due in the past and not Resolved/Cancelled — see
+    // trackeritemsmodel.cpp); priority values are the exact case-sensitive
+    // strings DesktopAppController.itemPriorityOptions() returns
+    // ("Low"/"Medium"/"High").
     function _quickFiltersForRow(m) {
         var qf = []
+        var pmId = DesktopAppController.projectManagerId()
+        if (pmId !== "")
+            qf.push({ icon: "assignment_ind", label: qsTr("Assigned to Me"), field: "assigned_to", values: [pmId] })
         var clientId = (m.client_id || "").toString()
         if (clientId !== "")
             qf.push({ icon: "apartment", label: qsTr("This Client"), field: "client_id", values: [clientId] })
         var assignedId = (m.assigned_to || "").toString()
-        if (assignedId !== "")
+        // Identical field/values to "Assigned to Me" when the clicked row is
+        // the PM's own — skip it rather than list the same shortcut twice.
+        if (assignedId !== "" && assignedId !== pmId)
             qf.push({ icon: "person_pin", label: qsTr("This Assigned To"), field: "assigned_to", values: [assignedId] })
         var identifiedId = (m.identified_by || "").toString()
         if (identifiedId !== "")

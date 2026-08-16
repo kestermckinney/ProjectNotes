@@ -8,18 +8,27 @@
 #include "QLoggerWriter.h"
 
 #include "sqlitesyncpro.h"
+// Used by verifySyncSettings() to check the saved credentials and encryption
+// phrase directly, without spinning up the sync engine.
+#include "authmanager.h"
+#include "httpclient.h"
+#include "rowencryption.h"
 
+#include <QCoreApplication>
+#include <QCryptographicHash>
 #include <QDir>
 #include <QFileInfo>
 #include <QHash>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QPointer>
 #include <QSet>
 #include <QSqlQuery>
 #include <QTextDocument>
 #include <QThread>
 #include <QTimer>
+#include <QUrlQuery>
 
 #include <algorithm>
 
@@ -226,16 +235,9 @@ void AppController::configureSyncApi()
 
     // Setters are mutex-protected inside SqliteSyncPro, so it is safe to
     // call them directly from the main thread.
-    const QString supabaseUrl = MobileSettings::isTestSupabase()
-        ? QStringLiteral("https://lsulnvxgrlpuqtzonner.supabase.co")
-        : QStringLiteral("https://nrtjpzkrldwydkbopsml.supabase.co");
-    const QString supabaseKey = MobileSettings::isTestSupabase()
-        ? QStringLiteral("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzdWxudnhncmxwdXF0em9ubmVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1ODY0OTIsImV4cCI6MjA5NDE2MjQ5Mn0.AyEQHLZadhj5r0BNkvPASaMZ0gTr4LAueq0SGVuua3s")
-        : QStringLiteral("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ydGpwemtybGR3eWRrYm9wc21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTU0NTQsImV4cCI6MjA4OTQzMTQ1NH0.hzzyb5bFKDIFbrJ7Fa8INh57pWIkz52csQ2gQ_L302E");
-
     m_syncApi->setSyncHostType(1);  // always Supabase
-    m_syncApi->setPostgrestUrl(supabaseUrl);
-    m_syncApi->setSupabaseKey(supabaseKey);
+    m_syncApi->setPostgrestUrl(supabaseUrl());
+    m_syncApi->setSupabaseKey(supabaseAnonKey());
     m_syncApi->setEmail(global_MobileSettings.getSyncEmail());
     m_syncApi->setPassword(global_MobileSettings.getSyncPassword());
     m_syncApi->setEncryptionPhrase(global_MobileSettings.getSyncEncryptionPhrase());
@@ -389,6 +391,20 @@ void AppController::setSyncProgress(qreal progress, bool hasError)
     emit syncProgressChanged();
 }
 
+QString AppController::supabaseUrl()
+{
+    return MobileSettings::isTestSupabase()
+        ? QStringLiteral("https://lsulnvxgrlpuqtzonner.supabase.co")
+        : QStringLiteral("https://nrtjpzkrldwydkbopsml.supabase.co");
+}
+
+QString AppController::supabaseAnonKey()
+{
+    return MobileSettings::isTestSupabase()
+        ? QStringLiteral("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzdWxudnhncmxwdXF0em9ubmVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1ODY0OTIsImV4cCI6MjA5NDE2MjQ5Mn0.AyEQHLZadhj5r0BNkvPASaMZ0gTr4LAueq0SGVuua3s")
+        : QStringLiteral("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ydGpwemtybGR3eWRrYm9wc21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTU0NTQsImV4cCI6MjA4OTQzMTQ1NH0.hzzyb5bFKDIFbrJ7Fa8INh57pWIkz52csQ2gQ_L302E");
+}
+
 QString AppController::supabaseConnectionInfo() const
 {
     const bool isTest = MobileSettings::isTestSupabase();
@@ -404,6 +420,200 @@ void AppController::setSubscriptionStatusText(const QString& text)
         return;
     m_subscriptionStatusText = text;
     emit subscriptionStatusChanged();
+}
+
+// ── Sync settings + verification ─────────────────────────────────────────────
+//
+// Mirrors DesktopAppController's implementation so both frontends report the
+// same problems in the same words.
+
+// Each setter is a no-op when the value is unchanged: the Cloud Sync Settings
+// page commits every field whenever it loses focus (and again on the way out),
+// so without the guard simply opening the page would mark the settings
+// unverified and trigger a pointless round trip to the host.
+void AppController::setSyncEnabled(bool v)
+{
+    if (syncEnabled() == v) return;
+    global_MobileSettings.setSyncEnabled(v);
+    // Switching sync on is the moment the stored credentials start to matter.
+    if (v) setSyncSettingsUnverified(true);
+    emit syncSettingsChanged();
+}
+
+void AppController::setSyncEmail(const QString& v)
+{
+    if (syncEmail() == v) return;
+    global_MobileSettings.setSyncEmail(v);
+    setSyncSettingsUnverified(true);
+    emit syncSettingsChanged();
+}
+
+void AppController::setSyncPassword(const QString& v)
+{
+    if (syncPassword() == v) return;
+    global_MobileSettings.setSyncPassword(v);
+    setSyncSettingsUnverified(true);
+    emit syncSettingsChanged();
+}
+
+void AppController::setSyncEncryptionPhrase(const QString& v)
+{
+    if (syncEncryptionPhrase() == v) return;
+    global_MobileSettings.setSyncEncryptionPhrase(v);
+    setSyncSettingsUnverified(true);
+    emit syncSettingsChanged();
+}
+
+void AppController::setSyncSettingsUnverified(bool unverified)
+{
+    if (m_syncSettingsUnverified == unverified)
+        return;
+    m_syncSettingsUnverified = unverified;
+    emit syncSettingsUnverifiedChanged();
+}
+
+// Sampling a handful of rows is enough to judge the phrase: the pull decrypts
+// every row with the same key, so if any row opens the phrase is right, and if
+// none of them do it isn't.
+static constexpr int kVerifySampleRows = 25;
+
+void AppController::verifySyncSettings()
+{
+    if (m_syncVerifyInProgress)
+        return;
+
+    const QString email  = syncEmail();
+    const QString passwd = syncPassword();
+    const QString phrase = syncEncryptionPhrase();
+
+    // Nothing to check against — sync is off, or the account was never filled in.
+    if (!syncEnabled() || email.isEmpty() || passwd.isEmpty()) {
+        setSyncSettingsUnverified(false);
+        emit syncSettingsVerified(QStringLiteral("skipped"), QString());
+        return;
+    }
+
+    m_syncVerifyInProgress = true;
+    emit syncVerifyInProgressChanged();
+
+    const QString url     = supabaseUrl();
+    const QString anonKey = supabaseAnonKey();
+    QPointer<AppController> self(this);
+
+    // Its own thread: HttpClient/AuthManager block on a nested event loop, and
+    // the sync engine's thread may well be mid-cycle. The verdict is posted back
+    // through the application object and the guard is only dereferenced on the
+    // GUI thread, so a controller torn down mid-check just drops the answer.
+    QThread* worker = QThread::create([self, url, anonKey, email, passwd, phrase]() {
+        HttpClient http;
+        http.setBaseUrl(url + QStringLiteral("/rest/v1"));
+        http.setApiKey(anonKey);
+        http.setTimeoutMs(15000);
+
+        bool    unreachable = false;
+        QString authError;
+        AuthManager auth;
+        QObject::connect(&auth, &AuthManager::networkError, &auth,
+                         [&unreachable](const QString&) { unreachable = true; });
+        QObject::connect(&auth, &AuthManager::authenticationFailed, &auth,
+                         [&authError](const QString& reason) { authError = reason; });
+
+        QString status;
+        QString detail;
+        if (!auth.login(&http, url + QStringLiteral("/auth/v1/token?grant_type=password"),
+                        email, passwd)) {
+            // AuthManager reports an unreachable host (HTTP status 0) separately
+            // from a rejected login, so an outage is never blamed on the password.
+            status = unreachable ? QStringLiteral("offline") : QStringLiteral("credentials");
+            detail = unreachable ? QString() : authError;
+        } else {
+            http.setAuthToken(auth.token());
+
+            // "sync_data" is SqliteSyncPro's default postgres table and the one
+            // this app syncs to (it never calls setPostgresTableName). Row-level
+            // security scopes it to the signed-in account, so this reads only
+            // this user's own rows.
+            QUrlQuery query;
+            query.addQueryItem(QStringLiteral("select"), QStringLiteral("jsonrowdata"));
+            query.addQueryItem(QStringLiteral("limit"), QString::number(kVerifySampleRows));
+            const QByteArray response = http.get(QStringLiteral("sync_data"), query);
+
+            if (!http.wasSuccessful()) {
+                // Signing in worked but the read didn't. Report it as unchecked
+                // rather than blaming the phrase for a server-side problem.
+                status = QStringLiteral("offline");
+                detail = http.lastError();
+            } else {
+                const QByteArray key = phrase.isEmpty()
+                    ? QByteArray()
+                    : QCryptographicHash::hash(phrase.toUtf8(), QCryptographicHash::Sha256);
+
+                int encryptedRows = 0;
+                int decryptedRows = 0;
+                const QJsonArray rows = QJsonDocument::fromJson(response).array();
+                for (const QJsonValue& row : rows) {
+                    const QJsonValue data = row.toObject().value(QStringLiteral("jsonrowdata"));
+                    // A plain JSON object was pushed before encryption was turned
+                    // on; only the "enc:…" strings say anything about the phrase.
+                    if (!data.isString())
+                        continue;
+                    ++encryptedRows;
+                    if (!key.isEmpty() && !RowEncryption::decrypt(data.toString(), key).isEmpty())
+                        ++decryptedRows;
+                }
+                // No encrypted rows yet (a brand-new account) proves nothing, so
+                // only an outright failure to open any of them is an error.
+                status = (encryptedRows > 0 && decryptedRows == 0)
+                             ? QStringLiteral("encryption") : QStringLiteral("ok");
+            }
+        }
+
+        QMetaObject::invokeMethod(QCoreApplication::instance(), [self, status, detail]() {
+            if (self)
+                self->finishSyncVerification(status, detail);
+        }, Qt::QueuedConnection);
+    });
+    worker->setObjectName(QStringLiteral("SyncSettingsVerify"));
+    connect(worker, &QThread::finished, worker, &QObject::deleteLater);
+    worker->start();
+}
+
+void AppController::finishSyncVerification(const QString& status, const QString& detail)
+{
+    m_syncVerifyInProgress = false;
+    emit syncVerifyInProgressChanged();
+
+    // One check per round of edits, whatever the verdict: the user has been told,
+    // and re-asking every time they leave the page (especially while offline)
+    // helps nobody. Editing a field marks the settings unverified again.
+    setSyncSettingsUnverified(false);
+
+    QString message;
+    if (status == QLatin1String("credentials")) {
+        message = tr("The sync host rejected your sync email and password.\n\n"
+                     "Cloud sync will not run until they are corrected. Check the "
+                     "Email and Password fields in Cloud Sync Settings.");
+    } else if (status == QLatin1String("encryption")) {
+        message = tr("Your encryption phrase does not match the one this account's "
+                     "data was encrypted with.\n\n"
+                     "Records synced from your other devices cannot be decrypted and "
+                     "will be skipped. Check the Encryption Phrase field in Cloud "
+                     "Sync Settings.");
+    } else if (status == QLatin1String("offline")) {
+        message = tr("Your cloud sync settings were saved, but the sync host could not "
+                     "be reached to check them.\n\n"
+                     "They will be checked again the next time sync runs.");
+    }
+
+    // ERRORLOG rather than the desktop's SYNCERRORLOG — it is the only
+    // file destination this app registers (see the constructor).
+    if (!message.isEmpty()) {
+        QLog_Error(ERRORLOG,
+            QString("Cloud sync settings check reported '%1'%2")
+                .arg(status, detail.isEmpty() ? QString() : QStringLiteral(": ") + detail));
+    }
+
+    emit syncSettingsVerified(status, message);
 }
 
 // ── Filter helpers ───────────────────────────────────────────────────────────
