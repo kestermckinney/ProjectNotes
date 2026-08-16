@@ -44,7 +44,7 @@ set -euo pipefail
 usage() { sed -n '13,40p' "$0" | sed 's/^# \{0,1\}//'; }
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-QT_IOS="${QT_IOS:-$HOME/Qt/6.10.2/ios}"
+QT_IOS="${QT_IOS:-$HOME/Qt/6.11.1/ios}"
 TEAM_ID="${TEAM_ID:-2PY624KHXH}"
 SCHEME="${SCHEME:-ProjectNotesMobile}"
 BUNDLE_ID="com.projectnotespro.projectnotesmobile"
@@ -88,7 +88,7 @@ QT_CMAKE="${QT_IOS}/bin/qt-cmake"
 # ── Sanity checks ─────────────────────────────────────────────────────────────
 if [[ ! -x "${QT_CMAKE}" ]]; then
     echo "ERROR: qt-cmake not found at ${QT_CMAKE}" >&2
-    echo "       Set QT_IOS to your Qt iOS kit, e.g. QT_IOS=\$HOME/Qt/6.10.2/ios" >&2
+    echo "       Set QT_IOS to your Qt iOS kit, e.g. QT_IOS=\$HOME/Qt/6.11.1/ios" >&2
     exit 1
 fi
 

@@ -39,7 +39,12 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 if(APPLE)
-    set(Python3_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/3.14" CACHE PATH "Python 3.13 root (python.org install)")
+    # Must point at the python.org framework that actually gets bundled: the macOS
+    # release copies this whole framework into the .app (BundlePythonFramework.cmake)
+    # and pluginmanager.cpp hardcodes python313.zip on sys.path. If this path does
+    # not exist, find_package silently falls back to Homebrew's python3 and the app
+    # links one interpreter while bundling another.
+    set(Python3_ROOT_DIR "/Library/Frameworks/Python.framework/Versions/3.13" CACHE PATH "Python 3.13 root (python.org install)")
 endif()
 
 if(WIN32)

@@ -98,4 +98,36 @@ message(STATUS "BundlePythonFramework: re-signing Python dylib (ad-hoc)")
 execute_process(COMMAND codesign --force --sign - "${_py_dylib}"
     OUTPUT_QUIET ERROR_QUIET)
 
+# ── 6. Re-sign the executable and re-seal the app bundle ─────────────────────
+# Steps 3 and 4 ran install_name_tool on EXECUTABLE, which invalidates the ad-hoc
+# signature macdeployqt applied moments earlier. An executable with a broken
+# signature is SIGKILLed by the kernel the instant dyld pages in its first page
+# ("EXC_BAD_ACCESS / SIGKILL (Code Signature Invalid)") — the app dies inside
+# dyld's start, before main() runs, with no output at all. Re-signing the Mach-O
+# is therefore mandatory, not just good hygiene.
+#
+# Sealing the surrounding .app afterwards keeps Contents/_CodeSignature in sync
+# with the modified executable; nested frameworks keep their own signatures.
+message(STATUS "BundlePythonFramework: re-signing executable (ad-hoc)")
+execute_process(COMMAND codesign --force --sign - "${EXECUTABLE}"
+    RESULT_VARIABLE _rc_exe OUTPUT_QUIET ERROR_QUIET)
+if(NOT _rc_exe EQUAL 0)
+    message(FATAL_ERROR "BundlePythonFramework: failed to re-sign ${EXECUTABLE} "
+        "(codesign exit ${_rc_exe}). The app would be SIGKILLed at launch.")
+endif()
+
+# EXECUTABLE = <bundle>.app/Contents/MacOS/<name> → up three levels is the bundle.
+get_filename_component(_app_bundle "${EXECUTABLE}/../../.." REALPATH)
+if(_app_bundle MATCHES "\\.app$" AND IS_DIRECTORY "${_app_bundle}")
+    message(STATUS "BundlePythonFramework: re-sealing bundle ${_app_bundle} (ad-hoc)")
+    execute_process(COMMAND codesign --force --sign - "${_app_bundle}"
+        RESULT_VARIABLE _rc_app OUTPUT_QUIET ERROR_QUIET)
+    if(NOT _rc_app EQUAL 0)
+        message(WARNING "BundlePythonFramework: re-sealing the bundle returned ${_rc_app}")
+    endif()
+else()
+    message(STATUS "BundlePythonFramework: ${EXECUTABLE} is not inside a .app — "
+        "skipped bundle re-seal (executable itself is signed).")
+endif()
+
 message(STATUS "BundlePythonFramework: done.")

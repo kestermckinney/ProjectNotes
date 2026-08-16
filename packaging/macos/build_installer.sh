@@ -50,7 +50,7 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 #   ${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app — QML frontend (shipped)
 # ProjectNotesDesktop's CMakeLists.txt pins RUNTIME_OUTPUT_DIRECTORY to its own
 # build subdirectory specifically so the two never collide.
-PN_BUILD_DIR="${PN_BUILD_DIR:-${PROJECT_ROOT}/build/Qt_6_10_2_for_macOS-Release}"
+PN_BUILD_DIR="${PN_BUILD_DIR:-${PROJECT_ROOT}/build/Qt_6_11_1_for_macOS_Release}"
 
 PN_APP="${PN_BUILD_DIR}/ProjectNotesDesktop/Project Notes.app"
 

@@ -42,7 +42,7 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 SQLADMIN_ROOT="$(cd "${PROJECT_ROOT}/../SqliteSyncPro" && pwd)"
 
 # Adjust this to match your Qt Creator build directory name
-SA_BUILD_DIR="${SA_BUILD_DIR:-${SQLADMIN_ROOT}/build/Qt_6_10_2_for_macOS-Release/admin}"
+SA_BUILD_DIR="${SA_BUILD_DIR:-${SQLADMIN_ROOT}/build/Qt_6_11_1_for_macOS_Release/admin}"
 
 SA_APP="${SA_BUILD_DIR}/Project Notes Remote Host.app"
 
