@@ -22,10 +22,8 @@ SortFilterProxyModel::SortFilterProxyModel(QObject *parent): QSortFilterProxyMod
     m_resortDebounce.setSingleShot(true);
     m_resortDebounce.setInterval(0);
     QObject::connect(&m_resortDebounce, &QTimer::timeout, this, [this]() {
-        if (m_sortColumn >= 0) {
-            preloadCurrentSortColumn();
-            QSortFilterProxyModel::sort(m_sortColumn, m_sortOrder);
-        }
+        if (m_sortColumn >= 0)
+            SortFilterProxyModel::sort(m_sortColumn, m_sortOrder);
     });
 }
 
@@ -213,22 +211,17 @@ void SortFilterProxyModel::onSourceDataChanged(const QModelIndex& topLeft,
 
 void SortFilterProxyModel::setPinnedRow(int sourceRow)
 {
-    if (m_pinnedSourceRow >= 0 && m_pendingSort) {
-        m_pendingSort = false;
-        preloadCurrentSortColumn();
-        QSortFilterProxyModel::sort(m_sortColumn, m_sortOrder);
-    }
+    if (m_pinnedSourceRow >= 0 && m_pendingSort)
+        SortFilterProxyModel::sort(m_sortColumn, m_sortOrder);
+
     m_pinnedSourceRow = sourceRow;
 }
 
 void SortFilterProxyModel::releasePinnedRow()
 {
     m_pinnedSourceRow = -1;
-    if (m_pendingSort && m_sortColumn >= 0) {
-        m_pendingSort = false;
-        preloadCurrentSortColumn();
-        QSortFilterProxyModel::sort(m_sortColumn, m_sortOrder);
-    }
+    if (m_pendingSort && m_sortColumn >= 0)
+        SortFilterProxyModel::sort(m_sortColumn, m_sortOrder);
 }
 
 bool SortFilterProxyModel::lessThan(const QModelIndex &sourceLeft, const QModelIndex &sourceRight) const
@@ -238,14 +231,6 @@ bool SortFilterProxyModel::lessThan(const QModelIndex &sourceLeft, const QModelI
     SqlQueryModel *sourcemodel_right = (SqlQueryModel*) sourceRight.model();
 
     SqlQueryModel::DBColumnType type_left = sourcemodel_left->getType(sourceLeft.column());
-
-    // -1/0/1: how the sort column compares. 0 means a tie, resolved below via
-    // the column-0 (record id) tiebreaker instead of returning directly, so
-    // rows with equal sort-column values still get a fully deterministic,
-    // reproducible order — otherwise which one sorts first is left to the
-    // underlying sort algorithm's unspecified handling of equivalent
-    // elements, which can reshuffle tied rows between resorts.
-    int cmp = 0;
 
     // For lookup columns, resolve the display value and compare as strings (case-insensitive).
     const QString lookupTable = sourcemodel_left->getLookupTable(sourceLeft.column());
@@ -263,45 +248,28 @@ bool SortFilterProxyModel::lessThan(const QModelIndex &sourceLeft, const QModelI
 
         const QString left_display  = resolveLookup(sourcemodel_left,  sourceLeft);
         const QString right_display = resolveLookup(sourcemodel_right, sourceRight);
-        cmp = QString::compare(left_display, right_display, Qt::CaseInsensitive);
-    }
-    else
-    {
-        // get raw values
-        QVariant value_left  = sourcemodel_left->data(sourceLeft);
-        QVariant value_right = sourcemodel_right->data(sourceRight);
 
-        // convert to sort_table items
-        sourcemodel_left->sqlEscape(value_left, type_left);
-        sourcemodel_right->sqlEscape(value_right, type_left);
-
-        // compare items
-        if (type_left == SqlQueryModel::DBInteger ||
-                type_left == SqlQueryModel::DBBool ||
-                type_left == SqlQueryModel::DBPercent ||
-                type_left == SqlQueryModel::DBReal ||
-                type_left == SqlQueryModel::DBUSD ||
-                type_left == SqlQueryModel::DBDate ||
-                type_left == SqlQueryModel::DBDateTime)
-        {
-            const double dl = value_left.toDouble();
-            const double dr = value_right.toDouble();
-            cmp = (dl < dr) ? -1 : (dl > dr ? 1 : 0);
-        }
-        else
-        {
-            cmp = QString::compare(value_left.toString(), value_right.toString(), Qt::CaseInsensitive);
-        }
+        return QString::compare(left_display, right_display, Qt::CaseInsensitive) < 0;
     }
 
-    if (cmp != 0)
-        return cmp < 0;
+    // get raw values
+    QVariant value_left  = sourcemodel_left->data(sourceLeft);
+    QVariant value_right = sourcemodel_right->data(sourceRight);
 
-    // Tie on the sort column — break it deterministically by the row's unique
-    // id (column 0) instead of leaving equivalent rows to the sort
-    // algorithm's unspecified ordering, so repeated sorts/resorts never
-    // reshuffle tied rows relative to each other.
-    return QString::compare(sourcemodel_left->data(sourcemodel_left->index(sourceLeft.row(), 0)).toString(),
-                             sourcemodel_right->data(sourcemodel_right->index(sourceRight.row(), 0)).toString(),
-                             Qt::CaseInsensitive) < 0;
+    // convert to sort_table items
+    sourcemodel_left->sqlEscape(value_left, type_left);
+    sourcemodel_right->sqlEscape(value_right, type_left);
+
+    // compare items - dates and date times are stored as epoch seconds, so they
+    // compare numerically like the rest of the numeric types
+    if (type_left == SqlQueryModel::DBInteger ||
+            type_left == SqlQueryModel::DBBool ||
+            type_left == SqlQueryModel::DBPercent ||
+            type_left == SqlQueryModel::DBReal ||
+            type_left == SqlQueryModel::DBUSD ||
+            type_left == SqlQueryModel::DBDate ||
+            type_left == SqlQueryModel::DBDateTime)
+        return value_left.toDouble() < value_right.toDouble();
+
+    return QString::compare(value_left.toString(), value_right.toString(), Qt::CaseInsensitive) < 0;
 }
