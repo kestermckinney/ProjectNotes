@@ -40,6 +40,10 @@ Item {
             if (pr >= 0) page.personActivated(pr, DesktopAppController.personIdAtRow(pr))
         }
         onDeleteRequested: DesktopAppController.deletePerson(page._ctxRow)
+        onDuplicateRequested: {
+            var newId = DesktopAppController.duplicateRecord(DesktopAppController.peopleModel, page._ctxId)
+            if (newId !== "") page.personActivated(DesktopAppController.peopleRowForId(newId), newId)
+        }
         onExportRequested: page.exportRequested("people", page._ctxId)
         onFilterRequested: page.filterRequested()
         onSortRequested: (sx, sy) => page.sortRequested(sx, sy)

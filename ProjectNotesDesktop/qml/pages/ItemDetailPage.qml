@@ -364,11 +364,16 @@ Item {
     // Routed to Main → MoveToDialog when "Move To…" is chosen — fired by the
     // explicit button above and by selfMenu's Move To… entry.
     signal moveToRequested(string itemId)
+    // Duplicate on selfMenu opens the copy — routed through Main so it gets a
+    // breadcrumb and a history entry like any other item.
+    signal itemActivated(string itemId)
 
     // Shared record/plugin menu for the comments list.
     RecordRowMenu {
         id: rowMenu
         onExportRecord: (table, id) => page.exportRequested(table, id)
+        // A copied comment stays on this item; it just appears in the list.
+        onDuplicateRecord: (table, id) => DesktopAppController.duplicateRecordInTable(table, id)
     }
 
     // The item's own record/plugin menu — opened by the title row's kebab and
@@ -383,10 +388,15 @@ Item {
         recordId: page.itemId
         canOpen: false
         canNew: false
-        canDuplicate: false
         canMoveTo: true
         canFilter: false
         onDeleteRequested: page.deleteRequested()
+        onDuplicateRequested: {
+            // Copy what's on screen, not what was last written.
+            page._saveNow()
+            var newId = DesktopAppController.copyTrackerItem(page.itemId)
+            if (newId !== "") page.itemActivated(newId)
+        }
         onExportRequested: page.exportRequested(page.exportTable, page.exportId)
         onRefreshRequested: page._reload()
         onMoveToRequested: (id) => page.moveToRequested(id)

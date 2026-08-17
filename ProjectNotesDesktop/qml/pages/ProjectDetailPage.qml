@@ -63,6 +63,9 @@ Item {
 
     signal noteActivated(int noteRow, string noteId)
     signal itemActivated(string itemId)
+    // Duplicate on the page's own menu opens the copy — routed through Main so
+    // it gets a breadcrumb, a sidebar selection and a history entry.
+    signal projectActivated(string projectId)
     // Routed to Main.exportRecord when a sub-table row's menu exports XML.
     signal exportRequested(string table, string id)
     // Routed to Main → MoveToDialog when a tracker item's "Move To…" is chosen.
@@ -659,7 +662,8 @@ Item {
                             function _menu(sx, sy) {
                                 rowMenu.openFor(DesktopAppController.projectTrackerItemsModel,
                                     trackerSlot.iid, qsTr("Tracker Item"),
-                                    (trackerSlot.model.item_name || "").toString(), sx, sy, true, true)
+                                    (trackerSlot.model.item_name || "").toString(), sx, sy,
+                                    /*allowMoveTo*/ true)
                             }
 
                             Card {
@@ -852,7 +856,8 @@ Item {
                             function _menu(sx, sy) {
                                 rowMenu.openFor(DesktopAppController.projectTeamMembersModel,
                                     (teamCard.model.id || "").toString(), qsTr("Team Member"),
-                                    (teamCard.model.name || "").toString(), sx, sy, false, false,
+                                    (teamCard.model.name || "").toString(), sx, sy,
+                                    /*allowMoveTo*/ false,
                                     (teamCard.model.people_id || "").toString())
                             }
                             RowLayout {
@@ -1191,7 +1196,7 @@ Item {
                                 rowMenu.openFor(DesktopAppController.projectNotesModel,
                                     (noteCard.model.id || "").toString(), qsTr("Note"),
                                     (noteCard.model.note_title || "").toString(), sx, sy,
-                                    /*allowDuplicate*/ true, /*allowMoveTo*/ false)
+                                    /*allowMoveTo*/ false)
                             }
                             RowLayout {
                                 anchors.fill: parent
@@ -1530,13 +1535,18 @@ Item {
     RecordRowMenu {
         id: rowMenu
         onExportRecord: (table, id) => page.exportRequested(table, id)
+        // Notes and tracker items get their own page, so a copy of one is worth
+        // opening; locations and status items live in a list on this page, where
+        // the copy simply shows up in place.
         onDuplicateRecord: (table, id) => {
             if (table === "project_notes") {
                 var r = DesktopAppController.copyProjectNote(id)
                 if (r >= 0) { page._saveNow(); page.noteActivated(r, DesktopAppController.projectNoteIdAtRow(r)) }
-            } else {
+            } else if (table === "item_tracker") {
                 var newId = DesktopAppController.copyTrackerItem(id)
                 if (newId !== "") { page._saveNow(); page.itemActivated(newId) }
+            } else {
+                DesktopAppController.duplicateRecordInTable(table, id)
             }
         }
         onMoveToRecord: (id) => page.moveToRequested(id)
@@ -1553,10 +1563,17 @@ Item {
         model: DesktopAppController.projectsListModel
         recordId: page.projectId
         canOpen: false
-        canDuplicate: false
         canMoveTo: true
         onNewRequested: page.newRequested()
         onDeleteRequested: page.deleteRequested()
+        onDuplicateRequested: {
+            // Copy what's on screen, not what was last written.
+            page._saveNow()
+            // ProjectsModel::copyRecord also brings the project's team across.
+            var newId = DesktopAppController.duplicateRecord(
+                            DesktopAppController.projectsListModel, page.projectId)
+            if (newId !== "") page.projectActivated(newId)
+        }
         onMoveToRequested: moveToFolderDialog.openFor(page.projectId, selfMenu.recordLabel)
         onExportRequested: page.exportRequested(page.exportTable, page.exportId)
         onFilterRequested: page.filterRequested()

@@ -17,7 +17,12 @@ Popup {
     property bool   canOpen: true
     property bool   canNew: true
     property bool   canDelete: true
-    property bool   canDuplicate: false
+    // Duplicate defaults to "whatever this record's table supports" rather than
+    // off, so every menu that names a model (or a recordTable) offers it without
+    // opting in — and the record types a copy can't work for (read-only views,
+    // the project_people / meeting_attendees join tables) stay excluded even on
+    // a menu added later. Pages still override it where the action doesn't apply.
+    property bool   canDuplicate: menu._tableSupportsDuplicate
     property bool   canMoveTo: false
     property bool   canExport: true
     property bool   canFilter: true
@@ -45,6 +50,14 @@ Popup {
     // Alternative to `model` for heterogeneous lists (search results): when set,
     // plugins are resolved/run by this table name instead of the model's table.
     property string recordTable: ""
+    // Whether this row's table can be copied at all — the default canDuplicate
+    // above. Keyed off recordTable when the menu has one (search hits), else off
+    // the model's table.
+    readonly property bool _tableSupportsDuplicate: {
+        if (typeof DesktopAppController === "undefined") return false
+        if (menu.recordTable !== "") return DesktopAppController.canDuplicateTable(menu.recordTable)
+        return menu.model ? DesktopAppController.canDuplicateModel(menu.model) : false
+    }
     property var    _plugins: []
     // Navigation IDs for "Go To Person" and "Go To Client" actions
     // Set by the page before opening the menu if the row supports these navigation actions

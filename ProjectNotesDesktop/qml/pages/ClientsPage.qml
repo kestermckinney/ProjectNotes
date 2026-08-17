@@ -28,6 +28,10 @@ Item {
             if (cr >= 0) page.clientActivated(cr, DesktopAppController.clientIdAtProxyRow(cr))
         }
         onDeleteRequested: DesktopAppController.deleteClient(page._ctxRow)
+        onDuplicateRequested: {
+            var newId = DesktopAppController.duplicateRecord(DesktopAppController.clientsModel, page._ctxId)
+            if (newId !== "") page.clientActivated(DesktopAppController.clientRowForId(newId), newId)
+        }
         onExportRequested: page.exportRequested("clients", page._ctxId)
         onFilterRequested: page.filterRequested()
         onSortRequested: (sx, sy) => page.sortRequested(sx, sy)

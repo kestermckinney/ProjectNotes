@@ -25,7 +25,9 @@ RecordContextMenu {
     // Navigation signals are re-emitted from the base class (not redeclared here)
 
     // Built-ins that make sense for a child record: the row already carries inline
-    // open/add/delete affordances, so the menu adds only Export + Refresh + plugins.
+    // open/add/delete affordances, so the menu adds Duplicate (inherited from the
+    // base, which enables it for every table a copy works on) + Export + Refresh
+    // + plugins.
     canOpen: false
     canNew: false
     canDelete: false
@@ -40,16 +42,15 @@ RecordContextMenu {
     onMoveToRequested: rowMenu.moveToRecord(rowMenu.recordId)
     onRefreshRequested: DesktopAppController.refreshModel(rowMenu.model)
 
-    // Configure for one row and open at scene coordinates. Pass allowDuplicate
-    // true for row types that support Copy/Duplicate, and allowMoveTo true for
-    // row types that support Move To… (both: tracker items only, so far).
-    // Optional personId/clientId enable "Go To Person"/"Go To Client" actions.
-    function openFor(rowModel, id, type, label, sx, sy, allowDuplicate, allowMoveTo, personId, clientId) {
+    // Configure for one row and open at scene coordinates. Pass allowMoveTo true
+    // for row types that support Move To… (tracker items only, so far). Optional
+    // personId/clientId enable "Go To Person"/"Go To Client" actions. Duplicate
+    // needs no argument — the base menu derives it from the row's own table.
+    function openFor(rowModel, id, type, label, sx, sy, allowMoveTo, personId, clientId) {
         rowMenu.model = rowModel
         rowMenu.recordId = id
         rowMenu.recordType = type
         rowMenu.recordLabel = label
-        rowMenu.canDuplicate = (allowDuplicate === true)
         rowMenu.canMoveTo = (allowMoveTo === true)
         rowMenu.personId = personId || ""
         rowMenu.clientId = clientId || ""

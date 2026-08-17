@@ -413,7 +413,7 @@ Item {
                                     rowMenu.openFor(DesktopAppController.notesActionItemsModel,
                                         (ai.model.id || "").toString(), qsTr("Action Item"),
                                         (ai.model.item_name || "").toString(), sx, sy,
-                                        /*allowDuplicate*/ false, /*allowMoveTo*/ true)
+                                        /*allowMoveTo*/ true)
                                 }
                                 TapHandler {
                                     acceptedButtons: Qt.RightButton
@@ -576,6 +576,9 @@ Item {
     // Routed to Main.exportRecord — fired by a sub-list row's menu exporting
     // XML, and by the note's own selfMenu below.
     signal exportRequested(string table, string id)
+    // Duplicate on selfMenu opens the copy — routed through Main so it gets a
+    // breadcrumb and a history entry like any other note.
+    signal noteActivated(int noteRow, string noteId)
     // Routed to Main's shared Move To… dialog, same as ProjectDetailPage /
     // ItemsPage / ItemDetailPage.
     signal moveToRequested(string itemId)
@@ -583,10 +586,15 @@ Item {
     // Shared record/plugin menu for the Attendees and Action Items lists.
     // Move To… is only ever offered for Action Items (see ai._menu()'s
     // allowMoveTo arg) — attRow._menu() never sets it, so this handler simply
-    // never fires for an attendee row.
+    // never fires for an attendee row. Duplicate is likewise Action Items only:
+    // the base menu excludes meeting_attendees, whose (note, person) unique key
+    // makes a copy a guaranteed clash.
     RecordRowMenu {
         id: rowMenu
         onExportRecord: (table, id) => page.exportRequested(table, id)
+        // Copied action items keep this note, so the copy just turns up in the
+        // list — copyTrackerItem() renumbers it and refreshes the models.
+        onDuplicateRecord: (table, id) => DesktopAppController.copyTrackerItem(id)
         onMoveToRecord: (id) => page.moveToRequested(id)
     }
 
@@ -603,10 +611,17 @@ Item {
         recordId: page.noteId
         canOpen: false
         canNew: false
-        canDuplicate: false
         canMoveTo: false
         canFilter: false
         onDeleteRequested: page.deleteRequested()
+        onDuplicateRequested: {
+            // Copy what's on screen, not what was last written.
+            page._saveNow()
+            // ProjectNotesModel::copyRecord keeps the project + title and the
+            // attendee list, resets the date to now and leaves the body blank.
+            var r = DesktopAppController.copyProjectNote(page.noteId)
+            if (r >= 0) page.noteActivated(r, DesktopAppController.projectNoteIdAtRow(r))
+        }
         onExportRequested: page.exportRequested(page.exportTable, page.exportId)
         onRefreshRequested: page._reload()
     }

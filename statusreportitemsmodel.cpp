@@ -45,3 +45,14 @@ const QModelIndex StatusReportItemsModel::newRecord(const QVariant* fkValue1, co
 
     return addRecord(qr);
 }
+
+void StatusReportItemsModel::prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex)
+{
+    Q_UNUSED(sourceIndex);
+
+    // (project_id, task_description) is a unique key, so a straight copy always
+    // clashes with the row it came from — prepend "Copy of " the way
+    // ProjectLocationsModel does for its own description key.
+    const int col = getColumnNumber("task_description");
+    newrecord[col] = QString("Copy of %1").arg(newrecord[col].toString());
+}

@@ -51,6 +51,11 @@ Item {
             if (r >= 0) page.projectActivated(DesktopAppController.projectIdAtRow(r))
         }
         onDeleteRequested: DesktopAppController.deleteProject(DesktopAppController.projectRowForId(page._ctxId))
+        onDuplicateRequested: {
+            // ProjectsModel::copyRecord also brings the project's team across.
+            var newId = DesktopAppController.duplicateRecord(DesktopAppController.projectsListModel, page._ctxId)
+            if (newId !== "") page.projectActivated(newId)
+        }
         onMoveToRequested: moveToFolderDialog.openFor(page._ctxId, ctxMenu.recordLabel)
         onExportRequested: page.exportRequested("projects", page._ctxId)
         onFilterRequested: page.filterRequested()

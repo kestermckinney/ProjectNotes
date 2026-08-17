@@ -537,6 +537,29 @@ public:
     // an empty string on failure.
     Q_INVOKABLE QString copyTrackerItem(const QString& itemId);
 
+    // ── Duplicate any record ─────────────────────────────────────────────────
+    // The generic Widgets "Copy" action, for every record menu in the QML shell.
+    // Each record type keeps its own copy rules because the work is done by the
+    // model's SqlQueryModel::copyRecord() override: a project copies its team, a
+    // note copies its attendees and resets the date, a tracker item takes the
+    // next item number in its project, and unique text columns come across
+    // prefixed "Copy of ".
+    //
+    // canDuplicate*() answers whether a record menu should offer Duplicate at
+    // all. False for read-only models, for tables with no model to copy with,
+    // and for the two join tables — project_people and meeting_attendees —
+    // whose composite unique key (parent + person) makes a copy a guaranteed
+    // clash; the Widgets TableView context menu leaves out those same two.
+    Q_INVOKABLE bool    canDuplicateModel(QAbstractItemModel* model);
+    Q_INVOKABLE bool    canDuplicateTable(const QString& table);
+    // Duplicate |recordId| from the table |model| displays. Returns the new
+    // record's id, or an empty string on failure (errorOccurred() carries the
+    // reason, typically a unique-value clash from copying the same row twice).
+    Q_INVOKABLE QString duplicateRecord(QAbstractItemModel* model, const QString& recordId);
+    // Same, addressed by table name — for menus that know only the table their
+    // row came from (search hits, detail-page sub-lists).
+    Q_INVOKABLE QString duplicateRecordInTable(const QString& table, const QString& recordId);
+
     // ── Help ▸ maintenance actions (mirror the Widgets Help menu) ────────────
     Q_INVOKABLE QString appVersion() const;   // "6.0.0"
     // Compile-time build timestamp ("Aug  7 2026 14:32:10"), same __DATE__/

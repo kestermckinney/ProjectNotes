@@ -663,6 +663,7 @@ ApplicationWindow {
             dragLayer: dragOverlay
             onNoteActivated: (noteRow, noteId) => root.openNote(noteRow, noteId, projectId)
             onItemActivated: (itemId) => root.openItem(itemId)
+            onProjectActivated: (pid) => root.openProject(pid)
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onMoveToRequested: (id) => moveToDialog.openFor(id)
             onDeleteRequested: root.confirmDelete()
@@ -700,6 +701,7 @@ ApplicationWindow {
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onMoveToRequested: (id) => moveToDialog.openFor(id)
             onDeleteRequested: root.confirmDelete()
+            onNoteActivated: (noteRow, noteId) => root.openNote(noteRow, noteId, projectId)
         }
     }
     Component {
@@ -721,6 +723,7 @@ ApplicationWindow {
     Component {
         id: personDetailComponent
         PersonDetailPage {
+            onPersonActivated: (row, personId) => root.openPerson(row, personId)
             onGoToClientRequested: (clientId) => {
                 var row = DesktopAppController.clientRowForId(clientId)
                 if (row >= 0) {
@@ -759,6 +762,7 @@ ApplicationWindow {
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onMoveToRequested: (id) => moveToDialog.openFor(id)
             onDeleteRequested: root.confirmDelete()
+            onItemActivated: (itemId) => root.openItem(itemId)
         }
     }
     Component {

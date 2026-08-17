@@ -2569,10 +2569,135 @@ QString DesktopAppController::copyTrackerItem(const QString& itemId)
 
     const QString newId = src->data(src->index(newIdx.row(), 0)).toString();
 
-    // Refresh the lists that show items so the copy appears immediately.
+    // Refresh the lists that show items so the copy appears immediately: the
+    // project Tracker tab, the master Items list, and a meeting's action items
+    // (all three are separate models over item_tracker).
     global_DBObjects.trackeritemsmodel()->refresh();
     global_DBObjects.allitemsmodel()->refresh();
+    global_DBObjects.notesactionitemsmodel()->refresh();
 
+    return newId;
+}
+
+// ── Duplicate any record ──────────────────────────────────────────────────────
+
+// The two join tables a straight copy can never succeed on: both carry a
+// composite unique key of (parent, person), so the copy always clashes with the
+// row it came from. The Widgets TableView context menu hides Copy for exactly
+// these two (see TableView::contextMenuEvent).
+static bool tableIsCopyable(const QString& table)
+{
+    const QString t = table.toLower();
+    return !t.isEmpty()
+        && t != QLatin1String("project_people")
+        && t != QLatin1String("meeting_attendees");
+}
+
+// Re-query every live model that shows |table|, so a record copied through a
+// throwaway export model appears in the on-screen lists straight away.
+static void refreshModelsForTable(const QString& table)
+{
+    const QString t = table.toLower();
+    if (t == QLatin1String("projects")) {
+        if (auto* m = global_DBObjects.projectinformationmodel()) m->refresh();
+    } else if (t == QLatin1String("people")) {
+        if (auto* m = global_DBObjects.peoplemodel()) m->refresh();
+    } else if (t == QLatin1String("clients")) {
+        if (auto* m = global_DBObjects.clientsmodel()) m->refresh();
+    } else if (t == QLatin1String("item_tracker")) {
+        // Three models show tracker items: the project tab, the all-items master
+        // list, and the notes-page action items.
+        if (auto* m = global_DBObjects.trackeritemsmodel()) m->refresh();
+        if (auto* m = global_DBObjects.allitemsmodel()) m->refresh();
+        if (auto* m = global_DBObjects.notesactionitemsmodel()) m->refresh();
+    } else if (t == QLatin1String("project_notes")) {
+        if (auto* m = global_DBObjects.projectnotesmodel()) m->refresh();
+    } else if (t == QLatin1String("project_locations")) {
+        if (auto* m = global_DBObjects.projectlocationsmodel()) m->refresh();
+    } else if (t == QLatin1String("status_report_items")) {
+        if (auto* m = global_DBObjects.statusreportitemsmodel()) m->refresh();
+    } else if (t == QLatin1String("item_tracker_updates")) {
+        if (auto* m = global_DBObjects.trackeritemscommentsmodel()) m->refresh();
+    }
+}
+
+bool DesktopAppController::canDuplicateTable(const QString& table)
+{
+    if (!tableIsCopyable(table))
+        return false;
+
+    // Whether a table has a model to copy with is fixed for the run, but this is
+    // asked once per context-menu open, so probe each table only the first time
+    // rather than building and tearing down a model on every right-click.
+    static QHash<QString, bool> cache;
+    const QString key = table.toLower();
+    const auto hit = cache.constFind(key);
+    if (hit != cache.constEnd())
+        return *hit;
+
+    SqlQueryModel* probe = global_DBObjects.createExportObject(key);
+    const bool ok = probe && !probe->isReadOnly();
+    delete probe;
+    cache.insert(key, ok);
+    return ok;
+}
+
+bool DesktopAppController::canDuplicateModel(QAbstractItemModel* model)
+{
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!src || src->isReadOnly())
+        return false;
+    return canDuplicateTable(src->tablename());
+}
+
+QString DesktopAppController::duplicateRecord(QAbstractItemModel* model, const QString& recordId)
+{
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!src)
+        return {};
+    return duplicateRecordInTable(src->tablename(), recordId);
+}
+
+QString DesktopAppController::duplicateRecordInTable(const QString& table, const QString& recordId)
+{
+    global_DBObjects.setLastSaveError("");
+    if (recordId.isEmpty() || !tableIsCopyable(table))
+        return {};
+
+    // Copy through a throwaway model of the table's own class, narrowed to the
+    // one record (same recipe as runPluginMenuForTable). Going through the
+    // table's canonical model rather than whichever list the row was clicked in
+    // matters: only TrackerItemsModel knows how to renumber a copied tracker
+    // item, yet items are also shown by NotesActionItemsModel, and a search hit
+    // may not be loaded in any live model at all. It also keeps a failed copy's
+    // half-built row out of the models the UI is bound to.
+    SqlQueryModel* copyModel = global_DBObjects.createExportObject(table);
+    if (!copyModel)
+        return {};
+
+    copyModel->setFilter(0, recordId);
+    copyModel->refresh();
+
+    QString newId;
+    if (copyModel->rowCount(QModelIndex()) > 0) {
+        const QModelIndex newIdx = copyModel->copyRecord(copyModel->index(0, 0));
+        // copyRecord() returns the staged cache row even when the INSERT was
+        // rejected; the id column is only filled in once the row is written, so
+        // an empty id is the failure signal.
+        if (newIdx.isValid())
+            newId = copyModel->data(copyModel->index(newIdx.row(), 0)).toString();
+    }
+
+    delete copyModel;
+
+    if (newId.isEmpty()) {
+        const QString err = global_DBObjects.lastSaveError();
+        emit errorOccurred(tr("Cannot Duplicate"),
+                           err.isEmpty() ? tr("This record could not be copied.") : err);
+        return {};
+    }
+
+    refreshModelsForTable(table);
     return newId;
 }
 

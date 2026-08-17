@@ -41,6 +41,12 @@ Rectangle {
         }
         onDeleteRequested: DesktopAppController.deleteProject(
                                DesktopAppController.projectRowForId(sidebar._ctxId))
+        onDuplicateRequested: {
+            // ProjectsModel::copyRecord also brings the project's team across.
+            var newId = DesktopAppController.duplicateRecord(
+                            DesktopAppController.projectsListModel, sidebar._ctxId)
+            if (newId !== "") sidebar.projectActivated(newId)
+        }
         onMoveToRequested: moveToFolderDialog.openFor(sidebar._ctxId, projCtxMenu.recordLabel)
         onExportRequested: sidebar.exportRequested("projects", sidebar._ctxId)
         onFilterRequested: sidebar.filterRequested()

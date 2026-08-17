@@ -27,8 +27,7 @@ Item {
         model: DesktopAppController.allItemsModel
         recordId: page._ctxId
         canDelete: false            // master list is a read-only view
-        canDuplicate: true          // Copy Item (Widgets parity)
-        canMoveTo: true
+        canMoveTo: true             // Duplicate comes from the base menu's default
         onOpenRequested:   page.itemActivated(page._ctxId)
         onNewRequested:    page.itemActivated(page._ctxId)
         onDuplicateRequested: {

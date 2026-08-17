@@ -19,6 +19,9 @@ Item {
 
     // Navigation signal
     signal goToClientRequested(string clientId)
+    // Duplicate opens the copy — routed through Main so it gets a breadcrumb and
+    // a history entry like any other person opened from the list.
+    signal personActivated(int row, string personId)
 
     function _clientNames() { return _clients.map(function(c){ return c.name }) }
     function _idForName(n) { for (var i=0;i<_clients.length;i++) if (_clients[i].name===n) return _clients[i].id; return "" }
@@ -105,12 +108,17 @@ Item {
         canOpen: false
         canNew: false
         canDelete: false
-        canDuplicate: false
         canMoveTo: false
         canExport: true
         canFilter: false
         canRefresh: true
         onExportRequested: {} // Handled by parent (Main.qml)
+        onDuplicateRequested: {
+            // Copy what's on screen, not what was last written.
+            page._saveNow()
+            var newId = DesktopAppController.duplicateRecord(DesktopAppController.peopleModel, page.personId)
+            if (newId !== "") page.personActivated(DesktopAppController.peopleRowForId(newId), newId)
+        }
         onRefreshRequested: page._reload()
         onGoToClientRequested: page.goToClientRequested(clientId)
     }

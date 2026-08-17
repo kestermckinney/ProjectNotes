@@ -85,6 +85,13 @@ Item {
         canRefresh: false
         canExport: ctxMenu.recordTable !== ""   // no table ⇒ nothing to export
         onOpenRequested: page.resultActivated(page._ctxType, page._ctxId, page._ctxFk)
+        onDuplicateRequested: {
+            var newId = DesktopAppController.duplicateRecordInTable(ctxMenu.recordTable, page._ctxId)
+            // Re-run the search rather than opening the copy: the hit list is a
+            // snapshot, and "Copy of …" still matches whatever was searched for,
+            // so the new record shows up next to the row it came from.
+            if (newId !== "") DesktopAppController.performSearch(searchField.text)
+        }
         onExportRequested: page.exportRequested(ctxMenu.recordTable, page._ctxId)
     }
 
