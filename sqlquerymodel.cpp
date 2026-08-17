@@ -2838,9 +2838,22 @@ bool SqlQueryModel::checkUniqueKeys(const QModelIndex &index, const QVariant &va
     {
         QString where;
         bool isrelevent = false;
+        bool resolvable = true;
 
         for (const QString& f : itk.value())
         {
+            // A key set naming a column this model doesn't have can neither be
+            // queried (the column isn't in the SELECT) nor bound (getColumnNumber()
+            // returns -1, which would index the row cache out of range below).
+            // Skip the whole set and record the mistake in the model definition.
+            if (getColumnNumber(f) < 0)
+            {
+                QLog_Error(ERRORLOG, QString("%1: unique key \"%2\" names unknown column \"%3\" — not checked")
+                                         .arg(objectName(), itk.key(), f));
+                resolvable = false;
+                break;
+            }
+
             if ( f.compare(checkfield) == 0 )
                 isrelevent = true;
 
@@ -2848,6 +2861,9 @@ bool SqlQueryModel::checkUniqueKeys(const QModelIndex &index, const QVariant &va
                 where += " and ";
             where += QString("%1 = ?").arg(f);
         }
+
+        if (!resolvable)
+            continue;
 
         // if the field we are checking is relevent check it
         if (isrelevent)

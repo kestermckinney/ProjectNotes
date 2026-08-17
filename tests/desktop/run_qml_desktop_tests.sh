@@ -15,7 +15,10 @@ cmake -S "$ROOT" -B "$BUILD" \
     -DBUILD_QML_DESKTOP_TESTS=ON \
     -DBUILD_QML_DESKTOP=OFF
 
-cmake --build "$BUILD" --target tst_qmldesktop -j"$(nproc)"
+# nproc is Linux-only; macOS has sysctl instead.
+JOBS="$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)"
+
+cmake --build "$BUILD" --target tst_qmldesktop -j"$JOBS"
 
 export QT_QPA_PLATFORM=offscreen
 # Keep plugin/python noise out of the test's own stdout stream if desired.

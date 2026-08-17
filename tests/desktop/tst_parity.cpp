@@ -139,8 +139,10 @@ private slots:
         const int before = c->projectsListModel()->rowCount();
         const int row = c->addProject();
         QVERIFY(row >= 0);
-        const QString id = c->projectIdAtRow(row);
-        QVERIFY(!id.isEmpty());
+        // addProject() only stages the row in the model cache; the record — and
+        // with it the id — is written by the first save, once the NOT NULL
+        // number/name are filled in. Same contract as addClient()/addPerson().
+        QVERIFY2(c->projectIdAtRow(row).isEmpty(), "a staged project must not have an id yet");
 
         const QString num  = uniq("PN");
         const QString name = uniq("Project_");
@@ -151,6 +153,10 @@ private slots:
                                 c->statusReportPeriodOptions().first(),
                                 "10000", "4200", "3900", "4100", "10000"),
                  qPrintable(c->lastSaveError()));
+        // The page that typed the fields adopts the new id from here (the insert
+        // can move the row within the sorted list) — see _adoptSavedRecord().
+        const QString id = c->lastCreatedProjectId();
+        QVERIFY(!id.isEmpty());
         QCOMPARE(c->projectsListModel()->rowCount(), before + 1);
         QCOMPARE(c->projectNameForId(id), name);
         QCOMPARE(c->projectNumberForId(id), num);
@@ -470,11 +476,34 @@ private slots:
 
     void test_18_deleteProject()
     {
+        // A staged row that was never written is dropped by discardNewProject();
+        // deleteProject() is for stored records (its UPDATE would match nothing).
+        const int stagedRow = c->addProject();
+        QVERIFY(stagedRow >= 0);
+        const int staged = c->projectsListModel()->rowCount();
+        QVERIFY(c->discardNewProject(stagedRow));
+        QCOMPARE(c->projectsListModel()->rowCount(), staged - 1);
+
+        // A saved project — including the default PM team row the save added —
+        // goes through deleteProject().
         const int row = c->addProject();
         QVERIFY(row >= 0);
+        QVERIFY2(c->saveProject(row, uniq("PN"), uniq("Doomed_"),
+                                c->projectStatusOptions().first(),
+                                m_personId, m_clientId, "07/01/2026", "07/15/2026",
+                                c->invoicingPeriodOptions().first(),
+                                c->statusReportPeriodOptions().first(),
+                                "0", "0", "0", "0", "0"),
+                 qPrintable(c->lastSaveError()));
+        const QString id = c->lastCreatedProjectId();
+        QVERIFY(!id.isEmpty());
+
+        const int r = c->projectRowForId(id);
+        QVERIFY(r >= 0);
         const int cnt = c->projectsListModel()->rowCount();
-        QVERIFY2(c->deleteProject(row), qPrintable(c->lastSaveError()));
+        QVERIFY2(c->deleteProject(r), qPrintable(c->lastSaveError()));
         QCOMPARE(c->projectsListModel()->rowCount(), cnt - 1);
+        QCOMPARE(c->projectRowForId(id), -1);
     }
 
     // Regression: with no default Project Manager configured, adding a project
@@ -485,9 +514,18 @@ private slots:
         c->setProjectManagerId("");   // clear the default PM
         QVERIFY(c->projectManagerId().isEmpty());
 
+        // The project has to be written for the default-PM step to run at all —
+        // it happens right after the staged row is INSERTed (insertStagedProject).
         const int row = c->addProject();
         QVERIFY(row >= 0);
-        const QString pid = c->projectIdAtRow(row);
+        QVERIFY2(c->saveProject(row, uniq("PN"), uniq("NoPmProject_"),
+                                c->projectStatusOptions().first(),
+                                "", m_clientId, "07/01/2026", "07/15/2026",
+                                c->invoicingPeriodOptions().first(),
+                                c->statusReportPeriodOptions().first(),
+                                "0", "0", "0", "0", "0"),
+                 qPrintable(c->lastSaveError()));
+        const QString pid = c->lastCreatedProjectId();
         QVERIFY(!pid.isEmpty());
 
         c->setProjectFilter(pid);
@@ -522,8 +560,6 @@ private slots:
         // A second project to move items into.
         const int destRow = c->addProject();
         QVERIFY(destRow >= 0);
-        const QString destProjectId = c->projectIdAtRow(destRow);
-        QVERIFY(!destProjectId.isEmpty());
         QVERIFY2(c->saveProject(destRow, uniq("PN"), uniq("DestProject_"),
                                 c->projectStatusOptions().first(),
                                 m_personId, m_clientId, "07/01/2026", "07/15/2026",
@@ -531,6 +567,8 @@ private slots:
                                 c->statusReportPeriodOptions().first(),
                                 "0", "0", "0", "0", "0"),
                  qPrintable(c->lastSaveError()));
+        const QString destProjectId = c->lastCreatedProjectId();
+        QVERIFY(!destProjectId.isEmpty());
 
         // A person who is not (yet) a member of destProjectId, to exercise the
         // auto-add path.
