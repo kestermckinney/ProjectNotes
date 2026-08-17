@@ -63,6 +63,11 @@ public:
     void refresh();
     void markDirty() { m_dirty = true; }
     void refreshIfDirty() { if (m_dirty) refresh(); }
+    // True once refresh() has run at least once — i.e. the model holds query
+    // results (which may legitimately be zero rows) rather than never having
+    // been loaded. Lets a caller re-query only the models a view already shows
+    // and leave the lazily-loaded ones alone.
+    bool isLoaded() const { return m_loaded; }
 
     void setTableName(const QString &table, const QString &displayName);
     const QString& tablename() { return m_tablename; }
@@ -300,6 +305,7 @@ private:
 
     bool m_showBlank = false;
     bool m_dirty = false;
+    bool m_loaded = false;
 
     QString m_orderBy;
     QString m_foreignKeyValue;

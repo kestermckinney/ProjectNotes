@@ -419,6 +419,7 @@ void SqlQueryModel::setTableName(const QString &table, const QString &displayNam
 void SqlQueryModel::refresh()
 {
     m_dirty = false;
+    m_loaded = true;
 
     QSqlQuery sql_query;
     QString orderby;

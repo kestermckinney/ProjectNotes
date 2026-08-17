@@ -542,12 +542,29 @@ void DesktopAppController::saveWindowGeometry(int x, int y, int width, int heigh
 
 // ── View options ─────────────────────────────────────────────────────────────
 
+// setGlobalSearches() applies the new filters to the shared models but only
+// marks them dirty — the Widgets app re-opens its current page afterwards,
+// which is what re-queries them. QML pages bind straight to the models, so a
+// list already on screen would keep its stale rows until the user navigated
+// away and back. Re-query the models that have been loaded; the rest stay
+// dirty and pick the filters up when a page first loads them.
+static void refreshLoadedModels(std::initializer_list<SqlQueryModel*> models)
+{
+    for (SqlQueryModel* m : models)
+        if (m && m->isLoaded())
+            m->refresh();
+}
+
 bool DesktopAppController::showClosedProjects() const
 { return global_DBObjects.getShowClosedProjects(); }
 void DesktopAppController::setShowClosedProjects(bool v)
 {
     global_DBObjects.setShowClosedProjects(v);
     global_DBObjects.setGlobalSearches(true);
+    // Models whose project-status filter setGlobalSearches() just changed.
+    refreshLoadedModels({ global_DBObjects.projectinformationmodel(),
+                          global_DBObjects.allitemsmodel(),
+                          global_DBObjects.searchresultsmodel() });
     emit viewOptionsChanged();
 }
 
@@ -557,6 +574,15 @@ void DesktopAppController::setShowInternalItems(bool v)
 {
     global_DBObjects.setShowInternalItems(v);
     global_DBObjects.setGlobalSearches(true);
+    // Models whose internal_item filter setGlobalSearches() just changed.
+    refreshLoadedModels({ global_DBObjects.projectnotesmodel(),
+                          global_DBObjects.actionitemsdetailsmeetingsmodel(),
+                          global_DBObjects.notesactionitemsmodel(),
+                          global_DBObjects.actionitemprojectnotesmodel(),
+                          global_DBObjects.trackeritemsmodel(),
+                          global_DBObjects.allitemsmodel(),
+                          global_DBObjects.actionitemsdetailsmodel(),
+                          global_DBObjects.searchresultsmodel() });
     emit viewOptionsChanged();
 }
 

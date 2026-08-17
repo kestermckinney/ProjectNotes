@@ -449,6 +449,46 @@ private slots:
         c->setNewAndAssignedOnly(d);
     }
 
+    // Regression: toggling a view option has to re-query the models it filters.
+    // The QML pages bind straight to those models (there is no page re-open like
+    // the Widgets app does), so marking them dirty alone left a closed project
+    // on screen after Show Closed Projects was unchecked, and vice versa.
+    void test_15a_showClosedProjectsRefreshesList()
+    {
+        const bool orig = c->showClosedProjects();
+
+        c->setShowClosedProjects(false);
+
+        const int row = c->addProject();
+        QVERIFY(row >= 0);
+        const QString name = uniq("ClosedProject_");
+        QVERIFY2(c->saveProject(row, uniq("PN"), name,
+                                "Closed", m_personId, m_clientId,
+                                "07/01/2026", "07/15/2026",
+                                c->invoicingPeriodOptions().first(),
+                                c->statusReportPeriodOptions().first(),
+                                "10000", "4200", "3900", "4100", "10000"),
+                 qPrintable(c->lastSaveError()));
+        const QString closedId = c->lastCreatedProjectId();
+        QVERIFY(!closedId.isEmpty());
+
+        c->setShowClosedProjects(true);
+        QVERIFY2(rowForId(c->projectsListModel(), closedId) >= 0,
+                 "closed project missing from the list after enabling Show Closed Projects");
+
+        c->setShowClosedProjects(false);
+        QVERIFY2(rowForId(c->projectsListModel(), closedId) < 0,
+                 "closed project still listed after unchecking Show Closed Projects");
+
+        // Clean up the fixture (only visible again with closed projects shown).
+        c->setShowClosedProjects(true);
+        const int r = c->projectRowForId(closedId);
+        QVERIFY(r >= 0);
+        QVERIFY2(c->deleteProject(r), qPrintable(c->lastSaveError()));
+
+        c->setShowClosedProjects(orig);
+    }
+
     void test_16_preferences()
     {
         c->setManagingCompanyId(m_clientId);
