@@ -370,7 +370,19 @@ public:
     Q_INVOKABLE QStringList statusItemCategoryOptions() const;
 
     // ── Projects CRUD ────────────────────────────────────────────────────────
+    // Stages a new project in the model cache and returns its proxy row; the row
+    // is only written once saveProject() has a project number and name for it
+    // (both are NOT NULL and unique in the schema). Use discardNewProject() to
+    // drop it again if the user leaves without filling those in.
     Q_INVOKABLE int         addProject();
+    Q_INVOKABLE bool        discardNewProject(int row);
+    // Id of the project the last save created from a staged row. The page that
+    // typed the fields adopts it from here rather than by row index, which the
+    // insert can move when the list re-sorts.
+    Q_INVOKABLE QString     lastCreatedProjectId() const { return m_lastCreatedProjectId; }
+    // Next free 5-digit project number, offered as the starting value for a new
+    // project. Nothing is written by asking.
+    Q_INVOKABLE QString     nextProjectNumber() const;
     Q_INVOKABLE bool        deleteProject(int row);
     Q_INVOKABLE QVariantMap getProjectData(int row) const;
     Q_INVOKABLE bool        saveProject(int row,
@@ -650,6 +662,11 @@ private:
     // preserves the first, most specific error rather than a downstream cascade.
     bool applyRowFields(QAbstractItemModel* model, int row,
                         std::initializer_list<std::pair<int, QVariant>> fields);
+
+    // INSERT a project row that addProject() only staged (via
+    // SqlQueryModel::insertStagedRow) and add its default project manager.
+    bool insertStagedProject(int srcRow, const QVector<QPair<int, QVariant>>& fields);
+    QString m_lastCreatedProjectId;   // see lastCreatedProjectId()
 
     // Helpers for moveTrackerItem / checkTrackerItemMove.
     bool isProjectTeamMember(const QString& projectId, const QString& peopleId) const;

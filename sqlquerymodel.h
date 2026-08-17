@@ -99,6 +99,18 @@ public:
     virtual const QModelIndex addRecord(QVector<QVariant>& newrecord);
     virtual const QModelIndex copyRecord(QModelIndex index);
     bool insertCacheRow(int row);
+
+    // INSERT a row that newRecord() only staged in the cache, writing every
+    // column in one statement after the same required / unique checks setData()
+    // applies per column. Values are display strings (as they come off a form)
+    // and are escaped exactly as setData() escapes them.
+    //
+    // This is what a record whose NOT NULL columns are filled in by the user
+    // needs: writing it a column at a time would try to INSERT on the first
+    // write, while the remaining required columns are still null. The failure
+    // reason lands in lastSaveError() either way; callers that suppress native
+    // dialogs surface it themselves.
+    bool insertStagedRow(int row, const QVector<QPair<int, QVariant>>& values);
     virtual void prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex) { Q_UNUSED(newrecord); Q_UNUSED(sourceIndex); }
     virtual const QModelIndex newRecord(const QVariant* fkValue1 = nullptr, const QVariant* fkValue2 = nullptr);
     virtual bool deleteRecord(QModelIndex index);

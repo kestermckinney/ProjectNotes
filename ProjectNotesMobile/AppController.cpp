@@ -724,12 +724,24 @@ bool AppController::saveProject(int row, const QString& projectNumber,
                                  const QString& invoicingPeriod, const QString& statusReportPeriod)
 {
     global_DBObjects.setLastSaveError("");
-    QAbstractItemModel* model = global_DBObjects.projectinformationmodelproxy();
+    auto* proxy = global_DBObjects.projectinformationmodelproxy();
+    QAbstractItemModel* model = proxy;
     if (row < 0 || row >= model->rowCount())
         return false;
 
     const QPersistentModelIndex pIdx(model->index(row, 0));
     if (!pIdx.isValid()) return false;
+
+    // A row addProject() only staged has no id yet, and can't be written one
+    // column at a time: the first setData() would try to INSERT it while the
+    // other required column is still null. Write the whole row at once.
+    auto* src = global_DBObjects.projectinformationmodel();
+    const QModelIndex srcIdx = proxy->mapToSource(model->index(row, 0));
+    if (srcIdx.isValid() && src->isNewRecord(srcIdx))
+        return insertStagedProject(srcIdx.row(),
+                { { 1, projectNumber},   { 2, projectName},      { 3, lastStatusDate},
+                  { 4, lastInvoiceDate}, { 5, primaryContactId}, {11, invoicingPeriod},
+                  {12, statusReportPeriod}, {13, clientId},      {14, projectStatus} });
 
     bool ok = true;
     ok &= model->setData(model->index(pIdx.row(),  1), projectNumber);
@@ -746,6 +758,33 @@ bool AppController::saveProject(int row, const QString& projectNumber,
         emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
+}
+
+// Write a staged project row (see addProject) as one INSERT, then finish what
+// ProjectsModel::setData() would have done for a row it inserted itself: give
+// the project its default project manager.
+bool AppController::insertStagedProject(int srcRow, const QVector<QPair<int, QVariant>>& fields)
+{
+    auto* src = global_DBObjects.projectinformationmodel();
+    m_lastCreatedProjectId.clear();
+
+    if (!src->insertStagedRow(srcRow, fields)) {
+        QString err = global_DBObjects.lastSaveError();
+        if (err.isEmpty())
+            err = tr("The project could not be saved.");
+        emit errorOccurred(tr("Could Not Save"), err);
+        return false;
+    }
+
+    const QString newId = src->data(src->index(srcRow, 0)).toString();
+    if (!newId.isEmpty())
+        global_DBObjects.addDefaultPMToProject(newId);
+    m_lastCreatedProjectId = newId;
+
+    // The EVM columns are computed in the SELECT, not stored — re-query the row
+    // so the page reads them back.
+    src->reloadRecord(src->index(srcRow, 0));
+    return true;
 }
 
 bool AppController::saveStatusItem(int row, const QString& category, const QString& description)
@@ -1121,22 +1160,20 @@ static QVariantMap proxyRowToMap(SortFilterProxyModel* proxy, int row)
 
 // ── Projects ──────────────────────────────────────────────────────────────────
 
+// Stage a new project row in the model cache without writing it — the schema
+// requires a project number and name (both NOT NULL and carrying partial unique
+// indexes), so a blank project cannot be INSERTed. saveProject() writes the row
+// in one go once ProjectDetailsPage has those two fields; leaving the page
+// without them discards the staged row (ProjectDetailsPage._discardNew).
 int AppController::addProject()
 {
-    auto* src = global_DBObjects.projectinformationmodel();
-    QModelIndex srcIdx = src->newRecord();
-    if (!srcIdx.isValid()) return -1;
+    return proxyRowFromSource(global_DBObjects.projectinformationmodelproxy(),
+                              global_DBObjects.projectinformationmodel()->newRecord());
+}
 
-    // Commit up front so saveProject's setData calls all take the UPDATE
-    // branch — avoids ProjectsModel::setData firing addDefaultPMToProject
-    // mid-save (same hazard fixed for project notes).
-    if (!src->insertCacheRow(srcIdx.row())) return -1;
-
-    const QString newId = src->data(src->index(srcIdx.row(), 0)).toString();
-    if (!newId.isEmpty())
-        global_DBObjects.addDefaultPMToProject(newId);
-
-    return proxyRowFromSource(global_DBObjects.projectinformationmodelproxy(), srcIdx);
+QString AppController::nextProjectNumber() const
+{
+    return global_DBObjects.projectinformationmodel()->nextAvailableProjectNumber();
 }
 
 bool AppController::deleteProject(int row)
@@ -2060,8 +2097,14 @@ int AppController::rowForId(QAbstractItemModel* model, const QString& id) const
 {
     auto* proxy = qobject_cast<SortFilterProxyModel*>(model);
     SqlQueryModel* src = sourceModelOf(model);
-    if (!proxy || !src || id.isEmpty()) return -1;
+    if (!proxy || !src) return -1;
 
+    // An empty id is not "no record": a row one of the add* methods only staged
+    // has no id until its first save, and the detail page editing it still has to
+    // find it (see ProjectDetailsPage._saveNow and friends). findIndex() keys
+    // rows on their id column, so it locates the staged row by that empty key.
+    // At most one row per model is ever in that state — the page that staged it
+    // either saves it or discards it before another can be added.
     QVariant key(id);
     const QModelIndex srcIdx = src->findIndex(key, 0);
     if (!srcIdx.isValid()) return -1;

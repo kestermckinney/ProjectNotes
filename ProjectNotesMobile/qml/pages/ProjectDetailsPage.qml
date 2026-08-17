@@ -63,6 +63,8 @@ Page {
     }
 
     function _isBlankNew() { return isNewRecord && nameField.text.trim() === "" }
+    // Covers both states a new project can be in: still staged in the model cache
+    // (no id — deleteProject just drops the cache row) or already written.
     function _discardNew()  {
         var row = AppController.rowForId(AppController.projectsListModel, root.projectId)
         if (row < 0) return
@@ -71,8 +73,19 @@ Page {
 
     // Re-resolve projectRow from the stable projectId before every write —
     // Sort/refresh elsewhere in the app can reorder or reset the shared
-    // projectsListModel proxy while this page is open.
+    // projectsListModel proxy while this page is open. A project that hasn't been
+    // created yet has no id; rowForId() resolves the staged row by that empty key.
     function _saveNow() {
+        // A staged project needs the two fields the schema requires of it before
+        // the save below can create it. Without a name there is nothing to create
+        // yet; without a number, fall back to the next free one rather than
+        // leaving a named project uncreatable.
+        if (root.projectId === "") {
+            if (nameField.text.trim() === "") return true
+            if (numberField.text.trim() === "")
+                numberField.text = AppController.nextProjectNumber()
+        }
+
         var row = AppController.rowForId(AppController.projectsListModel, root.projectId)
         if (row < 0) return false   // record no longer exists
         root.projectRow = row
@@ -88,9 +101,26 @@ Page {
             ? invoicingCombo.model[invoicingCombo.currentIndex] : ""
         var srPeriod = (statusReportCombo.currentIndex >= 0)
             ? statusReportCombo.model[statusReportCombo.currentIndex] : ""
-        return AppController.saveProject(root.projectRow, numberField.text, nameField.text,
-                                         status, primaryContactId, clientId, statusDateField.text,
-                                         invoiceDateField.text, invPeriod, srPeriod)
+        var wasStaged = root.projectId === ""
+        var ok = AppController.saveProject(root.projectRow, numberField.text, nameField.text,
+                                          status, primaryContactId, clientId, statusDateField.text,
+                                          invoiceDateField.text, invPeriod, srPeriod)
+        if (ok && wasStaged) root._adoptSavedRecord()
+        return ok
+    }
+
+    // The staged row has just been written: take on its new id (the insert can
+    // move it within the sorted list, so re-resolve the row too) and point the
+    // project-scoped models at it, which is what the sub-pages below read.
+    function _adoptSavedRecord() {
+        var id = AppController.lastCreatedProjectId()
+        if (id === "") return
+        root.projectId   = id
+        root.isNewRecord = false
+        var row = AppController.rowForId(AppController.projectsListModel, id)
+        if (row >= 0) root.projectRow = row
+        AppController.setProjectFilter(id)
+        root._reloadData()   // picks up the default project manager just added
     }
 
     function _reloadData() {
@@ -148,6 +178,8 @@ Page {
 
             ToolButton {
                 icon.name: "doc.on.doc"
+                // Nothing to duplicate until the project exists.
+                enabled: root.projectId !== ""
                 onClicked: {
                     if (!root._saveNow()) return
                     root._skipSave = true
@@ -183,6 +215,9 @@ Page {
 
             ToolButton {
                 icon.name: "trash"
+                // A project that was never written is discarded by leaving the
+                // page, not deleted (see _discardNew).
+                enabled: root.projectId !== ""
                 onClicked: {
                     var row = AppController.rowForId(AppController.projectsListModel, root.projectId)
                     if (row >= 0 && AppController.deleteProject(row)) {
@@ -220,6 +255,20 @@ Page {
                     text: root.initialProjectName
                     inputMethodHints: Qt.ImhNoPredictiveText
                 }
+            }
+
+            // A project that hasn't been created yet: say so, and say what
+            // creates it. The sub-pages in the footer stay disabled until then.
+            Label {
+                visible: root.projectId === ""
+                Layout.fillWidth: true
+                Layout.topMargin: 6
+                leftPadding: 16
+                rightPadding: 16
+                wrapMode: Text.WordWrap
+                font.pixelSize: 12
+                color: Theme.mutedText
+                text: qsTr("New project — give it a name to create it. The pages below become available once it is saved.")
             }
 
             SectionHeader { text: qsTr("Status") }
@@ -401,6 +450,9 @@ Page {
                     ToolTip.text: modelData.label
                     ToolTip.visible: hovered || pressed
                     display: AbstractButton.IconOnly
+                    // Every one of these lists is keyed by the project id, so
+                    // none of them exist until the project has been created.
+                    enabled: root.projectId !== ""
                     onClicked: root.StackView.view.push(
                         Qt.resolvedUrl(modelData.page),
                         { projectId: root.projectId,

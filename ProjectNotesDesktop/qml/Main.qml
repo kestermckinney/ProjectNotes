@@ -167,8 +167,15 @@ ApplicationWindow {
     // ── Navigation ────────────────────────────────────────────────────────────
     function _saveCurrent() {
         var it = contentStack.currentItem
-        if (it && typeof it._saveNow === "function")
+        if (!it) return
+        if (typeof it._saveNow === "function")
             it._saveNow()
+        // A record the "New" button only staged (see DesktopAppController::
+        // addProject) still isn't in the database if _saveNow() had nothing to
+        // save — no name typed, or a name that clashed. Drop the staged row on
+        // the way out so it can't linger in the list as a blank, dead card.
+        if (it.isNewRecord === true && typeof it._discardNew === "function")
+            it._discardNew()
     }
 
     // Section pages are created once and reused across navigation, so
@@ -319,6 +326,17 @@ ApplicationWindow {
         contentStack.push(projectDetailComponent, { projectRow: r, projectId: projectId })
     }
 
+    // Open the detail page on a project the "New Project" button just staged. It
+    // has no id yet — the row is written the moment the page has a project number
+    // and name (ProjectDetailPage._saveNow), which is also when its child tabs
+    // become usable, since every one of them is keyed by the project id.
+    function openNewProject(projectRow) {
+        _saveCurrent()
+        root.crumbSub = qsTr("New Project")
+        contentStack.push(projectDetailComponent,
+                          { projectRow: projectRow, projectId: "", isNewRecord: true })
+    }
+
     function openNote(noteRow, noteId, projectId) {
         _saveCurrent()
         root.crumbSub = qsTr("Note")
@@ -365,7 +383,7 @@ ApplicationWindow {
     function addForCurrentSection() {
         if (root.currentSection === "projects") {
             var r = DesktopAppController.addProject()
-            if (r >= 0) root.openProject(DesktopAppController.projectIdAtRow(r))
+            if (r >= 0) root.openNewProject(r)
         } else if (root.currentSection === "people") {
             var pr = DesktopAppController.addPerson()
             if (pr >= 0) root.openPerson(pr, DesktopAppController.personIdAtRow(pr))
@@ -649,6 +667,13 @@ ApplicationWindow {
             onMoveToRequested: (id) => moveToDialog.openFor(id)
             onDeleteRequested: root.confirmDelete()
             onNewRequested: root.addForCurrentSection()
+            // A staged new project became a real record — it has a breadcrumb and
+            // a sidebar selection now, like any project opened from the list.
+            onRecordPersisted: (projectId) => {
+                root.selectedProjectId = projectId
+                root.crumbSub = DesktopAppController.projectNumberForId(projectId)
+                                + " " + DesktopAppController.projectNameForId(projectId)
+            }
             onFilterRequested: filterDialog.openFor(root.currentSection)
             onSubFilterRequested: (section) => filterDialog.openFor(section)
             onSortRequested: (sx, sy) => sortMenu.openFor(root.currentSection, sx, sy)

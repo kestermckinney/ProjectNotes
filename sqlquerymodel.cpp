@@ -1021,6 +1021,49 @@ bool SqlQueryModel::insertCacheRow(int row)
     return false;
 }
 
+bool SqlQueryModel::insertStagedRow(int row, const QVector<QPair<int, QVariant>>& values)
+{
+    if (row < 0 || row >= m_cache.size())
+        return false;
+    if (!isNewRecord(index(row, 0)))   // already written; this is not an insert
+        return false;
+
+    // Stage everything first so the checks below (and the INSERT itself) see a
+    // complete row — a half-written row is exactly what this method exists to
+    // avoid.
+    for (const QPair<int, QVariant>& v : values)
+    {
+        QVariant escapedValue = v.second;
+        sqlEscape(escapedValue, m_columnType[v.first], true);
+        m_cache[row][v.first] = escapedValue;
+    }
+    invalidateValueIndex();
+
+    auto reject = [this](const QString& message)
+    {
+        getDBOs()->setLastSaveError(message);
+        showNativeError(QObject::tr("Cannot save record"), message);
+        return false;
+    };
+
+    for (const QPair<int, QVariant>& v : values)
+    {
+        const QString columnLabel = m_headers[v.first][Qt::EditRole].toString();
+
+        if (m_columnIsRequired[v.first] == DBRequired && m_cache[row][v.first].toString().trimmed().isEmpty())
+            return reject(columnLabel + QObject::tr(" is a required field."));
+
+        // Checked against the value as typed, the same as setData() does.
+        if (m_columnIsUnique[v.first] == DBUnique && !isUniqueValue(v.second, index(row, v.first)))
+            return reject(columnLabel + QObject::tr(" must be a unique value."));
+
+        if (!checkUniqueKeys(index(row, v.first), v.second))
+            return reject(columnLabel + QObject::tr(" must be a unique value."));
+    }
+
+    return insertCacheRow(row);
+}
+
 const QModelIndex SqlQueryModel::addRecord(QVector<QVariant>& newrecord)
 {
     QModelIndex qmi = QModelIndex();
@@ -1110,6 +1153,15 @@ bool SqlQueryModel::isUniqueValue(const QVariant &newValue, const QModelIndex &i
 
     if (m_cache.count() > 0) // if not a new record exclude the current record
         keyvalue = m_cache[index.row()][0].toString();
+
+    // A record that hasn't been written yet has no key. Binding that null key
+    // would make "id <> ?" evaluate to NULL for every row, so the duplicate
+    // check would silently pass and the collision would only surface as a raw
+    // SQL constraint error at insert time. Compare against an empty key
+    // instead — it excludes nothing, which is right for a row that isn't in the
+    // table yet.
+    if (keyvalue.toString().isNull())
+        keyvalue = QString("");
 
     QSqlQuery select(getDBOs()->getDb());
     select.prepare("select count(*) from " + m_tablename + " where " + keycolumnname + " <> ? and " + columnname + " = ? AND deleted = 0");

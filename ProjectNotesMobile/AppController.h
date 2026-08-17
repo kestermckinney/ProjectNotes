@@ -158,7 +158,17 @@ public:
     Q_INVOKABLE QString lastSaveError() const;
 
     // ── Add / Delete / Copy (returns new proxy row, or -1 on failure) ────────
+    // addProject() stages the row; it is written by the first saveProject() that
+    // has a project number and name for it (both required by the schema), and
+    // deleteProject() drops it again if the page is left without them.
     Q_INVOKABLE int          addProject();
+    // Next free 5-digit project number, offered as a new project's starting
+    // value. Nothing is written by asking.
+    Q_INVOKABLE QString      nextProjectNumber() const;
+    // Id of the project the last save created from a staged row. The page that
+    // typed the fields adopts it from here rather than by row index, which the
+    // insert can move when the list re-sorts.
+    Q_INVOKABLE QString      lastCreatedProjectId() const { return m_lastCreatedProjectId; }
     Q_INVOKABLE bool         deleteProject(int row);
     Q_INVOKABLE int          copyProject(int row);
     Q_INVOKABLE QVariantMap  getProjectData(int row) const;
@@ -439,6 +449,11 @@ private slots:
     void onSyncRowChanged(const QString& tableName, const QString& id);
 
 private:
+    // INSERT a project row that addProject() only staged (via
+    // SqlQueryModel::insertStagedRow) and add its default project manager.
+    bool insertStagedProject(int srcRow, const QVector<QPair<int, QVariant>>& fields);
+    QString m_lastCreatedProjectId;   // see lastCreatedProjectId()
+
     // m_syncApi lives on m_syncApiThread so its blocking startup work
     // (network auth, WAL pragma, table discovery, persistent DB open)
     // does not stall the UI thread. The thread is long-lived because the

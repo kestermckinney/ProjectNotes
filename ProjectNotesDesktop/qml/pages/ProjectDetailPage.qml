@@ -32,8 +32,9 @@ Item {
     readonly property string exportTable: "projects"
     readonly property string exportId: projectId
 
-    // Consumed by the TopBar's Delete action (Main.deleteCurrent()).
-    readonly property bool canDelete: true
+    // Consumed by the TopBar's Delete action (Main.deleteCurrent()). A staged new
+    // project has nothing to delete — leaving the page discards it.
+    readonly property bool canDelete: page.projectId !== ""
 
     // Delete this project. Removes the row from the shared projects model, so the
     // projects list refreshes itself once Main pops back to it.
@@ -85,6 +86,9 @@ Item {
     // Navigation signals from sub-table row menus
     signal goToPersonRequested(string personId)
     signal goToClientRequested(string clientId)
+    // A new project that was staged by the New Project button has just been
+    // written and now has an id (see _adoptSavedRecord).
+    signal recordPersisted(string projectId)
 
     // Whether a sub-tab's own model currently has an active column filter —
     // drives its SectionBar's Filter chip highlight. Reads filterRev first so
@@ -141,6 +145,9 @@ Item {
     Component.onCompleted: {
         _clients = DesktopAppController.clientList()
         _reload()
+        // For a staged project this filters every child list to an id no row has,
+        // i.e. leaves them empty — which is what a project that doesn't exist yet
+        // should show (rather than the previously-viewed project's rows).
         DesktopAppController.setProjectFilter(page.projectId)
         DesktopAppController.refreshProjectNotes()
         // These sub-tab models are shared, project-scoped singletons reused by
@@ -151,7 +158,8 @@ Item {
         DesktopAppController.setQuickSearch(DesktopAppController.projectTeamMembersModel, "")
         DesktopAppController.setQuickSearch(DesktopAppController.projectLocationsModel, "")
         DesktopAppController.setQuickSearch(DesktopAppController.projectNotesModel, "")
-        tabBar.currentIndex = DesktopAppController.lastProjectDetailTab(page.projectId)
+        if (page.projectId !== "")
+            tabBar.currentIndex = DesktopAppController.lastProjectDetailTab(page.projectId)
         var savedHeaderHeight = DesktopAppController.projectDetailHeaderHeight()
         if (savedHeaderHeight > 0) page._headerHeight = savedHeaderHeight
     }
@@ -192,25 +200,76 @@ Item {
         bcwsField.text   = page._bcws
         bacField.text    = page._bac
         page._changed = false
+        // A staged project starts with no number. Offer the next free one so the
+        // record can be created by typing nothing but a name — project_number and
+        // project_name are both required, and neither is written until then.
+        if (page.projectId === "" && numberField.text.trim() === "")
+            numberField.text = DesktopAppController.nextProjectNumber()
     }
 
     function _saveNow() {
-        if (!page._changed) return true
+        // A project the New Project button staged isn't in the database yet: the
+        // save below is what creates it, and it can only do that once both
+        // required fields are filled in. Until then there is nothing to save.
+        var isStaged = page.projectId === ""
+        if (isStaged) {
+            if (numberField.text.trim() === "" || nameField.text.trim() === "")
+                return true
+            // A staged row lives in the model cache, so a refresh from anywhere
+            // else (cloud sync, a plugin) can drop it. If this row now belongs to
+            // a stored project, it isn't ours to write over.
+            if (DesktopAppController.projectIdAtRow(page.projectRow) !== "")
+                return false
+        } else if (!page._changed) {
+            return true
+        }
+
         var ok = DesktopAppController.saveProject(
             page.projectRow, numberField.text, nameField.text, statusCombo.value,
             page._contactId, page._clientId, statusDate.text, invoiceDate.text,
             invoicingCombo.value, reportCombo.value,
             budgetField.text, actualField.text, bcwpField.text, bcwsField.text, bacField.text)
+        // A rejected create (a number or name already in use) leaves the typed
+        // values on screen to be corrected — reloading would blank them, since
+        // there is still no stored record to read them back from.
+        if (!ok && isStaged) return false
+        if (ok) {
+            page._changed = false
+            if (isStaged) _adoptSavedRecord()
+        }
         // reload to pick up recalculated EVM on success, or to revert the fields
         // to the last valid values when a rule rejected the edit.
-        if (ok) page._changed = false
         _reload()
         return ok
+    }
+
+    // The staged row has just been written: take on its new id, re-resolve the row
+    // (the insert can move it within the sorted list), point the child lists at it
+    // and let Main relabel the breadcrumb.
+    function _adoptSavedRecord() {
+        var id = DesktopAppController.lastCreatedProjectId()
+        if (id === "") return
+        page.projectId = id
+        page.isNewRecord = false
+        var r = DesktopAppController.projectRowForId(id)
+        if (r >= 0) page.projectRow = r
+        DesktopAppController.setProjectFilter(id)
+        page._refreshTeamPeople()   // the default project manager was just added
+        page.recordPersisted(id)
+    }
+
+    // Called by Main when leaving the page with the new project still unwritten.
+    function _discardNew() {
+        if (page.projectId !== "") return
+        DesktopAppController.discardNewProject(page.projectRow)
     }
 
     // Refresh everything the page shows for this project: the core fields plus
     // every child list. Backs the page-level menu's Refresh action.
     function _refreshAll() {
+        // Nothing stored to refresh yet, and re-running the projects query would
+        // drop the staged row this page is editing.
+        if (page.projectId === "") return
         DesktopAppController.refreshModel(DesktopAppController.projectsListModel)
         page._reload()
         DesktopAppController.refreshStatusItems()
@@ -267,6 +326,16 @@ Item {
                         Layout.preferredWidth: 110
                         Layout.fillWidth: false
                         onEdited: page._changed = true
+                        // These two fields are what a new project needs before it
+                        // can be created, so committing either one is what turns a
+                        // staged project into a record (see page._saveNow). Left
+                        // empty, the number falls back to the next free one rather
+                        // than leaving the project uncreatable.
+                        onEditingFinished: {
+                            if (page.projectId === "" && numberField.text.trim() === "")
+                                numberField.text = DesktopAppController.nextProjectNumber()
+                            page._saveNow()
+                        }
                     }
                     FormField {
                         id: nameField
@@ -275,6 +344,7 @@ Item {
                         spellCheck: true
                         spellDialog: spellDialog
                         onEdited: page._changed = true
+                        onEditingFinished: page._saveNow()
                     }
                     ComboField {
                         id: statusCombo
@@ -292,6 +362,21 @@ Item {
                         Layout.bottomMargin: 5
                         onClicked: (sx, sy) => page._openSelfMenu(sx, sy)
                     }
+                }
+
+                // A project that hasn't been created yet: say so, and say what
+                // creates it. The tabs below stay disabled until then — status
+                // items, tracker items, team, locations and notes all hang off the
+                // project id, which doesn't exist before the row is written.
+                Text {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 16
+                    Layout.rightMargin: 16
+                    visible: page.projectId === ""
+                    wrapMode: Text.WordWrap
+                    color: Theme.text3
+                    font.pixelSize: 12
+                    text: qsTr("New project — give it a name to create it. The tabs below become available once it is saved.")
                 }
 
                 // Remaining editable fields
@@ -410,11 +495,18 @@ Item {
             Layout.fillWidth: true
             Layout.leftMargin: 16
             Layout.rightMargin: 16
+            // Every tab below is a list of child records keyed by the project id,
+            // so none of them mean anything until the project exists.
+            enabled: page.projectId !== ""
+            opacity: enabled ? 1 : 0.4
             background: Rectangle {
                 color: "transparent"
                 Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Theme.border }
             }
-            onCurrentIndexChanged: DesktopAppController.setLastProjectDetailTab(page.projectId, currentIndex)
+            onCurrentIndexChanged: {
+                if (page.projectId !== "")
+                    DesktopAppController.setLastProjectDetailTab(page.projectId, currentIndex)
+            }
             TabItem { iconName: "flag";        label: qsTr("Status Report"); count: statusRep.count }
             TabItem { iconName: "task_alt";    label: qsTr("Tracker");       count: trackerRep.count }
             TabItem { iconName: "groups";      label: qsTr("Team");          count: teamRep.count }
@@ -427,6 +519,8 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             currentIndex: tabBar.currentIndex
+            enabled: page.projectId !== ""   // see the TabBar above
+            opacity: enabled ? 1 : 0.4
 
             // â”€â”€ 0: STATUS REPORT ITEMS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             // Virtualized: only visible rows exist; the tab badge reads

@@ -120,7 +120,19 @@ const QModelIndex ProjectsModel::newRecord(const QVariant* fkValue1, const QVari
     Q_UNUSED(fkValue1);
     Q_UNUSED(fkValue2);
 
-    // Find the first unused 5-digit zero-padded number starting at 00001
+    QVector<QVariant> qr = emptyrecord();
+    qr[11] = tr("Monthly");
+    qr[12] = tr("Bi-Weekly");
+    qr[14] = tr("Active");
+
+    return addRecord(qr);
+}
+
+QString ProjectsModel::nextAvailableProjectNumber()
+{
+    // First unused 5-digit zero-padded number, starting at 00001. Checked
+    // against both the database and this model's cache, so a staged (not yet
+    // INSERTed) new project's number isn't handed out twice.
     QSqlQuery query(getDBOs()->getDb());
     query.prepare("SELECT COUNT(*) FROM projects WHERE project_number = ? AND deleted = 0");
 
@@ -143,14 +155,7 @@ const QModelIndex ProjectsModel::newRecord(const QVariant* fkValue1, const QVari
         }
     } while (inUse);
 
-    QVector<QVariant> qr = emptyrecord();
-    qr[1] = projectNumber;
-    qr[2] = QString("[New Project %1]").arg(projectNumber);
-    qr[11] = tr("Monthly");
-    qr[12] = tr("Bi-Weekly");
-    qr[14] = tr("Active");
-
-    return addRecord(qr);
+    return projectNumber;
 }
 
 QVariant ProjectsModel::data(const QModelIndex &index, int role) const

@@ -96,8 +96,14 @@ Page {
                     root.stackView.push(Qt.resolvedUrl("ProjectDetailsPage.qml"), {
                         projectRow:               newRow,
                         isNewRecord:              true,
+                        // Staged, so there is no id yet — the page writes the row
+                        // once it has a number and name (both required). The
+                        // number starts at the next free one so naming the
+                        // project is all it takes to create it.
                         projectId:                (d.id                   || "").toString(),
-                        initialProjectNumber:     (d.project_number       || "").toString(),
+                        initialProjectNumber:     ((d.project_number || "").toString() !== "")
+                                                      ? (d.project_number || "").toString()
+                                                      : AppController.nextProjectNumber(),
                         initialProjectName:       (d.project_name         || "").toString(),
                         initialProjectStatus:     (d.project_status       || "").toString(),
                         initialPrimaryContact:    (d.primary_contact      || "").toString(),

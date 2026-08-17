@@ -46,10 +46,13 @@ const QModelIndex ProjectNotesModel::newRecord(const QVariant* fkValue1, const Q
     QVector<QVariant> qr = emptyrecord();
 
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
-    QVariant notetitle = QString("[New Meeting]");
 
     qr[1] = *fkValue1;
-    qr[2] = notetitle;
+    // A meeting starts untitled, but note_title is NOT NULL in the schema, so it
+    // has to be blank rather than absent — the row is written as soon as the
+    // meeting is created (addProjectNote), before any title is typed. There is no
+    // unique index on it, so any number of meetings can sit untitled.
+    qr[2] = QString("");
     qr[3] = curdate;
     qr[5] = 0;
 

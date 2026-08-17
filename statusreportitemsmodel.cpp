@@ -33,7 +33,11 @@ const QModelIndex StatusReportItemsModel::newRecord(const QVariant* fkValue1, co
 
     qr[getColumnNumber("project_id")] = *fkValue1;
     qr[getColumnNumber("task_category")] = "In Progress";
-    qr[getColumnNumber("task_description")] = "[New Status Item]";
+    // A new status item starts with no description, but task_description is NOT
+    // NULL in the schema, so it has to be blank rather than absent: the row is
+    // INSERTed by whichever cell the user edits first, which may well be the
+    // category rather than the description.
+    qr[getColumnNumber("task_description")] = QString("");
 
     return addRecord(qr);
 }
