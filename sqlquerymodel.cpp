@@ -144,7 +144,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
         //  or cached double vs incoming "$1,234.56" string for DBUSD)
         {
             QVariant testEscaped = value;
-            sqlEscape(testEscaped, m_columnType[index.column()], true);
+            escapeForColumn(testEscaped, index.column());
             const QVariant& cached = m_cache[index.row()].value(index.column());
             if (cached == testEscaped ||
                 (!cached.isNull() && !testEscaped.isNull() && cached.toString() == testEscaped.toString()))
@@ -215,10 +215,26 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
             m_cache[index.row()][0] = QUuid::createUuid().toString();
 
             QVariant escapedValue = value;
-            sqlEscape(escapedValue, m_columnType[index.column()], true);
+            escapeForColumn(escapedValue, index.column());
 
             // set the cached value
             m_cache[index.row()][index.column()] = escapedValue;
+
+            applyBlankColumnPolicy(index.row());
+
+            // The row is complete now, so the unique-key sets can be checked
+            // against all of it — see checkRowUniqueKeys().
+            QString clashingKey;
+            if (!checkRowUniqueKeys(index.row(), &clashingKey))
+            {
+                const QString msg = clashingKey + QObject::tr(" must be a unique value.");
+                getDBOs()->setLastSaveError(msg);
+                showNativeError(QObject::tr("Cannot save record"), msg);
+                // make the record a new record again
+                m_cache[index.row()][0] = QVariant();
+                emit dataChanged(index, index); // reload correct value
+                return false;
+            }
 
             for (int i = 0; i < m_columnCount; i++)
             {
@@ -304,7 +320,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
             QVariant oldvalue = m_cache[index.row()][index.column()];
             QVariant escapedValue = value;
 
-            sqlEscape(escapedValue, m_columnType[index.column()], true);
+            escapeForColumn(escapedValue, index.column());
 
             QSqlQuery update(getDBOs()->getDb());
             update.prepare("update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)");
@@ -564,6 +580,72 @@ QDateTime SqlQueryModel::parseDateTime(const QString& entrydate)
     QTime qt(Hours.toInt()+add12hours,Min.toInt(),Seconds.toInt(),Mil.toInt());
 
     return QDateTime(qd,qt);
+}
+
+void SqlQueryModel::escapeForColumn(QVariant& columnValue, int column) const
+{
+    sqlEscape(columnValue, m_columnType[column], true);
+
+    // sqlEscape() maps an empty value to NULL, which is right for most columns
+    // but fatal for the ones the database declares NOT NULL while the app treats
+    // them as optional: clearing the field, or any save that carries the
+    // still-empty field along, would be refused by the constraint. Those columns
+    // store a blank string instead — see setBlankInsteadOfNull().
+    if (columnValue.isNull() && blankInsteadOfNull(column))
+        columnValue = QString("");
+}
+
+// Check every unique-key set against the whole of |row| rather than against a
+// single column being written. Used before an INSERT, where all of the row's
+// values are known: without it a clash between two complete rows (two status
+// items with no description yet, say — task_description and project_id are a
+// unique key) reaches the database and comes back as a raw constraint error
+// instead of a message naming the field. |clashingKey| receives the name the
+// model gave the key set in addUniqueKeys(), which is the name to report.
+bool SqlQueryModel::checkRowUniqueKeys(int row, QString* clashingKey)
+{
+    if (row < 0 || row >= m_cache.size())
+        return true;
+
+    for (QHash<QString, QStringList>::const_iterator itk = m_uniqueKeys.constBegin();
+         itk != m_uniqueKeys.constEnd(); ++itk)
+    {
+        // checkUniqueKeys() compares the value passed for its index's column and
+        // the row's cached values for the rest of the set, so one call with any
+        // member column covers the whole set.
+        for (const QString& field : itk.value())
+        {
+            const int column = getColumnNumber(field);
+            if (column < 0)
+                continue;
+
+            if (!checkUniqueKeys(index(row, column), m_cache[row][column]))
+            {
+                if (clashingKey)
+                    *clashingKey = itk.key();
+                return false;
+            }
+            break;
+        }
+    }
+
+    return true;
+}
+
+// Fill in a blank for every blank-instead-of-NULL column of |row| that has no
+// value yet, so a row can be INSERTed no matter which column the user filled in
+// first (or whether the record came from a copy or an import).
+void SqlQueryModel::applyBlankColumnPolicy(int row)
+{
+    if (row < 0 || row >= m_cache.size())
+        return;
+
+    for (QHash<int, bool>::const_iterator it = m_columnBlankInsteadOfNull.constBegin();
+         it != m_columnBlankInsteadOfNull.constEnd(); ++it)
+    {
+        if (it.value() && it.key() < m_columnCount && m_cache[row][it.key()].isNull())
+            m_cache[row][it.key()] = QString("");
+    }
 }
 
 void SqlQueryModel::sqlEscape(QVariant& columnValue, DBColumnType columnType, bool noQuote) const
@@ -961,6 +1043,16 @@ bool SqlQueryModel::insertCacheRow(int row)
         return false;
 
     invalidateValueIndex();
+    applyBlankColumnPolicy(row);
+
+    QString clashingKey;
+    if (!checkRowUniqueKeys(row, &clashingKey))
+    {
+        const QString msg = clashingKey + QObject::tr(" must be a unique value.");
+        getDBOs()->setLastSaveError(msg);
+        showNativeError(QObject::tr("Cannot save record"), msg);
+        return false;
+    }
 
     // assign a new UUID key
     m_cache[row][0] = QUuid::createUuid().toString();
@@ -1034,7 +1126,7 @@ bool SqlQueryModel::insertStagedRow(int row, const QVector<QPair<int, QVariant>>
     for (const QPair<int, QVariant>& v : values)
     {
         QVariant escapedValue = v.second;
-        sqlEscape(escapedValue, m_columnType[v.first], true);
+        escapeForColumn(escapedValue, v.first);
         m_cache[row][v.first] = escapedValue;
     }
     invalidateValueIndex();
@@ -2559,6 +2651,12 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
                 // Convert the value to its SQL-safe form (quotes special chars,
                 // converts empty strings to NULL for non-text columns, etc.).
                 sqlEscape(field_value, m_columnType[colnum], false);
+
+                // A column that stores blanks rather than NULL (NOT NULL in the
+                // schema, optional in the app) must not be imported as NULL —
+                // see setBlankInsteadOfNull().
+                if (field_value.isNull() && blankInsteadOfNull(colnum))
+                    field_value = QString("");
 
                 // If a required non-key column resolved to NULL, skip this row
                 // silently rather than letting the INSERT fail a NOT NULL constraint.

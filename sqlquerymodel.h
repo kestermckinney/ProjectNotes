@@ -75,6 +75,13 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const override;
 
     void sqlEscape(QVariant& columnValue, DBColumnType columnType, bool noQuote = false) const;
+    // sqlEscape() for one column, honouring its blank policy — see
+    // setBlankInsteadOfNull(). Every write path uses this rather than calling
+    // sqlEscape() directly, so a column's policy holds on insert and update alike.
+    void escapeForColumn(QVariant& columnValue, int column) const;
+    // Give every blank-instead-of-NULL column of |row| a value if it has none, so
+    // the row can be INSERTed whichever column the user filled in first.
+    void applyBlankColumnPolicy(int row);
     static QString sqlEscapeLiteral(const QString& value);   // doubles single quotes for safe interpolation into SQL string literals
     void reformatValue(QVariant& columnValue, DBColumnType columnType) const;
 
@@ -128,6 +135,9 @@ public:
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 
     bool isUniqueValue(const QVariant &newValue, const QModelIndex &index);
+    // Unique-key check for a whole row, for use before an INSERT — see the
+    // definition. Returns the clashing key set's name in |clashingKey|.
+    bool checkRowUniqueKeys(int row, QString* clashingKey = nullptr);
     bool isNewRecord(const QModelIndex &index) { return m_cache[index.row()].value(0).isNull(); } // new records have blank guid in 0
     bool deleteCheck(const QModelIndex &index);
     bool columnChangeCheck(const QModelIndex &index);
@@ -189,6 +199,15 @@ public:
     bool isSearchable( int column ) { return (m_columnIsSearchable[column] == DBSearchable); }
     void setRequired( int column, DBColumnRequired required ) { m_columnIsRequired[column] = required; }
     bool isRequired( int column ) { return (m_columnIsRequired[column] == DBRequired); }
+
+    /** Store an empty value in this column as a blank string instead of NULL.
+     *  For columns the database declares NOT NULL while the app treats them as
+     *  optional — an untitled meeting, a status item with no description yet.
+     *  Without it, every write of an empty value (including a plain "the user
+     *  cleared the field", and any save that carries the still-empty field
+     *  along) is refused by the constraint. */
+    void setBlankInsteadOfNull( int column ) { m_columnBlankInsteadOfNull[column] = true; }
+    bool blankInsteadOfNull( int column ) const { return m_columnBlankInsteadOfNull.value(column, false); }
     DBColumnType getType( const int column ) const { return m_columnType[column]; }
     void setType( const int column, const DBColumnType columnType ) { m_columnType[column] = columnType; }
     QString getColumnName( int column ) { return m_columnName[column]; }
@@ -236,6 +255,7 @@ private:
     QHash<int, DBColumnSearchable> m_columnIsSearchable;
     QHash<int, DBColumnEditable> m_columnIsEditable;
     QHash<int, DBColumnUnique> m_columnIsUnique;
+    QHash<int, bool> m_columnBlankInsteadOfNull;   // see setBlankInsteadOfNull()
 
     QHash<int, bool> m_columnIsFiltered;
     QHash<int, QVariant> m_filterValue;

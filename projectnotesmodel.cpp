@@ -25,6 +25,10 @@ ProjectNotesModel::ProjectNotesModel(DatabaseObjects* dbo): SqlQueryModel(dbo)
     addColumn("project_id", tr("Project ID"), DBString, DBNotSearchable, DBRequired, DBEditable, DBNotUnique,
               "projects", "id", "project_number");
     addColumn("note_title",  tr("Title"), DBString, DBSearchable, DBNotRequired, DBEditable);
+    // project_notes.note_title is NOT NULL, but a meeting is created before its
+    // title is typed (and the title can be cleared again), so an empty title is
+    // stored blank rather than as NULL.
+    setBlankInsteadOfNull(getColumnNumber("note_title"));
     addColumn("note_date", tr("Date"), DBDate, DBSearchable, DBNotRequired, DBEditable);
     addColumn("note", tr("Note"), DBHtml, DBSearchable, DBNotRequired, DBEditable);
     addColumn("internal_item", tr("Internal"), DBBool, DBSearchable, DBNotRequired, DBEditable);
@@ -48,10 +52,10 @@ const QModelIndex ProjectNotesModel::newRecord(const QVariant* fkValue1, const Q
     QVariant curdate = QDateTime::currentDateTime().toSecsSinceEpoch();
 
     qr[1] = *fkValue1;
-    // A meeting starts untitled, but note_title is NOT NULL in the schema, so it
-    // has to be blank rather than absent — the row is written as soon as the
-    // meeting is created (addProjectNote), before any title is typed. There is no
-    // unique index on it, so any number of meetings can sit untitled.
+    // A meeting starts untitled. The row is written as soon as the meeting is
+    // created (addProjectNote), before any title is typed, so the title goes in
+    // blank rather than absent — see setBlankInsteadOfNull() above. There is no
+    // unique index on note_title, so any number of meetings can sit untitled.
     qr[2] = QString("");
     qr[3] = curdate;
     qr[5] = 0;
