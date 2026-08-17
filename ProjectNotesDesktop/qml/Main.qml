@@ -632,6 +632,10 @@ ApplicationWindow {
     Shortcut { sequence: AppShortcuts.map["import"]; onActivated: importDialog.open() }
     Shortcut { sequence: AppShortcuts.map["filter"]; onActivated: filterDialog.openFor(root.currentSection) }
     Shortcut { sequence: AppShortcuts.map["sort"];   onActivated: root._openSortMenuForCurrentSection() }
+    // Ctrl+L (⌘L on macOS) drops the cursor into the top bar's quick search
+    // field, browser address-bar style. Harmless on the sections that don't show
+    // the field — focusSearch() is a no-op there.
+    Shortcut { sequence: AppShortcuts.map["focus_quick_search"]; onActivated: topBar.focusSearch() }
     // Always-on toggle (F11 win/linux, Control+Command+F mac — see AppShortcuts.fullscreen).
     Shortcut { sequence: AppShortcuts.map["toggle_fullscreen"]; onActivated: root.handleMenuAction("toggle_fullscreen") }
     // Esc only ever exits full screen (never enters it) — matches browser/OS

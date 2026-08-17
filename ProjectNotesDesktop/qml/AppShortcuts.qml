@@ -41,6 +41,14 @@ QtObject {
         // ambiguous and silently fire neither).
         "search":            "Ctrl+K",
         "find":               "Ctrl+K",
+        // Drops the cursor into the top bar's quick search field. The only
+        // entry here without an AppMenu row of its own — nothing displays it in
+        // a menu, it lives in this map so every sequence the app binds stays
+        // visible in one list. Ctrl+L is the browser address-bar convention and
+        // collides with nothing else in this frontend (the note editor's
+        // alignment commands are toolbar-only; the deprecated Widgets frontend
+        // binds Ctrl+L to Align Left, but that's a separate application).
+        "focus_quick_search": "Ctrl+L",
         "export":            "Ctrl+Shift+E",
         "import":            "Ctrl+Shift+I",
         "preferences":       "Ctrl+,",

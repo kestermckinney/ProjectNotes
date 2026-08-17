@@ -45,6 +45,28 @@ Rectangle {
 
     signal searchEdited(string text)
     signal addClicked()
+
+    // Puts the keyboard cursor in the quick search field and selects whatever is
+    // already typed, so the next keystroke replaces it (browser address-bar
+    // behaviour). Wired to AppShortcuts' "focus_quick_search" key in Main.qml;
+    // a no-op on the sections and detail pages that don't show the field.
+    function focusSearch() {
+        if (!bar.showSearch)
+            return
+        searchField.forceActiveFocus()
+        searchField.selectAll()
+    }
+
+    // Clears the field and tells the caller the search is off. Used by the
+    // clear button and by Esc while the field has focus; clear() is programmatic
+    // so TextField.onTextEdited never fires for it — hence the explicit signal.
+    function clearSearch() {
+        if (searchField.text === "")
+            return
+        searchField.clear()
+        bar.searchEdited("")
+    }
+
     signal backClicked()
     signal exportClicked()
     signal deleteClicked()
@@ -244,12 +266,15 @@ Rectangle {
 
         // Global search box
         Rectangle {
+            id: searchBox
             visible: bar.showSearch
             Layout.preferredWidth: 220
             implicitHeight: 28
             radius: Theme.radiusSm
             color: Theme.surface
-            border.color: Theme.border
+            // Accent outline while focused, so the focus-search shortcut visibly
+            // lands somewhere (same treatment as SearchPage's field).
+            border.color: searchField.activeFocus ? Theme.accent : Theme.border
             RowLayout {
                 anchors.fill: parent
                 anchors.leftMargin: 9
@@ -259,15 +284,54 @@ Rectangle {
                 TextField {
                     id: searchField
                     Layout.fillWidth: true
-                    placeholderText: "Search entire database"
+                    // "Quick Page Search", not "search the database" — this
+                    // field filters the list on the page you're looking at
+                    // (setQuickSearch on the section's model). Searching the
+                    // whole database is the Search section.
+                    placeholderText: qsTr("Quick Page Search")
                     color: Theme.text
                     placeholderTextColor: Theme.text3
                     background: null
                     font.pixelSize: 12
                     onTextEdited: bar.searchEdited(text)
+                    // Esc clears the field while it has focus. With nothing to
+                    // clear the key falls through to whatever else wants it
+                    // (Main.qml's full-screen exit).
+                    Keys.onEscapePressed: (ev) => {
+                        if (searchField.text === "") {
+                            ev.accepted = false
+                            return
+                        }
+                        bar.clearSearch()
+                    }
                 }
-                Text { text: "⌘K"; color: Theme.text3; font.pixelSize: 10 }
+                // Clear button — appears only once there's something to clear.
+                // Replaces the "⌘K" hint that used to sit here: that key opens
+                // the full search page rather than focusing this field, and the
+                // glyph was the hardcoded macOS one on every platform. The
+                // field's real shortcut is on the tooltip below, rendered per-OS.
+                MaterialIcon {
+                    name: "cancel"
+                    size: 15
+                    color: clearHover.hovered ? Theme.text2 : Theme.text3
+                    visible: searchField.text !== ""
+                    Layout.alignment: Qt.AlignVCenter
+                    HoverHandler { id: clearHover }
+                    TapHandler {
+                        gesturePolicy: TapHandler.ReleaseWithinBounds
+                        onTapped: bar.clearSearch()
+                    }
+                    ToolTip.visible: clearHover.hovered
+                    ToolTip.text: qsTr("Clear Search")
+                    ToolTip.delay: 400
+                }
             }
+            HoverHandler { id: searchHover }
+            // Only while the field is idle — no tooltip hovering over the text
+            // someone is in the middle of typing.
+            ToolTip.visible: searchHover.hovered && !searchField.activeFocus && !clearHover.hovered
+            ToolTip.text: qsTr("Quick Page Search (%1)").arg(AppShortcuts.text("focus_quick_search"))
+            ToolTip.delay: 400
         }
 
         // Filter button (opens the filter editor for the current list) —

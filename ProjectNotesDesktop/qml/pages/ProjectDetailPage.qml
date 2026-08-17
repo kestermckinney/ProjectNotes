@@ -1436,6 +1436,18 @@ Item {
         // pushed page's scope — an Item id can't cross that boundary, a
         // couple of numbers can (see SortMenu.qml's openFor doc comment).
         signal sort(real sx, real sy)
+
+        // Empties the quick search field and drops the filter behind it. clear()
+        // is programmatic, so the field's onTextEdited never fires for it — the
+        // model has to be told here.
+        function clearSearch() {
+            if (subSearchField.text === "")
+                return
+            subSearchField.clear()
+            if (bar.searchModel)
+                DesktopAppController.setQuickSearch(bar.searchModel, "")
+        }
+
         Layout.fillWidth: true
         Layout.topMargin: 6
         spacing: 6
@@ -1451,7 +1463,7 @@ Item {
             implicitHeight: 26
             radius: Theme.radiusSm
             color: Theme.surface
-            border.color: Theme.border
+            border.color: subSearchField.activeFocus ? Theme.accent : Theme.border
             RowLayout {
                 anchors.fill: parent
                 anchors.leftMargin: 7
@@ -1459,6 +1471,7 @@ Item {
                 spacing: 5
                 MaterialIcon { name: "search"; size: 13; color: Theme.text3 }
                 TextField {
+                    id: subSearchField
                     Layout.fillWidth: true
                     placeholderText: qsTr("Search")
                     color: Theme.text
@@ -1468,6 +1481,32 @@ Item {
                     verticalAlignment: Text.AlignVCenter
                     font.pixelSize: 11
                     onTextEdited: DesktopAppController.setQuickSearch(bar.searchModel, text)
+                    // Esc clears the field while it has focus; with nothing to
+                    // clear the key falls through to whoever else wants it.
+                    Keys.onEscapePressed: (ev) => {
+                        if (subSearchField.text === "") {
+                            ev.accepted = false
+                            return
+                        }
+                        bar.clearSearch()
+                    }
+                }
+                // Clear button, same circle-X affordance as TopBar's search box —
+                // only visible once there's something to clear.
+                MaterialIcon {
+                    name: "cancel"
+                    size: 13
+                    color: subClearHover.hovered ? Theme.text2 : Theme.text3
+                    visible: subSearchField.text !== ""
+                    Layout.alignment: Qt.AlignVCenter
+                    HoverHandler { id: subClearHover }
+                    TapHandler {
+                        gesturePolicy: TapHandler.ReleaseWithinBounds
+                        onTapped: bar.clearSearch()
+                    }
+                    ToolTip.visible: subClearHover.hovered
+                    ToolTip.text: qsTr("Clear Search")
+                    ToolTip.delay: 400
                 }
             }
         }
