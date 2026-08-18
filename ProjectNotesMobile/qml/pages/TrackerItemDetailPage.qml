@@ -246,7 +246,6 @@ Page {
                 FormCombo {
                     id: meetingCombo
                     options: root._meetingNames()
-                    includeNone: true
                     Component.onCompleted: {
                         root._meetings = AppController.meetingList()
                         selectOption(root._meetingIndexForId(root.initialNoteId))

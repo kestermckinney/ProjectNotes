@@ -315,7 +315,6 @@ Page {
                 FormCombo {
                     id: invoicingCombo
                     options: AppController.invoicingPeriodOptions()
-                    includeNone: true
                     Component.onCompleted: selectText(root.initialInvoicingPeriod)
                 }
             }
@@ -325,7 +324,6 @@ Page {
                 FormCombo {
                     id: statusReportCombo
                     options: AppController.statusReportPeriodOptions()
-                    includeNone: true
                     Component.onCompleted: selectText(root.initialStatusReportPeriod)
                 }
             }
