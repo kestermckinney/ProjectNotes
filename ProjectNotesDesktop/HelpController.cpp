@@ -9,7 +9,11 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QQuickTextDocument>
 #include <QRegularExpression>
+#include <QTextBlock>
+#include <QTextCursor>
+#include <QTextDocument>
 #include <QVariantMap>
 
 // The docs/ tree is bundled under this prefix by qt_add_resources (CMakeLists.txt).
@@ -263,4 +267,44 @@ QVariantList HelpController::search(const QString& query) const
     });
 
     return results;
+}
+
+void HelpController::applySpacing(QQuickTextDocument* document) const
+{
+    if (!document)
+        return;
+    QTextDocument* doc = document->textDocument();
+    if (!doc)
+        return;
+
+    // Qt's Markdown importer sets tight, near-uniform block margins that read
+    // as a dense slab of text at UI font sizes. Give headings real breathing
+    // room above them, spread paragraphs apart, and keep list items snug
+    // against their own siblings while still separating from what surrounds
+    // the list. Line height gets a little extra too, since the default is
+    // cramped for on-screen reading.
+    QTextCursor cursor(doc);
+    cursor.beginEditBlock();
+    for (QTextBlock block = doc->begin(); block.isValid(); block = block.next()) {
+        QTextBlockFormat fmt = block.blockFormat();
+        const int headingLevel = fmt.headingLevel();
+        qreal top;
+        qreal bottom;
+        if (headingLevel > 0) {
+            top = headingLevel <= 2 ? 22.0 : (headingLevel <= 4 ? 16.0 : 12.0);
+            bottom = 6.0;
+        } else if (block.textList()) {
+            top = 1.0;
+            bottom = 5.0;
+        } else {
+            top = 4.0;
+            bottom = 14.0;
+        }
+        fmt.setTopMargin(top);
+        fmt.setBottomMargin(bottom);
+        fmt.setLineHeight(138.0, QTextBlockFormat::ProportionalHeight);
+        cursor.setPosition(block.position());
+        cursor.setBlockFormat(fmt);
+    }
+    cursor.endEditBlock();
 }

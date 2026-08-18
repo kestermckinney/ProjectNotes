@@ -11,6 +11,10 @@
 #include <QtTest/QtTest>
 #include <QQmlApplicationEngine>
 #include <QQmlError>
+#include <QQuickItem>
+#include <QQuickTextDocument>
+#include <QTextBlock>
+#include <QTextDocument>
 #include <QVariant>
 
 #include "DesktopAppController.h"
@@ -153,6 +157,38 @@ private slots:
         assertClean("openHelp(index.md)");
         nav("openHelp", "InterfaceOverview/ProjectListPage.md");
         assertClean("openHelp(topic)");
+    }
+
+    // Regression: HelpPage's Markdown viewer must actually expose a
+    // textDocument — that property exists on TextEdit/TextArea but NOT on
+    // plain Text, so a prior version of this page (a Text item) silently fed
+    // HelpController::applySpacing() an undefined document and never widened
+    // heading margins at all. Opens a topic with "##" section headers and
+    // checks a heading block's top margin was actually widened.
+    void test_06b_helpHeadingSpacing()
+    {
+        clearWarnings();
+        nav("openHelp", "InterfaceOverview/FindAndReplace.md");
+        assertClean("openHelp(FindAndReplace.md)");
+
+        QQuickTextDocument* qqDoc = nullptr;
+        for (QQuickItem* item : root->findChildren<QQuickItem*>()) {
+            if (qstrcmp(item->metaObject()->className(), "QQuickTextEdit") != 0)
+                continue;
+            const QVariant v = item->property("textDocument");
+            if (v.isValid() && (qqDoc = v.value<QQuickTextDocument*>()))
+                break;
+        }
+        QVERIFY2(qqDoc, "help content TextEdit (docText) not found, or has no textDocument");
+        QTextDocument* doc = qqDoc->textDocument();
+        QVERIFY(doc);
+
+        bool sawWidenedHeading = false;
+        for (QTextBlock b = doc->begin(); b.isValid(); b = b.next()) {
+            if (b.blockFormat().headingLevel() > 0 && b.blockFormat().topMargin() >= 12.0)
+                sawWidenedHeading = true;
+        }
+        QVERIFY2(sawWidenedHeading, "no heading block had a widened top margin — applySpacing() did not run");
     }
 
     void test_07_menuActions()

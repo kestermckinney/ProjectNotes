@@ -367,15 +367,33 @@ Rectangle {
                 boundsBehavior: Flickable.StopAtBounds
                 ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
 
-                Text {
+                // A read-only TextEdit rather than a plain Text: Text has no
+                // textDocument property (that's exclusive to TextEdit/TextArea),
+                // so applySpacing() below would silently receive undefined and
+                // do nothing. TextEdit renders Markdown identically and adds
+                // free-of-charge text selection/copy.
+                TextEdit {
                     id: docText
                     x: 24; y: 20
                     width: contentFlick.width - 48
                     text: HelpController.topicMarkdown(page.current)
-                    textFormat: Text.MarkdownText
-                    wrapMode: Text.WordWrap
+                    textFormat: TextEdit.MarkdownText
+                    wrapMode: TextEdit.WordWrap
                     color: Theme.text
                     font.pixelSize: Theme.fontLg
+                    readOnly: true
+                    activeFocusOnPress: false
+                    selectByMouse: true
+                    // Qt's Markdown-to-QTextDocument import packs blocks tight
+                    // enough to look cramped in-app; widen the live document's
+                    // margins/line height once it has (re-)parsed. Deferred a
+                    // tick since the document isn't repopulated synchronously
+                    // with the text change — by which time docText may itself
+                    // be gone (e.g. navigated away from Help before the tick
+                    // fires), so guard against the now-null id.
+                    onTextChanged: Qt.callLater(function() {
+                        if (docText) HelpController.applySpacing(docText.textDocument)
+                    })
                     onLinkActivated: (link) => {
                         var t = HelpController.resolveLink(page.current, link)
                         if (t && t.length) page.navigate(t)

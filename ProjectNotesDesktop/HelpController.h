@@ -11,6 +11,7 @@
 
 class QQmlEngine;
 class QJSEngine;
+class QQuickTextDocument;
 
 // HelpController — QML singleton backing the in-app User Guide (HelpPage.qml).
 //
@@ -54,6 +55,16 @@ public:
     // Case-insensitive search over topic titles and body text. Returns a list of
     // { title, path, snippet } maps, title matches ranked first.
     Q_INVOKABLE QVariantList search(const QString& query) const;
+
+    // Widen the block-level spacing (margins + line height) of a live QML
+    // Text item's document after it (re-)parses Markdown. Qt's Markdown
+    // importer packs headings, paragraphs, and list items almost edge-to-edge;
+    // this spreads them out so the rendered page reads as distinct blocks
+    // instead of one dense slab of text. Only block formatting is touched —
+    // colors and fonts still come from the Text item itself. Call it from the
+    // Text's onTextChanged, deferred a tick (e.g. via Qt.callLater) since the
+    // document is not repopulated synchronously with the text change.
+    Q_INVOKABLE void applySpacing(QQuickTextDocument* document) const;
 
 private:
     // qrc file path ("...:/help/<canonical>") for a canonical topic path.
