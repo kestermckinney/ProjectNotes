@@ -23,6 +23,9 @@ Page {
     property string projectId:    ""
     property string projectTitle: ""
 
+    FilterSheet { id: filterSheet }
+    SortSheet   { id: sortSheet }
+
     header: ToolBar {
         RowLayout {
             anchors { left: parent.left; right: parent.right; margins: 8 }
@@ -50,6 +53,24 @@ Page {
                 }
             }
             ToolButton {
+                icon.name: "line.3.horizontal.decrease.circle"
+                onClicked: filterSheet.openFor("locations", qsTr("Files & Folders"))
+                Rectangle {
+                    visible: { AppController.filterRev; return AppController.hasActiveColumnFilters(AppController.projectLocationsModel) }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                }
+            }
+            ToolButton {
+                icon.name: "arrow.up.arrow.down"
+                onClicked: sortSheet.openFor("locations", qsTr("Files & Folders"))
+                Rectangle {
+                    visible: { AppController.sortRev; return (AppController.activeSort(AppController.projectLocationsModel).field || "") !== "" }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                }
+            }
+            ToolButton {
                 icon.name: "plus"
                 onClicked: {
                     var newRow = AppController.addProjectLocation(root.projectId)
@@ -57,6 +78,7 @@ Page {
                     var d = AppController.getProjectLocationData(newRow)
                     root.StackView.view.push(Qt.resolvedUrl("ProjectLocationDetailPage.qml"), {
                         locationRow:         newRow,
+                        locationId:          (d.id                    || "").toString(),
                         isNewRecord:         true,
                         initialType:         (d.location_type        || "").toString(),
                         initialDescription:  (d.location_description || "").toString(),
@@ -74,6 +96,9 @@ Page {
         clip: true
 
         delegate: ItemDelegate {
+            id: delegateRoot
+            required property int index
+            required property var model
             width: listView.width
 
             contentItem: ColumnLayout {
@@ -83,22 +108,22 @@ Page {
                     Layout.fillWidth: true
 
                     Label {
-                        text: model.location_description || model.full_path || ""
+                        text: delegateRoot.model.location_description || delegateRoot.model.full_path || ""
                         font.bold: true
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
 
                     Label {
-                        text: model.location_type || ""
+                        text: delegateRoot.model.location_type || ""
                         font.pixelSize: 12
                         color: Theme.mutedText
                     }
                 }
 
                 Label {
-                    visible: (model.full_path || "") !== "" && (model.location_description || "") !== ""
-                    text: model.full_path || ""
+                    visible: (delegateRoot.model.full_path || "") !== "" && (delegateRoot.model.location_description || "") !== ""
+                    text: delegateRoot.model.full_path || ""
                     font.pixelSize: 12
                     color: Theme.mutedText
                     elide: Text.ElideRight
@@ -108,10 +133,11 @@ Page {
 
             onClicked: {
                 root.StackView.view.push(Qt.resolvedUrl("ProjectLocationDetailPage.qml"), {
-                    locationRow:         index,
-                    initialType:         model.location_type        || "",
-                    initialDescription:  model.location_description || "",
-                    initialPath:         model.full_path            || ""
+                    locationRow:         delegateRoot.index,
+                    locationId:          delegateRoot.model.id                  || "",
+                    initialType:         delegateRoot.model.location_type        || "",
+                    initialDescription:  delegateRoot.model.location_description || "",
+                    initialPath:         delegateRoot.model.full_path            || ""
                 })
             }
         }

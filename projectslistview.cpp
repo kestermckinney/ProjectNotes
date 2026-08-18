@@ -28,6 +28,8 @@ void ProjectsListView::setModel(QAbstractItemModel *model)
         TableView::setModel(model);
 
         setColumnHidden(0, true);
+        setColumnHidden(21, true); // status_overdue — computed filter-only column, QML desktop's Quick Filter
+        setColumnHidden(22, true); // invoicing_overdue — same
 
         // setup model lists
         m_projectStatus.setStringList(DatabaseObjects::project_status);

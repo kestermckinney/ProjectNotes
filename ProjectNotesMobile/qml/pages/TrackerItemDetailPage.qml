@@ -48,6 +48,43 @@ Page {
     property bool   isNewRecord:          false
     // property string _validatedItemNumber: root.initialItemNumber
 
+    // Stable {id,name} snapshot backing identifiedByCombo/assignedToCombo —
+    // deliberately NOT a live model proxy, which a Sort elsewhere can reorder
+    // or reset out from under a ComboBox bound directly to it (see
+    // AppController::teamMemberList doc comment).
+    property var _people: []
+    function _peopleNames() { return root._people.map(function(p){ return p.name }) }
+    function _personIndexForId(id) {
+        for (var i = 0; i < root._people.length; i++)
+            if (root._people[i].id === id) return i
+        return -1
+    }
+
+    // Stable {id,name} snapshot backing meetingCombo — deliberately NOT the
+    // live actionitemsdetailsmeetingsmodelproxy, which sort() elsewhere can
+    // reorder out from under a ComboBox bound directly to it (see the
+    // AppController teamMemberList/clientList doc comments).
+    property var _meetings: []
+    function _meetingNames() { return root._meetings.map(function(m){ return m.name }) }
+    function _meetingIndexForId(id) {
+        for (var i = 0; i < root._meetings.length; i++)
+            if (root._meetings[i].id === id) return i
+        return -1
+    }
+
+    // Identified By / Assigned To offer this project's team only, plus whoever
+    // either field already names so an existing value keeps displaying — the
+    // same rule as desktop's ItemDetailPage. The project id is read off the item
+    // row; none of the pages that push this one carry one of their own.
+    function _loadPeople(identifiedBy, assignedTo) {
+        var d = AppController.getTrackerItemDetailData(root.itemRow)
+        root._people = AppController.teamMemberList((d.project_id || "").toString(),
+                                                    [identifiedBy, assignedTo])
+    }
+
+    // Id of the entry a combo is sitting on, or "" for "(none)"/no selection.
+    function _idAt(list, i) { return (i >= 0 && i < list.length) ? list[i].id : "" }
+
     function _isBlankNew() { return isNewRecord && nameField.text.trim() === "" }
     function _discardNew()  { AppController.deleteTrackerItemDetail(root.itemRow) }
 
@@ -66,19 +103,16 @@ Page {
             root.itemRow,
             root.itemId,
             itemNumber.text,
-            typeCombo.currentIndex >= 0 ? typeCombo.model[typeCombo.currentIndex] : "",
+            typeCombo.selection,
             nameField.text,
             descEdit.text,
-            identifiedByCombo.currentIndex >= 0
-                ? AppController.teamMemberPersonIdAtRow(identifiedByCombo.currentIndex) : "",
-            assignedToCombo.currentIndex >= 0
-                ? AppController.teamMemberPersonIdAtRow(assignedToCombo.currentIndex) : "",
-            priorityCombo.currentIndex >= 0 ? priorityCombo.model[priorityCombo.currentIndex] : "",
-            statusCombo.currentIndex >= 0   ? statusCombo.model[statusCombo.currentIndex]     : "",
+            root._idAt(root._people,   identifiedByCombo.optionIndex),
+            root._idAt(root._people,   assignedToCombo.optionIndex),
+            priorityCombo.selection,
+            statusCombo.selection,
             dateIdentifiedField.text,
             dateDueField.text,
-            meetingCombo.currentIndex >= 0
-                ? AppController.meetingNoteIdAtRow(meetingCombo.currentIndex) : "",
+            root._idAt(root._meetings, meetingCombo.optionIndex),
             internalSwitch.checked
         )
         if (result) root._hasChanges = false
@@ -89,25 +123,21 @@ Page {
         var d = AppController.getTrackerItemDetailData(root.itemRow)
         // root._validatedItemNumber = (d.item_number || "").toString()
         itemNumber.text =  (d.item_number || "").toString() // root._validatedItemNumber
-        var ti = typeCombo.model.indexOf((d.item_type || "").toString())
-        typeCombo.currentIndex = ti >= 0 ? ti : 0
+        typeCombo.selectText((d.item_type || "").toString(), 0)
         nameField.text   = (d.item_name    || "").toString()
         descEdit.text    = (d.description  || "").toString()
-        var idBy = AppController.teamMemberRowForPersonId((d.identified_by || "").toString())
-        identifiedByCombo.currentIndex = idBy >= 0 ? idBy : -1
-        var asgn = AppController.teamMemberRowForPersonId((d.assigned_to || "").toString())
-        assignedToCombo.currentIndex = asgn >= 0 ? asgn : -1
-        var pri = priorityCombo.model.indexOf((d.priority || "").toString())
-        priorityCombo.currentIndex = pri >= 0 ? pri : -1
-        var sti = statusCombo.model.indexOf((d.status || "").toString())
-        statusCombo.currentIndex = sti >= 0 ? sti : -1
+        root._loadPeople((d.identified_by || "").toString(), (d.assigned_to || "").toString())
+        identifiedByCombo.selectOption(root._personIndexForId((d.identified_by || "").toString()))
+        assignedToCombo.selectOption(root._personIndexForId((d.assigned_to   || "").toString()))
+        priorityCombo.selectText((d.priority || "").toString())
+        statusCombo.selectText((d.status || "").toString())
         dateIdentifiedField.text = (d.date_identified || "").toString()
         dateDueField.text        = (d.date_due        || "").toString()
         root.initialLastUpdate   = (d.last_update     || "").toString()
         root.initialDateResolved = (d.date_resolved   || "").toString()
         internalSwitch.checked   = (d.internal_item   || "0") !== "0"
-        var mtg = AppController.meetingRowForNoteId((d.note_id || "").toString())
-        meetingCombo.currentIndex = mtg >= 0 ? mtg : -1
+        root._meetings = AppController.meetingList()
+        meetingCombo.selectOption(root._meetingIndexForId((d.note_id || "").toString()))
     }
 
     StackView.onDeactivating: {
@@ -221,14 +251,12 @@ Page {
 
             SectionHeader { text: qsTr("Meeting") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: meetingCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.trackerItemMeetingsModel
-                    textRole: "meeting"
+                    options: root._meetingNames()
                     Component.onCompleted: {
-                        var row = AppController.meetingRowForNoteId(root.initialNoteId)
-                        currentIndex = row >= 0 ? row : -1
+                        root._meetings = AppController.meetingList()
+                        selectOption(root._meetingIndexForId(root.initialNoteId))
                     }
                     onActivated: root._hasChanges = true
                 }
@@ -246,14 +274,10 @@ Page {
 
             SectionHeader { text: qsTr("Type") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: typeCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.trackerItemTypeOptions()
-                    Component.onCompleted: {
-                        var idx = model.indexOf(root.initialType)
-                        currentIndex = idx >= 0 ? idx : 0
-                    }
+                    options: AppController.trackerItemTypeOptions()
+                    Component.onCompleted: selectText(root.initialType, 0)
                     onActivated: root._hasChanges = true
                 }
             }
@@ -292,14 +316,13 @@ Page {
 
             SectionHeader { text: qsTr("Identified By") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: identifiedByCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.projectTeamMembersModel
-                    textRole: "name"
+                    options: root._peopleNames()
+                    includeNone: true
                     Component.onCompleted: {
-                        var row = AppController.teamMemberRowForPersonId(root.initialIdentifiedBy)
-                        currentIndex = row >= 0 ? row : -1
+                        root._loadPeople(root.initialIdentifiedBy, root.initialAssignedTo)
+                        selectOption(root._personIndexForId(root.initialIdentifiedBy))
                     }
                     onActivated: root._hasChanges = true
                 }
@@ -307,53 +330,40 @@ Page {
 
             SectionHeader { text: qsTr("Assigned To") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: assignedToCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.projectTeamMembersModel
-                    textRole: "name"
+                    options: root._peopleNames()
+                    includeNone: true
                     Component.onCompleted: {
-                        var row = AppController.teamMemberRowForPersonId(root.initialAssignedTo)
-                        currentIndex = row >= 0 ? row : -1
+                        root._loadPeople(root.initialIdentifiedBy, root.initialAssignedTo)
+                        selectOption(root._personIndexForId(root.initialAssignedTo))
                     }
-                    onActivated: function(idx) {
+                    onActivated: {
                         root._hasChanges = true
-                        if (idx >= 0) {
-                            var curStatus = statusCombo.currentIndex >= 0
-                                ? statusCombo.model[statusCombo.currentIndex] : ""
-                            if (curStatus === "New") {
-                                var assignedIdx = statusCombo.model.indexOf("Assigned")
-                                if (assignedIdx >= 0) statusCombo.currentIndex = assignedIdx
-                            }
-                        }
+                        // Assigning a still-New item moves it on to Assigned;
+                        // clearing the assignment leaves the status alone.
+                        if (optionIndex >= 0 && statusCombo.selection === "New")
+                            statusCombo.selectText("Assigned")
                     }
                 }
             }
 
             SectionHeader { text: qsTr("Priority") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: priorityCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.trackerItemPriorityOptions()
-                    Component.onCompleted: {
-                        var idx = model.indexOf(root.initialPriority)
-                        currentIndex = idx >= 0 ? idx : 0
-                    }
+                    options: AppController.trackerItemPriorityOptions()
+                    Component.onCompleted: selectText(root.initialPriority, 0)
                     onActivated: root._hasChanges = true
                 }
             }
 
             SectionHeader { text: qsTr("Status") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: statusCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.trackerItemStatusOptions()
-                    Component.onCompleted: {
-                        var idx = model.indexOf(root.initialStatus)
-                        currentIndex = idx >= 0 ? idx : 0
-                    }
+                    options: AppController.trackerItemStatusOptions()
+                    Component.onCompleted: selectText(root.initialStatus, 0)
                     onActivated: root._hasChanges = true
                 }
             }

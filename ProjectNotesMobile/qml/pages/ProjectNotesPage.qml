@@ -27,8 +27,14 @@ Page {
 
     Connections {
         target: AppController
-        function onViewOptionsChanged() { AppController.refreshProjectNotes() }
+        function onViewOptionsChanged() {
+            if (root.StackView.status !== StackView.Active) return
+            AppController.refreshProjectNotes()
+        }
     }
+
+    FilterSheet { id: filterSheet }
+    SortSheet   { id: sortSheet }
 
     header: ToolBar {
         RowLayout {
@@ -54,6 +60,24 @@ Page {
                         anchors.margins: -6
                         onClicked: searchField.clear()
                     }
+                }
+            }
+            ToolButton {
+                icon.name: "line.3.horizontal.decrease.circle"
+                onClicked: filterSheet.openFor("notes", qsTr("Notes"))
+                Rectangle {
+                    visible: { AppController.filterRev; return AppController.hasActiveColumnFilters(AppController.projectNotesModel) }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                }
+            }
+            ToolButton {
+                icon.name: "arrow.up.arrow.down"
+                onClicked: sortSheet.openFor("notes", qsTr("Notes"))
+                Rectangle {
+                    visible: { AppController.sortRev; return (AppController.activeSort(AppController.projectNotesModel).field || "") !== "" }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
                 }
             }
             ToolButton {
@@ -85,6 +109,9 @@ Page {
         clip: true
 
         delegate: ItemDelegate {
+            id: delegateRoot
+            required property int index
+            required property var model
             width: listView.width
 
             contentItem: ColumnLayout {
@@ -94,21 +121,21 @@ Page {
                     Layout.fillWidth: true
 
                     Label {
-                        text: model.note_title || qsTr("(untitled)")
+                        text: delegateRoot.model.note_title || qsTr("(untitled)")
                         font.bold: true
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
 
                     Label {
-                        text: model.note_date || ""
+                        text: delegateRoot.model.note_date || ""
                         font.pixelSize: 12
                         color: Theme.mutedText
                     }
                 }
 
                 Label {
-                    visible: AppController.showInternalItems && (model.internal_item || "0") !== "0"
+                    visible: AppController.showInternalItems && (delegateRoot.model.internal_item || "0") !== "0"
                     text: qsTr("Internal")
                     font.pixelSize: 11
                     color: palette.link
@@ -117,13 +144,13 @@ Page {
 
             onClicked: {
                 root.StackView.view.push(Qt.resolvedUrl("ProjectNoteDetailPage.qml"), {
-                    noteRow:          index,
-                    noteId:           model.id            || "",
+                    noteRow:          delegateRoot.index,
+                    noteId:           delegateRoot.model.id            || "",
                     projectId:        root.projectId,
-                    initialTitle:     model.note_title    || "",
-                    initialDate:      model.note_date     || "",
-                    initialNote:      model.note          || "",
-                    initialInternal:  (model.internal_item || "0") !== "0"
+                    initialTitle:     delegateRoot.model.note_title    || "",
+                    initialDate:      delegateRoot.model.note_date     || "",
+                    initialNote:      delegateRoot.model.note          || "",
+                    initialInternal:  (delegateRoot.model.internal_item || "0") !== "0"
                 })
             }
         }

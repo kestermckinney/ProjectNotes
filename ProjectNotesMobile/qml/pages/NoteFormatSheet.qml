@@ -49,7 +49,12 @@ Popup {
     y: parent ? parent.height - height : 0
     width: parent ? parent.width : 390
     height: _showColors ? _baseHeight + _colorSectionH : _baseHeight
+
+    // padding: 0 on its own is not enough: the iOS style sets topPadding (23)
+    // as well as padding, and a whole-control padding never overrides a
+    // per-edge one — the 23px survives as a blank strip above the header.
     padding: 0
+    topPadding: 0
 
     Behavior on height {
         NumberAnimation { duration: 180; easing.type: Easing.OutCubic }

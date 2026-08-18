@@ -16,6 +16,10 @@ StatusReportItemsModel::StatusReportItemsModel(DatabaseObjects* dbo): SqlQueryMo
               "projects", "id", "project_number");
     addColumn("task_category",  tr("Category"), DBString, DBSearchable, DBRequired, DBEditable, DBNotUnique, &DatabaseObjects::status_item_status);
     addColumn("task_description", tr("Description"), DBString, DBSearchable, DBNotRequired, DBEditable);
+    // status_report_items.task_description is NOT NULL, but an item is created
+    // before its description is typed (and the description can be cleared again),
+    // so an empty description is stored blank rather than as NULL.
+    setBlankInsteadOfNull(getColumnNumber("task_description"));
 
     QStringList key1 = {"project_id", "task_description"};
 
@@ -33,7 +37,22 @@ const QModelIndex StatusReportItemsModel::newRecord(const QVariant* fkValue1, co
 
     qr[getColumnNumber("project_id")] = *fkValue1;
     qr[getColumnNumber("task_category")] = "In Progress";
-    qr[getColumnNumber("task_description")] = "[New Status Item]";
+    // A new status item starts with no description. The row is INSERTed by
+    // whichever cell the user edits first — which may well be the category — so
+    // the description goes in blank rather than absent (see
+    // setBlankInsteadOfNull() above).
+    qr[getColumnNumber("task_description")] = QString("");
 
     return addRecord(qr);
+}
+
+void StatusReportItemsModel::prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex)
+{
+    Q_UNUSED(sourceIndex);
+
+    // (project_id, task_description) is a unique key, so a straight copy always
+    // clashes with the row it came from — prepend "Copy of " the way
+    // ProjectLocationsModel does for its own description key.
+    const int col = getColumnNumber("task_description");
+    newrecord[col] = QString("Copy of %1").arg(newrecord[col].toString());
 }

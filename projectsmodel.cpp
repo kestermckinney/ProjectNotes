@@ -40,7 +40,30 @@ ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
         (case when bcwp > 0 then round((actual -  bcwp) / bcwp * 100.0, 2) else NULL end) cv,
         (case when bcws > 0 then round((bcwp -  bcws) / bcws * 100.0, 2) else NULL end) sv,
         (case when bac > 0 then round(bcwp / bac * 100.0, 2) else NULL end) pct_complete,
-        (case when actual > 0 then round(bcwp / actual, 2) else NULL end) cpi
+        (case when actual > 0 then round(bcwp / actual, 2) else NULL end) cpi,
+        (case
+            when last_status_date is null or last_status_date = '' then 'No'
+            when status_report_period = 'Weekly' and
+                 cast(julianday('now','localtime','start of day')
+                      - julianday(last_status_date,'unixepoch','localtime','start of day') as integer) > 7
+                 then 'Yes'
+            when status_report_period = 'Bi-Weekly' and
+                 cast(julianday('now','localtime','start of day')
+                      - julianday(last_status_date,'unixepoch','localtime','start of day') as integer) > 14
+                 then 'Yes'
+            when status_report_period = 'Monthly' and
+                 cast(julianday('now','localtime','start of day')
+                      - julianday(last_status_date,'unixepoch','localtime','start of day') as integer) >= 31
+                 then 'Yes'
+            else 'No'
+        end) status_overdue,
+        (case
+            when invoicing_period = 'Monthly' and
+                 (last_invoice_date is null or last_invoice_date = '' or
+                  date('now','localtime') > date(last_invoice_date,'unixepoch','localtime','start of month','+1 month'))
+                 then 'Yes'
+            else 'No'
+        end) invoicing_overdue
         FROM projects
         )");
 
@@ -70,6 +93,14 @@ ProjectsModel::ProjectsModel(DatabaseObjects* dbo) : SqlQueryModel(dbo)
     addColumn("sv", tr("SV"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn("pct_complete", tr("Completed"), DBPercent, DBSearchable, DBNotRequired, DBReadOnly);
     addColumn("cpi", tr("CPI"), DBReal, DBSearchable, DBNotRequired, DBReadOnly);
+    // Computed "Yes"/"No" columns mirroring the red (overdue) branch of
+    // data()'s ForegroundRole logic below, so they're filterable through the
+    // same column-filter pipeline as every other field — see the QML desktop
+    // Quick Filter feature. Milestone/Complete invoicing periods never turn
+    // red today either, so invoicing_overdue can never be "Yes" for those —
+    // intentional, matches the existing color semantics exactly.
+    addColumn("status_overdue", tr("Status Overdue"), DBString, DBSearchable, DBNotRequired, DBReadOnly);
+    addColumn("invoicing_overdue", tr("Invoicing Overdue"), DBString, DBSearchable, DBNotRequired, DBReadOnly);
 
     addRelatedTable("project_notes", "project_id", "id", "Meeting", DBExportable);
     addRelatedTable("item_tracker", "project_id", "id", "Action/Tracker Item", DBExportable);
@@ -89,7 +120,19 @@ const QModelIndex ProjectsModel::newRecord(const QVariant* fkValue1, const QVari
     Q_UNUSED(fkValue1);
     Q_UNUSED(fkValue2);
 
-    // Find the first unused 5-digit zero-padded number starting at 00001
+    QVector<QVariant> qr = emptyrecord();
+    qr[11] = tr("Monthly");
+    qr[12] = tr("Bi-Weekly");
+    qr[14] = tr("Active");
+
+    return addRecord(qr);
+}
+
+QString ProjectsModel::nextAvailableProjectNumber()
+{
+    // First unused 5-digit zero-padded number, starting at 00001. Checked
+    // against both the database and this model's cache, so a staged (not yet
+    // INSERTed) new project's number isn't handed out twice.
     QSqlQuery query(getDBOs()->getDb());
     query.prepare("SELECT COUNT(*) FROM projects WHERE project_number = ? AND deleted = 0");
 
@@ -112,14 +155,7 @@ const QModelIndex ProjectsModel::newRecord(const QVariant* fkValue1, const QVari
         }
     } while (inUse);
 
-    QVector<QVariant> qr = emptyrecord();
-    qr[1] = projectNumber;
-    qr[2] = QString("[New Project %1]").arg(projectNumber);
-    qr[11] = tr("Monthly");
-    qr[12] = tr("Bi-Weekly");
-    qr[14] = tr("Active");
-
-    return addRecord(qr);
+    return projectNumber;
 }
 
 QVariant ProjectsModel::data(const QModelIndex &index, int role) const
@@ -128,12 +164,17 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
     {
         if (index.column() == 3) // status date
         {
-            QVariant value = data(index);
-
-            QDateTime datecol = parseDateTime(value.toString());
+            // Read the raw epoch directly instead of formatting data() to
+            // "MM/dd/yyyy" and regex-parsing it back — this branch runs per
+            // row per repaint. An empty value stays an invalid QDateTime,
+            // matching what parseDateTime("") produced.
+            const QVariant raw = rawValue(index.row(), index.column());
+            QDateTime datecol;
+            if (!raw.isNull() && !raw.toString().isEmpty())
+                datecol.setSecsSinceEpoch(raw.toLongLong());
             qint64 dif = datecol.daysTo(QDateTime::currentDateTime());
 
-            QString period = data( this->index(index.row(), 12)).toString();
+            QString period = rawValue(index.row(), 12).toString();
             if (period == "Weekly")
             {
                 if (dif > 7)
@@ -170,16 +211,18 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
         }
         else if (index.column() == 4) // invoice date
         {
-            QVariant value = data(index);
-
-            QDateTime datecol = parseDateTime(value.toString());
+            // Raw epoch read — see the status date branch above.
+            const QVariant raw = rawValue(index.row(), index.column());
+            QDateTime datecol;
+            if (!raw.isNull() && !raw.toString().isEmpty())
+                datecol.setSecsSinceEpoch(raw.toLongLong());
             QDate nextdate = datecol.date();
             nextdate = nextdate.addMonths(1);
             nextdate.setDate(nextdate.year(), nextdate.month(), 1); // set to the first of the next month
 
             qint64 dif = datecol.daysTo(QDateTime::currentDateTime());
 
-            QString period = data( this->index(index.row(), 11)).toString();
+            QString period = rawValue(index.row(), 11).toString();
 
             if (period == "Milestone")
             {
@@ -201,9 +244,13 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
             }
 
         }
+        // The threshold columns below must read the RAW number: data() returns
+        // the display string, and for the DBPercent columns ("95.00%") its
+        // toDouble() is 0, so those colors never fired. CPI (DBReal) parsed
+        // fine but reads the raw value too — it's cheaper than formatting.
         else if (index.column() == 15)  // percent consumed
         {
-            double value = data(index).toDouble();
+            double value = rawValue(index.row(), index.column()).toDouble();
 
             if (value >= 95.0)
                 return QVariant(QCOLOR_RED);
@@ -212,7 +259,7 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
         }
         else if (index.column() == 17) // cost variance
         {
-            double value = data(index).toDouble();
+            double value = rawValue(index.row(), index.column()).toDouble();
 
             if (value >= 10.0)
                 return QVariant(QCOLOR_RED);
@@ -221,7 +268,7 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
         }
         else if (index.column() == 18)  // schedule variance
         {
-            double value = data(index).toDouble();
+            double value = rawValue(index.row(), index.column()).toDouble();
 
             if (value >= 10.0)
                 return QVariant(QCOLOR_RED);
@@ -230,7 +277,7 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
         }
         else if (index.column() == 19)  // percent complete
         {
-            double value = data(index).toDouble();
+            double value = rawValue(index.row(), index.column()).toDouble();
 
             if (value >= 95.0)
                 return QVariant(QCOLOR_RED);
@@ -239,7 +286,7 @@ QVariant ProjectsModel::data(const QModelIndex &index, int role) const
         }
         else if (index.column() == 20)  // CPI
         {
-            double value = data(index).toDouble();
+            double value = rawValue(index.row(), index.column()).toDouble();
 
             if (value <= 0.8)
                 return QVariant(QCOLOR_RED);

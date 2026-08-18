@@ -17,6 +17,13 @@ ApplicationWindow {
     // Save current page data before app closes
     function saveCurrentPage() {
         var page = pageStack.currentItem
+        // Cloud Sync Settings isn't a record editor — it just needs its typed
+        // fields committed. No credential check here: leaving the app is not
+        // the moment to put a dialog in the user's way.
+        if (page && typeof page._commitSyncFields === "function") {
+            page._commitSyncFields()
+            return
+        }
         if (page && typeof page._saveNow === "function" && !page._skipSave) {
             if (page.isNewRecord && typeof page._isBlankNew === "function" && page._isBlankNew()) {
                 page._skipSave = true
@@ -46,12 +53,55 @@ ApplicationWindow {
         qsTr("Projects"), qsTr("People"), qsTr("Clients"), qsTr("Items")
     ]
 
+    // ── Leaving Cloud Sync Settings: check the fields first ───────────────────
+    // The sync credentials and the encryption phrase are write-through — a
+    // mistyped password or a phrase that doesn't match the account is simply
+    // saved, and only shows up much later as a sync that never completes. So
+    // when the user leaves that page having edited any of them, verify them
+    // against the host and say so while they can still fix it. The pop waiting
+    // on that answer is parked here. Mirrors the desktop app's Settings gate.
+    property var _pendingNavigation: null
+
+    // Returns true when `next` has been parked pending the check — the caller
+    // must then do nothing; _resumeNavigation() runs it once the user is done
+    // with the dialog.
+    function _gateOnSyncCheck(next) {
+        if (!AppController.syncSettingsUnverified)
+            return false
+        root._pendingNavigation = next
+        syncCheckDialog.status = ""
+        AppController.verifySyncSettings()
+        // With sync off or unconfigured there is nothing to contact the host
+        // about: the verdict came back inside that call and already ran the
+        // navigation, so don't flash a dialog for it.
+        if (root._pendingNavigation !== null)
+            syncCheckDialog.open()
+        return true
+    }
+
+    function _resumeNavigation() {
+        var next = root._pendingNavigation
+        root._pendingNavigation = null
+        if (next)
+            next()
+    }
+
     // Attempt to save the current detail page and pop.  If the C++ layer
     // rejects the data (lastSaveError is non-empty), stay on the page so the
     // user can fix their input — the errorOccurred signal opens the dialog,
     // and the typed values stay visible so it's clear which field is wrong.
     function trySaveAndPop() {
         var page = pageStack.currentItem
+        // Cloud Sync Settings: commit the fields, then check them before the
+        // page goes away. It has no record to save, so it never reaches the
+        // detail-page path below.
+        if (page && typeof page._commitSyncFields === "function") {
+            page._commitSyncFields()
+            if (_gateOnSyncCheck(function() { pageStack.pop() }))
+                return
+            pageStack.pop()
+            return
+        }
         if (page && typeof page._saveNow === "function" && !page._skipSave) {
             if (page.isNewRecord && typeof page._isBlankNew === "function" && page._isBlankNew()) {
                 page._skipSave = true
@@ -84,6 +134,21 @@ ApplicationWindow {
         function onSubscriptionExpired() {
             subscriptionExpiredDialog.open()
         }
+        // Verdict on the cloud sync settings the user just edited (see
+        // _gateOnSyncCheck). A late answer for a check the user already skipped
+        // has no pop parked against it and is theirs to ignore.
+        function onSyncSettingsVerified(status, message) {
+            if (root._pendingNavigation === null)
+                return
+            if (message === "") {
+                // Nothing to report — carry on and leave the page.
+                root._resumeNavigation()
+                syncCheckDialog.close()
+                return
+            }
+            syncCheckDialog.message = message
+            syncCheckDialog.status = status
+        }
     }
 
     Dialog {
@@ -113,6 +178,87 @@ ApplicationWindow {
                       + "<a href=\"https://www.projectnotespro.com\">www.projectnotespro.com</a> "
                       + "to renew your subscription.")
             onLinkActivated: Qt.openUrlExternally(link)
+        }
+    }
+
+    // Cloud sync check, shown on the way out of Cloud Sync Settings after the
+    // user edits the credentials or the encryption phrase (see
+    // _gateOnSyncCheck). An empty status means the check is still running;
+    // anything else is a problem worth stopping for.
+    Dialog {
+        id: syncCheckDialog
+        property string status: ""
+        property string message: ""
+        readonly property bool checking: status === ""
+        // "Back to Settings" is the only outcome that keeps the user on the
+        // page, so credential/phrase problems are the only ones with a choice.
+        readonly property bool fixable: status === "credentials" || status === "encryption"
+
+        title: checking ? qsTr("Checking Cloud Sync") : qsTr("Cloud Sync")
+        modal: true
+        anchors.centerIn: Overlay.overlay
+        width: Math.min(320, root.width - 48)
+        closePolicy: checking ? Popup.NoAutoClose : Popup.CloseOnEscape
+        footer: null
+
+        // Dismissing the dialog any other way means "stay here and fix it", so
+        // drop the pop that was waiting on it. The buttons that do continue run
+        // the pop before closing.
+        onClosed: root._pendingNavigation = null
+
+        ColumnLayout {
+            width: parent.width
+            spacing: 14
+
+            RowLayout {
+                Layout.fillWidth: true
+                visible: syncCheckDialog.checking
+                spacing: 10
+                BusyIndicator {
+                    running: syncCheckDialog.visible && syncCheckDialog.checking
+                    implicitWidth: 28
+                    implicitHeight: 28
+                }
+                Label {
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    text: qsTr("Checking your sync email, password, and encryption phrase…")
+                }
+            }
+
+            Label {
+                Layout.fillWidth: true
+                visible: !syncCheckDialog.checking
+                wrapMode: Text.Wrap
+                text: syncCheckDialog.message
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                Item { Layout.fillWidth: true }
+
+                // Leave with the settings as typed — they stay saved either way.
+                Button {
+                    text: qsTr("Leave Anyway")
+                    visible: syncCheckDialog.fixable
+                    flat: true
+                    onClicked: { root._resumeNavigation(); syncCheckDialog.close() }
+                }
+
+                Button {
+                    text: syncCheckDialog.checking ? qsTr("Skip")
+                          : (syncCheckDialog.fixable ? qsTr("Back to Settings") : qsTr("OK"))
+                    flat: true
+                    onClicked: {
+                        // Skip and OK carry on and leave the page; Back to
+                        // Settings keeps the user here.
+                        if (!syncCheckDialog.fixable)
+                            root._resumeNavigation()
+                        syncCheckDialog.close()
+                    }
+                }
+            }
         }
     }
 
@@ -313,6 +459,7 @@ ApplicationWindow {
             Connections {
                 target: AppController
                 function onViewOptionsChanged() {
+                    if (pageStack.depth > 1) return   // a detail page is stacked on top
                     switch (swipeView.currentIndex) {
                         case 0: AppController.refreshProjectsList(); break
                         case 1: AppController.refreshPeople();       break
@@ -345,11 +492,26 @@ ApplicationWindow {
     }
 
     // ── Startup ───────────────────────────────────────────────────────────────
-    // Defer DB init so the QML shell renders its first frame before the
-    // synchronous SQL work begins — eliminates the black-screen delay.
-    Component.onCompleted: Qt.callLater(function() {
+    // Open the database synchronously, directly in Component.onCompleted —
+    // matching ProjectNotesDesktop's Main.qml construction exactly. This runs
+    // during engine.load(), before main.cpp's window->show(), so the DB open,
+    // initial model refresh(), and column-filter restore below all complete
+    // before any ListView delegate exists. Deferring the whole call via
+    // Qt.callLater() (the original approach, kept the tab chrome from flashing
+    // blank while SQL work ran) let the SwipeView's ListViews render and bind
+    // to these exact models FIRST, so that work ran against live-viewed
+    // proxies instead — unsafe for the same reason described in
+    // AppController::openOrCreateDatabase()'s sort comment. Desktop never
+    // defers this call and never hits it. iOS's own LaunchScreen storyboard
+    // already covers the launch gap, so there's no bare black-screen risk.
+    //
+    // Sort restoration is the one piece of openOrCreateDatabase() that is NOT
+    // synchronous with the rest of this — see restoreAllSorts() and the
+    // QTimer::singleShot() call in AppController::openOrCreateDatabase() for
+    // why it's deferred to its own later event-loop turn instead.
+    Component.onCompleted: {
         AppController.openOrCreateDatabase()
         if (AppController.syncEnabled)
             AppController.startSync()
-    })
+    }
 }

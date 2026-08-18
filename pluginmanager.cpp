@@ -1,5 +1,4 @@
 // Copyright (C) 2025, 2026 Paul McKinney
-#include "mainwindow.h"
 #include "pluginmanager.h"
 
 #include <QDir>
@@ -13,6 +12,7 @@
 #include "QLoggerWriter.h"
 #include "databaseobjects.h"
 #include "credentialstore.h"
+#include "appsettings.h"   // appResourcesPath(), AppSettings::developerProfile()
 
 using namespace QLogger;
 
@@ -104,7 +104,7 @@ static PyObject* update_data(PyObject* self, PyObject* args)
 
     dbo.closeDatabase();
 
-    emit MainWindow::getPluginManager()->pluginRefreshRequest();
+    emit PluginManager::instance()->pluginRefreshRequest();
 
     return PyBool_FromLong(result);
 }
@@ -171,7 +171,7 @@ static PyObject* force_reload(PyObject* self, PyObject* args)
     }
 
     // put the reload request on the queue
-    MainWindow::getPluginManager()->forceReload(QString(modulename));
+    PluginManager::instance()->forceReload(QString(modulename));
 
     Py_RETURN_NONE;
 }
@@ -378,9 +378,16 @@ void reset_stdout()
     g_stderr = 0;
 }
 
+PluginManager* PluginManager::s_instance = nullptr;
+QString PluginManager::s_developerProfile;
+
 PluginManager::PluginManager(QObject *parent)
     : QObject{parent}
 {
+    // Self-register so the embedded-Python C callbacks (update_data / force_reload)
+    // can reach the one live manager without depending on MainWindow — the QML
+    // desktop app has no MainWindow. Each app process creates exactly one manager.
+    s_instance = this;
 
     m_pluginspath = appResourcesPath() + "/plugins/";
     m_threadspath = appResourcesPath() + "/threads/";
@@ -425,7 +432,7 @@ PluginManager::PluginManager(QObject *parent)
     PyObject* pnModule = PyImport_ImportModule("projectnotes");
 
     // Expose the developer profile name to Python plugins
-    QString devProfile = AppSettings::developerProfile();
+    QString devProfile = s_developerProfile;
     PyObject* pyProfile = PyUnicode_FromString(devProfile.toUtf8().constData());
     PyObject_SetAttrString(pnModule, "developer_profile", pyProfile);
     Py_DECREF(pyProfile);

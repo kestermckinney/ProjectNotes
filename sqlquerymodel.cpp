@@ -43,6 +43,17 @@ SqlQueryModel::~SqlQueryModel()
         m_dbo->removeModel(this);
 }
 
+void SqlQueryModel::showNativeError(const QString& title, const QString& message) const
+{
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
+    if (m_gui && m_dbo->guiDialogsEnabled())
+        QMessageBox::critical(nullptr, title, message, QMessageBox::Ok);
+#else
+    Q_UNUSED(title);
+    Q_UNUSED(message);
+#endif
+}
+
 void SqlQueryModel::refreshImpactedRecordsets(QModelIndex index)
 {
     QListIterator<SqlQueryModel*> it_recordsets(m_dbo->getOpenModels());
@@ -133,12 +144,15 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
         //  or cached double vs incoming "$1,234.56" string for DBUSD)
         {
             QVariant testEscaped = value;
-            sqlEscape(testEscaped, m_columnType[index.column()], true);
+            escapeForColumn(testEscaped, index.column());
             const QVariant& cached = m_cache[index.row()].value(index.column());
             if (cached == testEscaped ||
                 (!cached.isNull() && !testEscaped.isNull() && cached.toString() == testEscaped.toString()))
                 return true;
         }
+
+        // the value is actually changing below, so any cached findValue()/findIndex() lookups go stale
+        invalidateValueIndex();
 
         // make sure column is edit_table
         // exit if no update table defined
@@ -154,12 +168,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
             {
                 const QString msg = m_headers[index.column()][Qt::EditRole].toString() + QObject::tr(" is a required field.");
                 getDBOs()->setLastSaveError(msg);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-                if (m_gui)
-                {
-                    QMessageBox::critical(nullptr, QObject::tr("Cannot update record"), msg, QMessageBox::Ok);
-                }
-#endif
+                showNativeError(QObject::tr("Cannot update record"), msg);
                 emit dataChanged(index, index); // reload correct value
                 return false;
             }
@@ -178,12 +187,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
             {
                 const QString msg = m_headers[index.column()][Qt::EditRole].toString() + QObject::tr(" must be a unique value.");
                 getDBOs()->setLastSaveError(msg);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-                if (m_gui)
-                {
-                    QMessageBox::critical(nullptr, QObject::tr("Cannot update record"), msg, QMessageBox::Ok);
-                }
-#endif
+                showNativeError(QObject::tr("Cannot update record"), msg);
                 emit dataChanged(index, index); // reload correct value
 
                 return false;
@@ -195,12 +199,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
         {
             const QString msg = m_headers[index.column()][Qt::EditRole].toString() + QObject::tr(" must be a unique value.");
             getDBOs()->setLastSaveError(msg);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-            if (m_gui)
-            {
-                QMessageBox::critical(nullptr, QObject::tr("Cannot update record"), msg, QMessageBox::Ok);
-            }
-#endif
+            showNativeError(QObject::tr("Cannot update record"), msg);
             emit dataChanged(index, index); // reload correct value
             return false;
         }
@@ -216,10 +215,26 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
             m_cache[index.row()][0] = QUuid::createUuid().toString();
 
             QVariant escapedValue = value;
-            sqlEscape(escapedValue, m_columnType[index.column()], true);
+            escapeForColumn(escapedValue, index.column());
 
             // set the cached value
             m_cache[index.row()][index.column()] = escapedValue;
+
+            applyBlankColumnPolicy(index.row());
+
+            // The row is complete now, so the unique-key sets can be checked
+            // against all of it — see checkRowUniqueKeys().
+            QString clashingKey;
+            if (!checkRowUniqueKeys(index.row(), &clashingKey))
+            {
+                const QString msg = clashingKey + QObject::tr(" must be a unique value.");
+                getDBOs()->setLastSaveError(msg);
+                showNativeError(QObject::tr("Cannot save record"), msg);
+                // make the record a new record again
+                m_cache[index.row()][0] = QVariant();
+                emit dataChanged(index, index); // reload correct value
+                return false;
+            }
 
             for (int i = 0; i < m_columnCount; i++)
             {
@@ -256,12 +271,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
 
                     const QString msg = m_headers[i][Qt::EditRole].toString() + QObject::tr(" is required.");
                     getDBOs()->setLastSaveError(msg);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-                    if (m_gui)
-                    {
-                        QMessageBox::critical(nullptr, QObject::tr("Cannot save record"), msg, QMessageBox::Ok);
-                    }
-#endif
+                    showNativeError(QObject::tr("Cannot save record"), msg);
                     // don't insert the record until the required fields are filled in
                     // make the record a new record again
                     m_cache[index.row()][0] = QVariant();
@@ -296,12 +306,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
             const QString msg = insert.lastError().text();
 
             getDBOs()->setLastSaveError(msg);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-            if (m_gui)
-            {
-                QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"), msg, QMessageBox::Ok);
-            }
-#endif
+            showNativeError(QObject::tr("Cannot insert record"), msg);
             emit dataChanged(index, index); // reload correct value - not sure if this is correct for insert
 
             return false;
@@ -315,7 +320,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
             QVariant oldvalue = m_cache[index.row()][index.column()];
             QVariant escapedValue = value;
 
-            sqlEscape(escapedValue, m_columnType[index.column()], true);
+            escapeForColumn(escapedValue, index.column());
 
             QSqlQuery update(getDBOs()->getDb());
             update.prepare("update " + m_tablename + " set " + columnname + " = ? where " + keycolumnname + " = ? and (" + columnname + " = ? or " + columnname + " is NULL)");
@@ -334,12 +339,7 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
                 {                   
                     const QString msg = m_headers[index.column()][Qt::EditRole].toString() + QObject::tr(" was already updated by another process.");
                     getDBOs()->setLastSaveError(msg);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-                    if (m_gui)
-                    {
-                        QMessageBox::critical(nullptr, QObject::tr("Cannot update record"), msg, QMessageBox::Ok);
-                    }
-#endif
+                    showNativeError(QObject::tr("Cannot update record"), msg);
                     reloadRecord(index);
 
                     // check for all of the impacted open recordsets
@@ -356,7 +356,19 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
                     // WHERE clauses (string vs integer epoch mismatch).
                     m_cache[index.row()][index.column()] = escapedValue;
 
-                    emit dataChanged(index, index);
+                    // Direct grid edits bypass pushRowChange, so drop any proxy
+                    // lookup caches referencing this table (e.g. a person rename
+                    // read by another list's assigned-to sort/search).
+                    getDBOs()->invalidateLookupCaches(m_tablename);
+
+                    // Scope the change to this cell's roles. QML otherwise
+                    // re-reads every named + _foreground role of the row (~2 per
+                    // column); QTableView repaints the cell either way. Full-row
+                    // updates (reloadRecord) stay role-less on purpose.
+                    emit dataChanged(index, index,
+                                     { Qt::DisplayRole, Qt::EditRole, Qt::ForegroundRole,
+                                       Qt::UserRole + index.column(),
+                                       Qt::UserRole + 1000 + index.column() });
 
                     // check for all of the impacted open recordsets
                     if (m_gui) // some recordsets aren't attached to the gui
@@ -372,13 +384,12 @@ bool SqlQueryModel::setData(const QModelIndex &index, const QVariant &value, int
 
                 const QString msg = QObject::tr("Cannot update %1.\n%2").arg(m_headers[index.column()][Qt::EditRole].toString()).arg(update.lastError().text());
                 getDBOs()->setLastSaveError(msg);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-                if (m_gui)
-                {
-                    QMessageBox::critical(nullptr, QObject::tr("Cannot update record"), msg, QMessageBox::Ok);
-                }
-#endif
-                emit dataChanged(index, index); // reload correct value - not sure if this is correct for insert
+                showNativeError(QObject::tr("Cannot update record"), msg);
+                // reload correct value - not sure if this is correct for insert
+                emit dataChanged(index, index,
+                                 { Qt::DisplayRole, Qt::EditRole, Qt::ForegroundRole,
+                                   Qt::UserRole + index.column(),
+                                   Qt::UserRole + 1000 + index.column() });
 
                 return false;
 
@@ -408,6 +419,7 @@ void SqlQueryModel::setTableName(const QString &table, const QString &displayNam
 void SqlQueryModel::refresh()
 {
     m_dirty = false;
+    m_loaded = true;
 
     QSqlQuery sql_query;
     QString orderby;
@@ -524,11 +536,14 @@ QHash<int, QByteArray> SqlQueryModel::roleNames() const
 void SqlQueryModel::clear()
 {
     m_cache.clear();
+    invalidateValueIndex();
 }
 
 QDateTime SqlQueryModel::parseDateTime(const QString& entrydate)
 {
-    QStringList elements = entrydate.split(QRegularExpression("[-/.: ]"), Qt::SkipEmptyParts);
+    // Compiled once — this is called from delegate paint/ForegroundRole paths.
+    static const QRegularExpression kDateSeparators("[-/.: ]");
+    QStringList elements = entrydate.split(kDateSeparators, Qt::SkipEmptyParts);
     QString Mon, Day,Year, Hours, Min, Seconds, Mil;
     int add12hours = 0;
     int addcurrentyear = 0;
@@ -566,6 +581,72 @@ QDateTime SqlQueryModel::parseDateTime(const QString& entrydate)
     QTime qt(Hours.toInt()+add12hours,Min.toInt(),Seconds.toInt(),Mil.toInt());
 
     return QDateTime(qd,qt);
+}
+
+void SqlQueryModel::escapeForColumn(QVariant& columnValue, int column) const
+{
+    sqlEscape(columnValue, m_columnType[column], true);
+
+    // sqlEscape() maps an empty value to NULL, which is right for most columns
+    // but fatal for the ones the database declares NOT NULL while the app treats
+    // them as optional: clearing the field, or any save that carries the
+    // still-empty field along, would be refused by the constraint. Those columns
+    // store a blank string instead — see setBlankInsteadOfNull().
+    if (columnValue.isNull() && blankInsteadOfNull(column))
+        columnValue = QString("");
+}
+
+// Check every unique-key set against the whole of |row| rather than against a
+// single column being written. Used before an INSERT, where all of the row's
+// values are known: without it a clash between two complete rows (two status
+// items with no description yet, say — task_description and project_id are a
+// unique key) reaches the database and comes back as a raw constraint error
+// instead of a message naming the field. |clashingKey| receives the name the
+// model gave the key set in addUniqueKeys(), which is the name to report.
+bool SqlQueryModel::checkRowUniqueKeys(int row, QString* clashingKey)
+{
+    if (row < 0 || row >= m_cache.size())
+        return true;
+
+    for (QHash<QString, QStringList>::const_iterator itk = m_uniqueKeys.constBegin();
+         itk != m_uniqueKeys.constEnd(); ++itk)
+    {
+        // checkUniqueKeys() compares the value passed for its index's column and
+        // the row's cached values for the rest of the set, so one call with any
+        // member column covers the whole set.
+        for (const QString& field : itk.value())
+        {
+            const int column = getColumnNumber(field);
+            if (column < 0)
+                continue;
+
+            if (!checkUniqueKeys(index(row, column), m_cache[row][column]))
+            {
+                if (clashingKey)
+                    *clashingKey = itk.key();
+                return false;
+            }
+            break;
+        }
+    }
+
+    return true;
+}
+
+// Fill in a blank for every blank-instead-of-NULL column of |row| that has no
+// value yet, so a row can be INSERTed no matter which column the user filled in
+// first (or whether the record came from a copy or an import).
+void SqlQueryModel::applyBlankColumnPolicy(int row)
+{
+    if (row < 0 || row >= m_cache.size())
+        return;
+
+    for (QHash<int, bool>::const_iterator it = m_columnBlankInsteadOfNull.constBegin();
+         it != m_columnBlankInsteadOfNull.constEnd(); ++it)
+    {
+        if (it.value() && it.key() < m_columnCount && m_cache[row][it.key()].isNull())
+            m_cache[row][it.key()] = QString("");
+    }
 }
 
 void SqlQueryModel::sqlEscape(QVariant& columnValue, DBColumnType columnType, bool noQuote) const
@@ -962,6 +1043,18 @@ bool SqlQueryModel::insertCacheRow(int row)
     if (row < 0 || row >= m_cache.size())
         return false;
 
+    invalidateValueIndex();
+    applyBlankColumnPolicy(row);
+
+    QString clashingKey;
+    if (!checkRowUniqueKeys(row, &clashingKey))
+    {
+        const QString msg = clashingKey + QObject::tr(" must be a unique value.");
+        getDBOs()->setLastSaveError(msg);
+        showNativeError(QObject::tr("Cannot save record"), msg);
+        return false;
+    }
+
     // assign a new UUID key
     m_cache[row][0] = QUuid::createUuid().toString();
 
@@ -1014,16 +1107,54 @@ bool SqlQueryModel::insertCacheRow(int row)
     getDBOs()->setLastSaveError(insert.lastError().text());
 
 
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-    if (m_gui)
-    {
-        QMessageBox::critical(nullptr, QObject::tr("Cannot insert record"),
-           insert.lastError().text() + "\n" + insert.lastQuery(), QMessageBox::Ok);
-    }
-#endif
+    showNativeError(QObject::tr("Cannot insert record"),
+                    insert.lastError().text() + "\n" + insert.lastQuery());
     // revert the key so it stays as a new record
     m_cache[row][0] = QVariant();
     return false;
+}
+
+bool SqlQueryModel::insertStagedRow(int row, const QVector<QPair<int, QVariant>>& values)
+{
+    if (row < 0 || row >= m_cache.size())
+        return false;
+    if (!isNewRecord(index(row, 0)))   // already written; this is not an insert
+        return false;
+
+    // Stage everything first so the checks below (and the INSERT itself) see a
+    // complete row — a half-written row is exactly what this method exists to
+    // avoid.
+    for (const QPair<int, QVariant>& v : values)
+    {
+        QVariant escapedValue = v.second;
+        escapeForColumn(escapedValue, v.first);
+        m_cache[row][v.first] = escapedValue;
+    }
+    invalidateValueIndex();
+
+    auto reject = [this](const QString& message)
+    {
+        getDBOs()->setLastSaveError(message);
+        showNativeError(QObject::tr("Cannot save record"), message);
+        return false;
+    };
+
+    for (const QPair<int, QVariant>& v : values)
+    {
+        const QString columnLabel = m_headers[v.first][Qt::EditRole].toString();
+
+        if (m_columnIsRequired[v.first] == DBRequired && m_cache[row][v.first].toString().trimmed().isEmpty())
+            return reject(columnLabel + QObject::tr(" is a required field."));
+
+        // Checked against the value as typed, the same as setData() does.
+        if (m_columnIsUnique[v.first] == DBUnique && !isUniqueValue(v.second, index(row, v.first)))
+            return reject(columnLabel + QObject::tr(" must be a unique value."));
+
+        if (!checkUniqueKeys(index(row, v.first), v.second))
+            return reject(columnLabel + QObject::tr(" must be a unique value."));
+    }
+
+    return insertCacheRow(row);
 }
 
 const QModelIndex SqlQueryModel::addRecord(QVector<QVariant>& newrecord)
@@ -1033,6 +1164,7 @@ const QModelIndex SqlQueryModel::addRecord(QVector<QVariant>& newrecord)
 
     beginInsertRows(qmi, row, row);
     m_cache.append(newrecord);
+    invalidateValueIndex();
     endInsertRows();
 
     return index(row, 0);
@@ -1054,6 +1186,7 @@ void SqlQueryModel::removeCacheRecord(QModelIndex index)
     beginRemoveRows(QModelIndex(), index.row(), index.row());
 
     m_cache.remove(index.row());
+    invalidateValueIndex();
 
     endRemoveRows();
     // beginRemoveRows/endRemoveRows is sufficient to notify views of the removal.
@@ -1079,6 +1212,11 @@ bool SqlQueryModel::deleteRecord(QModelIndex index)
         removeCacheRecord(index);
 
         deleteRelatedRecords(keyval);
+
+        // Cascade soft-delete the record's owned (DBExportable) child records,
+        // then flush the queued row changes so any open child views refresh.
+        cascadeDeleteExportableChildren(keyval);
+        getDBOs()->updateDisplayData();
         return true;
     }
 
@@ -1086,13 +1224,8 @@ bool SqlQueryModel::deleteRecord(QModelIndex index)
 
     const QString msg =  QObject::tr("Cannot delete item.\n%1").arg(delrow.lastError().text());
     getDBOs()->setLastSaveError(msg);
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-    if (m_gui)
-    {
-        QMessageBox::critical(nullptr, QObject::tr("Cannot delete item"),
-           delrow.lastError().text() + "\n" + delrow.lastQuery(), QMessageBox::Ok);
-    }
-#endif
+    showNativeError(QObject::tr("Cannot delete item"),
+                    delrow.lastError().text() + "\n" + delrow.lastQuery());
     return false;
 }
 
@@ -1113,6 +1246,15 @@ bool SqlQueryModel::isUniqueValue(const QVariant &newValue, const QModelIndex &i
 
     if (m_cache.count() > 0) // if not a new record exclude the current record
         keyvalue = m_cache[index.row()][0].toString();
+
+    // A record that hasn't been written yet has no key. Binding that null key
+    // would make "id <> ?" evaluate to NULL for every row, so the duplicate
+    // check would silently pass and the collision would only surface as a raw
+    // SQL constraint error at insert time. Compare against an empty key
+    // instead — it excludes nothing, which is right for a row that isn't in the
+    // table yet.
+    if (keyvalue.toString().isNull())
+        keyvalue = QString("");
 
     QSqlQuery select(getDBOs()->getDb());
     select.prepare("select count(*) from " + m_tablename + " where " + keycolumnname + " <> ? and " + columnname + " = ? AND deleted = 0");
@@ -1242,7 +1384,7 @@ bool SqlQueryModel::columnChangeCheck(const QModelIndex &index)
         getDBOs()->setLastSaveError(message);
 
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-        if (m_gui)
+        if (m_gui && getDBOs()->guiDialogsEnabled())
         {
             message = m_displayName + QObject::tr(" is referenced in the following item(s):\n\n") + message +
                       QObject::tr("\nYou cannot change ") + m_displayName + QObject::tr(" until they are no longer assocated with the following items. Would you like to run a search for all related items?");
@@ -1289,6 +1431,12 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
 
     for (int i = 0; i < m_relatedTable.size(); ++i)
     {
+        // Owned child records (DBExportable) are cascade-deleted along with the
+        // parent, so they must not block the delete.  Only DBNotExportable
+        // relations represent external references that prevent deletion.
+        if (m_relationExportable[i] == DBExportable)
+            continue;
+
         int relatedcount = 0;
 
         //set the where for all
@@ -1354,9 +1502,14 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
 
     if (reference_count > 0)
     {
+        // Always record the blocking reason so a caller that suppresses native
+        // dialogs (e.g. the QML app) can still surface it.
+        getDBOs()->setLastSaveError(
+            m_displayName + QObject::tr(" is referenced in the following:\n\n") + message +
+            QObject::tr("\nYou cannot delete the ") + m_displayName + QObject::tr(" until the assocated items no longer reference it."));
 
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-        if (m_gui)
+        if (m_gui && getDBOs()->guiDialogsEnabled())
         {
             message = m_displayName + QObject::tr(" is referenced in the following:\n\n") + message +
                      QObject::tr("\nYou cannot delete the ") + m_displayName + QObject::tr(" until the assocated items no longer reference it. Would you like to run a search for all related items?");
@@ -1384,10 +1537,6 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
                 promptShowClosedProjects(key_columns, key_values, reference_count);
             }
         }
-#else
-        message = m_displayName + QObject::tr(" is referenced in the following:\n\n") + message +
-                  QObject::tr("\nYou cannot delete the ") + m_displayName + QObject::tr(" until the assocated items no longer reference it.");
-        getDBOs()->setLastSaveError(message);
 #endif
 
         return false;
@@ -1395,7 +1544,13 @@ bool SqlQueryModel::deleteCheck(const QModelIndex &index)
     else
     {
 #if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-        if (m_gui)
+        // Only prompt natively when native dialogs are enabled. The QML desktop
+        // app runs with m_gui == true but guiDialogsEnabled() == false because it
+        // presents its own themed delete-confirmation dialog; without this guard
+        // (matching the blocked-delete checks at ~1216/1341) it would pop a
+        // duplicate native QMessageBox on every delete — and block on it when
+        // running headless.
+        if (m_gui && getDBOs()->guiDialogsEnabled())
         {
             if ( QMessageBox::question(nullptr, QObject::tr("Delete item?"),
                 QObject::tr("Are you sure you want to delete ") + m_displayName + QObject::tr("?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes )
@@ -1427,28 +1582,41 @@ void SqlQueryModel::promptShowClosedProjects(const QStringList &keyColumns, cons
     }
 }
 
-const QVariant SqlQueryModel::findValue(QVariant& lookupValue, int searchColumn, int returnColumn)
+const QHash<QString, int>& SqlQueryModel::valueIndexForColumn(int searchColumn)
 {
-    for ( QVector<QVector<QVariant>>::Iterator itrow = m_cache.begin(); itrow != m_cache.end(); ++itrow )
+    QHash<QString, int>& colIndex = m_valueIndex[searchColumn];
+
+    if (colIndex.isEmpty() && !m_cache.isEmpty())
     {
-        if ( (*itrow)[searchColumn].toString().compare(lookupValue.toString()) == 0 )
+        for (int row = 0; row < m_cache.size(); row++)
         {
-            return (*itrow)[returnColumn]; // key is always at 0
+            const QString key = m_cache[row][searchColumn].toString();
+            if (!colIndex.contains(key)) // first match wins, same as the linear scan it replaces
+                colIndex.insert(key, row);
         }
     }
+
+    return colIndex;
+}
+
+const QVariant SqlQueryModel::findValue(QVariant& lookupValue, int searchColumn, int returnColumn)
+{
+    const QHash<QString, int>& colIndex = valueIndexForColumn(searchColumn);
+    auto it = colIndex.constFind(lookupValue.toString());
+
+    if (it != colIndex.constEnd())
+        return m_cache[it.value()][returnColumn];
 
     return QVariant();
 }
 
 const QModelIndex SqlQueryModel::findIndex(QVariant& lookupValue, int searchColumn)
 {
-    for ( int row = 0; row < rowCount(QModelIndex()); row++ )
-    {
-        if ( m_cache[row][searchColumn].toString().compare(lookupValue.toString()) == 0 )
-        {
-            return index(row, 0); // key is always at 0
-        }
-    }
+    const QHash<QString, int>& colIndex = valueIndexForColumn(searchColumn);
+    auto it = colIndex.constFind(lookupValue.toString());
+
+    if (it != colIndex.constEnd())
+        return index(it.value(), 0); // key is always at 0
 
     return QModelIndex();
 }
@@ -1488,6 +1656,7 @@ bool SqlQueryModel::reloadRecord(const QModelIndex& index)
                 record[i] = select.value(i);
 
             m_cache[index.row()] = record;
+            invalidateValueIndex();
 
             DB_UNLOCK;
 
@@ -2473,10 +2642,9 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
                 // allowed-values list (e.g. a status enum column).
                 if (m_lookupValues[colnum] && !m_lookupValues[colnum]->contains(field_value.toString(), Qt::CaseSensitive))
                 {
-#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
-                    if (m_gui)
-                        QMessageBox::critical(nullptr, QObject::tr("Invalid Field Value"), QString("""%1"" is not a valid field value.").arg(field_value.toString()));
-#endif
+                    const QString msg = QString("""%1"" is not a valid field value.").arg(field_value.toString());
+                    getDBOs()->setLastSaveError(msg);
+                    showNativeError(QObject::tr("Invalid Field Value"), msg);
 
                     return false;
                 }
@@ -2484,6 +2652,12 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
                 // Convert the value to its SQL-safe form (quotes special chars,
                 // converts empty strings to NULL for non-text columns, etc.).
                 sqlEscape(field_value, m_columnType[colnum], false);
+
+                // A column that stores blanks rather than NULL (NOT NULL in the
+                // schema, optional in the app) must not be imported as NULL —
+                // see setBlankInsteadOfNull().
+                if (field_value.isNull() && blankInsteadOfNull(colnum))
+                    field_value = QString("");
 
                 // If a required non-key column resolved to NULL, skip this row
                 // silently rather than letting the INSERT fail a NOT NULL constraint.
@@ -2575,6 +2749,15 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
 
         if (isdelete)
         {
+            // Do not delete a record that is still referenced elsewhere by a
+            // non-owned relation; leave it in place (its owned children are only
+            // removed when the record itself is deleted below).
+            if (hasExternalReferences(id_field))
+            {
+                QLog_Error(ERRORLOG, QString("Import skipped delete in %1: %2 = '%3' is still referenced elsewhere.").arg(m_tablename, getColumnName(0), id_field));
+                return true;
+            }
+
             sql = QString("UPDATE %1 SET deleted = 1 WHERE %2").arg(m_tablename, id_whereclause);
             disp_optype = KeyColumnChange::Delete;
         }
@@ -2639,6 +2822,10 @@ bool SqlQueryModel::setData(QDomElement* xmlRow, bool ignoreKey)
     // Notify the display layer so the relevant table views refresh the changed row.
     getDBOs()->pushRowChange(tablename(), id_field, disp_optype);
 
+    // When the row was soft-deleted, cascade the delete to its owned children.
+    if (disp_optype == KeyColumnChange::Delete)
+        cascadeDeleteExportableChildren(id_field);
+
     return true;
 }
 
@@ -2652,9 +2839,22 @@ bool SqlQueryModel::checkUniqueKeys(const QModelIndex &index, const QVariant &va
     {
         QString where;
         bool isrelevent = false;
+        bool resolvable = true;
 
         for (const QString& f : itk.value())
         {
+            // A key set naming a column this model doesn't have can neither be
+            // queried (the column isn't in the SELECT) nor bound (getColumnNumber()
+            // returns -1, which would index the row cache out of range below).
+            // Skip the whole set and record the mistake in the model definition.
+            if (getColumnNumber(f) < 0)
+            {
+                QLog_Error(ERRORLOG, QString("%1: unique key \"%2\" names unknown column \"%3\" — not checked")
+                                         .arg(objectName(), itk.key(), f));
+                resolvable = false;
+                break;
+            }
+
             if ( f.compare(checkfield) == 0 )
                 isrelevent = true;
 
@@ -2662,6 +2862,9 @@ bool SqlQueryModel::checkUniqueKeys(const QModelIndex &index, const QVariant &va
                 where += " and ";
             where += QString("%1 = ?").arg(f);
         }
+
+        if (!resolvable)
+            continue;
 
         // if the field we are checking is relevent check it
         if (isrelevent)
@@ -2853,5 +3056,130 @@ void SqlQueryModel::deleteRelatedRecords(QVariant& keyval)
                 }
             }
         }
+    }
+}
+
+// hasExternalReferences - true if a record is referenced by a non-owned relation.
+//
+// Walks every related table registered as DBNotExportable (an external reference
+// rather than an owned child) and returns true as soon as one active row still
+// points at the record identified by keyValue.  DBExportable relations are owned
+// children that get cascade-deleted, so they are ignored here.
+//
+// Each relation maps one or more child columns to columns on this model.  The
+// parent value for a relation column is keyValue when that column is the primary
+// key (column 0); otherwise it is fetched from the record so multi-column and
+// non-primary-key references (e.g. project_people -> "is primary contact") work
+// the same for both the GUI and XML-import delete paths.
+bool SqlQueryModel::hasExternalReferences(const QVariant& keyValue)
+{
+    if (keyValue.isNull() || keyValue.toString().isEmpty())
+        return false;
+
+    for (int i = 0; i < m_relatedTable.size(); ++i)
+    {
+        if (m_relationExportable[i] == DBExportable)
+            continue; // owned children are cascaded, not a blocking reference
+
+        QString where_clause;
+
+        for (int c = 0; c < m_relatedColumns[i].count(); c++)
+        {
+            const QString col_name = m_relatedColumns[i].at(c);
+            const QString fk_col_name = m_relatedFkColumns[i].at(c);
+
+            QString parentVal;
+            if (getColumnNumber(fk_col_name) == 0)
+                parentVal = keyValue.toString();
+            else
+                parentVal = getDBOs()->execute(QString("select %1 from %2 where %3 = '%4'")
+                    .arg(fk_col_name, m_tablename, getColumnName(0), sqlEscapeLiteral(keyValue.toString())));
+
+            if (!where_clause.isEmpty())
+                where_clause += " and ";
+            where_clause += QString(" %1 = '%2' ").arg(col_name, sqlEscapeLiteral(parentVal));
+        }
+
+        const QString cnt = getDBOs()->execute(
+            QString("select count(*) from %1 where %2 AND deleted = 0").arg(m_relatedTable.at(i), where_clause));
+
+        if (cnt.toInt() > 0)
+            return true;
+    }
+
+    return false;
+}
+
+// cascadeDeleteExportableChildren - recursively soft-delete a record's owned children.
+//
+// Given the primary-key value of a parent row in this model's table, walk every
+// related table registered as DBExportable (the same ownership tree used for XML
+// export) and soft-delete each matching child, descending into the children's own
+// exportable children first.  Only owned children are removed; external
+// references (DBNotExportable) are left intact and instead block deletion up front.
+//
+// This uses getDBOs()->execute() and refresh(), which take the database
+// write-lock internally, so it must be called with no DB lock held.
+void SqlQueryModel::cascadeDeleteExportableChildren(const QVariant& parentKeyValue)
+{
+    if (parentKeyValue.isNull() || parentKeyValue.toString().isEmpty())
+        return;
+
+    for (int i = 0; i < m_relatedTable.size(); ++i)
+    {
+        if (m_relationExportable[i] != DBExportable)
+            continue;
+
+        SqlQueryModel* childModel = getDBOs()->createExportObject(m_relatedTable[i]);
+        if (!childModel)
+            continue;
+
+        // Filter the child model to the rows owned by this parent row.  Each
+        // relation column pair maps a child column to a column on this model;
+        // resolve the parent's value and set it as an equality filter.
+        bool filtered = true;
+        for (int c = 0; c < m_relatedColumns[i].count(); c++)
+        {
+            const QString childCol = m_relatedColumns[i].at(c);
+            const QString parentFkCol = m_relatedFkColumns[i].at(c);
+
+            QString parentVal;
+            if (getColumnNumber(parentFkCol) == 0)
+                parentVal = parentKeyValue.toString();
+            else
+                parentVal = getDBOs()->execute(QString("select %1 from %2 where %3 = '%4'")
+                    .arg(parentFkCol, m_tablename, getColumnName(0), sqlEscapeLiteral(parentKeyValue.toString())));
+
+            const int childColNum = childModel->getColumnNumber(childCol);
+            if (childColNum < 0)
+            {
+                filtered = false;
+                break;
+            }
+
+            childModel->setFilter(childColNum, parentVal);
+        }
+
+        if (filtered)
+        {
+            childModel->refresh();
+
+            for (const QVector<QVariant>& childRow : childModel->m_cache)
+            {
+                const QVariant childKey = childRow.value(0);
+                if (childKey.isNull() || childKey.toString().isEmpty())
+                    continue; // skip any blank drop-down placeholder row
+
+                // Delete grandchildren first, then the child itself.
+                childModel->cascadeDeleteExportableChildren(childKey);
+
+                getDBOs()->execute(QString("UPDATE %1 SET deleted = 1 WHERE %2 = '%3'")
+                    .arg(childModel->m_tablename, childModel->getColumnName(0), sqlEscapeLiteral(childKey.toString())));
+
+                getDBOs()->pushRowChange(childModel->m_tablename, childKey, KeyColumnChange::Delete);
+            }
+        }
+
+        delete childModel;
     }
 }

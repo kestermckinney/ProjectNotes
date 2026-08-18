@@ -38,6 +38,7 @@ void TrackerItemsView::setModel(QAbstractItemModel *model)
         setColumnHidden(18, true);
         setColumnHidden(19, true);
         setColumnHidden(20, true);
+        setColumnHidden(21, true); // item_overdue — computed filter-only column, QML desktop's Quick Filter
 
         // setup model lists
         m_itemPriority.setStringList(DatabaseObjects::item_priority);

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ProjectNotesMobile VERSION 5.2.3 LANGUAGES CXX)
+project(ProjectNotesMobile VERSION 6.0.0 LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -99,6 +99,7 @@ qt_add_qml_module(ProjectNotesMobile
         qml/FormField.qml
         qml/FormLabel.qml
         qml/FieldRow.qml
+        qml/FormCombo.qml
         qml/Main.qml
         qml/pages/ProjectsListPage.qml
         qml/pages/PeoplePage.qml
@@ -130,6 +131,9 @@ qt_add_qml_module(ProjectNotesMobile
         qml/pages/DatePickerPopup.qml
         qml/pages/FontPickerPopup.qml
         qml/pages/NoteFormatSheet.qml
+        qml/pages/FilterSheet.qml
+        qml/pages/SortSheet.qml
+        qml/pages/QuickFilterDialog.qml
 )
 
 # ── iOS bundle properties ─────────────────────────────────────────────────────

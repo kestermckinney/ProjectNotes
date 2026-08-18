@@ -370,9 +370,9 @@ void TableView::contextMenuEvent(QContextMenuEvent *e)
 
     SqlQueryModel* currentmodel = dynamic_cast<SqlQueryModel*>(sortmodel->sourceModel());
 
-    int row = this->selectionModel()->currentIndex().row();
+    QModelIndex sourceIdx = sortmodel->mapToSource(this->selectionModel()->currentIndex());
 
-    bool is_new_record = currentmodel->data(currentmodel->index(row, 0)).isNull();
+    bool is_new_record = currentmodel->data(currentmodel->index(sourceIdx.row(), 0)).isNull();
 
     QMenu *menu = new QMenu(this);
 

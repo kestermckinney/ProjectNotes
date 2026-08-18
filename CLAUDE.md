@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ProjectNotes is a Qt/C++ desktop application (v5.2.1) for project management — tracking notes, meeting minutes, risks, issues, action items, contacts, and clients. It embeds a Python plugin system for extensibility and integrates with tools like Outlook, IFS ERP, and MS Office.
+ProjectNotes is a Qt/C++ desktop application (v6.0.0) for project management — tracking notes, meeting minutes, risks, issues, action items, contacts, and clients. It embeds a Python plugin system for extensibility and integrates with tools like Outlook, IFS ERP, and MS Office.
 
 ## Build Commands
 
@@ -14,8 +14,10 @@ cmake ..
 cmake --build .
 ```
 
+- The default target is `ProjectNotes`, the **QML** desktop frontend in `ProjectNotesDesktop/`. A plain `cmake --build .` builds only that.
+- The legacy Qt Widgets frontend is the separate `ProjectNotesWidgets` target and is **deprecated and off by default**. Build it with `cmake .. -DBUILD_WIDGETS_LEGACY=ON`. Linux/Flatpak still ships it, so its manifest passes that flag explicitly.
 - Requires CMake 3.16+, Qt6 (Qt5 fallback supported), Python 3 dev libraries, Hunspell 1.7
-- Qt modules used: Widgets, Core, SQL, XML, Network
+- Qt modules used: Widgets, Core, SQL, XML, Network, Qml/Quick (QML frontend)
 - Also requires `SqliteSyncPro` checked out as a sibling directory (`../SqliteSyncPro/src`) — it's linked as `SqliteSyncProLib`
 - No automated test framework exists in this project
 - No linting configuration
@@ -24,19 +26,34 @@ cmake --build .
 
 ### Application Structure
 
-Single-instance MDI Qt application enforced via `RunGuard` (UUID-based). Entry point is `main.cpp`, which sets Qt library paths for PyQt6 and launches `MainWindow`.
+Single-instance Qt application enforced via `RunGuard` (UUID-based). Two frontends share a common backend:
 
-**MainWindow** (`mainwindow.cpp`) manages:
+1. **Qt Widgets (Legacy)** - Original desktop UI via `main.cpp` → `MainWindow` (`mainwindow.cpp`)
+2. **Qt QML (Current Desktop)** - Modern QML-based desktop UI via `ProjectNotesDesktop/` with reactive components
+
+**MainWindow** (`mainwindow.cpp`) manages (Widgets frontend):
 - Page navigation with a history stack (max 20 nodes, forward/back)
 - Text formatting toolbar
 - Plugin menu injection
 
-### Page System (MVC)
+**Main.qml** (QML frontend) manages:
+- Section-based navigation (People, Clients, Projects, Items, Search)
+- Dynamic page component stack
+- Filter/Sort dialog coordination
+- Plugin menu integration with RecordContextMenu
 
-All pages inherit from `BasePage`. Key pages:
+### Page System (MVC/QML)
+
+**Widgets pages:** All inherit from `BasePage`:
 - `ProjectsListPage`, `ProjectDetailsPage`, `ProjectNotesPage`
 - `ItemDetailsPage` (risks, issues, action items)
 - `PeoplePage`, `ClientsPage`, `SearchPage`
+
+**QML pages:** Modern reactive components in `ProjectNotesDesktop/qml/pages/`:
+- `PeoplePage.qml`, `ClientsPage.qml` - Master lists with card-based UI
+- `PersonDetailPage.qml`, `ClientDetailPage.qml` - Detail pages with inline editing
+- `ProjectDetailPage.qml` - Complex detail page with multiple sub-tabs
+- `SearchPage.qml` - Unified search results
 
 ### Data Layer
 
@@ -53,6 +70,15 @@ Key tables: `projects`, `project_notes`, `item_tracker`, `item_tracker_updates`,
 - `PythonWorker` — Runs Python in a separate `QThread` with proper GIL management
 - Plugins live in `plugins/`; background worker threads in `threads/`
 - Plugins inject menu items via `pluginmenus`, can run on timers, and exchange data via XML
+
+### QML Context Menus & Navigation
+
+The QML desktop frontend uses `RecordContextMenu` for consistent right-click behavior across all detail pages:
+- **RecordContextMenu** - Main menu component showing Open/New/Delete/Duplicate/MoveTo actions, navigation actions (Go To Person/Client), export/filter/refresh, and plugins
+- **RecordRowMenu** - Extends RecordContextMenu for detail page sub-table rows (team, tracker items, etc.)
+- **Navigation Actions** - "Go To Person" and "Go To Client" actions allow quick navigation between related records
+  - People → Client: Navigate from a person's list/detail to their assigned client
+  - Team Member → Person: Navigate from a project team list to a team member's full person record
 
 ### Custom Delegates
 

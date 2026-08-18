@@ -31,13 +31,13 @@ done
 if [[ -z "$BUNDLE" ]]; then
     if $PREFER_RELEASE; then
         SEARCH_ORDER=(
-            "${SCRIPT_DIR}/build/Qt_6_10_2_for_macOS-Release/ProjectNotes.app"
-            "${SCRIPT_DIR}/build/Qt_6_10_2_for_macOS-Debug/ProjectNotes.app"
+            "${SCRIPT_DIR}/build/Qt_6_11_1_for_macOS_Release/ProjectNotes.app"
+            "${SCRIPT_DIR}/build/Qt_6_11_1_for_macOS_Debug/ProjectNotes.app"
         )
     else
         SEARCH_ORDER=(
-            "${SCRIPT_DIR}/build/Qt_6_10_2_for_macOS-Debug/ProjectNotes.app"
-            "${SCRIPT_DIR}/build/Qt_6_10_2_for_macOS-Release/ProjectNotes.app"
+            "${SCRIPT_DIR}/build/Qt_6_11_1_for_macOS_Debug/ProjectNotes.app"
+            "${SCRIPT_DIR}/build/Qt_6_11_1_for_macOS_Release/ProjectNotes.app"
         )
     fi
 

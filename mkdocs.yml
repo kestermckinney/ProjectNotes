@@ -10,26 +10,31 @@ nav:
     - 'Getting Started': Introduction/GettingStarted.md
     - 'System Requirements': Introduction/SystemRequirements.md
     - 'Installing on Linux': Introduction/InstallLinux.md
+    - 'Command-Line Options': Introduction/DeveloperProfile.md
   - 'Interface Overview':
-    - 'File Menu': InterfaceOverview/FileMenu.md
-    - 'Edit Menu': InterfaceOverview/EditMenu.md
-    - 'Plugins Menu': InterfaceOverview/PluginsMenu.md
-    - 'View Menu': InterfaceOverview/ViewMenu.md
-    - 'History Menu': InterfaceOverview/HistoryMenu.md
-    - 'Help Menu': InterfaceOverview/HelpMenu.md
-    - 'Toolbar': InterfaceOverview/Toolbar.md
+    - 'Application Menu': InterfaceOverview/ApplicationMenu.md
     - 'Preferences': InterfaceOverview/Preferences.md
     - 'Project List Page': InterfaceOverview/ProjectListPage.md
     - 'Project Page': InterfaceOverview/ProjectPage.md
     - 'Notes Page': InterfaceOverview/NotesPage.md
     - 'Item Tracker Page': InterfaceOverview/ItemTrackerPage.md
-    - 'Action Item Detail Page': InterfaceOverview/ActionItemDetailPage.md
+    - 'Action/Tracker Item Details': InterfaceOverview/ActionItemDetailPage.md
     - 'People List Page': InterfaceOverview/PeopleListPage.md
     - 'Client List Page': InterfaceOverview/ClientListPage.md
     - 'Search Page': InterfaceOverview/SearchPage.md
-    - 'Error Log': InterfaceOverview/ErrorLog.md
+  - 'Productivity Features':
+    - 'Project Folders': InterfaceOverview/ProjectFolders.md
     - 'Filter Tool': InterfaceOverview/FilterTool.md
     - 'Sorting and Sizing Columns': InterfaceOverview/SortingandSizingColumns.md
+    - 'Find and Replace in Notes': InterfaceOverview/FindAndReplace.md
+    - 'Copying Items': InterfaceOverview/CopyingItems.md
+    - 'Moving Items': InterfaceOverview/MovingItems.md
+    - 'Spell Checking': InterfaceOverview/SpellChecking.md
+    - 'UI Zoom': InterfaceOverview/VectorZoom.md
+    - 'Error Log': InterfaceOverview/ErrorLog.md
+  - 'Cloud Sync':
+    - 'Cloud Sync': InterfaceOverview/RemoteHost.md
+  - 'Reporting & Client Presentation':
     - 'Earned Value Terms': InterfaceOverview/EarnedValueTerms.md
     - 'Presenting to Clients': InterfaceOverview/PresentingToClients.md
   - 'Plugins Overview':
@@ -47,7 +52,6 @@ nav:
     - 'Meeting Notes Archive': StandardPlugins/MeetingNotesArchive.md
     - 'Export Tracker Items': StandardPlugins/ExportTrackerItems.md
     - 'Export Status Report': StandardPlugins/ExportStatusReport.md
-    - 'Tracker Report Generation': StandardPlugins/TrackerReportGeneration.md
     - 'New Document Templates': StandardPlugins/NewDocumentTemplates.md
     - 'Send Meeting Notes': StandardPlugins/SendMeetingNotes.md
     - 'Send Project Emails': StandardPlugins/SendProjectEmails.md

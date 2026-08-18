@@ -13,6 +13,8 @@ Project Notes comes with a comprehensive set of standard plugins installed and e
 
 All standard plugins are **highly configurable**. You can customize their behavior through settings dialogs accessible from the **Plugins > Settings** menu. This allows you to tailor Project Notes to your organization's specific workflows without modifying code.
 
+**Reaching Plugin Settings:** in the classic Widgets app, these are under the **Plugins > Settings** menu-bar item. In the QML desktop app, open the app menu (the menu icon at the top of the icon rail) — plugin settings appear grouped as **Plugins · Settings**, with a few utility items (Script Editor, Close Stranded Excel/Word, Outlook contact import/export) grouped under **Plugins · Utilities**. Both apps invoke the exact same plugin settings dialogs, so anything configured in one is immediately visible in the other.
+
 ### Standard Plugins Overview
 
 The standard plugins are organized into several categories:
@@ -28,7 +30,6 @@ The standard plugins are organized into several categories:
 - Export Meeting Notes — Export meeting notes to PDF
 - Export Tracker Items — Export tracker items and action items to PDF
 - Export Status Report — Export a project status report, with earned value metrics, to HTML and PDF
-- Tracker Report Generation — Generate customizable tracker/action item reports
 - Meeting Notes Archive — Archive meeting notes to a designated folder
 - Project Email Archive — Archive project-related emails
 
@@ -41,7 +42,6 @@ The standard plugins are organized into several categories:
 - Editor — Configure external script editors
 - My Shortcuts — Define custom menu shortcuts
 - IFS Cloud — Integrate with IFS Cloud ERP system
-- Find Project Email — Search Outlook for project emails by team member (Windows only)
 
 ### Important Note: IFS-Related Plugins
 
@@ -70,10 +70,8 @@ Plugin settings, UI state, and connection credentials are stored in your **opera
 | :--- | :--- |
 | Plugin configuration | Export sub-folders, IFS credentials, Outlook/Office 365 credentials, File Finder search locations and classifications, My Shortcuts definitions, meeting/email templates |
 | Cloud sync connection | Sync enabled flag, Project Notes Pro account email, password, and encryption phrase |
-| Window positions and sizes | Position and size of every dialog and the main window |
-| Table column widths and order | Column layout for every list view |
-| Table sort column and direction | Last sort applied to each list view |
-| Application font size | The global font size set via the View menu |
+| Window position and size | Position and size of the main window, restored on the next launch |
+| UI Zoom level | The zoom percentage set via **Ctrl +/-/0** or the [Application Menu](<../InterfaceOverview/ApplicationMenu.md>)'s **View** group zoom row — see [UI Zoom](<../InterfaceOverview/VectorZoom.md>) |
 | Spell check dictionary | Selected dictionary and personal word list |
 
 **Storage location by platform:**

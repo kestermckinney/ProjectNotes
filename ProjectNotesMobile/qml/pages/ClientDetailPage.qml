@@ -11,14 +11,25 @@ Page {
     title: qsTr("Client")
 
     property int    clientRow:         -1
+    property string clientId:          ""
     property string initialClientName: ""
     property bool   _skipSave:         false
     property bool   isNewRecord:       false
 
     function _isBlankNew() { return isNewRecord && clientNameField.text.trim() === "" }
-    function _discardNew()  { AppController.deleteClient(root.clientRow) }
+    function _discardNew()  {
+        var row = AppController.rowForId(AppController.clientsModel, root.clientId)
+        if (row < 0) return
+        AppController.deleteClient(row)
+    }
 
+    // Re-resolve clientRow from the stable clientId before every write —
+    // Sort/refresh elsewhere in the app can reorder or reset the shared
+    // clientsModel proxy while this page is open.
     function _saveNow() {
+        var row = AppController.rowForId(AppController.clientsModel, root.clientId)
+        if (row < 0) return false   // record no longer exists
+        root.clientRow = row
         return AppController.saveClient(root.clientRow, clientNameField.text)
     }
 
@@ -56,6 +67,7 @@ Page {
                     var d = AppController.getClientData(newRow)
                     root.StackView.view.replace(Qt.resolvedUrl("ClientDetailPage.qml"), {
                         clientRow:         newRow,
+                        clientId:          (d.id           || "").toString(),
                         initialClientName: (d.client_name || "").toString()
                     })
                 }
@@ -64,7 +76,8 @@ Page {
             ToolButton {
                 icon.name: "trash"
                 onClicked: {
-                    if (AppController.deleteClient(root.clientRow)) {
+                    var row = AppController.rowForId(AppController.clientsModel, root.clientId)
+                    if (row >= 0 && AppController.deleteClient(row)) {
                         root._skipSave = true
                         root.StackView.view.pop()
                     }

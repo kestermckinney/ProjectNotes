@@ -21,14 +21,27 @@ Page {
     property bool   _hasChanges: false
     property bool   isNewRecord: false
 
+    // Stable {id,name} snapshot backing updatedByCombo — deliberately NOT the
+    // live AppController.peopleModel proxy, which the People tab's Sort
+    // feature can reorder/reset out from under a ComboBox bound directly to
+    // it (see AppController::teamMemberList doc comment). All people, not
+    // just this project's team, matches desktop's Updated By field.
+    property var _people: []
+    function _peopleNames() { return root._people.map(function(p){ return p.name }) }
+    function _personIndexForId(id) {
+        for (var i = 0; i < root._people.length; i++)
+            if (root._people[i].id === id) return i
+        return -1
+    }
+
     function _isBlankNew() { return isNewRecord && noteEdit.text.trim() === "" }
     function _discardNew()  { AppController.deleteComment(root.commentRow) }
 
     function _saveNow() {
         if (!root._hasChanges) return true
         dateField.commitPending()
-        var byId = updatedByCombo.currentIndex >= 0
-            ? AppController.teamMemberPersonIdAtRow(updatedByCombo.currentIndex) : ""
+        var bi = updatedByCombo.optionIndex
+        var byId = (bi >= 0 && bi < root._people.length) ? root._people[bi].id : ""
         var result = AppController.saveComment(root.commentRow, dateField.text, noteEdit.text, byId)
         if (result) root._hasChanges = false
         return result
@@ -38,8 +51,8 @@ Page {
         var d = AppController.getCommentData(root.commentRow)
         dateField.text = (d.lastupdated_date || "").toString()
         noteEdit.text  = (d.update_note      || "").toString()
-        var row = AppController.teamMemberRowForPersonId((d.updated_by || "").toString())
-        updatedByCombo.currentIndex = row >= 0 ? row : -1
+        root._people = AppController.peopleList()
+        updatedByCombo.selectOption(root._personIndexForId((d.updated_by || "").toString()))
     }
 
     StackView.onDeactivating: {
@@ -95,14 +108,13 @@ Page {
 
             SectionHeader { text: qsTr("Updated By") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: updatedByCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.projectTeamMembersModel
-                    textRole: "name"
+                    options: root._peopleNames()
+                    includeNone: true
                     Component.onCompleted: {
-                        var row = AppController.teamMemberRowForPersonId(root.initialBy)
-                        currentIndex = row >= 0 ? row : -1
+                        root._people = AppController.peopleList()
+                        selectOption(root._personIndexForId(root.initialBy))
                     }
                     onActivated: root._hasChanges = true
                 }

@@ -2,6 +2,17 @@
 #ifndef PLUGINMANAGER_H
 #define PLUGINMANAGER_H
 
+// Pull in the debug CRT/STL declarations BEFORE the block below temporarily
+// undefines _DEBUG to include Python.h against the release CRT. <corecrt.h>
+// only declares _invalid_parameter under _DEBUG; if Python.h (which includes
+// the CRT headers) is processed first with _DEBUG undefined, corecrt.h's
+// include guard gets set without that declaration, and every later STL header
+// (<atomic>, <xmemory>, …) fails with "'_invalid_parameter': is not a member
+// of the global namespace". Including these here first keeps the guard correct.
+#include <atomic>
+#include <cstdlib>
+#include <functional>
+
 #ifdef _DEBUG
 #pragma push_macro("slots")
 #undef slots
@@ -35,6 +46,15 @@ public:
     explicit PluginManager(QObject *parent = nullptr);
     ~PluginManager();
 
+    // The one live manager in this process (set in the constructor). Lets the
+    // embedded-Python callbacks reach it without a MainWindow dependency.
+    static PluginManager* instance() { return s_instance; }
+
+    // Developer profile exposed to Python plugins. Set by the host app before
+    // constructing the manager (Widgets: from AppSettings; QML desktop: from its
+    // own --developer-profile). Avoids a hard dependency on AppSettings::.
+    static void setDeveloperProfile(const QString& profile) { s_developerProfile = profile; }
+
     const QList<Plugin*>& plugins() const { return m_pluginlist; }
     void forceReload(const QString& module);
     int loadedCount();
@@ -62,6 +82,8 @@ private slots:
     void onForceReload(const QString& module);
 
 private:
+    static PluginManager* s_instance;
+    static QString s_developerProfile;
     QList<Plugin*> m_pluginlist;
     PyThreadState* m_pythreadstate;
     QFileSystemWatcher* m_fileWatcher;

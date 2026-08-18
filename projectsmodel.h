@@ -12,6 +12,11 @@ public:
     ProjectsModel(DatabaseObjects* dbo);
     const QModelIndex  newRecord(const QVariant* fkValue1 = nullptr, const QVariant* fkValue2 = nullptr) override;
 
+    // Next free 5-digit project number ("00042"). newRecord() deliberately
+    // leaves project_number blank — a new project is only staged in the cache,
+    // not written — so this is for the UI to offer as a starting value.
+    QString nextAvailableProjectNumber();
+
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role) override;
     const QModelIndex copyRecord(QModelIndex index) override;

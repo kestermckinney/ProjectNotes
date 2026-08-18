@@ -63,7 +63,9 @@ Page {
                     var d = AppController.getAttendeeData(newRow)
                     root.StackView.view.push(Qt.resolvedUrl("MeetingAttendeeDetailPage.qml"), {
                         attendeeRow:  newRow,
+                        attendeeId:   (d.id        || "").toString(),
                         isNewRecord:  true,
+                        projectId:    root.projectId,
                         initialPerson:(d.person_id || "").toString()
                     })
                 }
@@ -78,6 +80,9 @@ Page {
         clip: true
 
         delegate: ItemDelegate {
+            id: delegateRoot
+            required property int index
+            required property var model
             width: listView.width
 
             contentItem: RowLayout {
@@ -88,7 +93,7 @@ Page {
                     Layout.fillWidth: true
 
                     Label {
-                        text: model.name || ""
+                        text: delegateRoot.model.name || ""
                         font.bold: true
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -98,8 +103,8 @@ Page {
                         Layout.fillWidth: true
 
                         Label {
-                            visible: (model.client_name || "") !== ""
-                            text: model.client_name || ""
+                            visible: (delegateRoot.model.client_name || "") !== ""
+                            text: delegateRoot.model.client_name || ""
                             font.pixelSize: 12
                             color: Theme.mutedText
                             elide: Text.ElideRight
@@ -107,8 +112,8 @@ Page {
                         }
 
                         Label {
-                            visible: (model.email || "") !== ""
-                            text: model.email || ""
+                            visible: (delegateRoot.model.email || "") !== ""
+                            text: delegateRoot.model.email || ""
                             font.pixelSize: 12
                             color: Theme.mutedText
                             elide: Text.ElideRight
@@ -121,32 +126,32 @@ Page {
                     Layout.alignment: Qt.AlignVCenter
 
                     ToolButton {
-                        visible: (model.cell_phone || "").length > 0
+                        visible: (delegateRoot.model.cell_phone || "").length > 0
                         icon.name: "iphone"
                         implicitWidth: 44; implicitHeight: 44
-                        onClicked: Qt.openUrlExternally("tel:" + (model.cell_phone || "").replace(/[^\d+]/g, ""))
+                        onClicked: Qt.openUrlExternally("tel:" + (delegateRoot.model.cell_phone || "").replace(/[^\d+]/g, ""))
                     }
 
                     ToolButton {
-                        visible: (model.office_phone || "").length > 0
+                        visible: (delegateRoot.model.office_phone || "").length > 0
                         icon.name: "phone.fill"
                         implicitWidth: 44; implicitHeight: 44
-                        onClicked: Qt.openUrlExternally("tel:" + (model.office_phone || "").replace(/[^\d+]/g, ""))
+                        onClicked: Qt.openUrlExternally("tel:" + (delegateRoot.model.office_phone || "").replace(/[^\d+]/g, ""))
                     }
 
                     ToolButton {
-                        visible: (model.email || "").length > 0
+                        visible: (delegateRoot.model.email || "").length > 0
                         icon.name: "envelope"
                         implicitWidth: 44; implicitHeight: 44
                         onClicked: {
                             var parts = []
-                            var pn = (model.project_number || "").trim()
-                            var nm = (model.project_name  || "").trim()
+                            var pn = (delegateRoot.model.project_number || "").trim()
+                            var nm = (delegateRoot.model.project_name  || "").trim()
                             if (pn || nm) parts.push((pn + " " + nm).trim())
                             if (root.noteTitle) parts.push(root.noteTitle.trim())
                             if (root.noteDate)  parts.push(root.noteDate.trim())
                             var subject = parts.join(" - ")
-                            Qt.openUrlExternally("mailto:" + (model.email || "")
+                            Qt.openUrlExternally("mailto:" + (delegateRoot.model.email || "")
                                 + "?subject=" + encodeURIComponent(subject)
                                 + "&body="    + encodeURIComponent(root.noteBody))
                         }
@@ -156,8 +161,10 @@ Page {
 
             onClicked: {
                 root.StackView.view.push(Qt.resolvedUrl("MeetingAttendeeDetailPage.qml"), {
-                    attendeeRow:  index,
-                    initialPerson: model.person_id || ""
+                    attendeeRow:  delegateRoot.index,
+                    attendeeId:   delegateRoot.model.id        || "",
+                    projectId:    root.projectId,
+                    initialPerson: delegateRoot.model.person_id || ""
                 })
             }
         }

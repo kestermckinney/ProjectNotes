@@ -60,13 +60,17 @@ void ItemDetailsPage::newRecord()
 {
     QVariant tracker_id = global_DBObjects.actionitemsdetailsmodelproxy()->data(global_DBObjects.actionitemsdetailsmodelproxy()->index(0,0));
 
-    int lastrow = dynamic_cast<SqlQueryModel*>(getCurrentModel()->sourceModel())->rowCount(QModelIndex());
+    QModelIndex index = dynamic_cast<SqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord(&tracker_id);
 
-    dynamic_cast<SqlQueryModel*>(getCurrentModel()->sourceModel())->newRecord(&tracker_id);
+    int col = 1;
+    while (getCurrentView()->isColumnHidden(col))
+        col++;
 
-    getCurrentView()->selectRow(lastrow);
-    QModelIndex index = getCurrentView()->model()->index(lastrow, 0);
-    getCurrentView()->selectionModel()->select(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    auto* proxy = dynamic_cast<QSortFilterProxyModel*>(getCurrentView()->model());
+    QModelIndex sort_index = proxy->index(proxy->mapFromSource(index).row(), col);
+
+    getCurrentView()->selectionModel()->select(sort_index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    getCurrentView()->scrollTo(sort_index, QAbstractItemView::PositionAtCenter);
 }
 
 void ItemDetailsPage::setupModels( Ui::MainWindow *ui )

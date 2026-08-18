@@ -8,17 +8,17 @@ Manage your subscription, billing, and account at [www.projectnotespro.com](http
 
 ## Configuring Cloud Sync
 
-Configure the connection in Project Notes under **File > Cloud Sync Settings...**
+Configure the connection under the **Cloud Sync** section of Settings — click the **Settings** icon in the icon rail (or choose **Preferences** from the app menu, the menu icon at the top of the icon rail).
 
-### Sync all your devices and backup your data
+### Enable cloud sync
 
-The master on/off switch for cloud sync. When unchecked, the local database operates in standalone mode and no data is sent to or received from Project Notes Pro hosting. The sync progress bar is hidden when sync is disabled.
+The master on/off switch for cloud sync. When unchecked, the local database operates in standalone mode and no data is sent to or received from Project Notes Pro hosting. The sync progress line under the status row is hidden when sync is disabled.
 
-### Username (Email)
+### Sync Email
 
 The email address for your Project Notes Pro account.
 
-### Password
+### Sync Password
 
 The password for your Project Notes Pro account. It is stored in your local OS profile and is never synced.
 
@@ -33,46 +33,69 @@ An optional passphrase that encrypts your data before it leaves your machine. Th
 - Leave blank to disable encryption. Data is still protected in transit by HTTPS.
 - Changing the phrase requires a **Sync All** to re-push all records in the new encrypted state.
 
+### Checking Your Settings
+
+Each field saves as soon as you leave it, so a mistyped password or a mismatched encryption phrase would otherwise sit unnoticed until you wondered why nothing was syncing. To prevent that, Project Notes checks the Cloud Sync fields whenever you change one and then navigate away from Settings. It signs in to Project Notes Pro with the email and password you entered, and confirms that your encryption phrase opens the records already stored for your account.
+
+If something is wrong, a dialog appears before you leave the page:
+
+- **Credentials rejected** — the email and password were not accepted. Sync will not run until they are corrected.
+- **Encryption phrase mismatch** — sign-in worked, but none of your stored records can be decrypted with the phrase you entered. Records synced from your other devices would be skipped. (See the Encryption Phrase notes above — every device on the account must use the same phrase.)
+- **Host unreachable** — your settings were saved but could not be checked because Project Notes Pro could not be reached. They will be checked again the next time sync runs.
+
+Choose **Back to Settings** to stay and fix the field, or **Leave Anyway** to continue — your entries stay saved either way. The check only runs when you have actually changed one of the Cloud Sync fields.
+
 ### Subscription Status
 
-The dialog displays the current state of your Project Notes Pro subscription — for example the plan name and whether the subscription is active. If you open the dialog before a database is connected, it shows *"Not connected — open a database to view subscription status."*
-
-Below the status line, a **Project ID** indicates which Project Notes Pro project your data is associated with, along with the environment it is connecting to.
+The Cloud Sync section displays the current state of your Project Notes Pro subscription as a status line below the sync icon — for example the plan name and whether the subscription is active.
 
 If your subscription lapses, Project Notes will notify you that the subscription has expired and pause syncing until it is renewed at [www.projectnotespro.com](https://www.projectnotespro.com). Your local data remains fully accessible while a subscription is inactive.
 
 ---
 
-## Sync All
+## Sync Now vs. Sync All
 
-**File > Sync All** resets all sync flags and re-synchronizes the entire database with Project Notes Pro hosting from scratch.
+Project Notes offers two ways to trigger a sync cycle by hand, both reachable from the app menu (File group) and from **Settings > Cloud Sync**:
+
+### Sync Now
+
+**Sync Now** nudges an immediate, incremental sync cycle — the same kind of cycle that already runs automatically in the background. It pushes any local changes and pulls any remote changes since the last cycle. Use it when you want to sync sooner rather than waiting for the next automatic cycle.
+
+**To run Sync Now:** Choose **Sync Now** from the app menu, click **Sync Now** in **Settings > Cloud Sync**, or click the sync icon in the icon rail.
+
+### Sync All
+
+**Sync All** resets all sync flags and performs a full re-push and re-pull of the entire database with Project Notes Pro hosting from scratch.
 
 Use Sync All when:
 
-- Records appear stuck and the sync progress bar does not clear
+- Records appear stuck and the sync indicator does not clear
 - You connect a new device and want to pull all existing data immediately
 - You change the Encryption Phrase and need to re-push all records
 - You suspect the remote data is out of sync after a connectivity interruption
 
-Sync All can take several minutes for large databases. The sync progress bar shows overall progress. Project Notes remains fully usable while Sync All runs in the background.
+Sync All can take several minutes for large databases. Project Notes remains fully usable while Sync All runs in the background.
 
-**To run Sync All:** From the **File** menu, choose **Sync All**.
+**To run Sync All:** Choose **Sync All** from the app menu, or click **Sync All** in **Settings > Cloud Sync**.
 
 ---
 
-## Sync Status Bar
+## Sync Indicator
 
-When cloud sync is active, a progress bar appears in the bottom-right corner of the status bar.
+When cloud sync is active, a cloud icon near the bottom of the icon rail shows the current state:
 
-- **While syncing** — the bar fills from left to right as records are pushed and pulled. Hover over the bar to see the exact percentage and the number of records pending push and pull.
-- **When complete** — the bar disappears automatically once the database is fully synchronized.
-- **When sync is disabled or not configured** — the bar is hidden.
+- **While syncing** — the icon spins and a thin circular progress ring fills in around it as records are pushed and pulled. Hover over it to see the exact detail text (percentage and record counts) as a tooltip.
+- **When complete** — the icon settles to a plain "synced" cloud.
+- **On a network error** — the icon switches to a "cloud off" state.
+- **When sync is disabled or not configured** — the icon is dimmed and shows no ring.
+
+Click the sync icon at any time to trigger **Sync Now**.
 
 ---
 
 ## Sync Stats Window
 
-For a more detailed view of sync activity than the status-bar progress bar provides, you can open the **Sync Stats** window from **View > Sync Stats**. The menu item is a checkable toggle: select it to show the window, select it again (or close the window) to hide it.
+For a more detailed view of sync activity than the icon-rail indicator provides, click **Sync Stats** in **Settings > Cloud Sync**.
 
 The window is provided by the underlying SqliteSyncPro engine and shows:
 
@@ -80,7 +103,7 @@ The window is provided by the underlying SqliteSyncPro engine and shows:
 - Counts of records pending push and pending pull, broken out by table
 - Any recent sync errors and the timestamp of the last successful sync cycle
 
-The Sync Stats menu item is only enabled once the sync engine has been initialized — that is, after Cloud Sync Settings have been configured and the first sync cycle has started.
+The **Sync Stats** button is only enabled once the sync engine has been initialized — that is, after cloud sync has been configured and the first sync cycle has started.
 
 ---
 
@@ -111,29 +134,28 @@ If Project Notes Pro hosting is unreachable, Project Notes continues to function
 
 ### "Cannot connect" or sign-in warning on save
 
-- Verify your **Username (Email)** and **Password** are correct.
+- Verify your **Sync Email** and **Sync Password** are correct.
 - Confirm your subscription is active at [www.projectnotespro.com](https://www.projectnotespro.com).
 - Check that a firewall or VPN is not blocking the connection.
 
-### Sync progress bar stays visible for a long time
+### Sync indicator stays active for a long time
 
-- A large number of pending records may be in the queue. Wait for completion or run **File > Sync All** to reset.
-- Review **View > Logs** for sync-related error messages.
+- A large number of pending records may be in the queue. Wait for completion or run **Sync All** to reset.
+- Open the **Log Viewer** from the app menu and review `syncerrors.log` for sync-related error messages (see [Error Log](<ErrorLog.md>)).
 
 ### Records appear on one device but not another
 
 - Confirm both devices are signed in with the same Project Notes Pro account.
-- Run **File > Sync All** on both devices.
+- Run **Sync All** on both devices.
 - Verify both devices use the same Encryption Phrase.
 
 ### Encryption phrase mismatch
 
-Records pushed with one phrase cannot be read with a different phrase. To resolve: ensure all devices use the identical Encryption Phrase, then run **File > Sync All** on each device.
+Records pushed with one phrase cannot be read with a different phrase. To resolve: ensure all devices use the identical Encryption Phrase, then run **Sync All** on each device.
 
 ---
 
 ## Related Pages
 
-- [File Menu](FileMenu.md) — Cloud Sync Settings and Sync All reference
 - [Getting Started](../Introduction/GettingStarted.md)
 - [Project Notes Mobile](../Mobile/ProjectNotesMobile.md)

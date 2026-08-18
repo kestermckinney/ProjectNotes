@@ -74,6 +74,14 @@ public:
     void setLastSaveError(const QString& error) { m_lastSaveError = error; }
     QString lastSaveError() const { return m_lastSaveError; }
 
+    // When false, the models suppress their own native QMessageBox error popups
+    // and only record the message in lastSaveError() for the caller to surface
+    // (e.g. the QML app routes it through a themed dialog). Interactive
+    // confirmations (delete prompts) are unaffected. Defaults to true so the
+    // Widgets app keeps its existing behaviour.
+    void setGuiDialogsEnabled(bool enabled) { m_guiDialogsEnabled = enabled; }
+    bool guiDialogsEnabled() const { return m_guiDialogsEnabled; }
+
     QString execute(const QString& sql);
     void addModel(SqlQueryModel* model);
     void removeModel(SqlQueryModel* model);
@@ -155,6 +163,12 @@ public:
     bool popRowChange(KeyColumnChange& outChange);
     void updateDisplayData();
 
+    // Drop every proxy's cached lookup display values for the given table.
+    // Must be called on any write to a table other models reference as a
+    // lookup (people, clients, projects, ...); pushRowChange() and
+    // SqlQueryModel::setData() cover all write paths between them.
+    void invalidateLookupCaches(const QString& table);
+
 
     // selection values for fields
     static QStringList item_type;
@@ -180,6 +194,15 @@ public:
     QString getProjectManager();
     void setManagingCompany(const QString& value);
     QString getManagingCompany();
+    void setLastProjectDetailTab(const QString& projectId, int index);
+    int getLastProjectDetailTab(const QString& projectId);
+    void setProjectDetailHeaderHeight(int height);
+    int getProjectDetailHeaderHeight();
+    void setProjectSidebarWidth(int width);
+    int getProjectSidebarWidth();
+    // UI zoom (uiScale), persisted as a whole percentage (e.g. 130 for 1.30x).
+    void setUiZoomPercent(int percent);
+    int getUiZoomPercent();
 
     QDomDocument* createXMLExportDoc(SqlQueryModel* querymodel, const QString& filter = QString());
     QDomDocument* createXMLExportDoc(QList<SqlQueryModel*>* querymodels);
@@ -195,6 +218,7 @@ private:
     QString m_databaseFile;
     QSqlDatabase m_sqliteDb;
     bool m_gui = true;
+    bool m_guiDialogsEnabled = true;
     QString m_lastSaveError;
 
     ClientsModel* m_clientsModel = nullptr;

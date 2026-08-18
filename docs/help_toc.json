@@ -1,0 +1,97 @@
+{
+  "sections": [
+    {
+      "title": "Introduction",
+      "items": [
+        { "title": "Home", "path": "index.md" },
+        { "title": "Getting Started", "path": "Introduction/GettingStarted.md" },
+        { "title": "System Requirements", "path": "Introduction/SystemRequirements.md" },
+        { "title": "Installing on Linux", "path": "Introduction/InstallLinux.md" },
+        { "title": "Command-Line Options", "path": "Introduction/DeveloperProfile.md" }
+      ]
+    },
+    {
+      "title": "Interface Overview",
+      "items": [
+        { "title": "Application Menu", "path": "InterfaceOverview/ApplicationMenu.md" },
+        { "title": "Preferences", "path": "InterfaceOverview/Preferences.md" },
+        { "title": "Project List Page", "path": "InterfaceOverview/ProjectListPage.md" },
+        { "title": "Project Page", "path": "InterfaceOverview/ProjectPage.md" },
+        { "title": "Notes Page", "path": "InterfaceOverview/NotesPage.md" },
+        { "title": "Item Tracker Page", "path": "InterfaceOverview/ItemTrackerPage.md" },
+        { "title": "Action/Tracker Item Details", "path": "InterfaceOverview/ActionItemDetailPage.md" },
+        { "title": "People List Page", "path": "InterfaceOverview/PeopleListPage.md" },
+        { "title": "Client List Page", "path": "InterfaceOverview/ClientListPage.md" },
+        { "title": "Search Page", "path": "InterfaceOverview/SearchPage.md" }
+      ]
+    },
+    {
+      "title": "Productivity Features",
+      "items": [
+        { "title": "Project Folders", "path": "InterfaceOverview/ProjectFolders.md" },
+        { "title": "Filter Tool", "path": "InterfaceOverview/FilterTool.md" },
+        { "title": "Sorting and Sizing Columns", "path": "InterfaceOverview/SortingandSizingColumns.md" },
+        { "title": "Find and Replace in Notes", "path": "InterfaceOverview/FindAndReplace.md" },
+        { "title": "Copying Items", "path": "InterfaceOverview/CopyingItems.md" },
+        { "title": "Moving Items", "path": "InterfaceOverview/MovingItems.md" },
+        { "title": "Spell Checking", "path": "InterfaceOverview/SpellChecking.md" },
+        { "title": "UI Zoom", "path": "InterfaceOverview/VectorZoom.md" },
+        { "title": "Error Log", "path": "InterfaceOverview/ErrorLog.md" }
+      ]
+    },
+    {
+      "title": "Cloud Sync",
+      "items": [
+        { "title": "Cloud Sync", "path": "InterfaceOverview/RemoteHost.md" }
+      ]
+    },
+    {
+      "title": "Reporting & Client Presentation",
+      "items": [
+        { "title": "Earned Value Terms", "path": "InterfaceOverview/EarnedValueTerms.md" },
+        { "title": "Presenting to Clients", "path": "InterfaceOverview/PresentingToClients.md" }
+      ]
+    },
+    {
+      "title": "Plugins Overview",
+      "items": [
+        { "title": "Adding Functionality", "path": "PluginsOverview/AddingFunctionality.md" },
+        { "title": "Data Types", "path": "PluginsOverview/DataTypes.md" },
+        { "title": "Project Notes XML", "path": "PluginsOverview/ProjectNotesXML.md" }
+      ]
+    },
+    {
+      "title": "Standard Plugins",
+      "items": [
+        { "title": "Plugin Settings", "path": "StandardPlugins/PluginSettings.md" },
+        { "title": "Outlook Integration", "path": "StandardPlugins/OutlookIntegration.md" },
+        { "title": "iCloud Contacts", "path": "StandardPlugins/iCloudContacts.md" },
+        { "title": "File Finder", "path": "StandardPlugins/FileFinder.md" },
+        { "title": "My Shortcuts", "path": "StandardPlugins/MyShortcuts.md" },
+        { "title": "Team Member Quick Add", "path": "StandardPlugins/TeamMemberQuickAdd.md" },
+        { "title": "Export Meeting Notes", "path": "StandardPlugins/ExportMeetingNotes.md" },
+        { "title": "Meeting Notes Archive", "path": "StandardPlugins/MeetingNotesArchive.md" },
+        { "title": "Export Tracker Items", "path": "StandardPlugins/ExportTrackerItems.md" },
+        { "title": "Export Status Report", "path": "StandardPlugins/ExportStatusReport.md" },
+        { "title": "New Document Templates", "path": "StandardPlugins/NewDocumentTemplates.md" },
+        { "title": "Send Meeting Notes", "path": "StandardPlugins/SendMeetingNotes.md" },
+        { "title": "Send Project Emails", "path": "StandardPlugins/SendProjectEmails.md" },
+        { "title": "Project Email Archive", "path": "StandardPlugins/ProjectEmailArchive.md" },
+        { "title": "Schedule an Internal Status Meeting", "path": "StandardPlugins/ScheduleanInternalStatusMeeting.md" },
+        { "title": "Schedule a Customer Status Meeting", "path": "StandardPlugins/ScheduleaCustomerStatusMeeting.md" },
+        { "title": "Schedule an Internal Kickoff Meeting", "path": "StandardPlugins/ScheduleanInternalKickoffMeeting.md" },
+        { "title": "Schedule a Customer Kickoff Meeting", "path": "StandardPlugins/ScheduleaCustomerKickoffMeeting.md" },
+        { "title": "Schedule an Internal Lessons Learned Meeting", "path": "StandardPlugins/ScheduleanInternalLessonsLearned.md" },
+        { "title": "Schedule a Customer Lessons Learned Meeting", "path": "StandardPlugins/ScheduleaCustomerLessonsLearned.md" },
+        { "title": "IFS Cloud Integration", "path": "StandardPlugins/IFSCloud.md" },
+        { "title": "Editor", "path": "StandardPlugins/Editor.md" }
+      ]
+    },
+    {
+      "title": "Project Notes Mobile",
+      "items": [
+        { "title": "Overview", "path": "Mobile/ProjectNotesMobile.md" }
+      ]
+    }
+  ]
+}

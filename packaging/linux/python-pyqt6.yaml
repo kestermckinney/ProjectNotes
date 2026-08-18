@@ -28,6 +28,7 @@ build-commands:
     export PYTHONPATH="$TOOLS/lib/python3.12/site-packages"
 
     # 2. Runtime sip module into the app prefix (required by the bindings).
+    mkdir -p "$FLATPAK_DEST"/lib/python3.12/site-packages "$FLATPAK_DEST"/bin
     pip3 install --no-index --no-deps --find-links="file://$PWD" \
         --prefix="$FLATPAK_DEST" PyQt6-sip
 

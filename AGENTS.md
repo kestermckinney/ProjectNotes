@@ -9,6 +9,7 @@ Quick build (common, exact):
 - mkdir build && cd build
 - cmake .. -DCMAKE_BUILD_TYPE=Debug|Release [see OS notes]
 - cmake --build . --config Release   # on multi-config generators specify --config
+- Default target is `ProjectNotes` = the QML frontend (source dir ProjectNotesDesktop/, output <build>/ProjectNotesDesktop/). The legacy Widgets app is target `ProjectNotesWidgets`, OFF by default; add -DBUILD_WIDGETS_LEGACY=ON to build it. Don't assume `ProjectNotes` means the Widgets app — that was true before the QML frontend became the default.
 
 High-signal gotchas
 - SqliteSyncPro is a required sibling: CMake calls add_subdirectory(../SqliteSyncPro/src). Put that repo at ../SqliteSyncPro or CMake will fail.

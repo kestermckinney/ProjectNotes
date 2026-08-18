@@ -147,6 +147,7 @@ MainWindow::MainWindow(QWidget *parent)
                 Qt::QueuedConnection);
     }
 
+    PluginManager::setDeveloperProfile(AppSettings::developerProfile());
     m_pluginManager = new PluginManager(this);
 
     connect(m_pluginManager, &PluginManager::pluginLoaded, this, &MainWindow::onPluginLoaded);

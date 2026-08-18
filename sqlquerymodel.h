@@ -45,19 +45,29 @@ public:
 
     void refreshImpactedRecordsets(QModelIndex index);
 
+    // Show a native error popup, unless the caller has opted out of native
+    // dialogs (see DatabaseObjects::guiDialogsEnabled). The message is always
+    // recorded in lastSaveError() by the caller regardless, so a GUI that
+    // suppresses native popups can still surface it its own way.
+    void showNativeError(const QString& title, const QString& message) const;
+
     bool setData(const QModelIndex &index, const QVariant &value, int role) override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
 
-    void setCacheData(const QModelIndex &index, const QVariant &value) { m_cache[index.row()][index.column()] = value; }
+    void setCacheData(const QModelIndex &index, const QVariant &value) { m_cache[index.row()][index.column()] = value; invalidateValueIndex(); }
 
     bool importXMLNode(const QDomNode& domnode);
     bool setData(QDomElement* xmlRow, bool ignoreKey);
 
-    void clear();
     void refresh();
     void markDirty() { m_dirty = true; }
     void refreshIfDirty() { if (m_dirty) refresh(); }
+    // True once refresh() has run at least once — i.e. the model holds query
+    // results (which may legitimately be zero rows) rather than never having
+    // been loaded. Lets a caller re-query only the models a view already shows
+    // and leave the lazily-loaded ones alone.
+    bool isLoaded() const { return m_loaded; }
 
     void setTableName(const QString &table, const QString &displayName);
     const QString& tablename() { return m_tablename; }
@@ -70,6 +80,13 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const override;
 
     void sqlEscape(QVariant& columnValue, DBColumnType columnType, bool noQuote = false) const;
+    // sqlEscape() for one column, honouring its blank policy — see
+    // setBlankInsteadOfNull(). Every write path uses this rather than calling
+    // sqlEscape() directly, so a column's policy holds on insert and update alike.
+    void escapeForColumn(QVariant& columnValue, int column) const;
+    // Give every blank-instead-of-NULL column of |row| a value if it has none, so
+    // the row can be INSERTed whichever column the user filled in first.
+    void applyBlankColumnPolicy(int row);
     static QString sqlEscapeLiteral(const QString& value);   // doubles single quotes for safe interpolation into SQL string literals
     void reformatValue(QVariant& columnValue, DBColumnType columnType) const;
 
@@ -94,11 +111,28 @@ public:
     virtual const QModelIndex addRecord(QVector<QVariant>& newrecord);
     virtual const QModelIndex copyRecord(QModelIndex index);
     bool insertCacheRow(int row);
+
+    // INSERT a row that newRecord() only staged in the cache, writing every
+    // column in one statement after the same required / unique checks setData()
+    // applies per column. Values are display strings (as they come off a form)
+    // and are escaped exactly as setData() escapes them.
+    //
+    // This is what a record whose NOT NULL columns are filled in by the user
+    // needs: writing it a column at a time would try to INSERT on the first
+    // write, while the remaining required columns are still null. The failure
+    // reason lands in lastSaveError() either way; callers that suppress native
+    // dialogs surface it themselves.
+    bool insertStagedRow(int row, const QVector<QPair<int, QVariant>>& values);
     virtual void prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex) { Q_UNUSED(newrecord); Q_UNUSED(sourceIndex); }
     virtual const QModelIndex newRecord(const QVariant* fkValue1 = nullptr, const QVariant* fkValue2 = nullptr);
     virtual bool deleteRecord(QModelIndex index);
     bool copyAndFilterRow(QModelIndex& qmi, SqlQueryModel& pnmodel);
     void deleteRelatedRecords(QVariant& keyval);
+    // Soft-delete a record's owned (DBExportable) child records recursively.
+    void cascadeDeleteExportableChildren(const QVariant& parentKeyValue);
+    // True if the record is referenced by any DBNotExportable related table
+    // (an external reference that must block deletion), false otherwise.
+    bool hasExternalReferences(const QVariant& keyValue);
     void removeCacheRecord(QModelIndex index);
 
     int rowCount(const QModelIndex &parent) const override;
@@ -106,6 +140,9 @@ public:
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
 
     bool isUniqueValue(const QVariant &newValue, const QModelIndex &index);
+    // Unique-key check for a whole row, for use before an INSERT — see the
+    // definition. Returns the clashing key set's name in |clashingKey|.
+    bool checkRowUniqueKeys(int row, QString* clashingKey = nullptr);
     bool isNewRecord(const QModelIndex &index) { return m_cache[index.row()].value(0).isNull(); } // new records have blank guid in 0
     bool deleteCheck(const QModelIndex &index);
     bool columnChangeCheck(const QModelIndex &index);
@@ -114,6 +151,12 @@ public:
     const QVariant findValue(QVariant& lookupValue, int searchColumn, int returnColumn);
     const QModelIndex findIndex(QVariant& lookupValue, int searchColumn);
     const QModelIndex findNextIndex(QVariant& lookupValue, int searchColumn, QModelIndex& startIndex);
+
+    // findValue()/findIndex() are called from delegate paint() on every repaint,
+    // so they're backed by a QHash index (built lazily per search column) instead
+    // of a linear scan. Any code that mutates m_cache outside of the model's own
+    // methods below must call invalidateValueIndex() to keep it in sync.
+    void invalidateValueIndex() { m_valueIndex.clear(); }
 
     void setShowBlank(bool show = true) { m_showBlank = show; }
     bool reloadRecord(const QModelIndex& index);
@@ -161,6 +204,15 @@ public:
     bool isSearchable( int column ) { return (m_columnIsSearchable[column] == DBSearchable); }
     void setRequired( int column, DBColumnRequired required ) { m_columnIsRequired[column] = required; }
     bool isRequired( int column ) { return (m_columnIsRequired[column] == DBRequired); }
+
+    /** Store an empty value in this column as a blank string instead of NULL.
+     *  For columns the database declares NOT NULL while the app treats them as
+     *  optional — an untitled meeting, a status item with no description yet.
+     *  Without it, every write of an empty value (including a plain "the user
+     *  cleared the field", and any save that carries the still-empty field
+     *  along) is refused by the constraint. */
+    void setBlankInsteadOfNull( int column ) { m_columnBlankInsteadOfNull[column] = true; }
+    bool blankInsteadOfNull( int column ) const { return m_columnBlankInsteadOfNull.value(column, false); }
     DBColumnType getType( const int column ) const { return m_columnType[column]; }
     void setType( const int column, const DBColumnType columnType ) { m_columnType[column] = columnType; }
     QString getColumnName( int column ) { return m_columnName[column]; }
@@ -190,6 +242,10 @@ public:
     QDomElement toQDomElement( QDomDocument* xmlDocument, const QString& filter = QString());
 
 private:
+    // Emits no model-change signal of its own - only call inside refresh()'s
+    // beginResetModel()/endResetModel() block.
+    void clear();
+
     QString m_tablename;  // the table to write data too, also the table to sync with other models when changed
     QString m_displayName;
     QString m_baseSql;
@@ -204,6 +260,7 @@ private:
     QHash<int, DBColumnSearchable> m_columnIsSearchable;
     QHash<int, DBColumnEditable> m_columnIsEditable;
     QHash<int, DBColumnUnique> m_columnIsUnique;
+    QHash<int, bool> m_columnBlankInsteadOfNull;   // see setBlankInsteadOfNull()
 
     QHash<int, bool> m_columnIsFiltered;
     QHash<int, QVariant> m_filterValue;
@@ -241,8 +298,14 @@ private:
     QVector<QVector<QVariant>> m_cache;
     QVector<QHash<int, QVariant> > m_headers;
 
+    // Lazily-built index for findValue()/findIndex(): searchColumn -> (value -> first matching row).
+    // Cleared by invalidateValueIndex() whenever m_cache changes, rebuilt on next lookup.
+    QHash<int, QHash<QString, int>> m_valueIndex;
+    const QHash<QString, int>& valueIndexForColumn(int searchColumn);
+
     bool m_showBlank = false;
     bool m_dirty = false;
+    bool m_loaded = false;
 
     QString m_orderBy;
     QString m_foreignKeyValue;
@@ -256,6 +319,18 @@ private:
     bool matchesFilter(int column, const QVariant& value);
 
 protected:
+    // Raw cache value (what the DB stores — epoch seconds for dates, plain
+    // numbers for USD/percent), bypassing reformatValue(). For subclass
+    // ForegroundRole logic: reading data() there formats the value and forces
+    // a parse back, per cell per repaint.
+    QVariant rawValue(int row, int column) const
+    {
+        if (row < 0 || row >= m_cache.size())
+            return QVariant();
+        const QVector<QVariant>& record = m_cache.at(row);
+        return column >= 0 && column < record.size() ? record.at(column) : QVariant();
+    }
+
     // After a key search, if fewer results are visible than expected (due to the closed
     // project filter), prompt the user to enable Show Closed Projects and re-run the search.
     void promptShowClosedProjects(const QStringList &keyColumns, const QStringList &keyValues, int expectedCount);

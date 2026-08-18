@@ -33,7 +33,11 @@ Page {
     property int _selEnd:   0
 
     function _isBlankNew() { return isNewRecord && titleField.text.trim() === "" }
-    function _discardNew()  { AppController.deleteProjectNote(root.noteRow) }
+    function _discardNew()  {
+        var row = AppController.rowForId(AppController.projectNotesModel, root.noteId)
+        if (row < 0) return
+        AppController.deleteProjectNote(row)
+    }
 
     Component.onCompleted: {
         if (root.noteId !== "")
@@ -45,8 +49,14 @@ Page {
         root._reloadData()
     }
 
+    // Re-resolve noteRow from the stable noteId before every write — Sort/
+    // refresh elsewhere in the app can reorder or reset the shared
+    // projectNotesModel proxy while this page is open.
     function _saveNow() {
         if (!root._hasChanges) return true
+        var row = AppController.rowForId(AppController.projectNotesModel, root.noteId)
+        if (row < 0) return false   // record no longer exists
+        root.noteRow = row
         dateField.commitPending()
         var result = AppController.saveProjectNote(root.noteRow, titleField.text, dateField.text,
                                                     root.scaleFontSizes(TextFormatter.documentHtml(noteEdit.textDocument), 1 / 1.5),
@@ -128,7 +138,8 @@ Page {
                 icon.name: "trash"
                 focusPolicy: Qt.NoFocus
                 onClicked: {
-                    if (AppController.deleteProjectNote(root.noteRow)) {
+                    var row = AppController.rowForId(AppController.projectNotesModel, root.noteId)
+                    if (row >= 0 && AppController.deleteProjectNote(row)) {
                         root._skipSave = true
                         root.StackView.view.pop()
                     }
@@ -264,7 +275,15 @@ Page {
         modal: false
         dim: false
         closePolicy: Popup.NoAutoClose
+
+        // padding: 0 on its own is not enough: the iOS style sets topPadding
+        // (23) as well as padding, and a whole-control padding never overrides
+        // a per-edge one. On a bar this short the leftover 23px halved the
+        // usable height of the button row.
         padding: 0
+        topPadding: 0
+        leftPadding: 4
+        rightPadding: 4
 
         x: 0
         y: Qt.inputMethod.visible
@@ -285,7 +304,6 @@ Page {
         }
 
         contentItem: RowLayout {
-            anchors { fill: parent; leftMargin: 4; rightMargin: 4 }
             spacing: 4
 
             // Aa — open the Format sheet

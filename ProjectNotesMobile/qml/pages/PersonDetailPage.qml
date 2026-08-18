@@ -11,6 +11,7 @@ Page {
     title: qsTr("Person")
 
     property int    personRow:          -1
+    property string personId:           ""
     property string initialName:        ""
     property string initialEmail:       ""
     property string initialOfficePhone: ""
@@ -20,12 +21,35 @@ Page {
     property bool   _skipSave:          false
     property bool   isNewRecord:        false
 
-    function _isBlankNew() { return isNewRecord && nameField.text.trim() === "" }
-    function _discardNew()  { AppController.deletePerson(root.personRow) }
+    // Stable {id,name} snapshot backing clientCombo — deliberately NOT the
+    // live AppController.clientsModel proxy, which the Clients tab's Sort
+    // feature can reorder/reset out from under a ComboBox bound directly to
+    // it (see AppController::teamMemberList doc comment).
+    property var _clients: []
+    function _clientNames() { return root._clients.map(function(c){ return c.name }) }
+    function _clientIndexForId(id) {
+        for (var i = 0; i < root._clients.length; i++)
+            if (root._clients[i].id === id) return i
+        return -1
+    }
 
+    function _isBlankNew() { return isNewRecord && nameField.text.trim() === "" }
+    function _discardNew()  {
+        var row = AppController.rowForId(AppController.peopleModel, root.personId)
+        if (row < 0) return
+        AppController.deletePerson(row)
+    }
+
+    // Re-resolve personRow from the stable personId before every write —
+    // Sort/refresh elsewhere in the app can reorder or reset the shared
+    // peopleModel proxy while this page is open, which would otherwise leave
+    // personRow pointing at a different (or no longer existing) record.
     function _saveNow() {
-        var clientId = (clientCombo.currentIndex >= 0)
-            ? AppController.clientIdAtRow(clientCombo.currentIndex) : ""
+        var row = AppController.rowForId(AppController.peopleModel, root.personId)
+        if (row < 0) return false   // record no longer exists
+        root.personRow = row
+        var ci = clientCombo.optionIndex
+        var clientId = (ci >= 0 && ci < root._clients.length) ? root._clients[ci].id : ""
         return AppController.savePerson(root.personRow, nameField.text, emailField.text,
                                         officePhoneField.text, cellPhoneField.text,
                                         clientId, roleField.text)
@@ -38,8 +62,8 @@ Page {
         officePhoneField.text = (d.office_phone || "").toString()
         cellPhoneField.text   = (d.cell_phone   || "").toString()
         roleField.text        = (d.role         || "").toString()
-        var row = AppController.clientRowForId((d.client_id || "").toString())
-        clientCombo.currentIndex = row >= 0 ? row : -1
+        root._clients = AppController.clientList()
+        clientCombo.selectOption(root._clientIndexForId((d.client_id || "").toString()))
     }
 
     StackView.onDeactivating: {
@@ -71,6 +95,7 @@ Page {
                     var d = AppController.getPersonData(newRow)
                     root.StackView.view.replace(Qt.resolvedUrl("PersonDetailPage.qml"), {
                         personRow:          newRow,
+                        personId:           (d.id           || "").toString(),
                         initialName:        (d.name         || "").toString(),
                         initialEmail:       (d.email        || "").toString(),
                         initialOfficePhone: (d.office_phone || "").toString(),
@@ -84,7 +109,8 @@ Page {
             ToolButton {
                 icon.name: "trash"
                 onClicked: {
-                    if (AppController.deletePerson(root.personRow)) {
+                    var row = AppController.rowForId(AppController.peopleModel, root.personId)
+                    if (row >= 0 && AppController.deletePerson(row)) {
                         root._skipSave = true
                         root.StackView.view.pop()
                     }
@@ -152,14 +178,13 @@ Page {
 
             SectionHeader { text: qsTr("Client") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: clientCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.clientsModel
-                    textRole: "client_name"
+                    options: root._clientNames()
+                    includeNone: true
                     Component.onCompleted: {
-                        var row = AppController.clientRowForId(root.initialClientId)
-                        currentIndex = (row >= 0) ? row : -1
+                        root._clients = AppController.clientList()
+                        selectOption(root._clientIndexForId(root.initialClientId))
                     }
                 }
             }

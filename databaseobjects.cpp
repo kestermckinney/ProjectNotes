@@ -678,6 +678,58 @@ QString DatabaseObjects::getManagingCompany()
     return loadParameter("Preferences:ManagingCompany");
 }
 
+void DatabaseObjects::setLastProjectDetailTab(const QString& projectId, int index)
+{
+    saveParameter("UI:LastProjectDetailTab:" + projectId, QString::number(index));
+}
+
+int DatabaseObjects::getLastProjectDetailTab(const QString& projectId)
+{
+    QString value = loadParameter("UI:LastProjectDetailTab:" + projectId);
+    if (value.isEmpty())
+        return 1; // Tracker tab
+    return value.toInt();
+}
+
+void DatabaseObjects::setProjectDetailHeaderHeight(int height)
+{
+    saveLocalParameter("UI:ProjectDetailHeaderHeight", QString::number(height));
+}
+
+int DatabaseObjects::getProjectDetailHeaderHeight()
+{
+    QString value = loadLocalParameter("UI:ProjectDetailHeaderHeight");
+    if (value.isEmpty())
+        return 0; // no saved preference
+    return value.toInt();
+}
+
+void DatabaseObjects::setProjectSidebarWidth(int width)
+{
+    saveLocalParameter("UI:ProjectSidebarWidth", QString::number(width));
+}
+
+int DatabaseObjects::getProjectSidebarWidth()
+{
+    QString value = loadLocalParameter("UI:ProjectSidebarWidth");
+    if (value.isEmpty())
+        return 0; // no saved preference — caller keeps its built-in default
+    return value.toInt();
+}
+
+void DatabaseObjects::setUiZoomPercent(int percent)
+{
+    saveLocalParameter("UI:ZoomPercent", QString::number(percent));
+}
+
+int DatabaseObjects::getUiZoomPercent()
+{
+    QString value = loadLocalParameter("UI:ZoomPercent");
+    if (value.isEmpty())
+        return 0; // no saved preference — caller keeps its built-in default
+    return value.toInt();
+}
+
 void DatabaseObjects::setGlobalSearches( bool refresh )
 { 
     // setup default filters
@@ -1163,6 +1215,14 @@ QList<SqlQueryModel*>* DatabaseObjects::getData(const QDomDocument& xmldoc)
 void DatabaseObjects::addDefaultPMToProject(const QString& projectId)
 {
     QString pm = getProjectManager();
+
+    // No default Project Manager configured: do not insert a project_people row
+    // at all. Inserting with an empty people_id creates a junk team-member record
+    // (empty string passes the NOT NULL constraint) that later fails on XML
+    // export/import when it round-trips to a real NULL.
+    if (pm.trimmed().isEmpty())
+        return;
+
     QString guid = QUuid::createUuid().toString();
 
     QString insert = QString("insert into project_people (id, people_id, project_id, role) select '%3', '%2', '%1', 'Project Manager' where not exists (select 1 from project_people where project_id = '%1' and people_id = '%2' and deleted = 0 )").arg(projectId).arg(pm).arg(guid);
@@ -1173,6 +1233,13 @@ void DatabaseObjects::addDefaultPMToProject(const QString& projectId)
 void DatabaseObjects::addDefaultPMToMeeting(const QString& noteId)
 {
     QString pm = getProjectManager();
+
+    // No default Project Manager configured: skip both the team-member and the
+    // meeting-attendee inserts rather than writing rows with an empty people_id /
+    // person_id (see addDefaultPMToProject).
+    if (pm.trimmed().isEmpty())
+        return;
+
     QString guid = QUuid::createUuid().toString();
     QString guid2 = QUuid::createUuid().toString();
 
@@ -1203,6 +1270,10 @@ void DatabaseObjects::pushRowChange(const QString& table, const QVariant& value,
         return;
     }
 
+    // Any write can change a value other proxies resolve through their lookup
+    // caches (e.g. a person rename read by the items list's assigned-to sort).
+    invalidateLookupCaches(table);
+
     KeyColumnChange newChange{table, value, optype};
     if (!m_keyColumnChanges.contains(newChange))
     {
@@ -1210,6 +1281,15 @@ void DatabaseObjects::pushRowChange(const QString& table, const QVariant& value,
     }
 
     // qDebug() << "Push change to " << table << " of id " << value << " to change stack.";
+}
+
+void DatabaseObjects::invalidateLookupCaches(const QString& table)
+{
+    // All proxies are direct children of this object (created in
+    // createDatabaseObjects); each one drops only entries for this table.
+    const auto proxies = findChildren<SortFilterProxyModel*>(QString(), Qt::FindDirectChildrenOnly);
+    for (SortFilterProxyModel* proxy : proxies)
+        proxy->invalidateLookupTable(table);
 }
 
 // Pop the last added change; returns true if successful, false if empty

@@ -59,11 +59,11 @@ Typical entries include connectivity failures, authentication problems, and reco
 
 ## Viewing Logs on Desktop
 
-The built-in **Log Viewer** lets you inspect all of these log files without leaving the application. Open it from the **View** menu by choosing **Logs**. (In earlier releases this item lived on the Plugins menu.)
+The built-in **Log Viewer** lets you inspect all of these log files without leaving the application. Open it by choosing **Log Viewer** from the app menu (the menu icon at the top of the icon rail). It opens as its own window with one tab per log file; select **Clear Log** in its footer to delete the file backing the current tab, or **Close** to hide the window (it keeps tailing the logs in the background so reopening it is instant).
 
 ## Sending Logs to Support
 
-If you need help diagnosing a problem, Project Notes can package your log files and email them to support for you. From the **Help** menu choose **Send Logs to Support…** — Project Notes zips `error.log`, `console.log`, and `syncerrors.log` and attaches the archive to a new email addressed to support. See the [Help Menu](HelpMenu.md) for details.
+If you need help diagnosing a problem, Project Notes can package your log files and email them to support for you. From the app menu choose **Send Logs to Support…** — Project Notes zips `error.log`, `console.log`, and `syncerrors.log` and attaches the archive to a new email addressed to support.
 
 ## Troubleshooting Plugins
 

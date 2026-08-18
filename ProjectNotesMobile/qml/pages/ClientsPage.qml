@@ -12,6 +12,9 @@ Page {
 
     property StackView stackView: null
 
+    FilterSheet { id: filterSheet }
+    SortSheet   { id: sortSheet }
+
     header: ToolBar {
         RowLayout {
             anchors { left: parent.left; right: parent.right; margins: 8 }
@@ -41,6 +44,26 @@ Page {
             }
 
             ToolButton {
+                icon.name: "line.3.horizontal.decrease.circle"
+                onClicked: filterSheet.openFor("clients", qsTr("Clients"))
+                Rectangle {
+                    visible: { AppController.filterRev; return AppController.hasActiveColumnFilters(AppController.clientsModel) }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                }
+            }
+
+            ToolButton {
+                icon.name: "arrow.up.arrow.down"
+                onClicked: sortSheet.openFor("clients", qsTr("Clients"))
+                Rectangle {
+                    visible: { AppController.sortRev; return (AppController.activeSort(AppController.clientsModel).field || "") !== "" }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                }
+            }
+
+            ToolButton {
                 icon.name: "plus"
                 onClicked: {
                     var newRow = AppController.addClient()
@@ -48,6 +71,7 @@ Page {
                     var d = AppController.getClientData(newRow)
                     root.stackView.push(Qt.resolvedUrl("ClientDetailPage.qml"), {
                         clientRow:         newRow,
+                        clientId:          (d.id           || "").toString(),
                         isNewRecord:       true,
                         initialClientName: (d.client_name || "").toString()
                     })
@@ -61,8 +85,12 @@ Page {
         anchors.fill: parent
         model: AppController.clientsModel
         clip: true
+        reuseItems: true
 
         delegate: ItemDelegate {
+            id: delegateRoot
+            required property int index
+            required property var model
             width: listView.width
             contentItem: RowLayout {
                 spacing: 12
@@ -75,7 +103,7 @@ Page {
 
                     Label {
                         anchors.centerIn: parent
-                        text: (model.client_name || "?").charAt(0).toUpperCase()
+                        text: (delegateRoot.model.client_name || "?").charAt(0).toUpperCase()
                         font.pixelSize: 16
                         font.bold: true
                         color: "white"
@@ -83,7 +111,7 @@ Page {
                 }
 
                 Label {
-                    text: model.client_name || ""
+                    text: delegateRoot.model.client_name || ""
                     font.bold: true
                     elide: Text.ElideRight
                     Layout.fillWidth: true
@@ -92,8 +120,9 @@ Page {
             }
             onClicked: {
                 root.stackView.push(Qt.resolvedUrl("ClientDetailPage.qml"), {
-                    clientRow:         index,
-                    initialClientName: model.client_name || ""
+                    clientRow:         delegateRoot.index,
+                    clientId:          delegateRoot.model.id           || "",
+                    initialClientName: delegateRoot.model.client_name || ""
                 })
             }
         }

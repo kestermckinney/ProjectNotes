@@ -10,6 +10,19 @@ Page {
     id: root
     title: qsTr("Preferences")
 
+    // Stable {id,name} snapshots backing the combos below — deliberately NOT
+    // AppController.clientsModel/peopleModel directly, which the Clients/
+    // People tabs' Sort feature can reorder/reset out from under a ComboBox
+    // bound live to them (see AppController::teamMemberList doc comment).
+    property var _clients: []
+    property var _people:  []
+    function _clientNames() { return root._clients.map(function(c){ return c.name }) }
+    function _peopleNames() { return root._people.map(function(p){ return p.name }) }
+    function _indexForId(list, id) {
+        for (var i = 0; i < list.length; i++) if (list[i].id === id) return i
+        return -1
+    }
+
     ScrollView {
         anchors.fill: parent
         contentWidth: availableWidth
@@ -21,25 +34,37 @@ Page {
             // ── Defaults ──────────────────────────────────────────────────────
             SectionHeader { text: qsTr("Managing Company") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: companyCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.clientsModel
-                    textRole: "client_name"
-                    Component.onCompleted: currentIndex = AppController.managingCompanyIndex()
-                    onActivated: AppController.setManagingCompanyByRow(currentIndex)
+                    options: root._clientNames()
+                    includeNone: true
+                    Component.onCompleted: {
+                        root._clients = AppController.clientList()
+                        selectOption(root._indexForId(root._clients, AppController.managingCompanyId()))
+                    }
+                    onActivated: {
+                        var i = optionIndex
+                        AppController.setManagingCompanyId(
+                            (i >= 0 && i < root._clients.length) ? root._clients[i].id : "")
+                    }
                 }
             }
 
             SectionHeader { text: qsTr("Project Manager") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: managerCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.peopleModel
-                    textRole: "name"
-                    Component.onCompleted: currentIndex = AppController.projectManagerIndex()
-                    onActivated: AppController.setProjectManagerByRow(currentIndex)
+                    options: root._peopleNames()
+                    includeNone: true
+                    Component.onCompleted: {
+                        root._people = AppController.peopleList()
+                        selectOption(root._indexForId(root._people, AppController.projectManagerId()))
+                    }
+                    onActivated: {
+                        var i = optionIndex
+                        AppController.setProjectManagerId(
+                            (i >= 0 && i < root._people.length) ? root._people[i].id : "")
+                    }
                 }
             }
         }

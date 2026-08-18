@@ -78,7 +78,12 @@ Popup {
     y: (parent ? parent.height - height : 0) + slideY
     width:  parent ? parent.width : 390
     height: 420
+
+    // padding: 0 on its own is not enough: the iOS style sets topPadding (23)
+    // as well as padding, and a whole-control padding never overrides a
+    // per-edge one — the 23px survives as a blank strip above the header.
     padding: 0
+    topPadding: 0
 
     enter: Transition {
         NumberAnimation { target: root; property: "slideY"; from: root.height; to: 0; duration: 280; easing.type: Easing.OutCubic }

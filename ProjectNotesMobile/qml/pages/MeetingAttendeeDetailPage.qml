@@ -15,18 +15,42 @@ Page {
     title: qsTr("Attendee")
 
     property int    attendeeRow:   -1
+    property string attendeeId:    ""
+    property string projectId:     ""
     property string initialPerson: ""
     property bool   _skipSave:     false
     property bool   _hasChanges:   false
     property bool   isNewRecord:   false
 
-    function _isBlankNew() { return isNewRecord && personCombo.currentIndex < 0 }
-    function _discardNew()  { AppController.deleteAttendee(root.attendeeRow) }
+    // Stable {id,name} snapshot backing personCombo — deliberately NOT the
+    // live AppController.projectTeamMembersModel proxy, which the Team tab's
+    // Sort feature can reorder/reset out from under a ComboBox bound directly
+    // to it (see AppController::teamMemberList doc comment).
+    property var _people: []
+    function _peopleNames() { return root._people.map(function(p){ return p.name }) }
+    function _personIndexForId(id) {
+        for (var i = 0; i < root._people.length; i++)
+            if (root._people[i].id === id) return i
+        return -1
+    }
 
+    function _isBlankNew() { return isNewRecord && personCombo.optionIndex < 0 }
+    function _discardNew()  {
+        var row = AppController.rowForId(AppController.meetingAttendeesModel, root.attendeeId)
+        if (row < 0) return
+        AppController.deleteAttendee(row)
+    }
+
+    // Re-resolve attendeeRow from the stable attendeeId before every write —
+    // Sort/refresh elsewhere in the app can reorder or reset the shared
+    // meetingAttendeesModel proxy while this page is open.
     function _saveNow() {
         if (!root._hasChanges) return true
-        var personId = personCombo.currentIndex >= 0
-            ? AppController.teamMemberPersonIdAtRow(personCombo.currentIndex) : ""
+        var row = AppController.rowForId(AppController.meetingAttendeesModel, root.attendeeId)
+        if (row < 0) return false   // record no longer exists
+        root.attendeeRow = row
+        var pi = personCombo.optionIndex
+        var personId = (pi >= 0 && pi < root._people.length) ? root._people[pi].id : ""
         var result = AppController.saveAttendee(root.attendeeRow, personId)
         if (result) root._hasChanges = false
         return result
@@ -34,8 +58,9 @@ Page {
 
     function _reloadData() {
         var d = AppController.getAttendeeData(root.attendeeRow)
-        var row = AppController.teamMemberRowForPersonId((d.person_id || "").toString())
-        personCombo.currentIndex = row >= 0 ? row : -1
+        var personId = (d.person_id || "").toString()
+        root._people = AppController.teamMemberList(root.projectId, [personId])
+        personCombo.selectOption(root._personIndexForId(personId))
     }
 
     StackView.onDeactivating: {
@@ -52,7 +77,8 @@ Page {
             ToolButton {
                 icon.name: "trash"
                 onClicked: {
-                    if (AppController.deleteAttendee(root.attendeeRow)) {
+                    var row = AppController.rowForId(AppController.meetingAttendeesModel, root.attendeeId)
+                    if (row >= 0 && AppController.deleteAttendee(row)) {
                         root._skipSave = true
                         root.StackView.view.pop()
                     }
@@ -71,14 +97,12 @@ Page {
 
             SectionHeader { text: qsTr("Person") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: personCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.projectTeamMembersModel
-                    textRole: "name"
+                    options: root._peopleNames()
                     Component.onCompleted: {
-                        var row = AppController.teamMemberRowForPersonId(root.initialPerson)
-                        currentIndex = row >= 0 ? row : -1
+                        root._people = AppController.teamMemberList(root.projectId, [root.initialPerson])
+                        selectOption(root._personIndexForId(root.initialPerson))
                     }
                     onActivated: root._hasChanges = true
                 }

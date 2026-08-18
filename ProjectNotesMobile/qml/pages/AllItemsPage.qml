@@ -31,6 +31,42 @@ Page {
         }
     }
 
+    // Quick Filter entries for a long-pressed item row: leads with "Assigned
+    // to Me" — the Project Manager configured in Preferences, omitted when
+    // none is set — then entries pre-filled from that row's own client/
+    // assigned-to/identified-by (omitted when unset), then the overdue toggle
+    // and the three priority shortcuts. "Assigned to Me" goes first so the one
+    // entry that doesn't depend on the pressed row keeps a stable position in
+    // the sheet. item_overdue is a computed "Yes"/"No" column (see
+    // trackeritemsmodel.cpp). Mirrors the desktop Master Item List's set —
+    // ProjectNotesDesktop/qml/pages/ItemsPage.qml.
+    function _quickFiltersForRow(m) {
+        var qf = []
+        var pmId = AppController.projectManagerId()
+        if (pmId !== "")
+            qf.push({ label: qsTr("Assigned to Me"), field: "assigned_to", values: [pmId] })
+        var clientId = (m.client_id || "").toString()
+        if (clientId !== "")
+            qf.push({ label: qsTr("This Client"), field: "client_id", values: [clientId] })
+        var assignedId = (m.assigned_to || "").toString()
+        // Identical field/values to "Assigned to Me" when the pressed row is
+        // the PM's own — skip it rather than list the same shortcut twice.
+        if (assignedId !== "" && assignedId !== pmId)
+            qf.push({ label: qsTr("This Assigned To"), field: "assigned_to", values: [assignedId] })
+        var identifiedId = (m.identified_by || "").toString()
+        if (identifiedId !== "")
+            qf.push({ label: qsTr("This Identified By"), field: "identified_by", values: [identifiedId] })
+        qf.push({ label: qsTr("Overdue Items"),   field: "item_overdue", values: ["Yes"] })
+        qf.push({ label: qsTr("High Priority"),   field: "priority", values: ["High"] })
+        qf.push({ label: qsTr("Medium Priority"), field: "priority", values: ["Medium"] })
+        qf.push({ label: qsTr("Low Priority"),    field: "priority", values: ["Low"] })
+        return qf
+    }
+
+    FilterSheet     { id: filterSheet }
+    SortSheet       { id: sortSheet }
+    QuickFilterDialog { id: qfDialog }
+
     // ── Search / filter toolbar ───────────────────────────────────────────────
     header: ToolBar {
         RowLayout {
@@ -59,6 +95,26 @@ Page {
                     }
                 }
             }
+
+            ToolButton {
+                icon.name: "line.3.horizontal.decrease.circle"
+                onClicked: filterSheet.openFor("items", qsTr("Items"))
+                Rectangle {
+                    visible: { AppController.filterRev; return AppController.hasActiveColumnFilters(AppController.allItemsModel) }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                }
+            }
+
+            ToolButton {
+                icon.name: "arrow.up.arrow.down"
+                onClicked: sortSheet.openFor("items", qsTr("Items"))
+                Rectangle {
+                    visible: { AppController.sortRev; return (AppController.activeSort(AppController.allItemsModel).field || "") !== "" }
+                    width: 8; height: 8; radius: 4; color: palette.highlight
+                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                }
+            }
         }
     }
 
@@ -68,9 +124,22 @@ Page {
         anchors.fill: parent
         model: AppController.allItemsModel
         clip: true
+        reuseItems: true
 
         delegate: ItemDelegate {
+            id: delegateRoot
+            required property int index
+            required property var model
             width: listView.width
+
+            // Long press → Quick Filter. Uses the delegate's own pressAndHold
+            // rather than a TapHandler's longPressed: an ItemDelegate arms its
+            // hold timer only when something is connected to this signal, and
+            // only that timer firing suppresses the clicked() it would
+            // otherwise emit on release — via a TapHandler the dialog opened
+            // but letting go still counted as a tap and navigated to the row
+            // underneath it.
+            onPressAndHold: qfDialog.openWith(AppController.allItemsModel, root._quickFiltersForRow(delegateRoot.model))
 
             contentItem: ColumnLayout {
                 spacing: 3
@@ -78,8 +147,8 @@ Page {
                 // Row 1: project_number + project_name (bold)
                 Label {
                     text: {
-                        var num  = model.project_number || ""
-                        var name = model.project_name   || ""
+                        var num  = delegateRoot.model.project_number || ""
+                        var name = delegateRoot.model.project_name   || ""
                         return num ? num + "  " + name : name
                     }
                     font.bold: true
@@ -90,8 +159,8 @@ Page {
                 // Row 2: item_number + item_name
                 Label {
                     text: {
-                        var num  = model.item_number || ""
-                        var name = model.item_name   || ""
+                        var num  = delegateRoot.model.item_number || ""
+                        var name = delegateRoot.model.item_name   || ""
                         return num ? num + "  " + name : name
                     }
                     font.pixelSize: 13
@@ -105,27 +174,27 @@ Page {
                     spacing: 0
 
                     Label {
-                        visible: (model.status || "") !== ""
-                        text: model.status || ""
+                        visible: (delegateRoot.model.status || "") !== ""
+                        text: delegateRoot.model.status || ""
                         font.pixelSize: 12
-                        color: root.statusColor(model.status || "")
+                        color: root.statusColor(delegateRoot.model.status || "")
                     }
 
                     Label {
-                        visible: (model.priority || "") !== ""
+                        visible: (delegateRoot.model.priority || "") !== ""
                         text: {
-                            var sep = (model.status || "") !== "" ? "  ·  " : ""
-                            return sep + (model.priority || "")
+                            var sep = (delegateRoot.model.status || "") !== "" ? "  ·  " : ""
+                            return sep + (delegateRoot.model.priority || "")
                         }
                         font.pixelSize: 12
-                        color: model.priority_foreground || Theme.mutedText
+                        color: delegateRoot.model.priority_foreground || Theme.mutedText
                     }
 
                     Label {
-                        visible: (model.assigned_to || "") !== ""
+                        visible: (delegateRoot.model.assigned_to || "") !== ""
                         text: {
-                            var sep = (model.status || model.priority) ? "  ·  " : ""
-                            return sep + AppController.peopleNameForId(model.assigned_to || "")
+                            var sep = (delegateRoot.model.status || delegateRoot.model.priority) ? "  ·  " : ""
+                            return sep + AppController.peopleNameForId(delegateRoot.model.assigned_to || "")
                         }
                         font.pixelSize: 12
                         color: Theme.mutedText
@@ -134,20 +203,20 @@ Page {
                     }
 
                     Label {
-                        visible: (model.date_due || "") !== ""
+                        visible: (delegateRoot.model.date_due || "") !== ""
                         text: {
-                            var sep = (model.status || model.priority || model.assigned_to) ? "  ·  " : ""
-                            return sep + "Due: " + (model.date_due || "")
+                            var sep = (delegateRoot.model.status || delegateRoot.model.priority || delegateRoot.model.assigned_to) ? "  ·  " : ""
+                            return sep + "Due: " + (delegateRoot.model.date_due || "")
                         }
                         font.pixelSize: 12
-                        color: model.date_due_foreground || Theme.mutedText
+                        color: delegateRoot.model.date_due_foreground || Theme.mutedText
                         elide: Text.ElideRight
                     }
                 }
             }
 
             onClicked: {
-                var itemId = model.id || ""
+                var itemId = delegateRoot.model.id || ""
 
                 if (!itemId) return
                 AppController.openTrackerItem(itemId)

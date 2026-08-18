@@ -31,7 +31,9 @@ MeetingAttendeesModel::MeetingAttendeesModel(DatabaseObjects* dbo): SqlQueryMode
     addColumn("office_phone", tr("Office Phone"), DBPhoneNumber, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
     addColumn("cell_phone", tr("Cell Phone"), DBPhoneNumber, DBNotSearchable, DBNotRequired, DBReadOnly, DBNotUnique);
 
-    QStringList key1 = {"note_id", "people_id"};
+    // The column is person_id here (project_people uses people_id) — naming the
+    // wrong one left the "one row per person per meeting" rule unenforced.
+    QStringList key1 = {"note_id", "person_id"};
 
     addUniqueKeys(key1, "Name");
 

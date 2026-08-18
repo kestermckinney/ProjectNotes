@@ -2,69 +2,70 @@
 
 ## Filtering List Views
 
-With the Filter Tool, you can setup static filters. Static filters are saved in the database and can remain active when you close and re-open Project Notes. The Filter Tool window is modal. To access the page below it, you must apply the filter and close the windows to continue.
+The Filter Editor lets you narrow the Projects, Items, People, or Clients list to matching records. Unlike the earlier desktop application, filters set here apply immediately for the current session only — they are **not** saved to the database and do not persist between application restarts.
 
-The filter button on the [Toolbar](Toolbar.md) will be enabled for lists that support the filter view.
+**To open the Filter Editor:**
 
-**To open the filter tool:**
+1. Click **Filter** in the bar above the list, or right-click any row and choose **Filter…**, or choose **Filter Data…** from the app menu (the menu icon at the top of the icon rail, under the Edit group).
 
-1. Choose **Filter** from the **View** menu.
+The Filter Editor is a two-panel window: a column list on the left and a values panel on the right. Columns with an active filter show a filled dot and a count badge in the column list.
 
 ### Filtering By Specific Value
 
-For each column you can select from a list of existing values. Columns with an active filter are highlighted in blue in the **Filter Tool Column Name** list.
+For each column you can select from a list of existing distinct values.
 
 **To filter by a value:**
 
-1. From the **Filter Tool** window, choose the column from the **Column Name** list.
-2. Click each cell value from the **Filter Values** list to include in the results.
+1. From the Filter Editor, choose the column from the list on the left.
+2. Click each value in the values panel to include it in the results.
 3. Click **Apply**.
 
 ### Filtering By Search Text
 
-Columns with free form text can be searched for a matching sub string. Searches are not case sensitive.
+Text columns can be searched for a matching sub string. Searches are not case sensitive.
 
 **To filter by a sub string:**
 
-1. From the **Filter Tool** window, choose the column from the **Column Name** list.
-2. Type in the **Search Text.**
+1. From the Filter Editor, choose the column from the list on the left.
+2. Type in the **Search Text** box.
 3. Click **Apply**.
 
 ### Filtering By Range
 
-Columns with free form text can be filtered within an alphabetically sorted range or a date range depending on the column type.
+Date columns can be filtered within a start/end range instead of a value list or search text.
 
 **To filter by a range:**
 
-1. From the **Filter Tool** window, choose the column from the **Column Name** list.
-2. Type in the **Start Value**, if you want a starting range.
-3. Type in the **End Value**, if you want a ending range.
+1. From the Filter Editor, choose a date column from the list on the left.
+2. Set the start of the range, if you want one — either type the date, or click the calendar button beside the box and pick a day.
+3. Set the end of the range the same way, if you want one.
 4. Click **Apply**.
+
+The calendar also offers **Today** to fill in the current date, and **Clear** to empty that end of the range.
 
 ### Date Searches
 
-For **Search Text**, **Start Value**, and **End Value** need to follow the specific ***MM/DD/YYYY*** date format in order to work correctly.
+Dates typed by hand need to follow the ***MM/DD/YYYY*** date format in order to work correctly. Dates chosen from the calendar are always entered in that format.
 
 ### Resetting the Filter
 
-The Filter Tool allows you to quickly clear all filter settings.
+The Filter Editor allows you to quickly clear all filter settings.
 
 **To clear all of your filters:**
 
-1. From the **Filter Tool** window.
-2. Click **Reset**.
-3. Click **Apply**.
+1. From the Filter Editor, click **Reset all**.
+2. Click **Apply**.
 
-### Clearing a Columns Filter
+### Clearing a Column's Filter
 
-Clearing the filter on a single column can be done without impacting filters on other columns. Columns with an active filter are highlighted in green.
+Clearing the filter on a single column can be done without impacting filters on other columns.
 
 **To clear the filter on a column:**
 
-1. From the **Filter Tool** window, choose the column from the **Column Name** list.
-2. Click **All**.
+1. From the Filter Editor, choose the column from the list on the left.
+2. Click **Clear column**.
 3. Click **Apply**.
 
 ### Canceling a Filter
 
-Your filter is not active until you click **Apply**. If you have not clicked **Apply**, click **Cancel** to close the **Filter Tool**.
+Your changes are not applied until you click **Apply**. Click **Cancel** (or the **×** in the header) to close the Filter Editor without changing the active filter.

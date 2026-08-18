@@ -4,24 +4,25 @@
 
 Project Notes automatically creates and opens a local database when it first launches. The database is stored in your user profile.
 
-If you are developing or testing plugins and need a separate environment that does not touch your production data, see [Developer Profile](<DeveloperProfile.md>).
+If you are developing or testing plugins and need a separate environment that does not touch your production data, launch Project Notes with `--developer-profile PROFILENAME`. If you also need cloud sync to hit the test Project Notes Pro environment instead of production while testing, add `--test-supabase` at the same time. See [Command-Line Options](<DeveloperProfile.md>) for both flags and what each isolates.
 
-If you want to back up your data and sync it across your devices, configure cloud sync from **File > Cloud Sync Settings...**. See [File Menu](../InterfaceOverview/FileMenu.md) for details and [Cloud Sync](../InterfaceOverview/RemoteHost.md) for a full feature reference.
+If you want to back up your data and sync it across your devices, configure cloud sync from the **Cloud Sync** section of Settings (click the **Settings** icon in the icon rail). See [Cloud Sync](../InterfaceOverview/RemoteHost.md) for a full feature reference.
 
 ## Cloud Sync Setup
 
-Cloud sync lets you back up your Project Notes data and keep it synchronized across all of your devices — your desktop installations and the [Project Notes Mobile](<../Mobile/ProjectNotesMobile.md>) app — automatically and in the background.
+Cloud sync lets you back up your Project Notes data and keep it synchronized across all of your devices including your desktop installations and the [Project Notes Mobile](<../Mobile/ProjectNotesMobile.md>) application automatically and in the background.
 
-Cloud sync is provided by a **Project Notes Pro** subscription. The hosting is fully managed: there is no server to set up and no host address or API key to enter. You simply sign in with your subscription account.
+Cloud sync is provided by a **Project Notes Pro** subscription. The hosting is fully managed. There is no server to set up and no host address or API key to enter. You simply sign in with your subscription account.
 
 **To enable cloud sync:**
 
 1. Subscribe at [www.projectnotespro.com](https://www.projectnotespro.com).
-2. In Project Notes, choose **File > Cloud Sync Settings...**
-3. Check **Sync all your devices and backup your data**.
-4. Enter the **Username (Email)** and **Password** for your Project Notes Pro account.
+2. Click the **Settings** icon in the icon rail and open the **Cloud Sync** section.
+3. Check **Enable cloud sync**.
+4. Enter the **Sync Email** and **Sync Password** for your Project Notes Pro account.
 5. Optionally set an **Encryption Phrase** to encrypt your data before it leaves your machine. Keep it somewhere safe — it cannot be recovered, and every device must use the same phrase.
-6. Click **OK**.
+
+Each field saves as soon as you enter it — there is no separate OK or Save step.
 
 See [Cloud Sync](<../InterfaceOverview/RemoteHost.md>) for a complete reference of all sync features, settings, and troubleshooting steps.
 
@@ -31,18 +32,20 @@ You will need to setup yourself to manage all of the projects. First you need to
 
 **To setup Project Notes:**
 
-1. Choose **Clients** from the **View** menu.
-2. Choose **New Item** from the **Edit** menu.
-3. Type in ***"Your Company Name.*"** in the new row.
-4. Choose **People** from the **View** menu.
-5. Choose **New Item** from the **Edit** menu.
+1. Click the **Clients** icon in the icon rail.
+2. Click **+ New** in the bar above the list.
+3. Type in ***"Your Company Name"*** in the new row.
+4. Click the **People** icon in the icon rail.
+5. Click **+ New** in the bar above the list.
 6. Type your **Name, Email**, and **Role** in the new row.
-7. From the **File** menu, choose **Preferences**.
+7. Choose **Preferences** from the app menu (the menu icon at the top of the icon rail).
 8. Select yourself as the **Project Manager**.
-9. Select ***"Your Company Name"*** as the **Client**.
-10. From the **Plugins** menu, choose **Settings > Export Notes** and set the sub-folder where meeting note exports will be saved.
-11. From the **Plugins** menu, choose **Settings > Export Tracker Items** and set the sub-folder where tracker item exports will be saved.
-12. From the **Plugins** menu, choose **Settings > File Finder** and add the root folder where your project files are stored so the File Finder can find them automatically.
+9. Select ***"Your Company Name"*** as the **Managing Company**.
+10. From the app menu, under **Plugins · Settings**, choose **Export Notes** and set the sub-folder where meeting note exports will be saved.
+11. From the app menu, under **Plugins · Settings**, choose **Export Tracker Items** and set the sub-folder where tracker item exports will be saved.
+12. From the app menu, under **Plugins · Settings**, choose **File Finder** and add the root folder where your project files are stored so the File Finder can find them automatically.
+
+See [Plugin Settings](<../StandardPlugins/PluginSettings.md>) for the full list of plugin settings reachable this way.
 
 ## Populating Your Database
 
@@ -51,12 +54,12 @@ Project Notes is capable of connecting information from various systems. In orde
 There are three methods to import clients and people.
 
 * **Importing From Outlook** - Project Notes includes Outlook contact sync utilities. See [Outlook Integration](<../StandardPlugins/OutlookIntegration.md>) for details. (Outlook COM sync requires Windows; Office 365 sync works on all platforms.)
-* **Importing From XML** - All database items can be imported from a [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) file. File import is accessible from the [File Menu](<../InterfaceOverview/FileMenu.md>).
+* **Importing From XML** - All database items can be imported from a [Project Notes XML](<../PluginsOverview/ProjectNotesXML.md>) file. Choose **Import XML…** from the app menu (the menu icon at the top of the icon rail) to import a file.
 * **Entering Manually** - Client information can be entered using the [Client List Page](<../InterfaceOverview/ClientListPage.md>), and contacts can be entered using the [People List Page](<../InterfaceOverview/PeopleListPage.md>).
 
-## Project Notes Preferences
+## Project Notes Settings
 
-Once your clients and people are setup, you will need to tell Project Notes which contact is the Project Manager coordinating all projects, and what company he works for. This information can be setup in the [Project Notes Preferences](<../InterfaceOverview/Preferences.md>).
+Once your clients and people are setup, you will need to tell Project Notes which contact is the Project Manager coordinating all projects, and what company they work for. This information can be set up by clicking the **Settings** icon in the icon rail — see [Project Notes Preferences](<../InterfaceOverview/Preferences.md>).
 
 ## Plugin Settings
 

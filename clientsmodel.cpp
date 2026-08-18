@@ -33,23 +33,8 @@ const QModelIndex ClientsModel::newRecord(const QVariant* fkValue1, const QVaria
     Q_UNUSED(fkValue1);
     Q_UNUSED(fkValue2);
 
-    DB_LOCK;
-    QSqlQuery select(getDBOs()->getDb());
-    select.prepare("select max(client_name) from clients where client_name like '[%' and deleted = 0");
-    QString maxnum;
-
-    select.exec();
-    if (select.next())
-    {
-        maxnum = select.value(0).toString();
-        maxnum.remove(QRegularExpression("[^0-9]+"));
-    }
-    DB_UNLOCK;
-
-    int num = maxnum.toInt() + 1;
 
     QVector<QVariant> qr = emptyrecord();
-    qr[1] = QString("[New Client %1]").arg(num, 2, 10, QLatin1Char('0'));
 
     return addRecord(qr);
 }

@@ -137,6 +137,55 @@
 						"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Release"
 					},
 				},
+				{
+					"name": "Build QML (Desktop) Debug",
+					"shell_cmd": "cmake --build . --target ProjectNotesDesktop",
+					"windows":
+					{
+						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . --target ProjectNotesDesktop",
+						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
+					},
+					"linux": { "working_dir": "$project_path/build/System_Qt_6_11_1-Debug" },
+					"osx": { "working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Debug" },
+				},
+				{
+					"name": "Run QML (Desktop) Debug",
+					"shell_cmd": "./ProjectNotesDesktop/\"Project Notes.exe\" --test-supabase --developer-profile TESTMODE",
+					"windows":
+					{
+						"shell_cmd": "set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\" --test-supabase --developer-profile TESTMODE",
+						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
+					},
+					"linux":
+					{
+						"shell_cmd": "./ProjectNotesDesktop/\"Project Notes.exe\" --test-supabase --developer-profile TESTMODE",
+						"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
+					},
+					"osx":
+					{
+						"shell_cmd": "./ProjectNotesDesktop/\"Project Notes.exe\" --test-supabase --developer-profile TESTMODE",
+						"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Debug"
+					},
+				},
+				{
+					"name": "Build & Run QML (Desktop) Debug",
+					"shell_cmd": "cmake --build . --target ProjectNotesDesktop && ./ProjectNotesDesktop/\"Project Notes.exe\" --test-supabase --developer-profile TESTMODE",
+					"windows":
+					{
+						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . --target ProjectNotesDesktop && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\" --test-supabase --developer-profile TESTMODE",
+						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
+					},
+					"linux":
+					{
+						"shell_cmd": "cmake --build . --target ProjectNotesDesktop && ./ProjectNotesDesktop/\"Project Notes.exe\" --test-supabase --developer-profile TESTMODE",
+						"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
+					},
+					"osx":
+					{
+						"shell_cmd": "cmake --build . --target ProjectNotesDesktop && ./ProjectNotesDesktop/\"Project Notes.exe\" --test-supabase --developer-profile TESTMODE",
+						"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Debug"
+					},
+				},
 			]
 		}
 	]

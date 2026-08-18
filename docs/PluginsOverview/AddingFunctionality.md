@@ -404,7 +404,7 @@ The example below demonstrates how a plugin menu can be generated dynamically at
 | submenu | If a submenu value is specified the menutitle will appear under the submenu text. |
 | dataexport | The record type (data type) the menu applies to. If this value is empty, the **Plugins** menu is used. See [Data Types](<DataTypes.md>) for a complete list of available types and how they relate to application views and right-click menus. |
 
-<br>
+
 
 ### Plugin Options
 
@@ -420,7 +420,7 @@ The events listed in the table below can be extended in Python plugins. In each 
 | event\_shutdown | The shutdown executes just before the plugin is unloaded. |
 | event\_timer | This event is only used in a thread.  The frequency the event is triggered is defined by the "plugintimerevent" variable defined in the script.  If the variable is not defined the default value is 1 for every one minute. |
 
-<br>
+
 
 ### Tables
 
@@ -442,7 +442,7 @@ Each exported `<row>` contains the record's primary key as its first `<column>` 
 | item_tracker_updates | The exported XML contains notes attached to tracker and action items. |
 | item_tracker | The exported XML contains action or tracker items. |
 
-<br>
+
 
 ### Basic XML formats
 

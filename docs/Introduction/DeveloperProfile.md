@@ -37,6 +37,16 @@ ProjectNotes.exe --developer-profile dev
 
 Replace `dev` with any short alphanumeric name. The same name must be used each time you launch that profile so the settings and database persist between sessions.
 
+### Testing Cloud Sync
+
+If you also need to exercise cloud sync without touching production data or your real Project Notes Pro account, add `--test-supabase` alongside `--developer-profile`:
+
+```bash
+ProjectNotes --developer-profile dev --test-supabase
+```
+
+This routes cloud sync to the Project Notes Pro **test** environment instead of production, and works the same way for the QML desktop app (`ProjectNotesQml`) and Project Notes Mobile. Combine it with a developer profile so the isolated database's synced records never mix with production data.
+
 ## Typical Workflow
 
 1. Launch with `--developer-profile dev` (or whatever name you chose).

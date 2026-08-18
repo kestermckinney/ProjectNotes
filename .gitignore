@@ -1,5 +1,6 @@
 # Specify filepatterns you want git to ignore.
 build/
+build-qmltests/
 *.txt.user
 *.pyc
 .gitattributes
@@ -7,6 +8,9 @@ build/
 *.sublime-workspace
 Thumbs.db
 graphify-out/
+# SQLite runtime temp files
+*.db-shm
+*.db-wal
 packaging/windows/*.exe
 packaging/linux/flatpak-repo
 packaging/linux/*.flatpak
@@ -15,3 +19,4 @@ packaging/macos/staging*
 .DS_Store
 .claude/
 .opencode/
+*.aps

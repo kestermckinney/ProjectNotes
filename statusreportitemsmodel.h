@@ -11,6 +11,7 @@ class StatusReportItemsModel : public SqlQueryModel
 public:
     StatusReportItemsModel(DatabaseObjects* dbo);
     const QModelIndex newRecord(const QVariant* fkValue1 = nullptr, const QVariant* fkValue2 = nullptr) override;
+    void prepareCopiedRecord(QVector<QVariant>& newrecord, const QModelIndex& sourceIndex) override;
 };
 
 #endif // STATUSREPORTITEMSMODEL_H

@@ -1,6 +1,6 @@
 # Project Notes XML
 
-Nearly all information found in Project Notes can be exported or imported using XML. The best way to understand the XML format is to export it. The format is based around a tree structure described below. XML files can be used to easily exchange information with other Project Notes users. The Python plugin system uses the XML structure to exchange information between Project Notes and the plugin architecture. Information on how to export a file can be found in [The File Menu](<../InterfaceOverview/FileMenu.md>) section.
+Nearly all information found in Project Notes can be exported or imported using XML. The best way to understand the XML format is to export it. The format is based around a tree structure described below. XML files can be used to easily exchange information with other Project Notes users. The Python plugin system uses the XML structure to exchange information between Project Notes and the plugin architecture. To export a file, choose **Export XML…** from the app menu (the menu icon at the top of the icon rail), or use the **Export XML** action on a record's detail page or right-click menu.
 
 **The XML format:**
 
@@ -86,4 +86,3 @@ The XML document follows a parent child heiarchy that corresponds to the record 
 | name | Attribute | The name of the column to be imported | Yes |
 | lookupvalue | Attribute | In many cases a record relates to another record. For example People and Clients, are related by their record id. To relate records on import, this value should contain the corresponding name. For example: The project\_id field should have this value set to the project\_number. The client\_id field should have this value set to the client name. The people\_id should have this field set to the people name. | Yes |
 
-<br>

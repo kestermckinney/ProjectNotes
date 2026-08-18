@@ -63,6 +63,10 @@ modules:
     config-opts:
       - -DCMAKE_BUILD_TYPE=Release
       - -DSQLITESYNCPRO_SRC_DIR=SqliteSyncPro/src
+      # BUILD_WIDGETS_LEGACY is OFF by default upstream, so this builds and
+      # ships only the QML (Qt Quick) desktop frontend. `command: projectnotes`
+      # above and the .desktop Exec both resolve to that target's Linux
+      # OUTPUT_NAME (see ProjectNotesDesktop/CMakeLists.txt).
     sources:
       # Pinned git sources for reproducible, Flathub-compatible builds.
       # Flathub does not accept `type: dir`; sources must be immutable and

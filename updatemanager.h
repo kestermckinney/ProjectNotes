@@ -39,17 +39,31 @@ public:
     // on success, launch it and emit installerLaunched() so the app can shut down.
     void downloadAndInstall(const QUrl &assetUrl);
 
-    // "5.2.3" assembled from version.h.
+    // "6.0.0" assembled from version.h.
     static QString currentVersion();
 
     // True when candidate is a strictly higher semantic version than current.
     static bool isNewerVersion(const QString &candidate, const QString &current);
+
+    // When false, the download shows NO native QProgressDialog and errors are
+    // reported via downloadProgress()/updateError() signals instead of native
+    // QMessageBoxes — so a host (the QML app) can render its own themed UI.
+    // Defaults true, so the Widgets app is unaffected.
+    void setUseNativeUi(bool use) { m_useNativeUi = use; }
+
+    // Abort an in-flight download (themed Cancel button).
+    void cancelDownload();
 
 signals:
     void updateAvailable(const QString &version, const QString &releaseNotes, const QUrl &assetUrl);
     void upToDate();
     void checkFailed(const QString &error);
     void installerLaunched();
+    // Emitted during a download so a themed host can show progress (total <= 0
+    // means the size is unknown → show an indeterminate bar).
+    void downloadProgress(qint64 received, qint64 total);
+    // A download / install error, emitted only when setUseNativeUi(false).
+    void updateError(const QString &message);
 
 private slots:
     void onCheckFinished();
@@ -63,6 +77,10 @@ private:
 
     void launchInstaller();
 
+    // Report a download/install failure: native QMessageBox when m_useNativeUi,
+    // else the updateError() signal for a themed host to display.
+    void reportUpdateError(const QString &title, const QString &message);
+
 #if defined(Q_OS_MACOS)
     // Writes the detached swap/relaunch helper to a temp file (see launchInstaller).
     // Returns the script path, or an empty string on failure.
@@ -70,6 +88,8 @@ private:
 #endif
 
     bool m_silent = false;
+    bool m_useNativeUi = true;
+    bool m_downloadCanceled = false;
     QWidget *m_parentWidget = nullptr;
     QNetworkAccessManager *m_network = nullptr;
     QNetworkReply *m_checkReply = nullptr;

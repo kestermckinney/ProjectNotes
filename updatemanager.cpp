@@ -169,6 +169,8 @@ void UpdateManager::downloadAndInstall(const QUrl &assetUrl)
     if (m_downloadReply)
         return; // already downloading
 
+    m_downloadCanceled = false;
+
     const QString fileName = QFileInfo(assetUrl.path()).fileName();
     const QString tempDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
     m_downloadPath = QDir(tempDir).filePath(fileName);
@@ -178,21 +180,45 @@ void UpdateManager::downloadAndInstall(const QUrl &assetUrl)
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                          QNetworkRequest::NoLessSafeRedirectPolicy);
 
-    m_progressDialog = new QProgressDialog(tr("Downloading update..."), tr("Cancel"), 0, 100, m_parentWidget);
-    m_progressDialog->setWindowTitle(tr("Software Update"));
-    m_progressDialog->setWindowModality(Qt::WindowModal);
-    m_progressDialog->setMinimumDuration(0);
-    m_progressDialog->setAutoClose(false);
-    m_progressDialog->setAutoReset(false);
+    // Native progress dialog only in native-UI mode; a themed host tracks the
+    // downloadProgress() signal instead.
+    if (m_useNativeUi)
+    {
+        m_progressDialog = new QProgressDialog(tr("Downloading update..."), tr("Cancel"), 0, 100, m_parentWidget);
+        m_progressDialog->setWindowTitle(tr("Software Update"));
+        m_progressDialog->setWindowModality(Qt::WindowModal);
+        m_progressDialog->setMinimumDuration(0);
+        m_progressDialog->setAutoClose(false);
+        m_progressDialog->setAutoReset(false);
+    }
 
     m_downloadReply = m_network->get(request);
     connect(m_downloadReply, &QNetworkReply::downloadProgress, this, &UpdateManager::onDownloadProgress);
     connect(m_downloadReply, &QNetworkReply::finished, this, &UpdateManager::onDownloadFinished);
-    connect(m_progressDialog, &QProgressDialog::canceled, m_downloadReply, &QNetworkReply::abort);
+    if (m_progressDialog)
+        connect(m_progressDialog, &QProgressDialog::canceled, m_downloadReply, &QNetworkReply::abort);
+}
+
+void UpdateManager::cancelDownload()
+{
+    m_downloadCanceled = true;
+    if (m_downloadReply)
+        m_downloadReply->abort();
+}
+
+void UpdateManager::reportUpdateError(const QString &title, const QString &message)
+{
+    if (m_useNativeUi)
+        QMessageBox::warning(m_parentWidget, title, message);
+    else
+        emit updateError(message);
 }
 
 void UpdateManager::onDownloadProgress(qint64 received, qint64 total)
 {
+    // Themed hosts render their own bar from this signal.
+    emit downloadProgress(received, total);
+
     if (!m_progressDialog || total <= 0)
         return;
 
@@ -205,7 +231,8 @@ void UpdateManager::onDownloadFinished()
     QNetworkReply *reply = m_downloadReply;
     m_downloadReply = nullptr;
 
-    const bool canceled = m_progressDialog && m_progressDialog->wasCanceled();
+    const bool canceled = (m_progressDialog && m_progressDialog->wasCanceled())
+                          || m_downloadCanceled;
 
     if (m_progressDialog)
     {
@@ -225,8 +252,8 @@ void UpdateManager::onDownloadFinished()
     if (error != QNetworkReply::NoError)
     {
         QLog_Error(ERRORLOG, QString("Update download failed: %1").arg(errorString));
-        QMessageBox::warning(m_parentWidget, tr("Software Update"),
-                             tr("The update could not be downloaded:\n%1").arg(errorString));
+        reportUpdateError(tr("Software Update"),
+                          tr("The update could not be downloaded:\n%1").arg(errorString));
         return;
     }
 
@@ -234,8 +261,8 @@ void UpdateManager::onDownloadFinished()
     if (!out.open(QIODevice::WriteOnly | QIODevice::Truncate) || out.write(payload) != payload.size())
     {
         QLog_Error(ERRORLOG, QString("Could not write update installer to %1").arg(m_downloadPath));
-        QMessageBox::warning(m_parentWidget, tr("Software Update"),
-                             tr("The update was downloaded but could not be saved to disk."));
+        reportUpdateError(tr("Software Update"),
+                          tr("The update was downloaded but could not be saved to disk."));
         return;
     }
     out.close();
@@ -257,8 +284,8 @@ void UpdateManager::launchInstaller()
     if (!QProcess::startDetached(m_downloadPath, args))
     {
         QLog_Error(ERRORLOG, QString("Failed to launch update installer %1").arg(m_downloadPath));
-        QMessageBox::warning(m_parentWidget, tr("Software Update"),
-                             tr("The update was downloaded but the installer could not be started."));
+        reportUpdateError(tr("Software Update"),
+                          tr("The update was downloaded but the installer could not be started."));
         return;
     }
 
@@ -289,16 +316,16 @@ void UpdateManager::launchInstaller()
     const QString scriptPath = writeMacRelaunchScript(m_downloadPath, targetApp);
     if (scriptPath.isEmpty())
     {
-        QMessageBox::warning(m_parentWidget, tr("Software Update"),
-                             tr("The update was downloaded but the installer could not be prepared."));
+        reportUpdateError(tr("Software Update"),
+                          tr("The update was downloaded but the installer could not be prepared."));
         return;
     }
 
     if (!QProcess::startDetached("/bin/bash", {scriptPath}))
     {
         QLog_Error(ERRORLOG, QString("Failed to launch update helper %1").arg(scriptPath));
-        QMessageBox::warning(m_parentWidget, tr("Software Update"),
-                             tr("The update was downloaded but the installer could not be started."));
+        reportUpdateError(tr("Software Update"),
+                          tr("The update was downloaded but the installer could not be started."));
         return;
     }
 

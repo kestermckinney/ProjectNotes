@@ -11,6 +11,7 @@ Page {
     title: qsTr("File / Folder")
 
     property int    locationRow:        -1
+    property string locationId:         ""
     property string initialType:        ""
     property string initialDescription: ""
     property string initialPath:        ""
@@ -19,12 +20,21 @@ Page {
     property bool   isNewRecord:        false
 
     function _isBlankNew() { return isNewRecord && descField.text.trim() === "" && pathField.text.trim() === "" }
-    function _discardNew()  { AppController.deleteProjectLocation(root.locationRow) }
+    function _discardNew()  {
+        var row = AppController.rowForId(AppController.projectLocationsModel, root.locationId)
+        if (row < 0) return
+        AppController.deleteProjectLocation(row)
+    }
 
+    // Re-resolve locationRow from the stable locationId before every write —
+    // Sort/refresh elsewhere in the app can reorder or reset the shared
+    // projectLocationsModel proxy while this page is open.
     function _saveNow() {
         if (!root._hasChanges) return true
-        var locType = (typeCombo.currentIndex >= 0)
-            ? typeCombo.model[typeCombo.currentIndex] : ""
+        var row = AppController.rowForId(AppController.projectLocationsModel, root.locationId)
+        if (row < 0) return false   // record no longer exists
+        root.locationRow = row
+        var locType = typeCombo.selection
         var result = AppController.saveProjectLocation(root.locationRow, locType, descField.text, pathField.text)
         if (result) root._hasChanges = false
         return result
@@ -32,8 +42,7 @@ Page {
 
     function _reloadData() {
         var d = AppController.getProjectLocationData(root.locationRow)
-        var ti = typeCombo.model.indexOf((d.location_type || "").toString())
-        typeCombo.currentIndex = ti >= 0 ? ti : 0
+        typeCombo.selectText((d.location_type || "").toString(), 0)
         descField.text = (d.location_description || "").toString()
         pathField.text = (d.full_path            || "").toString()
     }
@@ -67,6 +76,7 @@ Page {
                     var d = AppController.getProjectLocationData(newRow)
                     root.StackView.view.replace(Qt.resolvedUrl("ProjectLocationDetailPage.qml"), {
                         locationRow:         newRow,
+                        locationId:          (d.id                    || "").toString(),
                         initialType:         (d.location_type        || "").toString(),
                         initialDescription:  (d.location_description || "").toString(),
                         initialPath:         (d.full_path            || "").toString()
@@ -77,7 +87,8 @@ Page {
             ToolButton {
                 icon.name: "trash"
                 onClicked: {
-                    if (AppController.deleteProjectLocation(root.locationRow)) {
+                    var row = AppController.rowForId(AppController.projectLocationsModel, root.locationId)
+                    if (row >= 0 && AppController.deleteProjectLocation(row)) {
                         root._skipSave = true
                         root.StackView.view.pop()
                     }
@@ -89,7 +100,7 @@ Page {
     // ── Footer: open web link ─────────────────────────────────────────────────
     footer: ToolBar {
         visible: pathField.text.startsWith("http://") || pathField.text.startsWith("https://")
-                 || typeCombo.currentIndex >= 0 && typeCombo.model[typeCombo.currentIndex] === "Web Link"
+                 || typeCombo.selection === "Web Link"
         RowLayout {
             anchors.centerIn: parent
             ToolButton {
@@ -116,14 +127,10 @@ Page {
 
             SectionHeader { text: qsTr("Type") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: typeCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.fileTypeOptions()
-                    Component.onCompleted: {
-                        var idx = model.indexOf(root.initialType)
-                        currentIndex = (idx >= 0) ? idx : 0
-                    }
+                    options: AppController.fileTypeOptions()
+                    Component.onCompleted: selectText(root.initialType, 0)
                     onActivated: root._hasChanges = true
                 }
             }

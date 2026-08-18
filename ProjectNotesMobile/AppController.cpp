@@ -8,60 +8,31 @@
 #include "QLoggerWriter.h"
 
 #include "sqlitesyncpro.h"
+// Used by verifySyncSettings() to check the saved credentials and encryption
+// phrase directly, without spinning up the sync engine.
+#include "authmanager.h"
+#include "httpclient.h"
+#include "rowencryption.h"
 
+#include <QCoreApplication>
+#include <QCryptographicHash>
 #include <QDir>
 #include <QFileInfo>
 #include <QHash>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QPointer>
+#include <QSet>
+#include <QSqlQuery>
 #include <QTextDocument>
 #include <QThread>
 #include <QTimer>
+#include <QUrlQuery>
+
+#include <algorithm>
 
 using namespace QLogger;
-
-// ── IdRowIndex ───────────────────────────────────────────────────────────────
-// O(1) id→row hash for any QAbstractItemModel. Marks itself dirty on any
-// model change and rebuilds lazily on the next lookup. Replaces the per-row
-// linear scans that QML list delegates were hitting on every binding
-// re-evaluation (scroll, quick search, sync row update).
-class IdRowIndex
-{
-public:
-    IdRowIndex(QAbstractItemModel* model, int idColumn)
-        : m_model(model), m_idColumn(idColumn)
-    {
-        const auto invalidate = [this] { m_dirty = true; };
-        QObject::connect(model, &QAbstractItemModel::modelReset,    model, invalidate);
-        QObject::connect(model, &QAbstractItemModel::layoutChanged, model, invalidate);
-        QObject::connect(model, &QAbstractItemModel::dataChanged,   model, invalidate);
-        QObject::connect(model, &QAbstractItemModel::rowsInserted,  model, invalidate);
-        QObject::connect(model, &QAbstractItemModel::rowsRemoved,   model, invalidate);
-    }
-
-    int rowFor(const QString& id) const
-    {
-        if (id.isEmpty()) return -1;
-        if (m_dirty) rebuild();
-        return m_rows.value(id, -1);
-    }
-
-private:
-    void rebuild() const
-    {
-        m_rows.clear();
-        const int n = m_model->rowCount();
-        m_rows.reserve(n);
-        for (int row = 0; row < n; ++row) {
-            const QString id = m_model->data(m_model->index(row, m_idColumn)).toString();
-            if (!id.isEmpty()) m_rows.insert(id, row);
-        }
-        m_dirty = false;
-    }
-
-    QAbstractItemModel* m_model;
-    int                 m_idColumn;
-    mutable bool                m_dirty = true;
-    mutable QHash<QString, int> m_rows;
-};
 
 // ── Singleton plumbing ───────────────────────────────────────────────────────
 
@@ -135,6 +106,13 @@ AppController::~AppController()
     global_DBObjects.closeDatabase();
 }
 
+// Reapplies a model's persisted column filters (application_settings-backed);
+// defined further down alongside applyColumnFilters()/clearColumnFilters().
+static void restoreColumnFilters(SqlQueryModel* src);
+// Reapplies a model's persisted sort order; defined further down alongside
+// applySort()/clearSort().
+static void restoreSort(QAbstractItemModel* model);
+
 // ── Database ─────────────────────────────────────────────────────────────────
 
 bool AppController::openOrCreateDatabase()
@@ -170,27 +148,59 @@ bool AppController::openOrCreateDatabase()
     // Apply filters selected from the view menu option.
     global_DBObjects.setGlobalSearches(false);
 
-    // Build O(1) id→row indexes over the proxy models that QML list pages
-    // and detail-page combobox lookups hit on every binding evaluation.
-    // The team-members index keys on people_id (col 2) since callers look up
-    // a row by the person, not by the team_members.id.
+    // Initial load for the models QML needs populated as soon as the
+    // database is ready.
     global_DBObjects.clientsmodel()->refresh();
-    m_clientsIndex.reset(
-        new IdRowIndex(global_DBObjects.clientsmodelproxy(), 0));
     global_DBObjects.peoplemodel()->refresh();
-    m_peopleIndex.reset(
-        new IdRowIndex(global_DBObjects.peoplemodelproxy(), 0));
     global_DBObjects.projectinformationmodel()->refresh();
-    m_projectsIndex.reset(
-        new IdRowIndex(global_DBObjects.projectinformationmodelproxy(), 0));
     global_DBObjects.projectteammembersmodel()->refresh();
-    m_teamMembersByPersonIndex.reset(
-         new IdRowIndex(global_DBObjects.projectteammembersmodelproxy(), 2));
+
+    // Restore any column filters left active in the Filter sheet before the
+    // last quit (persisted to application_settings, keyed per table). No-op
+    // for models with nothing persisted; allitemsmodel is otherwise loaded
+    // lazily, so this forces it early only when a filter needs restoring.
+    restoreColumnFilters(global_DBObjects.projectinformationmodel());
+    restoreColumnFilters(global_DBObjects.clientsmodel());
+    restoreColumnFilters(global_DBObjects.peoplemodel());
+    restoreColumnFilters(global_DBObjects.allitemsmodel());
+    ++m_filterRev;
+    emit filterRevChanged();
+
+    // Restore any persisted sort choice for every filterable section. Unlike
+    // restoreColumnFilters() above, this is NOT called synchronously here.
+    // openOrCreateDatabase() runs directly from Main.qml's Component.onCompleted,
+    // which is still inside QQmlApplicationEngine::load() — before main.cpp's
+    // window->show() and before iOS's asynchronous delegate incubation for the
+    // SwipeView's ListViews has finished. proxy->sort() rebuilds the proxy's
+    // whole row mapping (layoutAboutToBeChanged/layoutChanged); doing that while
+    // a ListView's initial delegates are still being incubated crashes deep in
+    // Qt with no app-code frames on the stack — the same failure this was
+    // previously synchronous specifically to dodge, just reached from the other
+    // direction. Deferring restoreAllSorts() with a 0ms singleShot posts it as
+    // a real event on the event loop, so it only runs once control has fully
+    // returned to app.exec() — after window->show() and after the first frame's
+    // delegates have finished incubating — instead of racing them.
+    QTimer::singleShot(0, this, &AppController::restoreAllSorts);
 
     // Tell QML the view-option properties are now readable.
     emit viewOptionsChanged();
     emit databaseReady();
     return true;
+}
+
+// Applies every filterable section's persisted sort order. Split out of
+// openOrCreateDatabase() so it can be posted via QTimer::singleShot() instead
+// of running inline — see the call site above for why.
+void AppController::restoreAllSorts()
+{
+    for (const QString& section : { QStringLiteral("projects"), QStringLiteral("items"),
+                                     QStringLiteral("people"), QStringLiteral("clients"),
+                                     QStringLiteral("statusreport"), QStringLiteral("trackeritems"),
+                                     QStringLiteral("team"), QStringLiteral("locations"),
+                                     QStringLiteral("notes") })
+        restoreSort(modelForSection(section));
+    ++m_sortRev;
+    emit sortRevChanged();
 }
 
 // ── Sync ─────────────────────────────────────────────────────────────────────
@@ -225,16 +235,9 @@ void AppController::configureSyncApi()
 
     // Setters are mutex-protected inside SqliteSyncPro, so it is safe to
     // call them directly from the main thread.
-    const QString supabaseUrl = MobileSettings::isTestSupabase()
-        ? QStringLiteral("https://lsulnvxgrlpuqtzonner.supabase.co")
-        : QStringLiteral("https://nrtjpzkrldwydkbopsml.supabase.co");
-    const QString supabaseKey = MobileSettings::isTestSupabase()
-        ? QStringLiteral("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzdWxudnhncmxwdXF0em9ubmVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1ODY0OTIsImV4cCI6MjA5NDE2MjQ5Mn0.AyEQHLZadhj5r0BNkvPASaMZ0gTr4LAueq0SGVuua3s")
-        : QStringLiteral("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ydGpwemtybGR3eWRrYm9wc21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTU0NTQsImV4cCI6MjA4OTQzMTQ1NH0.hzzyb5bFKDIFbrJ7Fa8INh57pWIkz52csQ2gQ_L302E");
-
     m_syncApi->setSyncHostType(1);  // always Supabase
-    m_syncApi->setPostgrestUrl(supabaseUrl);
-    m_syncApi->setSupabaseKey(supabaseKey);
+    m_syncApi->setPostgrestUrl(supabaseUrl());
+    m_syncApi->setSupabaseKey(supabaseAnonKey());
     m_syncApi->setEmail(global_MobileSettings.getSyncEmail());
     m_syncApi->setPassword(global_MobileSettings.getSyncPassword());
     m_syncApi->setEncryptionPhrase(global_MobileSettings.getSyncEncryptionPhrase());
@@ -388,6 +391,20 @@ void AppController::setSyncProgress(qreal progress, bool hasError)
     emit syncProgressChanged();
 }
 
+QString AppController::supabaseUrl()
+{
+    return MobileSettings::isTestSupabase()
+        ? QStringLiteral("https://lsulnvxgrlpuqtzonner.supabase.co")
+        : QStringLiteral("https://nrtjpzkrldwydkbopsml.supabase.co");
+}
+
+QString AppController::supabaseAnonKey()
+{
+    return MobileSettings::isTestSupabase()
+        ? QStringLiteral("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzdWxudnhncmxwdXF0em9ubmVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1ODY0OTIsImV4cCI6MjA5NDE2MjQ5Mn0.AyEQHLZadhj5r0BNkvPASaMZ0gTr4LAueq0SGVuua3s")
+        : QStringLiteral("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ydGpwemtybGR3eWRrYm9wc21sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTU0NTQsImV4cCI6MjA4OTQzMTQ1NH0.hzzyb5bFKDIFbrJ7Fa8INh57pWIkz52csQ2gQ_L302E");
+}
+
 QString AppController::supabaseConnectionInfo() const
 {
     const bool isTest = MobileSettings::isTestSupabase();
@@ -403,6 +420,200 @@ void AppController::setSubscriptionStatusText(const QString& text)
         return;
     m_subscriptionStatusText = text;
     emit subscriptionStatusChanged();
+}
+
+// ── Sync settings + verification ─────────────────────────────────────────────
+//
+// Mirrors DesktopAppController's implementation so both frontends report the
+// same problems in the same words.
+
+// Each setter is a no-op when the value is unchanged: the Cloud Sync Settings
+// page commits every field whenever it loses focus (and again on the way out),
+// so without the guard simply opening the page would mark the settings
+// unverified and trigger a pointless round trip to the host.
+void AppController::setSyncEnabled(bool v)
+{
+    if (syncEnabled() == v) return;
+    global_MobileSettings.setSyncEnabled(v);
+    // Switching sync on is the moment the stored credentials start to matter.
+    if (v) setSyncSettingsUnverified(true);
+    emit syncSettingsChanged();
+}
+
+void AppController::setSyncEmail(const QString& v)
+{
+    if (syncEmail() == v) return;
+    global_MobileSettings.setSyncEmail(v);
+    setSyncSettingsUnverified(true);
+    emit syncSettingsChanged();
+}
+
+void AppController::setSyncPassword(const QString& v)
+{
+    if (syncPassword() == v) return;
+    global_MobileSettings.setSyncPassword(v);
+    setSyncSettingsUnverified(true);
+    emit syncSettingsChanged();
+}
+
+void AppController::setSyncEncryptionPhrase(const QString& v)
+{
+    if (syncEncryptionPhrase() == v) return;
+    global_MobileSettings.setSyncEncryptionPhrase(v);
+    setSyncSettingsUnverified(true);
+    emit syncSettingsChanged();
+}
+
+void AppController::setSyncSettingsUnverified(bool unverified)
+{
+    if (m_syncSettingsUnverified == unverified)
+        return;
+    m_syncSettingsUnverified = unverified;
+    emit syncSettingsUnverifiedChanged();
+}
+
+// Sampling a handful of rows is enough to judge the phrase: the pull decrypts
+// every row with the same key, so if any row opens the phrase is right, and if
+// none of them do it isn't.
+static constexpr int kVerifySampleRows = 25;
+
+void AppController::verifySyncSettings()
+{
+    if (m_syncVerifyInProgress)
+        return;
+
+    const QString email  = syncEmail();
+    const QString passwd = syncPassword();
+    const QString phrase = syncEncryptionPhrase();
+
+    // Nothing to check against — sync is off, or the account was never filled in.
+    if (!syncEnabled() || email.isEmpty() || passwd.isEmpty()) {
+        setSyncSettingsUnverified(false);
+        emit syncSettingsVerified(QStringLiteral("skipped"), QString());
+        return;
+    }
+
+    m_syncVerifyInProgress = true;
+    emit syncVerifyInProgressChanged();
+
+    const QString url     = supabaseUrl();
+    const QString anonKey = supabaseAnonKey();
+    QPointer<AppController> self(this);
+
+    // Its own thread: HttpClient/AuthManager block on a nested event loop, and
+    // the sync engine's thread may well be mid-cycle. The verdict is posted back
+    // through the application object and the guard is only dereferenced on the
+    // GUI thread, so a controller torn down mid-check just drops the answer.
+    QThread* worker = QThread::create([self, url, anonKey, email, passwd, phrase]() {
+        HttpClient http;
+        http.setBaseUrl(url + QStringLiteral("/rest/v1"));
+        http.setApiKey(anonKey);
+        http.setTimeoutMs(15000);
+
+        bool    unreachable = false;
+        QString authError;
+        AuthManager auth;
+        QObject::connect(&auth, &AuthManager::networkError, &auth,
+                         [&unreachable](const QString&) { unreachable = true; });
+        QObject::connect(&auth, &AuthManager::authenticationFailed, &auth,
+                         [&authError](const QString& reason) { authError = reason; });
+
+        QString status;
+        QString detail;
+        if (!auth.login(&http, url + QStringLiteral("/auth/v1/token?grant_type=password"),
+                        email, passwd)) {
+            // AuthManager reports an unreachable host (HTTP status 0) separately
+            // from a rejected login, so an outage is never blamed on the password.
+            status = unreachable ? QStringLiteral("offline") : QStringLiteral("credentials");
+            detail = unreachable ? QString() : authError;
+        } else {
+            http.setAuthToken(auth.token());
+
+            // "sync_data" is SqliteSyncPro's default postgres table and the one
+            // this app syncs to (it never calls setPostgresTableName). Row-level
+            // security scopes it to the signed-in account, so this reads only
+            // this user's own rows.
+            QUrlQuery query;
+            query.addQueryItem(QStringLiteral("select"), QStringLiteral("jsonrowdata"));
+            query.addQueryItem(QStringLiteral("limit"), QString::number(kVerifySampleRows));
+            const QByteArray response = http.get(QStringLiteral("sync_data"), query);
+
+            if (!http.wasSuccessful()) {
+                // Signing in worked but the read didn't. Report it as unchecked
+                // rather than blaming the phrase for a server-side problem.
+                status = QStringLiteral("offline");
+                detail = http.lastError();
+            } else {
+                const QByteArray key = phrase.isEmpty()
+                    ? QByteArray()
+                    : QCryptographicHash::hash(phrase.toUtf8(), QCryptographicHash::Sha256);
+
+                int encryptedRows = 0;
+                int decryptedRows = 0;
+                const QJsonArray rows = QJsonDocument::fromJson(response).array();
+                for (const QJsonValue& row : rows) {
+                    const QJsonValue data = row.toObject().value(QStringLiteral("jsonrowdata"));
+                    // A plain JSON object was pushed before encryption was turned
+                    // on; only the "enc:…" strings say anything about the phrase.
+                    if (!data.isString())
+                        continue;
+                    ++encryptedRows;
+                    if (!key.isEmpty() && !RowEncryption::decrypt(data.toString(), key).isEmpty())
+                        ++decryptedRows;
+                }
+                // No encrypted rows yet (a brand-new account) proves nothing, so
+                // only an outright failure to open any of them is an error.
+                status = (encryptedRows > 0 && decryptedRows == 0)
+                             ? QStringLiteral("encryption") : QStringLiteral("ok");
+            }
+        }
+
+        QMetaObject::invokeMethod(QCoreApplication::instance(), [self, status, detail]() {
+            if (self)
+                self->finishSyncVerification(status, detail);
+        }, Qt::QueuedConnection);
+    });
+    worker->setObjectName(QStringLiteral("SyncSettingsVerify"));
+    connect(worker, &QThread::finished, worker, &QObject::deleteLater);
+    worker->start();
+}
+
+void AppController::finishSyncVerification(const QString& status, const QString& detail)
+{
+    m_syncVerifyInProgress = false;
+    emit syncVerifyInProgressChanged();
+
+    // One check per round of edits, whatever the verdict: the user has been told,
+    // and re-asking every time they leave the page (especially while offline)
+    // helps nobody. Editing a field marks the settings unverified again.
+    setSyncSettingsUnverified(false);
+
+    QString message;
+    if (status == QLatin1String("credentials")) {
+        message = tr("The sync host rejected your sync email and password.\n\n"
+                     "Cloud sync will not run until they are corrected. Check the "
+                     "Email and Password fields in Cloud Sync Settings.");
+    } else if (status == QLatin1String("encryption")) {
+        message = tr("Your encryption phrase does not match the one this account's "
+                     "data was encrypted with.\n\n"
+                     "Records synced from your other devices cannot be decrypted and "
+                     "will be skipped. Check the Encryption Phrase field in Cloud "
+                     "Sync Settings.");
+    } else if (status == QLatin1String("offline")) {
+        message = tr("Your cloud sync settings were saved, but the sync host could not "
+                     "be reached to check them.\n\n"
+                     "They will be checked again the next time sync runs.");
+    }
+
+    // ERRORLOG rather than the desktop's SYNCERRORLOG — it is the only
+    // file destination this app registers (see the constructor).
+    if (!message.isEmpty()) {
+        QLog_Error(ERRORLOG,
+            QString("Cloud sync settings check reported '%1'%2")
+                .arg(status, detail.isEmpty() ? QString() : QStringLiteral(": ") + detail));
+    }
+
+    emit syncSettingsVerified(status, message);
 }
 
 // ── Filter helpers ───────────────────────────────────────────────────────────
@@ -513,12 +724,24 @@ bool AppController::saveProject(int row, const QString& projectNumber,
                                  const QString& invoicingPeriod, const QString& statusReportPeriod)
 {
     global_DBObjects.setLastSaveError("");
-    QAbstractItemModel* model = global_DBObjects.projectinformationmodelproxy();
+    auto* proxy = global_DBObjects.projectinformationmodelproxy();
+    QAbstractItemModel* model = proxy;
     if (row < 0 || row >= model->rowCount())
         return false;
 
     const QPersistentModelIndex pIdx(model->index(row, 0));
     if (!pIdx.isValid()) return false;
+
+    // A row addProject() only staged has no id yet, and can't be written one
+    // column at a time: the first setData() would try to INSERT it while the
+    // other required column is still null. Write the whole row at once.
+    auto* src = global_DBObjects.projectinformationmodel();
+    const QModelIndex srcIdx = proxy->mapToSource(model->index(row, 0));
+    if (srcIdx.isValid() && src->isNewRecord(srcIdx))
+        return insertStagedProject(srcIdx.row(),
+                { { 1, projectNumber},   { 2, projectName},      { 3, lastStatusDate},
+                  { 4, lastInvoiceDate}, { 5, primaryContactId}, {11, invoicingPeriod},
+                  {12, statusReportPeriod}, {13, clientId},      {14, projectStatus} });
 
     bool ok = true;
     ok &= model->setData(model->index(pIdx.row(),  1), projectNumber);
@@ -535,6 +758,33 @@ bool AppController::saveProject(int row, const QString& projectNumber,
         emit errorOccurred(tr("Could Not Save"), err);
     }
     return ok;
+}
+
+// Write a staged project row (see addProject) as one INSERT, then finish what
+// ProjectsModel::setData() would have done for a row it inserted itself: give
+// the project its default project manager.
+bool AppController::insertStagedProject(int srcRow, const QVector<QPair<int, QVariant>>& fields)
+{
+    auto* src = global_DBObjects.projectinformationmodel();
+    m_lastCreatedProjectId.clear();
+
+    if (!src->insertStagedRow(srcRow, fields)) {
+        QString err = global_DBObjects.lastSaveError();
+        if (err.isEmpty())
+            err = tr("The project could not be saved.");
+        emit errorOccurred(tr("Could Not Save"), err);
+        return false;
+    }
+
+    const QString newId = src->data(src->index(srcRow, 0)).toString();
+    if (!newId.isEmpty())
+        global_DBObjects.addDefaultPMToProject(newId);
+    m_lastCreatedProjectId = newId;
+
+    // The EVM columns are computed in the SELECT, not stored — re-query the row
+    // so the page reads them back.
+    src->reloadRecord(src->index(srcRow, 0));
+    return true;
 }
 
 bool AppController::saveStatusItem(int row, const QString& category, const QString& description)
@@ -636,75 +886,124 @@ bool AppController::saveClient(int row, const QString& clientName)
     return ok;
 }
 
-int AppController::clientRowForId(const QString& clientId) const
-{
-    return m_clientsIndex ? m_clientsIndex->rowFor(clientId) : -1;
-}
-
-QString AppController::clientIdAtRow(int row) const
-{
-    QAbstractItemModel* model = global_DBObjects.clientsmodelproxy();
-    if (row < 0 || row >= model->rowCount())
-        return {};
-    return model->data(model->index(row, 0)).toString();
-}
-
-int AppController::peopleRowForId(const QString& peopleId) const
-{
-    return m_peopleIndex ? m_peopleIndex->rowFor(peopleId) : -1;
-}
-
-QString AppController::peopleIdAtRow(int row) const
-{
-    QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
-    if (row < 0 || row >= model->rowCount())
-        return {};
-    return model->data(model->index(row, 0)).toString();
-}
-
 QString AppController::peopleNameForId(const QString& personId) const
 {
-    if (!m_peopleIndex) return {};
-    const int row = m_peopleIndex->rowFor(personId);
-    if (row < 0) return {};
-    QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
-    return model->data(model->index(row, 1)).toString();  // col 1 = name
+    auto* src = global_DBObjects.peoplemodel();
+    if (!src || personId.isEmpty()) return {};
+    QVariant key(personId);
+    return src->findValue(key, 0, 1).toString();  // col 1 = name
 }
 
 QString AppController::peopleEmailForId(const QString& personId) const
 {
-    if (!m_peopleIndex) return {};
-    const int row = m_peopleIndex->rowFor(personId);
-    if (row < 0) return {};
-    QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
-    return model->data(model->index(row, 2)).toString();  // col 2 = email
+    auto* src = global_DBObjects.peoplemodel();
+    if (!src || personId.isEmpty()) return {};
+    QVariant key(personId);
+    return src->findValue(key, 0, 2).toString();  // col 2 = email
 }
 
 QString AppController::clientNameForId(const QString& clientId) const
 {
-    if (!m_clientsIndex) return {};
-    const int row = m_clientsIndex->rowFor(clientId);
-    if (row < 0) return {};
-    QAbstractItemModel* model = global_DBObjects.clientsmodelproxy();
-    return model->data(model->index(row, 1)).toString();  // col 1 = client_name
+    auto* src = global_DBObjects.clientsmodel();
+    if (!src || clientId.isEmpty()) return {};
+    QVariant key(clientId);
+    return src->findValue(key, 0, 1).toString();  // col 1 = client_name
 }
 
 QString AppController::projectNumberForId(const QString& projectId) const
 {
-    if (!m_projectsIndex) return {};
-    const int row = m_projectsIndex->rowFor(projectId);
-    if (row < 0) return {};
-    QAbstractItemModel* model = global_DBObjects.projectinformationmodelproxy();
-    return model->data(model->index(row, 1)).toString();  // col 1 = project_number
+    auto* src = global_DBObjects.projectinformationmodel();
+    if (!src || projectId.isEmpty()) return {};
+    QVariant key(projectId);
+    return src->findValue(key, 0, 1).toString();  // col 1 = project_number
 }
 
 QString AppController::projectNameForId(const QString& projectId) const
 {
-    if (!m_projectsIndex) return {};
-    const int row = m_projectsIndex->rowFor(projectId);
-    if (row < 0) return {};
-    QAbstractItemModel* model = global_DBObjects.projectinformationmodelproxy();
-    return model->data(model->index(row, 2)).toString();  // col 2 = project_name
+    auto* src = global_DBObjects.projectinformationmodel();
+    if (!src || projectId.isEmpty()) return {};
+    QVariant key(projectId);
+    return src->findValue(key, 0, 2).toString();  // col 2 = project_name
+}
+
+QVariantList AppController::teamMemberList(const QString& projectId, const QStringList& includeIds) const
+{
+    QVariantList out;
+    if (projectId.isEmpty()) return out;
+
+    QSet<QString> seen;
+
+    DB_LOCK;
+    QSqlQuery qry(global_DBObjects.getDb());
+    qry.prepare("SELECT people.id, people.name FROM project_people "
+                "JOIN people ON people.id = project_people.people_id "
+                "WHERE project_people.project_id = ? "
+                "AND (project_people.deleted IS NULL OR project_people.deleted = 0) "
+                "AND (people.deleted IS NULL OR people.deleted = 0) "
+                "ORDER BY people.name");
+    qry.addBindValue(projectId);
+    qry.exec();
+    while (qry.next()) {
+        const QString id = qry.value(0).toString();
+        QVariantMap m;
+        m.insert("id",   id);
+        m.insert("name", qry.value(1).toString());
+        out.append(m);
+        seen.insert(id);
+    }
+    DB_UNLOCK;
+
+    // Keep any currently-referenced person who is no longer on the team so an
+    // existing assignment still shows (matches desktop's team combo).
+    for (const QString& id : includeIds) {
+        if (id.isEmpty() || seen.contains(id)) continue;
+        seen.insert(id);
+
+        DB_LOCK;
+        QSqlQuery pq(global_DBObjects.getDb());
+        pq.prepare("SELECT name FROM people WHERE id = ?");
+        pq.addBindValue(id);
+        pq.exec();
+        const bool found = pq.next();
+        const QString name = found ? pq.value(0).toString() : QString();
+        DB_UNLOCK;
+
+        if (found) {
+            QVariantMap m;
+            m.insert("id",   id);
+            m.insert("name", name);
+            out.append(m);
+        }
+    }
+    return out;
+}
+
+QVariantList AppController::clientList() const
+{
+    QVariantList out;
+    auto* proxy = global_DBObjects.clientsmodelproxy();
+    if (!proxy) return out;
+    for (int row = 0; row < proxy->rowCount(); ++row) {
+        QVariantMap m;
+        m.insert("id",   proxy->data(proxy->index(row, 0)).toString());
+        m.insert("name", proxy->data(proxy->index(row, 1)).toString());
+        out.append(m);
+    }
+    return out;
+}
+
+QVariantList AppController::peopleList() const
+{
+    QVariantList out;
+    auto* proxy = global_DBObjects.peoplemodelproxy();
+    if (!proxy) return out;
+    for (int row = 0; row < proxy->rowCount(); ++row) {
+        QVariantMap m;
+        m.insert("id",   proxy->data(proxy->index(row, 0)).toString());
+        m.insert("name", proxy->data(proxy->index(row, 1)).toString());
+        out.append(m);
+    }
+    return out;
 }
 
 QString AppController::teamMemberEmailList() const
@@ -791,19 +1090,12 @@ QString AppController::lastSaveError() const
     return global_DBObjects.lastSaveError();
 }
 
-// teamMemberRowForPersonId — search col 2 (people_id) in projectTeamMembersModelProxy
-int AppController::teamMemberRowForPersonId(const QString& personId) const
+// Resolve the SqlQueryModel behind a proxy model handed over from QML.
+static SqlQueryModel* sourceModelOf(QAbstractItemModel* model)
 {
-    return m_teamMembersByPersonIndex
-        ? m_teamMembersByPersonIndex->rowFor(personId) : -1;
-}
-
-// teamMemberPersonIdAtRow — return col 2 (people_id) from projectTeamMembersModelProxy
-QString AppController::teamMemberPersonIdAtRow(int row) const
-{
-    QAbstractItemModel* model = global_DBObjects.projectteammembersmodelproxy();
-    if (row < 0 || row >= model->rowCount()) return {};
-    return model->data(model->index(row, 2)).toString();
+    if (auto* proxy = qobject_cast<SortFilterProxyModel*>(model))
+        return qobject_cast<SqlQueryModel*>(proxy->sourceModel());
+    return nullptr;
 }
 
 // ── Add / Delete / Copy helpers ───────────────────────────────────────────────
@@ -827,7 +1119,8 @@ static bool deleteProxyRow(SortFilterProxyModel* proxy, SqlQueryModel* source, i
 }
 
 // Delete the record at proxy |row|, surfacing the model's blocked-delete message
-// to the user when child/foreign-key references prevent it. deleteRecord() (via
+// to the user when an external (non-owned) reference prevents it. Owned child
+// records are cascade-deleted instead of blocking. deleteRecord() (via
 // deleteCheck) already stores that message in lastSaveError on mobile; here we
 // emit it through the existing errorOccurred → errorDialog path used by saves.
 bool AppController::deleteAndReport(SortFilterProxyModel* proxy, SqlQueryModel* source, int row)
@@ -867,22 +1160,20 @@ static QVariantMap proxyRowToMap(SortFilterProxyModel* proxy, int row)
 
 // ── Projects ──────────────────────────────────────────────────────────────────
 
+// Stage a new project row in the model cache without writing it — the schema
+// requires a project number and name (both NOT NULL and carrying partial unique
+// indexes), so a blank project cannot be INSERTed. saveProject() writes the row
+// in one go once ProjectDetailsPage has those two fields; leaving the page
+// without them discards the staged row (ProjectDetailsPage._discardNew).
 int AppController::addProject()
 {
-    auto* src = global_DBObjects.projectinformationmodel();
-    QModelIndex srcIdx = src->newRecord();
-    if (!srcIdx.isValid()) return -1;
+    return proxyRowFromSource(global_DBObjects.projectinformationmodelproxy(),
+                              global_DBObjects.projectinformationmodel()->newRecord());
+}
 
-    // Commit up front so saveProject's setData calls all take the UPDATE
-    // branch — avoids ProjectsModel::setData firing addDefaultPMToProject
-    // mid-save (same hazard fixed for project notes).
-    if (!src->insertCacheRow(srcIdx.row())) return -1;
-
-    const QString newId = src->data(src->index(srcIdx.row(), 0)).toString();
-    if (!newId.isEmpty())
-        global_DBObjects.addDefaultPMToProject(newId);
-
-    return proxyRowFromSource(global_DBObjects.projectinformationmodelproxy(), srcIdx);
+QString AppController::nextProjectNumber() const
+{
+    return global_DBObjects.projectinformationmodel()->nextAvailableProjectNumber();
 }
 
 bool AppController::deleteProject(int row)
@@ -1072,48 +1363,6 @@ QVariantMap AppController::getProjectNoteData(int row) const
 
 // ── Preferences helpers ───────────────────────────────────────────────────────
 
-int AppController::managingCompanyIndex() const
-{
-    const QString id = global_DBObjects.getManagingCompany();
-    if (id.isEmpty())
-        return 0;
-    QAbstractItemModel* model = global_DBObjects.clientsmodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 0)).toString() == id)
-            return row;
-    }
-    return 0;
-}
-
-void AppController::setManagingCompanyByRow(int row)
-{
-    QAbstractItemModel* model = global_DBObjects.clientsmodelproxy();
-    if (row < 0 || row >= model->rowCount())
-        return;
-    global_DBObjects.setManagingCompany(model->data(model->index(row, 0)).toString());
-}
-
-int AppController::projectManagerIndex() const
-{
-    const QString id = global_DBObjects.getProjectManager();
-    if (id.isEmpty())
-        return 0;
-    QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
-    for (int row = 0; row < model->rowCount(); ++row) {
-        if (model->data(model->index(row, 0)).toString() == id)
-            return row;
-    }
-    return 0;
-}
-
-void AppController::setProjectManagerByRow(int row)
-{
-    QAbstractItemModel* model = global_DBObjects.peoplemodelproxy();
-    if (row < 0 || row >= model->rowCount())
-        return;
-    global_DBObjects.setProjectManager(model->data(model->index(row, 0)).toString());
-}
-
 // ── Tracker item detail (single-record model) ─────────────────────────────────
 
 void AppController::openTrackerItem(const QString& itemId)
@@ -1285,6 +1534,20 @@ QString AppController::meetingNoteIdAtRow(int row) const
     auto* m = global_DBObjects.actionitemsdetailsmeetingsmodelproxy();
     if (row < 0 || row >= m->rowCount()) return {};
     return m->data(m->index(row, 0)).toString();
+}
+
+QVariantList AppController::meetingList() const
+{
+    QVariantList out;
+    auto* proxy = global_DBObjects.actionitemsdetailsmeetingsmodelproxy();
+    if (!proxy) return out;
+    for (int row = 0; row < proxy->rowCount(); ++row) {
+        QVariantMap m;
+        m.insert("id",   proxy->data(proxy->index(row, 0)).toString()); // col 0 = note id
+        m.insert("name", proxy->data(proxy->index(row, 2)).toString()); // col 2 = meeting label
+        out.append(m);
+    }
+    return out;
 }
 
 bool AppController::isItemNumberUnique(const QString& projectId, const QString& itemId, const QString& itemNumber) const
@@ -1467,58 +1730,425 @@ QString AppController::noteActionItemIdAtRow(int row) const
 
 void AppController::refreshTeamMembers()
 {
-    global_DBObjects.projectteammembersmodel()->refresh();
+    global_DBObjects.projectteammembersmodel()->refreshIfDirty();
 }
 
 void AppController::refreshMeetingAttendees()
 {
-    global_DBObjects.meetingattendeesmodel()->refresh();
+    global_DBObjects.meetingattendeesmodel()->refreshIfDirty();
 }
 
 void AppController::refreshTrackerComments()
 {
-    global_DBObjects.trackeritemscommentsmodel()->refresh();
+    global_DBObjects.trackeritemscommentsmodel()->refreshIfDirty();
 }
 
 void AppController::refreshTrackerItems()
 {
-    global_DBObjects.trackeritemsmodel()->refresh();
+    global_DBObjects.trackeritemsmodel()->refreshIfDirty();
 }
 
 void AppController::refreshAllItems()
 {
-    global_DBObjects.allitemsmodel()->refresh();
+    global_DBObjects.allitemsmodel()->refreshIfDirty();
 }
 
 void AppController::refreshProjectNotes()
 {
-    global_DBObjects.projectnotesmodel()->refresh();
+    global_DBObjects.projectnotesmodel()->refreshIfDirty();
 }
 
 void AppController::refreshNoteActionItems()
 {
-    global_DBObjects.notesactionitemsmodel()->refresh();
+    global_DBObjects.notesactionitemsmodel()->refreshIfDirty();
 }
 
 void AppController::refreshProjectsList()
 {
-    global_DBObjects.projectinformationmodel()->refresh();
+    global_DBObjects.projectinformationmodel()->refreshIfDirty();
 }
 
 void AppController::refreshPeople()
 {
-    global_DBObjects.peoplemodel()->refresh();
+    global_DBObjects.peoplemodel()->refreshIfDirty();
 }
 
 void AppController::refreshClients()
 {
-    global_DBObjects.clientsmodel()->refresh();
+    global_DBObjects.clientsmodel()->refreshIfDirty();
 }
 
 void AppController::setQuickSearch(QAbstractItemModel* model, const QString& text)
 {
     if (auto* proxy = dynamic_cast<SortFilterProxyModel*>(model))
         proxy->setQuickSearch(text);
+}
+
+// ── Column filter editor (mirrors DesktopAppController) ──────────────────────
+
+QVariantList AppController::filterColumns(QAbstractItemModel* model) const
+{
+    QVariantList out;
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!src) return out;
+
+    const int cols = src->columnCount();
+    for (int c = 1; c < cols; ++c) {          // column 0 is the hidden id
+        if (!src->isSearchable(c)) continue;
+        const SqlQueryModel::DBColumnType t = src->getType(c);
+        QVariantMap m;
+        m["field"]  = src->getColumnName(c);
+        m["label"]  = src->headerData(c, Qt::Horizontal, Qt::DisplayRole).toString();
+        m["isDate"] = (t == SqlQueryModel::DBDate || t == SqlQueryModel::DBDateTime);
+        out.append(m);
+    }
+    return out;
+}
+
+QVariantList AppController::columnDistinctValues(QAbstractItemModel* model,
+                                                  const QString& field) const
+{
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!src) return {};
+    const int col = src->getColumnNumber(field);
+    if (col < 0) return {};
+
+    // Pull distinct values from the base data (context/deleted-row filters
+    // kept, interactive user filter dropped) rather than the model's
+    // currently-loaded rows — otherwise an already-active filter would
+    // narrow the value list and you could never pick a different value.
+    const QString dbcol = src->getColumnName(col);
+    QString where = src->constructWhereClause(false);   // "" or " WHERE ... "
+    where = where.isEmpty() ? QStringLiteral(" WHERE ") : (where + QStringLiteral(" AND "));
+
+    const QString sql = "SELECT DISTINCT " + dbcol + " FROM ( " + src->BaseSQL()
+                        + where + dbcol + " IS NOT NULL )";
+
+    const SqlQueryModel::DBColumnType type = src->getType(col);
+
+    // Foreign-key columns (e.g. client_id) store the id as the filterable
+    // value; resolve it through the lookup table's display column, matching
+    // the desktop Filter Editor's behavior.
+    const QString lookupTable  = src->getLookupTable(col);
+    const QString lookupFkCol  = src->getLookupFkColumnName(col);
+    const QString lookupValCol = src->getLookupValueColumnName(col);
+
+    QVariantList values;
+    QSet<QString> seen;
+    QSqlQuery q(src->getDBOs()->getDb());
+    if (q.exec(sql)) {
+        while (q.next() && values.size() < 500) {
+            QVariant raw = q.value(0);
+            src->reformatValue(raw, type);   // match the list's display formatting
+            const QString v = raw.toString().trimmed();
+            if (v.isEmpty() || seen.contains(v)) continue;
+            seen.insert(v);
+
+            QString label = v;
+            if (!lookupTable.isEmpty()) {
+                QSqlQuery lq(src->getDBOs()->getDb());
+                lq.prepare(QString("SELECT %1 FROM %2 WHERE %3 = ?")
+                               .arg(lookupValCol, lookupTable, lookupFkCol));
+                lq.addBindValue(v);
+                if (lq.exec() && lq.next())
+                    label = lq.value(0).toString();
+            }
+
+            QVariantMap m;
+            m["value"] = v;
+            m["label"] = label;
+            values.append(m);
+        }
+    } else {
+        QLog_Error(ERRORLOG, QString("columnDistinctValues query failed: %1 — %2")
+                                  .arg(q.lastError().text(), sql));
+    }
+
+    std::sort(values.begin(), values.end(), [](const QVariant& a, const QVariant& b) {
+        return a.toMap().value("label").toString().compare(
+                   b.toMap().value("label").toString(), Qt::CaseInsensitive) < 0;
+    });
+    return values;
+}
+
+// Scope string used to key a model's persisted UI state (column filters, sort
+// order) in application_settings. trackeritemsmodel() (a project's own
+// Tracker Items tab) and allitemsmodel() (the master cross-project Items
+// list) both report tablename() == "item_tracker" — disambiguate the
+// project-scoped one so filtering/sorting one doesn't silently overwrite the
+// other's persisted state (same fix as DesktopAppController).
+static QString settingsScopeForModel(SqlQueryModel* src)
+{
+    QString scope = src->tablename();
+    if (src == global_DBObjects.trackeritemsmodel())
+        scope += ":project";
+    return scope;
+}
+
+static QString columnFilterSettingKey(SqlQueryModel* src)
+{
+    return "UI:ColumnFilters:" + settingsScopeForModel(src);
+}
+
+static void applyFilterSpecsToModel(SqlQueryModel* src, const QVariantList& specs)
+{
+    src->clearAllUserSearches();
+
+    for (const QVariant& sv : specs) {
+        const QVariantMap spec = sv.toMap();
+        const int col = src->getColumnNumber(spec.value("field").toString());
+        if (col < 0) continue;
+
+        const QVariantList values = spec.value("values").toList();
+        if (!values.isEmpty())
+            src->setUserFilter(col, values);
+
+        const QString search = spec.value("search").toString().trimmed();
+        if (!search.isEmpty())
+            src->setUserSearchString(col, search);
+
+        const QString start = spec.value("rangeStart").toString().trimmed();
+        const QString end   = spec.value("rangeEnd").toString().trimmed();
+        if (!start.isEmpty() || !end.isEmpty())
+            src->setUserSearchRange(col, start, end);
+    }
+}
+
+void AppController::applyColumnFilters(QAbstractItemModel* model, const QVariantList& specs)
+{
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!src) return;
+
+    applyFilterSpecsToModel(src, specs);
+    src->activateUserFilter(QString());   // empty name → skip QSettings-backed persistence; application_settings below is canonical
+
+    const QByteArray json = QJsonDocument(QJsonArray::fromVariantList(specs)).toJson(QJsonDocument::Compact);
+    global_DBObjects.saveParameter(columnFilterSettingKey(src), QString::fromUtf8(json));
+
+    ++m_filterRev;
+    emit filterRevChanged();
+}
+
+void AppController::clearColumnFilters(QAbstractItemModel* model)
+{
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!src) return;
+    src->clearAllUserSearches();
+    src->deactivateUserFilter(QString());
+    global_DBObjects.saveParameter(columnFilterSettingKey(src), QString());
+
+    ++m_filterRev;
+    emit filterRevChanged();
+}
+
+QVariantList AppController::activeColumnFilters(QAbstractItemModel* model)
+{
+    QVariantList specs;
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!src) return specs;
+
+    const int cols = src->columnCount();
+    for (int c = 0; c < cols; ++c) {
+        if (!src->hasUserFilters(c)) continue;
+
+        QVariantMap spec;
+        spec["field"] = src->getColumnName(c);
+        spec["values"] = src->getUserFilter(c);
+        const QVariant search = src->getUserSearchString(c);
+        spec["search"] = search.isValid() ? search.toString() : QString();
+
+        QVariant start, end;
+        src->getUserSearchRange(c, start, end);
+        spec["rangeStart"] = start.isValid() ? start.toString() : QString();
+        spec["rangeEnd"]   = end.isValid()   ? end.toString()   : QString();
+
+        specs.append(spec);
+    }
+    return specs;
+}
+
+void AppController::applyQuickFilter(QAbstractItemModel* model, const QString& field,
+                                     const QVariantList& values)
+{
+    QVariantList specs = activeColumnFilters(model);
+
+    // Remove whatever's currently set for this field (if any) — either to
+    // replace it below, or, if it already matched exactly, to leave it
+    // removed (toggle-off: picking an already-active Quick Filter again
+    // clears just that one).
+    bool wasSameValues = false;
+    for (int i = specs.size() - 1; i >= 0; --i) {
+        const QVariantMap spec = specs.at(i).toMap();
+        if (spec.value("field").toString() != field) continue;
+        if (spec.value("values").toList() == values)
+            wasSameValues = true;
+        specs.removeAt(i);
+    }
+
+    if (!wasSameValues) {
+        QVariantMap spec;
+        spec["field"] = field;
+        spec["values"] = values;
+        spec["search"] = QString();
+        spec["rangeStart"] = QString();
+        spec["rangeEnd"] = QString();
+        specs.append(spec);
+    }
+
+    applyColumnFilters(model, specs);   // also bumps filterRev + persists
+}
+
+bool AppController::hasActiveColumnFilters(QAbstractItemModel* model) const
+{
+    SqlQueryModel* src = sourceModelOf(model);
+    return src && src->hasUserFilters();
+}
+
+QAbstractItemModel* AppController::modelForSection(const QString& section) const
+{
+    if (section == "projects")     return projectsListModel();
+    if (section == "items")        return allItemsModel();
+    if (section == "people")       return peopleModel();
+    if (section == "clients")      return clientsModel();
+    if (section == "statusreport") return statusReportItemsModel();
+    if (section == "trackeritems") return trackerItemsModel();
+    if (section == "team")         return projectTeamMembersModel();
+    if (section == "locations")    return projectLocationsModel();
+    if (section == "notes")        return projectNotesModel();
+    return nullptr;
+}
+
+void AppController::refreshModel(QAbstractItemModel* model)
+{
+    if (SqlQueryModel* src = sourceModelOf(model))
+        src->refresh();
+}
+
+// ── Sort ─────────────────────────────────────────────────────────────────────
+
+QVariantList AppController::sortColumns(QAbstractItemModel* model) const
+{
+    QVariantList out;
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!src) return out;
+
+    const int cols = src->columnCount();
+    for (int c = 1; c < cols; ++c) {          // column 0 is the hidden id
+        if (src->getType(c) == SqlQueryModel::DBHtml) continue;   // long free text
+        QVariantMap m;
+        m["field"] = src->getColumnName(c);
+        m["label"] = src->headerData(c, Qt::Horizontal, Qt::DisplayRole).toString();
+        out.append(m);
+    }
+    return out;
+}
+
+// application_settings key a model's sort order is persisted under — same
+// scope resolver the column filters use above.
+static QString sortSettingKey(SqlQueryModel* src)
+{
+    return "UI:SortOrder:" + settingsScopeForModel(src);
+}
+
+void AppController::applySort(QAbstractItemModel* model, const QString& field, bool descending)
+{
+    auto* proxy = qobject_cast<SortFilterProxyModel*>(model);
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!proxy || !src) return;
+
+    const int col = src->getColumnNumber(field);
+    if (col < 0) return;
+
+    proxy->sort(col, descending ? Qt::DescendingOrder : Qt::AscendingOrder);
+
+    QVariantMap spec;
+    spec["field"] = field;
+    spec["descending"] = descending;
+    const QByteArray json = QJsonDocument(QJsonObject::fromVariantMap(spec)).toJson(QJsonDocument::Compact);
+    global_DBObjects.saveParameter(sortSettingKey(src), QString::fromUtf8(json));
+
+    ++m_sortRev;
+    emit sortRevChanged();
+}
+
+void AppController::clearSort(QAbstractItemModel* model)
+{
+    auto* proxy = qobject_cast<SortFilterProxyModel*>(model);
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!proxy || !src) return;
+
+    proxy->sort(-1);   // restores the model's base ORDER BY
+    global_DBObjects.saveParameter(sortSettingKey(src), QString());
+
+    ++m_sortRev;
+    emit sortRevChanged();
+}
+
+QVariantMap AppController::activeSort(QAbstractItemModel* model) const
+{
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!src) return {};
+    const QString json = global_DBObjects.loadParameter(sortSettingKey(src));
+    if (json.isEmpty()) return {};
+    return QJsonDocument::fromJson(json.toUtf8()).object().toVariantMap();
+}
+
+int AppController::rowForId(QAbstractItemModel* model, const QString& id) const
+{
+    auto* proxy = qobject_cast<SortFilterProxyModel*>(model);
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!proxy || !src) return -1;
+
+    // An empty id is not "no record": a row one of the add* methods only staged
+    // has no id until its first save, and the detail page editing it still has to
+    // find it (see ProjectDetailsPage._saveNow and friends). findIndex() keys
+    // rows on their id column, so it locates the staged row by that empty key.
+    // At most one row per model is ever in that state — the page that staged it
+    // either saves it or discards it before another can be added.
+    QVariant key(id);
+    const QModelIndex srcIdx = src->findIndex(key, 0);
+    if (!srcIdx.isValid()) return -1;
+
+    const QModelIndex proxyIdx = proxy->mapFromSource(srcIdx);
+    return proxyIdx.isValid() ? proxyIdx.row() : -1;
+}
+
+// Reapply a model's persisted column filters (if any) after it's been
+// created. Called once per filterable model right after the database opens,
+// so lists stay filtered across an app restart the same way the Filter
+// Editor left them.
+static void restoreColumnFilters(SqlQueryModel* src)
+{
+    const QString json = global_DBObjects.loadParameter(columnFilterSettingKey(src));
+    if (json.isEmpty())
+        return;
+
+    const QVariantList specs = QJsonDocument::fromJson(json.toUtf8()).array().toVariantList();
+    if (specs.isEmpty())
+        return;
+
+    applyFilterSpecsToModel(src, specs);
+    src->activateUserFilter(QString());
+}
+
+// Reapply a model's persisted sort (if any) after it's been created. Sorting
+// an unloaded model is cheap — it just sets the pending column/order, which
+// the proxy applies when it next builds its row mapping — so every
+// filterable section is restored here.
+static void restoreSort(QAbstractItemModel* model)
+{
+    auto* proxy = qobject_cast<SortFilterProxyModel*>(model);
+    SqlQueryModel* src = sourceModelOf(model);
+    if (!proxy || !src) return;
+
+    const QString json = global_DBObjects.loadParameter(sortSettingKey(src));
+    if (json.isEmpty()) return;
+
+    const QVariantMap spec = QJsonDocument::fromJson(json.toUtf8()).object().toVariantMap();
+    const int col = src->getColumnNumber(spec.value("field").toString());
+    if (col < 0) return;
+
+    proxy->sort(col, spec.value("descending").toBool() ? Qt::DescendingOrder : Qt::AscendingOrder);
 }
 
 // ── Model accessors ──────────────────────────────────────────────────────────

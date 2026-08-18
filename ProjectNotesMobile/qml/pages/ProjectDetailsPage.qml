@@ -42,43 +42,98 @@ Page {
     property bool   _skipSave:                false
     property bool   isNewRecord:              false
 
-    function _isBlankNew() { return isNewRecord && nameField.text.trim() === "" }
-    function _discardNew()  { AppController.deleteProject(root.projectRow) }
+    // Stable {id,name} snapshot backing primaryContactCombo — NOT the live
+    // AppController.projectTeamMembersModel proxy, which the Team tab's Sort
+    // feature can reorder/reset out from under a ComboBox bound directly to
+    // it (see AppController::teamMemberList doc comment).
+    property var _people: []
+    function _peopleNames() { return root._people.map(function(p){ return p.name }) }
+    function _personIndexForId(id) {
+        for (var i = 0; i < root._people.length; i++)
+            if (root._people[i].id === id) return i
+        return -1
+    }
+    // Same rationale, backing clientCombo — clientsModel is also Sort-able.
+    property var _clients: []
+    function _clientNames() { return root._clients.map(function(c){ return c.name }) }
+    function _clientIndexForId(id) {
+        for (var i = 0; i < root._clients.length; i++)
+            if (root._clients[i].id === id) return i
+        return -1
+    }
 
+    function _isBlankNew() { return isNewRecord && nameField.text.trim() === "" }
+    // Covers both states a new project can be in: still staged in the model cache
+    // (no id — deleteProject just drops the cache row) or already written.
+    function _discardNew()  {
+        var row = AppController.rowForId(AppController.projectsListModel, root.projectId)
+        if (row < 0) return
+        AppController.deleteProject(row)
+    }
+
+    // Re-resolve projectRow from the stable projectId before every write —
+    // Sort/refresh elsewhere in the app can reorder or reset the shared
+    // projectsListModel proxy while this page is open. A project that hasn't been
+    // created yet has no id; rowForId() resolves the staged row by that empty key.
     function _saveNow() {
+        // A staged project needs the two fields the schema requires of it before
+        // the save below can create it. Without a name there is nothing to create
+        // yet; without a number, fall back to the next free one rather than
+        // leaving a named project uncreatable.
+        if (root.projectId === "") {
+            if (nameField.text.trim() === "") return true
+            if (numberField.text.trim() === "")
+                numberField.text = AppController.nextProjectNumber()
+        }
+
+        var row = AppController.rowForId(AppController.projectsListModel, root.projectId)
+        if (row < 0) return false   // record no longer exists
+        root.projectRow = row
         statusDateField.commitPending()
         invoiceDateField.commitPending()
-        var primaryContactId = (primaryContactCombo.currentIndex >= 0)
-            ? AppController.teamMemberPersonIdAtRow(primaryContactCombo.currentIndex) : ""
-        var clientId = (clientCombo.currentIndex >= 0)
-            ? AppController.clientIdAtRow(clientCombo.currentIndex) : ""
-        var status = (statusCombo.currentIndex >= 0)
-            ? statusCombo.model[statusCombo.currentIndex] : ""
-        var invPeriod = (invoicingCombo.currentIndex >= 0)
-            ? invoicingCombo.model[invoicingCombo.currentIndex] : ""
-        var srPeriod = (statusReportCombo.currentIndex >= 0)
-            ? statusReportCombo.model[statusReportCombo.currentIndex] : ""
-        return AppController.saveProject(root.projectRow, numberField.text, nameField.text,
-                                         status, primaryContactId, clientId, statusDateField.text,
-                                         invoiceDateField.text, invPeriod, srPeriod)
+        var pi = primaryContactCombo.optionIndex
+        var primaryContactId = (pi >= 0 && pi < root._people.length) ? root._people[pi].id : ""
+        var ci = clientCombo.optionIndex
+        var clientId = (ci >= 0 && ci < root._clients.length) ? root._clients[ci].id : ""
+        var status    = statusCombo.selection
+        var invPeriod = invoicingCombo.selection
+        var srPeriod  = statusReportCombo.selection
+        var wasStaged = root.projectId === ""
+        var ok = AppController.saveProject(root.projectRow, numberField.text, nameField.text,
+                                          status, primaryContactId, clientId, statusDateField.text,
+                                          invoiceDateField.text, invPeriod, srPeriod)
+        if (ok && wasStaged) root._adoptSavedRecord()
+        return ok
+    }
+
+    // The staged row has just been written: take on its new id (the insert can
+    // move it within the sorted list, so re-resolve the row too) and point the
+    // project-scoped models at it, which is what the sub-pages below read.
+    function _adoptSavedRecord() {
+        var id = AppController.lastCreatedProjectId()
+        if (id === "") return
+        root.projectId   = id
+        root.isNewRecord = false
+        var row = AppController.rowForId(AppController.projectsListModel, id)
+        if (row >= 0) root.projectRow = row
+        AppController.setProjectFilter(id)
+        root._reloadData()   // picks up the default project manager just added
     }
 
     function _reloadData() {
         var d = AppController.getProjectData(root.projectRow)
         numberField.text = (d.project_number || "").toString()
         nameField.text   = (d.project_name   || "").toString()
-        var si = statusCombo.model.indexOf((d.project_status || "").toString())
-        statusCombo.currentIndex = si >= 0 ? si : 0
-        var ci = AppController.clientRowForId((d.client_id || "").toString())
-        clientCombo.currentIndex = ci >= 0 ? ci : -1
-        var pi = AppController.teamMemberRowForPersonId((d.primary_contact || "").toString())
-        primaryContactCombo.currentIndex = pi >= 0 ? pi : -1
+        statusCombo.selectText((d.project_status || "").toString(), 0)
+        root._clients = AppController.clientList()
+        clientCombo.selectOption(root._clientIndexForId((d.client_id || "").toString()))
+        var contactId = (d.primary_contact || "").toString()
+        root._people = AppController.teamMemberList(root.projectId, [contactId])
+        primaryContactCombo.selectOption(root._personIndexForId(contactId))
         statusDateField.text  = (d.last_status_date     || "").toString()
         invoiceDateField.text = (d.last_invoice_date    || "").toString()
-        var ii = invoicingCombo.model.indexOf((d.invoicing_period || "").toString())
-        invoicingCombo.currentIndex = ii >= 0 ? ii : -1
-        var sri = statusReportCombo.model.indexOf((d.status_report_period || "").toString())
-        statusReportCombo.currentIndex = sri >= 0 ? sri : -1
+        invoicingCombo.selectText((d.invoicing_period || "").toString())
+        statusReportCombo.selectText((d.status_report_period || "").toString())
     }
 
     Component.onCompleted: {
@@ -117,6 +172,8 @@ Page {
 
             ToolButton {
                 icon.name: "doc.on.doc"
+                // Nothing to duplicate until the project exists.
+                enabled: root.projectId !== ""
                 onClicked: {
                     if (!root._saveNow()) return
                     root._skipSave = true
@@ -152,8 +209,12 @@ Page {
 
             ToolButton {
                 icon.name: "trash"
+                // A project that was never written is discarded by leaving the
+                // page, not deleted (see _discardNew).
+                enabled: root.projectId !== ""
                 onClicked: {
-                    if (AppController.deleteProject(root.projectRow)) {
+                    var row = AppController.rowForId(AppController.projectsListModel, root.projectId)
+                    if (row >= 0 && AppController.deleteProject(row)) {
                         root._skipSave = true
                         root.StackView.view.pop()
                     }
@@ -190,43 +251,51 @@ Page {
                 }
             }
 
+            // A project that hasn't been created yet: say so, and say what
+            // creates it. The sub-pages in the footer stay disabled until then.
+            Label {
+                visible: root.projectId === ""
+                Layout.fillWidth: true
+                Layout.topMargin: 6
+                leftPadding: 16
+                rightPadding: 16
+                wrapMode: Text.WordWrap
+                font.pixelSize: 12
+                color: Theme.mutedText
+                text: qsTr("New project — give it a name to create it. The pages below become available once it is saved.")
+            }
+
             SectionHeader { text: qsTr("Status") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: statusCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.projectStatusOptions()
-                    Component.onCompleted: {
-                        var idx = model.indexOf(root.initialProjectStatus)
-                        currentIndex = (idx >= 0) ? idx : 0
-                    }
+                    options: AppController.projectStatusOptions()
+                    Component.onCompleted: selectText(root.initialProjectStatus, 0)
                 }
             }
 
             SectionHeader { text: qsTr("Client") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: clientCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.clientsModel
-                    textRole: "client_name"
+                    options: root._clientNames()
+                    includeNone: true
                     Component.onCompleted: {
-                        var row = AppController.clientRowForId(root.initialClientId)
-                        currentIndex = (row >= 0) ? row : -1
+                        root._clients = AppController.clientList()
+                        selectOption(root._clientIndexForId(root.initialClientId))
                     }
                 }
             }
 
             SectionHeader { text: qsTr("Primary Contact") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: primaryContactCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.projectTeamMembersModel
-                    textRole: "name"
+                    options: root._peopleNames()
+                    includeNone: true
                     Component.onCompleted: {
-                        var row = AppController.teamMemberRowForPersonId(root.initialPrimaryContact)
-                        currentIndex = (row >= 0) ? row : -1
+                        root._people = AppController.teamMemberList(root.projectId, [root.initialPrimaryContact])
+                        selectOption(root._personIndexForId(root.initialPrimaryContact))
                     }
                 }
             }
@@ -243,27 +312,19 @@ Page {
 
             SectionHeader { text: qsTr("Invoice Period") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: invoicingCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.invoicingPeriodOptions()
-                    Component.onCompleted: {
-                        var idx = model.indexOf(root.initialInvoicingPeriod)
-                        currentIndex = (idx >= 0) ? idx : -1
-                    }
+                    options: AppController.invoicingPeriodOptions()
+                    Component.onCompleted: selectText(root.initialInvoicingPeriod)
                 }
             }
 
             SectionHeader { text: qsTr("Status Report Period") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: statusReportCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.statusReportPeriodOptions()
-                    Component.onCompleted: {
-                        var idx = model.indexOf(root.initialStatusReportPeriod)
-                        currentIndex = (idx >= 0) ? idx : -1
-                    }
+                    options: AppController.statusReportPeriodOptions()
+                    Component.onCompleted: selectText(root.initialStatusReportPeriod)
                 }
             }
 
@@ -371,6 +432,9 @@ Page {
                     ToolTip.text: modelData.label
                     ToolTip.visible: hovered || pressed
                     display: AbstractButton.IconOnly
+                    // Every one of these lists is keyed by the project id, so
+                    // none of them exist until the project has been created.
+                    enabled: root.projectId !== ""
                     onClicked: root.StackView.view.push(
                         Qt.resolvedUrl(modelData.page),
                         { projectId: root.projectId,
