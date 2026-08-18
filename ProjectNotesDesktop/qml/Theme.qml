@@ -96,32 +96,20 @@ QtObject {
 
     // ── Font metrics ──────────────────────────────────────────────────────────
     // Two type ramps, both in logical pixels (Theme.uiScale magnifies them at
-    // draw time, so these are the sizes seen at 100% zoom).
-    //
-    // Page ramp — the workspace ramp used by every page, card, dialog and
-    // field. Fixed sizes: this is the design system's own scale, tuned for the
-    // dense list/detail layouts, not something the platform dictates. Anchored
-    // on fontBody; the names say how far a step sits from it.
-    readonly property int font3xs:  8   // the smallest badges (list status pips)
-    readonly property int font2xs:  9   // ALL-CAPS group labels, tiny chips
-    readonly property int fontXs:  10   // secondary meta lines, table sub-text
-    readonly property int fontSm:  11   // dense secondary text, compact rows
-    readonly property int fontBody: 12  // default body / field text
-    readonly property int fontLg:  13   // emphasised body, card titles
-    readonly property int fontXl:  14   // section + card headings
-    readonly property int font2xl: 15   // dialog titles
-    readonly property int font3xl: 16   // About block product name
-    readonly property int font4xl: 18   // empty-state / stub display text
+    // draw time, so these are the sizes seen at 100% zoom). Both now trace
+    // back to a single anchor — the platform's own menu font size — rather
+    // than a fixed design constant, so the whole app scales together on a
+    // platform with a larger or smaller native UI font instead of just its
+    // menus. macOS draws menus at 13pt where Windows uses 12px; the old
+    // hardcoded 12px body/11px menu read as undersized against both.
 
     // Menu ramp — every hand-rolled popup menu (AppMenu, RecordContextMenu,
-    // SortMenu, MenuFlyout and the rows they share). Deliberately NOT the page
-    // ramp: these stand in for native menus, so they take their size from the
-    // platform's own menu font rather than the design scale — macOS draws menus
-    // at 13pt where Windows uses 12px, and the old hardcoded 11px read as
-    // undersized against both. Everything else in a menu row (icon, checkmark,
-    // chevron, row height) is derived from it so a bigger font grows the row
-    // instead of clipping inside it; the offsets reproduce the proportions the
-    // 11px design shipped with.
+    // SortMenu, MenuFlyout and the rows they share). These stand in for
+    // native menus, so they take their size straight from the platform's own
+    // menu font. Everything else in a menu row (icon, checkmark, chevron, row
+    // height) is derived from it so a bigger font grows the row instead of
+    // clipping inside it; the offsets reproduce the proportions the 11px
+    // design shipped with.
     readonly property int menuFont:   DesktopAppController.menuFontPixelSize
     readonly property int menuFontSm: menuFont - 1   // shortcut text, ALL-CAPS headers
     readonly property int menuFontLg: menuFont + 1   // the context menu's record label
@@ -130,11 +118,54 @@ QtObject {
     readonly property int menuChevronSize: menuFont + 1
     readonly property int menuRowHeight:   menuFont + 13
 
+    // Page ramp — the workspace ramp used by every page, card, dialog and
+    // field. fontBody IS the menu font above (not a fixed 12px anymore), so
+    // body text always matches the platform's own menu size; every other
+    // step is an offset from fontBody, preserving the original
+    // 8/9/10/11/12/13/14/15/16/18 proportions the design shipped with.
+    readonly property int fontBody: menuFont            // default body / field text
+    readonly property int font3xs:  fontBody - 4         // the smallest badges (list status pips)
+    readonly property int font2xs:  fontBody - 3         // ALL-CAPS group labels, tiny chips
+    readonly property int fontXs:   fontBody - 2         // secondary meta lines, table sub-text
+    readonly property int fontSm:   fontBody - 1         // dense secondary text, compact rows
+    readonly property int fontLg:   fontBody             // emphasised body, card titles
+    readonly property int fontXl:   fontBody             // section + card headings
+    readonly property int font2xl:  fontBody + 1         // dialog titles
+    readonly property int font3xl:  fontBody + 1         // About block product name
+    readonly property int font4xl:  fontBody             // empty-state / stub display text
+
+    // List/folder-panel ramp — every font.pixelSize in ProjectsListPage's card
+    // rows and the sidebar's FolderGroup rows. Equal to fontBody/menuFont
+    // (kept as its own name for what it documents: these two panels are the
+    // ones the user scans most, pinned to the platform's menu size on
+    // purpose rather than incidentally because it's also the body size).
+    readonly property int listFont: menuFont
+
+    // Earned-value / financial-strip ramp — the Budget/Actual/BCWP/BCWS/BAC/
+    // Consumed/EAC/CV/SV/CPI/Complete chips on a project card (the "Show
+    // Internal" strip). Deliberately a step below listFont: this is the
+    // densest row on the card and it's secondary/optional (hidden by
+    // default), so it should read as quieter than the always-visible date
+    // chips above it rather than competing with them at the same size.
+    readonly property int financialFont: listFont - 2
+
+    // Icon rail ramp — the left navigation rail (IconRail.qml): hamburger,
+    // section buttons, sync indicator, theme toggle, avatar. Also anchored on
+    // menuFont, but offset ~15% larger than the flat 34px button / 18px icon
+    // the compact pass left it at — those read as too small once everything
+    // else started following the platform's own menu size upward.
+    readonly property int railButtonSize:   menuFont + 27   // ≈34px×1.15 at menuFont 12
+    readonly property int railHoverSize:    railButtonSize - 2   // hover/active pill inside the button
+    readonly property int railIconSize:     menuFont + 9    // ≈18px×1.15
+    readonly property int railSyncIconSize: railIconSize - 1   // sync glyph reads a touch smaller
+    readonly property int railRingSize:     railHoverSize - 4   // sync progress ring, inset in the hover pill
+    readonly property int railAvatarSize:   railButtonSize - 9  // ≈26px×1.15
+
     // ── Metrics ───────────────────────────────────────────────────────────────
     readonly property int radiusSm: 6
     readonly property int radius:   8
     readonly property int radiusLg: 10
-    readonly property int railWidth: 48
+    readonly property int railWidth: railButtonSize + 14   // same ~7px margin each side as before
     readonly property int sidebarWidth: 228
 
     // Palette for folder color swatches in the settings editor.

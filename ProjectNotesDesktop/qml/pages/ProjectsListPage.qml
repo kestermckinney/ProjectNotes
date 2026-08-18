@@ -97,7 +97,7 @@ Item {
                     text: list.count + (list.count === 1 ? qsTr(" project")
                                                          : qsTr(" projects"))
                     color: Theme.text3
-                    font.pixelSize: Theme.fontSm
+                    font.pixelSize: Theme.listFont
                 }
 
                 Item { Layout.fillWidth: true }
@@ -125,7 +125,7 @@ Item {
                         Text {
                             text: qsTr("Show Internal")
                             color: internalToggle.on ? Theme.accent : Theme.text2
-                            font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold
+                            font.pixelSize: Theme.listFont; font.weight: Font.DemiBold
                             verticalAlignment: Text.AlignVCenter
                             Layout.alignment: Qt.AlignVCenter
                         }
@@ -188,7 +188,7 @@ Item {
                             Text {
                                 text: (card.model.project_number || "").toString()
                                 color: Theme.accent
-                                font.pixelSize: Theme.fontLg
+                                font.pixelSize: Theme.listFont
                                 font.weight: Font.Bold
                             }
                             Rectangle {
@@ -211,7 +211,7 @@ Item {
                                     anchors.centerIn: parent
                                     text: parent.st
                                     color: parent.pillColor
-                                    font.pixelSize: Theme.font2xs
+                                    font.pixelSize: Theme.listFont
                                     font.weight: Font.DemiBold
                                 }
                             }
@@ -225,7 +225,7 @@ Item {
                             Text {
                                 text: (card.model.project_name || "").toString()
                                 color: Theme.text
-                                font.pixelSize: Theme.fontLg
+                                font.pixelSize: Theme.listFont
                                 font.weight: Font.DemiBold
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
@@ -239,7 +239,7 @@ Item {
                                     text: DesktopAppController.clientNameForId(
                                               (card.model.client_id || "").toString())
                                     color: Theme.text2
-                                    font.pixelSize: Theme.fontSm
+                                    font.pixelSize: Theme.listFont
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
                                 }
@@ -253,7 +253,7 @@ Item {
                                     text: DesktopAppController.peopleNameForId(
                                               (card.model.primary_contact || "").toString())
                                     color: Theme.text2
-                                    font.pixelSize: Theme.fontSm
+                                    font.pixelSize: Theme.listFont
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
                                 }
@@ -303,36 +303,41 @@ Item {
                         Layout.topMargin: 1
                         visible: card.showFin
                         spacing: 8
-                        MetricChip { label: qsTr("Budget");   value: (card.model.budget || "").toString() }
-                        MetricChip { label: qsTr("Actual");   value: (card.model.actual || "").toString() }
-                        MetricChip { label: qsTr("BCWP");     value: (card.model.bcwp || "").toString(); accentColor: Theme.green }
-                        MetricChip { label: qsTr("BCWS");     value: (card.model.bcws || "").toString() }
-                        MetricChip { label: qsTr("BAC");      value: (card.model.bac || "").toString() }
+                        MetricChip { label: qsTr("Budget");   value: (card.model.budget || "").toString(); fontSize: Theme.financialFont }
+                        MetricChip { label: qsTr("Actual");   value: (card.model.actual || "").toString(); fontSize: Theme.financialFont }
+                        MetricChip { label: qsTr("BCWP");     value: (card.model.bcwp || "").toString(); accentColor: Theme.green; fontSize: Theme.financialFont }
+                        MetricChip { label: qsTr("BCWS");     value: (card.model.bcws || "").toString(); fontSize: Theme.financialFont }
+                        MetricChip { label: qsTr("BAC");      value: (card.model.bac || "").toString(); fontSize: Theme.financialFont }
                         MetricChip {
                             label: qsTr("Consumed")
                             value: (card.model.pct_consumed || "").toString()
                             accentColor: card.model.pct_consumed_foreground || Theme.text
+                            fontSize: Theme.financialFont
                         }
-                        MetricChip { label: qsTr("EAC");      value: (card.model.eac || "").toString(); accentColor: Theme.amber }
+                        MetricChip { label: qsTr("EAC");      value: (card.model.eac || "").toString(); accentColor: Theme.amber; fontSize: Theme.financialFont }
                         MetricChip {
                             label: qsTr("CV")
                             value: (card.model.cv || "").toString()
                             accentColor: card.model.cv_foreground || Theme.text
+                            fontSize: Theme.financialFont
                         }
                         MetricChip {
                             label: qsTr("SV")
                             value: (card.model.sv || "").toString()
                             accentColor: card.model.sv_foreground || Theme.text
+                            fontSize: Theme.financialFont
                         }
                         MetricChip {
                             label: qsTr("CPI")
                             value: (card.model.cpi || "").toString()
                             accentColor: card.model.cpi_foreground || Theme.text
+                            fontSize: Theme.financialFont
                         }
                         MetricChip {
                             label: qsTr("Complete")
                             value: (card.model.pct_complete || "").toString()
                             accentColor: card.model.pct_complete_foreground || Theme.text
+                            fontSize: Theme.financialFont
                         }
                     }
                     }
@@ -360,26 +365,35 @@ Item {
     }
 
     // Compact financial figure (label + value) used in the card financial strip.
-    // Fixed width so it tiles cleanly in a Flow; both lines elide so a long
-    // currency value never bleeds over the neighbouring chip.
+    // Width tiles cleanly in a Flow but tracks fontSize: 84px was tuned for
+    // the 11px page-ramp size this used to render at, so that ratio is
+    // preserved as the base and the chip widens with a larger menu font
+    // (e.g. macOS's 13pt) instead of eliding more than it used to. Both
+    // lines still elide so a long currency value never bleeds over the
+    // neighbouring chip.
+    //
+    // fontSize defaults to Theme.listFont (the always-visible date/period
+    // strip) but the financial strip below overrides it to the smaller
+    // Theme.financialFont — see that property for why.
     component MetricChip: Column {
         id: chip
         property string label: ""
         property string value: ""
         property color accentColor: Theme.text
+        property int fontSize: Theme.listFont
         readonly property bool _has: value !== undefined && value.toString().trim() !== ""
-        width: 84
+        width: Math.round(84 * chip.fontSize / 11)
         spacing: 1
         Text {
             width: parent.width; elide: Text.ElideRight
             text: chip.label.toUpperCase(); color: Theme.text3
-            font.pixelSize: Theme.font3xs; font.weight: Font.Bold
+            font.pixelSize: chip.fontSize; font.weight: Font.Bold
         }
         Text {
             width: parent.width; elide: Text.ElideRight
             text: chip._has ? chip.value : "—"
             color: chip._has ? chip.accentColor : Theme.text3
-            font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold
+            font.pixelSize: chip.fontSize; font.weight: Font.DemiBold
         }
     }
 }

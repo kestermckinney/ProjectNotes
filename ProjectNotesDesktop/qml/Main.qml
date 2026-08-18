@@ -423,7 +423,12 @@ ApplicationWindow {
         case "help":        root.openHelp(root._helpTopicForSection(root.currentSection)); break
         case "check_updates": DesktopAppController.checkForUpdates(); break
         case "support_logs":  DesktopAppController.sendLogsToSupport(); break
-        case "exit":        Qt.quit(); break
+        // root.close() (not Qt.quit()) so this goes through the window's own
+        // close path — onClosing is what persists window geometry, and only
+        // fires for an actual close event, not a direct quit. quitOnLastWindowClosed
+        // (Qt's default) then ends the app once the window is gone, same as
+        // clicking its native close button.
+        case "exit":        root.close(); break
         }
     }
 
@@ -620,7 +625,8 @@ ApplicationWindow {
     Shortcut { sequence: AppShortcuts.map["new"];         onActivated: root.addForCurrentSection() }
     Shortcut { sequence: AppShortcuts.map["search"];      onActivated: root.selectSection("search") }
     Shortcut { sequence: AppShortcuts.map["preferences"]; onActivated: root.selectSection("settings") }
-    Shortcut { sequence: AppShortcuts.map["exit"];        onActivated: Qt.quit() }
+    // root.close(), not Qt.quit() — see the "exit" case in the app-menu handler above.
+    Shortcut { sequence: AppShortcuts.map["exit"];        onActivated: root.close() }
     Shortcut {
         sequence: AppShortcuts.map["export"]
         onActivated: {

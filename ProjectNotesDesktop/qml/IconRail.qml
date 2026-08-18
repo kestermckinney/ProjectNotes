@@ -32,20 +32,20 @@ Rectangle {
         Item {
             id: menuBtn
             Layout.alignment: Qt.AlignHCenter
-            implicitWidth: 34; implicitHeight: 34
+            implicitWidth: Theme.railButtonSize; implicitHeight: Theme.railButtonSize
             Rectangle {
                 anchors.centerIn: parent
-                width: 32; height: 32; radius: Theme.radiusSm
+                width: Theme.railHoverSize; height: Theme.railHoverSize; radius: Theme.radiusSm
                 color: appMenu.opened ? Theme.surface2
                                       : (menuHover.hovered ? Theme.surface2 : "transparent")
-                MaterialIcon { anchors.centerIn: parent; name: "menu"; size: 18; color: Theme.text }
+                MaterialIcon { anchors.centerIn: parent; name: "menu"; size: Theme.railIconSize; color: Theme.text }
             }
             HoverHandler { id: menuHover }
             TapHandler { onTapped: appMenu.opened ? appMenu.close() : appMenu.open() }
 
             AppMenu {
                 id: appMenu
-                x: 40
+                x: Theme.railWidth - 8
                 y: 0
                 // Keep the in-scene popup inside the window (rail.height is the
                 // window's logical height; the menu opens ~10px from the top).
@@ -80,7 +80,7 @@ Rectangle {
         Rectangle {
             Layout.alignment: Qt.AlignHCenter
             Layout.topMargin: 5
-            width: 26; height: 26; radius: 13
+            width: Theme.railAvatarSize; height: Theme.railAvatarSize; radius: Theme.railAvatarSize / 2
             color: Theme.accentStrong
             Text {
                 anchors.centerIn: parent
@@ -104,19 +104,19 @@ Rectangle {
         readonly property bool active: selectable && rail.currentSection === section
 
         Layout.alignment: Qt.AlignHCenter
-        implicitWidth: 34
-        implicitHeight: 34
+        implicitWidth: Theme.railButtonSize
+        implicitHeight: Theme.railButtonSize
 
         Rectangle {
             anchors.centerIn: parent
-            width: 32; height: 32; radius: Theme.radiusSm
+            width: Theme.railHoverSize; height: Theme.railHoverSize; radius: Theme.radiusSm
             color: btn.active ? Theme.accentSoft
                               : (hover.hovered ? Theme.surface2 : "transparent")
 
             MaterialIcon {
                 anchors.centerIn: parent
                 name: btn.icon
-                size: 18
+                size: Theme.railIconSize
                 color: btn.active ? Theme.accent : Theme.text2
             }
         }
@@ -136,8 +136,8 @@ Rectangle {
     component SyncRailButton: Item {
         id: sb
         Layout.alignment: Qt.AlignHCenter
-        implicitWidth: 34
-        implicitHeight: 34
+        implicitWidth: Theme.railButtonSize
+        implicitHeight: Theme.railButtonSize
 
         readonly property bool active:   DesktopAppController.syncActive
         readonly property bool netError: DesktopAppController.syncNetworkError
@@ -145,7 +145,7 @@ Rectangle {
 
         Rectangle {
             anchors.centerIn: parent
-            width: 32; height: 32; radius: Theme.radiusSm
+            width: Theme.railHoverSize; height: Theme.railHoverSize; radius: Theme.radiusSm
             color: sbHover.hovered ? Theme.surface2 : "transparent"
         }
 
@@ -153,7 +153,7 @@ Rectangle {
         Canvas {
             id: ring
             anchors.centerIn: parent
-            width: 28; height: 28
+            width: Theme.railRingSize; height: Theme.railRingSize
             visible: sb.active && !sb.anyError
             property real prog: Math.max(0.03, DesktopAppController.syncProgress)
             property color trackColor: Theme.border
@@ -180,7 +180,7 @@ Rectangle {
             anchors.centerIn: parent
             name: sb.netError ? "cloud_off"
                   : (sb.active ? "sync" : "cloud_done")
-            size: 17
+            size: Theme.railSyncIconSize
             color: sb.netError ? Theme.red
                    : (sb.active ? Theme.accent
                       : (DesktopAppController.syncEnabled ? Theme.green : Theme.text3))
