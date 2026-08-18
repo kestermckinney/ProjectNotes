@@ -275,7 +275,15 @@ Page {
         modal: false
         dim: false
         closePolicy: Popup.NoAutoClose
+
+        // padding: 0 on its own is not enough: the iOS style sets topPadding
+        // (23) as well as padding, and a whole-control padding never overrides
+        // a per-edge one. On a bar this short the leftover 23px halved the
+        // usable height of the button row.
         padding: 0
+        topPadding: 0
+        leftPadding: 4
+        rightPadding: 4
 
         x: 0
         y: Qt.inputMethod.visible
@@ -296,7 +304,6 @@ Page {
         }
 
         contentItem: RowLayout {
-            anchors { fill: parent; leftMargin: 4; rightMargin: 4 }
             spacing: 4
 
             // Aa — open the Format sheet

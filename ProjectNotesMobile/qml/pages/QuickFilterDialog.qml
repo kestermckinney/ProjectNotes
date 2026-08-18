@@ -67,7 +67,12 @@ Popup {
     anchors.centerIn: parent
     modal: true
     width: Math.min(340, (parent ? parent.width : 390) - 48)
+
+    // padding: 0 on its own is not enough: the iOS style sets topPadding (23)
+    // as well as padding, and a whole-control padding never overrides a
+    // per-edge one — the 23px survives as a blank strip above the header.
     padding: 0
+    topPadding: 0
 
     // Cap on the shortcut list alone (the title bar and Clear Filters row sit
     // outside it), so a long set scrolls instead of running off-screen.

@@ -1,7 +1,7 @@
 // Copyright (C) 2022, 2023, 2024, 2025, 2026 Paul McKinney
 // SPDX-License-Identifier: GPL-3.0-only
 
-// FilterSheet — mobile Filter Editor, a bottom sheet mirroring
+// FilterSheet — mobile Filter Editor, a centered dialog mirroring
 // ProjectNotesDesktop/qml/FilterDialog.qml (column list + per-column values),
 // collapsed onto phone width as drill-down navigation (column list -> values)
 // instead of desktop's side-by-side panels. Selections only take effect on
@@ -110,22 +110,41 @@ Popup {
         root.close()
     }
 
-    // ── Popup geometry — slides up from screen bottom ─────────────────────────
+    // ── Geometry — a card centered on the window ──────────────────────────────
+    // Parented to the window overlay rather than to the page that declares it:
+    // that centers it on the screen instead of within the list, and it keeps
+    // the dialog alive if anything hides the page underneath — a popup whose
+    // visual parent goes invisible is hidden along with it.
+    parent: Overlay.overlay
+    anchors.centerIn: parent
     modal: true
     dim: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
 
-    x: 0
-    y: parent ? parent.height - height : 0
-    width:  parent ? parent.width : 390
-    height: parent ? Math.min(parent.height - 60, 620) : 560
+    // Fixed height rather than content-sized (as the other two dialogs are):
+    // the two levels — column list, then one column's values — hold very
+    // different amounts, and a card that resizes under the drill-down is more
+    // distracting than a little empty space on the short level.
+    width:  Math.min(340, (parent ? parent.width : 390) - 48)
+    height: Math.min((parent ? parent.height : 640) - 120, 620)
+
+    // padding: 0 on its own is not enough: the iOS style sets topPadding (23)
+    // as well as padding, and a whole-control padding never overrides a
+    // per-edge one — the 23px survives as a blank strip above the header.
     padding: 0
+    topPadding: 0
 
     enter: Transition {
-        NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 220; easing.type: Easing.OutCubic }
+        ParallelAnimation {
+            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 160; easing.type: Easing.OutCubic }
+            NumberAnimation { property: "scale";   from: 0.92; to: 1; duration: 160; easing.type: Easing.OutCubic }
+        }
     }
     exit: Transition {
-        NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 180; easing.type: Easing.InCubic }
+        ParallelAnimation {
+            NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 130; easing.type: Easing.InCubic }
+            NumberAnimation { property: "scale";   from: 1; to: 0.96; duration: 130; easing.type: Easing.InCubic }
+        }
     }
 
     background: Rectangle {
@@ -331,7 +350,7 @@ Popup {
             Item { visible: root._curIsDate; Layout.fillHeight: true }
         }
 
-        Rectangle { Layout.fillWidth: true; height: 1; color: Theme.mutedText; opacity: 0.25 }
+        Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.mutedText; opacity: 0.25 }
 
         // ── Footer ───────────────────────────────────────────────────────────────
         RowLayout {
