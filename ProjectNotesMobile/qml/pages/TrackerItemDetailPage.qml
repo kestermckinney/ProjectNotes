@@ -49,11 +49,9 @@ Page {
     // property string _validatedItemNumber: root.initialItemNumber
 
     // Stable {id,name} snapshot backing identifiedByCombo/assignedToCombo —
-    // deliberately NOT the live AppController.peopleModel proxy, which the
-    // People tab's Sort feature can reorder/reset out from under a ComboBox
-    // bound directly to it (see AppController::teamMemberList doc comment).
-    // All people, not just this project's team, matches desktop's Identified
-    // By / Assigned To fields.
+    // deliberately NOT a live model proxy, which a Sort elsewhere can reorder
+    // or reset out from under a ComboBox bound directly to it (see
+    // AppController::teamMemberList doc comment).
     property var _people: []
     function _peopleNames() { return root._people.map(function(p){ return p.name }) }
     function _personIndexForId(id) {
@@ -72,6 +70,16 @@ Page {
         for (var i = 0; i < root._meetings.length; i++)
             if (root._meetings[i].id === id) return i
         return -1
+    }
+
+    // Identified By / Assigned To offer this project's team only, plus whoever
+    // either field already names so an existing value keeps displaying — the
+    // same rule as desktop's ItemDetailPage. The project id is read off the item
+    // row; none of the pages that push this one carry one of their own.
+    function _loadPeople(identifiedBy, assignedTo) {
+        var d = AppController.getTrackerItemDetailData(root.itemRow)
+        root._people = AppController.teamMemberList((d.project_id || "").toString(),
+                                                    [identifiedBy, assignedTo])
     }
 
     // Id of the entry a combo is sitting on, or "" for "(none)"/no selection.
@@ -118,7 +126,7 @@ Page {
         typeCombo.selectText((d.item_type || "").toString(), 0)
         nameField.text   = (d.item_name    || "").toString()
         descEdit.text    = (d.description  || "").toString()
-        root._people = AppController.peopleList()
+        root._loadPeople((d.identified_by || "").toString(), (d.assigned_to || "").toString())
         identifiedByCombo.selectOption(root._personIndexForId((d.identified_by || "").toString()))
         assignedToCombo.selectOption(root._personIndexForId((d.assigned_to   || "").toString()))
         priorityCombo.selectText((d.priority || "").toString())
@@ -313,7 +321,7 @@ Page {
                     options: root._peopleNames()
                     includeNone: true
                     Component.onCompleted: {
-                        root._people = AppController.peopleList()
+                        root._loadPeople(root.initialIdentifiedBy, root.initialAssignedTo)
                         selectOption(root._personIndexForId(root.initialIdentifiedBy))
                     }
                     onActivated: root._hasChanges = true
@@ -327,7 +335,7 @@ Page {
                     options: root._peopleNames()
                     includeNone: true
                     Component.onCompleted: {
-                        root._people = AppController.peopleList()
+                        root._loadPeople(root.initialIdentifiedBy, root.initialAssignedTo)
                         selectOption(root._personIndexForId(root.initialAssignedTo))
                     }
                     onActivated: {
