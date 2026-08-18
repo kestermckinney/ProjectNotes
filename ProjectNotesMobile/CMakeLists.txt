@@ -99,6 +99,7 @@ qt_add_qml_module(ProjectNotesMobile
         qml/FormField.qml
         qml/FormLabel.qml
         qml/FieldRow.qml
+        qml/FormCombo.qml
         qml/Main.qml
         qml/pages/ProjectsListPage.qml
         qml/pages/PeoplePage.qml

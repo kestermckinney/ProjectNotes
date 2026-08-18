@@ -34,8 +34,7 @@ Page {
         var row = AppController.rowForId(AppController.projectLocationsModel, root.locationId)
         if (row < 0) return false   // record no longer exists
         root.locationRow = row
-        var locType = (typeCombo.currentIndex >= 0)
-            ? typeCombo.model[typeCombo.currentIndex] : ""
+        var locType = typeCombo.selection
         var result = AppController.saveProjectLocation(root.locationRow, locType, descField.text, pathField.text)
         if (result) root._hasChanges = false
         return result
@@ -43,8 +42,7 @@ Page {
 
     function _reloadData() {
         var d = AppController.getProjectLocationData(root.locationRow)
-        var ti = typeCombo.model.indexOf((d.location_type || "").toString())
-        typeCombo.currentIndex = ti >= 0 ? ti : 0
+        typeCombo.selectText((d.location_type || "").toString(), 0)
         descField.text = (d.location_description || "").toString()
         pathField.text = (d.full_path            || "").toString()
     }
@@ -102,7 +100,7 @@ Page {
     // ── Footer: open web link ─────────────────────────────────────────────────
     footer: ToolBar {
         visible: pathField.text.startsWith("http://") || pathField.text.startsWith("https://")
-                 || typeCombo.currentIndex >= 0 && typeCombo.model[typeCombo.currentIndex] === "Web Link"
+                 || typeCombo.selection === "Web Link"
         RowLayout {
             anchors.centerIn: parent
             ToolButton {
@@ -129,14 +127,10 @@ Page {
 
             SectionHeader { text: qsTr("Type") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: typeCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.fileTypeOptions()
-                    Component.onCompleted: {
-                        var idx = model.indexOf(root.initialType)
-                        currentIndex = (idx >= 0) ? idx : 0
-                    }
+                    options: AppController.fileTypeOptions()
+                    Component.onCompleted: selectText(root.initialType, 0)
                     onActivated: root._hasChanges = true
                 }
             }

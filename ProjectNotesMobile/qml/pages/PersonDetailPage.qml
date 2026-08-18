@@ -48,8 +48,8 @@ Page {
         var row = AppController.rowForId(AppController.peopleModel, root.personId)
         if (row < 0) return false   // record no longer exists
         root.personRow = row
-        var clientId = (clientCombo.currentIndex >= 0 && clientCombo.currentIndex < root._clients.length)
-            ? root._clients[clientCombo.currentIndex].id : ""
+        var ci = clientCombo.optionIndex
+        var clientId = (ci >= 0 && ci < root._clients.length) ? root._clients[ci].id : ""
         return AppController.savePerson(root.personRow, nameField.text, emailField.text,
                                         officePhoneField.text, cellPhoneField.text,
                                         clientId, roleField.text)
@@ -63,7 +63,7 @@ Page {
         cellPhoneField.text   = (d.cell_phone   || "").toString()
         roleField.text        = (d.role         || "").toString()
         root._clients = AppController.clientList()
-        clientCombo.currentIndex = root._clientIndexForId((d.client_id || "").toString())
+        clientCombo.selectOption(root._clientIndexForId((d.client_id || "").toString()))
     }
 
     StackView.onDeactivating: {
@@ -178,13 +178,13 @@ Page {
 
             SectionHeader { text: qsTr("Client") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: clientCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: root._clientNames()
+                    options: root._clientNames()
+                    includeNone: true
                     Component.onCompleted: {
                         root._clients = AppController.clientList()
-                        currentIndex = root._clientIndexForId(root.initialClientId)
+                        selectOption(root._clientIndexForId(root.initialClientId))
                     }
                 }
             }

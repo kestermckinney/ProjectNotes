@@ -40,8 +40,8 @@ Page {
     function _saveNow() {
         if (!root._hasChanges) return true
         dateField.commitPending()
-        var byId = (updatedByCombo.currentIndex >= 0 && updatedByCombo.currentIndex < root._people.length)
-            ? root._people[updatedByCombo.currentIndex].id : ""
+        var bi = updatedByCombo.optionIndex
+        var byId = (bi >= 0 && bi < root._people.length) ? root._people[bi].id : ""
         var result = AppController.saveComment(root.commentRow, dateField.text, noteEdit.text, byId)
         if (result) root._hasChanges = false
         return result
@@ -52,7 +52,7 @@ Page {
         dateField.text = (d.lastupdated_date || "").toString()
         noteEdit.text  = (d.update_note      || "").toString()
         root._people = AppController.peopleList()
-        updatedByCombo.currentIndex = root._personIndexForId((d.updated_by || "").toString())
+        updatedByCombo.selectOption(root._personIndexForId((d.updated_by || "").toString()))
     }
 
     StackView.onDeactivating: {
@@ -108,13 +108,13 @@ Page {
 
             SectionHeader { text: qsTr("Updated By") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: updatedByCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: root._peopleNames()
+                    options: root._peopleNames()
+                    includeNone: true
                     Component.onCompleted: {
                         root._people = AppController.peopleList()
-                        currentIndex = root._personIndexForId(root.initialBy)
+                        selectOption(root._personIndexForId(root.initialBy))
                     }
                     onActivated: root._hasChanges = true
                 }

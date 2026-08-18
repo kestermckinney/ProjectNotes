@@ -33,8 +33,7 @@ Page {
         var row = AppController.rowForId(AppController.statusReportItemsModel, root.itemId)
         if (row < 0) return false   // record no longer exists
         root.itemRow = row
-        var cat = (categoryCombo.currentIndex >= 0)
-            ? categoryCombo.model[categoryCombo.currentIndex] : ""
+        var cat = categoryCombo.selection
         var result = AppController.saveStatusItem(root.itemRow, cat, descField.text)
         if (result) root._hasChanges = false
         return result
@@ -42,8 +41,7 @@ Page {
 
     function _reloadData() {
         var d = AppController.getStatusItemData(root.itemRow)
-        var ci = categoryCombo.model.indexOf((d.task_category || "").toString())
-        categoryCombo.currentIndex = ci >= 0 ? ci : 0
+        categoryCombo.selectText((d.task_category || "").toString(), 0)
         descField.text = (d.task_description || "").toString()
     }
 
@@ -99,14 +97,10 @@ Page {
 
             SectionHeader { text: qsTr("Category") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: categoryCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.statusItemCategoryOptions()
-                    Component.onCompleted: {
-                        var idx = model.indexOf(root.initialCategory)
-                        currentIndex = (idx >= 0) ? idx : 0
-                    }
+                    options: AppController.statusItemCategoryOptions()
+                    Component.onCompleted: selectText(root.initialCategory, 0)
                     onActivated: root._hasChanges = true
                 }
             }

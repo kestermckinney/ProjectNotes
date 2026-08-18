@@ -34,34 +34,36 @@ Page {
             // ── Defaults ──────────────────────────────────────────────────────
             SectionHeader { text: qsTr("Managing Company") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: companyCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: root._clientNames()
+                    options: root._clientNames()
+                    includeNone: true
                     Component.onCompleted: {
                         root._clients = AppController.clientList()
-                        currentIndex = root._indexForId(root._clients, AppController.managingCompanyId())
+                        selectOption(root._indexForId(root._clients, AppController.managingCompanyId()))
                     }
                     onActivated: {
-                        if (currentIndex >= 0 && currentIndex < root._clients.length)
-                            AppController.setManagingCompanyId(root._clients[currentIndex].id)
+                        var i = optionIndex
+                        AppController.setManagingCompanyId(
+                            (i >= 0 && i < root._clients.length) ? root._clients[i].id : "")
                     }
                 }
             }
 
             SectionHeader { text: qsTr("Project Manager") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: managerCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: root._peopleNames()
+                    options: root._peopleNames()
+                    includeNone: true
                     Component.onCompleted: {
                         root._people = AppController.peopleList()
-                        currentIndex = root._indexForId(root._people, AppController.projectManagerId())
+                        selectOption(root._indexForId(root._people, AppController.projectManagerId()))
                     }
                     onActivated: {
-                        if (currentIndex >= 0 && currentIndex < root._people.length)
-                            AppController.setProjectManagerId(root._people[currentIndex].id)
+                        var i = optionIndex
+                        AppController.setProjectManagerId(
+                            (i >= 0 && i < root._people.length) ? root._people[i].id : "")
                     }
                 }
             }

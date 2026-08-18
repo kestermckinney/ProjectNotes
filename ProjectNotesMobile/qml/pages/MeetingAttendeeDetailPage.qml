@@ -34,7 +34,7 @@ Page {
         return -1
     }
 
-    function _isBlankNew() { return isNewRecord && personCombo.currentIndex < 0 }
+    function _isBlankNew() { return isNewRecord && personCombo.optionIndex < 0 }
     function _discardNew()  {
         var row = AppController.rowForId(AppController.meetingAttendeesModel, root.attendeeId)
         if (row < 0) return
@@ -49,8 +49,8 @@ Page {
         var row = AppController.rowForId(AppController.meetingAttendeesModel, root.attendeeId)
         if (row < 0) return false   // record no longer exists
         root.attendeeRow = row
-        var personId = (personCombo.currentIndex >= 0 && personCombo.currentIndex < root._people.length)
-            ? root._people[personCombo.currentIndex].id : ""
+        var pi = personCombo.optionIndex
+        var personId = (pi >= 0 && pi < root._people.length) ? root._people[pi].id : ""
         var result = AppController.saveAttendee(root.attendeeRow, personId)
         if (result) root._hasChanges = false
         return result
@@ -60,7 +60,7 @@ Page {
         var d = AppController.getAttendeeData(root.attendeeRow)
         var personId = (d.person_id || "").toString()
         root._people = AppController.teamMemberList(root.projectId, [personId])
-        personCombo.currentIndex = root._personIndexForId(personId)
+        personCombo.selectOption(root._personIndexForId(personId))
     }
 
     StackView.onDeactivating: {
@@ -97,13 +97,12 @@ Page {
 
             SectionHeader { text: qsTr("Person") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: personCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: root._peopleNames()
+                    options: root._peopleNames()
                     Component.onCompleted: {
                         root._people = AppController.teamMemberList(root.projectId, [root.initialPerson])
-                        currentIndex = root._personIndexForId(root.initialPerson)
+                        selectOption(root._personIndexForId(root.initialPerson))
                     }
                     onActivated: root._hasChanges = true
                 }

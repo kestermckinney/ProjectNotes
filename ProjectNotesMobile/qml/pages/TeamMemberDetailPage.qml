@@ -33,7 +33,7 @@ Page {
         return -1
     }
 
-    function _isBlankNew() { return isNewRecord && personCombo.currentIndex < 0 }
+    function _isBlankNew() { return isNewRecord && personCombo.optionIndex < 0 }
     function _discardNew()  {
         var row = AppController.rowForId(AppController.projectTeamMembersModel, root.memberId)
         if (row < 0) return
@@ -48,8 +48,8 @@ Page {
         var row = AppController.rowForId(AppController.projectTeamMembersModel, root.memberId)
         if (row < 0) return false   // record no longer exists
         root.memberRow = row
-        var peopleId = (personCombo.currentIndex >= 0 && personCombo.currentIndex < root._people.length)
-            ? root._people[personCombo.currentIndex].id : ""
+        var pi = personCombo.optionIndex
+        var peopleId = (pi >= 0 && pi < root._people.length) ? root._people[pi].id : ""
         var result = AppController.saveTeamMember(root.memberRow, peopleId, roleField.text, statusSwitch.checked)
         if (result) root._hasChanges = false
         return result
@@ -58,7 +58,7 @@ Page {
     function _reloadData() {
         var d = AppController.getTeamMemberData(root.memberRow)
         root._people = AppController.peopleList()
-        personCombo.currentIndex = root._personIndexForId((d.people_id || "").toString())
+        personCombo.selectOption(root._personIndexForId((d.people_id || "").toString()))
         roleField.text = (d.role || "").toString()
         statusSwitch.checked = (d.receive_status_report || "0") !== "0"
     }
@@ -134,13 +134,12 @@ Page {
 
             SectionHeader { text: qsTr("Person") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: personCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: root._peopleNames()
+                    options: root._peopleNames()
                     Component.onCompleted: {
                         root._people = AppController.peopleList()
-                        currentIndex = root._personIndexForId(root.initialPeopleId)
+                        selectOption(root._personIndexForId(root.initialPeopleId))
                     }
                     onActivated: root._hasChanges = true
                 }

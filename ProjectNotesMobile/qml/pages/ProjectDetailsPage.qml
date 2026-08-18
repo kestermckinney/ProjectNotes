@@ -91,16 +91,13 @@ Page {
         root.projectRow = row
         statusDateField.commitPending()
         invoiceDateField.commitPending()
-        var primaryContactId = (primaryContactCombo.currentIndex >= 0 && primaryContactCombo.currentIndex < root._people.length)
-            ? root._people[primaryContactCombo.currentIndex].id : ""
-        var clientId = (clientCombo.currentIndex >= 0 && clientCombo.currentIndex < root._clients.length)
-            ? root._clients[clientCombo.currentIndex].id : ""
-        var status = (statusCombo.currentIndex >= 0)
-            ? statusCombo.model[statusCombo.currentIndex] : ""
-        var invPeriod = (invoicingCombo.currentIndex >= 0)
-            ? invoicingCombo.model[invoicingCombo.currentIndex] : ""
-        var srPeriod = (statusReportCombo.currentIndex >= 0)
-            ? statusReportCombo.model[statusReportCombo.currentIndex] : ""
+        var pi = primaryContactCombo.optionIndex
+        var primaryContactId = (pi >= 0 && pi < root._people.length) ? root._people[pi].id : ""
+        var ci = clientCombo.optionIndex
+        var clientId = (ci >= 0 && ci < root._clients.length) ? root._clients[ci].id : ""
+        var status    = statusCombo.selection
+        var invPeriod = invoicingCombo.selection
+        var srPeriod  = statusReportCombo.selection
         var wasStaged = root.projectId === ""
         var ok = AppController.saveProject(root.projectRow, numberField.text, nameField.text,
                                           status, primaryContactId, clientId, statusDateField.text,
@@ -127,19 +124,16 @@ Page {
         var d = AppController.getProjectData(root.projectRow)
         numberField.text = (d.project_number || "").toString()
         nameField.text   = (d.project_name   || "").toString()
-        var si = statusCombo.model.indexOf((d.project_status || "").toString())
-        statusCombo.currentIndex = si >= 0 ? si : 0
+        statusCombo.selectText((d.project_status || "").toString(), 0)
         root._clients = AppController.clientList()
-        clientCombo.currentIndex = root._clientIndexForId((d.client_id || "").toString())
+        clientCombo.selectOption(root._clientIndexForId((d.client_id || "").toString()))
         var contactId = (d.primary_contact || "").toString()
         root._people = AppController.teamMemberList(root.projectId, [contactId])
-        primaryContactCombo.currentIndex = root._personIndexForId(contactId)
+        primaryContactCombo.selectOption(root._personIndexForId(contactId))
         statusDateField.text  = (d.last_status_date     || "").toString()
         invoiceDateField.text = (d.last_invoice_date    || "").toString()
-        var ii = invoicingCombo.model.indexOf((d.invoicing_period || "").toString())
-        invoicingCombo.currentIndex = ii >= 0 ? ii : -1
-        var sri = statusReportCombo.model.indexOf((d.status_report_period || "").toString())
-        statusReportCombo.currentIndex = sri >= 0 ? sri : -1
+        invoicingCombo.selectText((d.invoicing_period || "").toString())
+        statusReportCombo.selectText((d.status_report_period || "").toString())
     }
 
     Component.onCompleted: {
@@ -273,39 +267,35 @@ Page {
 
             SectionHeader { text: qsTr("Status") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: statusCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.projectStatusOptions()
-                    Component.onCompleted: {
-                        var idx = model.indexOf(root.initialProjectStatus)
-                        currentIndex = (idx >= 0) ? idx : 0
-                    }
+                    options: AppController.projectStatusOptions()
+                    Component.onCompleted: selectText(root.initialProjectStatus, 0)
                 }
             }
 
             SectionHeader { text: qsTr("Client") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: clientCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: root._clientNames()
+                    options: root._clientNames()
+                    includeNone: true
                     Component.onCompleted: {
                         root._clients = AppController.clientList()
-                        currentIndex = root._clientIndexForId(root.initialClientId)
+                        selectOption(root._clientIndexForId(root.initialClientId))
                     }
                 }
             }
 
             SectionHeader { text: qsTr("Primary Contact") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: primaryContactCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: root._peopleNames()
+                    options: root._peopleNames()
+                    includeNone: true
                     Component.onCompleted: {
                         root._people = AppController.teamMemberList(root.projectId, [root.initialPrimaryContact])
-                        currentIndex = root._personIndexForId(root.initialPrimaryContact)
+                        selectOption(root._personIndexForId(root.initialPrimaryContact))
                     }
                 }
             }
@@ -322,27 +312,21 @@ Page {
 
             SectionHeader { text: qsTr("Invoice Period") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: invoicingCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.invoicingPeriodOptions()
-                    Component.onCompleted: {
-                        var idx = model.indexOf(root.initialInvoicingPeriod)
-                        currentIndex = (idx >= 0) ? idx : -1
-                    }
+                    options: AppController.invoicingPeriodOptions()
+                    includeNone: true
+                    Component.onCompleted: selectText(root.initialInvoicingPeriod)
                 }
             }
 
             SectionHeader { text: qsTr("Status Report Period") }
             FieldRow {
-                ComboBox {
+                FormCombo {
                     id: statusReportCombo
-                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
-                    model: AppController.statusReportPeriodOptions()
-                    Component.onCompleted: {
-                        var idx = model.indexOf(root.initialStatusReportPeriod)
-                        currentIndex = (idx >= 0) ? idx : -1
-                    }
+                    options: AppController.statusReportPeriodOptions()
+                    includeNone: true
+                    Component.onCompleted: selectText(root.initialStatusReportPeriod)
                 }
             }
 
