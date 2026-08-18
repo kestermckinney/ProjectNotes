@@ -704,6 +704,19 @@ int DatabaseObjects::getProjectDetailHeaderHeight()
     return value.toInt();
 }
 
+void DatabaseObjects::setProjectSidebarWidth(int width)
+{
+    saveLocalParameter("UI:ProjectSidebarWidth", QString::number(width));
+}
+
+int DatabaseObjects::getProjectSidebarWidth()
+{
+    QString value = loadLocalParameter("UI:ProjectSidebarWidth");
+    if (value.isEmpty())
+        return 0; // no saved preference — caller keeps its built-in default
+    return value.toInt();
+}
+
 void DatabaseObjects::setUiZoomPercent(int percent)
 {
     saveLocalParameter("UI:ZoomPercent", QString::number(percent));

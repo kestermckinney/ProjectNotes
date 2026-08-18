@@ -198,6 +198,8 @@ public:
     int getLastProjectDetailTab(const QString& projectId);
     void setProjectDetailHeaderHeight(int height);
     int getProjectDetailHeaderHeight();
+    void setProjectSidebarWidth(int width);
+    int getProjectSidebarWidth();
     // UI zoom (uiScale), persisted as a whole percentage (e.g. 130 for 1.30x).
     void setUiZoomPercent(int percent);
     int getUiZoomPercent();

@@ -11,7 +11,21 @@ import ProjectNotesDesktop
 Rectangle {
     id: sidebar
     color: Theme.sidebar
-    implicitWidth: Theme.sidebarWidth
+
+    // Panel width is user-resizable (see the drag handle below) and persisted
+    // per-user (local QSettings, not the synced application_settings table) —
+    // same pattern as ProjectDetailPage's header-height handle. Starts at the
+    // design-system default until a saved width is restored below.
+    property int panelWidth: Theme.sidebarWidth
+    readonly property int minWidth: 160
+    readonly property int maxWidth: 480
+    implicitWidth: sidebar.panelWidth
+
+    Component.onCompleted: {
+        var saved = DesktopAppController.projectSidebarWidth()
+        if (saved > 0)
+            sidebar.panelWidth = Math.min(sidebar.maxWidth, Math.max(sidebar.minWidth, saved))
+    }
 
     property string selectedProjectId: ""
     property var    dragLayer: null
@@ -151,6 +165,40 @@ Rectangle {
                     onToggled: (exp) => FolderManager.allProjectsCollapsed = !exp
                 }
             }
+        }
+    }
+
+    // ── Width resize handle ──────────────────────────────────────────────────
+    // Drags sidebar.panelWidth; persisted per-user via
+    // DesktopAppController.setProjectSidebarWidth on release — same pattern as
+    // ProjectDetailPage's header resize handle (see _headerHeight there).
+    Rectangle {
+        id: widthResizeHandle
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        width: 2
+        color: (handleArea.pressed || handleArea.containsMouse) ? Theme.accent : "transparent"
+
+        MouseArea {
+            id: handleArea
+            anchors.fill: parent
+            anchors.margins: -3
+            hoverEnabled: true
+            cursorShape: Qt.SizeHorCursor
+            property real dragStartX: 0
+            property real dragStartWidth: 0
+            onPressed: (mouse) => {
+                dragStartX = mapToItem(sidebar, mouse.x, mouse.y).x
+                dragStartWidth = sidebar.panelWidth
+            }
+            onPositionChanged: (mouse) => {
+                if (!pressed) return
+                var currentX = mapToItem(sidebar, mouse.x, mouse.y).x
+                sidebar.panelWidth = Math.min(sidebar.maxWidth,
+                                     Math.max(sidebar.minWidth, dragStartWidth + (currentX - dragStartX)))
+            }
+            onReleased: DesktopAppController.setProjectSidebarWidth(sidebar.panelWidth)
         }
     }
 }

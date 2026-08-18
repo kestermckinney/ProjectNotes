@@ -493,6 +493,11 @@ int DesktopAppController::projectDetailHeaderHeight() const
 void DesktopAppController::setProjectDetailHeaderHeight(int height)
 { global_DBObjects.setProjectDetailHeaderHeight(height); }
 
+int DesktopAppController::projectSidebarWidth() const
+{ return global_DBObjects.getProjectSidebarWidth(); }
+void DesktopAppController::setProjectSidebarWidth(int width)
+{ global_DBObjects.setProjectSidebarWidth(width); }
+
 int DesktopAppController::uiZoomPercent() const
 { return global_DBObjects.getUiZoomPercent(); }
 void DesktopAppController::setUiZoomPercent(int percent)

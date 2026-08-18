@@ -167,6 +167,12 @@ public:
     Q_INVOKABLE int     projectDetailHeaderHeight() const;
     Q_INVOKABLE void    setProjectDetailHeaderHeight(int height);
 
+    // Draggable width on the project sidebar (folder list panel), persisted
+    // per-user (same local QSettings store as above). Returns 0 when no
+    // preference has been saved yet, so QML falls back to Theme.sidebarWidth.
+    Q_INVOKABLE int     projectSidebarWidth() const;
+    Q_INVOKABLE void    setProjectSidebarWidth(int width);
+
     // UI zoom level (Theme.uiScale), persisted per-user (same local QSettings
     // store as above). Stored/returned as a whole percentage (e.g. 130 for
     // 1.30x) to avoid floating-point round-tripping through QSettings; returns
