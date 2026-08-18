@@ -80,7 +80,7 @@ modules:
       # pointing at the latest released commit.
       - type: git
         url: https://github.com/kestermckinney/ProjectNotes.git
-        commit: 2a574c8845c27aba5fb4a6c7e4d67bf0d2a0e975
+        commit: 82d522d5c9807f838b06c53aca698a83e7b143b3
       # SqliteSyncPro is co-developed on the same branch (the repo has no tags).
       # Cloned into SqliteSyncPro/ to match the cmake config-opt
       # -DSQLITESYNCPRO_SRC_DIR=SqliteSyncPro/src. The release workflow resolves
