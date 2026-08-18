@@ -107,14 +107,11 @@ endif()
 
 # ── Legacy Qt Widgets frontend (deprecated) ──────────────────────────────────
 # The QML frontend in ProjectNotesDesktop/ is the default target and the one the
-# macOS and Windows installers ship. The Widgets app is kept buildable for now
-# but is OFF by default, so a plain `cmake --build .` produces only the QML app.
-#
-# Linux/Flatpak still ships this frontend: the manifest's `command: projectnotes`
-# and the .desktop `Exec=projectnotes` both resolve to the install(TARGETS) rule
-# below, and the QML target declares no install rule. packaging/linux's manifest
-# therefore passes -DBUILD_WIDGETS_LEGACY=ON explicitly. Do not flip that off
-# until the QML frontend is packaged for Linux.
+# macOS, Windows, and Linux/Flatpak builds ship. The Widgets app is kept
+# buildable for now but is OFF by default, so a plain `cmake --build .`
+# produces only the QML app. Its own install(TARGETS) rule below is guarded by
+# this option; the QML target's Linux install rule (further down, alongside
+# the freedesktop assets) is unconditional.
 option(BUILD_WIDGETS_LEGACY "Build the legacy Qt Widgets desktop frontend (deprecated)" OFF)
 
 if(BUILD_WIDGETS_LEGACY)
@@ -486,6 +483,17 @@ if(NOT APPLE)
     # and hicolor icons so the app appears in menus and Flatpak can export it.
     if(NOT WIN32)
         set(_linux_pkg "${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux")
+
+        # Install the QML desktop binary itself. The Widgets target has its own
+        # install(TARGETS) above (guarded by BUILD_WIDGETS_LEGACY); this is the
+        # QML frontend's equivalent, needed since it's now what Linux/Flatpak
+        # ships. Guarded by TARGET so a -DBUILD_QML_DESKTOP=OFF configure (e.g.
+        # tests/desktop's dedicated build) doesn't fail to generate.
+        if(TARGET ProjectNotes)
+            install(TARGETS ProjectNotes
+                RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            )
+        endif()
 
         install(FILES "${_linux_pkg}/com.projectnotespro.ProjectNotes.desktop"
             DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"

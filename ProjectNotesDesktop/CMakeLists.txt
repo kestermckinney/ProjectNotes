@@ -303,6 +303,14 @@ set_target_properties(ProjectNotes PROPERTIES
     OUTPUT_NAME "Project Notes"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
+if(UNIX AND NOT APPLE AND NOT ANDROID)
+    # Linux/Flatpak: the .desktop Exec and the Flatpak manifest invoke
+    # "projectnotes" (no space), matching the legacy Widgets target's Linux
+    # binary name — see the equivalent override on ProjectNotesWidgets in the
+    # top-level CMakeLists.txt.
+    set_target_properties(ProjectNotes PROPERTIES OUTPUT_NAME "projectnotes")
+endif()
+
 # ── Windows app icon ──────────────────────────────────────────────────────────
 if(WIN32)
     set_target_properties(ProjectNotes PROPERTIES WIN32_EXECUTABLE TRUE)

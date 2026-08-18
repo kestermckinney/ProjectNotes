@@ -63,12 +63,10 @@ modules:
     config-opts:
       - -DCMAKE_BUILD_TYPE=Release
       - -DSQLITESYNCPRO_SRC_DIR=SqliteSyncPro/src
-      # Linux still ships the Qt Widgets frontend: `command: projectnotes` above
-      # and the .desktop Exec both resolve to that binary, and only the Widgets
-      # target declares an install() rule. It is OFF by default upstream (the QML
-      # frontend is the default target now), so request it explicitly here.
-      # Remove this once the QML frontend is packaged and installed for Linux.
-      - -DBUILD_WIDGETS_LEGACY=ON
+      # BUILD_WIDGETS_LEGACY is OFF by default upstream, so this builds and
+      # ships only the QML (Qt Quick) desktop frontend. `command: projectnotes`
+      # above and the .desktop Exec both resolve to that target's Linux
+      # OUTPUT_NAME (see ProjectNotesDesktop/CMakeLists.txt).
     sources:
       # Pinned git sources for reproducible, Flathub-compatible builds.
       # Flathub does not accept `type: dir`; sources must be immutable and
