@@ -130,10 +130,10 @@ Item {
                 spacing: 8
                 Text {
                     text: qsTr("SPELLING"); color: Theme.text3
-                    font.pixelSize: 10; font.weight: Font.Bold
+                    font.pixelSize: Theme.menuFontSm; font.weight: Font.Bold
                 }
                 Text {
-                    text: root._word; color: Theme.red; font.pixelSize: 12
+                    text: root._word; color: Theme.red; font.pixelSize: Theme.menuFontLg
                     Layout.fillWidth: true; elide: Text.ElideRight
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -156,7 +156,7 @@ Item {
             Text {
                 visible: root._bad && root._suggestions.length === 0
                 text: qsTr("(no suggestions)"); color: Theme.text3
-                font.pixelSize: 12; font.italic: true
+                font.pixelSize: Theme.menuFont; font.italic: true
                 Layout.leftMargin: 9; Layout.topMargin: 4; Layout.bottomMargin: 4
             }
 
@@ -250,6 +250,11 @@ Item {
         // `enabled` (Item's built-in property) dims the row and blocks its
         // hover/tap, for actions like Cut/Paste that need a selection or
         // clipboard content — parity with the Widgets menu's setEnabled().
+        // A row of this menu. Deliberately roomier than the shared MenuRow
+        // (taller, larger icon) — it's the text-editing context menu, hit while
+        // the pointer is already busy inside a text field — but the label takes
+        // its size from the same Theme menu ramp, so every menu in the app reads
+        // at the platform's menu font.
         component SpellRow: Rectangle {
             id: sr
             property string icon: ""
@@ -270,7 +275,7 @@ Item {
                     Layout.alignment: Qt.AlignVCenter
                 }
                 Text {
-                    text: sr.label; color: Theme.text; font.pixelSize: 13
+                    text: sr.label; color: Theme.text; font.pixelSize: Theme.menuFont
                     Layout.fillWidth: true; elide: Text.ElideRight
                     verticalAlignment: Text.AlignVCenter
                 }

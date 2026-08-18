@@ -120,7 +120,7 @@ Item {
                     placeholderTextColor: Theme.text3
                     color: Theme.text
                     background: null
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontLg
                     selectByMouse: true
                     onTextChanged: {
                         if (text === "") {
@@ -193,11 +193,11 @@ Item {
                                     spacing: 6
                                     Text {
                                         text: (rc.model.datatype || "").toString()
-                                        color: Theme.text3; font.pixelSize: 9; font.weight: Font.Bold
+                                        color: Theme.text3; font.pixelSize: Theme.font2xs; font.weight: Font.Bold
                                     }
                                     Text {
                                         text: (rc.model.datadescription || rc.model.dataname || "").toString()
-                                        color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
+                                        color: Theme.text; font.pixelSize: Theme.fontLg; font.weight: Font.DemiBold
                                         elide: Text.ElideRight; Layout.fillWidth: true
                                     }
                                 }
@@ -209,7 +209,7 @@ Item {
                                         var label = (rc.model.dataname || "").toString()
                                         return [label, proj].filter(function(x){ return x.trim() !== "" }).join("  ·  ")
                                     }
-                                    color: Theme.text3; font.pixelSize: 10
+                                    color: Theme.text3; font.pixelSize: Theme.fontXs
                                     elide: Text.ElideRight; Layout.fillWidth: true
                                 }
                             }

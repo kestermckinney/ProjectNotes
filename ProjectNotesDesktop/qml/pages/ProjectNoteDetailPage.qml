@@ -157,7 +157,7 @@ Item {
                     contentItem: Text {
                         text: qsTr("Internal item")
                         color: Theme.text
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontBody
                         leftPadding: internalCheck.indicator.width + 7
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -171,7 +171,7 @@ Item {
                 Text {
                     text: qsTr("Note")
                     color: Theme.text3
-                    font.pixelSize: 10
+                    font.pixelSize: Theme.fontXs
                     font.weight: Font.DemiBold
                     Layout.fillWidth: true
                 }
@@ -189,7 +189,7 @@ Item {
                         Text {
                             text: qsTr("Find / Replace")
                             color: findBar.visible ? Theme.accent : Theme.text2
-                            font.pixelSize: 10; font.weight: Font.DemiBold
+                            font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold
                         }
                     }
                     HoverHandler { id: frHover }
@@ -224,7 +224,7 @@ Item {
                     persistentSelection: true
                     background: null
                     font.family: "Arial"
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontBody
                     onTextChanged: page._changed = true
 
                     // Inline spell-check: red squiggle + right-click suggestions +
@@ -255,7 +255,7 @@ Item {
                             MaterialIcon { name: "groups"; size: 16; color: Theme.text2 }
                             Text {
                                 text: qsTr("Attendees"); color: Theme.text
-                                font.pixelSize: 13; font.weight: Font.Bold
+                                font.pixelSize: Theme.fontLg; font.weight: Font.Bold
                                 Layout.fillWidth: true
                             }
                             SmallAddButton {
@@ -291,7 +291,7 @@ Item {
                                             var parts = n.split(" ")
                                             return (parts[0][0] || "") + (parts.length > 1 ? parts[parts.length-1][0] : "")
                                         }
-                                        color: Theme.accent; font.pixelSize: 9; font.weight: Font.Bold
+                                        color: Theme.accent; font.pixelSize: Theme.font2xs; font.weight: Font.Bold
                                     }
                                 }
                                 ColumnLayout {
@@ -299,13 +299,13 @@ Item {
                                     spacing: 0
                                     Text {
                                         text: (model.name || qsTr("(no name)")).toString()
-                                        color: Theme.text; font.pixelSize: 12; elide: Text.ElideRight
+                                        color: Theme.text; font.pixelSize: Theme.fontBody; elide: Text.ElideRight
                                         Layout.fillWidth: true
                                     }
                                     Text {
                                         text: (model.email || "").toString()
                                         visible: text !== ""
-                                        color: Theme.text3; font.pixelSize: 10; elide: Text.ElideRight
+                                        color: Theme.text3; font.pixelSize: Theme.fontXs; elide: Text.ElideRight
                                         Layout.fillWidth: true
                                     }
                                 }
@@ -341,7 +341,7 @@ Item {
                             MaterialIcon { name: "task_alt"; size: 16; color: Theme.text2 }
                             Text {
                                 text: qsTr("Action Items"); color: Theme.text
-                                font.pixelSize: 13; font.weight: Font.Bold
+                                font.pixelSize: Theme.fontLg; font.weight: Font.Bold
                                 Layout.fillWidth: true
                             }
                             SmallAddButton {
@@ -446,7 +446,7 @@ Item {
                                             id: aiNameInline
                                             Layout.fillWidth: true
                                             color: Theme.text
-                                            font.pixelSize: 12
+                                            font.pixelSize: Theme.fontBody
                                             horizontalAlignment: Text.AlignLeft
                                             background: null
                                             padding: 0
@@ -470,7 +470,7 @@ Item {
                                                 return [p, who].filter(function(x){ return x !== "" }).join(" · ")
                                             }
                                             visible: text !== ""
-                                            color: Theme.text3; font.pixelSize: 10; elide: Text.ElideRight
+                                            color: Theme.text3; font.pixelSize: Theme.fontXs; elide: Text.ElideRight
                                             horizontalAlignment: Text.AlignLeft
                                             Layout.fillWidth: true
                                         }
@@ -542,7 +542,7 @@ Item {
                                         DateField { id: aiDateId; label: qsTr("Date Identified"); onEdited: ai._save() }
                                         DateField { id: aiDateDue; label: qsTr("Date Due"); onEdited: ai._save() }
                                     }
-                                    Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold }
+                                    Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
                                     Rectangle {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: Math.max(56, aiDesc.contentHeight + 14)
@@ -557,7 +557,7 @@ Item {
                                             wrapMode: TextEdit.WordWrap
                                             selectByMouse: true
                                             background: null
-                                            font.pixelSize: 12
+                                            font.pixelSize: Theme.fontBody
                                             onEditingFinished: ai._save()
                                             SpellCheckField { dialog: spellDialog }
                                         }
@@ -659,7 +659,7 @@ Item {
                 Layout.margins: 12
                 Text {
                     text: qsTr("Add Attendee"); color: Theme.text
-                    font.pixelSize: 14; font.weight: Font.Bold
+                    font.pixelSize: Theme.fontXl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
                 MaterialIcon {
@@ -688,7 +688,7 @@ Item {
                         placeholderText: qsTr("Search people…")
                         placeholderTextColor: Theme.text3
                         color: Theme.text
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontBody
                         background: null
                         verticalAlignment: Text.AlignVCenter
                         selectByMouse: true
@@ -719,7 +719,7 @@ Item {
                     contentItem: Text {
                         text: modelData.name
                         color: Theme.text
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontBody
                         leftPadding: 12
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -750,7 +750,7 @@ Item {
             anchors.centerIn: parent
             spacing: 3
             MaterialIcon { name: "add"; size: 12; color: "#ffffff" }
-            Text { text: parent.parent.text; color: "#ffffff"; font.pixelSize: 10; font.weight: Font.DemiBold }
+            Text { text: parent.parent.text; color: "#ffffff"; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
         }
         HoverHandler { id: sHover }
         TapHandler { onTapped: parent.clicked() }

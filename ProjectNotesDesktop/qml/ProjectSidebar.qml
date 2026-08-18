@@ -81,7 +81,7 @@ Rectangle {
             Text {
                 text: "Project Notes"
                 color: Theme.text
-                font.pixelSize: 14
+                font.pixelSize: Theme.fontXl
                 font.weight: Font.DemiBold
                 Layout.fillWidth: true
             }

@@ -85,6 +85,14 @@ class DesktopAppController : public QObject
     Q_PROPERTY(bool syncSettingsUnverified READ syncSettingsUnverified NOTIFY syncSettingsUnverifiedChanged)
     Q_PROPERTY(bool syncVerifyInProgress   READ syncVerifyInProgress   NOTIFY syncVerifyInProgressChanged)
 
+    // The size, in logical pixels, of the font the OS draws menus with.
+    // Theme.qml's menu type ramp is built on it, so the hand-rolled popup menus
+    // (AppMenu, RecordContextMenu, SortMenu, MenuFlyout, the spell-check and
+    // zoom menus) match native menus instead of a hardcoded guess. CONSTANT: it
+    // is sampled once at startup, so a system font change takes effect on the
+    // next launch.
+    Q_PROPERTY(int menuFontPixelSize READ menuFontPixelSize CONSTANT)
+
 public:
     explicit DesktopAppController(QObject* parent = nullptr);
     ~DesktopAppController() override;
@@ -195,6 +203,13 @@ public:
     // app, which inserts clipboard->text() directly instead of going through
     // the normal rich-text paste() path.
     Q_INVOKABLE QString clipboardPlainText() const;
+
+    // ── Platform font metrics ────────────────────────────────────────────────
+    // Backing reader for the property above: the platform's own menu font
+    // (macOS: [NSFont menuFontOfSize:0], 13pt; Windows: the lfMenuFont out of
+    // NONCLIENTMETRICS, usually Segoe UI 9pt = 12px at 96dpi), falling back to
+    // the general UI font on a platform that doesn't publish a separate one.
+    int menuFontPixelSize() const;
 
     // ── Keyboard shortcuts ───────────────────────────────────────────────────
     // Render a portable Qt key sequence ("Ctrl+N", "Ctrl+,") as the current

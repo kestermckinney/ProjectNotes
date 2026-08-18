@@ -96,8 +96,8 @@ Item {
         property string value: ""
         visible: value !== ""
         spacing: 4
-        Text { text: mp.label.toUpperCase(); color: Theme.text3; font.pixelSize: 9; font.weight: Font.Bold }
-        Text { text: mp.value; color: Theme.text2; font.pixelSize: 11 }
+        Text { text: mp.label.toUpperCase(); color: Theme.text3; font.pixelSize: Theme.font2xs; font.weight: Font.Bold }
+        Text { text: mp.value; color: Theme.text2; font.pixelSize: Theme.fontSm }
     }
 
     // Virtualized list — only visible cards (plus cacheBuffer) are instantiated,
@@ -157,12 +157,12 @@ Item {
                             }
                             Text {
                                 text: (card.model.item_number || "").toString()
-                                color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold
+                                color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold
                                 Layout.alignment: Qt.AlignVCenter
                             }
                             Text {
                                 text: (card.model.item_name || qsTr("(unnamed)")).toString()
-                                color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
+                                color: Theme.text; font.pixelSize: Theme.fontLg; font.weight: Font.DemiBold
                                 elide: Text.ElideRight; Layout.fillWidth: true
                                 Layout.alignment: Qt.AlignVCenter
                             }
@@ -176,7 +176,7 @@ Item {
                                 Text {
                                     id: stt; anchors.centerIn: parent
                                     text: (card.model.status || "").toString()
-                                    color: parent.c; font.pixelSize: 9; font.weight: Font.DemiBold
+                                    color: parent.c; font.pixelSize: Theme.font2xs; font.weight: Font.DemiBold
                                 }
                             }
                             KebabButton {
@@ -189,7 +189,7 @@ Item {
                         // Project · type · priority
                         Text {
                             Layout.fillWidth: true
-                            color: Theme.text3; font.pixelSize: 10
+                            color: Theme.text3; font.pixelSize: Theme.fontXs
                             elide: Text.ElideRight
                             text: {
                                 var proj = ((card.model.project_number || "") + " " + (card.model.project_name || "")).trim()
@@ -223,7 +223,7 @@ Item {
                                 Layout.preferredWidth: 2
                                 visible: text !== ""
                                 text: (card.model.description || "").toString()
-                                color: Theme.text2; font.pixelSize: 11
+                                color: Theme.text2; font.pixelSize: Theme.fontSm
                                 wrapMode: Text.WordWrap; elide: Text.ElideRight
                                 maximumLineCount: 2
                             }
@@ -242,7 +242,7 @@ Item {
                                         MaterialIcon { name: "forum"; size: 10; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
                                         Text {
                                             text: (modelData.note || "").toString()
-                                            color: Theme.text3; font.pixelSize: 10
+                                            color: Theme.text3; font.pixelSize: Theme.fontXs
                                             elide: Text.ElideRight
                                             Layout.fillWidth: true
                                         }

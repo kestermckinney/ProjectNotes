@@ -18,8 +18,12 @@ Rectangle {
 
     signal action(string name)
 
+    // The −/percent/+/fullscreen hit targets, sized off the shared menu row
+    // height so they keep their inset as the platform's menu font changes.
+    readonly property int _stepSize: Theme.menuRowHeight - 6
+
     Layout.fillWidth: true
-    implicitHeight: 24
+    implicitHeight: Theme.menuRowHeight
     implicitWidth: rowContent.implicitWidth + 12
     radius: Theme.radiusSm
     color: "transparent"
@@ -31,24 +35,24 @@ Rectangle {
         spacing: 4
 
         Item {
-            Layout.preferredWidth: 14; Layout.preferredHeight: 14
+            Layout.preferredWidth: Theme.menuIconSize; Layout.preferredHeight: Theme.menuIconSize
             Layout.alignment: Qt.AlignVCenter
-            MaterialIcon { anchors.centerIn: parent; name: "zoom_in"; size: 14; color: Theme.text2 }
+            MaterialIcon { anchors.centerIn: parent; name: "zoom_in"; size: Theme.menuIconSize; color: Theme.text2 }
         }
         Text {
             text: qsTr("Zoom")
             color: Theme.text
-            font.pixelSize: 11
+            font.pixelSize: Theme.menuFont
             Layout.fillWidth: true
             verticalAlignment: Text.AlignVCenter
         }
 
         // − step
         Rectangle {
-            implicitWidth: 18; implicitHeight: 18; radius: Theme.radiusSm
+            implicitWidth: zr._stepSize; implicitHeight: zr._stepSize; radius: Theme.radiusSm
             Layout.alignment: Qt.AlignVCenter
             color: minusHover.hovered ? Theme.surface2 : "transparent"
-            MaterialIcon { anchors.centerIn: parent; name: "remove"; size: 12; color: Theme.text2 }
+            MaterialIcon { anchors.centerIn: parent; name: "remove"; size: Theme.menuChevronSize; color: Theme.text2 }
             HoverHandler { id: minusHover }
             TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: zr.action("zoom_out") }
         }
@@ -56,7 +60,7 @@ Rectangle {
         // Percentage readout — click resets to 100%, same as the old
         // Reset Zoom (⌘0) menu item.
         Rectangle {
-            implicitWidth: pctText.implicitWidth + 8; implicitHeight: 18; radius: Theme.radiusSm
+            implicitWidth: pctText.implicitWidth + 8; implicitHeight: zr._stepSize; radius: Theme.radiusSm
             Layout.alignment: Qt.AlignVCenter
             color: pctHover.hovered ? Theme.surface2 : "transparent"
             Text {
@@ -64,7 +68,7 @@ Rectangle {
                 anchors.centerIn: parent
                 text: Math.round(Theme.uiScale * 100) + "%"
                 color: Theme.text2
-                font.pixelSize: 10
+                font.pixelSize: Theme.menuFontSm
             }
             HoverHandler { id: pctHover }
             TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: zr.action("zoom_reset") }
@@ -75,26 +79,26 @@ Rectangle {
 
         // + step
         Rectangle {
-            implicitWidth: 18; implicitHeight: 18; radius: Theme.radiusSm
+            implicitWidth: zr._stepSize; implicitHeight: zr._stepSize; radius: Theme.radiusSm
             Layout.alignment: Qt.AlignVCenter
             color: plusHover.hovered ? Theme.surface2 : "transparent"
-            MaterialIcon { anchors.centerIn: parent; name: "add"; size: 12; color: Theme.text2 }
+            MaterialIcon { anchors.centerIn: parent; name: "add"; size: Theme.menuChevronSize; color: Theme.text2 }
             HoverHandler { id: plusHover }
             TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: zr.action("zoom_in") }
         }
 
         Rectangle {
-            Layout.preferredWidth: 1; Layout.preferredHeight: 16
+            Layout.preferredWidth: 1; Layout.preferredHeight: zr._stepSize - 2
             Layout.alignment: Qt.AlignVCenter
             color: Theme.border
         }
 
         // Fullscreen toggle
         Rectangle {
-            implicitWidth: 18; implicitHeight: 18; radius: Theme.radiusSm
+            implicitWidth: zr._stepSize; implicitHeight: zr._stepSize; radius: Theme.radiusSm
             Layout.alignment: Qt.AlignVCenter
             color: fsHover.hovered ? Theme.surface2 : "transparent"
-            MaterialIcon { anchors.centerIn: parent; name: "fullscreen"; size: 12; color: Theme.text2 }
+            MaterialIcon { anchors.centerIn: parent; name: "fullscreen"; size: Theme.menuChevronSize; color: Theme.text2 }
             HoverHandler { id: fsHover }
             TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: zr.action("toggle_fullscreen") }
             ToolTip.visible: fsHover.hovered

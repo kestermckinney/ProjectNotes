@@ -94,6 +94,42 @@ QtObject {
     // Drop-down / drag highlight
     readonly property color dropHighlight: accentSoft
 
+    // ── Font metrics ──────────────────────────────────────────────────────────
+    // Two type ramps, both in logical pixels (Theme.uiScale magnifies them at
+    // draw time, so these are the sizes seen at 100% zoom).
+    //
+    // Page ramp — the workspace ramp used by every page, card, dialog and
+    // field. Fixed sizes: this is the design system's own scale, tuned for the
+    // dense list/detail layouts, not something the platform dictates. Anchored
+    // on fontBody; the names say how far a step sits from it.
+    readonly property int font3xs:  8   // the smallest badges (list status pips)
+    readonly property int font2xs:  9   // ALL-CAPS group labels, tiny chips
+    readonly property int fontXs:  10   // secondary meta lines, table sub-text
+    readonly property int fontSm:  11   // dense secondary text, compact rows
+    readonly property int fontBody: 12  // default body / field text
+    readonly property int fontLg:  13   // emphasised body, card titles
+    readonly property int fontXl:  14   // section + card headings
+    readonly property int font2xl: 15   // dialog titles
+    readonly property int font3xl: 16   // About block product name
+    readonly property int font4xl: 18   // empty-state / stub display text
+
+    // Menu ramp — every hand-rolled popup menu (AppMenu, RecordContextMenu,
+    // SortMenu, MenuFlyout and the rows they share). Deliberately NOT the page
+    // ramp: these stand in for native menus, so they take their size from the
+    // platform's own menu font rather than the design scale — macOS draws menus
+    // at 13pt where Windows uses 12px, and the old hardcoded 11px read as
+    // undersized against both. Everything else in a menu row (icon, checkmark,
+    // chevron, row height) is derived from it so a bigger font grows the row
+    // instead of clipping inside it; the offsets reproduce the proportions the
+    // 11px design shipped with.
+    readonly property int menuFont:   DesktopAppController.menuFontPixelSize
+    readonly property int menuFontSm: menuFont - 1   // shortcut text, ALL-CAPS headers
+    readonly property int menuFontLg: menuFont + 1   // the context menu's record label
+    readonly property int menuIconSize:    menuFont + 3
+    readonly property int menuCheckSize:   menuFont + 2
+    readonly property int menuChevronSize: menuFont + 1
+    readonly property int menuRowHeight:   menuFont + 13
+
     // ── Metrics ───────────────────────────────────────────────────────────────
     readonly property int radiusSm: 6
     readonly property int radius:   8

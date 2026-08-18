@@ -196,7 +196,7 @@ Window {
                             id: tabLabel
                             text: tabBtn.model.fileName
                             color: tabBtn.checked ? Theme.text : Theme.text2
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontBody
                             font.weight: tabBtn.checked ? Font.DemiBold : Font.Normal
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
@@ -246,7 +246,7 @@ Window {
                             selectByMouse: true
                             persistentSelection: true
                             font.family: "monospace"
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontBody
                             color: Theme.text
                             background: Rectangle { color: Theme.bg }
                             Component.onCompleted:
@@ -273,12 +273,12 @@ Window {
                 }
                 Text {
                     text: qsTr("No log files yet")
-                    color: Theme.text2; font.pixelSize: 13; font.weight: Font.DemiBold
+                    color: Theme.text2; font.pixelSize: Theme.fontLg; font.weight: Font.DemiBold
                     Layout.alignment: Qt.AlignHCenter
                 }
                 Text {
                     text: LogViewerController.logFolder()
-                    color: Theme.text3; font.pixelSize: 10
+                    color: Theme.text3; font.pixelSize: Theme.fontXs
                     Layout.alignment: Qt.AlignHCenter
                 }
             }
@@ -318,7 +318,7 @@ Window {
                         anchors.centerIn: parent
                         spacing: 5
                         MaterialIcon { name: "delete"; size: 14; color: Theme.red }
-                        Text { text: qsTr("Clear Log"); color: Theme.red; font.pixelSize: 11 }
+                        Text { text: qsTr("Clear Log"); color: Theme.red; font.pixelSize: Theme.fontSm }
                     }
                     HoverHandler { id: clearHover; enabled: parent.enabled }
                     TapHandler {
@@ -337,7 +337,7 @@ Window {
                         id: closeText
                         anchors.centerIn: parent
                         text: qsTr("Close")
-                        color: "#ffffff"; font.pixelSize: 11; font.weight: Font.DemiBold
+                        color: "#ffffff"; font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold
                     }
                     HoverHandler { id: closeHover }
                     TapHandler { onTapped: win.hide() }

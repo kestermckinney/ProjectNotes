@@ -97,7 +97,7 @@ Item {
                     text: list.count + (list.count === 1 ? qsTr(" project")
                                                          : qsTr(" projects"))
                     color: Theme.text3
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontSm
                 }
 
                 Item { Layout.fillWidth: true }
@@ -125,7 +125,7 @@ Item {
                         Text {
                             text: qsTr("Show Internal")
                             color: internalToggle.on ? Theme.accent : Theme.text2
-                            font.pixelSize: 11; font.weight: Font.DemiBold
+                            font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold
                             verticalAlignment: Text.AlignVCenter
                             Layout.alignment: Qt.AlignVCenter
                         }
@@ -188,7 +188,7 @@ Item {
                             Text {
                                 text: (card.model.project_number || "").toString()
                                 color: Theme.accent
-                                font.pixelSize: 13
+                                font.pixelSize: Theme.fontLg
                                 font.weight: Font.Bold
                             }
                             Rectangle {
@@ -211,7 +211,7 @@ Item {
                                     anchors.centerIn: parent
                                     text: parent.st
                                     color: parent.pillColor
-                                    font.pixelSize: 9
+                                    font.pixelSize: Theme.font2xs
                                     font.weight: Font.DemiBold
                                 }
                             }
@@ -225,7 +225,7 @@ Item {
                             Text {
                                 text: (card.model.project_name || "").toString()
                                 color: Theme.text
-                                font.pixelSize: 13
+                                font.pixelSize: Theme.fontLg
                                 font.weight: Font.DemiBold
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
@@ -239,7 +239,7 @@ Item {
                                     text: DesktopAppController.clientNameForId(
                                               (card.model.client_id || "").toString())
                                     color: Theme.text2
-                                    font.pixelSize: 11
+                                    font.pixelSize: Theme.fontSm
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
                                 }
@@ -253,7 +253,7 @@ Item {
                                     text: DesktopAppController.peopleNameForId(
                                               (card.model.primary_contact || "").toString())
                                     color: Theme.text2
-                                    font.pixelSize: 11
+                                    font.pixelSize: Theme.fontSm
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
                                 }
@@ -373,13 +373,13 @@ Item {
         Text {
             width: parent.width; elide: Text.ElideRight
             text: chip.label.toUpperCase(); color: Theme.text3
-            font.pixelSize: 8; font.weight: Font.Bold
+            font.pixelSize: Theme.font3xs; font.weight: Font.Bold
         }
         Text {
             width: parent.width; elide: Text.ElideRight
             text: chip._has ? chip.value : "—"
             color: chip._has ? chip.accentColor : Theme.text3
-            font.pixelSize: 11; font.weight: Font.DemiBold
+            font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold
         }
     }
 }

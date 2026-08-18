@@ -117,7 +117,7 @@ Item {
                                     var p = n.split(" ")
                                     return (p[0][0] || "") + (p.length > 1 ? p[p.length-1][0] : "")
                                 }
-                                color: Theme.accent; font.pixelSize: 12; font.weight: Font.Bold
+                                color: Theme.accent; font.pixelSize: Theme.fontBody; font.weight: Font.Bold
                             }
                         }
                         ColumnLayout {
@@ -125,7 +125,7 @@ Item {
                             spacing: 1
                             Text {
                                 text: (card.model.name || qsTr("(no name)")).toString()
-                                color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
+                                color: Theme.text; font.pixelSize: Theme.fontLg; font.weight: Font.DemiBold
                                 elide: Text.ElideRight; Layout.fillWidth: true
                             }
                             Text {
@@ -134,7 +134,7 @@ Item {
                                     var r = (card.model.role || "").toString()
                                     return [r, e].filter(function(x){ return x !== "" }).join("  ·  ")
                                 }
-                                color: Theme.text3; font.pixelSize: 11
+                                color: Theme.text3; font.pixelSize: Theme.fontSm
                                 elide: Text.ElideRight; Layout.fillWidth: true
                             }
                         }

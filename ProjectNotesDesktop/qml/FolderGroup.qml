@@ -106,7 +106,7 @@ Column {
             Text {
                 text: group.folderName.toUpperCase()
                 color: Theme.text3
-                font.pixelSize: 10
+                font.pixelSize: Theme.fontXs
                 font.weight: Font.Bold
                 font.letterSpacing: 0.6
                 Layout.fillWidth: true
@@ -115,7 +115,7 @@ Column {
             Text {
                 text: group.displayCount
                 color: Theme.text3
-                font.pixelSize: 10
+                font.pixelSize: Theme.fontXs
             }
             MaterialIcon {
                 name: group.expanded ? "expand_more" : "chevron_right"
@@ -205,7 +205,7 @@ Column {
                     Text {
                         text: (row.modelData.project_number || "").toString()
                         color: Theme.text2
-                        font.pixelSize: 11
+                        font.pixelSize: Theme.fontSm
                         font.weight: Font.DemiBold
                         // Natural width, capped + elided so a long number never
                         // paints over the project name beside it.
@@ -215,7 +215,7 @@ Column {
                     Text {
                         text: (row.modelData.project_name || "").toString()
                         color: Theme.text
-                        font.pixelSize: 11
+                        font.pixelSize: Theme.fontSm
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }

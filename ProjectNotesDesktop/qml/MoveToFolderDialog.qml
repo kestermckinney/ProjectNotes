@@ -53,7 +53,7 @@ Dialog {
         spacing: 0
         RowLayout {
             Layout.fillWidth: true; Layout.margins: 12
-            Text { text: qsTr("Move To Folder"); color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold; Layout.fillWidth: true }
+            Text { text: qsTr("Move To Folder"); color: Theme.text; font.pixelSize: Theme.fontXl; font.weight: Font.Bold; Layout.fillWidth: true }
             MaterialIcon { name: "close"; size: 18; color: Theme.text3; TapHandler { onTapped: dlg.close() } }
         }
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
@@ -62,7 +62,7 @@ Dialog {
             visible: dlg._label !== ""
             text: dlg._label
             color: Theme.text3
-            font.pixelSize: 10
+            font.pixelSize: Theme.fontXs
             Layout.fillWidth: true
             Layout.leftMargin: 13; Layout.rightMargin: 13; Layout.topMargin: 8
             elide: Text.ElideRight
@@ -89,10 +89,10 @@ Dialog {
                         MaterialIcon { name: folderRow.modelData.icon; size: 14; color: folderRow.modelData.color }
                         Text {
                             text: folderRow.modelData.name
-                            color: Theme.text; font.pixelSize: 12
+                            color: Theme.text; font.pixelSize: Theme.fontBody
                             Layout.fillWidth: true; elide: Text.ElideRight
                         }
-                        Text { text: folderRow.modelData.count; color: Theme.text3; font.pixelSize: 10 }
+                        Text { text: folderRow.modelData.count; color: Theme.text3; font.pixelSize: Theme.fontXs }
                     }
                     HoverHandler { id: rowHover }
                     TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: dlg._pick(folderRow.modelData.id) }
@@ -103,7 +103,7 @@ Dialog {
                 visible: FolderManager.folders.length === 0
                 text: qsTr("No folders yet — add one in Settings.")
                 color: Theme.text3
-                font.pixelSize: 11
+                font.pixelSize: Theme.fontSm
                 Layout.margins: 5
             }
 
@@ -123,7 +123,7 @@ Dialog {
                     anchors.leftMargin: 7; anchors.rightMargin: 7
                     spacing: 8
                     MaterialIcon { name: "folder_off"; size: 14; color: Theme.text3 }
-                    Text { text: qsTr("Not Categorized"); color: Theme.text; font.pixelSize: 12; Layout.fillWidth: true }
+                    Text { text: qsTr("Not Categorized"); color: Theme.text; font.pixelSize: Theme.fontBody; Layout.fillWidth: true }
                 }
                 HoverHandler { id: uncatHover }
                 TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: dlg._pick("") }

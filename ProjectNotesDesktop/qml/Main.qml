@@ -819,7 +819,7 @@ ApplicationWindow {
                 MaterialIcon { name: "error"; size: 20; color: Theme.red }
                 Text {
                     text: errorDialog.title
-                    color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
+                    color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
                 MaterialIcon {
@@ -840,7 +840,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     wrapMode: Text.Wrap
                     color: Theme.text
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontLg
                 }
                 Item {
                     Layout.fillWidth: true
@@ -855,7 +855,7 @@ ApplicationWindow {
                             id: okText
                             anchors.centerIn: parent
                             text: qsTr("OK")
-                            color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
+                            color: "#ffffff"; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
                         }
                         HoverHandler { id: okHover }
                         TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: errorDialog.close() }
@@ -889,7 +889,7 @@ ApplicationWindow {
                 MaterialIcon { name: "info"; size: 20; color: Theme.accent }
                 Text {
                     text: infoDialog.title
-                    color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
+                    color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
                 MaterialIcon {
@@ -910,7 +910,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     wrapMode: Text.Wrap
                     color: Theme.text
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontLg
                 }
                 Item {
                     Layout.fillWidth: true
@@ -925,7 +925,7 @@ ApplicationWindow {
                             id: infoOkText
                             anchors.centerIn: parent
                             text: qsTr("OK")
-                            color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
+                            color: "#ffffff"; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
                         }
                         HoverHandler { id: infoOkHover }
                         // Exclusive grab so this tap doesn't also fall through to
@@ -982,7 +982,7 @@ ApplicationWindow {
                 }
                 Text {
                     text: syncCheckDialog.title
-                    color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
+                    color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
                 MaterialIcon {
@@ -1003,7 +1003,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     wrapMode: Text.Wrap
                     color: Theme.text
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontLg
                     text: syncCheckDialog.checking
                           ? qsTr("Checking your sync email, password, and encryption phrase…")
                           : syncCheckDialog.message
@@ -1051,7 +1051,7 @@ ApplicationWindow {
                             id: syncLeaveText
                             anchors.centerIn: parent
                             text: qsTr("Leave Anyway")
-                            color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                            color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
                         }
                         HoverHandler { id: syncLeaveHover }
                         TapHandler {
@@ -1070,7 +1070,7 @@ ApplicationWindow {
                             anchors.centerIn: parent
                             text: syncCheckDialog.checking ? qsTr("Skip")
                                   : (syncCheckDialog.fixable ? qsTr("Back to Settings") : qsTr("OK"))
-                            color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
+                            color: "#ffffff"; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
                         }
                         HoverHandler { id: syncPrimaryHover }
                         TapHandler {
@@ -1113,7 +1113,7 @@ ApplicationWindow {
                 MaterialIcon { name: "system_update_alt"; size: 20; color: Theme.accent }
                 Text {
                     text: updateDialog.title
-                    color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
+                    color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
                 MaterialIcon {
@@ -1132,7 +1132,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     wrapMode: Text.Wrap
                     color: Theme.text
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontLg
                 }
                 RowLayout {
                     Layout.fillWidth: true
@@ -1149,7 +1149,7 @@ ApplicationWindow {
                             id: laterText
                             anchors.centerIn: parent
                             text: qsTr("Later")
-                            color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                            color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
                         }
                         HoverHandler { id: laterHover }
                         TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: updateDialog.close() }
@@ -1163,7 +1163,7 @@ ApplicationWindow {
                             id: dlText
                             anchors.centerIn: parent
                             text: qsTr("Install & Restart")
-                            color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
+                            color: "#ffffff"; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
                         }
                         HoverHandler { id: dlHover }
                         TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: { updateDialog.close(); DesktopAppController.installUpdate() } }
@@ -1197,7 +1197,7 @@ ApplicationWindow {
                 MaterialIcon { name: "system_update_alt"; size: 20; color: Theme.accent }
                 Text {
                     text: downloadDialog.title
-                    color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
+                    color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
             }
@@ -1210,7 +1210,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     wrapMode: Text.Wrap
                     color: Theme.text
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontLg
                     text: root._dlPercent >= 0
                           ? qsTr("Downloading the update… %1%").arg(root._dlPercent)
                           : qsTr("Downloading the update…")
@@ -1256,7 +1256,7 @@ ApplicationWindow {
                             id: dlCancelText
                             anchors.centerIn: parent
                             text: qsTr("Cancel")
-                            color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                            color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
                         }
                         HoverHandler { id: dlCancelHover }
                         TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: { downloadDialog.close(); DesktopAppController.cancelUpdateDownload() } }
@@ -1292,7 +1292,7 @@ ApplicationWindow {
                 MaterialIcon { name: "delete"; size: 20; color: Theme.red }
                 Text {
                     text: confirmDeleteDialog.title
-                    color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold
+                    color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
                 MaterialIcon {
@@ -1312,7 +1312,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     wrapMode: Text.Wrap
                     color: Theme.text
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontLg
                     text: {
                         var l = confirmLabel.text.trim()
                         return l === ""
@@ -1338,7 +1338,7 @@ ApplicationWindow {
                             id: cancelText
                             anchors.centerIn: parent
                             text: qsTr("Cancel")
-                            color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                            color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
                         }
                         HoverHandler { id: cancelHover }
                         TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: confirmDeleteDialog.close() }
@@ -1354,7 +1354,7 @@ ApplicationWindow {
                             anchors.centerIn: parent
                             text: qsTr("Delete")
                             color: delConfirmHover.hovered ? "#ffffff" : Theme.red
-                            font.pixelSize: 12; font.weight: Font.DemiBold
+                            font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
                         }
                         HoverHandler { id: delConfirmHover }
                         // Exclusive grab matters most here: without it, this tap could

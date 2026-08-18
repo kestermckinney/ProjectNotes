@@ -127,7 +127,7 @@ Rectangle {
             placeholderTextColor: Theme.text3
             background: null
             selectByMouse: true
-            font.pixelSize: 12
+            font.pixelSize: Theme.fontBody
             Keys.onReturnPressed: (ev) => {
                 if (ev.modifiers & Qt.ShiftModifier) parent.shiftAccepted()
                 else parent.accepted()
@@ -151,7 +151,7 @@ Rectangle {
             anchors.centerIn: parent
             text: parent.label
             color: parent.primary ? "#ffffff" : Theme.text
-            font.pixelSize: 11; font.weight: Font.DemiBold
+            font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold
         }
         HoverHandler { id: bbHover }
         TapHandler { onTapped: parent.clicked() }
@@ -186,7 +186,7 @@ Rectangle {
                 Text {
                     anchors.centerIn: parent; text: "Aa"
                     color: bar.matchCase ? "#ffffff" : Theme.text2
-                    font.pixelSize: 11; font.weight: Font.DemiBold
+                    font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold
                 }
                 HoverHandler { id: mcHover }
                 TapHandler { onTapped: bar.matchCase = !bar.matchCase }
@@ -215,7 +215,7 @@ Rectangle {
             Text {
                 text: bar._status
                 visible: text !== ""
-                color: Theme.text3; font.pixelSize: 10
+                color: Theme.text3; font.pixelSize: Theme.fontXs
                 Layout.alignment: Qt.AlignVCenter
             }
             Item { Layout.fillWidth: true }

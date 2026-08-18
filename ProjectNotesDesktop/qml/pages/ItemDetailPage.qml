@@ -127,7 +127,7 @@ Item {
                     RowLayout {
                         id: moveRow; anchors.centerIn: parent; spacing: 5
                         MaterialIcon { name: "drive_file_move"; size: 15; color: Theme.text2 }
-                        Text { text: qsTr("Move To…"); color: Theme.text2; font.pixelSize: 12; font.weight: Font.DemiBold }
+                        Text { text: qsTr("Move To…"); color: Theme.text2; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold }
                     }
                     HoverHandler { id: moveHover }
                     TapHandler { onTapped: page.moveToRequested(page.itemId) }
@@ -158,7 +158,7 @@ Item {
                 }
             }
 
-            Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold }
+            Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: Math.max(76, descArea.contentHeight + 16)
@@ -173,7 +173,7 @@ Item {
                     wrapMode: TextEdit.WordWrap
                     selectByMouse: true
                     background: null
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontBody
                     onTextChanged: page._changed = true
                     SpellCheckField { dialog: spellDialog }
                 }
@@ -220,7 +220,7 @@ Item {
                     MaterialIcon { anchors.centerIn: parent; visible: internalCheck.checked; name: "check"; size: 12; color: "#ffffff" }
                 }
                 contentItem: Text {
-                    text: qsTr("Internal item"); color: Theme.text; font.pixelSize: 12
+                    text: qsTr("Internal item"); color: Theme.text; font.pixelSize: Theme.fontBody
                     leftPadding: internalCheck.indicator.width + 7; verticalAlignment: Text.AlignVCenter
                 }
             }
@@ -232,7 +232,7 @@ Item {
                 MaterialIcon { name: "forum"; size: 16; color: Theme.text2 }
                 Text {
                     text: qsTr("Comments"); color: Theme.text
-                    font.pixelSize: 14; font.weight: Font.Bold; Layout.fillWidth: true
+                    font.pixelSize: Theme.fontXl; font.weight: Font.Bold; Layout.fillWidth: true
                 }
                 Rectangle {
                     implicitHeight: 26; implicitWidth: cRow.implicitWidth + 14
@@ -241,7 +241,7 @@ Item {
                     RowLayout {
                         id: cRow; anchors.centerIn: parent; spacing: 4
                         MaterialIcon { name: "add"; size: 13; color: "#ffffff" }
-                        Text { text: qsTr("Add Comment"); color: "#ffffff"; font.pixelSize: 11; font.weight: Font.DemiBold }
+                        Text { text: qsTr("Add Comment"); color: "#ffffff"; font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold }
                     }
                     HoverHandler { id: cHover }
                     TapHandler {
@@ -342,7 +342,7 @@ Item {
                             wrapMode: TextEdit.WordWrap
                             selectByMouse: true
                             background: null
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontBody
                             SpellCheckField { dialog: spellDialog }
                             onEditingFinished: cCard._saveComment()
                         }

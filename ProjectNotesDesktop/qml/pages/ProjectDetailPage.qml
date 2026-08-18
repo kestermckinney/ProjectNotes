@@ -378,7 +378,7 @@ Item {
                     visible: page.projectId === ""
                     wrapMode: Text.WordWrap
                     color: Theme.text3
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontBody
                     text: qsTr("New project — give it a name to create it. The tabs below become available once it is saved.")
                 }
 
@@ -593,7 +593,7 @@ Item {
                                         text: (stCard.model.task_description || "").toString()
                                         placeholderText: qsTr("Description")
                                         placeholderTextColor: Theme.text3
-                                        color: Theme.text; background: null; font.pixelSize: 12
+                                        color: Theme.text; background: null; font.pixelSize: Theme.fontBody
                                         onEditingFinished: DesktopAppController.saveStatusItem(
                                             stCard.index, (stCard.model.task_category || "").toString(), text)
                                         SpellCheckField { dialog: spellDialog }
@@ -689,14 +689,14 @@ Item {
                                         spacing: 8
                                         Text {
                                             text: (trackerSlot.model.item_number || "").toString()
-                                            color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold
+                                            color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold
                                             elide: Text.ElideRight
                                             Layout.preferredWidth: 52
                                             Layout.maximumWidth: 52
                                         }
                                         Text {
                                             text: (trackerSlot.model.item_name || qsTr("(unnamed)")).toString()
-                                            color: Theme.text; font.pixelSize: 12; Layout.fillWidth: true; elide: Text.ElideRight
+                                            color: Theme.text; font.pixelSize: Theme.fontBody; Layout.fillWidth: true; elide: Text.ElideRight
                                         }
                                         Rectangle {
                                             readonly property color c: page._statusColor((trackerSlot.model.status || "").toString())
@@ -708,7 +708,7 @@ Item {
                                             Text {
                                                 id: tiStatus; anchors.centerIn: parent
                                                 text: (trackerSlot.model.status || "").toString()
-                                                color: parent.c; font.pixelSize: 9; font.weight: Font.DemiBold
+                                                color: parent.c; font.pixelSize: Theme.font2xs; font.weight: Font.DemiBold
                                             }
                                         }
                                         KebabButton {
@@ -867,7 +867,7 @@ Item {
                                 MaterialIcon { name: "person"; size: 15; color: Theme.text3 }
                                 Text {
                                     text: (teamCard.model.name || qsTr("(no name)")).toString()
-                                    color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                                    color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
                                     Layout.preferredWidth: 130; elide: Text.ElideRight
                                 }
                                 Rectangle {
@@ -879,7 +879,7 @@ Item {
                                         text: (teamCard.model.role || "").toString()
                                         placeholderText: qsTr("Role")
                                         placeholderTextColor: Theme.text3
-                                        color: Theme.text; background: null; font.pixelSize: 12
+                                        color: Theme.text; background: null; font.pixelSize: Theme.fontBody
                                         onEditingFinished: DesktopAppController.saveTeamMember(
                                             teamCard.index, (teamCard.model.people_id || "").toString(), text,
                                             (teamCard.model.receive_status_report || "0") !== "0")
@@ -901,7 +901,7 @@ Item {
                                         MaterialIcon { anchors.centerIn: parent; visible: statusCheck.checked; name: "check"; size: 12; color: "#ffffff" }
                                     }
                                     contentItem: Text {
-                                        text: qsTr("Status Report"); color: Theme.text3; font.pixelSize: 10
+                                        text: qsTr("Status Report"); color: Theme.text3; font.pixelSize: Theme.fontXs
                                         leftPadding: statusCheck.indicator.width + 5; verticalAlignment: Text.AlignVCenter
                                     }
                                 }
@@ -1002,7 +1002,7 @@ Item {
                                     MaterialIcon { name: "folder_open"; size: 13; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
                                     Text {
                                         text: qsTr("Browse File"); color: Theme.text2
-                                        font.pixelSize: 11; font.weight: Font.DemiBold
+                                        font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold
                                         verticalAlignment: Text.AlignVCenter
                                     }
                                 }
@@ -1021,7 +1021,7 @@ Item {
                             Text {
                                 anchors.centerIn: parent
                                 text: qsTr("Drop files or web links to add them")
-                                color: Theme.accent; font.pixelSize: 11; font.weight: Font.DemiBold
+                                color: Theme.accent; font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold
                             }
                         }
                     }
@@ -1066,7 +1066,7 @@ Item {
                                             text: (locCard.model.location_description || locCard.model.full_path
                                                    || qsTr("(unnamed location)")).toString()
                                             color: Theme.text
-                                            font.pixelSize: 12
+                                            font.pixelSize: Theme.fontBody
                                             elide: Text.ElideRight
                                             horizontalAlignment: Text.AlignLeft
                                             Layout.fillWidth: true
@@ -1208,12 +1208,12 @@ Item {
                                     spacing: 1
                                     Text {
                                         text: (noteCard.model.note_title || qsTr("(Untitled note)")).toString()
-                                        color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
+                                        color: Theme.text; font.pixelSize: Theme.fontLg; font.weight: Font.DemiBold
                                         elide: Text.ElideRight; Layout.fillWidth: true
                                     }
                                     Text {
                                         text: (noteCard.model.note_date || "").toString()
-                                        color: Theme.text3; font.pixelSize: 11
+                                        color: Theme.text3; font.pixelSize: Theme.fontSm
                                     }
                                 }
                                 KebabButton {
@@ -1260,7 +1260,7 @@ Item {
             spacing: 0
             RowLayout {
                 Layout.fillWidth: true; Layout.margins: 12
-                Text { text: qsTr("Add Team Member"); color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold; Layout.fillWidth: true }
+                Text { text: qsTr("Add Team Member"); color: Theme.text; font.pixelSize: Theme.fontXl; font.weight: Font.Bold; Layout.fillWidth: true }
                 MaterialIcon { name: "close"; size: 18; color: Theme.text3; TapHandler { onTapped: teamPicker.close() } }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
@@ -1284,7 +1284,7 @@ Item {
                         placeholderText: qsTr("Search people…")
                         placeholderTextColor: Theme.text3
                         color: Theme.text
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontBody
                         background: null
                         verticalAlignment: Text.AlignVCenter
                         selectByMouse: true
@@ -1306,7 +1306,7 @@ Item {
                         || String(modelData.name).toLowerCase().indexOf(teamPicker._filter.toLowerCase()) >= 0
                     visible: _match
                     width: teamPeople.width; height: _match ? 34 : 0
-                    contentItem: Text { text: modelData.name; color: Theme.text; font.pixelSize: 12; leftPadding: 12; verticalAlignment: Text.AlignVCenter }
+                    contentItem: Text { text: modelData.name; color: Theme.text; font.pixelSize: Theme.fontBody; leftPadding: 12; verticalAlignment: Text.AlignVCenter }
                     background: Rectangle { color: teamDelegate.hovered ? Theme.surface2 : "transparent" }
                     onClicked: {
                         var r = DesktopAppController.addTeamMember(page.projectId)
@@ -1332,8 +1332,8 @@ Item {
         property color valueColor: Theme.text2
         visible: value !== ""
         spacing: 3
-        Text { text: mp.label; color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold }
-        Text { text: mp.value; color: mp.valueColor; font.pixelSize: 10 }
+        Text { text: mp.label; color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
+        Text { text: mp.value; color: mp.valueColor; font.pixelSize: Theme.fontXs }
     }
 
     // Read-only calculated-financial tile.
@@ -1352,12 +1352,12 @@ Item {
             anchors.topMargin: 6;   anchors.bottomMargin: 6
             spacing: 1
             Text {
-                text: label; color: Theme.text3; font.pixelSize: 10
+                text: label; color: Theme.text3; font.pixelSize: Theme.fontXs
                 elide: Text.ElideRight; Layout.fillWidth: true
             }
             Text {
                 text: value; color: valueColor
-                font.pixelSize: 14; font.weight: Font.DemiBold
+                font.pixelSize: Theme.fontXl; font.weight: Font.DemiBold
                 elide: Text.ElideRight; Layout.fillWidth: true
             }
         }
@@ -1389,7 +1389,7 @@ Item {
             Text {
                 text: tb.label
                 color: tb.checked ? Theme.accent : Theme.text2
-                font.pixelSize: 12
+                font.pixelSize: Theme.fontBody
                 font.weight: tb.checked ? Font.DemiBold : Font.Normal
                 verticalAlignment: Text.AlignVCenter
                 Layout.alignment: Qt.AlignVCenter
@@ -1406,7 +1406,7 @@ Item {
                     anchors.centerIn: parent
                     text: tb.count.toString()
                     color: Theme.text3
-                    font.pixelSize: 9; font.weight: Font.DemiBold
+                    font.pixelSize: Theme.font2xs; font.weight: Font.DemiBold
                 }
             }
         }
@@ -1453,7 +1453,7 @@ Item {
         spacing: 6
         MaterialIcon { name: bar.icon; size: 16; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
         Text {
-            text: bar.title; color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold
+            text: bar.title; color: Theme.text; font.pixelSize: Theme.fontXl; font.weight: Font.Bold
             Layout.fillWidth: true; elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
         }
@@ -1479,7 +1479,7 @@ Item {
                     background: null
                     topPadding: 0; bottomPadding: 0
                     verticalAlignment: Text.AlignVCenter
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontSm
                     onTextEdited: DesktopAppController.setQuickSearch(bar.searchModel, text)
                     // Esc clears the field while it has focus; with nothing to
                     // clear the key falls through to whoever else wants it.
@@ -1521,7 +1521,7 @@ Item {
                 id: fRow; anchors.centerIn: parent; spacing: 4
                 MaterialIcon { name: "filter_list"; size: 13; color: bar.filterActive ? Theme.accent : Theme.text2; Layout.alignment: Qt.AlignVCenter }
                 Text {
-                    text: qsTr("Filter"); color: bar.filterActive ? Theme.accent : Theme.text; font.pixelSize: 11
+                    text: qsTr("Filter"); color: bar.filterActive ? Theme.accent : Theme.text; font.pixelSize: Theme.fontSm
                     verticalAlignment: Text.AlignVCenter
                 }
             }
@@ -1540,7 +1540,7 @@ Item {
                 id: sRow; anchors.centerIn: parent; spacing: 4
                 MaterialIcon { name: "swap_vert"; size: 13; color: bar.sortActive ? Theme.accent : Theme.text2; Layout.alignment: Qt.AlignVCenter }
                 Text {
-                    text: qsTr("Sort"); color: bar.sortActive ? Theme.accent : Theme.text; font.pixelSize: 11
+                    text: qsTr("Sort"); color: bar.sortActive ? Theme.accent : Theme.text; font.pixelSize: Theme.fontSm
                     verticalAlignment: Text.AlignVCenter
                 }
             }
@@ -1560,7 +1560,7 @@ Item {
                 id: aRow; anchors.centerIn: parent; spacing: 4
                 MaterialIcon { name: "add"; size: 13; color: "#ffffff"; Layout.alignment: Qt.AlignVCenter }
                 Text {
-                    text: bar.addLabel; color: "#ffffff"; font.pixelSize: 11; font.weight: Font.DemiBold
+                    text: bar.addLabel; color: "#ffffff"; font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold
                     verticalAlignment: Text.AlignVCenter
                 }
             }
@@ -1659,7 +1659,7 @@ Item {
                 text: lf.fieldText
                 placeholderText: lf.placeholder
                 placeholderTextColor: Theme.text3
-                color: Theme.text; background: null; font.pixelSize: 12
+                color: Theme.text; background: null; font.pixelSize: Theme.fontBody
                 onEditingFinished: lf.commit(text)
             }
         }

@@ -96,7 +96,7 @@ Popup {
 
         Text {
             text: qsTr("SORT BY"); color: Theme.text3
-            font.pixelSize: 10; font.weight: Font.Bold
+            font.pixelSize: Theme.menuFontSm; font.weight: Font.Bold
             Layout.leftMargin: 9; Layout.topMargin: 2; Layout.bottomMargin: 3
         }
 

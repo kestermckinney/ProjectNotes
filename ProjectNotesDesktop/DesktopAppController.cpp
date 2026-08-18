@@ -39,6 +39,7 @@
 
 #include <algorithm>
 
+#include <QApplication>
 #include <QClipboard>
 #include <QCryptographicHash>
 #include <QDateTime>
@@ -47,6 +48,7 @@
 #include <QDesktopServices>
 #include <QFile>
 #include <QFileInfo>
+#include <QFontInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -624,6 +626,28 @@ QString DesktopAppController::clipboardPlainText() const
 {
     QClipboard* clipboard = QGuiApplication::clipboard();
     return clipboard ? clipboard->text() : QString();
+}
+
+// ── Platform font metrics ────────────────────────────────────────────────────
+
+// A QFont that carries a point size has no pixel size of its own (pixelSize()
+// returns -1) until it is resolved against the paint device — QFontInfo does
+// that resolution, which is what makes this comparable with the logical-pixel
+// sizes QML's font.pixelSize expects.
+static int fontPixelSize(const QFont& font)
+{
+    const int px = QFontInfo(font).pixelSize();
+    return px > 0 ? px : QFontInfo(QGuiApplication::font()).pixelSize();
+}
+
+int DesktopAppController::menuFontPixelSize() const
+{
+    // QApplication (not QGuiApplication) is what maps a widget class name onto
+    // the platform theme's matching font — "QMenu" resolves to QPlatformTheme::
+    // MenuFont. The app object is a QApplication (see main.cpp), so this is
+    // available; on a platform with no distinct menu font it hands back the
+    // application font, which is the fallback we want anyway.
+    return fontPixelSize(QApplication::font("QMenu"));
 }
 
 // ── Keyboard shortcuts ────────────────────────────────────────────────────────

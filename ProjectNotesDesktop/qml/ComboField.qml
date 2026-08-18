@@ -35,7 +35,7 @@ ColumnLayout {
         text: root.label
         visible: root.label !== ""
         color: Theme.text3
-        font.pixelSize: 10
+        font.pixelSize: Theme.fontXs
         font.weight: Font.DemiBold
     }
 
@@ -45,7 +45,7 @@ ColumnLayout {
         implicitHeight: 30
         editable: root.searchable
         model: root._model
-        font.pixelSize: 12
+        font.pixelSize: Theme.fontBody
 
         // Current type-to-search text (lower-cased match target). Empty = show all.
         property string _filter: ""
@@ -171,7 +171,7 @@ ColumnLayout {
             contentItem: Text {
                 text: itemDelegate.modelData
                 color: Theme.text
-                font.pixelSize: 12
+                font.pixelSize: Theme.fontBody
                 verticalAlignment: Text.AlignVCenter
             }
             background: Rectangle {

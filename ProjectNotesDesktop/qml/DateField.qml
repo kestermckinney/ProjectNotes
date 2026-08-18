@@ -40,7 +40,7 @@ ColumnLayout {
         text: root.label
         visible: root.label !== ""
         color: Theme.text3
-        font.pixelSize: 10
+        font.pixelSize: Theme.fontXs
         font.weight: Font.DemiBold
     }
 
@@ -66,7 +66,7 @@ ColumnLayout {
                 placeholderTextColor: Theme.text3
                 color: Theme.text
                 background: null
-                font.pixelSize: 12
+                font.pixelSize: Theme.fontBody
                 selectByMouse: true
                 onEditingFinished: { root.text = text; root.edited(text) }
                 // Keep in sync when the bound value changes externally.
@@ -157,7 +157,7 @@ ColumnLayout {
                         Layout.fillWidth: true
                         horizontalAlignment: Text.AlignHCenter
                         text: popup._monthNames[popup.shownMonth] + " " + popup.shownYear
-                        color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                        color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
                     }
                     Rectangle {
                         width: 22; height: 22; radius: Theme.radiusSm; color: nHover.hovered ? Theme.surface2 : "transparent"
@@ -172,7 +172,7 @@ ColumnLayout {
                         required property var model
                         horizontalAlignment: Text.AlignHCenter
                         text: model.shortName
-                        color: Theme.text3; font.pixelSize: 9; font.weight: Font.Bold
+                        color: Theme.text3; font.pixelSize: Theme.font2xs; font.weight: Font.Bold
                     }
                 }
                 MonthGrid {
@@ -192,7 +192,7 @@ ColumnLayout {
                                 anchors.centerIn: parent
                                 text: model.day
                                 color: inMonth ? Theme.text : Theme.text3
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSm
                             }
                             HoverHandler { id: dtHover }
                             TapHandler {
@@ -212,14 +212,14 @@ ColumnLayout {
                     spacing: 6
                     Button {
                         flat: true
-                        contentItem: Text { text: qsTr("Clear"); color: Theme.red; font.pixelSize: 12 }
+                        contentItem: Text { text: qsTr("Clear"); color: Theme.red; font.pixelSize: Theme.fontBody }
                         background: null
                         onClicked: { root.text = ""; field.text = ""; root.edited(""); popup.close() }
                     }
                     Item { Layout.fillWidth: true }
                     Button {
                         flat: true
-                        contentItem: Text { text: qsTr("Today"); color: Theme.accent; font.pixelSize: 12; font.weight: Font.DemiBold }
+                        contentItem: Text { text: qsTr("Today"); color: Theme.accent; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold }
                         background: null
                         onClicked: {
                             var t = root._fmt(new Date())

@@ -188,8 +188,8 @@ Popup {
             Layout.margins: 12
             spacing: 8
             MaterialIcon { name: "filter_list"; size: 17; color: Theme.accent; Layout.alignment: Qt.AlignVCenter }
-            Text { text: qsTr("Filter Editor"); color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold; verticalAlignment: Text.AlignVCenter }
-            Text { text: "· " + dlg._sectionLabel; color: Theme.text3; font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
+            Text { text: qsTr("Filter Editor"); color: Theme.text; font.pixelSize: Theme.fontXl; font.weight: Font.Bold; verticalAlignment: Text.AlignVCenter }
+            Text { text: "· " + dlg._sectionLabel; color: Theme.text3; font.pixelSize: Theme.fontSm; verticalAlignment: Text.AlignVCenter }
             Item { Layout.fillWidth: true }
             Rectangle {
                 implicitWidth: 24; implicitHeight: 24; radius: Theme.radiusSm
@@ -220,7 +220,7 @@ Popup {
                     spacing: 0
                     Text {
                         text: qsTr("COLUMN NAME"); color: Theme.text3
-                        font.pixelSize: 9; font.weight: Font.Bold
+                        font.pixelSize: Theme.font2xs; font.weight: Font.Bold
                         Layout.leftMargin: 11; Layout.topMargin: 9; Layout.bottomMargin: 3
                     }
                     ListView {
@@ -248,7 +248,7 @@ Popup {
                                 Text {
                                     text: modelData.label
                                     color: index === dlg._curIndex ? Theme.accent : Theme.text
-                                    font.pixelSize: 12
+                                    font.pixelSize: Theme.fontBody
                                     font.weight: (index === dlg._curIndex || dlg._active(modelData.field)) ? Font.DemiBold : Font.Normal
                                     Layout.fillWidth: true; elide: Text.ElideRight
                                     verticalAlignment: Text.AlignVCenter
@@ -261,7 +261,7 @@ Popup {
                                     Text {
                                         id: cLbl; anchors.centerIn: parent
                                         text: dlg._count(modelData.field).toString()
-                                        color: Theme.accent; font.pixelSize: 9; font.weight: Font.Bold
+                                        color: Theme.accent; font.pixelSize: Theme.font2xs; font.weight: Font.Bold
                                     }
                                 }
                             }
@@ -283,10 +283,10 @@ Popup {
                     Layout.fillWidth: true
                     Layout.leftMargin: 14; Layout.rightMargin: 14; Layout.topMargin: 9; Layout.bottomMargin: 3
                     spacing: 6
-                    Text { text: qsTr("FILTER VALUES"); color: Theme.text3; font.pixelSize: 9; font.weight: Font.Bold }
-                    Text { text: dlg._curCol ? dlg._curCol.label : ""; color: Theme.text3; font.pixelSize: 10 }
+                    Text { text: qsTr("FILTER VALUES"); color: Theme.text3; font.pixelSize: Theme.font2xs; font.weight: Font.Bold }
+                    Text { text: dlg._curCol ? dlg._curCol.label : ""; color: Theme.text3; font.pixelSize: Theme.fontXs }
                     Item { Layout.fillWidth: true }
-                    Text { text: dlg._count(dlg._curField) + qsTr(" selected"); color: Theme.text3; font.pixelSize: 10 }
+                    Text { text: dlg._count(dlg._curField) + qsTr(" selected"); color: Theme.text3; font.pixelSize: Theme.fontXs }
                 }
 
                 // Distinct-value checkboxes (non-date columns)
@@ -326,7 +326,7 @@ Popup {
                                     }
                                 }
                                 Text {
-                                    text: modelData.label; color: Theme.text; font.pixelSize: 12
+                                    text: modelData.label; color: Theme.text; font.pixelSize: Theme.fontBody
                                     Layout.fillWidth: true; elide: Text.ElideRight
                                     verticalAlignment: Text.AlignVCenter
                                 }
@@ -340,7 +340,7 @@ Popup {
                         width: parent.width - 30
                         visible: !dlg._curIsDate && dlg._values.length === 0
                         text: qsTr("No distinct values to list — use the search box below.")
-                        color: Theme.text3; font.pixelSize: 11
+                        color: Theme.text3; font.pixelSize: Theme.fontSm
                         horizontalAlignment: Text.AlignHCenter; wrapMode: Text.WordWrap
                     }
                     Text {
@@ -348,7 +348,7 @@ Popup {
                         width: parent.width - 30
                         visible: dlg._curIsDate
                         text: qsTr("Use the range below to filter by date.")
-                        color: Theme.text3; font.pixelSize: 11
+                        color: Theme.text3; font.pixelSize: Theme.fontSm
                         horizontalAlignment: Text.AlignHCenter; wrapMode: Text.WordWrap
                     }
                 }
@@ -359,7 +359,7 @@ Popup {
                     Layout.leftMargin: 14; Layout.rightMargin: 14; Layout.topMargin: 8
                     spacing: 4
                     opacity: dlg._curIsDate ? 0.45 : 1.0
-                    Text { text: qsTr("Search Text"); color: Theme.text2; font.pixelSize: 11; font.weight: Font.DemiBold }
+                    Text { text: qsTr("Search Text"); color: Theme.text2; font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold }
                     FilterInput {
                         id: searchInput
                         enabled: !dlg._curIsDate
@@ -374,7 +374,7 @@ Popup {
                     Layout.leftMargin: 14; Layout.rightMargin: 14; Layout.topMargin: 6; Layout.bottomMargin: 11
                     spacing: 4
                     opacity: dlg._curIsDate ? 1.0 : 0.45
-                    Text { text: qsTr("Range"); color: Theme.text2; font.pixelSize: 11; font.weight: Font.DemiBold }
+                    Text { text: qsTr("Range"); color: Theme.text2; font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold }
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 8
@@ -442,7 +442,7 @@ Popup {
             placeholderText: fi.placeholder
             placeholderTextColor: Theme.text3
             background: null
-            font.pixelSize: 12
+            font.pixelSize: Theme.fontBody
             selectByMouse: true
             onTextEdited: fi.edited(text)
         }
@@ -474,7 +474,7 @@ Popup {
             Text {
                 text: fb.label
                 color: fb.primary ? "#ffffff" : Theme.text
-                font.pixelSize: 12; font.weight: fb.primary ? Font.DemiBold : Font.Medium
+                font.pixelSize: Theme.fontBody; font.weight: fb.primary ? Font.DemiBold : Font.Medium
                 verticalAlignment: Text.AlignVCenter
             }
         }

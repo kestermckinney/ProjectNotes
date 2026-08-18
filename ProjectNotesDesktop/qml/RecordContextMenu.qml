@@ -323,10 +323,10 @@ Popup {
             spacing: 8
             Text {
                 text: menu.recordType.toUpperCase(); color: Theme.text3
-                font.pixelSize: 10; font.weight: Font.Bold
+                font.pixelSize: Theme.menuFontSm; font.weight: Font.Bold
             }
             Text {
-                text: menu.recordLabel; color: Theme.text2; font.pixelSize: 12
+                text: menu.recordLabel; color: Theme.text2; font.pixelSize: Theme.menuFontLg
                 Layout.fillWidth: true; elide: Text.ElideRight
                 verticalAlignment: Text.AlignVCenter
             }

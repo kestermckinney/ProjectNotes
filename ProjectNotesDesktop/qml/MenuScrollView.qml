@@ -71,7 +71,7 @@ Item {
         MaterialIcon {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
-            name: "expand_less"; size: 14; color: Theme.text3
+            name: "expand_less"; size: Theme.menuIconSize; color: Theme.text3
         }
     }
     Rectangle {
@@ -85,7 +85,7 @@ Item {
         MaterialIcon {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
-            name: "expand_more"; size: 14; color: Theme.text3
+            name: "expand_more"; size: Theme.menuIconSize; color: Theme.text3
         }
     }
 }

@@ -21,14 +21,14 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             text: page.pageTitle
             color: Theme.text
-            font.pixelSize: 18
+            font.pixelSize: Theme.font4xl
             font.weight: Font.DemiBold
         }
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
             text: "This screen arrives in a later phase of the UI overhaul."
             color: Theme.text2
-            font.pixelSize: 13
+            font.pixelSize: Theme.fontLg
         }
     }
 }

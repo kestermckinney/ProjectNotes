@@ -74,7 +74,7 @@ Item {
                         }
                         Text {
                             text: (card.model.client_name || qsTr("(no name)")).toString()
-                            color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold
+                            color: Theme.text; font.pixelSize: Theme.fontLg; font.weight: Font.DemiBold
                             elide: Text.ElideRight; Layout.fillWidth: true
                         }
                         KebabButton {

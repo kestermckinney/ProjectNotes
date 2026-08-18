@@ -87,7 +87,7 @@ Rectangle {
                 text: DesktopAppController.projectManagerInitials !== ""
                       ? DesktopAppController.projectManagerInitials : "PM"
                 color: "#ffffff"
-                font.pixelSize: 10
+                font.pixelSize: Theme.fontXs
                 font.bold: true
             }
         }

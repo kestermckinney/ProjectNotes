@@ -91,7 +91,7 @@ Dialog {
             MaterialIcon { name: "spellcheck"; size: 17; color: Theme.accent }
             Text {
                 text: qsTr("Check Spelling")
-                color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold
+                color: Theme.text; font.pixelSize: Theme.fontXl; font.weight: Font.Bold
                 Layout.fillWidth: true
             }
             MaterialIcon {
@@ -112,7 +112,7 @@ Dialog {
                 MaterialIcon { name: "task_alt"; size: 17; color: Theme.green }
                 Text {
                     text: qsTr("Spell check complete.")
-                    color: Theme.text; font.pixelSize: 13
+                    color: Theme.text; font.pixelSize: Theme.fontLg
                 }
             }
             Item {
@@ -133,13 +133,13 @@ Dialog {
             spacing: 8
             visible: !dlg._finished
 
-            Text { text: qsTr("Not in dictionary:"); color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold }
+            Text { text: qsTr("Not in dictionary:"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
             Text {
                 text: dlg._word
-                color: Theme.red; font.pixelSize: 14; font.weight: Font.DemiBold
+                color: Theme.red; font.pixelSize: Theme.fontXl; font.weight: Font.DemiBold
             }
 
-            Text { text: qsTr("Change to:"); color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold }
+            Text { text: qsTr("Change to:"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
             Rectangle {
                 Layout.fillWidth: true
                 implicitHeight: 30
@@ -155,14 +155,14 @@ Dialog {
                     bottomPadding: 0
                     verticalAlignment: Text.AlignVCenter
                     color: Theme.text
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontBody
                     background: null
                     selectByMouse: true
                     onAccepted: dlg._change()
                 }
             }
 
-            Text { text: qsTr("Suggestions:"); color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold }
+            Text { text: qsTr("Suggestions:"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 120
@@ -181,7 +181,7 @@ Dialog {
                         width: suggestList.width
                         height: 25
                         contentItem: Text {
-                            text: modelData; color: Theme.text; font.pixelSize: 12
+                            text: modelData; color: Theme.text; font.pixelSize: Theme.fontBody
                             leftPadding: 7; verticalAlignment: Text.AlignVCenter
                         }
                         background: Rectangle {
@@ -228,7 +228,7 @@ Dialog {
             anchors.centerIn: parent
             text: parent.label
             color: parent.primary ? "#ffffff" : Theme.text
-            font.pixelSize: 11; font.weight: Font.DemiBold
+            font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold
         }
         HoverHandler { id: bHover }
         TapHandler { onTapped: parent.clicked() }

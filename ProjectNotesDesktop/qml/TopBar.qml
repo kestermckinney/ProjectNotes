@@ -99,7 +99,7 @@ Rectangle {
         Text {
             text: bar.crumbTitle
             color: Theme.text
-            font.pixelSize: 14
+            font.pixelSize: Theme.fontXl
             font.weight: Font.DemiBold
         }
         MaterialIcon {
@@ -109,7 +109,7 @@ Rectangle {
         Text {
             text: bar.crumbSub
             color: Theme.text2
-            font.pixelSize: 12
+            font.pixelSize: Theme.fontBody
             visible: bar.crumbSub !== ""
         }
 
@@ -133,7 +133,7 @@ Rectangle {
                 Text {
                     text: Math.round(Theme.uiScale * 100) + "%"
                     color: Theme.text2
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontSm
                 }
             }
             HoverHandler { id: zoomHover }
@@ -193,7 +193,7 @@ Rectangle {
                         readonly property bool current: Math.round(Theme.uiScale * 100) === modelData
                         Layout.fillWidth: true
                         implicitWidth: levelContent.implicitWidth + 16
-                        implicitHeight: 26
+                        implicitHeight: Theme.menuRowHeight
                         radius: Theme.radiusSm
                         color: levelHover.hovered ? Theme.surface2 : "transparent"
                         RowLayout {
@@ -204,13 +204,13 @@ Rectangle {
                             Text {
                                 text: levelRow.modelData + "%"
                                 color: Theme.text
-                                font.pixelSize: 12
+                                font.pixelSize: Theme.menuFont
                                 font.weight: levelRow.current ? Font.DemiBold : Font.Normal
                                 Layout.fillWidth: true
                             }
                             MaterialIcon {
                                 visible: levelRow.current
-                                name: "check"; size: 13; color: Theme.accent
+                                name: "check"; size: Theme.menuCheckSize; color: Theme.accent
                             }
                         }
                         HoverHandler { id: levelHover }
@@ -239,7 +239,7 @@ Rectangle {
                 anchors.centerIn: parent
                 spacing: 5
                 MaterialIcon { name: "delete"; size: 15; color: Theme.red }
-                Text { text: qsTr("Delete"); color: Theme.red; font.pixelSize: 12 }
+                Text { text: qsTr("Delete"); color: Theme.red; font.pixelSize: Theme.fontBody }
             }
             HoverHandler { id: delHover }
             TapHandler { onTapped: bar.deleteClicked() }
@@ -258,7 +258,7 @@ Rectangle {
                 anchors.centerIn: parent
                 spacing: 5
                 MaterialIcon { name: "download"; size: 15; color: Theme.text2 }
-                Text { text: qsTr("Export XML"); color: Theme.text; font.pixelSize: 12 }
+                Text { text: qsTr("Export XML"); color: Theme.text; font.pixelSize: Theme.fontBody }
             }
             HoverHandler { id: expHover }
             TapHandler { onTapped: bar.exportClicked() }
@@ -292,7 +292,7 @@ Rectangle {
                     color: Theme.text
                     placeholderTextColor: Theme.text3
                     background: null
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontBody
                     onTextEdited: bar.searchEdited(text)
                     // Esc clears the field while it has focus. With nothing to
                     // clear the key falls through to whatever else wants it
@@ -348,7 +348,7 @@ Rectangle {
                 anchors.centerIn: parent
                 spacing: 5
                 MaterialIcon { name: "filter_list"; size: 15; color: bar.filterActive ? Theme.accent : Theme.text2; Layout.alignment: Qt.AlignVCenter }
-                Text { text: qsTr("Filter"); color: bar.filterActive ? Theme.accent : Theme.text; font.pixelSize: 12; verticalAlignment: Text.AlignVCenter }
+                Text { text: qsTr("Filter"); color: bar.filterActive ? Theme.accent : Theme.text; font.pixelSize: Theme.fontBody; verticalAlignment: Text.AlignVCenter }
             }
             HoverHandler { id: filtHover }
             TapHandler { onTapped: bar.filterClicked() }
@@ -369,7 +369,7 @@ Rectangle {
                 anchors.centerIn: parent
                 spacing: 5
                 MaterialIcon { name: "swap_vert"; size: 15; color: bar.sortActive ? Theme.accent : Theme.text2; Layout.alignment: Qt.AlignVCenter }
-                Text { text: qsTr("Sort"); color: bar.sortActive ? Theme.accent : Theme.text; font.pixelSize: 12; verticalAlignment: Text.AlignVCenter }
+                Text { text: qsTr("Sort"); color: bar.sortActive ? Theme.accent : Theme.text; font.pixelSize: Theme.fontBody; verticalAlignment: Text.AlignVCenter }
             }
             HoverHandler { id: sortHover }
             TapHandler { onTapped: bar.sortClicked() }
@@ -385,7 +385,7 @@ Rectangle {
                 spacing: 5
                 MaterialIcon { name: "add"; size: 16; color: "#ffffff"; Layout.alignment: Qt.AlignVCenter }
                 Text {
-                    text: bar.newLabel; color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
+                    text: bar.newLabel; color: "#ffffff"; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
                     verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter
                 }
             }

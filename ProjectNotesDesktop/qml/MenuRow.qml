@@ -34,7 +34,7 @@ Rectangle {
     signal activated()
 
     Layout.fillWidth: true
-    implicitHeight: 24
+    implicitHeight: Theme.menuRowHeight
     // Report the row's natural width (content + the 6px side margins) so a
     // Popup can size itself to its widest row — the RowLayout is anchored, so
     // it won't drive width on its own.
@@ -51,35 +51,35 @@ Rectangle {
         // Fixed-size icon slot even when icon is "" (AppMenu's group-trigger
         // rows have no icon), so labels stay column-aligned across rows.
         Item {
-            Layout.preferredWidth: 14; Layout.preferredHeight: 14
+            Layout.preferredWidth: Theme.menuIconSize; Layout.preferredHeight: Theme.menuIconSize
             Layout.alignment: Qt.AlignVCenter
             MaterialIcon {
                 anchors.centerIn: parent
                 visible: mr.icon !== ""
-                name: mr.icon; size: 14
+                name: mr.icon; size: Theme.menuIconSize
                 color: mr.danger ? Theme.red : Theme.text2
             }
         }
         Text {
             text: mr.label
             color: mr.danger ? Theme.red : Theme.text
-            font.pixelSize: 11
+            font.pixelSize: Theme.menuFont
             Layout.fillWidth: true; elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
         }
         MaterialIcon {
             visible: mr.toggle && mr.checked
-            name: "check"; size: 13; color: Theme.accent
+            name: "check"; size: Theme.menuCheckSize; color: Theme.accent
             Layout.alignment: Qt.AlignVCenter
         }
         Text {
             visible: mr.trailingText !== "" && !mr.toggle && !mr.showChevron
-            text: mr.trailingText; color: Theme.text3; font.pixelSize: 10
+            text: mr.trailingText; color: Theme.text3; font.pixelSize: Theme.menuFontSm
             verticalAlignment: Text.AlignVCenter
         }
         MaterialIcon {
             visible: mr.showChevron
-            name: "chevron_right"; size: 12; color: Theme.text3
+            name: "chevron_right"; size: Theme.menuChevronSize; color: Theme.text3
             Layout.alignment: Qt.AlignVCenter
         }
     }

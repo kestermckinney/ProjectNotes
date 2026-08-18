@@ -147,7 +147,7 @@ Rectangle {
                     Layout.leftMargin: 3
                     text: HelpController.topicTitle(page.current)
                     color: Theme.text
-                    font.pixelSize: 14
+                    font.pixelSize: Theme.fontXl
                     font.weight: Font.DemiBold
                     elide: Text.ElideRight
                 }
@@ -202,7 +202,7 @@ Rectangle {
                                 color: Theme.text
                                 placeholderTextColor: Theme.text3
                                 background: null
-                                font.pixelSize: 12
+                                font.pixelSize: Theme.fontBody
                                 selectByMouse: true
                             }
 
@@ -238,7 +238,7 @@ Rectangle {
                                 visible: page.query.length > 0 && page.results.length === 0
                                 text: qsTr("No results for “%1”.").arg(page.query)
                                 color: Theme.text3
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSm
                                 Layout.margins: 10
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
@@ -263,7 +263,7 @@ Rectangle {
                                         Text {
                                             text: modelData.title
                                             color: Theme.text
-                                            font.pixelSize: 12
+                                            font.pixelSize: Theme.fontBody
                                             font.weight: Font.DemiBold
                                             Layout.fillWidth: true
                                             elide: Text.ElideRight
@@ -272,7 +272,7 @@ Rectangle {
                                             visible: (modelData.snippet || "").length > 0
                                             text: modelData.snippet
                                             color: Theme.text3
-                                            font.pixelSize: 10
+                                            font.pixelSize: Theme.fontXs
                                             Layout.fillWidth: true
                                             wrapMode: Text.WordWrap
                                             maximumLineCount: 2
@@ -309,7 +309,7 @@ Rectangle {
                                                 Layout.fillWidth: true
                                                 text: modelData.title.toUpperCase()
                                                 color: Theme.text2
-                                                font.pixelSize: 10
+                                                font.pixelSize: Theme.fontXs
                                                 font.weight: Font.Bold
                                                 elide: Text.ElideRight
                                             }
@@ -339,7 +339,7 @@ Rectangle {
                                                 verticalAlignment: Text.AlignVCenter
                                                 text: modelData.title
                                                 color: isCurrent ? Theme.accentStrong : Theme.text
-                                                font.pixelSize: 12
+                                                font.pixelSize: Theme.fontBody
                                                 font.weight: isCurrent ? Font.DemiBold : Font.Normal
                                                 elide: Text.ElideRight
                                             }
@@ -375,7 +375,7 @@ Rectangle {
                     textFormat: Text.MarkdownText
                     wrapMode: Text.WordWrap
                     color: Theme.text
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontLg
                     onLinkActivated: (link) => {
                         var t = HelpController.resolveLink(page.current, link)
                         if (t && t.length) page.navigate(t)

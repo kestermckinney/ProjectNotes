@@ -170,7 +170,7 @@ Rectangle {
                     visible: btn.glyph !== ""
                     text: btn.glyph
                     color: btn.active ? Theme.accent : Theme.text2
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontLg
                     font.weight: Font.Bold
                 }
             }
@@ -200,7 +200,7 @@ Rectangle {
                     id: chipText
                     text: chip.label
                     color: Theme.text2
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontSm
                     elide: Text.ElideRight
                     Layout.maximumWidth: 100
                 }
@@ -361,7 +361,7 @@ Rectangle {
                     placeholderText: qsTr("Search fonts…")
                     placeholderTextColor: Theme.text3
                     background: null
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontSm
                     selectByMouse: true
                 }
             }
@@ -380,7 +380,7 @@ Rectangle {
                     contentItem: Text {
                         text: modelData
                         color: Theme.text
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontBody
                         font.family: modelData
                         leftPadding: 7
                         verticalAlignment: Text.AlignVCenter
@@ -429,7 +429,7 @@ Rectangle {
                 contentItem: Text {
                     text: modelData
                     color: Theme.text
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontBody
                     leftPadding: 8
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -517,7 +517,7 @@ Rectangle {
             spacing: 6
             Text {
                 text: qsTr("Text color")
-                color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold
+                color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold
             }
             Grid {
                 columns: 8
@@ -572,7 +572,7 @@ Rectangle {
             spacing: 6
             Text {
                 text: qsTr("Highlight")
-                color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold
+                color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold
             }
             Grid {
                 columns: 8
@@ -613,7 +613,7 @@ Rectangle {
                     anchors.leftMargin: 7
                     spacing: 5
                     MaterialIcon { name: "format_color_reset"; size: 13; color: Theme.text2 }
-                    Text { text: qsTr("No highlight"); color: Theme.text2; font.pixelSize: 11 }
+                    Text { text: qsTr("No highlight"); color: Theme.text2; font.pixelSize: Theme.fontSm }
                 }
                 HoverHandler { id: noneHover }
                 TapHandler {
@@ -693,7 +693,7 @@ Rectangle {
                 text: tablePopup.hoverRows > 0
                       ? tablePopup.hoverCols + " × " + tablePopup.hoverRows
                       : qsTr("Insert table")
-                color: Theme.text2; font.pixelSize: 11
+                color: Theme.text2; font.pixelSize: Theme.fontSm
             }
         }
     }

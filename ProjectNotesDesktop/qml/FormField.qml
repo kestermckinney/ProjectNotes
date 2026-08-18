@@ -27,7 +27,7 @@ ColumnLayout {
         text: root.label
         visible: root.label !== ""
         color: Theme.text3
-        font.pixelSize: 10
+        font.pixelSize: Theme.fontXs
         font.weight: Font.DemiBold
     }
     Rectangle {
@@ -47,7 +47,7 @@ ColumnLayout {
             placeholderTextColor: Theme.text3
             readOnly: root.readOnly
             background: null
-            font.pixelSize: 12
+            font.pixelSize: Theme.fontBody
             selectByMouse: true
             onTextEdited: root.edited(text)
             onEditingFinished: root.editingFinished()

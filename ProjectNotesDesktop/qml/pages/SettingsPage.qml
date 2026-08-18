@@ -65,7 +65,7 @@ Item {
                             contentItem: Text {
                                 text: modelData.label
                                 color: Theme.mode === modelData.key ? "#ffffff" : Theme.text
-                                font.pixelSize: 12
+                                font.pixelSize: Theme.fontBody
                                 verticalAlignment: Text.AlignVCenter
                             }
                             onClicked: Theme.mode = modelData.key
@@ -97,7 +97,7 @@ Item {
                         Text {
                             Layout.fillWidth: true
                             color: DesktopAppController.syncNetworkError ? Theme.red : Theme.text
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontBody
                             font.weight: Font.DemiBold
                             elide: Text.ElideRight
                             text: DesktopAppController.syncDetail
@@ -106,7 +106,7 @@ Item {
                             Layout.fillWidth: true
                             visible: DesktopAppController.subscriptionStatusText !== ""
                             color: Theme.text3
-                            font.pixelSize: 11
+                            font.pixelSize: Theme.fontSm
                             elide: Text.ElideRight
                             textFormat: Text.RichText
                             text: DesktopAppController.subscriptionStatusText
@@ -119,7 +119,7 @@ Item {
                         contentItem: RowLayout {
                             spacing: 4
                             MaterialIcon { name: "monitoring"; size: 14; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
-                            Text { text: qsTr("Sync Stats"); color: Theme.text; font.pixelSize: 11; font.weight: Font.DemiBold
+                            Text { text: qsTr("Sync Stats"); color: Theme.text; font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold
                                    verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
                         }
                         onClicked: DesktopAppController.showSyncStats()
@@ -132,7 +132,7 @@ Item {
                         contentItem: RowLayout {
                             spacing: 4
                             MaterialIcon { name: "sync"; size: 14; color: "#ffffff"; Layout.alignment: Qt.AlignVCenter }
-                            Text { text: qsTr("Sync Now"); color: "#ffffff"; font.pixelSize: 11; font.weight: Font.DemiBold
+                            Text { text: qsTr("Sync Now"); color: "#ffffff"; font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold
                                    verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
                         }
                         onClicked: DesktopAppController.syncNow()
@@ -144,7 +144,7 @@ Item {
                         contentItem: RowLayout {
                             spacing: 4
                             MaterialIcon { name: "sync_alt"; size: 14; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
-                            Text { text: qsTr("Sync All"); color: Theme.text; font.pixelSize: 11; font.weight: Font.DemiBold
+                            Text { text: qsTr("Sync All"); color: Theme.text; font.pixelSize: Theme.fontSm; font.weight: Font.DemiBold
                                    verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
                         }
                         onClicked: DesktopAppController.syncAll()
@@ -216,7 +216,7 @@ Item {
                             color: Theme.text
                             placeholderTextColor: Theme.text3
                             background: null
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontBody
                             verticalAlignment: Text.AlignVCenter
                             onAccepted: page._createFolder()
                         }
@@ -230,7 +230,7 @@ Item {
                         contentItem: RowLayout {
                             spacing: 5
                             MaterialIcon { name: "add"; size: 16; color: "#ffffff"; Layout.alignment: Qt.AlignVCenter }
-                            Text { text: "Add Folder"; color: "#ffffff"; font.pixelSize: 12; font.weight: Font.DemiBold
+                            Text { text: "Add Folder"; color: "#ffffff"; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
                                    verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
                         }
                         onClicked: page._createFolder()
@@ -280,7 +280,7 @@ Item {
                             Text {
                                 text: folderRow.folder.name
                                 color: Theme.text
-                                font.pixelSize: 13
+                                font.pixelSize: Theme.fontLg
                                 font.weight: Font.DemiBold
                                 Layout.fillWidth: true
                                 elide: Text.ElideRight
@@ -290,7 +290,7 @@ Item {
                                 text: folderRow.folder.count
                                       + (folderRow.folder.count === 1 ? " project" : " projects")
                                 color: Theme.text3
-                                font.pixelSize: 10
+                                font.pixelSize: Theme.fontXs
                             }
 
                             // Color swatches
@@ -329,7 +329,7 @@ Item {
                     visible: FolderManager.folders.length === 0
                     text: "No folders yet. Add one above — it will appear in the project sidebar."
                     color: Theme.text3
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontSm
                 }
             }
 
@@ -388,7 +388,7 @@ Item {
                     contentItem: RowLayout {
                         spacing: 5
                         MaterialIcon { name: "upload"; size: 16; color: Theme.text2; Layout.alignment: Qt.AlignVCenter }
-                        Text { text: qsTr("Import from XML…"); color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                        Text { text: qsTr("Import from XML…"); color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
                                verticalAlignment: Text.AlignVCenter; Layout.alignment: Qt.AlignVCenter }
                     }
                     onClicked: importDialog.open()
@@ -400,25 +400,25 @@ Item {
                 title: "About"
                 Text {
                     text: "Project Notes"
-                    color: Theme.text; font.pixelSize: 16; font.weight: Font.Bold
+                    color: Theme.text; font.pixelSize: Theme.font3xl; font.weight: Font.Bold
                 }
                 Text {
                     text: "Version " + Qt.application.version + " · Built " + DesktopAppController.buildTimestamp()
-                    color: Theme.text3; font.pixelSize: 12
+                    color: Theme.text3; font.pixelSize: Theme.fontBody
                 }
                 Text {
                     text: "Qt " + DesktopAppController.qtRuntimeVersion()
-                    color: Theme.text3; font.pixelSize: 12
+                    color: Theme.text3; font.pixelSize: Theme.fontBody
                 }
                 Text {
                     visible: text.length > 0
                     text: DesktopAppController.developerProfile().length > 0
                           ? "Profile: " + DesktopAppController.developerProfile() : ""
-                    color: Theme.text3; font.pixelSize: 12
+                    color: Theme.text3; font.pixelSize: Theme.fontBody
                 }
                 Text {
                     text: "© 2022–2026 Paul McKinney"
-                    color: Theme.text3; font.pixelSize: 11
+                    color: Theme.text3; font.pixelSize: Theme.fontSm
                 }
 
                 RowLayout {
@@ -437,7 +437,7 @@ Item {
                             leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
                             contentItem: Text {
                                 text: modelData.label
-                                color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                                color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                             }
@@ -463,14 +463,14 @@ Item {
                         Text {
                             Layout.fillWidth: true
                             text: qsTr("Take Project Notes With You")
-                            font.pixelSize: 13; font.weight: Font.Bold
+                            font.pixelSize: Theme.fontLg; font.weight: Font.Bold
                             color: Theme.text
                             wrapMode: Text.WordWrap
                         }
                         Text {
                             Layout.fillWidth: true
                             text: qsTr("Download the Project Notes mobile app for iOS to check status, review notes, and stay on top of tracker items on the go.")
-                            font.pixelSize: 11
+                            font.pixelSize: Theme.fontSm
                             color: Theme.text3
                             wrapMode: Text.WordWrap
                         }
@@ -481,7 +481,7 @@ Item {
                     Layout.topMargin: 3
                     text: "<a href=\"https://www.projectnotespro.com\">www.projectnotespro.com</a>"
                     textFormat: Text.RichText
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontBody
                     color: Theme.accent
                     linkColor: Theme.accent
                     onLinkActivated: Qt.openUrlExternally(link)
@@ -516,7 +516,7 @@ Item {
         }
         Text {
             text: chk.label
-            color: Theme.text; font.pixelSize: 12
+            color: Theme.text; font.pixelSize: Theme.fontBody
             verticalAlignment: Text.AlignVCenter
             Layout.fillWidth: true
         }
@@ -536,7 +536,7 @@ Item {
         function commit() { sf.committed(sfInput.text) }
         Layout.fillWidth: true
         spacing: 3
-        Text { text: sf.label; color: Theme.text3; font.pixelSize: 10; font.weight: Font.DemiBold }
+        Text { text: sf.label; color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: 30
@@ -550,7 +550,7 @@ Item {
                 verticalAlignment: Text.AlignVCenter
                 color: Theme.text
                 background: null
-                font.pixelSize: 12
+                font.pixelSize: Theme.fontBody
                 selectByMouse: true
                 echoMode: sf.password ? TextInput.PasswordEchoOnEdit : TextInput.Normal
                 Component.onCompleted: text = sf.value
@@ -649,12 +649,12 @@ Item {
         Layout.fillWidth: true
         spacing: 8
 
-        Text { text: title; color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold }
+        Text { text: title; color: Theme.text; font.pixelSize: Theme.fontXl; font.weight: Font.Bold }
         Text {
             text: subtitle
             visible: subtitle !== ""
             color: Theme.text2
-            font.pixelSize: 12
+            font.pixelSize: Theme.fontBody
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
         }
