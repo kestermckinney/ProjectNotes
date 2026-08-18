@@ -42,6 +42,22 @@ Rectangle {
         { label: qsTr("Heading 6"),   style: 14, px: 11, wt: Font.DemiBold }
     ]
 
+    // List styles for the bullet-type dropdown. `style` maps to
+    // TextFormatter.applyStyle's list branch (1..8); 0 is handled specially
+    // (removes list formatting via toggleBulletList — see listStylePopup).
+    // Same 8 styles the legacy Widgets toolbar's style combo offers.
+    readonly property var _listStyles: [
+        { label: qsTr("None"),                  style: 0, glyph: ""   },
+        { label: qsTr("Bulleted (Disc)"),       style: 1, glyph: "●"  },
+        { label: qsTr("Bulleted (Circle)"),     style: 2, glyph: "○"  },
+        { label: qsTr("Bulleted (Square)"),     style: 3, glyph: "▪"  },
+        { label: qsTr("Numbered (1, 2, 3)"),    style: 4, glyph: "1." },
+        { label: qsTr("Numbered (a, b, c)"),    style: 5, glyph: "a." },
+        { label: qsTr("Numbered (A, B, C)"),    style: 6, glyph: "A." },
+        { label: qsTr("Numbered (i, ii, iii)"), style: 7, glyph: "i." },
+        { label: qsTr("Numbered (I, II, III)"), style: 8, glyph: "I." }
+    ]
+
     // Google-Docs-style palette: grayscale row + hue columns at several shades.
     readonly property var _fontColors: [
         "#000000", "#434343", "#666666", "#999999", "#b7b7b7", "#cccccc", "#d9d9d9", "#ffffff",
@@ -84,7 +100,8 @@ Rectangle {
             size: TextFormatter.currentFontPointSize(doc, e),
             color: TextFormatter.currentFontColor(doc, e),
             alignment: TextFormatter.currentAlignment(doc, e),
-            style: TextFormatter.currentParagraphStyle(doc, e)
+            style: TextFormatter.currentParagraphStyle(doc, e),
+            listStyle: TextFormatter.currentListStyle(doc, e)
         }
     }
 
@@ -134,6 +151,15 @@ Rectangle {
             if (_paragraphStyles[i].style === idx)
                 return _paragraphStyles[i].label
         return qsTr("Style")
+    }
+
+    // Human-readable name for a list-style index (see _listStyles). idx is
+    // -1 (not in a list) when no bullet/numbered style is active.
+    function _listStyleLabel(idx) {
+        for (var i = 0; i < _listStyles.length; i++)
+            if (_listStyles[i].style === idx)
+                return _listStyles[i].label
+        return qsTr("Bullets & Numbering")
     }
 
     RowLayout {
@@ -227,6 +253,50 @@ Rectangle {
             TapHandler { onTapped: chip.clicked() }
         }
 
+        // Split button for the bullet/numbering picker: the main glyph toggles
+        // the default disc bullet list on/off (unchanged one-click behavior);
+        // the chevron opens listStylePopup to pick a specific bullet or
+        // numbering style. Mirrors ChipButton/FmtButton's hover/active visuals.
+        component ListSplitButton: Item {
+            id: lsb
+            property bool active: false
+            signal toggled()
+            signal pickerRequested()
+            implicitWidth: 34
+            implicitHeight: 26
+            Layout.alignment: Qt.AlignVCenter
+
+            RowLayout {
+                anchors.fill: parent
+                spacing: 0
+                Rectangle {
+                    Layout.preferredWidth: 24
+                    Layout.fillHeight: true
+                    radius: Theme.radiusSm
+                    color: lsb.active ? Theme.accentSoft : (mainHover.hovered ? Theme.surface : "transparent")
+                    border.color: lsb.active ? Theme.accent : "transparent"
+                    border.width: 1
+                    MaterialIcon {
+                        anchors.centerIn: parent
+                        name: "format_list_bulleted"
+                        size: 15
+                        color: lsb.active ? Theme.accent : Theme.text2
+                    }
+                    HoverHandler { id: mainHover }
+                    TapHandler { onTapped: lsb.toggled() }
+                }
+                Rectangle {
+                    Layout.preferredWidth: 10
+                    Layout.fillHeight: true
+                    radius: Theme.radiusSm
+                    color: chevHover.hovered ? Theme.surface : "transparent"
+                    MaterialIcon { anchors.centerIn: parent; name: "arrow_drop_down"; size: 12; color: Theme.text2 }
+                    HoverHandler { id: chevHover }
+                    TapHandler { onTapped: lsb.pickerRequested() }
+                }
+            }
+        }
+
         component Sep: Rectangle {
             Layout.alignment: Qt.AlignVCenter
             width: 1; height: 17; color: Theme.border
@@ -278,7 +348,12 @@ Rectangle {
         }
         Sep {}
 
-        FmtButton { icon: "format_list_bulleted"; onTriggered: bar._apply(TextFormatter.toggleBulletList) }
+        ListSplitButton {
+            id: bulletBtn
+            active: bar._liveFmt ? bar._liveFmt.listStyle > 0 : false
+            onToggled: bar._apply(TextFormatter.toggleBulletList)
+            onPickerRequested: { bar._capture(); listStylePopup.openFor(bulletBtn) }
+        }
         FmtButton { icon: "format_indent_increase"; onTriggered: bar._apply(TextFormatter.indentText) }
         FmtButton { icon: "format_indent_decrease"; onTriggered: bar._apply(TextFormatter.unindentText) }
         Sep {}
@@ -486,6 +561,79 @@ Rectangle {
                         onTapped: {
                             bar._applyStashed(function(d,s,e){ TextFormatter.applyStyle(d, s, e, modelData.style) })
                             stylePopup.close()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Bullet/numbering style popup ──────────────────────────────────────────
+    Popup {
+        id: listStylePopup
+        width: 190
+        padding: 5
+        modal: false
+        scale: Theme.uiScale
+        transformOrigin: Item.TopLeft
+        background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
+
+        // Clicking away dismisses the picker and nothing else — see ClickShield.qml.
+        ClickShield { host: listStylePopup }
+
+        function openFor(anchorItem) {
+            var p = anchorItem.mapToItem(bar, 0, anchorItem.height)
+            x = Math.max(0, Math.min(p.x, bar.width - width))
+            y = p.y + 4
+            open()
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 0
+            Repeater {
+                model: bar._listStyles
+                delegate: Rectangle {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    implicitHeight: 30
+                    radius: 4
+                    color: bar._liveFmt && bar._liveFmt.listStyle === modelData.style
+                           ? Theme.accentSoft : (lsHover.hovered ? Theme.surface2 : "transparent")
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 8
+                        anchors.rightMargin: 8
+                        spacing: 8
+                        Text {
+                            text: modelData.glyph
+                            color: Theme.text2
+                            font.pixelSize: Theme.fontBody
+                            Layout.preferredWidth: 16
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                        Text {
+                            text: modelData.label
+                            color: Theme.text
+                            font.pixelSize: Theme.fontBody
+                            Layout.fillWidth: true
+                        }
+                    }
+                    HoverHandler { id: lsHover }
+                    TapHandler {
+                        onTapped: {
+                            bar._applyStashed(function(d,s,e){
+                                if (modelData.style === 0) {
+                                    // "None": toggleBulletList removes whatever list
+                                    // style is active without touching char format
+                                    // (applyStyle(0) would also reset font size/weight).
+                                    // No-op when there's nothing to remove.
+                                    if (TextFormatter.currentListStyle(d, e) > 0)
+                                        TextFormatter.toggleBulletList(d, s, e)
+                                } else {
+                                    TextFormatter.applyStyle(d, s, e, modelData.style)
+                                }
+                            })
+                            listStylePopup.close()
                         }
                     }
                 }
