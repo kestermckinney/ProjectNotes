@@ -13,6 +13,8 @@ Quick build (common, exact):
 
 High-signal gotchas
 - SqliteSyncPro is a required sibling: CMake calls add_subdirectory(../SqliteSyncPro/src). Put that repo at ../SqliteSyncPro or CMake will fail.
+- The data layer (databaseobjects.cpp, sqlquerymodel.cpp, etc., all still at repo root) is compiled into a static lib by ProjectNotesCore/CMakeLists.txt and linked by both the desktop QML app and ProjectNotesMobile. A change to those files affects the iOS app too, even though nothing in this build tree builds it.
+- ProjectNotesMobile/ (iOS/iPadOS companion app) has its own top-level CMakeLists.txt and is NOT part of this build — don't add_subdirectory it or expect `cmake --build .` to touch it. It's configured separately with an iOS toolchain/Xcode generator and a hardcoded vcpkg OpenSSL path for the maintainer's Mac, then archived via packaging/ios/build_appstore.sh. Its C++ (AppController, MobileSettings, TextFormatter) and QML live under ProjectNotesMobile/, separate from ProjectNotesDesktop/.
 - Python dev headers are required and CMake expects specific versions per OS: Windows/macOS -> Python 3.13 (the CMakeLists sets Python3 3.13); Linux defaults to 3.14. Use -DPython3_ROOT_DIR on macOS if you installed python.org framework (CMakeLists mentions this).
 - The build links against the Python release library (CMake sets Python3_LIBRARIES from the release variant). Don't assume the debug python libs are used.
 - The app expects PyQt6 wheel files under ./site-packages when run from the build/bundle (main.cpp adds ./site-packages/PyQt6 paths). When running from the build output ensure site-packages/PyQt6 exists (or the bundle contains a Python.framework in macOS release builds).
