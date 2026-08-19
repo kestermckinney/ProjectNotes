@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ProjectNotes is a Qt/C++ desktop application (v6.0.0) for project management — tracking notes, meeting minutes, risks, issues, action items, contacts, and clients. It embeds a Python plugin system for extensibility and integrates with tools like Outlook, IFS ERP, and MS Office.
+ProjectNotes is a Qt/C++ desktop application (v6.0.0) for project management — tracking notes, meeting minutes, risks, issues, action items, contacts, and clients. It embeds a Python plugin system for extensibility and integrates with tools like Outlook, IFS ERP, and MS Office. A companion iOS/iPadOS app, ProjectNotesMobile, shares the same data layer and syncs with the desktop app via SqliteSyncPro.
 
 ## Build Commands
 
@@ -21,26 +21,34 @@ cmake --build .
 - Also requires `SqliteSyncPro` checked out as a sibling directory (`../SqliteSyncPro/src`) — it's linked as `SqliteSyncProLib`
 - No automated test framework exists in this project
 - No linting configuration
+- `ProjectNotesMobile/` (the iOS companion app) is **not** part of this build — it's a standalone CMake project cross-compiled for iOS via its own Xcode-generator configure, with a hardcoded vcpkg OpenSSL path for the maintainer's machine. It's built and archived separately; see `packaging/ios/build_appstore.sh`.
 
 ## Architecture
 
 ### Application Structure
 
-Single-instance Qt application enforced via `RunGuard` (UUID-based). Two frontends share a common backend:
+Single-instance Qt application enforced via `RunGuard` (UUID-based). Three frontends share a common backend:
 
-1. **Qt Widgets (Legacy)** - Original desktop UI via `main.cpp` → `MainWindow` (`mainwindow.cpp`)
-2. **Qt QML (Current Desktop)** - Modern QML-based desktop UI via `ProjectNotesDesktop/` with reactive components
+1. **Qt Widgets (Legacy)** - Original desktop UI via `main.cpp` → `MainWindow` (`mainwindow.cpp`); deprecated, off by default (see Build Commands)
+2. **Qt QML (Current Desktop)** - Modern QML-based desktop UI via `ProjectNotesDesktop/` with reactive components; the default build target
+3. **Qt QML (Mobile)** - iOS/iPadOS companion app via `ProjectNotesMobile/` with reactive components; built and shipped separately from the desktop targets
 
 **MainWindow** (`mainwindow.cpp`) manages (Widgets frontend):
 - Page navigation with a history stack (max 20 nodes, forward/back)
 - Text formatting toolbar
 - Plugin menu injection
 
-**Main.qml** (QML frontend) manages:
+**Main.qml** (QML desktop frontend) manages:
 - Section-based navigation (People, Clients, Projects, Items, Search)
 - Dynamic page component stack
 - Filter/Sort dialog coordination
 - Plugin menu integration with RecordContextMenu
+
+**Main.qml** (QML mobile frontend, `ProjectNotesMobile/qml/`) manages:
+- Bottom tab bar navigation (Projects, People, Clients, Items) plus a hamburger-menu drawer for settings and utilities
+- Its own page set under `ProjectNotesMobile/qml/pages/` — sized and interaction-patterned for touch, not a reuse of the desktop QML pages
+- `AppController` (mobile) and `MobileSettings` fill the role `DesktopAppController`/`AppSettings` play on desktop
+- User-facing behavior is documented in `docs/Mobile/ProjectNotesMobile.md`
 
 ### Page System (MVC/QML)
 
@@ -57,6 +65,7 @@ Single-instance Qt application enforced via `RunGuard` (UUID-based). Two fronten
 
 ### Data Layer
 
+- `ProjectNotesCore/` builds the shared data layer (models, database, logging) as a static library, linked by both the QML desktop app and `ProjectNotesMobile`. Its `CMakeLists.txt` lists the source files, but they live one directory up (`databaseobjects.cpp`, `sqlquerymodel.cpp`, etc.) — it's a build wrapper, not a separate source tree. `Qt::Widgets` is a transitive dependency (see the comment at the top of `ProjectNotesCore/CMakeLists.txt`); all `QMessageBox` calls in core code are guarded by `if (m_gui)` so they never run in the mobile app.
 - `databaseobjects.h/cpp` — ORM-like wrappers for database interaction
 - `databasestructure.cpp` — Full schema definition and incremental upgrade logic via `UpgradeDatabase()`; versioned upgrade logic is split into `databaseupgrade_v*.cpp` files
 - `SqlQueryModel` → `SortFilterProxyModel` → `TableView` pipeline for all tabular data
@@ -98,3 +107,11 @@ Cell editors in table views are implemented as delegates: `CheckboxDelegate`, `C
 ## Plugin Development
 
 Plugins are Python files in `plugins/`. See `docs/PluginsOverview/` for the plugin API and `docs/PluginsOverview/ProjectNotesXML.md` for the XML data format used to exchange data between C++ and Python.
+
+## Documentation Writing
+
+- Avoid using em-dashes
+- Avoid clichés such as "delve," "tapestry," "leverage," "seamlessly," and "in today's fast-paced world." Replace these with direct, simple verbs and nouns.
+- Vary Sentence Structure: Mix short, punchy sentences with longer, flowing ones to increase "burstiness." Avoid uniform sentence lengths and predictable three-item lists.
+- Avoid Meta-Commentary: phrases like "In this section," "It is important to note," and "At the end of the day." Start directly with the point and avoid summarizing what you are about to say.
+
