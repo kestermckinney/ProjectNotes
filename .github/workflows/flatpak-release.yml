@@ -177,6 +177,10 @@ jobs:
           files: |
             packaging/linux/ProjectNotes.flatpak
             packaging/linux/projectnotes.flatpakrepo
+          # append_body: without this, action-gh-release REPLACES the whole
+          # release body with the text below, clobbering whatever notes were
+          # already written for the release (this happened to v6.0.0).
+          append_body: true
           body: |
             ### Install on Linux (Flatpak)
 
