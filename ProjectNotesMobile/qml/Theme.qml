@@ -14,6 +14,11 @@ QtObject {
     readonly property color accentGreen:     "#2ecc71"
     // Active / success text
     readonly property color accentGreenDark: "#27ae60"
+    // Toolbar badge + glyph tint marking an active filter or sort. Orange, not
+    // the green above, which already reads as "resolved / active status" in the
+    // lists. The light-mode value is deepened from iOS system orange so a small
+    // dot still carries against a near-white toolbar.
+    readonly property color accentOrange:    isDarkMode ? "#ff9f0a" : "#e2760a"
     // Section header background tint (6 % opacity navy)
     readonly property color sectionBg:       Qt.rgba(42/255, 63/255, 111/255, 0.06)
 
