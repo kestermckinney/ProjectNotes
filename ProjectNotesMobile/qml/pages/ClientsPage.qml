@@ -45,21 +45,21 @@ Page {
 
             ToolButton {
                 icon.name: "line.3.horizontal.decrease.circle"
+                icon.color: filterBadge.iconColor
                 onClicked: filterSheet.openFor("clients", qsTr("Clients"))
-                Rectangle {
-                    visible: { AppController.filterRev; return AppController.hasActiveColumnFilters(AppController.clientsModel) }
-                    width: 8; height: 8; radius: 4; color: palette.highlight
-                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                ActiveIndicator {
+                    id: filterBadge
+                    active: AppController.filterRev >= 0 && AppController.hasActiveColumnFilters(AppController.clientsModel)
                 }
             }
 
             ToolButton {
                 icon.name: "arrow.up.arrow.down"
+                icon.color: sortBadge.iconColor
                 onClicked: sortSheet.openFor("clients", qsTr("Clients"))
-                Rectangle {
-                    visible: { AppController.sortRev; return (AppController.activeSort(AppController.clientsModel).field || "") !== "" }
-                    width: 8; height: 8; radius: 4; color: palette.highlight
-                    anchors { top: parent.top; right: parent.right; topMargin: 6; rightMargin: 6 }
+                ActiveIndicator {
+                    id: sortBadge
+                    active: AppController.sortRev >= 0 && (AppController.activeSort(AppController.clientsModel).field || "") !== ""
                 }
             }
 

@@ -366,6 +366,14 @@ Popup {
                     // Also blank the inputs, otherwise a column drilled into
                     // keeps showing values that are no longer selected.
                     searchInput.text = ""; startInput.text = ""; endInput.text = ""
+                    // Clear what is actually applied as well, not just the
+                    // staged selection. This sheet has no Cancel button and
+                    // closes on a tap outside, so a staged-only reset left the
+                    // filters (and the toolbar's active badge) still on for
+                    // anyone who did not go on to press Apply. Matches the
+                    // Quick Filter dialog's "Clear Filters", which also takes
+                    // effect immediately.
+                    AppController.clearColumnFilters(root._model)
                 }
             }
             Item { Layout.fillWidth: true }
