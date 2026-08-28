@@ -46,6 +46,7 @@ ColumnLayout {
         editable: root.searchable
         model: root._model
         font.pixelSize: Theme.fontBody
+        displayText: root.includeNone && currentIndex === 0 ? "" : currentText
 
         // Current type-to-search text (lower-cased match target). Empty = show all.
         property string _filter: ""
@@ -63,8 +64,48 @@ ColumnLayout {
                 idx = root._model.indexOf(root.value)
             currentIndex = idx
             if (editable)
-                editText = idx >= 0 ? root._model[idx] : ""
+                editText = idx >= 0 && !(root.includeNone && idx === 0)
+                    ? root._model[idx] : ""
             _syncing = false
+        }
+
+        // Resolve typed text to an option. Prefer an exact match, then the
+        // keyboard-highlighted filtered row, and finally the first visible
+        // autocomplete result.
+        function _completionFor(text) {
+            var needle = String(text).toLowerCase()
+            if (needle === "")
+                return ""
+
+            var i
+            for (i = root.includeNone ? 1 : 0; i < root._model.length; ++i) {
+                if (String(root._model[i]).toLowerCase() === needle)
+                    return root._model[i]
+            }
+
+            if (highlightedIndex >= (root.includeNone ? 1 : 0)) {
+                var highlighted = String(root._model[highlightedIndex])
+                if (highlighted.toLowerCase().indexOf(needle) >= 0)
+                    return root._model[highlightedIndex]
+            }
+
+            for (i = root.includeNone ? 1 : 0; i < root._model.length; ++i) {
+                if (String(root._model[i]).toLowerCase().indexOf(needle) >= 0)
+                    return root._model[i]
+            }
+            return ""
+        }
+
+        function _acceptTypedText() {
+            var typed = editText
+            var completion = _completionFor(typed)
+            popup.close()
+            if (typed === "" && root.includeNone)
+                _commit("")
+            else if (completion !== "")
+                _commit(completion)
+            else
+                _syncFromValue()
         }
 
         // Commit a chosen/typed value. Blank (or the none entry) emits "";
@@ -75,9 +116,11 @@ ColumnLayout {
             if (root.includeNone && (text === "" || text === root.noneLabel)) {
                 root.value = ""
                 root.activated("")
+                _syncFromValue()
             } else if (root._model.indexOf(text) >= 0) {
                 root.value = text
                 root.activated(text)
+                _syncFromValue()
             } else {
                 _syncFromValue() // ignore free text that matches no entry
             }
@@ -92,17 +135,16 @@ ColumnLayout {
             function onValueChanged() { combo._syncFromValue() }
         }
         onActivated: (i) => _commit(textAt(i)) // popup pick / keyboard select
-        onAccepted: _commit(editText)          // Enter typed in the editor
         // When focus leaves: honor a cleared box (for a none-able combo that means
-        // committing "(none)" so the clear actually saves; otherwise revert), and
-        // discard any uncommitted partial search text so the box shows a real value.
+        // committing a blank value so the clear actually saves; otherwise revert),
+        // and accept the same autocomplete result as Return.
         onActiveFocusChanged: {
             if (activeFocus)
                 return
             if (editable && editText === "")
                 root.includeNone ? _commit("") : _syncFromValue()
             else if (_filter !== "")
-                _syncFromValue()
+                _acceptTypedText()
         }
 
         contentItem: TextField {
@@ -126,6 +168,14 @@ ColumnLayout {
                 combo._filter = text
                 if (!combo.popup.visible)
                     combo.popup.open()
+            }
+            Keys.onReturnPressed: (event) => {
+                combo._acceptTypedText()
+                event.accepted = true
+            }
+            Keys.onEnterPressed: (event) => {
+                combo._acceptTypedText()
+                event.accepted = true
             }
         }
         background: Rectangle {
