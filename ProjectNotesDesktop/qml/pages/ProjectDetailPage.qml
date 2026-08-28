@@ -23,6 +23,7 @@ Item {
     // original proportional height until the user drags the handle or a saved
     // per-user preference is loaded in Component.onCompleted.
     property real   _headerHeight: page.height * 0.62
+    readonly property real _minHeaderHeight: 72
 
     // Overlay layer a dragged tracker item card reparents onto while dragging
     // (threaded down from Main.qml's dragOverlay, same as the sidebar's).
@@ -307,7 +308,8 @@ Item {
         ScrollView {
             id: headerScroll
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.min(page._headerHeight, Math.max(160, page.height - 200))
+            Layout.preferredHeight: Math.min(page._headerHeight,
+                                             Math.max(page._minHeaderHeight, page.height - 200))
             clip: true
             contentWidth: availableWidth
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -484,7 +486,7 @@ Item {
                 onPositionChanged: (mouse) => {
                     if (!pressed) return
                     var currentY = mapToItem(page, mouse.x, mouse.y).y
-                    var minH = 160
+                    var minH = page._minHeaderHeight
                     var maxH = Math.max(minH, page.height - 200)
                     page._headerHeight = Math.min(maxH, Math.max(minH, dragStartHeight + (currentY - dragStartY)))
                 }
