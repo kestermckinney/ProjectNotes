@@ -1372,6 +1372,7 @@ Item {
         property int count: 0
         implicitHeight: 36
         implicitWidth: tabRow.implicitWidth + 22
+        clip: true
         background: Rectangle {
             color: tb.hovered && !tb.checked ? Theme.surface2 : "transparent"
             Rectangle {
@@ -1383,6 +1384,7 @@ Item {
         contentItem: RowLayout {
             id: tabRow
             spacing: 5
+            clip: true
             MaterialIcon {
                 name: tb.iconName; size: 14
                 color: tb.checked ? Theme.accent : Theme.text2
@@ -1395,6 +1397,9 @@ Item {
                 font.weight: tb.checked ? Font.DemiBold : Font.Normal
                 verticalAlignment: Text.AlignVCenter
                 Layout.alignment: Qt.AlignVCenter
+                Layout.fillWidth: true
+                Layout.minimumWidth: 0
+                elide: Text.ElideRight
             }
             // Count badge next to the tab label.
             Rectangle {

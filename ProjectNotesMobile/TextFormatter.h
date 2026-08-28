@@ -61,6 +61,8 @@ public:
     Q_INVOKABLE void insertTable(QQuickTextDocument* doc, int pos, int rows, int cols);
 
     // Apply font family, exact point size, or foreground color to the selection.
+    // An invalid/transparent foreground color clears the explicit color so the
+    // document inherits the editor/theme color again.
     Q_INVOKABLE void applyFontFamily(QQuickTextDocument* doc, int selStart, int selEnd, const QString& family);
     Q_INVOKABLE void applyFontPointSize(QQuickTextDocument* doc, int selStart, int selEnd, int pointSize);
     Q_INVOKABLE void applyFontColor(QQuickTextDocument* doc, int selStart, int selEnd, const QColor& color);
@@ -73,6 +75,7 @@ public:
     Q_INVOKABLE int     currentFontPointSize(QQuickTextDocument* doc, int pos) const;
     Q_INVOKABLE QColor  currentFontColor(QQuickTextDocument* doc, int pos) const;
     Q_INVOKABLE QColor  currentFontHighlight(QQuickTextDocument* doc, int pos) const;
+    Q_INVOKABLE bool    hasFontHighlightAt(QQuickTextDocument* doc, int pos) const;
 
     // Query the formatting state of the current selection / cursor position so
     // the format sheet can highlight which options are already applied.

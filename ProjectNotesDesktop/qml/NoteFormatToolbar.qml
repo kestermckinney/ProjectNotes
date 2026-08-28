@@ -89,19 +89,20 @@ Rectangle {
     function _refreshLiveFmt() {
         if (!bar.editor || !bar.editor.textDocument) { bar._liveFmt = null; return }
         var doc = bar.editor.textDocument
-        var s = bar.editor.selectionStart
-        var e = bar.editor.selectionEnd
+        var pos = bar.editor.cursorPosition
         bar._liveFmt = {
-            bold: TextFormatter.isBoldAt(doc, s, e),
-            italic: TextFormatter.isItalicAt(doc, s, e),
-            underline: TextFormatter.isUnderlineAt(doc, s, e),
-            strikethrough: TextFormatter.isStrikethroughAt(doc, s, e),
-            family: TextFormatter.currentFontFamily(doc, e),
-            size: TextFormatter.currentFontPointSize(doc, e),
-            color: TextFormatter.currentFontColor(doc, e),
-            alignment: TextFormatter.currentAlignment(doc, e),
-            style: TextFormatter.currentParagraphStyle(doc, e),
-            listStyle: TextFormatter.currentListStyle(doc, e)
+            bold: TextFormatter.isBoldAt(doc, pos, pos),
+            italic: TextFormatter.isItalicAt(doc, pos, pos),
+            underline: TextFormatter.isUnderlineAt(doc, pos, pos),
+            strikethrough: TextFormatter.isStrikethroughAt(doc, pos, pos),
+            family: TextFormatter.currentFontFamily(doc, pos),
+            size: TextFormatter.currentFontPointSize(doc, pos),
+            color: TextFormatter.currentFontColor(doc, pos),
+            highlight: TextFormatter.currentFontHighlight(doc, pos),
+            hasHighlight: TextFormatter.hasFontHighlightAt(doc, pos),
+            alignment: TextFormatter.currentAlignment(doc, pos),
+            style: TextFormatter.currentParagraphStyle(doc, pos),
+            listStyle: TextFormatter.currentListStyle(doc, pos)
         }
     }
 
@@ -344,7 +345,16 @@ Rectangle {
         FmtButton {
             id: hlBtn
             icon: "border_color"
+            active: bar._liveFmt ? bar._liveFmt.hasHighlight : false
             onTriggered: { bar._capture(); highlightPopup.openFor(hlBtn) }
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 4
+                width: 14; height: 2; radius: 1
+                visible: bar._liveFmt ? bar._liveFmt.hasHighlight : false
+                color: bar._liveFmt ? bar._liveFmt.highlight : "transparent"
+            }
         }
         Sep {}
 
@@ -366,6 +376,7 @@ Rectangle {
         FmtButton { icon: "format_align_left";    active: bar._liveFmt ? bar._liveFmt.alignment === 0 : false; onTriggered: bar._apply(function(d,s,e){ TextFormatter.setAlignment(d,s,e,0) }) }
         FmtButton { icon: "format_align_center";  active: bar._liveFmt ? bar._liveFmt.alignment === 1 : false; onTriggered: bar._apply(function(d,s,e){ TextFormatter.setAlignment(d,s,e,1) }) }
         FmtButton { icon: "format_align_right";   active: bar._liveFmt ? bar._liveFmt.alignment === 2 : false; onTriggered: bar._apply(function(d,s,e){ TextFormatter.setAlignment(d,s,e,2) }) }
+        FmtButton { icon: "format_align_justify"; active: bar._liveFmt ? bar._liveFmt.alignment === 3 : false; onTriggered: bar._apply(function(d,s,e){ TextFormatter.setAlignment(d,s,e,3) }) }
         Sep {}
 
         // ── Paragraph style (headings) ────────────────────────────────────────
@@ -464,7 +475,6 @@ Rectangle {
                     background: Rectangle { color: hovered ? Theme.surface2 : "transparent"; radius: 4 }
                     onClicked: {
                         bar._applyStashed(function(d,s,e){ TextFormatter.applyFontFamily(d, s, e, modelData) })
-                        fontChip.label = modelData
                         fontPopup.close()
                     }
                 }
@@ -692,6 +702,27 @@ Rectangle {
                                 colorPopup.close()
                             }
                         }
+                    }
+                }
+            }
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: 24
+                radius: Theme.radiusSm
+                color: autoColorHover.hovered ? Theme.surface2 : "transparent"
+                border.color: Theme.border
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 7
+                    spacing: 5
+                    MaterialIcon { name: "format_color_reset"; size: 13; color: Theme.text2 }
+                    Text { text: qsTr("Automatic"); color: Theme.text2; font.pixelSize: Theme.fontSm }
+                }
+                HoverHandler { id: autoColorHover }
+                TapHandler {
+                    onTapped: {
+                        bar._applyStashed(function(d,s,e){ TextFormatter.applyFontColor(d, s, e, "transparent") })
+                        colorPopup.close()
                     }
                 }
             }

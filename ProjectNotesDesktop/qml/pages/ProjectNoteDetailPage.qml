@@ -224,7 +224,11 @@ Item {
                     persistentSelection: true
                     background: null
                     font.family: "Arial"
-                    font.pixelSize: Theme.fontBody
+                    // Match TextFormatter's Normal Text style exactly. Using
+                    // pixelSize here made the unformatted default (~9pt at
+                    // 96 DPI) visibly smaller than Normal Text's 12pt.
+                    font.pointSize: 12
+                    font.weight: Font.Normal
                     onTextChanged: page._changed = true
 
                     // Inline spell-check: red squiggle + right-click suggestions +
@@ -274,7 +278,9 @@ Item {
                                 function _menu(sx, sy) {
                                     rowMenu.openFor(DesktopAppController.meetingAttendeesModel,
                                         (attRow.model.id || "").toString(), qsTr("Attendee"),
-                                        (attRow.model.name || "").toString(), sx, sy)
+                                        (attRow.model.name || "").toString(), sx, sy,
+                                        /*allowMoveTo*/ false,
+                                        (attRow.model.person_id || "").toString())
                                 }
                                 TapHandler {
                                     acceptedButtons: Qt.RightButton
@@ -582,6 +588,9 @@ Item {
     // Routed to Main's shared Move To… dialog, same as ProjectDetailPage /
     // ItemsPage / ItemDetailPage.
     signal moveToRequested(string itemId)
+    // Attendee row menus use the attendee's person_id to open the corresponding
+    // People detail page, matching ProjectDetailPage's Team member menu.
+    signal goToPersonRequested(string personId)
 
     // Shared record/plugin menu for the Attendees and Action Items lists.
     // Move To… is only ever offered for Action Items (see ai._menu()'s
@@ -596,6 +605,7 @@ Item {
         // list — copyTrackerItem() renumbers it and refreshes the models.
         onDuplicateRecord: (table, id) => DesktopAppController.copyTrackerItem(id)
         onMoveToRecord: (id) => page.moveToRequested(id)
+        onGoToPersonRequested: (personId) => page.goToPersonRequested(personId)
     }
 
     // The note's own record/plugin menu — opened by the title row's kebab and
