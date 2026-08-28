@@ -399,6 +399,15 @@ Rectangle {
                         if (t && t.length) page.navigate(t)
                         else Qt.openUrlExternally(link)
                     }
+
+                    // TextEdit activates Markdown links but does not change the
+                    // pointer by itself. Enable this handler only while Qt says
+                    // the pointer is over a link so ordinary text keeps its
+                    // normal selection cursor and behavior.
+                    HoverHandler {
+                        enabled: docText.hoveredLink !== ""
+                        cursorShape: Qt.PointingHandCursor
+                    }
                 }
             }
         }
