@@ -39,7 +39,7 @@ public:
     // on success, launch it and emit installerLaunched() so the app can shut down.
     void downloadAndInstall(const QUrl &assetUrl);
 
-    // "6.0.0" assembled from version.h.
+    // Semantic version assembled from version.h.
     static QString currentVersion();
 
     // True when candidate is a strictly higher semantic version than current.

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ProjectNotesMobile VERSION 6.0.0 LANGUAGES CXX)
+project(ProjectNotesMobile VERSION 6.1.0 LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -58,6 +58,9 @@ add_subdirectory(../ProjectNotesCore ProjectNotesCore)
 # ── Application target ────────────────────────────────────────────────────────
 qt_add_executable(ProjectNotesMobile
     main.cpp
+)
+target_compile_definitions(ProjectNotesMobile PRIVATE
+    PROJECTNOTES_VERSION="${PROJECT_VERSION}"
 )
 
 # ── iOS asset catalog (app icon) ──────────────────────────────────────────────
@@ -141,7 +144,8 @@ set_target_properties(ProjectNotesMobile PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER    "com.projectnotespro.projectnotesmobile"
     MACOSX_BUNDLE_BUNDLE_NAME       "Project Notes"
     MACOSX_BUNDLE_BUNDLE_VERSION    ${PROJECT_VERSION}
-    MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
+    MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+    XCODE_ATTRIBUTE_MARKETING_VERSION       "${PROJECT_VERSION}"
     MACOSX_BUNDLE TRUE
     XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
     # ── App Store signing (pinned to the registered App ID + team) ────────────

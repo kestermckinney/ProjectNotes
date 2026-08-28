@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
     app.setOrganizationName("ProjectNotes");
     app.setOrganizationDomain("projectnotespro.com");
     app.setApplicationName("Project Notes");
-    app.setApplicationVersion("5.0.0");
+    app.setApplicationVersion(QStringLiteral(PROJECTNOTES_VERSION));
 
     QCommandLineParser parser;
     QCommandLineOption testSupabaseOption(

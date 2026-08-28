@@ -8,6 +8,7 @@
 #include "runguard.h"
 #include "SpellCheck.h"
 #include "TextFormatter.h"
+#include "version.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -134,7 +135,7 @@ int main(int argc, char* argv[])
     QApplication::setApplicationName("projectnotes");
 #endif
     QApplication::setApplicationDisplayName("Project Notes");
-    QApplication::setApplicationVersion("6.0.0");
+    QApplication::setApplicationVersion(QStringLiteral(APP_VERSION_STRING));
 
     // --developer-profile PROFILENAME: use a separate data directory (same
     // behavior as the Widgets app), so the QML app can open the same dev DB.

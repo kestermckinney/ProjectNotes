@@ -23,7 +23,7 @@ Page {
 
         Label {
             Layout.alignment: Qt.AlignHCenter
-            text: qsTr("Version 6.0.0")
+            text: qsTr("Version %1").arg(Qt.application.version)
             font.pixelSize: 15
             color: Theme.mutedText
         }
