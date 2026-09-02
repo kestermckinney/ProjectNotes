@@ -650,6 +650,7 @@ class IFSCommon:
                 "date_due":       pnc.get_column_value(row, "date_due")      or "",
                 "last_update":    pnc.get_column_value(row, "last_update")   or "",
                 "date_resolved":  pnc.get_column_value(row, "date_resolved") or "",
+                "internal_item":  pnc.get_column_value(row, "internal_item") or "",
             }
             row = row.nextSibling()
 
@@ -745,6 +746,10 @@ class IFSCommon:
 
         Uses a direct OData query (rather than IFSCommon.get_activity_tasks) so we
         can include the Cf_* custom fields that the base method omits.
+
+        Returns None on a failed fetch (network error or non-200) so callers can
+        tell "IFS genuinely has zero tasks" apart from "we couldn't ask IFS" —
+        the latter must not be treated as license to push every PN item as new.
         """
         url = (
             self.ifs_url.rstrip("/")
@@ -765,11 +770,11 @@ class IFSCommon:
             )
         except Exception as e:
             print(f"Network error fetching tasks for ActivitySeq {activity_seq}: {e}")
-            return []
+            return None
 
         if response.status_code != 200:
             print(f"Task fetch failed {response.status_code}: {response.text}")
-            return []
+            return None
 
         return response.json().get("value", [])
 
@@ -791,6 +796,11 @@ class IFSCommon:
           - If PN already has that item and IFS is newer (or either date is absent) → update
           - If PN does not have the item → create
 
+        After that, any non-internal PN item that was never matched against one of
+        *tasks* (i.e. it has no corresponding IFS task yet) is pushed to IFS as a
+        new ActivityTask. This is what carries brand-new tracker items created only
+        in Project Notes over to IFS.
+
         Returns a dict with keys: created, updated, skipped.
         """
         project_number = project["project_number"]
@@ -809,6 +819,10 @@ class IFSCommon:
 
         counts = {"created": 0, "updated": 0, "skipped": 0}
 
+        # Tracks which PN item_numbers were matched against an IFS task in this
+        # batch, so items left over afterward are known to not exist in IFS yet.
+        matched_item_numbers = set()
+
         for task in tasks:
             task_id = task.get("TaskId") or ""
 
@@ -821,6 +835,8 @@ class IFSCommon:
             ifs_updated = self._parse_ifs_date(task.get("Cf_Date_Updated"))
 
             if item_number in pn_items:
+                matched_item_numbers.add(item_number)
+
                 # Item already exists in PN — decide direction by comparing dates
                 pn_updated = self._parse_pn_date(pn_items[item_number]["last_update"])
 
@@ -874,6 +890,7 @@ class IFSCommon:
                 task_name = task.get("Name") or ""
                 if task_name and task_name in name_to_item:
                     existing_key = name_to_item[task_name]
+                    matched_item_numbers.add(existing_key)
                     existing_id = pn_items[existing_key]["id"]
                     self._write_pn_item(pnc, project_id, item_number, task, item_id=existing_id)
                     counts["updated"] += 1
@@ -881,6 +898,46 @@ class IFSCommon:
                     # Truly new item
                     self._write_pn_item(pnc, project_id, item_number, task)
                     counts["created"] += 1
+
+        # Any PN item that was never matched against an IFS task in this batch
+        # was either created purely in PN and never pushed, or its IFS task was
+        # deleted.  Items with an "IFS..." item_number originated in IFS, so a
+        # missing match there means the IFS task is gone — leave those alone
+        # rather than resurrecting it.  Internal items are never sent to IFS.
+        if activity_seq is not None:
+            for item_number, pn in pn_items.items():
+                if item_number in matched_item_numbers:
+                    continue
+                if item_number.startswith("IFS"):
+                    continue
+                if (pn.get("internal_item") or "") == "1":
+                    continue
+
+                task_id = project_number + item_number
+
+                duedate = QDateTime()
+                dateupdated = QDateTime()
+                dateresolved = QDateTime()
+                assignedto = ''
+                identifiedby = ''
+
+                if pn.get("date_due"):
+                    duedate = QDateTime.fromString(pn.get("date_due"), 'MM/dd/yyyy')
+                if pn.get("last_update"):
+                    dateupdated = QDateTime.fromString(pn.get("last_update"), 'MM/dd/yyyy')
+                if pn.get("date_resolved"):
+                    dateresolved = QDateTime.fromString(pn.get("date_resolved"), 'MM/dd/yyyy')
+                if pn.get("assigned_to"):
+                    assignedto = pn.get("assigned_to").strip()
+                if pn.get("identified_by"):
+                    identifiedby = pn.get("identified_by").strip()
+
+                if self.create_activity_task(activity_seq, project_number, task_id, pn.get("item_name") or '', pn.get("description") or '',
+                                              assignedto, dateupdated, duedate, dateresolved, identifiedby,
+                                              pn.get("priority") or '', pn.get("status") or ''):
+                    counts["created"] += 1
+                else:
+                    counts["skipped"] += 1
 
         return counts
 
@@ -1274,7 +1331,7 @@ class IFSCommon:
                 activity_seq = self._fetch_issues_activity_seq(token, rowval['ProjectId'])
                 if activity_seq is not None:
                     tasks = self._fetch_issue_tasks_full(token, activity_seq)
-                    if tasks:
+                    if tasks is not None:
                         project_dict = {
                             "project_number": rowval['ProjectId'],
                             "project_name":   rowval['Description'],
@@ -1610,7 +1667,7 @@ class IFSCommon:
             tasks = self._fetch_issue_tasks_full(token, activity_seq)
             elapsed = time.perf_counter() - t0
 
-            if not tasks:
+            if tasks is None:
                 continue
 
             counts = self._sync_project_tasks(pnc, project, tasks, activity_seq)
