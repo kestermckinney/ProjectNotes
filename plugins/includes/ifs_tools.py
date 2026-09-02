@@ -1136,7 +1136,10 @@ class IFSCommon:
         # print("sending doc:")
         # print(json.dumps(docdata, indent=4))
 
-        request_url = self.ifs_url + "/main/ifsapplications/projection/v1/create_activity_task.svc/TaskSet"
+        # The custom create_activity_task.svc/TaskSet projection this used to POST to
+        # is not deployed (returns MI_METADATA_NOTFOUND) — POST to the same standard
+        # ActivityTasks entity set that update_activity_task() reads/writes instead.
+        request_url = self.ifs_url + "/main/ifsapplications/projection/v1/ProjectScopeAndScheduleHandling.svc/ActivityTasks"
 
         # print(f"Creating Activity in IFS, makeing url request: {request_url}")
 
