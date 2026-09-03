@@ -317,8 +317,10 @@ ApplicationWindow {
         root.selectSection("help")
     }
 
-    // Navigate to a search result based on its datatype.
-    function openSearchResult(dataType, dataId, fkId) {
+    // Navigate to a search result based on its datatype. dataId is the record's
+    // own id, fkId its parent (usually the project), dataKey a secondary key the
+    // database_search view carries for a few rows (mirrors mainwindow.cpp).
+    function openSearchResult(dataType, dataId, fkId, dataKey) {
         switch (dataType) {
         case "Project":
             openProject(dataId); break
@@ -329,9 +331,23 @@ ApplicationWindow {
         case "Item Tracker":
             openItem(dataId); break
         case "Tracker Update":
-            openItem(fkId !== "" ? fkId : dataId); break
+            // dataId is the update row; dataKey is the parent item_tracker id,
+            // which is what the item detail page needs (fkId is the project).
+            openItem(dataKey !== "" ? dataKey : dataId); break
+        case "Project Notes":
+        case "Meeting Attendees": {
+            // Open the note itself. Project Notes rows carry the project in fkId;
+            // Meeting Attendees rows carry the note id in fkId, so resolve from
+            // whichever note id we have.
+            var noteId = (dataType === "Meeting Attendees") ? fkId : dataId
+            var projId = (dataType === "Meeting Attendees") ? "" : fkId
+            var loc = DesktopAppController.noteLocationForId(noteId, projId)
+            if (loc.row >= 0) openNote(loc.row, noteId, loc.projectId)
+            else if (loc.projectId !== "") openProject(loc.projectId)
+            break
+        }
         default:
-            // Notes / attendees / locations / team / status → open the parent project.
+            // Locations / team / status → open the parent project.
             if (fkId !== "") openProject(fkId)
             break
         }
@@ -807,7 +823,7 @@ ApplicationWindow {
     Component {
         id: searchComponent
         SearchPage {
-            onResultActivated: (dataType, dataId, fkId) => root.openSearchResult(dataType, dataId, fkId)
+            onResultActivated: (dataType, dataId, fkId, dataKey) => root.openSearchResult(dataType, dataId, fkId, dataKey)
             onExportRequested: (table, id) => root.exportRecord(table, id)
         }
     }

@@ -1831,6 +1831,50 @@ QString DesktopAppController::projectNoteIdAtRow(int row) const
     return proxy->data(proxy->index(row, 0)).toString();
 }
 
+QVariantMap DesktopAppController::noteLocationForId(const QString& noteId,
+                                                   const QString& projectId)
+{
+    QVariantMap out;
+    out.insert("row", -1);
+    out.insert("projectId", QString());
+    if (noteId.isEmpty())
+        return out;
+
+    // The Project Notes search row carries the project id; the Meeting Attendees
+    // row only carries the note id, so fall back to a direct lookup (ids are
+    // UUIDs, but escape the quote defensively — mirrors mainwindow.cpp).
+    QString resolvedProjectId = projectId;
+    if (resolvedProjectId.isEmpty())
+    {
+        QString safeId = noteId;
+        safeId.replace('\'', QStringLiteral("''"));
+        resolvedProjectId = global_DBObjects.execute(
+            QStringLiteral("SELECT project_id FROM project_notes WHERE id = '%1'").arg(safeId));
+    }
+    if (resolvedProjectId.isEmpty())
+        return out;
+
+    out.insert("projectId", resolvedProjectId);
+
+    // Load this project's notes so the detail page's getProjectNoteData(row) hits.
+    setProjectFilter(resolvedProjectId);
+
+    auto* proxy = global_DBObjects.projectnotesmodelproxy();
+    auto* src   = global_DBObjects.projectnotesmodel();
+    if (proxy && src)
+    {
+        QVariant key(noteId);
+        const QModelIndex srcIdx = src->findIndex(key, 0);
+        if (srcIdx.isValid())
+        {
+            const QModelIndex proxyIdx = proxy->mapFromSource(srcIdx);
+            if (proxyIdx.isValid())
+                out.insert("row", proxyIdx.row());
+        }
+    }
+    return out;
+}
+
 bool DesktopAppController::saveProjectNote(int row, const QString& title, const QString& date,
                                            const QString& note, bool internalItem)
 {
