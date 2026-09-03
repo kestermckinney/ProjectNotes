@@ -346,12 +346,14 @@ Item {
                         id: mgmtCombo
                         label: qsTr("Managing Company")
                         options: page._clientNames()
+                        searchable: true
                         onActivated: (v) => DesktopAppController.setManagingCompanyId(page._idForName(page._clients, v))
                     }
                     ComboField {
                         id: pmCombo
                         label: qsTr("Project Manager")
                         options: page._peopleNames()
+                        searchable: true
                         onActivated: (v) => DesktopAppController.setProjectManagerId(page._idForName(page._people, v))
                     }
                 }

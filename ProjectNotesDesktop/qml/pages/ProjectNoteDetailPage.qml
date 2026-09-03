@@ -354,12 +354,21 @@ Item {
                                 text: qsTr("Add")
                                 onClicked: {
                                     page._saveNow()
+                                    // Adding a row refreshes the model, which rebuilds
+                                    // every delegate — flush each row's uncommitted
+                                    // inline edits first so a name typed but not yet
+                                    // blurred isn't wiped when its delegate is rebuilt.
+                                    for (var i = 0; i < aiRepeater.count; ++i) {
+                                        var d = aiRepeater.itemAt(i)
+                                        if (d) d._commitPending()
+                                    }
                                     DesktopAppController.addNoteActionItem(page.noteId, page.projectId)
                                     DesktopAppController.refreshNoteActionItems()
                                 }
                             }
                         }
                         Repeater {
+                            id: aiRepeater
                             model: DesktopAppController.notesActionItemsModel
                             delegate: ColumnLayout {
                                 id: ai
@@ -414,6 +423,16 @@ Item {
                                         (ai.model.date_identified || "").toString(),
                                         (ai.model.date_due || "").toString(),
                                         (ai.model.description || "").toString())
+                                }
+                                // Flush edits that are still only in the editors (not
+                                // yet saved on blur) before a model refresh rebuilds
+                                // this delegate. If the inline editor is open, save the
+                                // whole row; otherwise just persist the inline name.
+                                function _commitPending() {
+                                    if (ai.expanded)
+                                        ai._save()
+                                    else if (aiNameInline.text !== (ai.model.item_name || "").toString())
+                                        ai._saveName()
                                 }
                                 function _menu(sx, sy) {
                                     rowMenu.openFor(DesktopAppController.notesActionItemsModel,

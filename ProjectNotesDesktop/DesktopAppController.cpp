@@ -1413,6 +1413,18 @@ QString DesktopAppController::peopleNameForId(const QString& personId) const
 
 // ── Picker lists ─────────────────────────────────────────────────────────────
 
+// Sort a picker list (list of {id, name} maps) alphabetically by name. The
+// source proxies carry whatever sort the user last applied on the People /
+// Clients list pages, so every combo that feeds off these lists sorts its own
+// drop-down here rather than inheriting that order.
+static void sortByName(QVariantList& list)
+{
+    std::sort(list.begin(), list.end(), [](const QVariant& a, const QVariant& b) {
+        return a.toMap().value("name").toString().localeAwareCompare(
+                   b.toMap().value("name").toString()) < 0;
+    });
+}
+
 QVariantList DesktopAppController::clientList() const
 {
     QVariantList out;
@@ -1424,6 +1436,7 @@ QVariantList DesktopAppController::clientList() const
         m.insert("name", proxy->data(proxy->index(row, 1)).toString());
         out.append(m);
     }
+    sortByName(out);
     return out;
 }
 
@@ -1438,6 +1451,7 @@ QVariantList DesktopAppController::peopleList() const
         m.insert("name", proxy->data(proxy->index(row, 1)).toString());
         out.append(m);
     }
+    sortByName(out);
     return out;
 }
 
@@ -1507,6 +1521,10 @@ QVariantList DesktopAppController::teamMemberList(const QString& projectId,
             out.append(m);
         }
     }
+
+    // The SQL already returns the team alphabetically; re-sort so any appended
+    // includeIds (people no longer on the team) land in order too.
+    sortByName(out);
     return out;
 }
 
