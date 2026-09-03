@@ -13,6 +13,11 @@ public:
     void PerformSearch(const QString& searchValue);
     void PerformKeySearch(const QStringList& searchFields, const QStringList& searchValues);
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+
+private:
+    // The most recent free-text search string, used to clip the Content column
+    // to a window around the match instead of showing the whole note.
+    QString m_lastSearchValue;
 };
 
 #endif // SEARCHRESULTSMODEL_H
