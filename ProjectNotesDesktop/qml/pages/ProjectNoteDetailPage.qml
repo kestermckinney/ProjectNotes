@@ -705,109 +705,18 @@ Item {
     SpellCheckDialog { id: spellDialog }
 
     // ── People picker (for adding an attendee) ────────────────────────────────
-    Dialog {
+    // Only this project's team members may be added as attendees (matches the
+    // Widgets app). The roster is reloaded on open so changes made while the
+    // note is open are reflected.
+    PeoplePickerDialog {
         id: peoplePicker
-        anchors.centerIn: parent
-        width: 320
-        height: 380
-        modal: true
-        padding: 0
-        scale: Theme.uiScale   // match the zoomed workspace (centered origin)
-        background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
-
-        // Clicking away dismisses the picker and nothing else — see ClickShield.qml.
-        ClickShield { host: peoplePicker }
-
-        // Type-to-search text (lower-cased match target). Empty = show everyone.
-        property string _filter: ""
-
-        // Reset and focus the search box each time the picker opens.
-        onOpened: {
-            _filter = ""; attendeeSearch.text = ""; attendeeSearch.forceActiveFocus()
-            peopleList.model = DesktopAppController.teamMemberList(page.projectId)
-        }
-
-        contentItem: ColumnLayout {
-            spacing: 0
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.margins: 12
-                Text {
-                    text: qsTr("Add Attendee"); color: Theme.text
-                    font.pixelSize: Theme.fontXl; font.weight: Font.Bold
-                    Layout.fillWidth: true
-                }
-                MaterialIcon {
-                    name: "close"; size: 18; color: Theme.text3
-                    TapHandler { onTapped: peoplePicker.close() }
-                }
-            }
-            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
-
-            // Search field — filters the list below as you type.
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.margins: 10
-                implicitHeight: 30
-                radius: Theme.radiusSm
-                color: Theme.surface
-                border.color: attendeeSearch.activeFocus ? Theme.accent : Theme.border
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 9; anchors.rightMargin: 9
-                    spacing: 5
-                    MaterialIcon { name: "search"; size: 14; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
-                    TextField {
-                        id: attendeeSearch
-                        Layout.fillWidth: true
-                        placeholderText: qsTr("Search people…")
-                        placeholderTextColor: Theme.text3
-                        color: Theme.text
-                        font.pixelSize: Theme.fontBody
-                        background: null
-                        verticalAlignment: Text.AlignVCenter
-                        selectByMouse: true
-                        onTextChanged: peoplePicker._filter = text
-                    }
-                }
-            }
-
-            ListView {
-                id: peopleList
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                clip: true
-                // Only this project's team members may be added as attendees
-                // (matches the Widgets app). Refreshed on open so roster changes
-                // made while the note is open are reflected.
-                model: DesktopAppController.teamMemberList(page.projectId)
-                delegate: ItemDelegate {
-                    id: attendeeDelegate
-                    required property int index
-                    required property var modelData
-                    // Collapse rows that don't contain the search text.
-                    readonly property bool _match: peoplePicker._filter === ""
-                        || String(modelData.name).toLowerCase().indexOf(peoplePicker._filter.toLowerCase()) >= 0
-                    visible: _match
-                    width: peopleList.width
-                    height: _match ? 34 : 0
-                    contentItem: Text {
-                        text: modelData.name
-                        color: Theme.text
-                        font.pixelSize: Theme.fontBody
-                        leftPadding: 12
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                    background: Rectangle { color: attendeeDelegate.hovered ? Theme.surface2 : "transparent" }
-                    onClicked: {
-                        var r = DesktopAppController.addAttendee(page.noteId)
-                        if (r >= 0) {
-                            DesktopAppController.saveAttendee(r, modelData.id)
-                            DesktopAppController.refreshMeetingAttendees()
-                        }
-                        peoplePicker.close()
-                    }
-                }
+        headingText: qsTr("Add Attendee")
+        reload: () => DesktopAppController.teamMemberList(page.projectId)
+        onPicked: (person) => {
+            var r = DesktopAppController.addAttendee(page.noteId)
+            if (r >= 0) {
+                DesktopAppController.saveAttendee(r, person.id)
+                DesktopAppController.refreshMeetingAttendees()
             }
         }
     }

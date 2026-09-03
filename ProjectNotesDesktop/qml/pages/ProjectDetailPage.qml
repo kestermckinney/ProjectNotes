@@ -1242,84 +1242,16 @@ Item {
     }
 
     // â”€â”€ Team member people picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    Dialog {
+    PeoplePickerDialog {
         id: teamPicker
-        anchors.centerIn: parent
-        width: 320; height: 380; modal: true; padding: 0
-        scale: Theme.uiScale   // match the zoomed workspace (centered origin)
-        background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
-
-        // Clicking away dismisses the picker and nothing else — see ClickShield.qml.
-        ClickShield { host: teamPicker }
-
-        // Type-to-search text (lower-cased match target). Empty = show everyone.
-        property string _filter: ""
-
-        // Reset and focus the search box each time the picker opens.
-        onOpened: { _filter = ""; teamSearch.text = ""; teamSearch.forceActiveFocus() }
-
-        contentItem: ColumnLayout {
-            spacing: 0
-            RowLayout {
-                Layout.fillWidth: true; Layout.margins: 12
-                Text { text: qsTr("Add Team Member"); color: Theme.text; font.pixelSize: Theme.fontXl; font.weight: Font.Bold; Layout.fillWidth: true }
-                MaterialIcon { name: "close"; size: 18; color: Theme.text3; TapHandler { onTapped: teamPicker.close() } }
-            }
-            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
-
-            // Search field — filters the list below as you type.
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.margins: 10
-                implicitHeight: 30
-                radius: Theme.radiusSm
-                color: Theme.surface
-                border.color: teamSearch.activeFocus ? Theme.accent : Theme.border
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 9; anchors.rightMargin: 9
-                    spacing: 5
-                    MaterialIcon { name: "search"; size: 14; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
-                    TextField {
-                        id: teamSearch
-                        Layout.fillWidth: true
-                        placeholderText: qsTr("Search people…")
-                        placeholderTextColor: Theme.text3
-                        color: Theme.text
-                        font.pixelSize: Theme.fontBody
-                        background: null
-                        verticalAlignment: Text.AlignVCenter
-                        selectByMouse: true
-                        onTextChanged: teamPicker._filter = text
-                    }
-                }
-            }
-
-            ListView {
-                id: teamPeople
-                Layout.fillWidth: true; Layout.fillHeight: true; clip: true
-                model: DesktopAppController.peopleList()
-                delegate: ItemDelegate {
-                    id: teamDelegate
-                    required property int index
-                    required property var modelData
-                    // Collapse rows that don't contain the search text.
-                    readonly property bool _match: teamPicker._filter === ""
-                        || String(modelData.name).toLowerCase().indexOf(teamPicker._filter.toLowerCase()) >= 0
-                    visible: _match
-                    width: teamPeople.width; height: _match ? 34 : 0
-                    contentItem: Text { text: modelData.name; color: Theme.text; font.pixelSize: Theme.fontBody; leftPadding: 12; verticalAlignment: Text.AlignVCenter }
-                    background: Rectangle { color: teamDelegate.hovered ? Theme.surface2 : "transparent" }
-                    onClicked: {
-                        var r = DesktopAppController.addTeamMember(page.projectId)
-                        if (r >= 0) {
-                            DesktopAppController.saveTeamMember(r, modelData.id, "", false)
-                            DesktopAppController.refreshTeamMembers()
-                            page._refreshTeamPeople()
-                        }
-                        teamPicker.close()
-                    }
-                }
+        headingText: qsTr("Add Team Member")
+        model: DesktopAppController.peopleList()
+        onPicked: (person) => {
+            var r = DesktopAppController.addTeamMember(page.projectId)
+            if (r >= 0) {
+                DesktopAppController.saveTeamMember(r, person.id, "", false)
+                DesktopAppController.refreshTeamMembers()
+                page._refreshTeamPeople()
             }
         }
     }

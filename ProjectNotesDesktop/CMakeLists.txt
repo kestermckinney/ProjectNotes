@@ -105,6 +105,7 @@ set(DESKTOP_QML_FILES
     qml/FormField.qml
     qml/ComboField.qml
     qml/DateField.qml
+    qml/PeoplePickerDialog.qml
     qml/NoteFormatToolbar.qml
     qml/SpellCheckField.qml
     qml/SpellSquiggle.qml
