@@ -235,7 +235,7 @@ private slots:
                     c->itemPriorityOptions().first(),
                     c->itemStatusOptions().first(),
                     m_personId, m_personId, kDate1, kDate2,
-                    "Follow up on the deliverable."),
+                    "Follow up on the deliverable.", QString(), QString()),
                  qPrintable(c->lastSaveError()));
         QCOMPARE(c->notesActionItemsModel()->rowCount(), before + 1);
     }
@@ -256,7 +256,7 @@ private slots:
                     "A tracked risk.", m_personId, m_personId,
                     c->itemPriorityOptions().first(),
                     c->itemStatusOptions().first(),
-                    kDate1, "08/31/2026", false),
+                    kDate1, "08/31/2026", false, QString(), QString()),
                  qPrintable(c->lastSaveError()));
 
         // Uniqueness helpers used by the QML form validators.
@@ -629,7 +629,8 @@ private slots:
             QVERIFY2(c->saveTrackerItemDetail(0, itemId, uniq("N"),
                         c->itemTypeOptions().first(), uniq("SameProj_"), "",
                         "", "", c->itemPriorityOptions().first(),
-                        c->itemStatusOptions().first(), kDate1, kDate2, false),
+                        c->itemStatusOptions().first(), kDate1, kDate2, false,
+                        QString(), QString()),
                      qPrintable(c->lastSaveError()));
             QVERIFY(!c->checkTrackerItemMove(itemId, m_projectId).value("valid").toBool());
         }
@@ -644,7 +645,8 @@ private slots:
             QVERIFY2(c->saveTrackerItemDetail(0, freeItemId, freeNumber,
                         c->itemTypeOptions().first(), uniq("FreeNum_"), "",
                         moverId, moverId, c->itemPriorityOptions().first(),
-                        c->itemStatusOptions().first(), kDate1, kDate2, false),
+                        c->itemStatusOptions().first(), kDate1, kDate2, false,
+                        QString(), QString()),
                      qPrintable(c->lastSaveError()));
 
             const QVariantMap chk = c->checkTrackerItemMove(freeItemId, destProjectId);
@@ -682,7 +684,8 @@ private slots:
             QVERIFY2(c->saveTrackerItemDetail(0, itemId, freeNumber,
                         c->itemTypeOptions().first(), uniq("Collide_"), "",
                         "", "", c->itemPriorityOptions().first(),
-                        c->itemStatusOptions().first(), kDate1, kDate2, false),
+                        c->itemStatusOptions().first(), kDate1, kDate2, false,
+                        QString(), QString()),
                      qPrintable(c->lastSaveError()));
 
             const QVariantMap chk = c->checkTrackerItemMove(itemId, destProjectId);

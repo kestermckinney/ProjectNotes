@@ -377,6 +377,14 @@ Item {
                                 property bool expanded: false
                                 property string _assignedId: ""
                                 property string _identifiedId: ""
+                                // NotesActionItemsModel does no date bookkeeping (unlike
+                                // TrackerItemsModel), so this editor stamps Date Updated /
+                                // Date Resolved itself, mirroring that model's rules. Flags
+                                // track a hand-typed date so it isn't overwritten; _prevStatus
+                                // spots a move into or out of "Resolved". All reset by _edit().
+                                property string _prevStatus: ""
+                                property bool _lastUpdateEdited: false
+                                property bool _resolvedEdited: false
                                 Layout.fillWidth: true
                                 spacing: 5
 
@@ -397,8 +405,34 @@ Item {
                                     aiIdentified.value= page._nameForId(ai._identifiedId)
                                     aiDateId.text     = (ai.model.date_identified || "").toString()
                                     aiDateDue.text    = (ai.model.date_due || "").toString()
+                                    aiLastUpdate.text = (ai.model.last_update || "").toString()
+                                    aiDateResolved.text = (ai.model.date_resolved || "").toString()
                                     aiDesc.text       = (ai.model.description || "").toString()
+                                    ai._prevStatus       = (ai.model.status || "").toString()
+                                    ai._lastUpdateEdited = false
+                                    ai._resolvedEdited   = false
                                     ai.expanded = true
+                                }
+
+                                function _today() { return Qt.formatDate(new Date(), "MM/dd/yyyy") }
+
+                                // Stamp Date Updated to today for any edit (unless hand-typed).
+                                // Call before ai._save() so the new value is persisted.
+                                function _touchDates() {
+                                    if (!ai._lastUpdateEdited)
+                                        aiLastUpdate.setText(ai._today())
+                                }
+
+                                // Moving Status into "Resolved" stamps Date Resolved; moving
+                                // out clears it. Skipped if the user hand-typed that field.
+                                function _applyStatusDates(newStatus) {
+                                    if (!ai._resolvedEdited) {
+                                        if (newStatus === "Resolved" && ai._prevStatus !== "Resolved")
+                                            aiDateResolved.setText(ai._today())
+                                        else if (newStatus !== "Resolved" && ai._prevStatus === "Resolved")
+                                            aiDateResolved.setText("")
+                                    }
+                                    ai._prevStatus = newStatus
                                 }
                                 // Persist all fields (in-place setData → summary updates live,
                                 // no refresh, so the editor stays open). Uses the editor values,
@@ -407,12 +441,15 @@ Item {
                                     DesktopAppController.saveNoteActionItem(ai.index,
                                         aiNameInline.text, aiType.value, aiPriority.value, aiStatus.value,
                                         ai._assignedId, ai._identifiedId, aiDateId.text, aiDateDue.text,
-                                        aiDesc.text)
+                                        aiDesc.text, aiLastUpdate.text, aiDateResolved.text)
                                 }
                                 // Persist an inline name edit without disturbing the other fields:
                                 // read everything except the name straight from the model, so this
                                 // is safe even when the editor was never expanded.
                                 function _saveName() {
+                                    // Only bump Date Updated when the name really changed —
+                                    // onEditingFinished also fires on a focus-out with no edit.
+                                    var nameChanged = aiNameInline.text !== (ai.model.item_name || "").toString()
                                     DesktopAppController.saveNoteActionItem(ai.index,
                                         aiNameInline.text,
                                         (ai.model.item_type || "").toString(),
@@ -422,7 +459,9 @@ Item {
                                         (ai.model.identified_by || "").toString(),
                                         (ai.model.date_identified || "").toString(),
                                         (ai.model.date_due || "").toString(),
-                                        (ai.model.description || "").toString())
+                                        (ai.model.description || "").toString(),
+                                        nameChanged ? ai._today() : (ai.model.last_update || "").toString(),
+                                        (ai.model.date_resolved || "").toString())
                                 }
                                 // Flush edits that are still only in the editors (not
                                 // yet saved on blur) before a model refresh rebuilds
@@ -538,34 +577,36 @@ Item {
                                         ComboField {
                                             id: aiType; label: qsTr("Type")
                                             options: DesktopAppController.itemTypeOptions()
-                                            onActivated: ai._save()
+                                            onActivated: { ai._touchDates(); ai._save() }
                                         }
                                         ComboField {
                                             id: aiPriority; label: qsTr("Priority")
                                             options: DesktopAppController.itemPriorityOptions()
-                                            onActivated: ai._save()
+                                            onActivated: { ai._touchDates(); ai._save() }
                                         }
                                         ComboField {
                                             id: aiStatus; label: qsTr("Status")
                                             options: DesktopAppController.itemStatusOptions()
-                                            onActivated: ai._save()
+                                            onActivated: (v) => { ai._applyStatusDates(v); ai._touchDates(); ai._save() }
                                         }
                                         ComboField {
                                             id: aiAssigned; label: qsTr("Assigned To")
                                             options: page._peopleNames()
                                             includeNone: true
                                             searchable: true
-                                            onActivated: (v) => { ai._assignedId = page._idForName(v); ai._save() }
+                                            onActivated: (v) => { ai._assignedId = page._idForName(v); ai._touchDates(); ai._save() }
                                         }
                                         ComboField {
                                             id: aiIdentified; label: qsTr("Identified By")
                                             options: page._peopleNames()
                                             includeNone: true
                                             searchable: true
-                                            onActivated: (v) => { ai._identifiedId = page._idForName(v); ai._save() }
+                                            onActivated: (v) => { ai._identifiedId = page._idForName(v); ai._touchDates(); ai._save() }
                                         }
-                                        DateField { id: aiDateId; label: qsTr("Date Identified"); onEdited: ai._save() }
-                                        DateField { id: aiDateDue; label: qsTr("Date Due"); onEdited: ai._save() }
+                                        DateField { id: aiDateId; label: qsTr("Date Identified"); onEdited: { ai._touchDates(); ai._save() } }
+                                        DateField { id: aiDateDue; label: qsTr("Date Due"); onEdited: { ai._touchDates(); ai._save() } }
+                                        DateField { id: aiLastUpdate; label: qsTr("Date Updated"); onEdited: { ai._lastUpdateEdited = true; ai._save() } }
+                                        DateField { id: aiDateResolved; label: qsTr("Date Resolved"); onEdited: { ai._resolvedEdited = true; ai._touchDates(); ai._save() } }
                                     }
                                     Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
                                     Rectangle {
@@ -583,7 +624,12 @@ Item {
                                             selectByMouse: true
                                             background: null
                                             font.pixelSize: Theme.fontBody
-                                            onEditingFinished: ai._save()
+                                            onEditingFinished: {
+                                                // Fires on focus-out too — only stamp on a real edit.
+                                                if (aiDesc.text !== (ai.model.description || "").toString())
+                                                    ai._touchDates()
+                                                ai._save()
+                                            }
                                             SpellCheckField { dialog: spellDialog }
                                         }
                                     }

@@ -444,7 +444,8 @@ public:
                                 const QString& itemType, const QString& priority,
                                 const QString& status, const QString& assignedTo,
                                 const QString& identifiedBy, const QString& dateIdentified,
-                                const QString& dateDue, const QString& description);
+                                const QString& dateDue, const QString& description,
+                                const QString& lastUpdate, const QString& dateResolved);
 
     // ── People CRUD ──────────────────────────────────────────────────────────
     Q_INVOKABLE int         addPerson();
@@ -483,7 +484,8 @@ public:
                                 const QString& identifiedBy, const QString& assignedTo,
                                 const QString& priority, const QString& status,
                                 const QString& dateIdentified, const QString& dateDue,
-                                bool internalItem);
+                                bool internalItem,
+                                const QString& lastUpdate, const QString& dateResolved);
     Q_INVOKABLE bool        isItemNameUnique(const QString& projectId, const QString& itemId, const QString& itemName) const;
     Q_INVOKABLE bool        isItemNumberUnique(const QString& projectId, const QString& itemId, const QString& itemNumber) const;
 

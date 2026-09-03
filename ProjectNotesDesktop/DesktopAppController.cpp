@@ -38,6 +38,8 @@
 #include "updatemanager.h"
 
 #include <algorithm>
+#include <utility>
+#include <vector>
 
 #include <QApplication>
 #include <QClipboard>
@@ -1957,18 +1959,22 @@ QVariantMap DesktopAppController::getNoteActionItemData(int row) const
 bool DesktopAppController::saveNoteActionItem(int row, const QString& itemName,
         const QString& itemType, const QString& priority, const QString& status,
         const QString& assignedTo, const QString& identifiedBy,
-        const QString& dateIdentified, const QString& dateDue, const QString& description)
+        const QString& dateIdentified, const QString& dateDue, const QString& description,
+        const QString& lastUpdate, const QString& dateResolved)
 {
     global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.notesactionitemsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
     // notesActionItemsModel columns: 2 item_type, 3 item_name, 4 identified_by,
     // 5 date_identified, 6 description, 7 assigned_to, 8 priority, 9 status,
-    // 10 date_due (see notesactionitemsmodel.cpp SELECT order).
+    // 10 date_due, 11 last_update, 12 date_resolved (see notesactionitemsmodel.cpp
+    // SELECT order). NotesActionItemsModel::setData has no auto date handling, so
+    // last_update / date_resolved are whatever the editor holds.
     return applyRowFields(model, row, {
         {3,  itemName},      {2, itemType},   {8,  priority},
         {9,  status},        {7, assignedTo}, {4,  identifiedBy},
-        {5,  dateIdentified}, {10, dateDue},  {6,  description} });
+        {5,  dateIdentified}, {10, dateDue},  {6,  description},
+        {11, lastUpdate},    {12, dateResolved} });
 }
 
 // ── People ───────────────────────────────────────────────────────────────────
@@ -2174,7 +2180,8 @@ bool DesktopAppController::saveTrackerItemDetail(int row, const QString& itemId,
         const QString& itemNumber, const QString& itemType, const QString& itemName,
         const QString& description, const QString& identifiedBy, const QString& assignedTo,
         const QString& priority, const QString& status, const QString& dateIdentified,
-        const QString& dateDue, bool internalItem)
+        const QString& dateDue, bool internalItem,
+        const QString& lastUpdate, const QString& dateResolved)
 {
     global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.actionitemsdetailsmodelproxy();
@@ -2200,11 +2207,32 @@ bool DesktopAppController::saveTrackerItemDetail(int row, const QString& itemId,
     // Status must be written BEFORE assigned_to: TrackerItemsModel::setData
     // auto-advances a "New" item to "Assigned" when assigned_to is set. If status
     // were written after, it would clobber that auto-advance back to "New".
-    return applyRowFields(model, pIdx.row(), {
+    if (!applyRowFields(model, pIdx.row(), {
         { 1, itemNumber},    { 2, itemType},   { 3, itemName},
         { 4, identifiedBy},  { 5, dateIdentified}, { 6, description},
         { 8, priority},      { 9, status},     { 7, assignedTo},
-        {10, dateDue},       {15, internalItem ? "1" : "0"} });
+        {10, dateDue},       {15, internalItem ? "1" : "0"} }))
+        return false;
+
+    // Date Resolved (12) and Date Updated (11) are written last so a value the
+    // user typed in those fields wins over TrackerItemsModel::setData's own
+    // bookkeeping: every edit above bumps last_update to today, and setting the
+    // status to "Resolved" stamps date_resolved. An empty string means "leave as
+    // the model set it" — last_update is required so it is never legitimately
+    // blank, and date_resolved is normally cleared by moving off "Resolved"
+    // rather than by emptying the field.
+    std::vector<std::pair<int, QString>> extra;
+    if (!dateResolved.isEmpty()) extra.emplace_back(12, dateResolved);
+    if (!lastUpdate.isEmpty())   extra.emplace_back(11, lastUpdate);
+    for (const auto& f : extra) {
+        if (!model->setData(model->index(pIdx.row(), f.first), f.second)) {
+            QString err = global_DBObjects.lastSaveError();
+            if (err.isEmpty()) err = tr("The record could not be saved.");
+            emit errorOccurred(tr("Could Not Save"), err);
+            return false;
+        }
+    }
+    return true;
 }
 
 // ── Move a tracker item to a different project ───────────────────────────────
