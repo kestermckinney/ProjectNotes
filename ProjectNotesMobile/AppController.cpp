@@ -326,6 +326,13 @@ void AppController::onSyncComplete(const SyncResult& result)
     // Flush all row changes accumulated during the sync cycle in one pass.
     global_DBObjects.updateDisplayData();
 
+    // A bare 401 is a routine JWT expiration: the sync loop reauthenticates with
+    // the stored credentials and retries on its own, logging an error and
+    // stopping only if that reauthentication fails. Don't turn the bar red on
+    // every token refresh.
+    const bool authOnlyFailure = !result.success && result.hasAuthError()
+                                 && !result.hasNetworkError()
+                                 && result.totalDecryptionFailures() == 0;
     if (result.success) {
         m_syncHasError = false;
         // Ask SqliteSyncPro to count remaining pending records and emit
@@ -338,6 +345,9 @@ void AppController::onSyncComplete(const SyncResult& result)
                 api->checkSyncStatus(result);
             }, Qt::QueuedConnection);
         }
+    } else if (authOnlyFailure) {
+        // Leave the bar as-is (no red) and wait for the reauthenticated retry.
+        m_syncHasError = false;
     } else {
         // Turn bar red; no popup — the bar is the only sync error indicator.
         setSyncProgress(m_syncProgress, true);

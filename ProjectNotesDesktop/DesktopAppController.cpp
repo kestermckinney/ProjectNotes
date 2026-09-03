@@ -3357,13 +3357,20 @@ void DesktopAppController::onSyncComplete(const SyncResult& result)
         m_syncSessionActive = false;
         m_syncProgress = -1.0;
     }
+    // A bare 401 is a routine JWT expiration: the sync loop reauthenticates with
+    // the stored credentials and retries on its own, logging an error and
+    // stopping only if that reauthentication fails. Don't blink the sync status
+    // indicator red on every token refresh.
+    const bool authOnlyFailure = !result.success && result.hasAuthError()
+                                 && !result.hasNetworkError()
+                                 && result.totalDecryptionFailures() == 0;
     if (result.success) {
         m_syncHasError = false;
         if (SqliteSyncPro* api = m_syncApi)
             QMetaObject::invokeMethod(api, [api, result]() { api->checkSyncStatus(result); },
                                       Qt::QueuedConnection);
     } else {
-        m_syncHasError = true;
+        m_syncHasError = !authOnlyFailure;
     }
     emit syncProgressChanged();
 }
