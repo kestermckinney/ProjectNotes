@@ -13,6 +13,7 @@ Item {
 
     property var _clients: []
     property var _people: []
+    readonly property var _finder: DesktopAppController.fileFinder
     property int currentTab: 0
     Component.onCompleted: {
         _clients = DesktopAppController.clientList()
@@ -27,6 +28,8 @@ Item {
         syncEmailField.commit()
         syncPasswordField.commit()
         syncPhraseField.commit()
+        officeTenantField.commit()
+        officeClientField.commit()
     }
 
     function _clientNames() { return _clients.map(function(c){ return c.name }) }
@@ -40,7 +43,7 @@ Item {
         spacing: 14
 
         Rectangle {
-            Layout.preferredWidth: 168
+            Layout.preferredWidth: 194
             Layout.fillHeight: true
             radius: Theme.radius
             color: Theme.surface
@@ -57,6 +60,8 @@ Item {
                 model: [
                     { key: "appearance", label: qsTr("Appearance") },
                     { key: "cloudSync", label: qsTr("Cloud Sync") },
+                    { key: "office365", label: qsTr("Office 365 Integration") },
+                    { key: "fileFinder", label: qsTr("File Finder") },
                     { key: "projectFolder", label: qsTr("Project Folder") },
                     { key: "preferences", label: qsTr("Preferences") },
                     { key: "viewOptions", label: qsTr("View Options") },
@@ -252,6 +257,449 @@ Item {
                 }
             }
 
+            }
+
+            SettingsTab {
+                // Office 365 Integration
+                SettingsSection {
+                    title: qsTr("Office 365 Integration")
+                    subtitle: qsTr("Connect Microsoft Teams and SharePoint so File Finder can discover project folders and documents. The refresh token is stored in the operating system credential vault.")
+
+                    SettingsCheck {
+                        label: qsTr("Include Office 365 locations")
+                        checked: page._finder ? page._finder.office365Enabled : false
+                        onToggledValue: (v) => { if (page._finder) page._finder.office365Enabled = v }
+                    }
+                    SyncField {
+                        id: officeTenantField
+                        label: qsTr("Microsoft Entra tenant ID")
+                        value: page._finder ? page._finder.office365TenantId : "organizations"
+                        onCommitted: (v) => { if (page._finder) page._finder.office365TenantId = v }
+                    }
+                    SyncField {
+                        id: officeClientField
+                        label: qsTr("Application (client) ID")
+                        value: page._finder ? page._finder.office365ClientId : ""
+                        onCommitted: (v) => { if (page._finder) page._finder.office365ClientId = v }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: officeStatusColumn.implicitHeight + 20
+                        radius: Theme.radiusSm
+                        color: Theme.surface
+                        border.color: Theme.border
+                        ColumnLayout {
+                            id: officeStatusColumn
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            spacing: 5
+                            Text {
+                                Layout.fillWidth: true
+                                text: page._finder ? page._finder.office365AuthenticationStatus : qsTr("Not initialized")
+                                color: page._finder && page._finder.office365Authenticated ? Theme.green : Theme.text2
+                                font.pixelSize: Theme.fontBody
+                                wrapMode: Text.WordWrap
+                            }
+                            Text {
+                                visible: page._finder && page._finder.office365UserCode !== ""
+                                text: qsTr("Code: %1").arg(page._finder ? page._finder.office365UserCode : "")
+                                color: Theme.text
+                                font.pixelSize: Theme.fontXl
+                                font.weight: Font.Bold
+                            }
+                            Button {
+                                visible: page._finder && page._finder.office365VerificationUrl.toString() !== ""
+                                implicitHeight: 28
+                                text: qsTr("Open Microsoft sign-in page")
+                                onClicked: Qt.openUrlExternally(page._finder.office365VerificationUrl)
+                            }
+                        }
+                    }
+
+                    RowLayout {
+                        spacing: 8
+                        Button {
+                            primary: true
+                            implicitHeight: 30
+                            text: page._finder && page._finder.office365AuthenticationInProgress
+                                  ? qsTr("Waiting for sign-in…") : qsTr("Sign in to Microsoft 365")
+                            enabled: page._finder && !page._finder.office365AuthenticationInProgress
+                            onClicked: {
+                                officeTenantField.commit()
+                                officeClientField.commit()
+                                page._finder.startOffice365SignIn()
+                            }
+                        }
+                        Button {
+                            implicitHeight: 30
+                            text: qsTr("Sign out")
+                            enabled: page._finder && page._finder.office365Authenticated
+                            onClicked: page._finder.signOutOffice365()
+                        }
+                    }
+                }
+            }
+
+            SettingsTab {
+                // File Finder
+                SettingsSection {
+                    title: qsTr("File Finder")
+                    subtitle: qsTr("Scan active projects for local and Office 365 locations. A reconciliation runs every five minutes while enabled; unchanged rows are not written again.")
+
+                    SettingsCheck {
+                        label: qsTr("Enable File Finder")
+                        checked: page._finder ? page._finder.enabled : false
+                        onToggledValue: (v) => { if (page._finder) page._finder.enabled = v }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+                            Text {
+                                Layout.fillWidth: true
+                                text: page._finder ? page._finder.status : qsTr("Not initialized")
+                                color: Theme.text
+                                font.pixelSize: Theme.fontBody
+                                font.weight: Font.DemiBold
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                visible: page._finder && page._finder.lastScanSummary !== ""
+                                text: page._finder ? page._finder.lastScanSummary : ""
+                                color: Theme.text3
+                                font.pixelSize: Theme.fontSm
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                        Button {
+                            primary: true
+                            implicitHeight: 30
+                            text: page._finder && page._finder.scanning ? qsTr("Scanning…") : qsTr("Scan Now")
+                            enabled: page._finder && page._finder.enabled && !page._finder.scanning
+                            onClicked: page._finder.scanNow()
+                        }
+                    }
+                }
+
+                SettingsSection {
+                    title: qsTr("Search Locations")
+                    subtitle: qsTr("Each root is traversed once per scan, then active project numbers are matched to folder names.")
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: searchLocationsGrid.implicitHeight
+                        radius: Theme.radiusSm
+                        color: Theme.surface
+                        border.color: Theme.border
+                        clip: true
+
+                        ColumnLayout {
+                            id: searchLocationsGrid
+                            width: parent.width
+                            spacing: 0
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 30
+                                color: Theme.surface2
+                                RowLayout {
+                                    anchors.fill: parent
+                                    spacing: 0
+                                    Text {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        leftPadding: 9
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: qsTr("Folder path")
+                                        color: Theme.text2
+                                        font.pixelSize: Theme.fontXs
+                                        font.weight: Font.DemiBold
+                                    }
+                                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                    Text {
+                                        Layout.preferredWidth: 68
+                                        Layout.fillHeight: true
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: qsTr("Actions")
+                                        color: Theme.text2
+                                        font.pixelSize: Theme.fontXs
+                                        font.weight: Font.DemiBold
+                                    }
+                                }
+                            }
+
+                            Repeater {
+                                model: page._finder ? page._finder.searchRoots : []
+                                delegate: Rectangle {
+                                    required property string modelData
+                                    required property int index
+                                    Layout.fillWidth: true
+                                    implicitHeight: 34
+                                    color: index % 2 === 0 ? Theme.surface : Theme.raise
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        spacing: 0
+                                        Text {
+                                            Layout.fillWidth: true
+                                            Layout.fillHeight: true
+                                            leftPadding: 9
+                                            rightPadding: 9
+                                            verticalAlignment: Text.AlignVCenter
+                                            text: modelData
+                                            color: Theme.text
+                                            font.pixelSize: Theme.fontBody
+                                            elide: Text.ElideMiddle
+                                        }
+                                        Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                        Item { Layout.preferredWidth: 34; Layout.fillHeight: true }
+                                        Rectangle {
+                                            Layout.preferredWidth: 34
+                                            Layout.fillHeight: true
+                                            color: removeRootHover.hovered ? Theme.redSoft : "transparent"
+                                            MaterialIcon {
+                                                anchors.centerIn: parent
+                                                name: "delete"
+                                                size: 15
+                                                color: Theme.red
+                                            }
+                                            HoverHandler { id: removeRootHover }
+                                            TapHandler {
+                                                onTapped: page._finder.removeSearchRoot(index)
+                                            }
+                                        }
+                                    }
+                                    Rectangle {
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.bottom: parent.bottom
+                                        height: 1
+                                        color: Theme.border
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 36
+                                color: Theme.accentSoft
+                                RowLayout {
+                                    anchors.fill: parent
+                                    spacing: 0
+                                    GridCellEditor {
+                                        id: newRootField
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        placeholderText: qsTr("Add a folder path")
+                                        onAccepted: page._addSearchRoot()
+                                    }
+                                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                    Rectangle {
+                                        Layout.preferredWidth: 34
+                                        Layout.fillHeight: true
+                                        color: browseRootHover.hovered ? Theme.surface2 : "transparent"
+                                        MaterialIcon {
+                                            anchors.centerIn: parent
+                                            name: "folder_open"
+                                            size: 16
+                                            color: Theme.text2
+                                        }
+                                        HoverHandler { id: browseRootHover }
+                                        TapHandler { onTapped: fileFinderRootDialog.open() }
+                                    }
+                                    Rectangle {
+                                        Layout.preferredWidth: 34
+                                        Layout.fillHeight: true
+                                        color: addRootHover.hovered && newRootField.text.trim() !== ""
+                                               ? Theme.accent : "transparent"
+                                        opacity: newRootField.text.trim() !== "" ? 1 : 0.4
+                                        MaterialIcon {
+                                            anchors.centerIn: parent
+                                            name: "add"
+                                            size: 17
+                                            color: addRootHover.hovered && newRootField.text.trim() !== ""
+                                                   ? "#ffffff" : Theme.accent
+                                        }
+                                        HoverHandler { id: addRootHover }
+                                        TapHandler {
+                                            enabled: newRootField.text.trim() !== ""
+                                            onTapped: page._addSearchRoot()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                SettingsSection {
+                    title: qsTr("File Classifications")
+                    subtitle: qsTr("Regular expressions are evaluated once per file; the first matching rule supplies the classification.")
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: classificationGrid.implicitHeight
+                        radius: Theme.radiusSm
+                        color: Theme.surface
+                        border.color: Theme.border
+                        clip: true
+
+                        ColumnLayout {
+                            id: classificationGrid
+                            width: parent.width
+                            spacing: 0
+
+                            // Header row: fixed first/action columns keep every
+                            // editor aligned like a small spreadsheet.
+                            Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 30
+                                color: Theme.surface2
+                                RowLayout {
+                                    anchors.fill: parent
+                                    spacing: 0
+                                    Text {
+                                        Layout.preferredWidth: 190
+                                        Layout.fillHeight: true
+                                        leftPadding: 9
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: qsTr("Classification")
+                                        color: Theme.text2
+                                        font.pixelSize: Theme.fontXs
+                                        font.weight: Font.DemiBold
+                                    }
+                                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        leftPadding: 9
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: qsTr("Regular expression")
+                                        color: Theme.text2
+                                        font.pixelSize: Theme.fontXs
+                                        font.weight: Font.DemiBold
+                                    }
+                                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                    Item { Layout.preferredWidth: 34; Layout.fillHeight: true }
+                                }
+                            }
+
+                            Repeater {
+                                model: page._finder ? page._finder.fileRules : []
+                                delegate: Rectangle {
+                                    required property var modelData
+                                    required property int index
+                                    Layout.fillWidth: true
+                                    implicitHeight: 34
+                                    color: index % 2 === 0 ? Theme.surface : Theme.raise
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        spacing: 0
+                                        GridCellEditor {
+                                            id: classificationEditor
+                                            Layout.preferredWidth: 190
+                                            Layout.fillHeight: true
+                                            value: modelData.classification
+                                            onCommittedValue: (v) => page._finder.updateFileRule(
+                                                index, v, patternEditor.text)
+                                        }
+                                        Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                        GridCellEditor {
+                                            id: patternEditor
+                                            Layout.fillWidth: true
+                                            Layout.fillHeight: true
+                                            value: modelData.pattern
+                                            font.family: "monospace"
+                                            onCommittedValue: (v) => page._finder.updateFileRule(
+                                                index, classificationEditor.text, v)
+                                        }
+                                        Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                        Rectangle {
+                                            Layout.preferredWidth: 34
+                                            Layout.fillHeight: true
+                                            color: removeHover.hovered ? Theme.redSoft : "transparent"
+                                            MaterialIcon {
+                                                anchors.centerIn: parent
+                                                name: "delete"
+                                                size: 15
+                                                color: Theme.red
+                                            }
+                                            HoverHandler { id: removeHover }
+                                            TapHandler {
+                                                onTapped: page._finder.removeFileRule(index)
+                                            }
+                                        }
+                                    }
+                                    Rectangle {
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.bottom: parent.bottom
+                                        height: 1
+                                        color: Theme.border
+                                    }
+                                }
+                            }
+
+                            // The last grid row doubles as the new-rule editor.
+                            Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 36
+                                color: Theme.accentSoft
+                                RowLayout {
+                                    anchors.fill: parent
+                                    spacing: 0
+                                    GridCellEditor {
+                                        id: newClassificationField
+                                        Layout.preferredWidth: 190
+                                        Layout.fillHeight: true
+                                        placeholderText: qsTr("New classification")
+                                        onAccepted: newPatternField.forceActiveFocus()
+                                    }
+                                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                    GridCellEditor {
+                                        id: newPatternField
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        placeholderText: qsTr("New regular expression")
+                                        font.family: "monospace"
+                                        onAccepted: page._addFileRule()
+                                    }
+                                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                    Rectangle {
+                                        Layout.preferredWidth: 34
+                                        Layout.fillHeight: true
+                                        color: addHover.hovered && newPatternField.text.trim() !== ""
+                                               ? Theme.accent : "transparent"
+                                        opacity: newPatternField.text.trim() !== "" ? 1 : 0.4
+                                        MaterialIcon {
+                                            anchors.centerIn: parent
+                                            name: "add"
+                                            size: 17
+                                            color: addHover.hovered && newPatternField.text.trim() !== ""
+                                                   ? "#ffffff" : Theme.accent
+                                        }
+                                        HoverHandler { id: addHover }
+                                        TapHandler {
+                                            enabled: newPatternField.text.trim() !== ""
+                                            onTapped: page._addFileRule()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Button {
+                        Layout.alignment: Qt.AlignRight
+                        implicitHeight: 28
+                        text: qsTr("Reset Defaults")
+                        onClicked: page._finder.resetDefaultRules()
+                    }
+                }
             }
 
             SettingsTab {
@@ -532,6 +980,12 @@ Item {
         // saved (and checked) rather than lost. Committing an unchanged value is
         // harmless: the controller's setters ignore it.
         function commit() { sf.committed(sfInput.text) }
+        function currentText() { return sfInput.text }
+        function setText(v) { sfInput.text = v }
+        onValueChanged: {
+            if (!sfInput.activeFocus && sfInput.text !== value)
+                sfInput.text = value
+        }
         Layout.fillWidth: true
         spacing: 3
         Text { text: sf.label; color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
@@ -557,12 +1011,46 @@ Item {
         }
     }
 
+    // Borderless editor used inside the File Finder classification grid. The
+    // surrounding grid supplies structure; focus is shown with a subtle cell
+    // tint instead of another rounded text box.
+    component GridCellEditor: TextField {
+        id: gridEditor
+        property string value: ""
+        signal committedValue(string value)
+        selectByMouse: true
+        verticalAlignment: TextInput.AlignVCenter
+        leftPadding: 9
+        rightPadding: 9
+        color: Theme.text
+        placeholderTextColor: Theme.text3
+        font.pixelSize: Theme.fontBody
+        background: Rectangle {
+            color: gridEditor.activeFocus ? Theme.accentSoft : "transparent"
+        }
+        Component.onCompleted: text = value
+        onValueChanged: {
+            if (!activeFocus && text !== value)
+                text = value
+        }
+        onEditingFinished: committedValue(text)
+    }
+
     FileDialog {
         id: importDialog
         title: qsTr("Import XML from file")
         fileMode: FileDialog.OpenFile
         nameFilters: [ qsTr("XML files (*.xml)") ]
         onAccepted: DesktopAppController.importXmlFile(selectedFile)
+    }
+
+    FolderDialog {
+        id: fileFinderRootDialog
+        title: qsTr("Choose a File Finder search location")
+        onAccepted: {
+            if (page._finder)
+                page._finder.addSearchRoot(selectedFolder)
+        }
     }
 
     // Folder icon picker — a grid of Theme.folderIcons, highlighting the icon
@@ -637,6 +1125,24 @@ Item {
             return
         FolderManager.addFolder(name, "star", Theme.folderColors[0])
         newFolderField.clear()
+    }
+
+    function _addSearchRoot() {
+        if (!page._finder || newRootField.text.trim() === "")
+            return
+        page._finder.addSearchRoot(newRootField.text)
+        newRootField.clear()
+        newRootField.forceActiveFocus()
+    }
+
+    function _addFileRule() {
+        if (!page._finder || newPatternField.text.trim() === "")
+            return
+        page._finder.addFileRule(newClassificationField.text,
+                                 newPatternField.text)
+        newClassificationField.clear()
+        newPatternField.clear()
+        newClassificationField.forceActiveFocus()
     }
 
     // Inline section container

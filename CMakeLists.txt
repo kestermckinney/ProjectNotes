@@ -249,6 +249,7 @@ endif()
 set(SQLITESYNCPRO_SRC_DIR "../SqliteSyncPro/src" CACHE STRING "Path to SqliteSyncPro/src")
 add_subdirectory(${SQLITESYNCPRO_SRC_DIR} SqliteSyncPro)
 add_subdirectory(ProjectNotesCore)
+add_subdirectory(ProjectNotesFileFinder EXCLUDE_FROM_ALL)
 
 # ── QML desktop frontend (UI overhaul, Phase 1) ──────────────────────────────
 # Built as a separate ProjectNotesDesktop target that reuses ProjectNotesCore.

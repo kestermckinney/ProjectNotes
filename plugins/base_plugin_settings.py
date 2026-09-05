@@ -25,7 +25,6 @@ plugindescription = "This plugin provide settigns input for the base install set
 # the function wil only show on the right click if it matches the table specified in dataexport
 # if a dataexport value exist the menu will not appear on the plugin menu
 pluginmenus = [
-    {"menutitle" : "File Finder", "function" : "menu_file_collector_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "Editor", "function" : "menu_editor_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "Outlook Integration", "function" : "menu_outlook_integration_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "iCloud Contacts", "function" : "menu_icloud_contacts_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
@@ -1264,7 +1263,6 @@ def setup_default_icloud_settings():
     if pnc_tmp.get_plugin_setting("ExportNewContacts", settings_pluginname) is None:
         pnc_tmp.set_plugin_setting("ExportNewContacts", settings_pluginname, "false")
 
-setup_default_file_finder_settings()
 setup_default_editor_settings()
 setup_default_meeting_email_types_settings()
 setup_default_outlook_settings()
@@ -1277,7 +1275,6 @@ mss = MyShortcutSettings(pnc.get_main_window())
 ois = OutlookIntegrationSettings(pnc.get_main_window())
 ics = ICloudContactsSettings(pnc.get_main_window())
 es = EditorSettings(pnc.get_main_window())
-ffs = FileFinderSettings(pnc.get_main_window())
 
 # Use code below for testing
 if __name__ == '__main__':

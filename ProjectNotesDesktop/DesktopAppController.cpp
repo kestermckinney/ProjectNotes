@@ -19,6 +19,7 @@
 #include "projectlocationsmodel.h"
 #include "statusreportitemsmodel.h"
 #include "searchresultsmodel.h"
+#include "FileFinderService.h"
 
 #include "pluginmanager.h"
 #include "plugin.h"
@@ -88,6 +89,15 @@ DesktopAppController::DesktopAppController(QObject* parent)
     if (!s_instance)
         s_instance = this;
 
+    m_fileFinder = new FileFinderService(this);
+    connect(m_fileFinder, &FileFinderService::locationsChanged, this,
+            [](int, int) {
+        // The worker commits a complete scan in one transaction, so refresh
+        // dependent views once rather than once for every discovered location.
+        global_DBObjects.projectlocationsmodel()->refresh();
+        global_DBObjects.searchresultsmodel()->markDirty();
+    });
+
     // Install a backing store for DatabaseObjects "local" parameters (per-machine
     // view filters like UserFilter:ShowInternalItems / ShowClosedProjects /
     // ViewFilter:ShowResolvedTrackerItems). Without this the desktop app had no
@@ -140,6 +150,11 @@ QString DesktopAppController::dataLocation()
 
 DesktopAppController::~DesktopAppController()
 {
+    // Stop the finder's worker and close its connection before the shared
+    // application database is closed below.
+    delete m_fileFinder;
+    m_fileFinder = nullptr;
+
     if (m_syncApi && m_syncApiThread) {
         // Shut the engine down on its own thread, then stop the thread.
         SqliteSyncPro* api = m_syncApi;
@@ -290,6 +305,9 @@ bool DesktopAppController::openOrCreateDatabase()
     // building (pre-open); force a rebuild + rev bump now that data is loaded.
     invalidateFolderSnapshot();
 
+    m_fileFinder->initialize(dbPath, &db_rwlock,
+                             QStringLiteral("ProjectNotes") + s_developerProfile);
+
     m_databaseOpen = true;
     emit databaseReady();
     emit projectManagerChanged();   // picks up any PM configured in a prior session
@@ -307,6 +325,9 @@ bool DesktopAppController::openOrCreateDatabase()
 }
 
 // ── Models ───────────────────────────────────────────────────────────────────
+
+QObject* DesktopAppController::fileFinder() const
+{ return m_fileFinder; }
 
 QAbstractItemModel* DesktopAppController::projectsListModel() const
 { return global_DBObjects.projectinformationmodelproxy(); }

@@ -1,8 +1,9 @@
 # tests/desktop — automated tests for the QML (Qt Quick) desktop frontend.
 #
-# Builds a single test executable, tst_qmldesktop, that reuses the exact
-# DesktopAppController bridge + QML module the shipping ProjectNotesDesktop app
-# uses (no production code is modified). It runs two groups:
+# Builds tst_qmldesktop, which reuses the exact DesktopAppController bridge +
+# QML module the shipping ProjectNotesDesktop app uses, plus a small headless
+# tst_filefinder executable for native reconciliation. The QML test runs two
+# groups:
 #
 #   ParityTest  — drives DesktopAppController's full CRUD/search/filter surface
 #                 against a throwaway database, verifying the QML app can do
@@ -110,6 +111,7 @@ target_link_libraries(tst_qmldesktop PRIVATE
     "${Python3_LIBRARIES}"
     SqliteSyncProLib
     ProjectNotesCore
+    ProjectNotesFileFinder
 )
 
 if(UNIX AND NOT APPLE AND NOT ANDROID)
@@ -127,6 +129,8 @@ endif()
 # Deploy dictionary + plugins/threads next to the test binary so the embedded
 # Python plugin engine and spell checker behave exactly as in the real app.
 add_custom_command(TARGET tst_qmldesktop POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E remove_directory "$<TARGET_FILE_DIR:tst_qmldesktop>/plugins"
+    COMMAND ${CMAKE_COMMAND} -E remove_directory "$<TARGET_FILE_DIR:tst_qmldesktop>/threads"
     COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:tst_qmldesktop>/dictionary"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${ROOT_DIR}/dictionary/en_US.aff" "${ROOT_DIR}/dictionary/en_US.dic"
@@ -138,3 +142,23 @@ add_custom_command(TARGET tst_qmldesktop POST_BUILD
 enable_testing()
 add_test(NAME qmldesktop COMMAND tst_qmldesktop)
 set_tests_properties(qmldesktop PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# Fast, headless coverage for the native reconciliation path. This exercises a
+# dedicated SQLite connection, the shared lock, active-project filtering,
+# legacy-row adoption, batched upsert, and no-op repeat scans.
+add_executable(tst_filefinder
+    tst_filefinder.cpp
+    ${ROOT_DIR}/credentialstore.cpp ${ROOT_DIR}/credentialstore.h
+)
+target_link_libraries(tst_filefinder PRIVATE
+    Qt6::Core Qt6::Sql Qt6::Network Qt6::Test
+    ProjectNotesFileFinder
+)
+if(UNIX AND NOT APPLE AND NOT ANDROID)
+    target_link_libraries(tst_filefinder PRIVATE Qt6::DBus)
+elseif(APPLE)
+    target_link_libraries(tst_filefinder PRIVATE "-framework Security")
+elseif(WIN32)
+    target_link_libraries(tst_filefinder PRIVATE Advapi32)
+endif()
+add_test(NAME filefinder COMMAND tst_filefinder)
