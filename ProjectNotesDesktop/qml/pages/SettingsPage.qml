@@ -301,12 +301,20 @@ Item {
                                 font.pixelSize: Theme.fontBody
                                 wrapMode: Text.WordWrap
                             }
-                            Text {
+                            RowLayout {
                                 visible: page._finder && page._finder.office365UserCode !== ""
-                                text: qsTr("Code: %1").arg(page._finder ? page._finder.office365UserCode : "")
-                                color: Theme.text
-                                font.pixelSize: Theme.fontXl
-                                font.weight: Font.Bold
+                                spacing: 8
+                                Text {
+                                    text: qsTr("Code: %1").arg(page._finder ? page._finder.office365UserCode : "")
+                                    color: Theme.text
+                                    font.pixelSize: Theme.fontXl
+                                    font.weight: Font.Bold
+                                }
+                                Button {
+                                    implicitHeight: 28
+                                    text: qsTr("Copy code")
+                                    onClicked: DesktopAppController.copyTextToClipboard(page._finder.office365UserCode)
+                                }
                             }
                             Button {
                                 visible: page._finder && page._finder.office365VerificationUrl.toString() !== ""

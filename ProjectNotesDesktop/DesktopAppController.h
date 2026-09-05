@@ -212,6 +212,7 @@ public:
     // app, which inserts clipboard->text() directly instead of going through
     // the normal rich-text paste() path.
     Q_INVOKABLE QString clipboardPlainText() const;
+    Q_INVOKABLE void copyTextToClipboard(const QString& text) const;
 
     // ── Platform font metrics ────────────────────────────────────────────────
     // Backing reader for the property above: the platform's own menu font

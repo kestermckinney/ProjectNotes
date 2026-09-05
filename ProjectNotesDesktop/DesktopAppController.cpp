@@ -654,6 +654,12 @@ QString DesktopAppController::clipboardPlainText() const
     return clipboard ? clipboard->text() : QString();
 }
 
+void DesktopAppController::copyTextToClipboard(const QString& text) const
+{
+    if (QClipboard* clipboard = QGuiApplication::clipboard())
+        clipboard->setText(text);
+}
+
 // ── Platform font metrics ────────────────────────────────────────────────────
 
 // A QFont that carries a point size has no pixel size of its own (pixelSize()
