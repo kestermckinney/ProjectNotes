@@ -405,8 +405,8 @@ ApplicationWindow {
                 exportRecord(it.exportTable, it.exportId)
             break
         case "import":      importDialog.open(); break
-        case "preferences":
-        case "about":       selectSection("settings"); break
+        case "preferences": selectSection("settings"); break
+        case "about":       aboutDialog.open(); break
         case "sync":        DesktopAppController.syncNow(); break
         case "sync_all":    DesktopAppController.syncAll(); break
         case "filter":      filterDialog.openFor(root.currentSection); break
@@ -795,6 +795,184 @@ ApplicationWindow {
         StubPage {
             pageTitle: root.meta.title
             pageIcon: root.meta.icon
+        }
+    }
+
+    // About is a compact, modal application dialog (matching ScheduleVault)
+    // rather than another category in the Settings page.
+    Dialog {
+        id: aboutDialog
+        objectName: "aboutDialog"
+        anchors.centerIn: parent
+        width: 500
+        scale: Theme.uiScale
+        modal: true
+        padding: 0
+        closePolicy: Popup.CloseOnEscape
+        title: qsTr("About Project Notes")
+
+        background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
+        header: null
+        footer: null
+
+        contentItem: ColumnLayout {
+            spacing: 0
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.margins: 14
+                spacing: 8
+                MaterialIcon { name: "info"; size: 20; color: Theme.accent }
+                Text {
+                    text: aboutDialog.title
+                    color: Theme.text
+                    font.pixelSize: Theme.font2xl
+                    font.weight: Font.Bold
+                    Layout.fillWidth: true
+                }
+                MaterialIcon {
+                    name: "close"
+                    size: 20
+                    color: Theme.text3
+                    TapHandler {
+                        gesturePolicy: TapHandler.ReleaseWithinBounds
+                        onTapped: aboutDialog.close()
+                    }
+                }
+            }
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.margins: 18
+                spacing: 8
+
+                Image {
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.preferredWidth: 88
+                    Layout.preferredHeight: 88
+                    source: "qrc:/qt/qml/ProjectNotesDesktop/icons/projectnotes.ico"
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    mipmap: true
+                }
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: qsTr("Project Notes")
+                    color: Theme.text
+                    font.pixelSize: Theme.fontBody + 10
+                    font.weight: Font.Bold
+                }
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: qsTr("Version %1").arg(Qt.application.version)
+                    color: Theme.text2
+                    font.pixelSize: Theme.fontBody
+                }
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: qsTr("Build timestamp: %1").arg(DesktopAppController.buildTimestamp())
+                    color: Theme.text3
+                    font.pixelSize: Theme.fontSm
+                }
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: qsTr("Qt %1").arg(DesktopAppController.qtRuntimeVersion())
+                    color: Theme.text3
+                    font.pixelSize: Theme.fontSm
+                }
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    visible: DesktopAppController.developerProfile().length > 0
+                    text: qsTr("Profile: %1").arg(DesktopAppController.developerProfile())
+                    color: Theme.text3
+                    font.pixelSize: Theme.fontSm
+                }
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: "© 2022–2026 Paul McKinney · GPL-3.0-only"
+                    color: Theme.text3
+                    font.pixelSize: Theme.fontSm
+                }
+
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.topMargin: 4
+                    spacing: 6
+                    Repeater {
+                        model: [
+                            { label: qsTr("Documentation"), url: "https://projectnotes.readthedocs.io/" },
+                            { label: qsTr("Release Notes"), url: "https://github.com/kestermckinney/ProjectNotes/releases" },
+                            { label: qsTr("Source Code"), url: "https://github.com/kestermckinney/ProjectNotes" }
+                        ]
+                        delegate: Button {
+                            required property var modelData
+                            implicitHeight: 28
+                            leftPadding: 12
+                            rightPadding: 12
+                            topPadding: 0
+                            bottomPadding: 0
+                            contentItem: Text {
+                                text: modelData.label
+                                color: Theme.text
+                                font.pixelSize: Theme.fontBody
+                                font.weight: Font.DemiBold
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            onClicked: Qt.openUrlExternally(modelData.url)
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.topMargin: 4
+                    implicitHeight: aboutPromoColumn.implicitHeight + 20
+                    color: Theme.surface2
+                    radius: Theme.radius
+                    border.color: Theme.border
+
+                    ColumnLayout {
+                        id: aboutPromoColumn
+                        anchors { top: parent.top; left: parent.left; right: parent.right; margins: 10 }
+                        spacing: 5
+                        Text {
+                            Layout.fillWidth: true
+                            text: qsTr("Take Project Notes With You")
+                            font.pixelSize: Theme.fontLg
+                            font.weight: Font.Bold
+                            color: Theme.text
+                            wrapMode: Text.WordWrap
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: qsTr("Download the Project Notes mobile app for iOS to check status, review notes, and stay on top of tracker items on the go.")
+                            font.pixelSize: Theme.fontSm
+                            color: Theme.text3
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.topMargin: 2
+                    text: "<a href=\"https://www.projectnotespro.com\">www.projectnotespro.com</a>"
+                    textFormat: Text.RichText
+                    font.pixelSize: Theme.fontBody
+                    color: Theme.accent
+                    linkColor: Theme.accent
+                    onLinkActivated: (link) => Qt.openUrlExternally(link)
+                }
+
+                Button {
+                    Layout.alignment: Qt.AlignRight
+                    Layout.topMargin: 4
+                    text: qsTr("Close")
+                    onClicked: aboutDialog.close()
+                }
+            }
         }
     }
 

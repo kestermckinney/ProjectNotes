@@ -13,6 +13,7 @@
 #include <QQmlError>
 #include <QQuickItem>
 #include <QQuickTextDocument>
+#include <QQuickWindow>
 #include <QTextBlock>
 #include <QTextDocument>
 #include <QVariant>
@@ -116,6 +117,21 @@ private slots:
         }
     }
 
+    void test_02b_settingsCategories()
+    {
+        clearWarnings();
+        nav("selectSection", "settings");
+        QQuickWindow* window = qobject_cast<QQuickWindow*>(root);
+        QVERIFY(window);
+        QQuickItem* tabList = findVisualChild(window->contentItem(), QStringLiteral("settingsTabList"));
+        QQuickItem* pages = findVisualChild(window->contentItem(), QStringLiteral("settingsPages"));
+        QVERIFY(tabList);
+        QVERIFY(pages);
+        QCOMPARE(tabList->property("count").toInt(), 6);
+        QCOMPARE(pages->property("count").toInt(), 6);
+        assertClean("settings category tabs");
+    }
+
     void test_03_itemDetail()
     {
         clearWarnings();
@@ -196,11 +212,18 @@ private slots:
         for (const QString& action : { QStringLiteral("filter"),
                                        QStringLiteral("logs"),
                                        QStringLiteral("preferences"),
-                                       QStringLiteral("help") }) {
+                                       QStringLiteral("help"),
+                                       QStringLiteral("about") }) {
             clearWarnings();
             nav("selectSection", "projects");
             nav("handleMenuAction", action);
             assertClean(qPrintable(QStringLiteral("handleMenuAction('%1')").arg(action)));
+            if (action == QStringLiteral("about")) {
+                QObject* about = root->findChild<QObject*>(QStringLiteral("aboutDialog"));
+                QVERIFY(about);
+                QVERIFY(about->property("visible").toBool());
+                QVERIFY(QMetaObject::invokeMethod(about, "close"));
+            }
         }
     }
 
@@ -211,6 +234,19 @@ private slots:
     }
 
 private:
+    static QQuickItem* findVisualChild(QQuickItem* item, const QString& objectName)
+    {
+        if (!item)
+            return nullptr;
+        if (item->objectName() == objectName)
+            return item;
+        for (QQuickItem* child : item->childItems()) {
+            if (QQuickItem* match = findVisualChild(child, objectName))
+                return match;
+        }
+        return nullptr;
+    }
+
     static QString firstId(QAbstractItemModel* m)
     {
         if (!m || m->rowCount() < 1) return {};

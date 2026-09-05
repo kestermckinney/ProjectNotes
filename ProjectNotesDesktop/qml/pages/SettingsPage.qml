@@ -7,12 +7,13 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 import ProjectNotesDesktop
 
-// Settings screen: theme, project folders, preferences, view options, about.
+// Settings screen: category tabs on the left, selected settings on the right.
 Item {
     id: page
 
     property var _clients: []
     property var _people: []
+    property int currentTab: 0
     Component.onCompleted: {
         _clients = DesktopAppController.clientList()
         _people  = DesktopAppController.peopleList()
@@ -33,19 +34,76 @@ Item {
     function _idForName(list, n) { for (var i=0;i<list.length;i++) if (list[i].name===n) return list[i].id; return "" }
     function _nameForId(list, id){ for (var i=0;i<list.length;i++) if (list[i].id===id) return list[i].name; return "" }
 
-    ScrollView {
-        id: pageScroll
+    RowLayout {
         anchors.fill: parent
         anchors.margins: 14
-        clip: true
-        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+        spacing: 14
 
-        ColumnLayout {
-            width: pageScroll.availableWidth
-            spacing: 16
+        Rectangle {
+            Layout.preferredWidth: 168
+            Layout.fillHeight: true
+            radius: Theme.radius
+            color: Theme.surface
+            border.color: Theme.border
 
-            // ── Appearance ────────────────────────────────────────────────────
-            SettingsSection {
+            ListView {
+                id: tabList
+                objectName: "settingsTabList"
+                anchors.fill: parent
+                anchors.margins: 5
+                clip: true
+                interactive: false
+                currentIndex: page.currentTab
+                model: [
+                    { key: "appearance", label: qsTr("Appearance") },
+                    { key: "cloudSync", label: qsTr("Cloud Sync") },
+                    { key: "projectFolder", label: qsTr("Project Folder") },
+                    { key: "preferences", label: qsTr("Preferences") },
+                    { key: "viewOptions", label: qsTr("View Options") },
+                    { key: "data", label: qsTr("Data") }
+                ]
+
+                delegate: Rectangle {
+                    required property var modelData
+                    required property int index
+                    objectName: "settingsTab_" + modelData.key
+                    width: tabList.width
+                    height: 36
+                    radius: Theme.radiusSm
+                    color: index === page.currentTab
+                           ? Theme.accentSoft
+                           : (tabHover.hovered ? Theme.surface2 : "transparent")
+
+                    Text {
+                        anchors.fill: parent
+                        anchors.leftMargin: 10
+                        anchors.rightMargin: 8
+                        verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
+                        text: parent.modelData.label
+                        color: parent.index === page.currentTab ? Theme.accent : Theme.text2
+                        font.pixelSize: Theme.menuFont
+                        font.weight: parent.index === page.currentTab ? Font.DemiBold : Font.Normal
+                    }
+                    HoverHandler { id: tabHover }
+                    TapHandler {
+                        gesturePolicy: TapHandler.ReleaseWithinBounds
+                        onTapped: page.currentTab = parent.index
+                    }
+                }
+            }
+        }
+
+        StackLayout {
+            id: settingsPages
+            objectName: "settingsPages"
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            currentIndex: page.currentTab
+
+            SettingsTab {
+                // Appearance
+                SettingsSection {
                 title: "Appearance"
                 subtitle: "Theme used across the application."
                 RowLayout {
@@ -74,8 +132,11 @@ Item {
                 }
             }
 
-            // ── Cloud Sync ────────────────────────────────────────────────────
-            SettingsSection {
+            }
+
+            SettingsTab {
+                // Cloud Sync
+                SettingsSection {
                 title: "Cloud Sync"
                 subtitle: DesktopAppController.supabaseConnectionInfo
 
@@ -191,9 +252,12 @@ Item {
                 }
             }
 
-            // ── Project Folders ───────────────────────────────────────────────
-            SettingsSection {
-                title: "Project Folders"
+            }
+
+            SettingsTab {
+                // Project Folder
+                SettingsSection {
+                title: "Project Folder"
                 subtitle: "Group projects into folders (e.g. Favorites). A project can belong to several folders. Drag projects onto a folder in the sidebar to add them."
 
                 // New-folder row
@@ -333,8 +397,11 @@ Item {
                 }
             }
 
-            // ── Preferences ───────────────────────────────────────────────────
-            SettingsSection {
+            }
+
+            SettingsTab {
+                // Preferences
+                SettingsSection {
                 title: "Preferences"
                 subtitle: "Defaults applied to new projects and status reports."
                 GridLayout {
@@ -357,8 +424,11 @@ Item {
                 }
             }
 
-            // ── View Options ──────────────────────────────────────────────────
-            SettingsSection {
+            }
+
+            SettingsTab {
+                // View Options
+                SettingsSection {
                 title: "View Options"
                 subtitle: "Control what the lists show. Changes apply immediately."
                 SettingsCheck {
@@ -378,8 +448,11 @@ Item {
                 }
             }
 
-            // ── Data ──────────────────────────────────────────────────────────
-            SettingsSection {
+            }
+
+            SettingsTab {
+                // Data
+                SettingsSection {
                 title: "Data"
                 subtitle: "Import records from a Project Notes XML file. Export is available from any record's detail page."
                 Button {
@@ -395,98 +468,23 @@ Item {
                 }
             }
 
-            // ── About ─────────────────────────────────────────────────────────
-            SettingsSection {
-                title: "About"
-                Text {
-                    text: "Project Notes"
-                    color: Theme.text; font.pixelSize: Theme.font3xl; font.weight: Font.Bold
-                }
-                Text {
-                    text: "Version " + Qt.application.version + " · Built " + DesktopAppController.buildTimestamp()
-                    color: Theme.text3; font.pixelSize: Theme.fontBody
-                }
-                Text {
-                    text: "Qt " + DesktopAppController.qtRuntimeVersion()
-                    color: Theme.text3; font.pixelSize: Theme.fontBody
-                }
-                Text {
-                    visible: text.length > 0
-                    text: DesktopAppController.developerProfile().length > 0
-                          ? "Profile: " + DesktopAppController.developerProfile() : ""
-                    color: Theme.text3; font.pixelSize: Theme.fontBody
-                }
-                Text {
-                    text: "© 2022–2026 Paul McKinney"
-                    color: Theme.text3; font.pixelSize: Theme.fontSm
-                }
-
-                RowLayout {
-                    Layout.topMargin: 3
-                    spacing: 6
-
-                    Repeater {
-                        model: [
-                            { label: qsTr("Documentation"),  url: "https://projectnotes.readthedocs.io/" },
-                            { label: qsTr("Release Notes"),  url: "https://github.com/kestermckinney/ProjectNotes/releases" },
-                            { label: qsTr("Source Code"),    url: "https://github.com/kestermckinney/ProjectNotes" }
-                        ]
-                        delegate: Button {
-                            required property var modelData
-                            implicitHeight: 28
-                            leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
-                            contentItem: Text {
-                                text: modelData.label
-                                color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                            onClicked: Qt.openUrlExternally(modelData.url)
-                        }
-                    }
-                }
-
-                Rectangle {
-                    Layout.topMargin: 6
-                    Layout.fillWidth: true
-                    Layout.preferredWidth: 420
-                    implicitHeight: promoColumn.implicitHeight + 20
-                    color: Theme.surface2
-                    radius: Theme.radius
-                    border.color: Theme.border
-
-                    ColumnLayout {
-                        id: promoColumn
-                        anchors { top: parent.top; left: parent.left; right: parent.right; margins: 10 }
-                        spacing: 5
-
-                        Text {
-                            Layout.fillWidth: true
-                            text: qsTr("Take Project Notes With You")
-                            font.pixelSize: Theme.fontLg; font.weight: Font.Bold
-                            color: Theme.text
-                            wrapMode: Text.WordWrap
-                        }
-                        Text {
-                            Layout.fillWidth: true
-                            text: qsTr("Download the Project Notes mobile app for iOS to check status, review notes, and stay on top of tracker items on the go.")
-                            font.pixelSize: Theme.fontSm
-                            color: Theme.text3
-                            wrapMode: Text.WordWrap
-                        }
-                    }
-                }
-
-                Text {
-                    Layout.topMargin: 3
-                    text: "<a href=\"https://www.projectnotespro.com\">www.projectnotespro.com</a>"
-                    textFormat: Text.RichText
-                    font.pixelSize: Theme.fontBody
-                    color: Theme.accent
-                    linkColor: Theme.accent
-                    onLinkActivated: Qt.openUrlExternally(link)
-                }
             }
+        }
+    }
+
+    // One independently scrollable settings category used by the StackLayout.
+    component SettingsTab: ScrollView {
+        id: settingsTab
+        default property alias content: settingsContent.data
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        clip: true
+        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+        ColumnLayout {
+            id: settingsContent
+            width: settingsTab.availableWidth
+            spacing: 16
         }
     }
 
