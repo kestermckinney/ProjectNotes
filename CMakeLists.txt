@@ -356,10 +356,10 @@ if(APPLE)
         # In Qt Creator: right-click project → Build → sync_plugins,
         # or add a custom Build Step with "Make arguments: sync_plugins".
         add_custom_target(sync_plugins
-            COMMAND rsync -rv --checksum
+            COMMAND rsync -rv --checksum --delete
                 "${CMAKE_CURRENT_SOURCE_DIR}/plugins/"
                 "$<TARGET_BUNDLE_DIR:ProjectNotesWidgets>/Contents/Resources/plugins/"
-            COMMAND rsync -rv --checksum
+            COMMAND rsync -rv --checksum --delete
                 "${CMAKE_CURRENT_SOURCE_DIR}/threads/"
                 "$<TARGET_BUNDLE_DIR:ProjectNotesWidgets>/Contents/Resources/threads/"
             COMMENT "Syncing Python plugins to app bundle (changed files only)"
@@ -465,6 +465,16 @@ endif() # BUILD_WIDGETS_LEGACY — post-build resource staging
 # and do not reference any executable target, so they must run whichever
 # frontend was built — hence outside the BUILD_WIDGETS_LEGACY guard above.
 if(NOT APPLE)
+    # CMake directory installs merge into an existing prefix. Run a targeted
+    # cleanup first so upgrades cannot retain the retired Python File Finder
+    # worker (or its importable bytecode) now that File Finder is native C++.
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/packaging/RemoveLegacyFileFinder.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/RemoveLegacyFileFinder.cmake"
+        @ONLY
+    )
+    install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/RemoveLegacyFileFinder.cmake")
+
     # Install runtime assets alongside the executable so packaged builds
     # (e.g. Flatpak installs to /app/bin) can find them via appResourcesPath().
     # The IFS ERP plugins are intentionally excluded from this (Flatpak/Linux)

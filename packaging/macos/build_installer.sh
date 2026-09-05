@@ -238,6 +238,20 @@ IFS_PLUGIN_FILES=(
     "threads/ifssync_thread.py"
 )
 
+RETIRED_PLUGIN_FILES=(
+    "threads/filefinder_thread.py"
+)
+
+log "Removing retired plugin files from macOS bundles..."
+for rel in "${RETIRED_PLUGIN_FILES[@]}"; do
+    for base in "${PN_RESOURCES}" "${UPDATER_APP}/Contents/Resources"; do
+        rm -f "${base}/${rel}"
+        mod="$(basename "${rel}" .py)"
+        rm -f "$(dirname "${base}/${rel}")/__pycache__/${mod}".*.pyc
+        rm -f "$(dirname "${base}/${rel}")/__pycache__/${mod}".*.pyo
+    done
+done
+
 log "Removing IFS plugin files from macOS bundles..."
 for rel in "${IFS_PLUGIN_FILES[@]}"; do
     for base in "${PN_RESOURCES}" "${UPDATER_APP}/Contents/Resources"; do
@@ -264,6 +278,7 @@ log "=== Building Component Packages ==="
 
 pkgbuild \
     --root "${STAGING_DIR}/projectnotes" \
+    --scripts "${SCRIPT_DIR}/projectnotes-scripts" \
     --component-plist "${SCRIPT_DIR}/ProjectNotes-component.plist" \
     --identifier "com.projectnotespro.ProjectNotes" \
     --version "${PN_VERSION}" \

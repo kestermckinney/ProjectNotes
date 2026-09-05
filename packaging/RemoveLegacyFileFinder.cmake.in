@@ -1,0 +1,29 @@
+# CMake directory installs merge into their destination, so files removed from
+# the source tree can otherwise survive an upgrade. Keep this cleanup narrowly
+# scoped to the retired Python File Finder implementation.
+set(_pn_install_bindir "@CMAKE_INSTALL_BINDIR@")
+if(IS_ABSOLUTE "${_pn_install_bindir}")
+    set(_pn_runtime_root "$ENV{DESTDIR}${_pn_install_bindir}")
+else()
+    set(_pn_runtime_root "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${_pn_install_bindir}")
+endif()
+set(_pn_legacy_source "${_pn_runtime_root}/threads/filefinder_thread.py")
+
+if(EXISTS "${_pn_legacy_source}" OR IS_SYMLINK "${_pn_legacy_source}")
+    message(STATUS "Removing retired File Finder worker: ${_pn_legacy_source}")
+    file(REMOVE "${_pn_legacy_source}")
+endif()
+
+file(GLOB _pn_legacy_bytecode
+    "${_pn_runtime_root}/threads/__pycache__/filefinder_thread*.pyc"
+    "${_pn_runtime_root}/threads/__pycache__/filefinder_thread*.pyo"
+)
+if(_pn_legacy_bytecode)
+    message(STATUS "Removing retired File Finder bytecode")
+    file(REMOVE ${_pn_legacy_bytecode})
+endif()
+
+unset(_pn_legacy_bytecode)
+unset(_pn_legacy_source)
+unset(_pn_runtime_root)
+unset(_pn_install_bindir)

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# pkg upgrades can merge a component bundle with the existing application.
+# Remove the retired Python File Finder worker before installing the native one.
+target_volume="${3:-/}"
+application_root="${target_volume%/}/Applications/Project Notes.app"
+
+for resources_root in \
+    "${application_root}/Contents/Resources" \
+    "${application_root}/Contents/MacOS"
+do
+    rm -f "${resources_root}/threads/filefinder_thread.py"
+    rm -f "${resources_root}/threads/__pycache__/filefinder_thread"*.pyc
+    rm -f "${resources_root}/threads/__pycache__/filefinder_thread"*.pyo
+done
+
+exit 0

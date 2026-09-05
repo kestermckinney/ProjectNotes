@@ -96,6 +96,13 @@ Section "MainSection" SEC01
     FileClose $1
   waitdone:
 
+  ; File Finder is native as of 6.0. Remove the retired Python worker and any
+  ; cached bytecode before copying the current payload so an in-place upgrade
+  ; cannot load the legacy implementation.
+  Delete "$INSTDIR\threads\filefinder_thread.py"
+  Delete "$INSTDIR\threads\__pycache__\filefinder_thread*.pyc"
+  Delete "$INSTDIR\threads\__pycache__\filefinder_thread*.pyo"
+
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
 
@@ -301,7 +308,6 @@ Section "MainSection" SEC01
 
   ; ── Background threads ───────────────────────────────────────────────────────
   SetOutPath "$INSTDIR\threads"
-   File "${DEPLOY_DIR}\threads\filefinder_thread.py"
    File "${DEPLOY_DIR}\threads\icloudsync_thread.py"
    File "${DEPLOY_DIR}\threads\outlooksync_thread.py"
 
