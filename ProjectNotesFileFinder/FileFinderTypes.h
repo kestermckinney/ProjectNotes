@@ -17,6 +17,7 @@ struct FileFinderRule
 struct FileFinderConfiguration
 {
     QStringList roots;
+    QStringList folderExclusions;
     QList<FileFinderRule> rules;
     bool enabled = false;
     bool office365Enabled = false;

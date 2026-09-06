@@ -3,6 +3,7 @@
 
 #include "MicrosoftGraphSource.h"
 
+#include <QDir>
 #include <QEventLoop>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -15,7 +16,8 @@
 MicrosoftGraphSource::MicrosoftGraphSource(QString bearerToken,
                                            QNetworkAccessManager *network,
                                            QUrl endpoint,
-                                           std::function<void(const QString &)> diagnostic)
+                                           std::function<void(const QString &)> diagnostic,
+                                           const QStringList &folderExclusions)
     : m_token(std::move(bearerToken)), m_network(network), m_endpoint(std::move(endpoint)),
       m_diagnostic(std::move(diagnostic))
 {
@@ -25,6 +27,11 @@ MicrosoftGraphSource::MicrosoftGraphSource(QString bearerToken,
     if (!value.endsWith(QLatin1Char('/')))
         value.append(QLatin1Char('/'));
     m_endpoint = QUrl(value);
+    for (const QString &pattern : folderExclusions) {
+        QRegularExpression expression(pattern, QRegularExpression::CaseInsensitiveOption);
+        if (expression.isValid() && !pattern.trimmed().isEmpty())
+            m_folderExclusions.append(expression);
+    }
 }
 
 QJsonObject MicrosoftGraphSource::getObject(const QUrl &url, QString *error)
@@ -295,6 +302,14 @@ bool MicrosoftGraphSource::appendChildren(
             if (name.isEmpty() || id.isEmpty())
                 continue;
             if (item.contains(QStringLiteral("folder"))) {
+                if (isFolderExcluded(relative, name)) {
+#ifdef QT_DEBUG
+                    if (m_diagnostic)
+                        m_diagnostic(QStringLiteral("Office 365 File Finder: excluded folder '%1'.")
+                                         .arg(relative));
+#endif
+                    continue;
+                }
                 if (!appendChildren(driveId, id, relative, project, rules, locations,
                                     filesExamined, matchedFiles, error))
                     return false;
@@ -333,4 +348,18 @@ QString MicrosoftGraphSource::locationType(const QString &path)
     if (extension == QLatin1String("pptx") || extension == QLatin1String("ppt"))
         return QStringLiteral("PowerPoint Document");
     return QStringLiteral("Generic File (System Identified)");
+}
+
+bool MicrosoftGraphSource::isFolderExcluded(const QString &path, const QString &name) const
+{
+    const QString normalized = QDir::fromNativeSeparators(path);
+    const QString directoryPath = normalized.endsWith(QLatin1Char('/'))
+        ? normalized : normalized + QLatin1Char('/');
+    for (const QRegularExpression &expression : m_folderExclusions) {
+        if (expression.match(normalized).hasMatch()
+            || expression.match(directoryPath).hasMatch()
+            || expression.match(name).hasMatch())
+            return true;
+    }
+    return false;
 }

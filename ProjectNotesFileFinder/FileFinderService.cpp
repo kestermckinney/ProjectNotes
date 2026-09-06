@@ -252,6 +252,39 @@ void FileFinderService::removeSearchRoot(int index)
     emit settingsChanged();
 }
 
+void FileFinderService::addFolderExclusion(const QString &pattern)
+{
+    const QString value = pattern.trimmed();
+    if (value.isEmpty() || m_folderExclusions.contains(value))
+        return;
+    m_folderExclusions.append(value);
+    saveSettings();
+    applyConfiguration();
+    emit settingsChanged();
+}
+
+void FileFinderService::updateFolderExclusion(int index, const QString &pattern)
+{
+    const QString value = pattern.trimmed();
+    if (index < 0 || index >= m_folderExclusions.size() || value.isEmpty())
+        return;
+    m_folderExclusions[index] = value;
+    m_folderExclusions.removeDuplicates();
+    saveSettings();
+    applyConfiguration();
+    emit settingsChanged();
+}
+
+void FileFinderService::removeFolderExclusion(int index)
+{
+    if (index < 0 || index >= m_folderExclusions.size())
+        return;
+    m_folderExclusions.removeAt(index);
+    saveSettings();
+    applyConfiguration();
+    emit settingsChanged();
+}
+
 void FileFinderService::addFileRule(const QString &classification, const QString &pattern)
 {
     if (pattern.trimmed().isEmpty())
@@ -370,6 +403,12 @@ void FileFinderService::loadAndMigrateSettings()
                                 QStringLiteral("organizations")).toString();
     m_clientId = settings.value(prefix + QStringLiteral("clientId")).toString();
     m_roots = normalizedRoots(settings.value(prefix + QStringLiteral("roots")).toStringList());
+    m_folderExclusions = settings.value(
+        prefix + QStringLiteral("folderExclusions")).toStringList();
+    for (QString &pattern : m_folderExclusions)
+        pattern = pattern.trimmed();
+    m_folderExclusions.removeAll(QString());
+    m_folderExclusions.removeDuplicates();
     const QJsonDocument rules = QJsonDocument::fromJson(
         settings.value(prefix + QStringLiteral("rules")).toByteArray());
     m_rules.clear();
@@ -391,6 +430,7 @@ void FileFinderService::saveSettings() const
     settings.setValue(prefix + QStringLiteral("tenantId"), m_tenantId);
     settings.setValue(prefix + QStringLiteral("clientId"), m_clientId);
     settings.setValue(prefix + QStringLiteral("roots"), m_roots);
+    settings.setValue(prefix + QStringLiteral("folderExclusions"), m_folderExclusions);
     QJsonArray array;
     for (const FileFinderRule &rule : m_rules)
         array.append(QJsonObject{{QStringLiteral("classification"), rule.classification},
@@ -405,6 +445,7 @@ void FileFinderService::applyConfiguration()
         return;
     FileFinderConfiguration configuration;
     configuration.roots = m_roots;
+    configuration.folderExclusions = m_folderExclusions;
     configuration.rules = m_rules;
     configuration.enabled = m_enabled;
     configuration.office365Enabled = m_office365Enabled;

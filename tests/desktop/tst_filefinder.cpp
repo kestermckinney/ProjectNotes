@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QHash>
 #include <QNetworkReply>
 #include <QTimer>
 #include <QReadWriteLock>
@@ -16,11 +17,13 @@
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QtTest>
+#include <utility>
 
 class EmptyGraphReply final : public QNetworkReply
 {
 public:
-    explicit EmptyGraphReply(QObject *parent) : QNetworkReply(parent)
+    explicit EmptyGraphReply(QByteArray body, QObject *parent)
+        : QNetworkReply(parent), m_body(std::move(body))
     {
         open(QIODevice::ReadOnly);
         QTimer::singleShot(0, this, [this] {
@@ -40,19 +43,22 @@ protected:
         return size;
     }
 private:
-    QByteArray m_body = R"({"value":[]})";
+    QByteArray m_body;
 };
 
 class RecordingGraphNetwork final : public QNetworkAccessManager
 {
 public:
     QList<QUrl> requests;
+    QHash<QString, QByteArray> responses;
 protected:
     QNetworkReply *createRequest(Operation, const QNetworkRequest &request,
                                  QIODevice *) override
     {
         requests.append(request.url());
-        return new EmptyGraphReply(this);
+        return new EmptyGraphReply(
+            responses.value(request.url().path(), QByteArrayLiteral(R"({"value":[]})")),
+            this);
     }
 };
 
@@ -62,6 +68,7 @@ class FileFinderTest final : public QObject
 
 private slots:
     void graphEndpointResolution();
+    void graphFolderExclusionsPruneSubtrees();
     void reconcilesOnlyActiveProjectsAndAdoptsLegacyRows();
 };
 
@@ -88,6 +95,39 @@ void FileFinderTest::graphEndpointResolution()
         "http://localhost:1234/v1.0/me/joinedTeams?$select=id,displayName"));
 }
 
+void FileFinderTest::graphFolderExclusionsPruneSubtrees()
+{
+    RecordingGraphNetwork network;
+    network.responses = {
+        {QStringLiteral("/v1.0/me/joinedTeams"),
+         R"({"value":[{"id":"team","displayName":"Project Team"}]})"},
+        {QStringLiteral("/v1.0/teams/team/channels"),
+         R"({"value":[{"id":"channel","displayName":"1001 General"}]})"},
+        {QStringLiteral("/v1.0/teams/team/channels/channel/filesFolder"),
+         R"({"id":"root","webUrl":"https://example.test/root","parentReference":{"driveId":"drive"}})"},
+        {QStringLiteral("/v1.0/drives/drive/items/root/children"),
+         R"({"value":[{"id":"engineering","name":"Engineering","folder":{}},{"id":"documents","name":"Documents","folder":{}}]})"},
+        {QStringLiteral("/v1.0/drives/drive/items/documents/children"),
+         R"({"value":[]})"}
+    };
+
+    MicrosoftGraphSource graph(QStringLiteral("test-token"), &network, {}, {},
+                               {QStringLiteral(R"(Engineering/.*)")});
+    QString error;
+    graph.discover({{QStringLiteral("active-id"), QStringLiteral("1001")}},
+                   {}, nullptr, nullptr, &error);
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+
+    bool requestedEngineering = false;
+    bool requestedDocuments = false;
+    for (const QUrl &request : std::as_const(network.requests)) {
+        requestedEngineering |= request.path().contains(QStringLiteral("/engineering/"));
+        requestedDocuments |= request.path().contains(QStringLiteral("/documents/"));
+    }
+    QVERIFY(!requestedEngineering);
+    QVERIFY(requestedDocuments);
+}
+
 void FileFinderTest::reconcilesOnlyActiveProjectsAndAdoptsLegacyRows()
 {
     QTemporaryDir temporary;
@@ -97,13 +137,20 @@ void FileFinderTest::reconcilesOnlyActiveProjectsAndAdoptsLegacyRows()
     const QString activeFolder = searchRoot + QStringLiteral("/1001 - Active Project");
     const QString quotesFolder = activeFolder + QStringLiteral("/Project Management/Quotes");
     const QString quotePath = quotesFolder + QStringLiteral("/Proposal.pdf");
+    const QString excludedFolder = quotesFolder + QStringLiteral("/Engineering/cache");
+    const QString excludedQuotePath = excludedFolder + QStringLiteral("/CachedProposal.pdf");
     const QString closedFolder = searchRoot + QStringLiteral("/2002 - Closed Project");
     QVERIFY(QDir().mkpath(quotesFolder));
+    QVERIFY(QDir().mkpath(excludedFolder));
     QVERIFY(QDir().mkpath(closedFolder));
     QFile quote(quotePath);
     QVERIFY(quote.open(QIODevice::WriteOnly));
     quote.write("test");
     quote.close();
+    QFile excludedQuote(excludedQuotePath);
+    QVERIFY(excludedQuote.open(QIODevice::WriteOnly));
+    excludedQuote.write("excluded");
+    excludedQuote.close();
 
     const QString databasePath = temporary.filePath(QStringLiteral("ProjectNotes.db"));
     const QString setupConnection = QStringLiteral("FileFinderTestSetup");
@@ -147,6 +194,9 @@ void FileFinderTest::reconcilesOnlyActiveProjectsAndAdoptsLegacyRows()
     FileFinderConfiguration configuration;
     configuration.enabled = true;
     configuration.roots = {searchRoot};
+    configuration.folderExclusions = {
+        QStringLiteral(R"(.*/Engineering/.*)")
+    };
     configuration.rules = {{QStringLiteral("Quote"),
                             QStringLiteral(R"(.*Project Management/Quotes.*\.pdf$)")}};
     worker.configure(configuration);

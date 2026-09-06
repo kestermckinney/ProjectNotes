@@ -7,6 +7,7 @@
 
 #include <QHash>
 #include <QObject>
+#include <QRegularExpression>
 #include <QSqlDatabase>
 
 class QNetworkAccessManager;
@@ -44,11 +45,13 @@ private:
     void scheduleNextScan();
     static QString locationType(const QString &path);
     static QString normalizedPath(const QString &path);
+    bool isFolderExcluded(const QString &path, const QString &name) const;
 
     QString m_connectionName;
     QSqlDatabase m_database;
     QReadWriteLock *m_databaseLock = nullptr;
     FileFinderConfiguration m_configuration;
+    QList<QRegularExpression> m_folderExclusions;
     QTimer *m_timer = nullptr;
     QNetworkAccessManager *m_network = nullptr;
     bool m_running = false;

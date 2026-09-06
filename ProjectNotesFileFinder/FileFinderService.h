@@ -19,6 +19,7 @@ class FileFinderService final : public QObject
     Q_OBJECT
     Q_PROPERTY(bool enabled READ enabled WRITE setEnabled NOTIFY settingsChanged)
     Q_PROPERTY(QStringList searchRoots READ searchRoots NOTIFY settingsChanged)
+    Q_PROPERTY(QStringList folderExclusions READ folderExclusions NOTIFY settingsChanged)
     Q_PROPERTY(QVariantList fileRules READ fileRules NOTIFY settingsChanged)
     Q_PROPERTY(bool office365Enabled READ office365Enabled WRITE setOffice365Enabled NOTIFY settingsChanged)
     Q_PROPERTY(QString office365TenantId READ office365TenantId WRITE setOffice365TenantId NOTIFY settingsChanged)
@@ -42,6 +43,7 @@ public:
     bool enabled() const { return m_enabled; }
     void setEnabled(bool enabled);
     QStringList searchRoots() const { return m_roots; }
+    QStringList folderExclusions() const { return m_folderExclusions; }
     QVariantList fileRules() const;
     bool office365Enabled() const { return m_office365Enabled; }
     void setOffice365Enabled(bool enabled);
@@ -60,6 +62,9 @@ public:
 
     Q_INVOKABLE void addSearchRoot(const QString &path);
     Q_INVOKABLE void removeSearchRoot(int index);
+    Q_INVOKABLE void addFolderExclusion(const QString &pattern);
+    Q_INVOKABLE void updateFolderExclusion(int index, const QString &pattern);
+    Q_INVOKABLE void removeFolderExclusion(int index);
     Q_INVOKABLE void addFileRule(const QString &classification, const QString &pattern);
     Q_INVOKABLE void updateFileRule(int index, const QString &classification,
                                     const QString &pattern);
@@ -89,6 +94,7 @@ private:
     QString m_settingsOrganization;
     QString m_accessToken;
     QStringList m_roots;
+    QStringList m_folderExclusions;
     QList<FileFinderRule> m_rules;
     bool m_enabled = false;
     bool m_office365Enabled = false;

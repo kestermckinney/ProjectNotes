@@ -6,7 +6,6 @@
 
 #include <QDateTime>
 #include <QDir>
-#include <QDirIterator>
 #include <QElapsedTimer>
 #include <QFileInfo>
 #include <QNetworkAccessManager>
@@ -69,6 +68,15 @@ void FileFinderWorker::initializeDatabase(const QString &databasePath,
 void FileFinderWorker::configure(const FileFinderConfiguration &configuration)
 {
     m_configuration = configuration;
+    m_folderExclusions.clear();
+    for (const QString &pattern : configuration.folderExclusions) {
+        QRegularExpression expression(pattern, QRegularExpression::CaseInsensitiveOption);
+        if (expression.isValid() && !pattern.trimmed().isEmpty())
+            m_folderExclusions.append(expression);
+        else if (!expression.isValid())
+            emit diagnostic(tr("Invalid folder exclusion expression '%1': %2")
+                                .arg(pattern, expression.errorString()));
+    }
     if (!m_configuration.enabled && m_timer)
         m_timer->stop();
     else if (m_running)
@@ -134,7 +142,8 @@ void FileFinderWorker::scanNow()
                                 .arg(projects.size()).arg(m_configuration.rules.size()));
 #endif
             MicrosoftGraphSource graph(m_configuration.accessToken, m_network, {},
-                [this](const QString &message) { emit diagnostic(message); });
+                [this](const QString &message) { emit diagnostic(message); },
+                m_configuration.folderExclusions);
             const QList<DiscoveredLocation> remote = graph.discover(
                 projects, m_configuration.rules, &remoteFiles, &remoteMatches, &graphError);
             summary.files += remoteFiles;
@@ -244,14 +253,22 @@ QHash<QString, QString> FileFinderWorker::findLocalProjectFolders(
                     folders.insert(project.id, path);
             }
         };
-        considerDirectory(root, QFileInfo(root).fileName());
-        QDirIterator iterator(root, QDir::Dirs | QDir::NoDotAndDotDot | QDir::Readable,
-                              QDirIterator::Subdirectories);
-        while (iterator.hasNext() && folders.size() < projects.size()) {
+        if (isFolderExcluded(root, QFileInfo(root).fileName()))
+            continue;
+        QList<QString> pending = {root};
+        while (!pending.isEmpty() && folders.size() < projects.size()) {
             if (QThread::currentThread()->isInterruptionRequested())
                 break;
-            iterator.next();
-            considerDirectory(iterator.filePath(), iterator.fileName());
+            const QString path = pending.takeLast();
+            const QString name = QFileInfo(path).fileName();
+            considerDirectory(path, name);
+            const QFileInfoList children = QDir(path).entryInfoList(
+                QDir::Dirs | QDir::NoDotAndDotDot | QDir::Readable, QDir::NoSort);
+            for (const QFileInfo &child : children) {
+                if (!child.isSymLink()
+                    && !isFolderExcluded(child.absoluteFilePath(), child.fileName()))
+                    pending.append(child.absoluteFilePath());
+            }
         }
         if (folders.size() == projects.size())
             break;
@@ -283,26 +300,37 @@ QList<DiscoveredLocation> FileFinderWorker::scanLocalFolders(
             continue;
         locations.append({project.id, QStringLiteral("File Folder"),
                           QStringLiteral("Project Folder"), folder});
-        QDirIterator iterator(folder, QDir::Files | QDir::Readable,
-                              QDirIterator::Subdirectories);
-        while (iterator.hasNext()) {
+        if (isFolderExcluded(folder, QFileInfo(folder).fileName()))
+            continue;
+        QList<QString> pending = {folder};
+        while (!pending.isEmpty()) {
             if (QThread::currentThread()->isInterruptionRequested())
                 break;
-            iterator.next();
-            if (filesExamined)
-                ++*filesExamined;
-            const QFileInfo info = iterator.fileInfo();
-            const QString normalized = QDir::fromNativeSeparators(info.absoluteFilePath());
-            for (const CompiledRule &rule : rules) {
-                if (!rule.expression.match(normalized).hasMatch()
-                    && !rule.expression.match(info.fileName()).hasMatch())
+            const QString path = pending.takeLast();
+            const QFileInfoList entries = QDir(path).entryInfoList(
+                QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Readable,
+                QDir::NoSort);
+            for (const QFileInfo &info : entries) {
+                if (info.isDir()) {
+                    if (!info.isSymLink()
+                        && !isFolderExcluded(info.absoluteFilePath(), info.fileName()))
+                        pending.append(info.absoluteFilePath());
                     continue;
-                if (matchedFiles)
-                    ++*matchedFiles;
-                locations.append({project.id, locationType(info.filePath()),
-                    QStringLiteral("%1 : %2").arg(rule.classification, info.fileName()),
-                    normalizedPath(info.filePath())});
-                break;
+                }
+                if (filesExamined)
+                    ++*filesExamined;
+                const QString normalized = QDir::fromNativeSeparators(info.absoluteFilePath());
+                for (const CompiledRule &rule : rules) {
+                    if (!rule.expression.match(normalized).hasMatch()
+                        && !rule.expression.match(info.fileName()).hasMatch())
+                        continue;
+                    if (matchedFiles)
+                        ++*matchedFiles;
+                    locations.append({project.id, locationType(info.filePath()),
+                        QStringLiteral("%1 : %2").arg(rule.classification, info.fileName()),
+                        normalizedPath(info.filePath())});
+                    break;
+                }
             }
         }
     }
@@ -460,4 +488,18 @@ QString FileFinderWorker::normalizedPath(const QString &path)
     const QFileInfo info(path);
     const QString canonical = info.canonicalFilePath();
     return QDir::fromNativeSeparators(canonical.isEmpty() ? info.absoluteFilePath() : canonical);
+}
+
+bool FileFinderWorker::isFolderExcluded(const QString &path, const QString &name) const
+{
+    const QString normalized = QDir::fromNativeSeparators(path);
+    const QString directoryPath = normalized.endsWith(QLatin1Char('/'))
+        ? normalized : normalized + QLatin1Char('/');
+    for (const QRegularExpression &expression : m_folderExclusions) {
+        if (expression.match(normalized).hasMatch()
+            || expression.match(directoryPath).hasMatch()
+            || expression.match(name).hasMatch())
+            return true;
+    }
+    return false;
 }

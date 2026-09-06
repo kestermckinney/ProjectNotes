@@ -556,6 +556,138 @@ Item {
                 }
 
                 SettingsSection {
+                    title: qsTr("Excluded Folders")
+                    subtitle: qsTr("Case-insensitive regular expressions are matched against each folder name and full path (with and without a trailing slash). A matching folder and its entire subtree are skipped.")
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: folderExclusionGrid.implicitHeight
+                        radius: Theme.radiusSm
+                        color: Theme.surface
+                        border.color: Theme.border
+                        clip: true
+
+                        ColumnLayout {
+                            id: folderExclusionGrid
+                            width: parent.width
+                            spacing: 0
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 30
+                                color: Theme.surface2
+                                RowLayout {
+                                    anchors.fill: parent
+                                    spacing: 0
+                                    Text {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        leftPadding: 9
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: qsTr("Folder exclusion regular expression")
+                                        color: Theme.text2
+                                        font.pixelSize: Theme.fontXs
+                                        font.weight: Font.DemiBold
+                                    }
+                                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                    Item { Layout.preferredWidth: 34; Layout.fillHeight: true }
+                                }
+                            }
+
+                            Repeater {
+                                model: page._finder ? page._finder.folderExclusions : []
+                                delegate: Rectangle {
+                                    required property string modelData
+                                    required property int index
+                                    Layout.fillWidth: true
+                                    implicitHeight: 34
+                                    color: index % 2 === 0 ? Theme.surface : Theme.raise
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        spacing: 0
+                                        GridCellEditor {
+                                            Layout.fillWidth: true
+                                            Layout.fillHeight: true
+                                            value: modelData
+                                            font.family: "monospace"
+                                            onCommittedValue: (v) => page._finder.updateFolderExclusion(index, v)
+                                        }
+                                        Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                        Rectangle {
+                                            Layout.preferredWidth: 34
+                                            Layout.fillHeight: true
+                                            color: removeExclusionHover.hovered ? Theme.redSoft : "transparent"
+                                            MaterialIcon {
+                                                anchors.centerIn: parent
+                                                name: "delete"
+                                                size: 15
+                                                color: Theme.red
+                                            }
+                                            HoverHandler { id: removeExclusionHover }
+                                            TapHandler { onTapped: page._finder.removeFolderExclusion(index) }
+                                        }
+                                    }
+                                    Rectangle {
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.bottom: parent.bottom
+                                        height: 1
+                                        color: Theme.border
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 36
+                                color: Theme.accentSoft
+                                RowLayout {
+                                    anchors.fill: parent
+                                    spacing: 0
+                                    GridCellEditor {
+                                        id: newFolderExclusionField
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        placeholderText: qsTr("Add a regex, for example (^|/)(node_modules|[.]git)(/|$)")
+                                        font.family: "monospace"
+                                        onAccepted: {
+                                            if (text.trim() !== "") {
+                                                page._finder.addFolderExclusion(text)
+                                                text = ""
+                                            }
+                                        }
+                                    }
+                                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                    Rectangle {
+                                        Layout.preferredWidth: 34
+                                        Layout.fillHeight: true
+                                        opacity: newFolderExclusionField.text.trim() !== "" ? 1 : 0.4
+                                        color: addExclusionHover.hovered && newFolderExclusionField.text.trim() !== ""
+                                               ? Theme.accent : "transparent"
+                                        MaterialIcon {
+                                            anchors.centerIn: parent
+                                            name: "add"
+                                            size: 17
+                                            color: addExclusionHover.hovered && newFolderExclusionField.text.trim() !== ""
+                                                   ? "#ffffff" : Theme.accent
+                                        }
+                                        HoverHandler { id: addExclusionHover }
+                                        TapHandler {
+                                            enabled: newFolderExclusionField.text.trim() !== ""
+                                            onTapped: {
+                                                page._finder.addFolderExclusion(newFolderExclusionField.text)
+                                                newFolderExclusionField.text = ""
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                SettingsSection {
                     title: qsTr("File Classifications")
                     subtitle: qsTr("Regular expressions are evaluated once per file; the first matching rule supplies the classification.")
 

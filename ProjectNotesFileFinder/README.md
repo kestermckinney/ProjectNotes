@@ -25,6 +25,12 @@ Existing legacy rows are adopted by normalized path or by their description with
 an old source prefix removed.
 Reconciliation intentionally does not delete locations that disappear from a source.
 
+Folder exclusion expressions are case-insensitive and checked against both a
+folder's name and normalized full path, including a directory-form path ending
+in `/`. A matching folder is skipped without enumerating its subtree. Exclusions
+apply while locating local project folders, while scanning files within a
+matched local project folder, and while traversing Microsoft Teams folders.
+
 Tenant/client identifiers and finder rules live in `AppSettings`. Microsoft
 refresh tokens are stored only through `CredentialStore`; access tokens remain
 in memory. **Reconsider All Files** discards the current scan summary and queues
