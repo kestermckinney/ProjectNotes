@@ -17,9 +17,11 @@ MicrosoftGraphSource::MicrosoftGraphSource(QString bearerToken,
                                            QNetworkAccessManager *network,
                                            QUrl endpoint,
                                            std::function<void(const QString &)> diagnostic,
-                                           const QStringList &folderExclusions)
+                                           const QStringList &folderExclusions,
+                                           const QHash<QString, QString> &folderState)
     : m_token(std::move(bearerToken)), m_network(network), m_endpoint(std::move(endpoint)),
-      m_diagnostic(std::move(diagnostic))
+      m_diagnostic(std::move(diagnostic)), m_previousFolderState(folderState),
+      m_folderState(folderState)
 {
     if (m_endpoint.isEmpty())
         m_endpoint = QUrl(QStringLiteral("https://graph.microsoft.com/v1.0/"));
@@ -209,7 +211,8 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
 
                 const QString encodedChannel = QString::fromLatin1(QUrl::toPercentEncoding(channelId));
                 const QJsonObject folder = getRelativeObject(
-                    QStringLiteral("teams/%1/channels/%2/filesFolder")
+                    QStringLiteral("teams/%1/channels/%2/filesFolder?"
+                                   "$select=id,webUrl,parentReference,lastModifiedDateTime")
                         .arg(encodedTeam, encodedChannel), error);
                 if (error && !error->isEmpty())
                     return {};
@@ -217,6 +220,8 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
                                             .toObject().value(QStringLiteral("driveId")).toString();
                 const QString itemId = folder.value(QStringLiteral("id")).toString();
                 const QString webUrl = folder.value(QStringLiteral("webUrl")).toString();
+                const QString modified = folder.value(
+                    QStringLiteral("lastModifiedDateTime")).toString();
                 if (driveId.isEmpty() || itemId.isEmpty() || webUrl.isEmpty()) {
 #ifdef QT_DEBUG
                     if (m_diagnostic)
@@ -236,9 +241,22 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
 
                 result.append({project.id, QStringLiteral("Microsoft Teams"),
                                QStringLiteral("Project Folder"), webUrl});
-                if (!appendChildren(driveId, itemId, {}, project, compiledRules, &result,
-                                    filesExamined, matchedFiles, error))
-                    return {};
+                const QString stateKey = folderStateKey(driveId, itemId);
+                const bool unchanged = !modified.isEmpty()
+                    && m_previousFolderState.value(stateKey) == modified;
+                if (!modified.isEmpty())
+                    m_folderState.insert(stateKey, modified);
+                if (!unchanged) {
+                    if (!appendChildren(driveId, itemId, {}, project, compiledRules, &result,
+                                        filesExamined, matchedFiles, error))
+                        return {};
+                }
+#ifdef QT_DEBUG
+                else if (m_diagnostic) {
+                    m_diagnostic(QStringLiteral("Office 365 File Finder: project folder for '%1' is unchanged; skipped its subtree.")
+                                     .arg(project.number));
+                }
+#endif
                 foundProjects.insert(project.id);
 #ifdef QT_DEBUG
                 if (m_diagnostic)
@@ -310,6 +328,21 @@ bool MicrosoftGraphSource::appendChildren(
 #endif
                     continue;
                 }
+                const QString modified = item.value(
+                    QStringLiteral("lastModifiedDateTime")).toString();
+                const QString stateKey = folderStateKey(driveId, id);
+                const bool unchanged = !modified.isEmpty()
+                    && m_previousFolderState.value(stateKey) == modified;
+                if (!modified.isEmpty())
+                    m_folderState.insert(stateKey, modified);
+                if (unchanged) {
+#ifdef QT_DEBUG
+                    if (m_diagnostic)
+                        m_diagnostic(QStringLiteral("Office 365 File Finder: folder '%1' is unchanged; skipped its subtree.")
+                                         .arg(relative));
+#endif
+                    continue;
+                }
                 if (!appendChildren(driveId, id, relative, project, rules, locations,
                                     filesExamined, matchedFiles, error))
                     return false;
@@ -362,4 +395,9 @@ bool MicrosoftGraphSource::isFolderExcluded(const QString &path, const QString &
             return true;
     }
     return false;
+}
+
+QString MicrosoftGraphSource::folderStateKey(const QString &driveId, const QString &itemId)
+{
+    return driveId + QChar(0x1f) + itemId;
 }

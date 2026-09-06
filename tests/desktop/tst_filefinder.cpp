@@ -17,6 +17,7 @@
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QtTest>
+#include <algorithm>
 #include <utility>
 
 class EmptyGraphReply final : public QNetworkReply
@@ -69,6 +70,7 @@ class FileFinderTest final : public QObject
 private slots:
     void graphEndpointResolution();
     void graphFolderExclusionsPruneSubtrees();
+    void graphFolderTimestampsSkipUnchangedSubtrees();
     void reconcilesOnlyActiveProjectsAndAdoptsLegacyRows();
 };
 
@@ -126,6 +128,62 @@ void FileFinderTest::graphFolderExclusionsPruneSubtrees()
     }
     QVERIFY(!requestedEngineering);
     QVERIFY(requestedDocuments);
+}
+
+void FileFinderTest::graphFolderTimestampsSkipUnchangedSubtrees()
+{
+    RecordingGraphNetwork network;
+    network.responses = {
+        {QStringLiteral("/v1.0/me/joinedTeams"),
+         R"({"value":[{"id":"team","displayName":"Project Team"}]})"},
+        {QStringLiteral("/v1.0/teams/team/channels"),
+         R"({"value":[{"id":"channel","displayName":"1001 General"}]})"},
+        {QStringLiteral("/v1.0/teams/team/channels/channel/filesFolder"),
+         R"({"id":"root","webUrl":"https://example.test/root","lastModifiedDateTime":"2026-09-01T10:00:00Z","parentReference":{"driveId":"drive"}})"},
+        {QStringLiteral("/v1.0/drives/drive/items/root/children"),
+         R"({"value":[{"id":"documents","name":"Documents","lastModifiedDateTime":"2026-09-01T09:00:00Z","folder":{}}]})"},
+        {QStringLiteral("/v1.0/drives/drive/items/documents/children"),
+         R"({"value":[]})"}
+    };
+    const QList<ActiveProject> projects = {
+        {QStringLiteral("active-id"), QStringLiteral("1001")}
+    };
+
+    QString error;
+    MicrosoftGraphSource initial(QStringLiteral("test-token"), &network);
+    initial.discover(projects, {}, nullptr, nullptr, &error);
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QVERIFY(network.requests.contains(QUrl(
+        QStringLiteral("https://graph.microsoft.com/v1.0/drives/drive/items/documents/children?"
+                       "$select=id,name,size,lastModifiedDateTime,webUrl,file,folder"))));
+    const QHash<QString, QString> initialState = initial.folderState();
+    QCOMPARE(initialState.size(), 2);
+
+    network.requests.clear();
+    MicrosoftGraphSource unchanged(QStringLiteral("test-token"), &network, {}, {}, {},
+                                   initialState);
+    unchanged.discover(projects, {}, nullptr, nullptr, &error);
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QVERIFY(std::none_of(network.requests.cbegin(), network.requests.cend(),
+                         [](const QUrl &url) {
+        return url.path().contains(QStringLiteral("/root/children"));
+    }));
+
+    network.responses[QStringLiteral("/v1.0/teams/team/channels/channel/filesFolder")] =
+        R"({"id":"root","webUrl":"https://example.test/root","lastModifiedDateTime":"2026-09-02T10:00:00Z","parentReference":{"driveId":"drive"}})";
+    network.requests.clear();
+    MicrosoftGraphSource changedRoot(QStringLiteral("test-token"), &network, {}, {}, {},
+                                     initialState);
+    changedRoot.discover(projects, {}, nullptr, nullptr, &error);
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QVERIFY(std::any_of(network.requests.cbegin(), network.requests.cend(),
+                        [](const QUrl &url) {
+        return url.path().contains(QStringLiteral("/root/children"));
+    }));
+    QVERIFY(std::none_of(network.requests.cbegin(), network.requests.cend(),
+                         [](const QUrl &url) {
+        return url.path().contains(QStringLiteral("/documents/children"));
+    }));
 }
 
 void FileFinderTest::reconcilesOnlyActiveProjectsAndAdoptsLegacyRows()

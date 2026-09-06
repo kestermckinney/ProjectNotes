@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <QHash>
 #include <QList>
 #include <QMetaType>
 #include <QString>
@@ -18,6 +19,7 @@ struct FileFinderConfiguration
 {
     QStringList roots;
     QStringList folderExclusions;
+    QHash<QString, QString> graphFolderState;
     QList<FileFinderRule> rules;
     bool enabled = false;
     bool office365Enabled = false;

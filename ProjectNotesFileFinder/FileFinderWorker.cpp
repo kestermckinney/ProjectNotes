@@ -143,7 +143,8 @@ void FileFinderWorker::scanNow()
 #endif
             MicrosoftGraphSource graph(m_configuration.accessToken, m_network, {},
                 [this](const QString &message) { emit diagnostic(message); },
-                m_configuration.folderExclusions);
+                m_configuration.folderExclusions,
+                m_configuration.graphFolderState);
             const QList<DiscoveredLocation> remote = graph.discover(
                 projects, m_configuration.rules, &remoteFiles, &remoteMatches, &graphError);
             summary.files += remoteFiles;
@@ -156,6 +157,12 @@ void FileFinderWorker::scanNow()
             if (!graphError.isEmpty()) {
                 summary.warning = graphError;
                 emit diagnostic(graphError);
+            } else {
+                const QHash<QString, QString> state = graph.folderState();
+                if (state != m_configuration.graphFolderState) {
+                    m_configuration.graphFolderState = state;
+                    emit graphFolderStateChanged(state);
+                }
             }
         }
 

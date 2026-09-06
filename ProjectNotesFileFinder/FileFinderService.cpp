@@ -35,12 +35,30 @@ QStringList normalizedRoots(QStringList roots)
     roots.removeDuplicates();
     return roots;
 }
+
+QHash<QString, QString> graphFolderStateFromJson(const QByteArray &json)
+{
+    QHash<QString, QString> state;
+    const QJsonObject object = QJsonDocument::fromJson(json).object();
+    for (auto it = object.constBegin(); it != object.constEnd(); ++it)
+        state.insert(it.key(), it.value().toString());
+    return state;
+}
+
+QByteArray graphFolderStateToJson(const QHash<QString, QString> &state)
+{
+    QJsonObject object;
+    for (auto it = state.constBegin(); it != state.constEnd(); ++it)
+        object.insert(it.key(), it.value());
+    return QJsonDocument(object).toJson(QJsonDocument::Compact);
+}
 }
 
 FileFinderService::FileFinderService(QObject *parent) : QObject(parent)
 {
     qRegisterMetaType<FileFinderConfiguration>();
     qRegisterMetaType<FileFinderScanSummary>();
+    qRegisterMetaType<QHash<QString, QString>>();
     qRegisterMetaType<QReadWriteLock *>("QReadWriteLock*");
 
     m_oauth = new MicrosoftOAuthManager(this);
@@ -130,6 +148,13 @@ void FileFinderService::initialize(const QString &databasePath, QReadWriteLock *
     });
     connect(m_worker, &FileFinderWorker::locationsCommitted,
             this, &FileFinderService::locationsChanged);
+    connect(m_worker, &FileFinderWorker::graphFolderStateChanged, this,
+            [this](const QHash<QString, QString> &state) {
+        if (m_graphFolderState == state)
+            return;
+        m_graphFolderState = state;
+        saveSettings();
+    });
     m_thread->start(QThread::LowPriority);
     QMetaObject::invokeMethod(m_worker, "initializeDatabase", Qt::QueuedConnection,
                               Q_ARG(QString, databasePath),
@@ -184,6 +209,7 @@ void FileFinderService::setOffice365TenantId(const QString &tenantId)
     if (m_tenantId == value)
         return;
     m_tenantId = value;
+    invalidateGraphFolderState();
     saveSettings();
     QSettings legacy(m_settingsOrganization, QString::fromLatin1(kLegacyPluginSettings));
     legacy.setFallbacksEnabled(false);
@@ -198,6 +224,7 @@ void FileFinderService::setOffice365ClientId(const QString &clientId)
     if (m_clientId == value)
         return;
     m_clientId = value;
+    invalidateGraphFolderState();
     saveSettings();
     QSettings legacy(m_settingsOrganization, QString::fromLatin1(kLegacyPluginSettings));
     legacy.setFallbacksEnabled(false);
@@ -258,6 +285,7 @@ void FileFinderService::addFolderExclusion(const QString &pattern)
     if (value.isEmpty() || m_folderExclusions.contains(value))
         return;
     m_folderExclusions.append(value);
+    invalidateGraphFolderState();
     saveSettings();
     applyConfiguration();
     emit settingsChanged();
@@ -270,6 +298,7 @@ void FileFinderService::updateFolderExclusion(int index, const QString &pattern)
         return;
     m_folderExclusions[index] = value;
     m_folderExclusions.removeDuplicates();
+    invalidateGraphFolderState();
     saveSettings();
     applyConfiguration();
     emit settingsChanged();
@@ -280,6 +309,7 @@ void FileFinderService::removeFolderExclusion(int index)
     if (index < 0 || index >= m_folderExclusions.size())
         return;
     m_folderExclusions.removeAt(index);
+    invalidateGraphFolderState();
     saveSettings();
     applyConfiguration();
     emit settingsChanged();
@@ -290,6 +320,7 @@ void FileFinderService::addFileRule(const QString &classification, const QString
     if (pattern.trimmed().isEmpty())
         return;
     m_rules.append({classification.trimmed(), pattern.trimmed()});
+    invalidateGraphFolderState();
     saveSettings();
     applyConfiguration();
     emit settingsChanged();
@@ -301,6 +332,7 @@ void FileFinderService::updateFileRule(int index, const QString &classification,
     if (index < 0 || index >= m_rules.size() || pattern.trimmed().isEmpty())
         return;
     m_rules[index] = {classification.trimmed(), pattern.trimmed()};
+    invalidateGraphFolderState();
     saveSettings();
     applyConfiguration();
     emit settingsChanged();
@@ -311,6 +343,7 @@ void FileFinderService::removeFileRule(int index)
     if (index < 0 || index >= m_rules.size())
         return;
     m_rules.removeAt(index);
+    invalidateGraphFolderState();
     saveSettings();
     applyConfiguration();
     emit settingsChanged();
@@ -319,6 +352,7 @@ void FileFinderService::removeFileRule(int index)
 void FileFinderService::resetDefaultRules()
 {
     m_rules = defaultRules();
+    invalidateGraphFolderState();
     saveSettings();
     applyConfiguration();
     emit settingsChanged();
@@ -336,10 +370,11 @@ void FileFinderService::reconsiderAllFiles()
         return;
     m_lastScanSummary.clear();
     m_status = tr("Resetting File Finder state and reconsidering all files…");
+    invalidateGraphFolderState();
+    saveSettings();
+    applyConfiguration();
     emit statusChanged();
-    // Folder matches, file timestamps, and reconciliation hashes are scoped to
-    // a worker scan. Queuing a new pass rebuilds all of them from source. If a
-    // scan is already active, FileFinderWorker records a pending full pass.
+    // The empty Graph folder-state cache forces every remote subtree to be read.
     QMetaObject::invokeMethod(m_worker, &FileFinderWorker::scanNow, Qt::QueuedConnection);
 }
 
@@ -352,7 +387,15 @@ void FileFinderService::startOffice365SignIn()
 
 void FileFinderService::signOutOffice365()
 {
+    invalidateGraphFolderState();
+    saveSettings();
+    applyConfiguration();
     m_oauth->signOut();
+}
+
+void FileFinderService::invalidateGraphFolderState()
+{
+    m_graphFolderState.clear();
 }
 
 void FileFinderService::loadAndMigrateSettings()
@@ -409,6 +452,8 @@ void FileFinderService::loadAndMigrateSettings()
         pattern = pattern.trimmed();
     m_folderExclusions.removeAll(QString());
     m_folderExclusions.removeDuplicates();
+    m_graphFolderState = graphFolderStateFromJson(
+        settings.value(prefix + QStringLiteral("graphFolderState")).toByteArray());
     const QJsonDocument rules = QJsonDocument::fromJson(
         settings.value(prefix + QStringLiteral("rules")).toByteArray());
     m_rules.clear();
@@ -431,6 +476,8 @@ void FileFinderService::saveSettings() const
     settings.setValue(prefix + QStringLiteral("clientId"), m_clientId);
     settings.setValue(prefix + QStringLiteral("roots"), m_roots);
     settings.setValue(prefix + QStringLiteral("folderExclusions"), m_folderExclusions);
+    settings.setValue(prefix + QStringLiteral("graphFolderState"),
+                      graphFolderStateToJson(m_graphFolderState));
     QJsonArray array;
     for (const FileFinderRule &rule : m_rules)
         array.append(QJsonObject{{QStringLiteral("classification"), rule.classification},
@@ -446,6 +493,7 @@ void FileFinderService::applyConfiguration()
     FileFinderConfiguration configuration;
     configuration.roots = m_roots;
     configuration.folderExclusions = m_folderExclusions;
+    configuration.graphFolderState = m_graphFolderState;
     configuration.rules = m_rules;
     configuration.enabled = m_enabled;
     configuration.office365Enabled = m_office365Enabled;

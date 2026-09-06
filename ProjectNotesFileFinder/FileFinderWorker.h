@@ -33,6 +33,7 @@ signals:
     void scanStarted();
     void scanFinished(const FileFinderScanSummary &summary);
     void locationsCommitted(int inserted, int updated);
+    void graphFolderStateChanged(const QHash<QString, QString> &state);
 
 private:
     QList<ActiveProject> activeProjects(QString *error);

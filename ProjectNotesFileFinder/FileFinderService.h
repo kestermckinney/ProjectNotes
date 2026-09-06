@@ -83,6 +83,7 @@ signals:
     void diagnostic(const QString &message);
 
 private:
+    void invalidateGraphFolderState();
     void loadAndMigrateSettings();
     void saveSettings() const;
     void applyConfiguration();
@@ -95,6 +96,7 @@ private:
     QString m_accessToken;
     QStringList m_roots;
     QStringList m_folderExclusions;
+    QHash<QString, QString> m_graphFolderState;
     QList<FileFinderRule> m_rules;
     bool m_enabled = false;
     bool m_office365Enabled = false;

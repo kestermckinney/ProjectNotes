@@ -31,6 +31,12 @@ in `/`. A matching folder is skipped without enumerating its subtree. Exclusions
 apply while locating local project folders, while scanning files within a
 matched local project folder, and while traversing Microsoft Teams folders.
 
+Microsoft Teams scans persist `lastModifiedDateTime` by Graph drive/item ID for
+each visited folder. An unchanged project folder skips the entire remote tree;
+when a project changes, unchanged child folders are still pruned individually.
+Changing file rules or folder exclusions invalidates this state, as does signing
+out or choosing **Reconsider All Files**.
+
 Tenant/client identifiers and finder rules live in `AppSettings`. Microsoft
 refresh tokens are stored only through `CredentialStore`; access tokens remain
 in memory. **Reconsider All Files** discards the current scan summary and queues
