@@ -16,7 +16,9 @@
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSettings>
 #include <QTemporaryDir>
+#include <QUuid>
 #include <QtTest>
 #include <algorithm>
 #include <utility>
@@ -70,6 +72,7 @@ class FileFinderTest final : public QObject
 
 private slots:
     void searchRootPreservesHomeShortcut();
+    void firstRunUsesCurrentSearchDefaults();
     void graphEndpointResolution();
     void graphFolderExclusionsPruneSubtrees();
     void graphFolderTimestampsSkipUnchangedSubtrees();
@@ -84,6 +87,62 @@ void FileFinderTest::searchRootPreservesHomeShortcut()
 
     service.addSearchRoot(QStringLiteral("~\\Documents"));
     QCOMPARE(service.searchRoots().at(1), QStringLiteral("~/Documents"));
+}
+
+void FileFinderTest::firstRunUsesCurrentSearchDefaults()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    const QString organization = QStringLiteral("ProjectNotesFileFinderTest-")
+        + QUuid::createUuid().toString(QUuid::WithoutBraces);
+
+    {
+        FileFinderService service;
+        QReadWriteLock databaseLock;
+        service.initialize(temporary.filePath(QStringLiteral("ProjectNotes.db")),
+                           &databaseLock, organization);
+
+        QVERIFY(service.enabled());
+        QCOMPARE(service.searchRoots(), QStringList{QStringLiteral("~")});
+        QCOMPARE(service.folderExclusions(),
+                 QStringList{QStringLiteral(R"(Engineering/.*)")});
+
+        const QList<QPair<QString, QString>> expectedRules = {
+            {"Project Schedule", R"(.*\.mpp$)"},
+            {"Quote", R"(.*Quote.*\.pdf$)"},
+            {"Issues List", R"(^(?!.*\bTemplate\b).*Tracker Report.*\.pdf$)"},
+            {"Issues List", R"(^(?!.*\bTemplate\b).*Issues List.*\.xlsx$)"},
+            {"Meeting Presentation", R"(^(?!.*\bTemplate\b).*Meeting Minutes.*\.pptx$)"},
+            {"Meeting Presentation", R"(^(?!.*\bTemplate\b).*Meeting Minutes.*\.ppt$)"},
+            {"Meeting Notes", R"(^(?!.*\bTemplate\b).*Meeting Minutes.*\.doc$)"},
+            {"Meeting Notes", R"(^(?!.*\bTemplate\b).*Meeting Minutes.*\.docx$)"},
+            {"Change Request", R"(.*PCR\d{1}.*\.pdf$)"},
+            {"Change Request", R"(.*PCR\d{1}.*\.docx$)"},
+            {"Change Request", R"(.*PCR\d{1}.*\.xlsx$)"},
+            {"PM Plan", R"(.*PM Plan.*\.docx$)"},
+            {"Purchase Order", R"(.*/Purchase Orders/.*\.pdf$)"},
+            {"Estimate", R"(.*Estimate.*\.xlsx$)"},
+            {"Quote", R"(.*Quote.*\.docx$)"},
+            {"Risk Register", R"(^(?!.*\bTemplate\b).*Risk.*\.xlsx$)"},
+            {"Risk Register", R"(^(?!.*\bTemplate\b).*Risk Management.*\.docx$)"},
+            {"Quote", R"(.*Proposal.*\.docx$)"},
+            {"Quote", R"(.*Proposal.*\.pdf$)"},
+            {"Stakeholders", R"(.*Stakeholder.*\.docx$)"},
+            {"Stakeholders", R"(.*Stakeholder.*\.xlsx$)"}
+        };
+        const QVariantList actualRules = service.fileRules();
+        QCOMPARE(actualRules.size(), expectedRules.size());
+        for (qsizetype index = 0; index < expectedRules.size(); ++index) {
+            const QVariantMap actual = actualRules.at(index).toMap();
+            QCOMPARE(actual.value(QStringLiteral("classification")).toString(),
+                     expectedRules.at(index).first);
+            QCOMPARE(actual.value(QStringLiteral("pattern")).toString(),
+                     expectedRules.at(index).second);
+        }
+    }
+
+    QSettings(organization, QStringLiteral("AppSettings")).clear();
+    QSettings(organization, QStringLiteral("PluginSettings")).clear();
 }
 
 void FileFinderTest::graphEndpointResolution()

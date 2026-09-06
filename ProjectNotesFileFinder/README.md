@@ -42,3 +42,8 @@ refresh tokens are stored only through `CredentialStore`; access tokens remain
 in memory. **Reconsider All Files** discards the current scan summary and queues
 a completely fresh discovery pass, rebuilding the project-folder, timestamp,
 and reconciliation hashes without changing saved rules or locations.
+
+New profiles start with `~` as the portable local search root, exclude
+`Engineering/.*` folder trees, and receive the maintained default classification
+rules. The first-run migration preserves any roots or rules found in the legacy
+File Finder settings rather than replacing an existing user's configuration.

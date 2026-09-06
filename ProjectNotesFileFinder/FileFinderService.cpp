@@ -22,6 +22,16 @@ constexpr auto kLegacyPluginSettings = "PluginSettings";
 constexpr auto kSettingsPrefix = "FileFinder/";
 constexpr auto kCredentialService = "Office365FileFinder";
 
+QStringList defaultSearchRoots()
+{
+    return {QStringLiteral("~")};
+}
+
+QStringList defaultFolderExclusions()
+{
+    return {QStringLiteral(R"(Engineering/.*)")};
+}
+
 QStringList normalizedRoots(QStringList roots)
 {
     for (QString &root : roots) {
@@ -438,11 +448,16 @@ void FileFinderService::loadAndMigrateSettings()
             rules.append({object.value(QStringLiteral("Classification")).toString(),
                           object.value(QStringLiteral("Pattern Match")).toString()});
         }
+        const bool hasLegacySearchSettings = !roots.isEmpty() || !rules.isEmpty();
         if (roots.isEmpty())
-            roots.append(QDir::homePath() + QStringLiteral("/Documents/Projects"));
+            roots = defaultSearchRoots();
         if (rules.isEmpty())
             rules = defaultRules();
         settings.setValue(prefix + QStringLiteral("roots"), normalizedRoots(roots));
+        if (!hasLegacySearchSettings) {
+            settings.setValue(prefix + QStringLiteral("folderExclusions"),
+                              defaultFolderExclusions());
+        }
         QJsonArray array;
         for (const FileFinderRule &rule : rules)
             array.append(QJsonObject{{QStringLiteral("classification"), rule.classification},
@@ -523,22 +538,26 @@ void FileFinderService::applyConfiguration()
 QList<FileFinderRule> FileFinderService::defaultRules()
 {
     return {
-        {"Project Schedule", R"(.*Project Management/Schedule.*\.mpp$)"},
-        {"Quote", R"(.*Project Management/Quotes.*\.pdf$)"},
-        {"Issues List", R"(.*Project Management/.*Tracker Report.*\.pdf$)"},
-        {"Issues List", R"(.*Project Management/.*Issues List.*\.xlsx$)"},
-        {"Meeting Presentation", R"(.*Project Management/Meeting Minutes/.*\.pptx$)"},
-        {"Meeting Presentation", R"(.*Project Management/Meeting Minutes/.*\.ppt$)"},
-        {"Meeting Presentation", R"(.*Project Management/Meeting Minutes/.*\.doc$)"},
-        {"Meeting Presentation", R"(.*Project Management/Meeting Minutes/.*\.docx$)"},
-        {"Change Request", R"(.*Project Management/PCR's/.*\.pdf$)"},
-        {"Change Request", R"(.*Project Management/PCR's/.*\.docx$)"},
-        {"Change Request", R"(.*Project Management/PCR's/.*\.xlsx$)"},
-        {"PM Plan", R"(.*Project Management/PM Plan/.*\.docx$)"},
-        {"Purchase Order", R"(.*Project Management/Purchase Orders/.*\.pdf$)"},
-        {"Estimate", R"(.*Project Management/Quotes.*\.xlsx$)"},
-        {"Quote", R"(.*Project Management/Quotes.*\.docx$)"},
-        {"Risk Register", R"(.*Project Management/Risk Management.*\.xlsx$)"},
-        {"Risk Register", R"(.*Project Management/Risk Management.*\.docx$)"}
+        {"Project Schedule", R"(.*\.mpp$)"},
+        {"Quote", R"(.*Quote.*\.pdf$)"},
+        {"Issues List", R"(^(?!.*\bTemplate\b).*Tracker Report.*\.pdf$)"},
+        {"Issues List", R"(^(?!.*\bTemplate\b).*Issues List.*\.xlsx$)"},
+        {"Meeting Presentation", R"(^(?!.*\bTemplate\b).*Meeting Minutes.*\.pptx$)"},
+        {"Meeting Presentation", R"(^(?!.*\bTemplate\b).*Meeting Minutes.*\.ppt$)"},
+        {"Meeting Notes", R"(^(?!.*\bTemplate\b).*Meeting Minutes.*\.doc$)"},
+        {"Meeting Notes", R"(^(?!.*\bTemplate\b).*Meeting Minutes.*\.docx$)"},
+        {"Change Request", R"(.*PCR\d{1}.*\.pdf$)"},
+        {"Change Request", R"(.*PCR\d{1}.*\.docx$)"},
+        {"Change Request", R"(.*PCR\d{1}.*\.xlsx$)"},
+        {"PM Plan", R"(.*PM Plan.*\.docx$)"},
+        {"Purchase Order", R"(.*/Purchase Orders/.*\.pdf$)"},
+        {"Estimate", R"(.*Estimate.*\.xlsx$)"},
+        {"Quote", R"(.*Quote.*\.docx$)"},
+        {"Risk Register", R"(^(?!.*\bTemplate\b).*Risk.*\.xlsx$)"},
+        {"Risk Register", R"(^(?!.*\bTemplate\b).*Risk Management.*\.docx$)"},
+        {"Quote", R"(.*Proposal.*\.docx$)"},
+        {"Quote", R"(.*Proposal.*\.pdf$)"},
+        {"Stakeholders", R"(.*Stakeholder.*\.docx$)"},
+        {"Stakeholders", R"(.*Stakeholder.*\.xlsx$)"}
     };
 }
