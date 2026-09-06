@@ -27,11 +27,29 @@ QStringList normalizedRoots(QStringList roots)
     for (QString &root : roots) {
         const QString trimmed = root.trimmed();
         const QUrl url(trimmed);
-        const QString localPath = url.isLocalFile() ? url.toLocalFile() : trimmed;
+        QString localPath = url.isLocalFile() ? url.toLocalFile() : trimmed;
+        if (localPath.startsWith(QLatin1String("~\\")))
+            localPath.replace(0, 2, QStringLiteral("~/"));
+        localPath = QDir::fromNativeSeparators(localPath);
+        const bool homeRelative = localPath == QLatin1String("~")
+            || localPath.startsWith(QLatin1String("~/"));
         root = localPath.isEmpty() ? QString()
-                                   : QDir::fromNativeSeparators(QDir(localPath).absolutePath());
+             : homeRelative ? QDir::cleanPath(localPath)
+                            : QDir::fromNativeSeparators(QDir(localPath).absolutePath());
     }
     roots.removeAll(QString());
+    roots.removeDuplicates();
+    return roots;
+}
+
+QStringList expandedRoots(QStringList roots)
+{
+    for (QString &root : roots) {
+        if (root == QLatin1String("~"))
+            root = QDir::homePath();
+        else if (root.startsWith(QLatin1String("~/")))
+            root = QDir::homePath() + root.mid(1);
+    }
     roots.removeDuplicates();
     return roots;
 }
@@ -491,7 +509,7 @@ void FileFinderService::applyConfiguration()
     if (!m_worker)
         return;
     FileFinderConfiguration configuration;
-    configuration.roots = m_roots;
+    configuration.roots = expandedRoots(m_roots);
     configuration.folderExclusions = m_folderExclusions;
     configuration.graphFolderState = m_graphFolderState;
     configuration.rules = m_rules;

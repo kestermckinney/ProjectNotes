@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "FileFinderWorker.h"
+#include "FileFinderService.h"
 #include "MicrosoftGraphSource.h"
 
 #include <QDir>
@@ -68,11 +69,22 @@ class FileFinderTest final : public QObject
     Q_OBJECT
 
 private slots:
+    void searchRootPreservesHomeShortcut();
     void graphEndpointResolution();
     void graphFolderExclusionsPruneSubtrees();
     void graphFolderTimestampsSkipUnchangedSubtrees();
     void reconcilesOnlyActiveProjectsAndAdoptsLegacyRows();
 };
+
+void FileFinderTest::searchRootPreservesHomeShortcut()
+{
+    FileFinderService service;
+    service.addSearchRoot(QStringLiteral("~"));
+    QCOMPARE(service.searchRoots(), QStringList{QStringLiteral("~")});
+
+    service.addSearchRoot(QStringLiteral("~\\Documents"));
+    QCOMPARE(service.searchRoots().at(1), QStringLiteral("~/Documents"));
+}
 
 void FileFinderTest::graphEndpointResolution()
 {
