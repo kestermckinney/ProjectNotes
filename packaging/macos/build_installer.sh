@@ -240,6 +240,8 @@ IFS_PLUGIN_FILES=(
 
 RETIRED_PLUGIN_FILES=(
     "threads/filefinder_thread.py"
+    "plugins/forms/dialogFileFinder.ui"
+    "plugins/forms/dialogClassification.ui"
 )
 
 log "Removing retired plugin files from macOS bundles..."

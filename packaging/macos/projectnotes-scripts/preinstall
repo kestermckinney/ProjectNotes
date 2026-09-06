@@ -12,6 +12,8 @@ do
     rm -f "${resources_root}/threads/filefinder_thread.py"
     rm -f "${resources_root}/threads/__pycache__/filefinder_thread"*.pyc
     rm -f "${resources_root}/threads/__pycache__/filefinder_thread"*.pyo
+    rm -f "${resources_root}/plugins/forms/dialogFileFinder.ui"
+    rm -f "${resources_root}/plugins/forms/dialogClassification.ui"
 done
 
 exit 0

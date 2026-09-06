@@ -8,11 +8,22 @@ else()
     set(_pn_runtime_root "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${_pn_install_bindir}")
 endif()
 set(_pn_legacy_source "${_pn_runtime_root}/threads/filefinder_thread.py")
+set(_pn_legacy_settings_form "${_pn_runtime_root}/plugins/forms/dialogFileFinder.ui")
+set(_pn_legacy_classification_form "${_pn_runtime_root}/plugins/forms/dialogClassification.ui")
 
 if(EXISTS "${_pn_legacy_source}" OR IS_SYMLINK "${_pn_legacy_source}")
     message(STATUS "Removing retired File Finder worker: ${_pn_legacy_source}")
     file(REMOVE "${_pn_legacy_source}")
 endif()
+
+foreach(_pn_legacy_form IN ITEMS
+        "${_pn_legacy_settings_form}"
+        "${_pn_legacy_classification_form}")
+    if(EXISTS "${_pn_legacy_form}" OR IS_SYMLINK "${_pn_legacy_form}")
+        message(STATUS "Removing retired File Finder form: ${_pn_legacy_form}")
+        file(REMOVE "${_pn_legacy_form}")
+    endif()
+endforeach()
 
 file(GLOB _pn_legacy_bytecode
     "${_pn_runtime_root}/threads/__pycache__/filefinder_thread*.pyc"
@@ -24,6 +35,9 @@ if(_pn_legacy_bytecode)
 endif()
 
 unset(_pn_legacy_bytecode)
+unset(_pn_legacy_form)
+unset(_pn_legacy_classification_form)
+unset(_pn_legacy_settings_form)
 unset(_pn_legacy_source)
 unset(_pn_runtime_root)
 unset(_pn_install_bindir)

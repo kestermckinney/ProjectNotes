@@ -1,149 +1,77 @@
 # File Finder
 
-The **File Finder** runs as a background process. Every minute, the plugin scans all configured folders and looks for files related to your projects, automatically adding them to the **Files & Folders** tab on the Project Page. This keeps your project file list up to date without manual maintenance.
+File Finder is a native Project Notes service that discovers files for active projects and adds or updates them on the project's **Files & Folders** tab. It runs every five minutes while Project Notes is open and File Finder is enabled. You can also start a scan immediately.
 
-## How It Works
+File Finder is no longer a Python plugin and is not configured from **Plugins > Settings**. Open the app menu, choose **Settings**, and select **File Finder**.
 
-The File Finder matches files to projects using the **project number** found in the file name or folder path. When a matching file is found that is not already listed in the project's Artifacts, the plugin adds it automatically with the appropriate file type based on the **Classifications** matching rules.
+## How File Finder Matches Projects
 
-### Project Number Matching
+For each active project, File Finder looks for a folder whose name contains the complete project number. Matching is case-insensitive, and the project number must be separated from surrounding letters and numbers. For example, project `ABC-001` can match `ABC-001 Project Name`, but not `XABC-0012`.
 
-Files are matched to projects by extracting the project number from their path or filename. For example, if you have a project with number `ABC-001`, the File Finder will locate and associate files like:
-- `C:\Projects\ABC-001\Schedule.mpp`
-- `C:\Projects\ABC-001_Quotes\Proposal.pdf`
-- Any file in a folder containing `ABC-001`
+Each configured local search location is traversed once per scan. After File Finder finds a project's folder, it adds the folder as **Project Folder** and scans its files and subfolders. If **Include Office 365 locations** is enabled, it can also find a Microsoft Teams channel named for the project and scan the channel's SharePoint files.
 
-## Configuring File Finder Settings
+File classification rules are evaluated in order. The first regular expression that matches a file name or normalized path supplies the classification. The resulting description has the form `Classification : filename.ext`.
 
-**To open the File Finder settings:**
+When local and Office 365 discovery find a file with the same project, classification, and filename, they reconcile to one row instead of creating source-specific duplicates. Office 365 is considered after local discovery, so its web link becomes the row's current location. File Finder does not delete entries when a file disappears from a source.
 
-1. From the **Plugins** menu choose **Settings > File Finder**.
+## File Finder Settings
 
-The settings dialog has two sections:
+### File Finder Controls
+
+| Setting or action | Description |
+| :--- | :--- |
+| **Enable File Finder** | Starts scheduled reconciliation. Disable it to stop background and manual scans without deleting settings or existing file entries. |
+| **Include Office 365 locations** | Adds Microsoft Teams and SharePoint discovery to local discovery. Configure and sign in on the separate **Office 365 Integration** settings page first. |
+| **Scan Now** | Starts an immediate scan using the saved settings. The current status and previous scan summary appear beside the button. |
+| **Reconsider All Files** | Clears File Finder's discovery cache and performs a fresh scan. It keeps search locations, exclusions, classification rules, and existing **Files & Folders** rows. Use it after remote folders change in a way an ordinary scan does not detect. |
+
+Microsoft 365 account configuration is intentionally kept on its own settings page so it can support more Project Notes features over time. See [Office 365 Integration](<Office365Integration.md>).
 
 ### Search Locations
 
-Specifies the base folder(s) where File Finder searches for project-related files. The plugin will **recursively search** all subfolders within each location.
+Search locations are local root folders. File Finder recursively examines each root until it finds folders for the active project numbers.
 
-#### How Base Locations Work
+- Enter a path and select **Add**, or use the folder button to browse.
+- Select the delete action to stop scanning a root. The folder and existing Project Notes entries are not deleted.
+- Add multiple roots when project folders are stored in more than one place.
+- `~` means the current user's home folder and is the default for a new profile.
 
-When you add a search location, File Finder scans:
-- The root folder itself and all its subfolders
-- All files found in any subdirectory tree
-- Project folders and shared file repositories
+Avoid adding overlapping roots because the same directory tree will be visited from each root.
 
-**Example:** If you add `C:\Users\user\Documents\Projects` as a search location, File Finder will find files in:
-- `C:\Users\user\Documents\Projects\ABC-001\Schedule.mpp` ✓
-- `C:\Users\user\Documents\Projects\Shared Files\ABC-001.pdf` ✓
-- `C:\Users\user\Documents\Projects\Archive\Old Projects\XYZ-005\Proposal.docx` ✓
+### Excluded Folders
 
-#### Default Location
+Folder exclusions prevent File Finder from entering unwanted directory trees. Each entry is a case-insensitive regular expression checked against the folder name and its normalized path, with and without a trailing `/`. When an expression matches, that folder and its entire subtree are skipped for both local and Office 365 discovery.
 
-By default, File Finder is configured to search your user's Documents folder under `Projects`:
-- **Windows**: `C:\Users\[YourUsername]\Documents\Projects`
-- **macOS**: `/Users/[YourUsername]/Documents/Projects`
-- **Linux**: `/home/[YourUsername]/Documents/Projects`
+New profiles exclude `Engineering/.*` by default. Add, edit, or delete expressions directly in the grid. For example:
 
-If you store projects in multiple locations, you can add multiple search locations.
+```regex
+(^|/)(node_modules|[.]git)(/|$)
+```
 
-#### Managing Search Locations
-
-| Button | Description |
-| :--- | :--- |
-| **Add Location** | Add a new folder to scan. Choose any folder where you store project files. |
-| **Edit Location** | Edit the selected folder path. Useful if you relocate your project directories. |
-| **Delete Location** | Remove the selected folder from the scan list. The folder itself is not deleted, just removed from File Finder's search scope. |
+This skips folders named `node_modules` or `.git` anywhere below a search root. Changing exclusions invalidates the Office 365 folder cache so remote content is reconsidered on the next scan.
 
 ### File Classifications
 
-Classification rules determine how files are categorized when added to the Files & Folders list. Each rule uses **pattern matching** (regular expressions) to identify files by name and automatically assign them a file type and description.
+Each row contains a classification and a regular expression. Expressions are case-insensitive and are matched against both the file name and normalized path. Rules run from top to bottom, and only the first match is used.
 
-#### Understanding Pattern Matching
-
-Pattern matching uses **regular expressions** to match file paths and names. This allows flexible rules that can match multiple related files with a single pattern.
-
-**Common Pattern Elements:**
-
-| Pattern | Means | Example Match |
-| :--- | :--- | :--- |
-| `.` | Any single character | `file.txt` matches `a.txt` |
-| `.*` | Any characters (zero or more) | `.*Project.*` matches `MyProject`, `Project_2024`, `ProjectNotes` |
-| `\.mpp$` | File extension `.mpp` at end of filename | `Schedule.mpp` (matches), `schedule.mpp.bak` (doesn't match) |
-| `$` | End of string (anchors pattern) | `\.xlsx$` only matches Excel files, not `file.xlsx.tmp` |
-| `\|` | OR (match one pattern or another) | `\.(pdf\|docx)$` matches both PDF and Word files |
-| `[0-9]` | Any digit | `Project[0-9].pdf` matches `Project1.pdf`, `Project5.pdf` |
-| `Schedule` | Literal text | `Schedule.mpp` (matches), `SCHEDULE.MPP` (case-sensitive, doesn't match by default) |
-
-#### Pattern Matching Examples
-
-**Example 1: Match all project schedules**
-```
-Pattern: .*Project Management/Schedule.*\.mpp$
-Matches:
-  ✓ C:\Projects\ABC-001\Project Management\Schedule.mpp
-  ✓ C:\Projects\ABC-001\Project Management\Schedule_Final.mpp
-  ✓ C:\Archive\Project Management\Schedule_2024.mpp
-```
-
-**Example 2: Match quotes (PDF or Excel)**
-```
-Pattern: .*Project Management/Quotes.*\.(pdf|xlsx)$
-Matches:
-  ✓ C:\Projects\ABC-001\Project Management\Quotes\Proposal.pdf
-  ✓ C:\Projects\ABC-001\Project Management\Quotes\Budget_Estimate.xlsx
-  ✗ C:\Projects\ABC-001\Quotes.docx (doesn't match — not PDF or Excel)
-```
-
-**Example 3: Match meeting minutes by name**
-```
-Pattern: .*Project Management/Meeting Minutes/.*\.(pptx|ppt|docx)$
-Matches:
-  ✓ C:\Projects\ABC-001\Project Management\Meeting Minutes\Kickoff.pptx
-  ✓ C:\Projects\ABC-001\Project Management\Meeting Minutes\Status_Jan2024.docx
-  ✓ C:\Projects\ABC-001\PM\Meeting Minutes\Design Review.ppt
-```
-
-**Example 4: Match PCR (change request) documents**
-```
-Pattern: .*Project Management/PCR.*\.(pdf|docx|xlsx)$
-Matches:
-  ✓ C:\Projects\ABC-001\Project Management\PCRs\PCR_001.pdf
-  ✓ C:\Projects\ABC-001\Project Management\PCR Management\PCR_Tracking.xlsx
-  ✗ C:\Projects\ABC-001\PCR_Backup.pdf.old (doesn't match — .old extension)
-```
-
-**Example 5: Match risk registers**
-```
-Pattern: .*Project Management/Risk Management.*\.(xlsx|docx)$
-Matches:
-  ✓ C:\Projects\ABC-001\Project Management\Risk Management\Risk Register.xlsx
-  ✓ C:\Projects\ABC-001\Project Management\Risk_Analysis\Risks.docx
-  ✗ C:\Projects\ABC-001\Risk.txt (doesn't match — not in Risk Management folder, wrong type)
-```
-
-#### Managing Classifications
-
-| Button | Description |
+| Pattern | Example use |
 | :--- | :--- |
-| **Add Classification** | Create a new file classification rule with a pattern and file type. |
-| **Edit Classification** | Modify an existing rule's pattern or file type. |
-| **Delete Classification** | Remove a classification rule. Files previously added with this rule are not affected. |
+| `.*[.]mpp$` | Microsoft Project schedules |
+| `.*Quote.*[.]pdf$` | PDF files containing `Quote` in the name or path |
+| `.*[.](pdf\|docx)$` | PDF or Word files |
+| `^(?!.*\bTemplate\b).*Risk.*[.]xlsx$` | Risk workbooks except files containing `Template` |
 
-#### Tips for Pattern Matching
+Use the blank row to add a rule, edit existing cells in place, or use the delete action to remove a rule. **Reset Defaults** replaces all classification rules with the maintained defaults; it does not change search locations or exclusions.
 
-- **Be specific**: More specific patterns prevent false matches. `.*Risk.*\.xlsx$` is better than `.*Risk.*`
-- **Use folder structure**: Include folder names in your patterns to improve accuracy
-- **Test your patterns**: Add test files and run File Finder to verify patterns work as expected
-- **Order matters**: File Finder applies the first matching pattern, so order similar rules appropriately
-- **Case sensitivity**: Patterns are case-sensitive by default. Use lowercase file extensions or adjust patterns as needed
+Changing classification rules invalidates the Office 365 folder cache. Run **Scan Now** if you want the new rules applied immediately.
 
-## Notes
+## First Run and Upgrades
 
-- The File Finder only adds files; it does not remove or modify existing Files & Folders entries.
-- Files are added with the **Project Folder** file type when a matching project folder is found.
-- The plugin runs only while Project Notes is open.
-- Pattern matching uses regular expressions; refer to standard regex syntax for complex patterns.
+New profiles start with File Finder enabled, `~` as the local search root, the default `Engineering/.*` exclusion, and the maintained classification rules.
+
+When upgrading from the retired Python File Finder, Project Notes imports existing search locations and classification rules once. The retired plugin, settings dialog, and background thread are not used after migration.
 
 ## Related Documentation
 
-- [Standard Plugins Overview](<PluginSettings.md>) — Complete list of all standard plugins and their configuration options
+- [Office 365 Integration](<Office365Integration.md>) — Configure Microsoft identity and sign-in independently of File Finder.
+- [Plugin Settings](<PluginSettings.md>) — Configure the remaining Python-based plugins.

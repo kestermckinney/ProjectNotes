@@ -380,7 +380,6 @@ Project Notes plugin architecture provide the ability to add new menu items to t
 
 ```python
 pluginmenus = [
-    {"menutitle" : "File Finder", "function" : "menuFileFinder", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "Editor", "function" : "menuEditorSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "Outlook Integration", "function" : "menuOutlookIntegrationSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "My Shortcuts", "function" : "menuMyShortcutSettings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
@@ -467,65 +466,19 @@ The example below show an XML export of a person. Notice child tables contain th
 
 ### Code Example
 
-The plugin architecture calls event functions if they have been defined. Below is a common section of code used to respond to events. See other plugins installed with Project Notes for more examples.
+The plugin architecture calls event functions when they are defined. This minimal example adds a project context-menu command and returns no database changes. See the installed plugins for more complete examples.
 
 ```python
-# make sure includes folder can be found
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../plugins')))
-
-from includes.common import ProjectNotesCommon
-from PyQt6.QtXml import QDomDocument, QDomNode
-from PyQt6.QtCore import QDateTime, QElapsedTimer, QDir, QDirIterator, QFileInfo
-
 # Project Notes Plugin Parameters
-pluginname = "File Finder Thread" # name used in the menu
-plugindescription = "This is test thread. Supported platforms: Windows, Linux, MacOS"
-plugintimerevent = 1 # how many minutes between the timer event
+pluginname = "Project Tools"
+plugindescription = "Example project utilities. Supported platforms: Windows, Linux, macOS"
 
 pluginmenus = [
-    {"menutitle" : "Find All Fiiles", "function" : "event_timer", "tablefilter" : "", "submenu" : "Utilities", "dataexport" : "", "parameter" : "all"},
-    {"menutitle" : "Find Project Files", "function" : "event_data_rightclick", "tablefilter" : "projects", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : ""}
+    {"menutitle" : "Review Project", "function" : "review_project", "tablefilter" : "projects", "submenu" : "Utilities", "dataexport" : "projects", "parameter" : ""}
 ]
 
-# all events return an xml string that can be processed by ProjectNotes
-#
-# Supported Events
-
-# def event_startup(parameter):
-#     return
-#
-# def event_shutdown(parameter):
-#     return
-#
-# def event_timer(parameter):
-#     return
-#
-
-class  FileFinder:
-    def __init__(self):
-        super().__init__()
-
-        self.pnc = ProjectNotesCommon()
-        self.settings_pluginname = "File Finder"
-        self.search_locations = self.pnc.get_plugin_setting("SearchLocations", self.settings_pluginname)
-        self.classifications = self.pnc.get_plugin_setting("Classifications", self.settings_pluginname)
-
-    # ... code removed for simplicity
-
-def event_timer(parameter):
-    ff = FileFinder()
-    ff.parse_by_project((parameter == "all"))
-
-    return ""
-
-def event_data_rightclick(xmlstr, parameter):
-    ff = FileFinder()
-
-    projectnumber = ff.get_projectnumber(xmlstr)
-
-    if projectnumber is not None:
-        ff.parse_by_project(False, projectnumber)
-
+def review_project(xmlstr, parameter):
+    # Inspect xmlstr or perform an action here.
     return ""
 ```
 

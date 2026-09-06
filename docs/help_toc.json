@@ -64,6 +64,7 @@
       "title": "Standard Plugins",
       "items": [
         { "title": "Plugin Settings", "path": "StandardPlugins/PluginSettings.md" },
+        { "title": "Office 365 Integration", "path": "StandardPlugins/Office365Integration.md" },
         { "title": "Outlook Integration", "path": "StandardPlugins/OutlookIntegration.md" },
         { "title": "iCloud Contacts", "path": "StandardPlugins/iCloudContacts.md" },
         { "title": "File Finder", "path": "StandardPlugins/FileFinder.md" },
