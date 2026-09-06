@@ -17,11 +17,16 @@ A scan performs these operations:
    all changed locations in one transaction.
 4. Refresh the Locations and search models once after the transaction.
 
-Descriptions are source-qualified (`File Finder:` and `Office 365:`) to respect
-the existing per-project description uniqueness rule. Existing legacy rows are
-adopted by matching project and normalized path. Reconciliation intentionally
-does not delete locations that disappear from a source.
+File descriptions use `<classification> : <base filename.ext>` and are deliberately
+not source-qualified. Local folders and Microsoft Teams may both be scanned; a
+result from either source with the same project, classification, and filename
+reconciles into the same location row.
+Existing legacy rows are adopted by normalized path or by their description with
+an old source prefix removed.
+Reconciliation intentionally does not delete locations that disappear from a source.
 
 Tenant/client identifiers and finder rules live in `AppSettings`. Microsoft
 refresh tokens are stored only through `CredentialStore`; access tokens remain
-in memory.
+in memory. **Reconsider All Files** discards the current scan summary and queues
+a completely fresh discovery pass, rebuilding the project-folder, timestamp,
+and reconciliation hashes without changing saved rules or locations.

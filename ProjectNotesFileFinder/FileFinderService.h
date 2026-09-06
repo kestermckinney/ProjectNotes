@@ -66,6 +66,7 @@ public:
     Q_INVOKABLE void removeFileRule(int index);
     Q_INVOKABLE void resetDefaultRules();
     Q_INVOKABLE void scanNow();
+    Q_INVOKABLE void reconsiderAllFiles();
     Q_INVOKABLE void startOffice365SignIn();
     Q_INVOKABLE void signOutOffice365();
 
@@ -74,6 +75,7 @@ signals:
     void authenticationChanged();
     void statusChanged();
     void locationsChanged(int inserted, int updated);
+    void diagnostic(const QString &message);
 
 private:
     void loadAndMigrateSettings();

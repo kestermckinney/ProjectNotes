@@ -62,7 +62,7 @@ Item {
                     { key: "cloudSync", label: qsTr("Cloud Sync") },
                     { key: "office365", label: qsTr("Office 365 Integration") },
                     { key: "fileFinder", label: qsTr("File Finder") },
-                    { key: "projectFolder", label: qsTr("Project Folder") },
+                    { key: "projectFolders", label: qsTr("Project Folders") },
                     { key: "preferences", label: qsTr("Preferences") },
                     { key: "viewOptions", label: qsTr("View Options") },
                     { key: "data", label: qsTr("Data") }
@@ -265,11 +265,6 @@ Item {
                     title: qsTr("Office 365 Integration")
                     subtitle: qsTr("Connect Microsoft Teams and SharePoint so File Finder can discover project folders and documents. The refresh token is stored in the operating system credential vault.")
 
-                    SettingsCheck {
-                        label: qsTr("Include Office 365 locations")
-                        checked: page._finder ? page._finder.office365Enabled : false
-                        onToggledValue: (v) => { if (page._finder) page._finder.office365Enabled = v }
-                    }
                     SyncField {
                         id: officeTenantField
                         label: qsTr("Microsoft Entra tenant ID")
@@ -353,28 +348,39 @@ Item {
                 // File Finder
                 SettingsSection {
                     title: qsTr("File Finder")
-                    subtitle: qsTr("Scan active projects for local and Office 365 locations. A reconciliation runs every five minutes while enabled; unchanged rows are not written again.")
+                    subtitle: qsTr("Scan active projects for local and Microsoft Teams locations. Files with the same classification and filename update the same row. A reconciliation runs every five minutes while enabled.")
 
                     SettingsCheck {
                         label: qsTr("Enable File Finder")
                         checked: page._finder ? page._finder.enabled : false
                         onToggledValue: (v) => { if (page._finder) page._finder.enabled = v }
                     }
+                    SettingsCheck {
+                        label: qsTr("Include Office 365 locations")
+                        checked: page._finder ? page._finder.office365Enabled : false
+                        onToggledValue: (v) => { if (page._finder) page._finder.office365Enabled = v }
+                    }
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 8
                         ColumnLayout {
                             Layout.fillWidth: true
+                            Layout.minimumWidth: 0
                             spacing: 2
                             Text {
                                 Layout.fillWidth: true
+                                Layout.minimumWidth: 0
                                 text: page._finder ? page._finder.status : qsTr("Not initialized")
                                 color: Theme.text
                                 font.pixelSize: Theme.fontBody
                                 font.weight: Font.DemiBold
+                                elide: Text.ElideMiddle
+                                maximumLineCount: 1
+                                clip: true
                             }
                             Text {
                                 Layout.fillWidth: true
+                                Layout.minimumWidth: 0
                                 visible: page._finder && page._finder.lastScanSummary !== ""
                                 text: page._finder ? page._finder.lastScanSummary : ""
                                 color: Theme.text3
@@ -388,6 +394,12 @@ Item {
                             text: page._finder && page._finder.scanning ? qsTr("Scanning…") : qsTr("Scan Now")
                             enabled: page._finder && page._finder.enabled && !page._finder.scanning
                             onClicked: page._finder.scanNow()
+                        }
+                        Button {
+                            implicitHeight: 30
+                            text: qsTr("Reconsider All Files")
+                            enabled: page._finder && page._finder.enabled
+                            onClicked: page._finder.reconsiderAllFiles()
                         }
                     }
                 }
@@ -713,7 +725,7 @@ Item {
             SettingsTab {
                 // Project Folder
                 SettingsSection {
-                title: "Project Folder"
+                title: "Project Folders"
                 subtitle: "Group projects into folders (e.g. Favorites). A project can belong to several folders. Drag projects onto a folder in the sidebar to add them."
 
                 // New-folder row

@@ -102,6 +102,7 @@ void FileFinderService::initialize(const QString &databasePath, QReadWriteLock *
     connect(m_thread, &QThread::finished, m_worker, &QObject::deleteLater);
     connect(m_worker, &FileFinderWorker::diagnostic, this,
             [this](const QString &message) {
+        emit diagnostic(message);
         m_status = message;
         emit statusChanged();
     });
@@ -294,6 +295,19 @@ void FileFinderService::scanNow()
 {
     if (m_worker && m_enabled)
         QMetaObject::invokeMethod(m_worker, &FileFinderWorker::scanNow, Qt::QueuedConnection);
+}
+
+void FileFinderService::reconsiderAllFiles()
+{
+    if (!m_worker || !m_enabled)
+        return;
+    m_lastScanSummary.clear();
+    m_status = tr("Resetting File Finder state and reconsidering all files…");
+    emit statusChanged();
+    // Folder matches, file timestamps, and reconciliation hashes are scoped to
+    // a worker scan. Queuing a new pass rebuilds all of them from source. If a
+    // scan is already active, FileFinderWorker records a pending full pass.
+    QMetaObject::invokeMethod(m_worker, &FileFinderWorker::scanNow, Qt::QueuedConnection);
 }
 
 void FileFinderService::startOffice365SignIn()

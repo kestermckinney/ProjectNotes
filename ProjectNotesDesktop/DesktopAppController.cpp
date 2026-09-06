@@ -90,6 +90,10 @@ DesktopAppController::DesktopAppController(QObject* parent)
         s_instance = this;
 
     m_fileFinder = new FileFinderService(this);
+#ifdef QT_DEBUG
+    connect(m_fileFinder, &FileFinderService::diagnostic, this,
+            [](const QString &message) { QLog_Debug(DEBUGLOG, message); });
+#endif
     connect(m_fileFinder, &FileFinderService::locationsChanged, this,
             [](int, int) {
         // The worker commits a complete scan in one transaction, so refresh

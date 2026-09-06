@@ -10,12 +10,14 @@
 #include <QNetworkAccessManager>
 #include <QRegularExpression>
 #include <QUrl>
+#include <functional>
 
 class MicrosoftGraphSource
 {
 public:
     MicrosoftGraphSource(QString bearerToken, QNetworkAccessManager *network,
-                         QUrl endpoint = QUrl(QStringLiteral("https://graph.microsoft.com/v1.0/")));
+                         QUrl endpoint = {}, // Empty uses the public Graph v1.0 endpoint.
+                         std::function<void(const QString &)> diagnostic = {});
 
     QList<DiscoveredLocation> discover(const QList<ActiveProject> &projects,
                                        const QList<FileFinderRule> &rules,
@@ -37,4 +39,5 @@ private:
     QString m_token;
     QNetworkAccessManager *m_network = nullptr;
     QUrl m_endpoint;
+    std::function<void(const QString &)> m_diagnostic;
 };

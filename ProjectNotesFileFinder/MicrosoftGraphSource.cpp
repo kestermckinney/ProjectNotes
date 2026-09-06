@@ -14,9 +14,13 @@
 
 MicrosoftGraphSource::MicrosoftGraphSource(QString bearerToken,
                                            QNetworkAccessManager *network,
-                                           QUrl endpoint)
-    : m_token(std::move(bearerToken)), m_network(network), m_endpoint(std::move(endpoint))
+                                           QUrl endpoint,
+                                           std::function<void(const QString &)> diagnostic)
+    : m_token(std::move(bearerToken)), m_network(network), m_endpoint(std::move(endpoint)),
+      m_diagnostic(std::move(diagnostic))
 {
+    if (m_endpoint.isEmpty())
+        m_endpoint = QUrl(QStringLiteral("https://graph.microsoft.com/v1.0/"));
     QString value = m_endpoint.toString();
     if (!value.endsWith(QLatin1Char('/')))
         value.append(QLatin1Char('/'));
@@ -145,10 +149,17 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
         QUrl(QStringLiteral("me/joinedTeams?$select=id,displayName")), error);
     if (error && !error->isEmpty())
         return {};
+#ifdef QT_DEBUG
+    if (m_diagnostic)
+        m_diagnostic(QStringLiteral("Office 365 File Finder: Graph returned %1 joined team(s) for %2 active project(s).")
+                         .arg(teams.size()).arg(projects.size()));
+#endif
 
     QSet<QString> foundProjects;
     for (const QJsonValue &teamValue : teams) {
-        const QString teamId = teamValue.toObject().value(QStringLiteral("id")).toString();
+        const QJsonObject team = teamValue.toObject();
+        const QString teamId = team.value(QStringLiteral("id")).toString();
+        const QString teamName = team.value(QStringLiteral("displayName")).toString();
         if (teamId.isEmpty())
             continue;
         const QString encodedTeam = QString::fromLatin1(QUrl::toPercentEncoding(teamId));
@@ -157,6 +168,11 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
             error);
         if (error && !error->isEmpty())
             return {};
+#ifdef QT_DEBUG
+        if (m_diagnostic)
+            m_diagnostic(QStringLiteral("Office 365 File Finder: team '%1' contains %2 channel(s).")
+                             .arg(teamName, QString::number(channels.size())));
+#endif
 
         for (const QJsonValue &channelValue : channels) {
             const QJsonObject channel = channelValue.toObject();
@@ -164,6 +180,11 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
             const QString channelId = channel.value(QStringLiteral("id")).toString();
             if (channelId.isEmpty())
                 continue;
+#ifdef QT_DEBUG
+            if (m_diagnostic)
+                m_diagnostic(QStringLiteral("Office 365 File Finder: examining channel '%1' in team '%2'.")
+                                 .arg(channelName, teamName));
+#endif
 
             for (const ProjectMatcher &matcher : projectMatchers) {
                 const ActiveProject &project = matcher.project;
@@ -172,6 +193,12 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
                     continue;
                 if (!matcher.expression.match(channelName).hasMatch())
                     continue;
+
+#ifdef QT_DEBUG
+                if (m_diagnostic)
+                    m_diagnostic(QStringLiteral("Office 365 File Finder: channel '%1' in team '%2' matched project '%3'.")
+                                     .arg(channelName, teamName, project.number));
+#endif
 
                 const QString encodedChannel = QString::fromLatin1(QUrl::toPercentEncoding(channelId));
                 const QJsonObject folder = getRelativeObject(
@@ -183,15 +210,34 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
                                             .toObject().value(QStringLiteral("driveId")).toString();
                 const QString itemId = folder.value(QStringLiteral("id")).toString();
                 const QString webUrl = folder.value(QStringLiteral("webUrl")).toString();
-                if (driveId.isEmpty() || itemId.isEmpty() || webUrl.isEmpty())
+                if (driveId.isEmpty() || itemId.isEmpty() || webUrl.isEmpty()) {
+#ifdef QT_DEBUG
+                    if (m_diagnostic)
+                        m_diagnostic(QStringLiteral("Office 365 File Finder: filesFolder for channel '%1' is incomplete (driveId=%2, itemId=%3, webUrl=%4).")
+                                         .arg(channelName,
+                                              driveId.isEmpty() ? QStringLiteral("missing") : QStringLiteral("present"),
+                                              itemId.isEmpty() ? QStringLiteral("missing") : QStringLiteral("present"),
+                                              webUrl.isEmpty() ? QStringLiteral("missing") : QStringLiteral("present")));
+#endif
                     continue;
+                }
+#ifdef QT_DEBUG
+                if (m_diagnostic)
+                    m_diagnostic(QStringLiteral("Office 365 File Finder: resolved filesFolder for channel '%1'.")
+                                     .arg(channelName));
+#endif
 
                 result.append({project.id, QStringLiteral("Microsoft Teams"),
-                               QStringLiteral("Office 365: Project Folder"), webUrl});
+                               QStringLiteral("Project Folder"), webUrl});
                 if (!appendChildren(driveId, itemId, {}, project, compiledRules, &result,
                                     filesExamined, matchedFiles, error))
                     return {};
                 foundProjects.insert(project.id);
+#ifdef QT_DEBUG
+                if (m_diagnostic)
+                    m_diagnostic(QStringLiteral("Office 365 File Finder: finished scanning project folder for '%1'.")
+                                     .arg(project.number));
+#endif
             }
             if (foundProjects.size() == projects.size())
                 break;
@@ -199,6 +245,18 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
         if (foundProjects.size() == projects.size())
             break;
     }
+#ifdef QT_DEBUG
+    if (m_diagnostic) {
+        QStringList unmatched;
+        for (const ProjectMatcher &matcher : projectMatchers) {
+            if (!foundProjects.contains(matcher.project.id))
+                unmatched.append(matcher.project.number);
+        }
+        m_diagnostic(QStringLiteral("Office 365 File Finder: found folders for %1 of %2 active project(s); unmatched project numbers: %3")
+                         .arg(foundProjects.size()).arg(projects.size())
+                         .arg(unmatched.isEmpty() ? QStringLiteral("none") : unmatched.join(QStringLiteral(", "))));
+    }
+#endif
     return result;
 }
 
@@ -222,7 +280,14 @@ bool MicrosoftGraphSource::appendChildren(
         const QJsonObject object = getObject(page, error);
         if (error && !error->isEmpty())
             return false;
-        for (const QJsonValue &value : object.value(QStringLiteral("value")).toArray()) {
+        const QJsonArray children = object.value(QStringLiteral("value")).toArray();
+#ifdef QT_DEBUG
+        if (m_diagnostic)
+            m_diagnostic(QStringLiteral("Office 365 File Finder: folder '%1' returned %2 child item(s).")
+                             .arg(parentPath.isEmpty() ? QStringLiteral("/") : parentPath)
+                             .arg(children.size()));
+#endif
+        for (const QJsonValue &value : children) {
             const QJsonObject item = value.toObject();
             const QString name = item.value(QStringLiteral("name")).toString();
             const QString id = item.value(QStringLiteral("id")).toString();
@@ -244,7 +309,7 @@ bool MicrosoftGraphSource::appendChildren(
                 if (matchedFiles)
                     ++*matchedFiles;
                 locations->append({project.id, locationType(name),
-                    QStringLiteral("Office 365: %1 : %2").arg(rule.first, relative),
+                    QStringLiteral("%1 : %2").arg(rule.first, name),
                     item.value(QStringLiteral("webUrl")).toString()});
                 break;
             }

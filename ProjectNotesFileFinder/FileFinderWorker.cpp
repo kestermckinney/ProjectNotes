@@ -30,6 +30,21 @@ QString locationKey(const QString &projectId, const QString &value)
     return projectId + kKeySeparator + value;
 }
 
+QString unqualifiedDescription(QString description)
+{
+    static const QStringList prefixes = {
+        QStringLiteral("File Finder: "),
+        QStringLiteral("Office 365: ")
+    };
+    for (const QString &prefix : prefixes) {
+        if (description.startsWith(prefix, Qt::CaseInsensitive)) {
+            description.remove(0, prefix.size());
+            break;
+        }
+    }
+    return description;
+}
+
 }
 
 FileFinderWorker::FileFinderWorker(QObject *parent) : QObject(parent)
@@ -114,12 +129,21 @@ void FileFinderWorker::scanNow()
             int remoteFiles = 0;
             int remoteMatches = 0;
             QString graphError;
-            MicrosoftGraphSource graph(m_configuration.accessToken, m_network);
+#ifdef QT_DEBUG
+            emit diagnostic(tr("Office 365 File Finder: starting Graph discovery for %1 active project(s) with %2 file rule(s).")
+                                .arg(projects.size()).arg(m_configuration.rules.size()));
+#endif
+            MicrosoftGraphSource graph(m_configuration.accessToken, m_network, {},
+                [this](const QString &message) { emit diagnostic(message); });
             const QList<DiscoveredLocation> remote = graph.discover(
                 projects, m_configuration.rules, &remoteFiles, &remoteMatches, &graphError);
             summary.files += remoteFiles;
             summary.matched += remoteMatches;
             locations.append(remote);
+#ifdef QT_DEBUG
+            emit diagnostic(tr("Office 365 File Finder: Graph discovery completed with %1 location(s), %2 file(s) examined, and %3 rule match(es).")
+                                .arg(remote.size()).arg(remoteFiles).arg(remoteMatches));
+#endif
             if (!graphError.isEmpty()) {
                 summary.warning = graphError;
                 emit diagnostic(graphError);
@@ -258,8 +282,7 @@ QList<DiscoveredLocation> FileFinderWorker::scanLocalFolders(
         if (folder.isEmpty())
             continue;
         locations.append({project.id, QStringLiteral("File Folder"),
-                          QStringLiteral("File Finder: Project Folder"), folder});
-        const QDir base(folder);
+                          QStringLiteral("Project Folder"), folder});
         QDirIterator iterator(folder, QDir::Files | QDir::Readable,
                               QDirIterator::Subdirectories);
         while (iterator.hasNext()) {
@@ -270,7 +293,6 @@ QList<DiscoveredLocation> FileFinderWorker::scanLocalFolders(
                 ++*filesExamined;
             const QFileInfo info = iterator.fileInfo();
             const QString normalized = QDir::fromNativeSeparators(info.absoluteFilePath());
-            const QString relative = QDir::fromNativeSeparators(base.relativeFilePath(info.filePath()));
             for (const CompiledRule &rule : rules) {
                 if (!rule.expression.match(normalized).hasMatch()
                     && !rule.expression.match(info.fileName()).hasMatch())
@@ -278,7 +300,7 @@ QList<DiscoveredLocation> FileFinderWorker::scanLocalFolders(
                 if (matchedFiles)
                     ++*matchedFiles;
                 locations.append({project.id, locationType(info.filePath()),
-                    QStringLiteral("File Finder: %1 : %2").arg(rule.classification, relative),
+                    QStringLiteral("%1 : %2").arg(rule.classification, info.fileName()),
                     normalizedPath(info.filePath())});
                 break;
             }
@@ -307,6 +329,7 @@ bool FileFinderWorker::commitLocations(const QList<DiscoveredLocation> &location
     };
     QHash<QString, ExistingLocation> byPath;
     QHash<QString, ExistingLocation> byDescription;
+    QMultiHash<QString, ExistingLocation> byUnqualifiedDescription;
     QSqlQuery existing(m_database);
     if (!existing.exec(QStringLiteral(
         "SELECT l.id, l.project_id, l.location_type, l.location_description, l.full_path "
@@ -323,6 +346,8 @@ bool FileFinderWorker::commitLocations(const QList<DiscoveredLocation> &location
         const QString projectId = existing.value(1).toString();
         byPath.insert(locationKey(projectId, normalizedPath(value.path)), value);
         byDescription.insert(locationKey(projectId, value.description), value);
+        byUnqualifiedDescription.insert(
+            locationKey(projectId, unqualifiedDescription(value.description)), value);
     }
 
     QSqlQuery update(m_database);
@@ -336,7 +361,11 @@ bool FileFinderWorker::commitLocations(const QList<DiscoveredLocation> &location
         "VALUES (?, ?, ?, ?, ?, ?, NULL, 0)"));
 
     QSet<QString> seen;
-    for (const DiscoveredLocation &location : locations) {
+    // Later discoveries win. Microsoft Teams results are appended after local
+    // results, so an enabled Teams source updates the same classifier row while
+    // both discovery options remain active.
+    for (auto it = locations.crbegin(); it != locations.crend(); ++it) {
+        const DiscoveredLocation &location = *it;
         const QString path = normalizedPath(location.fullPath);
         if (location.projectId.isEmpty() || location.description.isEmpty() || path.isEmpty())
             continue;
@@ -347,6 +376,13 @@ bool FileFinderWorker::commitLocations(const QList<DiscoveredLocation> &location
         ExistingLocation old = byPath.value(locationKey(location.projectId, path));
         if (old.id.isEmpty())
             old = byDescription.value(uniqueKey);
+        if (old.id.isEmpty()) {
+            const QList<ExistingLocation> candidates =
+                byUnqualifiedDescription.values(locationKey(
+                    location.projectId, unqualifiedDescription(location.description)));
+            if (!candidates.isEmpty())
+                old = candidates.first();
+        }
         if (!old.id.isEmpty()) {
             if (old.type == location.locationType && old.description == location.description
                 && normalizedPath(old.path) == path) {
