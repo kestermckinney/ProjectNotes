@@ -7,7 +7,7 @@ RequestExecutionLevel user
 
 ; ── Product defines ───────────────────────────────────────────────────────────
 !define PRODUCT_NAME      "Project Notes"
-!define PRODUCT_VERSION   "6.0.0"
+!define PRODUCT_VERSION   "6.1.0"
 !define PRODUCT_PUBLISHER "Paul McKinney"
 !define PRODUCT_WEB_SITE  "https://www.projectnotespro.com"
 !define PRODUCT_DIR_REGKEY  "Software\Microsoft\Windows\CurrentVersion\App Paths\Project Notes.exe"

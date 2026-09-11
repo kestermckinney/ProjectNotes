@@ -829,13 +829,27 @@ void MainWindow::openDatabase(const QString& dbfile)
                         // if a future library path forgets to call SyncLog. The
                         // library already logs per-table detail; this adds a
                         // single cycle-level summary line.
-                        if (!result.success || result.hasNetworkError() ||
-                            result.hasAuthError() || result.totalDecryptionFailures() > 0) {
-                            QStringList failed;
-                            for (const auto &t : result.tableResults) {
-                                if (!t.success || t.networkError || t.authError || t.decryptionFailures > 0)
-                                    failed << t.tableName;
+                        //
+                        // A bare 401 is excluded: it is a routine JWT expiration
+                        // that the sync loop recovers from by reauthenticating,
+                        // emitting authenticationRequired (logged below) only if
+                        // that fails. Without this, every token refresh would be
+                        // recorded as a sync failure.
+                        QStringList failed;
+                        bool nonAuthFailure = result.hasNetworkError() ||
+                                              result.totalDecryptionFailures() > 0;
+                        for (const auto &t : result.tableResults) {
+                            const bool realTableFailure =
+                                (!t.success || t.networkError || t.decryptionFailures > 0)
+                                && !t.authError;
+                            if (realTableFailure) {
+                                failed << t.tableName;
+                                nonAuthFailure = true;
                             }
+                        }
+                        if (!result.success && result.tableResults.isEmpty())
+                            nonAuthFailure = true;
+                        if (nonAuthFailure) {
                             QLog_Warning(SYNCERRORLOG,
                                 QString("Sync cycle reported failure: %1%2")
                                     .arg(result.errorMessage.isEmpty()

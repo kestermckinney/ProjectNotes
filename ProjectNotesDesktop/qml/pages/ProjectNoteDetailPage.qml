@@ -224,7 +224,11 @@ Item {
                     persistentSelection: true
                     background: null
                     font.family: "Arial"
-                    font.pixelSize: Theme.fontBody
+                    // Match TextFormatter's Normal Text style exactly. Using
+                    // pixelSize here made the unformatted default (~9pt at
+                    // 96 DPI) visibly smaller than Normal Text's 12pt.
+                    font.pointSize: 12
+                    font.weight: Font.Normal
                     onTextChanged: page._changed = true
 
                     // Inline spell-check: red squiggle + right-click suggestions +
@@ -274,7 +278,9 @@ Item {
                                 function _menu(sx, sy) {
                                     rowMenu.openFor(DesktopAppController.meetingAttendeesModel,
                                         (attRow.model.id || "").toString(), qsTr("Attendee"),
-                                        (attRow.model.name || "").toString(), sx, sy)
+                                        (attRow.model.name || "").toString(), sx, sy,
+                                        /*allowMoveTo*/ false,
+                                        (attRow.model.person_id || "").toString())
                                 }
                                 TapHandler {
                                     acceptedButtons: Qt.RightButton
@@ -348,12 +354,21 @@ Item {
                                 text: qsTr("Add")
                                 onClicked: {
                                     page._saveNow()
+                                    // Adding a row refreshes the model, which rebuilds
+                                    // every delegate — flush each row's uncommitted
+                                    // inline edits first so a name typed but not yet
+                                    // blurred isn't wiped when its delegate is rebuilt.
+                                    for (var i = 0; i < aiRepeater.count; ++i) {
+                                        var d = aiRepeater.itemAt(i)
+                                        if (d) d._commitPending()
+                                    }
                                     DesktopAppController.addNoteActionItem(page.noteId, page.projectId)
                                     DesktopAppController.refreshNoteActionItems()
                                 }
                             }
                         }
                         Repeater {
+                            id: aiRepeater
                             model: DesktopAppController.notesActionItemsModel
                             delegate: ColumnLayout {
                                 id: ai
@@ -362,6 +377,14 @@ Item {
                                 property bool expanded: false
                                 property string _assignedId: ""
                                 property string _identifiedId: ""
+                                // NotesActionItemsModel does no date bookkeeping (unlike
+                                // TrackerItemsModel), so this editor stamps Date Updated /
+                                // Date Resolved itself, mirroring that model's rules. Flags
+                                // track a hand-typed date so it isn't overwritten; _prevStatus
+                                // spots a move into or out of "Resolved". All reset by _edit().
+                                property string _prevStatus: ""
+                                property bool _lastUpdateEdited: false
+                                property bool _resolvedEdited: false
                                 Layout.fillWidth: true
                                 spacing: 5
 
@@ -382,8 +405,34 @@ Item {
                                     aiIdentified.value= page._nameForId(ai._identifiedId)
                                     aiDateId.text     = (ai.model.date_identified || "").toString()
                                     aiDateDue.text    = (ai.model.date_due || "").toString()
+                                    aiLastUpdate.text = (ai.model.last_update || "").toString()
+                                    aiDateResolved.text = (ai.model.date_resolved || "").toString()
                                     aiDesc.text       = (ai.model.description || "").toString()
+                                    ai._prevStatus       = (ai.model.status || "").toString()
+                                    ai._lastUpdateEdited = false
+                                    ai._resolvedEdited   = false
                                     ai.expanded = true
+                                }
+
+                                function _today() { return Qt.formatDate(new Date(), "MM/dd/yyyy") }
+
+                                // Stamp Date Updated to today for any edit (unless hand-typed).
+                                // Call before ai._save() so the new value is persisted.
+                                function _touchDates() {
+                                    if (!ai._lastUpdateEdited)
+                                        aiLastUpdate.setText(ai._today())
+                                }
+
+                                // Moving Status into "Resolved" stamps Date Resolved; moving
+                                // out clears it. Skipped if the user hand-typed that field.
+                                function _applyStatusDates(newStatus) {
+                                    if (!ai._resolvedEdited) {
+                                        if (newStatus === "Resolved" && ai._prevStatus !== "Resolved")
+                                            aiDateResolved.setText(ai._today())
+                                        else if (newStatus !== "Resolved" && ai._prevStatus === "Resolved")
+                                            aiDateResolved.setText("")
+                                    }
+                                    ai._prevStatus = newStatus
                                 }
                                 // Persist all fields (in-place setData → summary updates live,
                                 // no refresh, so the editor stays open). Uses the editor values,
@@ -392,12 +441,15 @@ Item {
                                     DesktopAppController.saveNoteActionItem(ai.index,
                                         aiNameInline.text, aiType.value, aiPriority.value, aiStatus.value,
                                         ai._assignedId, ai._identifiedId, aiDateId.text, aiDateDue.text,
-                                        aiDesc.text)
+                                        aiDesc.text, aiLastUpdate.text, aiDateResolved.text)
                                 }
                                 // Persist an inline name edit without disturbing the other fields:
                                 // read everything except the name straight from the model, so this
                                 // is safe even when the editor was never expanded.
                                 function _saveName() {
+                                    // Only bump Date Updated when the name really changed —
+                                    // onEditingFinished also fires on a focus-out with no edit.
+                                    var nameChanged = aiNameInline.text !== (ai.model.item_name || "").toString()
                                     DesktopAppController.saveNoteActionItem(ai.index,
                                         aiNameInline.text,
                                         (ai.model.item_type || "").toString(),
@@ -407,7 +459,19 @@ Item {
                                         (ai.model.identified_by || "").toString(),
                                         (ai.model.date_identified || "").toString(),
                                         (ai.model.date_due || "").toString(),
-                                        (ai.model.description || "").toString())
+                                        (ai.model.description || "").toString(),
+                                        nameChanged ? ai._today() : (ai.model.last_update || "").toString(),
+                                        (ai.model.date_resolved || "").toString())
+                                }
+                                // Flush edits that are still only in the editors (not
+                                // yet saved on blur) before a model refresh rebuilds
+                                // this delegate. If the inline editor is open, save the
+                                // whole row; otherwise just persist the inline name.
+                                function _commitPending() {
+                                    if (ai.expanded)
+                                        ai._save()
+                                    else if (aiNameInline.text !== (ai.model.item_name || "").toString())
+                                        ai._saveName()
                                 }
                                 function _menu(sx, sy) {
                                     rowMenu.openFor(DesktopAppController.notesActionItemsModel,
@@ -513,34 +577,36 @@ Item {
                                         ComboField {
                                             id: aiType; label: qsTr("Type")
                                             options: DesktopAppController.itemTypeOptions()
-                                            onActivated: ai._save()
+                                            onActivated: { ai._touchDates(); ai._save() }
                                         }
                                         ComboField {
                                             id: aiPriority; label: qsTr("Priority")
                                             options: DesktopAppController.itemPriorityOptions()
-                                            onActivated: ai._save()
+                                            onActivated: { ai._touchDates(); ai._save() }
                                         }
                                         ComboField {
                                             id: aiStatus; label: qsTr("Status")
                                             options: DesktopAppController.itemStatusOptions()
-                                            onActivated: ai._save()
+                                            onActivated: (v) => { ai._applyStatusDates(v); ai._touchDates(); ai._save() }
                                         }
                                         ComboField {
                                             id: aiAssigned; label: qsTr("Assigned To")
                                             options: page._peopleNames()
                                             includeNone: true
                                             searchable: true
-                                            onActivated: (v) => { ai._assignedId = page._idForName(v); ai._save() }
+                                            onActivated: (v) => { ai._assignedId = page._idForName(v); ai._touchDates(); ai._save() }
                                         }
                                         ComboField {
                                             id: aiIdentified; label: qsTr("Identified By")
                                             options: page._peopleNames()
                                             includeNone: true
                                             searchable: true
-                                            onActivated: (v) => { ai._identifiedId = page._idForName(v); ai._save() }
+                                            onActivated: (v) => { ai._identifiedId = page._idForName(v); ai._touchDates(); ai._save() }
                                         }
-                                        DateField { id: aiDateId; label: qsTr("Date Identified"); onEdited: ai._save() }
-                                        DateField { id: aiDateDue; label: qsTr("Date Due"); onEdited: ai._save() }
+                                        DateField { id: aiDateId; label: qsTr("Date Identified"); onEdited: { ai._touchDates(); ai._save() } }
+                                        DateField { id: aiDateDue; label: qsTr("Date Due"); onEdited: { ai._touchDates(); ai._save() } }
+                                        DateField { id: aiLastUpdate; label: qsTr("Date Updated"); onEdited: { ai._lastUpdateEdited = true; ai._save() } }
+                                        DateField { id: aiDateResolved; label: qsTr("Date Resolved"); onEdited: { ai._resolvedEdited = true; ai._touchDates(); ai._save() } }
                                     }
                                     Text { text: qsTr("Description"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
                                     Rectangle {
@@ -558,7 +624,12 @@ Item {
                                             selectByMouse: true
                                             background: null
                                             font.pixelSize: Theme.fontBody
-                                            onEditingFinished: ai._save()
+                                            onEditingFinished: {
+                                                // Fires on focus-out too — only stamp on a real edit.
+                                                if (aiDesc.text !== (ai.model.description || "").toString())
+                                                    ai._touchDates()
+                                                ai._save()
+                                            }
                                             SpellCheckField { dialog: spellDialog }
                                         }
                                     }
@@ -582,6 +653,9 @@ Item {
     // Routed to Main's shared Move To… dialog, same as ProjectDetailPage /
     // ItemsPage / ItemDetailPage.
     signal moveToRequested(string itemId)
+    // Attendee row menus use the attendee's person_id to open the corresponding
+    // People detail page, matching ProjectDetailPage's Team member menu.
+    signal goToPersonRequested(string personId)
 
     // Shared record/plugin menu for the Attendees and Action Items lists.
     // Move To… is only ever offered for Action Items (see ai._menu()'s
@@ -596,6 +670,7 @@ Item {
         // list — copyTrackerItem() renumbers it and refreshes the models.
         onDuplicateRecord: (table, id) => DesktopAppController.copyTrackerItem(id)
         onMoveToRecord: (id) => page.moveToRequested(id)
+        onGoToPersonRequested: (personId) => page.goToPersonRequested(personId)
     }
 
     // The note's own record/plugin menu — opened by the title row's kebab and
@@ -630,109 +705,18 @@ Item {
     SpellCheckDialog { id: spellDialog }
 
     // ── People picker (for adding an attendee) ────────────────────────────────
-    Dialog {
+    // Only this project's team members may be added as attendees (matches the
+    // Widgets app). The roster is reloaded on open so changes made while the
+    // note is open are reflected.
+    PeoplePickerDialog {
         id: peoplePicker
-        anchors.centerIn: parent
-        width: 320
-        height: 380
-        modal: true
-        padding: 0
-        scale: Theme.uiScale   // match the zoomed workspace (centered origin)
-        background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
-
-        // Clicking away dismisses the picker and nothing else — see ClickShield.qml.
-        ClickShield { host: peoplePicker }
-
-        // Type-to-search text (lower-cased match target). Empty = show everyone.
-        property string _filter: ""
-
-        // Reset and focus the search box each time the picker opens.
-        onOpened: {
-            _filter = ""; attendeeSearch.text = ""; attendeeSearch.forceActiveFocus()
-            peopleList.model = DesktopAppController.teamMemberList(page.projectId)
-        }
-
-        contentItem: ColumnLayout {
-            spacing: 0
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.margins: 12
-                Text {
-                    text: qsTr("Add Attendee"); color: Theme.text
-                    font.pixelSize: Theme.fontXl; font.weight: Font.Bold
-                    Layout.fillWidth: true
-                }
-                MaterialIcon {
-                    name: "close"; size: 18; color: Theme.text3
-                    TapHandler { onTapped: peoplePicker.close() }
-                }
-            }
-            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
-
-            // Search field — filters the list below as you type.
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.margins: 10
-                implicitHeight: 30
-                radius: Theme.radiusSm
-                color: Theme.surface
-                border.color: attendeeSearch.activeFocus ? Theme.accent : Theme.border
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 9; anchors.rightMargin: 9
-                    spacing: 5
-                    MaterialIcon { name: "search"; size: 14; color: Theme.text3; Layout.alignment: Qt.AlignVCenter }
-                    TextField {
-                        id: attendeeSearch
-                        Layout.fillWidth: true
-                        placeholderText: qsTr("Search people…")
-                        placeholderTextColor: Theme.text3
-                        color: Theme.text
-                        font.pixelSize: Theme.fontBody
-                        background: null
-                        verticalAlignment: Text.AlignVCenter
-                        selectByMouse: true
-                        onTextChanged: peoplePicker._filter = text
-                    }
-                }
-            }
-
-            ListView {
-                id: peopleList
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                clip: true
-                // Only this project's team members may be added as attendees
-                // (matches the Widgets app). Refreshed on open so roster changes
-                // made while the note is open are reflected.
-                model: DesktopAppController.teamMemberList(page.projectId)
-                delegate: ItemDelegate {
-                    id: attendeeDelegate
-                    required property int index
-                    required property var modelData
-                    // Collapse rows that don't contain the search text.
-                    readonly property bool _match: peoplePicker._filter === ""
-                        || String(modelData.name).toLowerCase().indexOf(peoplePicker._filter.toLowerCase()) >= 0
-                    visible: _match
-                    width: peopleList.width
-                    height: _match ? 34 : 0
-                    contentItem: Text {
-                        text: modelData.name
-                        color: Theme.text
-                        font.pixelSize: Theme.fontBody
-                        leftPadding: 12
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                    background: Rectangle { color: attendeeDelegate.hovered ? Theme.surface2 : "transparent" }
-                    onClicked: {
-                        var r = DesktopAppController.addAttendee(page.noteId)
-                        if (r >= 0) {
-                            DesktopAppController.saveAttendee(r, modelData.id)
-                            DesktopAppController.refreshMeetingAttendees()
-                        }
-                        peoplePicker.close()
-                    }
-                }
+        headingText: qsTr("Add Attendee")
+        reload: () => DesktopAppController.teamMemberList(page.projectId)
+        onPicked: (person) => {
+            var r = DesktopAppController.addAttendee(page.noteId)
+            if (r >= 0) {
+                DesktopAppController.saveAttendee(r, person.id)
+                DesktopAppController.refreshMeetingAttendees()
             }
         }
     }

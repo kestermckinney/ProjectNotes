@@ -44,13 +44,56 @@ Item {
     property string _identifiedBy: ""
     property string _assignedTo: ""
 
+    // Date Updated / Date Resolved are shown and hand-editable, but the data
+    // layer also maintains them (every edit stamps last_update; resolving stamps
+    // date_resolved). These track whether the user actually touched the fields
+    // so _saveNow() only forces the typed value when they did — otherwise the
+    // model's own bookkeeping stands.
+    property bool _lastUpdateEdited: false
+    property bool _resolvedEdited: false
+
+    // Last committed status, so a status change can tell it moved into or out of
+    // "Resolved". Kept in sync by _reload() and _applyStatusDates().
+    property string _prevStatus: ""
+    // True while _reload() repopulates the fields — suppresses the live date
+    // preview so refilling a field doesn't stamp today's date.
+    property bool _loading: false
+
     Component.onCompleted: {
         if (page.itemId !== "")
             DesktopAppController.openTrackerItem(page.itemId)
         _reload()
     }
 
+    function _today() { return Qt.formatDate(new Date(), "MM/dd/yyyy") }
+
+    // Preview TrackerItemsModel::setData's date bookkeeping before the save
+    // round-trip: any field edit restamps Date Updated to today. A value the
+    // user has hand-typed into that field is left alone (and still wins at save
+    // via _lastUpdateEdited).
+    function _markChanged() {
+        if (page._loading) return
+        page._changed = true
+        if (!page._lastUpdateEdited)
+            lastUpdateDate.setText(_today())
+    }
+
+    // Mirror the resolved-date half of that bookkeeping: moving Status to
+    // "Resolved" stamps Date Resolved, moving away clears it. A hand-typed Date
+    // Resolved is left alone (and still wins at save via _resolvedEdited).
+    function _applyStatusDates(newStatus) {
+        if (page._loading) return
+        if (!page._resolvedEdited) {
+            if (newStatus === "Resolved" && page._prevStatus !== "Resolved")
+                resolvedDate.setText(_today())
+            else if (newStatus !== "Resolved" && page._prevStatus === "Resolved")
+                resolvedDate.setText("")
+        }
+        page._prevStatus = newStatus
+    }
+
     function _reload() {
+        page._loading = true
         var d = DesktopAppController.getTrackerItemDetailData(0)
         page.itemId  = (d.id || page.itemId).toString()
         page.projectId = (d.project_id || "").toString()
@@ -60,8 +103,13 @@ Item {
         descArea.text   = (d.description || "").toString()
         priorityCombo.value = (d.priority || "").toString()
         statusCombo.value   = (d.status || "").toString()
+        page._prevStatus    = statusCombo.value
         idDate.text  = (d.date_identified || "").toString()
         dueDate.text = (d.date_due || "").toString()
+        lastUpdateDate.text = (d.last_update || "").toString()
+        resolvedDate.text   = (d.date_resolved || "").toString()
+        page._lastUpdateEdited = false
+        page._resolvedEdited   = false
         internalCheck.checked = (d.internal_item || "0") !== "0"
         page._identifiedBy = (d.identified_by || "").toString()
         page._assignedTo   = (d.assigned_to || "").toString()
@@ -72,6 +120,7 @@ Item {
         identifiedCombo.value = _nameForId(page._identifiedBy)
         assignedCombo.value   = _nameForId(page._assignedTo)
         page._changed = false
+        page._loading = false
     }
 
     function _saveNow() {
@@ -79,7 +128,9 @@ Item {
         var ok = DesktopAppController.saveTrackerItemDetail(0, page.itemId,
             numberField.text, typeCombo.value, nameField.text, descArea.text,
             page._identifiedBy, page._assignedTo, priorityCombo.value, statusCombo.value,
-            idDate.text, dueDate.text, internalCheck.checked)
+            idDate.text, dueDate.text, internalCheck.checked,
+            page._lastUpdateEdited ? lastUpdateDate.text : "",
+            page._resolvedEdited   ? resolvedDate.text   : "")
         // Reload either way: on success to reflect data-layer side effects
         // (assigning a person auto-advances a "New" item to "Assigned", resolving
         // one sets the resolved date — see TrackerItemsModel::setData); on failure
@@ -143,18 +194,18 @@ Item {
 
             GridLayout {
                 Layout.fillWidth: true; columns: 2; columnSpacing: 10; rowSpacing: 9
-                FormField { label: qsTr("Item Number"); id: numberField; onEdited: page._changed = true }
+                FormField { label: qsTr("Item Number"); id: numberField; onEdited: page._markChanged() }
                 ComboField {
                     label: qsTr("Type"); id: typeCombo
                     options: DesktopAppController.itemTypeOptions()
-                    onActivated: page._changed = true
+                    onActivated: page._markChanged()
                 }
                 FormField {
                     label: qsTr("Item Name"); id: nameField
                     Layout.columnSpan: 2
                     spellCheck: true
                     spellDialog: spellDialog
-                    onEdited: page._changed = true
+                    onEdited: page._markChanged()
                 }
             }
 
@@ -174,7 +225,7 @@ Item {
                     selectByMouse: true
                     background: null
                     font.pixelSize: Theme.fontBody
-                    onTextChanged: page._changed = true
+                    onTextChanged: page._markChanged()
                     SpellCheckField { dialog: spellDialog }
                 }
             }
@@ -186,32 +237,40 @@ Item {
                     options: page._peopleNames()
                     includeNone: true
                     searchable: true
-                    onActivated: (v) => { page._identifiedBy = page._idForName(v); page._changed = true }
+                    onActivated: (v) => { page._identifiedBy = page._idForName(v); page._markChanged() }
                 }
                 ComboField {
                     label: qsTr("Assigned To"); id: assignedCombo
                     options: page._peopleNames()
                     includeNone: true
                     searchable: true
-                    onActivated: (v) => { page._assignedTo = page._idForName(v); page._changed = true }
+                    onActivated: (v) => { page._assignedTo = page._idForName(v); page._markChanged() }
                 }
                 ComboField {
                     label: qsTr("Priority"); id: priorityCombo
                     options: DesktopAppController.itemPriorityOptions()
-                    onActivated: page._changed = true
+                    onActivated: page._markChanged()
                 }
                 ComboField {
                     label: qsTr("Status"); id: statusCombo
                     options: DesktopAppController.itemStatusOptions()
-                    onActivated: page._changed = true
+                    onActivated: (v) => { page._applyStatusDates(v); page._markChanged() }
                 }
-                DateField { label: qsTr("Date Identified"); id: idDate; onEdited: page._changed = true }
-                DateField { label: qsTr("Date Due"); id: dueDate; onEdited: page._changed = true }
+                DateField { label: qsTr("Date Identified"); id: idDate; onEdited: page._markChanged() }
+                DateField { label: qsTr("Date Due"); id: dueDate; onEdited: page._markChanged() }
+                DateField {
+                    label: qsTr("Date Updated"); id: lastUpdateDate
+                    onEdited: { page._lastUpdateEdited = true; page._changed = true }
+                }
+                DateField {
+                    label: qsTr("Date Resolved"); id: resolvedDate
+                    onEdited: { page._resolvedEdited = true; page._markChanged() }
+                }
             }
 
             CheckBox {
                 id: internalCheck
-                onToggled: page._changed = true
+                onToggled: page._markChanged()
                 indicator: Rectangle {
                     implicitWidth: 16; implicitHeight: 16; radius: 4
                     x: internalCheck.leftPadding; y: parent.height/2 - height/2

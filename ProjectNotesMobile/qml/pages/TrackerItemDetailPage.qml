@@ -46,6 +46,13 @@ Page {
     property bool   _skipSave:            false
     property bool   _hasChanges:          false
     property bool   isNewRecord:          false
+    // Last committed status, so a status change can tell it moved into or out of
+    // "Resolved". Synced in Component.onCompleted and _reloadData().
+    property string _prevStatus:          ""
+    // Set true once the page has finished building — the field bindings fire
+    // onTextChanged during load, and this guards the live date preview from
+    // stamping today's date then.
+    property bool   _ready:               false
     // property string _validatedItemNumber: root.initialItemNumber
 
     // Stable {id,name} snapshot backing identifiedByCombo/assignedToCombo —
@@ -93,6 +100,29 @@ Page {
     //     Qt.inputMethod.hide()
     // }
 
+    function _today() { return Qt.formatDate(new Date(), "MM/dd/yyyy") }
+
+    // Preview TrackerItemsModel::setData's date bookkeeping before the save
+    // round-trip: any field edit restamps Last Updated to today. Last Updated /
+    // Date Resolved are read-only labels bound to these properties, so writing
+    // them updates the screen live.
+    function _touch() {
+        root._hasChanges = true
+        if (root._ready)
+            root.initialLastUpdate = root._today()
+    }
+
+    // Mirror the resolved-date half of that bookkeeping: moving Status to
+    // "Resolved" stamps Date Resolved, moving away clears it.
+    function _applyStatusDates(newStatus) {
+        if (!root._ready) return
+        if (newStatus === "Resolved" && root._prevStatus !== "Resolved")
+            root.initialDateResolved = root._today()
+        else if (newStatus !== "Resolved" && root._prevStatus === "Resolved")
+            root.initialDateResolved = ""
+        root._prevStatus = newStatus
+    }
+
     function _saveNow() {
         if (!root._hasChanges) return true
         // root._releaseInputFocus()
@@ -131,6 +161,7 @@ Page {
         assignedToCombo.selectOption(root._personIndexForId((d.assigned_to   || "").toString()))
         priorityCombo.selectText((d.priority || "").toString())
         statusCombo.selectText((d.status || "").toString())
+        root._prevStatus = (d.status || "").toString()
         dateIdentifiedField.text = (d.date_identified || "").toString()
         dateDueField.text        = (d.date_due        || "").toString()
         root.initialLastUpdate   = (d.last_update     || "").toString()
@@ -138,6 +169,14 @@ Page {
         internalSwitch.checked   = (d.internal_item   || "0") !== "0"
         root._meetings = AppController.meetingList()
         meetingCombo.selectOption(root._meetingIndexForId((d.note_id || "").toString()))
+    }
+
+    // Runs after every child combo's own Component.onCompleted (their selectText
+    // has already landed), so _prevStatus starts from the shown status and the
+    // live date preview only arms once the page is fully built.
+    Component.onCompleted: {
+        root._prevStatus = root.initialStatus
+        root._ready = true
     }
 
     StackView.onDeactivating: {
@@ -258,7 +297,7 @@ Page {
                         root._meetings = AppController.meetingList()
                         selectOption(root._meetingIndexForId(root.initialNoteId))
                     }
-                    onActivated: root._hasChanges = true
+                    onActivated: root._touch()
                 }
             }
 
@@ -268,7 +307,7 @@ Page {
                     id: itemNumber
                     text: root.initialItemNumber
                     inputMethodHints: Qt.ImhNoPredictiveText
-                    onTextChanged: root._hasChanges = true
+                    onTextChanged: root._touch()
                 }
             }
 
@@ -278,7 +317,7 @@ Page {
                     id: typeCombo
                     options: AppController.trackerItemTypeOptions()
                     Component.onCompleted: selectText(root.initialType, 0)
-                    onActivated: root._hasChanges = true
+                    onActivated: root._touch()
                 }
             }
 
@@ -289,7 +328,7 @@ Page {
                     id: nameField
                     text: root.initialName
                     inputMethodHints: Qt.ImhNoPredictiveText
-                    onTextChanged: root._hasChanges = true
+                    onTextChanged: root._touch()
                 }
             }
 
@@ -306,7 +345,7 @@ Page {
                     wrapMode: TextEdit.Wrap
                     color: palette.text
                     selectByMouse: true
-                    onTextChanged: root._hasChanges = true
+                    onTextChanged: root._touch()
                 }
                 Rectangle {
                     anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
@@ -324,7 +363,7 @@ Page {
                         root._loadPeople(root.initialIdentifiedBy, root.initialAssignedTo)
                         selectOption(root._personIndexForId(root.initialIdentifiedBy))
                     }
-                    onActivated: root._hasChanges = true
+                    onActivated: root._touch()
                 }
             }
 
@@ -339,11 +378,13 @@ Page {
                         selectOption(root._personIndexForId(root.initialAssignedTo))
                     }
                     onActivated: {
-                        root._hasChanges = true
+                        root._touch()
                         // Assigning a still-New item moves it on to Assigned;
                         // clearing the assignment leaves the status alone.
-                        if (optionIndex >= 0 && statusCombo.selection === "New")
+                        if (optionIndex >= 0 && statusCombo.selection === "New") {
                             statusCombo.selectText("Assigned")
+                            root._prevStatus = "Assigned"
+                        }
                     }
                 }
             }
@@ -354,7 +395,7 @@ Page {
                     id: priorityCombo
                     options: AppController.trackerItemPriorityOptions()
                     Component.onCompleted: selectText(root.initialPriority, 0)
-                    onActivated: root._hasChanges = true
+                    onActivated: root._touch()
                 }
             }
 
@@ -364,15 +405,15 @@ Page {
                     id: statusCombo
                     options: AppController.trackerItemStatusOptions()
                     Component.onCompleted: selectText(root.initialStatus, 0)
-                    onActivated: root._hasChanges = true
+                    onActivated: { root._applyStatusDates(statusCombo.selection); root._touch() }
                 }
             }
 
             SectionHeader { text: qsTr("Date Identified") }
-            DateFieldRow { id: dateIdentifiedField; text: root.initialDateIdentified; onTextChanged: root._hasChanges = true }
+            DateFieldRow { id: dateIdentifiedField; text: root.initialDateIdentified; onTextChanged: root._touch() }
 
             SectionHeader { text: qsTr("Date Due") }
-            DateFieldRow { id: dateDueField; text: root.initialDateDue; onTextChanged: root._hasChanges = true }
+            DateFieldRow { id: dateDueField; text: root.initialDateDue; onTextChanged: root._touch() }
 
             SectionHeader { text: qsTr("Last Updated") }
             FieldRow {
@@ -399,7 +440,7 @@ Page {
                     anchors { left: parent.left; verticalCenter: parent.verticalCenter; leftMargin: 12 }
                     checked: root.initialInternal
                     text: qsTr("Internal Item")
-                    onToggled: root._hasChanges = true
+                    onToggled: root._touch()
                 }
             }
 

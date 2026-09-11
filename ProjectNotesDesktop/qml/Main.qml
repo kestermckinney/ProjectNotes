@@ -83,9 +83,15 @@ ApplicationWindow {
             root.visibility = Window.Maximized
     }
 
-    // Persist the current geometry so the window reopens the same size/position
-    // next launch.
-    onClosing: {
+    // Commit the focused editor and persist the active page before accepting a
+    // native-window, keyboard-shortcut, or application-menu close. Moving focus
+    // first flushes inline delegates that save from editingFinished; _saveCurrent
+    // then covers each detail page's aggregate fields and rich-text editors.
+    onClosing: (close) => {
+        if (!root._prepareToClose(true)) {
+            close.accepted = false
+            return
+        }
         DesktopAppController.saveWindowGeometry(
             root._normalX, root._normalY, root._normalWidth, root._normalHeight,
             root.visibility === Window.Maximized)
@@ -145,6 +151,7 @@ ApplicationWindow {
         function onQuitForUpdate() {
             // The installer/relaunch helper is running; exit so it can replace us.
             downloadDialog.close()
+            root._prepareToClose(false)
             Qt.quit()
         }
         // Verdict on the cloud sync settings the user just edited (see
@@ -165,17 +172,32 @@ ApplicationWindow {
     }
 
     // ── Navigation ────────────────────────────────────────────────────────────
-    function _saveCurrent() {
+    function _saveCurrent(preserveFailedNewRecord) {
         var it = contentStack.currentItem
-        if (!it) return
-        if (typeof it._saveNow === "function")
-            it._saveNow()
+        if (!it) return true
+        var saved = true
+        if (typeof it._saveNow === "function") {
+            var result = it._saveNow()
+            saved = result !== false
+        }
         // A record the "New" button only staged (see DesktopAppController::
         // addProject) still isn't in the database if _saveNow() had nothing to
         // save — no name typed, or a name that clashed. Drop the staged row on
-        // the way out so it can't linger in the list as a blank, dead card.
-        if (it.isNewRecord === true && typeof it._discardNew === "function")
+        // the way out so it can't linger in the list as a blank, dead card. A
+        // rejected close is the exception: keep the staged values on screen so
+        // the user can correct them and try again.
+        if (it.isNewRecord === true && typeof it._discardNew === "function"
+                && (saved || preserveFailedNewRecord !== true))
             it._discardNew()
+        return saved
+    }
+
+    function _prepareToClose(preserveFailedNewRecord) {
+        // A native close button does not necessarily move focus before
+        // ApplicationWindow.closing fires. Force it away from the active field
+        // so TextField/TextArea delegates can commit their editingFinished data.
+        contentStack.forceActiveFocus(Qt.OtherFocusReason)
+        return _saveCurrent(preserveFailedNewRecord)
     }
 
     // Section pages are created once and reused across navigation, so
@@ -295,8 +317,10 @@ ApplicationWindow {
         root.selectSection("help")
     }
 
-    // Navigate to a search result based on its datatype.
-    function openSearchResult(dataType, dataId, fkId) {
+    // Navigate to a search result based on its datatype. dataId is the record's
+    // own id, fkId its parent (usually the project), dataKey a secondary key the
+    // database_search view carries for a few rows (mirrors mainwindow.cpp).
+    function openSearchResult(dataType, dataId, fkId, dataKey) {
         switch (dataType) {
         case "Project":
             openProject(dataId); break
@@ -307,9 +331,23 @@ ApplicationWindow {
         case "Item Tracker":
             openItem(dataId); break
         case "Tracker Update":
-            openItem(fkId !== "" ? fkId : dataId); break
+            // dataId is the update row; dataKey is the parent item_tracker id,
+            // which is what the item detail page needs (fkId is the project).
+            openItem(dataKey !== "" ? dataKey : dataId); break
+        case "Project Notes":
+        case "Meeting Attendees": {
+            // Open the note itself. Project Notes rows carry the project in fkId;
+            // Meeting Attendees rows carry the note id in fkId, so resolve from
+            // whichever note id we have.
+            var noteId = (dataType === "Meeting Attendees") ? fkId : dataId
+            var projId = (dataType === "Meeting Attendees") ? "" : fkId
+            var loc = DesktopAppController.noteLocationForId(noteId, projId)
+            if (loc.row >= 0) openNote(loc.row, noteId, loc.projectId)
+            else if (loc.projectId !== "") openProject(loc.projectId)
+            break
+        }
         default:
-            // Notes / attendees / locations / team / status → open the parent project.
+            // Locations / team / status → open the parent project.
             if (fkId !== "") openProject(fkId)
             break
         }
@@ -710,6 +748,13 @@ ApplicationWindow {
         ProjectNoteDetailPage {
             onExportRequested: (table, id) => root.exportRecord(table, id)
             onMoveToRequested: (id) => moveToDialog.openFor(id)
+            onGoToPersonRequested: (personId) => {
+                var row = DesktopAppController.peopleRowForId(personId)
+                if (row >= 0) {
+                    root.selectSection("people")
+                    root.openPerson(row, personId)
+                }
+            }
             onDeleteRequested: root.confirmDelete()
             onNoteActivated: (noteRow, noteId) => root.openNote(noteRow, noteId, projectId)
         }
@@ -778,7 +823,7 @@ ApplicationWindow {
     Component {
         id: searchComponent
         SearchPage {
-            onResultActivated: (dataType, dataId, fkId) => root.openSearchResult(dataType, dataId, fkId)
+            onResultActivated: (dataType, dataId, fkId, dataKey) => root.openSearchResult(dataType, dataId, fkId, dataKey)
             onExportRequested: (table, id) => root.exportRecord(table, id)
         }
     }

@@ -38,7 +38,13 @@ Rectangle {
                 width: Theme.railHoverSize; height: Theme.railHoverSize; radius: Theme.radiusSm
                 color: appMenu.opened ? Theme.surface2
                                       : (menuHover.hovered ? Theme.surface2 : "transparent")
-                MaterialIcon { anchors.centerIn: parent; name: "menu"; size: Theme.railIconSize; color: Theme.text }
+                MaterialIcon {
+                    anchors.centerIn: parent
+                    name: "menu"
+                    size: Theme.railIconSize
+                    weight: Font.Light
+                    color: Theme.text
+                }
             }
             HoverHandler { id: menuHover }
             TapHandler { onTapped: appMenu.opened ? appMenu.close() : appMenu.open() }
@@ -117,6 +123,7 @@ Rectangle {
                 anchors.centerIn: parent
                 name: btn.icon
                 size: Theme.railIconSize
+                weight: Font.Light
                 color: btn.active ? Theme.accent : Theme.text2
             }
         }
@@ -181,6 +188,7 @@ Rectangle {
             name: sb.netError ? "cloud_off"
                   : (sb.active ? "sync" : "cloud_done")
             size: Theme.railSyncIconSize
+            weight: Font.Light
             color: sb.netError ? Theme.red
                    : (sb.active ? Theme.accent
                       : (DesktopAppController.syncEnabled ? Theme.green : Theme.text3))

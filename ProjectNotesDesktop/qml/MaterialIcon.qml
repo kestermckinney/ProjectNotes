@@ -16,6 +16,7 @@ Text {
     id: icon
     property string name: ""
     property int size: 20
+    property int weight: Font.Normal
 
     text: Icons.codepoints[name] !== undefined
           ? String.fromCodePoint(Icons.codepoints[name])
@@ -24,6 +25,7 @@ Text {
     // here would be instantiated once per icon.
     font.family: Theme.iconFont
     font.pixelSize: size
+    font.weight: weight
     verticalAlignment: Text.AlignVCenter
     horizontalAlignment: Text.AlignHCenter
     renderType: Text.QtRendering

@@ -363,6 +363,14 @@ public:
     Q_INVOKABLE QString peopleIdAtRow(int row) const;
     Q_INVOKABLE QString peopleNameForId(const QString& personId) const;
 
+    // Locate a project note for the global-search "open" action. Scopes the
+    // notes model to the note's project (so ProjectNoteDetailPage can read it
+    // by row) and returns { row, projectId }; row is -1 if the note is gone.
+    // projectId may be passed in from the search row, or left empty to resolve
+    // it from the note id (the Meeting Attendees hit only carries the note id).
+    Q_INVOKABLE QVariantMap noteLocationForId(const QString& noteId,
+                                              const QString& projectId = QString());
+
     // ── Picker lists ([{id,name}]) for client / person combos ────────────────
     Q_INVOKABLE QVariantList clientList() const;
     Q_INVOKABLE QVariantList peopleList() const;
@@ -448,7 +456,8 @@ public:
                                 const QString& itemType, const QString& priority,
                                 const QString& status, const QString& assignedTo,
                                 const QString& identifiedBy, const QString& dateIdentified,
-                                const QString& dateDue, const QString& description);
+                                const QString& dateDue, const QString& description,
+                                const QString& lastUpdate, const QString& dateResolved);
 
     // ── People CRUD ──────────────────────────────────────────────────────────
     Q_INVOKABLE int         addPerson();
@@ -487,7 +496,8 @@ public:
                                 const QString& identifiedBy, const QString& assignedTo,
                                 const QString& priority, const QString& status,
                                 const QString& dateIdentified, const QString& dateDue,
-                                bool internalItem);
+                                bool internalItem,
+                                const QString& lastUpdate, const QString& dateResolved);
     Q_INVOKABLE bool        isItemNameUnique(const QString& projectId, const QString& itemId, const QString& itemName) const;
     Q_INVOKABLE bool        isItemNumberUnique(const QString& projectId, const QString& itemId, const QString& itemNumber) const;
 
@@ -586,7 +596,7 @@ public:
     Q_INVOKABLE QString duplicateRecordInTable(const QString& table, const QString& recordId);
 
     // ── Help ▸ maintenance actions (mirror the Widgets Help menu) ────────────
-    Q_INVOKABLE QString appVersion() const;   // "6.0.0"
+    Q_INVOKABLE QString appVersion() const;   // APP_VERSION_STRING
     // Compile-time build timestamp ("Aug  7 2026 14:32:10"), same __DATE__/
     // __TIME__ source as the Widgets AboutDialog's BUILDV.
     Q_INVOKABLE QString buildTimestamp() const;

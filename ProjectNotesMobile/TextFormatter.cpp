@@ -466,10 +466,13 @@ void TextFormatter::applyFontPointSize(QQuickTextDocument* doc, int selStart, in
 void TextFormatter::applyFontColor(QQuickTextDocument* doc, int selStart, int selEnd,
                                    const QColor& color)
 {
-    if (!doc || !color.isValid()) return;
+    if (!doc) return;
     QTextCursor cursor = cursorForRange(doc, selStart, selEnd);
     QTextCharFormat fmt;
-    fmt.setForeground(color);
+    if (color.isValid() && color.alpha() > 0)
+        fmt.setForeground(color);
+    else
+        fmt.setForeground(QBrush(Qt::NoBrush));
     cursor.mergeCharFormat(fmt);
 }
 
@@ -570,6 +573,16 @@ QColor TextFormatter::currentFontHighlight(QQuickTextDocument* doc, int pos) con
     return QColor();
 }
 
+bool TextFormatter::hasFontHighlightAt(QQuickTextDocument* doc, int pos) const
+{
+    if (!doc) return false;
+    QTextDocument* tdoc = doc->textDocument();
+    QTextCursor probe(tdoc);
+    probe.setPosition(qBound(0, pos, tdoc->characterCount() - 1));
+    const QBrush brush = probe.charFormat().background();
+    return brush.style() != Qt::NoBrush && brush.color().alpha() > 0;
+}
+
 // ── Format-state queries (used by the format sheet to show active options) ──
 
 bool TextFormatter::isBoldAt(QQuickTextDocument* doc, int selStart, int selEnd) const
@@ -631,11 +644,10 @@ int TextFormatter::currentListStyle(QQuickTextDocument* doc, int pos) const
 
 int TextFormatter::currentParagraphStyle(QQuickTextDocument* doc, int pos) const
 {
-    // Style indices match applyStyle: 0=Body, 9=Title (H1), 10=Heading (H2),
-    // 11=Subheading (H3). Detection uses the first character's point size and
-    // weight. Note: ProjectNoteDetailPage scales sizes by 1.5× on load and
-    // /1.5 on save, which can introduce ±1pt drift across save/reload — the
-    // ranges below absorb that drift.
+    // Style indices and sizes match applyStyle/applyHeading exactly:
+    // 0=Body (12pt normal), 9..14=Heading 1..6 (24/20/16/14/13/12pt bold).
+    // Detection uses the first character so an inline emphasis run elsewhere
+    // in the paragraph does not change the paragraph-style indicator.
     if (!doc) return -1;
     QTextDocument* tdoc = doc->textDocument();
     QTextBlock block = tdoc->findBlock(qBound(0, pos, tdoc->characterCount() - 1));
@@ -650,10 +662,13 @@ int TextFormatter::currentParagraphStyle(QQuickTextDocument* doc, int pos) const
     int size = qRound(ps);
     bool bold = fmt.fontWeight() >= QFont::Bold;
 
-    if (bold && size >= 23 && size <= 25) return 9;   // Title
-    if (bold && size >= 19 && size <= 21) return 10;  // Heading
-    if (bold && size >= 15 && size <= 17) return 11;  // Subheading
-    if (!bold && size >= 11 && size <= 13) return 0;  // Body
+    if (bold && size == 24) return 9;
+    if (bold && size == 20) return 10;
+    if (bold && size == 16) return 11;
+    if (bold && size == 14) return 12;
+    if (bold && size == 13) return 13;
+    if (bold && size == 12) return 14;
+    if (!bold && size == 12) return 0;
     return -1;
 }
 

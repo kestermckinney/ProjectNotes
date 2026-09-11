@@ -39,6 +39,8 @@
 #include "updatemanager.h"
 
 #include <algorithm>
+#include <utility>
+#include <vector>
 
 #include <QApplication>
 #include <QClipboard>
@@ -1444,6 +1446,18 @@ QString DesktopAppController::peopleNameForId(const QString& personId) const
 
 // ── Picker lists ─────────────────────────────────────────────────────────────
 
+// Sort a picker list (list of {id, name} maps) alphabetically by name. The
+// source proxies carry whatever sort the user last applied on the People /
+// Clients list pages, so every combo that feeds off these lists sorts its own
+// drop-down here rather than inheriting that order.
+static void sortByName(QVariantList& list)
+{
+    std::sort(list.begin(), list.end(), [](const QVariant& a, const QVariant& b) {
+        return a.toMap().value("name").toString().localeAwareCompare(
+                   b.toMap().value("name").toString()) < 0;
+    });
+}
+
 QVariantList DesktopAppController::clientList() const
 {
     QVariantList out;
@@ -1455,6 +1469,7 @@ QVariantList DesktopAppController::clientList() const
         m.insert("name", proxy->data(proxy->index(row, 1)).toString());
         out.append(m);
     }
+    sortByName(out);
     return out;
 }
 
@@ -1469,6 +1484,7 @@ QVariantList DesktopAppController::peopleList() const
         m.insert("name", proxy->data(proxy->index(row, 1)).toString());
         out.append(m);
     }
+    sortByName(out);
     return out;
 }
 
@@ -1538,6 +1554,10 @@ QVariantList DesktopAppController::teamMemberList(const QString& projectId,
             out.append(m);
         }
     }
+
+    // The SQL already returns the team alphabetically; re-sort so any appended
+    // includeIds (people no longer on the team) land in order too.
+    sortByName(out);
     return out;
 }
 
@@ -1842,6 +1862,50 @@ QString DesktopAppController::projectNoteIdAtRow(int row) const
     return proxy->data(proxy->index(row, 0)).toString();
 }
 
+QVariantMap DesktopAppController::noteLocationForId(const QString& noteId,
+                                                   const QString& projectId)
+{
+    QVariantMap out;
+    out.insert("row", -1);
+    out.insert("projectId", QString());
+    if (noteId.isEmpty())
+        return out;
+
+    // The Project Notes search row carries the project id; the Meeting Attendees
+    // row only carries the note id, so fall back to a direct lookup (ids are
+    // UUIDs, but escape the quote defensively — mirrors mainwindow.cpp).
+    QString resolvedProjectId = projectId;
+    if (resolvedProjectId.isEmpty())
+    {
+        QString safeId = noteId;
+        safeId.replace('\'', QStringLiteral("''"));
+        resolvedProjectId = global_DBObjects.execute(
+            QStringLiteral("SELECT project_id FROM project_notes WHERE id = '%1'").arg(safeId));
+    }
+    if (resolvedProjectId.isEmpty())
+        return out;
+
+    out.insert("projectId", resolvedProjectId);
+
+    // Load this project's notes so the detail page's getProjectNoteData(row) hits.
+    setProjectFilter(resolvedProjectId);
+
+    auto* proxy = global_DBObjects.projectnotesmodelproxy();
+    auto* src   = global_DBObjects.projectnotesmodel();
+    if (proxy && src)
+    {
+        QVariant key(noteId);
+        const QModelIndex srcIdx = src->findIndex(key, 0);
+        if (srcIdx.isValid())
+        {
+            const QModelIndex proxyIdx = proxy->mapFromSource(srcIdx);
+            if (proxyIdx.isValid())
+                out.insert("row", proxyIdx.row());
+        }
+    }
+    return out;
+}
+
 bool DesktopAppController::saveProjectNote(int row, const QString& title, const QString& date,
                                            const QString& note, bool internalItem)
 {
@@ -1970,18 +2034,22 @@ QVariantMap DesktopAppController::getNoteActionItemData(int row) const
 bool DesktopAppController::saveNoteActionItem(int row, const QString& itemName,
         const QString& itemType, const QString& priority, const QString& status,
         const QString& assignedTo, const QString& identifiedBy,
-        const QString& dateIdentified, const QString& dateDue, const QString& description)
+        const QString& dateIdentified, const QString& dateDue, const QString& description,
+        const QString& lastUpdate, const QString& dateResolved)
 {
     global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.notesactionitemsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return false;
     // notesActionItemsModel columns: 2 item_type, 3 item_name, 4 identified_by,
     // 5 date_identified, 6 description, 7 assigned_to, 8 priority, 9 status,
-    // 10 date_due (see notesactionitemsmodel.cpp SELECT order).
+    // 10 date_due, 11 last_update, 12 date_resolved (see notesactionitemsmodel.cpp
+    // SELECT order). NotesActionItemsModel::setData has no auto date handling, so
+    // last_update / date_resolved are whatever the editor holds.
     return applyRowFields(model, row, {
         {3,  itemName},      {2, itemType},   {8,  priority},
         {9,  status},        {7, assignedTo}, {4,  identifiedBy},
-        {5,  dateIdentified}, {10, dateDue},  {6,  description} });
+        {5,  dateIdentified}, {10, dateDue},  {6,  description},
+        {11, lastUpdate},    {12, dateResolved} });
 }
 
 // ── People ───────────────────────────────────────────────────────────────────
@@ -2187,7 +2255,8 @@ bool DesktopAppController::saveTrackerItemDetail(int row, const QString& itemId,
         const QString& itemNumber, const QString& itemType, const QString& itemName,
         const QString& description, const QString& identifiedBy, const QString& assignedTo,
         const QString& priority, const QString& status, const QString& dateIdentified,
-        const QString& dateDue, bool internalItem)
+        const QString& dateDue, bool internalItem,
+        const QString& lastUpdate, const QString& dateResolved)
 {
     global_DBObjects.setLastSaveError("");
     QAbstractItemModel* model = global_DBObjects.actionitemsdetailsmodelproxy();
@@ -2213,11 +2282,32 @@ bool DesktopAppController::saveTrackerItemDetail(int row, const QString& itemId,
     // Status must be written BEFORE assigned_to: TrackerItemsModel::setData
     // auto-advances a "New" item to "Assigned" when assigned_to is set. If status
     // were written after, it would clobber that auto-advance back to "New".
-    return applyRowFields(model, pIdx.row(), {
+    if (!applyRowFields(model, pIdx.row(), {
         { 1, itemNumber},    { 2, itemType},   { 3, itemName},
         { 4, identifiedBy},  { 5, dateIdentified}, { 6, description},
         { 8, priority},      { 9, status},     { 7, assignedTo},
-        {10, dateDue},       {15, internalItem ? "1" : "0"} });
+        {10, dateDue},       {15, internalItem ? "1" : "0"} }))
+        return false;
+
+    // Date Resolved (12) and Date Updated (11) are written last so a value the
+    // user typed in those fields wins over TrackerItemsModel::setData's own
+    // bookkeeping: every edit above bumps last_update to today, and setting the
+    // status to "Resolved" stamps date_resolved. An empty string means "leave as
+    // the model set it" — last_update is required so it is never legitimately
+    // blank, and date_resolved is normally cleared by moving off "Resolved"
+    // rather than by emptying the field.
+    std::vector<std::pair<int, QString>> extra;
+    if (!dateResolved.isEmpty()) extra.emplace_back(12, dateResolved);
+    if (!lastUpdate.isEmpty())   extra.emplace_back(11, lastUpdate);
+    for (const auto& f : extra) {
+        if (!model->setData(model->index(pIdx.row(), f.first), f.second)) {
+            QString err = global_DBObjects.lastSaveError();
+            if (err.isEmpty()) err = tr("The record could not be saved.");
+            emit errorOccurred(tr("Could Not Save"), err);
+            return false;
+        }
+    }
+    return true;
 }
 
 // ── Move a tracker item to a different project ───────────────────────────────
@@ -3342,13 +3432,20 @@ void DesktopAppController::onSyncComplete(const SyncResult& result)
         m_syncSessionActive = false;
         m_syncProgress = -1.0;
     }
+    // A bare 401 is a routine JWT expiration: the sync loop reauthenticates with
+    // the stored credentials and retries on its own, logging an error and
+    // stopping only if that reauthentication fails. Don't blink the sync status
+    // indicator red on every token refresh.
+    const bool authOnlyFailure = !result.success && result.hasAuthError()
+                                 && !result.hasNetworkError()
+                                 && result.totalDecryptionFailures() == 0;
     if (result.success) {
         m_syncHasError = false;
         if (SqliteSyncPro* api = m_syncApi)
             QMetaObject::invokeMethod(api, [api, result]() { api->checkSyncStatus(result); },
                                       Qt::QueuedConnection);
     } else {
-        m_syncHasError = true;
+        m_syncHasError = !authOnlyFailure;
     }
     emit syncProgressChanged();
 }

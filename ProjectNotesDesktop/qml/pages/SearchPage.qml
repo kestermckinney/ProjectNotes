@@ -9,8 +9,9 @@ import ProjectNotesDesktop
 // Global search across the whole database (database_search view).
 Item {
     id: page
-    // Emitted when a result is clicked: datatype + the record id + parent id.
-    signal resultActivated(string dataType, string dataId, string fkId)
+    // Emitted when a result is clicked: datatype + the record id + parent id +
+    // the view's secondary key (datakey, e.g. the parent item for a comment).
+    signal resultActivated(string dataType, string dataId, string fkId, string dataKey)
     // Routed to Main.exportRecord when a result row's menu exports XML.
     signal exportRequested(string table, string id)
 
@@ -19,6 +20,7 @@ Item {
     property string _ctxType: ""
     property string _ctxId: ""
     property string _ctxFk: ""
+    property string _ctxKey: ""
 
     function _icon(t) {
         switch (t) {
@@ -64,10 +66,11 @@ Item {
     }
 
     // Configure the shared menu for a result row and open it at scene coords.
-    function _openMenu(datatype, dataid, fkId, label, sx, sy) {
+    function _openMenu(datatype, dataid, fkId, dataKey, label, sx, sy) {
         page._ctxType = datatype
         page._ctxId = dataid
         page._ctxFk = fkId
+        page._ctxKey = dataKey
         ctxMenu.recordTable = page._table(datatype)
         ctxMenu.recordType = datatype
         ctxMenu.recordLabel = label
@@ -84,7 +87,7 @@ Item {
         canFilter: false
         canRefresh: false
         canExport: ctxMenu.recordTable !== ""   // no table ⇒ nothing to export
-        onOpenRequested: page.resultActivated(page._ctxType, page._ctxId, page._ctxFk)
+        onOpenRequested: page.resultActivated(page._ctxType, page._ctxId, page._ctxFk, page._ctxKey)
         onDuplicateRequested: {
             var newId = DesktopAppController.duplicateRecordInTable(ctxMenu.recordTable, page._ctxId)
             // Re-run the search rather than opening the copy: the hit list is a
@@ -168,6 +171,7 @@ Item {
                                 (rc.model.datatype || "").toString(),
                                 (rc.model.dataid || "").toString(),
                                 (rc.model.fk_id || "").toString(),
+                                (rc.model.datakey || "").toString(),
                                 (rc.model.datadescription || rc.model.dataname || "").toString(),
                                 sx, sy)
                         }
@@ -224,7 +228,8 @@ Item {
                             onTapped: page.resultActivated(
                                 (rc.model.datatype || "").toString(),
                                 (rc.model.dataid || "").toString(),
-                                (rc.model.fk_id || "").toString())
+                                (rc.model.fk_id || "").toString(),
+                                (rc.model.datakey || "").toString())
                         }
                         TapHandler {
                             acceptedButtons: Qt.RightButton

@@ -4,7 +4,6 @@
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
-import QtQuick.Window
 import ProjectNotesDesktop
 
 // Labeled date input. Stores/produces dates as MM/DD/YYYY (the format the data
@@ -87,6 +86,10 @@ ColumnLayout {
         // ── Calendar popup ────────────────────────────────────────────────────
         Popup {
             id: popup
+            // Overlay-parented (like RecordContextMenu / MenuFlyout) so all the
+            // placement math lives in one unscaled coordinate space — the field
+            // itself sits inside the zoomed workspace, the popup does not.
+            parent: Overlay.overlay
             width: 260
             padding: 10
             modal: false
@@ -112,24 +115,27 @@ ColumnLayout {
                 open()
             }
 
-            // Position the popup below the field, but flip above / clamp sideways
-            // so a field low or near the edge of the window isn't clipped.
+            // Anchor the popup below the field, but flip above / clamp sideways
+            // so a field low or near the window edge isn't clipped. Positions
+            // are Overlay.overlay coordinates; the drawn popup is Theme.uiScale
+            // bigger than its logical width/height, so every bound is checked
+            // against the scaled footprint (same approach as MenuFlyout).
             onAboutToShow: _place()
+            onHeightChanged: if (visible) _place()
             function _place() {
-                var win = fieldBox.Window.window
-                var ph = popup.height > 0 ? popup.height : 300
-                if (!win) { popup.x = 0; popup.y = fieldBox.height + 4; return }
-                var pos = fieldBox.mapToItem(null, 0, 0)
-                if (pos.y + fieldBox.height + 4 + ph > win.height && pos.y - ph - 4 >= 0)
-                    popup.y = -ph - 4
+                var ov = Overlay.overlay
+                if (!ov) { popup.x = 0; popup.y = fieldBox.height + 4; return }
+                var s = Theme.uiScale
+                var pw = popup.width * s
+                var ph = (popup.height > 0 ? popup.height : 300) * s
+                var gap = 4 * s
+                var top = fieldBox.mapToItem(ov, 0, 0)
+                var bot = fieldBox.mapToItem(ov, 0, fieldBox.height)
+                if (bot.y + gap + ph > ov.height && top.y - gap - ph >= 0)
+                    popup.y = top.y - gap - ph
                 else
-                    popup.y = fieldBox.height + 4
-                var px = 0
-                if (pos.x + popup.width > win.width)
-                    px = win.width - popup.width - pos.x
-                if (pos.x + px < 0)
-                    px = -pos.x
-                popup.x = px
+                    popup.y = Math.max(6, Math.min(bot.y + gap, ov.height - ph - 6))
+                popup.x = Math.max(6, Math.min(top.x, ov.width - pw - 6))
             }
             function _prev() {
                 if (shownMonth === 0) { shownMonth = 11; shownYear-- }
