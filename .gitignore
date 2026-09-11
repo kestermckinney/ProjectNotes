@@ -12,6 +12,7 @@ graphify-out/
 *.db-shm
 *.db-wal
 packaging/windows/*.exe
+packaging/windows/*.nsh
 packaging/linux/flatpak-repo
 packaging/linux/*.flatpak
 packaging/macos/output*
