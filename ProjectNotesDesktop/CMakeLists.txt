@@ -167,6 +167,7 @@ target_link_libraries(ProjectNotes PRIVATE
     "${Python3_LIBRARIES}"
     SqliteSyncProLib
     ProjectNotesCore
+    ProjectNotesFileFinder
 )
 
 # Platform credential backend used by the plugin secret API (credentialstore).
@@ -191,10 +192,10 @@ if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     # notarizable. Symlinks (used below for Debug/Win/Linux dev convenience) are
     # rejected by notarization, so plugins/threads/dictionary are real copies here.
     add_custom_target(sync_plugins_desktop
-        COMMAND rsync -rv --checksum
+        COMMAND rsync -rv --checksum --delete
             "${CMAKE_CURRENT_SOURCE_DIR}/../plugins/"
             "$<TARGET_BUNDLE_DIR:ProjectNotes>/Contents/Resources/plugins/"
-        COMMAND rsync -rv --checksum
+        COMMAND rsync -rv --checksum --delete
             "${CMAKE_CURRENT_SOURCE_DIR}/../threads/"
             "$<TARGET_BUNDLE_DIR:ProjectNotes>/Contents/Resources/threads/"
         COMMENT "Syncing Python plugins to Project Notes (QML) app bundle (changed files only)"

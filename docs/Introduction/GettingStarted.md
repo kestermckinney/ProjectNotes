@@ -43,7 +43,7 @@ You will need to setup yourself to manage all of the projects. First you need to
 9. Select ***"Your Company Name"*** as the **Managing Company**.
 10. From the app menu, under **Plugins · Settings**, choose **Export Notes** and set the sub-folder where meeting note exports will be saved.
 11. From the app menu, under **Plugins · Settings**, choose **Export Tracker Items** and set the sub-folder where tracker item exports will be saved.
-12. From the app menu, under **Plugins · Settings**, choose **File Finder** and add the root folder where your project files are stored so the File Finder can find them automatically.
+12. From the app menu, choose **Settings**, select **File Finder**, and add the root folder where your project files are stored.
 
 See [Plugin Settings](<../StandardPlugins/PluginSettings.md>) for the full list of plugin settings reachable this way.
 
@@ -63,7 +63,7 @@ Once your clients and people are setup, you will need to tell Project Notes whic
 
 ## Plugin Settings
 
-Project Notes plugins are highly configurable. Each plugin exposes its own settings dialog under **Plugins > Settings**. Settings control things like where exported files are saved, which folders the File Finder scans, and how integrations with Outlook or Office 365 are authenticated. See [Plugin Settings](<../StandardPlugins/PluginSettings.md>) for a full list of available settings and configuration options.
+Project Notes plugins are highly configurable. Plugin dialogs are available under **Plugins > Settings**. Native services use the main **Settings** page instead: File Finder and Office 365 Integration have separate sections there. See [Plugin Settings](<../StandardPlugins/PluginSettings.md>), [File Finder](<../StandardPlugins/FileFinder.md>), and [Office 365 Integration](<../StandardPlugins/Office365Integration.md>) for configuration details.
 
 Plugin settings are stored in your local OS profile (registry on Windows, plist on macOS, ini on Linux) and are not synced to the cloud host. If you move to a new machine, use the **Settings Migrator** (under **Plugins > Settings**) to transfer your configuration.
 

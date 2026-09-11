@@ -20,3 +20,4 @@ packaging/macos/staging*
 .claude/
 .opencode/
 *.aps
+.codegraph/

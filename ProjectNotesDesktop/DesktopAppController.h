@@ -23,6 +23,7 @@ class SqliteSyncPro;
 struct SyncResult;
 class PluginManager;
 class Plugin;
+class FileFinderService;
 
 // DesktopAppController — the QML bridge for the desktop app.
 //
@@ -51,6 +52,7 @@ class DesktopAppController : public QObject
     Q_PROPERTY(QAbstractItemModel* projectLocationsModel READ projectLocationsModel NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* statusReportItemsModel READ statusReportItemsModel NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* searchResultsModel    READ searchResultsModel    NOTIFY databaseReady)
+    Q_PROPERTY(QObject* fileFinder READ fileFinder CONSTANT)
     Q_PROPERTY(bool databaseOpen READ databaseOpen NOTIFY databaseReady)
 
     // View options (two-way bindable from the Settings screen).
@@ -119,6 +121,7 @@ public:
     // ── Database ─────────────────────────────────────────────────────────────
     Q_INVOKABLE bool openOrCreateDatabase();
     bool databaseOpen() const { return m_databaseOpen; }
+    QObject* fileFinder() const;
 
     // ── Models ───────────────────────────────────────────────────────────────
     QAbstractItemModel* projectsListModel() const;
@@ -209,6 +212,7 @@ public:
     // app, which inserts clipboard->text() directly instead of going through
     // the normal rich-text paste() path.
     Q_INVOKABLE QString clipboardPlainText() const;
+    Q_INVOKABLE void copyTextToClipboard(const QString& text) const;
 
     // ── Platform font metrics ────────────────────────────────────────────────
     // Backing reader for the property above: the platform's own menu font
@@ -717,6 +721,7 @@ private:
     bool addPersonToProjectTeam(const QString& projectId, const QString& peopleId);
 
     bool m_databaseOpen = false;
+    FileFinderService* m_fileFinder = nullptr;
 
     // ── Sidebar folder snapshots (see folderProjects/sidebarRev) ─────────────
     QHash<QString, QVariantList> m_folderSnapshot;   // folderId ("" = all) -> rows

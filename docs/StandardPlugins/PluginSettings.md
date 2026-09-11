@@ -6,14 +6,14 @@ Project Notes comes with a comprehensive set of standard plugins installed and e
 
 - **Meeting and Email Integration** — Schedule meetings, send emails, and archive communications
 - **Document Management** — Export meeting notes and tracker items to PDF, create new documents from templates
-- **File Organization** — Automatically collect and organize project files
+- **File Organization** — The native File Finder automatically collects and organizes project files
 - **Report Generation** — Generate tracker item reports and status reports
 - **Enterprise Integration** — Connect to Outlook, Office 365, and IFS Cloud ERP
 - **Customization** — Define custom shortcuts and configure plugin behavior
 
-All standard plugins are **highly configurable**. You can customize their behavior through settings dialogs accessible from the **Plugins > Settings** menu. This allows you to tailor Project Notes to your organization's specific workflows without modifying code.
+Standard plugins are configurable through dialogs under **Plugins > Settings**. File Finder and the native Office 365 connection are application services rather than Python plugins, so they have separate sections on the main **Settings** page.
 
-**Reaching Plugin Settings:** in the classic Widgets app, these are under the **Plugins > Settings** menu-bar item. In the QML desktop app, open the app menu (the menu icon at the top of the icon rail) — plugin settings appear grouped as **Plugins · Settings**, with a few utility items (Script Editor, Close Stranded Excel/Word, Outlook contact import/export) grouped under **Plugins · Utilities**. Both apps invoke the exact same plugin settings dialogs, so anything configured in one is immediately visible in the other.
+**Reaching Plugin Settings:** in the classic Widgets app, plugin settings are under the **Plugins > Settings** menu-bar item. In the QML desktop app, open the app menu (the menu icon at the top of the icon rail); plugin settings are grouped as **Plugins · Settings**. Open the main **Settings** page for File Finder or the native Office 365 connection.
 
 ### Standard Plugins Overview
 
@@ -33,8 +33,8 @@ The standard plugins are organized into several categories:
 - Meeting Notes Archive — Archive meeting notes to a designated folder
 - Project Email Archive — Archive project-related emails
 
-**File and Document Plugins:**
-- File Finder — Automatically monitor and organize project-related files
+**File and Document Features:**
+- File Finder — Native service that automatically monitors and organizes project-related files
 - New Document Templates — Create new documents from templates (MS Project, PowerPoint, Change Orders, etc.)
 - Team Member Quick Add — Quickly add team members to projects
 
@@ -68,7 +68,7 @@ Plugin settings, UI state, and connection credentials are stored in your **opera
 
 | Category | Examples |
 | :--- | :--- |
-| Plugin configuration | Export sub-folders, IFS credentials, Outlook/Office 365 credentials, File Finder search locations and classifications, My Shortcuts definitions, meeting/email templates |
+| Local application and plugin configuration | Export sub-folders, IFS credentials, Outlook credentials, Office 365 connection details, File Finder search locations/exclusions/classifications, My Shortcuts definitions, meeting/email templates |
 | Cloud sync connection | Sync enabled flag, Project Notes Pro account email, password, and encryption phrase |
 | Window position and size | Position and size of the main window, restored on the next launch |
 | UI Zoom level | The zoom percentage set via **Ctrl +/-/0** or the [Application Menu](<../InterfaceOverview/ApplicationMenu.md>)'s **View** group zoom row — see [UI Zoom](<../InterfaceOverview/VectorZoom.md>) |
@@ -253,7 +253,7 @@ Subject: Meeting Minutes - P-001 Sample Project - 03/23/2026
 ```
 
 
-### Common Plugin Settings Examples
+### Common Settings Examples
 
 #### Outlook Integration Settings
 
@@ -269,8 +269,10 @@ Subject: Meeting Minutes - P-001 Sample Project - 03/23/2026
 | :--- | :--- | :--- |
 | **Search Location 1** | \\company\projects | Root folder to scan for project files |
 | **Search Location 2** | C:\Users\{username}\Documents | User's local documents folder |
-| **Classification: PDF** | Contract (.pdf) | Files ending in .pdf are marked as "Contract" type |
-| **Classification: Mpp** | Project Plan (.mpp) | Files ending in .mpp are marked as "Project Plan" type |
+| **Folder Exclusion** | `(^\|/)(node_modules\|[.]git)(/\|$)` | Skip development metadata folders and their subtrees |
+| **Classification** | `Project Schedule` / `.*[.]mpp$` | Classify Microsoft Project files as project schedules |
+
+These settings are on the main **Settings > File Finder** page, not in a plugin dialog. See [File Finder](<FileFinder.md>) for all controls.
 
 #### Export Meeting Notes Settings
 
@@ -303,7 +305,6 @@ The variable `[$projects.project_number.1]` in the URL is replaced with the actu
 
 | Settings Entry | Plugin | Description |
 | :--- | :--- | :--- |
-| **File Finder** | Base Plugins Settings | Configure folders to scan and file classification rules for the File Finder background process. |
 | **Editor** | Base Plugins Settings | Set the path to the Python script editor used by the Script Editor utility. |
 | **Outlook Integration** | Base Plugins Settings | Configure Office 365 Graph API credentials or Outlook COM options. See [Outlook Integration](<OutlookIntegration.md>). |
 | **My Shortcuts** | Base Plugins Settings | Configure custom URL shortcuts that appear in the Plugins or right-click menus. See [My Shortcuts](<MyShortcuts.md>). |

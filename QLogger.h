@@ -284,9 +284,13 @@ extern void QLog_(const QString &module, QLogger::LogLevel level, const QString 
  * @param module The module that the message references.
  * @param message The message.
  */
+#ifdef QT_DEBUG
 #   define QLog_Debug(module, message)                                                                                 \
       QLogger::QLoggerManager::getInstance()->enqueueMessage(module, QLogger::LogLevel::Debug, message, __FUNCTION__,  \
                                                              __FILE__, __LINE__)
+#else
+#   define QLog_Debug(module, message) do { } while (false)
+#endif
 #endif
 
 #ifndef QLog_Info

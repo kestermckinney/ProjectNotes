@@ -11,7 +11,7 @@ from includes.common import ProjectNotesCommon, _settings_organization
 from includes.icloud_tools import APPLE_SERVICE, CardDAVClient, ICloudError
 from PyQt6 import QtGui, QtCore, QtWidgets, uic
 from PyQt6.QtCore import Qt, QRect, QSettings
-from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QDialog, QFileDialog, QWidget, QTableWidgetItem, QStyledItemDelegate, QComboBox
+from PyQt6.QtWidgets import QMessageBox, QMainWindow, QApplication, QDialog, QFileDialog, QTableWidgetItem, QStyledItemDelegate, QComboBox
 
 # Project Notes Plugin Parameters
 pluginname = "Base Plugins Settings" # name used in the menu
@@ -25,7 +25,6 @@ plugindescription = "This plugin provide settigns input for the base install set
 # the function wil only show on the right click if it matches the table specified in dataexport
 # if a dataexport value exist the menu will not appear on the plugin menu
 pluginmenus = [
-    {"menutitle" : "File Finder", "function" : "menu_file_collector_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "Editor", "function" : "menu_editor_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "Outlook Integration", "function" : "menu_outlook_integration_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
     {"menutitle" : "iCloud Contacts", "function" : "menu_icloud_contacts_settings", "tablefilter" : "", "submenu" : "Settings", "dataexport" : ""},
@@ -77,222 +76,6 @@ class ComboBoxDelegate(QStyledItemDelegate):
 
     def updateEditorGeometry(self, editor, option, index):
         editor.setGeometry(option.rect)
-
-class ClassificationEdit(QDialog):
-    def __init__(self, parent: QMainWindow = None):
-        super().__init__(parent)
-
-        self.ui = uic.loadUi("plugins/forms/dialogClassification.ui", self)
-        self.ui.setWindowFlags(
-            QtCore.Qt.WindowType.Window |
-            QtCore.Qt.WindowType.WindowCloseButtonHint
-            )
-
-# File Finder populates the list of files associated with a project
-class FileFinderSettings(QDialog):
-    def __init__(self, parent: QMainWindow = None):
-        super().__init__(parent)
-
-        self.pnc = ProjectNotesCommon()
-        self.settings_pluginname = "File Finder"
-
-        self.ui = uic.loadUi("plugins/forms/dialogFileFinder.ui", self)
-        self.ui.setWindowFlags(
-            QtCore.Qt.WindowType.Window |
-            QtCore.Qt.WindowType.WindowCloseButtonHint
-            )
- 
-        self.ui_class = ClassificationEdit(self.ui)
-        self.ui_class.buttonBox.accepted.connect(self.update_classification_row)
-
-        self.ui.pushButtonAddLocation.clicked.connect(self.add_location)
-        self.ui.pushButtonEditLocation.clicked.connect(self.edit_location)
-        self.ui.pushButtonDeleteLocation.clicked.connect(self.delete_location)
-        self.ui.pushButtonAddClassification.clicked.connect(self.add_classification)
-        self.ui.pushButtonEditClassification.clicked.connect(self.edit_classification)
-        self.ui.pushButtonDeleteClassification.clicked.connect(self.delete_classification)
-        self.ui.buttonBox.accepted.connect(self.save_settings)
-        self.ui.buttonBox.rejected.connect(self.reject_changes)
-        self.ui.tableSearchLocations.verticalHeader().sectionDoubleClicked.connect(self.on_location_row_header_clicked)
-        self.ui.tableClassifications.verticalHeader().sectionDoubleClicked.connect(self.on_classification_row_header_clicked)
-
-        delegate = ComboBoxDelegate(self.ui, False)
-        delegate.set_items([
-           "Quote",
-           "Functional Design",
-           "Estimate",
-           "Purchase Order",
-           "Change Request",
-           "Risk Register",
-           "Project Schedule",
-           "Issues List",
-           "Activity Report",
-           "Meeting Presentation"])
-
-        self.ui.tableClassifications.setItemDelegateForColumn(0, delegate)
-
-        self.search_locations = self.pnc.get_plugin_setting("SearchLocations", self.settings_pluginname)
-        self.classifications = self.pnc.get_plugin_setting("Classifications", self.settings_pluginname)
-
-        self.populate_table_from_json(self.search_locations, self.ui.tableSearchLocations)
-        self.populate_table_from_json(self.classifications, self.ui.tableClassifications)
-
-        w = self.pnc.get_plugin_setting("W", self.settings_pluginname)
-        h = self.pnc.get_plugin_setting("H", self.settings_pluginname)
-
-        lc1 = self.pnc.get_plugin_setting("lc1", self.settings_pluginname)
-        mc1 = self.pnc.get_plugin_setting("mc1", self.settings_pluginname)
-        mc2 = self.pnc.get_plugin_setting("mc2", self.settings_pluginname)
-
-        if (lc1 is not None and mc1 is not None and mc2 is not None):
-            self.ui.tableSearchLocations.setColumnWidth(0, int(lc1))
-            self.ui.tableClassifications.setColumnWidth(0, int(mc1))
-            self.ui.tableClassifications.setColumnWidth(1, int(mc2))
-
-            #print(f"loading file finder columns {lc1}, {mc1}, {mc2}")
-
-        if w is not None and h is not None:
-            self.ui.resize(int(w), int(h))
-        self.center_on_main_window()
-
-    def copy_table_to_json(self, qtable):
-        data = []
-        for row in range(qtable.rowCount()):
-            row_data = {}
-            for column in range(qtable.columnCount()):
-                header = qtable.horizontalHeaderItem(column).text()
-                item = qtable.item(row, column)
-                value = item.text() if item is not None else ''
-                row_data[header] = value
-            data.append(row_data)
-
-        json_data = json.dumps(data, indent=4)
-        return(json_data)
-
-    def populate_table_from_json(self, json_string, qtable):
-
-        # nothing was saved
-        if (json_string is None or json_string == ""):
-            return
-
-        data = json.loads(json_string)
-
-        if (len(data) > 0):
-            # Get the column headers from the first row
-            column_headers = list(data[0].keys())
-
-            # Populate the table with data
-            qtable.setRowCount(len(data))
-            for row, row_data in enumerate(data):
-                for column, header in enumerate(column_headers):
-                    value = row_data.get(header, '')
-                    qtable.setItem(row, column, QTableWidgetItem(value))
-
-    def update_classification_row(self):
-        if (self.edit_classification_row >= self.ui.tableClassifications.rowCount()):
-            self.ui.tableClassifications.setRowCount(self.edit_classification_row + 1)
-
-        self.ui.tableClassifications.setItem(self.edit_classification_row, 0, QTableWidgetItem(self.ui_class.comboBoxClassification.currentText()))
-        self.ui.tableClassifications.setItem(self.edit_classification_row, 1, QTableWidgetItem(self.ui_class.lineEditPatternMatch.text()))
-
-    def on_location_row_header_clicked(self, row):
-        self.ui.tableSearchLocations.selectRow(row)
-        self.edit_location()
-
-    def on_classification_row_header_clicked(self, row):
-        self.ui.tableClassifications.selectRow(row)
-        self.edit_classification()
-
-    def add_location(self):
-        folder_path = QFileDialog.getExistingDirectory(caption="Select a folder")
-        if (folder_path is not None and folder_path != ''):
-            row_count = self.ui.tableSearchLocations.rowCount()
-            self.ui.tableSearchLocations.setRowCount(row_count + 1)
-            self.ui.tableSearchLocations.setItem(row_count, 0, QTableWidgetItem(folder_path))
-
-    def edit_location(self):
-        row = self.ui.tableSearchLocations.currentRow()
-
-        if (row > -1):
-            value = self.ui.tableSearchLocations.item(row, 0).text()
-            folder_path = QFileDialog.getExistingDirectory(caption="Select a folder", directory=value)
-            if (folder_path is not None and folder_path != ''):
-                self.ui.tableSearchLocations.setItem(row, 0, QTableWidgetItem(folder_path))
-
-    def delete_location(self):
-        row = self.ui.tableSearchLocations.currentRow()
-        if (row > -1):
-            value = self.ui.tableSearchLocations.removeRow(row)
-
-    def add_classification(self):
-        self.edit_classification_row = self.ui.tableClassifications.rowCount()
-        self.ui_class.comboBoxClassification.setCurrentText('')
-        self.ui_class.lineEditPatternMatch.setText('')
-        self.ui_class.setModal(True)
-
-        self.ui_class.show()
-
-    def edit_classification(self):
-        self.edit_classification_row = self.ui.tableClassifications.currentRow()
-
-        if (self.edit_classification_row > -1):
-            clss = self.ui.tableClassifications.item(self.edit_classification_row, 0).text()
-            pat = self.ui.tableClassifications.item(self.edit_classification_row, 1).text()
-
-            self.ui_class.comboBoxClassification.setCurrentText(clss)
-            self.ui_class.lineEditPatternMatch.setText(pat)
-            self.ui_class.setModal(True)
-
-            self.ui_class.show()
-
-    def delete_classification(self):
-        row = self.ui.tableClassifications.currentRow()
-        if (row > -1):
-            value = self.ui.tableClassifications.removeRow(row)
-
-    def center_on_main_window(self):
-        main_window = QApplication.activeWindow()
-        if main_window:
-            main_geometry = main_window.geometry()
-            x = main_geometry.x() + (main_geometry.width() - self.width()) // 2
-            y = main_geometry.y() + (main_geometry.height() - self.height()) // 2
-            self.move(max(0, x), max(0, y))
-
-    def save_window_state(self):
-        self.pnc.set_plugin_setting("W", self.settings_pluginname, f"{self.size().width()}")
-        self.pnc.set_plugin_setting("H", self.settings_pluginname, f"{self.size().height()}")
-
-        self.pnc.set_plugin_setting("lc1", self.settings_pluginname, f"{self.ui.tableSearchLocations.columnWidth(0)}")
-        self.pnc.set_plugin_setting("mc1", self.settings_pluginname, f"{self.ui.tableClassifications.columnWidth(0)}")
-        self.pnc.set_plugin_setting("mc2", self.settings_pluginname, f"{self.ui.tableClassifications.columnWidth(1)}")
-
-        # print(f"saving dimensions {self.size().width()},{self.size().height()}")
-
-    def save_settings(self):
-        self.search_locations = self.copy_table_to_json(self.ui.tableSearchLocations)
-        self.pnc.set_plugin_setting("SearchLocations", self.settings_pluginname, self.search_locations)
-
-        self.classifications = self.copy_table_to_json(self.ui.tableClassifications)
-        self.pnc.set_plugin_setting("Classifications", self.settings_pluginname, self.classifications)
-
-        # reload the thread so it picks up the new search locations and classifications
-        projectnotes.force_reload("filefinder_thread")
-
-        self.save_window_state()
-        self.accept()
-
-    def reject_changes(self):
-        self.save_window_state()
-        
-        # Call the base class implementation
-        self.reject()
-
-    def closeEvent(self, event):
-
-        self.save_window_state()
-
-        # Call the base class implementation
-        super().closeEvent(event)
 
 # Custom Editor Setting
 class EditorSettings(QDialog):
@@ -1145,10 +928,6 @@ class SettingsMigrator(QDialog):
         # Call the base class implementation
         super().closeEvent(event)
 
-def menu_file_collector_settings(parameter):
-    ffs.show()
-    return ""
-
 def menu_editor_settings(parameter):
     es.show()
     return ""
@@ -1172,38 +951,6 @@ def menu_meeting_email_types_settings(parameter):
 def menu_settings_migrator(parameter):
     sm.show()
     return ""
-
-def setup_default_file_finder_settings():
-    pnc_tmp = ProjectNotesCommon()
-    settings_pluginname = "File Finder"
-
-    if pnc_tmp.get_plugin_setting("SearchLocations", settings_pluginname) is None:
-        default_locations = json.dumps([
-            {"Location": os.path.join(os.path.expanduser("~"), "Documents", "Projects").replace("\\", "/")}
-        ], indent=4)
-        pnc_tmp.set_plugin_setting("SearchLocations", settings_pluginname, default_locations)
-
-    if pnc_tmp.get_plugin_setting("Classifications", settings_pluginname) is None:
-        default_classifications = json.dumps([
-            {"Classification": "Project Schedule", "Pattern Match": ".*Project Management/Schedule.*\\.mpp$"},
-            {"Classification": "Quote",            "Pattern Match": ".*Project Management/Quotes.*\\.pdf$"},
-            {"Classification": "Issues List",      "Pattern Match": ".*Project Management/.*Tracker Report.*\\.pdf$"},
-            {"Classification": "Issues List",      "Pattern Match": ".*Project Management/.*Issues List.*\\.xlsx$"},
-            {"Classification": "Meeting Presentation", "Pattern Match": ".*Project Management/Meeting Minutes/.*\\.pptx$"},
-            {"Classification": "Meeting Presentation", "Pattern Match": ".*Project Management/Meeting Minutes/.*\\.ppt$"},
-            {"Classification": "Meeting Presentation", "Pattern Match": ".*Project Management/Meeting Minutes/.*\\.doc$"},
-            {"Classification": "Meeting Presentation", "Pattern Match": ".*Project Management/Meeting Minutes/.*\\.docx$"},
-            {"Classification": "Change Request",   "Pattern Match": ".*Project Management/PCR's/.*\\.pdf$"},
-            {"Classification": "Change Request",   "Pattern Match": ".*Project Management/PCR's/.*\\.docx$"},
-            {"Classification": "Change Request",   "Pattern Match": ".*Project Management/PCR's/.*\\.xlsx$"},
-            {"Classification": "PM Plan",          "Pattern Match": ".*Project Management/PM Plan/.*\\.docx$"},
-            {"Classification": "Purchase Order",   "Pattern Match": ".*Project Management/Purchase Orders/.*\\.pdf$"},
-            {"Classification": "Estimate",         "Pattern Match": ".*Project Management/Quotes.*\\.xlsx$"},
-            {"Classification": "Quote",            "Pattern Match": ".*Project Management/Quotes.*\\.docx$"},
-            {"Classification": "Risk Register",    "Pattern Match": ".*Project Management/Risk Management.*\\.xlsx$"},
-            {"Classification": "Risk Register",    "Pattern Match": ".*Project Management/Risk Management.*\\.docx$"},
-        ], indent=4)
-        pnc_tmp.set_plugin_setting("Classifications", settings_pluginname, default_classifications)
 
 def setup_default_editor_settings():
     pnc_tmp = ProjectNotesCommon()
@@ -1264,7 +1011,6 @@ def setup_default_icloud_settings():
     if pnc_tmp.get_plugin_setting("ExportNewContacts", settings_pluginname) is None:
         pnc_tmp.set_plugin_setting("ExportNewContacts", settings_pluginname, "false")
 
-setup_default_file_finder_settings()
 setup_default_editor_settings()
 setup_default_meeting_email_types_settings()
 setup_default_outlook_settings()
@@ -1277,7 +1023,6 @@ mss = MyShortcutSettings(pnc.get_main_window())
 ois = OutlookIntegrationSettings(pnc.get_main_window())
 ics = ICloudContactsSettings(pnc.get_main_window())
 es = EditorSettings(pnc.get_main_window())
-ffs = FileFinderSettings(pnc.get_main_window())
 
 # Use code below for testing
 if __name__ == '__main__':
@@ -1286,5 +1031,4 @@ if __name__ == '__main__':
     os.chdir("..")
     #menu_outlook_integration_settings("") 
     menu_meeting_email_types_settings("")
-    #menu_file_collector_settings("")
     sys.exit(app.exec())
