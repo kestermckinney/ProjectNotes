@@ -196,7 +196,7 @@ void db_CreateNewDatabase()
     )");
 
     global_DBObjects.execute(R"(
-        CREATE UNIQUE INDEX idx_project_locations_proj_desc ON project_locations (project_id, location_description) WHERE deleted = 0;
+        CREATE INDEX idx_project_locations_proj_desc ON project_locations (project_id, location_description) WHERE deleted = 0;
     )");
 
     // Project notes table

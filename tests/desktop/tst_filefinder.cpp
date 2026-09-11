@@ -77,6 +77,7 @@ private slots:
     void graphFolderExclusionsPruneSubtrees();
     void graphFolderTimestampsSkipUnchangedSubtrees();
     void reconcilesOnlyActiveProjectsAndAdoptsLegacyRows();
+    void scanSurvivesDescriptionCollisionWithoutAbortingScan();
 };
 
 void FileFinderTest::searchRootPreservesHomeShortcut()
@@ -297,7 +298,7 @@ void FileFinderTest::reconcilesOnlyActiveProjectsAndAdoptsLegacyRows()
             "location_type TEXT, location_description TEXT, full_path TEXT, "
             "updateddate INTEGER, syncdate INTEGER, deleted INTEGER DEFAULT 0)")));
         QVERIFY(query.exec(QStringLiteral(
-            "CREATE UNIQUE INDEX project_location_desc ON project_locations "
+            "CREATE INDEX project_location_desc ON project_locations "
             "(project_id, location_description) WHERE deleted = 0")));
         QVERIFY(query.exec(QStringLiteral(
             "INSERT INTO projects VALUES ('active-id', '1001', 'Active', 0)")));
@@ -370,6 +371,109 @@ void FileFinderTest::reconcilesOnlyActiveProjectsAndAdoptsLegacyRows()
             "SELECT count(*) FROM project_locations WHERE project_id = 'closed-id'")));
         QVERIFY(query.next());
         QCOMPARE(query.value(0).toInt(), 0);
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(verifyConnection);
+}
+
+void FileFinderTest::scanSurvivesDescriptionCollisionWithoutAbortingScan()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+
+    const QString searchRoot = temporary.filePath(QStringLiteral("Projects"));
+    const QString activeFolder = searchRoot + QStringLiteral("/1001 - Active Project");
+    const QString quotesFolder = activeFolder + QStringLiteral("/Project Management/Quotes");
+    const QString quotePath = quotesFolder + QStringLiteral("/Proposal.pdf");
+    QVERIFY(QDir().mkpath(quotesFolder));
+    QFile quote(quotePath);
+    QVERIFY(quote.open(QIODevice::WriteOnly));
+    quote.write("test");
+    quote.close();
+
+    const QString databasePath = temporary.filePath(QStringLiteral("ProjectNotes.db"));
+    const QString setupConnection = QStringLiteral("FileFinderCollisionSetup");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                          setupConnection);
+        database.setDatabaseName(databasePath);
+        QVERIFY2(database.open(), qPrintable(database.lastError().text()));
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, "
+            "project_status TEXT, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, "
+            "location_type TEXT, location_description TEXT, full_path TEXT, "
+            "updateddate INTEGER, syncdate INTEGER, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE INDEX project_location_desc ON project_locations "
+            "(project_id, location_description) WHERE deleted = 0")));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO projects VALUES ('active-id', '1001', 'Active', 0)")));
+
+        // Row A: matches the scan by PATH (it already points at quotePath) but
+        // its stored description is stale, so the scan will try to rewrite it
+        // to "Quote : Proposal.pdf".
+        query.prepare(QStringLiteral(
+            "INSERT INTO project_locations VALUES "
+            "('row-a-id', 'active-id', 'PDF File', 'Stale Description', ?, 1, NULL, 0)"));
+        query.addBindValue(QFileInfo(quotePath).canonicalFilePath());
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+
+        // Row B: already holds the description the scan will assign to Row A,
+        // but points at a path that no longer exists on disk. Before the
+        // unique index was relaxed, updating Row A collided with this row.
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO project_locations VALUES "
+            "('row-b-id', 'active-id', 'PDF File', 'Quote : Proposal.pdf', "
+            "'/no/longer/exists/Proposal-old.pdf', 1, NULL, 0)")));
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(setupConnection);
+
+    QReadWriteLock sharedLock;
+    FileFinderWorker worker;
+    worker.initializeDatabase(databasePath, &sharedLock);
+    FileFinderConfiguration configuration;
+    configuration.enabled = true;
+    configuration.roots = {searchRoot};
+    configuration.rules = {{QStringLiteral("Quote"),
+                            QStringLiteral(R"(.*Project Management/Quotes.*\.pdf$)")}};
+    worker.configure(configuration);
+
+    QSignalSpy scans(&worker, &FileFinderWorker::scanFinished);
+    worker.scanNow();
+    QCOMPARE(scans.count(), 1);
+    FileFinderScanSummary summary = qvariant_cast<FileFinderScanSummary>(scans.takeFirst().at(0));
+    QVERIFY2(summary.error.isEmpty(), qPrintable(summary.error));
+
+    worker.closeDatabase();
+    const QString verifyConnection = QStringLiteral("FileFinderCollisionVerify");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                          verifyConnection);
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        QSqlQuery query(database);
+
+        // Row A was matched by path and now carries the new description.
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT location_description, deleted FROM project_locations "
+            "WHERE id = 'row-a-id'")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("Quote : Proposal.pdf"));
+        QCOMPARE(query.value(1).toInt(), 0);
+
+        // Row B is left untouched; it simply shares a description with Row A
+        // now, which is no longer an error.
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT location_description, deleted FROM project_locations "
+            "WHERE id = 'row-b-id'")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("Quote : Proposal.pdf"));
+        QCOMPARE(query.value(1).toInt(), 0);
+
         database.close();
     }
     QSqlDatabase::removeDatabase(verifyConnection);
