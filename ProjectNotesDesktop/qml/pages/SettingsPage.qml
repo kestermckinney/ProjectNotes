@@ -7,12 +7,14 @@ import QtQuick.Layouts
 import QtQuick.Dialogs
 import ProjectNotesDesktop
 
-// Settings screen: theme, project folders, preferences, view options, about.
+// Settings screen: category tabs on the left, selected settings on the right.
 Item {
     id: page
 
     property var _clients: []
     property var _people: []
+    readonly property var _finder: DesktopAppController.fileFinder
+    property int currentTab: 0
     Component.onCompleted: {
         _clients = DesktopAppController.clientList()
         _people  = DesktopAppController.peopleList()
@@ -26,6 +28,8 @@ Item {
         syncEmailField.commit()
         syncPasswordField.commit()
         syncPhraseField.commit()
+        officeTenantField.commit()
+        officeClientField.commit()
     }
 
     function _clientNames() { return _clients.map(function(c){ return c.name }) }
@@ -33,19 +37,78 @@ Item {
     function _idForName(list, n) { for (var i=0;i<list.length;i++) if (list[i].name===n) return list[i].id; return "" }
     function _nameForId(list, id){ for (var i=0;i<list.length;i++) if (list[i].id===id) return list[i].name; return "" }
 
-    ScrollView {
-        id: pageScroll
+    RowLayout {
         anchors.fill: parent
         anchors.margins: 14
-        clip: true
-        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+        spacing: 14
 
-        ColumnLayout {
-            width: pageScroll.availableWidth
-            spacing: 16
+        Rectangle {
+            Layout.preferredWidth: 194
+            Layout.fillHeight: true
+            radius: Theme.radius
+            color: Theme.surface
+            border.color: Theme.border
 
-            // ── Appearance ────────────────────────────────────────────────────
-            SettingsSection {
+            ListView {
+                id: tabList
+                objectName: "settingsTabList"
+                anchors.fill: parent
+                anchors.margins: 5
+                clip: true
+                interactive: false
+                currentIndex: page.currentTab
+                model: [
+                    { key: "appearance", label: qsTr("Appearance") },
+                    { key: "cloudSync", label: qsTr("Cloud Sync") },
+                    { key: "office365", label: qsTr("Office 365 Integration") },
+                    { key: "fileFinder", label: qsTr("File Finder") },
+                    { key: "projectFolders", label: qsTr("Project Folders") },
+                    { key: "preferences", label: qsTr("Preferences") },
+                    { key: "viewOptions", label: qsTr("View Options") },
+                    { key: "data", label: qsTr("Data") }
+                ]
+
+                delegate: Rectangle {
+                    required property var modelData
+                    required property int index
+                    objectName: "settingsTab_" + modelData.key
+                    width: tabList.width
+                    height: 36
+                    radius: Theme.radiusSm
+                    color: index === page.currentTab
+                           ? Theme.accentSoft
+                           : (tabHover.hovered ? Theme.surface2 : "transparent")
+
+                    Text {
+                        anchors.fill: parent
+                        anchors.leftMargin: 10
+                        anchors.rightMargin: 8
+                        verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
+                        text: parent.modelData.label
+                        color: parent.index === page.currentTab ? Theme.accent : Theme.text2
+                        font.pixelSize: Theme.menuFont
+                        font.weight: parent.index === page.currentTab ? Font.DemiBold : Font.Normal
+                    }
+                    HoverHandler { id: tabHover }
+                    TapHandler {
+                        gesturePolicy: TapHandler.ReleaseWithinBounds
+                        onTapped: page.currentTab = parent.index
+                    }
+                }
+            }
+        }
+
+        StackLayout {
+            id: settingsPages
+            objectName: "settingsPages"
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            currentIndex: page.currentTab
+
+            SettingsTab {
+                // Appearance
+                SettingsSection {
                 title: "Appearance"
                 subtitle: "Theme used across the application."
                 RowLayout {
@@ -74,8 +137,11 @@ Item {
                 }
             }
 
-            // ── Cloud Sync ────────────────────────────────────────────────────
-            SettingsSection {
+            }
+
+            SettingsTab {
+                // Cloud Sync
+                SettingsSection {
                 title: "Cloud Sync"
                 subtitle: DesktopAppController.supabaseConnectionInfo
 
@@ -191,8 +257,606 @@ Item {
                 }
             }
 
-            // ── Project Folders ───────────────────────────────────────────────
-            SettingsSection {
+            }
+
+            SettingsTab {
+                // Office 365 Integration
+                SettingsSection {
+                    title: qsTr("Office 365 Integration")
+                    subtitle: qsTr("Connect Project Notes to Microsoft 365. File Finder currently uses this connection for Teams and SharePoint discovery, and other features can use it in the future. The refresh token is stored in the operating system credential vault.")
+
+                    SyncField {
+                        id: officeTenantField
+                        label: qsTr("Microsoft Entra tenant ID")
+                        value: page._finder ? page._finder.office365TenantId : "organizations"
+                        onCommitted: (v) => { if (page._finder) page._finder.office365TenantId = v }
+                    }
+                    SyncField {
+                        id: officeClientField
+                        label: qsTr("Application (client) ID")
+                        value: page._finder ? page._finder.office365ClientId : ""
+                        onCommitted: (v) => { if (page._finder) page._finder.office365ClientId = v }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: officeStatusColumn.implicitHeight + 20
+                        radius: Theme.radiusSm
+                        color: Theme.surface
+                        border.color: Theme.border
+                        ColumnLayout {
+                            id: officeStatusColumn
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            spacing: 5
+                            Text {
+                                Layout.fillWidth: true
+                                text: page._finder ? page._finder.office365AuthenticationStatus : qsTr("Not initialized")
+                                color: page._finder && page._finder.office365Authenticated ? Theme.green : Theme.text2
+                                font.pixelSize: Theme.fontBody
+                                wrapMode: Text.WordWrap
+                            }
+                            RowLayout {
+                                visible: page._finder && page._finder.office365UserCode !== ""
+                                spacing: 8
+                                Text {
+                                    text: qsTr("Code: %1").arg(page._finder ? page._finder.office365UserCode : "")
+                                    color: Theme.text
+                                    font.pixelSize: Theme.fontXl
+                                    font.weight: Font.Bold
+                                }
+                                Button {
+                                    implicitHeight: 28
+                                    text: qsTr("Copy code")
+                                    onClicked: DesktopAppController.copyTextToClipboard(page._finder.office365UserCode)
+                                }
+                            }
+                            Button {
+                                visible: page._finder && page._finder.office365VerificationUrl.toString() !== ""
+                                implicitHeight: 28
+                                text: qsTr("Open Microsoft sign-in page")
+                                onClicked: Qt.openUrlExternally(page._finder.office365VerificationUrl)
+                            }
+                        }
+                    }
+
+                    RowLayout {
+                        spacing: 8
+                        Button {
+                            primary: true
+                            implicitHeight: 30
+                            text: page._finder && page._finder.office365AuthenticationInProgress
+                                  ? qsTr("Waiting for sign-in…") : qsTr("Sign in to Microsoft 365")
+                            enabled: page._finder && !page._finder.office365AuthenticationInProgress
+                            onClicked: {
+                                officeTenantField.commit()
+                                officeClientField.commit()
+                                page._finder.startOffice365SignIn()
+                            }
+                        }
+                        Button {
+                            implicitHeight: 30
+                            text: qsTr("Sign out")
+                            enabled: page._finder && page._finder.office365Authenticated
+                            onClicked: page._finder.signOutOffice365()
+                        }
+                    }
+                }
+            }
+
+            SettingsTab {
+                // File Finder
+                SettingsSection {
+                    title: qsTr("File Finder")
+                    subtitle: qsTr("Scan active projects for local and Microsoft Teams locations. Files with the same classification and filename update the same row. A reconciliation runs every five minutes while enabled.")
+
+                    SettingsCheck {
+                        label: qsTr("Enable File Finder")
+                        checked: page._finder ? page._finder.enabled : false
+                        onToggledValue: (v) => { if (page._finder) page._finder.enabled = v }
+                    }
+                    SettingsCheck {
+                        label: qsTr("Include Office 365 locations")
+                        checked: page._finder ? page._finder.office365Enabled : false
+                        onToggledValue: (v) => { if (page._finder) page._finder.office365Enabled = v }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.minimumWidth: 0
+                            spacing: 2
+                            Text {
+                                Layout.fillWidth: true
+                                Layout.minimumWidth: 0
+                                text: page._finder ? page._finder.status : qsTr("Not initialized")
+                                color: Theme.text
+                                font.pixelSize: Theme.fontBody
+                                font.weight: Font.DemiBold
+                                elide: Text.ElideMiddle
+                                maximumLineCount: 1
+                                clip: true
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                Layout.minimumWidth: 0
+                                visible: page._finder && page._finder.lastScanSummary !== ""
+                                text: page._finder ? page._finder.lastScanSummary : ""
+                                color: Theme.text3
+                                font.pixelSize: Theme.fontSm
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                        Button {
+                            primary: true
+                            implicitHeight: 30
+                            text: page._finder && page._finder.scanning ? qsTr("Scanning…") : qsTr("Scan Now")
+                            enabled: page._finder && page._finder.enabled && !page._finder.scanning
+                            onClicked: page._finder.scanNow()
+                        }
+                        Button {
+                            implicitHeight: 30
+                            text: qsTr("Reconsider All Files")
+                            enabled: page._finder && page._finder.enabled
+                            onClicked: page._finder.reconsiderAllFiles()
+                        }
+                    }
+                }
+
+                SettingsSection {
+                    title: qsTr("Search Locations")
+                    subtitle: qsTr("Each root is traversed once per scan, then active project numbers are matched to folder names.")
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: searchLocationsGrid.implicitHeight
+                        radius: Theme.radiusSm
+                        color: Theme.surface
+                        border.color: Theme.border
+                        clip: true
+
+                        ColumnLayout {
+                            id: searchLocationsGrid
+                            width: parent.width
+                            spacing: 0
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 30
+                                color: Theme.surface2
+                                RowLayout {
+                                    anchors.fill: parent
+                                    spacing: 0
+                                    Text {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        leftPadding: 9
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: qsTr("Folder path")
+                                        color: Theme.text2
+                                        font.pixelSize: Theme.fontXs
+                                        font.weight: Font.DemiBold
+                                    }
+                                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                    Text {
+                                        Layout.preferredWidth: 68
+                                        Layout.fillHeight: true
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: qsTr("Actions")
+                                        color: Theme.text2
+                                        font.pixelSize: Theme.fontXs
+                                        font.weight: Font.DemiBold
+                                    }
+                                }
+                            }
+
+                            Repeater {
+                                model: page._finder ? page._finder.searchRoots : []
+                                delegate: Rectangle {
+                                    required property string modelData
+                                    required property int index
+                                    Layout.fillWidth: true
+                                    implicitHeight: 34
+                                    color: index % 2 === 0 ? Theme.surface : Theme.raise
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        spacing: 0
+                                        Text {
+                                            Layout.fillWidth: true
+                                            Layout.fillHeight: true
+                                            leftPadding: 9
+                                            rightPadding: 9
+                                            verticalAlignment: Text.AlignVCenter
+                                            text: modelData
+                                            color: Theme.text
+                                            font.pixelSize: Theme.fontBody
+                                            elide: Text.ElideMiddle
+                                        }
+                                        Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                        Item { Layout.preferredWidth: 34; Layout.fillHeight: true }
+                                        Rectangle {
+                                            Layout.preferredWidth: 34
+                                            Layout.fillHeight: true
+                                            color: removeRootHover.hovered ? Theme.redSoft : "transparent"
+                                            MaterialIcon {
+                                                anchors.centerIn: parent
+                                                name: "delete"
+                                                size: 15
+                                                color: Theme.red
+                                            }
+                                            HoverHandler { id: removeRootHover }
+                                            TapHandler {
+                                                onTapped: page._finder.removeSearchRoot(index)
+                                            }
+                                        }
+                                    }
+                                    Rectangle {
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.bottom: parent.bottom
+                                        height: 1
+                                        color: Theme.border
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 36
+                                color: Theme.accentSoft
+                                RowLayout {
+                                    anchors.fill: parent
+                                    spacing: 0
+                                    GridCellEditor {
+                                        id: newRootField
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        placeholderText: qsTr("Add a folder path")
+                                        onAccepted: page._addSearchRoot()
+                                    }
+                                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                    Rectangle {
+                                        Layout.preferredWidth: 34
+                                        Layout.fillHeight: true
+                                        color: browseRootHover.hovered ? Theme.surface2 : "transparent"
+                                        MaterialIcon {
+                                            anchors.centerIn: parent
+                                            name: "folder_open"
+                                            size: 16
+                                            color: Theme.text2
+                                        }
+                                        HoverHandler { id: browseRootHover }
+                                        TapHandler { onTapped: fileFinderRootDialog.open() }
+                                    }
+                                    Rectangle {
+                                        Layout.preferredWidth: 34
+                                        Layout.fillHeight: true
+                                        color: addRootHover.hovered && newRootField.text.trim() !== ""
+                                               ? Theme.accent : "transparent"
+                                        opacity: newRootField.text.trim() !== "" ? 1 : 0.4
+                                        MaterialIcon {
+                                            anchors.centerIn: parent
+                                            name: "add"
+                                            size: 17
+                                            color: addRootHover.hovered && newRootField.text.trim() !== ""
+                                                   ? "#ffffff" : Theme.accent
+                                        }
+                                        HoverHandler { id: addRootHover }
+                                        TapHandler {
+                                            enabled: newRootField.text.trim() !== ""
+                                            onTapped: page._addSearchRoot()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                SettingsSection {
+                    title: qsTr("Excluded Folders")
+                    subtitle: qsTr("Case-insensitive regular expressions are matched against each folder name and full path (with and without a trailing slash). A matching folder and its entire subtree are skipped.")
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: folderExclusionGrid.implicitHeight
+                        radius: Theme.radiusSm
+                        color: Theme.surface
+                        border.color: Theme.border
+                        clip: true
+
+                        ColumnLayout {
+                            id: folderExclusionGrid
+                            width: parent.width
+                            spacing: 0
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 30
+                                color: Theme.surface2
+                                RowLayout {
+                                    anchors.fill: parent
+                                    spacing: 0
+                                    Text {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        leftPadding: 9
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: qsTr("Folder exclusion regular expression")
+                                        color: Theme.text2
+                                        font.pixelSize: Theme.fontXs
+                                        font.weight: Font.DemiBold
+                                    }
+                                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                    Item { Layout.preferredWidth: 34; Layout.fillHeight: true }
+                                }
+                            }
+
+                            Repeater {
+                                model: page._finder ? page._finder.folderExclusions : []
+                                delegate: Rectangle {
+                                    required property string modelData
+                                    required property int index
+                                    Layout.fillWidth: true
+                                    implicitHeight: 34
+                                    color: index % 2 === 0 ? Theme.surface : Theme.raise
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        spacing: 0
+                                        GridCellEditor {
+                                            Layout.fillWidth: true
+                                            Layout.fillHeight: true
+                                            value: modelData
+                                            font.family: "monospace"
+                                            onCommittedValue: (v) => page._finder.updateFolderExclusion(index, v)
+                                        }
+                                        Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                        Rectangle {
+                                            Layout.preferredWidth: 34
+                                            Layout.fillHeight: true
+                                            color: removeExclusionHover.hovered ? Theme.redSoft : "transparent"
+                                            MaterialIcon {
+                                                anchors.centerIn: parent
+                                                name: "delete"
+                                                size: 15
+                                                color: Theme.red
+                                            }
+                                            HoverHandler { id: removeExclusionHover }
+                                            TapHandler { onTapped: page._finder.removeFolderExclusion(index) }
+                                        }
+                                    }
+                                    Rectangle {
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.bottom: parent.bottom
+                                        height: 1
+                                        color: Theme.border
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 36
+                                color: Theme.accentSoft
+                                RowLayout {
+                                    anchors.fill: parent
+                                    spacing: 0
+                                    GridCellEditor {
+                                        id: newFolderExclusionField
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        placeholderText: qsTr("Add a regex, for example (^|/)(node_modules|[.]git)(/|$)")
+                                        font.family: "monospace"
+                                        onAccepted: {
+                                            if (text.trim() !== "") {
+                                                page._finder.addFolderExclusion(text)
+                                                text = ""
+                                            }
+                                        }
+                                    }
+                                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                    Rectangle {
+                                        Layout.preferredWidth: 34
+                                        Layout.fillHeight: true
+                                        opacity: newFolderExclusionField.text.trim() !== "" ? 1 : 0.4
+                                        color: addExclusionHover.hovered && newFolderExclusionField.text.trim() !== ""
+                                               ? Theme.accent : "transparent"
+                                        MaterialIcon {
+                                            anchors.centerIn: parent
+                                            name: "add"
+                                            size: 17
+                                            color: addExclusionHover.hovered && newFolderExclusionField.text.trim() !== ""
+                                                   ? "#ffffff" : Theme.accent
+                                        }
+                                        HoverHandler { id: addExclusionHover }
+                                        TapHandler {
+                                            enabled: newFolderExclusionField.text.trim() !== ""
+                                            onTapped: {
+                                                page._finder.addFolderExclusion(newFolderExclusionField.text)
+                                                newFolderExclusionField.text = ""
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                SettingsSection {
+                    title: qsTr("File Classifications")
+                    subtitle: qsTr("Regular expressions are evaluated once per file; the first matching rule supplies the classification.")
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: classificationGrid.implicitHeight
+                        radius: Theme.radiusSm
+                        color: Theme.surface
+                        border.color: Theme.border
+                        clip: true
+
+                        ColumnLayout {
+                            id: classificationGrid
+                            width: parent.width
+                            spacing: 0
+
+                            // Header row: fixed first/action columns keep every
+                            // editor aligned like a small spreadsheet.
+                            Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 30
+                                color: Theme.surface2
+                                RowLayout {
+                                    anchors.fill: parent
+                                    spacing: 0
+                                    Text {
+                                        Layout.preferredWidth: 190
+                                        Layout.fillHeight: true
+                                        leftPadding: 9
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: qsTr("Classification")
+                                        color: Theme.text2
+                                        font.pixelSize: Theme.fontXs
+                                        font.weight: Font.DemiBold
+                                    }
+                                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        leftPadding: 9
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: qsTr("Regular expression")
+                                        color: Theme.text2
+                                        font.pixelSize: Theme.fontXs
+                                        font.weight: Font.DemiBold
+                                    }
+                                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                    Item { Layout.preferredWidth: 34; Layout.fillHeight: true }
+                                }
+                            }
+
+                            Repeater {
+                                model: page._finder ? page._finder.fileRules : []
+                                delegate: Rectangle {
+                                    required property var modelData
+                                    required property int index
+                                    Layout.fillWidth: true
+                                    implicitHeight: 34
+                                    color: index % 2 === 0 ? Theme.surface : Theme.raise
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        spacing: 0
+                                        GridCellEditor {
+                                            id: classificationEditor
+                                            Layout.preferredWidth: 190
+                                            Layout.fillHeight: true
+                                            value: modelData.classification
+                                            onCommittedValue: (v) => page._finder.updateFileRule(
+                                                index, v, patternEditor.text)
+                                        }
+                                        Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                        GridCellEditor {
+                                            id: patternEditor
+                                            Layout.fillWidth: true
+                                            Layout.fillHeight: true
+                                            value: modelData.pattern
+                                            font.family: "monospace"
+                                            onCommittedValue: (v) => page._finder.updateFileRule(
+                                                index, classificationEditor.text, v)
+                                        }
+                                        Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                        Rectangle {
+                                            Layout.preferredWidth: 34
+                                            Layout.fillHeight: true
+                                            color: removeHover.hovered ? Theme.redSoft : "transparent"
+                                            MaterialIcon {
+                                                anchors.centerIn: parent
+                                                name: "delete"
+                                                size: 15
+                                                color: Theme.red
+                                            }
+                                            HoverHandler { id: removeHover }
+                                            TapHandler {
+                                                onTapped: page._finder.removeFileRule(index)
+                                            }
+                                        }
+                                    }
+                                    Rectangle {
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.bottom: parent.bottom
+                                        height: 1
+                                        color: Theme.border
+                                    }
+                                }
+                            }
+
+                            // The last grid row doubles as the new-rule editor.
+                            Rectangle {
+                                Layout.fillWidth: true
+                                implicitHeight: 36
+                                color: Theme.accentSoft
+                                RowLayout {
+                                    anchors.fill: parent
+                                    spacing: 0
+                                    GridCellEditor {
+                                        id: newClassificationField
+                                        Layout.preferredWidth: 190
+                                        Layout.fillHeight: true
+                                        placeholderText: qsTr("New classification")
+                                        onAccepted: newPatternField.forceActiveFocus()
+                                    }
+                                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                    GridCellEditor {
+                                        id: newPatternField
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        placeholderText: qsTr("New regular expression")
+                                        font.family: "monospace"
+                                        onAccepted: page._addFileRule()
+                                    }
+                                    Rectangle { Layout.preferredWidth: 1; Layout.fillHeight: true; color: Theme.border }
+                                    Rectangle {
+                                        Layout.preferredWidth: 34
+                                        Layout.fillHeight: true
+                                        color: addHover.hovered && newPatternField.text.trim() !== ""
+                                               ? Theme.accent : "transparent"
+                                        opacity: newPatternField.text.trim() !== "" ? 1 : 0.4
+                                        MaterialIcon {
+                                            anchors.centerIn: parent
+                                            name: "add"
+                                            size: 17
+                                            color: addHover.hovered && newPatternField.text.trim() !== ""
+                                                   ? "#ffffff" : Theme.accent
+                                        }
+                                        HoverHandler { id: addHover }
+                                        TapHandler {
+                                            enabled: newPatternField.text.trim() !== ""
+                                            onTapped: page._addFileRule()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Button {
+                        Layout.alignment: Qt.AlignRight
+                        implicitHeight: 28
+                        text: qsTr("Reset Defaults")
+                        onClicked: page._finder.resetDefaultRules()
+                    }
+                }
+            }
+
+            SettingsTab {
+                // Project Folder
+                SettingsSection {
                 title: "Project Folders"
                 subtitle: "Group projects into folders (e.g. Favorites). A project can belong to several folders. Drag projects onto a folder in the sidebar to add them."
 
@@ -333,8 +997,11 @@ Item {
                 }
             }
 
-            // ── Preferences ───────────────────────────────────────────────────
-            SettingsSection {
+            }
+
+            SettingsTab {
+                // Preferences
+                SettingsSection {
                 title: "Preferences"
                 subtitle: "Defaults applied to new projects and status reports."
                 GridLayout {
@@ -359,8 +1026,11 @@ Item {
                 }
             }
 
-            // ── View Options ──────────────────────────────────────────────────
-            SettingsSection {
+            }
+
+            SettingsTab {
+                // View Options
+                SettingsSection {
                 title: "View Options"
                 subtitle: "Control what the lists show. Changes apply immediately."
                 SettingsCheck {
@@ -380,8 +1050,11 @@ Item {
                 }
             }
 
-            // ── Data ──────────────────────────────────────────────────────────
-            SettingsSection {
+            }
+
+            SettingsTab {
+                // Data
+                SettingsSection {
                 title: "Data"
                 subtitle: "Import records from a Project Notes XML file. Export is available from any record's detail page."
                 Button {
@@ -397,98 +1070,23 @@ Item {
                 }
             }
 
-            // ── About ─────────────────────────────────────────────────────────
-            SettingsSection {
-                title: "About"
-                Text {
-                    text: "Project Notes"
-                    color: Theme.text; font.pixelSize: Theme.font3xl; font.weight: Font.Bold
-                }
-                Text {
-                    text: "Version " + Qt.application.version + " · Built " + DesktopAppController.buildTimestamp()
-                    color: Theme.text3; font.pixelSize: Theme.fontBody
-                }
-                Text {
-                    text: "Qt " + DesktopAppController.qtRuntimeVersion()
-                    color: Theme.text3; font.pixelSize: Theme.fontBody
-                }
-                Text {
-                    visible: text.length > 0
-                    text: DesktopAppController.developerProfile().length > 0
-                          ? "Profile: " + DesktopAppController.developerProfile() : ""
-                    color: Theme.text3; font.pixelSize: Theme.fontBody
-                }
-                Text {
-                    text: "© 2022–2026 Paul McKinney"
-                    color: Theme.text3; font.pixelSize: Theme.fontSm
-                }
-
-                RowLayout {
-                    Layout.topMargin: 3
-                    spacing: 6
-
-                    Repeater {
-                        model: [
-                            { label: qsTr("Documentation"),  url: "https://projectnotes.readthedocs.io/" },
-                            { label: qsTr("Release Notes"),  url: "https://github.com/kestermckinney/ProjectNotes/releases" },
-                            { label: qsTr("Source Code"),    url: "https://github.com/kestermckinney/ProjectNotes" }
-                        ]
-                        delegate: Button {
-                            required property var modelData
-                            implicitHeight: 28
-                            leftPadding: 12; rightPadding: 12; topPadding: 0; bottomPadding: 0
-                            contentItem: Text {
-                                text: modelData.label
-                                color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                            onClicked: Qt.openUrlExternally(modelData.url)
-                        }
-                    }
-                }
-
-                Rectangle {
-                    Layout.topMargin: 6
-                    Layout.fillWidth: true
-                    Layout.preferredWidth: 420
-                    implicitHeight: promoColumn.implicitHeight + 20
-                    color: Theme.surface2
-                    radius: Theme.radius
-                    border.color: Theme.border
-
-                    ColumnLayout {
-                        id: promoColumn
-                        anchors { top: parent.top; left: parent.left; right: parent.right; margins: 10 }
-                        spacing: 5
-
-                        Text {
-                            Layout.fillWidth: true
-                            text: qsTr("Take Project Notes With You")
-                            font.pixelSize: Theme.fontLg; font.weight: Font.Bold
-                            color: Theme.text
-                            wrapMode: Text.WordWrap
-                        }
-                        Text {
-                            Layout.fillWidth: true
-                            text: qsTr("Download the Project Notes mobile app for iOS to check status, review notes, and stay on top of tracker items on the go.")
-                            font.pixelSize: Theme.fontSm
-                            color: Theme.text3
-                            wrapMode: Text.WordWrap
-                        }
-                    }
-                }
-
-                Text {
-                    Layout.topMargin: 3
-                    text: "<a href=\"https://www.projectnotespro.com\">www.projectnotespro.com</a>"
-                    textFormat: Text.RichText
-                    font.pixelSize: Theme.fontBody
-                    color: Theme.accent
-                    linkColor: Theme.accent
-                    onLinkActivated: Qt.openUrlExternally(link)
-                }
             }
+        }
+    }
+
+    // One independently scrollable settings category used by the StackLayout.
+    component SettingsTab: ScrollView {
+        id: settingsTab
+        default property alias content: settingsContent.data
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        clip: true
+        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+        ColumnLayout {
+            id: settingsContent
+            width: settingsTab.availableWidth
+            spacing: 16
         }
     }
 
@@ -536,6 +1134,12 @@ Item {
         // saved (and checked) rather than lost. Committing an unchanged value is
         // harmless: the controller's setters ignore it.
         function commit() { sf.committed(sfInput.text) }
+        function currentText() { return sfInput.text }
+        function setText(v) { sfInput.text = v }
+        onValueChanged: {
+            if (!sfInput.activeFocus && sfInput.text !== value)
+                sfInput.text = value
+        }
         Layout.fillWidth: true
         spacing: 3
         Text { text: sf.label; color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
@@ -561,12 +1165,46 @@ Item {
         }
     }
 
+    // Borderless editor used inside the File Finder classification grid. The
+    // surrounding grid supplies structure; focus is shown with a subtle cell
+    // tint instead of another rounded text box.
+    component GridCellEditor: TextField {
+        id: gridEditor
+        property string value: ""
+        signal committedValue(string value)
+        selectByMouse: true
+        verticalAlignment: TextInput.AlignVCenter
+        leftPadding: 9
+        rightPadding: 9
+        color: Theme.text
+        placeholderTextColor: Theme.text3
+        font.pixelSize: Theme.fontBody
+        background: Rectangle {
+            color: gridEditor.activeFocus ? Theme.accentSoft : "transparent"
+        }
+        Component.onCompleted: text = value
+        onValueChanged: {
+            if (!activeFocus && text !== value)
+                text = value
+        }
+        onEditingFinished: committedValue(text)
+    }
+
     FileDialog {
         id: importDialog
         title: qsTr("Import XML from file")
         fileMode: FileDialog.OpenFile
         nameFilters: [ qsTr("XML files (*.xml)") ]
         onAccepted: DesktopAppController.importXmlFile(selectedFile)
+    }
+
+    FolderDialog {
+        id: fileFinderRootDialog
+        title: qsTr("Choose a File Finder search location")
+        onAccepted: {
+            if (page._finder)
+                page._finder.addSearchRoot(selectedFolder)
+        }
     }
 
     // Folder icon picker — a grid of Theme.folderIcons, highlighting the icon
@@ -641,6 +1279,24 @@ Item {
             return
         FolderManager.addFolder(name, "star", Theme.folderColors[0])
         newFolderField.clear()
+    }
+
+    function _addSearchRoot() {
+        if (!page._finder || newRootField.text.trim() === "")
+            return
+        page._finder.addSearchRoot(newRootField.text)
+        newRootField.clear()
+        newRootField.forceActiveFocus()
+    }
+
+    function _addFileRule() {
+        if (!page._finder || newPatternField.text.trim() === "")
+            return
+        page._finder.addFileRule(newClassificationField.text,
+                                 newPatternField.text)
+        newClassificationField.clear()
+        newPatternField.clear()
+        newClassificationField.forceActiveFocus()
     }
 
     // Inline section container

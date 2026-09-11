@@ -1,0 +1,379 @@
+// Copyright (C) 2026 Paul McKinney
+// SPDX-License-Identifier: GPL-3.0-only
+
+#include "FileFinderWorker.h"
+#include "FileFinderService.h"
+#include "MicrosoftGraphSource.h"
+
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QHash>
+#include <QNetworkReply>
+#include <QTimer>
+#include <QReadWriteLock>
+#include <QSignalSpy>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
+#include <QSettings>
+#include <QTemporaryDir>
+#include <QUuid>
+#include <QtTest>
+#include <algorithm>
+#include <utility>
+
+class EmptyGraphReply final : public QNetworkReply
+{
+public:
+    explicit EmptyGraphReply(QByteArray body, QObject *parent)
+        : QNetworkReply(parent), m_body(std::move(body))
+    {
+        open(QIODevice::ReadOnly);
+        QTimer::singleShot(0, this, [this] {
+            setFinished(true);
+            emit finished();
+        });
+    }
+    void abort() override {}
+protected:
+    qint64 readData(char *data, qint64 maxSize) override
+    {
+        const qint64 size = qMin(maxSize, qint64(m_body.size()));
+        if (!size)
+            return -1;
+        memcpy(data, m_body.constData(), size);
+        m_body.remove(0, size);
+        return size;
+    }
+private:
+    QByteArray m_body;
+};
+
+class RecordingGraphNetwork final : public QNetworkAccessManager
+{
+public:
+    QList<QUrl> requests;
+    QHash<QString, QByteArray> responses;
+protected:
+    QNetworkReply *createRequest(Operation, const QNetworkRequest &request,
+                                 QIODevice *) override
+    {
+        requests.append(request.url());
+        return new EmptyGraphReply(
+            responses.value(request.url().path(), QByteArrayLiteral(R"({"value":[]})")),
+            this);
+    }
+};
+
+class FileFinderTest final : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    void searchRootPreservesHomeShortcut();
+    void firstRunUsesCurrentSearchDefaults();
+    void graphEndpointResolution();
+    void graphFolderExclusionsPruneSubtrees();
+    void graphFolderTimestampsSkipUnchangedSubtrees();
+    void reconcilesOnlyActiveProjectsAndAdoptsLegacyRows();
+};
+
+void FileFinderTest::searchRootPreservesHomeShortcut()
+{
+    FileFinderService service;
+    service.addSearchRoot(QStringLiteral("~"));
+    QCOMPARE(service.searchRoots(), QStringList{QStringLiteral("~")});
+
+    service.addSearchRoot(QStringLiteral("~\\Documents"));
+    QCOMPARE(service.searchRoots().at(1), QStringLiteral("~/Documents"));
+}
+
+void FileFinderTest::firstRunUsesCurrentSearchDefaults()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    const QString organization = QStringLiteral("ProjectNotesFileFinderTest-")
+        + QUuid::createUuid().toString(QUuid::WithoutBraces);
+
+    {
+        FileFinderService service;
+        QReadWriteLock databaseLock;
+        service.initialize(temporary.filePath(QStringLiteral("ProjectNotes.db")),
+                           &databaseLock, organization);
+
+        QVERIFY(service.enabled());
+        QCOMPARE(service.searchRoots(), QStringList{QStringLiteral("~")});
+        QCOMPARE(service.folderExclusions(),
+                 QStringList{QStringLiteral(R"(Engineering/.*)")});
+
+        const QList<QPair<QString, QString>> expectedRules = {
+            {"Project Schedule", R"(.*\.mpp$)"},
+            {"Quote", R"(.*Quote.*\.pdf$)"},
+            {"Issues List", R"(^(?!.*\bTemplate\b).*Tracker Report.*\.pdf$)"},
+            {"Issues List", R"(^(?!.*\bTemplate\b).*Issues List.*\.xlsx$)"},
+            {"Meeting Presentation", R"(^(?!.*\bTemplate\b).*Meeting Minutes.*\.pptx$)"},
+            {"Meeting Presentation", R"(^(?!.*\bTemplate\b).*Meeting Minutes.*\.ppt$)"},
+            {"Meeting Notes", R"(^(?!.*\bTemplate\b).*Meeting Minutes.*\.doc$)"},
+            {"Meeting Notes", R"(^(?!.*\bTemplate\b).*Meeting Minutes.*\.docx$)"},
+            {"Change Request", R"(.*PCR\d{1}.*\.pdf$)"},
+            {"Change Request", R"(.*PCR\d{1}.*\.docx$)"},
+            {"Change Request", R"(.*PCR\d{1}.*\.xlsx$)"},
+            {"PM Plan", R"(.*PM Plan.*\.docx$)"},
+            {"Purchase Order", R"(.*/Purchase Orders/.*\.pdf$)"},
+            {"Estimate", R"(.*Estimate.*\.xlsx$)"},
+            {"Quote", R"(.*Quote.*\.docx$)"},
+            {"Risk Register", R"(^(?!.*\bTemplate\b).*Risk.*\.xlsx$)"},
+            {"Risk Register", R"(^(?!.*\bTemplate\b).*Risk Management.*\.docx$)"},
+            {"Quote", R"(.*Proposal.*\.docx$)"},
+            {"Quote", R"(.*Proposal.*\.pdf$)"},
+            {"Stakeholders", R"(.*Stakeholder.*\.docx$)"},
+            {"Stakeholders", R"(.*Stakeholder.*\.xlsx$)"}
+        };
+        const QVariantList actualRules = service.fileRules();
+        QCOMPARE(actualRules.size(), expectedRules.size());
+        for (qsizetype index = 0; index < expectedRules.size(); ++index) {
+            const QVariantMap actual = actualRules.at(index).toMap();
+            QCOMPARE(actual.value(QStringLiteral("classification")).toString(),
+                     expectedRules.at(index).first);
+            QCOMPARE(actual.value(QStringLiteral("pattern")).toString(),
+                     expectedRules.at(index).second);
+        }
+    }
+
+    QSettings(organization, QStringLiteral("AppSettings")).clear();
+    QSettings(organization, QStringLiteral("PluginSettings")).clear();
+}
+
+void FileFinderTest::graphEndpointResolution()
+{
+    RecordingGraphNetwork network;
+    auto verify = [&](MicrosoftGraphSource &graph, const QString &expected) {
+        QString error;
+        graph.discover({{QStringLiteral("active-id"), QStringLiteral("1001")}},
+                       {}, nullptr, nullptr, &error);
+        QVERIFY2(error.isEmpty(), qPrintable(error));
+        QCOMPARE(network.requests.takeLast(), QUrl(expected));
+    };
+    const QString publicUrl = QStringLiteral(
+        "https://graph.microsoft.com/v1.0/me/joinedTeams?$select=id,displayName");
+    MicrosoftGraphSource defaultGraph(QStringLiteral("test-token"), &network);
+    verify(defaultGraph, publicUrl);
+    MicrosoftGraphSource emptyEndpoint(QStringLiteral("test-token"), &network, {},
+                                       [](const QString &) {});
+    verify(emptyEndpoint, publicUrl);
+    MicrosoftGraphSource customEndpoint(QStringLiteral("test-token"), &network,
+                                        QUrl(QStringLiteral("http://localhost:1234/v1.0")));
+    verify(customEndpoint, QStringLiteral(
+        "http://localhost:1234/v1.0/me/joinedTeams?$select=id,displayName"));
+}
+
+void FileFinderTest::graphFolderExclusionsPruneSubtrees()
+{
+    RecordingGraphNetwork network;
+    network.responses = {
+        {QStringLiteral("/v1.0/me/joinedTeams"),
+         R"({"value":[{"id":"team","displayName":"Project Team"}]})"},
+        {QStringLiteral("/v1.0/teams/team/channels"),
+         R"({"value":[{"id":"channel","displayName":"1001 General"}]})"},
+        {QStringLiteral("/v1.0/teams/team/channels/channel/filesFolder"),
+         R"({"id":"root","webUrl":"https://example.test/root","parentReference":{"driveId":"drive"}})"},
+        {QStringLiteral("/v1.0/drives/drive/items/root/children"),
+         R"({"value":[{"id":"engineering","name":"Engineering","folder":{}},{"id":"documents","name":"Documents","folder":{}}]})"},
+        {QStringLiteral("/v1.0/drives/drive/items/documents/children"),
+         R"({"value":[]})"}
+    };
+
+    MicrosoftGraphSource graph(QStringLiteral("test-token"), &network, {}, {},
+                               {QStringLiteral(R"(Engineering/.*)")});
+    QString error;
+    graph.discover({{QStringLiteral("active-id"), QStringLiteral("1001")}},
+                   {}, nullptr, nullptr, &error);
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+
+    bool requestedEngineering = false;
+    bool requestedDocuments = false;
+    for (const QUrl &request : std::as_const(network.requests)) {
+        requestedEngineering |= request.path().contains(QStringLiteral("/engineering/"));
+        requestedDocuments |= request.path().contains(QStringLiteral("/documents/"));
+    }
+    QVERIFY(!requestedEngineering);
+    QVERIFY(requestedDocuments);
+}
+
+void FileFinderTest::graphFolderTimestampsSkipUnchangedSubtrees()
+{
+    RecordingGraphNetwork network;
+    network.responses = {
+        {QStringLiteral("/v1.0/me/joinedTeams"),
+         R"({"value":[{"id":"team","displayName":"Project Team"}]})"},
+        {QStringLiteral("/v1.0/teams/team/channels"),
+         R"({"value":[{"id":"channel","displayName":"1001 General"}]})"},
+        {QStringLiteral("/v1.0/teams/team/channels/channel/filesFolder"),
+         R"({"id":"root","webUrl":"https://example.test/root","lastModifiedDateTime":"2026-09-01T10:00:00Z","parentReference":{"driveId":"drive"}})"},
+        {QStringLiteral("/v1.0/drives/drive/items/root/children"),
+         R"({"value":[{"id":"documents","name":"Documents","lastModifiedDateTime":"2026-09-01T09:00:00Z","folder":{}}]})"},
+        {QStringLiteral("/v1.0/drives/drive/items/documents/children"),
+         R"({"value":[]})"}
+    };
+    const QList<ActiveProject> projects = {
+        {QStringLiteral("active-id"), QStringLiteral("1001")}
+    };
+
+    QString error;
+    MicrosoftGraphSource initial(QStringLiteral("test-token"), &network);
+    initial.discover(projects, {}, nullptr, nullptr, &error);
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QVERIFY(network.requests.contains(QUrl(
+        QStringLiteral("https://graph.microsoft.com/v1.0/drives/drive/items/documents/children?"
+                       "$select=id,name,size,lastModifiedDateTime,webUrl,file,folder"))));
+    const QHash<QString, QString> initialState = initial.folderState();
+    QCOMPARE(initialState.size(), 2);
+
+    network.requests.clear();
+    MicrosoftGraphSource unchanged(QStringLiteral("test-token"), &network, {}, {}, {},
+                                   initialState);
+    unchanged.discover(projects, {}, nullptr, nullptr, &error);
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QVERIFY(std::none_of(network.requests.cbegin(), network.requests.cend(),
+                         [](const QUrl &url) {
+        return url.path().contains(QStringLiteral("/root/children"));
+    }));
+
+    network.responses[QStringLiteral("/v1.0/teams/team/channels/channel/filesFolder")] =
+        R"({"id":"root","webUrl":"https://example.test/root","lastModifiedDateTime":"2026-09-02T10:00:00Z","parentReference":{"driveId":"drive"}})";
+    network.requests.clear();
+    MicrosoftGraphSource changedRoot(QStringLiteral("test-token"), &network, {}, {}, {},
+                                     initialState);
+    changedRoot.discover(projects, {}, nullptr, nullptr, &error);
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QVERIFY(std::any_of(network.requests.cbegin(), network.requests.cend(),
+                        [](const QUrl &url) {
+        return url.path().contains(QStringLiteral("/root/children"));
+    }));
+    QVERIFY(std::none_of(network.requests.cbegin(), network.requests.cend(),
+                         [](const QUrl &url) {
+        return url.path().contains(QStringLiteral("/documents/children"));
+    }));
+}
+
+void FileFinderTest::reconcilesOnlyActiveProjectsAndAdoptsLegacyRows()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+
+    const QString searchRoot = temporary.filePath(QStringLiteral("Projects"));
+    const QString activeFolder = searchRoot + QStringLiteral("/1001 - Active Project");
+    const QString quotesFolder = activeFolder + QStringLiteral("/Project Management/Quotes");
+    const QString quotePath = quotesFolder + QStringLiteral("/Proposal.pdf");
+    const QString excludedFolder = quotesFolder + QStringLiteral("/Engineering/cache");
+    const QString excludedQuotePath = excludedFolder + QStringLiteral("/CachedProposal.pdf");
+    const QString closedFolder = searchRoot + QStringLiteral("/2002 - Closed Project");
+    QVERIFY(QDir().mkpath(quotesFolder));
+    QVERIFY(QDir().mkpath(excludedFolder));
+    QVERIFY(QDir().mkpath(closedFolder));
+    QFile quote(quotePath);
+    QVERIFY(quote.open(QIODevice::WriteOnly));
+    quote.write("test");
+    quote.close();
+    QFile excludedQuote(excludedQuotePath);
+    QVERIFY(excludedQuote.open(QIODevice::WriteOnly));
+    excludedQuote.write("excluded");
+    excludedQuote.close();
+
+    const QString databasePath = temporary.filePath(QStringLiteral("ProjectNotes.db"));
+    const QString setupConnection = QStringLiteral("FileFinderTestSetup");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                          setupConnection);
+        database.setDatabaseName(databasePath);
+        QVERIFY2(database.open(), qPrintable(database.lastError().text()));
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, "
+            "project_status TEXT, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, "
+            "location_type TEXT, location_description TEXT, full_path TEXT, "
+            "updateddate INTEGER, syncdate INTEGER, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE UNIQUE INDEX project_location_desc ON project_locations "
+            "(project_id, location_description) WHERE deleted = 0")));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO projects VALUES ('active-id', '1001', 'Active', 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO projects VALUES ('closed-id', '2002', 'Closed', 0)")));
+
+        query.prepare(QStringLiteral(
+            "INSERT INTO project_locations VALUES "
+            "('legacy-id', 'active-id', 'PDF File', 'Quote', ?, 1, NULL, 0)"));
+        query.addBindValue(QFileInfo(quotePath).canonicalFilePath());
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO project_locations VALUES "
+            "('legacy-folder-id', 'active-id', 'Microsoft Teams', "
+            "'Office 365: Project Folder', 'https://example.test/old-team', 1, NULL, 0)")));
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(setupConnection);
+
+    QReadWriteLock sharedLock;
+    FileFinderWorker worker;
+    worker.initializeDatabase(databasePath, &sharedLock);
+    FileFinderConfiguration configuration;
+    configuration.enabled = true;
+    configuration.roots = {searchRoot};
+    configuration.folderExclusions = {
+        QStringLiteral(R"(.*/Engineering/.*)")
+    };
+    configuration.rules = {{QStringLiteral("Quote"),
+                            QStringLiteral(R"(.*Project Management/Quotes.*\.pdf$)")}};
+    worker.configure(configuration);
+
+    QSignalSpy scans(&worker, &FileFinderWorker::scanFinished);
+    worker.scanNow();
+    QCOMPARE(scans.count(), 1);
+    FileFinderScanSummary first = qvariant_cast<FileFinderScanSummary>(scans.takeFirst().at(0));
+    QCOMPARE(first.projects, 1);
+    QCOMPARE(first.files, 1);
+    QCOMPARE(first.matched, 1);
+    QCOMPARE(first.inserted, 0);
+    QCOMPARE(first.updated, 2);  // legacy file and source-qualified folder were adopted
+    QVERIFY(first.error.isEmpty());
+
+    worker.scanNow();
+    QCOMPARE(scans.count(), 1);
+    FileFinderScanSummary second = qvariant_cast<FileFinderScanSummary>(scans.takeFirst().at(0));
+    QCOMPARE(second.inserted, 0);
+    QCOMPARE(second.updated, 0);
+    QCOMPARE(second.unchanged, 2);
+
+    worker.closeDatabase();
+    const QString verifyConnection = QStringLiteral("FileFinderTestVerify");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                          verifyConnection);
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT id, location_description FROM project_locations "
+            "WHERE project_id = 'active-id' ORDER BY location_description")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("legacy-folder-id"));
+        QCOMPARE(query.value(1).toString(), QStringLiteral("Project Folder"));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("legacy-id"));
+        QCOMPARE(query.value(1).toString(), QStringLiteral("Quote : Proposal.pdf"));
+        QVERIFY(!query.next());
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT count(*) FROM project_locations WHERE project_id = 'closed-id'")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), 0);
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(verifyConnection);
+}
+
+QTEST_GUILESS_MAIN(FileFinderTest)
+#include "tst_filefinder.moc"

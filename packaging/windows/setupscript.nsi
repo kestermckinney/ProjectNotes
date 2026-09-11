@@ -96,6 +96,15 @@ Section "MainSection" SEC01
     FileClose $1
   waitdone:
 
+  ; File Finder is native as of 6.0. Remove the retired Python worker and any
+  ; cached bytecode before copying the current payload so an in-place upgrade
+  ; cannot load the legacy implementation.
+  Delete "$INSTDIR\threads\filefinder_thread.py"
+  Delete "$INSTDIR\threads\__pycache__\filefinder_thread*.pyc"
+  Delete "$INSTDIR\threads\__pycache__\filefinder_thread*.pyo"
+  Delete "$INSTDIR\plugins\forms\dialogFileFinder.ui"
+  Delete "$INSTDIR\plugins\forms\dialogClassification.ui"
+
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
 
@@ -279,14 +288,12 @@ Section "MainSection" SEC01
   File "${DEPLOY_DIR}\plugins\includes\word_tools.py"
 
   SetOutPath "$INSTDIR\plugins\forms"
-  File "${DEPLOY_DIR}\plugins\forms\dialogClassification.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogDuplicateFilesFound.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogEditor.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogExportLocation.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogExportNotesOptions.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogExportStatusReportOptions.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogExportTrackerOptions.ui"
-   File "${DEPLOY_DIR}\plugins\forms\dialogFileFinder.ui"
    File "${DEPLOY_DIR}\plugins\forms\dialogMeetingEmailTemplate.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogMeetingEmailTypes.ui"
   File "${DEPLOY_DIR}\plugins\forms\dialogMyShortcuts.ui"
@@ -301,7 +308,6 @@ Section "MainSection" SEC01
 
   ; ── Background threads ───────────────────────────────────────────────────────
   SetOutPath "$INSTDIR\threads"
-   File "${DEPLOY_DIR}\threads\filefinder_thread.py"
    File "${DEPLOY_DIR}\threads\icloudsync_thread.py"
    File "${DEPLOY_DIR}\threads\outlooksync_thread.py"
 
@@ -455,14 +461,12 @@ Section Uninstall
   RMDir  "$INSTDIR\plugins\includes\__pycache__"
   RMDir  "$INSTDIR\plugins\includes"
 
-  Delete "$INSTDIR\plugins\forms\dialogClassification.ui"
   Delete "$INSTDIR\plugins\forms\dialogDuplicateFilesFound.ui"
   Delete "$INSTDIR\plugins\forms\dialogEditor.ui"
   Delete "$INSTDIR\plugins\forms\dialogExportLocation.ui"
   Delete "$INSTDIR\plugins\forms\dialogExportNotesOptions.ui"
   Delete "$INSTDIR\plugins\forms\dialogExportStatusReportOptions.ui"
   Delete "$INSTDIR\plugins\forms\dialogExportTrackerOptions.ui"
-  Delete "$INSTDIR\plugins\forms\dialogFileFinder.ui"
   Delete "$INSTDIR\plugins\forms\dialogIFSCloud.ui"
   Delete "$INSTDIR\plugins\forms\dialogMeetingEmailTemplate.ui"
   Delete "$INSTDIR\plugins\forms\dialogMeetingEmailTypes.ui"

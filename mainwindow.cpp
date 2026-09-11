@@ -887,11 +887,13 @@ void MainWindow::openDatabase(const QString& dbfile)
 
             if (m_syncApi->isAuthenticated()) {
                 const SubscriptionStatus sub = m_syncApi->getSubscriptionStatus();
+#ifdef QT_DEBUG
                 qDebug() << "Subscription check: valid=" << sub.valid
                          << "hasActive=" << sub.hasActiveSubscription
                          << "status=" << sub.status
                          << "plan=" << sub.planName
                          << "error=" << sub.errorMessage;
+#endif
                 if (sub.valid && !sub.hasActiveSubscription) {
                     QMessageBox msgBox(this);
                     msgBox.setWindowTitle(tr("Project Notes Pro Subscription Expired"));

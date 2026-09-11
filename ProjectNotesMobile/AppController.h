@@ -306,11 +306,24 @@ public:
     // it instead (toggle).
     Q_INVOKABLE void applyQuickFilter(QAbstractItemModel* model, const QString& field, const QVariantList& values);
     // True if the model has any active column filter (quick or manual) —
-    // drives the Filter button's highlighted state. Read filterRev first in
-    // the same QML binding to pick up changes.
+    // drives the Filter button's active badge. Has no change notification of
+    // its own, so a QML binding must also read filterRev to know when to
+    // re-run (see below for the form that read has to take).
     Q_INVOKABLE bool hasActiveColumnFilters(QAbstractItemModel* model) const;
     // Bumped whenever a model's active column filters change (apply/clear/
     // quick filter) — see hasActiveColumnFilters().
+    //
+    // A binding must fold this into the value it returns, e.g.
+    //
+    //     active: AppController.filterRev >= 0
+    //             && AppController.hasActiveColumnFilters(someModel)
+    //
+    // and NOT read it as a statement of its own ("{ AppController.filterRev;
+    // return ... }"). qmlsc compiles these bindings ahead of time and drops a
+    // statement whose value is never used, which takes the dependency on
+    // filterRev with it: the binding then runs once and freezes in whatever
+    // state the page was created with. The interpreter keeps such a read, so
+    // the difference only shows up in a real build. Same rule for sortRev.
     Q_PROPERTY(int filterRev READ filterRev NOTIFY filterRevChanged)
     int filterRev() const { return m_filterRev; }
     // The Q_PROPERTY model behind a section key — the one canonical mapping
@@ -337,8 +350,9 @@ public:
     Q_INVOKABLE void clearSort(QAbstractItemModel* model);
     // The model's current sort, as {field, descending} ({} if unsorted).
     Q_INVOKABLE QVariantMap activeSort(QAbstractItemModel* model) const;
-    // Bumped whenever a model's sort changes (applySort/clearSort) — read
-    // first in a QML binding the same way filterRev is, for reactivity.
+    // Bumped whenever a model's sort changes (applySort/clearSort) — fold it
+    // into a QML binding's result the same way filterRev is, for reactivity
+    // (see filterRev above for why a bare read is not enough).
     Q_PROPERTY(int sortRev READ sortRev NOTIFY sortRevChanged)
     int sortRev() const { return m_sortRev; }
     // Re-resolve a stable record id back to its current row in |model|'s

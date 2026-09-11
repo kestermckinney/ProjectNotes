@@ -126,7 +126,9 @@ bool AppController::openOrCreateDatabase()
     const bool isNewDatabase = !QFileInfo::exists(dbPath);
 
     if (isNewDatabase) {
+#ifdef QT_DEBUG
         QLog_Debug(DEBUGLOG, QString("Creating new database: %1").arg(dbPath));
+#endif
         if (!global_DBObjects.createDatabase(dbPath)) {
             emit errorOccurred(tr("Database Error"), tr("Failed to create database at %1").arg(dbPath));
             return false;
@@ -138,7 +140,9 @@ bool AppController::openOrCreateDatabase()
         return false;
     }
 
+#ifdef QT_DEBUG
     QLog_Debug(DEBUGLOG, QString("Database opened: %1").arg(dbPath));
+#endif
 
     // On first install set mobile-friendly defaults before applying filters.
     // On subsequent launches the values stored in the database are used as-is.

@@ -24,15 +24,15 @@ Popup {
     property var _model: null
     property var _filters: []   // [{label, field, values}]
 
-    // Reads filterRev so the trailing "Clear Filters" row appears/disappears
-    // as shortcuts are picked while this dialog stays open —
-    // hasActiveColumnFilters() has no change notification of its own (see
-    // AppController.filterRev), so without this the row's visibility would be
-    // frozen at whatever was active when the dialog opened.
-    readonly property bool _hasActive: {
-        AppController.filterRev
-        return _model ? AppController.hasActiveColumnFilters(_model) : false
-    }
+    // filterRev is folded into the result so the trailing "Clear Filters" row
+    // appears/disappears as shortcuts are picked while this dialog stays open.
+    // hasActiveColumnFilters() has no change notification of its own, so the
+    // binding needs filterRev to know when to re-run — and reading it has to
+    // feed the returned value, never stand as a statement on its own. See
+    // AppController.filterRev for why.
+    readonly property bool _hasActive: AppController.filterRev >= 0
+                                       && !!_model
+                                       && AppController.hasActiveColumnFilters(_model)
 
     // ── Public API ────────────────────────────────────────────────────────────
     function openWith(model, filters) {
@@ -150,11 +150,12 @@ Popup {
             delegate: ItemDelegate {
                 id: rowItem
                 required property var modelData
-                // Reads filterRev so the checkmark stays live while the dialog
-                // is open and the user picks more than one shortcut (this
-                // stays open across picks, like the desktop menu — see
-                // AppController.filterRev).
-                readonly property bool checked_: { AppController.filterRev; return root._matches(modelData) }
+                // filterRev keeps the checkmark live while the dialog is open
+                // and the user picks more than one shortcut (this stays open
+                // across picks, like the desktop menu). Folded into the result
+                // rather than read as a bare statement — see
+                // AppController.filterRev.
+                readonly property bool checked_: AppController.filterRev >= 0 && root._matches(modelData)
                 width: ListView.view ? ListView.view.width : 0
                 text: modelData.label
 
