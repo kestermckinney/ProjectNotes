@@ -239,7 +239,7 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
                                      .arg(channelName));
 #endif
 
-                result.append({project.id, QStringLiteral("Microsoft Teams"),
+                result.append({project.id, QStringLiteral("Web Link"),
                                QStringLiteral("Project Folder"), webUrl});
                 const QString stateKey = folderStateKey(driveId, itemId);
                 const bool unchanged = !modified.isEmpty()
