@@ -27,6 +27,11 @@ public:
                                        int *filesExamined, int *matchedFiles,
                                        QString *error);
     QHash<QString, QString> folderState() const { return m_folderState; }
+    // Up to the first few non-folder items examined during discover(), in the
+    // order encountered, regardless of whether they matched a rule. Lets a
+    // caller report what Graph is actually returning when a scan examines
+    // files but matches none, without needing a debug build.
+    QStringList examinedFileNames() const { return m_examinedFileNames; }
 
 private:
     using CompiledRules = QList<QPair<QString, QRegularExpression>>;
@@ -41,6 +46,10 @@ private:
     static QString locationType(const QString &path);
     bool isFolderExcluded(const QString &path, const QString &name) const;
     static QString folderStateKey(const QString &driveId, const QString &itemId);
+    // Drops the mobileRedirect/action query parameters Teams tacks onto a
+    // webUrl (meaningful only inside the Teams client), leaving every other
+    // parameter and the rest of the URL untouched.
+    static QString stripRedirectParams(const QString &url);
 
     QString m_token;
     QNetworkAccessManager *m_network = nullptr;
@@ -50,4 +59,5 @@ private:
     QList<QRegularExpression> m_folderExclusions;
     QHash<QString, QString> m_previousFolderState;
     QHash<QString, QString> m_folderState;
+    QStringList m_examinedFileNames;
 };

@@ -78,6 +78,8 @@ private slots:
     void graphEndpointResolution();
     void graphFolderExclusionsPruneSubtrees();
     void graphFolderTimestampsSkipUnchangedSubtrees();
+    void graphWebUrlsStripMobileRedirectAndActionParams();
+    void commitLocationsUpdatesExistingRemoteRowToNewUrl();
     void reconcilesOnlyActiveProjectsAndAdoptsLegacyRows();
     void scanSurvivesDescriptionCollisionWithoutAbortingScan();
     void commitLocationsPrefersLocalOverRemoteOnDescriptionCollision();
@@ -343,6 +345,37 @@ void FileFinderTest::graphFolderTimestampsSkipUnchangedSubtrees()
                          [](const QUrl &url) {
         return url.path().contains(QStringLiteral("/documents/children"));
     }));
+}
+
+void FileFinderTest::graphWebUrlsStripMobileRedirectAndActionParams()
+{
+    RecordingGraphNetwork network;
+    network.responses = {
+        {QStringLiteral("/v1.0/me/joinedTeams"),
+         R"({"value":[{"id":"team","displayName":"Project Team"}]})"},
+        {QStringLiteral("/v1.0/teams/team/channels"),
+         R"({"value":[{"id":"channel","displayName":"1001 General"}]})"},
+        {QStringLiteral("/v1.0/teams/team/channels/channel/filesFolder"),
+         R"({"id":"root","webUrl":"https://example.test/root?groupId=abc&mobileRedirect=true&action=default","parentReference":{"driveId":"drive"}})"},
+        {QStringLiteral("/v1.0/drives/drive/items/root/children"),
+         // action/mobileRedirect appear before the legitimate param here, to
+         // prove removal isn't just a naive trim of the URL's tail.
+         R"({"value":[{"id":"file","name":"Report.pdf","webUrl":"https://example.test/Report.pdf?action=default&mobileRedirect=true&groupId=abc","file":{}}]})"}
+    };
+
+    MicrosoftGraphSource graph(QStringLiteral("test-token"), &network);
+    QString error;
+    const QList<DiscoveredLocation> locations = graph.discover(
+        {{QStringLiteral("active-id"), QStringLiteral("1001")}},
+        {{QStringLiteral("Report"), QStringLiteral(R"(.*\.pdf$)")}},
+        nullptr, nullptr, &error);
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+
+    QCOMPARE(locations.size(), 2);
+    QCOMPARE(locations.at(0).fullPath,
+             QStringLiteral("https://example.test/root?groupId=abc"));
+    QCOMPARE(locations.at(1).fullPath,
+             QStringLiteral("https://example.test/Report.pdf?groupId=abc"));
 }
 
 void FileFinderTest::reconcilesOnlyActiveProjectsAndAdoptsLegacyRows()
@@ -654,6 +687,78 @@ void FileFinderTest::commitLocationsPrefersLocalOverRemoteOnDescriptionCollision
         {QStringLiteral("active-id"), QStringLiteral("PDF File"),
          QStringLiteral("Quote : Proposal.pdf"), localPath, false},
     }, QStringLiteral("remote-first order"));
+}
+
+void FileFinderTest::commitLocationsUpdatesExistingRemoteRowToNewUrl()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+
+    const QString databasePath = temporary.filePath(QStringLiteral("ProjectNotes.db"));
+    const QString oldUrl = QStringLiteral(
+        "https://example.test/Doc.aspx?sourcedoc=%7BGUID%7D&file=Report.xlsx"
+        "&action=default&mobileredirect=true");
+    const QString newUrl = QStringLiteral(
+        "https://example.test/Doc.aspx?sourcedoc=%7BGUID%7D&file=Report.xlsx");
+
+    const QString setupConnection = QStringLiteral("FileFinderRemoteUrlUpdateSetup");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                          setupConnection);
+        database.setDatabaseName(databasePath);
+        QVERIFY2(database.open(), qPrintable(database.lastError().text()));
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, "
+            "project_status TEXT, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, "
+            "location_type TEXT, location_description TEXT, full_path TEXT, "
+            "updateddate INTEGER, syncdate INTEGER, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO projects VALUES ('active-id', '1001', 'Active', 0)")));
+        query.prepare(QStringLiteral(
+            "INSERT INTO project_locations VALUES "
+            "('remote-row-id', 'active-id', 'Excel Document', 'Estimate : Report.xlsx', "
+            "?, 1, NULL, 0)"));
+        query.addBindValue(oldUrl);
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(setupConnection);
+
+    QReadWriteLock sharedLock;
+    FileFinderWorker worker;
+    worker.initializeDatabase(databasePath, &sharedLock);
+
+    // Simulates a rescan (e.g. "Reconsider All Files") re-discovering the same
+    // file, now with the mobileRedirect/action params already stripped by
+    // MicrosoftGraphSource — the existing row must be updated to match, not
+    // left on its old, unstripped URL.
+    const QList<DiscoveredLocation> locations = {
+        {QStringLiteral("active-id"), QStringLiteral("Excel Document"),
+         QStringLiteral("Estimate : Report.xlsx"), newUrl, true},
+    };
+    FileFinderScanSummary summary;
+    QString error;
+    QVERIFY2(worker.commitLocations(locations, &summary, &error), qPrintable(error));
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QCOMPARE(summary.updated, 1);
+    QCOMPARE(summary.inserted, 0);
+
+    worker.closeDatabase();
+
+    QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                      setupConnection);
+    database.setDatabaseName(databasePath);
+    QVERIFY2(database.open(), qPrintable(database.lastError().text()));
+    QSqlQuery query(database);
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT full_path FROM project_locations WHERE id = 'remote-row-id'")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), newUrl);
+    database.close();
+    QSqlDatabase::removeDatabase(setupConnection);
 }
 
 void FileFinderTest::commitLocationsKeepsExistingLocalRowWhenFileStillExists()

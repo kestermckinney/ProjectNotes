@@ -12,6 +12,7 @@
 #include <QSet>
 #include <QThread>
 #include <QTimer>
+#include <QUrlQuery>
 
 MicrosoftGraphSource::MicrosoftGraphSource(QString bearerToken,
                                            QNetworkAccessManager *network,
@@ -230,7 +231,8 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
                 const QString driveId = folder.value(QStringLiteral("parentReference"))
                                             .toObject().value(QStringLiteral("driveId")).toString();
                 const QString itemId = folder.value(QStringLiteral("id")).toString();
-                const QString webUrl = folder.value(QStringLiteral("webUrl")).toString();
+                const QString webUrl = stripRedirectParams(
+                    folder.value(QStringLiteral("webUrl")).toString());
                 const QString modified = folder.value(
                     QStringLiteral("lastModifiedDateTime")).toString();
                 if (driveId.isEmpty() || itemId.isEmpty() || webUrl.isEmpty()) {
@@ -363,6 +365,8 @@ bool MicrosoftGraphSource::appendChildren(
             }
             if (filesExamined)
                 ++*filesExamined;
+            if (m_examinedFileNames.size() < 5)
+                m_examinedFileNames.append(name);
             for (const auto &rule : rules) {
                 if (!rule.second.match(relative).hasMatch()
                     && !rule.second.match(name).hasMatch())
@@ -371,7 +375,7 @@ bool MicrosoftGraphSource::appendChildren(
                     ++*matchedFiles;
                 locations->append({project.id, locationType(name),
                     QStringLiteral("%1 : %2").arg(rule.first, name),
-                    item.value(QStringLiteral("webUrl")).toString()});
+                    stripRedirectParams(item.value(QStringLiteral("webUrl")).toString())});
                 break;
             }
         }
@@ -413,4 +417,31 @@ bool MicrosoftGraphSource::isFolderExcluded(const QString &path, const QString &
 QString MicrosoftGraphSource::folderStateKey(const QString &driveId, const QString &itemId)
 {
     return driveId + QChar(0x1f) + itemId;
+}
+
+QString MicrosoftGraphSource::stripRedirectParams(const QString &url)
+{
+    if (url.isEmpty())
+        return url;
+    QUrl parsed(url);
+    if (!parsed.isValid() || !parsed.hasQuery())
+        return url;
+    QUrlQuery query(parsed);
+    // Read and write with the same (fully-encoded) component formatting so
+    // values pass through unchanged instead of being decoded and re-encoded.
+    const QList<QPair<QString, QString>> items = query.queryItems(QUrl::FullyEncoded);
+    QUrlQuery filtered;
+    bool changed = false;
+    for (const auto &item : items) {
+        if (item.first.compare(QStringLiteral("mobileRedirect"), Qt::CaseInsensitive) == 0
+            || item.first.compare(QStringLiteral("action"), Qt::CaseInsensitive) == 0) {
+            changed = true;
+            continue;
+        }
+        filtered.addQueryItem(item.first, item.second);
+    }
+    if (!changed)
+        return url;
+    parsed.setQuery(filtered);
+    return parsed.toString(QUrl::FullyEncoded);
 }

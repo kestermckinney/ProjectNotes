@@ -174,6 +174,17 @@ void FileFinderWorker::scanNow()
                     m_configuration.graphFolderState = state;
                     emit graphFolderStateChanged(state);
                 }
+                // No rule matched anything Graph returned, even though files
+                // were examined. Surface a sample of what was actually seen
+                // (via the ordinary status/warning text, not gated behind a
+                // debug build) so a rule/matching mismatch is diagnosable
+                // without instrumentation.
+                if (remoteFiles > 0 && remoteMatches == 0) {
+                    summary.warning = tr("Teams scan examined %1 file(s) but matched none. "
+                                         "Example name(s) seen: %2")
+                        .arg(remoteFiles).arg(graph.examinedFileNames().join(
+                            QStringLiteral(", ")));
+                }
             }
         }
 
