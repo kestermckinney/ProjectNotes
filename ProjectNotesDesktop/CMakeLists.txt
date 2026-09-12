@@ -92,6 +92,7 @@ set(DESKTOP_QML_FILES
     qml/MenuScrollView.qml
     qml/ZoomMenuRow.qml
     qml/LogViewerWindow.qml
+    qml/ReadOnlyTextContextMenu.qml
     qml/HelpPage.qml
     qml/FilterDialog.qml
     qml/SortMenu.qml
