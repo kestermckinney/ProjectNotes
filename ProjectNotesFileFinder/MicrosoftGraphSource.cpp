@@ -156,7 +156,7 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
     }
 
     const QJsonArray teams = getCollection(
-        QUrl(QStringLiteral("me/joinedTeams?$select=id,displayName")), error);
+        QUrl(QStringLiteral("me/joinedTeams?$select=id,displayName,isArchived")), error);
     if (error && !error->isEmpty())
         return {};
 #ifdef QT_DEBUG
@@ -172,6 +172,14 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
         const QString teamName = team.value(QStringLiteral("displayName")).toString();
         if (teamId.isEmpty())
             continue;
+        if (team.value(QStringLiteral("isArchived")).toBool()) {
+#ifdef QT_DEBUG
+            if (m_diagnostic)
+                m_diagnostic(QStringLiteral("Office 365 File Finder: skipping archived team '%1'.")
+                                 .arg(teamName));
+#endif
+            continue;
+        }
         const QString encodedTeam = QString::fromLatin1(QUrl::toPercentEncoding(teamId));
         const QJsonArray channels = getCollection(
             QUrl(QStringLiteral("teams/%1/channels?$select=id,displayName").arg(encodedTeam)),
