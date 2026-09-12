@@ -145,8 +145,10 @@ void FileFinderWorker::scanNow()
                 [this](const QString &message) { emit diagnostic(message); },
                 m_configuration.folderExclusions,
                 m_configuration.graphFolderState);
-            const QList<DiscoveredLocation> remote = graph.discover(
+            QList<DiscoveredLocation> remote = graph.discover(
                 projects, m_configuration.rules, &remoteFiles, &remoteMatches, &graphError);
+            for (DiscoveredLocation &r : remote)
+                r.isRemote = true;
             summary.files += remoteFiles;
             summary.matched += remoteMatches;
             locations.append(remote);
@@ -395,12 +397,25 @@ bool FileFinderWorker::commitLocations(const QList<DiscoveredLocation> &location
         "(id, project_id, location_type, location_description, full_path, updateddate, syncdate, deleted) "
         "VALUES (?, ?, ?, ?, ?, ?, NULL, 0)"));
 
+    // Local (system) discoveries take precedence over remote/Teams discoveries
+    // when they describe the same file, so a project folder synced to both
+    // still points users at the local copy. Within a source, later scan order
+    // wins. Process all local entries first (in reverse, so later local
+    // entries win among themselves), then remote entries, skipping any whose
+    // key a local entry already claimed.
     QSet<QString> seen;
-    // Later discoveries win. Microsoft Teams results are appended after local
-    // results, so an enabled Teams source updates the same classifier row while
-    // both discovery options remain active.
+    QList<const DiscoveredLocation *> ordered;
+    ordered.reserve(locations.size());
     for (auto it = locations.crbegin(); it != locations.crend(); ++it) {
-        const DiscoveredLocation &location = *it;
+        if (!it->isRemote)
+            ordered.append(&(*it));
+    }
+    for (auto it = locations.crbegin(); it != locations.crend(); ++it) {
+        if (it->isRemote)
+            ordered.append(&(*it));
+    }
+    for (const DiscoveredLocation *locationPtr : ordered) {
+        const DiscoveredLocation &location = *locationPtr;
         const QString path = normalizedPath(location.fullPath);
         if (location.projectId.isEmpty() || location.description.isEmpty() || path.isEmpty())
             continue;

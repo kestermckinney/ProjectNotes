@@ -6,14 +6,14 @@ The current native integration is used by File Finder to discover project channe
 
 ## Before You Sign In
 
-Your organization must provide a Microsoft Entra app registration that permits Project Notes to request these delegated Microsoft Graph scopes:
+Your organization must provide a **dedicated** Microsoft Entra app registration for Office 365 Integration. Do not reuse the app registration configured for [Outlook Integration](<OutlookIntegration.md>) — its consent only covers Mail, Calendar, Contacts, and Tasks scopes. Office 365 Integration requests different, higher-privilege delegated Microsoft Graph scopes:
 
 - `Team.ReadBasic.All`
 - `Channel.ReadBasic.All`
 - `Files.Read.All`
 - `offline_access`
 
-Administrator consent may be required by your organization's Microsoft 365 policies.
+Microsoft Graph marks `Team.ReadBasic.All`, `Channel.ReadBasic.All`, and `Files.Read.All` as requiring administrator consent. A tenant administrator must grant consent for these permissions on the dedicated app registration (Microsoft Entra admin center > **App registrations** > the app > **API permissions** > **Grant admin consent**) before sign-in will succeed. If sign-in appears to complete but File Finder then reports an error mentioning admin approval (AADSTS90094), consent has not been granted yet, or the tenant/client ID entered below points at an app registration that was never granted it.
 
 ## Settings
 
@@ -30,7 +30,7 @@ The status panel reports whether Project Notes is signed in and shows the device
 
 ## Credential Storage
 
-Project Notes stores the Microsoft refresh token in the operating system's credential vault. Access tokens remain in memory. The tenant ID, client ID, and connection state are stored in the local Project Notes settings profile and do not sync through the project database.
+Project Notes stores the Microsoft refresh token in the operating system's credential vault. Access tokens remain in memory. The tenant ID, client ID, and connection state are stored in the local Project Notes settings profile and do not sync through the project database. These settings are kept independent of [Outlook Integration](<OutlookIntegration.md>)'s tenant ID and application ID — changing one never affects the other.
 
 ## Use with File Finder
 

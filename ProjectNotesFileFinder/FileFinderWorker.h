@@ -17,6 +17,7 @@ class QTimer;
 class FileFinderWorker final : public QObject
 {
     Q_OBJECT
+    friend class FileFinderTest;
 public:
     explicit FileFinderWorker(QObject *parent = nullptr);
 
