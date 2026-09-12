@@ -2657,10 +2657,11 @@ void DesktopAppController::openProjectLocation(int row)
     const QString path = model->data(model->index(row, 4)).toString();
     if (path.isEmpty()) return;
 
-    // A stored path with a URL scheme — http(s), the ms-office deep links that
-    // ProjectLocationsModel writes for Office web documents, mailto, file, … — is
-    // handed to the OS as a URL so the browser or the registered Office handler
-    // opens it; a bare filesystem path is opened as a local file.
+    // A stored path with a URL scheme — http(s), an ms-office deep link
+    // (kept only for rows saved before that rewrite was removed), mailto,
+    // file, … — is handed to the OS as a URL so the browser or the
+    // registered handler opens it; a bare filesystem path is opened as a
+    // local file.
     static const QStringList urlSchemes = {
         "http:", "https:", "ftp:", "mailto:", "file:",
         "ms-word:", "ms-excel:", "ms-powerpoint:", "ms-project:",
