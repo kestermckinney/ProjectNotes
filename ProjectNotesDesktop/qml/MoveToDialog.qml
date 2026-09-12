@@ -91,7 +91,7 @@ Dialog {
         RowLayout {
             Layout.fillWidth: true; Layout.margins: 12
             Text { text: qsTr("Move To…"); color: Theme.text; font.pixelSize: Theme.fontXl; font.weight: Font.Bold; Layout.fillWidth: true }
-            MaterialIcon { name: "close"; size: 18; color: Theme.text3; TapHandler { onTapped: dlg.close() } }
+            DialogCloseButton { popup: dlg; iconSize: 18 }
         }
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
 

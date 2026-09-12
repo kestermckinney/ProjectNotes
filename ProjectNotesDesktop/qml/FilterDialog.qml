@@ -191,16 +191,7 @@ Popup {
             Text { text: qsTr("Filter Editor"); color: Theme.text; font.pixelSize: Theme.fontXl; font.weight: Font.Bold; verticalAlignment: Text.AlignVCenter }
             Text { text: "· " + dlg._sectionLabel; color: Theme.text3; font.pixelSize: Theme.fontSm; verticalAlignment: Text.AlignVCenter }
             Item { Layout.fillWidth: true }
-            Rectangle {
-                implicitWidth: 24; implicitHeight: 24; radius: Theme.radiusSm
-                color: closeHover.hovered ? Theme.surface2 : "transparent"
-                MaterialIcon { anchors.centerIn: parent; name: "close"; size: 16; color: Theme.text2 }
-                HoverHandler { id: closeHover }
-                // Exclusive grab: a plain TapHandler only takes a passive grab, so
-                // without this the same tap also falls through to the list card
-                // behind the modal and navigates (matches the Main.qml dialog fix).
-                TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: dlg._dismiss() }
-            }
+            DialogCloseButton { popup: dlg; iconSize: 16 }
         }
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
 

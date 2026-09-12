@@ -1250,10 +1250,7 @@ Item {
                     color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
-                MaterialIcon {
-                    name: "close"; size: 20; color: Theme.text3
-                    TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: resetFileRulesDialog.close() }
-                }
+                DialogCloseButton { popup: resetFileRulesDialog }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
 

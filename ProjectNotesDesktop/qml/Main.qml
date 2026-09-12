@@ -898,15 +898,7 @@ ApplicationWindow {
                     font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
-                MaterialIcon {
-                    name: "close"
-                    size: 20
-                    color: Theme.text3
-                    TapHandler {
-                        gesturePolicy: TapHandler.ReleaseWithinBounds
-                        onTapped: aboutDialog.close()
-                    }
-                }
+                DialogCloseButton { popup: aboutDialog }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
 
@@ -1074,11 +1066,7 @@ ApplicationWindow {
                     color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
-                MaterialIcon {
-                    name: "close"; size: 20; color: Theme.text3
-                    // Exclusive grab: see the matching infoDialog close button below.
-                    TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: errorDialog.close() }
-                }
+                DialogCloseButton { popup: errorDialog }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
 
@@ -1144,13 +1132,7 @@ ApplicationWindow {
                     color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
-                MaterialIcon {
-                    name: "close"; size: 20; color: Theme.text3
-                    // Exclusive grab: a plain TapHandler only takes a passive grab, so
-                    // without this the same tap can also fall through to whatever's
-                    // behind the modal dialog (see the KebabButton fix for the same bug).
-                    TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: infoDialog.close() }
-                }
+                DialogCloseButton { popup: infoDialog }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
             ColumnLayout {
@@ -1237,11 +1219,9 @@ ApplicationWindow {
                     color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
-                MaterialIcon {
-                    name: "close"; size: 20; color: Theme.text3
+                DialogCloseButton {
+                    popup: syncCheckDialog
                     visible: !syncCheckDialog.checking
-                    // Exclusive grab: see the matching infoDialog close button above.
-                    TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: syncCheckDialog.close() }
                 }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
@@ -1368,11 +1348,7 @@ ApplicationWindow {
                     color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
-                MaterialIcon {
-                    name: "close"; size: 20; color: Theme.text3
-                    // Exclusive grab: see the matching infoDialog close button above.
-                    TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: updateDialog.close() }
-                }
+                DialogCloseButton { popup: updateDialog }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
             ColumnLayout {
@@ -1547,11 +1523,7 @@ ApplicationWindow {
                     color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
-                MaterialIcon {
-                    name: "close"; size: 20; color: Theme.text3
-                    // Exclusive grab: see the matching infoDialog close button above.
-                    TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: confirmDeleteDialog.close() }
-                }
+                DialogCloseButton { popup: confirmDeleteDialog }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
 
