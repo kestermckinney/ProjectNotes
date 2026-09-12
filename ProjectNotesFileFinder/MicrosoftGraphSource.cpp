@@ -18,10 +18,11 @@ MicrosoftGraphSource::MicrosoftGraphSource(QString bearerToken,
                                            QUrl endpoint,
                                            std::function<void(const QString &)> diagnostic,
                                            const QStringList &folderExclusions,
-                                           const QHash<QString, QString> &folderState)
+                                           const QHash<QString, QString> &folderState,
+                                           std::function<void(const QString &)> progress)
     : m_token(std::move(bearerToken)), m_network(network), m_endpoint(std::move(endpoint)),
-      m_diagnostic(std::move(diagnostic)), m_previousFolderState(folderState),
-      m_folderState(folderState)
+      m_diagnostic(std::move(diagnostic)), m_progress(std::move(progress)),
+      m_previousFolderState(folderState), m_folderState(folderState)
 {
     if (m_endpoint.isEmpty())
         m_endpoint = QUrl(QStringLiteral("https://graph.microsoft.com/v1.0/"));
@@ -194,6 +195,8 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
                 m_diagnostic(QStringLiteral("Office 365 File Finder: examining channel '%1' in team '%2'.")
                                  .arg(channelName, teamName));
 #endif
+            if (m_progress)
+                m_progress(QStringLiteral("%1 / %2").arg(teamName, channelName));
 
             for (const ProjectMatcher &matcher : projectMatchers) {
                 const ActiveProject &project = matcher.project;
@@ -312,6 +315,8 @@ bool MicrosoftGraphSource::appendChildren(
                              .arg(parentPath.isEmpty() ? QStringLiteral("/") : parentPath)
                              .arg(children.size()));
 #endif
+        if (m_progress)
+            m_progress(parentPath.isEmpty() ? QStringLiteral("/") : parentPath);
         for (const QJsonValue &value : children) {
             const QJsonObject item = value.toObject();
             const QString name = item.value(QStringLiteral("name")).toString();

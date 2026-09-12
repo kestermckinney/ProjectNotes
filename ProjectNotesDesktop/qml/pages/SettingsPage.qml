@@ -381,7 +381,20 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 Layout.minimumWidth: 0
-                                visible: page._finder && page._finder.lastScanSummary !== ""
+                                visible: page._finder && page._finder.scanning
+                                         && page._finder.scanningLocation !== ""
+                                text: page._finder ? page._finder.scanningLocation : ""
+                                color: Theme.text3
+                                font.pixelSize: Theme.fontSm
+                                elide: Text.ElideMiddle
+                                maximumLineCount: 1
+                                clip: true
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                Layout.minimumWidth: 0
+                                visible: page._finder && !page._finder.scanning
+                                         && page._finder.lastScanSummary !== ""
                                 text: page._finder ? page._finder.lastScanSummary : ""
                                 color: Theme.text3
                                 font.pixelSize: Theme.fontSm

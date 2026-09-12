@@ -32,6 +32,7 @@ class FileFinderService final : public QObject
     Q_PROPERTY(bool scanning READ scanning NOTIFY statusChanged)
     Q_PROPERTY(QString status READ status NOTIFY statusChanged)
     Q_PROPERTY(QString lastScanSummary READ lastScanSummary NOTIFY statusChanged)
+    Q_PROPERTY(QString scanningLocation READ scanningLocation NOTIFY scanningLocationChanged)
 
 public:
     explicit FileFinderService(QObject *parent = nullptr);
@@ -59,6 +60,7 @@ public:
     bool scanning() const { return m_scanning; }
     QString status() const { return m_status; }
     QString lastScanSummary() const { return m_lastScanSummary; }
+    QString scanningLocation() const { return m_scanningLocation; }
 
     Q_INVOKABLE void addSearchRoot(const QString &path);
     Q_INVOKABLE void removeSearchRoot(int index);
@@ -79,6 +81,7 @@ signals:
     void settingsChanged();
     void authenticationChanged();
     void statusChanged();
+    void scanningLocationChanged();
     void locationsChanged(int inserted, int updated);
     void diagnostic(const QString &message);
 
@@ -106,4 +109,5 @@ private:
     QString m_clientId;
     QString m_status = tr("File Finder is not initialized");
     QString m_lastScanSummary;
+    QString m_scanningLocation;
 };

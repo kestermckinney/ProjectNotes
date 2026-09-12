@@ -156,11 +156,20 @@ void FileFinderService::initialize(const QString &databasePath, QReadWriteLock *
     connect(m_worker, &FileFinderWorker::scanStarted, this, [this] {
         m_scanning = true;
         m_status = tr("Scanning active projects…");
+        m_scanningLocation.clear();
         emit statusChanged();
+        emit scanningLocationChanged();
+    });
+    connect(m_worker, &FileFinderWorker::scanningLocation, this,
+            [this](const QString &description) {
+        m_scanningLocation = description;
+        emit scanningLocationChanged();
     });
     connect(m_worker, &FileFinderWorker::scanFinished, this,
             [this](const FileFinderScanSummary &summary) {
         m_scanning = false;
+        m_scanningLocation.clear();
+        emit scanningLocationChanged();
         if (summary.error.isEmpty()) {
             m_status = summary.warning.isEmpty() ? tr("File Finder is ready")
                                                  : summary.warning;

@@ -150,7 +150,10 @@ void FileFinderWorker::scanNow()
             MicrosoftGraphSource graph(m_configuration.accessToken, m_network, {},
                 [this](const QString &message) { emit diagnostic(message); },
                 m_configuration.folderExclusions,
-                m_configuration.graphFolderState);
+                m_configuration.graphFolderState,
+                [this](const QString &folder) {
+                    emit scanningLocation(tr("Teams folder: %1").arg(folder));
+                });
             QList<DiscoveredLocation> remote = graph.discover(
                 projects, m_configuration.rules, &remoteFiles, &remoteMatches, &graphError);
             for (DiscoveredLocation &r : remote)
@@ -276,6 +279,7 @@ QHash<QString, QString> FileFinderWorker::findLocalProjectFolders(
                 break;
             const QString path = pending.takeLast();
             const QString name = QFileInfo(path).fileName();
+            emit scanningLocation(tr("Local folder: %1").arg(path));
             considerDirectory(path, name);
             const QFileInfoList children = QDir(path).entryInfoList(
                 QDir::Dirs | QDir::NoDotAndDotDot | QDir::Readable, QDir::NoSort);
