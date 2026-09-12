@@ -81,6 +81,8 @@ private slots:
     void reconcilesOnlyActiveProjectsAndAdoptsLegacyRows();
     void scanSurvivesDescriptionCollisionWithoutAbortingScan();
     void commitLocationsPrefersLocalOverRemoteOnDescriptionCollision();
+    void commitLocationsKeepsExistingLocalRowWhenFileStillExists();
+    void commitLocationsReplacesExistingLocalRowWhenFileNoLongerExists();
 };
 
 void FileFinderTest::searchRootPreservesHomeShortcut()
@@ -652,6 +654,147 @@ void FileFinderTest::commitLocationsPrefersLocalOverRemoteOnDescriptionCollision
         {QStringLiteral("active-id"), QStringLiteral("PDF File"),
          QStringLiteral("Quote : Proposal.pdf"), localPath, false},
     }, QStringLiteral("remote-first order"));
+}
+
+void FileFinderTest::commitLocationsKeepsExistingLocalRowWhenFileStillExists()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+
+    const QString databasePath = temporary.filePath(QStringLiteral("ProjectNotes.db"));
+    const QString localPath = temporary.filePath(QStringLiteral("Proposal.pdf"));
+    {
+        QFile file(localPath);
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        file.write("stub");
+    }
+
+    const QString setupConnection = QStringLiteral("FileFinderStillExistsSetup");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                          setupConnection);
+        database.setDatabaseName(databasePath);
+        QVERIFY2(database.open(), qPrintable(database.lastError().text()));
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, "
+            "project_status TEXT, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, "
+            "location_type TEXT, location_description TEXT, full_path TEXT, "
+            "updateddate INTEGER, syncdate INTEGER, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO projects VALUES ('active-id', '1001', 'Active', 0)")));
+        query.prepare(QStringLiteral(
+            "INSERT INTO project_locations VALUES "
+            "('local-row-id', 'active-id', 'File Folder', 'Project Folder', ?, 1, NULL, 0)"));
+        query.addBindValue(QFileInfo(localPath).canonicalFilePath());
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(setupConnection);
+
+    QReadWriteLock sharedLock;
+    FileFinderWorker worker;
+    worker.initializeDatabase(databasePath, &sharedLock);
+
+    FileFinderScanSummary summary;
+    QString error;
+    const QList<DiscoveredLocation> locations = {
+        {QStringLiteral("active-id"), QStringLiteral("Web Link"),
+         QStringLiteral("Project Folder"),
+         QStringLiteral("https://example.test/Project Folder"), true},
+    };
+    QVERIFY2(worker.commitLocations(locations, &summary, &error), qPrintable(error));
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QCOMPARE(summary.updated, 0);
+    QCOMPARE(summary.unchanged, 1);
+
+    worker.closeDatabase();
+    const QString verifyConnection = QStringLiteral("FileFinderStillExistsVerify");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                          verifyConnection);
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT location_type, full_path FROM project_locations "
+            "WHERE id = 'local-row-id'")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("File Folder"));
+        QCOMPARE(query.value(1).toString(), QFileInfo(localPath).canonicalFilePath());
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(verifyConnection);
+}
+
+void FileFinderTest::commitLocationsReplacesExistingLocalRowWhenFileNoLongerExists()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+
+    const QString databasePath = temporary.filePath(QStringLiteral("ProjectNotes.db"));
+    const QString staleLocalPath = QStringLiteral("/no/longer/exists/Project Folder");
+    const QString remotePath = QStringLiteral("https://example.test/Project Folder");
+
+    const QString setupConnection = QStringLiteral("FileFinderNoLongerExistsSetup");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                          setupConnection);
+        database.setDatabaseName(databasePath);
+        QVERIFY2(database.open(), qPrintable(database.lastError().text()));
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, "
+            "project_status TEXT, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, "
+            "location_type TEXT, location_description TEXT, full_path TEXT, "
+            "updateddate INTEGER, syncdate INTEGER, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO projects VALUES ('active-id', '1001', 'Active', 0)")));
+        query.prepare(QStringLiteral(
+            "INSERT INTO project_locations VALUES "
+            "('local-row-id', 'active-id', 'File Folder', 'Project Folder', ?, 1, NULL, 0)"));
+        query.addBindValue(staleLocalPath);
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(setupConnection);
+
+    QReadWriteLock sharedLock;
+    FileFinderWorker worker;
+    worker.initializeDatabase(databasePath, &sharedLock);
+
+    FileFinderScanSummary summary;
+    QString error;
+    const QList<DiscoveredLocation> locations = {
+        {QStringLiteral("active-id"), QStringLiteral("Web Link"),
+         QStringLiteral("Project Folder"), remotePath, true},
+    };
+    QVERIFY2(worker.commitLocations(locations, &summary, &error), qPrintable(error));
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QCOMPARE(summary.updated, 1);
+    QCOMPARE(summary.unchanged, 0);
+
+    worker.closeDatabase();
+    const QString verifyConnection = QStringLiteral("FileFinderNoLongerExistsVerify");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                          verifyConnection);
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT location_type, full_path FROM project_locations "
+            "WHERE id = 'local-row-id'")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("Web Link"));
+        QCOMPARE(query.value(1).toString(), remotePath);
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(verifyConnection);
 }
 
 QTEST_GUILESS_MAIN(FileFinderTest)

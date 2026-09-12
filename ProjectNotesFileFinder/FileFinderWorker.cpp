@@ -44,6 +44,12 @@ QString unqualifiedDescription(QString description)
     return description;
 }
 
+bool isRemoteLocationPath(const QString &path)
+{
+    return path.startsWith(QStringLiteral("http://"), Qt::CaseInsensitive)
+        || path.startsWith(QStringLiteral("https://"), Qt::CaseInsensitive);
+}
+
 }
 
 FileFinderWorker::FileFinderWorker(QObject *parent) : QObject(parent)
@@ -434,6 +440,15 @@ bool FileFinderWorker::commitLocations(const QList<DiscoveredLocation> &location
                 old = candidates.first();
         }
         if (!old.id.isEmpty()) {
+            if (location.isRemote && !isRemoteLocationPath(old.path)
+                && QFileInfo(old.path).exists()) {
+                // A Teams/remote discovery matched an existing row that still
+                // points at a local file that's still there. Don't let the
+                // remote link replace it just because this scan didn't
+                // rediscover the local copy.
+                ++summary->unchanged;
+                continue;
+            }
             if (old.type == location.locationType && old.description == location.description
                 && normalizedPath(old.path) == path) {
                 ++summary->unchanged;
@@ -504,8 +519,7 @@ QString FileFinderWorker::normalizedPath(const QString &path)
 {
     if (path.trimmed().isEmpty())
         return {};
-    if (path.startsWith(QStringLiteral("http://"), Qt::CaseInsensitive)
-        || path.startsWith(QStringLiteral("https://"), Qt::CaseInsensitive))
+    if (isRemoteLocationPath(path))
         return path;
     const QFileInfo info(path);
     const QString canonical = info.canonicalFilePath();
