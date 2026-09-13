@@ -178,8 +178,27 @@ QString HelpController::topicMarkdown(const QString& relPath) const
         last = m.capturedEnd();
     }
     rebuilt2 += out.mid(last);
+    out = rebuilt2;
 
-    return rebuilt2;
+    // Angle-bracketed link destinations, e.g. [text](<File.md>), as mkdocs
+    // allows for targets with spaces or parentheses. Qt's Markdown importer
+    // doesn't unwrap these itself; left as-is, the brackets read as an inline
+    // HTML tag and the link doesn't render. Image targets are handled above;
+    // this only strips brackets immediately after "](", so bare autolinks
+    // like <https://example.com> elsewhere in the text are untouched.
+    static const QRegularExpression reLinkTarget(QStringLiteral("\\]\\(<([^>]*)>\\)"));
+    QString rebuilt3;
+    rebuilt3.reserve(out.size());
+    last = 0;
+    for (QRegularExpressionMatchIterator it = reLinkTarget.globalMatch(out); it.hasNext(); ) {
+        const QRegularExpressionMatch m = it.next();
+        rebuilt3 += out.mid(last, m.capturedStart() - last);
+        rebuilt3 += "](" + m.captured(1) + ")";
+        last = m.capturedEnd();
+    }
+    rebuilt3 += out.mid(last);
+
+    return rebuilt3;
 }
 
 QString HelpController::resolveLink(const QString& fromPath, const QString& href) const
