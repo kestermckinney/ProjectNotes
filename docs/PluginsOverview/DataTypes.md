@@ -161,7 +161,7 @@ The [Meeting and Email Types](<../StandardPlugins/PluginSettings.md>) plugin ass
 
 ### File Finder
 
-The native [File Finder](<../StandardPlugins/FileFinder.md>) service classifies files and adds them with the `project_locations` data type, making them appear in the **Files & Folders** tab.
+The native [File Finder](<../InterfaceOverview/FileFinder.md>) service classifies files and adds them with the `project_locations` data type, making them appear in the **Files & Folders** tab.
 
 ## Summary
 

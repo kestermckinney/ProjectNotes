@@ -9,6 +9,17 @@ The Project Notes Settings page allows you to configure application-wide setting
 1. Click the **Settings** icon in the icon rail, or choose **Preferences** from the app menu (the menu icon at the top of the icon rail).
 2. The Settings page opens with sections for Appearance, Cloud Sync, Project Folders, Preferences, View Options, Data, and About.
 
+## Related Settings Pages
+
+This page covers Appearance, Project Manager/Managing Company, View Options,
+Data, and About. A few other Settings-page sections are substantial enough to
+have their own documentation:
+
+- [Cloud Sync](<RemoteHost.md>) — Sync your database with Project Notes Pro
+- [Project Folders](<ProjectFolders.md>) — Configure per-project folder locations
+- [File Finder](<FileFinder.md>) — Native automatic project file discovery
+- [Office 365 Integration](<Office365Integration.md>) — Native Microsoft 365 sign-in used by File Finder
+
 ## Appearance
 
 The **Appearance** section at the top of Settings controls the app's theme: **System**, **Light**, or **Dark**. **System** follows your operating system's current theme and switches automatically if it changes. Click a button to switch immediately — there is nothing to save. The same choice, as a quick two-way toggle, is also available as **Dark Mode** in the [Application Menu](<ApplicationMenu.md>)'s **View** group.
