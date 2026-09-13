@@ -12,10 +12,13 @@
 // phrase directly, without spinning up the sync engine.
 #include "authmanager.h"
 #include "httpclient.h"
+#include "NativeUrlOpener.h"
+#include "officedeeplink.h"
 #include "rowencryption.h"
 
 #include <QCoreApplication>
 #include <QCryptographicHash>
+#include <QDesktopServices>
 #include <QDir>
 #include <QFileInfo>
 #include <QHash>
@@ -28,6 +31,7 @@
 #include <QTextDocument>
 #include <QThread>
 #include <QTimer>
+#include <QUrl>
 #include <QUrlQuery>
 
 #include <algorithm>
@@ -1333,6 +1337,37 @@ int AppController::copyProjectLocation(int row)
 QVariantMap AppController::getProjectLocationData(int row) const
 {
     return proxyRowToMap(global_DBObjects.projectlocationsmodelproxy(), row);
+}
+
+bool AppController::openProjectLocation(int row)
+{
+    QAbstractItemModel* model = global_DBObjects.projectlocationsmodelproxy();
+    if (row < 0 || row >= model->rowCount()) return false;
+    // Rows saved by the old save-time rewrite hold ms-excel:ofe|u|<url>;
+    // unwrap them so they open exactly like a canonical row.
+    const QString path = unwrapOfficeDeepLink(
+        model->data(model->index(row, 4)).toString());
+    if (path.isEmpty()) return false;
+
+    // full_path is stored canonically — a plain http(s)/SharePoint URL, not
+    // an ms-office deep link (see the note in ProjectLocationsModel::setData()).
+    // Try the native Word/Excel/PowerPoint/Project app first, falling back to
+    // Safari when it isn't installed. This goes through NativeUrlOpener, not
+    // QDesktopServices, because QUrl percent-encodes the literal "|" that
+    // deep link relies on as its command delimiter — see NativeUrlOpener.h.
+    const QString deepLink = officeDeepLinkFor(path);
+    if (!deepLink.isEmpty() && NativeUrlOpener::openRawUrl(deepLink))
+        return true;
+
+    if (path.startsWith("http:", Qt::CaseInsensitive) || path.startsWith("https:", Qt::CaseInsensitive))
+        return QDesktopServices::openUrl(QUrl(path, QUrl::TolerantMode));
+
+    if (path.startsWith("www.", Qt::CaseInsensitive))
+        return QDesktopServices::openUrl(QUrl("https://" + path, QUrl::TolerantMode));
+
+    // Local filesystem paths (e.g. a location synced from a desktop File
+    // Finder scan) aren't meaningful on iOS's sandboxed filesystem.
+    return false;
 }
 
 // ── Project Notes ─────────────────────────────────────────────────────────────

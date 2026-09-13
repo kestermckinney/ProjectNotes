@@ -197,6 +197,7 @@ public:
     Q_INVOKABLE bool         deleteProjectLocation(int row);
     Q_INVOKABLE int          copyProjectLocation(int row);
     Q_INVOKABLE QVariantMap  getProjectLocationData(int row) const;
+    Q_INVOKABLE bool         openProjectLocation(int row);
 
     Q_INVOKABLE int          addProjectNote(const QString& projectId);
     Q_INVOKABLE bool         deleteProjectNote(int row);

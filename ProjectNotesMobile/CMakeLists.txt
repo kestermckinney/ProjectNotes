@@ -97,6 +97,7 @@ qt_add_qml_module(ProjectNotesMobile
         MobileSettings.cpp  MobileSettings.h
         TextFormatter.cpp   TextFormatter.h
         MailComposer.mm     MailComposer.h
+        NativeUrlOpener.mm  NativeUrlOpener.h
     QML_FILES
         qml/Theme.qml
         qml/FormField.qml

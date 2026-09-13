@@ -47,4 +47,10 @@ File Finder caches Microsoft Graph folder modification times to avoid reading un
 
 When a file is discovered both locally and through a Teams channel, File Finder keeps the local path on the **Files & Folders** row instead of replacing it with the Teams/SharePoint web link, as long as the local copy is still there. This keeps the row usable from applications that aren't integrated with Microsoft Teams.
 
+For Word, Excel, PowerPoint, and Project files, File Finder stores the direct SharePoint address of the document (for example `.../Shared Documents/General/Budget.xlsx`) rather than the browser viewer page. Other files keep the browser link.
+
+Clicking **Open** on a row with a direct document address launches the matching Office app on that document. The link opens in the browser instead when the app isn't installed (Safari on the mobile app). Viewer pages (`.../_layouts/15/Doc.aspx?...`) and short sharing links (`.../:x:/r/...`) always open in the browser, because Office apps can't open them directly; Office for the web offers **Open in Desktop App** from there. The stored link is never rewritten when you open it.
+
+Rows found by earlier scans still hold viewer-page links. Select **Reconsider All Files** on the File Finder page once to replace them with direct addresses.
+
 See [File Finder](<FileFinder.md>) for discovery, matching, classification settings, and how local/Teams precedence works.

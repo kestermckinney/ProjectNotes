@@ -78,7 +78,7 @@ private slots:
     void graphEndpointResolution();
     void graphFolderExclusionsPruneSubtrees();
     void graphFolderTimestampsSkipUnchangedSubtrees();
-    void graphWebUrlsStripMobileRedirectAndActionParams();
+    void graphOfficeFilesStoreDirectWebDavUrl();
     void commitLocationsUpdatesExistingRemoteRowToNewUrl();
     void reconcilesOnlyActiveProjectsAndAdoptsLegacyRows();
     void scanSurvivesDescriptionCollisionWithoutAbortingScan();
@@ -246,7 +246,7 @@ void FileFinderTest::graphEndpointResolution()
         QCOMPARE(network.requests.takeLast(), QUrl(expected));
     };
     const QString publicUrl = QStringLiteral(
-        "https://graph.microsoft.com/v1.0/me/joinedTeams?$select=id,displayName");
+        "https://graph.microsoft.com/v1.0/me/joinedTeams?$select=id,displayName,isArchived");
     MicrosoftGraphSource defaultGraph(QStringLiteral("test-token"), &network);
     verify(defaultGraph, publicUrl);
     MicrosoftGraphSource emptyEndpoint(QStringLiteral("test-token"), &network, {},
@@ -255,7 +255,7 @@ void FileFinderTest::graphEndpointResolution()
     MicrosoftGraphSource customEndpoint(QStringLiteral("test-token"), &network,
                                         QUrl(QStringLiteral("http://localhost:1234/v1.0")));
     verify(customEndpoint, QStringLiteral(
-        "http://localhost:1234/v1.0/me/joinedTeams?$select=id,displayName"));
+        "http://localhost:1234/v1.0/me/joinedTeams?$select=id,displayName,isArchived"));
 }
 
 void FileFinderTest::graphFolderExclusionsPruneSubtrees()
@@ -316,7 +316,7 @@ void FileFinderTest::graphFolderTimestampsSkipUnchangedSubtrees()
     QVERIFY2(error.isEmpty(), qPrintable(error));
     QVERIFY(network.requests.contains(QUrl(
         QStringLiteral("https://graph.microsoft.com/v1.0/drives/drive/items/documents/children?"
-                       "$select=id,name,size,lastModifiedDateTime,webUrl,file,folder"))));
+                       "$select=id,name,size,lastModifiedDateTime,webUrl,webDavUrl,file,folder"))));
     const QHash<QString, QString> initialState = initial.folderState();
     QCOMPARE(initialState.size(), 2);
 
@@ -347,8 +347,10 @@ void FileFinderTest::graphFolderTimestampsSkipUnchangedSubtrees()
     }));
 }
 
-void FileFinderTest::graphWebUrlsStripMobileRedirectAndActionParams()
+void FileFinderTest::graphOfficeFilesStoreDirectWebDavUrl()
 {
+    // An Office file's webUrl is SharePoint's Doc.aspx viewer page, which the
+    // ms-excel:ofe|u| URI scheme can't open, so Office types store webDavUrl.
     RecordingGraphNetwork network;
     network.responses = {
         {QStringLiteral("/v1.0/me/joinedTeams"),
@@ -356,26 +358,37 @@ void FileFinderTest::graphWebUrlsStripMobileRedirectAndActionParams()
         {QStringLiteral("/v1.0/teams/team/channels"),
          R"({"value":[{"id":"channel","displayName":"1001 General"}]})"},
         {QStringLiteral("/v1.0/teams/team/channels/channel/filesFolder"),
-         R"({"id":"root","webUrl":"https://example.test/root?groupId=abc&mobileRedirect=true&action=default","parentReference":{"driveId":"drive"}})"},
+         R"({"id":"root","webUrl":"https://example.test/root","parentReference":{"driveId":"drive"}})"},
         {QStringLiteral("/v1.0/drives/drive/items/root/children"),
-         // action/mobileRedirect appear before the legitimate param here, to
-         // prove removal isn't just a naive trim of the URL's tail.
-         R"({"value":[{"id":"file","name":"Report.pdf","webUrl":"https://example.test/Report.pdf?action=default&mobileRedirect=true&groupId=abc","file":{}}]})"}
+         R"({"value":[)"
+         R"({"id":"xlsx","name":"Budget.xlsx","file":{},)"
+         R"("webUrl":"https://example.test/_layouts/15/Doc.aspx?sourcedoc=%7BGUID%7D&file=Budget.xlsx&action=default",)"
+         R"("webDavUrl":"https://example.test/Shared%20Documents/Budget.xlsx"},)"
+         R"({"id":"pdf","name":"Manual.pdf","file":{},)"
+         R"("webUrl":"https://example.test/Shared%20Documents/Manual.pdf",)"
+         R"("webDavUrl":"https://example.test/dav/Manual.pdf"},)"
+         R"({"id":"docx","name":"Notes.docx","file":{},)"
+         R"("webUrl":"https://example.test/_layouts/15/Doc.aspx?sourcedoc=%7BDOC%7D&file=Notes.docx"})"
+         R"(]})"}
     };
 
     MicrosoftGraphSource graph(QStringLiteral("test-token"), &network);
     QString error;
     const QList<DiscoveredLocation> locations = graph.discover(
         {{QStringLiteral("active-id"), QStringLiteral("1001")}},
-        {{QStringLiteral("Report"), QStringLiteral(R"(.*\.pdf$)")}},
+        {{QStringLiteral("Document"), QStringLiteral(R"(.*\.(xlsx|pdf|docx)$)")}},
         nullptr, nullptr, &error);
     QVERIFY2(error.isEmpty(), qPrintable(error));
 
-    QCOMPARE(locations.size(), 2);
-    QCOMPARE(locations.at(0).fullPath,
-             QStringLiteral("https://example.test/root?groupId=abc"));
+    QCOMPARE(locations.size(), 4);
     QCOMPARE(locations.at(1).fullPath,
-             QStringLiteral("https://example.test/Report.pdf?groupId=abc"));
+             QStringLiteral("https://example.test/Shared%20Documents/Budget.xlsx"));
+    // Non-Office files keep webUrl even when webDavUrl is present.
+    QCOMPARE(locations.at(2).fullPath,
+             QStringLiteral("https://example.test/Shared%20Documents/Manual.pdf"));
+    // An Office file without webDavUrl falls back to webUrl.
+    QCOMPARE(locations.at(3).fullPath,
+             QStringLiteral("https://example.test/_layouts/15/Doc.aspx?sourcedoc=%7BDOC%7D&file=Notes.docx"));
 }
 
 void FileFinderTest::reconcilesOnlyActiveProjectsAndAdoptsLegacyRows()
@@ -696,10 +709,10 @@ void FileFinderTest::commitLocationsUpdatesExistingRemoteRowToNewUrl()
 
     const QString databasePath = temporary.filePath(QStringLiteral("ProjectNotes.db"));
     const QString oldUrl = QStringLiteral(
-        "https://example.test/Doc.aspx?sourcedoc=%7BGUID%7D&file=Report.xlsx"
+        "https://example.test/_layouts/15/Doc.aspx?sourcedoc=%7BGUID%7D&file=Report.xlsx"
         "&action=default&mobileredirect=true");
     const QString newUrl = QStringLiteral(
-        "https://example.test/Doc.aspx?sourcedoc=%7BGUID%7D&file=Report.xlsx");
+        "https://example.test/Shared%20Documents/Report.xlsx");
 
     const QString setupConnection = QStringLiteral("FileFinderRemoteUrlUpdateSetup");
     {
@@ -732,9 +745,9 @@ void FileFinderTest::commitLocationsUpdatesExistingRemoteRowToNewUrl()
     worker.initializeDatabase(databasePath, &sharedLock);
 
     // Simulates a rescan (e.g. "Reconsider All Files") re-discovering the same
-    // file, now with the mobileRedirect/action params already stripped by
-    // MicrosoftGraphSource — the existing row must be updated to match, not
-    // left on its old, unstripped URL.
+    // Office file, now under its direct webDavUrl instead of the Doc.aspx
+    // viewer page an earlier scan stored — the existing row must be updated
+    // to the new URL, not left on the old one or duplicated.
     const QList<DiscoveredLocation> locations = {
         {QStringLiteral("active-id"), QStringLiteral("Excel Document"),
          QStringLiteral("Estimate : Report.xlsx"), newUrl, true},

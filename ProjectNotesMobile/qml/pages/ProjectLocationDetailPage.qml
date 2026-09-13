@@ -97,21 +97,26 @@ Page {
         }
     }
 
-    // ── Footer: open web link ─────────────────────────────────────────────────
+    // ── Footer: open ──────────────────────────────────────────────────────────
     footer: ToolBar {
         visible: pathField.text.startsWith("http://") || pathField.text.startsWith("https://")
+                 || pathField.text.startsWith("ms-")
                  || typeCombo.selection === "Web Link"
         RowLayout {
             anchors.centerIn: parent
             ToolButton {
                 icon.name: "safari"
-                text: qsTr("Open in Browser")
+                text: qsTr("Open")
                 display: AbstractButton.TextUnderIcon
                 onClicked: {
-                    var url = pathField.text
-                    if (!url.startsWith("http://") && !url.startsWith("https://"))
-                        url = "http://" + url
-                    Qt.openUrlExternally(url)
+                    // Save any pending edits first so the row AppController
+                    // opens reflects what's on screen, then re-resolve the
+                    // row the same way _saveNow() does.
+                    if (!root._saveNow()) return
+                    var row = AppController.rowForId(AppController.projectLocationsModel, root.locationId)
+                    if (row < 0) return
+                    root.locationRow = row
+                    AppController.openProjectLocation(row)
                 }
             }
         }

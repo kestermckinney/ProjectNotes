@@ -12,7 +12,6 @@
 #include <QSet>
 #include <QThread>
 #include <QTimer>
-#include <QUrlQuery>
 
 MicrosoftGraphSource::MicrosoftGraphSource(QString bearerToken,
                                            QNetworkAccessManager *network,
@@ -231,8 +230,7 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
                 const QString driveId = folder.value(QStringLiteral("parentReference"))
                                             .toObject().value(QStringLiteral("driveId")).toString();
                 const QString itemId = folder.value(QStringLiteral("id")).toString();
-                const QString webUrl = stripRedirectParams(
-                    folder.value(QStringLiteral("webUrl")).toString());
+                const QString webUrl = folder.value(QStringLiteral("webUrl")).toString();
                 const QString modified = folder.value(
                     QStringLiteral("lastModifiedDateTime")).toString();
                 if (driveId.isEmpty() || itemId.isEmpty() || webUrl.isEmpty()) {
@@ -307,7 +305,7 @@ bool MicrosoftGraphSource::appendChildren(
     const QString encodedDrive = QString::fromLatin1(QUrl::toPercentEncoding(driveId));
     const QString encodedItem = QString::fromLatin1(QUrl::toPercentEncoding(itemId));
     QUrl page(QStringLiteral("drives/%1/items/%2/children?"
-                             "$select=id,name,size,lastModifiedDateTime,webUrl,file,folder")
+                             "$select=id,name,size,lastModifiedDateTime,webUrl,webDavUrl,file,folder")
                   .arg(encodedDrive, encodedItem));
     while (!page.isEmpty()) {
         if (QThread::currentThread()->isInterruptionRequested()) {
@@ -373,9 +371,22 @@ bool MicrosoftGraphSource::appendChildren(
                     continue;
                 if (matchedFiles)
                     ++*matchedFiles;
-                locations->append({project.id, locationType(name),
-                    QStringLiteral("%1 : %2").arg(rule.first, name),
-                    stripRedirectParams(item.value(QStringLiteral("webUrl")).toString())});
+                // For an Office file, webUrl is SharePoint's browser viewer
+                // page (_layouts/15/Doc.aspx?sourcedoc={GUID}&file=…), which
+                // the ms-word:/ms-excel: URI scheme can't open. webDavUrl is
+                // the direct document URL, so store that for Office types.
+                // Everything else keeps webUrl, which opens in the browser.
+                const QString type = locationType(name);
+                const bool officeType = type == QLatin1String("Word Document")
+                    || type == QLatin1String("Excel Document")
+                    || type == QLatin1String("PowerPoint Document")
+                    || type == QLatin1String("Microsoft Project");
+                QString url = officeType
+                    ? item.value(QStringLiteral("webDavUrl")).toString() : QString();
+                if (url.isEmpty())
+                    url = item.value(QStringLiteral("webUrl")).toString();
+                locations->append({project.id, type,
+                    QStringLiteral("%1 : %2").arg(rule.first, name), url});
                 break;
             }
         }
@@ -417,31 +428,4 @@ bool MicrosoftGraphSource::isFolderExcluded(const QString &path, const QString &
 QString MicrosoftGraphSource::folderStateKey(const QString &driveId, const QString &itemId)
 {
     return driveId + QChar(0x1f) + itemId;
-}
-
-QString MicrosoftGraphSource::stripRedirectParams(const QString &url)
-{
-    if (url.isEmpty())
-        return url;
-    QUrl parsed(url);
-    if (!parsed.isValid() || !parsed.hasQuery())
-        return url;
-    QUrlQuery query(parsed);
-    // Read and write with the same (fully-encoded) component formatting so
-    // values pass through unchanged instead of being decoded and re-encoded.
-    const QList<QPair<QString, QString>> items = query.queryItems(QUrl::FullyEncoded);
-    QUrlQuery filtered;
-    bool changed = false;
-    for (const auto &item : items) {
-        if (item.first.compare(QStringLiteral("mobileRedirect"), Qt::CaseInsensitive) == 0
-            || item.first.compare(QStringLiteral("action"), Qt::CaseInsensitive) == 0) {
-            changed = true;
-            continue;
-        }
-        filtered.addQueryItem(item.first, item.second);
-    }
-    if (!changed)
-        return url;
-    parsed.setQuery(filtered);
-    return parsed.toString(QUrl::FullyEncoded);
 }

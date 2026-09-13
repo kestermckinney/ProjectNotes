@@ -34,6 +34,7 @@ set(CORE_SOURCES
     ../databasecreate.cpp   ../databasecreate.h
     ../databasestructure.cpp ../databasestructure.h
     ../databaseviews.cpp    ../databaseviews.h
+    ../officedeeplink.cpp   ../officedeeplink.h
     ../databaseupgrade_v1_0_0.cpp ../databaseupgrade_v1_0_0.h
     ../databaseupgrade_v1_2_0.cpp ../databaseupgrade_v1_2_0.h
     ../databaseupgrade_v5_0_0.cpp ../databaseupgrade_v5_0_0.h

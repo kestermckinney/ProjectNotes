@@ -46,10 +46,6 @@ private:
     static QString locationType(const QString &path);
     bool isFolderExcluded(const QString &path, const QString &name) const;
     static QString folderStateKey(const QString &driveId, const QString &itemId);
-    // Drops the mobileRedirect/action query parameters Teams tacks onto a
-    // webUrl (meaningful only inside the Teams client), leaving every other
-    // parameter and the rest of the URL untouched.
-    static QString stripRedirectParams(const QString &url);
 
     QString m_token;
     QNetworkAccessManager *m_network = nullptr;
