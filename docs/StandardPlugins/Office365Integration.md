@@ -45,4 +45,6 @@ File Finder enumerates the signed-in user's joined Teams and their channels. A c
 
 File Finder caches Microsoft Graph folder modification times to avoid reading unchanged remote subtrees. Changing classification rules or folder exclusions, signing out, or selecting **Reconsider All Files** clears that cache.
 
-See [File Finder](<FileFinder.md>) for discovery, matching, and classification settings.
+When a file is discovered both locally and through a Teams channel, File Finder keeps the local path on the **Files & Folders** row instead of replacing it with the Teams/SharePoint web link, as long as the local copy is still there. This keeps the row usable from applications that aren't integrated with Microsoft Teams.
+
+See [File Finder](<FileFinder.md>) for discovery, matching, classification settings, and how local/Teams precedence works.
