@@ -1366,9 +1366,32 @@ bool AppController::openProjectLocation(int row)
     // Safari when it isn't installed. This goes through NativeUrlOpener, not
     // QDesktopServices, because QUrl percent-encodes the literal "|" that
     // deep link relies on as its command delimiter — see NativeUrlOpener.h.
-    const QString deepLink = officeDeepLinkFor(path);
-    if (!deepLink.isEmpty() && NativeUrlOpener::openRawUrl(deepLink))
-        return true;
+    //
+    // Preferences > "Open links in desktop apps when available" lets the user
+    // turn this off entirely, matching the desktop app's Office 365
+    // Integration setting; in that case open the browser-based Office Online
+    // viewer instead of handing the file to a native app.
+    if (global_DBObjects.getOffice365OpenLinksInDesktop()) {
+        const QString deepLink = officeDeepLinkFor(path);
+        if (!deepLink.isEmpty() && NativeUrlOpener::openRawUrl(deepLink))
+            return true;
+    } else {
+        // Only return here on success — same as the native-app branch above.
+        // If opening the rewritten viewer URL fails, fall through to the
+        // plain-URL open below rather than silently doing nothing.
+        //
+        // This goes through NativeUrlOpener::openInBrowser(), not
+        // QDesktopServices, because a plain https:// open — via either one —
+        // goes through UIApplication's normal URL routing, which honors
+        // Universal Links: the installed Word/Excel/PowerPoint apps register
+        // as handlers for SharePoint/OneDrive domains, so the link would land
+        // back in the native app regardless of this setting being off.
+        // openInBrowser() presents it in an in-app Safari view instead,
+        // bypassing that routing so the viewer actually opens in the browser.
+        const QString viewerUrl = officeWebViewerUrlFor(path);
+        if (!viewerUrl.isEmpty() && NativeUrlOpener::openInBrowser(viewerUrl))
+            return true;
+    }
 
     if (path.startsWith("http:", Qt::CaseInsensitive) || path.startsWith("https:", Qt::CaseInsensitive))
         return QDesktopServices::openUrl(QUrl(path, QUrl::TolerantMode));

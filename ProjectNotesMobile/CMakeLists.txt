@@ -167,6 +167,12 @@ if(IOS OR (APPLE AND CMAKE_SYSTEM_NAME STREQUAL "iOS"))
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/ios/Info.plist"
     )
     target_link_libraries(ProjectNotesMobile PRIVATE "-framework MessageUI")
+    # SFSafariViewController — see NativeUrlOpener::openInBrowser(): forces a
+    # link open in-app via Safari rather than through UIApplication's URL
+    # routing, which a Universal-Link-registered app (e.g. the installed Word/
+    # Excel/PowerPoint apps claim SharePoint/OneDrive domains) would otherwise
+    # intercept regardless of the "Open links in desktop apps" setting.
+    target_link_libraries(ProjectNotesMobile PRIVATE "-framework SafariServices")
 endif()
 
 # ── Link libraries ────────────────────────────────────────────────────────────

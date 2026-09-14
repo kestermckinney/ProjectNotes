@@ -67,6 +67,16 @@ Page {
                     }
                 }
             }
+
+            // ── Office Documents ─────────────────────────────────────────────
+            SectionHeader { text: qsTr("Office Documents") }
+            SettingsRow {
+                label: qsTr("Open links in apps when available")
+                control: Switch {
+                    checked: AppController.office365OpenLinksInDesktop
+                    onToggled: AppController.office365OpenLinksInDesktop = checked
+                }
+            }
         }
     }
 
@@ -81,5 +91,44 @@ Page {
         font.weight: 600
         color: Theme.navyMid
         background: Rectangle { color: Theme.sectionBg }
+    }
+
+    component SettingsRow: RowLayout {
+        property string label: ""
+        property alias control: controlSlot.children
+
+        Layout.fillWidth: true
+        Layout.minimumHeight: 44
+        spacing: 0
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            color: palette.base
+
+            RowLayout {
+                anchors { fill: parent; leftMargin: 16; rightMargin: 16; topMargin: 8; bottomMargin: 8 }
+
+                Label {
+                    text: parent.parent.parent.label
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                }
+
+                Item {
+                    id: controlSlot
+                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                    implicitWidth: children.length > 0 ? children[0].implicitWidth : 0
+                    implicitHeight: children.length > 0 ? children[0].implicitHeight : 0
+                }
+            }
+
+            Rectangle {
+                anchors { bottom: parent.bottom; left: parent.left; right: parent.right; leftMargin: 16 }
+                height: 1
+                color: Theme.mutedText
+                opacity: 0.3
+            }
+        }
     }
 }

@@ -78,6 +78,8 @@ class AppController : public QObject
     Q_PROPERTY(bool showClosedProjects  READ showClosedProjects  WRITE setShowClosedProjects  NOTIFY viewOptionsChanged)
     Q_PROPERTY(bool showInternalItems   READ showInternalItems   WRITE setShowInternalItems   NOTIFY viewOptionsChanged)
     Q_PROPERTY(bool newAndAssignedOnly  READ newAndAssignedOnly  WRITE setNewAndAssignedOnly  NOTIFY viewOptionsChanged)
+    Q_PROPERTY(bool office365OpenLinksInDesktop READ office365OpenLinksInDesktop
+               WRITE setOffice365OpenLinksInDesktop NOTIFY viewOptionsChanged)
 
 public:
     explicit AppController(QObject* parent = nullptr);
@@ -434,6 +436,16 @@ public:
 
     bool newAndAssignedOnly() const { return !global_DBObjects.getShowResolvedTrackerItems(); }
     void setNewAndAssignedOnly(bool v);  // implemented in .cpp — needs model filter calls
+
+    // Mirrors desktop's Settings > Office 365 Integration toggle: whether
+    // openProjectLocation() tries a native Word/Excel/PowerPoint/Project app
+    // first, versus going straight to the browser-based Office Online viewer.
+    bool office365OpenLinksInDesktop() const { return global_DBObjects.getOffice365OpenLinksInDesktop(); }
+    void setOffice365OpenLinksInDesktop(bool v)
+    {
+        global_DBObjects.setOffice365OpenLinksInDesktop(v);
+        emit viewOptionsChanged();
+    }
 
 signals:
     void syncSettingsChanged();
