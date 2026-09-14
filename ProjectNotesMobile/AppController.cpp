@@ -255,6 +255,11 @@ void AppController::startSync()
 {
     if (!global_MobileSettings.getSyncEnabled()) return;
     if (!global_DBObjects.isOpen()) return;
+    // Config must actually be usable — an enabled-but-unconfigured setup
+    // (e.g. just after install) must not attempt to initialize with empty
+    // credentials.
+    if (global_MobileSettings.getSyncEmail().isEmpty()) return;
+    if (global_MobileSettings.getSyncPassword().isEmpty()) return;
 
     configureSyncApi();
 
@@ -391,7 +396,13 @@ void AppController::onSyncStatusUpdated(int percentComplete, qint64 /*pendingPus
 
 void AppController::onSyncSettingsChanged()
 {
-    if (!global_MobileSettings.getSyncEnabled())      return;
+    if (!global_MobileSettings.getSyncEnabled()) {
+        // Sync was just turned off — stop an already-running engine rather
+        // than merely blocking future start attempts, otherwise it keeps
+        // syncing in the background despite the setting showing disabled.
+        stopSync();
+        return;
+    }
     if (!global_DBObjects.isOpen())                   return;
     if (global_MobileSettings.getSyncEmail().isEmpty())    return;
     if (global_MobileSettings.getSyncPassword().isEmpty()) return;

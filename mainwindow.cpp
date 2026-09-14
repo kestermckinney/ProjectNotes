@@ -790,8 +790,14 @@ void MainWindow::openDatabase(const QString& dbfile)
     if (!global_DBObjects.openDatabase(dbfile, mainConnectionName()))
         return;
 
-    // Start sync if enabled
-    if (global_Settings.getSyncEnabled()) {
+    // Start sync only if enabled AND the credentials needed to actually
+    // authenticate are present. An enabled-but-unconfigured setup used to
+    // fall through into initialize() with empty email/password.
+    const bool syncConfigured = global_Settings.getSyncEnabled()
+        && !global_Settings.getSyncEmail().isEmpty()
+        && !global_Settings.getSyncPassword().isEmpty();
+
+    if (syncConfigured) {
         if (!m_syncApi)
             m_syncApi = new SqliteSyncPro(this);
 
@@ -925,6 +931,16 @@ void MainWindow::openDatabase(const QString& dbfile)
                 tr("Connection settings are invalid — unable to connect to the sync host.\n\n"
                    "Your settings have been saved. You can update them via File > Cloud Sync Settings."));
         }
+    } else if (m_syncApi && m_syncApi->isInitialized()) {
+        // Cloud Sync was just turned off (or its credentials cleared) while a
+        // sync engine from a prior session was still running. Stop it now —
+        // otherwise it keeps syncing in the background despite the setting
+        // showing disabled.
+        disconnect(m_syncApi, &SqliteSyncPro::rowChanged, this, &MainWindow::onSyncRowChanged);
+        QEventLoop stopLoop;
+        connect(m_syncApi, &SqliteSyncPro::syncStopped, &stopLoop, &QEventLoop::quit);
+        m_syncApi->shutdown();
+        stopLoop.exec();
     }
 
     // load and refresh all of the models in order of their dependancy relationships
