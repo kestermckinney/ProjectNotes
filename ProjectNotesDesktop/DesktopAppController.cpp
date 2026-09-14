@@ -2708,9 +2708,23 @@ void DesktopAppController::openProjectLocation(int row)
     // opening the canonical URL itself when nothing answers (e.g. the Office
     // app isn't installed). openRawUri() returns false when no handler is
     // registered for the ms-* scheme.
-    const QString deepLink = officeDeepLinkFor(path);
-    if (!deepLink.isEmpty() && openRawUri(deepLink))
-        return;
+    //
+    // Settings > Office 365 Integration lets the user turn this off entirely;
+    // in that case open the browser-based Office Online viewer instead of
+    // handing the file to a desktop app, rather than just opening the bare
+    // document URL (which SharePoint/OneDrive can otherwise offer to download
+    // or open in the desktop app itself, depending on tenant settings).
+    if (!m_fileFinder || m_fileFinder->office365OpenLinksInDesktop()) {
+        const QString deepLink = officeDeepLinkFor(path);
+        if (!deepLink.isEmpty() && openRawUri(deepLink))
+            return;
+    } else {
+        const QString viewerUrl = officeWebViewerUrlFor(path);
+        if (!viewerUrl.isEmpty()) {
+            QDesktopServices::openUrl(QUrl(viewerUrl, QUrl::TolerantMode));
+            return;
+        }
+    }
 
     // A stored path with a URL scheme — http(s), an ms-office deep link
     // (kept only for rows saved before that rewrite was removed), mailto,
@@ -3132,6 +3146,10 @@ void DesktopAppController::setSyncEnabled(bool v)
     setSyncSetting("Sync/Enabled", v);
     // Switching sync on is the moment the stored credentials start to matter.
     if (v) setSyncSettingsUnverified(true);
+    // Switching it off must stop an already-running engine immediately —
+    // otherwise a sync started earlier this session keeps going despite the
+    // setting now reading "disabled".
+    else stopSync();
     emit syncSettingsChanged();
 }
 void DesktopAppController::setSyncEmail(const QString& v)

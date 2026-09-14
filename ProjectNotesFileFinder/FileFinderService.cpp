@@ -240,6 +240,15 @@ void FileFinderService::setOffice365Enabled(bool enabled)
     emit settingsChanged();
 }
 
+void FileFinderService::setOffice365OpenLinksInDesktop(bool enabled)
+{
+    if (m_office365OpenLinksInDesktop == enabled)
+        return;
+    m_office365OpenLinksInDesktop = enabled;
+    saveSettings();
+    emit settingsChanged();
+}
+
 void FileFinderService::setOffice365TenantId(const QString &tenantId)
 {
     const QString value = tenantId.trimmed().isEmpty()
@@ -486,6 +495,8 @@ void FileFinderService::loadAndMigrateSettings()
     m_tenantId = settings.value(office365Prefix + QStringLiteral("tenantId"),
                                 QStringLiteral("organizations")).toString();
     m_clientId = settings.value(office365Prefix + QStringLiteral("clientId")).toString();
+    m_office365OpenLinksInDesktop = settings.value(
+        office365Prefix + QStringLiteral("openLinksInDesktop"), true).toBool();
     m_roots = normalizedRoots(settings.value(prefix + QStringLiteral("roots")).toStringList());
     m_folderExclusions = settings.value(
         prefix + QStringLiteral("folderExclusions")).toStringList();
@@ -516,6 +527,8 @@ void FileFinderService::saveSettings() const
     settings.setValue(prefix + QStringLiteral("office365Enabled"), m_office365Enabled);
     settings.setValue(office365Prefix + QStringLiteral("tenantId"), m_tenantId);
     settings.setValue(office365Prefix + QStringLiteral("clientId"), m_clientId);
+    settings.setValue(office365Prefix + QStringLiteral("openLinksInDesktop"),
+                      m_office365OpenLinksInDesktop);
     settings.remove(prefix + QStringLiteral("tenantId"));
     settings.remove(prefix + QStringLiteral("clientId"));
     settings.setValue(prefix + QStringLiteral("roots"), m_roots);

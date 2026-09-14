@@ -341,6 +341,12 @@ Item {
                             onClicked: page._finder.signOutOffice365()
                         }
                     }
+
+                    SettingsCheck {
+                        label: qsTr("Open links in desktop apps when available")
+                        checked: page._finder ? page._finder.office365OpenLinksInDesktop : true
+                        onToggledValue: (v) => { if (page._finder) page._finder.office365OpenLinksInDesktop = v }
+                    }
                 }
             }
 
