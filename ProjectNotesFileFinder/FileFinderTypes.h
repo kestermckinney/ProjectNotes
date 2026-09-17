@@ -38,6 +38,11 @@ struct DiscoveredLocation
     QString locationType;
     QString description;
     QString fullPath;
+    // True when this location came from a remote source (e.g. Microsoft
+    // Teams/SharePoint via Graph) rather than the local/system filesystem.
+    // Used by FileFinderWorker::commitLocations() to prefer local discoveries
+    // over remote ones when both describe the same file.
+    bool isRemote = false;
 };
 
 struct FileFinderScanSummary

@@ -68,8 +68,16 @@ ApplicationWindow {
     // and then jumping.
     function _restoreGeometry() {
         var g = DesktopAppController.windowGeometry()
-        if (!g.valid)
+        if (!g.valid) {
+            // First run — nothing saved yet. The onXChanged/etc. handlers
+            // above can't seed _normal* themselves at this point (see note
+            // below), so seed them from the declared defaults directly.
+            _normalX = root.x
+            _normalY = root.y
+            _normalWidth = root.width
+            _normalHeight = root.height
             return
+        }
         // x/y come back as -1 when the saved position no longer lands on any
         // connected screen (e.g. a monitor was unplugged) — leave Qt's default
         // placement in that case and only restore the size.
@@ -81,6 +89,21 @@ ApplicationWindow {
         root.height = g.height
         if (g.maximized)
             root.visibility = Window.Maximized
+
+        // This runs before the window is shown (see comment below), so
+        // `visibility` is still Hidden here — the onXChanged/onYChanged/
+        // onWidthChanged/onHeightChanged handlers above are guarded on
+        // `visibility === Window.Windowed` and won't fire for the
+        // assignments just above, leaving _normal* at their 0 defaults
+        // until the user manually drags or resizes the window. Seed them
+        // directly instead, so a session where the window is never touched
+        // still persists the correct size/position on close rather than
+        // saving 0x0 (which then gets clamped up to minimumWidth/
+        // minimumHeight on the next launch).
+        _normalWidth = g.width
+        _normalHeight = g.height
+        _normalX = (g.x !== -1) ? g.x : root.x
+        _normalY = (g.y !== -1) ? g.y : root.y
     }
 
     // Commit the focused editor and persist the active page before accepting a
@@ -875,15 +898,7 @@ ApplicationWindow {
                     font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
-                MaterialIcon {
-                    name: "close"
-                    size: 20
-                    color: Theme.text3
-                    TapHandler {
-                        gesturePolicy: TapHandler.ReleaseWithinBounds
-                        onTapped: aboutDialog.close()
-                    }
-                }
+                DialogCloseButton { popup: aboutDialog }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
 
@@ -1051,11 +1066,7 @@ ApplicationWindow {
                     color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
-                MaterialIcon {
-                    name: "close"; size: 20; color: Theme.text3
-                    // Exclusive grab: see the matching infoDialog close button below.
-                    TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: errorDialog.close() }
-                }
+                DialogCloseButton { popup: errorDialog }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
 
@@ -1121,13 +1132,7 @@ ApplicationWindow {
                     color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
-                MaterialIcon {
-                    name: "close"; size: 20; color: Theme.text3
-                    // Exclusive grab: a plain TapHandler only takes a passive grab, so
-                    // without this the same tap can also fall through to whatever's
-                    // behind the modal dialog (see the KebabButton fix for the same bug).
-                    TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: infoDialog.close() }
-                }
+                DialogCloseButton { popup: infoDialog }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
             ColumnLayout {
@@ -1214,11 +1219,9 @@ ApplicationWindow {
                     color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
-                MaterialIcon {
-                    name: "close"; size: 20; color: Theme.text3
+                DialogCloseButton {
+                    popup: syncCheckDialog
                     visible: !syncCheckDialog.checking
-                    // Exclusive grab: see the matching infoDialog close button above.
-                    TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: syncCheckDialog.close() }
                 }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
@@ -1345,11 +1348,7 @@ ApplicationWindow {
                     color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
-                MaterialIcon {
-                    name: "close"; size: 20; color: Theme.text3
-                    // Exclusive grab: see the matching infoDialog close button above.
-                    TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: updateDialog.close() }
-                }
+                DialogCloseButton { popup: updateDialog }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
             ColumnLayout {
@@ -1524,11 +1523,7 @@ ApplicationWindow {
                     color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
                     Layout.fillWidth: true
                 }
-                MaterialIcon {
-                    name: "close"; size: 20; color: Theme.text3
-                    // Exclusive grab: see the matching infoDialog close button above.
-                    TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: confirmDeleteDialog.close() }
-                }
+                DialogCloseButton { popup: confirmDeleteDialog }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
 

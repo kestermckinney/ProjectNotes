@@ -12,7 +12,7 @@ Each configured local search location is traversed once per scan. After File Fin
 
 File classification rules are evaluated in order. The first regular expression that matches a file name or normalized path supplies the classification. The resulting description has the form `Classification : filename.ext`.
 
-When local and Office 365 discovery find a file with the same project, classification, and filename, they reconcile to one row instead of creating source-specific duplicates. Office 365 is considered after local discovery, so its web link becomes the row's current location. File Finder does not delete entries when a file disappears from a source.
+When local and Office 365 discovery find a file with the same project, classification, and filename, they reconcile to one row instead of creating source-specific duplicates. The local (system) discovery wins: if a row already points at a local path and that path still exists, a Teams/SharePoint match for the same file does not replace it with a web link. This matters if you work with a file through an application that isn't integrated with Microsoft Teams — a CAD tool, an old Office install, anything that only understands a filesystem path. As long as your local search location still finds the file, **Files & Folders** keeps opening it locally instead of routing you through a browser link. Office 365 discovery only supplies the row when no live local copy was found, and it still adds any remaining unmatched files from either source. File Finder does not delete entries when a file disappears from a source.
 
 ## File Finder Settings
 
@@ -74,4 +74,4 @@ When upgrading from the retired Python File Finder, Project Notes imports existi
 ## Related Documentation
 
 - [Office 365 Integration](<Office365Integration.md>) — Configure Microsoft identity and sign-in independently of File Finder.
-- [Plugin Settings](<PluginSettings.md>) — Configure the remaining Python-based plugins.
+- [Plugin Settings](<../StandardPlugins/PluginSettings.md>) — Configure the remaining Python-based plugins.

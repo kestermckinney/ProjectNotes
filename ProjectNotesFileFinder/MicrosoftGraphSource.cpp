@@ -18,10 +18,11 @@ MicrosoftGraphSource::MicrosoftGraphSource(QString bearerToken,
                                            QUrl endpoint,
                                            std::function<void(const QString &)> diagnostic,
                                            const QStringList &folderExclusions,
-                                           const QHash<QString, QString> &folderState)
+                                           const QHash<QString, QString> &folderState,
+                                           std::function<void(const QString &)> progress)
     : m_token(std::move(bearerToken)), m_network(network), m_endpoint(std::move(endpoint)),
-      m_diagnostic(std::move(diagnostic)), m_previousFolderState(folderState),
-      m_folderState(folderState)
+      m_diagnostic(std::move(diagnostic)), m_progress(std::move(progress)),
+      m_previousFolderState(folderState), m_folderState(folderState)
 {
     if (m_endpoint.isEmpty())
         m_endpoint = QUrl(QStringLiteral("https://graph.microsoft.com/v1.0/"));
@@ -155,7 +156,7 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
     }
 
     const QJsonArray teams = getCollection(
-        QUrl(QStringLiteral("me/joinedTeams?$select=id,displayName")), error);
+        QUrl(QStringLiteral("me/joinedTeams?$select=id,displayName,isArchived")), error);
     if (error && !error->isEmpty())
         return {};
 #ifdef QT_DEBUG
@@ -171,6 +172,14 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
         const QString teamName = team.value(QStringLiteral("displayName")).toString();
         if (teamId.isEmpty())
             continue;
+        if (team.value(QStringLiteral("isArchived")).toBool()) {
+#ifdef QT_DEBUG
+            if (m_diagnostic)
+                m_diagnostic(QStringLiteral("Office 365 File Finder: skipping archived team '%1'.")
+                                 .arg(teamName));
+#endif
+            continue;
+        }
         const QString encodedTeam = QString::fromLatin1(QUrl::toPercentEncoding(teamId));
         const QJsonArray channels = getCollection(
             QUrl(QStringLiteral("teams/%1/channels?$select=id,displayName").arg(encodedTeam)),
@@ -194,6 +203,8 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
                 m_diagnostic(QStringLiteral("Office 365 File Finder: examining channel '%1' in team '%2'.")
                                  .arg(channelName, teamName));
 #endif
+            if (m_progress)
+                m_progress(QStringLiteral("%1 / %2").arg(teamName, channelName));
 
             for (const ProjectMatcher &matcher : projectMatchers) {
                 const ActiveProject &project = matcher.project;
@@ -239,7 +250,7 @@ QList<DiscoveredLocation> MicrosoftGraphSource::discover(
                                      .arg(channelName));
 #endif
 
-                result.append({project.id, QStringLiteral("Microsoft Teams"),
+                result.append({project.id, QStringLiteral("Web Link"),
                                QStringLiteral("Project Folder"), webUrl});
                 const QString stateKey = folderStateKey(driveId, itemId);
                 const bool unchanged = !modified.isEmpty()
@@ -294,7 +305,7 @@ bool MicrosoftGraphSource::appendChildren(
     const QString encodedDrive = QString::fromLatin1(QUrl::toPercentEncoding(driveId));
     const QString encodedItem = QString::fromLatin1(QUrl::toPercentEncoding(itemId));
     QUrl page(QStringLiteral("drives/%1/items/%2/children?"
-                             "$select=id,name,size,lastModifiedDateTime,webUrl,file,folder")
+                             "$select=id,name,size,lastModifiedDateTime,webUrl,webDavUrl,file,folder")
                   .arg(encodedDrive, encodedItem));
     while (!page.isEmpty()) {
         if (QThread::currentThread()->isInterruptionRequested()) {
@@ -312,6 +323,8 @@ bool MicrosoftGraphSource::appendChildren(
                              .arg(parentPath.isEmpty() ? QStringLiteral("/") : parentPath)
                              .arg(children.size()));
 #endif
+        if (m_progress)
+            m_progress(parentPath.isEmpty() ? QStringLiteral("/") : parentPath);
         for (const QJsonValue &value : children) {
             const QJsonObject item = value.toObject();
             const QString name = item.value(QStringLiteral("name")).toString();
@@ -350,15 +363,30 @@ bool MicrosoftGraphSource::appendChildren(
             }
             if (filesExamined)
                 ++*filesExamined;
+            if (m_examinedFileNames.size() < 5)
+                m_examinedFileNames.append(name);
             for (const auto &rule : rules) {
                 if (!rule.second.match(relative).hasMatch()
                     && !rule.second.match(name).hasMatch())
                     continue;
                 if (matchedFiles)
                     ++*matchedFiles;
-                locations->append({project.id, locationType(name),
-                    QStringLiteral("%1 : %2").arg(rule.first, name),
-                    item.value(QStringLiteral("webUrl")).toString()});
+                // For an Office file, webUrl is SharePoint's browser viewer
+                // page (_layouts/15/Doc.aspx?sourcedoc={GUID}&file=…), which
+                // the ms-word:/ms-excel: URI scheme can't open. webDavUrl is
+                // the direct document URL, so store that for Office types.
+                // Everything else keeps webUrl, which opens in the browser.
+                const QString type = locationType(name);
+                const bool officeType = type == QLatin1String("Word Document")
+                    || type == QLatin1String("Excel Document")
+                    || type == QLatin1String("PowerPoint Document")
+                    || type == QLatin1String("Microsoft Project");
+                QString url = officeType
+                    ? item.value(QStringLiteral("webDavUrl")).toString() : QString();
+                if (url.isEmpty())
+                    url = item.value(QStringLiteral("webUrl")).toString();
+                locations->append({project.id, type,
+                    QStringLiteral("%1 : %2").arg(rule.first, name), url});
                 break;
             }
         }

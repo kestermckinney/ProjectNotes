@@ -54,7 +54,7 @@ const QModelIndex ProjectLocationsModel::newRecord(const QVariant* fkValue1, con
 
 bool ProjectLocationsModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    QString store_val = value.toString(); // may be replaced with protocol-prefixed URL
+    QString store_val = value.toString(); // stored as-is; see the note below setData's suffix checks
 
     if (index.column() == 4)
     {
@@ -86,29 +86,29 @@ bool ProjectLocationsModel::setData(const QModelIndex &index, const QVariant &va
         QString pathPart = isUrl ? test_val.split('?').first() : test_val;
         QString suffix = fileParam.isEmpty() ? pathPart.right(5) : fileParam.right(5);
 
+        // Note: store_val is deliberately left as the raw value in every branch
+        // below. This model used to rewrite it into an
+        // ms-word:/ms-excel:/ms-powerpoint:/ms-project: deep link here, but
+        // that only fired for edits made through this model — XML import and
+        // File Finder write full_path via raw SQL and never saw it, so a
+        // location added those ways stayed a plain URL forever. full_path now
+        // always keeps its canonical, unrewritten form, for XML export, sync,
+        // and the mobile app.
         if (suffix.contains(".docx", Qt::CaseInsensitive) || suffix.contains(".doc", Qt::CaseInsensitive) || suffix.contains(".dot", Qt::CaseInsensitive) || suffix.contains(".odt", Qt::CaseInsensitive) || suffix.contains(".rtf", Qt::CaseInsensitive))
         {
             file_type = "Word Document";
-            if (isUrl && !test_val.startsWith("ms-word:", Qt::CaseInsensitive))
-                store_val = "ms-word:ofe|u|" + test_val;
         }
         else if (suffix.contains(".xlsx", Qt::CaseInsensitive) || suffix.contains(".xls", Qt::CaseInsensitive) || suffix.contains(".ods", Qt::CaseInsensitive) || suffix.contains(".xlt", Qt::CaseInsensitive))
         {
             file_type = "Excel Document";
-            if (isUrl && !test_val.startsWith("ms-excel:", Qt::CaseInsensitive))
-                store_val = "ms-excel:ofe|u|" + test_val;
         }
         else if (suffix.contains(".mpp", Qt::CaseInsensitive) || suffix.contains(".mpt", Qt::CaseInsensitive))
         {
             file_type = "Microsoft Project";
-            if (isUrl && !test_val.startsWith("ms-project:", Qt::CaseInsensitive))
-                store_val = "ms-project:ofe|u|" + test_val;
         }
         else if (suffix.contains(".pptx", Qt::CaseInsensitive) || suffix.contains(".ppt", Qt::CaseInsensitive) || suffix.contains(".odp", Qt::CaseInsensitive) || suffix.contains(".pps", Qt::CaseInsensitive) || suffix.contains(".pot", Qt::CaseInsensitive))
         {
             file_type = "PowerPoint Document";
-            if (isUrl && !test_val.startsWith("ms-powerpoint:", Qt::CaseInsensitive))
-                store_val = "ms-powerpoint:ofe|u|" + test_val;
         }
         else if (suffix.contains(".pdf", Qt::CaseInsensitive))
         {

@@ -27,7 +27,7 @@
 			},
 			"osx":
 			{
-				"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Debug"
+				"working_dir": "$project_path/build/Qt_6_11_1_for_macOS_Debug"
 			},
 			"variants":
 			[
@@ -39,7 +39,7 @@
 						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
 					},
 					"linux": { "working_dir": "$project_path/build/System_Qt_6_11_1-Release" },
-					"osx": { "working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Release" },
+					"osx": { "working_dir": "$project_path/build/Qt_6_11_1_for_macOS_Release" },
 				},
 				{
 					"name": "Rebuild Debug",
@@ -49,7 +49,7 @@
 						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
 					},
 					"linux": { "working_dir": "$project_path/build/System_Qt_6_11_1-Debug" },
-					"osx": { "working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Debug" },
+					"osx": { "working_dir": "$project_path/build/Qt_6_11_1_for_macOS_Debug" },
 				},
 				{
 					"name": "Rebuild Release",
@@ -59,82 +59,82 @@
 						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
 					},
 					"linux": { "working_dir": "$project_path/build/System_Qt_6_11_1-Release" },
-					"osx": { "working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Release" },
+					"osx": { "working_dir": "$project_path/build/Qt_6_11_1_for_macOS_Release" },
 				},
 				{
 					"name": "Run Debug",
-					"shell_cmd": "./projectnotes",
+					"shell_cmd": "./projectnotes --developer-profile TESTMODE --test-supabase",
 					"windows":
 					{
-						"shell_cmd": "set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\"",
+						"shell_cmd": "set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\" --developer-profile TESTMODE --test-supabase",
 						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
 					},
 					"linux":
 					{
-						"shell_cmd": "./ProjectNotesDesktop/projectnotes",
+						"shell_cmd": "./ProjectNotesDesktop/projectnotes --developer-profile TESTMODE --test-supabase",
 						"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
 					},
 					"osx":
 					{
-						"shell_cmd": "./ProjectNotesDesktop/\"Project Notes\"",
-						"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Debug"
+						"shell_cmd": "./ProjectNotesDesktop/\"Project Notes\" --developer-profile TESTMODE --test-supabase",
+						"working_dir": "$project_path/build/Qt_6_11_1_for_macOS_Debug"
 					},
 				},
 				{
 					"name": "Run Release",
-					"shell_cmd": "./projectnotes",
+					"shell_cmd": "./projectnotes --developer-profile TESTMODE --test-supabase",
 					"windows":
 					{
-						"shell_cmd": "set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\"",
+						"shell_cmd": "set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\" --developer-profile TESTMODE --test-supabase",
 						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
 					},
 					"linux":
 					{
-						"shell_cmd": "./ProjectNotesDesktop/projectnotes",
+						"shell_cmd": "./ProjectNotesDesktop/projectnotes --developer-profile TESTMODE --test-supabase",
 						"working_dir": "$project_path/build/System_Qt_6_11_1-Release"
 					},
 					"osx":
 					{
-						"shell_cmd": "open \"./ProjectNotesDesktop/Project Notes.app\"",
-						"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Release"
+						"shell_cmd": "open \"./ProjectNotesDesktop/Project Notes.app\" --args --developer-profile TESTMODE --test-supabase",
+						"working_dir": "$project_path/build/Qt_6_11_1_for_macOS_Release"
 					},
 				},
 				{
 					"name": "Build & Run Debug",
-					"shell_cmd": "cmake --build . && ./projectnotes",
+					"shell_cmd": "cmake --build . && ./projectnotes --developer-profile TESTMODE --test-supabase",
 					"windows":
 					{
-						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . --target ProjectNotes && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\"",
+						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . --target ProjectNotes && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\" --developer-profile TESTMODE --test-supabase",
 						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
 					},
 					"linux":
 					{
-						"shell_cmd": "cmake --build . --target ProjectNotes && ./ProjectNotesDesktop/projectnotes",
+						"shell_cmd": "cmake --build . --target ProjectNotes && ./ProjectNotesDesktop/projectnotes --developer-profile TESTMODE --test-supabase",
 						"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
 					},
 					"osx":
 					{
-						"shell_cmd": "cmake --build . --target ProjectNotes && ./ProjectNotesDesktop/\"Project Notes\"",
-						"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Debug"
+						"shell_cmd": "cmake --build . --target ProjectNotes && ./ProjectNotesDesktop/\"Project Notes\" --developer-profile TESTMODE --test-supabase",
+						"working_dir": "$project_path/build/Qt_6_11_1_for_macOS_Debug"
 					},
 				},
 				{
 					"name": "Build & Run Release",
-					"shell_cmd": "cmake --build . && ./projectnotes",
+					"shell_cmd": "cmake --build . && ./projectnotes --developer-profile TESTMODE --test-supabase",
 					"windows":
 					{
-						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . --target ProjectNotes && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\"",
+						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . --target ProjectNotes && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\" --developer-profile TESTMODE --test-supabase",
 						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
 					},
 					"linux":
 					{
-						"shell_cmd": "cmake --build . --target ProjectNotes && ./ProjectNotesDesktop/projectnotes",
+						"shell_cmd": "cmake --build . --target ProjectNotes && ./ProjectNotesDesktop/projectnotes --developer-profile TESTMODE --test-supabase",
 						"working_dir": "$project_path/build/System_Qt_6_11_1-Release"
 					},
 					"osx":
 					{
-						"shell_cmd": "cmake --build . --target ProjectNotes && open \"./ProjectNotesDesktop/Project Notes.app\"",
-						"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Release"
+						"shell_cmd": "cmake --build . --target ProjectNotes && open \"./ProjectNotesDesktop/Project Notes.app\" --args --developer-profile TESTMODE --test-supabase",
+						"working_dir": "$project_path/build/Qt_6_11_1_for_macOS_Release"
 					},
 				},
 			]

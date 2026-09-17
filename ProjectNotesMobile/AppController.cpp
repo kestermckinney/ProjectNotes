@@ -12,10 +12,13 @@
 // phrase directly, without spinning up the sync engine.
 #include "authmanager.h"
 #include "httpclient.h"
+#include "NativeUrlOpener.h"
+#include "officedeeplink.h"
 #include "rowencryption.h"
 
 #include <QCoreApplication>
 #include <QCryptographicHash>
+#include <QDesktopServices>
 #include <QDir>
 #include <QFileInfo>
 #include <QHash>
@@ -28,6 +31,7 @@
 #include <QTextDocument>
 #include <QThread>
 #include <QTimer>
+#include <QUrl>
 #include <QUrlQuery>
 
 #include <algorithm>
@@ -251,6 +255,11 @@ void AppController::startSync()
 {
     if (!global_MobileSettings.getSyncEnabled()) return;
     if (!global_DBObjects.isOpen()) return;
+    // Config must actually be usable — an enabled-but-unconfigured setup
+    // (e.g. just after install) must not attempt to initialize with empty
+    // credentials.
+    if (global_MobileSettings.getSyncEmail().isEmpty()) return;
+    if (global_MobileSettings.getSyncPassword().isEmpty()) return;
 
     configureSyncApi();
 
@@ -387,7 +396,13 @@ void AppController::onSyncStatusUpdated(int percentComplete, qint64 /*pendingPus
 
 void AppController::onSyncSettingsChanged()
 {
-    if (!global_MobileSettings.getSyncEnabled())      return;
+    if (!global_MobileSettings.getSyncEnabled()) {
+        // Sync was just turned off — stop an already-running engine rather
+        // than merely blocking future start attempts, otherwise it keeps
+        // syncing in the background despite the setting showing disabled.
+        stopSync();
+        return;
+    }
     if (!global_DBObjects.isOpen())                   return;
     if (global_MobileSettings.getSyncEmail().isEmpty())    return;
     if (global_MobileSettings.getSyncPassword().isEmpty()) return;
@@ -1333,6 +1348,60 @@ int AppController::copyProjectLocation(int row)
 QVariantMap AppController::getProjectLocationData(int row) const
 {
     return proxyRowToMap(global_DBObjects.projectlocationsmodelproxy(), row);
+}
+
+bool AppController::openProjectLocation(int row)
+{
+    QAbstractItemModel* model = global_DBObjects.projectlocationsmodelproxy();
+    if (row < 0 || row >= model->rowCount()) return false;
+    // Rows saved by the old save-time rewrite hold ms-excel:ofe|u|<url>;
+    // unwrap them so they open exactly like a canonical row.
+    const QString path = unwrapOfficeDeepLink(
+        model->data(model->index(row, 4)).toString());
+    if (path.isEmpty()) return false;
+
+    // full_path is stored canonically — a plain http(s)/SharePoint URL, not
+    // an ms-office deep link (see the note in ProjectLocationsModel::setData()).
+    // Try the native Word/Excel/PowerPoint/Project app first, falling back to
+    // Safari when it isn't installed. This goes through NativeUrlOpener, not
+    // QDesktopServices, because QUrl percent-encodes the literal "|" that
+    // deep link relies on as its command delimiter — see NativeUrlOpener.h.
+    //
+    // Preferences > "Open links in desktop apps when available" lets the user
+    // turn this off entirely, matching the desktop app's Office 365
+    // Integration setting; in that case open the browser-based Office Online
+    // viewer instead of handing the file to a native app.
+    if (global_DBObjects.getOffice365OpenLinksInDesktop()) {
+        const QString deepLink = officeDeepLinkFor(path);
+        if (!deepLink.isEmpty() && NativeUrlOpener::openRawUrl(deepLink))
+            return true;
+    } else {
+        // Only return here on success — same as the native-app branch above.
+        // If opening the rewritten viewer URL fails, fall through to the
+        // plain-URL open below rather than silently doing nothing.
+        //
+        // This goes through NativeUrlOpener::openInBrowser(), not
+        // QDesktopServices, because a plain https:// open — via either one —
+        // goes through UIApplication's normal URL routing, which honors
+        // Universal Links: the installed Word/Excel/PowerPoint apps register
+        // as handlers for SharePoint/OneDrive domains, so the link would land
+        // back in the native app regardless of this setting being off.
+        // openInBrowser() presents it in an in-app Safari view instead,
+        // bypassing that routing so the viewer actually opens in the browser.
+        const QString viewerUrl = officeWebViewerUrlFor(path);
+        if (!viewerUrl.isEmpty() && NativeUrlOpener::openInBrowser(viewerUrl))
+            return true;
+    }
+
+    if (path.startsWith("http:", Qt::CaseInsensitive) || path.startsWith("https:", Qt::CaseInsensitive))
+        return QDesktopServices::openUrl(QUrl(path, QUrl::TolerantMode));
+
+    if (path.startsWith("www.", Qt::CaseInsensitive))
+        return QDesktopServices::openUrl(QUrl("https://" + path, QUrl::TolerantMode));
+
+    // Local filesystem paths (e.g. a location synced from a desktop File
+    // Finder scan) aren't meaningful on iOS's sandboxed filesystem.
+    return false;
 }
 
 // ── Project Notes ─────────────────────────────────────────────────────────────

@@ -253,6 +253,11 @@ Window {
                                 win._registerEditor(model.filePath, logText, flick)
                             Component.onDestruction:
                                 win._unregisterEditor(model.filePath)
+
+                            // Themed Copy/Select All menu, matching every other
+                            // right-click menu in the app, instead of the native
+                            // edit-menu popup a read-only TextArea shows by default.
+                            ReadOnlyTextContextMenu { }
                         }
                     }
                 }

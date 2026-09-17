@@ -17,6 +17,7 @@ class QTimer;
 class FileFinderWorker final : public QObject
 {
     Q_OBJECT
+    friend class FileFinderTest;
 public:
     explicit FileFinderWorker(QObject *parent = nullptr);
 
@@ -31,6 +32,7 @@ public slots:
 signals:
     void diagnostic(const QString &message);
     void scanStarted();
+    void scanningLocation(const QString &description);
     void scanFinished(const FileFinderScanSummary &summary);
     void locationsCommitted(int inserted, int updated);
     void graphFolderStateChanged(const QHash<QString, QString> &state);

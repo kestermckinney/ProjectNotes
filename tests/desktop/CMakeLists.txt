@@ -162,3 +162,13 @@ elseif(WIN32)
     target_link_libraries(tst_filefinder PRIVATE Advapi32)
 endif()
 add_test(NAME filefinder COMMAND tst_filefinder)
+
+# Fast, headless coverage for the open-time Office deep-link builder used by
+# both DesktopAppController::openProjectLocation() and the mobile
+# AppController's equivalent.
+add_executable(tst_officedeeplink tst_officedeeplink.cpp)
+target_link_libraries(tst_officedeeplink PRIVATE
+    Qt6::Core Qt6::Test
+    ProjectNotesCore
+)
+add_test(NAME officedeeplink COMMAND tst_officedeeplink)

@@ -19,13 +19,19 @@ public:
                          QUrl endpoint = {}, // Empty uses the public Graph v1.0 endpoint.
                          std::function<void(const QString &)> diagnostic = {},
                          const QStringList &folderExclusions = {},
-                         const QHash<QString, QString> &folderState = {});
+                         const QHash<QString, QString> &folderState = {},
+                         std::function<void(const QString &)> progress = {});
 
     QList<DiscoveredLocation> discover(const QList<ActiveProject> &projects,
                                        const QList<FileFinderRule> &rules,
                                        int *filesExamined, int *matchedFiles,
                                        QString *error);
     QHash<QString, QString> folderState() const { return m_folderState; }
+    // Up to the first few non-folder items examined during discover(), in the
+    // order encountered, regardless of whether they matched a rule. Lets a
+    // caller report what Graph is actually returning when a scan examines
+    // files but matches none, without needing a debug build.
+    QStringList examinedFileNames() const { return m_examinedFileNames; }
 
 private:
     using CompiledRules = QList<QPair<QString, QRegularExpression>>;
@@ -45,7 +51,9 @@ private:
     QNetworkAccessManager *m_network = nullptr;
     QUrl m_endpoint;
     std::function<void(const QString &)> m_diagnostic;
+    std::function<void(const QString &)> m_progress;
     QList<QRegularExpression> m_folderExclusions;
     QHash<QString, QString> m_previousFolderState;
     QHash<QString, QString> m_folderState;
+    QStringList m_examinedFileNames;
 };

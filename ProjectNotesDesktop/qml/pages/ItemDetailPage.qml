@@ -244,7 +244,16 @@ Item {
                     options: page._peopleNames()
                     includeNone: true
                     searchable: true
-                    onActivated: (v) => { page._assignedTo = page._idForName(v); page._markChanged() }
+                    onActivated: (v) => {
+                        page._assignedTo = page._idForName(v)
+                        // Assigning a still-New item moves it on to Assigned;
+                        // clearing the assignment leaves the status alone.
+                        if (v !== "" && statusCombo.value === "New") {
+                            statusCombo.value = "Assigned"
+                            page._applyStatusDates("Assigned")
+                        }
+                        page._markChanged()
+                    }
                 }
                 ComboField {
                     label: qsTr("Priority"); id: priorityCombo

@@ -73,11 +73,18 @@ class FileFinderTest final : public QObject
 private slots:
     void searchRootPreservesHomeShortcut();
     void firstRunUsesCurrentSearchDefaults();
+    void migrationDoesNotReuseOutlookAppRegistration();
+    void office365CredentialsDoNotTouchOutlookSettings();
     void graphEndpointResolution();
     void graphFolderExclusionsPruneSubtrees();
     void graphFolderTimestampsSkipUnchangedSubtrees();
+    void graphOfficeFilesStoreDirectWebDavUrl();
+    void commitLocationsUpdatesExistingRemoteRowToNewUrl();
     void reconcilesOnlyActiveProjectsAndAdoptsLegacyRows();
     void scanSurvivesDescriptionCollisionWithoutAbortingScan();
+    void commitLocationsPrefersLocalOverRemoteOnDescriptionCollision();
+    void commitLocationsKeepsExistingLocalRowWhenFileStillExists();
+    void commitLocationsReplacesExistingLocalRowWhenFileNoLongerExists();
 };
 
 void FileFinderTest::searchRootPreservesHomeShortcut()
@@ -146,6 +153,88 @@ void FileFinderTest::firstRunUsesCurrentSearchDefaults()
     QSettings(organization, QStringLiteral("PluginSettings")).clear();
 }
 
+void FileFinderTest::migrationDoesNotReuseOutlookAppRegistration()
+{
+    const QString organization = QStringLiteral("ProjectNotesFileFinderTest-")
+        + QUuid::createUuid().toString(QUuid::WithoutBraces);
+
+    // Seed the legacy Outlook Integration app registration the way an
+    // existing install would have it, before File Finder ever runs.
+    {
+        QSettings legacy(organization, QStringLiteral("PluginSettings"));
+        legacy.setValue(QStringLiteral("Outlook Integration/TenantID"),
+                        QStringLiteral("outlook-tenant-id"));
+        legacy.setValue(QStringLiteral("Outlook Integration/ApplicationID"),
+                        QStringLiteral("outlook-client-id"));
+    }
+
+    {
+        QTemporaryDir temporary;
+        QVERIFY(temporary.isValid());
+        FileFinderService service;
+        QReadWriteLock databaseLock;
+        service.initialize(temporary.filePath(QStringLiteral("ProjectNotes.db")),
+                           &databaseLock, organization);
+
+        // File Finder must not silently inherit Outlook Integration's app
+        // registration: its Team/Channel/Files scopes need separate consent.
+        QCOMPARE(service.office365TenantId(), QStringLiteral("organizations"));
+        QVERIFY(service.office365ClientId().isEmpty());
+    }
+
+    QSettings(organization, QStringLiteral("AppSettings")).clear();
+    QSettings(organization, QStringLiteral("PluginSettings")).clear();
+}
+
+void FileFinderTest::office365CredentialsDoNotTouchOutlookSettings()
+{
+    const QString organization = QStringLiteral("ProjectNotesFileFinderTest-")
+        + QUuid::createUuid().toString(QUuid::WithoutBraces);
+
+    // Seed Outlook Integration's real app registration, as if it were
+    // already configured and working.
+    {
+        QSettings legacy(organization, QStringLiteral("PluginSettings"));
+        legacy.setValue(QStringLiteral("Outlook Integration/TenantID"),
+                        QStringLiteral("outlook-tenant-id"));
+        legacy.setValue(QStringLiteral("Outlook Integration/ApplicationID"),
+                        QStringLiteral("outlook-client-id"));
+    }
+
+    {
+        QTemporaryDir temporary;
+        QVERIFY(temporary.isValid());
+        FileFinderService service;
+        QReadWriteLock databaseLock;
+        service.initialize(temporary.filePath(QStringLiteral("ProjectNotes.db")),
+                           &databaseLock, organization);
+
+        // Configuring a dedicated Office 365 Integration app registration
+        // must not touch Outlook Integration's settings in either direction.
+        service.setOffice365TenantId(QStringLiteral("office365-tenant-id"));
+        service.setOffice365ClientId(QStringLiteral("office365-client-id"));
+        QCOMPARE(service.office365TenantId(), QStringLiteral("office365-tenant-id"));
+        QCOMPARE(service.office365ClientId(), QStringLiteral("office365-client-id"));
+    }
+
+    QSettings legacy(organization, QStringLiteral("PluginSettings"));
+    QCOMPARE(legacy.value(QStringLiteral("Outlook Integration/TenantID")).toString(),
+             QStringLiteral("outlook-tenant-id"));
+    QCOMPARE(legacy.value(QStringLiteral("Outlook Integration/ApplicationID")).toString(),
+             QStringLiteral("outlook-client-id"));
+
+    QSettings settings(organization, QStringLiteral("AppSettings"));
+    QCOMPARE(settings.value(QStringLiteral("Office365/tenantId")).toString(),
+             QStringLiteral("office365-tenant-id"));
+    QCOMPARE(settings.value(QStringLiteral("Office365/clientId")).toString(),
+             QStringLiteral("office365-client-id"));
+    QVERIFY(!settings.contains(QStringLiteral("FileFinder/tenantId")));
+    QVERIFY(!settings.contains(QStringLiteral("FileFinder/clientId")));
+
+    QSettings(organization, QStringLiteral("AppSettings")).clear();
+    QSettings(organization, QStringLiteral("PluginSettings")).clear();
+}
+
 void FileFinderTest::graphEndpointResolution()
 {
     RecordingGraphNetwork network;
@@ -157,7 +246,7 @@ void FileFinderTest::graphEndpointResolution()
         QCOMPARE(network.requests.takeLast(), QUrl(expected));
     };
     const QString publicUrl = QStringLiteral(
-        "https://graph.microsoft.com/v1.0/me/joinedTeams?$select=id,displayName");
+        "https://graph.microsoft.com/v1.0/me/joinedTeams?$select=id,displayName,isArchived");
     MicrosoftGraphSource defaultGraph(QStringLiteral("test-token"), &network);
     verify(defaultGraph, publicUrl);
     MicrosoftGraphSource emptyEndpoint(QStringLiteral("test-token"), &network, {},
@@ -166,7 +255,7 @@ void FileFinderTest::graphEndpointResolution()
     MicrosoftGraphSource customEndpoint(QStringLiteral("test-token"), &network,
                                         QUrl(QStringLiteral("http://localhost:1234/v1.0")));
     verify(customEndpoint, QStringLiteral(
-        "http://localhost:1234/v1.0/me/joinedTeams?$select=id,displayName"));
+        "http://localhost:1234/v1.0/me/joinedTeams?$select=id,displayName,isArchived"));
 }
 
 void FileFinderTest::graphFolderExclusionsPruneSubtrees()
@@ -227,7 +316,7 @@ void FileFinderTest::graphFolderTimestampsSkipUnchangedSubtrees()
     QVERIFY2(error.isEmpty(), qPrintable(error));
     QVERIFY(network.requests.contains(QUrl(
         QStringLiteral("https://graph.microsoft.com/v1.0/drives/drive/items/documents/children?"
-                       "$select=id,name,size,lastModifiedDateTime,webUrl,file,folder"))));
+                       "$select=id,name,size,lastModifiedDateTime,webUrl,webDavUrl,file,folder"))));
     const QHash<QString, QString> initialState = initial.folderState();
     QCOMPARE(initialState.size(), 2);
 
@@ -256,6 +345,50 @@ void FileFinderTest::graphFolderTimestampsSkipUnchangedSubtrees()
                          [](const QUrl &url) {
         return url.path().contains(QStringLiteral("/documents/children"));
     }));
+}
+
+void FileFinderTest::graphOfficeFilesStoreDirectWebDavUrl()
+{
+    // An Office file's webUrl is SharePoint's Doc.aspx viewer page, which the
+    // ms-excel:ofe|u| URI scheme can't open, so Office types store webDavUrl.
+    RecordingGraphNetwork network;
+    network.responses = {
+        {QStringLiteral("/v1.0/me/joinedTeams"),
+         R"({"value":[{"id":"team","displayName":"Project Team"}]})"},
+        {QStringLiteral("/v1.0/teams/team/channels"),
+         R"({"value":[{"id":"channel","displayName":"1001 General"}]})"},
+        {QStringLiteral("/v1.0/teams/team/channels/channel/filesFolder"),
+         R"({"id":"root","webUrl":"https://example.test/root","parentReference":{"driveId":"drive"}})"},
+        {QStringLiteral("/v1.0/drives/drive/items/root/children"),
+         R"({"value":[)"
+         R"({"id":"xlsx","name":"Budget.xlsx","file":{},)"
+         R"("webUrl":"https://example.test/_layouts/15/Doc.aspx?sourcedoc=%7BGUID%7D&file=Budget.xlsx&action=default",)"
+         R"("webDavUrl":"https://example.test/Shared%20Documents/Budget.xlsx"},)"
+         R"({"id":"pdf","name":"Manual.pdf","file":{},)"
+         R"("webUrl":"https://example.test/Shared%20Documents/Manual.pdf",)"
+         R"("webDavUrl":"https://example.test/dav/Manual.pdf"},)"
+         R"({"id":"docx","name":"Notes.docx","file":{},)"
+         R"("webUrl":"https://example.test/_layouts/15/Doc.aspx?sourcedoc=%7BDOC%7D&file=Notes.docx"})"
+         R"(]})"}
+    };
+
+    MicrosoftGraphSource graph(QStringLiteral("test-token"), &network);
+    QString error;
+    const QList<DiscoveredLocation> locations = graph.discover(
+        {{QStringLiteral("active-id"), QStringLiteral("1001")}},
+        {{QStringLiteral("Document"), QStringLiteral(R"(.*\.(xlsx|pdf|docx)$)")}},
+        nullptr, nullptr, &error);
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+
+    QCOMPARE(locations.size(), 4);
+    QCOMPARE(locations.at(1).fullPath,
+             QStringLiteral("https://example.test/Shared%20Documents/Budget.xlsx"));
+    // Non-Office files keep webUrl even when webDavUrl is present.
+    QCOMPARE(locations.at(2).fullPath,
+             QStringLiteral("https://example.test/Shared%20Documents/Manual.pdf"));
+    // An Office file without webDavUrl falls back to webUrl.
+    QCOMPARE(locations.at(3).fullPath,
+             QStringLiteral("https://example.test/_layouts/15/Doc.aspx?sourcedoc=%7BDOC%7D&file=Notes.docx"));
 }
 
 void FileFinderTest::reconcilesOnlyActiveProjectsAndAdoptsLegacyRows()
@@ -474,6 +607,309 @@ void FileFinderTest::scanSurvivesDescriptionCollisionWithoutAbortingScan()
         QCOMPARE(query.value(0).toString(), QStringLiteral("Quote : Proposal.pdf"));
         QCOMPARE(query.value(1).toInt(), 0);
 
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(verifyConnection);
+}
+
+void FileFinderTest::commitLocationsPrefersLocalOverRemoteOnDescriptionCollision()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+
+    const QString databasePath = temporary.filePath(QStringLiteral("ProjectNotes.db"));
+    const QString setupConnection = QStringLiteral("FileFinderPrecedenceSetup");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                          setupConnection);
+        database.setDatabaseName(databasePath);
+        QVERIFY2(database.open(), qPrintable(database.lastError().text()));
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, "
+            "project_status TEXT, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, "
+            "location_type TEXT, location_description TEXT, full_path TEXT, "
+            "updateddate INTEGER, syncdate INTEGER, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE INDEX project_location_desc ON project_locations "
+            "(project_id, location_description) WHERE deleted = 0")));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO projects VALUES ('active-id', '1001', 'Active', 0)")));
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(setupConnection);
+
+    const QString localPath = QStringLiteral("C:/Projects/1001/Quotes/Proposal.pdf");
+    const QString remotePath = QStringLiteral("https://example.test/Quotes/Proposal.pdf");
+
+    auto verifyLocalWins = [&](const QList<DiscoveredLocation> &locations, const QString &label) {
+        {
+            QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                              setupConnection);
+            database.setDatabaseName(databasePath);
+            QVERIFY2(database.open(), qPrintable(database.lastError().text()));
+            QSqlQuery cleanup(database);
+            QVERIFY(cleanup.exec(QStringLiteral("DELETE FROM project_locations")));
+            database.close();
+        }
+        QSqlDatabase::removeDatabase(setupConnection);
+
+        QReadWriteLock sharedLock;
+        FileFinderWorker worker;
+        worker.initializeDatabase(databasePath, &sharedLock);
+
+        FileFinderScanSummary summary;
+        QString error;
+        QVERIFY2(worker.commitLocations(locations, &summary, &error), qPrintable(error));
+        QVERIFY2(error.isEmpty(), qPrintable(error));
+        QCOMPARE(summary.inserted, 1);
+
+        worker.closeDatabase();
+
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                          setupConnection);
+        database.setDatabaseName(databasePath);
+        QVERIFY2(database.open(), qPrintable(database.lastError().text()));
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT location_type, full_path FROM project_locations "
+            "WHERE project_id = 'active-id'")));
+        QVERIFY2(query.next(), qPrintable(label));
+        QCOMPARE(query.value(0).toString(), QStringLiteral("PDF File"));
+        QCOMPARE(query.value(1).toString(), localPath);
+        QVERIFY(!query.next());
+        database.close();
+        QSqlDatabase::removeDatabase(setupConnection);
+    };
+
+    // Local discovered before remote in the scan's own list.
+    verifyLocalWins({
+        {QStringLiteral("active-id"), QStringLiteral("PDF File"),
+         QStringLiteral("Quote : Proposal.pdf"), localPath, false},
+        {QStringLiteral("active-id"), QStringLiteral("Web Link"),
+         QStringLiteral("Quote : Proposal.pdf"), remotePath, true},
+    }, QStringLiteral("local-first order"));
+
+    // Order reversed: remote discovered before local. Local must still win,
+    // proving precedence is by source, not by list/scan order.
+    verifyLocalWins({
+        {QStringLiteral("active-id"), QStringLiteral("Web Link"),
+         QStringLiteral("Quote : Proposal.pdf"), remotePath, true},
+        {QStringLiteral("active-id"), QStringLiteral("PDF File"),
+         QStringLiteral("Quote : Proposal.pdf"), localPath, false},
+    }, QStringLiteral("remote-first order"));
+}
+
+void FileFinderTest::commitLocationsUpdatesExistingRemoteRowToNewUrl()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+
+    const QString databasePath = temporary.filePath(QStringLiteral("ProjectNotes.db"));
+    const QString oldUrl = QStringLiteral(
+        "https://example.test/_layouts/15/Doc.aspx?sourcedoc=%7BGUID%7D&file=Report.xlsx"
+        "&action=default&mobileredirect=true");
+    const QString newUrl = QStringLiteral(
+        "https://example.test/Shared%20Documents/Report.xlsx");
+
+    const QString setupConnection = QStringLiteral("FileFinderRemoteUrlUpdateSetup");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                          setupConnection);
+        database.setDatabaseName(databasePath);
+        QVERIFY2(database.open(), qPrintable(database.lastError().text()));
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, "
+            "project_status TEXT, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, "
+            "location_type TEXT, location_description TEXT, full_path TEXT, "
+            "updateddate INTEGER, syncdate INTEGER, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO projects VALUES ('active-id', '1001', 'Active', 0)")));
+        query.prepare(QStringLiteral(
+            "INSERT INTO project_locations VALUES "
+            "('remote-row-id', 'active-id', 'Excel Document', 'Estimate : Report.xlsx', "
+            "?, 1, NULL, 0)"));
+        query.addBindValue(oldUrl);
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(setupConnection);
+
+    QReadWriteLock sharedLock;
+    FileFinderWorker worker;
+    worker.initializeDatabase(databasePath, &sharedLock);
+
+    // Simulates a rescan (e.g. "Reconsider All Files") re-discovering the same
+    // Office file, now under its direct webDavUrl instead of the Doc.aspx
+    // viewer page an earlier scan stored — the existing row must be updated
+    // to the new URL, not left on the old one or duplicated.
+    const QList<DiscoveredLocation> locations = {
+        {QStringLiteral("active-id"), QStringLiteral("Excel Document"),
+         QStringLiteral("Estimate : Report.xlsx"), newUrl, true},
+    };
+    FileFinderScanSummary summary;
+    QString error;
+    QVERIFY2(worker.commitLocations(locations, &summary, &error), qPrintable(error));
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QCOMPARE(summary.updated, 1);
+    QCOMPARE(summary.inserted, 0);
+
+    worker.closeDatabase();
+
+    QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                      setupConnection);
+    database.setDatabaseName(databasePath);
+    QVERIFY2(database.open(), qPrintable(database.lastError().text()));
+    QSqlQuery query(database);
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT full_path FROM project_locations WHERE id = 'remote-row-id'")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), newUrl);
+    database.close();
+    QSqlDatabase::removeDatabase(setupConnection);
+}
+
+void FileFinderTest::commitLocationsKeepsExistingLocalRowWhenFileStillExists()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+
+    const QString databasePath = temporary.filePath(QStringLiteral("ProjectNotes.db"));
+    const QString localPath = temporary.filePath(QStringLiteral("Proposal.pdf"));
+    {
+        QFile file(localPath);
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        file.write("stub");
+    }
+
+    const QString setupConnection = QStringLiteral("FileFinderStillExistsSetup");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                          setupConnection);
+        database.setDatabaseName(databasePath);
+        QVERIFY2(database.open(), qPrintable(database.lastError().text()));
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, "
+            "project_status TEXT, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, "
+            "location_type TEXT, location_description TEXT, full_path TEXT, "
+            "updateddate INTEGER, syncdate INTEGER, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO projects VALUES ('active-id', '1001', 'Active', 0)")));
+        query.prepare(QStringLiteral(
+            "INSERT INTO project_locations VALUES "
+            "('local-row-id', 'active-id', 'File Folder', 'Project Folder', ?, 1, NULL, 0)"));
+        query.addBindValue(QFileInfo(localPath).canonicalFilePath());
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(setupConnection);
+
+    QReadWriteLock sharedLock;
+    FileFinderWorker worker;
+    worker.initializeDatabase(databasePath, &sharedLock);
+
+    FileFinderScanSummary summary;
+    QString error;
+    const QList<DiscoveredLocation> locations = {
+        {QStringLiteral("active-id"), QStringLiteral("Web Link"),
+         QStringLiteral("Project Folder"),
+         QStringLiteral("https://example.test/Project Folder"), true},
+    };
+    QVERIFY2(worker.commitLocations(locations, &summary, &error), qPrintable(error));
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QCOMPARE(summary.updated, 0);
+    QCOMPARE(summary.unchanged, 1);
+
+    worker.closeDatabase();
+    const QString verifyConnection = QStringLiteral("FileFinderStillExistsVerify");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                          verifyConnection);
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT location_type, full_path FROM project_locations "
+            "WHERE id = 'local-row-id'")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("File Folder"));
+        QCOMPARE(query.value(1).toString(), QFileInfo(localPath).canonicalFilePath());
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(verifyConnection);
+}
+
+void FileFinderTest::commitLocationsReplacesExistingLocalRowWhenFileNoLongerExists()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+
+    const QString databasePath = temporary.filePath(QStringLiteral("ProjectNotes.db"));
+    const QString staleLocalPath = QStringLiteral("/no/longer/exists/Project Folder");
+    const QString remotePath = QStringLiteral("https://example.test/Project Folder");
+
+    const QString setupConnection = QStringLiteral("FileFinderNoLongerExistsSetup");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                          setupConnection);
+        database.setDatabaseName(databasePath);
+        QVERIFY2(database.open(), qPrintable(database.lastError().text()));
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE projects (id TEXT PRIMARY KEY, project_number TEXT, "
+            "project_status TEXT, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TABLE project_locations (id TEXT PRIMARY KEY, project_id TEXT, "
+            "location_type TEXT, location_description TEXT, full_path TEXT, "
+            "updateddate INTEGER, syncdate INTEGER, deleted INTEGER DEFAULT 0)")));
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO projects VALUES ('active-id', '1001', 'Active', 0)")));
+        query.prepare(QStringLiteral(
+            "INSERT INTO project_locations VALUES "
+            "('local-row-id', 'active-id', 'File Folder', 'Project Folder', ?, 1, NULL, 0)"));
+        query.addBindValue(staleLocalPath);
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(setupConnection);
+
+    QReadWriteLock sharedLock;
+    FileFinderWorker worker;
+    worker.initializeDatabase(databasePath, &sharedLock);
+
+    FileFinderScanSummary summary;
+    QString error;
+    const QList<DiscoveredLocation> locations = {
+        {QStringLiteral("active-id"), QStringLiteral("Web Link"),
+         QStringLiteral("Project Folder"), remotePath, true},
+    };
+    QVERIFY2(worker.commitLocations(locations, &summary, &error), qPrintable(error));
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QCOMPARE(summary.updated, 1);
+    QCOMPARE(summary.unchanged, 0);
+
+    worker.closeDatabase();
+    const QString verifyConnection = QStringLiteral("FileFinderNoLongerExistsVerify");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"),
+                                                          verifyConnection);
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT location_type, full_path FROM project_locations "
+            "WHERE id = 'local-row-id'")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("Web Link"));
+        QCOMPARE(query.value(1).toString(), remotePath);
         database.close();
     }
     QSqlDatabase::removeDatabase(verifyConnection);

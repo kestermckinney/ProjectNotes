@@ -658,6 +658,19 @@ bool DatabaseObjects::getShowInternalItems()
     return ret;
 }
 
+void DatabaseObjects::setOffice365OpenLinksInDesktop(bool value)
+{
+    saveLocalParameter("Office365:OpenLinksInDesktop", (value ? "1": "0"));
+}
+
+bool DatabaseObjects::getOffice365OpenLinksInDesktop()
+{
+    QString value = loadLocalParameter("Office365:OpenLinksInDesktop");
+    if (value.isEmpty())
+        return true; // unset: default to trying the native desktop app first, matching desktop
+    return (bool)value.toUInt();
+}
+
 void DatabaseObjects::setProjectManager(const QString& value)
 {
     saveParameter("Preferences:ProjectManager", value );

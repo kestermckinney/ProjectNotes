@@ -341,6 +341,12 @@ Item {
                             onClicked: page._finder.signOutOffice365()
                         }
                     }
+
+                    SettingsCheck {
+                        label: qsTr("Open links in desktop apps when available")
+                        checked: page._finder ? page._finder.office365OpenLinksInDesktop : true
+                        onToggledValue: (v) => { if (page._finder) page._finder.office365OpenLinksInDesktop = v }
+                    }
                 }
             }
 
@@ -381,7 +387,20 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 Layout.minimumWidth: 0
-                                visible: page._finder && page._finder.lastScanSummary !== ""
+                                visible: page._finder && page._finder.scanning
+                                         && page._finder.scanningLocation !== ""
+                                text: page._finder ? page._finder.scanningLocation : ""
+                                color: Theme.text3
+                                font.pixelSize: Theme.fontSm
+                                elide: Text.ElideMiddle
+                                maximumLineCount: 1
+                                clip: true
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                Layout.minimumWidth: 0
+                                visible: page._finder && !page._finder.scanning
+                                         && page._finder.lastScanSummary !== ""
                                 text: page._finder ? page._finder.lastScanSummary : ""
                                 color: Theme.text3
                                 font.pixelSize: Theme.fontSm
@@ -849,7 +868,7 @@ Item {
                         Layout.alignment: Qt.AlignRight
                         implicitHeight: 28
                         text: qsTr("Reset Defaults")
-                        onClicked: page._finder.resetDefaultRules()
+                        onClicked: resetFileRulesDialog.open()
                     }
                 }
             }
@@ -1204,6 +1223,96 @@ Item {
         onAccepted: {
             if (page._finder)
                 page._finder.addSearchRoot(selectedFolder)
+        }
+    }
+
+    // Confirms File Finder's "Reset Defaults" — it discards every custom
+    // classification rule, so a stray click shouldn't be able to do that
+    // silently. Styled like Main.qml's confirmDeleteDialog.
+    Dialog {
+        id: resetFileRulesDialog
+        anchors.centerIn: parent
+        width: 380
+        scale: Theme.uiScale
+        modal: true
+        padding: 0
+        closePolicy: Popup.CloseOnEscape
+        title: qsTr("Reset Defaults")
+
+        background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
+        header: null
+        footer: null
+
+        contentItem: ColumnLayout {
+            spacing: 0
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.margins: 14
+                spacing: 8
+                MaterialIcon { name: "restart_alt"; size: 20; color: Theme.red }
+                Text {
+                    text: resetFileRulesDialog.title
+                    color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold
+                    Layout.fillWidth: true
+                }
+                DialogCloseButton { popup: resetFileRulesDialog }
+            }
+            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.margins: 18
+                spacing: 16
+                Text {
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    color: Theme.text
+                    font.pixelSize: Theme.fontLg
+                    text: qsTr("Reset File Finder's classification rules to their defaults? This replaces all of your custom rules and cannot be undone.")
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignRight
+                    spacing: 10
+                    Item { Layout.fillWidth: true }
+                    Rectangle {
+                        implicitHeight: 30
+                        implicitWidth: resetCancelText.implicitWidth + 26
+                        radius: Theme.radiusSm
+                        color: resetCancelHover.hovered ? Theme.surface2 : Theme.surface
+                        border.color: Theme.border
+                        Text {
+                            id: resetCancelText
+                            anchors.centerIn: parent
+                            text: qsTr("Cancel")
+                            color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
+                        }
+                        HoverHandler { id: resetCancelHover }
+                        TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: resetFileRulesDialog.close() }
+                    }
+                    Rectangle {
+                        implicitHeight: 30
+                        implicitWidth: resetConfirmText.implicitWidth + 26
+                        radius: Theme.radiusSm
+                        color: resetConfirmHover.hovered ? Theme.red : Theme.redSoft
+                        border.color: Theme.red
+                        Text {
+                            id: resetConfirmText
+                            anchors.centerIn: parent
+                            text: qsTr("Reset Defaults")
+                            color: resetConfirmHover.hovered ? "#ffffff" : Theme.red
+                            font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold
+                        }
+                        HoverHandler { id: resetConfirmHover }
+                        TapHandler {
+                            gesturePolicy: TapHandler.ReleaseWithinBounds
+                            onTapped: { resetFileRulesDialog.close(); page._finder.resetDefaultRules() }
+                        }
+                    }
+                }
+            }
         }
     }
 

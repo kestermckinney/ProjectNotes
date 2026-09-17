@@ -6,7 +6,7 @@ Project Notes comes with a comprehensive set of standard plugins installed and e
 
 - **Meeting and Email Integration** — Schedule meetings, send emails, and archive communications
 - **Document Management** — Export meeting notes and tracker items to PDF, create new documents from templates
-- **File Organization** — The native File Finder automatically collects and organizes project files
+- **File Organization** — See [File Finder](<../InterfaceOverview/FileFinder.md>), a native productivity feature (not a plugin) that automatically collects and organizes project files
 - **Report Generation** — Generate tracker item reports and status reports
 - **Enterprise Integration** — Connect to Outlook, Office 365, and IFS Cloud ERP
 - **Customization** — Define custom shortcuts and configure plugin behavior
@@ -34,7 +34,7 @@ The standard plugins are organized into several categories:
 - Project Email Archive — Archive project-related emails
 
 **File and Document Features:**
-- File Finder — Native service that automatically monitors and organizes project-related files
+- [File Finder](<../InterfaceOverview/FileFinder.md>) — Native service that automatically monitors and organizes project-related files (not a plugin — see Productivity Features)
 - New Document Templates — Create new documents from templates (MS Project, PowerPoint, Change Orders, etc.)
 - Team Member Quick Add — Quickly add team members to projects
 
@@ -263,16 +263,7 @@ Subject: Meeting Minutes - P-001 Sample Project - 03/23/2026
 | **Client ID** | a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6 | Azure AD app ID for OAuth |
 | **Tenant ID** | f1e2d3c4-b5a6-4978-c9d0-e1f2a3b4c5d6 | Azure AD tenant for your organization |
 
-#### File Finder Settings
-
-| Setting | Example Value | Purpose |
-| :--- | :--- | :--- |
-| **Search Location 1** | \\company\projects | Root folder to scan for project files |
-| **Search Location 2** | C:\Users\{username}\Documents | User's local documents folder |
-| **Folder Exclusion** | `(^\|/)(node_modules\|[.]git)(/\|$)` | Skip development metadata folders and their subtrees |
-| **Classification** | `Project Schedule` / `.*[.]mpp$` | Classify Microsoft Project files as project schedules |
-
-These settings are on the main **Settings > File Finder** page, not in a plugin dialog. See [File Finder](<FileFinder.md>) for all controls.
+File Finder's settings (search locations, folder exclusions, classification rules) are on the main **Settings > File Finder** page, not in a plugin dialog, so they aren't repeated here. See [File Finder](<../InterfaceOverview/FileFinder.md>) for the full settings reference.
 
 #### Export Meeting Notes Settings
 

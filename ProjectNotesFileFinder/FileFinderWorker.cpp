@@ -44,6 +44,12 @@ QString unqualifiedDescription(QString description)
     return description;
 }
 
+bool isRemoteLocationPath(const QString &path)
+{
+    return path.startsWith(QStringLiteral("http://"), Qt::CaseInsensitive)
+        || path.startsWith(QStringLiteral("https://"), Qt::CaseInsensitive);
+}
+
 }
 
 FileFinderWorker::FileFinderWorker(QObject *parent) : QObject(parent)
@@ -144,9 +150,14 @@ void FileFinderWorker::scanNow()
             MicrosoftGraphSource graph(m_configuration.accessToken, m_network, {},
                 [this](const QString &message) { emit diagnostic(message); },
                 m_configuration.folderExclusions,
-                m_configuration.graphFolderState);
-            const QList<DiscoveredLocation> remote = graph.discover(
+                m_configuration.graphFolderState,
+                [this](const QString &folder) {
+                    emit scanningLocation(tr("Teams folder: %1").arg(folder));
+                });
+            QList<DiscoveredLocation> remote = graph.discover(
                 projects, m_configuration.rules, &remoteFiles, &remoteMatches, &graphError);
+            for (DiscoveredLocation &r : remote)
+                r.isRemote = true;
             summary.files += remoteFiles;
             summary.matched += remoteMatches;
             locations.append(remote);
@@ -162,6 +173,17 @@ void FileFinderWorker::scanNow()
                 if (state != m_configuration.graphFolderState) {
                     m_configuration.graphFolderState = state;
                     emit graphFolderStateChanged(state);
+                }
+                // No rule matched anything Graph returned, even though files
+                // were examined. Surface a sample of what was actually seen
+                // (via the ordinary status/warning text, not gated behind a
+                // debug build) so a rule/matching mismatch is diagnosable
+                // without instrumentation.
+                if (remoteFiles > 0 && remoteMatches == 0) {
+                    summary.warning = tr("Teams scan examined %1 file(s) but matched none. "
+                                         "Example name(s) seen: %2")
+                        .arg(remoteFiles).arg(graph.examinedFileNames().join(
+                            QStringLiteral(", ")));
                 }
             }
         }
@@ -268,6 +290,7 @@ QHash<QString, QString> FileFinderWorker::findLocalProjectFolders(
                 break;
             const QString path = pending.takeLast();
             const QString name = QFileInfo(path).fileName();
+            emit scanningLocation(tr("Local folder: %1").arg(path));
             considerDirectory(path, name);
             const QFileInfoList children = QDir(path).entryInfoList(
                 QDir::Dirs | QDir::NoDotAndDotDot | QDir::Readable, QDir::NoSort);
@@ -395,12 +418,25 @@ bool FileFinderWorker::commitLocations(const QList<DiscoveredLocation> &location
         "(id, project_id, location_type, location_description, full_path, updateddate, syncdate, deleted) "
         "VALUES (?, ?, ?, ?, ?, ?, NULL, 0)"));
 
+    // Local (system) discoveries take precedence over remote/Teams discoveries
+    // when they describe the same file, so a project folder synced to both
+    // still points users at the local copy. Within a source, later scan order
+    // wins. Process all local entries first (in reverse, so later local
+    // entries win among themselves), then remote entries, skipping any whose
+    // key a local entry already claimed.
     QSet<QString> seen;
-    // Later discoveries win. Microsoft Teams results are appended after local
-    // results, so an enabled Teams source updates the same classifier row while
-    // both discovery options remain active.
+    QList<const DiscoveredLocation *> ordered;
+    ordered.reserve(locations.size());
     for (auto it = locations.crbegin(); it != locations.crend(); ++it) {
-        const DiscoveredLocation &location = *it;
+        if (!it->isRemote)
+            ordered.append(&(*it));
+    }
+    for (auto it = locations.crbegin(); it != locations.crend(); ++it) {
+        if (it->isRemote)
+            ordered.append(&(*it));
+    }
+    for (const DiscoveredLocation *locationPtr : ordered) {
+        const DiscoveredLocation &location = *locationPtr;
         const QString path = normalizedPath(location.fullPath);
         if (location.projectId.isEmpty() || location.description.isEmpty() || path.isEmpty())
             continue;
@@ -419,6 +455,15 @@ bool FileFinderWorker::commitLocations(const QList<DiscoveredLocation> &location
                 old = candidates.first();
         }
         if (!old.id.isEmpty()) {
+            if (location.isRemote && !isRemoteLocationPath(old.path)
+                && QFileInfo(old.path).exists()) {
+                // A Teams/remote discovery matched an existing row that still
+                // points at a local file that's still there. Don't let the
+                // remote link replace it just because this scan didn't
+                // rediscover the local copy.
+                ++summary->unchanged;
+                continue;
+            }
             if (old.type == location.locationType && old.description == location.description
                 && normalizedPath(old.path) == path) {
                 ++summary->unchanged;
@@ -489,8 +534,7 @@ QString FileFinderWorker::normalizedPath(const QString &path)
 {
     if (path.trimmed().isEmpty())
         return {};
-    if (path.startsWith(QStringLiteral("http://"), Qt::CaseInsensitive)
-        || path.startsWith(QStringLiteral("https://"), Qt::CaseInsensitive))
+    if (isRemoteLocationPath(path))
         return path;
     const QFileInfo info(path);
     const QString canonical = info.canonicalFilePath();

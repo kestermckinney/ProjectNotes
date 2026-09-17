@@ -25,6 +25,13 @@ Existing legacy rows are adopted by normalized path or by their description with
 an old source prefix removed.
 Reconciliation intentionally does not delete locations that disappear from a source.
 
+Microsoft Teams files of an Office type (Word, Excel, PowerPoint, Project) store
+Graph's `webDavUrl`, the direct document URL, instead of `webUrl`, which for
+those files is SharePoint's `_layouts/15/Doc.aspx` viewer page. The Office URI
+scheme (`ms-excel:ofe|u|<url>`) used when opening a location can only open a
+direct document URL. Other file types keep `webUrl`. Existing rows adopt the
+new URL through description matching, but only for folders a scan revisits.
+
 Folder exclusion expressions are case-insensitive and checked against both a
 folder's name and normalized full path, including a directory-form path ending
 in `/`. A matching folder is skipped without enumerating its subtree. Exclusions

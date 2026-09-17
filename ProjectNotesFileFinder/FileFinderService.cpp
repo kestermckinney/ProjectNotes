@@ -20,6 +20,7 @@ namespace {
 constexpr auto kSettingsApplication = "AppSettings";
 constexpr auto kLegacyPluginSettings = "PluginSettings";
 constexpr auto kSettingsPrefix = "FileFinder/";
+constexpr auto kOffice365SettingsPrefix = "Office365/";
 constexpr auto kCredentialService = "Office365FileFinder";
 
 QStringList defaultSearchRoots()
@@ -155,11 +156,20 @@ void FileFinderService::initialize(const QString &databasePath, QReadWriteLock *
     connect(m_worker, &FileFinderWorker::scanStarted, this, [this] {
         m_scanning = true;
         m_status = tr("Scanning active projects…");
+        m_scanningLocation.clear();
         emit statusChanged();
+        emit scanningLocationChanged();
+    });
+    connect(m_worker, &FileFinderWorker::scanningLocation, this,
+            [this](const QString &description) {
+        m_scanningLocation = description;
+        emit scanningLocationChanged();
     });
     connect(m_worker, &FileFinderWorker::scanFinished, this,
             [this](const FileFinderScanSummary &summary) {
         m_scanning = false;
+        m_scanningLocation.clear();
+        emit scanningLocationChanged();
         if (summary.error.isEmpty()) {
             m_status = summary.warning.isEmpty() ? tr("File Finder is ready")
                                                  : summary.warning;
@@ -230,6 +240,15 @@ void FileFinderService::setOffice365Enabled(bool enabled)
     emit settingsChanged();
 }
 
+void FileFinderService::setOffice365OpenLinksInDesktop(bool enabled)
+{
+    if (m_office365OpenLinksInDesktop == enabled)
+        return;
+    m_office365OpenLinksInDesktop = enabled;
+    saveSettings();
+    emit settingsChanged();
+}
+
 void FileFinderService::setOffice365TenantId(const QString &tenantId)
 {
     const QString value = tenantId.trimmed().isEmpty()
@@ -239,9 +258,6 @@ void FileFinderService::setOffice365TenantId(const QString &tenantId)
     m_tenantId = value;
     invalidateGraphFolderState();
     saveSettings();
-    QSettings legacy(m_settingsOrganization, QString::fromLatin1(kLegacyPluginSettings));
-    legacy.setFallbacksEnabled(false);
-    legacy.setValue(QStringLiteral("Outlook Integration/TenantID"), value);
     m_oauth->configure(m_tenantId, m_clientId);
     emit settingsChanged();
 }
@@ -254,9 +270,6 @@ void FileFinderService::setOffice365ClientId(const QString &clientId)
     m_clientId = value;
     invalidateGraphFolderState();
     saveSettings();
-    QSettings legacy(m_settingsOrganization, QString::fromLatin1(kLegacyPluginSettings));
-    legacy.setFallbacksEnabled(false);
-    legacy.setValue(QStringLiteral("Outlook Integration/ApplicationID"), value);
     m_oauth->configure(m_tenantId, m_clientId);
     emit settingsChanged();
 }
@@ -465,19 +478,25 @@ void FileFinderService::loadAndMigrateSettings()
         settings.setValue(prefix + QStringLiteral("rules"),
                           QJsonDocument(array).toJson(QJsonDocument::Compact));
         settings.setValue(prefix + QStringLiteral("enabled"), true);
-        settings.setValue(prefix + QStringLiteral("tenantId"),
-                          legacy.value(QStringLiteral("Outlook Integration/TenantID"),
-                                       QStringLiteral("organizations")));
-        settings.setValue(prefix + QStringLiteral("clientId"),
-                          legacy.value(QStringLiteral("Outlook Integration/ApplicationID")));
+        // Deliberately do NOT copy Outlook Integration's TenantID/ApplicationID
+        // here. File Finder requests Team.ReadBasic.All, Channel.ReadBasic.All,
+        // and Files.Read.All, which Microsoft Graph marks as requiring admin
+        // consent; Outlook Integration's app registration was only ever
+        // consented for Mail/Calendar/Contacts/Tasks scopes. Reusing it makes
+        // sign-in appear to succeed while Azure AD then rejects the new scopes
+        // with AADSTS90094. File Finder needs its own Entra app registration,
+        // entered by the user under Settings > Office 365 Integration.
         settings.setValue(prefix + QStringLiteral("migrationComplete"), true);
     }
 
+    const QString office365Prefix = QString::fromLatin1(kOffice365SettingsPrefix);
     m_enabled = settings.value(prefix + QStringLiteral("enabled"), false).toBool();
     m_office365Enabled = settings.value(prefix + QStringLiteral("office365Enabled"), false).toBool();
-    m_tenantId = settings.value(prefix + QStringLiteral("tenantId"),
+    m_tenantId = settings.value(office365Prefix + QStringLiteral("tenantId"),
                                 QStringLiteral("organizations")).toString();
-    m_clientId = settings.value(prefix + QStringLiteral("clientId")).toString();
+    m_clientId = settings.value(office365Prefix + QStringLiteral("clientId")).toString();
+    m_office365OpenLinksInDesktop = settings.value(
+        office365Prefix + QStringLiteral("openLinksInDesktop"), true).toBool();
     m_roots = normalizedRoots(settings.value(prefix + QStringLiteral("roots")).toStringList());
     m_folderExclusions = settings.value(
         prefix + QStringLiteral("folderExclusions")).toStringList();
@@ -503,10 +522,15 @@ void FileFinderService::saveSettings() const
         return;
     QSettings settings(m_settingsOrganization, QString::fromLatin1(kSettingsApplication));
     const QString prefix = QString::fromLatin1(kSettingsPrefix);
+    const QString office365Prefix = QString::fromLatin1(kOffice365SettingsPrefix);
     settings.setValue(prefix + QStringLiteral("enabled"), m_enabled);
     settings.setValue(prefix + QStringLiteral("office365Enabled"), m_office365Enabled);
-    settings.setValue(prefix + QStringLiteral("tenantId"), m_tenantId);
-    settings.setValue(prefix + QStringLiteral("clientId"), m_clientId);
+    settings.setValue(office365Prefix + QStringLiteral("tenantId"), m_tenantId);
+    settings.setValue(office365Prefix + QStringLiteral("clientId"), m_clientId);
+    settings.setValue(office365Prefix + QStringLiteral("openLinksInDesktop"),
+                      m_office365OpenLinksInDesktop);
+    settings.remove(prefix + QStringLiteral("tenantId"));
+    settings.remove(prefix + QStringLiteral("clientId"));
     settings.setValue(prefix + QStringLiteral("roots"), m_roots);
     settings.setValue(prefix + QStringLiteral("folderExclusions"), m_folderExclusions);
     settings.setValue(prefix + QStringLiteral("graphFolderState"),

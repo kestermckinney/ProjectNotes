@@ -63,7 +63,7 @@ Once your clients and people are setup, you will need to tell Project Notes whic
 
 ## Plugin Settings
 
-Project Notes plugins are highly configurable. Plugin dialogs are available under **Plugins > Settings**. Native services use the main **Settings** page instead: File Finder and Office 365 Integration have separate sections there. See [Plugin Settings](<../StandardPlugins/PluginSettings.md>), [File Finder](<../StandardPlugins/FileFinder.md>), and [Office 365 Integration](<../StandardPlugins/Office365Integration.md>) for configuration details.
+Project Notes plugins are highly configurable. Plugin dialogs are available under **Plugins > Settings**. Native services use the main **Settings** page instead: File Finder and Office 365 Integration have separate sections there. See [Plugin Settings](<../StandardPlugins/PluginSettings.md>), [File Finder](<../InterfaceOverview/FileFinder.md>), and [Office 365 Integration](<../InterfaceOverview/Office365Integration.md>) for configuration details.
 
 Plugin settings are stored in your local OS profile (registry on Windows, plist on macOS, ini on Linux) and are not synced to the cloud host. If you move to a new machine, use the **Settings Migrator** (under **Plugins > Settings**) to transfer your configuration.
 

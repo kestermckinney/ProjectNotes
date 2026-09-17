@@ -14,7 +14,6 @@
       "title": "Interface Overview",
       "items": [
         { "title": "Application Menu", "path": "InterfaceOverview/ApplicationMenu.md" },
-        { "title": "Preferences", "path": "InterfaceOverview/Preferences.md" },
         { "title": "Project List Page", "path": "InterfaceOverview/ProjectListPage.md" },
         { "title": "Project Page", "path": "InterfaceOverview/ProjectPage.md" },
         { "title": "Notes Page", "path": "InterfaceOverview/NotesPage.md" },
@@ -23,6 +22,12 @@
         { "title": "People List Page", "path": "InterfaceOverview/PeopleListPage.md" },
         { "title": "Client List Page", "path": "InterfaceOverview/ClientListPage.md" },
         { "title": "Search Page", "path": "InterfaceOverview/SearchPage.md" }
+      ]
+    },
+    {
+      "title": "Settings",
+      "items": [
+        { "title": "Settings", "path": "InterfaceOverview/Preferences.md" }
       ]
     },
     {
@@ -36,7 +41,9 @@
         { "title": "Moving Items", "path": "InterfaceOverview/MovingItems.md" },
         { "title": "Spell Checking", "path": "InterfaceOverview/SpellChecking.md" },
         { "title": "UI Zoom", "path": "InterfaceOverview/VectorZoom.md" },
-        { "title": "Error Log", "path": "InterfaceOverview/ErrorLog.md" }
+        { "title": "Error Log", "path": "InterfaceOverview/ErrorLog.md" },
+        { "title": "File Finder", "path": "InterfaceOverview/FileFinder.md" },
+        { "title": "Office 365 Integration", "path": "InterfaceOverview/Office365Integration.md" }
       ]
     },
     {
@@ -64,10 +71,8 @@
       "title": "Standard Plugins",
       "items": [
         { "title": "Plugin Settings", "path": "StandardPlugins/PluginSettings.md" },
-        { "title": "Office 365 Integration", "path": "StandardPlugins/Office365Integration.md" },
         { "title": "Outlook Integration", "path": "StandardPlugins/OutlookIntegration.md" },
         { "title": "iCloud Contacts", "path": "StandardPlugins/iCloudContacts.md" },
-        { "title": "File Finder", "path": "StandardPlugins/FileFinder.md" },
         { "title": "My Shortcuts", "path": "StandardPlugins/MyShortcuts.md" },
         { "title": "Team Member Quick Add", "path": "StandardPlugins/TeamMemberQuickAdd.md" },
         { "title": "Export Meeting Notes", "path": "StandardPlugins/ExportMeetingNotes.md" },

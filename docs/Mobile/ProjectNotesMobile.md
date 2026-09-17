@@ -139,6 +139,8 @@ Displays an associated file path or folder location for a project.
 | Description | Human-readable label for the location |
 | Path | File system path or URL |
 
+When the path is a web link, an **Open** button appears. For a Word, Excel, PowerPoint, or Project document stored in SharePoint/Teams, it first tries to launch the matching Office app directly to that document, falling back to Safari when the app isn't installed. A local file system path (e.g. from a desktop File Finder scan) can't be opened from the mobile app.
+
 ### Team Members Page
 
 Lists all team members assigned to a specific project.

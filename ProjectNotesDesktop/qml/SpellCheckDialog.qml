@@ -94,10 +94,7 @@ Dialog {
                 color: Theme.text; font.pixelSize: Theme.fontXl; font.weight: Font.Bold
                 Layout.fillWidth: true
             }
-            MaterialIcon {
-                name: "close"; size: 16; color: Theme.text3
-                TapHandler { onTapped: dlg.close() }
-            }
+            DialogCloseButton { popup: dlg; iconSize: 16 }
         }
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
 

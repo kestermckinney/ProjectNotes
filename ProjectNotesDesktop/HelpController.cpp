@@ -14,6 +14,7 @@
 #include <QTextBlock>
 #include <QTextCursor>
 #include <QTextDocument>
+#include <QTextTable>
 #include <QVariantMap>
 
 // The docs/ tree is bundled under this prefix by qt_add_resources (CMakeLists.txt).
@@ -178,8 +179,27 @@ QString HelpController::topicMarkdown(const QString& relPath) const
         last = m.capturedEnd();
     }
     rebuilt2 += out.mid(last);
+    out = rebuilt2;
 
-    return rebuilt2;
+    // Angle-bracketed link destinations, e.g. [text](<File.md>), as mkdocs
+    // allows for targets with spaces or parentheses. Qt's Markdown importer
+    // doesn't unwrap these itself; left as-is, the brackets read as an inline
+    // HTML tag and the link doesn't render. Image targets are handled above;
+    // this only strips brackets immediately after "](", so bare autolinks
+    // like <https://example.com> elsewhere in the text are untouched.
+    static const QRegularExpression reLinkTarget(QStringLiteral("\\]\\(<([^>]*)>\\)"));
+    QString rebuilt3;
+    rebuilt3.reserve(out.size());
+    last = 0;
+    for (QRegularExpressionMatchIterator it = reLinkTarget.globalMatch(out); it.hasNext(); ) {
+        const QRegularExpressionMatch m = it.next();
+        rebuilt3 += out.mid(last, m.capturedStart() - last);
+        rebuilt3 += "](" + m.captured(1) + ")";
+        last = m.capturedEnd();
+    }
+    rebuilt3 += out.mid(last);
+
+    return rebuilt3;
 }
 
 QString HelpController::resolveLink(const QString& fromPath, const QString& href) const
@@ -283,9 +303,20 @@ void HelpController::applySpacing(QQuickTextDocument* document) const
     // against their own siblings while still separating from what surrounds
     // the list. Line height gets a little extra too, since the default is
     // cramped for on-screen reading.
+    //
+    // Table cells are skipped entirely. Reformatting their paragraphs inside
+    // the same edit block as the surrounding body text (margins are cell
+    // content, not row spacing, so there's nothing worth widening there
+    // anyway) left everything above a table failing to repaint on topics
+    // like PluginsOverview/DataTypes.md — the parsed document still had the
+    // heading/paragraph/list blocks, they just never got painted once a
+    // table was reformatted in the same pass. Keeping the edit scoped to
+    // blocks outside any table sidesteps that.
     QTextCursor cursor(doc);
     cursor.beginEditBlock();
     for (QTextBlock block = doc->begin(); block.isValid(); block = block.next()) {
+        if (qobject_cast<QTextTable*>(doc->frameAt(block.position())))
+            continue;
         QTextBlockFormat fmt = block.blockFormat();
         const int headingLevel = fmt.headingLevel();
         qreal top;

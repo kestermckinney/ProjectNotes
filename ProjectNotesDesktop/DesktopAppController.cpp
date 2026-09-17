@@ -20,6 +20,7 @@
 #include "statusreportitemsmodel.h"
 #include "searchresultsmodel.h"
 #include "FileFinderService.h"
+#include "officedeeplink.h"
 
 #include "pluginmanager.h"
 #include "plugin.h"
@@ -70,6 +71,13 @@
 #include <QUrl>
 #include <QUrlQuery>
 #include <QUuid>
+
+#if defined(Q_OS_WIN)
+#include <windows.h>
+#include <shellapi.h>
+#elif defined(Q_OS_MACOS)
+#include <QProcess>
+#endif
 
 #include <private/qzipwriter_p.h>
 
@@ -2650,17 +2658,79 @@ bool DesktopAppController::addProjectLocationFromUrl(const QString& projectId,
     return setProjectLocationPath(row, fileUrlOrPath);
 }
 
+namespace {
+
+// ms-word:ofe|u|<url> (and the ms-excel:/ms-powerpoint:/ms-project: equivalents)
+// rely on a literal, un-encoded "|" as their command delimiter — see
+// officeDeepLinkFor()'s header comment. QUrl has no "opaque URI" mode that
+// preserves that: parsing the string into a QUrl and hoisting it back out
+// through QDesktopServices::openUrl() percent-encodes each "|" to "%7C",
+// which Office's protocol handler doesn't recognize ("This action couldn't
+// be performed because Office doesn't recognize the command it was given").
+// So these already-fully-formed native URIs go straight to the OS, bypassing
+// QUrl's encode/decode round trip entirely.
+bool openRawUri(const QString& uri)
+{
+#if defined(Q_OS_WIN)
+    HINSTANCE result = ShellExecuteW(nullptr, L"open",
+                                      reinterpret_cast<const wchar_t*>(uri.utf16()),
+                                      nullptr, nullptr, SW_SHOWNORMAL);
+    // Per the ShellExecute docs, a return value greater than 32 indicates success;
+    // values 32 and below (e.g. SE_ERR_NOASSOC) mean no handler was found.
+    return reinterpret_cast<INT_PTR>(result) > 32;
+#elif defined(Q_OS_MACOS)
+    // `open` resolves and hands the raw string to LaunchServices without
+    // Qt's percent-encoding; a nonzero exit means no app claims the scheme.
+    return QProcess::execute(QStringLiteral("open"), {uri}) == 0;
+#else
+    // No native Office desktop app / URI handler expected on this platform;
+    // let the caller fall back to opening the canonical URL instead.
+    Q_UNUSED(uri);
+    return false;
+#endif
+}
+
+} // namespace
+
 void DesktopAppController::openProjectLocation(int row)
 {
     QAbstractItemModel* model = global_DBObjects.projectlocationsmodelproxy();
     if (row < 0 || row >= model->rowCount()) return;
-    const QString path = model->data(model->index(row, 4)).toString();
+    // Rows saved by the old save-time rewrite hold ms-excel:ofe|u|<url>;
+    // unwrap them so they open exactly like a canonical row.
+    const QString path = unwrapOfficeDeepLink(
+        model->data(model->index(row, 4)).toString());
     if (path.isEmpty()) return;
 
-    // A stored path with a URL scheme — http(s), the ms-office deep links that
-    // ProjectLocationsModel writes for Office web documents, mailto, file, … — is
-    // handed to the OS as a URL so the browser or the registered Office handler
-    // opens it; a bare filesystem path is opened as a local file.
+    // full_path is stored canonically (a plain http(s)/SharePoint URL, not an
+    // ms-office deep link — see the note in ProjectLocationsModel::setData()).
+    // Try the native Word/Excel/PowerPoint/Project app first and fall back to
+    // opening the canonical URL itself when nothing answers (e.g. the Office
+    // app isn't installed). openRawUri() returns false when no handler is
+    // registered for the ms-* scheme.
+    //
+    // Settings > Office 365 Integration lets the user turn this off entirely;
+    // in that case open the browser-based Office Online viewer instead of
+    // handing the file to a desktop app, rather than just opening the bare
+    // document URL (which SharePoint/OneDrive can otherwise offer to download
+    // or open in the desktop app itself, depending on tenant settings).
+    if (!m_fileFinder || m_fileFinder->office365OpenLinksInDesktop()) {
+        const QString deepLink = officeDeepLinkFor(path);
+        if (!deepLink.isEmpty() && openRawUri(deepLink))
+            return;
+    } else {
+        const QString viewerUrl = officeWebViewerUrlFor(path);
+        if (!viewerUrl.isEmpty()) {
+            QDesktopServices::openUrl(QUrl(viewerUrl, QUrl::TolerantMode));
+            return;
+        }
+    }
+
+    // A stored path with a URL scheme — http(s), an ms-office deep link
+    // (kept only for rows saved before that rewrite was removed), mailto,
+    // file, … — is handed to the OS as a URL so the browser or the
+    // registered handler opens it; a bare filesystem path is opened as a
+    // local file.
     static const QStringList urlSchemes = {
         "http:", "https:", "ftp:", "mailto:", "file:",
         "ms-word:", "ms-excel:", "ms-powerpoint:", "ms-project:",
@@ -3076,6 +3146,10 @@ void DesktopAppController::setSyncEnabled(bool v)
     setSyncSetting("Sync/Enabled", v);
     // Switching sync on is the moment the stored credentials start to matter.
     if (v) setSyncSettingsUnverified(true);
+    // Switching it off must stop an already-running engine immediately —
+    // otherwise a sync started earlier this session keeps going despite the
+    // setting now reading "disabled".
+    else stopSync();
     emit syncSettingsChanged();
 }
 void DesktopAppController::setSyncEmail(const QString& v)

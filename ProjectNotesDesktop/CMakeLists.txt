@@ -88,9 +88,11 @@ set(DESKTOP_QML_FILES
     qml/MenuRow.qml
     qml/MenuFlyout.qml
     qml/ClickShield.qml
+    qml/DialogCloseButton.qml
     qml/MenuScrollView.qml
     qml/ZoomMenuRow.qml
     qml/LogViewerWindow.qml
+    qml/ReadOnlyTextContextMenu.qml
     qml/HelpPage.qml
     qml/FilterDialog.qml
     qml/SortMenu.qml

@@ -190,6 +190,12 @@ public:
     bool getShowClosedProjects();
     void setShowInternalItems(bool value);
     bool getShowInternalItems();
+    // Mirrors desktop's Settings > Office 365 Integration > "Open links in
+    // desktop apps when available" (FileFinderService::office365OpenLinksInDesktop)
+    // for the mobile app, which has no FileFinderService of its own. Defaults
+    // to true, matching desktop.
+    void setOffice365OpenLinksInDesktop(bool value);
+    bool getOffice365OpenLinksInDesktop();
     void setProjectManager(const QString& value);
     QString getProjectManager();
     void setManagingCompany(const QString& value);
