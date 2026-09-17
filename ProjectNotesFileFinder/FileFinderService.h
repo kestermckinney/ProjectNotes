@@ -10,7 +10,7 @@
 #include <QVariantList>
 
 class FileFinderWorker;
-class MicrosoftOAuthManager;
+namespace PN::Comm { class Office365Service; }
 class QReadWriteLock;
 class QThread;
 
@@ -56,6 +56,7 @@ public:
     QString office365AuthenticationStatus() const;
     QString office365UserCode() const;
     QUrl office365VerificationUrl() const;
+    PN::Comm::Office365Service *office365Service() const { return m_office365Service; }
     bool scanning() const { return m_scanning; }
     QString status() const { return m_status; }
     QString lastScanSummary() const { return m_lastScanSummary; }
@@ -91,7 +92,7 @@ private:
 
     QThread *m_thread = nullptr;
     FileFinderWorker *m_worker = nullptr;
-    MicrosoftOAuthManager *m_oauth = nullptr;
+    PN::Comm::Office365Service *m_office365Service = nullptr;
     QString m_settingsOrganization;
     QString m_accessToken;
     QStringList m_roots;

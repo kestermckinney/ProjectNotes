@@ -85,7 +85,13 @@ ApplicationWindow {
 
     // Persist the current geometry so the window reopens the same size/position
     // next launch.
-    onClosing: {
+    onClosing: function(close) {
+        // A template validation failure deliberately keeps the window open so
+        // the user can correct it; SettingsPage shows the standard dialog.
+        if (!_saveCurrent()) {
+            close.accepted = false
+            return
+        }
         DesktopAppController.saveWindowGeometry(
             root._normalX, root._normalY, root._normalWidth, root._normalHeight,
             root.visibility === Window.Maximized)
@@ -167,15 +173,17 @@ ApplicationWindow {
     // ── Navigation ────────────────────────────────────────────────────────────
     function _saveCurrent() {
         var it = contentStack.currentItem
-        if (!it) return
+        if (!it) return true
         if (typeof it._saveNow === "function")
-            it._saveNow()
+            if (it._saveNow() === false)
+                return false
         // A record the "New" button only staged (see DesktopAppController::
         // addProject) still isn't in the database if _saveNow() had nothing to
         // save — no name typed, or a name that clashed. Drop the staged row on
         // the way out so it can't linger in the list as a blank, dead card.
         if (it.isNewRecord === true && typeof it._discardNew === "function")
             it._discardNew()
+        return true
     }
 
     // Section pages are created once and reused across navigation, so
@@ -252,7 +260,8 @@ ApplicationWindow {
     function selectSection(section) {
         if (section === root.currentSection && contentStack.depth <= 1)
             return
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         if (_gateOnSyncCheck(function() { root._selectSectionNow(section) }))
             return
         _selectSectionNow(section)
@@ -317,7 +326,8 @@ ApplicationWindow {
 
     function openProject(projectId) {
         if (projectId === "") return
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         root.selectedProjectId = projectId
         var r = DesktopAppController.projectRowForId(projectId)
         if (r < 0) return
@@ -331,34 +341,39 @@ ApplicationWindow {
     // and name (ProjectDetailPage._saveNow), which is also when its child tabs
     // become usable, since every one of them is keyed by the project id.
     function openNewProject(projectRow) {
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         root.crumbSub = qsTr("New Project")
         contentStack.push(projectDetailComponent,
                           { projectRow: projectRow, projectId: "", isNewRecord: true })
     }
 
     function openNote(noteRow, noteId, projectId) {
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         root.crumbSub = qsTr("Note")
         contentStack.push(noteDetailComponent,
                           { noteRow: noteRow, noteId: noteId, projectId: projectId })
     }
 
     function openPerson(row, personId) {
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         root.crumbSub = DesktopAppController.peopleNameForId(personId)
         contentStack.push(personDetailComponent, { personRow: row, personId: personId })
     }
 
     function openClient(row, clientId) {
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         root.crumbSub = DesktopAppController.clientNameForId(clientId)
         contentStack.push(clientDetailComponent, { clientRow: row, clientId: clientId })
     }
 
     function openItem(itemId) {
         if (itemId === "") return
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         root.crumbSub = qsTr("Item")
         contentStack.push(itemDetailComponent, { itemId: itemId })
     }
@@ -437,7 +452,8 @@ ApplicationWindow {
     property string _exportId: ""
     function exportRecord(table, id) {
         if (!table || !id) return
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         root._exportTable = table
         root._exportId = id
         exportDialog.open()
@@ -457,7 +473,8 @@ ApplicationWindow {
     }
 
     function goBack() {
-        _saveCurrent()
+        if (!_saveCurrent())
+            return
         _popAndRecrumb()
     }
 

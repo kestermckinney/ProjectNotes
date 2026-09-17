@@ -1,0 +1,22 @@
+{
+  "source_revision": "0507b5393a4e878e85d2079f568519c7e29a6d13",
+  "project": {"number": "DEMO-042", "name": "Northwind Upgrade & Safety Review"},
+  "reporting_date": "09/15/2026",
+  "manager": "Morgan Manager",
+  "status_recipients": ["Casey Client", "Alex Partner"],
+  "meeting": {
+    "title": "Kickoff & risk review",
+    "date": "09/10/2026",
+    "attendees": ["Morgan Manager", "Casey Client", "Alex Partner"],
+    "notes": "Decision: retain <em>legacy</em> layout & confirm delivery.",
+    "actions": [
+      {"name": "Confirm scope", "assigned_to": "Alex Partner", "status": "Assigned", "date_due": "09/20/2026"},
+      {"name": "Provide review", "assigned_to": "Casey Client", "status": "New", "date_due": "09/22/2026"}
+    ]
+  },
+  "tracker_items": [
+    {"number": "I-001", "name": "Synthetic risk & mitigation", "identified_by": "Morgan Manager", "date_identified": "09/01/2026", "description": "Verify <scope> & avoid loss", "assigned_to": "Alex Partner", "priority": "High", "status": "New", "date_due": "09/30/2026", "last_update": "09/12/2026", "date_resolved": "", "comments": "Client requested review", "internal": "1", "type": "Tracker"},
+    {"number": "A-002", "name": "Follow-up", "identified_by": "Casey Client", "date_identified": "09/02/2026", "description": "Document handoff", "assigned_to": "Morgan Manager", "priority": "Medium", "status": "Assigned", "date_due": "10/01/2026", "last_update": "", "date_resolved": "", "comments": "", "internal": "0", "type": "Action"}
+  ],
+  "activities": {"since_last": ["Reviewed scope", "Logged risk"], "next_period": ["Obtain approval"], "completed": ["Kickoff held"]}
+}

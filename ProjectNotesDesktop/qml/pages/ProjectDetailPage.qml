@@ -1603,6 +1603,11 @@ Item {
         recordId: page.projectId
         canOpen: false
         canMoveTo: true
+        reportItems: [
+            { label: qsTr("Meeting Notes"), value: "meeting-notes-report" },
+            { label: qsTr("Status"), value: "status-report" },
+            { label: qsTr("Tracker Items"), value: "tracker-items-report" }
+        ]
         onNewRequested: page.newRequested()
         onDeleteRequested: page.deleteRequested()
         onDuplicateRequested: {
@@ -1618,10 +1623,24 @@ Item {
         onFilterRequested: page.filterRequested()
         onSortRequested: (sx, sy) => page.sortRequested(sx, sy)
         onRefreshRequested: page._refreshAll()
+        onReportRequested: (workflow) => {
+            if (page._saveNow()) {
+                meetingNotesReportReview.workflow = workflow
+                meetingNotesReportReview.open()
+            }
+        }
     }
 
     // "Move To Folder" for the project itself, opened from selfMenu above.
     MoveToFolderDialog { id: moveToFolderDialog }
+
+    MeetingNotesReportReviewDialog {
+        id: meetingNotesReportReview
+        projectId: page.projectId
+        controller: DesktopAppController.communicationsController
+        recipientModel: DesktopAppController.recipientSelectionModel
+        templateModel: DesktopAppController.templateEditorModel
+    }
 
     // Shared full-field spell-check dialog (opened by fields / right-click).
     SpellCheckDialog { id: spellDialog }

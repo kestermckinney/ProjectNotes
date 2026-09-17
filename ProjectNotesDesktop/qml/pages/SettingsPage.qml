@@ -14,7 +14,9 @@ Item {
     property var _clients: []
     property var _people: []
     readonly property var _finder: DesktopAppController.fileFinder
+    readonly property var _office365: DesktopAppController.office365SettingsModel
     property int currentTab: 0
+    readonly property int emailTemplatesTabIndex: 3
     Component.onCompleted: {
         _clients = DesktopAppController.clientList()
         _people  = DesktopAppController.peopleList()
@@ -30,6 +32,10 @@ Item {
         syncPhraseField.commit()
         officeTenantField.commit()
         officeClientField.commit()
+        // Closing the application must be held at this same commit point too.
+        // saveAndValidate() records incomplete drafts, then returns false so
+        // the shell can abort navigation/close and let the user correct them.
+        return emailTemplates.saveAndValidate()
     }
 
     function _clientNames() { return _clients.map(function(c){ return c.name }) }
@@ -61,6 +67,7 @@ Item {
                     { key: "appearance", label: qsTr("Appearance") },
                     { key: "cloudSync", label: qsTr("Cloud Sync") },
                     { key: "office365", label: qsTr("Office 365 Integration") },
+                    { key: "emailTemplates", label: qsTr("Email Templates") },
                     { key: "fileFinder", label: qsTr("File Finder") },
                     { key: "projectFolders", label: qsTr("Project Folders") },
                     { key: "preferences", label: qsTr("Preferences") },
@@ -93,7 +100,14 @@ Item {
                     HoverHandler { id: tabHover }
                     TapHandler {
                         gesturePolicy: TapHandler.ReleaseWithinBounds
-                        onTapped: page.currentTab = parent.index
+                        onTapped: {
+                            if (parent.index === page.currentTab)
+                                return
+                            if (page.currentTab === page.emailTemplatesTabIndex
+                                    && !emailTemplates.saveAndValidate())
+                                return
+                            page.currentTab = parent.index
+                        }
                     }
                 }
             }
@@ -268,14 +282,14 @@ Item {
                     SyncField {
                         id: officeTenantField
                         label: qsTr("Microsoft Entra tenant ID")
-                        value: page._finder ? page._finder.office365TenantId : "organizations"
-                        onCommitted: (v) => { if (page._finder) page._finder.office365TenantId = v }
+                        value: page._office365 ? page._office365.tenantId : "organizations"
+                        onCommitted: (v) => { if (page._office365) page._office365.tenantId = v }
                     }
                     SyncField {
                         id: officeClientField
                         label: qsTr("Application (client) ID")
-                        value: page._finder ? page._finder.office365ClientId : ""
-                        onCommitted: (v) => { if (page._finder) page._finder.office365ClientId = v }
+                        value: page._office365 ? page._office365.clientId : ""
+                        onCommitted: (v) => { if (page._office365) page._office365.clientId = v }
                     }
 
                     Rectangle {
@@ -291,16 +305,16 @@ Item {
                             spacing: 5
                             Text {
                                 Layout.fillWidth: true
-                                text: page._finder ? page._finder.office365AuthenticationStatus : qsTr("Not initialized")
-                                color: page._finder && page._finder.office365Authenticated ? Theme.green : Theme.text2
+                                text: page._office365 ? page._office365.authenticationStatus : qsTr("Not initialized")
+                                color: page._office365 && page._office365.authenticated ? Theme.green : Theme.text2
                                 font.pixelSize: Theme.fontBody
                                 wrapMode: Text.WordWrap
                             }
                             RowLayout {
-                                visible: page._finder && page._finder.office365UserCode !== ""
+                                visible: page._office365 && page._office365.userCode !== ""
                                 spacing: 8
                                 Text {
-                                    text: qsTr("Code: %1").arg(page._finder ? page._finder.office365UserCode : "")
+                                    text: qsTr("Code: %1").arg(page._office365 ? page._office365.userCode : "")
                                     color: Theme.text
                                     font.pixelSize: Theme.fontXl
                                     font.weight: Font.Bold
@@ -308,14 +322,14 @@ Item {
                                 Button {
                                     implicitHeight: 28
                                     text: qsTr("Copy code")
-                                    onClicked: DesktopAppController.copyTextToClipboard(page._finder.office365UserCode)
+                                    onClicked: DesktopAppController.copyTextToClipboard(page._office365.userCode)
                                 }
                             }
                             Button {
-                                visible: page._finder && page._finder.office365VerificationUrl.toString() !== ""
+                                visible: page._office365 && page._office365.verificationUrl.toString() !== ""
                                 implicitHeight: 28
                                 text: qsTr("Open Microsoft sign-in page")
-                                onClicked: Qt.openUrlExternally(page._finder.office365VerificationUrl)
+                                onClicked: Qt.openUrlExternally(page._office365.verificationUrl)
                             }
                         }
                     }
@@ -325,22 +339,73 @@ Item {
                         Button {
                             primary: true
                             implicitHeight: 30
-                            text: page._finder && page._finder.office365AuthenticationInProgress
+                            text: page._office365 && page._office365.authenticationInProgress
                                   ? qsTr("Waiting for sign-in…") : qsTr("Sign in to Microsoft 365")
-                            enabled: page._finder && !page._finder.office365AuthenticationInProgress
+                            enabled: page._office365 && !page._office365.authenticationInProgress
                             onClicked: {
                                 officeTenantField.commit()
                                 officeClientField.commit()
-                                page._finder.startOffice365SignIn()
+                                page._office365.startSignIn()
                             }
                         }
                         Button {
                             implicitHeight: 30
                             text: qsTr("Sign out")
-                            enabled: page._finder && page._finder.office365Authenticated
-                            onClicked: page._finder.signOutOffice365()
+                            enabled: page._office365 && page._office365.authenticated
+                            onClicked: page._office365.signOut()
                         }
                     }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        implicitHeight: emailDraftConsent.implicitHeight + 20
+                        radius: Theme.radiusSm
+                        color: Theme.surface2
+                        border.color: Theme.border
+                        ColumnLayout {
+                            id: emailDraftConsent
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            spacing: 6
+                            Text {
+                                Layout.fillWidth: true
+                                text: page._office365 && page._office365.emailDraftsGranted
+                                      ? qsTr("Email draft creation is authorized.")
+                                      : qsTr("Email draft creation needs separate Microsoft consent.")
+                                color: page._office365 && page._office365.emailDraftsGranted
+                                       ? Theme.green : Theme.text2
+                                font.pixelSize: Theme.fontBody
+                                wrapMode: Text.WordWrap
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: qsTr("This requests only your basic profile and permission to create drafts; it never requests permission to send mail or manage calendars.")
+                                color: Theme.text3
+                                font.pixelSize: Theme.fontSm
+                                wrapMode: Text.WordWrap
+                            }
+                            Button {
+                                implicitHeight: 28
+                                text: qsTr("Enable email drafts")
+                                visible: !page._office365 || !page._office365.emailDraftsGranted
+                                enabled: page._office365 && !page._office365.authenticationInProgress
+                                onClicked: {
+                                    officeTenantField.commit()
+                                    officeClientField.commit()
+                                    page._office365.requestEmailDraftConsent()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            SettingsTab {
+                // Email Templates
+                TemplateSettingsPane {
+                    id: emailTemplates
+                    Layout.fillWidth: true
+                    templateModel: DesktopAppController.templateEditorModel
                 }
             }
 

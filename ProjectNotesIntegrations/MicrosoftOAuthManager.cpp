@@ -37,6 +37,60 @@ void MicrosoftOAuthManager::setSecretStore(SecretReader reader, SecretWriter wri
     m_secretRemover = std::move(remover);
 }
 
+void MicrosoftOAuthManager::setGrantedScopesStore(GrantedScopesReader reader,
+                                                    GrantedScopesWriter writer,
+                                                    GrantedScopesRemover remover)
+{
+    m_grantedScopesReader = std::move(reader);
+    m_grantedScopesWriter = std::move(writer);
+    m_grantedScopesRemover = std::move(remover);
+}
+
+void MicrosoftOAuthManager::setSecretNamespace(QString secretNamespace)
+{
+    m_secretNamespace = std::move(secretNamespace).trimmed();
+}
+
+void MicrosoftOAuthManager::setHttpTransport(PN::Comm::HttpTransport *transport)
+{
+    m_transport = transport;
+}
+
+void MicrosoftOAuthManager::setRequestedScopes(QStringList scopes)
+{
+    for (QString &scope : scopes)
+        scope = scope.trimmed();
+    scopes.removeAll({});
+    scopes.removeDuplicates();
+    if (m_requestedScopes == scopes)
+        return;
+    m_requestedScopes = std::move(scopes);
+    m_scopeChangePending = true;
+    // Do not disrupt an already-valid File Finder session merely because a
+    // separate feature asks the user for additional consent.
+    if (m_inProgress) {
+        ++m_operationId;
+        m_pollTimer->stop();
+    }
+    if (!m_authenticated && !m_refreshInFlight) {
+        ++m_sessionGeneration;
+        m_accessToken.clear();
+        emit accessTokenChanged({});
+    }
+    clearDeviceCode();
+    setState(m_authenticated, false, tr("Microsoft consent must be renewed for the requested capability."));
+}
+
+QStringList MicrosoftOAuthManager::requestedScopeList() const
+{
+    return m_requestedScopes.isEmpty()
+        ? QStringList{QStringLiteral("offline_access"),
+                      QStringLiteral("https://graph.microsoft.com/Team.ReadBasic.All"),
+                      QStringLiteral("https://graph.microsoft.com/Channel.ReadBasic.All"),
+                      QStringLiteral("https://graph.microsoft.com/Files.Read.All")}
+        : m_requestedScopes;
+}
+
 void MicrosoftOAuthManager::configure(const QString &tenantId, const QString &clientId)
 {
     const QString tenant = tenantId.trimmed().isEmpty()
@@ -46,16 +100,27 @@ void MicrosoftOAuthManager::configure(const QString &tenantId, const QString &cl
         return;
 
     ++m_operationId;
+    ++m_sessionGeneration;
     m_pollTimer->stop();
     m_refreshTimer->stop();
+    m_refreshInFlight = false;
+    m_scopeChangePending = false;
     m_tenantId = tenant;
     m_clientId = client;
     m_accessToken.clear();
     m_refreshToken.clear();
+    m_grantedScopes.clear();
     clearDeviceCode();
     QString error;
     if (m_secretReader && !client.isEmpty())
         m_refreshToken = m_secretReader(secretAccount(), &error);
+    if (m_grantedScopesReader && !client.isEmpty()) {
+        m_grantedScopes = m_grantedScopesReader(secretAccount());
+        for (QString &scope : m_grantedScopes)
+            scope = scope.trimmed();
+        m_grantedScopes.removeAll({});
+        m_grantedScopes.removeDuplicates();
+    }
     emit accessTokenChanged({});
     setState(false, false, !error.isEmpty() ? error
               : (m_refreshToken.isEmpty() ? tr("Not signed in")
@@ -64,6 +129,8 @@ void MicrosoftOAuthManager::configure(const QString &tenantId, const QString &cl
 
 void MicrosoftOAuthManager::restoreSession()
 {
+    if (m_inProgress || m_refreshInFlight)
+        return;
     if (!configurationIsComplete()) {
         setState(false, false, tr("Enter the Microsoft Entra tenant and application client ID."));
         return;
@@ -85,6 +152,8 @@ void MicrosoftOAuthManager::restoreSession()
 
 void MicrosoftOAuthManager::startSignIn()
 {
+    if (m_inProgress || m_refreshInFlight)
+        return;
     if (!configurationIsComplete()) {
         setState(false, false, tr("Enter the Microsoft Entra tenant and application client ID."));
         return;
@@ -93,6 +162,7 @@ void MicrosoftOAuthManager::startSignIn()
     ++m_operationId;
     const quint64 operationId = m_operationId;
     m_pollTimer->stop();
+    m_refreshInFlight = false;
     clearDeviceCode();
     setState(m_authenticated, true, tr("Requesting a Microsoft sign-in code…"));
 
@@ -132,10 +202,14 @@ void MicrosoftOAuthManager::startSignIn()
 void MicrosoftOAuthManager::signOut()
 {
     ++m_operationId;
+    ++m_sessionGeneration;
     m_pollTimer->stop();
     m_refreshTimer->stop();
+    m_refreshInFlight = false;
+    m_scopeChangePending = false;
     m_accessToken.clear();
     m_refreshToken.clear();
+    clearGrantedScopes();
     clearDeviceCode();
     QString error;
     const bool removed = !m_secretRemover || m_secretRemover(secretAccount(), &error);
@@ -146,10 +220,31 @@ void MicrosoftOAuthManager::signOut()
 void MicrosoftOAuthManager::postForm(const QUrl &url, const QUrlQuery &form,
                                      JsonHandler handler)
 {
+    const QByteArray body = form.query(QUrl::FullyEncoded).toUtf8();
+    if (m_transport) {
+        PN::Comm::HttpRequest request;
+        request.operationId = QUuid::createUuid();
+        request.method = "POST";
+        request.url = url;
+        request.headers.insert("Content-Type", "application/x-www-form-urlencoded");
+        request.body = body;
+        m_transport->send(std::move(request), [handler = std::move(handler)](PN::Comm::HttpResponse response) mutable {
+            QJsonParseError parseError;
+            const QJsonDocument document = QJsonDocument::fromJson(response.body, &parseError);
+            QString error = response.error.displayText;
+            if (error.isEmpty() && parseError.error != QJsonParseError::NoError)
+                error = QObject::tr("Invalid response from Microsoft: %1").arg(parseError.errorString());
+            else if (error.isEmpty() && response.statusCode >= 400
+                     && document.object().value(QStringLiteral("error")).toString().isEmpty())
+                error = QObject::tr("Microsoft request failed (%1).").arg(response.statusCode);
+            handler(document.object(), error);
+        });
+        return;
+    }
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader,
                       QStringLiteral("application/x-www-form-urlencoded"));
-    QNetworkReply *reply = m_network->post(request, form.query(QUrl::FullyEncoded).toUtf8());
+    QNetworkReply *reply = m_network->post(request, body);
     QTimer::singleShot(30000, reply, [reply] {
         if (reply->isRunning())
             reply->abort();
@@ -215,26 +310,28 @@ void MicrosoftOAuthManager::pollForDeviceToken(quint64 operationId)
                          .arg(response.value(QStringLiteral("error_description")).toString(error)));
             return;
         }
-        acceptTokenResponse(response);
+        acceptTokenResponse(response, true);
     });
 }
 
 void MicrosoftOAuthManager::refreshAccessToken(quint64 operationId)
 {
     if (operationId != m_operationId || m_refreshToken.isEmpty()
-        || !configurationIsComplete())
+        || !configurationIsComplete() || m_refreshInFlight)
         return;
+    m_refreshInFlight = true;
     setState(m_authenticated, true, m_authenticated ? tr("Refreshing Microsoft sign-in…")
                                                     : tr("Restoring saved Microsoft sign-in…"));
     QUrlQuery form;
     form.addQueryItem(QStringLiteral("grant_type"), QStringLiteral("refresh_token"));
     form.addQueryItem(QStringLiteral("client_id"), m_clientId);
     form.addQueryItem(QStringLiteral("refresh_token"), m_refreshToken);
-    form.addQueryItem(QStringLiteral("scope"), requestedScopes());
+    form.addQueryItem(QStringLiteral("scope"), refreshScopes());
     postForm(oauthEndpoint(QStringLiteral("token")), form,
              [this, operationId](const QJsonObject &response, const QString &networkError) {
         if (operationId != m_operationId)
             return;
+        m_refreshInFlight = false;
         const QString oauthError = response.value(QStringLiteral("error")).toString();
         if (!networkError.isEmpty() || oauthError == QLatin1String("temporarily_unavailable")
             || oauthError == QLatin1String("server_error")) {
@@ -246,6 +343,7 @@ void MicrosoftOAuthManager::refreshAccessToken(quint64 operationId)
         }
         if (!oauthError.isEmpty()) {
             m_accessToken.clear();
+            clearGrantedScopes();
             if (oauthError == QLatin1String("invalid_grant")
                 || oauthError == QLatin1String("interaction_required")) {
                 m_refreshToken.clear();
@@ -257,26 +355,47 @@ void MicrosoftOAuthManager::refreshAccessToken(quint64 operationId)
             setState(false, false, tr("Microsoft sign-in must be renewed. Sign in again."));
             return;
         }
-        acceptTokenResponse(response);
+        acceptTokenResponse(response, false);
     });
 }
 
-void MicrosoftOAuthManager::acceptTokenResponse(const QJsonObject &response)
+void MicrosoftOAuthManager::acceptTokenResponse(const QJsonObject &response, bool interactiveConsent)
 {
     const QString accessToken = response.value(QStringLiteral("access_token")).toString();
     if (accessToken.isEmpty()) {
-        setState(false, false, tr("Microsoft did not return an access token."));
+        setState(m_authenticated, false, tr("Microsoft did not return an access token."));
         return;
     }
-    m_accessToken = accessToken;
+    const QString confirmedScopeText = response.value(QStringLiteral("scope")).toString();
+    QStringList confirmedScopes = confirmedScopeText.split(u' ', Qt::SkipEmptyParts);
+    for (QString &scope : confirmedScopes)
+        scope = scope.trimmed();
+    confirmedScopes.removeAll({});
+    confirmedScopes.removeDuplicates();
+    if (interactiveConsent && m_scopeChangePending && confirmedScopes.isEmpty()) {
+        // Never replace an active File Finder session with an unconfirmed
+        // grant for a separate feature capability.
+        setState(m_authenticated, false,
+                 tr("Microsoft did not confirm the requested capability scopes."));
+        return;
+    }
+    if (!confirmedScopes.isEmpty()) {
+        m_grantedScopes = std::move(confirmedScopes);
+        persistGrantedScopes();
+    }
     const QString replacement = response.value(QStringLiteral("refresh_token")).toString();
     if (!replacement.isEmpty()) {
         QString error;
         if (m_secretWriter && !m_secretWriter(secretAccount(), replacement, &error)) {
-            setState(false, false, error);
+            setState(m_authenticated, false, error);
             return;
         }
         m_refreshToken = replacement;
+    }
+    m_accessToken = accessToken;
+    if (interactiveConsent && m_scopeChangePending) {
+        m_scopeChangePending = false;
+        ++m_sessionGeneration;
     }
     clearDeviceCode();
     emit accessTokenChanged(m_accessToken);
@@ -311,11 +430,32 @@ void MicrosoftOAuthManager::scheduleRefresh(int expiresInSeconds)
     m_refreshTimer->start(qMax(30, expiresInSeconds - 300) * 1000);
 }
 
+void MicrosoftOAuthManager::clearGrantedScopes()
+{
+    m_grantedScopes.clear();
+    if (m_grantedScopesRemover && !m_clientId.isEmpty())
+        m_grantedScopesRemover(secretAccount());
+}
+
+void MicrosoftOAuthManager::persistGrantedScopes()
+{
+    if (m_grantedScopesWriter && !m_clientId.isEmpty())
+        m_grantedScopesWriter(secretAccount(), m_grantedScopes);
+}
+
 QString MicrosoftOAuthManager::requestedScopes() const
 {
-    return QStringLiteral("offline_access https://graph.microsoft.com/Team.ReadBasic.All "
-                          "https://graph.microsoft.com/Channel.ReadBasic.All "
-                          "https://graph.microsoft.com/Files.Read.All");
+    return requestedScopeList().join(u' ');
+}
+
+QString MicrosoftOAuthManager::refreshScopes() const
+{
+    // A refresh-token request must retain the scopes already granted while a
+    // new capability is waiting for interactive consent.  Asking for the new
+    // scopes here could otherwise invalidate a working File Finder session.
+    if (m_scopeChangePending && !m_grantedScopes.isEmpty())
+        return m_grantedScopes.join(u' ');
+    return requestedScopes();
 }
 
 QUrl MicrosoftOAuthManager::oauthEndpoint(const QString &name) const
@@ -326,7 +466,8 @@ QUrl MicrosoftOAuthManager::oauthEndpoint(const QString &name) const
 
 QString MicrosoftOAuthManager::secretAccount() const
 {
-    return m_tenantId + QLatin1Char('/') + m_clientId;
+    const QString account = m_tenantId + QLatin1Char('/') + m_clientId;
+    return m_secretNamespace.isEmpty() ? account : m_secretNamespace + QLatin1Char('/') + account;
 }
 
 bool MicrosoftOAuthManager::configurationIsComplete() const

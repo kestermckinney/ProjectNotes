@@ -25,8 +25,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts WebEngineCore WebEngineQuick)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Widgets Sql Xml Network Charts WebEngineCore WebEngineQuick)
 # CorePrivate exposes QtCore's private QZipWriter (qzipwriter_p.h), used by the
 # "Send Logs to Support" log bundler.
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS CorePrivate)
@@ -249,7 +249,14 @@ endif()
 set(SQLITESYNCPRO_SRC_DIR "../SqliteSyncPro/src" CACHE STRING "Path to SqliteSyncPro/src")
 add_subdirectory(${SQLITESYNCPRO_SRC_DIR} SqliteSyncPro)
 add_subdirectory(ProjectNotesCore)
+# Shared integration contracts also provide File Finder's existing OAuth
+# implementation. Email/rendering remain desktop-only below.
+add_subdirectory(ProjectNotesIntegrations)
 add_subdirectory(ProjectNotesFileFinder EXCLUDE_FROM_ALL)
+if(NOT ANDROID AND NOT IOS)
+    add_subdirectory(ProjectNotesEmail)
+    add_subdirectory(ProjectNotesEmailRendering)
+endif()
 
 # ── QML desktop frontend (UI overhaul, Phase 1) ──────────────────────────────
 # Built as a separate ProjectNotesDesktop target that reuses ProjectNotesCore.
@@ -636,6 +643,14 @@ if(WIN32)
             "${CMAKE_CURRENT_SOURCE_DIR}/threads"    "${DEPLOY_DIR}/threads"
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/dictionary" "${DEPLOY_DIR}/dictionary"
+
+        # A native Qt WebEngine renderer is linked into the QML executable.
+        # Do not let a PyQt wheel under site-packages mask a missing native
+        # Chromium helper/resources/locales deployment.
+        COMMAND ${CMAKE_COMMAND}
+            "-DPN_PLATFORM=windows"
+            "-DPN_PACKAGE_ROOT=${DEPLOY_DIR}"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/packaging/verify_native_webengine_package.cmake"
 
         DEPENDS ProjectNotes
         VERBATIM

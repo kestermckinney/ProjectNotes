@@ -94,8 +94,14 @@ Build the project in Release first, or set PN_BUILD_DIR / SA_BUILD_DIR."
 sign_bundle() {
     local bundle="$1"
     local entitlements="${2:-}"
+    local webengine_entitlements=""
 
     log "Signing: ${bundle}"
+
+    # Qt WebEngine's Chromium helper requires Qt's own entitlement set. It
+    # must not inherit the application's Python-oriented entitlements merely
+    # because both happen to be nested .app bundles.
+    webengine_entitlements="$(find "${bundle}/Contents" -path '*/QtWebEngineProcess.app/Contents/Resources/QtWebEngineProcess.entitlements' -type f -print -quit 2>/dev/null || true)"
 
     # Strip build-system artifacts from nested frameworks.  Static archives
     # (.a), object files (.o), pkg-config files (.pc), and shell config scripts
@@ -153,7 +159,13 @@ sign_bundle() {
     while IFS= read -r item; do printf '%d\t%s\n' "${#item}" "$item"; done | \
     sort -rn | cut -f2- | \
     while IFS= read -r item; do
-        if [[ "${item}" == *.app && -n "${entitlements}" ]]; then
+        if [[ "${item}" == *QtWebEngineProcess.app && -n "${webengine_entitlements}" ]]; then
+            codesign --force --sign "${SIGN_IDENTITY}" \
+                --options runtime \
+                --timestamp \
+                --entitlements "${webengine_entitlements}" \
+                "${item}" 2>&1 | grep -v "replacing existing signature" || true
+        elif [[ "${item}" == *.app && -n "${entitlements}" ]]; then
             codesign --force --sign "${SIGN_IDENTITY}" \
                 --options runtime \
                 --timestamp \

@@ -43,6 +43,7 @@ qt_add_executable(tst_qmldesktop
     tst_uismoke.cpp
     # Reused verbatim from the shipping desktop app.
     ${DESKTOP_DIR}/DesktopAppController.cpp ${DESKTOP_DIR}/DesktopAppController.h
+    ${DESKTOP_DIR}/Office365SettingsModel.cpp ${DESKTOP_DIR}/Office365SettingsModel.h
     ${DESKTOP_DIR}/FolderManager.cpp        ${DESKTOP_DIR}/FolderManager.h
     ${DESKTOP_DIR}/LogViewerController.cpp  ${DESKTOP_DIR}/LogViewerController.h
     ${DESKTOP_DIR}/HelpController.cpp       ${DESKTOP_DIR}/HelpController.h
@@ -112,6 +113,8 @@ target_link_libraries(tst_qmldesktop PRIVATE
     SqliteSyncProLib
     ProjectNotesCore
     ProjectNotesFileFinder
+    ProjectNotesEmail
+    ProjectNotesEmailRendering
 )
 
 if(UNIX AND NOT APPLE AND NOT ANDROID)
@@ -162,3 +165,73 @@ elseif(WIN32)
     target_link_libraries(tst_filefinder PRIVATE Advapi32)
 endif()
 add_test(NAME filefinder COMMAND tst_filefinder)
+
+# T01 value-contract coverage. No profile, database, account, renderer, client,
+# or process is initialized by this test.
+add_executable(tst_communicationcontracts
+    tst_communicationcontracts.cpp
+    email/fakes/RecordingEmailBackend.h
+    email/fakes/DeferredEmailBackend.h
+)
+target_link_libraries(tst_communicationcontracts PRIVATE
+    Qt6::Core Qt6::Test
+    ProjectNotesEmail ProjectNotesCore
+)
+add_test(NAME communicationcontracts COMMAND tst_communicationcontracts)
+
+add_executable(tst_artifactstore tst_artifactstore.cpp)
+target_link_libraries(tst_artifactstore PRIVATE Qt6::Core Qt6::Test ProjectNotesEmail)
+add_test(NAME artifactstore COMMAND tst_artifactstore)
+
+# This is intentionally a real WebEngine process test, separate from the
+# headless contract suite.  Some container runtimes prohibit Chromium helper
+# shutdown even when its sandbox is disabled, so maintainers opt in only on a
+# native/package-like host where it can be valid evidence for G4.
+option(ENABLE_WEBENGINE_RENDERER_TESTS "Register native Qt WebEngine renderer tests" OFF)
+if(ENABLE_WEBENGINE_RENDERER_TESTS)
+    add_executable(tst_webenginerenderer tst_webenginerenderer.cpp)
+    target_link_libraries(tst_webenginerenderer PRIVATE
+        Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Test Qt6::WebEngineCore Qt6::WebEngineQuick
+        ProjectNotesEmail ProjectNotesEmailRendering)
+    add_test(NAME webenginerenderer COMMAND tst_webenginerenderer)
+    set_tests_properties(webenginerenderer PROPERTIES ENVIRONMENT
+        "QT_QPA_PLATFORM=offscreen;QTWEBENGINE_DISABLE_SANDBOX=1;QTWEBENGINE_CHROMIUM_FLAGS=--disable-gpu")
+endif()
+
+add_executable(tst_communicationrepository tst_communicationrepository.cpp)
+target_link_libraries(tst_communicationrepository PRIVATE Qt6::Core Qt6::Sql Qt6::Test ProjectNotesEmail)
+add_test(NAME communicationrepository COMMAND tst_communicationrepository)
+
+add_executable(tst_microsoftoauth tst_microsoftoauth.cpp)
+target_link_libraries(tst_microsoftoauth PRIVATE Qt6::Core Qt6::Network Qt6::Test ProjectNotesIntegrations)
+add_test(NAME microsoftoauth COMMAND tst_microsoftoauth)
+
+add_executable(tst_httptransport tst_httptransport.cpp)
+target_link_libraries(tst_httptransport PRIVATE Qt6::Core Qt6::Network Qt6::Test ProjectNotesIntegrations)
+add_test(NAME httptransport COMMAND tst_httptransport)
+
+add_executable(tst_reportformatters tst_reportformatters.cpp)
+target_link_libraries(tst_reportformatters PRIVATE Qt6::Core Qt6::Test ProjectNotesEmail)
+add_test(NAME reportformatters COMMAND tst_reportformatters)
+
+# Native report-content coverage is deliberately independent from the broader
+# communication-contract target, whose adapter cases may be held on a client
+# platform.  This target neither initializes a backend nor starts WebEngine.
+add_executable(tst_reportbuilders tst_reportbuilders.cpp)
+target_link_libraries(tst_reportbuilders PRIVATE Qt6::Core Qt6::Test ProjectNotesEmail)
+add_test(NAME reportbuilders COMMAND tst_reportbuilders)
+
+# Pure audience selection/model coverage is kept runnable while email-client
+# adapter checks are intentionally held.  It has no process, browser, or
+# network dependency.
+add_executable(tst_audienceresolver tst_audienceresolver.cpp)
+target_link_libraries(tst_audienceresolver PRIVATE Qt6::Core Qt6::Test ProjectNotesEmail)
+add_test(NAME audienceresolver COMMAND tst_audienceresolver)
+
+# G5 evidence only: exercise Qt's rich-text parser without rendering or loading
+# resources. This records what a QTextDocument round trip retains before it can
+# be selected as the policy for imported template prose.
+add_executable(tst_richtextpolicy tst_richtextpolicy.cpp)
+target_link_libraries(tst_richtextpolicy PRIVATE Qt6::Core Qt6::Gui Qt6::Test ProjectNotesEmailRendering)
+add_test(NAME richtextpolicy COMMAND tst_richtextpolicy)
+set_tests_properties(richtextpolicy PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

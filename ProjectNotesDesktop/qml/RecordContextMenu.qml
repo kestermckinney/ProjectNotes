@@ -24,9 +24,16 @@ Popup {
     // a menu added later. Pages still override it where the action doesn't apply.
     property bool   canDuplicate: menu._tableSupportsDuplicate
     property bool   canMoveTo: false
+    // Optional page-specific action for reviewing a generated email before it
+    // is handed to a mail backend (used by individual meeting notes).
+    property bool   canReviewEmail: false
     property bool   canExport: true
     property bool   canFilter: true
     property bool   canRefresh: true
+    // Optional page-specific reports. Each entry is { label, value }; when
+    // present they appear in a Reports flyout alongside the record actions.
+    property var    reportItems: []
+    readonly property bool canReport: reportItems.length > 0
     // Quick Filter: pre-filled column-filter shortcuts for the row this menu
     // was opened for — set by the page (from the clicked row's own field
     // values) just before calling openAt(). Each entry: {icon, label, field,
@@ -77,6 +84,7 @@ Popup {
     signal deleteRequested()
     signal duplicateRequested()
     signal moveToRequested()
+    signal reviewEmailRequested()
     signal exportRequested()
     signal filterRequested()
     // Carries the menu's own scene position (Overlay.overlay space, same as
@@ -85,6 +93,7 @@ Popup {
     // than an Item reference (see SortMenu.qml's doc comment).
     signal sortRequested(real sx, real sy)
     signal refreshRequested()
+    signal reportRequested(string value)
     // Navigation signals for jumping to related records
     signal goToPersonRequested(string personId)
     signal goToClientRequested(string clientId)
@@ -197,9 +206,9 @@ Popup {
         flyout.openBeside(pluginTriggerRow)
     }
     onClosed: {
-        openDelay.stop(); pluginSubOpenDelay.stop(); qfOpenDelay.stop()
-        flyout.close(); pluginSubFlyout.close(); qfFlyout.close()
-        pluginOpen = false; pluginSubIndex = -1; quickFilterOpen = false
+        openDelay.stop(); pluginSubOpenDelay.stop(); qfOpenDelay.stop(); reportOpenDelay.stop()
+        flyout.close(); pluginSubFlyout.close(); qfFlyout.close(); reportFlyout.close()
+        pluginOpen = false; pluginSubIndex = -1; quickFilterOpen = false; reportOpen = false
     }
 
     // ── Quick Filter ─────────────────────────────────────────────────────────
@@ -261,6 +270,31 @@ Popup {
             // Deliberately don't close — quick filters are checkable/
             // stackable (like AppMenu's View toggles), so the user can tick
             // several from one open menu; `items` above re-evaluates live.
+        }
+    }
+
+    // Page-provided reports use the same flyout interaction as Plugins, but
+    // are intentionally a first-class Reports submenu rather than plugins.
+    property bool reportOpen: false
+    Timer {
+        id: reportOpenDelay
+        interval: 300
+        onTriggered: menu._activateReports()
+    }
+    function _activateReports() {
+        if (!menu.canReport) return
+        menu.reportOpen = true
+        reportFlyout.openBeside(reportTriggerRow)
+    }
+    MenuFlyout {
+        id: reportFlyout
+        items: menu.reportItems.map(function(item) {
+            return { icon: "description", label: item.label || "", trailingText: "", toggle: false, checked: false }
+        })
+        onItemActivated: (i) => {
+            var item = menu.reportItems[i]
+            menu.close()
+            if (item) menu.reportRequested(item.value || "")
         }
     }
 
@@ -337,6 +371,7 @@ Popup {
         MenuRow { icon: "add";          label: qsTr("New");         visible: menu.canNew;       onActivated: menu._fire(menu.newRequested) }
         MenuRow { icon: "content_copy"; label: qsTr("Duplicate");   visible: menu.canDuplicate; onActivated: menu._fire(menu.duplicateRequested) }
         MenuRow { icon: "drive_file_move"; label: qsTr("Move To…"); visible: menu.canMoveTo;   onActivated: menu._fire(menu.moveToRequested) }
+        MenuRow { icon: "email";        label: qsTr("Review Email"); visible: menu.canReviewEmail; onActivated: menu._fire(menu.reviewEmailRequested) }
         MenuRow { icon: "delete";       label: qsTr("Delete");      visible: menu.canDelete;    danger: true; onActivated: menu._fire(menu.deleteRequested) }
         Rectangle {
             visible: menu._hasTopGroup || menu.canGoToPerson || menu.canGoToClient
@@ -374,6 +409,22 @@ Popup {
             onActivated: { menu.close(); menu.sortRequested(menu.x, menu.y) }
         }
         MenuRow { icon: "refresh";      label: qsTr("Refresh");     visible: menu.canRefresh; onActivated: menu._fire(menu.refreshRequested) }
+        MenuRow {
+            id: reportTriggerRow
+            icon: "description"
+            label: qsTr("Reports")
+            visible: menu.canReport
+            showChevron: true
+            highlighted: menu.reportOpen
+            onHoveredChanged: {
+                if (hovered) reportOpenDelay.restart()
+                else reportOpenDelay.stop()
+            }
+            onActivated: {
+                reportOpenDelay.stop()
+                menu._activateReports()
+            }
+        }
 
         // Plugin menus for this table (dataexport == model table), like the
         // Widgets right-click, collapsed into a single "Plugins" trigger row

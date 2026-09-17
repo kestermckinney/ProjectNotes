@@ -12,8 +12,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickControls2 Sql Xml Network)
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickControls2 Sql Xml Network)
+find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickControls2 Sql Xml Network WebEngineCore WebEngineQuick)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickControls2 Sql Xml Network WebEngineCore WebEngineQuick)
 # CorePrivate exposes QtCore's private QZipWriter (qzipwriter_p.h), used by
 # DesktopAppController::sendLogsToSupport to build the support-log archive.
 find_package(Qt6 REQUIRED COMPONENTS CorePrivate)
@@ -42,6 +42,7 @@ qt_add_executable(ProjectNotes
     main.cpp
     ${APP_ICON_RESOURCE_WINDOWS}
     DesktopAppController.cpp DesktopAppController.h
+    Office365SettingsModel.cpp Office365SettingsModel.h
     FolderManager.cpp        FolderManager.h
     LogViewerController.cpp  LogViewerController.h
     HelpController.cpp       HelpController.h
@@ -106,9 +107,15 @@ set(DESKTOP_QML_FILES
     qml/ComboField.qml
     qml/DateField.qml
     qml/NoteFormatToolbar.qml
+    qml/RichTextEditor.qml
     qml/SpellCheckField.qml
     qml/SpellSquiggle.qml
     qml/SpellCheckDialog.qml
+    qml/ReportOptionsPane.qml
+    qml/RecipientSelectionPane.qml
+    qml/MeetingNotesReviewDialog.qml
+    qml/MeetingNotesReportReviewDialog.qml
+    qml/TemplateSettingsPane.qml
     qml/pages/ProjectsListPage.qml
     qml/pages/ProjectDetailPage.qml
     qml/pages/ProjectNoteDetailPage.qml
@@ -163,11 +170,15 @@ target_link_libraries(ProjectNotes PRIVATE
     Qt6::Sql
     Qt6::Xml
     Qt6::Network
+    Qt6::WebEngineCore
+    Qt6::WebEngineQuick
     "${HUNSPELL_LIBRARIES}"
     "${Python3_LIBRARIES}"
     SqliteSyncProLib
     ProjectNotesCore
     ProjectNotesFileFinder
+    ProjectNotesEmail
+    ProjectNotesEmailRendering
 )
 
 # Platform credential backend used by the plugin secret API (credentialstore).
@@ -255,6 +266,17 @@ if(APPLE AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
             "-qmldir=${CMAKE_CURRENT_SOURCE_DIR}/qml"
             -always-overwrite
         COMMENT "Deploying Qt into app bundle (macdeployqt)"
+        VERBATIM)
+
+    # Verify the deployed Qt payload itself. PyQt remains bundled for legacy
+    # plugins, so looking under site-packages would not prove the native C++
+    # renderer has its matching Chromium helper, resources, and locales.
+    add_custom_command(TARGET ProjectNotes POST_BUILD
+        COMMAND ${CMAKE_COMMAND}
+            "-DPN_PLATFORM=macos"
+            "-DPN_PACKAGE_ROOT=$<TARGET_BUNDLE_DIR:ProjectNotes>"
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/../packaging/verify_native_webengine_package.cmake"
+        COMMENT "Verifying native Qt WebEngine bundle payload"
         VERBATIM)
 
     # ── 5. Bundle Python.framework ───────────────────────────────────────────────

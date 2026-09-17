@@ -25,6 +25,11 @@ Item {
     property Item target: parent
     // Shared full-field dialog; if null the "Check Spelling…" item is hidden.
     property var  dialog: null
+    // Optional literal fields supplied by a host editor.  Keeping this on the
+    // shared text context menu gives template editors the same menu treatment
+    // as every other editable surface instead of adding page-local controls.
+    property var insertFields: []
+    signal insertFieldRequested(string path)
     // Exposed so a toolbar button can open the dialog for this same field.
     property alias spell: spell
 
@@ -117,6 +122,7 @@ Item {
             open()
         }
         onHeightChanged: if (visible && parent) y = Math.max(6, Math.min(y, parent.height - height - 6))
+        onClosed: insertFieldFlyout.close()
 
         contentItem: ColumnLayout {
             spacing: 0
@@ -183,6 +189,23 @@ Item {
                 color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
             }
 
+            MenuRow {
+                id: insertFieldRow
+                visible: root.insertFields.length > 0
+                icon: "data_object"
+                label: qsTr("Insert Field")
+                showChevron: true
+                highlighted: insertFieldFlyout.visible
+                onHoveredChanged: if (hovered) insertFieldFlyout.openBeside(insertFieldRow)
+                onActivated: insertFieldFlyout.openBeside(insertFieldRow)
+            }
+
+            Rectangle {
+                visible: root.insertFields.length > 0
+                Layout.fillWidth: true; Layout.preferredHeight: 1
+                color: Theme.borderSoft; Layout.topMargin: 3; Layout.bottomMargin: 3
+            }
+
             // Undo/Redo — same ordering as TextEdit::contextMenuEvent() in the
             // Widgets app (Undo, Redo, divider, then Cut/Copy/Paste/…). Ctrl+Z
             // already works natively while the field has focus (Qt Quick's text
@@ -242,6 +265,19 @@ Item {
             SpellRow {
                 icon: "select_all"; label: qsTr("Select All")
                 onActivated: { menu.close(); root.target.selectAll() }
+            }
+        }
+
+        MenuFlyout {
+            id: insertFieldFlyout
+            items: root.insertFields.map(function(path) {
+                return { icon: "data_object", label: path }
+            })
+            onItemActivated: (index) => {
+                const path = root.insertFields[index]
+                insertFieldFlyout.close()
+                menu.close()
+                root.insertFieldRequested(path)
             }
         }
 

@@ -5,14 +5,23 @@
 #define DESKTOPAPPCONTROLLER_H
 
 #include <QObject>
+
+#include <functional>
 #include <QAbstractItemModel>
 #include <QStringList>
 #include <QVariant>
 #include <QVariantList>
 #include <QVariantMap>
 #include <QVector>
+#include <QUuid>
+
+#include "ProjectNotesEmail/EmailContentBuilder.h"
+#include "ProjectNotesEmail/RecipientAudienceResolver.h"
+#include "ProjectNotesEmail/SnapshotTypes.h"
 
 #include <initializer_list>
+#include <memory>
+#include <optional>
 #include <utility>
 
 class QQmlEngine;
@@ -24,6 +33,18 @@ struct SyncResult;
 class PluginManager;
 class Plugin;
 class FileFinderService;
+class Office365SettingsModel;
+namespace PN::Comm {
+class AsyncSqliteCommunicationRepository;
+class WebEngineReportRenderer;
+class CommunicationsController;
+class EmailService;
+class RecipientSelectionModel;
+class TemplateEditorModel;
+class Office365Service;
+class QtNetworkHttpTransport;
+class GraphEmailBackend;
+}
 
 // DesktopAppController — the QML bridge for the desktop app.
 //
@@ -53,6 +74,15 @@ class DesktopAppController : public QObject
     Q_PROPERTY(QAbstractItemModel* statusReportItemsModel READ statusReportItemsModel NOTIFY databaseReady)
     Q_PROPERTY(QAbstractItemModel* searchResultsModel    READ searchResultsModel    NOTIFY databaseReady)
     Q_PROPERTY(QObject* fileFinder READ fileFinder CONSTANT)
+    // Application-lifetime communication handoff coordinator. Registered
+    // adapters are never invoked by merely exposing this object; a reviewed
+    // handoff remains an explicit controller action.
+    Q_PROPERTY(QObject* communicationsController READ communicationsController CONSTANT)
+    Q_PROPERTY(QObject* recipientSelectionModel READ recipientSelectionModel CONSTANT)
+    Q_PROPERTY(QObject* templateEditorModel READ templateEditorModel CONSTANT)
+    Q_PROPERTY(QObject* office365SettingsModel READ office365SettingsModel CONSTANT)
+    Q_PROPERTY(QString preferredEmailBackend READ preferredEmailBackend WRITE setPreferredEmailBackend NOTIFY emailSettingsChanged)
+    Q_PROPERTY(QString thunderbirdExecutable READ thunderbirdExecutable WRITE setThunderbirdExecutable NOTIFY emailSettingsChanged)
     Q_PROPERTY(bool databaseOpen READ databaseOpen NOTIFY databaseReady)
 
     // View options (two-way bindable from the Settings screen).
@@ -122,6 +152,112 @@ public:
     Q_INVOKABLE bool openOrCreateDatabase();
     bool databaseOpen() const { return m_databaseOpen; }
     QObject* fileFinder() const;
+    QObject* communicationsController() const;
+    QObject* recipientSelectionModel() const;
+    QObject* templateEditorModel() const;
+    QObject* office365SettingsModel() const;
+    QString preferredEmailBackend() const;
+    void setPreferredEmailBackend(const QString &backend);
+    QString thunderbirdExecutable() const;
+    void setThunderbirdExecutable(const QString &path);
+    // Report destinations are profile settings, optionally scoped to the
+    // current database through its local hashed key. QML passes only stable
+    // workflow names and never constructs the underlying settings key.
+    Q_INVOKABLE QString reportExportSubfolder(const QString &workflow, bool databaseScoped) const;
+    Q_INVOKABLE bool setReportExportSubfolder(const QString &workflow, const QString &subfolder,
+                                              bool databaseScoped);
+    // Starts the native Send Meeting Notes review from persisted IDs. It only
+    // loads/builds review state; callers must use the later handoff flow to
+    // interact with a backend.
+    Q_INVOKABLE bool prepareMeetingNotesReview(const QString& projectId, const QString& noteId);
+    // Starts a read-only review of the project's meeting-notes report.  The
+    // reporting date is supplied in the desktop's MM/dd/yyyy display format.
+    // Like the one-note route, this never activates an email backend.
+    Q_INVOKABLE bool prepareMeetingNotesReportReview(const QString& projectId,
+                                                      const QString& reportingDate,
+                                                      bool internalReport);
+    Q_INVOKABLE bool prepareMeetingNotesReportReviewWithEmailMode(const QString& projectId,
+                                                                   const QString& reportingDate,
+                                                                   bool internalReport,
+                                                                   const QString& emailMode);
+    Q_INVOKABLE bool prepareMeetingNotesReportReviewWithOptions(const QString& projectId,
+                                                                 const QString& reportingDate,
+                                                                 bool internalReport,
+                                                                 const QString& emailMode,
+                                                                 bool retainHtml,
+                                                                 bool displayPdf);
+    Q_INVOKABLE bool applyMeetingNotesReportTemplate(const QString& templateId);
+    Q_INVOKABLE bool prepareStatusReportReview(const QString& projectId, const QString& reportingDate,
+                                                bool internalReport);
+    Q_INVOKABLE bool prepareStatusReportReviewWithEmailMode(const QString& projectId,
+                                                             const QString& reportingDate,
+                                                             bool internalReport,
+                                                             const QString& emailMode);
+    Q_INVOKABLE bool prepareStatusReportReviewWithOptions(const QString& projectId,
+                                                           const QString& reportingDate,
+                                                           bool internalReport,
+                                                           const QString& emailMode,
+                                                           bool retainHtml,
+                                                           bool displayPdf);
+    Q_INVOKABLE bool prepareTrackerReportReview(const QString& projectId, const QString& reportingDate,
+                                                 bool internalReport);
+    Q_INVOKABLE bool prepareTrackerReportReviewWithEmailMode(const QString& projectId,
+                                                              const QString& reportingDate,
+                                                              bool internalReport,
+                                                              const QString& emailMode);
+    Q_INVOKABLE bool prepareTrackerReportReviewWithFilters(const QString& projectId,
+                                                            const QString& reportingDate,
+                                                            bool internalReport,
+                                                            const QString& emailMode,
+                                                            const QStringList& itemTypes,
+                                                            const QStringList& statuses);
+    Q_INVOKABLE bool prepareTrackerReportReviewWithOptions(const QString& projectId,
+                                                            const QString& reportingDate,
+                                                            bool internalReport,
+                                                            const QString& emailMode,
+                                                            const QStringList& itemTypes,
+                                                            const QStringList& statuses,
+                                                            bool retainHtml,
+                                                            bool displayPdf);
+    Q_INVOKABLE bool applyProjectReportTemplate(const QString& templateId);
+    // Rebuilds the review-local audience from the immutable snapshot.  QML
+    // passes stable strings so it does not need to duplicate resolver rules.
+    Q_INVOKABLE bool applyReviewAudienceRule(const QString& peopleSource,
+                                             const QString& companyFilter,
+                                             bool includeUnknownCompany,
+                                             bool excludeProjectManager);
+    Q_INVOKABLE bool applyReviewAudienceRuleWithCompanies(const QString& peopleSource,
+                                                          const QString& companyFilter,
+                                                          const QStringList& companyIds,
+                                                          bool includeUnknownCompany,
+                                                          bool excludeProjectManager);
+    Q_INVOKABLE bool applyReviewAudienceRuleAdvanced(const QString& peopleSource,
+                                                     const QString& companyFilter,
+                                                     const QStringList& companyIds,
+                                                     const QStringList& chosenPersonIds,
+                                                     bool includeUnknownCompany,
+                                                     bool excludeProjectManager);
+    // QML receives stable IDs, display labels, and source-snapshot counts;
+    // it never decides company eligibility itself.
+    Q_INVOKABLE QVariantList reviewAudienceCompanies() const;
+    Q_INVOKABLE QVariantList reviewAudiencePeople() const;
+    Q_INVOKABLE QVariantList reviewAudiencePresets() const;
+    Q_INVOKABLE bool saveReviewAudiencePreset(const QString& name, bool projectScoped);
+    Q_INVOKABLE bool applyReviewAudiencePreset(const QString& presetId);
+    Q_INVOKABLE bool setReviewAudiencePresetDefault(const QString& presetId, bool projectScoped);
+    Q_INVOKABLE bool addReviewAttachment(const QString& sourcePath);
+    // Rebuilds only the currently reviewed, persisted note from its immutable
+    // snapshot. An empty id restores the native default document.
+    Q_INVOKABLE bool applyMeetingNotesTemplate(const QString& templateId);
+    Q_INVOKABLE bool handoffPreparedReview();
+    // Copies a manifest-owned generated report only after the user has chosen
+    // an explicit destination. It never launches a client or exports a user
+    // supplied attachment.
+    Q_INVOKABLE bool saveReviewGeneratedAttachment(const QString& displayName,
+                                                   const QString& destination);
+    // Copies the reviewed plain-text body only after an explicit user action,
+    // for a manual email workflow. It does not stage, launch, or send anything.
+    Q_INVOKABLE bool copyReviewPlainText();
 
     // ── Models ───────────────────────────────────────────────────────────────
     QAbstractItemModel* projectsListModel() const;
@@ -658,6 +794,7 @@ public:
     QString supabaseConnectionInfo() const;
 
 signals:
+    void emailSettingsChanged();
     void databaseReady();
     void errorOccurred(const QString& title, const QString& message);
     // A non-error informational result (e.g. Send Logs to Support outcome).
@@ -702,6 +839,8 @@ private slots:
     void onSyncStatusUpdated(int percentComplete, qint64 pendingPush, qint64 pendingPull);
 
 private:
+    bool applyDefaultReviewAudiencePreset();
+    void updateRecipientInternalReportContext();
     // Apply an ordered set of column writes to `row`, stopping at the first
     // failure and surfacing it through the themed error dialog. Writing in order
     // and bailing early prevents partial inserts — a failed write on a NOT NULL
@@ -722,6 +861,54 @@ private:
 
     bool m_databaseOpen = false;
     FileFinderService* m_fileFinder = nullptr;
+    // Keep the controller alive for every QML consumer, and destroy it before its
+    // non-QObject EmailService dependency during desktop shutdown.
+    std::unique_ptr<PN::Comm::EmailService> m_emailService;
+    // The facade is the only desktop consumer of File Finder's OAuth manager;
+    // its token stays private to the integration layer.
+    PN::Comm::Office365Service *m_office365Service = nullptr;
+    PN::Comm::QtNetworkHttpTransport *m_office365Transport = nullptr;
+    std::unique_ptr<PN::Comm::GraphEmailBackend> m_graphEmailBackend;
+    std::unique_ptr<PN::Comm::CommunicationsController> m_communicationsController;
+    std::unique_ptr<PN::Comm::RecipientSelectionModel> m_recipientSelectionModel;
+    std::unique_ptr<PN::Comm::TemplateEditorModel> m_templateEditorModel;
+    std::unique_ptr<Office365SettingsModel> m_office365SettingsModel;
+    PN::Comm::WebEngineReportRenderer *m_webEngineRenderer = nullptr;
+    // Bound to the currently open database only. It owns worker threads, so it
+    // must be destroyed before global_DBObjects closes that database.
+    std::unique_ptr<PN::Comm::AsyncSqliteCommunicationRepository> m_communicationRepository;
+    quint64 m_communicationDatabaseGeneration = 0;
+    QUuid m_pendingMeetingNotesReview;
+    QUuid m_pendingMeetingNotesReportReview;
+    QUuid m_pendingProjectReportReview;
+    QUuid m_pendingHandoffRevalidation;
+    QUuid m_pendingPdfRender;
+    std::optional<PN::Comm::EmailPreparation> m_meetingNotesReview;
+    std::optional<PN::Comm::EmailPreparation> m_meetingNotesReportReview;
+    std::optional<PN::Comm::CommunicationSnapshot> m_meetingNotesSnapshot;
+    std::optional<PN::Comm::SourceContext> m_meetingNotesSource;
+    std::optional<PN::Comm::CommunicationSnapshot> m_meetingNotesReportSnapshot;
+    std::optional<PN::Comm::SourceContext> m_meetingNotesReportSource;
+    QDate m_meetingNotesReportDate;
+    bool m_meetingNotesReportInternal = false;
+    std::optional<PN::Comm::EmailPreparation> m_projectReportReview;
+    std::optional<PN::Comm::CommunicationSnapshot> m_reviewAudienceSnapshot;
+    std::optional<PN::Comm::AudienceRule> m_reviewAudienceRule;
+    std::optional<PN::Comm::CommunicationSnapshot> m_projectReportSnapshot;
+    std::optional<PN::Comm::SourceContext> m_projectReportSource;
+    std::optional<PN::Comm::ReportOptions> m_projectReportOptions;
+    bool prepareProjectReportReview(const QString &projectId, const QString &reportingDate,
+                                    bool internalReport, PN::Comm::Workflow workflow,
+                                    PN::Comm::EmailMode emailMode,
+                                    bool retainHtml = false,
+                                    bool displayPdf = false,
+                                    std::optional<PN::Comm::TrackerFilters> trackerFilters = std::nullopt);
+    bool stageRequestedGeneratedAttachment(PN::Comm::EmailPreparation *preparation,
+                                           PN::Comm::ValidationResult *validation);
+    void stageRequestedGeneratedAttachmentAsync(PN::Comm::EmailPreparation preparation,
+                                                std::function<void(std::optional<PN::Comm::EmailPreparation>,
+                                                                   PN::Comm::ValidationResult)> completion);
+    void cleanupTransientReports();
 
     // ── Sidebar folder snapshots (see folderProjects/sidebarRev) ─────────────
     QHash<QString, QVariantList> m_folderSnapshot;   // folderId ("" = all) -> rows

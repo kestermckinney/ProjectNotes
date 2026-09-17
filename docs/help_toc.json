@@ -48,6 +48,7 @@
     {
       "title": "Reporting & Client Presentation",
       "items": [
+        { "title": "Native Reports and Email Review", "path": "InterfaceOverview/NativeReportsAndEmail.md" },
         { "title": "Earned Value Terms", "path": "InterfaceOverview/EarnedValueTerms.md" },
         { "title": "Presenting to Clients", "path": "InterfaceOverview/PresentingToClients.md" }
       ]

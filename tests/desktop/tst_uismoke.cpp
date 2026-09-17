@@ -127,8 +127,8 @@ private slots:
         QQuickItem* pages = findVisualChild(window->contentItem(), QStringLiteral("settingsPages"));
         QVERIFY(tabList);
         QVERIFY(pages);
-        QCOMPARE(tabList->property("count").toInt(), 8);
-        QCOMPARE(pages->property("count").toInt(), 8);
+        QCOMPARE(tabList->property("count").toInt(), 9);
+        QCOMPARE(pages->property("count").toInt(), 9);
         assertClean("settings category tabs");
     }
 

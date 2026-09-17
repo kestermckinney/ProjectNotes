@@ -4,6 +4,7 @@
 #include "FileFinderWorker.h"
 #include "FileFinderService.h"
 #include "MicrosoftGraphSource.h"
+#include "ProjectNotesIntegrations/Office365Service.h"
 
 #include <QDir>
 #include <QFile>
@@ -73,6 +74,7 @@ class FileFinderTest final : public QObject
 private slots:
     void searchRootPreservesHomeShortcut();
     void firstRunUsesCurrentSearchDefaults();
+    void identitySettingsSurviveFileFinderWrites();
     void graphEndpointResolution();
     void graphFolderExclusionsPruneSubtrees();
     void graphFolderTimestampsSkipUnchangedSubtrees();
@@ -93,6 +95,8 @@ void FileFinderTest::firstRunUsesCurrentSearchDefaults()
 {
     QTemporaryDir temporary;
     QVERIFY(temporary.isValid());
+    QSettings::setPath(QSettings::NativeFormat, QSettings::UserScope,
+                       temporary.filePath(QStringLiteral("settings")));
     const QString organization = QStringLiteral("ProjectNotesFileFinderTest-")
         + QUuid::createUuid().toString(QUuid::WithoutBraces);
 
@@ -139,6 +143,37 @@ void FileFinderTest::firstRunUsesCurrentSearchDefaults()
             QCOMPARE(actual.value(QStringLiteral("pattern")).toString(),
                      expectedRules.at(index).second);
         }
+    }
+
+    QSettings(organization, QStringLiteral("AppSettings")).clear();
+    QSettings(organization, QStringLiteral("PluginSettings")).clear();
+}
+
+void FileFinderTest::identitySettingsSurviveFileFinderWrites()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    QSettings::setPath(QSettings::NativeFormat, QSettings::UserScope,
+                       temporary.filePath(QStringLiteral("settings")));
+    const QString organization = QStringLiteral("ProjectNotesFileFinderIdentityTest-")
+        + QUuid::createUuid().toString(QUuid::WithoutBraces);
+
+    {
+        FileFinderService service;
+        QReadWriteLock databaseLock;
+        service.initialize(temporary.filePath(QStringLiteral("ProjectNotes.db")),
+                           &databaseLock, organization);
+        service.setOffice365TenantId(QStringLiteral("tenant-a"));
+        service.setOffice365ClientId(QStringLiteral("client-a"));
+        QCOMPARE(service.office365Service()->tenantId(), QStringLiteral("tenant-a"));
+        QCOMPARE(service.office365Service()->clientId(), QStringLiteral("client-a"));
+        service.addSearchRoot(temporary.filePath(QStringLiteral("documents")));
+
+        QSettings settings(organization, QStringLiteral("AppSettings"));
+        QCOMPARE(settings.value(QStringLiteral("FileFinder/tenantId")).toString(),
+                 QStringLiteral("tenant-a"));
+        QCOMPARE(settings.value(QStringLiteral("FileFinder/clientId")).toString(),
+                 QStringLiteral("client-a"));
     }
 
     QSettings(organization, QStringLiteral("AppSettings")).clear();

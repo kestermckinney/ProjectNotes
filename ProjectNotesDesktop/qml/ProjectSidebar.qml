@@ -48,6 +48,11 @@ Rectangle {
         model: DesktopAppController.projectsListModel
         recordId: sidebar._ctxId
         canMoveTo: true
+        reportItems: [
+            { label: qsTr("Meeting Notes"), value: "meeting-notes-report" },
+            { label: qsTr("Status"), value: "status-report" },
+            { label: qsTr("Tracker Items"), value: "tracker-items-report" }
+        ]
         onOpenRequested:   sidebar.projectActivated(sidebar._ctxId)
         onNewRequested: {
             var r = DesktopAppController.addProject()
@@ -66,9 +71,21 @@ Rectangle {
         onFilterRequested: sidebar.filterRequested()
         onSortRequested: (sx, sy) => sidebar.sortRequested(sx, sy)
         onRefreshRequested: DesktopAppController.refreshModel(DesktopAppController.projectsListModel)
+        onReportRequested: (workflow) => {
+            meetingNotesReportReview.workflow = workflow
+            meetingNotesReportReview.open()
+        }
     }
 
     MoveToFolderDialog { id: moveToFolderDialog }
+
+    MeetingNotesReportReviewDialog {
+        id: meetingNotesReportReview
+        projectId: sidebar._ctxId
+        controller: DesktopAppController.communicationsController
+        recipientModel: DesktopAppController.recipientSelectionModel
+        templateModel: DesktopAppController.templateEditorModel
+    }
 
     // Called by a FolderGroup row (right-click or kebab) to open the shared menu
     // for a given project at scene coordinates.

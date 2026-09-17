@@ -9,7 +9,7 @@
 #include <QApplication>
 #include <QDir>
 #include <QQuickStyle>
-#include <QStandardPaths>
+#include <QUuid>
 #include <QtQml/qqml.h>
 #include <QtTest/QtTest>
 
@@ -19,6 +19,7 @@
 #include "LogViewerController.h"
 #include "SpellCheck.h"
 #include "TextFormatter.h"
+#include "ProjectNotesIntegrations/CommunicationTypes.h"
 
 // Defined in the two test translation units.
 int runParityTests(int argc, char** argv);
@@ -26,6 +27,13 @@ int runUiSmokeTests(int argc, char** argv);
 
 int main(int argc, char* argv[])
 {
+    PN::Comm::registerCommunicationMetaTypes();
+    // The sandbox can expose Qt's test-mode (~/.qttest) location read-only.
+    // Use unique writable XDG roots before QApplication caches locations.
+    const QString testDataHome = QDir::temp().filePath(
+        QStringLiteral("projectnotes-qmltest-") + QUuid::createUuid().toString(QUuid::WithoutBraces));
+    qputenv("XDG_DATA_HOME", testDataHome.toUtf8());
+    qputenv("XDG_CONFIG_HOME", testDataHome.toUtf8());
     // QApplication (Widgets) — matches the shipping app; core surfaces some
     // errors through QMessageBox (guarded off at runtime). Platform is forced to
     // offscreen so the whole suite runs headless.
@@ -33,13 +41,12 @@ int main(int argc, char* argv[])
     QApplication app(argc, argv);
 
     // Identical identifiers to the shipping app so AppDataLocation resolves the
-    // same way — but test mode + a dedicated profile keep it fully isolated.
+    // same way — but dedicated XDG roots + profile keep it fully isolated.
     QApplication::setOrganizationDomain("projectnotespro.com");
     QApplication::setApplicationName("projectnotes");
     QApplication::setApplicationDisplayName("Project Notes");
     QApplication::setApplicationVersion("6.0.0");
 
-    QStandardPaths::setTestModeEnabled(true);
     DesktopAppController::setDeveloperProfile("qmltest");
     DesktopAppController::setUpdateChecksEnabled(false);   // no network in tests
 

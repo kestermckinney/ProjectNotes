@@ -3,7 +3,8 @@ runtime: org.kde.Platform
 runtime-version: '6.9'
 sdk: org.kde.Sdk
 # Qt WebEngine compiled from source against this same org.kde Qt 6.9, supplied
-# as a base layer. Needed by the PDF-export plugins (PyQt6.QtWebEngineWidgets).
+# as a base layer. The QML desktop executable links it directly for native PDF
+# rendering; legacy PyQt bindings remain only until the G6 plugin-removal gate.
 base: io.qt.qtwebengine.BaseApp
 base-version: '6.9'
 command: projectnotes
@@ -31,7 +32,8 @@ finish-args:
   - --device=dri
   # Qt WebEngine (from the BaseApp) installs under /app, but the runtime Qt's
   # baked-in prefix is /usr, so it can't find the process/resources/locales on
-  # its own. Point it at the /app locations. Needed by the PDF-export plugins.
+  # its own. Point it at the /app locations. These are native C++ renderer
+  # paths; do not redirect them to PyQt wheel files.
   - --env=QTWEBENGINEPROCESS_PATH=/app/lib/libexec/QtWebEngineProcess
   - --env=QTWEBENGINE_RESOURCES_PATH=/app/resources
   - --env=QTWEBENGINE_LOCALES_PATH=/app/translations/qtwebengine_locales
@@ -46,7 +48,7 @@ modules:
   - python-pyqt6.yaml
 
   # ── PyQt6-WebEngine bindings, built against the BaseApp's Qt WebEngine ─────
-  # Needed by the PDF-export plugins. Must come after python-pyqt6.yaml.
+  # Retained for legacy export plugins until the explicit G6 removal gate.
   - python-pyqt6-webengine.yaml
 
   # ── Hunspell 1.7 (spell checking) ─────────────────────────────────────────
