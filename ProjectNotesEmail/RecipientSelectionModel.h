@@ -45,6 +45,10 @@ public:
     // entries; QML never receives or compares company IDs.
     void setInternalReportContext(bool internalReport, QString managingCompanyId);
     Q_INVOKABLE bool setSelected(const QString &personId, bool selected);
+    // Bulk selection is kept in the model so QML never has to infer or walk
+    // the current (possibly filtered/grouped) list of recipients.
+    Q_INVOKABLE void selectAll();
+    Q_INVOKABLE void clearSelection();
     Q_INVOKABLE bool setRecipientRole(const QString &personId, RecipientRole role);
     Q_INVOKABLE bool setRecipientRoleValue(const QString &personId, int role);
     Q_INVOKABLE bool addManual(QString displayName, QString address, RecipientRole role = RecipientRole::To);

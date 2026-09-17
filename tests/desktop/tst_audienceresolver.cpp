@@ -168,6 +168,11 @@ void AudienceResolverTest::retainsRecipientEditsAndManualEntries()
     QVERIFY(model.audienceDiagnostic().isEmpty());
     QVERIFY(model.setSelected(QStringLiteral("one"), false));
     QVERIFY(model.setRecipientRole(QStringLiteral("two"), RecipientRole::Bcc));
+    model.clearSelection();
+    QCOMPARE(model.selectedRecipientCount(), 0);
+    model.selectAll();
+    QCOMPARE(model.selectedRecipientCount(), 2);
+    QVERIFY(model.setSelected(QStringLiteral("one"), false));
     QVERIFY(model.addManual(QStringLiteral("Manual"), QStringLiteral("manual@example.test"), RecipientRole::Cc));
     QVERIFY(!model.addManual(QStringLiteral("Duplicate source"), QStringLiteral("TWO@example.test"), RecipientRole::Bcc));
     QVERIFY(!model.addManual(QStringLiteral("Duplicate manual"), QStringLiteral("MANUAL@example.test"), RecipientRole::To));

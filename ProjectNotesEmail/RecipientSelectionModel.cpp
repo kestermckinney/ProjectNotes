@@ -103,6 +103,38 @@ bool RecipientSelectionModel::setSelected(const QString &personId, bool selected
     return true;
 }
 
+void RecipientSelectionModel::selectAll()
+{
+    bool changed = false;
+    for (Entry &entry : m_entries) {
+        if (!entry.selected) {
+            entry.selected = true;
+            changed = true;
+        }
+    }
+    if (!changed)
+        return;
+    if (!m_entries.isEmpty())
+        emit dataChanged(index(0), index(m_entries.size() - 1), {SelectedRole});
+    emit selectionStateChanged();
+}
+
+void RecipientSelectionModel::clearSelection()
+{
+    bool changed = false;
+    for (Entry &entry : m_entries) {
+        if (entry.selected) {
+            entry.selected = false;
+            changed = true;
+        }
+    }
+    if (!changed)
+        return;
+    if (!m_entries.isEmpty())
+        emit dataChanged(index(0), index(m_entries.size() - 1), {SelectedRole});
+    emit selectionStateChanged();
+}
+
 bool RecipientSelectionModel::setRecipientRole(const QString &personId, RecipientRole role)
 {
     const int index = indexOf(personId); if (index < 0) return false;

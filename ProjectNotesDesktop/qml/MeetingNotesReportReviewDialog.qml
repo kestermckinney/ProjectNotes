@@ -8,131 +8,113 @@ import QtQuick.Dialogs
 import QtQuick.Layouts
 import ProjectNotesDesktop
 
-// Report configuration dialog. Snapshot construction and report filtering
-// remain in DesktopAppController/native services.
+// A single project-report delivery flow. Report construction, recipient
+// resolution, artifact staging, and Graph draft handoff stay native.
 Dialog {
     id: dialog
     modal: true
-    // Keep this dialog centered in the application window even when it is
-    // declared inside a narrow container such as ProjectSidebar.
     parent: Overlay.overlay
     anchors.centerIn: parent
-    width: Math.min(460, parent ? parent.width - 36 : 460)
-    height: Math.min(570, parent ? parent.height - 36 : 570)
+    width: Math.min(720, parent ? parent.width - 36 : 720)
+    height: Math.min(760, parent ? parent.height - 36 : 760)
     padding: 0
-    property string workflow: "meeting-notes-report"
-    title: workflow === "status-report" ? qsTr("Status Report")
-          : workflow === "tracker-items-report" ? qsTr("Tracker Items Report")
-          : qsTr("Meeting Notes Report")
+    title: qsTr("Run report")
+
     property var controller: null
     property var recipientModel: null
     property var templateModel: null
     property string projectId: ""
+    property string workflow: "meeting-notes-report"
+    property string delivery: "save"
     property string emailMode: "inline-html"
+    property bool internalReport: false
     property bool openAfterSave: false
+    property string preparedKey: ""
+    property string pendingPreparationKey: ""
     property string pendingSaveUrl: ""
     property string pendingSaveFormat: ""
-    readonly property var emailModeOptions: [
-        { label: qsTr("Inline HTML"), value: "inline-html" },
-        { label: qsTr("HTML attachment"), value: "html-attachment" },
-        { label: qsTr("PDF attachment"), value: "pdf-attachment" },
-        { label: qsTr("Do not email"), value: "none" }
-    ]
+    property var companyChoices: []
+    property var selectedCompanyIds: []
+
     readonly property var office365: DesktopAppController.office365SettingsModel
     readonly property bool graphDraftReady: DesktopAppController.preferredEmailBackend === "graph"
                                          && office365 && office365.emailDraftsGranted
                                          && office365.accountLabel !== ""
+    readonly property bool reviewing: controller && controller.stageName === "reviewing" && !controller.busy
+    readonly property bool prepared: reviewing && preparedKey === reportKey(emailMode)
+    readonly property var workflowOptions: [
+        { label: qsTr("Status report"), value: "status-report" },
+        { label: qsTr("Tracker items report"), value: "tracker-items-report" },
+        { label: qsTr("Meeting notes report"), value: "meeting-notes-report" }
+    ]
+    readonly property var emailModeOptions: [
+        { label: qsTr("Inline HTML"), value: "inline-html", description: qsTr("Show the report in the email body.") },
+        { label: qsTr("HTML attachment"), value: "html-attachment", description: qsTr("Attach a standalone HTML report.") },
+        { label: qsTr("PDF attachment"), value: "pdf-attachment", description: qsTr("Attach a print-ready PDF report.") }
+    ]
 
-    // Match the checkbox treatment used by the note editor: a compact rounded
-    // indicator with the application accent and Material check mark.
-    component ReportCheckBox: CheckBox {
-        id: checkBox
-        indicator: Rectangle {
-            implicitWidth: 16
-            implicitHeight: 16
-            radius: 4
-            x: checkBox.leftPadding
-            y: parent.height / 2 - height / 2
-            color: checkBox.checked ? Theme.accent : Theme.surface
-            border.color: checkBox.checked ? Theme.accent : Theme.border
-            MaterialIcon {
-                anchors.centerIn: parent
-                visible: checkBox.checked
-                name: "check"
-                size: 12
-                color: "#ffffff"
+    component ChoiceCard: Rectangle {
+        property bool chosen: false
+        property string iconName: "description"
+        property string heading: ""
+        property string detail: ""
+        signal selected()
+        Layout.fillWidth: true
+        implicitHeight: 70
+        radius: Theme.radius
+        color: chosen ? Theme.accentSoft : Theme.surface
+        border.width: chosen ? 2 : 1
+        border.color: chosen ? Theme.accent : Theme.border
+        RowLayout {
+            anchors.fill: parent; anchors.margins: 11; spacing: 10
+            Rectangle {
+                Layout.preferredWidth: 34; Layout.preferredHeight: 34; radius: Theme.radiusSm
+                color: chosen ? Theme.accent : Theme.surface2
+                MaterialIcon { anchors.centerIn: parent; name: iconName; size: 18; color: chosen ? "white" : Theme.text2 }
+            }
+            ColumnLayout {
+                Layout.fillWidth: true; spacing: 1
+                Label { text: heading; color: chosen ? Theme.accentStrong : Theme.text; font.weight: Font.DemiBold }
+                Label { text: detail; color: Theme.text3; font.pixelSize: Theme.fontSm; Layout.fillWidth: true; wrapMode: Text.Wrap }
             }
         }
+        TapHandler { onTapped: parent.selected() }
+    }
+
+    component CompactCheckBox: CheckBox {
+        id: compactCheckBox
+        indicator: Rectangle {
+            implicitWidth: 16; implicitHeight: 16; radius: 4
+            x: compactCheckBox.leftPadding; y: compactCheckBox.height / 2 - height / 2
+            color: compactCheckBox.checked ? Theme.accent : Theme.surface
+            border.color: compactCheckBox.checked ? Theme.accent : Theme.border
+            MaterialIcon { anchors.centerIn: parent; visible: compactCheckBox.checked; name: "check"; size: 12; color: "white" }
+        }
         contentItem: Text {
-            text: checkBox.text
-            color: Theme.text
-            font.pixelSize: Theme.fontBody
-            leftPadding: checkBox.indicator.width + 7
-            verticalAlignment: Text.AlignVCenter
+            text: compactCheckBox.text; color: Theme.text; font.pixelSize: Theme.fontBody
+            leftPadding: compactCheckBox.indicator.width + 7; verticalAlignment: Text.AlignVCenter
         }
     }
 
     function todayText() {
         var d = new Date()
         return (d.getMonth() + 1 < 10 ? "0" : "") + (d.getMonth() + 1) + "/"
-            + (d.getDate() < 10 ? "0" : "") + d.getDate() + "/" + d.getFullYear()
+             + (d.getDate() < 10 ? "0" : "") + d.getDate() + "/" + d.getFullYear()
     }
-    function emailModeLabel(mode) {
+    function workflowLabel(value) {
+        for (var i = 0; i < workflowOptions.length; ++i)
+            if (workflowOptions[i].value === value) return workflowOptions[i].label
+        return workflowOptions[0].label
+    }
+    function workflowValue(label) {
+        for (var i = 0; i < workflowOptions.length; ++i)
+            if (workflowOptions[i].label === label) return workflowOptions[i].value
+        return workflowOptions[0].value
+    }
+    function modeLabel(value) {
         for (var i = 0; i < emailModeOptions.length; ++i)
-            if (emailModeOptions[i].value === mode) return emailModeOptions[i].label
+            if (emailModeOptions[i].value === value) return emailModeOptions[i].label
         return emailModeOptions[0].label
-    }
-    function emailModeValue(label) {
-        for (var i = 0; i < emailModeOptions.length; ++i)
-            if (emailModeOptions[i].label === label) return emailModeOptions[i].value
-        return emailModeOptions[0].value
-    }
-    function defaultReportFileStem() {
-        var date = (reportDate.text || "").split("/")
-        var datePart = date.length === 3 ? date[2] + date[0] + date[1] : "Report"
-        var row = DesktopAppController.projectRowForId(projectId)
-        var project = row >= 0 ? DesktopAppController.getProjectData(row) : ({})
-        var number = (project.project_number || "").toString().trim()
-        var reportName = workflow === "status-report" ? qsTr("Status Report")
-                       : workflow === "tracker-items-report" ? qsTr("Tracker Items Report")
-                       : qsTr("Meeting Notes Report")
-        return [datePart, number, reportName].filter(function(part) { return part !== "" }).join(" ")
-    }
-    function openSaveDialog() {
-        saveReportDialog.currentFile = StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
-                + "/" + defaultReportFileStem()
-        saveReportDialog.open()
-    }
-    function generatedExportName(format) {
-        if (!controller) return ""
-        var suffix = "." + (format || "pdf")
-        var names = controller.generatedAttachmentNames
-        for (var i = 0; i < names.length; ++i)
-            if (names[i].toLowerCase().endsWith(suffix)) return names[i]
-        return ""
-    }
-    function savePendingReport() {
-        if (pendingSaveUrl === "" || !controller || controller.busy
-                || controller.stageName !== "reviewing") return
-        var name = generatedExportName(pendingSaveFormat)
-        if (name === "") return
-        var destination = pendingSaveUrl
-        pendingSaveUrl = ""
-        pendingSaveFormat = ""
-        if (DesktopAppController.saveReviewGeneratedAttachment(name, destination) && openAfterSave)
-            Qt.openUrlExternally(destination)
-    }
-    function prepare() {
-        if (projectId === "") return
-        if (workflow === "status-report")
-            DesktopAppController.prepareStatusReportReviewWithOptions(projectId, reportDate.text,
-                                                                        internalReport.checked, emailMode, false, false)
-        else if (workflow === "tracker-items-report")
-            DesktopAppController.prepareTrackerReportReviewWithOptions(projectId, reportDate.text, internalReport.checked,
-                                                                        emailMode, selectedTrackerTypes(), selectedTrackerStatuses(), false, false)
-        else
-            DesktopAppController.prepareMeetingNotesReportReviewWithOptions(projectId, reportDate.text,
-                                                                             internalReport.checked, emailMode, false, false)
     }
     function selectedTrackerTypes() {
         var values = []
@@ -145,157 +127,301 @@ Dialog {
         if (includeNew.checked) values.push("New")
         if (includeAssigned.checked) values.push("Assigned")
         if (includeResolved.checked) values.push("Resolved")
-        if (includeDefered.checked) values.push("Defered")
+        if (includeDeferred.checked) values.push("Defered")
         if (includeCancelled.checked) values.push("Cancelled")
         return values
     }
-    onOpened: {
-        if (templateModel) templateModel.workflow = workflow
-        if (reportDate.text === "") reportDate.text = todayText()
+    function reportKey(mode) {
+        return [workflow, reportDate.text, internalReport, mode,
+                selectedTrackerTypes().join(","), selectedTrackerStatuses().join(",")].join("|")
     }
-    onClosed: {
+    function prepare(mode) {
+        if (projectId === "" || (controller && controller.busy)) return
+        pendingPreparationKey = reportKey(mode)
+        if (workflow === "status-report")
+            DesktopAppController.prepareStatusReportReviewWithOptions(projectId, reportDate.text, internalReport, mode, false, false)
+        else if (workflow === "tracker-items-report")
+            DesktopAppController.prepareTrackerReportReviewWithOptions(projectId, reportDate.text, internalReport, mode,
+                                                                        selectedTrackerTypes(), selectedTrackerStatuses(), false, false)
+        else
+            DesktopAppController.prepareMeetingNotesReportReviewWithOptions(projectId, reportDate.text, internalReport, mode, false, false)
+    }
+    function defaultPeopleSource() { return workflow === "status-report" ? "status-recipients" : "project-team" }
+    function refreshCompanies() {
+        companyChoices = DesktopAppController.reviewAudienceCompanies()
+        selectedCompanyIds = []
+    }
+    function setCompanySelected(companyId, selected) {
+        var ids = selectedCompanyIds.slice()
+        var index = ids.indexOf(companyId)
+        if (selected && index < 0) ids.push(companyId)
+        else if (!selected && index >= 0) ids.splice(index, 1)
+        selectedCompanyIds = ids
+    }
+    function applyDefaultAudience() {
+        DesktopAppController.applyReviewAudienceRule(defaultPeopleSource(), "all", false, false)
+    }
+    function applySpecificCompanies() {
+        DesktopAppController.applyReviewAudienceRuleWithCompanies(defaultPeopleSource(), "selected-companies",
+                                                                   selectedCompanyIds, false, false)
+    }
+    function defaultReportFileStem() {
+        var date = (reportDate.text || "").split("/")
+        var datePart = date.length === 3 ? date[2] + date[0] + date[1] : "Report"
+        var row = DesktopAppController.projectRowForId(projectId)
+        var project = row >= 0 ? DesktopAppController.getProjectData(row) : ({})
+        var number = (project.project_number || "").toString().trim()
+        return [datePart, number, workflowLabel(workflow)].filter(function(part) { return part !== "" }).join(" ")
+    }
+    function generatedExportName(format) {
+        if (!controller) return ""
+        var suffix = "." + format
+        var names = controller.generatedAttachmentNames
+        for (var i = 0; i < names.length; ++i)
+            if (names[i].toLowerCase().endsWith(suffix)) return names[i]
+        return ""
+    }
+    function openSaveDialog() {
+        saveReportDialog.currentFile = StandardPaths.writableLocation(StandardPaths.DocumentsLocation) + "/" + defaultReportFileStem()
+        saveReportDialog.open()
+    }
+    function savePendingReport() {
+        var mode = pendingSaveFormat === "html" ? "html-attachment" : "pdf-attachment"
+        if (pendingSaveUrl === "" || !reviewing || preparedKey !== reportKey(mode)) return
+        var name = generatedExportName(pendingSaveFormat)
+        if (name === "") return
+        var destination = pendingSaveUrl
         pendingSaveUrl = ""
         pendingSaveFormat = ""
+        if (DesktopAppController.saveReviewGeneratedAttachment(name, destination) && openAfterSave)
+            Qt.openUrlExternally(destination)
     }
+    function deliverySummary() {
+        var report = workflowLabel(workflow)
+        if (delivery === "save") return qsTr("Will prepare %1 for %2 and ask where to save it.").arg(report).arg(reportDate.text)
+        var count = recipientModel ? recipientModel.selectedRecipientCount : 0
+        if (!prepared) return qsTr("Generate %1, then choose exactly who receives it.").arg(report)
+        return qsTr("Create a Microsoft 365 draft of %1 for %2 selected recipient(s), as %3.").arg(report).arg(count).arg(modeLabel(emailMode))
+    }
+
+    onWorkflowChanged: { preparedKey = ""; pendingPreparationKey = ""; selectedCompanyIds = [] }
+    onOpened: if (reportDate.text === "") reportDate.text = todayText()
+    onClosed: { pendingSaveUrl = ""; pendingSaveFormat = ""; pendingPreparationKey = "" }
     Connections {
         target: dialog.controller
-        function onStateChanged() { dialog.savePendingReport() }
+        function onStateChanged() {
+            if (dialog.controller && dialog.controller.stageName === "reviewing" && dialog.pendingPreparationKey !== "") {
+                dialog.preparedKey = dialog.pendingPreparationKey
+                dialog.pendingPreparationKey = ""
+                dialog.refreshCompanies()
+            }
+            dialog.savePendingReport()
+        }
     }
 
     background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
-    // Match the About dialog: an icon-led title row, an explicit close affordance,
-    // and a one-pixel divider separating the title from the scrollable content.
     header: null
     contentItem: ColumnLayout {
         spacing: 0
         RowLayout {
-            Layout.fillWidth: true
-            Layout.margins: 14
-            spacing: 8
+            Layout.fillWidth: true; Layout.margins: 14; spacing: 8
             MaterialIcon { name: "description"; size: 20; color: Theme.accent }
-            Text {
-                text: dialog.title
-                color: Theme.text
-                font.pixelSize: Theme.font2xl
-                font.weight: Font.Bold
-                Layout.fillWidth: true
-            }
-            MaterialIcon {
-                name: "close"
-                size: 20
-                color: Theme.text3
-                TapHandler {
-                    gesturePolicy: TapHandler.ReleaseWithinBounds
-                    onTapped: dialog.close()
+            Label { text: dialog.title; color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold; Layout.fillWidth: true }
+            ToolButton { text: "×"; onClicked: dialog.close() }
+        }
+        Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
+        ScrollView {
+            id: scroll
+            Layout.fillWidth: true; Layout.fillHeight: true; clip: true; padding: 16
+            contentWidth: availableWidth
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            ColumnLayout {
+                width: scroll.availableWidth; spacing: 14
+                Label {
+                    Layout.fillWidth: true
+                    text: qsTr("Choose a report, then save it or create a Microsoft 365 draft. You stay in control of recipients and format.")
+                    color: Theme.text2; wrapMode: Text.Wrap
+                }
+                Rectangle {
+                    Layout.fillWidth: true; radius: Theme.radius; color: Theme.surface; border.color: Theme.border
+                    implicitHeight: chooseReport.implicitHeight + 28
+                    ColumnLayout {
+                        id: chooseReport
+                        anchors.fill: parent; anchors.margins: 14; spacing: 9
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Rectangle { Layout.preferredWidth: 24; Layout.preferredHeight: 24; radius: 12; color: Theme.accent
+                                Label { anchors.centerIn: parent; text: "1"; color: "white"; font.weight: Font.Bold } }
+                            Label { text: qsTr("Which report?"); color: Theme.text; font.weight: Font.DemiBold; font.pixelSize: Theme.fontLg }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true; spacing: 10
+                            ComboField {
+                                Layout.fillWidth: true; label: qsTr("Report")
+                                options: dialog.workflowOptions.map(function(option) { return option.label })
+                                value: dialog.workflowLabel(dialog.workflow)
+                                onActivated: function(label) { dialog.workflow = dialog.workflowValue(label) }
+                            }
+                            DateField { id: reportDate; Layout.preferredWidth: 158; label: qsTr("Reporting date") }
+                        }
+                        CompactCheckBox {
+                            text: dialog.workflow === "meeting-notes-report" ? qsTr("Include internal meetings") : qsTr("Generate internal report")
+                            checked: dialog.internalReport
+                            onToggled: dialog.internalReport = checked
+                        }
+                        ColumnLayout {
+                            visible: dialog.workflow === "tracker-items-report"; Layout.fillWidth: true; spacing: 3
+                            Label { text: qsTr("Include tracker items"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
+                            RowLayout {
+                                Layout.fillWidth: true
+                                CompactCheckBox { id: includeTrackerItems; text: qsTr("Tracker"); checked: true }
+                                CompactCheckBox { id: includeActionItems; text: qsTr("Action") }
+                            }
+                            Label { text: qsTr("Status"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
+                            Flow {
+                                Layout.fillWidth: true; spacing: 9
+                                CompactCheckBox { id: includeNew; text: qsTr("New"); checked: true }
+                                CompactCheckBox { id: includeAssigned; text: qsTr("Assigned"); checked: true }
+                                CompactCheckBox { id: includeResolved; text: qsTr("Resolved") }
+                                CompactCheckBox { id: includeDeferred; text: qsTr("Deferred") }
+                                CompactCheckBox { id: includeCancelled; text: qsTr("Cancelled") }
+                            }
+                        }
+                    }
+                }
+                Rectangle {
+                    Layout.fillWidth: true; radius: Theme.radius; color: Theme.surface; border.color: Theme.border
+                    implicitHeight: deliveryOptions.implicitHeight + 28
+                    ColumnLayout {
+                        id: deliveryOptions
+                        anchors.fill: parent; anchors.margins: 14; spacing: 9
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Rectangle { Layout.preferredWidth: 24; Layout.preferredHeight: 24; radius: 12; color: Theme.accent
+                                Label { anchors.centerIn: parent; text: "2"; color: "white"; font.weight: Font.Bold } }
+                            Label { text: qsTr("What should happen with it?"); color: Theme.text; font.weight: Font.DemiBold; font.pixelSize: Theme.fontLg }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true; spacing: 10
+                            ChoiceCard {
+                                Layout.fillWidth: true; chosen: dialog.delivery === "save"; iconName: "save"
+                                heading: qsTr("Save the report"); detail: qsTr("Choose a location. Nothing is sent.")
+                                onSelected: dialog.delivery = "save"
+                            }
+                            ChoiceCard {
+                                Layout.fillWidth: true; chosen: dialog.delivery === "email"; iconName: "mail"
+                                heading: qsTr("Email the report"); detail: qsTr("Create a draft for selected recipients.")
+                                onSelected: dialog.delivery = "email"
+                            }
+                        }
+                    }
+                }
+                Rectangle {
+                    visible: dialog.delivery === "email"; Layout.fillWidth: true; radius: Theme.radius; color: Theme.surface; border.color: Theme.border
+                    implicitHeight: emailOptions.implicitHeight + 28
+                    ColumnLayout {
+                        id: emailOptions
+                        anchors.fill: parent; anchors.margins: 14; spacing: 10
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Rectangle { Layout.preferredWidth: 24; Layout.preferredHeight: 24; radius: 12; color: Theme.accent
+                                Label { anchors.centerIn: parent; text: "3"; color: "white"; font.weight: Font.Bold } }
+                            Label { text: qsTr("Email details"); color: Theme.text; font.weight: Font.DemiBold; font.pixelSize: Theme.fontLg }
+                        }
+                        Label { text: qsTr("Format"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
+                        Repeater {
+                            model: dialog.emailModeOptions
+                            delegate: ChoiceCard {
+                                required property var modelData
+                                chosen: dialog.emailMode === modelData.value
+                                iconName: modelData.value === "pdf-attachment" ? "picture_as_pdf" : "code"
+                                heading: modelData.label; detail: modelData.description
+                                onSelected: dialog.emailMode = modelData.value
+                            }
+                        }
+                        BusyIndicator { running: dialog.controller && dialog.controller.busy; visible: running; Layout.alignment: Qt.AlignHCenter }
+                        Label {
+                            visible: dialog.controller && dialog.controller.diagnostic !== ""
+                            Layout.fillWidth: true; text: dialog.controller ? dialog.controller.diagnostic : ""
+                            color: Theme.red; wrapMode: Text.Wrap
+                        }
+                        ColumnLayout {
+                            visible: dialog.prepared; Layout.fillWidth: true; spacing: 9
+                            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
+                            Label { text: qsTr("Send to"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
+                            RowLayout {
+                                Layout.fillWidth: true; spacing: 8
+                                ChoiceCard {
+                                    Layout.fillWidth: true; implicitHeight: 58; chosen: !specificCompanies.checked
+                                    iconName: "groups"; heading: qsTr("Default audience"); detail: qsTr("Use this report’s normal distribution.")
+                                    onSelected: { specificCompanies.checked = false; dialog.applyDefaultAudience() }
+                                }
+                                ChoiceCard {
+                                    Layout.fillWidth: true; implicitHeight: 58; chosen: specificCompanies.checked
+                                    iconName: "business"; heading: qsTr("Specific companies"); detail: qsTr("Limit the default audience by company.")
+                                    onSelected: specificCompanies.checked = true
+                                }
+                            }
+                            CheckBox { id: specificCompanies; visible: false }
+                            Flow {
+                                visible: specificCompanies.checked; Layout.fillWidth: true; spacing: 7
+                                Repeater {
+                                    model: dialog.companyChoices
+                                    delegate: CompactCheckBox {
+                                        required property var modelData
+                                        text: qsTr("%1 (%2)").arg(modelData.name).arg(modelData.peopleCount)
+                                        checked: dialog.selectedCompanyIds.indexOf(modelData.id) >= 0
+                                        onToggled: { dialog.setCompanySelected(modelData.id, checked); dialog.applySpecificCompanies() }
+                                    }
+                                }
+                            }
+                            RecipientSelectionPane {
+                                Layout.fillWidth: true
+                                recipientModel: dialog.recipientModel
+                                reviewController: dialog.controller
+                                audienceController: DesktopAppController
+                                defaultPeopleSource: dialog.defaultPeopleSource()
+                                compact: true
+                            }
+                            Label {
+                                Layout.fillWidth: true
+                                text: dialog.graphDraftReady
+                                    ? qsTr("A draft will be created in the verified Microsoft 365 account%1. It will not be sent.")
+                                        .arg(dialog.office365.accountLabel === "" ? "" : " (" + dialog.office365.accountLabel + ")")
+                                    : qsTr("Microsoft 365 draft creation is not configured for this account.")
+                                color: Theme.text3; wrapMode: Text.Wrap
+                            }
+                        }
+                    }
                 }
             }
         }
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
-        ScrollView {
-        id: contentScroll
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-        clip: true
-        padding: 16
-        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-        ScrollBar.vertical.policy: ScrollBar.AsNeeded
-        contentWidth: availableWidth
-
-        ColumnLayout {
-            width: contentScroll.availableWidth
-            spacing: 10
-
-            DateField {
-            id: reportDate
-            label: dialog.workflow === "meeting-notes-report"
-                ? qsTr("Include meetings through") : qsTr("Reporting date")
-            Layout.fillWidth: false
-            Layout.preferredWidth: 150
-            }
-
-            Label {
-            text: qsTr("Report options")
-            color: Theme.text
-            font.pixelSize: Theme.fontLg
-            font.weight: Font.DemiBold
-            }
-            ReportCheckBox {
-            id: internalReport
-            text: dialog.workflow === "meeting-notes-report"
-                ? qsTr("Include internal meetings") : qsTr("Generate internal report")
-            }
-            ReportCheckBox {
-            text: qsTr("Open after save")
-            checked: dialog.openAfterSave
-            onToggled: dialog.openAfterSave = checked
-            }
-
-            ColumnLayout {
-            visible: dialog.workflow === "tracker-items-report"
-            Layout.fillWidth: true
-            spacing: 4
-            Label { text: qsTr("Include"); color: Theme.text2; font.weight: Font.DemiBold }
-            ReportCheckBox { id: includeTrackerItems; text: qsTr("Tracker items"); checked: true }
-            ReportCheckBox { id: includeActionItems; text: qsTr("Action items") }
-            Label { text: qsTr("Status"); color: Theme.text2; font.weight: Font.DemiBold }
-            ReportCheckBox { id: includeNew; text: qsTr("New"); checked: true }
-            ReportCheckBox { id: includeAssigned; text: qsTr("Assigned"); checked: true }
-            ReportCheckBox { id: includeResolved; text: qsTr("Resolved") }
-            ReportCheckBox { id: includeDefered; text: qsTr("Deferred") }
-            ReportCheckBox { id: includeCancelled; text: qsTr("Cancelled") }
-            }
-
-            ComboField {
-            id: emailModeSelector
-            label: qsTr("Email report as")
-            options: dialog.emailModeOptions.map(function(option) { return option.label })
-            value: dialog.emailModeLabel(dialog.emailMode)
-            onActivated: (label) => dialog.emailMode = dialog.emailModeValue(label)
-            }
-            Label {
-            Layout.fillWidth: true
-            visible: dialog.controller && dialog.controller.diagnostic !== ""
-            text: dialog.controller ? dialog.controller.diagnostic : ""
-            color: Theme.red
-            wrapMode: Text.Wrap
-            }
-            RowLayout {
-            Layout.fillWidth: true
-            Item { Layout.fillWidth: true }
+        RowLayout {
+            Layout.fillWidth: true; Layout.margins: 14; spacing: 10
+            Label { Layout.fillWidth: true; text: dialog.deliverySummary(); color: Theme.text2; wrapMode: Text.Wrap }
+            Button { text: qsTr("Cancel"); onClicked: dialog.close() }
             Button {
-                text: qsTr("Generate")
-                enabled: !dialog.controller || !dialog.controller.busy
-                onClicked: dialog.prepare()
-            }
-            Button {
-                text: qsTr("Save As")
+                visible: dialog.delivery === "save"; text: qsTr("Save As…")
                 enabled: dialog.projectId !== "" && (!dialog.controller || !dialog.controller.busy)
                 onClicked: dialog.openSaveDialog()
             }
             Button {
-                visible: dialog.emailMode === "none"
-                text: qsTr("Complete")
-                enabled: dialog.controller && dialog.controller.stageName === "reviewing" && !dialog.controller.busy
-                onClicked: DesktopAppController.handoffPreparedReview()
+                visible: dialog.delivery === "email" && !dialog.prepared; text: qsTr("Generate report")
+                enabled: dialog.projectId !== "" && (!dialog.controller || !dialog.controller.busy)
+                onClicked: dialog.prepare(dialog.emailMode)
             }
             Button {
-                visible: dialog.emailMode !== "none" && dialog.graphDraftReady
+                visible: dialog.delivery === "email" && dialog.prepared && dialog.graphDraftReady
                 text: qsTr("Create Microsoft 365 draft")
-                enabled: dialog.controller && dialog.controller.stageName === "reviewing" && !dialog.controller.busy
+                enabled: dialog.recipientModel && dialog.recipientModel.selectedRecipientCount > 0 && !dialog.controller.busy
                 onClicked: DesktopAppController.handoffPreparedReview()
             }
             Button {
-                visible: dialog.controller && dialog.controller.stageName === "completed"
-                         && dialog.controller.presentationUrl.toString() !== ""
+                visible: dialog.controller && dialog.controller.stageName === "completed" && dialog.controller.presentationUrl.toString() !== ""
                 text: qsTr("Open draft in Outlook")
                 onClicked: Qt.openUrlExternally(dialog.controller.presentationUrl)
             }
-            Button {
-                text: qsTr("Cancel")
-                onClicked: dialog.close()
-            }
-            }
-        }
         }
     }
     FileDialog {
@@ -306,12 +432,10 @@ Dialog {
         onAccepted: {
             dialog.pendingSaveFormat = selectedNameFilter.extensions.indexOf("html") >= 0 ? "html" : "pdf"
             var destination = selectedFile.toString()
-            if (!destination.toLowerCase().endsWith("." + dialog.pendingSaveFormat))
-                destination += "." + dialog.pendingSaveFormat
-            if (!DesktopAppController.removeExistingReportSaveFile(destination))
-                return
+            if (!destination.toLowerCase().endsWith("." + dialog.pendingSaveFormat)) destination += "." + dialog.pendingSaveFormat
+            if (!DesktopAppController.removeExistingReportSaveFile(destination)) return
             dialog.pendingSaveUrl = destination
-            dialog.prepare()
+            dialog.prepare(dialog.pendingSaveFormat === "html" ? "html-attachment" : "pdf-attachment")
         }
     }
 }
