@@ -533,9 +533,8 @@ bool DesktopAppController::stageRequestedGeneratedAttachment(PN::Comm::EmailPrep
                              QStringLiteral("attachments"));
         return false;
     }
-    if (!preparation->retainHtml && (preparation->mode == PN::Comm::EmailMode::InlineHtml
-        || preparation->mode == PN::Comm::EmailMode::None
-        || preparation->mode == PN::Comm::EmailMode::PdfAttachment))
+    if (!preparation->retainHtml && preparation->mode != PN::Comm::EmailMode::HtmlAttachment
+        && !preparation->createHtmlExport)
         return true;
 
     QString name = preparation->document.fileStem.trimmed();
@@ -558,7 +557,10 @@ bool DesktopAppController::stageRequestedGeneratedAttachment(PN::Comm::EmailPrep
                              QStringLiteral("attachments"));
         return false;
     }
-    preparation->attachments.append(staged.artifact);
+    if (preparation->mode == PN::Comm::EmailMode::HtmlAttachment)
+        preparation->attachments.append(staged.artifact);
+    else
+        preparation->exports.append(staged.artifact);
     return true;
 }
 
@@ -576,7 +578,8 @@ void DesktopAppController::stageRequestedGeneratedAttachmentAsync(
         completion(std::nullopt, std::move(validation));
         return;
     }
-    if (preparation.mode != PN::Comm::EmailMode::PdfAttachment && !preparation.displayPdf) {
+    if (preparation.mode != PN::Comm::EmailMode::PdfAttachment && !preparation.displayPdf
+        && !preparation.createPdfExport) {
         completion(std::move(preparation), std::move(validation));
         return;
     }
@@ -629,6 +632,8 @@ void DesktopAppController::stageRequestedGeneratedAttachmentAsync(
         }
         if (preparation.mode == PN::Comm::EmailMode::PdfAttachment)
             preparation.attachments.append(registered.artifact);
+        else
+            preparation.exports.append(registered.artifact);
         if (preparation.displayPdf
             && !QDesktopServices::openUrl(QUrl::fromLocalFile(registered.artifact.absolutePath))) {
             validation.addWarning(QStringLiteral("report-display-failed"), QStringLiteral("report.display"),
@@ -788,6 +793,8 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
         self->m_recipientSelectionModel->setAudience(PN::Comm::resolveAudience(result.snapshot, audienceRule));
         PN::Comm::EmailPreparation prepared = *preparation;
         prepared.displayPdf = displayPdf;
+        prepared.createHtmlExport = true;
+        prepared.createPdfExport = true;
         const PN::Comm::RecipientResolution recipients = self->m_recipientSelectionModel->resolve();
         prepared.recipients = recipients.recipients;
         prepared.addressLater = recipients.addressLaterExplicitlyChosen;
@@ -842,6 +849,8 @@ bool DesktopAppController::applyMeetingNotesReportTemplate(const QString& templa
     PN::Comm::EmailPreparation prepared = *rebuilt;
     prepared.retainedHtmlExportSubfolder = m_meetingNotesReportReview->retainedHtmlExportSubfolder;
     prepared.displayPdf = m_meetingNotesReportReview->displayPdf;
+    prepared.createHtmlExport = m_meetingNotesReportReview->createHtmlExport;
+    prepared.createPdfExport = m_meetingNotesReportReview->createPdfExport;
     prepared.recipients = recipients.recipients;
     prepared.addressLater = recipients.addressLaterExplicitlyChosen;
     stageRequestedGeneratedAttachmentAsync(std::move(prepared),
@@ -1005,7 +1014,10 @@ bool DesktopAppController::prepareProjectReportReview(const QString &projectId, 
             self->m_communicationsController->setReviewValidation(std::move(validation));
             return;
         }
-        self->stageRequestedGeneratedAttachmentAsync(review->preparation,
+        PN::Comm::EmailPreparation prepared = review->preparation;
+        prepared.createHtmlExport = true;
+        prepared.createPdfExport = true;
+        self->stageRequestedGeneratedAttachmentAsync(std::move(prepared),
             [self, audience = review->audience, snapshot = result.snapshot, source = request.source, options,
              reviewValidation = review->validation]
             (std::optional<PN::Comm::EmailPreparation> staged, PN::Comm::ValidationResult validation) mutable {
@@ -1059,6 +1071,8 @@ bool DesktopAppController::applyProjectReportTemplate(const QString& templateId)
     }
     PN::Comm::EmailPreparation prepared = rebuilt->preparation;
     prepared.retainedHtmlExportSubfolder = m_projectReportReview->retainedHtmlExportSubfolder;
+    prepared.createHtmlExport = m_projectReportReview->createHtmlExport;
+    prepared.createPdfExport = m_projectReportReview->createPdfExport;
     prepared.recipients = recipients.recipients;
     prepared.addressLater = recipients.addressLaterExplicitlyChosen;
     stageRequestedGeneratedAttachmentAsync(std::move(prepared),
@@ -1412,18 +1426,47 @@ bool DesktopAppController::saveReviewGeneratedAttachment(const QString &displayN
         return false;
     const QUrl destinationUrl(destination);
     const QString localDestination = destinationUrl.isLocalFile() ? destinationUrl.toLocalFile() : destination;
-    const auto &attachments = m_communicationsController->preparation().attachments;
-    const auto found = std::find_if(attachments.cbegin(), attachments.cend(), [&displayName](const PN::Comm::Artifact &artifact) {
+    const auto &preparation = m_communicationsController->preparation();
+    const PN::Comm::Artifact *artifactToSave = nullptr;
+    const auto attachment = std::find_if(preparation.attachments.cbegin(), preparation.attachments.cend(), [&displayName](const PN::Comm::Artifact &artifact) {
         return artifact.generatedByApp && artifact.displayName == displayName;
     });
-    if (found == attachments.cend())
+    if (attachment != preparation.attachments.cend()) {
+        artifactToSave = &*attachment;
+    } else {
+        const auto exported = std::find_if(preparation.exports.cbegin(), preparation.exports.cend(), [&displayName](const PN::Comm::Artifact &artifact) {
+            return artifact.generatedByApp && artifact.displayName == displayName;
+        });
+        if (exported != preparation.exports.cend())
+            artifactToSave = &*exported;
+    }
+    if (!artifactToSave)
         return false;
     PN::Comm::ServiceError error;
-    if (PN::Comm::ArtifactStore(PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile)).publish(*found, localDestination, &error))
+    if (PN::Comm::ArtifactStore(PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile)).publish(*artifactToSave, localDestination, &error))
         return true;
     PN::Comm::ValidationResult validation;
     validation.addError(error.code.isEmpty() ? QStringLiteral("artifact-publish-failed") : error.code,
                         QStringLiteral("attachments"), tr("The generated attachment could not be saved."));
+    m_communicationsController->setReviewValidation(std::move(validation));
+    return false;
+}
+
+bool DesktopAppController::removeExistingReportSaveFile(const QString &destination)
+{
+    const QUrl destinationUrl(destination);
+    const QString localDestination = destinationUrl.isLocalFile() ? destinationUrl.toLocalFile() : destination;
+    const QFileInfo existing(localDestination);
+    if (!existing.exists())
+        return true;
+    if (!existing.isFile() || existing.isSymLink())
+        return false;
+    if (QFile::remove(existing.absoluteFilePath()))
+        return true;
+
+    PN::Comm::ValidationResult validation;
+    validation.addError(QStringLiteral("destination-remove-failed"), QStringLiteral("destination"),
+                        tr("The existing report file could not be replaced."));
     m_communicationsController->setReviewValidation(std::move(validation));
     return false;
 }

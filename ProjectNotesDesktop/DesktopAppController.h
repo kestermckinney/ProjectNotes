@@ -255,6 +255,9 @@ public:
     // supplied attachment.
     Q_INVOKABLE bool saveReviewGeneratedAttachment(const QString& displayName,
                                                    const QString& destination);
+    // Called after the native Save As picker confirms an overwrite and before
+    // report preparation begins, so publication never races an old file.
+    Q_INVOKABLE bool removeExistingReportSaveFile(const QString& destination);
     // Copies the reviewed plain-text body only after an explicit user action,
     // for a manual email workflow. It does not stage, launch, or send anything.
     Q_INVOKABLE bool copyReviewPlainText();

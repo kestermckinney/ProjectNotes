@@ -3,6 +3,8 @@
 
 import QtQuick
 import QtQuick.Controls.Basic
+import QtCore
+import QtQuick.Dialogs
 import QtQuick.Layouts
 import ProjectNotesDesktop
 
@@ -19,16 +21,17 @@ Dialog {
     height: Math.min(570, parent ? parent.height - 36 : 570)
     padding: 0
     property string workflow: "meeting-notes-report"
-    title: workflow === "status-report" ? qsTr("Generate Status Report")
-          : workflow === "tracker-items-report" ? qsTr("Generate Tracker Items Report")
-          : qsTr("Generate Meeting Notes Report")
+    title: workflow === "status-report" ? qsTr("Status Report")
+          : workflow === "tracker-items-report" ? qsTr("Tracker Items Report")
+          : qsTr("Meeting Notes Report")
     property var controller: null
     property var recipientModel: null
     property var templateModel: null
     property string projectId: ""
     property string emailMode: "inline-html"
-    property bool retainHtml: false
-    property bool displayPdf: false
+    property bool openAfterSave: false
+    property string pendingSaveUrl: ""
+    property string pendingSaveFormat: ""
     readonly property var emailModeOptions: [
         { label: qsTr("Inline HTML"), value: "inline-html" },
         { label: qsTr("HTML attachment"), value: "html-attachment" },
@@ -84,17 +87,52 @@ Dialog {
             if (emailModeOptions[i].label === label) return emailModeOptions[i].value
         return emailModeOptions[0].value
     }
+    function defaultReportFileStem() {
+        var date = (reportDate.text || "").split("/")
+        var datePart = date.length === 3 ? date[2] + date[0] + date[1] : "Report"
+        var row = DesktopAppController.projectRowForId(projectId)
+        var project = row >= 0 ? DesktopAppController.getProjectData(row) : ({})
+        var number = (project.project_number || "").toString().trim()
+        var reportName = workflow === "status-report" ? qsTr("Status Report")
+                       : workflow === "tracker-items-report" ? qsTr("Tracker Items Report")
+                       : qsTr("Meeting Notes Report")
+        return [datePart, number, reportName].filter(function(part) { return part !== "" }).join(" ")
+    }
+    function openSaveDialog() {
+        saveReportDialog.currentFile = StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+                + "/" + defaultReportFileStem()
+        saveReportDialog.open()
+    }
+    function generatedExportName(format) {
+        if (!controller) return ""
+        var suffix = "." + (format || "pdf")
+        var names = controller.generatedAttachmentNames
+        for (var i = 0; i < names.length; ++i)
+            if (names[i].toLowerCase().endsWith(suffix)) return names[i]
+        return ""
+    }
+    function savePendingReport() {
+        if (pendingSaveUrl === "" || !controller || controller.busy
+                || controller.stageName !== "reviewing") return
+        var name = generatedExportName(pendingSaveFormat)
+        if (name === "") return
+        var destination = pendingSaveUrl
+        pendingSaveUrl = ""
+        pendingSaveFormat = ""
+        if (DesktopAppController.saveReviewGeneratedAttachment(name, destination) && openAfterSave)
+            Qt.openUrlExternally(destination)
+    }
     function prepare() {
         if (projectId === "") return
         if (workflow === "status-report")
             DesktopAppController.prepareStatusReportReviewWithOptions(projectId, reportDate.text,
-                                                                        internalReport.checked, emailMode, retainHtml, displayPdf)
+                                                                        internalReport.checked, emailMode, false, false)
         else if (workflow === "tracker-items-report")
             DesktopAppController.prepareTrackerReportReviewWithOptions(projectId, reportDate.text, internalReport.checked,
-                                                                        emailMode, selectedTrackerTypes(), selectedTrackerStatuses(), retainHtml, displayPdf)
+                                                                        emailMode, selectedTrackerTypes(), selectedTrackerStatuses(), false, false)
         else
             DesktopAppController.prepareMeetingNotesReportReviewWithOptions(projectId, reportDate.text,
-                                                                             internalReport.checked, emailMode, retainHtml, displayPdf)
+                                                                             internalReport.checked, emailMode, false, false)
     }
     function selectedTrackerTypes() {
         var values = []
@@ -114,29 +152,49 @@ Dialog {
     onOpened: {
         if (templateModel) templateModel.workflow = workflow
         if (reportDate.text === "") reportDate.text = todayText()
-        prepare()
+    }
+    onClosed: {
+        pendingSaveUrl = ""
+        pendingSaveFormat = ""
+    }
+    Connections {
+        target: dialog.controller
+        function onStateChanged() { dialog.savePendingReport() }
     }
 
     background: Rectangle { radius: Theme.radius; color: Theme.raise; border.color: Theme.border }
-    header: Item {
-        implicitHeight: 52
+    // Match the About dialog: an icon-led title row, an explicit close affordance,
+    // and a one-pixel divider separating the title from the scrollable content.
+    header: null
+    contentItem: ColumnLayout {
+        spacing: 0
         RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 16
-            anchors.rightMargin: 12
-            spacing: 10
-            Label {
+            Layout.fillWidth: true
+            Layout.margins: 14
+            spacing: 8
+            MaterialIcon { name: "description"; size: 20; color: Theme.accent }
+            Text {
                 text: dialog.title
                 color: Theme.text
-                font.pixelSize: Theme.fontXl
-                font.weight: Font.DemiBold
+                font.pixelSize: Theme.font2xl
+                font.weight: Font.Bold
                 Layout.fillWidth: true
             }
-            ToolButton { text: "×"; onClicked: dialog.close() }
+            MaterialIcon {
+                name: "close"
+                size: 20
+                color: Theme.text3
+                TapHandler {
+                    gesturePolicy: TapHandler.ReleaseWithinBounds
+                    onTapped: dialog.close()
+                }
+            }
         }
-    }
-    contentItem: ScrollView {
+        Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
+        ScrollView {
         id: contentScroll
+        Layout.fillWidth: true
+        Layout.fillHeight: true
         clip: true
         padding: 16
         ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
@@ -151,7 +209,8 @@ Dialog {
             id: reportDate
             label: dialog.workflow === "meeting-notes-report"
                 ? qsTr("Include meetings through") : qsTr("Reporting date")
-            Layout.fillWidth: true
+            Layout.fillWidth: false
+            Layout.preferredWidth: 150
             }
 
             Label {
@@ -166,14 +225,9 @@ Dialog {
                 ? qsTr("Include internal meetings") : qsTr("Generate internal report")
             }
             ReportCheckBox {
-            text: qsTr("Generate HTML report (temporary)")
-            checked: dialog.retainHtml
-            onToggled: dialog.retainHtml = checked
-            }
-            ReportCheckBox {
-            text: qsTr("Display report when complete")
-            checked: dialog.displayPdf
-            onToggled: dialog.displayPdf = checked
+            text: qsTr("Open after save")
+            checked: dialog.openAfterSave
+            onToggled: dialog.openAfterSave = checked
             }
 
             ColumnLayout {
@@ -198,7 +252,6 @@ Dialog {
             value: dialog.emailModeLabel(dialog.emailMode)
             onActivated: (label) => dialog.emailMode = dialog.emailModeValue(label)
             }
-
             Label {
             Layout.fillWidth: true
             visible: dialog.controller && dialog.controller.diagnostic !== ""
@@ -213,6 +266,11 @@ Dialog {
                 text: qsTr("Generate")
                 enabled: !dialog.controller || !dialog.controller.busy
                 onClicked: dialog.prepare()
+            }
+            Button {
+                text: qsTr("Save As")
+                enabled: dialog.projectId !== "" && (!dialog.controller || !dialog.controller.busy)
+                onClicked: dialog.openSaveDialog()
             }
             Button {
                 visible: dialog.emailMode === "none"
@@ -237,6 +295,23 @@ Dialog {
                 onClicked: dialog.close()
             }
             }
+        }
+        }
+    }
+    FileDialog {
+        id: saveReportDialog
+        title: qsTr("Save report as")
+        fileMode: FileDialog.SaveFile
+        nameFilters: [qsTr("PDF files (*.pdf)"), qsTr("HTML files (*.html)")]
+        onAccepted: {
+            dialog.pendingSaveFormat = selectedNameFilter.extensions.indexOf("html") >= 0 ? "html" : "pdf"
+            var destination = selectedFile.toString()
+            if (!destination.toLowerCase().endsWith("." + dialog.pendingSaveFormat))
+                destination += "." + dialog.pendingSaveFormat
+            if (!DesktopAppController.removeExistingReportSaveFile(destination))
+                return
+            dialog.pendingSaveUrl = destination
+            dialog.prepare()
         }
     }
 }

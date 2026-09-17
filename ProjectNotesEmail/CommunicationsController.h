@@ -75,6 +75,9 @@ public:
         for (const Artifact &attachment : m_preparation.attachments)
             if (attachment.generatedByApp)
                 names.append(attachment.displayName);
+        for (const Artifact &exported : m_preparation.exports)
+            if (exported.generatedByApp)
+                names.append(exported.displayName);
         return names;
     }
     [[nodiscard]] QString draftIdentity() const { return m_lastResult.draftIdentity; }
