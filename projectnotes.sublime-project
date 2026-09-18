@@ -1,161 +1,79 @@
 {
-	"folders":
-	[
+	"folders": [
 		{
 			"path": ".",
-			"file_exclude_patterns": ["*.sublime-workspace",".gitattributes", "*.pro.user", ".gitignore", "CMakeLists.txt.user*",".*","*.flatpak"],
-			"folder_exclude_patterns": ["build", "__pycache__", ".*", ".flatpak-builder", "flatpak-build", "flatpak-build-remotehost", "graphify-out","flatpak-repo"],
+			"file_exclude_patterns": ["*.sublime-workspace", ".gitattributes", "*.pro.user", ".gitignore", "CMakeLists.txt.user*", ".*", "*.flatpak"],
+			"folder_exclude_patterns": ["build", "__pycache__", ".*", ".flatpak-builder", "flatpak-build", "flatpak-build-remotehost", "graphify-out", "flatpak-repo"],
 			"binary_file_patterns": ["*.so", "*.so.*", "*.a", "*.o", "*.pack", "*.idx", "*.db", "*.dll", "*.dylib", "*.exe", "*.png", "*.jpg", "*.ico", "*.zip", "*.tar", "*.gz", "*.AppImage", "*.flatpak"],
-			"index_exclude_patterns": ["packaging/linux/.flatpak-builder/*", "packaging/linux/flatpak-build/*", "*.db"],
-		},
+			"index_exclude_patterns": ["packaging/linux/.flatpak-builder/*", "packaging/linux/flatpak-build/*", "*.db"]
+		}
 	],
-	"build_systems":
-	[
+	"build_systems": [
 		{
 			"name": "Project Notes",
 			"selector": "source.c++, source.c",
-			"shell_cmd": "cmake --build .",
 			"file_regex": "^(..[^:]*):([0-9]+):?([0-9]+)?:? (.*)$",
-			"windows":
-			{
-				"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build .",
-				"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
+			"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --parallel",
+			"linux": {
+				"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --parallel 1"
 			},
-			"linux":
-			{
-				"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
+			"windows": {
+				"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\sublime-debug\" -G Ninja -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path\\build\\sublime-debug\" --parallel"
 			},
-			"osx":
-			{
-				"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Debug"
-			},
-			"variants":
-			[
+			"variants": [
+				{
+					"name": "Configure Debug",
+					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug",
+					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\sublime-debug\" -G Ninja -DCMAKE_BUILD_TYPE=Debug" }
+				},
 				{
 					"name": "Build Release",
-					"shell_cmd": "cmake --build .",
-					"windows": {
-						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build .",
-						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
-					},
-					"linux": { "working_dir": "$project_path/build/System_Qt_6_11_1_Release" },
-					"osx": { "working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Release" },
+					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/sublime-release\" --parallel",
+					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/sublime-release\" --parallel 1" },
+					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\sublime-release\" -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path\\build\\sublime-release\" --parallel" }
 				},
 				{
 					"name": "Rebuild Debug",
-					"shell_cmd": "cmake --build . --clean-first",
-					"windows": {
-						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . --clean-first",
-						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
-					},
-					"linux": { "working_dir": "$project_path/build/System_Qt_6_11_1-Debug" },
-					"osx": { "working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Debug" },
+					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --clean-first --parallel",
+					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --clean-first --parallel 1" },
+					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\sublime-debug\" -G Ninja -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path\\build\\sublime-debug\" --clean-first --parallel" }
 				},
 				{
 					"name": "Rebuild Release",
-					"shell_cmd": "cmake --build . --clean-first",
-					"windows": {
-						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . --clean-first",
-						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
-					},
-					"linux": { "working_dir": "$project_path/build/System_Qt_6_11_1_Release" },
-					"osx": { "working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Release" },
+					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/sublime-release\" --clean-first --parallel",
+					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/sublime-release\" --clean-first --parallel 1" },
+					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\sublime-release\" -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path\\build\\sublime-release\" --clean-first --parallel" }
 				},
 				{
 					"name": "Run Debug",
-					"shell_cmd": "./ProjectNotesDesktop/projectnotes",
-					"windows":
-					{
-						"shell_cmd": "set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\"",
-						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
-					},
-					"linux":
-					{
-						"shell_cmd": "./ProjectNotesDesktop/projectnotes",
-						"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
-					},
-					"osx":
-					{
-						"shell_cmd": "./ProjectNotesDesktop/\"Project Notes\"",
-						"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Debug"
-					},
+					"shell_cmd": "\"$project_path/build/sublime-debug/ProjectNotesDesktop/projectnotes\"",
+					"windows": { "shell_cmd": "set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"$project_path\\build\\sublime-debug\\ProjectNotesDesktop\\Project Notes.exe\"" },
+					"osx": { "shell_cmd": "open \"$project_path/build/sublime-debug/ProjectNotesDesktop/Project Notes.app\"" }
 				},
 				{
 					"name": "Run Release",
-					"shell_cmd": "./ProjectNotesDesktop/projectnotes",
-					"windows":
-					{
-						"shell_cmd": "set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\"",
-						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
-					},
-					"linux":
-					{
-						"shell_cmd": "./ProjectNotesDesktop/projectnotes",
-						"working_dir": "$project_path/build/Desktop_Qt_6_11_1_Release"
-					},
-					"osx":
-					{
-						"shell_cmd": "open \"./ProjectNotesDesktop/Project Notes.app\"",
-						"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Release"
-					},
+					"shell_cmd": "\"$project_path/build/sublime-release/ProjectNotesDesktop/projectnotes\"",
+					"windows": { "shell_cmd": "set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"$project_path\\build\\sublime-release\\ProjectNotesDesktop\\Project Notes.exe\"" },
+					"osx": { "shell_cmd": "open \"$project_path/build/sublime-release/ProjectNotesDesktop/Project Notes.app\"" }
 				},
 				{
 					"name": "Build & Run Debug",
-					"shell_cmd": "cmake --build .&& ./ProjectNotesDesktop/projectnotes",
-					"windows":
-					{
-						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\"",
-						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
-					},
-					"linux":
-					{
-						"shell_cmd": "cmake --build . && ./ProjectNotesDesktop/projectnotes",
-						"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
-					},
-					"osx":
-					{
-						"shell_cmd": "cmake --build . && ./ProjectNotesDesktop/\"Project Notes\"",
-						"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Debug"
-					},
-				},
-				{
-					"name": "Build & Run Release (TESTMODE)",
-					"shell_cmd": "cmake --build . && ./ProjectNotesDesktop/projectnotes",
-					"windows":
-					{
-						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\"  --test-supabase --developer-profile TESTMODE",
-						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
-					},
-					"linux":
-					{
-						"shell_cmd": "cmake --build . && ./ProjectNotesDesktop/projectnotes  --test-supabase --developer-profile TESTMODE",
-						"working_dir": "$project_path/build/System_Qt_6_11_1_Release"
-					},
-					"osx":
-					{
-						"shell_cmd": "cmake --build . && open \"./ProjectNotesDesktop/Project Notes.app\"",
-						"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Release"
-					},
+					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --parallel && \"$project_path/build/sublime-debug/ProjectNotesDesktop/projectnotes\"",
+					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --parallel 1 && \"$project_path/build/sublime-debug/ProjectNotesDesktop/projectnotes\"" },
+					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\sublime-debug\" -G Ninja -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path\\build\\sublime-debug\" --parallel && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"$project_path\\build\\sublime-debug\\ProjectNotesDesktop\\Project Notes.exe\"" }
 				},
 				{
 					"name": "Build & Run Debug (TESTMODE)",
-					"shell_cmd": "cmake --build. && ./ProjectNotesDesktop/projectnotes --test-supabase --developer-profile TESTMODE",
-					"windows":
-					{
-						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\" --test-supabase --developer-profile TESTMODE",
-						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
-					},
-					"linux":
-					{
-						"shell_cmd": "cmake --build .&& ./ProjectNotesDesktop/projectnotes --test-supabase --developer-profile TESTMODE",
-						"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
-					},
-					"osx":
-					{
-						"shell_cmd": "cmake --build . && ./ProjectNotesDesktop/\"Project Notes\" --test-supabase --developer-profile TESTMODE",
-						"working_dir": "$project_path/build/Qt_6_10_2_for_macOS-Debug"
-					},
+					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --parallel && \"$project_path/build/sublime-debug/ProjectNotesDesktop/projectnotes\" --test-supabase --developer-profile TESTMODE",
+					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-debug\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path/build/sublime-debug\" --parallel 1 && \"$project_path/build/sublime-debug/ProjectNotesDesktop/projectnotes\" --test-supabase --developer-profile TESTMODE" },
+					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\sublime-debug\" -G Ninja -DCMAKE_BUILD_TYPE=Debug && cmake --build \"$project_path\\build\\sublime-debug\" --parallel && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"$project_path\\build\\sublime-debug\\ProjectNotesDesktop\\Project Notes.exe\" --test-supabase --developer-profile TESTMODE" }
 				},
+				{
+					"name": "Build & Run Release (TESTMODE)",
+					"shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/sublime-release\" --parallel && \"$project_path/build/sublime-release/ProjectNotesDesktop/projectnotes\" --test-supabase --developer-profile TESTMODE",
+					"linux": { "shell_cmd": "cmake -S \"$project_path\" -B \"$project_path/build/sublime-release\" -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path/build/sublime-release\" --parallel 1 && \"$project_path/build/sublime-release/ProjectNotesDesktop/projectnotes\" --test-supabase --developer-profile TESTMODE" },
+					"windows": { "shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake -S \"$project_path\" -B \"$project_path\\build\\sublime-release\" -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build \"$project_path\\build\\sublime-release\" --parallel && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"$project_path\\build\\sublime-release\\ProjectNotesDesktop\\Project Notes.exe\" --test-supabase --developer-profile TESTMODE" }
+				}
 			]
 		}
 	]
