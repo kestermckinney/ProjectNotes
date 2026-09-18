@@ -177,6 +177,15 @@ DesktopAppController::DesktopAppController(QObject* parent)
             m_communicationRepository->cancel(m_pendingHandoffRevalidation);
         m_pendingHandoffRevalidation = {};
     });
+    connect(m_communicationsController.get(), &PN::Comm::CommunicationsController::handoffFinished,
+            this, [this](const PN::Comm::EmailHandoffResult &result) {
+        // A Graph draft has a provider-supplied Outlook web link.  Open it as
+        // soon as the complete draft (including its attachments) is ready.
+        if (result.error.code.isEmpty() && result.presentationUrl.isValid()
+            && !QDesktopServices::openUrl(result.presentationUrl))
+            emit errorOccurred(tr("Cannot Open Email Draft"),
+                               tr("The draft was created, but the browser could not open it. Open Outlook Drafts to review the email."));
+    });
     m_recipientSelectionModel = std::make_unique<PN::Comm::RecipientSelectionModel>();
     m_templateEditorModel = std::make_unique<PN::Comm::TemplateEditorModel>(
         QStringLiteral("ProjectNotes") + s_developerProfile);

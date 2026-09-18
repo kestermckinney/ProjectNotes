@@ -54,7 +54,6 @@ public:
     void restoreSession();
     void requestFileFinderConsent();
     void requestEmailDraftConsent();
-    [[nodiscard]] bool emailDraftsGranted() const;
     void startSignIn();
     void signOut();
     // Internal File Finder capability. It is intentionally not a Q_PROPERTY or

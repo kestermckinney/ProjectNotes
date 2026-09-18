@@ -54,7 +54,16 @@ class ScriptedHttpTransport final : public HttpTransport {
 public:
     QList<HttpRequest> requests;
     QList<HttpResponse> responses;
+    QList<HttpRequest> identityRequests;
     void send(HttpRequest request, Completion completion) override {
+        // Account identity is fetched on sign-in independently of the draft
+        // workflow. Keep it out of the scripted draft/upload response queue.
+        if (request.method == "GET" && request.url.path() == "/v1.0/me") {
+            identityRequests.append(request);
+            completion({request.operationId, 200, {},
+                        QByteArrayLiteral("{\"displayName\":\"Test User\",\"mail\":\"user@example.test\"}"), {}});
+            return;
+        }
         requests.append(request);
         HttpResponse response = responses.isEmpty() ? HttpResponse{} : responses.takeFirst();
         response.operationId = request.operationId;
@@ -1205,6 +1214,9 @@ void CommunicationContractsTest::buildsStatusReportWithEvmAndEscapedIssues()
     QVERIFY(document->htmlDocument.indexOf("Later high") < document->htmlDocument.indexOf("Earlier high"));
     QVERIFY(document->htmlDocument.indexOf("Earlier high") < document->htmlDocument.indexOf("Risk &lt;one&gt;"));
     QVERIFY(document->htmlDocument.contains("-16.67%")); QCOMPARE(document->defaultSubject,QStringLiteral("P-1 North - Status Report 09/15/2026"));
+    QVERIFY(document->htmlDocument.contains("Earned Value Project Management Terms"));
+    QVERIFY(document->htmlDocument.contains("table class='ev-table'"));
+    QVERIFY(document->htmlDocument.contains("priority-medium"));
     QVERIFY(document->fileStem.endsWith("Status Report"));
     QCOMPARE(document->pdfLayout.pageSize().id(), QPageSize::Letter);
     QCOMPARE(document->pdfLayout.orientation(), QPageLayout::Portrait);
@@ -1269,7 +1281,7 @@ void CommunicationContractsTest::createsGraphDraftWithoutSend()
 {
     ScriptedHttpTransport transport;
     transport.responses = {
-        {{}, 200, {}, QJsonDocument(QJsonObject{{"access_token", "token"}, {"expires_in", 3600}, {"scope", "Mail.ReadWrite offline_access"}}).toJson(QJsonDocument::Compact), {}},
+        {{}, 200, {}, QJsonDocument(QJsonObject{{"access_token", "token"}, {"expires_in", 3600}, {"scope", "offline_access"}}).toJson(QJsonDocument::Compact), {}},
         {{}, 201, {}, QJsonDocument(QJsonObject{{"id", "draft-id"}, {"webLink", "https://outlook.office.com/draft-id"}}).toJson(QJsonDocument::Compact), {}}
     };
     MicrosoftOAuthManager oauth;
@@ -1318,8 +1330,11 @@ void CommunicationContractsTest::createsGraphDraftWithoutSend()
     QCOMPARE(transport.requests.size(), 2);
 
     ScriptedHttpTransport missingScopeTransport;
-    missingScopeTransport.responses = {{{}, 200, {}, QJsonDocument(QJsonObject{
-        {"access_token", "token"}, {"expires_in", 3600}, {"scope", "Files.Read.All"}}).toJson(QJsonDocument::Compact), {}}};
+    missingScopeTransport.responses = {
+        {{}, 200, {}, QJsonDocument(QJsonObject{
+            {"access_token", "token"}, {"expires_in", 3600}, {"scope", "Files.Read.All"}}).toJson(QJsonDocument::Compact), {}},
+        {{}, 403, {}, QJsonDocument(QJsonObject{{"error", QJsonObject{{"code", "ErrorAccessDenied"}, {"message", "Access is denied."}}}}).toJson(QJsonDocument::Compact), {}}
+    };
     MicrosoftOAuthManager missingScopeOAuth;
     missingScopeOAuth.setHttpTransport(&missingScopeTransport);
     missingScopeOAuth.setSecretStore([](const QString &, QString *) { return QStringLiteral("refresh"); }, {}, {});
@@ -1335,8 +1350,8 @@ void CommunicationContractsTest::createsGraphDraftWithoutSend()
     missingScopeBackend.handoff(request, [&missingScopeError](EmailHandoffResult result) {
         missingScopeError = result.error.code;
     });
-    QCOMPARE(missingScopeError, QStringLiteral("graph-mail-scope-required"));
-    QCOMPARE(missingScopeTransport.requests.size(), 1);
+    QCOMPARE(missingScopeError, QStringLiteral("ErrorAccessDenied"));
+    QCOMPARE(missingScopeTransport.requests.size(), 2);
 }
 
 void CommunicationContractsTest::retainsUncertainOutcomeForLostGraphDraftResponse()

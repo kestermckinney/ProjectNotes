@@ -22,7 +22,6 @@ Dialog {
     property var recipientModel: null
     readonly property var office365: DesktopAppController.office365SettingsModel
     readonly property bool graphDraftReady: DesktopAppController.preferredEmailBackend === "graph"
-                                         && office365 && office365.authenticated && office365.emailDraftsGranted
     readonly property bool reviewing: controller && controller.stageName === "reviewing" && !controller.busy
 
     component SectionCard: Rectangle {
@@ -90,13 +89,18 @@ Dialog {
                     }
                     Label {
                         Layout.fillWidth: true
-                        text: dialog.graphDraftReady
-                            ? qsTr("A draft will be created in Microsoft 365%1. It will not be sent.").arg(dialog.office365.accountLabel === "" ? "" : " (" + dialog.office365.accountLabel + ")")
-                            : qsTr("Email delivery is not configured in this preview.")
+                        text: dialog.graphDraftReady ? qsTr("A draft will be created in Microsoft 365%1. It will not be sent.")
+                            .arg(dialog.office365 && dialog.office365.accountLabel !== "" ? " (" + dialog.office365.accountLabel + ")" : "")
+                            : qsTr("Your configured email client will open with the meeting notes and selected recipients.")
                         color: Theme.text3; wrapMode: Text.Wrap
                     }
                 }
             }
+        }
+        ProgressBar {
+            Layout.fillWidth: true
+            visible: dialog.controller && (dialog.controller.busy || dialog.controller.stageName === "editing")
+            indeterminate: true
         }
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
         RowLayout {
@@ -108,13 +112,9 @@ Dialog {
             }
             Button { text: qsTr("Cancel"); onClicked: dialog.close() }
             Button {
-                visible: dialog.graphDraftReady; text: qsTr("Create Microsoft 365 draft")
-                enabled: dialog.reviewing
+                text: qsTr("Send Email")
+                enabled: dialog.reviewing && dialog.recipientModel && dialog.recipientModel.selectedRecipientCount > 0
                 onClicked: DesktopAppController.handoffPreparedReview()
-            }
-            Button {
-                visible: dialog.controller && dialog.controller.stageName === "completed" && dialog.controller.presentationUrl.toString() !== ""
-                text: qsTr("Open draft in Outlook"); onClicked: Qt.openUrlExternally(dialog.controller.presentationUrl)
             }
         }
     }

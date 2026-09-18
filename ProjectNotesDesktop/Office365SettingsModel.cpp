@@ -74,11 +74,6 @@ QString Office365SettingsModel::accountLabel() const
     return m_service ? m_service->account().label : QString();
 }
 
-bool Office365SettingsModel::emailDraftsGranted() const
-{
-    return m_service && m_service->emailDraftsGranted();
-}
-
 void Office365SettingsModel::startSignIn()
 {
     // Keep this identical to the formerly separate draft-consent action: it

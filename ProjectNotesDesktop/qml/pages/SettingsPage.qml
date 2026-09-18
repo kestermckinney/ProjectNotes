@@ -358,11 +358,8 @@ Item {
 
                     Text {
                         Layout.fillWidth: true
-                        text: page._office365 && page._office365.emailDraftsGranted
-                              ? qsTr("Email draft creation is authorized.")
-                              : qsTr("Signing in authorizes Outlook draft creation. It never grants permission to send mail or manage calendars.")
-                        color: page._office365 && page._office365.emailDraftsGranted
-                               ? Theme.green : Theme.text3
+                        text: qsTr("Signing in requests Outlook draft creation. It never requests permission to send mail or manage calendars.")
+                        color: Theme.text3
                         font.pixelSize: Theme.fontSm
                         wrapMode: Text.WordWrap
                     }

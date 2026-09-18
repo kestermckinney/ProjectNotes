@@ -24,7 +24,6 @@ class Office365SettingsModel final : public QObject
     Q_PROPERTY(QString userCode READ userCode NOTIFY changed)
     Q_PROPERTY(QUrl verificationUrl READ verificationUrl NOTIFY changed)
     Q_PROPERTY(QString accountLabel READ accountLabel NOTIFY changed)
-    Q_PROPERTY(bool emailDraftsGranted READ emailDraftsGranted NOTIFY changed)
 
 public:
     explicit Office365SettingsModel(FileFinderService *fileFinder,
@@ -41,7 +40,6 @@ public:
     QString userCode() const;
     QUrl verificationUrl() const;
     QString accountLabel() const;
-    bool emailDraftsGranted() const;
 
     Q_INVOKABLE void startSignIn();
     Q_INVOKABLE void requestEmailDraftConsent();

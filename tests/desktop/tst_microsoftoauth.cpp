@@ -76,12 +76,16 @@ void MicrosoftOAuthManagerTest::facadeAddsAuthorizationWithoutExposingToken()
         [&persistedScopes](const QString &account) { return persistedScopes.value(account); },
         [&persistedScopes](const QString &account, const QStringList &scopes) { persistedScopes.insert(account, scopes); },
         [&persistedScopes](const QString &account) { persistedScopes.remove(account); });
+    persistedScopes.insert(QStringLiteral("tenant/client"),
+                           {QStringLiteral("offline_access"), QStringLiteral("User.Read"),
+                            QStringLiteral("Mail.ReadWrite")});
     manager.configure("tenant", "client");
     Office365Service service;
     service.setOAuthManager(&manager);
     service.setHttpTransport(&transport);
     manager.restoreSession();
     QVERIFY(service.account().authenticated);
+    QVERIFY(transport.requests.constFirst().body.contains("Mail.ReadWrite"));
     QCOMPARE(service.account().generation, manager.sessionGeneration());
     QCOMPARE(service.account().grantedScopes,
              QStringList({QStringLiteral("offline_access"), QStringLiteral("User.Read"),
@@ -200,7 +204,6 @@ void MicrosoftOAuthManagerTest::emailDraftConsentPreservesFileFinderSession()
 
     service.requestEmailDraftConsent();
     QVERIFY(service.account().authenticated);
-    QVERIFY(!service.emailDraftsGranted());
     QVERIFY(service.account().grantedScopes.contains(
         QStringLiteral("https://graph.microsoft.com/Files.Read.All")));
 

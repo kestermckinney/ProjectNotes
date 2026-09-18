@@ -450,10 +450,12 @@ QString MicrosoftOAuthManager::requestedScopes() const
 
 QString MicrosoftOAuthManager::refreshScopes() const
 {
-    // A refresh-token request must retain the scopes already granted while a
-    // new capability is waiting for interactive consent.  Asking for the new
-    // scopes here could otherwise invalidate a working File Finder session.
-    if (m_scopeChangePending && !m_grantedScopes.isEmpty())
+    // A refresh-token request must retain the provider-confirmed scopes.  On
+    // restart there is no requested feature yet, so falling back to File
+    // Finder's defaults would silently replace a saved Mail.ReadWrite grant.
+    // A separate feature can still request changed scopes through its normal
+    // interactive-consent flow.
+    if (!m_grantedScopes.isEmpty())
         return m_grantedScopes.join(u' ');
     return requestedScopes();
 }

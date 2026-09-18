@@ -33,7 +33,7 @@ void Office365Service::setOAuthManager(MicrosoftOAuthManager *manager)
                         m_identityGeneration = 0;
                     }
                     emit accountChanged();
-                    if (!token.isEmpty() && emailDraftsGranted())
+                    if (!token.isEmpty())
                         refreshIdentity();
                 });
         connect(m_oauth, &MicrosoftOAuthManager::stateChanged, this,
@@ -127,16 +127,6 @@ void Office365Service::requestEmailDraftConsent()
     }
 }
 
-bool Office365Service::emailDraftsGranted() const
-{
-    if (!m_oauth)
-        return false;
-    const QStringList scopes = m_oauth->grantedScopeList();
-    // Creating a message draft requires Mail.ReadWrite. User.Read is requested
-    // during normal sign-in only to show a friendly account label; a failed or
-    // delayed profile lookup must not block a valid draft handoff.
-    return scopes.contains(QStringLiteral("Mail.ReadWrite"));
-}
 void Office365Service::startSignIn() { if (m_oauth) m_oauth->startSignIn(); }
 void Office365Service::signOut() { if (m_oauth) m_oauth->signOut(); }
 
@@ -151,7 +141,7 @@ Office365Account Office365Service::account() const
 
 void Office365Service::refreshIdentity()
 {
-    if (!m_oauth || !emailDraftsGranted())
+    if (!m_oauth)
         return;
     const quint64 generation = m_oauth->sessionGeneration();
     HttpRequest request;

@@ -17,6 +17,16 @@
 namespace PN::Comm {
 namespace {
 bool unsafeHeader(const QString &value) { return value.contains(u'\r') || value.contains(u'\n'); }
+ServiceError graphFailure(const HttpResponse &response, const QString &fallback, OutcomeCertainty certainty)
+{
+    const QJsonObject error = QJsonDocument::fromJson(response.body).object()
+                                  .value(QStringLiteral("error")).toObject();
+    const QString code = error.value(QStringLiteral("code")).toString();
+    const QString message = error.value(QStringLiteral("message")).toString();
+    return {code.isEmpty() ? (response.error.code.isEmpty() ? fallback : response.error.code) : code,
+            message.isEmpty() ? response.error.displayText : message,
+            RetryKind::ReviewAndRetry, certainty};
+}
 OutcomeCertainty draftCreateFailureCertainty(const HttpResponse &response)
 {
     // A transport failure after the POST was dispatched gives no reliable answer
@@ -85,9 +95,6 @@ void GraphEmailBackend::handoff(EmailRequest request, Completion completion)
     if (m_cancelled.remove(request.operationId)) { fail(QStringLiteral("operation-cancelled")); return; }
     const Office365Account account = m_service->account();
     if (request.accountGeneration != account.generation) { fail(QStringLiteral("account-generation-changed")); return; }
-    if (!account.grantedScopes.contains(QStringLiteral("Mail.ReadWrite"))) {
-        fail(QStringLiteral("graph-mail-scope-required")); return;
-    }
     if (unsafeHeader(request.subject)) { fail(QStringLiteral("email-header-injection")); return; }
     for (const EmailAddress &recipient : request.recipients)
         if (unsafeHeader(recipient.address) || recipient.address.contains(u',') || recipient.address.contains(u';') ||
@@ -112,7 +119,7 @@ void GraphEmailBackend::handoff(EmailRequest request, Completion completion)
     m_service->sendGraphRequest(std::move(create), [this, request = std::move(request), completion = std::move(completion)](HttpResponse response) mutable {
         EmailHandoffResult result; result.operationId = request.operationId;
         if (m_cancelled.remove(request.operationId)) { result.error = {"operation-cancelled", {}, RetryKind::None, OutcomeCertainty::Uncertain}; completion(result); return; }
-        if (!response.error.code.isEmpty() || response.statusCode != 201) { result.error = {response.error.code.isEmpty() ? "graph-draft-create-failed" : response.error.code, {}, RetryKind::ReviewAndRetry, draftCreateFailureCertainty(response)}; completion(result); return; }
+        if (!response.error.code.isEmpty() || response.statusCode != 201) { result.error = graphFailure(response, QStringLiteral("graph-draft-create-failed"), draftCreateFailureCertainty(response)); completion(result); return; }
         const QJsonObject draftObject = QJsonDocument::fromJson(response.body).object();
         const QString draftId = draftObject.value("id").toString();
         if (draftId.isEmpty()) { result.error = {"graph-draft-id-missing", {}, RetryKind::ReviewAndRetry, OutcomeCertainty::Certain}; completion(result); return; }
@@ -134,7 +141,7 @@ void GraphEmailBackend::handoff(EmailRequest request, Completion completion)
                     EmailHandoffResult failed; failed.operationId = request.operationId; failed.draftIdentity = draftId; failed.presentationUrl = presentationUrl;
                     if (m_cancelled.remove(request.operationId)) { failed.error = {"operation-cancelled", {}, RetryKind::None, OutcomeCertainty::Uncertain}; completion(failed); return; }
                     const QString uploadUrl = QJsonDocument::fromJson(response.body).object().value("uploadUrl").toString();
-                    if (!response.error.code.isEmpty() || uploadUrl.isEmpty()) { failed.error = {response.error.code.isEmpty() ? "graph-upload-session-failed" : response.error.code, {}, RetryKind::ReviewAndRetry, OutcomeCertainty::Uncertain}; completion(failed); return; }
+                    if (!response.error.code.isEmpty() || uploadUrl.isEmpty()) { failed.error = graphFailure(response, QStringLiteral("graph-upload-session-failed"), OutcomeCertainty::Uncertain); completion(failed); return; }
                     auto putChunk = std::make_shared<std::function<void(qint64)>>();
                     *putChunk = [this, request, completion, draftId, presentationUrl, attachment, index, upload, putChunk, uploadUrl, info](qint64 offset) mutable {
                         QFile file(attachment.absolutePath);
@@ -148,7 +155,7 @@ void GraphEmailBackend::handoff(EmailRequest request, Completion completion)
                         put.body = bytes;
                         m_service->sendUploadRequest(std::move(put), [this, request, putChunk, offset, bytes, info, upload, index, completion, failed](HttpResponse response) mutable {
                             if (m_cancelled.remove(request.operationId)) { auto result = failed; result.error = {"operation-cancelled", {}, RetryKind::None, OutcomeCertainty::Uncertain}; completion(result); return; }
-                            if (!response.error.code.isEmpty() || (response.statusCode != 200 && response.statusCode != 201 && response.statusCode != 202)) { auto result = failed; result.error = {response.error.code.isEmpty() ? "graph-upload-chunk-failed" : response.error.code, {}, RetryKind::ReviewAndRetry, OutcomeCertainty::Uncertain}; completion(result); return; }
+                            if (!response.error.code.isEmpty() || (response.statusCode != 200 && response.statusCode != 201 && response.statusCode != 202)) { auto result = failed; result.error = graphFailure(response, QStringLiteral("graph-upload-chunk-failed"), OutcomeCertainty::Uncertain); completion(result); return; }
                             const qint64 next = offset + bytes.size();
                             if (next >= info.size()) (*upload)(index + 1); else (*putChunk)(next);
                         });
@@ -166,7 +173,7 @@ void GraphEmailBackend::handoff(EmailRequest request, Completion completion)
             add.headers.insert("Content-Type", "application/json"); add.body = QJsonDocument(payload).toJson(QJsonDocument::Compact);
             m_service->sendGraphRequest(std::move(add), [this, request, upload, index, completion, next](HttpResponse response) mutable {
                 if (m_cancelled.remove(request.operationId)) { auto cancelled = next; cancelled.error = {"operation-cancelled", {}, RetryKind::None, OutcomeCertainty::Uncertain}; completion(cancelled); return; }
-                if (!response.error.code.isEmpty() || response.statusCode != 201) { auto failed = next; failed.error = {response.error.code.isEmpty() ? "graph-attachment-upload-failed" : response.error.code, {}, RetryKind::ReviewAndRetry, OutcomeCertainty::Uncertain}; completion(failed); return; }
+                if (!response.error.code.isEmpty() || response.statusCode != 201) { auto failed = next; failed.error = graphFailure(response, QStringLiteral("graph-attachment-upload-failed"), OutcomeCertainty::Uncertain); completion(failed); return; }
                 (*upload)(index + 1);
             });
         };
