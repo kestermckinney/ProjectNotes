@@ -120,9 +120,15 @@ void ReportBuildersTest::buildsStatusReportWithEscapedValuesAndLetterLayout()
     QVERIFY(document->htmlDocument.contains(QStringLiteral("Risk &lt;one&gt;")));
     QVERIFY(!document->htmlDocument.contains(QStringLiteral("Internal issue")));
     QVERIFY(document->htmlDocument.contains(QStringLiteral("-16.67%")));
-    QVERIFY(document->htmlDocument.contains(QStringLiteral("<th>Date:</th><td>09/15/2026</td>")));
+    QVERIFY(document->htmlDocument.contains(QStringLiteral("<td class='cell-label'>Date:</td><td class='cell-value'>09/15/2026</td>")));
     QVERIFY(document->htmlDocument.contains(QStringLiteral("Report Date: 09/15/2026")));
     QVERIFY(document->htmlDocument.contains(QStringLiteral("Created by Project Notes")));
+    // The email body must carry the same styling as the exported report.
+    QVERIFY(document->emailFragment.startsWith(QStringLiteral("<style>")));
+    QVERIFY(document->emailFragment.contains(QStringLiteral("background:#DCE6F1")));
+    QVERIFY(document->emailFragment.contains(QStringLiteral(".ev-columns{display:flex")));
+    QVERIFY(document->htmlDocument.contains(document->emailFragment));
+    QVERIFY(!document->plainText.contains(QStringLiteral("font-family")));
     QCOMPARE(document->defaultSubject, QStringLiteral("P-1 North - Status Report 09/15/2026"));
     QCOMPARE(document->pdfLayout.pageSize().id(), QPageSize::Letter);
     QCOMPARE(document->pdfLayout.orientation(), QPageLayout::Portrait);
