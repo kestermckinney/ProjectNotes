@@ -356,46 +356,15 @@ Item {
                         }
                     }
 
-                    Rectangle {
+                    Text {
                         Layout.fillWidth: true
-                        implicitHeight: emailDraftConsent.implicitHeight + 20
-                        radius: Theme.radiusSm
-                        color: Theme.surface2
-                        border.color: Theme.border
-                        ColumnLayout {
-                            id: emailDraftConsent
-                            anchors.fill: parent
-                            anchors.margins: 10
-                            spacing: 6
-                            Text {
-                                Layout.fillWidth: true
-                                text: page._office365 && page._office365.emailDraftsGranted
-                                      ? qsTr("Email draft creation is authorized.")
-                                      : qsTr("Email draft creation needs separate Microsoft consent.")
-                                color: page._office365 && page._office365.emailDraftsGranted
-                                       ? Theme.green : Theme.text2
-                                font.pixelSize: Theme.fontBody
-                                wrapMode: Text.WordWrap
-                            }
-                            Text {
-                                Layout.fillWidth: true
-                                text: qsTr("This requests only your basic profile and permission to create drafts; it never requests permission to send mail or manage calendars.")
-                                color: Theme.text3
-                                font.pixelSize: Theme.fontSm
-                                wrapMode: Text.WordWrap
-                            }
-                            Button {
-                                implicitHeight: 28
-                                text: qsTr("Enable email drafts")
-                                visible: !page._office365 || !page._office365.emailDraftsGranted
-                                enabled: page._office365 && !page._office365.authenticationInProgress
-                                onClicked: {
-                                    officeTenantField.commit()
-                                    officeClientField.commit()
-                                    page._office365.requestEmailDraftConsent()
-                                }
-                            }
-                        }
+                        text: page._office365 && page._office365.emailDraftsGranted
+                              ? qsTr("Email draft creation is authorized.")
+                              : qsTr("Signing in authorizes Outlook draft creation. It never grants permission to send mail or manage calendars.")
+                        color: page._office365 && page._office365.emailDraftsGranted
+                               ? Theme.green : Theme.text3
+                        font.pixelSize: Theme.fontSm
+                        wrapMode: Text.WordWrap
                     }
                 }
             }

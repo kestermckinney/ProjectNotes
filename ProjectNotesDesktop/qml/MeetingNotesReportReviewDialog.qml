@@ -38,11 +38,14 @@ Dialog {
     property var selectedCompanyIds: []
 
     readonly property var office365: DesktopAppController.office365SettingsModel
-    readonly property bool graphDraftReady: DesktopAppController.preferredEmailBackend === "graph"
-                                         && office365 && office365.emailDraftsGranted
-                                         && office365.accountLabel !== ""
+    readonly property bool graphSelected: DesktopAppController.preferredEmailBackend === "graph"
+    readonly property bool graphDraftReady: graphSelected
+                                         && office365 && office365.authenticated && office365.emailDraftsGranted
     readonly property bool reviewing: controller && controller.stageName === "reviewing" && !controller.busy
     readonly property bool prepared: reviewing && preparedKey === reportKey(emailMode)
+    readonly property bool hasSelectedRecipients: recipientModel && recipientModel.selectedRecipientCount > 0
+    readonly property bool emailActionEnabled: prepared && hasSelectedRecipients && !controller.busy
+                                             && (!graphSelected || graphDraftReady)
     readonly property var workflowOptions: [
         { label: qsTr("Status Report"), value: "Status Report", workflow: "status-report" },
         { label: qsTr("Tracker Items Report"), value: "Tracker Items", workflow: "tracker-items-report" },
@@ -215,6 +218,17 @@ Dialog {
         var count = recipientModel ? recipientModel.selectedRecipientCount : 0
         if (!prepared) return qsTr("Preparing %1 and its recipient options…").arg(report)
         return qsTr("Create a Microsoft 365 draft of %1 for %2 selected recipient(s), as %3.").arg(report).arg(count).arg(modeLabel(emailMode))
+    }
+    function emailActionHint() {
+        if (delivery !== "email" || emailActionEnabled) return ""
+        if (controller && controller.busy) return qsTr("Preparing the report…")
+        if (!prepared) return qsTr("Wait for the report and recipient options to finish loading.")
+        if (!hasSelectedRecipients) return qsTr("Select at least one recipient with an email address to create the draft.")
+        if (graphSelected && (!office365 || !office365.authenticated))
+            return qsTr("Sign in to Microsoft 365 to create a draft.")
+        if (graphSelected && (!office365 || !office365.emailDraftsGranted))
+            return qsTr("Microsoft 365 signed in, but this Entra application was not granted Microsoft Graph Mail.ReadWrite. Add that delegated permission (and grant admin consent if required), then sign in again.")
+        return ""
     }
 
     onWorkflowChanged: {
@@ -421,8 +435,10 @@ Dialog {
                             Label {
                                 Layout.fillWidth: true
                                 text: dialog.graphDraftReady
-                                    ? qsTr("A draft will be created in the verified Microsoft 365 account%1. It will not be sent.")
+                                    ? qsTr("A draft will be created in Microsoft 365%1. It will not be sent.")
                                         .arg(dialog.office365.accountLabel === "" ? "" : " (" + dialog.office365.accountLabel + ")")
+                                    : dialog.graphSelected
+                                      ? qsTr("Microsoft 365 is selected, but draft access is not ready. In Settings > Office 365 Integration, sign in and grant permission to create drafts.")
                                     : qsTr("Your configured email client will open with this report and the selected recipients.")
                                 color: Theme.text3; wrapMode: Text.Wrap
                             }
@@ -434,7 +450,17 @@ Dialog {
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
         RowLayout {
             Layout.fillWidth: true; Layout.margins: 14; spacing: 10
-            Label { Layout.fillWidth: true; text: dialog.deliverySummary(); color: Theme.text2; wrapMode: Text.Wrap }
+            Label {
+                Layout.fillWidth: true; color: Theme.text2; wrapMode: Text.Wrap
+                text: dialog.controller && dialog.controller.stageName === "completed" && dialog.graphSelected
+                    ? qsTr("Microsoft 365 draft created. It has not been sent.")
+                    : dialog.deliverySummary()
+            }
+            Label {
+                visible: dialog.emailActionHint() !== ""
+                Layout.fillWidth: true; color: Theme.amber; wrapMode: Text.Wrap
+                text: dialog.emailActionHint()
+            }
             Button { text: qsTr("Cancel"); onClicked: dialog.close() }
             Button {
                 visible: dialog.delivery === "save"; text: qsTr("Save As…")
@@ -443,9 +469,8 @@ Dialog {
             }
             Button {
                 visible: dialog.delivery === "email"
-                text: dialog.graphDraftReady ? qsTr("Create Microsoft 365 draft") : qsTr("Send email")
-                enabled: dialog.prepared && dialog.recipientModel
-                         && dialog.recipientModel.selectedRecipientCount > 0 && !dialog.controller.busy
+                text: dialog.graphSelected ? qsTr("Create Microsoft 365 draft") : qsTr("Send email")
+                enabled: dialog.emailActionEnabled
                 onClicked: DesktopAppController.handoffPreparedReview()
             }
             Button {

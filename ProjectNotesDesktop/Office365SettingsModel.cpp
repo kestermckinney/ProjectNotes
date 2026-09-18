@@ -81,8 +81,10 @@ bool Office365SettingsModel::emailDraftsGranted() const
 
 void Office365SettingsModel::startSignIn()
 {
-    if (m_fileFinder)
-        m_fileFinder->startOffice365SignIn();
+    // Keep this identical to the formerly separate draft-consent action: it
+    // requests only the Graph capabilities needed to create a draft, never
+    // Mail.Send. File Finder requests its own scopes when that feature is used.
+    requestEmailDraftConsent();
 }
 
 void Office365SettingsModel::requestEmailDraftConsent()

@@ -22,8 +22,7 @@ Dialog {
     property var recipientModel: null
     readonly property var office365: DesktopAppController.office365SettingsModel
     readonly property bool graphDraftReady: DesktopAppController.preferredEmailBackend === "graph"
-                                         && office365 && office365.emailDraftsGranted
-                                         && office365.accountLabel !== ""
+                                         && office365 && office365.authenticated && office365.emailDraftsGranted
     readonly property bool reviewing: controller && controller.stageName === "reviewing" && !controller.busy
 
     component SectionCard: Rectangle {
@@ -92,7 +91,7 @@ Dialog {
                     Label {
                         Layout.fillWidth: true
                         text: dialog.graphDraftReady
-                            ? qsTr("A draft will be created in the verified Microsoft 365 account%1. It will not be sent.").arg(dialog.office365.accountLabel === "" ? "" : " (" + dialog.office365.accountLabel + ")")
+                            ? qsTr("A draft will be created in Microsoft 365%1. It will not be sent.").arg(dialog.office365.accountLabel === "" ? "" : " (" + dialog.office365.accountLabel + ")")
                             : qsTr("Email delivery is not configured in this preview.")
                         color: Theme.text3; wrapMode: Text.Wrap
                     }

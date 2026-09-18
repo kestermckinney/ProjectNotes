@@ -132,8 +132,10 @@ bool Office365Service::emailDraftsGranted() const
     if (!m_oauth)
         return false;
     const QStringList scopes = m_oauth->grantedScopeList();
-    return scopes.contains(QStringLiteral("User.Read"))
-        && scopes.contains(QStringLiteral("Mail.ReadWrite"));
+    // Creating a message draft requires Mail.ReadWrite. User.Read is requested
+    // during normal sign-in only to show a friendly account label; a failed or
+    // delayed profile lookup must not block a valid draft handoff.
+    return scopes.contains(QStringLiteral("Mail.ReadWrite"));
 }
 void Office365Service::startSignIn() { if (m_oauth) m_oauth->startSignIn(); }
 void Office365Service::signOut() { if (m_oauth) m_oauth->signOut(); }
