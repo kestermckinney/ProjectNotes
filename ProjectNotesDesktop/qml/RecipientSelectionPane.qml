@@ -279,9 +279,23 @@ ColumnLayout {
             height: matchesSearch ? implicitHeight : 0
             spacing: 8
             CheckBox {
+                id: recipientCheck
                 checked: model.selected
                 Accessible.name: qsTr("Include %1").arg(model.name)
                 onToggled: if (pane.recipientModel) pane.recipientModel.setSelected(model.personId, checked)
+                indicator: Rectangle {
+                    implicitWidth: 16; implicitHeight: 16
+                    radius: 4
+                    x: recipientCheck.leftPadding
+                    y: recipientCheck.height / 2 - height / 2
+                    color: recipientCheck.checked ? Theme.accent : Theme.surface
+                    border.color: recipientCheck.checked ? Theme.accent : Theme.border
+                    MaterialIcon {
+                        anchors.centerIn: parent
+                        visible: recipientCheck.checked
+                        name: "check"; size: 12; color: "white"
+                    }
+                }
             }
             ColumnLayout {
                 Layout.fillWidth: true
