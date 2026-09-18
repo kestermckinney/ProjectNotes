@@ -20,6 +20,7 @@
 #include <QUuid>
 
 #include "DesktopAppController.h"
+#include "ProjectNotesEmail/RecipientSelectionModel.h"
 
 namespace {
 
@@ -303,6 +304,24 @@ private slots:
         QVERIFY2(c->saveTeamMember(row, memberId, "Analyst", true),
                  qPrintable(c->lastSaveError()));
         QCOMPARE(c->projectTeamMembersModel()->rowCount(), before + 1);
+    }
+
+    void test_10b_sendNotesLoadsRecipientsWithoutEmailBackend()
+    {
+        const QString previousManager = c->projectManagerId();
+        c->setProjectManagerId(QString());
+        QVERIFY(c->prepareMeetingNotesReview(m_projectId, m_noteId));
+        QObject *review = c->communicationsController();
+        QTRY_VERIFY_WITH_TIMEOUT(review->property("stageName").toString() != QStringLiteral("editing"), 5000);
+        QVERIFY2(review->property("stageName").toString() == QStringLiteral("reviewing"),
+                 qPrintable(review->property("diagnostic").toString()));
+        auto *recipients = qobject_cast<PN::Comm::RecipientSelectionModel *>(c->recipientSelectionModel());
+        QVERIFY(recipients);
+        QVERIFY(recipients->rowCount() >= 2);
+        QCOMPARE(recipients->selectedRecipientCount(), 1);
+        QCOMPARE(recipients->toRecipientCount(), 1);
+        QCOMPARE(recipients->ccRecipientCount(), 0);
+        c->setProjectManagerId(previousManager);
     }
 
     void test_11_projectLocations()

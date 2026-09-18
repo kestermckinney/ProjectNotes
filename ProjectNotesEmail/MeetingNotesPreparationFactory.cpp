@@ -66,21 +66,35 @@ std::optional<MeetingNotesReview> MeetingNotesPreparationFactory::create(
         document->defaultSubject = applied.subject;
     }
 
-    // This is the legacy Send Meeting Notes default: the entire project team.
-    // RecipientSelectionModel retains this resolution for explicit review and
-    // any user-selected To/Cc/Bcc overrides.
+    // List this note's attendees together with the remaining project team.
+    // Only attendees start selected; absent team members default to CC.
     AudienceRule defaultAudience;
-    defaultAudience.source = PeopleSource::ProjectTeam;
+    defaultAudience.source = PeopleSource::ChosenPeople;
     defaultAudience.companyFilter = CompanyFilter::All;
-    defaultAudience.excludeProjectManager = false;
+    defaultAudience.excludeProjectManager = true;
+    const auto selectedNote = std::find_if(snapshot.notes.cbegin(), snapshot.notes.cend(), [&source](const SnapshotNote &note) {
+        return note.id == source.noteIds.constFirst();
+    });
+    if (selectedNote != snapshot.notes.cend())
+        defaultAudience.chosenPersonIds = selectedNote->attendeeIds;
+    for (const SnapshotPerson &person : snapshot.people)
+        if (person.projectTeamMember && !defaultAudience.chosenPersonIds.contains(person.id))
+            defaultAudience.chosenPersonIds.append(person.id);
     review.audience = resolveAudience(snapshot, defaultAudience);
+    for (SnapshotPerson &person : review.audience.people) {
+        person.meetingAttendee = selectedNote != snapshot.notes.cend()
+            && selectedNote->attendeeIds.contains(person.id);
+        review.audience.initialOverrides.append({person.id, person.meetingAttendee,
+                                                person.meetingAttendee ? RecipientRole::To : RecipientRole::Cc});
+    }
     review.validation.issues += review.audience.validation.issues;
 
-    const RecipientResolution recipients = applyRecipientOverrides(review.audience, {});
+    const RecipientResolution recipients = applyRecipientOverrides(review.audience, review.audience.initialOverrides);
     review.validation.issues += recipients.validation.issues;
     if (!review.validation.ok())
         return std::nullopt;
 
+    review.preparation.operationId = QUuid::createUuid();
     review.preparation.source = std::move(source);
     review.preparation.backend = backend;
     review.preparation.mode = mode;

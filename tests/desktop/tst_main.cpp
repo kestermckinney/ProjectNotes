@@ -34,6 +34,7 @@ int main(int argc, char* argv[])
         QStringLiteral("projectnotes-qmltest-") + QUuid::createUuid().toString(QUuid::WithoutBraces));
     qputenv("XDG_DATA_HOME", testDataHome.toUtf8());
     qputenv("XDG_CONFIG_HOME", testDataHome.toUtf8());
+    qputenv("XDG_CACHE_HOME", testDataHome.toUtf8());
     // QApplication (Widgets) — matches the shipping app; core surfaces some
     // errors through QMessageBox (guarded off at runtime). Platform is forced to
     // offscreen so the whole suite runs headless.

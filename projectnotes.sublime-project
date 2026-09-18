@@ -14,7 +14,7 @@
 		{
 			"name": "Project Notes",
 			"selector": "source.c++, source.c",
-			"shell_cmd": "cmake --build . --parallel 1 ",
+			"shell_cmd": "cmake --build .",
 			"file_regex": "^(..[^:]*):([0-9]+):?([0-9]+)?:? (.*)$",
 			"windows":
 			{
@@ -33,7 +33,7 @@
 			[
 				{
 					"name": "Build Release",
-					"shell_cmd": "cmake --build . --parallel 1 ",
+					"shell_cmd": "cmake --build .",
 					"windows": {
 						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build .",
 						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
@@ -43,7 +43,7 @@
 				},
 				{
 					"name": "Rebuild Debug",
-					"shell_cmd": "cmake --build . --clean-first --parallel 1 ",
+					"shell_cmd": "cmake --build . --clean-first",
 					"windows": {
 						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . --clean-first",
 						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Debug"
@@ -53,7 +53,7 @@
 				},
 				{
 					"name": "Rebuild Release",
-					"shell_cmd": "cmake --build . --clean-first --parallel 1 ",
+					"shell_cmd": "cmake --build . --clean-first",
 					"windows": {
 						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . --clean-first",
 						"working_dir": "$project_path/build/Desktop_Qt_6_10_0_MSVC2022_64bit-Release"
@@ -101,7 +101,7 @@
 				},
 				{
 					"name": "Build & Run Debug",
-					"shell_cmd": "cmake --build . --parallel 1 && ./ProjectNotesDesktop/projectnotes",
+					"shell_cmd": "cmake --build .&& ./ProjectNotesDesktop/projectnotes",
 					"windows":
 					{
 						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\"",
@@ -128,7 +128,7 @@
 					},
 					"linux":
 					{
-						"shell_cmd": "cmake --build . --parallel 1  && ./ProjectNotesDesktop/projectnotes  --test-supabase --developer-profile TESTMODE",
+						"shell_cmd": "cmake --build . && ./ProjectNotesDesktop/projectnotes  --test-supabase --developer-profile TESTMODE",
 						"working_dir": "$project_path/build/System_Qt_6_11_1_Release"
 					},
 					"osx":
@@ -139,7 +139,7 @@
 				},
 				{
 					"name": "Build & Run Debug (TESTMODE)",
-					"shell_cmd": "cmake --build --parallel 1 . && ./ProjectNotesDesktop/projectnotes --test-supabase --developer-profile TESTMODE",
+					"shell_cmd": "cmake --build. && ./ProjectNotesDesktop/projectnotes --test-supabase --developer-profile TESTMODE",
 					"windows":
 					{
 						"shell_cmd": "call \"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && cmake --build . && set \"PATH=C:\\Qt\\6.10.0\\msvc2022_64\\bin;%PATH%\" && \"ProjectNotesDesktop\\Project Notes.exe\" --test-supabase --developer-profile TESTMODE",
@@ -147,7 +147,7 @@
 					},
 					"linux":
 					{
-						"shell_cmd": "cmake --build . --parallel 1 && ./ProjectNotesDesktop/projectnotes --test-supabase --developer-profile TESTMODE",
+						"shell_cmd": "cmake --build .&& ./ProjectNotesDesktop/projectnotes --test-supabase --developer-profile TESTMODE",
 						"working_dir": "$project_path/build/System_Qt_6_11_1-Debug"
 					},
 					"osx":

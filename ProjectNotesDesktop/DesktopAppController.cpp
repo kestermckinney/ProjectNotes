@@ -679,8 +679,15 @@ bool DesktopAppController::prepareMeetingNotesReview(const QString& projectId, c
         // This review path still registers no backend and therefore cannot send.
         QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
         const PN::Comm::BackendId backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
+        // Send Notes has exactly one workflow template. Resolve it here rather
+        // than asking at delivery time so its configured subject and body are
+        // always applied to the prepared note.
+        self->m_templateEditorModel->setWorkflow(QStringLiteral("send-meeting-notes"));
+        const auto contentTemplate = self->m_templateEditorModel->templateById(
+            self->m_templateEditorModel->selectedTemplateId());
         const auto review = PN::Comm::MeetingNotesPreparationFactory::create(
-            result.snapshot, request.source, backend);
+            result.snapshot, request.source, backend, PN::Comm::EmailMode::InlineHtml,
+            contentTemplate ? &*contentTemplate : nullptr);
         if (!review) {
             emit self->errorOccurred(self->tr("Cannot Prepare Meeting Notes"),
                                      self->tr("The selected note could not be prepared for review."));
@@ -698,7 +705,6 @@ bool DesktopAppController::prepareMeetingNotesReview(const QString& projectId, c
                 self->m_reviewAudienceSnapshot = snapshot;
                 self->m_communicationsController->setPreparation(std::move(*prepared));
                 self->updateRecipientInternalReportContext();
-                self->applyDefaultReviewAudiencePreset();
                 if (!validation.issues.isEmpty())
                     self->m_communicationsController->setReviewValidation(std::move(validation));
             });

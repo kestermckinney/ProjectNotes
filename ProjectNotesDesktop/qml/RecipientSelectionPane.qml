@@ -28,6 +28,9 @@ ColumnLayout {
     // not expose alternate audience rules, saved audiences, or manual
     // additions that could introduce people outside that team.
     property bool fixedAudience: false
+    // A workflow may supply a fixed, preselected distribution while still
+    // allowing its recipients to be reviewed individually.
+    property bool recipientListOnly: false
     property bool advancedOpen: false
     property var companyChoices: []
     property var selectedCompanyIds: []
@@ -90,7 +93,7 @@ ColumnLayout {
     }
     RowLayout {
         Layout.fillWidth: true
-        visible: pane.compact && pane.recipientModel !== null
+        visible: pane.compact && !pane.recipientListOnly && pane.recipientModel !== null
         Button {
             text: qsTr("Select all")
             onClicked: pane.recipientModel.selectAll()
@@ -252,11 +255,12 @@ ColumnLayout {
         id: recipientSearch
         Layout.fillWidth: true
         placeholderText: qsTr("Search selected audience")
+        visible: !pane.recipientListOnly
     }
     ListView {
         id: recipientList
         Layout.fillWidth: true
-        Layout.preferredHeight: Math.min(contentHeight, 220)
+        Layout.preferredHeight: Math.min(220, Math.max(contentHeight, count > 0 ? 80 : 0))
         clip: true
         model: pane.recipientModel
         spacing: 4
@@ -271,6 +275,8 @@ ColumnLayout {
             topPadding: 6
         }
         delegate: RowLayout {
+            id: recipientRow
+            readonly property var recipient: model
             width: recipientList.width
             readonly property bool matchesSearch: recipientSearch.text.trim() === ""
                 || (model.name + " " + model.address + " " + model.companyName + " " + model.sourceReason)
@@ -305,11 +311,17 @@ ColumnLayout {
                 Label { text: model.sourceReason; color: Theme.text3; elide: Text.ElideRight; Layout.fillWidth: true; font.pixelSize: Theme.fontXs }
             }
             ComboBox {
+                visible: !pane.recipientListOnly
                 model: [qsTr("To"), qsTr("Cc"), qsTr("Bcc")]
-                currentIndex: model.recipientRole
-                enabled: model.selected
-                Accessible.name: qsTr("Recipient role for %1").arg(model.name)
-                onActivated: if (pane.recipientModel) pane.recipientModel.setRecipientRoleValue(model.personId, currentIndex)
+                currentIndex: recipientRow.recipient.recipientRole
+                enabled: recipientRow.recipient.selected
+                Accessible.name: qsTr("Recipient role for %1").arg(recipientRow.recipient.name)
+                onActivated: if (pane.recipientModel) pane.recipientModel.setRecipientRoleValue(recipientRow.recipient.personId, currentIndex)
+            }
+            Label {
+                visible: pane.recipientListOnly
+                text: [qsTr("To"), qsTr("Cc"), qsTr("Bcc")][model.recipientRole]
+                color: Theme.text2
             }
             Button {
                 visible: model.manual

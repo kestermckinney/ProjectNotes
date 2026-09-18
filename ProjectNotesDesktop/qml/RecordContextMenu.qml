@@ -24,8 +24,7 @@ Popup {
     // a menu added later. Pages still override it where the action doesn't apply.
     property bool   canDuplicate: menu._tableSupportsDuplicate
     property bool   canMoveTo: false
-    // Optional page-specific action for reviewing a generated email before it
-    // is handed to a mail backend (used by individual meeting notes).
+    // Optional page-specific action for preparing a meeting note for delivery.
     property bool   canReviewEmail: false
     property bool   canExport: true
     property bool   canFilter: true
@@ -371,7 +370,7 @@ Popup {
         MenuRow { icon: "add";          label: qsTr("New");         visible: menu.canNew;       onActivated: menu._fire(menu.newRequested) }
         MenuRow { icon: "content_copy"; label: qsTr("Duplicate");   visible: menu.canDuplicate; onActivated: menu._fire(menu.duplicateRequested) }
         MenuRow { icon: "drive_file_move"; label: qsTr("Move To…"); visible: menu.canMoveTo;   onActivated: menu._fire(menu.moveToRequested) }
-        MenuRow { icon: "email";        label: qsTr("Review Email"); visible: menu.canReviewEmail; onActivated: menu._fire(menu.reviewEmailRequested) }
+        MenuRow { icon: "email";        label: qsTr("Send Notes"); visible: menu.canReviewEmail; onActivated: menu._fire(menu.reviewEmailRequested) }
         MenuRow { icon: "delete";       label: qsTr("Delete");      visible: menu.canDelete;    danger: true; onActivated: menu._fire(menu.deleteRequested) }
         Rectangle {
             visible: menu._hasTopGroup || menu.canGoToPerson || menu.canGoToClient

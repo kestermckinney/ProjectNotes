@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "ProjectNotesEmail/EmailTypes.h"
+#include "ProjectNotesEmail/ArtifactStore.h"
 #include "ProjectNotesEmail/RecipientAudienceResolver.h"
 #include "ProjectNotesEmail/RecipientSelectionModel.h"
 #include "ProjectNotesEmail/MeetingNotesEmailBuilder.h"
@@ -770,9 +771,12 @@ void CommunicationContractsTest::createsMeetingNotesReviewFromSnapshot()
     snapshot.databaseGeneration = 4;
     snapshot.projectManagerId = "manager";
     snapshot.people = {{"manager", "Manager", "manager@example.test", {}, {}, false, false, true},
-                       {"member", "Member", "member@example.test", {}, {}, false, false, true}};
+                       {"member", "Member", "member@example.test", {}, {}, false, false, true},
+                       {"absent", "Absent", "absent@example.test", {}, {}, false, true, true},
+                       {"guest", "Guest", "guest@example.test", {}, {}, false, false, false},
+                       {"other", "Other note attendee", "other@example.test", {}, {}, false, true, false}};
     snapshot.notes = {{"note", "Kickoff", "<p>Notes</p>",
-                       QDateTime(QDate(2026, 9, 12), QTime(9, 0)), false, {"member"}}};
+                       QDateTime(QDate(2026, 9, 12), QTime(9, 0)), false, {"manager", "member", "guest"}}};
     SourceContext source{"database", 4, "project", {"note"}, Workflow::SendMeetingNotes};
     const auto review = MeetingNotesPreparationFactory::create(snapshot, source,
                                                                 BackendId::Thunderbird,
@@ -782,9 +786,51 @@ void CommunicationContractsTest::createsMeetingNotesReviewFromSnapshot()
     QCOMPARE(review->preparation.source.databaseGeneration, quint64(4));
     QCOMPARE(review->preparation.backend, BackendId::Thunderbird);
     QCOMPARE(review->preparation.mode, EmailMode::HtmlAttachment);
+    // The desktop stages an operation before populating the recipient model.
+    QTemporaryDir staging;
+    QVERIFY(staging.isValid());
+    ArtifactStore store(staging.path());
+    OperationManifest manifest;
+    manifest.operationId = review->preparation.operationId;
+    manifest.workflow = review->preparation.source.workflow;
+    manifest.databaseKey = review->preparation.source.databaseKey;
+    manifest.projectId = review->preparation.source.projectId;
+    manifest.backend = review->preparation.backend;
+    ServiceError stagingError;
+    QVERIFY2(store.createOperation(manifest, &stagingError), qPrintable(stagingError.code));
     QCOMPARE(review->preparation.recipients.size(), 2);
-    QCOMPARE(review->audience.people.size(), 2); // Full project team includes the manager.
+    QCOMPARE(review->audience.people.size(), 3); // Attendees and absent team, excluding the manager.
+    RecipientSelectionModel recipients;
+    recipients.setAudience(review->audience);
+    QCOMPARE(recipients.rowCount(), 3);
+    QCOMPARE(recipients.selectedRecipientCount(), 2);
+    QCOMPARE(recipients.toRecipientCount(), 2);
+    QCOMPARE(recipients.ccRecipientCount(), 0);
+    for (int row = 0; row < recipients.rowCount(); ++row) {
+        const auto index = recipients.index(row);
+        const bool absent = recipients.data(index, RecipientSelectionModel::PersonIdRole).toString() == "absent";
+        QCOMPARE(recipients.data(index, RecipientSelectionModel::SelectedRole).toBool(), !absent);
+        QCOMPARE(recipients.data(index, RecipientSelectionModel::RecipientRoleRole).toInt(),
+                 static_cast<int>(absent ? RecipientRole::Cc : RecipientRole::To));
+    }
+    QVERIFY(!recipients.setSelected("manager", true));
+    QVERIFY(!recipients.setSelected("other", true));
+    QVERIFY(recipients.setSelected("absent", true));
+    QCOMPARE(recipients.resolve().recipients.size(), 3);
+    QCOMPARE(recipients.ccRecipientCount(), 1);
+    QCOMPARE(recipients.resolve().recipients.at(1).role, RecipientRole::Cc);
     QVERIFY(review->preparation.document.emailFragment.contains("Kickoff"));
+
+    auto noAttendees = snapshot;
+    noAttendees.notes.first().attendeeIds.clear();
+    const auto teamOnly = MeetingNotesPreparationFactory::create(noAttendees, source);
+    QVERIFY(teamOnly.has_value());
+    QVERIFY(teamOnly->preparation.recipients.isEmpty());
+    recipients.setAudience(teamOnly->audience);
+    QCOMPARE(recipients.rowCount(), 2);
+    QCOMPARE(recipients.selectedRecipientCount(), 0);
+    QVERIFY(recipients.setSelected("member", true));
+    QCOMPARE(recipients.ccRecipientCount(), 1);
 
     CommunicationTemplate templateValue{"meeting-prose", "Meeting prose", Workflow::SendMeetingNotes,
                                         "{{ project.name }} notes", "<p>Prepared for {{ project.name }}</p>{{ content.body }}"};

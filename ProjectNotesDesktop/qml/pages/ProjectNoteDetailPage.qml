@@ -578,7 +578,6 @@ Item {
         id: emailReview
         controller: DesktopAppController.communicationsController
         recipientModel: DesktopAppController.recipientSelectionModel
-        templateModel: DesktopAppController.templateEditorModel
     }
 
     // Shared full-field spell-check dialog (opened by fields / the toolbar).
