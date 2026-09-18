@@ -25,6 +25,7 @@ Dialog {
     property var templateModel: null
     property string projectId: ""
     property string workflow: "meeting-notes-report"
+    readonly property bool projectReport: workflow === "status-report" || workflow === "tracker-items-report"
     property string delivery: "save"
     property string emailMode: "inline-html"
     property bool internalReport: false
@@ -43,9 +44,9 @@ Dialog {
     readonly property bool reviewing: controller && controller.stageName === "reviewing" && !controller.busy
     readonly property bool prepared: reviewing && preparedKey === reportKey(emailMode)
     readonly property var workflowOptions: [
-        { label: qsTr("Status report"), value: "status-report" },
-        { label: qsTr("Tracker items report"), value: "tracker-items-report" },
-        { label: qsTr("Meeting notes report"), value: "meeting-notes-report" }
+        { label: qsTr("Status Report"), value: "Status Report", workflow: "status-report" },
+        { label: qsTr("Tracker Items Report"), value: "Tracker Items", workflow: "tracker-items-report" },
+        { label: qsTr("Meeting Notes Report"), value: "Meeting Notes Report", workflow: "meeting-notes-report" }
     ]
     readonly property var emailModeOptions: [
         { label: qsTr("Inline HTML"), value: "inline-html", description: qsTr("Show the report in the email body.") },
@@ -103,12 +104,17 @@ Dialog {
     }
     function workflowLabel(value) {
         for (var i = 0; i < workflowOptions.length; ++i)
-            if (workflowOptions[i].value === value) return workflowOptions[i].label
+            if (workflowOptions[i].workflow === value) return workflowOptions[i].label
         return workflowOptions[0].label
     }
-    function workflowValue(label) {
+    function workflowFromOption(value) {
         for (var i = 0; i < workflowOptions.length; ++i)
-            if (workflowOptions[i].label === label) return workflowOptions[i].value
+            if (workflowOptions[i].value === value) return workflowOptions[i].workflow
+        return workflowOptions[0].workflow
+    }
+    function workflowOptionValue(value) {
+        for (var i = 0; i < workflowOptions.length; ++i)
+            if (workflowOptions[i].workflow === value) return workflowOptions[i].value
         return workflowOptions[0].value
     }
     function modeLabel(value) {
@@ -146,7 +152,11 @@ Dialog {
         else
             DesktopAppController.prepareMeetingNotesReportReviewWithOptions(projectId, reportDate.text, internalReport, mode, false, false)
     }
-    function defaultPeopleSource() { return workflow === "status-report" ? "status-recipients" : "project-team" }
+    function prepareEmailReport() {
+        if (delivery === "email" && projectId !== "" && reportDate.text !== "")
+            prepare(emailMode)
+    }
+    function defaultPeopleSource() { return "project-team" }
     function refreshCompanies() {
         companyChoices = DesktopAppController.reviewAudienceCompanies()
         selectedCompanyIds = []
@@ -159,7 +169,10 @@ Dialog {
         selectedCompanyIds = ids
     }
     function applyDefaultAudience() {
-        DesktopAppController.applyReviewAudienceRule(defaultPeopleSource(), "all", false, false)
+        if (projectReport)
+            DesktopAppController.restoreProjectReportDefaultAudience()
+        else
+            DesktopAppController.applyReviewAudienceRule(defaultPeopleSource(), "all", false, false)
     }
     function applySpecificCompanies() {
         DesktopAppController.applyReviewAudienceRuleWithCompanies(defaultPeopleSource(), "selected-companies",
@@ -200,12 +213,23 @@ Dialog {
         var report = workflowLabel(workflow)
         if (delivery === "save") return qsTr("Will prepare %1 for %2 and ask where to save it.").arg(report).arg(reportDate.text)
         var count = recipientModel ? recipientModel.selectedRecipientCount : 0
-        if (!prepared) return qsTr("Generate %1, then choose exactly who receives it.").arg(report)
+        if (!prepared) return qsTr("Preparing %1 and its recipient options…").arg(report)
         return qsTr("Create a Microsoft 365 draft of %1 for %2 selected recipient(s), as %3.").arg(report).arg(count).arg(modeLabel(emailMode))
     }
 
-    onWorkflowChanged: { preparedKey = ""; pendingPreparationKey = ""; selectedCompanyIds = [] }
-    onOpened: if (reportDate.text === "") reportDate.text = todayText()
+    onWorkflowChanged: {
+        preparedKey = ""
+        pendingPreparationKey = ""
+        selectedCompanyIds = []
+        Qt.callLater(dialog.prepareEmailReport)
+    }
+    onDeliveryChanged: Qt.callLater(dialog.prepareEmailReport)
+    onEmailModeChanged: Qt.callLater(dialog.prepareEmailReport)
+    onInternalReportChanged: Qt.callLater(dialog.prepareEmailReport)
+    onOpened: {
+        if (reportDate.text === "") reportDate.text = todayText()
+        Qt.callLater(dialog.prepareEmailReport)
+    }
     onClosed: { pendingSaveUrl = ""; pendingSaveFormat = ""; pendingPreparationKey = "" }
     Connections {
         target: dialog.controller
@@ -258,11 +282,14 @@ Dialog {
                             Layout.fillWidth: true; spacing: 10
                             ComboField {
                                 Layout.fillWidth: true; label: qsTr("Report")
-                                options: dialog.workflowOptions.map(function(option) { return option.label })
-                                value: dialog.workflowLabel(dialog.workflow)
-                                onActivated: function(label) { dialog.workflow = dialog.workflowValue(label) }
+                                options: dialog.workflowOptions.map(function(option) { return option.value })
+                                value: dialog.workflowOptionValue(dialog.workflow)
+                                onActivated: function(value) { dialog.workflow = dialog.workflowFromOption(value) }
                             }
-                            DateField { id: reportDate; Layout.preferredWidth: 158; label: qsTr("Reporting date") }
+                            DateField {
+                                id: reportDate; Layout.preferredWidth: 158; label: qsTr("Reporting date")
+                                onEdited: dialog.prepareEmailReport()
+                            }
                         }
                         CompactCheckBox {
                             text: dialog.workflow === "meeting-notes-report" ? qsTr("Include internal meetings") : qsTr("Generate internal report")
@@ -274,17 +301,17 @@ Dialog {
                             Label { text: qsTr("Include tracker items"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
                             RowLayout {
                                 Layout.fillWidth: true
-                                CompactCheckBox { id: includeTrackerItems; text: qsTr("Tracker"); checked: true }
-                                CompactCheckBox { id: includeActionItems; text: qsTr("Action") }
+                                CompactCheckBox { id: includeTrackerItems; text: qsTr("Tracker"); checked: true; onToggled: dialog.prepareEmailReport() }
+                                CompactCheckBox { id: includeActionItems; text: qsTr("Action"); onToggled: dialog.prepareEmailReport() }
                             }
                             Label { text: qsTr("Status"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
                             Flow {
                                 Layout.fillWidth: true; spacing: 9
-                                CompactCheckBox { id: includeNew; text: qsTr("New"); checked: true }
-                                CompactCheckBox { id: includeAssigned; text: qsTr("Assigned"); checked: true }
-                                CompactCheckBox { id: includeResolved; text: qsTr("Resolved") }
-                                CompactCheckBox { id: includeDeferred; text: qsTr("Deferred") }
-                                CompactCheckBox { id: includeCancelled; text: qsTr("Cancelled") }
+                                CompactCheckBox { id: includeNew; text: qsTr("New"); checked: true; onToggled: dialog.prepareEmailReport() }
+                                CompactCheckBox { id: includeAssigned; text: qsTr("Assigned"); checked: true; onToggled: dialog.prepareEmailReport() }
+                                CompactCheckBox { id: includeResolved; text: qsTr("Resolved"); onToggled: dialog.prepareEmailReport() }
+                                CompactCheckBox { id: includeDeferred; text: qsTr("Deferred"); onToggled: dialog.prepareEmailReport() }
+                                CompactCheckBox { id: includeCancelled; text: qsTr("Cancelled"); onToggled: dialog.prepareEmailReport() }
                             }
                         }
                     }
@@ -346,7 +373,7 @@ Dialog {
                             color: Theme.red; wrapMode: Text.Wrap
                         }
                         ColumnLayout {
-                            visible: dialog.prepared; Layout.fillWidth: true; spacing: 9
+                            visible: dialog.delivery === "email"; Layout.fillWidth: true; spacing: 9
                             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
                             Label { text: qsTr("Send to"); color: Theme.text3; font.pixelSize: Theme.fontXs; font.weight: Font.DemiBold }
                             RowLayout {
@@ -375,20 +402,28 @@ Dialog {
                                     }
                                 }
                             }
+                            Label {
+                                visible: !dialog.prepared
+                                Layout.fillWidth: true
+                                text: qsTr("Loading report recipients…")
+                                color: Theme.text3
+                            }
                             RecipientSelectionPane {
+                                visible: dialog.prepared
                                 Layout.fillWidth: true
                                 recipientModel: dialog.recipientModel
                                 reviewController: dialog.controller
-                                audienceController: DesktopAppController
+                                audienceController: dialog.projectReport ? null : DesktopAppController
                                 defaultPeopleSource: dialog.defaultPeopleSource()
                                 compact: true
+                                fixedAudience: dialog.projectReport
                             }
                             Label {
                                 Layout.fillWidth: true
                                 text: dialog.graphDraftReady
                                     ? qsTr("A draft will be created in the verified Microsoft 365 account%1. It will not be sent.")
                                         .arg(dialog.office365.accountLabel === "" ? "" : " (" + dialog.office365.accountLabel + ")")
-                                    : qsTr("Microsoft 365 draft creation is not configured for this account.")
+                                    : qsTr("Your configured email client will open with this report and the selected recipients.")
                                 color: Theme.text3; wrapMode: Text.Wrap
                             }
                         }
@@ -407,14 +442,10 @@ Dialog {
                 onClicked: dialog.openSaveDialog()
             }
             Button {
-                visible: dialog.delivery === "email" && !dialog.prepared; text: qsTr("Generate report")
-                enabled: dialog.projectId !== "" && (!dialog.controller || !dialog.controller.busy)
-                onClicked: dialog.prepare(dialog.emailMode)
-            }
-            Button {
-                visible: dialog.delivery === "email" && dialog.prepared && dialog.graphDraftReady
-                text: qsTr("Create Microsoft 365 draft")
-                enabled: dialog.recipientModel && dialog.recipientModel.selectedRecipientCount > 0 && !dialog.controller.busy
+                visible: dialog.delivery === "email"
+                text: dialog.graphDraftReady ? qsTr("Create Microsoft 365 draft") : qsTr("Send email")
+                enabled: dialog.prepared && dialog.recipientModel
+                         && dialog.recipientModel.selectedRecipientCount > 0 && !dialog.controller.busy
                 onClicked: DesktopAppController.handoffPreparedReview()
             }
             Button {

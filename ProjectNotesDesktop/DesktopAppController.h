@@ -220,6 +220,9 @@ public:
                                                             bool retainHtml,
                                                             bool displayPdf);
     Q_INVOKABLE bool applyProjectReportTemplate(const QString& templateId);
+    // Restores the fixed project-team report audience and its workflow default
+    // selections (status-report recipients are selected by default).
+    Q_INVOKABLE bool restoreProjectReportDefaultAudience();
     // Rebuilds the review-local audience from the immutable snapshot.  QML
     // passes stable strings so it does not need to duplicate resolver rules.
     Q_INVOKABLE bool applyReviewAudienceRule(const QString& peopleSource,

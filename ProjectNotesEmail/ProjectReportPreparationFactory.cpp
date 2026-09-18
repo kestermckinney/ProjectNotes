@@ -33,7 +33,8 @@ ProjectReportReview finish(ReportDocument document, SourceContext source, Backen
     review.preparation.displayPdf = displayPdf;
     review.preparation.projectFolderPath = std::move(projectFolderPath);
     review.preparation.document = std::move(document);
-    const RecipientResolution recipients = applyRecipientOverrides(review.audience, {});
+    const RecipientResolution recipients = applyRecipientOverrides(review.audience,
+                                                                     review.audience.initialOverrides);
     review.validation.issues += recipients.validation.issues;
     review.preparation.recipients = recipients.recipients;
     review.preparation.addressLater = recipients.addressLaterExplicitlyChosen;
@@ -118,10 +119,16 @@ std::optional<ProjectReportReview> ProjectReportPreparationFactory::createStatus
     if (!document || !validation.ok()) return std::nullopt;
     if (!applyContentTemplate(&*document, snapshot, Workflow::StatusReport, options, contentTemplate, &validation))
         return std::nullopt;
-    AudienceRule audienceRule; audienceRule.source = PeopleSource::StatusRecipients;
+    // The report dialog may offer every member of this project, but starts
+    // with only members who opted in to status reports selected.
+    AudienceRule audienceRule; audienceRule.source = PeopleSource::ProjectTeam;
     audienceRule.companyFilter = CompanyFilter::All; audienceRule.excludeProjectManager = false;
+    AudienceResolution audience = resolveAudience(snapshot, audienceRule);
+    for (const SnapshotPerson &person : audience.people)
+        if (!person.receivesStatus)
+            audience.initialOverrides.append({person.id, false, RecipientRole::To});
     return finish(*document, std::move(source), backend, options.emailMode, options.retainHtml, options.displayPdf, snapshot.projectFolderPath,
-                  resolveAudience(snapshot, audienceRule), std::move(validation));
+                  std::move(audience), std::move(validation));
 }
 
 std::optional<ProjectReportReview> ProjectReportPreparationFactory::createTracker(
@@ -148,8 +155,12 @@ std::optional<ProjectReportReview> ProjectReportPreparationFactory::createTracke
         return std::nullopt;
     AudienceRule audienceRule; audienceRule.source = PeopleSource::ProjectTeam;
     audienceRule.companyFilter = CompanyFilter::All; audienceRule.excludeProjectManager = false;
+    AudienceResolution audience = resolveAudience(snapshot, audienceRule);
+    for (const SnapshotPerson &person : audience.people)
+        if (!person.receivesStatus)
+            audience.initialOverrides.append({person.id, false, RecipientRole::To});
     return finish(*document, std::move(source), backend, options.emailMode, options.retainHtml, options.displayPdf, snapshot.projectFolderPath,
-                  resolveAudience(snapshot, audienceRule), std::move(validation));
+                  std::move(audience), std::move(validation));
 }
 
 } // namespace PN::Comm

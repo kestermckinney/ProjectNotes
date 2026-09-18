@@ -24,6 +24,10 @@ ColumnLayout {
     // Report delivery starts with a compact, mockup-like recipient checklist.
     // The full rule/preset/manual-address surface remains available on demand.
     property bool compact: false
+    // Project reports always use their fixed project-team audience.  They do
+    // not expose alternate audience rules, saved audiences, or manual
+    // additions that could introduce people outside that team.
+    property bool fixedAudience: false
     property bool advancedOpen: false
     property var companyChoices: []
     property var selectedCompanyIds: []
@@ -97,6 +101,7 @@ ColumnLayout {
         }
         Item { Layout.fillWidth: true }
         Button {
+            visible: !pane.fixedAudience
             text: pane.advancedOpen ? qsTr("Hide advanced") : qsTr("Advanced")
             onClicked: pane.advancedOpen = !pane.advancedOpen
         }
@@ -104,7 +109,7 @@ ColumnLayout {
     GridLayout {
         columns: 2
         Layout.fillWidth: true
-        visible: pane.audienceController !== null && (!pane.compact || pane.advancedOpen)
+        visible: !pane.fixedAudience && pane.audienceController !== null && (!pane.compact || pane.advancedOpen)
         columnSpacing: 8
         rowSpacing: 4
         Label { text: qsTr("Audience source"); color: Theme.text2 }
@@ -140,7 +145,7 @@ ColumnLayout {
     }
     ColumnLayout {
         Layout.fillWidth: true
-        visible: (!pane.compact || pane.advancedOpen) && companyFilter.currentValue === "selected-companies"
+        visible: !pane.fixedAudience && (!pane.compact || pane.advancedOpen) && companyFilter.currentValue === "selected-companies"
         spacing: 2
         Label { text: qsTr("Choose companies"); color: Theme.text2; font.weight: Font.DemiBold }
         Repeater {
@@ -155,7 +160,7 @@ ColumnLayout {
     }
     ColumnLayout {
         Layout.fillWidth: true
-        visible: (!pane.compact || pane.advancedOpen) && peopleSource.currentValue === "chosen-people"
+        visible: !pane.fixedAudience && (!pane.compact || pane.advancedOpen) && peopleSource.currentValue === "chosen-people"
         spacing: 2
         Label { text: qsTr("Choose people"); color: Theme.text2; font.weight: Font.DemiBold }
         TextField {
@@ -178,7 +183,7 @@ ColumnLayout {
     }
     RowLayout {
         Layout.fillWidth: true
-        visible: pane.audienceController !== null && (!pane.compact || pane.advancedOpen)
+        visible: !pane.fixedAudience && pane.audienceController !== null && (!pane.compact || pane.advancedOpen)
         CheckBox { id: includeUnknown; text: qsTr("Include unknown company"); checked: pane.defaultIncludeUnknownCompany }
         CheckBox { id: excludeManager; text: qsTr("Exclude project manager"); checked: pane.defaultExcludeProjectManager }
         Item { Layout.fillWidth: true }
@@ -203,7 +208,7 @@ ColumnLayout {
     RowLayout {
         id: presetRow
         Layout.fillWidth: true
-        visible: pane.audienceController !== null && (!pane.compact || pane.advancedOpen)
+        visible: !pane.fixedAudience && pane.audienceController !== null && (!pane.compact || pane.advancedOpen)
         property var presets: []
         function refresh() {
             presets = pane.audienceController ? pane.audienceController.reviewAudiencePresets() : []
@@ -230,7 +235,7 @@ ColumnLayout {
     }
     RowLayout {
         Layout.fillWidth: true
-        visible: pane.audienceController !== null && (!pane.compact || pane.advancedOpen)
+        visible: !pane.fixedAudience && pane.audienceController !== null && (!pane.compact || pane.advancedOpen)
         TextField { id: presetName; Layout.fillWidth: true; placeholderText: qsTr("Save audience preset") }
         CheckBox { id: projectPreset; text: qsTr("This project") }
         Button {
@@ -303,7 +308,7 @@ ColumnLayout {
 
     RowLayout {
         Layout.fillWidth: true
-        visible: !pane.compact || pane.advancedOpen
+        visible: !pane.fixedAudience && (!pane.compact || pane.advancedOpen)
         TextField { id: manualName; Layout.preferredWidth: 150; placeholderText: qsTr("Name") }
         TextField { id: manualAddress; Layout.fillWidth: true; placeholderText: qsTr("email@example.com"); inputMethodHints: Qt.ImhEmailCharactersOnly }
         Button {
@@ -313,20 +318,20 @@ ColumnLayout {
         }
     }
     CheckBox {
-        visible: !pane.compact || pane.advancedOpen
+        visible: !pane.fixedAudience && (!pane.compact || pane.advancedOpen)
         text: qsTr("Add recipients in the email client instead")
         checked: pane.recipientModel ? pane.recipientModel.addressLaterExplicitlyChosen : false
         onToggled: if (pane.recipientModel) pane.recipientModel.setAddressLaterExplicitlyChosen(checked)
     }
     CheckBox {
         id: showExcluded
-        visible: (!pane.compact || pane.advancedOpen) && pane.recipientModel && pane.recipientModel.excludedRecipients.length > 0
+        visible: !pane.fixedAudience && (!pane.compact || pane.advancedOpen) && pane.recipientModel && pane.recipientModel.excludedRecipients.length > 0
         text: pane.recipientModel
             ? qsTr("Show %1 contact(s) not included").arg(pane.recipientModel.excludedRecipients.length)
             : ""
     }
     Repeater {
-        model: (!pane.compact || pane.advancedOpen) && showExcluded.checked && pane.recipientModel ? pane.recipientModel.excludedRecipients : []
+        model: !pane.fixedAudience && (!pane.compact || pane.advancedOpen) && showExcluded.checked && pane.recipientModel ? pane.recipientModel.excludedRecipients : []
         delegate: ColumnLayout {
             required property var modelData
             Layout.fillWidth: true

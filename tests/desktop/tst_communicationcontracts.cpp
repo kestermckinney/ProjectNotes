@@ -863,7 +863,8 @@ void CommunicationContractsTest::preparesStatusAndTrackerReportsFromSnapshot()
     snapshot.statusReportPeriod="Weekly"; snapshot.budget="100"; snapshot.actual="25";
     snapshot.bcwp="30"; snapshot.bcws="35"; snapshot.bac="100";
     snapshot.people={{"manager","Manager","manager@example.test",{}, {}, false, false, true},
-                     {"status","Status","status@example.test",{}, {}, true, false, true}};
+                     {"status","Status","status@example.test",{}, {}, true, false, true},
+                     {"outside","Outside","outside@example.test",{}, {}, true, false, false}};
     snapshot.statusItems={{"In Progress", "Build"}, {"Next Period", "Review"}, {"Completed", "Plan"}};
     snapshot.trackerItems={{"001","Risk","Manager","09/01/2026","Description","Status","High","New","09/20/2026","09/01/2026",{},"Still open","Tracker",false},
                            {"002","Task","Manager","09/01/2026","Implement","Status","Medium","Assigned","09/21/2026","09/02/2026",{}, {},"Tracker",false},
@@ -882,6 +883,16 @@ void CommunicationContractsTest::preparesStatusAndTrackerReportsFromSnapshot()
     QVERIFY(status->preparation.document.emailFragment.contains("Build")); QVERIFY(status->preparation.document.emailFragment.contains("Risk"));
     QVERIFY(!status->preparation.document.emailFragment.contains("Resolved risk"));
     QVERIFY(!status->preparation.document.emailFragment.contains("Internal risk"));
+    QCOMPARE(status->audience.people.size(), 2);
+    QCOMPARE(status->audience.initialOverrides.size(), 1);
+    QCOMPARE(status->audience.initialOverrides.constFirst().personId, QStringLiteral("manager"));
+    RecipientSelectionModel statusRecipients;
+    statusRecipients.setAudience(status->audience);
+    QCOMPARE(statusRecipients.rowCount(), 2);
+    QCOMPARE(statusRecipients.selectedRecipientCount(), 1);
+    QCOMPARE(statusRecipients.data(statusRecipients.index(0), RecipientSelectionModel::SelectedRole).toBool(),
+             false);
+    QCOMPARE(status->preparation.recipients.size(), 1);
     QCOMPARE(status->preparation.recipients.constFirst().address,QStringLiteral("status@example.test"));
 
     CommunicationTemplate statusTemplate{"status-prose", "Status prose", Workflow::StatusReport,
@@ -910,7 +921,9 @@ void CommunicationContractsTest::preparesStatusAndTrackerReportsFromSnapshot()
     QVERIFY(tracker->preparation.retainHtml);
     QVERIFY(tracker->preparation.displayPdf);
     QVERIFY(tracker->preparation.document.emailFragment.contains("Task"));
-    QCOMPARE(tracker->preparation.recipients.size(),2);
+    QCOMPARE(tracker->audience.people.size(), 2);
+    QCOMPARE(tracker->preparation.recipients.size(), 1);
+    QCOMPARE(tracker->preparation.recipients.constFirst().address, QStringLiteral("status@example.test"));
 }
 
 void CommunicationContractsTest::encodesAndBoundsMailtoRequests()

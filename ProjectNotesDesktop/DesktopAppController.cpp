@@ -1031,7 +1031,8 @@ bool DesktopAppController::prepareProjectReportReview(const QString &projectId, 
                 self->m_reviewAudienceSnapshot = snapshot;
                 self->m_communicationsController->setPreparation(std::move(*staged));
                 self->updateRecipientInternalReportContext();
-                self->applyDefaultReviewAudiencePreset();
+                // Project reports have a fixed project-team recipient list,
+                // so saved audience presets are not applied here.
                 validation.issues += reviewValidation.issues;
                 if (!validation.issues.isEmpty())
                     self->m_communicationsController->setReviewValidation(std::move(validation));
@@ -1085,6 +1086,28 @@ bool DesktopAppController::applyProjectReportTemplate(const QString& templateId)
             if (!validation.issues.isEmpty())
                 self->m_communicationsController->setReviewValidation(std::move(validation));
         });
+    return true;
+}
+
+bool DesktopAppController::restoreProjectReportDefaultAudience()
+{
+    if (!m_projectReportSnapshot || !m_projectReportSource || !m_recipientSelectionModel || !m_communicationsController
+        || m_communicationsController->busy())
+        return false;
+    if (m_projectReportSource->workflow != PN::Comm::Workflow::StatusReport
+        && m_projectReportSource->workflow != PN::Comm::Workflow::TrackerItemsReport)
+        return false;
+    PN::Comm::AudienceRule rule;
+    rule.source = PN::Comm::PeopleSource::ProjectTeam;
+    rule.companyFilter = PN::Comm::CompanyFilter::All;
+    rule.excludeProjectManager = false;
+    PN::Comm::AudienceResolution audience = PN::Comm::resolveAudience(*m_projectReportSnapshot, rule);
+    for (const PN::Comm::SnapshotPerson &person : audience.people)
+        if (!person.receivesStatus)
+            audience.initialOverrides.append({person.id, false, PN::Comm::RecipientRole::To});
+    m_recipientSelectionModel->setAudience(std::move(audience));
+    updateRecipientInternalReportContext();
+    m_reviewAudienceRule = rule;
     return true;
 }
 

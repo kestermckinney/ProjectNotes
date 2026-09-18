@@ -55,8 +55,17 @@ void RecipientSelectionModel::setAudience(AudienceResolution audience)
     beginResetModel();
     m_entries.clear();
     int sourceOrder = 0;
-    for (const SnapshotPerson &person : audience.people)
-        m_entries.append({person, true, RecipientRole::To, false, sourceOrder++});
+    for (const SnapshotPerson &person : audience.people) {
+        bool selected = true;
+        RecipientRole role = RecipientRole::To;
+        for (const RecipientOverride &overrideValue : audience.initialOverrides) {
+            if (overrideValue.personId == person.id) {
+                selected = overrideValue.selected;
+                role = overrideValue.role;
+            }
+        }
+        m_entries.append({person, selected, role, false, sourceOrder++});
+    }
     // Grouping affects only presentation. resolve() restores this recorded
     // source order before applying overrides, preserving the frozen native
     // recipient order supplied by the repository/resolver.
