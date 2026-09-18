@@ -745,7 +745,7 @@ Item {
                                 // sidebar to move this item there.
                                 Drag.active: dragArea.drag.active
                                 Drag.source: trackerCard
-                                Drag.keys: ["trackerItem"]
+                                Drag.keys: ["Tracker Item"]
                                 Drag.hotSpot.x: width / 2
                                 Drag.hotSpot.y: height / 2
 

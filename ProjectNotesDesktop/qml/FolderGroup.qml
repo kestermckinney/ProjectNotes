@@ -36,7 +36,7 @@ Column {
     // A project row wants the shared record/plugin menu opened for it, at the
     // given scene coordinates. Handled by ProjectSidebar.openProjectMenu.
     signal menuRequested(string projId, string label, real sceneX, real sceneY)
-    // A tracker item card (Drag.keys ["trackerItem"]) was dropped on a project
+    // A tracker item card (Drag.keys ["Tracker Item"]) was dropped on a project
     // row. Handled by ProjectSidebar → Main.requestTrackerItemMove.
     signal itemMoveRequested(string itemId, string projectId)
     // The header was tapped and `expanded` flipped to the given value. The
@@ -177,7 +177,7 @@ Column {
                 DropArea {
                     id: itemDrop
                     anchors.fill: parent
-                    keys: ["trackerItem"]
+                    keys: ["Tracker Item"]
                     onDropped: (drop) => {
                         if (drop.source && drop.source.itemId)
                             group.itemMoveRequested(drop.source.itemId, row.projId)
