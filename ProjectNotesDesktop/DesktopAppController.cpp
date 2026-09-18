@@ -32,6 +32,8 @@
 #include "ProjectNotesEmail/AudiencePresetStore.h"
 #include "ProjectNotesEmail/EmailSettingsStore.h"
 #include "ProjectNotesEmail/backends/GraphEmailBackend.h"
+#include "ProjectNotesEmail/backends/MailtoEmailBackend.h"
+#include "ProjectNotesEmail/backends/ThunderbirdEmailBackend.h"
 #include "ProjectNotesEmailRendering/WebEngineReportRenderer.h"
 #include "ProjectNotesIntegrations/Office365Service.h"
 #include "ProjectNotesIntegrations/QtNetworkHttpTransport.h"
@@ -160,6 +162,14 @@ DesktopAppController::DesktopAppController(QObject* parent)
     m_office365Service->setHttpTransport(m_office365Transport);
     m_graphEmailBackend = std::make_unique<PN::Comm::GraphEmailBackend>(m_office365Service);
     m_emailService->registerBackend(PN::Comm::BackendId::Graph, m_graphEmailBackend.get());
+    m_mailtoEmailBackend = std::make_unique<PN::Comm::MailtoEmailBackend>();
+    m_emailService->registerBackend(PN::Comm::BackendId::Mailto, m_mailtoEmailBackend.get());
+    QSettings emailSettings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
+    const QString thunderbirdCommand = PN::Comm::EmailSettingsStore(emailSettings).thunderbirdPath();
+    if (!thunderbirdCommand.isEmpty()) {
+        m_thunderbirdEmailBackend = std::make_unique<PN::Comm::ThunderbirdEmailBackend>(thunderbirdCommand);
+        m_emailService->registerBackend(PN::Comm::BackendId::Thunderbird, m_thunderbirdEmailBackend.get());
+    }
     m_communicationsController = std::make_unique<PN::Comm::CommunicationsController>(m_emailService.get());
     connect(m_communicationsController.get(), &PN::Comm::CommunicationsController::sourceRevalidationCancelled,
             this, [this] {
@@ -479,6 +489,14 @@ void DesktopAppController::setThunderbirdExecutable(const QString &path)
 {
     QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
     PN::Comm::EmailSettingsStore(settings).setThunderbirdPath(path.trimmed());
+    // Recreate the adapter so subsequent reviews use the newly saved command.
+    // A command is parsed by ThunderbirdEmailBackend and launched without a shell.
+    m_thunderbirdEmailBackend.reset();
+    m_emailService->registerBackend(PN::Comm::BackendId::Thunderbird, nullptr);
+    if (!path.trimmed().isEmpty()) {
+        m_thunderbirdEmailBackend = std::make_unique<PN::Comm::ThunderbirdEmailBackend>(path.trimmed());
+        m_emailService->registerBackend(PN::Comm::BackendId::Thunderbird, m_thunderbirdEmailBackend.get());
+    }
     emit emailSettingsChanged();
 }
 
@@ -532,6 +550,24 @@ bool DesktopAppController::stageRequestedGeneratedAttachment(PN::Comm::EmailPrep
         validation->addError(error.code.isEmpty() ? QStringLiteral("artifact-staging-failed") : error.code,
                              QStringLiteral("attachments"));
         return false;
+    }
+    // Thunderbird consumes an operation-owned HTML file for its compose body,
+    // even when the user did not choose to retain an HTML export.
+    if (preparation->backend == PN::Comm::BackendId::Thunderbird) {
+        const auto body = store.stageGeneratedContent(preparation->operationId,
+                                                      QStringLiteral("message.html"),
+                                                      preparation->document.htmlDocument.toUtf8(),
+                                                      QStringLiteral("text/html"));
+        if (!body.ok() || !m_thunderbirdEmailBackend) {
+            validation->addError(body.error.code.isEmpty() ? QStringLiteral("thunderbird-body-staging-failed")
+                                                           : body.error.code,
+                                 QStringLiteral("body"));
+            return false;
+        }
+        const QString operationDirectory = QDir(store.stagingRoot()).filePath(
+            preparation->operationId.toString(QUuid::WithoutBraces));
+        m_thunderbirdEmailBackend->setBodyFile(preparation->operationId, body.artifact.absolutePath,
+                                               operationDirectory);
     }
     if (!preparation->retainHtml && preparation->mode != PN::Comm::EmailMode::HtmlAttachment
         && !preparation->createHtmlExport)

@@ -118,6 +118,7 @@ private slots:
     void preparesStatusAndTrackerReportsFromSnapshot();
     void encodesAndBoundsMailtoRequests();
     void createsThunderbirdComposeArguments();
+    void launchesThunderbirdCommandWithFixedArguments();
     void resolvesThunderbirdExecutable();
     void validatesOutlookHelperProtocolFrames();
     void reportsMacMailPlatformAvailability();
@@ -1018,6 +1019,30 @@ void CommunicationContractsTest::createsThunderbirdComposeArguments()
     QVERIFY(validation.ok()); QVERIFY(arguments.has_value()); QCOMPARE(arguments->first(), QStringLiteral("-compose"));
     QVERIFY(arguments->at(1).contains("to='to@example.test'")); QVERIFY(arguments->at(1).contains("cc='cc@example.test'"));
     QVERIFY(arguments->at(1).contains("bcc='bcc@example.test'")); QVERIFY(arguments->at(1).contains("file:///"));
+}
+
+void CommunicationContractsTest::launchesThunderbirdCommandWithFixedArguments()
+{
+    QTemporaryDir directory; QVERIFY(directory.isValid());
+    const QString bodyPath = directory.filePath(QStringLiteral("message.html"));
+    QFile body(bodyPath); QVERIFY(body.open(QIODevice::WriteOnly)); body.write("<p>body</p>"); body.close();
+    QString program;
+    QStringList arguments;
+    ThunderbirdEmailBackend backend(QStringLiteral("/bin/echo run org.mozilla.Thunderbird"),
+        [&program, &arguments](const QString &receivedProgram, const QStringList &receivedArguments) {
+            program = receivedProgram; arguments = receivedArguments; return true;
+        });
+    const QUuid operationId = QUuid::createUuid();
+    backend.setBodyFile(operationId, bodyPath, directory.path());
+    EmailRequest request; request.operationId = operationId; request.subject = QStringLiteral("Subject");
+    request.recipients = {{QStringLiteral("To"), QStringLiteral("to@example.test"), RecipientRole::To}};
+    bool completed = false;
+    backend.handoff(request, [&completed](EmailHandoffResult result) { completed = result.error.code.isEmpty(); });
+    QVERIFY(completed);
+    QCOMPARE(program, QStringLiteral("/bin/echo"));
+    QCOMPARE(arguments.first(), QStringLiteral("run"));
+    QCOMPARE(arguments.at(1), QStringLiteral("org.mozilla.Thunderbird"));
+    QCOMPARE(arguments.at(2), QStringLiteral("-compose"));
 }
 
 void CommunicationContractsTest::resolvesThunderbirdExecutable()

@@ -27,7 +27,8 @@ public:
     void setBodyFile(const QUuid &operationId, QString path, QString operationDirectory);
 
 private:
-    QString m_executable;
+    QString m_program;
+    QStringList m_commandArguments;
     ProcessLauncher m_launcher;
     struct StagedBodyFile { QString path; QString operationDirectory; };
     QHash<QUuid, StagedBodyFile> m_bodyFiles;

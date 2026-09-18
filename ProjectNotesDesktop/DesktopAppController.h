@@ -44,6 +44,8 @@ class TemplateEditorModel;
 class Office365Service;
 class QtNetworkHttpTransport;
 class GraphEmailBackend;
+class MailtoEmailBackend;
+class ThunderbirdEmailBackend;
 }
 
 // DesktopAppController — the QML bridge for the desktop app.
@@ -875,6 +877,8 @@ private:
     PN::Comm::Office365Service *m_office365Service = nullptr;
     PN::Comm::QtNetworkHttpTransport *m_office365Transport = nullptr;
     std::unique_ptr<PN::Comm::GraphEmailBackend> m_graphEmailBackend;
+    std::unique_ptr<PN::Comm::MailtoEmailBackend> m_mailtoEmailBackend;
+    std::unique_ptr<PN::Comm::ThunderbirdEmailBackend> m_thunderbirdEmailBackend;
     std::unique_ptr<PN::Comm::CommunicationsController> m_communicationsController;
     std::unique_ptr<PN::Comm::RecipientSelectionModel> m_recipientSelectionModel;
     std::unique_ptr<PN::Comm::TemplateEditorModel> m_templateEditorModel;
