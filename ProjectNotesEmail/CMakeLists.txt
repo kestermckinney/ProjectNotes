@@ -8,8 +8,6 @@ add_library(ProjectNotesEmail STATIC
     EmailSettingsStore.h
     ArtifactStore.cpp
     ArtifactStore.h
-    ReportDestination.cpp
-    ReportDestination.h
     SnapshotTypes.h
     RecipientAudienceResolver.h
     RecipientAudienceResolver.cpp
@@ -55,7 +53,6 @@ add_library(ProjectNotesEmail STATIC
     EmailService.cpp
     EmailBackend.h
     ReportRenderer.h
-    ExternalPresentation.h
 )
 
 target_include_directories(ProjectNotesEmail PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)

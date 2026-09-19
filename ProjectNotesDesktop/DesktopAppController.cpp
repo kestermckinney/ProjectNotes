@@ -22,7 +22,6 @@
 #include "FileFinderService.h"
 #include "ProjectNotesEmail/CommunicationRepository.h"
 #include "ProjectNotesEmail/ArtifactStore.h"
-#include "ProjectNotesEmail/ReportDestination.h"
 #include "ProjectNotesEmail/CommunicationsController.h"
 #include "ProjectNotesEmail/MeetingNotesPreparationFactory.h"
 #include "ProjectNotesEmail/MeetingNotesReportPreparationFactory.h"
@@ -509,39 +508,6 @@ void DesktopAppController::setThunderbirdExecutable(const QString &path)
     emit emailSettingsChanged();
 }
 
-QString DesktopAppController::reportExportSubfolder(const QString &workflow, bool databaseScoped) const
-{
-    const auto parsed = PN::Comm::workflowFromStableString(workflow);
-    if (!parsed || *parsed == PN::Comm::Workflow::SendMeetingNotes)
-        return {};
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
-    const QString databaseKey = databaseScoped && m_databaseOpen
-        ? PN::Comm::EmailSettingsStore::databaseKeyForPath(global_DBObjects.getDatabaseFile())
-        : QString();
-    return PN::Comm::EmailSettingsStore(settings).exportSubfolder(*parsed, databaseKey);
-}
-
-bool DesktopAppController::setReportExportSubfolder(const QString &workflow, const QString &subfolder,
-                                                     bool databaseScoped)
-{
-    const auto parsed = PN::Comm::workflowFromStableString(workflow);
-    if (!parsed || *parsed == PN::Comm::Workflow::SendMeetingNotes
-        || (databaseScoped && !m_databaseOpen))
-        return false;
-    // The project root is a harmless placeholder here: this validates only the
-    // user-entered relative subfolder before it reaches persistent settings.
-    if (!PN::Comm::resolveReportDestination(QStringLiteral("/project"), subfolder,
-                                            QStringLiteral("report.html")).ok())
-        return false;
-    QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
-    const QString databaseKey = databaseScoped
-        ? PN::Comm::EmailSettingsStore::databaseKeyForPath(global_DBObjects.getDatabaseFile())
-        : QString();
-    PN::Comm::EmailSettingsStore(settings).setExportSubfolder(*parsed, subfolder.trimmed(), databaseKey);
-    emit emailSettingsChanged();
-    return true;
-}
-
 bool DesktopAppController::stageRequestedGeneratedAttachment(PN::Comm::EmailPreparation *preparation,
                                                               PN::Comm::ValidationResult *validation)
 {
@@ -724,12 +690,10 @@ bool DesktopAppController::prepareMeetingNotesReview(const QString& projectId, c
         // This review path still registers no backend and therefore cannot send.
         QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
         const PN::Comm::BackendId backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
-        // Send Notes has exactly one workflow template. Resolve it here rather
-        // than asking at delivery time so its configured subject and body are
-        // always applied to the prepared note.
-        self->m_templateEditorModel->setWorkflow(QStringLiteral("send-meeting-notes"));
-        const auto contentTemplate = self->m_templateEditorModel->templateById(
-            self->m_templateEditorModel->selectedTemplateId());
+        // Resolve the configured template here rather than asking at delivery
+        // time so its subject and body are always applied to the prepared note.
+        const auto contentTemplate =
+            self->resolveWorkflowTemplate(PN::Comm::Workflow::SendMeetingNotes);
         const auto review = PN::Comm::MeetingNotesPreparationFactory::create(
             result.snapshot, request.source, backend, PN::Comm::EmailMode::InlineHtml,
             contentTemplate ? &*contentTemplate : nullptr);
@@ -755,22 +719,6 @@ bool DesktopAppController::prepareMeetingNotesReview(const QString& projectId, c
             });
     });
     return true;
-}
-
-bool DesktopAppController::prepareMeetingNotesReportReview(const QString& projectId,
-                                                           const QString& reportingDate,
-                                                           bool internalReport)
-{
-    return prepareMeetingNotesReportReviewWithEmailMode(
-        projectId, reportingDate, internalReport, QStringLiteral("inline-html"));
-}
-
-bool DesktopAppController::prepareMeetingNotesReportReviewWithEmailMode(const QString& projectId,
-                                                                        const QString& reportingDate,
-                                                                        bool internalReport,
-                                                                        const QString& emailMode)
-{
-    return prepareMeetingNotesReportReviewWithOptions(projectId, reportingDate, internalReport, emailMode, false, false);
 }
 
 bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QString& projectId,
@@ -826,9 +774,11 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
         QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
         const PN::Comm::BackendId backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
         PN::Comm::ValidationResult validation;
+        const auto contentTemplate =
+            self->resolveWorkflowTemplate(PN::Comm::Workflow::MeetingNotesReport);
         const auto preparation = PN::Comm::MeetingNotesReportPreparationFactory::create(
             result.snapshot, request.source, date, internalReport, backend,
-            *mode, retainHtml, &validation);
+            *mode, retainHtml, &validation, contentTemplate ? &*contentTemplate : nullptr);
         if (!preparation) {
             self->m_communicationsController->setReviewValidation(std::move(validation));
             return;
@@ -850,7 +800,7 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
         prepared.recipients = recipients.recipients;
         prepared.addressLater = recipients.addressLaterExplicitlyChosen;
         self->stageRequestedGeneratedAttachmentAsync(std::move(prepared),
-            [self, snapshot = result.snapshot, source = request.source, date, internalReport,
+            [self, snapshot = result.snapshot, source = request.source, internalReport,
              recipientValidation = recipients.validation]
             (std::optional<PN::Comm::EmailPreparation> staged, PN::Comm::ValidationResult validation) mutable {
                 if (!self) return;
@@ -859,7 +809,6 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
                 self->m_meetingNotesReportSnapshot = snapshot;
                 self->m_meetingNotesReportSource = source;
                 self->m_reviewAudienceSnapshot = snapshot;
-                self->m_meetingNotesReportDate = date;
                 self->m_meetingNotesReportInternal = internalReport;
                 self->m_communicationsController->setPreparation(std::move(*staged));
                 self->updateRecipientInternalReportContext();
@@ -872,66 +821,6 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
     return true;
 }
 
-bool DesktopAppController::applyMeetingNotesReportTemplate(const QString& templateId)
-{
-    if (!m_meetingNotesReportReview || !m_meetingNotesReportSnapshot || !m_meetingNotesReportSource
-        || m_communicationsController->busy())
-        return false;
-    std::optional<PN::Comm::CommunicationTemplate> templateValue;
-    if (!templateId.isEmpty()) {
-        templateValue = m_templateEditorModel->templateById(templateId);
-        if (!templateValue || templateValue->workflow != PN::Comm::Workflow::MeetingNotesReport)
-            return false;
-    }
-    PN::Comm::ValidationResult validation;
-    const auto rebuilt = PN::Comm::MeetingNotesReportPreparationFactory::create(
-        *m_meetingNotesReportSnapshot, *m_meetingNotesReportSource, m_meetingNotesReportDate,
-        m_meetingNotesReportInternal, m_meetingNotesReportReview->backend, m_meetingNotesReportReview->mode,
-        m_meetingNotesReportReview->retainHtml, &validation, templateValue ? &*templateValue : nullptr);
-    if (!rebuilt) {
-        m_communicationsController->setReviewValidation(std::move(validation));
-        return false;
-    }
-    const PN::Comm::RecipientResolution recipients = m_recipientSelectionModel->resolve();
-    if (!recipients.validation.ok()) {
-        m_communicationsController->setReviewValidation(recipients.validation);
-        return false;
-    }
-    PN::Comm::EmailPreparation prepared = *rebuilt;
-    prepared.retainedHtmlExportSubfolder = m_meetingNotesReportReview->retainedHtmlExportSubfolder;
-    prepared.displayPdf = m_meetingNotesReportReview->displayPdf;
-    prepared.createHtmlExport = m_meetingNotesReportReview->createHtmlExport;
-    prepared.createPdfExport = m_meetingNotesReportReview->createPdfExport;
-    prepared.recipients = recipients.recipients;
-    prepared.addressLater = recipients.addressLaterExplicitlyChosen;
-    stageRequestedGeneratedAttachmentAsync(std::move(prepared),
-        [self = QPointer<DesktopAppController>(this)](std::optional<PN::Comm::EmailPreparation> staged,
-                                                      PN::Comm::ValidationResult validation) mutable {
-            if (!self) return;
-            if (!staged) { self->m_communicationsController->setReviewValidation(std::move(validation)); return; }
-            self->m_meetingNotesReportReview = *staged;
-            self->m_communicationsController->setPreparation(std::move(*staged));
-            if (!validation.issues.isEmpty())
-                self->m_communicationsController->setReviewValidation(std::move(validation));
-        });
-    return true;
-}
-
-bool DesktopAppController::prepareStatusReportReview(const QString& projectId, const QString& reportingDate,
-                                                      bool internalReport)
-{
-    return prepareStatusReportReviewWithEmailMode(projectId, reportingDate, internalReport,
-                                                  QStringLiteral("inline-html"));
-}
-
-bool DesktopAppController::prepareStatusReportReviewWithEmailMode(const QString& projectId,
-                                                                   const QString& reportingDate,
-                                                                   bool internalReport,
-                                                                   const QString& emailMode)
-{
-    return prepareStatusReportReviewWithOptions(projectId, reportingDate, internalReport, emailMode, false, false);
-}
-
 bool DesktopAppController::prepareStatusReportReviewWithOptions(const QString& projectId,
                                                                  const QString& reportingDate,
                                                                  bool internalReport,
@@ -942,34 +831,6 @@ bool DesktopAppController::prepareStatusReportReviewWithOptions(const QString& p
     const auto mode = PN::Comm::emailModeFromStableString(emailMode);
     return mode && prepareProjectReportReview(projectId, reportingDate, internalReport,
                                               PN::Comm::Workflow::StatusReport, *mode, retainHtml, displayPdf);
-}
-
-bool DesktopAppController::prepareTrackerReportReview(const QString& projectId, const QString& reportingDate,
-                                                       bool internalReport)
-{
-    return prepareTrackerReportReviewWithEmailMode(projectId, reportingDate, internalReport,
-                                                   QStringLiteral("inline-html"));
-}
-
-bool DesktopAppController::prepareTrackerReportReviewWithEmailMode(const QString& projectId,
-                                                                    const QString& reportingDate,
-                                                                    bool internalReport,
-                                                                    const QString& emailMode)
-{
-    return prepareTrackerReportReviewWithFilters(projectId, reportingDate, internalReport, emailMode,
-                                                 {QStringLiteral("Tracker")},
-                                                 {QStringLiteral("New"), QStringLiteral("Assigned")});
-}
-
-bool DesktopAppController::prepareTrackerReportReviewWithFilters(const QString& projectId,
-                                                                  const QString& reportingDate,
-                                                                  bool internalReport,
-                                                                  const QString& emailMode,
-                                                                  const QStringList& itemTypes,
-                                                                  const QStringList& statuses)
-{
-    return prepareTrackerReportReviewWithOptions(projectId, reportingDate, internalReport, emailMode,
-                                                 itemTypes, statuses, false, false);
 }
 
 bool DesktopAppController::prepareTrackerReportReviewWithOptions(const QString& projectId,
@@ -1056,9 +917,14 @@ bool DesktopAppController::prepareProjectReportReview(const QString &projectId, 
             options.tracker = *trackerFilters;
         QSettings settings(QStringLiteral("ProjectNotes") + s_developerProfile, QStringLiteral("AppSettings"));
         const auto backend = PN::Comm::EmailSettingsStore(settings).preferredBackend();
+        const auto contentTemplate = self->resolveWorkflowTemplate(workflow);
+        const PN::Comm::CommunicationTemplate *templatePointer =
+            contentTemplate ? &*contentTemplate : nullptr;
         const auto review = workflow == PN::Comm::Workflow::StatusReport
-            ? PN::Comm::ProjectReportPreparationFactory::createStatus(result.snapshot, request.source, options, backend)
-            : PN::Comm::ProjectReportPreparationFactory::createTracker(result.snapshot, request.source, options, backend);
+            ? PN::Comm::ProjectReportPreparationFactory::createStatus(result.snapshot, request.source, options, backend,
+                                                                      templatePointer)
+            : PN::Comm::ProjectReportPreparationFactory::createTracker(result.snapshot, request.source, options, backend,
+                                                                       templatePointer);
         if (!review) {
             PN::Comm::ValidationResult validation;
             validation.addError(QStringLiteral("report-preparation-failed"), QStringLiteral("report"));
@@ -1089,54 +955,6 @@ bool DesktopAppController::prepareProjectReportReview(const QString &projectId, 
                     self->m_communicationsController->setReviewValidation(std::move(validation));
             });
     });
-    return true;
-}
-
-bool DesktopAppController::applyProjectReportTemplate(const QString& templateId)
-{
-    if (!m_projectReportReview || !m_projectReportSnapshot || !m_projectReportSource || !m_projectReportOptions
-        || m_communicationsController->busy())
-        return false;
-    std::optional<PN::Comm::CommunicationTemplate> templateValue;
-    if (!templateId.isEmpty()) {
-        templateValue = m_templateEditorModel->templateById(templateId);
-        if (!templateValue || templateValue->workflow != m_projectReportSource->workflow)
-            return false;
-    }
-    const auto rebuilt = m_projectReportSource->workflow == PN::Comm::Workflow::StatusReport
-        ? PN::Comm::ProjectReportPreparationFactory::createStatus(
-              *m_projectReportSnapshot, *m_projectReportSource, *m_projectReportOptions,
-              m_projectReportReview->backend, templateValue ? &*templateValue : nullptr)
-        : PN::Comm::ProjectReportPreparationFactory::createTracker(
-              *m_projectReportSnapshot, *m_projectReportSource, *m_projectReportOptions,
-              m_projectReportReview->backend, templateValue ? &*templateValue : nullptr);
-    if (!rebuilt) {
-        PN::Comm::ValidationResult validation;
-        validation.addError(QStringLiteral("report-template-application-failed"), QStringLiteral("template"));
-        m_communicationsController->setReviewValidation(std::move(validation));
-        return false;
-    }
-    const PN::Comm::RecipientResolution recipients = m_recipientSelectionModel->resolve();
-    if (!recipients.validation.ok()) {
-        m_communicationsController->setReviewValidation(recipients.validation);
-        return false;
-    }
-    PN::Comm::EmailPreparation prepared = rebuilt->preparation;
-    prepared.retainedHtmlExportSubfolder = m_projectReportReview->retainedHtmlExportSubfolder;
-    prepared.createHtmlExport = m_projectReportReview->createHtmlExport;
-    prepared.createPdfExport = m_projectReportReview->createPdfExport;
-    prepared.recipients = recipients.recipients;
-    prepared.addressLater = recipients.addressLaterExplicitlyChosen;
-    stageRequestedGeneratedAttachmentAsync(std::move(prepared),
-        [self = QPointer<DesktopAppController>(this)](std::optional<PN::Comm::EmailPreparation> staged,
-                                                      PN::Comm::ValidationResult validation) mutable {
-            if (!self) return;
-            if (!staged) { self->m_communicationsController->setReviewValidation(std::move(validation)); return; }
-            self->m_projectReportReview = *staged;
-            self->m_communicationsController->setPreparation(std::move(*staged));
-            if (!validation.issues.isEmpty())
-                self->m_communicationsController->setReviewValidation(std::move(validation));
-        });
     return true;
 }
 
@@ -1326,6 +1144,18 @@ bool DesktopAppController::setReviewAudiencePresetDefault(const QString &presetI
         .setDefault(presetId, source.workflow, projectScoped ? source.projectId : QString()).ok();
 }
 
+std::optional<PN::Comm::CommunicationTemplate>
+DesktopAppController::resolveWorkflowTemplate(PN::Comm::Workflow workflow)
+{
+    if (!m_templateEditorModel)
+        return {};
+    // Each workflow has exactly one active template. Pointing the editor model
+    // at the workflow makes its own selection rules (bundled default, or the
+    // user's saved copy) pick the template, so there is nothing to choose here.
+    m_templateEditorModel->setWorkflow(PN::Comm::toStableString(workflow));
+    return m_templateEditorModel->templateById(m_templateEditorModel->selectedTemplateId());
+}
+
 bool DesktopAppController::applyDefaultReviewAudiencePreset()
 {
     if (!m_reviewAudienceSnapshot || !m_communicationsController)
@@ -1363,45 +1193,6 @@ void DesktopAppController::updateRecipientInternalReportContext()
     }
     m_recipientSelectionModel->setInternalReportContext(
         internalReport, m_reviewAudienceSnapshot ? m_reviewAudienceSnapshot->managingCompanyId : QString());
-}
-
-bool DesktopAppController::applyMeetingNotesTemplate(const QString& templateId)
-{
-    if (!m_meetingNotesReview || !m_meetingNotesSnapshot || !m_meetingNotesSource
-        || m_communicationsController->busy())
-        return false;
-    std::optional<PN::Comm::CommunicationTemplate> templateValue;
-    if (!templateId.isEmpty()) {
-        templateValue = m_templateEditorModel->templateById(templateId);
-        if (!templateValue) return false;
-    }
-    PN::Comm::ValidationResult templateValidation;
-    const auto rebuilt = PN::Comm::MeetingNotesPreparationFactory::create(
-        *m_meetingNotesSnapshot, *m_meetingNotesSource, m_meetingNotesReview->backend,
-        m_meetingNotesReview->mode, templateValue ? &*templateValue : nullptr, &templateValidation);
-    if (!rebuilt) {
-        m_communicationsController->setReviewValidation(templateValidation);
-        return false;
-    }
-    const PN::Comm::RecipientResolution recipients = m_recipientSelectionModel->resolve();
-    if (!recipients.validation.ok()) {
-        m_communicationsController->setReviewValidation(recipients.validation);
-        return false;
-    }
-    PN::Comm::EmailPreparation prepared = rebuilt->preparation;
-    prepared.recipients = recipients.recipients;
-    prepared.addressLater = recipients.addressLaterExplicitlyChosen;
-    stageRequestedGeneratedAttachmentAsync(std::move(prepared),
-        [self = QPointer<DesktopAppController>(this)](std::optional<PN::Comm::EmailPreparation> staged,
-                                                      PN::Comm::ValidationResult validation) mutable {
-            if (!self) return;
-            if (!staged) { self->m_communicationsController->setReviewValidation(std::move(validation)); return; }
-            self->m_meetingNotesReview = *staged;
-            self->m_communicationsController->setPreparation(std::move(*staged));
-            if (!validation.issues.isEmpty())
-                self->m_communicationsController->setReviewValidation(std::move(validation));
-        });
-    return true;
 }
 
 bool DesktopAppController::handoffPreparedReview()
@@ -1482,28 +1273,6 @@ bool DesktopAppController::handoffPreparedReview()
     return true;
 }
 
-bool DesktopAppController::addReviewAttachment(const QString& sourcePath)
-{
-    if (!m_communicationsController || m_communicationsController->busy())
-        return false;
-    const PN::Comm::EmailPreparation &preparation = m_communicationsController->preparation();
-    if (preparation.operationId.isNull() || preparation.source.projectId.isEmpty())
-        return false;
-    const QUrl url(sourcePath);
-    const QString localPath = url.isLocalFile() ? url.toLocalFile() : sourcePath;
-    PN::Comm::ArtifactStore store(PN::Comm::ArtifactStore::cacheDirectory(s_developerProfile));
-    const auto staged = store.stageUserAttachment(preparation.operationId, localPath);
-    if (!staged.ok()) {
-        PN::Comm::ValidationResult validation;
-        validation.addError(staged.error.code.isEmpty() ? QStringLiteral("attachment-staging-failed")
-                                                        : staged.error.code,
-                            QStringLiteral("attachments"), tr("The selected attachment could not be staged."));
-        m_communicationsController->setReviewValidation(std::move(validation));
-        return false;
-    }
-    return m_communicationsController->appendAttachment(staged.artifact);
-}
-
 bool DesktopAppController::saveReviewGeneratedAttachment(const QString &displayName,
                                                          const QString &destination)
 {
@@ -1555,17 +1324,6 @@ bool DesktopAppController::removeExistingReportSaveFile(const QString &destinati
                         tr("The existing report file could not be replaced."));
     m_communicationsController->setReviewValidation(std::move(validation));
     return false;
-}
-
-bool DesktopAppController::copyReviewPlainText()
-{
-    if (!m_communicationsController || m_communicationsController->busy())
-        return false;
-    const QString body = m_communicationsController->plainText();
-    if (body.trimmed().isEmpty() || !QGuiApplication::clipboard())
-        return false;
-    QGuiApplication::clipboard()->setText(body);
-    return true;
 }
 
 QAbstractItemModel* DesktopAppController::projectsListModel() const

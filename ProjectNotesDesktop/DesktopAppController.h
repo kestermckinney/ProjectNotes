@@ -18,6 +18,7 @@
 #include "ProjectNotesEmail/EmailContentBuilder.h"
 #include "ProjectNotesEmail/RecipientAudienceResolver.h"
 #include "ProjectNotesEmail/SnapshotTypes.h"
+#include "ProjectNotesIntegrations/CommunicationTemplateStore.h"
 
 #include <initializer_list>
 #include <memory>
@@ -164,12 +165,6 @@ public:
     void setPreferredEmailBackend(const QString &backend);
     QString thunderbirdExecutable() const;
     void setThunderbirdExecutable(const QString &path);
-    // Report destinations are profile settings, optionally scoped to the
-    // current database through its local hashed key. QML passes only stable
-    // workflow names and never constructs the underlying settings key.
-    Q_INVOKABLE QString reportExportSubfolder(const QString &workflow, bool databaseScoped) const;
-    Q_INVOKABLE bool setReportExportSubfolder(const QString &workflow, const QString &subfolder,
-                                              bool databaseScoped);
     // Starts the native Send Meeting Notes review from persisted IDs. It only
     // loads/builds review state; callers must use the later handoff flow to
     // interact with a backend.
@@ -177,44 +172,18 @@ public:
     // Starts a read-only review of the project's meeting-notes report.  The
     // reporting date is supplied in the desktop's MM/dd/yyyy display format.
     // Like the one-note route, this never activates an email backend.
-    Q_INVOKABLE bool prepareMeetingNotesReportReview(const QString& projectId,
-                                                      const QString& reportingDate,
-                                                      bool internalReport);
-    Q_INVOKABLE bool prepareMeetingNotesReportReviewWithEmailMode(const QString& projectId,
-                                                                   const QString& reportingDate,
-                                                                   bool internalReport,
-                                                                   const QString& emailMode);
     Q_INVOKABLE bool prepareMeetingNotesReportReviewWithOptions(const QString& projectId,
                                                                  const QString& reportingDate,
                                                                  bool internalReport,
                                                                  const QString& emailMode,
                                                                  bool retainHtml,
                                                                  bool displayPdf);
-    Q_INVOKABLE bool applyMeetingNotesReportTemplate(const QString& templateId);
-    Q_INVOKABLE bool prepareStatusReportReview(const QString& projectId, const QString& reportingDate,
-                                                bool internalReport);
-    Q_INVOKABLE bool prepareStatusReportReviewWithEmailMode(const QString& projectId,
-                                                             const QString& reportingDate,
-                                                             bool internalReport,
-                                                             const QString& emailMode);
     Q_INVOKABLE bool prepareStatusReportReviewWithOptions(const QString& projectId,
                                                            const QString& reportingDate,
                                                            bool internalReport,
                                                            const QString& emailMode,
                                                            bool retainHtml,
                                                            bool displayPdf);
-    Q_INVOKABLE bool prepareTrackerReportReview(const QString& projectId, const QString& reportingDate,
-                                                 bool internalReport);
-    Q_INVOKABLE bool prepareTrackerReportReviewWithEmailMode(const QString& projectId,
-                                                              const QString& reportingDate,
-                                                              bool internalReport,
-                                                              const QString& emailMode);
-    Q_INVOKABLE bool prepareTrackerReportReviewWithFilters(const QString& projectId,
-                                                            const QString& reportingDate,
-                                                            bool internalReport,
-                                                            const QString& emailMode,
-                                                            const QStringList& itemTypes,
-                                                            const QStringList& statuses);
     Q_INVOKABLE bool prepareTrackerReportReviewWithOptions(const QString& projectId,
                                                             const QString& reportingDate,
                                                             bool internalReport,
@@ -223,7 +192,6 @@ public:
                                                             const QStringList& statuses,
                                                             bool retainHtml,
                                                             bool displayPdf);
-    Q_INVOKABLE bool applyProjectReportTemplate(const QString& templateId);
     // Restores the fixed project-team report audience and its workflow default
     // selections (status-report recipients are selected by default).
     Q_INVOKABLE bool restoreProjectReportDefaultAudience();
@@ -252,10 +220,6 @@ public:
     Q_INVOKABLE bool saveReviewAudiencePreset(const QString& name, bool projectScoped);
     Q_INVOKABLE bool applyReviewAudiencePreset(const QString& presetId);
     Q_INVOKABLE bool setReviewAudiencePresetDefault(const QString& presetId, bool projectScoped);
-    Q_INVOKABLE bool addReviewAttachment(const QString& sourcePath);
-    // Rebuilds only the currently reviewed, persisted note from its immutable
-    // snapshot. An empty id restores the native default document.
-    Q_INVOKABLE bool applyMeetingNotesTemplate(const QString& templateId);
     Q_INVOKABLE bool handoffPreparedReview();
     // Copies a manifest-owned generated report only after the user has chosen
     // an explicit destination. It never launches a client or exports a user
@@ -265,9 +229,6 @@ public:
     // Called after the native Save As picker confirms an overwrite and before
     // report preparation begins, so publication never races an old file.
     Q_INVOKABLE bool removeExistingReportSaveFile(const QString& destination);
-    // Copies the reviewed plain-text body only after an explicit user action,
-    // for a manual email workflow. It does not stage, launch, or send anything.
-    Q_INVOKABLE bool copyReviewPlainText();
 
     // ── Models ───────────────────────────────────────────────────────────────
     QAbstractItemModel* projectsListModel() const;
@@ -854,6 +815,11 @@ private slots:
 private:
     bool applyDefaultReviewAudiencePreset();
     void updateRecipientInternalReportContext();
+    // Resolves the template a workflow's review should start from. Report and
+    // Send Notes preparation both apply the configured template up front, so
+    // there is no per-email template choice to make at delivery time.
+    std::optional<PN::Comm::CommunicationTemplate>
+        resolveWorkflowTemplate(PN::Comm::Workflow workflow);
     // Apply an ordered set of column writes to `row`, stopping at the first
     // failure and surfacing it through the themed error dialog. Writing in order
     // and bailing early prevents partial inserts — a failed write on a NOT NULL
@@ -904,7 +870,6 @@ private:
     std::optional<PN::Comm::SourceContext> m_meetingNotesSource;
     std::optional<PN::Comm::CommunicationSnapshot> m_meetingNotesReportSnapshot;
     std::optional<PN::Comm::SourceContext> m_meetingNotesReportSource;
-    QDate m_meetingNotesReportDate;
     bool m_meetingNotesReportInternal = false;
     std::optional<PN::Comm::EmailPreparation> m_projectReportReview;
     std::optional<PN::Comm::CommunicationSnapshot> m_reviewAudienceSnapshot;

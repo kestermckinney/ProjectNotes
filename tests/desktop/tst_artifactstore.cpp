@@ -3,8 +3,8 @@
 
 #include "ProjectNotesEmail/ArtifactStore.h"
 #include "ProjectNotesEmail/EmailSettingsStore.h"
-#include "ProjectNotesEmail/ReportDestination.h"
 
+#include <QDir>
 #include <QFile>
 #include <QSettings>
 #include <QTemporaryDir>
@@ -24,9 +24,7 @@ private slots:
     void reportsCorruptAndCancelledRecovery();
     void rejectsSymlinksAndFailedStagingRoots();
     void reservesAndRegistersOnlyOperationOwnedGeneratedFiles();
-    void resolvesOnlySafeLocalReportDestinations();
-    void materializesOnlyRealDirectoriesBelowProjectFolder();
-    void publishesGeneratedHtmlToMaterializedProjectDestination();
+    void publishesGeneratedHtmlToProjectDestination();
 };
 
 static OperationManifest operation()
@@ -46,21 +44,11 @@ void ArtifactStoreTest::settingsAreProfileAndDatabaseScoped()
     QSettings second(dir.filePath("second.ini"), QSettings::IniFormat);
     EmailSettingsStore firstStore(first), secondStore(second);
     firstStore.setPreferredBackend(BackendId::Thunderbird);
-    firstStore.setExportSubfolder(Workflow::StatusReport, QStringLiteral("Reports/One"), QStringLiteral("one"));
-    secondStore.setExportSubfolder(Workflow::StatusReport, QStringLiteral("Reports/Two"), QStringLiteral("two"));
+    firstStore.setThunderbirdPath(QStringLiteral("/opt/thunderbird/thunderbird"));
     QCOMPARE(firstStore.preferredBackend(), BackendId::Thunderbird);
+    QCOMPARE(firstStore.thunderbirdPath(), QStringLiteral("/opt/thunderbird/thunderbird"));
     QCOMPARE(secondStore.preferredBackend(), BackendId::Mailto);
-    QCOMPARE(firstStore.exportSubfolder(Workflow::TrackerItemsReport),
-             QStringLiteral("Project Management/Issues List"));
-    QCOMPARE(firstStore.exportSubfolder(Workflow::StatusReport),
-             QStringLiteral("Project Management/Status Reports"));
-    QCOMPARE(firstStore.exportSubfolder(Workflow::MeetingNotesReport),
-             QStringLiteral("Project Management/Meeting Minutes"));
-    QCOMPARE(firstStore.exportSubfolder(Workflow::SendMeetingNotes), QString());
-    QCOMPARE(firstStore.exportSubfolder(Workflow::StatusReport, QStringLiteral("one")), QStringLiteral("Reports/One"));
-    QCOMPARE(secondStore.exportSubfolder(Workflow::StatusReport, QStringLiteral("two")), QStringLiteral("Reports/Two"));
-    QVERIFY(EmailSettingsStore::databaseKeyForPath(dir.filePath("a.db")) !=
-             EmailSettingsStore::databaseKeyForPath(dir.filePath("b.db")));
+    QCOMPARE(secondStore.thunderbirdPath(), QString());
 }
 
 void ArtifactStoreTest::stagesImmutableAttachmentsAndRejectsTraversal()
@@ -257,49 +245,7 @@ void ArtifactStoreTest::reservesAndRegistersOnlyOperationOwnedGeneratedFiles()
     QCOMPARE(escaped.error.code, QStringLiteral("artifact-path-rejected"));
 }
 
-void ArtifactStoreTest::resolvesOnlySafeLocalReportDestinations()
-{
-    const auto valid = resolveReportDestination(QStringLiteral("/project/root"),
-                                                QStringLiteral("Project Management/Status Reports"),
-                                                QStringLiteral("Status Report.html"));
-    QVERIFY(valid.ok());
-    QCOMPARE(valid.directoryPath, QStringLiteral("/project/root/Project Management/Status Reports"));
-    QCOMPARE(valid.filePath, QStringLiteral("/project/root/Project Management/Status Reports/Status Report.html"));
-    QCOMPARE(resolveReportDestination(QStringLiteral("https://example.test/folder"), "Exports", "report.html").error.code,
-             QStringLiteral("project-folder-unavailable"));
-    QCOMPARE(resolveReportDestination(QStringLiteral("/project/root"), "../escape", "report.html").error.code,
-             QStringLiteral("export-subfolder-invalid"));
-    QCOMPARE(resolveReportDestination(QStringLiteral("/project/root"), "/absolute", "report.html").error.code,
-             QStringLiteral("export-subfolder-invalid"));
-    QCOMPARE(resolveReportDestination(QStringLiteral("/project/root"), "C:/escape", "report.html").error.code,
-             QStringLiteral("export-subfolder-invalid"));
-    QCOMPARE(resolveReportDestination(QStringLiteral("/project/root"), "Exports", "../report.html").error.code,
-             QStringLiteral("report-filename-invalid"));
-}
-
-void ArtifactStoreTest::materializesOnlyRealDirectoriesBelowProjectFolder()
-{
-    QTemporaryDir root;
-    QVERIFY(root.isValid());
-    const auto requested = resolveReportDestination(root.path(), QStringLiteral("Reports/Status"),
-                                                    QStringLiteral("Status Report.html"));
-    const auto destination = ensureReportDestination(requested);
-    QVERIFY(destination.ok());
-    QVERIFY(QFileInfo::exists(destination.directoryPath));
-    QCOMPARE(destination.filePath,
-             QDir(destination.directoryPath).filePath(QStringLiteral("Status Report.html")));
-
-    QTemporaryDir outside;
-    QVERIFY(outside.isValid());
-    const QString link = QDir(root.path()).filePath(QStringLiteral("linked"));
-    if (!QFile::link(outside.path(), link))
-        QSKIP("The host cannot create a directory symlink for this safety check.");
-    const auto escaped = ensureReportDestination(resolveReportDestination(
-        root.path(), QStringLiteral("linked/Reports"), QStringLiteral("Status Report.html")));
-    QCOMPARE(escaped.error.code, QStringLiteral("export-subfolder-unavailable"));
-}
-
-void ArtifactStoreTest::publishesGeneratedHtmlToMaterializedProjectDestination()
+void ArtifactStoreTest::publishesGeneratedHtmlToProjectDestination()
 {
     QTemporaryDir profile;
     QTemporaryDir project;
@@ -311,12 +257,15 @@ void ArtifactStoreTest::publishesGeneratedHtmlToMaterializedProjectDestination()
     const auto staged = store.stageGeneratedContent(manifest.operationId, QStringLiteral("Status Report.html"),
                                                     QByteArrayLiteral("<p>generated</p>"), QStringLiteral("text/html"));
     QVERIFY(staged.ok());
-    const auto destination = ensureReportDestination(resolveReportDestination(
-        project.path(), QStringLiteral("Project Management/Status Reports"), staged.artifact.displayName));
-    QVERIFY(destination.ok());
+    // The save picker supplies an already-chosen absolute destination, so the
+    // store is handed a concrete file path rather than resolving one itself.
+    QDir projectDir(project.path());
+    QVERIFY(projectDir.mkpath(QStringLiteral("Project Management/Status Reports")));
+    const QString destinationPath = projectDir.filePath(
+        QStringLiteral("Project Management/Status Reports/") + staged.artifact.displayName);
     ServiceError error;
-    QVERIFY(store.publish(staged.artifact, destination.filePath, &error));
-    QFile published(destination.filePath);
+    QVERIFY(store.publish(staged.artifact, destinationPath, &error));
+    QFile published(destinationPath);
     QVERIFY(published.open(QIODevice::ReadOnly));
     QCOMPARE(published.readAll(), QByteArrayLiteral("<p>generated</p>"));
 }
