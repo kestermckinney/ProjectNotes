@@ -1081,7 +1081,7 @@ void CommunicationContractsTest::launchesThunderbirdCommandWithFixedArguments()
     QFile body(bodyPath); QVERIFY(body.open(QIODevice::WriteOnly)); body.write("<p>body</p>"); body.close();
     QString program;
     QStringList arguments;
-    ThunderbirdEmailBackend backend(QStringLiteral("/bin/echo run org.mozilla.Thunderbird"),
+    ThunderbirdEmailBackend backend(QStringLiteral("/bin/flatpak run org.mozilla.Thunderbird"),
         [&program, &arguments](const QString &receivedProgram, const QStringList &receivedArguments) {
             program = receivedProgram; arguments = receivedArguments; return true;
         });
@@ -1092,10 +1092,12 @@ void CommunicationContractsTest::launchesThunderbirdCommandWithFixedArguments()
     bool completed = false;
     backend.handoff(request, [&completed](EmailHandoffResult result) { completed = result.error.code.isEmpty(); });
     QVERIFY(completed);
-    QCOMPARE(program, QStringLiteral("/bin/echo"));
+    QCOMPARE(program, QStringLiteral("/bin/flatpak"));
     QCOMPARE(arguments.first(), QStringLiteral("run"));
-    QCOMPARE(arguments.at(1), QStringLiteral("org.mozilla.Thunderbird"));
-    QCOMPARE(arguments.at(2), QStringLiteral("-compose"));
+    const QString stagingRoot = QFileInfo(directory.path()).dir().absolutePath();
+    QCOMPARE(arguments.at(1), QStringLiteral("--filesystem=%1:ro").arg(stagingRoot));
+    QCOMPARE(arguments.at(2), QStringLiteral("org.mozilla.Thunderbird"));
+    QCOMPARE(arguments.at(3), QStringLiteral("-compose"));
 }
 
 void CommunicationContractsTest::resolvesThunderbirdExecutable()

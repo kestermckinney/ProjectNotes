@@ -16,6 +16,11 @@ QString quote(const QString &value) {
     return QStringLiteral("'") + result + QStringLiteral("'");
 }
 bool invalid(const QString &value) { return value.contains('\r') || value.contains('\n'); }
+bool isFlatpakLauncher(const QString &program, const QStringList &arguments)
+{
+    return QFileInfo(program).fileName() == QLatin1String("flatpak")
+        && !arguments.isEmpty() && arguments.constFirst() == QLatin1String("run");
+}
 bool isOperationOwnedFile(const QString &path, const QString &operationDirectory)
 {
     const QFileInfo rootInfo(operationDirectory);
@@ -136,6 +141,12 @@ void ThunderbirdEmailBackend::handoff(EmailRequest request, Completion completio
     const auto arguments = composeArguments(request, body.path, body.operationDirectory, &validation);
     if (!arguments) { result.error = {validation.issues.constFirst().code, {}, RetryKind::ReviewAndRetry, OutcomeCertainty::Certain}; completion(result); return; }
     QStringList launchArguments = m_commandArguments;
+    if (isFlatpakLauncher(m_program, launchArguments)) {
+        QDir stagingDirectory(body.operationDirectory);
+        if (stagingDirectory.cdUp())
+            launchArguments.insert(1, QStringLiteral("--filesystem=%1:ro")
+                                          .arg(stagingDirectory.absolutePath()));
+    }
     launchArguments.append(*arguments);
     if (!m_launcher(m_program, launchArguments)) { result.error = {"thunderbird-launch-failed", {}, RetryKind::RetryPresentation, OutcomeCertainty::Certain}; completion(result); return; }
     result.certainty = OutcomeCertainty::Uncertain; completion(result);
