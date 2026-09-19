@@ -363,15 +363,15 @@ const QModelIndex ProjectsModel::copyRecord(QModelIndex index)
         // Copy project-scoped saved audiences with fresh row IDs.
         DB_LOCK;
         QSqlQuery audienceQuery(getDBOs()->getDb());
-        audienceQuery.prepare("SELECT workflow,audience_name,people_source,company_filter,selected_company_ids_json,selected_person_ids_json,recipient_distribution_json,is_default,settings_version FROM project_email_audiences WHERE project_id=? AND deleted=0");
+        audienceQuery.prepare("SELECT workflow,audience_name,people_source,company_filter,selected_company_ids_json,selected_person_ids_json,recipient_distribution_json,is_default,default_workflows_json,settings_version FROM project_email_audiences WHERE project_id=? AND deleted=0");
         audienceQuery.addBindValue(oldid);
         if (audienceQuery.exec()) {
             QSqlQuery insert(getDBOs()->getDb());
-            insert.prepare("INSERT INTO project_email_audiences(id,project_id,workflow,audience_name,people_source,company_filter,selected_company_ids_json,selected_person_ids_json,recipient_distribution_json,is_default,settings_version,updateddate) VALUES(?,?,?,?,?,?,?,?,?,?,?,CAST(strftime('%s','now') AS INTEGER))");
+            insert.prepare("INSERT INTO project_email_audiences(id,project_id,workflow,audience_name,people_source,company_filter,selected_company_ids_json,selected_person_ids_json,recipient_distribution_json,is_default,default_workflows_json,settings_version,updateddate) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,CAST(strftime('%s','now') AS INTEGER))");
             while (audienceQuery.next()) {
                 const QString id = QUuid::createUuid().toString();
                 insert.bindValue(0, id); insert.bindValue(1, newid);
-                for (int column = 0; column < 9; ++column) insert.bindValue(column + 2, audienceQuery.value(column));
+                for (int column = 0; column < 10; ++column) insert.bindValue(column + 2, audienceQuery.value(column));
                 if (insert.exec()) getDBOs()->pushRowChange("project_email_audiences", id, KeyColumnChange::Insert);
             }
         }

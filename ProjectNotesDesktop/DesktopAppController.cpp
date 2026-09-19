@@ -66,6 +66,18 @@ bool isMigratedBundledReportAction(const Plugin *plugin, const PluginMenu &menu)
             && function == QLatin1String("menu_export_tracker_items"));
 }
 
+// Every generated report starts from the project team, excluding the project
+// manager, before any saved audience preset is applied.
+PN::Comm::AudienceRule projectTeamAudienceRule()
+{
+    PN::Comm::AudienceRule rule;
+    rule.source = PN::Comm::PeopleSource::ProjectTeam;
+    rule.companyFilter = PN::Comm::CompanyFilter::All;
+    rule.includeUnknownCompany = true;
+    rule.excludeProjectManager = true;
+    return rule;
+}
+
 } // namespace
 
 #include "sqlitesyncpro.h"
@@ -652,6 +664,7 @@ bool DesktopAppController::prepareMeetingNotesReview(const QString& projectId, c
     m_meetingNotesSource.reset();
     m_reviewAudienceSnapshot.reset();
     m_reviewAudienceRule.reset();
+    setAppliedReviewAudiencePreset({});
 
     QPointer<DesktopAppController> self(this);
     m_communicationRepository->loadSnapshot(request, [self, request](PN::Comm::SnapshotResult result) {
@@ -737,6 +750,7 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
     m_meetingNotesReportSource.reset();
     m_reviewAudienceSnapshot.reset();
     m_reviewAudienceRule.reset();
+    setAppliedReviewAudiencePreset({});
 
     QPointer<DesktopAppController> self(this);
     m_communicationRepository->loadSnapshot(request, [self, request, date, internalReport, mode, retainHtml, displayPdf](PN::Comm::SnapshotResult result) {
@@ -764,12 +778,8 @@ bool DesktopAppController::prepareMeetingNotesReportReviewWithOptions(const QStr
 
         // The native report begins with the same project-team review audience as
         // Send Meeting Notes.  RecipientSelectionModel is the only place where
-        // later To/Cc/Bcc/manual edits are resolved.
-        PN::Comm::AudienceRule audienceRule;
-        audienceRule.source = PN::Comm::PeopleSource::ProjectTeam;
-        audienceRule.companyFilter = PN::Comm::CompanyFilter::All;
-        audienceRule.includeUnknownCompany = true;
-        audienceRule.excludeProjectManager = true;
+        // later selection and To/Cc/Bcc edits are resolved.
+        const PN::Comm::AudienceRule audienceRule = projectTeamAudienceRule();
         self->m_recipientSelectionModel->setAudience(PN::Comm::resolveAudience(result.snapshot, audienceRule));
         PN::Comm::EmailPreparation prepared = *preparation;
         prepared.displayPdf = displayPdf;
@@ -878,6 +888,7 @@ bool DesktopAppController::prepareProjectReportReview(const QString &projectId, 
     m_projectReportOptions.reset();
     m_reviewAudienceSnapshot.reset();
     m_reviewAudienceRule.reset();
+    setAppliedReviewAudiencePreset({});
     QPointer<DesktopAppController> self(this);
     m_communicationRepository->loadSnapshot(request, [self, request, date, internalReport, workflow, emailMode, retainHtml, displayPdf,
                                                        trackerFilters = std::move(trackerFilters)](PN::Comm::SnapshotResult result) {
@@ -926,10 +937,12 @@ bool DesktopAppController::prepareProjectReportReview(const QString &projectId, 
                 self->m_projectReportSource = source;
                 self->m_projectReportOptions = options;
                 self->m_reviewAudienceSnapshot = snapshot;
+                self->m_reviewAudienceRule = projectTeamAudienceRule();
                 self->m_communicationsController->setPreparation(std::move(*staged));
                 self->updateRecipientInternalReportContext();
-                // Project reports have a fixed project-team recipient list,
-                // so saved audience presets are not applied here.
+                // Without a saved default the receives-status preselection
+                // from the preparation factory stays in place.
+                self->applyDefaultReviewAudiencePreset();
                 validation.issues += reviewValidation.issues;
                 if (!validation.issues.isEmpty())
                     self->m_communicationsController->setReviewValidation(std::move(validation));
@@ -946,11 +959,7 @@ bool DesktopAppController::restoreProjectReportDefaultAudience()
     if (m_projectReportSource->workflow != PN::Comm::Workflow::StatusReport
         && m_projectReportSource->workflow != PN::Comm::Workflow::TrackerItemsReport)
         return false;
-    PN::Comm::AudienceRule rule;
-    rule.source = PN::Comm::PeopleSource::ProjectTeam;
-    rule.companyFilter = PN::Comm::CompanyFilter::All;
-    rule.includeUnknownCompany = true;
-    rule.excludeProjectManager = true;
+    const PN::Comm::AudienceRule rule = projectTeamAudienceRule();
     PN::Comm::AudienceResolution audience = PN::Comm::resolveAudience(*m_projectReportSnapshot, rule);
     for (const PN::Comm::SnapshotPerson &person : audience.people)
         if (!person.receivesStatus)
@@ -958,6 +967,7 @@ bool DesktopAppController::restoreProjectReportDefaultAudience()
     m_recipientSelectionModel->setAudience(std::move(audience));
     updateRecipientInternalReportContext();
     m_reviewAudienceRule = rule;
+    setAppliedReviewAudiencePreset({});
     return true;
 }
 
@@ -968,11 +978,13 @@ QVariantList DesktopAppController::reviewAudiencePresets() const
         return result;
     const auto &source = m_communicationsController->preparation().source;
     const PN::Comm::AudiencePresetStore store;
-    const auto projectDefault = store.defaultFor(source.workflow, source.projectId);
-    for (const PN::Comm::AudiencePreset &preset : store.presets(source.projectId, source.workflow)) {
+    // Saved audiences belong to the project, so every report lists them all;
+    // only the default is specific to the report being reviewed.
+    for (const PN::Comm::AudiencePreset &preset : store.presets(source.projectId)) {
         result.append(QVariantMap{{QStringLiteral("id"), preset.id},
                                   {QStringLiteral("name"), preset.name},
-                                  {QStringLiteral("projectDefault"), projectDefault && projectDefault->id == preset.id}});
+                                  {QStringLiteral("reportDefault"), preset.defaultFor.contains(source.workflow)},
+                                  {QStringLiteral("applied"), preset.id == m_reviewAudiencePresetId}});
     }
     return result;
 }
@@ -988,10 +1000,16 @@ bool DesktopAppController::saveReviewAudiencePreset(const QString &name)
     preset.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
     preset.name = name.trimmed();
     preset.projectId = source.projectId;
-    preset.workflow = source.workflow;
     preset.rule = *m_reviewAudienceRule;
     preset.overrides = m_recipientSelectionModel->overrides();
-    return PN::Comm::AudiencePresetStore().save(std::move(preset)).ok();
+    PN::Comm::AudiencePresetStore store;
+    if (!store.save(preset).ok())
+        return false;
+    // The review now shows exactly the saved audience, so it becomes the applied one.
+    for (const PN::Comm::AudiencePreset &saved : store.presets(source.projectId))
+        if (saved.name.compare(preset.name, Qt::CaseInsensitive) == 0)
+            setAppliedReviewAudiencePreset(saved.id);
+    return true;
 }
 
 bool DesktopAppController::applyReviewAudiencePreset(const QString &presetId)
@@ -1000,13 +1018,14 @@ bool DesktopAppController::applyReviewAudiencePreset(const QString &presetId)
         return false;
     const auto &source = m_communicationsController->preparation().source;
     const PN::Comm::AudiencePresetStore store;
-    for (const PN::Comm::AudiencePreset &preset : store.presets(source.projectId, source.workflow)) {
+    for (const PN::Comm::AudiencePreset &preset : store.presets(source.projectId)) {
         if (preset.id != presetId)
             continue;
         m_recipientSelectionModel->setAudience(PN::Comm::resolveAudience(*m_reviewAudienceSnapshot, preset.rule));
         updateRecipientInternalReportContext();
         m_recipientSelectionModel->applyOverrides(preset.overrides);
         m_reviewAudienceRule = preset.rule;
+        setAppliedReviewAudiencePreset(preset.id);
         return true;
     }
     return false;
@@ -1045,7 +1064,16 @@ bool DesktopAppController::applyDefaultReviewAudiencePreset()
     updateRecipientInternalReportContext();
     m_recipientSelectionModel->applyOverrides(preset->overrides);
     m_reviewAudienceRule = preset->rule;
+    setAppliedReviewAudiencePreset(preset->id);
     return true;
+}
+
+void DesktopAppController::setAppliedReviewAudiencePreset(const QString &presetId)
+{
+    // Always signal: a new review may load the same default as the last one,
+    // and the picker is cleared when the review is re-prepared.
+    m_reviewAudiencePresetId = presetId;
+    emit reviewAudiencePresetChanged();
 }
 
 void DesktopAppController::updateRecipientInternalReportContext()

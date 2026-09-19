@@ -32,6 +32,7 @@
 #include "ProjectNotesIntegrations/MicrosoftOAuthManager.h"
 #include "ProjectNotesIntegrations/Office365Service.h"
 #include "databaseobjects.h"
+#include "databaseupgrade_v6_2_0.h"
 #include "email/fakes/RecordingEmailBackend.h"
 #include "email/fakes/DeferredEmailBackend.h"
 
@@ -134,6 +135,8 @@ private slots:
     void reportsMacMailPlatformAvailability();
     void serializesEmailHandoffsAndRejectsStaleCompletion();
     void scopesAudiencePresetsByDatabaseAndProject();
+    void keepsAudienceDefaultsPerReport();
+    void foldsReportScopedAudiencesIntoProjectAudiences();
     void buildsStatusReportWithEvmAndEscapedIssues();
     void buildsFilteredAndSortedTrackerReport();
     void dispatchesAllNativeReportBuilders();
@@ -367,16 +370,10 @@ void CommunicationContractsTest::retainsRecipientEditsAndManualEntries()
     QVERIFY(model.audienceDiagnostic().isEmpty());
     QVERIFY(model.setSelected("one", false));
     QVERIFY(model.setRecipientRole("two", RecipientRole::Bcc));
-    QVERIFY(model.addManual("Manual", "manual@example.test", RecipientRole::Cc));
-    QVERIFY(!model.addManual("Duplicate source", "TWO@example.test", RecipientRole::Bcc));
-    QVERIFY(!model.addManual("Duplicate manual", "MANUAL@example.test", RecipientRole::To));
-    QVERIFY(!model.addManual("Invalid role", "other@example.test", static_cast<RecipientRole>(99)));
-    QVERIFY(!model.addManual("Bad", "bad@example.test\r\nBcc:x@example.test"));
     model.setAddressLaterExplicitlyChosen(true);
     const auto resolved = model.resolve();
-    QCOMPARE(resolved.recipients.size(), 2);
+    QCOMPARE(resolved.recipients.size(), 1);
     QCOMPARE(resolved.recipients.at(0).role, RecipientRole::Bcc);
-    QCOMPARE(resolved.recipients.at(1).role, RecipientRole::Cc);
     QVERIFY(resolved.addressLaterExplicitlyChosen);
     AudienceResolution replacement;
     replacement.people = {{"replacement", "Replacement", "replacement@example.test"}};
@@ -385,11 +382,7 @@ void CommunicationContractsTest::retainsRecipientEditsAndManualEntries()
     QVERIFY(!model.resolve().addressLaterExplicitlyChosen);
     QVERIFY(!model.setSelected("one", false));
     model.setAudience(audience);
-    QVERIFY(model.addManual("Manual", "manual@example.test", RecipientRole::Cc));
-    const QString manualId = model.data(model.index(2), RecipientSelectionModel::PersonIdRole).toString();
-    QVERIFY(model.removeManual(manualId));
-    QCOMPARE(model.recipientCount(), 2);
-    QVERIFY(!model.removeManual(QStringLiteral("one")));
+    QVERIFY(model.setSelected("one", false));
     model.reset();
     QCOMPARE(model.resolve().recipients.size(), 2);
     QVERIFY(!model.resolve().addressLaterExplicitlyChosen);
@@ -403,7 +396,7 @@ void CommunicationContractsTest::retainsRecipientEditsAndManualEntries()
     model.setAudience(empty);
     QCOMPARE(model.recipientCount(), 0);
     QCOMPARE(model.audienceDiagnostic(), QStringLiteral("audience-empty"));
-    QVERIFY(model.addManual("Manual", "manual@example.test"));
+    model.setAddressLaterExplicitlyChosen(true);
     QCOMPARE(model.resolve().validation.issues.constFirst().code, QStringLiteral("audience-empty"));
     model.reset();
     QCOMPARE(model.recipientCount(), 0);
@@ -1265,22 +1258,92 @@ void CommunicationContractsTest::serializesEmailHandoffsAndRejectsStaleCompletio
 
 void CommunicationContractsTest::scopesAudiencePresetsByDatabaseAndProject()
 {
-    AudiencePresetStore store; AudiencePreset preset{"team", "Team", "p", Workflow::StatusReport};
+    AudiencePresetStore store; AudiencePreset preset{"team", "Team", "p"};
     preset.rule.source=PeopleSource::StatusRecipients; preset.rule.companyFilter=CompanyFilter::ManagingCompany; preset.overrides={{"person", false, RecipientRole::To}};
     QVERIFY(store.save(preset).ok());
-    const auto saved=store.presets("p", Workflow::StatusReport); QCOMPARE(saved.size(), 1); QCOMPARE(saved.constFirst().name, QStringLiteral("Team"));
+    const auto saved=store.presets("p"); QCOMPARE(saved.size(), 1); QCOMPARE(saved.constFirst().name, QStringLiteral("Team"));
     QCOMPARE(saved.constFirst().rule.source, PeopleSource::ProjectTeam);
     QVERIFY(saved.constFirst().rule.chosenPersonIds.isEmpty());
     QCOMPARE(saved.constFirst().rule.companyFilter, CompanyFilter::All);
     QVERIFY(saved.constFirst().rule.companyIds.isEmpty());
     QVERIFY(saved.constFirst().rule.includeUnknownCompany);
+    QVERIFY(saved.constFirst().defaultFor.isEmpty());
+    QVERIFY(store.presets("other").isEmpty());
     QVERIFY(store.setDefault(saved.constFirst().id, Workflow::StatusReport, "p").ok());
     QCOMPARE(store.defaultFor(Workflow::StatusReport, "p")->name, QStringLiteral("Team"));
     QVERIFY(!store.defaultFor(Workflow::StatusReport, "other").has_value());
-    AudiencePreset replacement=preset; replacement.id="ignored-new-id"; replacement.rule.companyFilter=CompanyFilter::All;
+    QVERIFY(!store.setDefault(saved.constFirst().id, Workflow::StatusReport, "other").ok());
+    // Re-saving a name replaces its recipients and keeps its report defaults.
+    AudiencePreset replacement=preset; replacement.id="ignored-new-id"; replacement.name="team"; replacement.rule.companyFilter=CompanyFilter::All;
     QVERIFY(store.save(replacement).ok());
-    QCOMPARE(store.presets("p", Workflow::StatusReport).size(), 1);
-    QCOMPARE(store.presets("p", Workflow::StatusReport).constFirst().rule.companyFilter, CompanyFilter::All);
+    QCOMPARE(store.presets("p").size(), 1);
+    QCOMPARE(store.presets("p").constFirst().id, saved.constFirst().id);
+    QCOMPARE(store.presets("p").constFirst().defaultFor, QList<Workflow>{Workflow::StatusReport});
+}
+
+void CommunicationContractsTest::keepsAudienceDefaultsPerReport()
+{
+    AudiencePresetStore store;
+    QVERIFY(store.save({"", "Executives", "p"}).ok());
+    QVERIFY(store.save({"", "Everyone", "p"}).ok());
+    const auto saved=store.presets("p"); QCOMPARE(saved.size(), 2);
+    const QString everyone=saved.at(0).id, executives=saved.at(1).id;
+    QCOMPARE(saved.at(1).name, QStringLiteral("Executives"));
+
+    // Every report of the project sees both audiences and has no default yet.
+    for (const Workflow workflow : {Workflow::StatusReport, Workflow::TrackerItemsReport, Workflow::MeetingNotesReport})
+        QVERIFY(!store.defaultFor(workflow, "p").has_value());
+
+    QVERIFY(store.setDefault(executives, Workflow::StatusReport, "p").ok());
+    QVERIFY(store.setDefault(everyone, Workflow::TrackerItemsReport, "p").ok());
+    QVERIFY(store.setDefault(executives, Workflow::MeetingNotesReport, "p").ok());
+    QCOMPARE(store.defaultFor(Workflow::StatusReport, "p")->id, executives);
+    QCOMPARE(store.defaultFor(Workflow::TrackerItemsReport, "p")->id, everyone);
+    QCOMPARE(store.defaultFor(Workflow::MeetingNotesReport, "p")->id, executives);
+
+    // Moving one report's default leaves the others untouched.
+    QVERIFY(store.setDefault(everyone, Workflow::StatusReport, "p").ok());
+    QCOMPARE(store.defaultFor(Workflow::StatusReport, "p")->id, everyone);
+    QCOMPARE(store.defaultFor(Workflow::TrackerItemsReport, "p")->id, everyone);
+    QCOMPARE(store.defaultFor(Workflow::MeetingNotesReport, "p")->id, executives);
+    for (const AudiencePreset &preset : store.presets("p"))
+        QCOMPARE(preset.defaultFor.count(Workflow::StatusReport), preset.id == everyone ? 1 : 0);
+}
+
+void CommunicationContractsTest::foldsReportScopedAudiencesIntoProjectAudiences()
+{
+    // Early 6.2.0 builds stored one row per report and flagged defaults with is_default.
+    QSqlQuery insert(global_DBObjects.getDb());
+    QVERIFY(insert.prepare(QStringLiteral("INSERT INTO project_email_audiences(id,project_id,workflow,audience_name,people_source,company_filter,is_default,updateddate,deleted) VALUES(?,?,?,?,'project-team','all',?,?,0)")));
+    const QList<QVariantList> rows{
+        {"old-status", "p", "status-report", "Team", 1, 100},
+        {"new-tracker", "p", "tracker-items-report", "team", 0, 200},
+        {"meeting", "p", "meeting-notes-report", "Team", 1, 50},
+        {"other", "p2", "status-report", "Team", 0, 10}};
+    for (const QVariantList &row : rows) {
+        for (int i = 0; i < row.size(); ++i) insert.bindValue(i, row.at(i));
+        QVERIFY(insert.exec());
+    }
+
+    db_UpgradeStep_v6_2_0();
+    db_UpgradeStep_v6_2_0();
+
+    AudiencePresetStore store;
+    const auto shared=store.presets("p"); QCOMPARE(shared.size(), 1);
+    QCOMPARE(shared.constFirst().id, QStringLiteral("new-tracker"));
+    QCOMPARE(store.defaultFor(Workflow::StatusReport, "p")->id, QStringLiteral("new-tracker"));
+    QCOMPARE(store.defaultFor(Workflow::MeetingNotesReport, "p")->id, QStringLiteral("new-tracker"));
+    QVERIFY(!store.defaultFor(Workflow::TrackerItemsReport, "p").has_value());
+    QCOMPARE(store.presets("p2").size(), 1);
+    QSqlQuery removed(global_DBObjects.getDb());
+    QVERIFY(removed.exec(QStringLiteral("SELECT COUNT(*) FROM project_email_audiences WHERE deleted=1 AND id IN ('old-status','meeting')")));
+    QVERIFY(removed.next()); QCOMPARE(removed.value(0).toInt(), 2);
+    QSqlQuery legacy(global_DBObjects.getDb());
+    QVERIFY(legacy.exec(QStringLiteral("SELECT COUNT(*) FROM project_email_audiences WHERE deleted=0 AND workflow<>'project'")));
+    QVERIFY(legacy.next()); QCOMPARE(legacy.value(0).toInt(), 0);
+    // Saving the folded name updates the surviving row instead of adding one.
+    QVERIFY(store.save({"", "TEAM", "p"}).ok());
+    QCOMPARE(store.presets("p").size(), 1);
 }
 
 void CommunicationContractsTest::buildsStatusReportWithEvmAndEscapedIssues()

@@ -17,17 +17,15 @@ ColumnLayout {
     // DesktopAppController owns the immutable snapshot and applies this rule
     // through the C++ resolver; the pane never filters people itself.
     property var audienceController: null
-    // Report delivery starts with a compact, mockup-like recipient checklist.
-    // The full rule/preset/manual-address surface remains available on demand.
+    // Report delivery uses a compact recipient checklist with bulk
+    // select/clear actions; saved-audience controls are always shown.
     property bool compact: false
-    // Project reports always use their fixed project-team audience.  They do
-    // not expose alternate audience rules, saved audiences, or manual
-    // additions that could introduce people outside that team.
+    // Send Meeting Notes uses a fixed attendee distribution and does not
+    // expose saved audiences.  Recipients only ever come from people records.
     property bool fixedAudience: false
     // A workflow may supply a fixed, preselected distribution while still
     // allowing its recipients to be reviewed individually.
     property bool recipientListOnly: false
-    property bool advancedOpen: false
     spacing: 8
 
     component StandardCheckBox: CheckBox {
@@ -101,74 +99,99 @@ ColumnLayout {
             onClicked: pane.recipientModel.clearSelection()
         }
         Item { Layout.fillWidth: true }
-        Button {
-            visible: !pane.fixedAudience
-            text: pane.advancedOpen ? qsTr("Hide advanced") : qsTr("Advanced")
-            onClicked: pane.advancedOpen = !pane.advancedOpen
-        }
     }
     Connections {
         target: pane.reviewController
         function onStateChanged() { presetRow.refresh() }
     }
+    Connections {
+        target: pane.audienceController
+        ignoreUnknownSignals: true
+        function onReviewAudiencePresetChanged() { presetRow.refresh() }
+    }
 
     RowLayout {
         id: presetRow
         Layout.fillWidth: true
-        visible: !pane.fixedAudience && pane.audienceController !== null && (!pane.compact || pane.advancedOpen)
+        visible: !pane.fixedAudience && pane.audienceController !== null
         property var presets: []
-        function refresh(selectName) {
+        // Audience last copied into the save-name box; refreshes that keep the
+        // same selection leave whatever the user has typed alone.
+        property string namedId: ""
+        property string namedText: ""
+        function showName(preset) {
+            var id = preset ? preset.id : ""
+            if (id === namedId) return
+            if (preset)
+                presetName.text = preset.name
+            else if (presetName.text === namedText)
+                presetName.clear()
+            namedId = id
+            namedText = preset ? preset.name : ""
+        }
+        // Saved audiences are shared by every report of the project; the one
+        // this report loads automatically is marked in the list, and whichever
+        // audience is loaded into the review is shown as selected.
+        function label(preset) {
+            return preset.reportDefault ? qsTr("%1 (report default)").arg(preset.name) : preset.name
+        }
+        function refresh(selectId, selectName) {
             presetChoice.selectedId = ""
             presetChoice.value = ""
             presets = pane.audienceController ? pane.audienceController.reviewAudiencePresets() : []
-            if (!selectName) return
             for (var i = 0; i < presets.length; ++i)
-                if (presets[i].name === selectName) {
+                if ((selectId && presets[i].id === selectId) || (selectName && presets[i].name === selectName)
+                        || (!selectId && !selectName && presets[i].applied)) {
                     presetChoice.selectedId = presets[i].id
-                    presetChoice.value = presets[i].name
+                    presetChoice.value = label(presets[i])
+                    showName(presets[i])
                     return
                 }
+            showName(null)
         }
         Component.onCompleted: refresh()
         ComboField {
             id: presetChoice
             Layout.fillWidth: true
             property string selectedId: ""
-            options: presetRow.presets.map(function(preset) { return preset.name })
+            options: presetRow.presets.map(function(preset) { return presetRow.label(preset) })
             value: ""
             includeNone: true
             noneLabel: qsTr("Saved audience")
             onActivated: function(value) {
                 selectedId = ""
                 for (var i = 0; i < presetRow.presets.length; ++i)
-                    if (presetRow.presets[i].name === value) {
+                    if (presetRow.label(presetRow.presets[i]) === value) {
                         selectedId = presetRow.presets[i].id
                         break
                     }
+                // Choosing a saved audience applies it immediately; the
+                // placeholder leaves the current selection untouched.
+                if (selectedId !== "" && pane.audienceController)
+                    pane.audienceController.applyReviewAudiencePreset(selectedId)
             }
         }
         Button {
-            text: qsTr("Apply saved")
+            text: qsTr("Set as report default")
             enabled: presetChoice.selectedId !== ""
-            onClicked: if (pane.audienceController) pane.audienceController.applyReviewAudiencePreset(presetChoice.selectedId)
-        }
-        Button {
-            text: qsTr("Set project default")
-            enabled: presetChoice.selectedId !== ""
-            onClicked: if (pane.audienceController && pane.audienceController.setReviewAudiencePresetDefault(presetChoice.selectedId)) presetRow.refresh()
+            onClicked: {
+                var chosenId = presetChoice.selectedId
+                if (pane.audienceController && pane.audienceController.setReviewAudiencePresetDefault(chosenId))
+                    presetRow.refresh(chosenId)
+            }
         }
     }
     RowLayout {
         Layout.fillWidth: true
-        visible: !pane.fixedAudience && pane.audienceController !== null && (!pane.compact || pane.advancedOpen)
+        visible: !pane.fixedAudience && pane.audienceController !== null
         FormField { id: presetName; Layout.fillWidth: true; placeholder: qsTr("Save audience preset") }
         Button {
             text: qsTr("Save audience")
             enabled: presetName.text.trim().length > 0
             onClicked: if (pane.audienceController && pane.audienceController.saveReviewAudiencePreset(presetName.text)) {
-                var savedName = presetName.text.trim()
-                presetName.clear()
-                presetRow.refresh(savedName)
+                // The saved audience stays selected with its name in the box,
+                // ready to be edited and saved over again.
+                presetRow.refresh("", presetName.text.trim())
             }
         }
     }
@@ -238,28 +261,11 @@ ColumnLayout {
                 text: [qsTr("To"), qsTr("Cc"), qsTr("Bcc")][model.recipientRole]
                 color: Theme.text2
             }
-            Button {
-                visible: model.manual
-                text: qsTr("Remove")
-                Accessible.name: qsTr("Remove %1").arg(model.name)
-                onClicked: if (pane.recipientModel) pane.recipientModel.removeManual(model.personId)
-            }
         }
     }
 
-    RowLayout {
-        Layout.fillWidth: true
-        visible: !pane.fixedAudience && (!pane.compact || pane.advancedOpen)
-        FormField { id: manualName; Layout.preferredWidth: 150; Layout.fillWidth: false; placeholder: qsTr("Name") }
-        FormField { id: manualAddress; Layout.fillWidth: true; placeholder: qsTr("email@example.com"); inputMethodHints: Qt.ImhEmailCharactersOnly }
-        Button {
-            text: qsTr("Add")
-            enabled: manualAddress.text.trim().length > 0
-            onClicked: if (pane.recipientModel && pane.recipientModel.addManual(manualName.text, manualAddress.text)) { manualName.clear(); manualAddress.clear() }
-        }
-    }
     Button {
-        visible: !pane.compact || pane.advancedOpen
+        visible: !pane.recipientListOnly
         text: qsTr("Reset recipients")
         enabled: pane.recipientModel !== null
         onClicked: if (pane.recipientModel) pane.recipientModel.reset()

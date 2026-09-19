@@ -173,16 +173,10 @@ void AudienceResolverTest::retainsRecipientEditsAndManualEntries()
     model.selectAll();
     QCOMPARE(model.selectedRecipientCount(), 2);
     QVERIFY(model.setSelected(QStringLiteral("one"), false));
-    QVERIFY(model.addManual(QStringLiteral("Manual"), QStringLiteral("manual@example.test"), RecipientRole::Cc));
-    QVERIFY(!model.addManual(QStringLiteral("Duplicate source"), QStringLiteral("TWO@example.test"), RecipientRole::Bcc));
-    QVERIFY(!model.addManual(QStringLiteral("Duplicate manual"), QStringLiteral("MANUAL@example.test"), RecipientRole::To));
-    QVERIFY(!model.addManual(QStringLiteral("Invalid role"), QStringLiteral("other@example.test"), static_cast<RecipientRole>(99)));
-    QVERIFY(!model.addManual(QStringLiteral("Bad"), QStringLiteral("bad@example.test\r\nBcc:x@example.test")));
     model.setAddressLaterExplicitlyChosen(true);
     const auto resolved = model.resolve();
-    QCOMPARE(resolved.recipients.size(), 2);
+    QCOMPARE(resolved.recipients.size(), 1);
     QCOMPARE(resolved.recipients.at(0).role, RecipientRole::Bcc);
-    QCOMPARE(resolved.recipients.at(1).role, RecipientRole::Cc);
     QVERIFY(resolved.addressLaterExplicitlyChosen);
 
     AudienceResolution replacement;
@@ -192,11 +186,7 @@ void AudienceResolverTest::retainsRecipientEditsAndManualEntries()
     QVERIFY(!model.resolve().addressLaterExplicitlyChosen);
     QVERIFY(!model.setSelected(QStringLiteral("one"), false));
     model.setAudience(audience);
-    QVERIFY(model.addManual(QStringLiteral("Manual"), QStringLiteral("manual@example.test"), RecipientRole::Cc));
-    const QString manualId = model.data(model.index(2), RecipientSelectionModel::PersonIdRole).toString();
-    QVERIFY(model.removeManual(manualId));
-    QCOMPARE(model.recipientCount(), 2);
-    QVERIFY(!model.removeManual(QStringLiteral("one")));
+    QVERIFY(model.setSelected(QStringLiteral("one"), false));
     model.reset();
     QCOMPARE(model.resolve().recipients.size(), 2);
     QVERIFY(!model.resolve().addressLaterExplicitlyChosen);
@@ -212,7 +202,7 @@ void AudienceResolverTest::retainsRecipientEditsAndManualEntries()
     model.setAudience(empty);
     QCOMPARE(model.recipientCount(), 0);
     QCOMPARE(model.audienceDiagnostic(), QStringLiteral("audience-empty"));
-    QVERIFY(model.addManual(QStringLiteral("Manual"), QStringLiteral("manual@example.test")));
+    model.setAddressLaterExplicitlyChosen(true);
     QCOMPARE(model.resolve().validation.issues.constFirst().code, QStringLiteral("audience-empty"));
     model.reset();
     QCOMPARE(model.recipientCount(), 0);
@@ -244,7 +234,6 @@ void AudienceResolverTest::preservesResolutionOrderWhileGroupingAudience()
 
     RecipientSelectionModel model;
     model.setAudience(audience);
-    QVERIFY(!model.addManual(QStringLiteral("Manager duplicate"), QStringLiteral("MANAGER@example.test")));
     model.setInternalReportContext(true, QStringLiteral("ours"));
     QCOMPARE(model.internalAudienceWarning(),
              QStringLiteral("This internal report has 2 selected recipient(s) outside the managing company."));

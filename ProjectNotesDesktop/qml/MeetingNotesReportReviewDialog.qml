@@ -25,7 +25,6 @@ Dialog {
     property var templateModel: null
     property string projectId: ""
     property string workflow: "meeting-notes-report"
-    readonly property bool projectReport: workflow === "status-report" || workflow === "tracker-items-report"
     property string delivery: "save"
     property string emailMode: "inline-html"
     property bool internalReport: false
@@ -383,9 +382,8 @@ Dialog {
                                 Layout.fillWidth: true
                                 recipientModel: dialog.recipientModel
                                 reviewController: dialog.controller
-                                audienceController: dialog.projectReport ? null : DesktopAppController
+                                audienceController: DesktopAppController
                                 compact: true
-                                fixedAudience: dialog.projectReport
                             }
                             Label {
                                 Layout.fillWidth: true

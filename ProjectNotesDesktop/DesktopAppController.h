@@ -747,6 +747,7 @@ public:
 
 signals:
     void viewReportAfterSaveChanged();
+    void reviewAudiencePresetChanged();
     void emailSettingsChanged();
     void databaseReady();
     void errorOccurred(const QString& title, const QString& message);
@@ -793,6 +794,7 @@ private slots:
 
 private:
     bool applyDefaultReviewAudiencePreset();
+    void setAppliedReviewAudiencePreset(const QString& presetId);
     void updateRecipientInternalReportContext();
     // Resolves the template a workflow's review should start from. Report and
     // Send Notes preparation both apply the configured template up front, so
@@ -853,6 +855,8 @@ private:
     std::optional<PN::Comm::EmailPreparation> m_projectReportReview;
     std::optional<PN::Comm::CommunicationSnapshot> m_reviewAudienceSnapshot;
     std::optional<PN::Comm::AudienceRule> m_reviewAudienceRule;
+    // Saved audience currently loaded into the review, so the picker can show it.
+    QString m_reviewAudiencePresetId;
     std::optional<PN::Comm::CommunicationSnapshot> m_projectReportSnapshot;
     std::optional<PN::Comm::SourceContext> m_projectReportSource;
     std::optional<PN::Comm::ReportOptions> m_projectReportOptions;

@@ -332,7 +332,9 @@ void db_CreateNewDatabase()
         CREATE UNIQUE INDEX idx_status_report_items_desc_proj ON status_report_items (task_description, project_id) WHERE deleted = 0;
     )");
 
-    // Named, project-scoped recipient audiences for native email/report workflows.
+    // Named recipient audiences shared by every report of a project. workflow is
+    // always 'project'; default_workflows_json lists the reports that load the
+    // audience automatically.
     global_DBObjects.execute(R"(
         CREATE TABLE project_email_audiences (
             id                          TEXT PRIMARY KEY NOT NULL,
@@ -345,15 +347,15 @@ void db_CreateNewDatabase()
             selected_person_ids_json    TEXT NOT NULL DEFAULT '[]',
             recipient_distribution_json TEXT NOT NULL DEFAULT '[]',
             is_default                  INTEGER NOT NULL DEFAULT 0,
+            default_workflows_json      TEXT NOT NULL DEFAULT '[]',
             settings_version            INTEGER NOT NULL DEFAULT 1,
             updateddate                 INTEGER,
             syncdate                    INTEGER,
             deleted                     INTEGER NOT NULL DEFAULT 0
         );
     )");
-    global_DBObjects.execute(R"(CREATE INDEX idx_project_email_audiences_project ON project_email_audiences(project_id, workflow, deleted);)");
+    global_DBObjects.execute(R"(CREATE INDEX idx_project_email_audiences_project_shared ON project_email_audiences(project_id, deleted);)");
     global_DBObjects.execute(R"(CREATE UNIQUE INDEX idx_project_email_audiences_name ON project_email_audiences(project_id, workflow, audience_name COLLATE NOCASE) WHERE deleted = 0;)");
-    global_DBObjects.execute(R"(CREATE UNIQUE INDEX idx_project_email_audiences_default ON project_email_audiences(project_id, workflow) WHERE deleted = 0 AND is_default = 1;)");
 
     // Triggers — on data changes: stamp updateddate and clear syncdate so the row is queued for sync.
     // WHEN NEW.syncdate IS OLD.syncdate: skip if the UPDATE is only writing syncdate itself

@@ -60,14 +60,15 @@ bool DatabaseStructure::UpgradeDatabase()
         if (currentversion == "4.1.0" || currentversion == "1.2.0" || currentversion == "1.0.0")
             db_UpgradeStep_v5_0_0();
 
-        // Idempotent so every supported pre-6.2 database receives the new table,
-        // including databases whose earlier release had no schema migration.
-        db_UpgradeStep_v6_2_0();
-
         // Update version to target (only update current_version, never modify id)
         global_DBObjects.execute(QString("update application_version set current_version = '%1';")
             .arg(targetversion));
     }
+
+    // Runs on every launch, outside the version check: every statement is
+    // guarded, so pre-6.2 databases receive the audience table and databases
+    // created by early 6.2.0 builds pick up the shared-audience columns.
+    db_UpgradeStep_v6_2_0();
 
     // Recreate all views as final step (always uses current column names)
     db_CreateAllViews();

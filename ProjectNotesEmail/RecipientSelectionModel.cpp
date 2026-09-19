@@ -4,7 +4,6 @@
 #include "RecipientSelectionModel.h"
 
 #include <QSet>
-#include <QUuid>
 
 #include <algorithm>
 
@@ -28,12 +27,10 @@ QVariant RecipientSelectionModel::data(const QModelIndex &index, int role) const
     case CompanyNameRole: return entry.person.companyName;
     case SelectedRole: return entry.selected;
     case RecipientRoleRole: return static_cast<int>(entry.role);
-    case ManualRole: return entry.manual;
     case CompanyGroupRole:
-        return entry.manual ? tr("Manual additions")
-                            : (entry.person.companyName.trimmed().isEmpty()
-                               ? tr("Unknown company") : entry.person.companyName.trimmed());
-    case SourceReasonRole: return entry.manual ? tr("Added manually") : sourceReason(entry.person);
+        return entry.person.companyName.trimmed().isEmpty()
+            ? tr("Unknown company") : entry.person.companyName.trimmed();
+    case SourceReasonRole: return sourceReason(entry.person);
     default: return {};
     }
 }
@@ -42,15 +39,15 @@ QHash<int, QByteArray> RecipientSelectionModel::roleNames() const
 {
     return {{PersonIdRole, "personId"}, {NameRole, "name"}, {AddressRole, "address"},
             {CompanyNameRole, "companyName"}, {SelectedRole, "selected"},
-            {RecipientRoleRole, "recipientRole"}, {ManualRole, "manual"},
+            {RecipientRoleRole, "recipientRole"},
             {CompanyGroupRole, "companyGroup"}, {SourceReasonRole, "sourceReason"}};
 }
 
 void RecipientSelectionModel::setAudience(AudienceResolution audience)
 {
-    // A changed source is a new recipient decision.  Preserve neither manual
-    // entries nor the explicit "address later" escape hatch from the prior
-    // audience, otherwise a later source change could silently carry it over.
+    // A changed source is a new recipient decision.  Do not preserve the
+    // explicit "address later" escape hatch from the prior audience,
+    // otherwise a later source change could silently carry it over.
     const bool addressLaterChanged = m_addressLaterExplicitlyChosen;
     beginResetModel();
     m_entries.clear();
@@ -64,7 +61,7 @@ void RecipientSelectionModel::setAudience(AudienceResolution audience)
                 role = overrideValue.role;
             }
         }
-        m_entries.append({person, selected, role, false, sourceOrder++});
+        m_entries.append({person, selected, role, sourceOrder++});
     }
     // Grouping affects only presentation. resolve() restores this recorded
     // source order before applying overrides, preserving the frozen native
@@ -159,44 +156,6 @@ bool RecipientSelectionModel::setRecipientRoleValue(const QString &personId, int
     if (role < static_cast<int>(RecipientRole::To) || role > static_cast<int>(RecipientRole::Bcc))
         return false;
     return setRecipientRole(personId, static_cast<RecipientRole>(role));
-}
-
-bool RecipientSelectionModel::addManual(QString displayName, QString address, RecipientRole role)
-{
-    const QString trimmed = address.trimmed();
-    if (trimmed.isEmpty() || trimmed.contains('\r') || trimmed.contains('\n') ||
-        trimmed.contains(',') || trimmed.contains(';') || !trimmed.contains('@') ||
-        role < RecipientRole::To || role > RecipientRole::Bcc)
-        return false;
-    const QString key = trimmed.toCaseFolded();
-    for (const AudienceExclusion &exclusion : m_exclusions)
-        if (exclusion.reason == QLatin1String("project-manager-excluded")
-            && exclusion.person.email.trimmed().toCaseFolded() == key)
-            return false;
-    for (const Entry &entry : m_entries)
-        if (entry.person.email.trimmed().toCaseFolded() == key)
-            return false;
-    const int row = m_entries.size();
-    beginInsertRows({}, row, row);
-    int sourceOrder = 0;
-    for (const Entry &entry : m_entries)
-        sourceOrder = qMax(sourceOrder, entry.sourceOrder + 1);
-    m_entries.append({{QStringLiteral("manual-") + QUuid::createUuid().toString(QUuid::WithoutBraces),
-                       std::move(displayName), trimmed}, true, role, true, sourceOrder});
-    endInsertRows();
-    emit selectionStateChanged();
-    return true;
-}
-
-bool RecipientSelectionModel::removeManual(const QString &personId)
-{
-    const int row = indexOf(personId);
-    if (row < 0 || !m_entries.at(row).manual) return false;
-    beginRemoveRows({}, row, row);
-    m_entries.removeAt(row);
-    endRemoveRows();
-    emit selectionStateChanged();
-    return true;
 }
 
 void RecipientSelectionModel::setAddressLaterExplicitlyChosen(bool chosen)
@@ -308,8 +267,7 @@ QList<RecipientOverride> RecipientSelectionModel::overrides() const
 {
     QList<RecipientOverride> result;
     for (const Entry &entry : m_entries)
-        if (!entry.manual)
-            result.append({entry.person.id, entry.selected, entry.role});
+        result.append({entry.person.id, entry.selected, entry.role});
     return result;
 }
 
@@ -321,7 +279,7 @@ void RecipientSelectionModel::applyOverrides(const QList<RecipientOverride> &ove
     bool changed = false;
     for (Entry &entry : m_entries) {
         const auto found = byPerson.constFind(entry.person.id);
-        if (entry.manual || found == byPerson.cend())
+        if (found == byPerson.cend())
             continue;
         if (entry.selected != found->selected || entry.role != found->role) {
             entry.selected = found->selected;
@@ -339,9 +297,6 @@ void RecipientSelectionModel::applyOverrides(const QList<RecipientOverride> &ove
 void RecipientSelectionModel::reset()
 {
     beginResetModel();
-    m_entries.erase(std::remove_if(m_entries.begin(), m_entries.end(),
-                                   [](const Entry &entry) { return entry.manual; }),
-                    m_entries.end());
     for (Entry &entry : m_entries) { entry.selected = true; entry.role = RecipientRole::To; }
     const bool addressLaterChanged = m_addressLaterExplicitlyChosen;
     m_addressLaterExplicitlyChosen = false;

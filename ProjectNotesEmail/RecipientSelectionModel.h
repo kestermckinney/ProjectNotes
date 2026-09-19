@@ -29,7 +29,6 @@ public:
         CompanyNameRole,
         SelectedRole,
         RecipientRoleRole,
-        ManualRole,
         CompanyGroupRole,
         SourceReasonRole
     };
@@ -51,8 +50,6 @@ public:
     Q_INVOKABLE void clearSelection();
     Q_INVOKABLE bool setRecipientRole(const QString &personId, RecipientRole role);
     Q_INVOKABLE bool setRecipientRoleValue(const QString &personId, int role);
-    Q_INVOKABLE bool addManual(QString displayName, QString address, RecipientRole role = RecipientRole::To);
-    Q_INVOKABLE bool removeManual(const QString &personId);
     Q_INVOKABLE void setAddressLaterExplicitlyChosen(bool chosen);
     [[nodiscard]] bool addressLaterExplicitlyChosen() const;
     Q_INVOKABLE void reset();
@@ -64,8 +61,8 @@ public:
     [[nodiscard]] QVariantList excludedRecipients() const;
     [[nodiscard]] QString internalAudienceWarning() const;
     [[nodiscard]] QString audienceDiagnostic() const;
-    // Presets contain only persisted snapshot-person choices. Manual entries
-    // and the address-later escape hatch deliberately remain review-local.
+    // Presets contain only persisted snapshot-person choices. The
+    // address-later escape hatch deliberately remains review-local.
     [[nodiscard]] QList<RecipientOverride> overrides() const;
     void applyOverrides(const QList<RecipientOverride> &overrides);
     RecipientResolution resolve() const;
@@ -79,7 +76,6 @@ private:
         SnapshotPerson person;
         bool selected = true;
         RecipientRole role = RecipientRole::To;
-        bool manual = false;
         int sourceOrder = 0;
     };
     int indexOf(const QString &personId) const;

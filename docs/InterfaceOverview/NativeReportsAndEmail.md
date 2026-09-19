@@ -15,7 +15,7 @@ review uses the version you intend to share.
 
 The review dialog shows the generated subject and a plain-text summary. Where
 the chosen mode permits it, you can edit the subject, choose a template, select
-the audience shortcut and company filter, add manual recipients, or attach a
+the audience shortcut and company filter, adjust recipients, or attach a
 file. These review-only changes do not alter the project team or the saved
 template unless you explicitly save a template from **Settings > Email
 Templates**.
@@ -67,7 +67,7 @@ Templates are scoped to the active Project Notes profile and database.
 
 A template may retain a reference to one global saved audience preset for its
 workflow. It is only a reusable suggestion: saving or choosing that reference
-never changes recipients. Apply the preset explicitly from a review, where the
+never changes recipients. Apply the preset from a review, where the
 current project and immutable recipient snapshot are known.
 If a referenced preset is later removed, Settings shows that missing reference
 until you explicitly select a replacement or clear it.
@@ -79,10 +79,28 @@ list. You can refine an audience by managing company, project client, everyone
 except the client, or selected companies. The grouped checklist shows why a
 person is included, unique To/Cc/Bcc totals, and a collapsible list of contacts
 not included with the resolver's reason. Company filters, manager exclusion,
-manual addresses, and recipient-role changes affect only the open review. An
+and recipient-role changes affect only the open review. An
 internal report warns if its selected audience includes someone outside the
 configured managing company. Check the displayed list before creating a draft,
 especially after changing an audience source.
+
+Recipients always come from people records. To email someone who isn't listed,
+add them as a person and put them on the project team first. You can't type an
+address into the review.
+
+Every Generate Report review shows the saved-audience controls. There is no
+separate Advanced section. Pick a saved audience from the dropdown and the
+checklist updates immediately. **Save audience** stores the current selection
+for the project. Saved audiences are shared, so one you save while running a
+Status Report also appears for the Tracker Items Report and the Meeting Notes
+Report on the same project.
+
+Defaults work per report. **Set as report default** makes the chosen audience
+load automatically the next time you generate the report you are reviewing for
+this project. Each report keeps its own default, and a single audience can be
+the default for several reports. The dropdown marks the current report's
+default. Without a default, Status Report and Tracker Items Report start with
+the team members marked to receive status reports.
 
 ## Email-client availability
 
