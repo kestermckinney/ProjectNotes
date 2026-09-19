@@ -20,6 +20,14 @@ Dialog {
     padding: 0
     title: qsTr("Run report")
 
+    // Clicking away dismisses the dialog and nothing else — see ClickShield.qml.
+    ClickShield { host: dialog }
+
+    // Close on the next tick rather than inside a click — see
+    // FilterDialog._dismiss(). Closing mid-delivery lets the click fall through
+    // to whatever sits behind the dialog.
+    function _dismiss() { Qt.callLater(close) }
+
     property var controller: null
     property var recipientModel: null
     property var templateModel: null
@@ -183,7 +191,7 @@ Dialog {
         pendingSaveUrl = ""
         pendingSaveFormat = ""
         if (DesktopAppController.saveReviewGeneratedAttachment(name, destination)) {
-            dialog.close()
+            dialog._dismiss()
             if (DesktopAppController.viewReportAfterSave)
                 Qt.openUrlExternally(destination)
         }
@@ -226,7 +234,7 @@ Dialog {
         function onStateChanged() {
             if (dialog.visible && dialog.delivery === "email" && dialog.controller
                     && dialog.controller.stageName === "completed") {
-                dialog.close()
+                dialog._dismiss()
                 return
             }
             if (dialog.controller && dialog.controller.stageName === "reviewing" && dialog.pendingPreparationKey !== "") {
@@ -245,7 +253,7 @@ Dialog {
             Layout.fillWidth: true; Layout.margins: 14; spacing: 8
             MaterialIcon { name: "description"; size: 20; color: Theme.accent }
             Label { text: dialog.title; color: Theme.text; font.pixelSize: Theme.font2xl; font.weight: Font.Bold; Layout.fillWidth: true }
-            ToolButton { text: "×"; onClicked: dialog.close() }
+            ToolButton { text: "×"; onClicked: dialog._dismiss() }
         }
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
         ScrollView {
@@ -417,7 +425,7 @@ Dialog {
                 Layout.fillWidth: true; color: Theme.amber; wrapMode: Text.Wrap
                 text: dialog.emailActionHint()
             }
-            Button { text: qsTr("Cancel"); onClicked: dialog.close() }
+            Button { text: qsTr("Cancel"); onClicked: dialog._dismiss() }
             Button {
                 visible: dialog.delivery === "save"; text: qsTr("Save As…")
                 enabled: dialog.projectId !== "" && (!dialog.controller || !dialog.controller.busy)

@@ -23,9 +23,11 @@ import QtQuick.Templates as T
 //
 // Keeping one more modal popup open across the dismissal leaves the overlay
 // blocking for the whole delivery, so nothing behind the menu reacts. This one
-// is invisible, empty, never closes on its own (NoAutoClose), and sits at z: -1
-// below every other popup in the overlay — so the menu it shields, and any
-// submenu opened over that menu, keep receiving input exactly as before.
+// is invisible, empty, never closes on its own (NoAutoClose), and sits half a
+// step below its host in the overlay — so the menu it shields, and any submenu
+// opened over that menu, keep receiving input exactly as before. A host raised
+// above z 0 (ComboField's drop-down) puts its shield above a dialog it sits in,
+// so a click away from the drop-down doesn't also land on that dialog.
 //
 // Usage — declare one inside the popup it protects:
 //     Popup { id: menu;  ClickShield { host: menu }  /* … */ }
@@ -40,7 +42,7 @@ Popup {
     property T.Popup host: null
 
     parent: Overlay.overlay
-    z: -1
+    z: host ? host.z - 0.5 : -1
     modal: true
     dim: false
     closePolicy: Popup.NoAutoClose

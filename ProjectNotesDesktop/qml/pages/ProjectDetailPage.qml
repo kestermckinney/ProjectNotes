@@ -1253,6 +1253,11 @@ Item {
         // Type-to-search text (lower-cased match target). Empty = show everyone.
         property string _filter: ""
 
+        // Close on the next tick, not inside the row's click — see
+        // FilterDialog._dismiss(). Closing mid-release lets the click fall
+        // through to whatever sits behind the picker on the project page.
+        function _dismiss() { Qt.callLater(close) }
+
         // Reset and focus the search box each time the picker opens.
         onOpened: { _filter = ""; teamSearch.text = ""; teamSearch.forceActiveFocus() }
 
@@ -1261,7 +1266,7 @@ Item {
             RowLayout {
                 Layout.fillWidth: true; Layout.margins: 12
                 Text { text: qsTr("Add Team Member"); color: Theme.text; font.pixelSize: Theme.fontXl; font.weight: Font.Bold; Layout.fillWidth: true }
-                MaterialIcon { name: "close"; size: 18; color: Theme.text3; TapHandler { onTapped: teamPicker.close() } }
+                MaterialIcon { name: "close"; size: 18; color: Theme.text3; TapHandler { onTapped: teamPicker._dismiss() } }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
 
@@ -1315,7 +1320,7 @@ Item {
                             DesktopAppController.refreshTeamMembers()
                             page._refreshTeamPeople()
                         }
-                        teamPicker.close()
+                        teamPicker._dismiss()
                     }
                 }
             }

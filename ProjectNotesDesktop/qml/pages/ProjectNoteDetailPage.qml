@@ -600,6 +600,11 @@ Item {
         // Type-to-search text (lower-cased match target). Empty = show everyone.
         property string _filter: ""
 
+        // Close on the next tick, not inside the row's click — see
+        // FilterDialog._dismiss(). Closing mid-release lets the click fall
+        // through to whatever sits behind the picker on the note page.
+        function _dismiss() { Qt.callLater(close) }
+
         // Reset and focus the search box each time the picker opens.
         onOpened: {
             _filter = ""; attendeeSearch.text = ""; attendeeSearch.forceActiveFocus()
@@ -618,7 +623,7 @@ Item {
                 }
                 MaterialIcon {
                     name: "close"; size: 18; color: Theme.text3
-                    TapHandler { onTapped: peoplePicker.close() }
+                    TapHandler { onTapped: peoplePicker._dismiss() }
                 }
             }
             Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.border }
@@ -684,7 +689,7 @@ Item {
                             DesktopAppController.saveAttendee(r, modelData.id)
                             DesktopAppController.refreshMeetingAttendees()
                         }
-                        peoplePicker.close()
+                        peoplePicker._dismiss()
                     }
                 }
             }
