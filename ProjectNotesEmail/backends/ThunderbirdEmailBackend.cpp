@@ -113,7 +113,9 @@ std::optional<QStringList> ThunderbirdEmailBackend::composeArguments(const Email
     if (!cc.isEmpty()) fields.append("cc=" + quote(cc.join(',')));
     if (!bcc.isEmpty()) fields.append("bcc=" + quote(bcc.join(',')));
     fields.append("subject=" + quote(request.subject));
-    fields.append("body=" + quote(QUrl::fromLocalFile(body.absoluteFilePath()).toString(QUrl::FullyEncoded)));
+    // Thunderbird's body argument is literal text; message loads a UTF-8 file.
+    fields.append("message=" + quote(body.absoluteFilePath()));
+    fields.append(request.html.isEmpty() ? "format=text" : "format=html");
     if (!attachments.isEmpty()) fields.append("attachment=" + quote(attachments.join(',')));
     return QStringList{"-compose", fields.join(',')};
 }

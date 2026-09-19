@@ -15,6 +15,26 @@ QString body(const QString &html) {
     const auto match = expression.match(html); return match.hasMatch() ? match.captured(1) : html;
 }
 QString plain(const QString &html) { QString value = html; value.remove(QRegularExpression("<[^>]*>")); return value.simplified(); }
+
+// Email clients receive the fragment without the exported document's head.
+// Style only our markup, before interpolating any user-authored note HTML.
+QString emailMarkup(QString markup)
+{
+    const QString cell = "font-family:Calibri,Arial,sans-serif;border:1px solid #808080;"
+                         "padding:6px;vertical-align:top;";
+    markup.replace("<table class='meeting-notes'>",
+                   "<table class='meeting-notes' width='100%' cellspacing='0' cellpadding='0' "
+                   "style='border-collapse:collapse;width:100%;'>");
+    markup.replace(QRegularExpression("<th(?=[ >])"),
+                   "<th bgcolor='#e7e6e6' style='" + cell + "background-color:#e7e6e6;'");
+    markup.replace("<td colspan='4' class='note-body'>",
+                   "<td colspan='4' class='note-body' bgcolor='#d9e1f2' style='" + cell
+                       + "background-color:#d9e1f2;'>");
+    markup.replace("<td>", "<td style='" + cell + "'>");
+    markup.replace("<td colspan='3'>", "<td colspan='3' style='" + cell + "'>");
+    markup.replace("<td colspan='4'>", "<td colspan='4' style='" + cell + "'>");
+    return markup;
+}
 }
 
 std::optional<ReportDocument> MeetingNotesEmailBuilder::build(const MeetingNotesBuildInput &input,
@@ -34,19 +54,19 @@ std::optional<ReportDocument> MeetingNotesEmailBuilder::build(const MeetingNotes
         if (item.noteId == note->id) items.append({item.name, item.assignedTo, item.status, item.dueDate});
     QString actions;
     for (const MeetingActionItem &item : items)
-        actions += QStringLiteral("<tr><td>%1</td><td>%2</td><td>%3</td><td>%4</td></tr>")
+        actions += emailMarkup(QStringLiteral("<tr><td>%1</td><td>%2</td><td>%3</td><td>%4</td></tr>"))
                        .arg(escape(item.name), escape(item.assignedTo), escape(item.status), escape(item.dueDate));
-    if (actions.isEmpty()) actions = QStringLiteral("<tr><td colspan='4'>No action items.</td></tr>");
+    if (actions.isEmpty()) actions = emailMarkup(QStringLiteral("<tr><td colspan='4'>No action items.</td></tr>"));
     const QString date = note->date.isValid() ? note->date.date().toString("MM/dd/yyyy") : QString();
-    const QString fragment = QStringLiteral("<table class='meeting-notes'><tr><th colspan='4'>%1 - %2</th></tr>"
+    const QString fragment = emailMarkup(QStringLiteral("<table class='meeting-notes'><tr><th colspan='4'>%1 - %2</th></tr>"
         "<tr><th>Meeting Date</th><td colspan='3'>%3</td></tr><tr><th>Attendees</th><td colspan='3'>%4</td></tr>"
         "<tr><th colspan='4'>Meeting Notes</th></tr><tr><td colspan='4' class='note-body'>%5</td></tr>"
-        "<tr><th colspan='4'>Action Items</th></tr><tr><th>Item</th><th>Assigned To</th><th>Status</th><th>Due</th></tr>%6</table>")
+        "<tr><th colspan='4'>Action Items</th></tr><tr><th>Item</th><th>Assigned To</th><th>Status</th><th>Due</th></tr>%6</table>"))
         .arg(escape(input.snapshot.projectNumber + QStringLiteral(" ") + input.snapshot.projectName),
              escape(note->title), escape(date), escape(attendees.join(", ")), body(note->html), actions);
     ReportDocument report; report.workflow = Workflow::SendMeetingNotes; report.emailFragment = fragment;
     report.htmlDocument = QStringLiteral("<!doctype html><html><head><meta charset='utf-8'><style>"
-        "body{font-family:Calibri,sans-serif}table{border-collapse:collapse;width:100%%}th,td{border:1px solid #808080;padding:6px;vertical-align:top}th{background:#e7e6e6}.note-body{background:#d9e1f2}</style></head><body>%1</body></html>").arg(fragment);
+        "body{font-family:Calibri,sans-serif}</style></head><body>%1</body></html>").arg(fragment);
     report.plainText = plain(fragment); report.defaultSubject = QStringLiteral("%1 %2 - %3 %4 Notes")
         .arg(input.snapshot.projectNumber, input.snapshot.projectName, date, note->title).simplified();
     report.fileStem = QStringLiteral("Meeting Notes"); report.pdfLayout = QPageLayout(QPageSize(QPageSize::A4), QPageLayout::Portrait, {});

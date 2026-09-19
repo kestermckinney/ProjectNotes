@@ -772,6 +772,22 @@ void CommunicationContractsTest::buildsContextSpecificMeetingNotes()
     QVERIFY(document->htmlDocument.contains("Discussed <b>scope</b>"));
     QVERIFY(document->htmlDocument.contains("Alice"));
     QVERIFY(document->htmlDocument.contains("Draft"));
+    QVERIFY(document->emailFragment.contains("border-collapse:collapse;width:100%;"));
+    QVERIFY(document->emailFragment.contains("bgcolor='#e7e6e6'"));
+    QVERIFY(document->emailFragment.contains("background-color:#e7e6e6;"));
+    QVERIFY(document->emailFragment.contains("bgcolor='#d9e1f2'"));
+    QVERIFY(document->emailFragment.contains("background-color:#d9e1f2;"));
+    const QRegularExpression cells(QStringLiteral("<(?:th|td)\\b[^>]*>"));
+    auto matches = cells.globalMatch(document->emailFragment);
+    while (matches.hasNext())
+        QVERIFY(matches.next().captured().contains("border:1px solid #808080;"));
+    // Styling the generated table must not rewrite tables inside the note.
+    input.snapshot.notes[0].html = "<table><tr><td style='background-color:red'>Custom</td></tr></table>";
+    input.snapshot.actionItems.clear();
+    const auto emptyActions = MeetingNotesEmailBuilder::build(input);
+    QVERIFY(emptyActions.has_value());
+    QVERIFY(emptyActions->emailFragment.contains(input.snapshot.notes[0].html));
+    QVERIFY(emptyActions->emailFragment.contains("No action items."));
     QCOMPARE(document->defaultSubject, QStringLiteral("P-1 North - 09/12/2026 Kickoff Notes"));
 }
 
@@ -1040,6 +1056,7 @@ void CommunicationContractsTest::createsThunderbirdComposeArguments()
     const QString bodyPath = directory.filePath("body with spaces.html"); QFile body(bodyPath); QVERIFY(body.open(QIODevice::WriteOnly)); body.write("<p>body</p>"); body.close();
     const QString attachmentPath = directory.filePath("attachment.pdf"); QFile attachment(attachmentPath); QVERIFY(attachment.open(QIODevice::WriteOnly)); attachment.write("pdf"); attachment.close();
     EmailRequest request; request.subject = "Subject, Unicode ✓";
+    request.html = QStringLiteral("<p>body</p>");
     request.recipients = {{"To", "to@example.test", RecipientRole::To}, {"Cc", "cc@example.test", RecipientRole::Cc}, {"Bcc", "bcc@example.test", RecipientRole::Bcc}};
     request.attachments = {{QUuid::createUuid(), attachmentPath, "attachment.pdf", "application/pdf", 3}};
     ValidationResult validation; const auto arguments = ThunderbirdEmailBackend::composeArguments(
@@ -1047,6 +1064,14 @@ void CommunicationContractsTest::createsThunderbirdComposeArguments()
     QVERIFY(validation.ok()); QVERIFY(arguments.has_value()); QCOMPARE(arguments->first(), QStringLiteral("-compose"));
     QVERIFY(arguments->at(1).contains("to='to@example.test'")); QVERIFY(arguments->at(1).contains("cc='cc@example.test'"));
     QVERIFY(arguments->at(1).contains("bcc='bcc@example.test'")); QVERIFY(arguments->at(1).contains("file:///"));
+    QVERIFY(arguments->at(1).contains("message='" + bodyPath + "'"));
+    QVERIFY(arguments->at(1).contains("format=html"));
+    QVERIFY(!arguments->at(1).contains("body="));
+    request.html.clear();
+    const auto plainArguments = ThunderbirdEmailBackend::composeArguments(
+        request, bodyPath, directory.path(), &validation);
+    QVERIFY(plainArguments.has_value());
+    QVERIFY(plainArguments->at(1).contains("format=text"));
 }
 
 void CommunicationContractsTest::launchesThunderbirdCommandWithFixedArguments()
@@ -1351,7 +1376,13 @@ void CommunicationContractsTest::createsGraphDraftWithoutSend()
     request.operationId = QUuid::createUuid();
     request.accountGeneration = service.account().generation;
     request.subject = "Synthetic draft";
-    request.html = "<p>body</p>";
+    MeetingNotesBuildInput notes;
+    notes.noteId = "note";
+    notes.snapshot.notes = {{"note", "Kickoff", "<p>Notes</p>",
+                             QDateTime(QDate(2026, 9, 12), QTime(9, 0)), false, {}}};
+    const auto document = MeetingNotesEmailBuilder::build(notes);
+    QVERIFY(document.has_value());
+    request.html = document->emailFragment;
     request.recipients = {{"To", "to@example.test", RecipientRole::To}};
     bool complete = false;
     backend.handoff(request, [&complete, &composeUrl](EmailHandoffResult result) {
@@ -1372,6 +1403,10 @@ void CommunicationContractsTest::createsGraphDraftWithoutSend()
     QVERIFY(!draft.url.toString().contains("send", Qt::CaseInsensitive));
     QCOMPARE(draft.headers.value("Authorization"), QByteArray("Bearer token"));
     QVERIFY(draft.body.contains("to@example.test"));
+    const auto graphBody = QJsonDocument::fromJson(draft.body).object().value("body").toObject();
+    QCOMPARE(graphBody.value("contentType").toString(), QStringLiteral("HTML"));
+    QCOMPARE(graphBody.value("content").toString(), document->emailFragment);
+    QVERIFY(graphBody.value("content").toString().contains("background-color:#d9e1f2;"));
 
     request.operationId = QUuid::createUuid();
     request.accountGeneration = service.account().generation + 1;

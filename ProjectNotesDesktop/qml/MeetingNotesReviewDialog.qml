@@ -114,7 +114,10 @@ Dialog {
             Button {
                 text: qsTr("Send Email")
                 enabled: dialog.reviewing && dialog.recipientModel && dialog.recipientModel.selectedRecipientCount > 0
-                onClicked: DesktopAppController.handoffPreparedReview()
+                onClicked: {
+                    if (DesktopAppController.handoffPreparedReview())
+                        dialog.close()
+                }
             }
         }
     }
